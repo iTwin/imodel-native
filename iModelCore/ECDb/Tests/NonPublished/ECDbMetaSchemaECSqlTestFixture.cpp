@@ -2119,4 +2119,179 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, PropertyCustomAttributes) {
     }
 }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbMetaSchemaECSqlTestFixture, Meta_Test) {
+    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
+    ASSERT_EQ(SUCCESS, SetupECDb("metaschema_propertycustomattributes.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECCustomAttributeClass typeName="CAClass" modifier="Sealed" appliesTo="PrimitiveProperty">
+            <ECProperty propertyName="CAProp" typeName="string" />
+        </ECCustomAttributeClass>
+        <ECEntityClass typeName="Foo">
+            <ECProperty propertyName="Bar" typeName="string">
+                <ECCustomAttributes>
+                    <CAClass>
+                        <CAProp>Test</CAProp>
+                    </CAClass>
+                </ECCustomAttributes>
+          </ECProperty>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+/*
+    {
+        ECSqlStatement stmt;
+        Utf8CP stmtText = R"stmt(
+            SELECT ca.ECInstanceId
+             FROM meta.CustomAttribute ca
+            LIMIT 1
+            )stmt";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, stmtText));
+        printf("----------------------------------------\n");
+        printf("ECSQL: %s\n", stmtText);
+        printf("native SQL: %s\n", stmt.GetNativeSql());
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+    }
+
+    {
+        ECSqlStatement stmt;
+        Utf8CP stmtText = R"stmt(
+            SELECT ca.ECInstanceId, cDef.Name
+             FROM meta.CustomAttribute ca
+                JOIN meta.ECClassDef cDef USING meta.CustomAttributeClassHasInstance
+             WHERE cDef.Name='CAClass'
+            )stmt";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, stmtText));
+        printf("----------------------------------------\n");
+        printf("ECSQL: %s\n", stmtText);
+        printf("native SQL: %s\n", stmt.GetNativeSql());
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+    }
+
+    {
+        ECSqlStatement stmt;
+        Utf8CP stmtText = R"stmt(
+            SELECT ca.ECInstanceId, cDef.Name
+             FROM meta.CustomAttribute ca
+                JOIN meta.ECClassDef cDef ON ca.Class.Id=cDef.ECInstanceId
+             WHERE cDef.Name='CAClass'
+            )stmt";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, stmtText));
+        printf("----------------------------------------\n");
+        printf("ECSQL: %s\n", stmtText);
+        printf("native SQL: %s\n", stmt.GetNativeSql());
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+    }
+
+    {
+        ECSqlStatement stmt;
+        Utf8CP stmtText = R"stmt(
+            SELECT ca.ECInstanceId, ca.Class.Id [A], ca.Class.RelECClassId [B], ca.Class [C]
+            FROM meta.CustomAttribute ca
+            LIMIT 1
+            )stmt";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, stmtText));
+        printf("----------------------------------------\n");
+        printf("ECSQL: %s\n", stmtText);
+        printf("native SQL: %s\n", stmt.GetNativeSql());
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+    }
+
+    {
+        ECSqlStatement stmt;
+        Utf8CP stmtText = R"stmt(
+            SELECT ca.ECInstanceId, cDef.Name
+            FROM meta.CustomAttributeClassHasInstance caRel
+            JOIN meta.ECClassDef cDef ON cDef.ECInstanceId = caRel.SourceECInstanceId
+            JOIN meta.CustomAttribute ca ON ca.ECInstanceId =  caRel.TargetECInstanceId
+            WHERE cDef.Name='CAClass'
+            )stmt";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, stmtText));
+        printf("----------------------------------------\n");
+        printf("ECSQL: %s\n", stmtText);
+        printf("native SQL: %s\n", stmt.GetNativeSql());
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+    }*/
+
+    {
+        ECSqlStatement stmt;
+        Utf8CP stmtText = R"stmt(
+            SELECT ca.ECInstanceId
+             FROM meta.PropertyCustomAttribute ca
+            LIMIT 1
+            )stmt";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, stmtText));
+        printf("----------------------------------------\n");
+        printf("ECSQL: %s\n", stmtText);
+        printf("native SQL: %s\n", stmt.GetNativeSql());
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+    }
+
+    {
+        ECSqlStatement stmt;
+        Utf8CP stmtText = R"stmt(
+            SELECT ca.ECInstanceId, cDef.Name
+             FROM meta.PropertyCustomAttribute ca
+                JOIN meta.ECClassDef cDef USING meta.CustomAttributeClassHasInstanceOnProperty
+             WHERE cDef.Name='CAClass'
+            )stmt";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, stmtText));
+        printf("----------------------------------------\n");
+        printf("ECSQL: %s\n", stmtText);
+        printf("native SQL: %s\n", stmt.GetNativeSql());
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+    }
+//Select NAV(PropertyCustomAttribute.Property, 1) x FROM foo WHERE x.Id=2 && x.RelECClassId=3
+    //    ECPropertyNameExpression
+//Select Nav(Foo:Parent, Parent.Id, Parent.RelECClassId) parent2 FROM foo WHERE parent2.Id=2 && parent2.RelECClassId=3
+    {
+        ECSqlStatement stmt;
+        Utf8CP stmtText = R"stmt(
+            SELECT ca.ECInstanceId, cDef.Name
+             FROM meta.PropertyCustomAttribute ca
+                JOIN meta.ECClassDef cDef ON ca.Class.Id=cDef.ECInstanceId
+             WHERE cDef.Name='CAClass'
+            )stmt";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, stmtText));
+        printf("----------------------------------------\n");
+        printf("ECSQL: %s\n", stmtText);
+        printf("native SQL: %s\n", stmt.GetNativeSql());
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+    }
+
+    {
+        ECSqlStatement stmt;
+        Utf8CP stmtText = R"stmt(
+            SELECT ca.ECInstanceId, ca.Class.Id [A], ca.Class.RelECClassId [B], ca.Class [C]
+            FROM meta.PropertyCustomAttribute ca
+            LIMIT 1
+            )stmt";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, stmtText));
+        printf("----------------------------------------\n");
+        printf("ECSQL: %s\n", stmtText);
+        printf("native SQL: %s\n", stmt.GetNativeSql());
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+    }
+
+    {
+        ECSqlStatement stmt;
+        Utf8CP stmtText = R"stmt(
+            SELECT ca.ECInstanceId, cDef.Name
+            FROM meta.CustomAttributeClassHasInstanceOnProperty caRel
+            JOIN meta.ECClassDef cDef ON cDef.ECInstanceId = caRel.SourceECInstanceId
+            JOIN meta.PropertyCustomAttribute ca ON ca.ECInstanceId =  caRel.TargetECInstanceId
+            WHERE cDef.Name='CAClass'
+            )stmt";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, stmtText));
+        printf("----------------------------------------\n");
+        printf("ECSQL: %s\n", stmtText);
+        printf("native SQL: %s\n", stmt.GetNativeSql());
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+    }
+}
+
 END_ECDBUNITTESTS_NAMESPACE

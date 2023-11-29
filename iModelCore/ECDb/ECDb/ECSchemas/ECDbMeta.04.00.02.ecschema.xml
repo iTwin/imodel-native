@@ -558,7 +558,6 @@
         </Target>
     </ECRelationshipClass>
 
-
     <ECEntityClass typeName="PropertyCustomAttribute" description="" displayLabel="" modifier="Abstract">
         <ECCustomAttributes>
             <View xmlns="ECDbMap.02.00.03">
@@ -574,6 +573,50 @@
             </View>
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="Property" relationshipName="PropertyHasCustomAttribute" direction="backward"/>
+        <ECNavigationProperty propertyName="Class" relationshipName="CustomAttributeClassHasInstanceOnProperty" direction="backward"/>
+        <ECProperty propertyName="Instance"  typeName="string"/>
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="CustomAttributeClassHasInstanceOnProperty" modifier="Abstract" strength="referencing">
+        <ECCustomAttributes>
+            <View xmlns="ECDbMap.02.00.03">
+                <Query>
+                    SELECT * FROM [meta].[CustomAttributeClassHasInstance]
+                </Query>
+            </View>
+        </ECCustomAttributes>
+        <Source multiplicity="(1..1)" roleLabel="has instance" polymorphic="false">
+            <Class class="ECClassDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is instance of" polymorphic="false">
+            <Class class="PropertyCustomAttribute"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="PropertyHasCustomAttribute" modifier="Sealed" strength="referencing">
+        <Source multiplicity="(1..1)" roleLabel="has custom attribute" polymorphic="false">
+            <Class class="ECPropertyDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is defined on" polymorphic="false">
+            <Class class="PropertyCustomAttribute"/>
+        </Target>
+    </ECRelationshipClass>
+<!--
+    <ECEntityClass typeName="PropertyCustomAttribute" description="" displayLabel="" modifier="Abstract">
+        <ECCustomAttributes>
+            <View xmlns="ECDbMap.02.00.03">
+                <Query>
+                SELECT
+                    [ca].[ECInstanceId],
+                    [ca].[Class] [Class],
+                    CAST([ca].[ContainerId] as LONG) [Property],
+                    XmlCAToJson([ca].[Class].[Id], [ca].[Instance]) [Instance]
+                FROM [meta].[CustomAttribute] [ca]
+                WHERE [ca].[ContainerType] = 992 ORDER BY [ca].[Ordinal]
+                </Query>
+            </View>
+        </ECCustomAttributes>
+        <!-<ECNavigationProperty propertyName="Property" relationshipName="PropertyHasCustomAttribute" direction="backward"/>->
         <ECNavigationProperty propertyName="Class" relationshipName="CustomAttributeClassHasInstanceOnProperty" direction="backward"/>
         <ECProperty propertyName="Instance"  typeName="string"/>
     </ECEntityClass>
@@ -600,22 +643,8 @@
             <Class class="PropertyCustomAttribute"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="CustomAttributeClassHasInstanceOnProperty" modifier="Abstract" strength="referencing">
-        <ECCustomAttributes>
-            <View xmlns="ECDbMap.02.00.03">
-                <Query>
-                    SELECT * FROM meta.CustomAttributeClassHasInstance
-                </Query>
-            </View>
-        </ECCustomAttributes>
-        <Source multiplicity="(1..1)" roleLabel="has instance" polymorphic="false">
-            <Class class="ECClassDef"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="is instance of" polymorphic="false">
-            <Class class="PropertyCustomAttribute"/>
-        </Target>
-    </ECRelationshipClass>
 
+-->
 <!--
     <ECRelationshipClass typeName="ClassHasCustomAttribute" modifier="Sealed" strength="referencing">
         <Source multiplicity="(1..1)" roleLabel="has custom attribute" polymorphic="false">
