@@ -12,9 +12,7 @@ outDir = $(_MakeFilePath)lib/
 
 always:
     ~chdir $(srcDir)
-%if defined(BMAKE_DELETE_ALL_TARGETS)
     npm run clean
-%endif
     npm run buildAndLint
 
 $(BuildContext)Delivery/lib : $(outDir)

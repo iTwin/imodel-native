@@ -1026,7 +1026,7 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
     // go over each row and serialize result
     auto rc = stmt.Step();
     while (rc == BE_SQLITE_ROW) {
-        auto& rowsDoc = cachedAdaptor.ClearAndGetCachedXmlDocument();
+        auto& rowsDoc = cachedAdaptor.ClearAndGetCachedJsonDocument();
         BeJsValue rows(rowsDoc);
         if (adaptor.RenderRow(rows, ECSqlStatementRow(stmt)) != SUCCESS) {
             setError(QueryResponse::Status::Error_ECSql_RowToJsonFailed, "failed to serialize ecsql statement row to json");
