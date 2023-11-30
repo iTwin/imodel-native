@@ -5212,10 +5212,13 @@ BentleyStatus SchemaWriter::UpdateFormat(Context& ctx, FormatChange& change, ECS
             sqlUpdateBuilder.AddSetExp("CompositeSpec", SchemaPersistenceHelper::SerializeCompositeSpecWithoutUnits(*newVal.GetCompositeSpec()).c_str());
         }
 
-    FormatId formatId = oldVal.GetId();
-    sqlUpdateBuilder.AddWhereExp("Id", formatId.GetValue());
-    if (SUCCESS != sqlUpdateBuilder.ExecuteSql(ctx.GetECDb()))
-        return ERROR;
+    auto formatId = oldVal.GetId();
+    if (sqlUpdateBuilder.IsValid())
+        {
+        sqlUpdateBuilder.AddWhereExp("Id", formatId.GetValue());
+        if (SUCCESS != sqlUpdateBuilder.ExecuteSql(ctx.GetECDb()))
+            return ERROR;
+        }
 
     if (SUCCESS != UpdateFormatCompositeUnitLabel(ctx, formatId, compSpecChange.MajorLabel(), 0))
         return ERROR;
