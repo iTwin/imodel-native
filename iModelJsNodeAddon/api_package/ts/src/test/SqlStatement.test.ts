@@ -18,7 +18,7 @@ describe("SQLite statements", () => {
   });
 
   after((done) => {
-    dgndb.closeIModel();
+    dgndb.closeFile();
     done();
   });
 
