@@ -502,7 +502,7 @@ export declare namespace IModelJsNative {
     public cancelTo(txnId: TxnIdString): IModelStatus;
     public classIdToName(idString: string): string;
     public classNameToId(className: string): Id64String;
-    public closeIModel(): void;
+    public closeFile(): void;
     public completeCreateChangeset(arg: { index: number }): void;
     public computeProjectExtents(wantFullExtents: boolean, wantOutlierIds: boolean): { extents: Range3dProps, fullExtents?: Range3dProps, outliers?: Id64Array };
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;

@@ -1058,9 +1058,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         if (!m_dgndb.IsValid())
             return;
 
-        if (m_dgndb->Txns().HasChanges())
-            m_dgndb->SaveChanges();
-
         DgnDbPtr dgndb = m_dgndb;
         ClearDgnDb();
         dgndb->CloseDb();
@@ -2091,7 +2088,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         return Napi::String::New(info.Env(), xml.c_str());
         }
 
-    void CloseIModel(NapiInfoCR info) { CloseDgnDb(false); }
+    void CloseFile(NapiInfoCR info) { CloseDgnDb(false); }
 
     Napi::Value CreateClassViewsInDb(NapiInfoCR info) {
         RequireDbIsOpen(info);
@@ -2519,7 +2516,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("cancelTo", &NativeDgnDb::CancelTo),
             InstanceMethod("classIdToName", &NativeDgnDb::ClassIdToName),
             InstanceMethod("classNameToId", &NativeDgnDb::ClassNameToId),
-            InstanceMethod("closeIModel", &NativeDgnDb::CloseIModel),
+            InstanceMethod("closeFile", &NativeDgnDb::CloseFile),
             InstanceMethod("completeCreateChangeset", &NativeDgnDb::CompleteCreateChangeset),
             InstanceMethod("computeProjectExtents", &NativeDgnDb::ComputeProjectExtents),
             InstanceMethod("concurrentQueryExecute", &NativeDgnDb::ConcurrentQueryExecute),
