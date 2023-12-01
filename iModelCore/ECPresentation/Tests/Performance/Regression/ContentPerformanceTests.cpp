@@ -78,15 +78,9 @@ void ContentPerformanceTests::GetContent(SelectionInfo const* selection, KeySetC
     Timer _timer(timerName.c_str());
 
     // get the descriptor
-    auto descriptorParams = AsyncContentDescriptorRequestParams::Create(m_project, GetRulesetId(), RulesetVariables(), type, 0, inputKeys);
+    auto descriptorParams = AsyncContentDescriptorRequestParams::Create(m_project, GetRulesetId(), RulesetVariables(), type, flags, inputKeys);
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(descriptorParams));
     ASSERT_TRUE(descriptor.IsValid());
-    if (descriptor->GetContentFlags() != (flags | descriptor->GetContentFlags()))
-        {
-        ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-        modifiedDescriptor->SetContentFlags(flags | descriptor->GetContentFlags());
-        descriptor = modifiedDescriptor;
-        }
 
     // get the content
     auto contentParams = AsyncContentRequestParams::Create(m_project, *descriptor);

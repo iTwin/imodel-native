@@ -301,7 +301,8 @@ struct SQLiteOps {
     }
 
     void RequireDbIsOpen(NapiInfoCR info) {
-        if (!_GetMyDb()->IsDbOpen())
+        const auto* db = _GetMyDb();
+        if (db == nullptr || !db->IsDbOpen())
             BeNapi::ThrowJsException(info.Env(), "db is not open");
     }
     void RequireDbIsWritable(NapiInfoCR info) {
@@ -310,7 +311,8 @@ struct SQLiteOps {
     }
 
     Napi::Value IsOpen(NapiInfoCR info) {
-        return Napi::Boolean::New(info.Env(), _GetMyDb()->IsDbOpen());
+        auto db = _GetMyDb();
+        return Napi::Boolean::New(info.Env(), nullptr != db && db->IsDbOpen());
     }
 
     Napi::Value IsReadonly(NapiInfoCR info) {
@@ -1055,9 +1057,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
     void CloseDgnDb(bool fromDestructor) {
         if (!m_dgndb.IsValid())
             return;
-
-        if (m_dgndb->Txns().HasChanges())
-            m_dgndb->SaveChanges();
 
         DgnDbPtr dgndb = m_dgndb;
         ClearDgnDb();
@@ -2089,7 +2088,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         return Napi::String::New(info.Env(), xml.c_str());
         }
 
-    void CloseIModel(NapiInfoCR info) { CloseDgnDb(false); }
+    void CloseFile(NapiInfoCR info) { CloseDgnDb(false); }
 
     Napi::Value CreateClassViewsInDb(NapiInfoCR info) {
         RequireDbIsOpen(info);
@@ -2517,7 +2516,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("cancelTo", &NativeDgnDb::CancelTo),
             InstanceMethod("classIdToName", &NativeDgnDb::ClassIdToName),
             InstanceMethod("classNameToId", &NativeDgnDb::ClassNameToId),
-            InstanceMethod("closeIModel", &NativeDgnDb::CloseIModel),
+            InstanceMethod("closeFile", &NativeDgnDb::CloseFile),
             InstanceMethod("completeCreateChangeset", &NativeDgnDb::CompleteCreateChangeset),
             InstanceMethod("computeProjectExtents", &NativeDgnDb::ComputeProjectExtents),
             InstanceMethod("concurrentQueryExecute", &NativeDgnDb::ConcurrentQueryExecute),

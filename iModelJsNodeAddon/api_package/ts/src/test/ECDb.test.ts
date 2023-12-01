@@ -63,7 +63,7 @@ describe("concurrent query tests", () => {
   });
 
   afterEach((done) => {
-    conn.closeIModel();
+    conn.closeFile();
     done();
   });
   it("reset config", async () => {

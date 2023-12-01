@@ -1,4 +1,7 @@
 leak:/usr/bin/bash
-leak:*/python3.5*
+leak:*/bin/python*
 leak:*/bsitools/*
-leak:*/thirdparty/*
+leak:*/BentleyBuild/*
+leak:*/toolcache/*
+leak:*/node*/*
+leak:*interceptor_malloc
