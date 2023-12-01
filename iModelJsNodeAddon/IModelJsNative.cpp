@@ -469,6 +469,19 @@ public:
         return Napi::Number::New(Env(), (int)status);
     }
 
+
+    Napi::Value GetSchemaProps(NapiInfoCR info)  {
+        REQUIRE_ARGUMENT_STRING(0, schemaName);
+        auto schema = m_ecdb.Schemas().GetSchema(schemaName, true);
+        if (nullptr == schema)
+            BeNapi::ThrowJsException(info.Env(), "schema not found");
+
+        BeJsNapiObject props(info.Env());
+        if (!schema->WriteToJsonValue(props))
+            BeNapi::ThrowJsException(info.Env(), "unable to serialize schema");
+        return props;
+    }
+
     Napi::Value ImportSchema(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, schemaPathName);
         DbResult status = JsInterop::ImportSchema(m_ecdb, BeFileName(schemaPathName.c_str(), true));
@@ -575,6 +588,7 @@ public:
             InstanceMethod("getFilePath", &NativeECDb::GetFilePath),
             InstanceMethod("getLastError", &NativeECDb::GetLastError),
             InstanceMethod("getLastInsertRowId", &NativeECDb::GetLastInsertRowId),
+            InstanceMethod("getSchemaProps", &NativeECDb::GetSchemaProps),
             InstanceMethod("importSchema", &NativeECDb::ImportSchema),
             InstanceMethod("isOpen", &NativeECDb::IsOpen),
             InstanceMethod("schemaSyncSetDefaultUri", &NativeECDb::SchemaSyncSetDefaultUri),
@@ -1172,14 +1186,14 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         auto& modelChanges = GetDgnDb().Txns().m_modelChanges;
         if (enable != modelChanges.IsTrackingGeometry())
             {
-            auto status = modelChanges.SetTrackingGeometry(enable);
+            auto mode = modelChanges.SetTrackingGeometry(enable);
             auto readonly = false;
-            switch (status)
+            switch (mode)
                 {
-                case TxnManager::ModelChanges::Status::Readonly:
+                case TxnManager::ModelChanges::Mode::Readonly:
                     readonly = true;
                     // fall-through intentional.
-                case TxnManager::ModelChanges::Status::VersionTooOld:
+                case TxnManager::ModelChanges::Mode::Legacy:
                     return CreateBentleyReturnErrorObject(readonly ? DgnDbStatus::ReadOnly : DgnDbStatus::VersionTooOld);
                 }
             }
@@ -1191,7 +1205,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
         {
         RequireDbIsOpen(info);
-        return Napi::Boolean::New(Env(), TxnManager::ModelChanges::Status::Success == GetDgnDb().Txns().m_modelChanges.DetermineStatus());
+        return Napi::Boolean::New(Env(), TxnManager::ModelChanges::Mode::Full == GetDgnDb().Txns().m_modelChanges.DetermineMode());
         }
 
     Napi::Value QueryModelExtents(NapiInfoCR info)
@@ -1446,6 +1460,23 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         REQUIRE_ARGUMENT_ANY_OBJ(0, request);
         DgnDbWorkerPtr worker = new FenceAsyncWorker(*m_dgndb, request); // freed in caller of OnOK and OnError see AsyncWorker::OnWorkComplete
         return worker->Queue();  // Containment check happens in another thread
+    }
+
+    Napi::Value GetLocalChanges(NapiInfoCR info)        {
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, rootClassFilter);
+        REQUIRE_ARGUMENT_BOOL(1, includeInMemChanges);
+        auto results = Napi::Array::New(Env());
+        int i = 0;
+
+        GetDgnDb().Txns().ForEachLocalChange(
+            [&](ECInstanceKey const& key, DbOpcode changeType) {
+                auto result = Napi::Object::New(Env());
+                result["id"] = Napi::String::New(Env(), key.GetInstanceId().ToHexStr());
+                result["classFullName"] = Napi::String::New(Env(), GetDgnDb().Schemas().GetClass(key.GetClassId())->GetFullName());
+                result["changeType"] = Napi::String::New(Env(), (changeType == DbOpcode::Delete ? "deleted" : (changeType == DbOpcode::Insert ? "inserted" : "updated")));
+                results[i++] = result;
+            }, rootClassFilter, includeInMemChanges);
+        return results;
     }
 
     Napi::Value GetIModelCoordsFromGeoCoords(NapiInfoCR info) {
@@ -2637,6 +2668,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("enableWalMode", &NativeDgnDb::EnableWalMode),
             InstanceMethod("performCheckpoint", &NativeDgnDb::PerformCheckpoint),
             InstanceMethod("setAutoCheckpointThreshold", &NativeDgnDb::SetAutoCheckpointThreshold),
+            InstanceMethod("getLocalChanges", &NativeDgnDb::GetLocalChanges),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
         });
@@ -4214,7 +4246,7 @@ private:
         ECDbR m_db;
         bool m_active;
 
-        void _OnIssueReported(BentleyApi::ECN::IssueSeverity severity, BentleyApi::ECN::IssueCategory category, BentleyApi::ECN::IssueType type, Utf8CP message) const override { m_lastIssue = message; }
+        void _OnIssueReported(BentleyApi::ECN::IssueSeverity severity, BentleyApi::ECN::IssueCategory category, BentleyApi::ECN::IssueType type, BentleyApi::ECN::IssueId id, Utf8CP message) const override { m_lastIssue = message; }
 
         explicit IssueListener(ECDbR db) : m_active(SUCCESS == db.AddIssueListener(*this)), m_db(db) {}
         ~IssueListener() {
@@ -5210,7 +5242,8 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
     DEFINE_CONSTRUCTOR;
 
     std::unique_ptr<ECPresentationManager> m_presentationManager;
-    RefCountedPtr<SimpleRuleSetLocater> m_ruleSetLocater;
+    RefCountedPtr<SimpleRuleSetLocater> m_supplementalRulesets;
+    RefCountedPtr<SimpleRuleSetLocater> m_primaryRulesets;
     ECPresentation::JsonLocalState m_localState;
     std::shared_ptr<IModelJsECPresentationUpdateRecordsHandler> m_updateRecords;
     Napi::ThreadSafeFunction m_threadSafeFunc;
@@ -5234,6 +5267,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             InstanceMethod("setRulesetVariableValue", &NativeECPresentationManager::SetRulesetVariableValue),
             InstanceMethod("unsetRulesetVariableValue", &NativeECPresentationManager::UnsetRulesetVariableValue),
             InstanceMethod("getRulesetVariableValue", &NativeECPresentationManager::GetRulesetVariableValue),
+            InstanceMethod("registerSupplementalRuleset", &NativeECPresentationManager::RegisterSupplementalRuleset),
             InstanceMethod("getRulesets", &NativeECPresentationManager::GetRulesets),
             InstanceMethod("addRuleset", &NativeECPresentationManager::AddRuleset),
             InstanceMethod("removeRuleset", &NativeECPresentationManager::RemoveRuleset),
@@ -5314,8 +5348,10 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             m_updateRecords = std::make_shared<IModelJsECPresentationUpdateRecordsHandler>();
             m_presentationManager = std::unique_ptr<ECPresentationManager>(ECPresentationUtils::CreatePresentationManager(T_HOST.GetIKnownLocationsAdmin(),
                 m_localState, m_updateRecords, props));
-            m_ruleSetLocater = SimpleRuleSetLocater::Create();
-            m_presentationManager->GetLocaters().RegisterLocater(*m_ruleSetLocater);
+            m_supplementalRulesets = SimpleRuleSetLocater::Create();
+            m_presentationManager->GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(*m_supplementalRulesets));
+            m_primaryRulesets = SimpleRuleSetLocater::Create();
+            m_presentationManager->GetLocaters().RegisterLocater(*NonSupplementalRuleSetLocater::Create(*m_primaryRulesets));
             m_threadSafeFunc = Napi::ThreadSafeFunction::New(Env(), Napi::Function::New(Env(), [](NapiInfoCR info) {}), "NativeECPresentationManager", 0, 1);
             }
         catch (std::exception const& e)
@@ -5490,17 +5526,24 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         return CreateReturnValue(std::move(result));
         }
 
+    Napi::Value RegisterSupplementalRuleset(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, rulesetJsonString);
+        ECPresentationResult result = ECPresentationUtils::AddRuleset(*m_supplementalRulesets, rulesetJsonString);
+        return CreateReturnValue(std::move(result));
+        }
+
     Napi::Value GetRulesets(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_STRING(0, rulesetId);
-        ECPresentationResult result = ECPresentationUtils::GetRulesets(*m_ruleSetLocater, rulesetId);
+        ECPresentationResult result = ECPresentationUtils::GetRulesets(*m_primaryRulesets, rulesetId);
         return CreateReturnValue(std::move(result), true);
         }
 
     Napi::Value AddRuleset(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_STRING(0, rulesetJsonString);
-        ECPresentationResult result = ECPresentationUtils::AddRuleset(*m_ruleSetLocater, rulesetJsonString);
+        ECPresentationResult result = ECPresentationUtils::AddRuleset(*m_primaryRulesets, rulesetJsonString);
         return CreateReturnValue(std::move(result));
         }
 
@@ -5508,13 +5551,13 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         {
         REQUIRE_ARGUMENT_STRING(0, rulesetId);
         REQUIRE_ARGUMENT_STRING(1, hash);
-        ECPresentationResult result = ECPresentationUtils::RemoveRuleset(*m_ruleSetLocater, rulesetId, hash);
+        ECPresentationResult result = ECPresentationUtils::RemoveRuleset(*m_primaryRulesets, rulesetId, hash);
         return CreateReturnValue(std::move(result));
         }
 
     Napi::Value ClearRulesets(NapiInfoCR info)
         {
-        ECPresentationResult result = ECPresentationUtils::ClearRulesets(*m_ruleSetLocater);
+        ECPresentationResult result = ECPresentationUtils::ClearRulesets(*m_primaryRulesets);
         return CreateReturnValue(std::move(result));
         }
 

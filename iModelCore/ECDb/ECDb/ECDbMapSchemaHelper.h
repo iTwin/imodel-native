@@ -16,6 +16,8 @@ struct DbIndexListCustomAttribute;
 struct PropertyMapCustomAttribute;
 struct LinkTableRelationshipMapCustomAttribute;
 struct ForeignKeyConstraintCustomAttribute;
+struct ImportRequiresVersionCustomAttribute;
+struct UseRequiresVersionCustomAttribute;
 
 //=======================================================================================    
 //! ECDbMapCustomAttributeHelper is a convenience API for the custom attributes defined
@@ -75,6 +77,18 @@ struct ECDbMapCustomAttributeHelper final
         //! @param[in] navProp Navigation property to retrieve the custom attribute from.
         //! @return true if @p navProp has the custom attribute. false, if @p navProp doesn't have the custom attribute
         static bool TryGetForeignKeyConstraint(ForeignKeyConstraintCustomAttribute& foreignKeyConstraint, ECN::NavigationECPropertyCR navProp);
+
+        //! Tries to retrieve the ImportRequiresVersion custom attribute from the specified schema.
+        //! @param[out] ca Retrieved CA
+        //! @param[in] ecClass Class to retrieve the custom attribute from.
+        //! @return true if @p schema has the custom attribute.
+        static bool TryGetImportRequiresVersion(ImportRequiresVersionCustomAttribute& ca, ECN::ECSchemaCR schema);
+
+        //! Tries to retrieve the UseRequiresVersion custom attribute from the specified schema.
+        //! @param[out] ca Retrieved CA
+        //! @param[in] ecClass Class to retrieve the custom attribute from.
+        //! @return true if @p schema has the custom attribute.
+        static bool TryGetUseRequiresVersion(UseRequiresVersionCustomAttribute& ca, ECN::ECClassCR ecClass);
     };
 
 //=======================================================================================    
@@ -375,7 +389,72 @@ struct LinkTableRelationshipMapCustomAttribute final
         //! @param[out] allowDuplicateRelationships AllowDuplicateRelationships flag. IsNull() is true, if the AllowDuplicateRelationships property wasn't set in the LinkTableRelationshipMap.
         //! @return SUCCESS if AllowDuplicateRelationships was set or unset in the LinkTableRelationshipMap, ERROR otherwise
         BentleyStatus TryGetAllowDuplicateRelationships(Nullable<bool>& allowDuplicateRelationships) const;
+    };
 
+//=======================================================================================    
+//! ImportRequiresVersionCustomAttribute is put on schemas and limits ECDb versions into which the schema can be imported
+//! @bsiclass
+//=======================================================================================    
+struct ImportRequiresVersionCustomAttribute final
+    {
+    friend struct ECDbMapCustomAttributeHelper;
+
+    private:
+        ECN::ECSchemaCP m_schema = nullptr;
+        ECN::IECInstancePtr m_ca = nullptr;
+
+        ImportRequiresVersionCustomAttribute(ECN::ECSchemaCR schema, ECN::IECInstancePtr ca) : m_schema(&schema), m_ca(ca) {}
+
+    public:
+        ImportRequiresVersionCustomAttribute() {}
+
+        //! @return true if ImportRequiresVersion exists on the schema.
+        bool IsValid() const { return m_schema != nullptr && m_ca != nullptr; }
+
+        //! Tries to get the value of the ECDbRuntimeVersion property.
+        //! @param[out] version ECDbRuntimeVersion property. IsNull() is true, if the property wasn't set.
+        //! @return SUCCESS if ECDbRuntimeVersion was set or unset in the ImportRequiresVersion custom attribute, ERROR otherwise
+        BentleyStatus TryGetECDbRuntimeVersion(Nullable<Utf8String>& version) const;
+
+        //! Verify the current instance of the CA against ECDb runtime, report errors if not supported
+        BentleyStatus Verify(IssueDataSource const& issues, Utf8CP fullSchemaName) const;
+    };
+
+
+//=======================================================================================    
+//! UseRequiresVersionCustomAttribute is put on classes and limits ECDb versions which can use the class
+//! @bsiclass
+//=======================================================================================    
+struct UseRequiresVersionCustomAttribute final
+    {
+    friend struct ECDbMapCustomAttributeHelper;
+
+    private:
+        ECN::ECClassCP m_ecClass = nullptr;
+        ECN::IECInstancePtr m_ca = nullptr;
+
+        UseRequiresVersionCustomAttribute(ECN::ECClassCR ecClass, ECN::IECInstancePtr ca) : m_ecClass(&ecClass), m_ca(ca) {}
+
+    public:
+        UseRequiresVersionCustomAttribute() {}
+
+        //! @return true if UseRequiresVersion CustomAttribute exists on the schema.
+        bool IsValid() const { return m_ecClass != nullptr && m_ca != nullptr; }
+
+        //! Tries to get the value of the ECDbRuntimeVersion property.
+        //! @param[out] version ECDbRuntimeVersion property. IsNull() is true, if the property wasn't set.
+        //! @return SUCCESS if ECDbRuntimeVersion was set or unset in the custom attribute, ERROR otherwise
+        BentleyStatus TryGetECDbRuntimeVersion(Nullable<Utf8String>& version) const;
+
+        //! Tries to get the value of the ECSqlVersion property.
+        //! @param[out] version ECSqlVersion property. IsNull() is true, if the property wasn't set.
+        //! @return SUCCESS if ECSqlVersion was set or unset in the custom attribute, ERROR otherwise
+        BentleyStatus TryGetECSqlVersion(Nullable<Utf8String>& version) const;
+
+        //! Verify the current instance of the CA against ECDb runtime, report errors if not supported
+        //! @param[issues] issue reporter to use
+        //! @param[context] context info to provide with issues that are written
+        BentleyStatus Verify(IssueDataSource const& issues, Utf8CP context) const;
     };
 
 //*****************************************************************

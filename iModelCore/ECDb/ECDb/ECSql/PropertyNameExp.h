@@ -50,6 +50,7 @@ struct PropertyNameExp final : ValueExp
     private:
         ECN::ECPropertyCP m_property;
         PropertyPath m_propertyPath;
+        PropertyPath m_ecsqlPropertyPath;
         std::unique_ptr<PropertyRef> m_propertyRef;
         SourceType m_sourceType;
         Utf8String m_className;
@@ -64,6 +65,7 @@ struct PropertyNameExp final : ValueExp
         void SetPropertyRef(DerivedPropertyExp const& derivedPropertyExpInSubqueryRefExp);
         void SetVirtualProperty(ECN::ECPropertyCR property) { m_property = &property; }
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
 
     public:
@@ -75,8 +77,9 @@ struct PropertyNameExp final : ValueExp
         bool HasUserDefinedAlias() const;
         ECN::ECPropertyCP GetVirtualProperty() const;
         bool IsVirtualProperty(bool recursively = true) const { return recursively ? GetVirtualProperty() != nullptr: m_property != nullptr ; }
+        PropertyPath const& GetECSqlPropertyPath() const { return m_ecsqlPropertyPath; }
         PropertyPath const& GetPropertyPath() const { return m_propertyPath; }
-        PropertyMap const& GetPropertyMap() const;
+        PropertyMap const* GetPropertyMap() const;
         SourceType const GetSourceType() const { return m_sourceType; }
         Utf8CP GetClassName() const { return m_className.c_str(); }
         RangeClassRefExp const* GetClassRefExp() const { return m_classRefExp; }
@@ -124,22 +127,20 @@ public:
 struct ExtractPropertyValueExp final : InstanceValueExp {
     constexpr static auto ANCHOR_NAME = "extract_prop";
 
-private:
-    PropertyPath m_targetPath;
-    void _ToECSql(ECSqlRenderContext& ctx) const override {
-            ctx.AppendToECSql(GetInstancePath().ToString().c_str());
-            ctx.AppendToECSql(" -> ");
-            ctx.AppendToECSql(m_targetPath.ToString().c_str());
-        }
-        Utf8String _ToString() const override { return "";}
+    private:
+        PropertyPath m_targetPath;
+        void _ToECSql(ECSqlRenderContext& ctx) const override;
+        void _ToJson(BeJsValue val, JsonFormat const&) const override;
+        Utf8String _ToString() const override { return ""; }
         mutable Utf8String m_anchor;
+        bool m_isOptionalProp;
 
     public:
         ExtractPropertyValueExp(
             PropertyPath instancePath,
-            PropertyPath targetPath):
-                InstanceValueExp(Type::ExtractProperty, instancePath), m_targetPath(targetPath) {
-            SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_String));
+            PropertyPath targetPath,
+            bool isOptionalProp) : InstanceValueExp(Type::ExtractProperty, instancePath), m_targetPath(targetPath), m_isOptionalProp(isOptionalProp) {
+        SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_String));
         }
         Utf8StringCR GetSqlAnchor(std::function<Utf8String(Utf8CP name)> gen = nullptr) const {
             if (m_anchor.empty() && gen != nullptr)
@@ -147,6 +148,7 @@ private:
             return m_anchor;
         }
         PropertyPath const& GetTargetPath() const { return m_targetPath; }
+        bool IsOptional() const { return m_isOptionalProp; }
         virtual ~ExtractPropertyValueExp(){}
 };
 
@@ -155,9 +157,8 @@ private:
 //+===============+===============+===============+===============+===============+======
 struct ExtractInstanceValueExp final : InstanceValueExp {
     private:
-        void _ToECSql(ECSqlRenderContext& ctx) const override{
-            ctx.AppendToECSql(GetInstancePath().ToString().c_str());
-        }
+        void _ToECSql(ECSqlRenderContext& ctx) const override;
+        void _ToJson(BeJsValue val, JsonFormat const&) const override;
         Utf8String _ToString() const override { return ""; }
 
     public:

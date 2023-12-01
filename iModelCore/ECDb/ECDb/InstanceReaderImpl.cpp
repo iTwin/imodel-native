@@ -162,19 +162,23 @@ InstanceReader::Impl::~Impl() {}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-RowRender::Document& RowRender::ClearAndGetCachedXmlDocument() const {
-    m_cachedXmlDoc.RemoveAllMembers();
-    return m_cachedXmlDoc;
+RowRender::Document& RowRender::ClearAndGetCachedJsonDocument() const {
+    m_allocator.Clear();
+    m_cachedJsonDoc.RemoveAllMembers();
+    m_cachedJsonDoc.SetObject();
+
+
+    return m_cachedJsonDoc;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 BeJsValue RowRender::GetInstanceJsonObject(ECInstanceKeyCR instanceKey, IECSqlRow const& ecsqlRow, InstanceReader::JsonParams const& param ) const  {
-    if (instanceKey == m_instanceKey && param == m_jsonParam && m_accessString.empty()) {
-        return BeJsValue(m_cachedXmlDoc);
+    if (instanceKey == m_instanceKey && param == m_jsonParam && m_accessString.empty() && !(m_conn.IsDbOpen() && m_conn.IsWriteable())) {
+        return BeJsValue(m_cachedJsonDoc);
     }
-    auto& rowsDoc = ClearAndGetCachedXmlDocument();
+    auto& rowsDoc = ClearAndGetCachedJsonDocument();
     BeJsValue row(rowsDoc);
     QueryJsonAdaptor adaptor(m_conn);
     adaptor.UseJsNames(param.GetUseJsName());
@@ -192,9 +196,9 @@ BeJsValue RowRender::GetInstanceJsonObject(ECInstanceKeyCR instanceKey, IECSqlRo
 //+---------------+---------------+---------------+---------------+---------------+------
 BeJsValue RowRender::GetPropertyJsonValue(ECInstanceKeyCR instanceKey, Utf8StringCR  accessString, IECSqlValue const& ecsqlValue, InstanceReader::JsonParams const& param) const  {
     if (instanceKey == m_instanceKey && param == m_jsonParam && m_accessString.Equals(accessString)) {
-        return BeJsValue(m_cachedXmlDoc)["$"];
+        return BeJsValue(m_cachedJsonDoc)["$"];
     }
-    auto& rowsDoc = ClearAndGetCachedXmlDocument();
+    auto& rowsDoc = ClearAndGetCachedJsonDocument();
     BeJsValue row(rowsDoc);
     auto out = row["$"];
     QueryJsonAdaptor adaptor(m_conn);
@@ -1118,6 +1122,10 @@ InstanceReader::InstanceReader(ECDbCR ecdb): m_pImpl(new Impl(*this, ecdb)) {}
 //+---------------+---------------+---------------+---------------+---------------+------
 bool InstanceReader::Seek(Position const& pos, RowCallback callback ) const {
     return m_pImpl->Seek(pos, callback);
+}
+
+void InstanceReader::Reset() {
+    return m_pImpl->Reset();
 }
 
 //////////////////////////////////////////////////////////////////////////

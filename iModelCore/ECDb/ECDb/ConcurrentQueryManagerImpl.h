@@ -42,7 +42,7 @@ struct ErrorListenerScope final: ECN::IIssueListener {
         mutable std::string m_lastError;
         ECDb& m_ecdb;
         BeMutexHolder m_lock;
-        void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, Utf8CP message) const override;
+        void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override;
     public:
         explicit ErrorListenerScope (ECDb& ecdb);
         ~ErrorListenerScope();
@@ -59,14 +59,14 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
         std::string m_cachedString;
         rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator> m_allocator;
         rapidjson::CrtAllocator m_stackAllocator;
-        rapidjson::Document m_cachedXmlDoc;
+        rapidjson::Document m_cachedJsonDoc;
         Db const* m_conn;
         bool m_usePrimaryConn;
     public:
-        CachedQueryAdaptor() :m_cachedXmlDoc(&m_allocator, 1024, &m_stackAllocator), m_usePrimaryConn(false) { m_cachedXmlDoc.SetArray(); }
+        CachedQueryAdaptor() :m_cachedJsonDoc(&m_allocator, 1024, &m_stackAllocator), m_usePrimaryConn(false) { m_cachedJsonDoc.SetArray(); }
         ECSqlStatement& GetStatement() { return m_stmt; }
         QueryJsonAdaptor& GetJsonAdaptor();
-        rapidjson::Document& ClearAndGetCachedXmlDocument() { m_cachedXmlDoc.Clear();  return m_cachedXmlDoc; }
+        rapidjson::Document& ClearAndGetCachedJsonDocument() { m_cachedJsonDoc.Clear(); m_allocator.Clear(); return m_cachedJsonDoc; }
         std::string& ClearAndGetCachedString() { m_cachedString.clear(); return m_cachedString; }
         bool GetUsePrimaryConn() const { return m_usePrimaryConn; }
         void SetUsePrimaryConn(bool val) { m_usePrimaryConn = val; }

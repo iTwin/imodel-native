@@ -57,6 +57,58 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, CommonTableEx
     return Prepare(ctx, *exp.GetQuery(), nullptr);
 }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+ECSqlStatus ECSqlSelectPreparer::PreparePartial(NativeSqlBuilder& nativeSqlSnippet, ECSqlPrepareContext& ctx, SelectStatementExp const& exp)
+    {
+    NativeSqlBuilder::ListOfLists selectClauseSqlSnippetList;
+    SingleSelectStatementExp const& firstStmt = exp.GetFirstStatement();
+    ctx.PushScope(firstStmt, firstStmt.GetOptions());
+    ECSqlStatus status;
+    if (firstStmt.IsRowConstructor())
+        {
+        nativeSqlSnippet.Append("SELECT").AppendSpace();
+        status = PrepareSelectClauseExp(selectClauseSqlSnippetList, ctx, *firstStmt.GetSelection(), nullptr);
+        if (!status.IsSuccess())
+            return status;
+
+        bool isFirstItem = true;
+        for (NativeSqlBuilder::List const& list : selectClauseSqlSnippetList)
+            {
+            if (!isFirstItem)
+                nativeSqlSnippet.AppendComma();
+
+            nativeSqlSnippet.Append(list);
+            isFirstItem = false;
+            }
+        }
+    else
+        {
+        nativeSqlSnippet.Append("SELECT").AppendSpace();
+
+        if (firstStmt.GetSelectionType() != SqlSetQuantifier::NotSpecified)
+            nativeSqlSnippet.Append(ExpHelper::ToSql(firstStmt.GetSelectionType())).AppendSpace();
+
+        // Append selection.
+        status = PrepareSelectClauseExp(selectClauseSqlSnippetList, ctx, *firstStmt.GetSelection(), nullptr);
+        if (!status.IsSuccess())
+            return status;
+
+        bool isFirstItem = true;
+        for (NativeSqlBuilder::List const& list : selectClauseSqlSnippetList)
+            {
+            if (!isFirstItem)
+                nativeSqlSnippet.AppendComma();
+
+            nativeSqlSnippet.Append(list);
+            isFirstItem = false;
+            }
+        }
+    ctx.PopScope();
+    return ECSqlStatus::Success;
+    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -260,7 +312,7 @@ ECSqlStatus ECSqlSelectPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::Lis
 
     size_t snippetCountBefore = nativeSqlSnippets.size();
     if (!innerExp->IsParameterExp() && innerExp->GetTypeInfo().IsNull())
-        { 
+        {
         ECSqlStatus status = ECSqlExpPreparer::PrepareNullExp(nativeSqlSnippets, ctx, *innerExp, referenceSqliteSnippetCount);
         if (!status.IsSuccess())
             return status;
@@ -326,7 +378,8 @@ BentleyStatus ECSqlSelectPreparer::ValidateSelectClauseItems(ECSqlPrepareContext
     const size_t count = lhs.GetChildrenCount();
     if (count != rhs.GetChildrenCount())
         {
-        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Number of properties in all the select clauses of UNION/EXCEPT/INTERSECT must be same in number and type.");
+        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0527,
+            "Number of properties in all the select clauses of UNION/EXCEPT/INTERSECT must be same in number and type.");
         return ERROR;
         }
 
@@ -338,13 +391,22 @@ BentleyStatus ECSqlSelectPreparer::ValidateSelectClauseItems(ECSqlPrepareContext
         ECSqlTypeInfo const& rhsTypeInfo = rhsDerivedPropExp->GetExpression()->GetTypeInfo();
         if (!lhsTypeInfo.CanCompare(rhsTypeInfo))
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Type of expression %s in LHS of UNION/EXCEPT/INTERSECT is not same as respective expression %s in RHS.", lhsDerivedPropExp->ToECSql().c_str(), rhsDerivedPropExp->ToECSql().c_str());
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECSQL,
+                ECDbIssueId::ECDb_0528,
+                "Type of expression %s in LHS of UNION/EXCEPT/INTERSECT is not same as respective expression %s in RHS.",
+                lhsDerivedPropExp->ToECSql().c_str(),
+                rhsDerivedPropExp->ToECSql().c_str()
+            );
             return ERROR;
             }
 
         if (lhsTypeInfo.IsNull() && (rhsTypeInfo.IsPoint() || !rhsTypeInfo.IsPrimitive()))
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "NULL in LHS of UNION/EXCEPT/INTERSECT is ambiguous if its RHS counterpart is not of a primitive type (excluding Point2d and Point3d).");
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0529,
+                "NULL in LHS of UNION/EXCEPT/INTERSECT is ambiguous if its RHS counterpart is not of a primitive type (excluding Point2d and Point3d).");
             return ERROR;
             }
         }
@@ -366,8 +428,8 @@ void ECSqlSelectPreparer::ExtractPropertyRefs(ECSqlPrepareContext& ctx, Exp cons
         PropertyNameExp const* propertyName = static_cast<PropertyNameExp const*>(exp);
         if (propertyName->IsVirtualProperty())
             return;
-        
-        ctx.GetSelectionOptionsR().AddProperty(propertyName->GetPropertyMap());
+
+        ctx.GetSelectionOptionsR().AddProperty(*propertyName->GetPropertyMap());
         }
 
     for (Exp const* child : exp->GetChildren())

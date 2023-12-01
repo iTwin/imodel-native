@@ -8,6 +8,7 @@
 #include "ListExp.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
@@ -27,6 +28,7 @@ private:
     FinalizeParseStatus Validate (ECSqlParseContext&) const;
 
     void _ToECSql(ECSqlRenderContext& ctx) const override;
+    void _ToJson(BeJsValue, JsonFormat const&) const override;
     Utf8String _ToString() const override { return "Insert"; }
 
     PropertyNameListExp* GetPropertyNameListExpP () const;

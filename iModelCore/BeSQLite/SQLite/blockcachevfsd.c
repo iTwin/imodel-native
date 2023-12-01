@@ -1778,12 +1778,14 @@ static void bcvProxyClientCount(
   Container *pCont, 
   int iDbId, 
   int *pnClient,
-  int *pnPrefetch
+  int *pnPrefetch,
+  int *pnReader
 ){
   DClient *pClient = 0;
   DaemonCtx *p = 0;
   int nClient = 0;
   int nPrefetch = 0;
+  int nReader = 0;
 
   p = (DaemonCtx*)&((u8*)pCommon)[-offsetof(DaemonCtx, c)];
   for(pClient=p->pClientList; pClient; pClient=pClient->pNext){
@@ -1792,12 +1794,14 @@ static void bcvProxyClientCount(
         nPrefetch++;
       }else{
         nClient++;
+        if( pClient->apRef ) nReader++;
       }
     }
   }
 
   *pnClient = nClient;
   *pnPrefetch = nPrefetch;
+  *pnReader = nReader;
 }
 
 /*

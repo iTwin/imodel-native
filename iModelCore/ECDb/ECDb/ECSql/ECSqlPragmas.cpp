@@ -11,7 +11,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult PragmaChecksum::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& val) {
+DbResult PragmaChecksum::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& val, PragmaManager::OptionsMap const& options) {
 	auto result = std::make_unique<StaticPragmaResult>(ecdb);
 	result->AppendProperty("sha3_256", PRIMITIVETYPE_String);
 	result->FreezeSchemaChanges();
@@ -21,6 +21,7 @@ DbResult PragmaChecksum::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, Pragma
 			IssueSeverity::Error,
 			IssueCategory::BusinessProperties,
 			IssueType::ECSQL,
+			ECDbIssueId::ECDb_0592,
 			"unsupported val for checksum pragma.");
 
 		rowSet = std::move(result);
@@ -38,6 +39,7 @@ DbResult PragmaChecksum::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, Pragma
 				IssueSeverity::Error,
 				IssueCategory::BusinessProperties,
 				IssueType::ECSQL,
+				ECDbIssueId::ECDb_0593,
 				"Unable to compute sha3/256 checksum for ec schemas.");
 
 			rowSet = std::move(result);
@@ -55,6 +57,7 @@ DbResult PragmaChecksum::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, Pragma
 				IssueSeverity::Error,
 				IssueCategory::BusinessProperties,
 				IssueType::ECSQL,
+				ECDbIssueId::ECDb_0594,
 				"Unable to compute sha3/256 checksum for ec map.");
 
 			rowSet = std::move(result);
@@ -72,6 +75,7 @@ DbResult PragmaChecksum::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, Pragma
 				IssueSeverity::Error,
 				IssueCategory::BusinessProperties,
 				IssueType::ECSQL,
+				ECDbIssueId::ECDb_0595,
 				"Unable to compute sha3/256 checksum for db schema.");
 
 			rowSet = std::move(result);
@@ -87,6 +91,7 @@ DbResult PragmaChecksum::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, Pragma
 		IssueSeverity::Error,
 		IssueCategory::BusinessProperties,
 		IssueType::ECSQL,
+		ECDbIssueId::ECDb_0596,
 		"Unable checksum val '%s'. Valid values are ecdb_schema|ecdb_map|sqlite_schema", val.GetString().c_str());
 
 	rowSet = std::move(result);
@@ -96,20 +101,61 @@ DbResult PragmaChecksum::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, Pragma
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult PragmaChecksum::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) {
-	ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "PRAGMA %s is readonly.", GetName().c_str());
+DbResult PragmaChecksum::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const& options) {
+	ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0552, "PRAGMA %s is readonly.", GetName().c_str());
 	rowSet = std::make_unique<StaticPragmaResult>(ecdb);
 	rowSet->FreezeSchemaChanges();
 	return BE_SQLITE_READONLY;
 }
 
 //=======================================================================================
+// PragmaParseTree
+//=======================================================================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult PragmaParseTree::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& ecsql, PragmaManager::OptionsMap const& options) {
+    if (!isExperimentalFeatureAllowed(ecdb, options)) {
+		ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0597, "'PRAGMA parse_tree' is experimental feature and disabled by default.");
+		return BE_SQLITE_ERROR;
+	}
+
+	auto result = std::make_unique<StaticPragmaResult>(ecdb);
+	result->AppendProperty("val", PRIMITIVETYPE_String);
+	result->FreezeSchemaChanges();
+
+    BeJsDocument out;
+    if (SUCCESS != ECSqlParseTreeFormatter::ECSqlToJson(out, ecdb, ecsql.GetString().c_str())) {
+		ecdb.GetImpl().Issues().ReportV(
+			IssueSeverity::Error,
+			IssueCategory::BusinessProperties,
+			IssueType::ECSQL,
+			ECDbIssueId::ECDb_0598,
+			"Unable to parse ecsql '%s'. ", ecsql.GetString().c_str());
+	}
+
+	auto row = result->AppendRow();
+	row.appendValue() = out.Stringify();
+	rowSet = std::move(result);
+	return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult PragmaParseTree::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const& options) {
+	ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0552, "PRAGMA %s is readonly.", GetName().c_str());
+	rowSet = std::make_unique<StaticPragmaResult>(ecdb);
+	rowSet->FreezeSchemaChanges();
+	return BE_SQLITE_READONLY;
+}
+//=======================================================================================
 // DisqualifyTypeIndex
 //=======================================================================================
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult PragmaECDbVersion::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) {
+DbResult PragmaECDbVersion::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const& options) {
 	auto result = std::make_unique<StaticPragmaResult>(ecdb);
 	result->AppendProperty("current", PRIMITIVETYPE_String);
 	result->AppendProperty("file", PRIMITIVETYPE_String);
@@ -124,8 +170,8 @@ DbResult PragmaECDbVersion::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, Pra
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult PragmaECDbVersion::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) {
-	ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "PRAGMA %s is readonly.", GetName().c_str());
+DbResult PragmaECDbVersion::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const& options) {
+	ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0552, "PRAGMA %s is readonly.", GetName().c_str());
 	rowSet = std::make_unique<StaticPragmaResult>(ecdb);
 	rowSet->FreezeSchemaChanges();
 	return BE_SQLITE_READONLY;
@@ -137,7 +183,7 @@ DbResult PragmaECDbVersion::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, Pr
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult DisqualifyTypeIndex::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, ECClassCR cls) {
+DbResult DisqualifyTypeIndex::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, ECClassCR cls, PragmaManager::OptionsMap const& options) {
 	auto result = std::make_unique<StaticPragmaResult>(ecdb);
 	result->AppendProperty(GetName(), PRIMITIVETYPE_Boolean);
 	result->FreezeSchemaChanges();
@@ -149,12 +195,12 @@ DbResult DisqualifyTypeIndex::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, P
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult DisqualifyTypeIndex::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& val, ECClassCR cls) {
+DbResult DisqualifyTypeIndex::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& val, ECClassCR cls, PragmaManager::OptionsMap const& options) {
 	if (!val.IsBool() && !val.IsInteger()) {
 		ecdb.GetImpl().Issues().ReportV(
 			IssueSeverity::Error,
 			IssueCategory::BusinessProperties,
-			IssueType::ECSQL, "PRAGMA %s, expect bool or integer value", GetName().c_str());
+			IssueType::ECSQL, ECDbIssueId::ECDb_0599, "PRAGMA %s, expect bool or integer value", GetName().c_str());
 		return BE_SQLITE_ERROR;
 	}
 	auto mapInfo = ecdb.Schemas().GetClassMapStrategy(cls.GetSchema().GetName(), cls.GetName());
@@ -162,7 +208,7 @@ DbResult DisqualifyTypeIndex::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, 
 		ecdb.GetImpl().Issues().ReportV(
 			IssueSeverity::Error,
 			IssueCategory::BusinessProperties,
-			IssueType::ECSQL, "PRAGMA %s, is not invoked on class %s which is not mapped or exist.", GetName().c_str(), cls.GetFullName());
+			IssueType::ECSQL, ECDbIssueId::ECDb_0600, "PRAGMA %s, is not invoked on class %s which is not mapped or exist.", GetName().c_str(), cls.GetFullName());
 		return BE_SQLITE_ERROR;
 	}
 	if (val.GetBool()) {
@@ -223,19 +269,19 @@ DbResult PragmaExplainQuery::ToResultSet (Statement& from, StaticPragmaResult& t
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult PragmaExplainQuery::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& val) {
+DbResult PragmaExplainQuery::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& val, PragmaManager::OptionsMap const& options) {
 	if (!val.IsString()) {
-		ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "PRAGMA %s expect a ECSQL query as string argument.", GetName().c_str());
+		ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0601, "PRAGMA %s expect a ECSQL query as string argument.", GetName().c_str());
 		return BE_SQLITE_ERROR;
 	}
 	ECSqlStatement stmt;
 	if (ECSqlStatus::Success != stmt.Prepare(ecdb, val.GetString().c_str())) {
-		ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "PRAGMA %s failed to prepare ECSQL query.", GetName().c_str());
+		ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0602, "PRAGMA %s failed to prepare ECSQL query.", GetName().c_str());
 		return BE_SQLITE_ERROR;
 	}
 	Statement sqlStmt;
 	if (BE_SQLITE_OK != sqlStmt.Prepare(ecdb, SqlPrintfString("explain query plan %s", stmt.GetNativeSql()))){
-		ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "PRAGMA %s failed to explain native sql.", GetName().c_str());
+		ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0603, "PRAGMA %s failed to explain native sql.", GetName().c_str());
 		return BE_SQLITE_ERROR;
 	}
 
@@ -250,8 +296,8 @@ DbResult PragmaExplainQuery::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, Pr
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-DbResult PragmaExplainQuery::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) {
-	ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "PRAGMA %s is readonly.", GetName().c_str());
+DbResult PragmaExplainQuery::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const& options) {
+	ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0552, "PRAGMA %s is readonly.", GetName().c_str());
 	rowSet = std::make_unique<StaticPragmaResult>(ecdb);
 	rowSet->FreezeSchemaChanges();
 	return BE_SQLITE_READONLY;
@@ -390,7 +436,7 @@ DbResult SHA3Helper::ComputeHash(Utf8String& hash, DbCR db, std::vector<std::str
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PragmaExperimentalFeatures::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&)   {
+DbResult PragmaExperimentalFeatures::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const& options)   {
 	auto result = std::make_unique<StaticPragmaResult>(ecdb);
 	result->AppendProperty("experimental_features_enabled", PRIMITIVETYPE_Boolean);
 	result->FreezeSchemaChanges();
@@ -403,7 +449,7 @@ DbResult PragmaExperimentalFeatures::Read(PragmaManager::RowSet& rowSet, ECDbCR 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PragmaExperimentalFeatures::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& val) {
+DbResult PragmaExperimentalFeatures::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& val, PragmaManager::OptionsMap const& options) {
 	if (val.IsBool()) {
 		ecdb.GetImpl().GetECSqlConfig().SetExperimentalFeaturesEnabled(val.GetBool());
 	}
@@ -422,9 +468,9 @@ DbResult PragmaExperimentalFeatures::Write(PragmaManager::RowSet& rowSet, ECDbCR
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PragmaIntegrityCheck::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& v) {
-	if (!ecdb.GetECSqlConfig().GetExperimentalFeaturesEnabled()) {
-		ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "PRAGMA integrity_check is experimental feature. Use 'PRAGMA experimental_features_enabled=true' to enable it.");
+DbResult PragmaIntegrityCheck::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const& v, PragmaManager::OptionsMap const& options) {
+    if (!isExperimentalFeatureAllowed(ecdb, options)) {
+		ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0604, "'PRAGMA integrity_check' is experimental feature and disabled by default.");
 		return BE_SQLITE_ERROR;
 	}
 
@@ -678,7 +724,7 @@ DbResult PragmaIntegrityCheck::CheckClassIds(IntegrityChecker& checker, StaticPr
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult PragmaIntegrityCheck::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&) {
+DbResult PragmaIntegrityCheck::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const& options) {
 	return BE_SQLITE_READONLY;
 }
 

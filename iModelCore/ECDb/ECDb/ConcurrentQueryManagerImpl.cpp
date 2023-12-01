@@ -323,7 +323,7 @@ void ConnectionCache::Interrupt(bool reset_conn, bool detach_dbs) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void ErrorListenerScope::_OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, Utf8CP message) const{
+void ErrorListenerScope::_OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const{
     if (severity == ECN::IssueSeverity::Error)
         m_lastError = message;
 }
@@ -1026,7 +1026,7 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
     // go over each row and serialize result
     auto rc = stmt.Step();
     while (rc == BE_SQLITE_ROW) {
-        auto& rowsDoc = cachedAdaptor.ClearAndGetCachedXmlDocument();
+        auto& rowsDoc = cachedAdaptor.ClearAndGetCachedJsonDocument();
         BeJsValue rows(rowsDoc);
         if (adaptor.RenderRow(rows, ECSqlStatementRow(stmt)) != SUCCESS) {
             setError(QueryResponse::Status::Error_ECSql_RowToJsonFailed, "failed to serialize ecsql statement row to json");

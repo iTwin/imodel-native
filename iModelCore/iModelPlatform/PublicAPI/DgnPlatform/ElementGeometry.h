@@ -312,7 +312,7 @@ struct GeometryStreamIO
         bool Get(Operation const&, CurveVectorPtr&, bool applyValidation = false) const;
         bool Get(Operation const&, ISolidPrimitivePtr&, bool applyValidation = false) const;
         bool Get(Operation const&, MSBsplineSurfacePtr&, bool applyValidation = false) const;
-        bool Get(Operation const&, IBRepEntityPtr&) const;
+        DGNPLATFORM_EXPORT bool Get(Operation const&, IBRepEntityPtr&) const;
         DGNPLATFORM_EXPORT bool Get(Operation const&, GeometricPrimitivePtr&, bool applyValidation = false) const;
         DGNPLATFORM_EXPORT bool Get(Operation const&, DgnGeometryPartId&, TransformR) const;
         DGNPLATFORM_EXPORT bool Get(Operation const&, Render::GeometryParamsR) const; // Updated by multiple op-codes, true if changed
