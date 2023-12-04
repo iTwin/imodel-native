@@ -204,6 +204,7 @@ MAX                 {SQL_NEW_KEYWORD(SQL_TOKEN_MAX);  }
 MIN                 {SQL_NEW_KEYWORD(SQL_TOKEN_MIN);  }
 
 NATURAL             {SQL_NEW_KEYWORD(SQL_TOKEN_NATURAL);  }
+NAV                 {SQL_NEW_KEYWORD(SQL_TOKEN_NAV);  }
 NO                  {SQL_NEW_KEYWORD(SQL_TOKEN_NO);  }
 NOCASE              {SQL_NEW_KEYWORD(SQL_TOKEN_NOCASE);  }
 NOT                 {SQL_NEW_KEYWORD(SQL_TOKEN_NOT);  }

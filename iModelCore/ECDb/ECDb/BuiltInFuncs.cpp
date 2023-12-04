@@ -733,7 +733,7 @@ void XmlCAToJson::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     {
     if(nArgs != 2)
         {
-        ctx.SetResultError("SQL function " SQLFUNC_XmlCAToJson " failed: invalid number of arguments. Expect 1 argument.");
+        ctx.SetResultError("SQL function " SQLFUNC_XmlCAToJson " failed: invalid number of arguments. Expected 2 arguments.");
         return;
         }
 

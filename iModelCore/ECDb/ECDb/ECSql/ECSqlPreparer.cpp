@@ -996,6 +996,30 @@ ECSqlStatus ECSqlExpPreparer::PrepareFromExp(ECSqlPrepareContext& ctx, FromExp c
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
+ECSqlStatus ECSqlExpPreparer::PrepareFromExp(NativeSqlBuilder& sqlGenerator, ECSqlPrepareContext& ctx, FromExp const& fromClause)
+    {
+    sqlGenerator.Append("FROM ");
+    bool isFirstItem = true;
+    for (Exp const* classRefExp : fromClause.GetChildren())
+        {
+        if (!isFirstItem)
+            sqlGenerator.AppendComma();
+
+        ECSqlStatus status = PrepareClassRefExp(sqlGenerator, ctx, classRefExp->GetAs<ClassRefExp>());
+        if (!status.IsSuccess())
+            return status;
+
+        isFirstItem = false;
+        }
+
+    return ECSqlStatus::Success;
+    }
+
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
 ECSqlStatus ECSqlExpPreparer::PrepareGroupByExp(ECSqlPrepareContext& ctx, GroupByExp const& exp)
     {
     ctx.GetSqlBuilder().Append(" GROUP BY ");
@@ -2661,6 +2685,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp(NativeSqlBuilder::List& nativeSqlS
             }
             case Exp::Type::WindowFunction:
                 return PrepareWindowFunctionExp(nativeSqlSnippets, ctx, exp.GetAs<WindowFunctionExp>());
+            case Exp::Type::ValueCreationFuncExp:
+                return PrepareValueCreationFuncExp(nativeSqlSnippets, ctx, exp.GetAs<ValueCreationFuncExp>());
             default:
                 break;
             }
@@ -2809,6 +2835,79 @@ ECSqlStatus ECSqlExpPreparer::GenerateECClassIdFilter(Utf8StringR filterSqlExpre
     if (partition->NeedsECClassIdFilter())
         filterSqlExpression.append(classIdColSql).append(" IN (SELECT ClassId FROM [").append(classMap.GetSchemaManager().GetTableSpace().GetName()).append("]." TABLE_ClassHierarchyCache " WHERE BaseClassId=").append(classIdStr).append(")");
 
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlStatus ECSqlExpPreparer::PrepareValueCreationFuncExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ValueCreationFuncExp const& exp)
+    {
+    switch (exp.GetValueCreationFunctionType())
+        {
+        case ValueCreationFuncExp::ValueCreationFunctionType::Nav:
+            return PrepareNavValueCreationFuncExp(nativeSqlSnippets, ctx, exp.GetAs<NavValueCreationFuncExp>());
+        }
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlStatus ECSqlExpPreparer::PrepareNavValueCreationFuncExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, NavValueCreationFuncExp const& exp)
+    {
+    NativeSqlBuilder builder;
+    NativeSqlBuilder::List idNativeSql;
+    NativeSqlBuilder::List relECClassIdNativeSql;
+    ECSqlFieldFactory::CreateField(ctx, exp.GetColumnRefExp()->GetAsCP<DerivedPropertyExp>(), 0);
+    auto stat = PrepareValueExp(idNativeSql, ctx, *exp.GetIdArgExp());
+    if (!stat.IsSuccess())
+        return stat;
+    
+    if (exp.GetRelECClassId() == nullptr)
+        stat = PrepareRelECClassIdFromNavProperty(relECClassIdNativeSql, ctx, exp.GetColumnRefExp()->GetAs<DerivedPropertyExp>().GetExpression()->GetAs<PropertyNameExp>());
+    else
+        stat = PrepareValueExp(relECClassIdNativeSql, ctx, *exp.GetRelECClassId());
+    
+    if (!stat.IsSuccess())
+        return stat;
+
+    Utf8CP navName = exp.GetParent()->GetAs<DerivedPropertyExp>().HasAlias() ? exp.GetParent()->GetAs<DerivedPropertyExp>().GetColumnAlias().c_str() : exp.GetColumnRefExp()->GetAs<DerivedPropertyExp>().GetExpression()->GetAs<PropertyNameExp>().GetPropertyPath()[2].GetName().c_str();
+    builder.Append(idNativeSql.at(0).GetSql()).AppendSpace().Append("[").Append(navName).Append("_0").Append("]");
+    builder.AppendComma().AppendSpace();
+    builder.Append(relECClassIdNativeSql.at(0).GetSql()).AppendSpace().Append("[").Append(navName).Append("_1").Append("]");
+    builder.AppendSpace();
+    if (exp.GetIdArgExp()->GetType() == Exp::Type::PropertyName)
+        {
+        if (exp.GetParent()->GetParent()->GetParent()->GetAs<SingleSelectStatementExp>().GetFrom() == nullptr)
+            {
+            BeAssert(false && "If class name specified, FROM clause should be specified as well");
+            return ECSqlStatus::Error;
+            }
+        nativeSqlSnippets.push_back(builder);
+        return ECSqlStatus::Success;
+        }
+    builder.Append("FROM (SELECT ").Append(idNativeSql).AppendComma().AppendSpace().Append(relECClassIdNativeSql).AppendParenRight();
+
+    nativeSqlSnippets.push_back(builder);
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlStatus ECSqlExpPreparer::PrepareRelECClassIdFromNavProperty(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, PropertyNameExp const& exp)
+    {
+    if (exp.GetPropertyPath().Size() != 3)
+        {
+        BeAssert(false && "PrepareRelECClassIdFromNavProperty expects to get three properties: SchemaName.ClassName.PropertyName");
+        return ECSqlStatus::InvalidECSql;
+        }
+    NativeSqlBuilder builder(std::to_string(ctx.GetECDb().Schemas().GetClass(exp.GetPropertyPath()[0].GetName(), exp.GetPropertyPath()[1].GetName())->GetPropertyP(exp.GetPropertyPath()[2].GetName())->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue()).c_str());
+    nativeSqlSnippets.push_back(builder);
     return ECSqlStatus::Success;
     }
 

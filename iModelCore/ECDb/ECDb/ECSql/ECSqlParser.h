@@ -11,6 +11,8 @@
 #include "PragmaStatementExp.h"
 #include "CommonTableExp.h"
 #include "WindowFunctionExp.h"
+#include "ValueCreationFuncExp.h"
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
@@ -280,6 +282,8 @@ private:
     BentleyStatus ParseWindowFrameBetween(std::unique_ptr<WindowFrameBetweenExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseFirstWindowFrameBound(std::unique_ptr<FirstWindowFrameBoundExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseSecondWindowFrameBound(std::unique_ptr<SecondWindowFrameBoundExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseValueCreationFuncExp(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const *) const;
+    BentleyStatus ParseNavValueCreationFuncExp(std::unique_ptr<NavValueCreationFuncExp>&, connectivity::OSQLParseNode const *) const;
 
     static BentleyStatus ParsePolymorphicConstraint(PolymorphicInfo& constraint, connectivity::OSQLParseNode const* parseNode);
     IssueDataSource const& Issues() const { BeAssert(m_context != nullptr); return m_context->Issues(); }

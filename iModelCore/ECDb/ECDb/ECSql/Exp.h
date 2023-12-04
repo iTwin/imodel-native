@@ -223,6 +223,7 @@ struct Exp
             UnaryValue,
             Update,
             ValueBinary,
+            ValueCreationFuncExp,
             ValueExpList,
             Where,
             WindowDefinitionExp,

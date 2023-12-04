@@ -93,6 +93,7 @@
 #include "ECSql/ExpHelper.h"
 #include "ECSql/ECSqlTypeInfo.h"
 #include "ECSql/CommonTableExp.h"
+#include "ECSql/ValueCreationFuncExp.h"
 
 #include "ECSql/ECSqlPrepareContext.h"
 #include "ECSql/ECSqlPreparer.h"

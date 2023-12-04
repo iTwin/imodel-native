@@ -534,7 +534,6 @@
         <ECEnumerator name="String" value="2305" displayLabel="String" />
         <ECEnumerator name="IGeometry" value="2561" displayLabel="IGeometry" />
     </ECEnumeration>
-
     <ECEntityClass typeName="CustomAttribute" description="" displayLabel="" modifier="Sealed">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00.00">
@@ -548,7 +547,6 @@
         <ECProperty propertyName="Instance"  typeName="string"/>
         <ECNavigationProperty propertyName="Class" relationshipName="CustomAttributeClassHasInstance" direction="backward"/>
     </ECEntityClass>
-
     <ECRelationshipClass typeName="CustomAttributeClassHasInstance" modifier="Sealed" strength="referencing">
         <Source multiplicity="(1..1)" roleLabel="has instance" polymorphic="false">
             <Class class="ECClassDef"/>
@@ -557,7 +555,6 @@
             <Class class="CustomAttribute"/>
         </Target>
     </ECRelationshipClass>
-
     <ECEntityClass typeName="PropertyCustomAttribute" description="" displayLabel="" modifier="Abstract">
         <ECCustomAttributes>
             <View xmlns="ECDbMap.02.00.03">
@@ -568,7 +565,8 @@
                     CAST([ca].[ContainerId] as LONG) [Property],
                     XmlCAToJson([ca].[Class].[Id], [ca].[Instance]) [Instance]
                 FROM [meta].[CustomAttribute] [ca]
-                WHERE [ca].[ContainerType] = 992 ORDER BY [ca].[Ordinal]
+                WHERE [ca].[ContainerType] = 992
+                ORDER BY [ca].[Ordinal]
                 </Query>
             </View>
         </ECCustomAttributes>
@@ -576,15 +574,15 @@
         <ECNavigationProperty propertyName="Class" relationshipName="CustomAttributeClassHasInstanceOnProperty" direction="backward"/>
         <ECProperty propertyName="Instance"  typeName="string"/>
     </ECEntityClass>
-
+    <ECRelationshipClass typeName="PropertyHasCustomAttribute" modifier="Abstract" strength="referencing">
+        <Source multiplicity="(1..1)" roleLabel="has custom attribute" polymorphic="false">
+            <Class class="ECPropertyDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is defined on" polymorphic="false">
+            <Class class="PropertyCustomAttribute"/>
+        </Target>
+    </ECRelationshipClass>
     <ECRelationshipClass typeName="CustomAttributeClassHasInstanceOnProperty" modifier="Abstract" strength="referencing">
-        <ECCustomAttributes>
-            <View xmlns="ECDbMap.02.00.03">
-                <Query>
-                    SELECT * FROM [meta].[CustomAttributeClassHasInstance]
-                </Query>
-            </View>
-        </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="has instance" polymorphic="false">
             <Class class="ECClassDef"/>
         </Source>
@@ -592,61 +590,7 @@
             <Class class="PropertyCustomAttribute"/>
         </Target>
     </ECRelationshipClass>
-
-    <ECRelationshipClass typeName="PropertyHasCustomAttribute" modifier="Sealed" strength="referencing">
-        <Source multiplicity="(1..1)" roleLabel="has custom attribute" polymorphic="false">
-            <Class class="ECPropertyDef"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="is defined on" polymorphic="false">
-            <Class class="PropertyCustomAttribute"/>
-        </Target>
-    </ECRelationshipClass>
-<!--
-    <ECEntityClass typeName="PropertyCustomAttribute" description="" displayLabel="" modifier="Abstract">
-        <ECCustomAttributes>
-            <View xmlns="ECDbMap.02.00.03">
-                <Query>
-                SELECT
-                    [ca].[ECInstanceId],
-                    [ca].[Class] [Class],
-                    CAST([ca].[ContainerId] as LONG) [Property],
-                    XmlCAToJson([ca].[Class].[Id], [ca].[Instance]) [Instance]
-                FROM [meta].[CustomAttribute] [ca]
-                WHERE [ca].[ContainerType] = 992 ORDER BY [ca].[Ordinal]
-                </Query>
-            </View>
-        </ECCustomAttributes>
-        <!-<ECNavigationProperty propertyName="Property" relationshipName="PropertyHasCustomAttribute" direction="backward"/>->
-        <ECNavigationProperty propertyName="Class" relationshipName="CustomAttributeClassHasInstanceOnProperty" direction="backward"/>
-        <ECProperty propertyName="Instance"  typeName="string"/>
-    </ECEntityClass>
-
-    <ECRelationshipClass typeName="PropertyHasCustomAttribute" modifier="Abstract" strength="referencing">
-        <ECCustomAttributes>
-            <View xmlns="ECDbMap.02.00.03">
-                <Query>
-                    SELECT
-                        [ca].[ECinstanceId],
-                        [ca].[ContainerId] as [SourceECInstanceId],
-                        ec_classid('ECDbMeta:ECPropertyDef') as [SourceECClassId],
-                        [ca].[ECInstanceId] as [TargetECInstanceId],
-                        ec_classid('ECDbMeta:PropertyCustomAttribute') as [TargetECClassId]
-                    FROM meta.CustomAttribute [ca]
-                    WHERE [ca].[ContainerType] = 992 ORDER BY [ca].[Ordinal]
-                </Query>
-            </View>
-        </ECCustomAttributes>
-        <Source multiplicity="(1..1)" roleLabel="has custom attribute" polymorphic="false">
-            <Class class="ECPropertyDef"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="is defined on" polymorphic="false">
-            <Class class="PropertyCustomAttribute"/>
-        </Target>
-    </ECRelationshipClass>
-
--->
-<!--
-    <ECRelationshipClass typeName="ClassHasCustomAttribute" modifier="Sealed" strength="referencing">
+    <!--ECRelationshipClass typeName="ClassHasCustomAttribute" modifier="Sealed" strength="referencing">
         <Source multiplicity="(1..1)" roleLabel="has custom attribute" polymorphic="false">
             <Class class="ECClassDef"/>
         </Source>
@@ -656,15 +600,24 @@
     </ECRelationshipClass>
     <ECEntityClass typeName="ClassCustomAttribute" description="" displayLabel="" modifier="Abstract">
         <ECCustomAttributes>
-            <TransientView xmlns="ECDbView.01.00.00">
-                <Query>SELECT ca.[ClassId] [ClassId], [ca].[ContainerId] [ContainerId],[ca].[Ordinal] [Ordinal], [ca].[Instance] [InstanceXml] FROM [meta].[CustomAttribute] [ca] WHERE [ca].[ContainerType] = 30</Query>
-            </TransientView>
+            <View xmlns="ECDbMap.02.00.03">
+                <Query>
+                SELECT
+                    [ca].[ECInstanceId],
+                    [ca].[Class] [Class],
+                    CAST([ca].[ContainerId] as LONG) [Class],
+                    XmlCAToJson([ca].[Class].[Id], [ca].[Instance]) [Instance]
+                FROM [meta].[CustomAttribute] [ca]
+                WHERE [ca].[ContainerType] = 30
+                ORDER BY [ca].[Ordinal]
+                </Query>
+            </View>
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="Class" relationshipName="ClassHasCustomAttribute" direction="backward"/>
         <ECProperty propertyName="ClassId" typeName="int" />
         <ECProperty propertyName="ContainerId"  typeName="int"/>
         <ECProperty propertyName="Ordinal"  typeName="int"/>
-        <ECProperty propertyName="InstanceXml"  typeName="string"/>
+        <ECProperty propertyName="Instance"  typeName="string"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="SchemaHasCustomAttribute" modifier="Sealed" strength="referencing">
         <Source multiplicity="(1..1)" roleLabel="has custom attribute" polymorphic="false">
@@ -676,14 +629,23 @@
     </ECRelationshipClass>
     <ECEntityClass typeName="SchemaCustomAttribute" description="" displayLabel="" modifier="Abstract">
         <ECCustomAttributes>
-            <TransientView xmlns="ECDbView.01.00.00">
-                <Query>SELECT ca.[ClassId] [ClassId], [ca].[ContainerId] [ContainerId],[ca].[Ordinal] [Ordinal], [ca].[Instance] [InstanceXml] FROM [meta].[CustomAttribute] [ca] WHERE [ca].[ContainerType] = 1</Query>
-            </TransientView>
+            <View xmlns="ECDbMap.02.00.03">
+                <Query>
+                SELECT
+                    [ca].[ECInstanceId],
+                    [ca].[Class] [Class],
+                    CAST([ca].[ContainerId] as LONG) [Property],
+                    XmlCAToJson([ca].[Class].[Id], [ca].[Instance]) [Instance]
+                FROM [meta].[CustomAttribute] [ca]
+                WHERE [ca].[ContainerType] = 1
+                ORDER BY [ca].[Ordinal]
+                </Query>
+            </View>
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="Schema" relationshipName="SchemaHasCustomAttribute" direction="backward"/>
         <ECProperty propertyName="ClassId" typeName="int" />
         <ECProperty propertyName="ContainerId"  typeName="int"/>
         <ECProperty propertyName="Ordinal"  typeName="int"/>
-        <ECProperty propertyName="InstanceXml"  typeName="string"/>
-    </ECEntityClass> -->
+        <ECProperty propertyName="Instance"  typeName="string"/>
+    </ECEntityClass!-->
 </ECSchema>

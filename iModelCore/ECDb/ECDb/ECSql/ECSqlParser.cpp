@@ -3322,7 +3322,8 @@ BentleyStatus ECSqlParser::ParseValueExp(std::unique_ptr<ValueExp>& valueExp, OS
                     return ParseValueExpPrimary(valueExp, parseNode);
                 case OSQLParseNode::window_function:
                     return ParseWindowFunction(valueExp, parseNode);
-
+                case OSQLParseNode::value_creation_fct:
+                    return ParseValueCreationFuncExp(valueExp, parseNode);
                 default:
                     Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0493,
                         "ECSQL Parse error: Unsupported value_exp type: %d", (int) parseNode->getKnownRuleID());
@@ -4167,6 +4168,65 @@ BentleyStatus ECSqlParser::ParseWindowFrameExclusion(WindowFrameClauseExp::Windo
         BeAssert(false && "Incorrect number of child nodes in window frame exclusion type");
         return ERROR;
         }
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+BentleyStatus ECSqlParser::ParseValueCreationFuncExp(std::unique_ptr<ValueExp>& valueExp, OSQLParseNode const* parseNode) const
+    {
+    if (!SQL_ISRULE(parseNode, value_creation_fct))
+        {
+        BeAssert(false && "Invalid grammar. Expecting value_creation_fct");
+        return ERROR;
+        }
+
+    switch (parseNode->getChild(0)->getTokenID())
+        {
+        case SQL_TOKEN_NAV:
+            {
+            std::unique_ptr<NavValueCreationFuncExp> navValueCreationFuncExp = nullptr;
+            if (SUCCESS != ParseNavValueCreationFuncExp(navValueCreationFuncExp, parseNode))
+                return ERROR;
+            valueExp = std::move(navValueCreationFuncExp);
+            return SUCCESS;
+            }
+        default:
+            {
+            BeAssert(false && "Unhandled tokenID in ValueCreationFuncExp");
+            return ERROR;
+            }
+        }
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+BentleyStatus ECSqlParser::ParseNavValueCreationFuncExp(std::unique_ptr<NavValueCreationFuncExp>& valueCreationFuncExp, OSQLParseNode const* parseNode) const
+    {
+    std::unique_ptr<DerivedPropertyExp> derivedPropertyExp = nullptr;
+    if (SUCCESS != ParseDerivedColumn(derivedPropertyExp, parseNode->getChild(2)))
+        return ERROR;
+
+    if (derivedPropertyExp->GetExpression()->GetAs<PropertyNameExp>().GetPropertyPath().Size() != 3)
+        {
+        BeAssert(false && "NavValueCreationFunc expects first argument to get three properties: SchemaName.ClassName.PropertyName");
+        return ERROR;
+        }
+    
+    std::unique_ptr<PropertyNameExp> propNameExp = std::make_unique<PropertyNameExp>(std::move(derivedPropertyExp->GetExpression()->GetAs<PropertyNameExp>().GetPropertyPath()), true);
+    propNameExp->SetTypeInfo(ECSqlTypeInfo(ECSqlTypeInfo::Kind::Navigation));
+    derivedPropertyExp = std::move(std::make_unique<DerivedPropertyExp>(std::move(propNameExp), parseNode->getParent()->getChild(1)->getTokenValue().empty() ? nullptr : parseNode->getParent()->getChild(1)->getTokenValue().c_str()));
+    std::unique_ptr<ValueExp> idArgExp = nullptr;
+    if (SUCCESS != ParseFunctionArg(idArgExp, *parseNode->getChild(4)))
+        return ERROR;
+    
+    std::unique_ptr<ValueExp> relECClassIdArgExp = nullptr;
+    if (parseNode->getChild(5)->count() != 0 && SUCCESS != ParseFunctionArg(relECClassIdArgExp, *parseNode->getChild(5)->getChild(1)))
+        return ERROR;
+
+    valueCreationFuncExp = std::make_unique<NavValueCreationFuncExp>(std::move(derivedPropertyExp), std::move(idArgExp), std::move(relECClassIdArgExp));
+    return SUCCESS;
     }
 
 //-----------------------------------------------------------------------------------------

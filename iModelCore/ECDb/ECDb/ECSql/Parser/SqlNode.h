@@ -292,6 +292,7 @@ namespace connectivity
                 unary_predicate,
                 unique_test,
                 update_statement_searched,
+                value_creation_fct,
                 value_exp,
                 value_exp_commalist,
                 value_exp_primary,

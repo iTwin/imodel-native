@@ -57,6 +57,14 @@ void ExtractInstanceValueExp::_ToJson(BeJsValue val, JsonFormat const&) const {
 //+---------------+---------------+---------------+---------------+---------------+--------
 PropertyNameExp::PropertyNameExp(PropertyPath const& propPath) : ValueExp(Type::PropertyName),m_ecsqlPropertyPath(propPath), m_propertyPath(propPath), m_classRefExp(nullptr), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty()), m_sourceType(SourceType::ECSql),m_property(nullptr)
     {}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+PropertyNameExp::PropertyNameExp(PropertyPath const& propPath, bool isUsedForValueCreation) : ValueExp(Type::PropertyName),m_ecsqlPropertyPath(propPath), m_propertyPath(propPath), m_classRefExp(nullptr), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty()),
+    m_sourceType(isUsedForValueCreation ? SourceType::ValueCreationFunc : SourceType::ECSql),m_property(nullptr)
+    {}
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -123,6 +131,9 @@ Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ct
             return FinalizeParseStatus::Error;
         return FinalizeParseStatus::NotCompleted;
     }
+
+    if (m_sourceType == SourceType::ValueCreationFunc)
+        return FinalizeParseStatus::Completed;
 
     if (IsVirtualProperty(false)){
         SetTypeInfo(ECSqlTypeInfo(*GetVirtualProperty()));
@@ -272,6 +283,16 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
     // This mean the PropertyNameExp was created by expanding WILDCARD so it both has ClassRef and DerviedProperty.
     if (GetClassRefExp() != nullptr)
         return ResolveLocalRef(ctx);
+
+    if (m_sourceType == SourceType::ValueCreationFunc)
+        {
+        if (ctx.Schemas().GetClass(m_propertyPath[0].GetName(), m_propertyPath[1].GetName()) == nullptr || ctx.Schemas().GetClass(m_propertyPath[0].GetName(), m_propertyPath[1].GetName())->GetPropertyP(m_propertyPath[2].GetName()) == nullptr)
+            {
+            BeAssert(false && "Could not find given property");
+            return ERROR;
+            }
+        return SUCCESS;
+        }
 
     if (!ctx.CurrentArg()) {
         return ERROR;

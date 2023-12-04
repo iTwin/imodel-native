@@ -131,6 +131,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/ECInstanceAdapterHelper.h \
                 $(baseDir)ECSql/CommonTableExp.h \
                 $(baseDir)ECSql/ECSqlPragmas.h \
+                $(baseDir)ECSql/ValueCreationFuncExp.h \
                 $(baseDir)DbSchema.h \
                 $(baseDir)DbSchemaPersistenceManager.h \
                 $(baseDir)LightweightCache.h \

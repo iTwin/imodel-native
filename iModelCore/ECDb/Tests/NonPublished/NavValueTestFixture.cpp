@@ -111,7 +111,7 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue) {
 
         ECClassId relClassId;
         ECInstanceId instId = stmt.GetValueNavigation<ECInstanceId>(0, &relClassId);
-        ASSERT_EQ(m_bookClassId, relClassId);
+        ASSERT_EQ(m_bookHasAuthorClassId, relClassId);
         ASSERT_EQ(ECInstanceId(1ull), instId);
         auto& colInfo = stmt.GetColumnInfo(0);
         ASSERT_TRUE(colInfo.IsValid());
@@ -134,7 +134,7 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue) {
 
         ECClassId relClassId;
         ECInstanceId instId = stmt.GetValueNavigation<ECInstanceId>(0, &relClassId);
-        ASSERT_EQ(m_bookClassId, relClassId);
+        ASSERT_EQ(m_bookHasAuthorClassId, relClassId);
         ASSERT_EQ(m_personInstanceKey.GetInstanceId(), instId);
         auto& colInfo = stmt.GetColumnInfo(0);
         ASSERT_TRUE(colInfo.IsValid());
@@ -150,14 +150,12 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue) {
         { // construct from actual nav property row
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NAV(ts.Book.Author, Author.Id, Author.RelECClassId) [MyNavProp] FROM ts.Book LIMIT 1"));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, m_personInstanceKey.GetInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, m_bookHasAuthorClassId));
         printf("%s\n", stmt.GetNativeSql());
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
 
         ECClassId relClassId;
         ECInstanceId instId = stmt.GetValueNavigation<ECInstanceId>(0, &relClassId);
-        ASSERT_EQ(m_bookClassId, relClassId);
+        ASSERT_EQ(m_bookHasAuthorClassId, relClassId);
         ASSERT_EQ(m_personInstanceKey.GetInstanceId(), instId);
         auto& colInfo = stmt.GetColumnInfo(0);
         ASSERT_TRUE(colInfo.IsValid());
@@ -168,6 +166,16 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue) {
         ASSERT_TRUE(property != nullptr);
         ASSERT_STREQ("MyNavProp", property->GetName().c_str());
         ASSERT_TRUE(property->GetIsNavigation());
+        }
+
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM meta.PropertyCustomAttribute"));
+        }
+
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NAV(meta.PropertyCustomAttribute.Class, 1, 2)"));
         }
     }
 

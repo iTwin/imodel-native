@@ -20,6 +20,7 @@ struct PropertyNameExp final : ValueExp
             ECSql,
             ClassRef,
             SubQuery,
+            ValueCreationFunc,
             };
         struct PropertyRef
         {
@@ -70,6 +71,7 @@ struct PropertyNameExp final : ValueExp
 
     public:
         explicit PropertyNameExp(PropertyPath const& propPath);
+        explicit PropertyNameExp(PropertyPath const& propPath, bool isUsedForValueCreation);
         PropertyNameExp(PropertyPath const& propPath, RangeClassRefExp const& classRefExp, ECN::ECPropertyCR property);
         PropertyNameExp(ECSqlParseContext const&, Utf8StringCR propertyName, RangeClassRefExp const& classRefExp, ClassMap const& classMap);
         PropertyNameExp(ECSqlParseContext const&, RangeClassRefExp const& classRefExp, DerivedPropertyExp const& derivedPropExp);

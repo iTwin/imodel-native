@@ -55,6 +55,7 @@ struct ECSqlExpPreparer final
         static ECSqlStatus PrepareComputedExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, ComputedExp const&);
         static ECSqlStatus PrepareCrossJoinExp(ECSqlPrepareContext&, CrossJoinExp const&);
         static ECSqlStatus PrepareFromExp(ECSqlPrepareContext&, FromExp const&);
+        static ECSqlStatus PrepareFromExp(NativeSqlBuilder&, ECSqlPrepareContext&, FromExp const&);
         static ECSqlStatus PrepareFunctionCallExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, FunctionCallExp const&);
         static ECSqlStatus PrepareFunctionArgList(NativeSqlBuilder::List&, ECSqlPrepareContext&, ValueExp const& functionExp);
         static ECSqlStatus PrepareGroupByExp(ECSqlPrepareContext&, GroupByExp const&);
@@ -104,6 +105,9 @@ struct ECSqlExpPreparer final
         static ECSqlStatus PrepareTableValuedFunctionExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, TableValuedFunctionExp const& exp);
         static ECSqlStatus PrepareExtractPropertyExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ExtractPropertyValueExp const& exp);
         static ECSqlStatus PrepareExtractInstanceExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ExtractInstanceValueExp const& exp);
+        static ECSqlStatus PrepareValueCreationFuncExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ValueCreationFuncExp const& exp);
+        static ECSqlStatus PrepareNavValueCreationFuncExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, NavValueCreationFuncExp const& exp);
+        static ECSqlStatus PrepareRelECClassIdFromNavProperty(NativeSqlBuilder::List& builder, ECSqlPrepareContext& ctx, PropertyNameExp const& exp);
         static BooleanSqlOperator DetermineCompoundLogicalOpForCompoundExpressions(BooleanSqlOperator);
 
     };

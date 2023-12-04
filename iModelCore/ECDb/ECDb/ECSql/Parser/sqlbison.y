@@ -119,6 +119,8 @@ using namespace connectivity;
 %token <pParseNode> SQL_TOKEN_DOLLAR
 %token <pParseNode> SQL_BITWISE_NOT
 
+%token <pParseNode> SQL_TOKEN_NAV
+
 /* time and date functions */
 %token <pParseNode> SQL_TOKEN_CURRENT_DATE SQL_TOKEN_CURRENT_TIME SQL_TOKEN_CURRENT_TIMESTAMP
 
@@ -228,6 +230,7 @@ using namespace connectivity;
 %type <pParseNode> opt_ecsqloptions_clause ecsqloptions_clause ecsqloptions_list ecsqloption ecsqloptionvalue
 %type <pParseNode> cte opt_cte_recursive cte_column_list cte_table_name cte_block_list
 %type <pParseNode> pragma opt_pragma_set opt_pragma_set_val opt_pragma_func pragma_value pragma_path opt_pragma_for
+%type <pParseNode> value_creation_fct
 %%
 
 /* Parse Tree an OSQLParser zurueckliefern
@@ -1335,6 +1338,7 @@ iif_spec:
 fct_spec:
         aggregate_fct
     |   iif_spec
+    |   value_creation_fct
     |   function_name '(' ')'
         {
             $$ = SQL_NEW_RULE;
@@ -1366,6 +1370,19 @@ function_name:
     |   SQL_TOKEN_RTRIM
     ;
 
+value_creation_fct:
+        SQL_TOKEN_NAV '(' derived_column ',' function_arg opt_function_arg ')'
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+            $$->append($4 = CREATE_NODE(",", SQL_NODE_PUNCTUATION));
+            $$->append($5);
+            $$->append($6);
+            $$->append($7 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
+        }
+        ;
 
 aggregate_fct:
         SQL_TOKEN_MAX '(' opt_all_distinct  function_args_commalist ')'
