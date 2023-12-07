@@ -87,7 +87,6 @@ void CloudCache::ReadGuid() {
     Db::CreateParams params;
     params.m_failIfDbExists = false;
     params.m_rawSQLite = true;
-    params.m_startDefaultTxn = DefaultTxn::No;
 
     if (BE_SQLITE_OK != localStoreDb.CreateNewDb(guidFile, params))
         return;
@@ -100,7 +99,7 @@ void CloudCache::ReadGuid() {
     stat = stmt.Step();
     BeAssert(stat == BE_SQLITE_DONE);
     stmt.Finalize();
-    localStoreDb.TryExecuteSql("COMMIT");
+    localStoreDb.SaveChanges();
     localStoreDb.CloseDb();
 }
 
