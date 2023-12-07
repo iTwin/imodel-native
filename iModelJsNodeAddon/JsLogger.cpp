@@ -98,8 +98,16 @@ bool JsLogger::isEnabled(Utf8CP catIn, SEVERITY sev) {
 void JsLogger::processDeferred() {
     if (m_deferredLogging.empty())
         return;
-    for (auto const& message : m_deferredLogging)
-        logToJs(message.m_category.c_str(), message.m_severity, message.m_message.c_str());
+    for (auto const& message : m_deferredLogging) {
+        try {
+            logToJs(message.m_category.c_str(), message.m_severity, message.m_message.c_str());
+        } catch (...) {
+            // Logging to JS did not work (probably due to backend logging being redirected to the
+            // frontend and the backend and frontend not currently being connected). Try again
+            // later.
+            return;
+        }
+    }
     m_deferredLogging.clear();
 }
 
@@ -115,15 +123,26 @@ void JsLogger::LogMessage(Utf8CP category, SEVERITY sev, Utf8CP msg) {
 
     if (canUseJavaScript()) {
         processDeferred();
-        logToJs(category, sev, msg);
-    } else {
-        // save this message in memory so it can be logged later on the JavaScript thread
-        m_deferredLogging.push_back(LoggedMessage(category, sev, msg));
+        try {
+            logToJs(category, sev, msg);
+            return;
+        } catch (...) {
+            // Push to deferred below, because JS log failed.
+            // On mobile, it seems to fail if called when backend logging is redirected to the
+            // frontend, and the backend and frontend are not connected at the time of the log
+            // message.
+        }
     }
+    // save this message in memory so it can be logged later on the JavaScript thread
+    m_deferredLogging.push_back(LoggedMessage(category, sev, msg));
 }
 
 bool JsLogger::IsSeverityEnabled(Utf8CP category, SEVERITY sev) {
     BeMutexHolder lock(m_deferredLogMutex);
+    if (canUseJavaScript()) {
+        // Process the deferred log messages every chance we get.
+        processDeferred();
+    }
     return isEnabled(category, sev);
 }
 
