@@ -102,9 +102,12 @@ void JsLogger::processDeferred() {
         try {
             logToJs(message.m_category.c_str(), message.m_severity, message.m_message.c_str());
         } catch (...) {
-            // Logging to JS did not work (probably due to backend logging being redirected to the
-            // frontend and the backend and frontend not currently being connected). Try again
+            // Logging to JS did not work, so leave m_deferredLogging alone so we can try again
             // later.
+            // logToJs triggers the backend JavaScript logging functionality. That functionality
+            // allows for custom log functions. Those custom log functions may throw an exception,
+            // and if they do so, that exception gets propogated to here. Catch that here so that
+            // we don't throw a C++ exception from this function.
             return;
         }
     }
@@ -128,9 +131,10 @@ void JsLogger::LogMessage(Utf8CP category, SEVERITY sev, Utf8CP msg) {
             return;
         } catch (...) {
             // Push to deferred below, because JS log failed.
-            // On mobile, it seems to fail if called when backend logging is redirected to the
-            // frontend, and the backend and frontend are not connected at the time of the log
-            // message.
+            // logToJs triggers the backend JavaScript logging functionality. That functionality
+            // allows for custom log functions. Those custom log functions may throw an exception,
+            // and if they do so, that exception gets propogated to here. Catch that here so that
+            // we don't throw a C++ exception from this function.
         }
     }
     // save this message in memory so it can be logged later on the JavaScript thread
