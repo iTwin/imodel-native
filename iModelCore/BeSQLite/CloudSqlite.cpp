@@ -71,6 +71,7 @@ void CloudCache::ReadGuid() {
     Db::OpenParams openParams(Db::OpenMode::Readonly, DefaultTxn::No);
     openParams.SetImmutable();
     openParams.m_rawSQLite = true;
+    params.m_startDefaultTxn = DefaultTxn::No;
 
     auto stat = localStoreDb.OpenBeSQLiteDb(guidFile, openParams);
     if (BE_SQLITE_OK == stat) {
@@ -99,7 +100,7 @@ void CloudCache::ReadGuid() {
     stat = stmt.Step();
     BeAssert(stat == BE_SQLITE_DONE);
     stmt.Finalize();
-    localStoreDb.SaveChanges();
+    localStoreDb.TryExecuteSql("COMMIT");
     localStoreDb.CloseDb();
 }
 
