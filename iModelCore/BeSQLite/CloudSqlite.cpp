@@ -71,7 +71,6 @@ void CloudCache::ReadGuid() {
     Db::OpenParams openParams(Db::OpenMode::Readonly, DefaultTxn::No);
     openParams.SetImmutable();
     openParams.m_rawSQLite = true;
-    params.m_startDefaultTxn = DefaultTxn::No;
 
     auto stat = localStoreDb.OpenBeSQLiteDb(guidFile, openParams);
     if (BE_SQLITE_OK == stat) {
@@ -88,6 +87,7 @@ void CloudCache::ReadGuid() {
     Db::CreateParams params;
     params.m_failIfDbExists = false;
     params.m_rawSQLite = true;
+    params.m_startDefaultTxn = DefaultTxn::No;
 
     if (BE_SQLITE_OK != localStoreDb.CreateNewDb(guidFile, params))
         return;
