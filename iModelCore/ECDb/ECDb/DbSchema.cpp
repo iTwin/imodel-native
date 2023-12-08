@@ -1095,6 +1095,13 @@ bool DbTable::RemoveIndexDef(Utf8StringCR indexName)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+bool DbTable::ContainsIndex(Utf8StringCR indexName) const
+    {
+    return std::find_if(m_indexes.begin(), m_indexes.end(), [&indexName](const std::unique_ptr<DbIndex>& index) { return index->GetName().Equals(indexName); }) != m_indexes.end();
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 BentleyStatus DbTable::AddTrigger(Utf8StringCR triggerName, DbTrigger::Type type, Utf8StringCR condition, Utf8StringCR body)
     {
     if (m_type == Type::Existing)

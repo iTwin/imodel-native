@@ -1001,6 +1001,36 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod
+//---------------------------------------------------------------------------------------
+ClassMappingStatus RelationshipClassLinkTableMap::_UpdateDefaultIndexes(ClassMappingContext& ctx)
+    {
+    // Replace the index created in BisCore:ElementRefersToElements
+    if (ctx.GetImportCtx().GetECDb().GetECDbProfileVersion() >= ProfileVersion(4, 0, 0, 5) && Utf8String(ctx.GetClassMappingInfo().GetClass().GetFullName()).Equals("BisCore:ElementRefersToElements") && GetPrimaryTable().FindColumn("MemberPriority") != nullptr)
+        {
+        if (SUCCESS != ctx.GetImportCtx().GetSchemaManager().GetDbSchema().LoadIndexDefs())
+            return ClassMappingStatus::Error;
+
+        // Drop the old index and remove the entry from the table
+        if (GetPrimaryTable().RemoveIndexDef("uix_bis_ElementRefersToElements_sourcetargetclassid"))
+            {
+            if (!ctx.GetImportCtx().IsSynchronizeSchemas())
+                {
+                if (BE_SQLITE_OK != ctx.GetImportCtx().GetECDb().ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = 'uix_bis_ElementRefersToElements_sourcetargetclassid'")))
+                    return ClassMappingStatus::Error;
+                }
+
+            if (BE_SQLITE_OK != ctx.GetImportCtx().GetECDb().ExecuteDdl(SqlPrintfString("DROP INDEX IF EXISTS [uix_bis_ElementRefersToElements_sourcetargetclassid]")))
+                return ClassMappingStatus::Error;
+            }
+
+        // Add the new index introduced in Profile version 4.0.0.5 if not already present
+        if (!GetPrimaryTable().ContainsIndex("uix_bis_ElementRefersToElements_sourcetargetclassid_memberpriority"))
+            AddIndex(ctx.GetImportCtx(), RelationshipIndexSpec::SourceAndTargetAndClassId, true);
+        }
+    return ClassMappingStatus::Success;
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMappingStatus RelationshipClassLinkTableMap::MapSubClass(ClassMappingContext& ctx)
@@ -1255,8 +1285,20 @@ void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportCo
                 GenerateIndexColumnList(columns, sourceECInstanceIdColumn, sourceECClassIdColumn, targetECInstanceIdColumn, targetECClassIdColumn, nullptr);
                 break;
             case RelationshipIndexSpec::SourceAndTargetAndClassId:
+                {
                 GenerateIndexColumnList(columns, sourceECInstanceIdColumn, sourceECClassIdColumn, targetECInstanceIdColumn, targetECClassIdColumn, classId);
+                
+                // ECDb Profile version 4.0.0.5 onwards, update the unique index `uix_bis_ElementRefersToElements_sourcetargetclassid` to `uix_bis_ElementRefersToElements_sourcetargetclassid_memberpriority`
+                if (name.Equals("uix_bis_ElementRefersToElements_sourcetargetclassid") && schemaImportContext.GetECDb().GetECDbProfileVersion() >= ProfileVersion(4, 0, 0, 5))
+                    {
+                    if (auto memberPriorityColumn = GetPrimaryTable().FindColumn("MemberPriority"); memberPriorityColumn)
+                        {
+                        columns.push_back(memberPriorityColumn);
+                        name.append("_memberpriority");
+                        }
+                    }
                 break;
+                }
             default:
                 BeAssert(false);
                 break;

@@ -188,6 +188,17 @@ void Assert_BuiltinSchemaVersions_4_0_0_4 (TestECDb& testDb)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void Assert_BuiltinSchemaVersions_4_0_0_5(TestECDb& testDb)
+    {
+    // TO-DO:
+    // BisCore domain schema will be upgraded to 1.0.17 which will have a CA to restrict it's import only to ECDb profile version 4.0.0.5 and greater.
+    // Once the new BisCore schema is released, a check needs to be added here to verify that the new property is created in bis:ElementRefersToElements class and the unique index is extended as well.
+    Assert_BuiltinSchemaVersions_4_0_0_4(testDb);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void Assert_BuiltinSchemaVersions_4_X_X_X(TestECDb& testDb)
     {
     EXPECT_LE(5, testDb.GetSchemaCount()) << testDb.GetDescription();
@@ -234,14 +245,16 @@ TEST_F(ECDbCompatibilityTestFixture, BuiltinSchemaVersions)
                         Assert_BuiltinSchemaVersions_4_0_0_2(testDb);
                     else if (testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 3))
                         Assert_BuiltinSchemaVersions_4_0_0_3(testDb);
+                    else if (testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 4))
+                        Assert_BuiltinSchemaVersions_4_0_0_4(testDb);
                     else
                         FAIL() << "*ERROR* case not handled | " << testDb.GetDescription();
                     break;
                     }
                 case ProfileState::Age::UpToDate:
                     {
-                    if (testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 4))
-                        Assert_BuiltinSchemaVersions_4_0_0_4(testDb);
+                    if (testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 5))
+                        Assert_BuiltinSchemaVersions_4_0_0_5(testDb);
                     else 
                         FAIL() << "*ERROR* case not handled | " << testDb.GetDescription();
                     break;
@@ -1217,48 +1230,57 @@ TEST_F(ECDbCompatibilityTestFixture, EC31SchemaImportWithReadContextVariations)
                      </ECSchema>)xml", ctx)) << scenario << " | " << testDb.GetDescription();
 
         BentleyStatus schemaImportStat = testDb.GetDb().Schemas().ImportSchemas(ctx.GetCache().GetSchemas());
+
+        auto testOriginalECXmlVersion = [&testDb, &schemaImportStat, &scenario](const std::vector<std::pair<BeVersion, Utf8CP>>& testCases)
+            {
+            ASSERT_EQ(SUCCESS, schemaImportStat) << scenario << " | " << testDb.GetDescription();
+            for (const auto& testCase : testCases)
+                EXPECT_EQ(testCase.first, testDb.GetOriginalECXmlVersion(testCase.second)) << scenario << " | " << testDb.GetDescription();
+            };
+
         switch (testDb.GetAge())
             {
             case ProfileState::Age::Older:
                 if (testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 1))
                     {
-                    ASSERT_EQ(SUCCESS, schemaImportStat) << scenario << " | " << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("TestSchema")) << scenario << " | " << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << scenario << " | " << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("ECDbMap")) << scenario << " | " << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("ECDbMeta")) << scenario << " | " << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(), testDb.GetOriginalECXmlVersion("ECDbSystem")) << scenario << " | " << testDb.GetDescription();
+                    const auto beVersion = BeVersion();
+                    testOriginalECXmlVersion({
+                        std::make_pair(beVersion, "TestSchema"),
+                        std::make_pair(beVersion, "ECDbFileInfo"),
+                        std::make_pair(beVersion, "ECDbMap"),
+                        std::make_pair(beVersion, "ECDbMeta"),
+                        std::make_pair(beVersion, "ECDbSystem")});
                     }
                 else if (testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 2))
                     {
-                    ASSERT_EQ(SUCCESS, schemaImportStat) << scenario << " | " << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("TestSchema")) << scenario << " | " << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << scenario << " | " << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("ECDbMap")) << scenario << " | " << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << scenario << " | " << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbSystem")) << scenario << " | " << testDb.GetDescription();
+                    testOriginalECXmlVersion({
+                        std::make_pair(BeVersion(3, 1), "TestSchema"),
+                        std::make_pair(BeVersion(3, 2), "ECDbFileInfo"),
+                        std::make_pair(BeVersion(3, 1), "ECDbMap"),
+                        std::make_pair(BeVersion(3, 2), "ECDbMeta"),
+                        std::make_pair(BeVersion(3, 2), "ECDbSystem")});
                     }
-                else if (testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 3))
+                else if (testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 3) || testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 4))
                     {
-                    ASSERT_EQ(SUCCESS, schemaImportStat) << scenario << " | " << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("TestSchema")) << scenario << " | " << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << scenario << " | " << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMap")) << scenario << " | " << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << scenario << " | " << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbSystem")) << scenario << " | " << testDb.GetDescription();
+                    testOriginalECXmlVersion({
+                        std::make_pair(BeVersion(3, 1), "TestSchema"),
+                        std::make_pair(BeVersion(3, 2), "ECDbFileInfo"),
+                        std::make_pair(BeVersion(3, 2), "ECDbMap"),
+                        std::make_pair(BeVersion(3, 2), "ECDbMeta"),
+                        std::make_pair(BeVersion(3, 2), "ECDbSystem")});
                     }
                 else
                     FAIL() << "*ERROR* case not handled | " << testDb.GetDescription();
                 break;
             case ProfileState::Age::UpToDate:
-                if (testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 4))
+                if (testDb.GetECDbProfileVersion() == ProfileVersion(4, 0, 0, 5))
                     {
-                    ASSERT_EQ(SUCCESS, schemaImportStat) << scenario << " | " << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("TestSchema")) << scenario << " | " << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << scenario << " | " << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMap")) << scenario << " | " << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << scenario << " | " << testDb.GetDescription();
-                    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbSystem")) << scenario << " | " << testDb.GetDescription();
+                    testOriginalECXmlVersion({
+                        std::make_pair(BeVersion(3, 1), "TestSchema"),
+                        std::make_pair(BeVersion(3, 2), "ECDbFileInfo"),
+                        std::make_pair(BeVersion(3, 2), "ECDbMap"),
+                        std::make_pair(BeVersion(3, 2), "ECDbMeta"),
+                        std::make_pair(BeVersion(3, 2), "ECDbSystem")});
                     }
                 else
                     FAIL() << "*ERROR* case not handled | " << testDb.GetDescription();

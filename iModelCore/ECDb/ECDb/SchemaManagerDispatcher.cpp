@@ -1526,9 +1526,9 @@ ClassMappingStatus MainSchemaManager::MapClass(SchemaImportContext& ctx, ECClass
     if (SUCCESS != TryGetClassMap(existingClassMap, ctx.GetClassMapLoadContext(), ecClass))
         return ClassMappingStatus::Error;
 
+    ClassMappingInfo mappingInfo(ctx, ecClass);
     if (existingClassMap == nullptr)
         {
-        ClassMappingInfo mappingInfo(ctx, ecClass);
         ClassMappingStatus status = mappingInfo.Initialize();
         if (status == ClassMappingStatus::BaseClassesNotMapped || status == ClassMappingStatus::Error)
             return status;
@@ -1537,6 +1537,9 @@ ClassMappingStatus MainSchemaManager::MapClass(SchemaImportContext& ctx, ECClass
         }
 
     if (SUCCESS != existingClassMap->Update(ctx))
+        return ClassMappingStatus::Error;
+
+    if (ClassMappingStatus::Success != existingClassMap->UpdateDefaultIndexes(ctx, mappingInfo))
         return ClassMappingStatus::Error;
 
     return MapDerivedClasses(ctx, ecClass);

@@ -4,8 +4,15 @@ This document including important changes to syntax or file format.
 
 | Module  | Version   |
 | ------- | --------- |
-| Profile | `4.0.0.4` |
+| Profile | `4.0.0.5` |
 | ECSQL   | `1.2.9.2` |
+
+## `12/08/2023`: Modified unique index in bis:ElementRefersToElements to include new MemberPriority property
+
+* ECDb profile version updated to `4.0.0.4` -> `4.0.0.5`.
+* BisCore domain schema has been upgraded to 1.0.17 which adds MemberPriority property in the class bis:ElementRefersToElement.
+* ECDb profile version has been incremented to support this change and extend the unique index to include this new property.
+* This new version of BisCore can only be imported when the runtime ECDb version is at least 4.0.0.5.
 
 ## `10/27/2023`: Pragma integrity_check(check_nav_class_ids) performance improved
 

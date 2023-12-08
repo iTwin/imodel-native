@@ -128,6 +128,7 @@ struct ClassMap
         BentleyStatus LoadPropertyMaps(ClassMapLoadContext&, DbClassMapLoadContext const&);
         IssueDataSource const& Issues() const;
         BentleyStatus MapSystemColumns();
+        virtual ClassMappingStatus _UpdateDefaultIndexes(ClassMappingContext&) { return ClassMappingStatus::Success; }
 
     public:
         ClassMap(ECDb const& ecdb, TableSpaceSchemaManager const& manager, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrat) : ClassMap(ecdb, manager, Type::Class, ecClass, mapStrat) {}
@@ -173,6 +174,7 @@ struct ClassMap
         BentleyStatus SetOverflowTable(DbTable& overflowTable);
         ClassMapColumnFactory const& GetColumnFactory() const;
         PropertyMapContainer& GetPropertyMapsR() { return m_propertyMaps; }
+        ClassMappingStatus UpdateDefaultIndexes(SchemaImportContext& importCtx, ClassMappingInfo const& info) { ClassMappingContext ctx(importCtx, info);  return _UpdateDefaultIndexes(ctx); }
 
         template<typename TClassMap>
         static std::unique_ptr<TClassMap> Create(ECDb const& ecdb, TableSpaceSchemaManager const& tableSpaceManager, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy)

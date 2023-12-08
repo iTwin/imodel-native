@@ -250,6 +250,7 @@ struct RelationshipClassLinkTableMap final : RelationshipClassMap
 
         static bool GetAllowDuplicateRelationshipsFlag(Nullable<bool> const& allowDuplicateRelationshipFlag) { return allowDuplicateRelationshipFlag.IsNull() ? false : allowDuplicateRelationshipFlag.Value(); }
         void AddDefaultIndexes(SchemaImportContext& ctx);
+        ClassMappingStatus _UpdateDefaultIndexes(ClassMappingContext&) override;
     public:
         RelationshipClassLinkTableMap(ECDb const&, TableSpaceSchemaManager const&, ECN::ECClassCR, MapStrategyExtendedInfo const&);
         ~RelationshipClassLinkTableMap() {}
