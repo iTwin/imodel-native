@@ -924,7 +924,7 @@ TEST_F(ECDbTestFixture, NullOrEmptyStringUnitLabelsInCompositeFormats)
         }
     }
 
-TEST_F(ECDbTestFixture, ElementRefersToElementExtendedUniqueIndex)
+TEST_F(ECDbTestFixture, ElementRefersToElementsExtendedUniqueIndex)
     {
     const auto bisCoreCommon = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="BisCore" alias="bis" version="01.00.%d" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -998,7 +998,7 @@ TEST_F(ECDbTestFixture, ElementRefersToElementExtendedUniqueIndex)
 
     auto importSchemasTestAndReset = [this](const SchemaItem& schemaForSetup, const std::vector<SchemaItem>& schemasToImport, const bool expectedToFailInsert)
         {
-        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ElementRefersToElementExtendedUniqueIndex.ecdb", schemaForSetup));
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ElementRefersToElementsExtendedUniqueIndex.ecdb", schemaForSetup));
         ASSERT_EQ(BentleyStatus::SUCCESS, GetHelper().ImportSchemas(schemasToImport));
 
         ECSqlStatement statement;

@@ -1020,7 +1020,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::_UpdateDefaultIndexes(ClassMap
                     return ClassMappingStatus::Error;
                 }
 
-            if (BE_SQLITE_OK != ctx.GetImportCtx().GetECDb().ExecuteDdl(SqlPrintfString("DROP INDEX IF EXISTS [uix_bis_ElementRefersToElements_sourcetargetclassid]")))
+            if (BE_SQLITE_OK != ctx.GetImportCtx().GetECDb().ExecuteDdl("DROP INDEX IF EXISTS [uix_bis_ElementRefersToElements_sourcetargetclassid]"))
                 return ClassMappingStatus::Error;
             }
 
