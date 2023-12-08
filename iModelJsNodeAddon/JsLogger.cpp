@@ -143,10 +143,6 @@ void JsLogger::LogMessage(Utf8CP category, SEVERITY sev, Utf8CP msg) {
 
 bool JsLogger::IsSeverityEnabled(Utf8CP category, SEVERITY sev) {
     BeMutexHolder lock(m_deferredLogMutex);
-    if (canUseJavaScript()) {
-        // Process the deferred log messages every chance we get.
-        processDeferred();
-    }
     return isEnabled(category, sev);
 }
 
