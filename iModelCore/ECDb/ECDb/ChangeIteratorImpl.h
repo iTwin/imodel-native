@@ -62,7 +62,7 @@ struct ChangeIterator::TableMap final
         TableMap(ECDbCR ecdb, Utf8StringCR tableName) : m_ecdb(ecdb) { Initialize(tableName); }
         ~TableMap() {}
 
-        //! Returns true if the table is mapped to a ECClass. false otherwise. 
+        //! Returns true if the table is mapped to a ECClass. false otherwise.
         bool IsMapped() const { return m_isMapped; }
 
         DbTable const* GetDbTable() const { return m_dbTable; }
@@ -125,7 +125,7 @@ struct ChangeIterator::TableClassMap final
         ColumnMap m_relationshipClassIdColumnMap;
         ColumnMap m_relatedInstanceIdColumnMap;
         mutable bmap<ECN::ECRelationshipClassCP, DbColumn const*> m_foreignEndClassIdColumnMap;
-
+      
         DbColumn const* GetForeignEndClassIdColumn(ECDbCR ecdb, ECN::ECRelationshipClassCR relationshipClass) const;
         };
 

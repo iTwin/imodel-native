@@ -545,11 +545,36 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(Context& ctx
             "Failed to extract change summary for a navigation property. ForeignKey Relationship %s does not refer to relationship class.", rowEntry.ToString().c_str());
         // We decided to treat this as not an error, because ECDb allows to insert this into the DB without validation. We do not want this data error to completely
         // stop change summary generation from working.
-        return SUCCESS;
+
+        if (!endTableRelMap.m_relationshipClassId.IsValid())
+            return SUCCESS;
+
+        //! default to root case
+        relClassRaw = ctx.GetPrimaryECDb().Schemas().GetClass(endTableRelMap.m_relationshipClassId);
+        if (relClassRaw == nullptr)
+            return SUCCESS;
         }
 
     ECRelationshipClassCR relClass = *relClassRaw->GetRelationshipClassCP();
-    RelationshipClassEndTableMap const& relClassMap = ctx.GetPrimaryFileSchemaManager().GetClassMap(relClass)->GetAs<RelationshipClassEndTableMap>();
+    auto classMap = ctx.GetPrimaryFileSchemaManager().GetClassMap(relClass);
+
+    if (classMap->GetType() != ClassMap::Type::RelationshipEndTable) {
+        //rel class id wasn't set along with nav id
+        ctx.Issues().ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0679,
+            "Failed to extract change summary for a navigation property. ForeignKey Relationship %s does not refer to a endtable relationship class.", rowEntry.ToString().c_str());
+
+        if (!endTableRelMap.m_relationshipClassId.IsValid())
+            return SUCCESS;
+
+        relClassRaw = ctx.GetPrimaryECDb().Schemas().GetClass(endTableRelMap.m_relationshipClassId);
+        if (relClassRaw == nullptr)
+            return SUCCESS;
+
+        classMap = ctx.GetPrimaryFileSchemaManager().GetClassMap(relClass);
+        if (classMap == nullptr || classMap->GetType() != ClassMap::Type::RelationshipEndTable)
+            return SUCCESS;
+    }
+    RelationshipClassEndTableMap const& relClassMap = classMap->GetAs<RelationshipClassEndTableMap>();
 
     ECInstanceId relInstanceId = rowEntry.GetPrimaryInstanceId();
 

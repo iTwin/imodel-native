@@ -152,8 +152,8 @@ void ChangeIterator::RowEntry::InitPrimaryInstance()
         if (BE_SQLITE_DONE == stmt->Step())
             {
             // Note: The instance doesn't exist anymore, and has been deleted in future change to the Db.
-            // Processing updates requires that the instance is still available in the Db to extract sufficient EC information, 
-            // especially since a SqlChangeSet records only the updated columns but not the entire row. 
+            // Processing updates requires that the instance is still available in the Db to extract sufficient EC information,
+            // especially since a SqlChangeSet records only the updated columns but not the entire row.
             BeAssert(false && "SqlChangeSet does not span all modifications made to the Db");
             return;
             }
@@ -198,7 +198,7 @@ ECN::ECClassId ChangeIterator::RowEntry::GetClassIdFromChangeOrTable(Utf8CP clas
         if (newId.IsValid()) return newId;
         if (oldId.IsValid()) return oldId;
         }
-    
+
     // The class id entry hasn't been updated at all - get it from the database itself
     ECClassId classId;
     if (SUCCESS != DbUtilities::QueryRowClassId(classId, m_ecdb, m_tableMap->GetTableName(), classIdColumnName, m_tableMap->GetIdColumn().GetName(), instanceId))
@@ -538,9 +538,8 @@ void ChangeIterator::TableClassMap::InitEndTableRelationshipMaps()
 
         EndTableRelationshipMap* endTableRelMap = new EndTableRelationshipMap();
         endTableRelMap->m_relatedInstanceIdColumnMap = ColumnMap(idColumn.GetName(), m_tableMap.GetColumnIndexByName(idColumn.GetName()));
-        if (relClassIdColumn.IsVirtual())
-            endTableRelMap->m_relationshipClassId = relClassIdPropertyMap.GetDefaultClassId();
-        else
+        endTableRelMap->m_relationshipClassId = relClassIdPropertyMap.GetDefaultClassId();
+        if (!relClassIdColumn.IsVirtual())
             endTableRelMap->m_relationshipClassIdColumnMap = ColumnMap(relClassIdColumn.GetName(), m_tableMap.GetColumnIndexByName(relClassIdColumn.GetName()));
 
         m_endTableRelMaps.push_back(endTableRelMap);
@@ -572,7 +571,7 @@ void ChangeIterator::TableClassMap::InitPropertyColumnMaps()
 
         DbColumn const& column = singleColumnMap.GetColumn();
         if (column.GetTable() != *m_tableMap.GetDbTable() || column.IsVirtual())
-            continue; // Skip properties that don't belong to, or not written to the current table. 
+            continue; // Skip properties that don't belong to, or not written to the current table.
 
         int columnIndex = m_tableMap.GetColumnIndexByName(column.GetName());
         m_columnMapByAccessString[singleColumnMap.GetAccessString()] = new ColumnMap(column.GetName(), columnIndex);
@@ -698,7 +697,7 @@ ECClassId ChangeIterator::TableMap::QueryClassId() const
 
     const ECClassId ecClassId = stmt->GetValueId<ECClassId>(0);
     BeAssert(ecClassId.IsValid());
-    BeAssert(BE_SQLITE_DONE == stmt->Step()); // There should be only one primary class mapped to a table (if there is no ecClassId column)    
+    BeAssert(BE_SQLITE_DONE == stmt->Step()); // There should be only one primary class mapped to a table (if there is no ecClassId column)
     return ecClassId;
     }
 
