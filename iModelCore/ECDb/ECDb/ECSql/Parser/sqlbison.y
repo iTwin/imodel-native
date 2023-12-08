@@ -75,6 +75,7 @@ using namespace connectivity;
 
 %define api.pure full
 %parse-param { connectivity::OSQLParser* context }
+
 %union {
     connectivity::OSQLParseNode * pParseNode;
 }
@@ -227,8 +228,9 @@ using namespace connectivity;
 %type <pParseNode> rtreematch_predicate rtreematch_predicate_part_2
 %type <pParseNode> opt_ecsqloptions_clause ecsqloptions_clause ecsqloptions_list ecsqloption ecsqloptionvalue
 %type <pParseNode> cte opt_cte_recursive cte_column_list cte_table_name cte_block_list
-%type <pParseNode> pragma opt_pragma_set opt_pragma_set_val opt_pragma_func pragma_value pragma_path opt_pragma_for
+%type <pParseNode> pragma opt_pragma_set opt_pragma_set_val opt_pragma_func pragma_value pragma_path opt_pragma_for name_or_keyword
 %%
+
 
 /* Parse Tree an OSQLParser zurueckliefern
  * (der Zugriff ueber yyval nach Aufruf des Parsers scheitert,
@@ -2478,7 +2480,7 @@ column_ref:
 /* the various things you can name */
 /* TODO: change to only allow identifiers, i.e. column must not start with number etc. */
 column:
-        SQL_TOKEN_NAME
+        name_or_keyword
     ;
 
 case_expression:
@@ -2593,7 +2595,7 @@ case_operand:
     ;
 
 parameter:
-        ':' SQL_TOKEN_NAME
+        ':' name_or_keyword
         {
             $$ = SQL_NEW_RULE;
             $$->append($1 = CREATE_NODE(":", SQL_NODE_PUNCTUATION));
@@ -2667,6 +2669,134 @@ ecsqloptionvalue:
   | SQL_TOKEN_NAME
   | truth_value
   ;
+
+name_or_keyword:
+      SQL_TOKEN_NAME
+    | SQL_TOKEN_ALL
+    | SQL_TOKEN_AND
+    /* | SQL_TOKEN_ANY */
+    | SQL_TOKEN_AS
+    | SQL_TOKEN_ASC
+    /* | SQL_TOKEN_AVG */
+    | SQL_TOKEN_BACKWARD
+    | SQL_TOKEN_BETWEEN
+    | SQL_TOKEN_BINARY
+    | SQL_TOKEN_BLOB
+    | SQL_TOKEN_BOOLEAN
+    | SQL_TOKEN_BY
+    | SQL_TOKEN_CASE
+    | SQL_TOKEN_CAST
+    | SQL_TOKEN_COLLATE
+    /* | SQL_TOKEN_COUNT */
+    | SQL_TOKEN_CROSS
+    | SQL_TOKEN_CUME_DIST
+    | SQL_TOKEN_CURRENT
+    | SQL_TOKEN_CURRENT_DATE
+    | SQL_TOKEN_CURRENT_TIME
+    | SQL_TOKEN_CURRENT_TIMESTAMP
+    | SQL_TOKEN_DATE
+    | SQL_TOKEN_DELETE
+    | SQL_TOKEN_DENSE_RANK
+    | SQL_TOKEN_DESC
+    | SQL_TOKEN_DISTINCT
+    | SQL_TOKEN_DOUBLE
+    | SQL_TOKEN_ECSQLOPTIONS
+    | SQL_TOKEN_ELSE
+    | SQL_TOKEN_END
+    | SQL_TOKEN_ESCAPE
+    /* | SQL_TOKEN_EVERY */
+    /* | SQL_TOKEN_EXCEPT */
+    | SQL_TOKEN_EXCLUDE
+    | SQL_TOKEN_EXISTS
+    | SQL_TOKEN_FALSE
+    | SQL_TOKEN_FLOAT
+    | SQL_TOKEN_FIRST
+    | SQL_TOKEN_LAST
+    | SQL_TOKEN_NULLS
+    /* | SQL_TOKEN_FILTER */
+    | SQL_TOKEN_FIRST_VALUE
+    | SQL_TOKEN_FOLLOWING
+    | SQL_TOKEN_FOR
+    | SQL_TOKEN_FORWARD
+    /* | SQL_TOKEN_FROM */
+    | SQL_TOKEN_FULL
+    | SQL_TOKEN_GROUP
+    /* | SQL_TOKEN_GROUP_CONCAT */
+    | SQL_TOKEN_GROUPS
+    | SQL_TOKEN_HAVING
+    | SQL_TOKEN_IIF
+    | SQL_TOKEN_IN
+    | SQL_TOKEN_INNER
+    | SQL_TOKEN_INSERT
+    | SQL_TOKEN_INTEGER
+    | SQL_TOKEN_INT64
+    /* | SQL_TOKEN_INTERSECT */
+    | SQL_TOKEN_INTO
+    | SQL_TOKEN_IS
+    | SQL_TOKEN_JOIN
+    | SQL_TOKEN_LAG
+    | SQL_TOKEN_LAST_VALUE
+    | SQL_TOKEN_LEAD
+    | SQL_TOKEN_LEFT
+    | SQL_TOKEN_LIKE
+    | SQL_TOKEN_LIMIT
+    | SQL_TOKEN_LONG
+    | SQL_TOKEN_MATCH
+    /* | SQL_TOKEN_MAX */
+    /* | SQL_TOKEN_MIN */
+    | SQL_TOKEN_NATURAL
+    | SQL_TOKEN_NO
+    | SQL_TOKEN_NOCASE
+    | SQL_TOKEN_NOT
+    | SQL_TOKEN_NTH_VALUE
+    | SQL_TOKEN_NTILE
+    | SQL_TOKEN_NULL
+    | SQL_TOKEN_OFFSET
+    | SQL_TOKEN_ON
+    | SQL_TOKEN_ONLY
+    | SQL_TOKEN_OR
+    | SQL_TOKEN_ORDER
+    | SQL_TOKEN_OTHERS
+    | SQL_TOKEN_OUTER
+    /* | SQL_TOKEN_OVER */
+    | SQL_TOKEN_PARTITION
+    | SQL_TOKEN_PERCENT_RANK
+    | SQL_TOKEN_PRAGMA
+    | SQL_TOKEN_PRECEDING
+    | SQL_TOKEN_RANGE
+    | SQL_TOKEN_RANK
+    | SQL_TOKEN_REAL
+    | SQL_TOKEN_RECURSIVE
+    | SQL_TOKEN_RIGHT
+    | SQL_TOKEN_ROW
+    | SQL_TOKEN_ROWS
+    | SQL_TOKEN_ROW_NUMBER
+    | SQL_TOKEN_RTRIM
+    | SQL_TOKEN_SELECT
+    | SQL_TOKEN_SET
+    /* | SQL_TOKEN_SOME */
+    /* | SQL_TOKEN_STRING */
+    /* | SQL_TOKEN_SUM */
+    | SQL_TOKEN_THEN
+    | SQL_TOKEN_TIES
+    | SQL_TOKEN_TIME
+    | SQL_TOKEN_TIMESTAMP
+    /* | SQL_TOKEN_TOTAL */
+    | SQL_TOKEN_TRUE
+    | SQL_TOKEN_UNBOUNDED
+    /* | SQL_TOKEN_UNION */
+    | SQL_TOKEN_UNIQUE
+    | SQL_TOKEN_UNKNOWN
+    | SQL_TOKEN_UPDATE
+    | SQL_TOKEN_USING
+    | SQL_TOKEN_VALUE
+    | SQL_TOKEN_VALUES
+    | SQL_TOKEN_VARCHAR
+    | SQL_TOKEN_WHEN
+    | SQL_TOKEN_WHERE
+    | SQL_TOKEN_WITH
+    | SQL_TOKEN_WINDOW
+    ;
 %%
 
 
