@@ -2379,7 +2379,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavProp_MandatoryRelClassIdIs
     //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
     ECInstanceKey changeSummaryKey;
     BeTest::SetFailOnAssert(false);
-    ASSERT_EQ(ERROR, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset))) << "Expected to fail because RelClassId wasn't inserted along with Nav id";
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset))) << "This should not fail any more. When RelECClassId is not provided we revert to base rel for that nav property";
     BeTest::SetFailOnAssert(true);
     tracker.EndTracking();
     }
