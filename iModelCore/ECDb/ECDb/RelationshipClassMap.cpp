@@ -1006,7 +1006,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
 ClassMappingStatus RelationshipClassLinkTableMap::_UpdateDefaultIndexes(ClassMappingContext& ctx)
     {
     // Replace the index created in BisCore:ElementRefersToElements
-    if (ctx.GetImportCtx().GetECDb().GetECDbProfileVersion() >= ProfileVersion(4, 0, 0, 5) && Utf8String(ctx.GetClassMappingInfo().GetClass().GetFullName()).Equals("BisCore:ElementRefersToElements") && GetPrimaryTable().FindColumn("MemberPriority") != nullptr)
+    if (Utf8String(ctx.GetClassMappingInfo().GetClass().GetFullName()).Equals("BisCore:ElementRefersToElements") && GetPrimaryTable().FindColumn("MemberPriority") != nullptr)
         {
         if (SUCCESS != ctx.GetImportCtx().GetSchemaManager().GetDbSchema().LoadIndexDefs())
             return ClassMappingStatus::Error;
@@ -1289,7 +1289,7 @@ void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportCo
                 GenerateIndexColumnList(columns, sourceECInstanceIdColumn, sourceECClassIdColumn, targetECInstanceIdColumn, targetECClassIdColumn, classId);
                 
                 // ECDb Profile version 4.0.0.5 onwards, update the unique index `uix_bis_ElementRefersToElements_sourcetargetclassid` to `uix_bis_ElementRefersToElements_sourcetargetclassid_memberpriority`
-                if (name.Equals("uix_bis_ElementRefersToElements_sourcetargetclassid") && schemaImportContext.GetECDb().GetECDbProfileVersion() >= ProfileVersion(4, 0, 0, 5))
+                if (name.Equals("uix_bis_ElementRefersToElements_sourcetargetclassid"))
                     {
                     if (auto memberPriorityColumn = GetPrimaryTable().FindColumn("MemberPriority"); memberPriorityColumn)
                         {
