@@ -468,13 +468,16 @@ void PropertyNameExp::SetPropertyRef(DerivedPropertyExp const& derivedPropertyEx
 //+---------------+---------------+---------------+---------------+---------------+---------
 PropertyMap const* PropertyNameExp::GetPropertyMap() const
     {
-    BeAssert(GetClassRefExp() != nullptr);
+    auto classRefExp = GetClassRefExp();
+    if (classRefExp == nullptr)
+        return nullptr;
+
     PropertyMap const* propertyMap = nullptr;
-    switch (GetClassRefExp()->GetType())
+    switch (classRefExp->GetType())
         {
         case Exp::Type::ClassName:
             {
-            ClassNameExp const& classNameExp = GetClassRefExp()->GetAs<ClassNameExp>();
+            ClassNameExp const& classNameExp = classRefExp->GetAs<ClassNameExp>();
             propertyMap = classNameExp.GetInfo().GetMap().GetPropertyMaps().Find(GetPropertyPath().ToString(false).c_str());
             break;
             }
