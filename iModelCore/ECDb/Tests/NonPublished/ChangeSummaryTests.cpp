@@ -376,7 +376,7 @@ TEST_F(ChangeSummaryTestFixture, DoNotCrash_if_MandatoryRelECClassIdIsSetToLinkT
         tracker.EnableTracking(true);
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Element(Parent) VALUES(?)"));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, BeInt64Id(1), classElementRefersToElements->GetId()));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, BeInt64Id(1ull), classElementRefersToElements->GetId()));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         tracker.EnableTracking(false);
         ASSERT_TRUE(tracker.HasChanges());
@@ -448,7 +448,7 @@ TEST_F(ChangeSummaryTestFixture, DoNotCrash_if_MandatoryRelECClassIdIsSetToNotAn
         tracker.EnableTracking(true);
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Element(Parent) VALUES(?)"));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, BeInt64Id(1), ECClassId(0xffffff)));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, BeInt64Id(1ull), ECClassId(0xffffffull)));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         tracker.EnableTracking(false);
         ASSERT_TRUE(tracker.HasChanges());
@@ -521,7 +521,7 @@ TEST_F(ChangeSummaryTestFixture, DoNotCrash_if_MandatoryRelECClassIdIsSetToAEnti
         tracker.EnableTracking(true);
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Element(Parent) VALUES(?)"));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, BeInt64Id(1), classElement->GetId()));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, BeInt64Id(1ull), classElement->GetId()));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         tracker.EnableTracking(false);
         ASSERT_TRUE(tracker.HasChanges());
