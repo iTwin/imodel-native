@@ -538,8 +538,10 @@ void ChangeIterator::TableClassMap::InitEndTableRelationshipMaps()
 
         EndTableRelationshipMap* endTableRelMap = new EndTableRelationshipMap();
         endTableRelMap->m_relatedInstanceIdColumnMap = ColumnMap(idColumn.GetName(), m_tableMap.GetColumnIndexByName(idColumn.GetName()));
-        endTableRelMap->m_relationshipClassId = relClassIdPropertyMap.GetDefaultClassId();
-        if (!relClassIdColumn.IsVirtual())
+        endTableRelMap->m_fallbackClassId = relClassIdPropertyMap.GetDefaultClassId();
+        if (relClassIdColumn.IsVirtual())
+            endTableRelMap->m_relationshipClassId = relClassIdPropertyMap.GetDefaultClassId();
+        else
             endTableRelMap->m_relationshipClassIdColumnMap = ColumnMap(relClassIdColumn.GetName(), m_tableMap.GetColumnIndexByName(relClassIdColumn.GetName()));
 
         m_endTableRelMaps.push_back(endTableRelMap);

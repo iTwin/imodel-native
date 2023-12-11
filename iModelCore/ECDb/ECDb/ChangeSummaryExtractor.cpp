@@ -546,7 +546,7 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(Context& ctx
         // We decided to treat this as not an error, because ECDb allows to insert this into the DB without validation. We do not want this data error to completely
         // stop change summary generation from working.
 
-        if (!endTableRelMap.m_relationshipClassId.IsValid())
+        if (!endTableRelMap.m_fallbackClassId.IsValid())
             return SUCCESS;
 
         //! default to root case
@@ -563,10 +563,10 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(Context& ctx
         ctx.Issues().ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0679,
             "Failed to extract change summary for a navigation property. ForeignKey Relationship %s does not refer to a endtable relationship class.", rowEntry.ToString().c_str());
 
-        if (!endTableRelMap.m_relationshipClassId.IsValid())
+        if (!endTableRelMap.m_fallbackClassId.IsValid())
             return SUCCESS;
 
-        relClassRaw = ctx.GetPrimaryECDb().Schemas().GetClass(endTableRelMap.m_relationshipClassId);
+        relClassRaw = ctx.GetPrimaryECDb().Schemas().GetClass(endTableRelMap.m_fallbackClassId);
         if (relClassRaw == nullptr)
             return SUCCESS;
 

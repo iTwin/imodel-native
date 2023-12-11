@@ -122,10 +122,11 @@ struct ChangeIterator::TableClassMap final
     struct EndTableRelationshipMap final
         {
         ECN::ECClassId m_relationshipClassId;
+        ECN::ECClassId m_fallbackClassId;
         ColumnMap m_relationshipClassIdColumnMap;
         ColumnMap m_relatedInstanceIdColumnMap;
         mutable bmap<ECN::ECRelationshipClassCP, DbColumn const*> m_foreignEndClassIdColumnMap;
-      
+
         DbColumn const* GetForeignEndClassIdColumn(ECDbCR ecdb, ECN::ECRelationshipClassCR relationshipClass) const;
         };
 

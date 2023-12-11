@@ -318,7 +318,7 @@ struct ChangeSummaryTestFixtureV1 : public ECDbTestFixture
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, ExtractingInvalidRelECClassIdWhichIsAValueLinkTableRelationshipId) {
+TEST_F(ChangeSummaryTestFixture, DoNotCrash_if_MandatoryRelECClassIdIsSetToLinkTableRelationship) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("crash.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -391,7 +391,7 @@ TEST_F(ChangeSummaryTestFixture, ExtractingInvalidRelECClassIdWhichIsAValueLinkT
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, ExtractingInvalidRelECClassIdWhichIsNotAECClass) {
+TEST_F(ChangeSummaryTestFixture, DoNotCrash_if_MandatoryRelECClassIdIsSetToNotAnyKnowClass) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("crash.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -463,7 +463,7 @@ TEST_F(ChangeSummaryTestFixture, ExtractingInvalidRelECClassIdWhichIsNotAECClass
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, ExtractingInvalidRelECClassIdWhichIsAEntityClassId) {
+TEST_F(ChangeSummaryTestFixture, DoNotCrash_if_MandatoryRelECClassIdIsSetToAEntityClass) {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("crash.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -2379,7 +2379,7 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavProp_MandatoryRelClassIdIs
     //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
     ECInstanceKey changeSummaryKey;
     BeTest::SetFailOnAssert(false);
-    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset))) << "This should not fail any more. When RelECClassId is not provided we revert to base rel for that nav property";
+    ASSERT_EQ(ERROR, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset))) << "Expected to fail because RelClassId wasn't inserted along with Nav id";
     BeTest::SetFailOnAssert(true);
     tracker.EndTracking();
     }
