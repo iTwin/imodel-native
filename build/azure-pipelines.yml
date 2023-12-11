@@ -21,7 +21,7 @@ parameters:
 - name: defaultCoreBranch
   displayName: Default itwinjs-core Branch Used for PR Validation
   type: string
-  default: 'release/4.2.x' # Change to appropriate branch name when creating new release branch
+  default: 'release/4.3.x' # Change to appropriate branch name when creating new release branch
 
 
 resources:
