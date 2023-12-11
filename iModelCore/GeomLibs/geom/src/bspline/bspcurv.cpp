@@ -973,7 +973,9 @@ MSBsplineCurve  *inCurve
     */
     MSBsplineCurve  curve;
     DPoint3d *P;
-    double *U, *w, a, b, absMax = 1.0e-10, max = 0.0;
+    double *U, *w, a, b, max = 0.0;
+    double xyzRelTol = 1.0e-8;  // same as MSBsplineCurve::Resolution(). P&T use 1.0e-10, but this is too tight for metric poles (x~50m)
+    double wAbsTol = 1.0e-10;   // unchanged from P&T
     bool    r;
     int i, j, k, n, p, status;
 
@@ -1058,12 +1060,12 @@ MSBsplineCurve  *inCurve
         if (max < P[i].z)
             max = P[i].z;
         }
-    max *= absMax;
+    max *= xyzRelTol;
 
     /* leave "open" if resulting formulation doesn't wrap around, i.e., have
     homogeneous p-1 continuity */
     for (i = 0; i < p; i++)
-        if (P[i].Distance (P[n-p+1+i]) > max || (r && (w[i]-w[n-p+1+i] > absMax)))
+        if (P[i].Distance (P[n-p+1+i]) > max || (r && (w[i]-w[n-p+1+i] > wAbsTol)))
             {
             bspcurv_freeCurve (&curve);
             return ERROR;

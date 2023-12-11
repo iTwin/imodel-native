@@ -5,8 +5,11 @@
 #pragma once
 
 #include <Units/Units.h>
+#include "Bentley/Logging.h"
 
 BEGIN_BENTLEY_UNITS_NAMESPACE
+
+#define UNITSLOG (NativeLogging::CategoryLogger("UnitsNative"))
 
 //=======================================================================================
 //! A central place to store registered units with the system.  Users interact
@@ -30,25 +33,25 @@ private:
         {
         if (Utf8String::IsNullOrEmpty(phenomenaName))
             {
-            NativeLogging::CategoryLogger("UnitsNative").error("Failed to create Phenomenon because name is null");
+            UNITSLOG.error("Failed to create Phenomenon because name is null");
             return nullptr;
             }
 
         if (Utf8String::IsNullOrEmpty(definition))
             {
-            NativeLogging::CategoryLogger("UnitsNative").error("Failed to create Phenomenon because definition is null");
+            UNITSLOG.error("Failed to create Phenomenon because definition is null");
             return nullptr;
             }
 
         if (NamedItemExists(phenomenaName))
             {
-            NativeLogging::CategoryLogger("UnitsNative").errorv("Cannot create Phenomenon '%s' because name is already in use", phenomenaName);
+            UNITSLOG.errorv("Cannot create Phenomenon '%s' because name is already in use", phenomenaName);
             return nullptr;
             }
 
         if (Utf8String::IsNullOrEmpty(definition))
             {
-            NativeLogging::CategoryLogger("UnitsNative").errorv("Cannot create Phenomenon '%s' because the definition is empty.", phenomenaName);
+            UNITSLOG.errorv("Cannot create Phenomenon '%s' because the definition is empty.", phenomenaName);
             return nullptr;
             }
 
@@ -66,39 +69,39 @@ private:
         {
         if (Utf8String::IsNullOrEmpty(unitName))
             {
-            NativeLogging::CategoryLogger("UnitsNative").error("Cannot create base unit because the input name is null");
+            UNITSLOG.error("Cannot create base unit because the input name is null");
             return nullptr;
             }
 
         if (NamedItemExists(unitName))
             {
-            NativeLogging::CategoryLogger("UnitsNative").errorv("Could not create unit '%s' because that name is already in use", unitName);
+            UNITSLOG.errorv("Could not create unit '%s' because that name is already in use", unitName);
             return nullptr;
             }
 
         PhenomenonP phenomenon = _LookupPhenomenonP(phenomName);
         if (nullptr == phenomenon)
             {
-            NativeLogging::CategoryLogger("UnitsNative").errorv("Could not find phenomenon '%s'", phenomName);
+            UNITSLOG.errorv("Could not find phenomenon '%s'", phenomName);
             return nullptr;
             }
 
         UnitSystemCP system = LookupUnitSystem(systemName);
         if (nullptr == system)
             {
-            NativeLogging::CategoryLogger("UnitsNative").errorv("Could not find system '%s'", systemName);
+            UNITSLOG.errorv("Could not find system '%s'", systemName);
             return nullptr;
             }
 
         if (Utf8String::IsNullOrEmpty(definition))
             {
-            NativeLogging::CategoryLogger("UnitsNative").errorv("Cannot create Unit '%s' because the definition is empty.", unitName);
+            UNITSLOG.errorv("Cannot create Unit '%s' because the definition is empty.", unitName);
             return nullptr;
             }
 
         if (0.0 == numerator || 0.0 == denominator)
             {
-             NativeLogging::CategoryLogger("UnitsNative").errorv("Failed to create unit %s because numerator or denominator is 0.  Factor: %.17g / %.17g  Offset: %d", unitName, numerator, denominator, offset);
+             UNITSLOG.errorv("Failed to create unit %s because numerator or denominator is 0.  Factor: %.17g / %.17g  Offset: %d", unitName, numerator, denominator, offset);
             return nullptr;
             }
         auto unit = new Unit(*system, *phenomenon, unitName, definition, numerator, denominator, offset, isConstant);
@@ -115,50 +118,50 @@ private:
         {
         if (Utf8String::IsNullOrEmpty(unitName))
             {
-            NativeLogging::CategoryLogger("UnitsNative").error("Cannot create unit because the input name is null");
+            UNITSLOG.error("Cannot create unit because the input name is null");
             return nullptr;
             }
 
         if (Utf8String::IsNullOrEmpty(parentUnitName))
             {
-            NativeLogging::CategoryLogger("UnitsNative").errorv("Cannot create unit %s because it's parent name is null", unitName);
+            UNITSLOG.errorv("Cannot create unit %s because it's parent name is null", unitName);
             return nullptr;
             }
 
         if (Utf8String::IsNullOrEmpty(unitSystemName))
             {
-            NativeLogging::CategoryLogger("UnitsNative").errorv("Cannot create unit %s because it's unit system name is null", unitName);
+            UNITSLOG.errorv("Cannot create unit %s because it's unit system name is null", unitName);
             return nullptr;
             }
 
         UnitCP parentUnit = LookupUnit(parentUnitName);
         if (nullptr == parentUnit)
             {
-            NativeLogging::CategoryLogger("UnitsNative").errorv("Cannot create unit %s because it's parent unit %s cannot be found", unitName, parentUnitName);
+            UNITSLOG.errorv("Cannot create unit %s because it's parent unit %s cannot be found", unitName, parentUnitName);
             return nullptr;
             }
 
         UnitSystemCP unitSystem = LookupUnitSystem(unitSystemName);
         if (nullptr == unitSystem)
             {
-            NativeLogging::CategoryLogger("UnitsNative").errorv("Cannot create unit %s because it's unit system %s cannot be found", unitName, unitSystemName);
+            UNITSLOG.errorv("Cannot create unit %s because it's unit system %s cannot be found", unitName, unitSystemName);
             return nullptr;
             }
 
         if (NamedItemExists(unitName))
             {
-            NativeLogging::CategoryLogger("UnitsNative").errorv("Could not create unit '%s' because that name is already in use", unitName);
+            UNITSLOG.errorv("Could not create unit '%s' because that name is already in use", unitName);
             return nullptr;
             }
 
         if (parentUnit->HasOffset())
             {
-             NativeLogging::CategoryLogger("UnitsNative").errorv("Cannot create inverted unit %s with parent %s because parent has an offset.", unitName, parentUnit->GetName().c_str());
+             UNITSLOG.errorv("Cannot create inverted unit %s with parent %s because parent has an offset.", unitName, parentUnit->GetName().c_str());
             return nullptr;
             }
         if (parentUnit->IsInvertedUnit())
             {
-             NativeLogging::CategoryLogger("UnitsNative").errorv("Cannot create inverted unit %s with parent %s because parent is an inverted unit", unitName, parentUnit->GetName().c_str());
+             UNITSLOG.errorv("Cannot create inverted unit %s with parent %s because parent is an inverted unit", unitName, parentUnit->GetName().c_str());
             return nullptr;
             }
 
@@ -178,12 +181,12 @@ private:
         {
         if (Utf8String::IsNullOrEmpty(name))
             {
-            NativeLogging::CategoryLogger("UnitsNative").error("Cannot create UnitSystem because name is null");
+            UNITSLOG.error("Cannot create UnitSystem because name is null");
             return nullptr;
             }
         if (NamedItemExists(name))
             {
-            NativeLogging::CategoryLogger("UnitsNative").errorv("Cannot create UnitSystem '%s' because that name is already in use.", name);
+            UNITSLOG.errorv("Cannot create UnitSystem '%s' because that name is already in use.", name);
             return nullptr;
             }
 

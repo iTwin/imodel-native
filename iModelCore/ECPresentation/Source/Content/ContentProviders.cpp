@@ -969,14 +969,18 @@ QuerySet SpecificationContentProvider::_GetCountQuerySet() const
     {
     auto scope = Diagnostics::Scope::Create("Create content set size queries");
 
-    ContentDescriptorPtr countDescriptor = ContentDescriptor::Create(*GetContentDescriptor());
-    if (countDescriptor->GetFieldsFilterExpression().empty())
+    ContentDescriptorPtr countDescriptor;
+    if (GetContentDescriptor()->GetFieldsFilterExpression().empty())
         {
         // note: can't add `KeysOnly` if there's a filter expression - we need to select properties to filter by them
 #ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
-        if (!countDescriptor->OnlyDistinctValues())
+        if (!GetContentDescriptor()->OnlyDistinctValues())
 #endif
-            countDescriptor->AddContentFlag(ContentFlags::KeysOnly);
+            countDescriptor = ContentDescriptor::Create(*GetContentDescriptor(), (int)ContentFlags::KeysOnly);
+        }
+    if (countDescriptor.IsNull()) 
+        {
+        countDescriptor = ContentDescriptor::Create(*GetContentDescriptor());
         }
 
     QueryBuilder builder(GetContext(), *countDescriptor, false, true);

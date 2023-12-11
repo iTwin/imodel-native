@@ -92,13 +92,23 @@ double              tolerance
 );
 
 //--------------------------------------------------------------------------------------
-// @bsimethod
+// @deprecated in 4.x. Use the overload with const input surface.
 //--------------------------------------------------------------------------------------
 Public GEOMDLLIMPEXP void     bspsurf_isPhysicallyClosed
 (
 bool                *uClosed,
 bool                *vClosed,
 MSBsplineSurface    *surf
+);
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//--------------------------------------------------------------------------------------
+Public GEOMDLLIMPEXP void     bspsurf_isPhysicallyClosed
+(
+MSBsplineSurfaceCR  surf,
+bool&               uClosed,
+bool&               vClosed
 );
 
 //--------------------------------------------------------------------------------------

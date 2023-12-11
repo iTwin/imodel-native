@@ -321,7 +321,7 @@ struct SchemaManager::Dispatcher final
         TableSpaceSchemaManager const* GetManager(Utf8CP tableSpaceName) const;
 
     public:
-        Dispatcher(ECDbCR ecdb, BeMutex& mutex) : m_ecdb(ecdb), m_mutex(mutex) { InitMain(); }
+        Dispatcher(ECDbCR ecdb, BeMutex& mutex) : m_ecdb(ecdb), m_mutex(mutex), m_unsupportedClassesLoaded(false), m_unsupportedClassIdCache() { InitMain(); }
         ~Dispatcher() {}
 
         MainSchemaManager const& Main() const { BeAssert(m_main != nullptr); return *m_main; }
