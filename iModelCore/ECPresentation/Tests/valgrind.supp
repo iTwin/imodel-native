@@ -27,3 +27,11 @@
    fun:_ZN7BeFolly10ThreadPool10GetCpuPoolEv
    ...
 }
+
+{
+   <Auto Generated ECDb Parser code which we have no control over>
+   Memcheck:Leak
+   match-leak-kinds: all
+   ...
+   fun:*OSQLParser*
+}

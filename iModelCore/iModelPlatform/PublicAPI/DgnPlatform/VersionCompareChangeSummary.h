@@ -641,7 +641,9 @@ private:
 public:
     //! Constructor
     ChangedElementFinder(ECPresentationManagerR presentationManager, Utf8StringCR rulesetId, Utf8StringCR elementClassFullName, bool wantParents = true, bool wantChecksums = true, bool wantRelationshipCaching = true, int relationshipCacheSize = VC_DEFAULT_RELATIONSHIP_CACHE_SIZE, bool wantChunkTraversal = false)
-        : m_presentationManager(presentationManager), m_rulesetId(rulesetId), m_elementClassFullName(elementClassFullName), m_wantParentKeys(wantParents), m_wantChecksums(wantChecksums), m_wantRelationshipCaching(wantRelationshipCaching), m_relationshipCacheSize(relationshipCacheSize), m_wantChunkTraversal(wantChunkTraversal) { }
+        : m_presentationManager(presentationManager), m_rulesetId(rulesetId), m_elementClassFullName(elementClassFullName),
+          m_wantParentKeys(wantParents), m_wantChecksums(wantChecksums), m_wantRelationshipCaching(wantRelationshipCaching),
+          m_relationshipCacheSize(relationshipCacheSize), m_wantChunkTraversal(wantChunkTraversal) { }
 
     //! Destructor
     ~ChangedElementFinder()
@@ -710,7 +712,10 @@ private:
     DgnElementCPtr  GetElement(BentleyApi::Dgn::DgnElementId elementId, BentleyApi::BeSQLite::DbOpcode opcode);
 
     //! Constructor
-    VersionCompareChangeSummary(BeFileName dbFilename, ECPresentationManagerR presentationManager) : m_dbFilename(dbFilename), m_targetDb(nullptr), m_presentationManager(presentationManager), m_filterSpatial(false), m_filterLastMod(false), m_wantTargetState(false) { }
+    VersionCompareChangeSummary(BeFileName dbFilename, ECPresentationManagerR presentationManager)
+      : m_dbFilename(dbFilename), m_targetDb(nullptr), m_presentationManager(presentationManager), m_filterSpatial(false),
+        m_filterLastMod(false), m_wantTargetState(false), m_wantParentKeys(false), m_wantPropertyChecksums(true), m_wantBriefcaseRoll(false),
+       m_wantRelationshipCaching(true), m_relationshipCacheSize(VC_DEFAULT_RELATIONSHIP_CACHE_SIZE), m_wantChunkTraversal(false) { }
 
     //! This method will process the changesets and obtain all the changed instances
     //! @param[in] changesets Vector of ChangesetPropsPtr containing the changesets to compile together
