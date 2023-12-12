@@ -174,16 +174,36 @@ TEST_F(IntegrityCheckerFixture, check_nav_class_ids) {
 
     auto executeTest = [&]() {
         ASSERT_STREQ(ParseJSON("[]").c_str(), runCheck(m_ecdb).c_str()) << "expect this to pass";
+        // RelECClassId does not exist in the iModel
         m_ecdb.ExecuteSql("UPDATE bis_GeometricElement3d SET TypeDefinitionId = 0x17, TypeDefinitionRelECClassId=0xffff WHERE ElementId = 0x3a");
+        // RelECClassId does exist in the iModel but it does not represent valid ClassId for the relationship
+        m_ecdb.ExecuteSql("UPDATE bis_GeometricElement3d SET TypeDefinitionId = 0x17, TypeDefinitionRelECClassId=0x43 WHERE ElementId = 0x3b");
+        m_ecdb.ExecuteSql("UPDATE bis_GeometricElement3d SET TypeDefinitionId = 0x17, TypeDefinitionRelECClassId=0x43 WHERE ElementId = 0x39");
         auto expectedJSON = R"json(
             [
                 {
                     "sno": 1,
+                    "id": "0x39",
+                    "class": "BisCore:GeometricElement3d",
+                    "property": "TypeDefinition",
+                    "nav_id": "0x17",
+                    "nav_classId": "0x43"
+                },
+                {
+                    "sno": 2,
                     "id": "0x3a",
                     "class": "BisCore:GeometricElement3d",
                     "property": "TypeDefinition",
                     "nav_id": "0x17",
                     "nav_classId": "0xffff"
+                },
+                {
+                    "sno": 3,
+                    "id": "0x3b",
+                    "class": "BisCore:GeometricElement3d",
+                    "property": "TypeDefinition",
+                    "nav_id": "0x17",
+                    "nav_classId": "0x43"
                 }
             ]
         )json";

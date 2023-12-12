@@ -515,7 +515,7 @@ TEST_F(ECDbTestFixture, GetAndAssignBriefcaseIdForDb)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, GetAndChangeGUIDForDb)
     {
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbbriefcaseIdtest.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("getAndChangeGUIDForDb.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
 
     BeGuid guid = m_ecdb.GetDbGuid();
     ASSERT_TRUE(guid.IsValid());
@@ -819,6 +819,108 @@ TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsDQLAndDML)
             // Test if the parsing for MIN/MAX has failed with appropriate error message
             EXPECT_STREQ(listener.GetLastError().c_str(), errorMsg.c_str()) << "Test case at line " << lineNumber << " failed.\n";
             }
+        }
+    }
+
+TEST_F(ECDbTestFixture, NullOrEmptyStringUnitLabelsInCompositeFormats)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("UnitLabelsCompositeFormat.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+
+    Utf8CP schemaXml = R"xml(
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+
+            <Unit typeName="TestUnitMajor" displayLabel="TestUnitMajorLabel" definition="u:KM" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitMiddle" displayLabel="TestUnitMiddleLabel" definition="u:M" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitMinor" displayLabel="TestUnitMinorLabel" definition="u:CM" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitSub" displayLabel="TestUnitSubLabel" definition="u:MM" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+
+            <Format typeName="TestFormat" displayLabel="TestFormat" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero" precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" " >
+                <Composite spacer="=" includeZero="False">
+                    <Unit label="romeo">TestUnitMajor</Unit>
+                    <Unit label="oscar">TestUnitMiddle</Unit>
+                    <Unit label="hotel">TestUnitMinor</Unit>
+                    <Unit label="tango">TestUnitSub</Unit>
+                </Composite>
+            </Format>
+
+            <KindOfQuantity typeName="TestKOQ1" description="Test KOQ1" displayLabel="TestKOQ1" persistenceUnit="u:M" presentationUnits="TestFormat[TestUnitMajor][TestUnitMiddle|foxtrot][TestUnitMinor|][TestUnitSub|tango]" relativeError="10e-3" />
+
+            <Format typeName="TestFormatWithSpecialLabels" displayLabel="TestFormatWithSpecialLabels" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero" precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" " >
+                <Composite spacer="=" includeZero="False">
+                    <Unit>TestUnitMajor</Unit>
+                    <Unit label="">TestUnitMiddle</Unit>
+                    <Unit label="&quot;">TestUnitMinor</Unit>
+                    <Unit label="tango">TestUnitSub</Unit>
+                </Composite>
+            </Format>
+
+            <KindOfQuantity typeName="TestKOQ2" description="Test KOQ2" displayLabel="TestKOQ2" persistenceUnit="u:M" presentationUnits="TestFormatWithSpecialLabels[TestUnitMajor|][TestUnitMiddle][TestUnitMinor][TestUnitSub|tango]" relativeError="10e-3" />
+        </ECSchema>)xml";
+
+        const std::vector<std::pair<bool, Utf8CP>> compositeSpecStringLabels = {{true, "romeo"}, {true, "oscar"}, {true, "hotel"}, {true, "tango"}};
+        const std::vector<std::pair<bool, Utf8CP>> compositeSpecDifferentLabels = {{false, "TestUnitMajorLabel"}, {true, ""}, {true, "\""}, {true, "tango"}};
+        const std::vector<std::pair<bool, Utf8CP>> overriddenFormatKOQ1 = {{false, "TestUnitMajorLabel"}, {true, "foxtrot"}, {true, ""}, {true, "tango"}};
+        const std::vector<std::pair<bool, Utf8CP>> overriddenFormatKOQ2 = {{true, ""}, {false, "TestUnitMiddleLabel"}, {false, "TestUnitMinorLabel"}, {true, "tango"}};
+
+        static const auto verifyCompositeFormatLabels = [](NamedFormatCR format, std::vector<std::pair<bool, Utf8CP>> expectedResults, Utf8CP errMsg) -> void
+            {
+            ASSERT_EQ(expectedResults.size(), 4) << "Composite Units cannot be more than 4";
+
+            const auto spec = format.GetCompositeSpec();
+
+            EXPECT_EQ(expectedResults[0].first, spec->HasMajorLabel()) << errMsg;
+            EXPECT_EQ(expectedResults[1].first, spec->HasMiddleLabel()) << errMsg;
+            EXPECT_EQ(expectedResults[2].first, spec->HasMinorLabel()) << errMsg;
+            EXPECT_EQ(expectedResults[3].first, spec->HasSubLabel()) << errMsg;
+
+            EXPECT_STREQ(expectedResults[0].second, spec->GetMajorLabel().c_str()) << errMsg;
+            EXPECT_STREQ(expectedResults[1].second, spec->GetMiddleLabel().c_str()) << errMsg;
+            EXPECT_STREQ(expectedResults[2].second, spec->GetMinorLabel().c_str()) << errMsg;
+            EXPECT_STREQ(expectedResults[3].second, spec->GetSubLabel().c_str()) << errMsg;
+            };
+
+        static const auto verifyFormats = [&](ECSchemaCP schema, Utf8CP errMsg) -> void
+            {
+            ASSERT_TRUE(schema);
+
+            // Test the composite units on the main format
+            verifyCompositeFormatLabels(*schema->GetFormatCP("TestFormat"), compositeSpecStringLabels, Utf8PrintfString("%s for TestFormat.", errMsg).c_str());
+            verifyCompositeFormatLabels(*schema->GetFormatCP("TestFormatWithSpecialLabels"), compositeSpecDifferentLabels, Utf8PrintfString("%s for TestFormatWithSpecialLabels.", errMsg).c_str());
+            
+            // Test the overriden format composite units on both the KoQ
+            const auto koq1 = schema->GetKindOfQuantityCP("TestKOQ1");
+            ASSERT_TRUE(koq1);
+            verifyCompositeFormatLabels(koq1->GetPresentationFormats()[0], overriddenFormatKOQ1, Utf8PrintfString("%s for TestKOQ1.", errMsg).c_str());
+
+            const auto koq2 = schema->GetKindOfQuantityCP("TestKOQ2");
+            ASSERT_TRUE(koq2);
+            verifyCompositeFormatLabels(koq2->GetPresentationFormats()[0], overriddenFormatKOQ2, Utf8PrintfString("%s for TestKOQ2.", errMsg).c_str());
+            };
+
+        // Test case 1: Import schema and check if composite formats are correct
+        {
+        ASSERT_EQ(SUCCESS, GetHelper().ImportSchemas({SchemaItem(schemaXml)}));
+        verifyFormats(m_ecdb.Schemas().GetSchema("TestSchema"), "Failed when testing schema import");
+        }
+
+        // Test case 2: RoundTrip Test
+        {
+        Utf8String serializedSchemaXml;
+        // Deserialize original XML
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+        verifyFormats(schema.get(), "Failed when testing initial schema deserialization");
+
+        //  Serialize it to Xml
+        ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml, ECVersion::Latest));
+        
+        // Deserialize it back and verify the formats in the schema
+        ECSchemaPtr roundtrippedSchema;
+        ECSchemaReadContextPtr newContext = ECSchemaReadContext::CreateContext();
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(roundtrippedSchema, serializedSchemaXml.c_str(), *newContext));
+        verifyFormats(roundtrippedSchema.get(), "Failed when testing final schema deserialization");
         }
     }
 
