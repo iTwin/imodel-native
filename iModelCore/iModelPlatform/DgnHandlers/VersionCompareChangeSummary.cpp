@@ -322,7 +322,7 @@ void RelatedPropertyPathExplorer::FindCacheableClasses(DgnDbR db, DgnChangeSumma
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelationshipQueryHelper::RelationshipQueryHelper(DgnDbR db, DgnChangeSummary& changeSummary): m_statementCache(STATEMENT_CACHE_SIZE)
+RelationshipQueryHelper::RelationshipQueryHelper(DgnDbR db, DgnChangeSummary& changeSummary): m_statementCache(STATEMENT_CACHE_SIZE), m_options()
     {
     // Query for finding the changed relationships targets and sources from the temp tables created by the change summary
     Utf8PrintfString sql("SELECT it.InstanceId, vt.AccessString, vt.OldValue "

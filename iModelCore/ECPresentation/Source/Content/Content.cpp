@@ -102,9 +102,9 @@ Utf8String ContentDescriptor::Field::ArrayTypeDescription::CreateTypeName(TypeDe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptor::ContentDescriptor(IConnectionCR connection, PresentationRuleSetCR ruleset, RulesetVariables rulesetVariables, INavNodeKeysContainerCR inputKeys)
+ContentDescriptor::ContentDescriptor(IConnectionCR connection, PresentationRuleSetCR ruleset, RulesetVariables rulesetVariables, INavNodeKeysContainerCR inputKeys, Utf8CP preferredDisplayType, int requestedContentFlags, int usedContentFlags)
     : m_connectionId(connection.GetId()), m_ruleset(&ruleset), m_rulesetVariables(rulesetVariables), m_inputKeys(&inputKeys),
-    m_preferredDisplayType(ContentDisplayType::Undefined), m_contentFlags(0), m_unitSystem(UnitSystem::Undefined),
+    m_preferredDisplayType(preferredDisplayType), m_requestedContentFlags(requestedContentFlags), m_contentFlags(usedContentFlags), m_unitSystem(UnitSystem::Undefined),
     m_sortingFieldIndex(-1), m_sortDirection(SortDirection::Ascending), m_usesModifiedRuleset(false)
     {
     }
@@ -114,7 +114,7 @@ ContentDescriptor::ContentDescriptor(IConnectionCR connection, PresentationRuleS
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::ContentDescriptor(ContentDescriptorCR other)
     : m_preferredDisplayType(other.m_preferredDisplayType), m_classes(other.m_classes), m_specificationClasses(other.m_specificationClasses),
-    m_fieldsFilterExpression(other.m_fieldsFilterExpression), m_instanceFilter(other.m_instanceFilter), m_contentFlags(other.m_contentFlags),
+    m_fieldsFilterExpression(other.m_fieldsFilterExpression), m_instanceFilter(other.m_instanceFilter), m_contentFlags(other.m_contentFlags), m_requestedContentFlags(other.m_requestedContentFlags),
     m_sortingFieldIndex(other.m_sortingFieldIndex), m_sortDirection(other.m_sortDirection), m_connectionId(other.m_connectionId), m_inputKeys(other.m_inputKeys),
     m_selectionInfo(other.m_selectionInfo), m_categories(other.m_categories), m_totalFieldsCount(other.m_totalFieldsCount), m_unitSystem(other.m_unitSystem),
     m_ruleset(other.m_ruleset), m_rulesetVariables(other.m_rulesetVariables), m_usesModifiedRuleset(other.m_usesModifiedRuleset), m_exclusiveIncludePaths(other.m_exclusiveIncludePaths)
@@ -130,6 +130,16 @@ ContentDescriptor::~ContentDescriptor()
     {
     for (Field* field : m_fields)
         delete field;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptorPtr ContentDescriptor::Create(ContentDescriptorCR other, int additionalContentFlags)
+    {
+    ContentDescriptorPtr copy = new ContentDescriptor(other);
+    copy->AddContentFlags(additionalContentFlags);
+    return copy;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -604,7 +614,7 @@ void ContentDescriptor::MergeWith(ContentDescriptorCR other)
     NavNodeKeyList newKeys;
     for (NavNodeKeyCPtr inputKey : *other.m_inputKeys)
         {
-        if (m_inputKeys->end() != m_inputKeys->find(inputKey))
+        if (m_inputKeys->end() == m_inputKeys->find(inputKey))
             newKeys.push_back(inputKey);
         }
     if (0 != newKeys.size())
@@ -654,37 +664,7 @@ void ContentDescriptor::MergeWith(ContentDescriptorCR other)
             AddRootField(*sourceField->Clone());
         }
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentDescriptor::SetContentFlags(int flags)
-    {
-    int diff = flags ^ m_contentFlags;
-    int additions = flags & diff;
-    int removals = m_contentFlags & diff;
 
-    m_contentFlags = flags;
-
-    int steps = 0;
-    while (additions > 0)
-        {
-        int addition = (additions & 1) << steps;
-        if (0 != addition)
-            OnFlagAdded((ContentFlags)addition);
-        additions >>= 1;
-        ++steps;
-        }
-
-    steps = 0;
-    while (removals > 0)
-        {
-        int removal = removals & 1;
-        if (0 != removal)
-            OnFlagRemoved((ContentFlags)removal);
-        removals >>= 1;
-        ++steps;
-        }
-    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -692,36 +672,6 @@ bool ContentDescriptor::HasContentFlag(ContentFlags flag) const
     {
     return 0 != ((int)flag & m_contentFlags);
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentDescriptor::AddContentFlag(ContentFlags flag)
-    {
-    if (0 != ((int)flag & m_contentFlags))
-        return;
-
-    m_contentFlags |= (int)flag;
-    OnFlagAdded(flag);
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentDescriptor::RemoveContentFlag(ContentFlags flag)
-    {
-    if (0 == ((int)flag & m_contentFlags))
-        return;
-
-    m_contentFlags &= ~(int)flag;
-    OnFlagRemoved(flag);
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentDescriptor::OnFlagAdded(ContentFlags flag) {}
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentDescriptor::OnFlagRemoved(ContentFlags flag) {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
