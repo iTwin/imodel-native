@@ -126,6 +126,9 @@ PropertyNameExp::PropertyNameExp(ECSqlParseContext const& ctx, Utf8StringCR prop
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) {
+    if (m_propertyPath.Size() == 3){
+        printf("");
+    }
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren) {
         if (ResolveColumnRef(ctx) != SUCCESS)
             return FinalizeParseStatus::Error;
@@ -251,6 +254,10 @@ BentleyStatus PropertyNameExp::ResolveLocalRef(ECSqlParseContext& ctx) {
         return SUCCESS;
 
     PropertyMatchOptions options;
+    auto smth = GetClassRefExp();
+    if (smth == nullptr)
+        printf("GetClassRef is nullpt");
+    smth->FindProperty(ctx, m_propertyPath, options);
     PropertyMatchResult result = GetClassRefExp()->FindProperty(ctx, m_propertyPath, options);
     if (result.isValid()) {
         if (result.GetPropertyMap() != nullptr) {
@@ -280,13 +287,15 @@ BentleyStatus PropertyNameExp::ResolveLocalRef(ECSqlParseContext& ctx) {
 //+---------------+---------------+---------------+---------------+---------------+--------
 BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
     {
+    if (m_propertyPath.Size() == 3)
+        printf("");
     // This mean the PropertyNameExp was created by expanding WILDCARD so it both has ClassRef and DerviedProperty.
     if (GetClassRefExp() != nullptr)
         return ResolveLocalRef(ctx);
 
     if (m_sourceType == SourceType::ValueCreationFunc)
         {
-        if (ctx.Schemas().GetClass(m_propertyPath[0].GetName(), m_propertyPath[1].GetName()) == nullptr || ctx.Schemas().GetClass(m_propertyPath[0].GetName(), m_propertyPath[1].GetName())->GetPropertyP(m_propertyPath[2].GetName()) == nullptr)
+        if (ctx.Schemas().FindClass(m_propertyPath[0].GetName() + "." + m_propertyPath[1].GetName()) == nullptr || ctx.Schemas().GetClass(m_propertyPath[0].GetName(), m_propertyPath[1].GetName())->GetPropertyP(m_propertyPath[2].GetName()) == nullptr)
             {
             BeAssert(false && "Could not find given property");
             return ERROR;
@@ -402,6 +411,17 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
      }
 
     if (matchProps.empty()) {
+        // if it's RelECClassId argument of NAV function then assume that it's a static variable
+        if (GetParent()->GetType() == Exp::Type::NavValueCreationFunc && GetParent()->GetAs<NavValueCreationFuncExp>().GetRelECClassIdExp() == this)
+            {
+            if (ctx.Schemas().FindClass(m_propertyPath[0].GetName() + "." + m_propertyPath[1].GetName()) == nullptr || ctx.Schemas().GetClass(m_propertyPath[0].GetName(), m_propertyPath[1].GetName())->GetPropertyP(m_propertyPath[2].GetName()) == nullptr)
+                {
+                BeAssert(false && "Could not find given property");
+                return ERROR;
+                }
+            m_sourceType = SourceType::ValueCreationFunc;
+            return SUCCESS;
+            }
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0565,
             "No property or enumeration found for expression '%s'.", m_propertyPath.ToString().c_str());
         return ERROR;

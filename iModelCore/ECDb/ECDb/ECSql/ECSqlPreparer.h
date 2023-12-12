@@ -105,8 +105,7 @@ struct ECSqlExpPreparer final
         static ECSqlStatus PrepareTableValuedFunctionExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, TableValuedFunctionExp const& exp);
         static ECSqlStatus PrepareExtractPropertyExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ExtractPropertyValueExp const& exp);
         static ECSqlStatus PrepareExtractInstanceExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ExtractInstanceValueExp const& exp);
-        static ECSqlStatus PrepareValueCreationFuncExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ValueCreationFuncExp const& exp);
-        static ECSqlStatus PrepareNavValueCreationFuncExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, NavValueCreationFuncExp const& exp);
+        static ECSqlStatus PrepareNavValueCreationFuncExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, NavValueCreationFuncExp const& exp, bool shouldUseOtherSyntax = false);
         static ECSqlStatus PrepareRelECClassIdFromNavProperty(NativeSqlBuilder::List& builder, ECSqlPrepareContext& ctx, PropertyNameExp const& exp);
         static BooleanSqlOperator DetermineCompoundLogicalOpForCompoundExpressions(BooleanSqlOperator);
 

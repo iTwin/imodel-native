@@ -36,7 +36,6 @@ ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECProper
     if (!initStat.IsSuccess())
         return initStat;
 
-
     generatedProperty = nullptr;
 
     //A property for the select clause item is generated
@@ -279,10 +278,14 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
                 if (selectClauseItemExp.GetExpression()->GetType() == Exp::Type::PropertyName && selectClauseItemExp.GetExpression()->GetAs<PropertyNameExp>().GetSourceType() == PropertyNameExp::SourceType::ValueCreationFunc)
                     {
                     NavigationECPropertyP newNavProp = nullptr;
-                    NavigationECProperty const* navProp = ctx.GetECDb().Schemas().GetClass(selectClauseItemExp.GetExpression()->GetAs<PropertyNameExp>().GetPropertyPath()[0].GetName(), selectClauseItemExp.GetExpression()->GetAs<PropertyNameExp>().GetPropertyPath()[1].GetName())->GetPropertyP(selectClauseItemExp.GetExpression()->GetAs<PropertyNameExp>().GetPropertyPath()[2].GetName())->GetAsNavigationProperty();
+                    NavigationECProperty const* navProp = ctx.GetECDb().Schemas().GetClass(
+                        selectClauseItemExp.GetExpression()->GetAs<PropertyNameExp>().GetECSqlPropertyPath()[0].GetName(),
+                        selectClauseItemExp.GetExpression()->GetAs<PropertyNameExp>().GetECSqlPropertyPath()[1].GetName()
+                    )->GetPropertyP(selectClauseItemExp.GetExpression()->GetAs<PropertyNameExp>().GetECSqlPropertyPath()[2].GetName())->GetAsNavigationProperty();
                     ECRelationshipClassCR relClass = *navProp->GetRelationshipClass();
                     if (SUCCESS != AddSchemaReference(relClass.GetSchema()))
                         return ECSqlStatus::Error;
+
                     if (ECObjectsStatus::Success != GetClass().CreateNavigationProperty(newNavProp, encodedPropName, relClass, navProp->GetDirection(), false))
                         return ECSqlStatus::Error;
 

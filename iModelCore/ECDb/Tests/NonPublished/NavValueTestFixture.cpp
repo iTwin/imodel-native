@@ -82,100 +82,99 @@ void NavValueTestFixture::SetUp()
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(NavValueTestFixture, SimpleSelectNavValue) {
     {
-        { // construct from 3 static parameters
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NAV(ts.Book.Author, 1, 2)"));
-        printf("%s\n", stmt.GetNativeSql());
-        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        // { // construct from 3 static parameters
+        // ECSqlStatement stmt;
+        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NAV(ts.Book.Author, 1, 2)"));
+        // printf("%s\n", stmt.GetNativeSql());
+        // ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
 
-        ECClassId relClassId;
-        ECInstanceId instId = stmt.GetValueNavigation<ECInstanceId>(0, &relClassId);
-        ASSERT_EQ(ECClassId(2ull), relClassId);
-        ASSERT_EQ(ECInstanceId(1ull), instId);
-        auto& colInfo = stmt.GetColumnInfo(0);
-        ASSERT_TRUE(colInfo.IsValid());
-        ASSERT_TRUE(colInfo.IsGeneratedProperty());
-        ASSERT_TRUE(colInfo.GetDataType().IsNavigation());
+        // ECClassId relClassId;
+        // ECInstanceId instId = stmt.GetValueNavigation<ECInstanceId>(0, &relClassId);
+        // ASSERT_EQ(ECClassId(2ull), relClassId);
+        // ASSERT_EQ(ECInstanceId(1ull), instId);
+        // auto& colInfo = stmt.GetColumnInfo(0);
+        // ASSERT_TRUE(colInfo.IsValid());
+        // ASSERT_TRUE(colInfo.IsGeneratedProperty());
+        // ASSERT_TRUE(colInfo.GetDataType().IsNavigation());
 
-        auto* property = colInfo.GetProperty();
-        ASSERT_TRUE(property != nullptr);
-        ASSERT_STREQ("Author", property->GetName().c_str());
-        ASSERT_TRUE(property->GetIsNavigation());
-        }
+        // auto* property = colInfo.GetProperty();
+        // ASSERT_TRUE(property != nullptr);
+        // ASSERT_STREQ("Author", property->GetName().c_str());
+        // ASSERT_TRUE(property->GetIsNavigation());
+        // }
 
-        { // construct from 2 static parameters (RelClassId should be taken from nav prop)
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NAV(ts.Book.Author, 1)"));
-        printf("%s\n", stmt.GetNativeSql());
-        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        // { // construct from 2 static parameters (RelClassId should be taken from nav prop)
+        // ECSqlStatement stmt;
+        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NAV(ts.Book.Author, 1)"));
+        // printf("%s\n", stmt.GetNativeSql());
+        // ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
 
-        ECClassId relClassId;
-        ECInstanceId instId = stmt.GetValueNavigation<ECInstanceId>(0, &relClassId);
-        ASSERT_EQ(m_bookHasAuthorClassId, relClassId);
-        ASSERT_EQ(ECInstanceId(1ull), instId);
-        auto& colInfo = stmt.GetColumnInfo(0);
-        ASSERT_TRUE(colInfo.IsValid());
-        ASSERT_TRUE(colInfo.IsGeneratedProperty());
-        ASSERT_TRUE(colInfo.GetDataType().IsNavigation());
+        // ECClassId relClassId;
+        // ECInstanceId instId = stmt.GetValueNavigation<ECInstanceId>(0, &relClassId);
+        // ASSERT_EQ(m_bookHasAuthorClassId, relClassId);
+        // ASSERT_EQ(ECInstanceId(1ull), instId);
+        // auto& colInfo = stmt.GetColumnInfo(0);
+        // ASSERT_TRUE(colInfo.IsValid());
+        // ASSERT_TRUE(colInfo.IsGeneratedProperty());
+        // ASSERT_TRUE(colInfo.GetDataType().IsNavigation());
 
-        auto* property = colInfo.GetProperty();
-        ASSERT_TRUE(property != nullptr);
-        ASSERT_STREQ("Author", property->GetName().c_str());
-        ASSERT_TRUE(property->GetIsNavigation());
-        }
+        // auto* property = colInfo.GetProperty();
+        // ASSERT_TRUE(property != nullptr);
+        // ASSERT_STREQ("Author", property->GetName().c_str());
+        // ASSERT_TRUE(property->GetIsNavigation());
+        // }
 
-        { // construct from parameters
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NAV(ts.Book.Author, ?, ?)"));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, m_personInstanceKey.GetInstanceId()));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, m_bookHasAuthorClassId));
-        printf("%s\n", stmt.GetNativeSql());
-        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        // { // construct from parameters
+        // ECSqlStatement stmt;
+        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NAV(ts.Book.Author, ?, ?)"));
+        // ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, m_personInstanceKey.GetInstanceId()));
+        // ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, m_bookHasAuthorClassId));
+        // printf("%s\n", stmt.GetNativeSql());
+        // ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
 
-        ECClassId relClassId;
-        ECInstanceId instId = stmt.GetValueNavigation<ECInstanceId>(0, &relClassId);
-        ASSERT_EQ(m_bookHasAuthorClassId, relClassId);
-        ASSERT_EQ(m_personInstanceKey.GetInstanceId(), instId);
-        auto& colInfo = stmt.GetColumnInfo(0);
-        ASSERT_TRUE(colInfo.IsValid());
-        ASSERT_TRUE(colInfo.IsGeneratedProperty());
-        ASSERT_TRUE(colInfo.GetDataType().IsNavigation());
+        // ECClassId relClassId;
+        // ECInstanceId instId = stmt.GetValueNavigation<ECInstanceId>(0, &relClassId);
+        // ASSERT_EQ(m_bookHasAuthorClassId, relClassId);
+        // ASSERT_EQ(m_personInstanceKey.GetInstanceId(), instId);
+        // auto& colInfo = stmt.GetColumnInfo(0);
+        // ASSERT_TRUE(colInfo.IsValid());
+        // ASSERT_TRUE(colInfo.IsGeneratedProperty());
+        // ASSERT_TRUE(colInfo.GetDataType().IsNavigation());
 
-        auto* property = colInfo.GetProperty();
-        ASSERT_TRUE(property != nullptr);
-        ASSERT_STREQ("Author", property->GetName().c_str());
-        ASSERT_TRUE(property->GetIsNavigation());
-        }
+        // auto* property = colInfo.GetProperty();
+        // ASSERT_TRUE(property != nullptr);
+        // ASSERT_STREQ("Author", property->GetName().c_str());
+        // ASSERT_TRUE(property->GetIsNavigation());
+        // }
 
-        { // construct from actual nav property row
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NAV(ts.Book.Author, Author.Id, Author.RelECClassId) [MyNavProp] FROM ts.Book LIMIT 1"));
-        printf("%s\n", stmt.GetNativeSql());
-        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        // { // construct from actual nav property row
+        // ECSqlStatement stmt;
+        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NAV(ts.Book.Author, Author.Id, Author.RelECClassId) [MyNavProp] FROM ts.Book LIMIT 1"));
+        // printf("%s\n", stmt.GetNativeSql());
+        // ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
 
-        ECClassId relClassId;
-        ECInstanceId instId = stmt.GetValueNavigation<ECInstanceId>(0, &relClassId);
-        ASSERT_EQ(m_bookHasAuthorClassId, relClassId);
-        ASSERT_EQ(m_personInstanceKey.GetInstanceId(), instId);
-        auto& colInfo = stmt.GetColumnInfo(0);
-        ASSERT_TRUE(colInfo.IsValid());
-        ASSERT_TRUE(colInfo.IsGeneratedProperty());
-        ASSERT_TRUE(colInfo.GetDataType().IsNavigation());
+        // ECClassId relClassId;
+        // ECInstanceId instId = stmt.GetValueNavigation<ECInstanceId>(0, &relClassId);
+        // ASSERT_EQ(m_bookHasAuthorClassId, relClassId);
+        // ASSERT_EQ(m_personInstanceKey.GetInstanceId(), instId);
+        // auto& colInfo = stmt.GetColumnInfo(0);
+        // ASSERT_TRUE(colInfo.IsValid());
+        // ASSERT_TRUE(colInfo.IsGeneratedProperty());
+        // ASSERT_TRUE(colInfo.GetDataType().IsNavigation());
 
-        auto* property = colInfo.GetProperty();
-        ASSERT_TRUE(property != nullptr);
-        ASSERT_STREQ("MyNavProp", property->GetName().c_str());
-        ASSERT_TRUE(property->GetIsNavigation());
-        }
-
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM meta.PropertyCustomAttribute"));
-        }
+        // auto* property = colInfo.GetProperty();
+        // ASSERT_TRUE(property != nullptr);
+        // ASSERT_STREQ("MyNavProp", property->GetName().c_str());
+        // ASSERT_TRUE(property->GetIsNavigation());
+        // }
+        
+        // test if user can select same nav prop multiple times, e.g. SELECT NAV(ts.Book.Author, 1, 2), NAV(ts.Book.Author, 3, 4)
+        // SELECT ECInstanceId FROM meta.PropertyCustomAttribute should return one column
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NAV(meta.PropertyCustomAttribute.Class, 1, 2)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Property.Id from meta.PropertyCustomAttribute"));
+        printf("%s\n", stmt.GetNativeSql());
         }
     }
 

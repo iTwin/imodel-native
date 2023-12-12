@@ -8,4 +8,12 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+void NavValueCreationFuncExp::_ToECSql(ECSqlRenderContext& ctx) const
+    {
+    ctx.AppendToECSql("NAV(").AppendToECSql(*GetColumnRefExp()).AppendToECSql(" ").AppendToECSql(*GetIdArgExp());
+    if (GetRelECClassIdExp() != nullptr)
+        ctx.AppendToECSql(" ").AppendToECSql(*GetRelECClassIdExp());
+    ctx.AppendToECSql(")");
+    }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

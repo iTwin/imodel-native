@@ -670,7 +670,6 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
         return ERROR;
 
     viewSql.Append(" FROM ").AppendEscaped(contextTable.GetTableSpace().GetName()).AppendDot().AppendEscaped(contextTable.GetName());
-
     const bool disqualifyPrimaryJoin = ctx.GetViewType() == ViewType::SelectFromView ? ctx.GetAs<SelectFromViewContext>().IsDisqualifyPrimaryJoin() : false;
     //Join necessary table for table
     for(DbTable const* to : requireJoinTo)
