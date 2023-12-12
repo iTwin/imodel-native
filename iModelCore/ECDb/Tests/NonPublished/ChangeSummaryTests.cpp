@@ -448,7 +448,7 @@ TEST_F(ChangeSummaryTestFixture, DoNotCrash_if_MandatoryRelECClassIdIsSetToNotAn
         tracker.EnableTracking(true);
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Element(Parent) VALUES(?)"));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, BeInt64Id(1ull), ECClassId(0xffffffull)));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, BeInt64Id(1ull), ECN::ECClassId((uint64_t)0xffffff)));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         tracker.EnableTracking(false);
         ASSERT_TRUE(tracker.HasChanges());
