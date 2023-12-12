@@ -82,7 +82,7 @@ describe("ImportSchema", () => {
     db.setITwinId(Guid.empty);
     db.resetBriefcaseId(0);
     db.saveChanges();
-    db.closeIModel();
+    db.closeFile();
 
     db.openIModel(dbpath, OpenMode.ReadWrite);
 
@@ -139,5 +139,7 @@ describe("ImportSchema", () => {
     expect("BisCore:InformationRecordElement").eq(fooInfoClassV98.baseClasses[0]);
     expect(fooInfoClassV98.properties).hasOwnProperty("propertyFoo");
     expect(fooInfoClassV98.properties).hasOwnProperty("propertyBar");
+
+    db.saveChanges();
   });
 });
