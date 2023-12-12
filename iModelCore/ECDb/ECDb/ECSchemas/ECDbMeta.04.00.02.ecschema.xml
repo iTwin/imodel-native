@@ -559,14 +559,14 @@
         <ECCustomAttributes>
             <View xmlns="ECDbMap.02.00.03">
                 <Query>
-                SELECT
-                    [ca].[ECInstanceId],
-                    [ca].[Class] [Class],
-                    CAST([ca].[ContainerId] as LONG) [Property],
-                    XmlCAToJson([ca].[Class].[Id], [ca].[Instance]) [Instance]
-                FROM [meta].[CustomAttribute] [ca]
-                WHERE [ca].[ContainerType] = 992
-                ORDER BY [ca].[Ordinal]
+                    SELECT
+                        [ca].[ECInstanceId],
+                        NAV(meta.PropertyCustomAttribute.Property, [ca].[Class].[Id]) [Class],
+                        NAV(meta.PropertyCustomAttribute.Class, [ca].[ContainerId]) [Property],
+                        XmlCAToJson([ca].[Class].[Id], [ca].[Instance]) [Instance]
+                    FROM [meta].[CustomAttribute] [ca]
+                    WHERE [ca].[ContainerType] = 992
+                    ORDER BY [ca].[Ordinal]
                 </Query>
             </View>
         </ECCustomAttributes>
@@ -578,12 +578,12 @@
         <Source multiplicity="(1..1)" roleLabel="has custom attribute" polymorphic="false">
             <Class class="ECPropertyDef"/>
         </Source>
-        <Target multiplicity="(0..*)" roleLabel="is defined on" polymorphic="false">
+        <Target multiplicity="(0..*)" roleLabel="is set on" polymorphic="false">
             <Class class="PropertyCustomAttribute"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="CustomAttributeClassHasInstanceOnProperty" modifier="Abstract" strength="referencing">
-        <Source multiplicity="(1..1)" roleLabel="has instance" polymorphic="false">
+        <Source multiplicity="(1..1)" roleLabel="has instance on" polymorphic="false">
             <Class class="ECClassDef"/>
         </Source>
         <Target multiplicity="(0..*)" roleLabel="is instance of" polymorphic="false">
