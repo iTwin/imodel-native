@@ -2103,15 +2103,39 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, PropertyCustomAttributes) {
     {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT COUNT(*)
+             FROM meta.PropertyCustomAttribute ca
+                         JOIN meta.ECClassDef cDef ON ca.CustomAttributeClass.Id = cDef.ECInstanceId
+             WHERE cDef.Name='CAClass'
+            )stmt"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_EQ(1, stmt.GetValueInt(0));
+    }
+
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT ca.ECInstanceId, pDef.Name
+             FROM meta.PropertyCustomAttribute ca
+                         JOIN meta.ECPropertyDef pDef ON ca.Property.Id = pDef.ECInstanceId
+                         JOIN meta.ECClassDef cDef ON ca.CustomAttributeClass.Id = cDef.ECInstanceId
+             WHERE cDef.Name='CAClass'
+            )stmt"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        printf("0: %s\n", stmt.GetValueText(0));
+        printf("1: %s\n", stmt.GetValueText(1));
+        printf("native SQL: %s\n", stmt.GetNativeSql());
+    }
+
+   {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
             SELECT ca.ECInstanceId, pDef.Name
              FROM meta.PropertyCustomAttribute ca
                          JOIN meta.ECPropertyDef pDef USING meta.PropertyHasCustomAttribute
                          JOIN meta.ECClassDef cDef USING meta.CustomAttributeClassHasInstanceOnProperty
              WHERE cDef.Name='CAClass'
             )stmt"));
-            //             JOIN meta.ECPropertyDef pDef USING meta.PropertyHasCustomAttribute
-            //             JOIN meta.ECClassDef cDef USING meta.CustomAttributeClassHasInstanceOnProperty
-            // WHERE cDef.Name='CAClass'
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
         printf("0: %s\n", stmt.GetValueText(0));
         printf("1: %s\n", stmt.GetValueText(1));
