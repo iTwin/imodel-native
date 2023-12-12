@@ -111,18 +111,6 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoForProperty(ECSqlPrepareConte
             }
         }
 
-    if(isGenerated)
-        {
-        isSystem = generatedProperty->HasId() && ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*generatedProperty).IsSystemProperty();
-        propertyPath.AddEntry(*generatedProperty);
-        rootClass = &generatedProperty->GetClass();
-
-        if(!propertyNameExpRefersToProperty)
-            {
-            return CreateTopLevelColumnInfo(ctx.Issues(), isSystem, true, std::move(propertyPath), ECSqlColumnInfo::RootClass(*rootClass, nullptr), nullptr, isDynamic);
-            }
-        }
-
     if (propertyNameExp != nullptr && propertyNameExp->GetSourceType() == PropertyNameExp::SourceType::ValueCreationFunc)
         {
         ECClassCR ecClass = *ctx.GetECDb().Schemas().GetClass(
@@ -146,13 +134,25 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoForProperty(ECSqlPrepareConte
             dateTimeInfo,
             structType,
             generatedProperty == nullptr ? ecProperty : generatedProperty,
-            ecProperty,
+            generatedProperty == nullptr ? ecProperty : generatedProperty,
             true,
             true,
             std::move(propertyPath),
             rootClass == nullptr ? ECSqlColumnInfo::RootClass(ecClass, propertyNameExp->GetPropertyPath()[0].GetName().c_str(), propertyNameExp->GetParent()->GetParent()->GetParent()->GetAs<DerivedPropertyExp>().HasAlias() ? propertyNameExp->GetParent()->GetParent()->GetParent()->GetAs<DerivedPropertyExp>().GetColumnAlias().c_str() : propertyNameExp->GetPropertyPath()[1].GetName().c_str()) : ECSqlColumnInfo::RootClass(*rootClass, nullptr),
             isDynamic
         );
+        }
+
+    if(isGenerated)
+        {
+        isSystem = generatedProperty->HasId() && ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*generatedProperty).IsSystemProperty();
+        propertyPath.AddEntry(*generatedProperty);
+        rootClass = &generatedProperty->GetClass();
+
+        if(!propertyNameExpRefersToProperty)
+            {
+            return CreateTopLevelColumnInfo(ctx.Issues(), isSystem, true, std::move(propertyPath), ECSqlColumnInfo::RootClass(*rootClass, nullptr), nullptr, isDynamic);
+            }
         }
 
     PropertyPath const& internalPropPath = resolvedPropertyName->GetPropertyPath();

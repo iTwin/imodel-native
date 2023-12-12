@@ -883,6 +883,9 @@ PropertyMatchResult SingleSelectStatementExp::_FindProperty(ECSqlParseContext& c
             DerivedPropertyExp const& derivedPropertyExp = selectClauseExp->GetAs<DerivedPropertyExp>();
             PropertyNameExp const *propertyNameExp = derivedPropertyExp.GetExpression()->GetType() == Exp::Type::PropertyName ? derivedPropertyExp.GetExpression()->GetAsCP<PropertyNameExp>() : nullptr;
 
+            if (propertyNameExp == nullptr)
+                propertyNameExp = derivedPropertyExp.GetExpression()->GetType() == Exp::Type::NavValueCreationFunc ? derivedPropertyExp.GetExpression()->
+                    GetAs<NavValueCreationFuncExp>().GetColumnRefExp()->GetAs<DerivedPropertyExp>().GetExpression()->GetAsCP<PropertyNameExp>() : nullptr;
             // Match alias or indirect
             const auto matchUserAlias = !derivedPropertyExp.GetColumnAlias().empty() && derivedPropertyExp.GetColumnAlias().EqualsIAscii(effectivePath.First().GetName());
             const auto matchIndirect = derivedPropertyExp.GetColumnAlias().empty() && propertyNameExp != nullptr &&  propertyNameExp->GetPropertyPath().ToString().EqualsIAscii(effectivePath.First().GetName());

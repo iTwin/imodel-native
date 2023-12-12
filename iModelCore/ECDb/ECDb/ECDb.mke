@@ -377,6 +377,8 @@ $(o)NavigationPropertyECSqlField$(oext):                      $(baseDir)ECSql/Na
 
 $(o)ECSqlPragmas$(oext):                                      $(baseDir)ECSql/ECSqlPragmas.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)ValueCreationFuncExp$(oext):                              $(baseDir)ECsql/ValueCreationFuncExp.cpp  $(ECDbAllHeaders) ${MultiCompileDepends}
+
 $(o)DbSchema$(oext):                                          $(baseDir)DbSchema.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)DbSchemaPersistenceManager$(oext):                        $(baseDir)DbSchemaPersistenceManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}

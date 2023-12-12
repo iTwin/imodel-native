@@ -2685,8 +2685,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp(NativeSqlBuilder::List& nativeSqlS
             }
             case Exp::Type::WindowFunction:
                 return PrepareWindowFunctionExp(nativeSqlSnippets, ctx, exp.GetAs<WindowFunctionExp>());
-            case Exp::Type::ValueCreationFuncExp:
-                return PrepareValueCreationFuncExp(nativeSqlSnippets, ctx, exp.GetAs<ValueCreationFuncExp>());
+            case Exp::Type::NavValueCreationFunc:
+                return PrepareNavValueCreationFuncExp(nativeSqlSnippets, ctx, exp.GetAs<NavValueCreationFuncExp>());
             default:
                 break;
             }
@@ -2842,42 +2842,39 @@ ECSqlStatus ECSqlExpPreparer::GenerateECClassIdFilter(Utf8StringR filterSqlExpre
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareValueCreationFuncExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ValueCreationFuncExp const& exp)
-    {
-    switch (exp.GetValueCreationFunctionType())
-        {
-        case ValueCreationFuncExp::ValueCreationFunctionType::Nav:
-            return PrepareNavValueCreationFuncExp(nativeSqlSnippets, ctx, exp.GetAs<NavValueCreationFuncExp>());
-        }
-    return ECSqlStatus::Success;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-ECSqlStatus ECSqlExpPreparer::PrepareNavValueCreationFuncExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, NavValueCreationFuncExp const& exp)
+ECSqlStatus ECSqlExpPreparer::PrepareNavValueCreationFuncExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, NavValueCreationFuncExp const& exp, bool shouldUseOtherSyntax)
     {
     NativeSqlBuilder builder;
     NativeSqlBuilder::List idNativeSql;
     NativeSqlBuilder::List relECClassIdNativeSql;
-    ECSqlFieldFactory::CreateField(ctx, exp.GetColumnRefExp()->GetAsCP<DerivedPropertyExp>(), 0);
+    if (ctx.GetCurrentScope().IsRootScope())
+        ECSqlFieldFactory::CreateField(ctx, exp.GetColumnRefExp()->GetAsCP<DerivedPropertyExp>(), ctx.GetCurrentScope().GetNativeSqlSelectClauseColumnCount());
+
     auto stat = PrepareValueExp(idNativeSql, ctx, *exp.GetIdArgExp());
     if (!stat.IsSuccess())
         return stat;
-    
-    if (exp.GetRelECClassId() == nullptr)
+
+    if (exp.GetRelECClassIdExp() == nullptr || (exp.GetRelECClassIdExp()->GetType() == Exp::Type::PropertyName && exp.GetRelECClassIdExp()->GetAs<PropertyNameExp>().GetSourceType() == PropertyNameExp::SourceType::ValueCreationFunc))
         stat = PrepareRelECClassIdFromNavProperty(relECClassIdNativeSql, ctx, exp.GetColumnRefExp()->GetAs<DerivedPropertyExp>().GetExpression()->GetAs<PropertyNameExp>());
     else
-        stat = PrepareValueExp(relECClassIdNativeSql, ctx, *exp.GetRelECClassId());
+        stat = PrepareValueExp(relECClassIdNativeSql, ctx, *exp.GetRelECClassIdExp());
     
     if (!stat.IsSuccess())
         return stat;
 
-    Utf8CP navName = exp.GetParent()->GetAs<DerivedPropertyExp>().HasAlias() ? exp.GetParent()->GetAs<DerivedPropertyExp>().GetColumnAlias().c_str() : exp.GetColumnRefExp()->GetAs<DerivedPropertyExp>().GetExpression()->GetAs<PropertyNameExp>().GetPropertyPath()[2].GetName().c_str();
-    builder.Append(idNativeSql.at(0).GetSql()).AppendSpace().Append("[").Append(navName).Append("_0").Append("]");
+    if (shouldUseOtherSyntax)
+        {
+        Utf8CP navName = exp.GetParent()->GetAs<DerivedPropertyExp>().HasAlias() ? exp.GetParent()->GetAs<DerivedPropertyExp>().GetColumnAlias().c_str() : exp.GetColumnRefExp()->GetAs<DerivedPropertyExp>().GetExpression()->GetAs<PropertyNameExp>().GetPropertyPath()[2].GetName().c_str();
+        builder.Append("[").Append(navName).Append("Id]");
+        builder.AppendComma().AppendSpace();
+        builder.Append("[").Append(navName).Append("RelECClassId]");
+        nativeSqlSnippets.push_back(builder);
+        return ECSqlStatus::Success;
+        }
+    Utf8CP navName = exp.GetParent()->GetAs<DerivedPropertyExp>().GetNestedAlias().empty() ? exp.GetColumnRefExp()->GetAs<DerivedPropertyExp>().GetColumnAlias().c_str() : exp.GetParent()->GetAs<DerivedPropertyExp>().GetNestedAlias().c_str();
+    builder.Append(idNativeSql.at(0).GetSql()).AppendSpace().Append("[").Append(navName).Append("_0]");
     builder.AppendComma().AppendSpace();
-    builder.Append(relECClassIdNativeSql.at(0).GetSql()).AppendSpace().Append("[").Append(navName).Append("_1").Append("]");
+    builder.Append(relECClassIdNativeSql.at(0).GetSql()).AppendSpace().Append("[").Append(navName).Append("_1]");
     builder.AppendSpace();
     if (exp.GetIdArgExp()->GetType() == Exp::Type::PropertyName)
         {
@@ -2889,7 +2886,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareNavValueCreationFuncExp(NativeSqlBuilder::L
         nativeSqlSnippets.push_back(builder);
         return ECSqlStatus::Success;
         }
-    builder.Append("FROM (SELECT ").Append(idNativeSql).AppendComma().AppendSpace().Append(relECClassIdNativeSql).AppendParenRight();
 
     nativeSqlSnippets.push_back(builder);
     return ECSqlStatus::Success;
@@ -2901,14 +2897,17 @@ ECSqlStatus ECSqlExpPreparer::PrepareNavValueCreationFuncExp(NativeSqlBuilder::L
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareRelECClassIdFromNavProperty(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, PropertyNameExp const& exp)
     {
-    if (exp.GetPropertyPath().Size() != 3)
-        {
-        BeAssert(false && "PrepareRelECClassIdFromNavProperty expects to get three properties: SchemaName.ClassName.PropertyName");
-        return ECSqlStatus::InvalidECSql;
-        }
-    NativeSqlBuilder builder(std::to_string(ctx.GetECDb().Schemas().GetClass(exp.GetPropertyPath()[0].GetName(), exp.GetPropertyPath()[1].GetName())->GetPropertyP(exp.GetPropertyPath()[2].GetName())->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue()).c_str());
+    NativeSqlBuilder builder(std::to_string(ctx.GetECDb().Schemas().GetClass(exp.GetClassRefExp()->GetAs<ClassNameExp>().GetSchemaName(), exp.GetClassRefExp()->GetAs<ClassNameExp>().GetClassName())->GetPropertyP(exp.GetPropertyPath()[0].GetName())->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue()).c_str());
     nativeSqlSnippets.push_back(builder);
     return ECSqlStatus::Success;
+    // if (exp.GetECSqlPropertyPath().Size() != 3)
+    //     {
+    //     BeAssert(false && "PrepareRelECClassIdFromNavProperty expects to get three properties: SchemaName.ClassName.PropertyName");
+    //     return ECSqlStatus::InvalidECSql;
+    //     }
+    // NativeSqlBuilder builder(std::to_string(ctx.GetECDb().Schemas().GetClass(exp.GetECSqlPropertyPath()[0].GetName(), exp.GetECSqlPropertyPath()[1].GetName())->GetPropertyP(exp.GetECSqlPropertyPath()[2].GetName())->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue()).c_str());
+    // nativeSqlSnippets.push_back(builder);
+    // return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------

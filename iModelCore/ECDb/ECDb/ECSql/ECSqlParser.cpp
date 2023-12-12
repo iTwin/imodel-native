@@ -4214,18 +4214,34 @@ BentleyStatus ECSqlParser::ParseNavValueCreationFuncExp(std::unique_ptr<NavValue
         return ERROR;
         }
     
-    std::unique_ptr<PropertyNameExp> propNameExp = std::make_unique<PropertyNameExp>(std::move(derivedPropertyExp->GetExpression()->GetAs<PropertyNameExp>().GetPropertyPath()), true);
+    const auto propPath = derivedPropertyExp->GetExpression()->GetAs<PropertyNameExp>().GetPropertyPath();
+    ClassMap const* classMap = m_context->GetECDb().Schemas().GetDispatcher().GetClassMap(propPath[0].GetName(), propPath[1].GetName(), SchemaLookupMode::AutoDetect, nullptr);
+    std::shared_ptr<ClassNameExp::Info> classNameExpInfo = nullptr;
+    if (SUCCESS != m_context->TryResolveClass(classNameExpInfo, nullptr, propPath[0].GetName(), propPath[1].GetName(), ECSqlType::Select, false))
+        return ERROR;
+
+    std::unique_ptr<ClassNameExp> classNameExp =  std::make_unique<ClassNameExp>(propPath[1].GetName().c_str(), propPath[0].GetName().c_str(), nullptr, classNameExpInfo);
+
+    std::unique_ptr<PropertyNameExp> propNameExp = std::make_unique<PropertyNameExp>(
+        *m_context,
+        propPath[2].GetName(),
+        *classNameExp.get(),
+        *classMap
+    );
+
     propNameExp->SetTypeInfo(ECSqlTypeInfo(ECSqlTypeInfo::Kind::Navigation));
     derivedPropertyExp = std::move(std::make_unique<DerivedPropertyExp>(std::move(propNameExp), parseNode->getParent()->getChild(1)->getTokenValue().empty() ? nullptr : parseNode->getParent()->getChild(1)->getTokenValue().c_str()));
+
     std::unique_ptr<ValueExp> idArgExp = nullptr;
     if (SUCCESS != ParseFunctionArg(idArgExp, *parseNode->getChild(4)))
         return ERROR;
-    
+
     std::unique_ptr<ValueExp> relECClassIdArgExp = nullptr;
     if (parseNode->getChild(5)->count() != 0 && SUCCESS != ParseFunctionArg(relECClassIdArgExp, *parseNode->getChild(5)->getChild(1)))
         return ERROR;
 
-    valueCreationFuncExp = std::make_unique<NavValueCreationFuncExp>(std::move(derivedPropertyExp), std::move(idArgExp), std::move(relECClassIdArgExp));
+    valueCreationFuncExp = std::make_unique<NavValueCreationFuncExp>(std::move(derivedPropertyExp), std::move(idArgExp), std::move(relECClassIdArgExp), std::move(classNameExp));
+    valueCreationFuncExp->SetTypeInfo(ECSqlTypeInfo(ECSqlTypeInfo::Kind::Navigation));
     return SUCCESS;
     }
 
