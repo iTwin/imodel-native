@@ -38,8 +38,7 @@ TEST_F (ContentQueryBuilderTests, RelatedContentField_WithSingleStepRelationship
     auto querySet = GetQueryBuilder().CreateQuerySet(field);
     ValidateQueries(querySet, [&]()
         {
-        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
-        descriptor->RemoveContentFlag(ContentFlags::SkipInstancesCheck);
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Undefined, 0);
         descriptor->AddSelectClass(SelectClassInfo(*classB, RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), true), "");
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), *classB, *classB->GetPropertyP("PropB")));
@@ -102,8 +101,7 @@ TEST_F (ContentQueryBuilderTests, RelatedContentField_WithMultiStepRelationshipP
     auto querySet = GetQueryBuilder().CreateQuerySet(field);
     ValidateQueries(querySet, [&]()
         {
-        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
-        descriptor->RemoveContentFlag(ContentFlags::SkipInstancesCheck);
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Undefined, 0);
         descriptor->AddSelectClass(SelectClassInfo(*classC, RULES_ENGINE_RELATED_CLASS_ALIAS(*classC, 0), true), "");
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classC, 0), *classC, *classC->GetPropertyP("PropC")));
@@ -177,8 +175,7 @@ TEST_F (ContentQueryBuilderTests, RelatedContentField_WithNestedContentFields)
         {
         RelatedClassPath bTocPath{ RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relBC, RULES_ENGINE_RELATED_CLASS_ALIAS(*relBC, 0)), true, SelectClass<ECClass>(*classC, RULES_ENGINE_RELATED_CLASS_ALIAS(*classC, 0), false)) };
 
-        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
-        descriptor->RemoveContentFlag(ContentFlags::SkipInstancesCheck);
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Undefined, 0);
         descriptor->AddSelectClass(SelectClassInfo(*classB, RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), true)
             .SetRelatedPropertyPaths({bTocPath}), "");
 
