@@ -98,8 +98,19 @@ bool JsLogger::isEnabled(Utf8CP catIn, SEVERITY sev) {
 void JsLogger::processDeferred() {
     if (m_deferredLogging.empty())
         return;
-    for (auto const& message : m_deferredLogging)
-        logToJs(message.m_category.c_str(), message.m_severity, message.m_message.c_str());
+    for (auto const& message : m_deferredLogging) {
+        try {
+            logToJs(message.m_category.c_str(), message.m_severity, message.m_message.c_str());
+        } catch (...) {
+            // Logging to JS did not work, so leave m_deferredLogging alone so we can try again
+            // later.
+            // logToJs triggers the backend JavaScript logging functionality. That functionality
+            // allows for custom log functions. Those custom log functions may throw an exception,
+            // and if they do so, that exception gets propogated to here. Catch that here so that
+            // we don't throw a C++ exception from this function.
+            return;
+        }
+    }
     m_deferredLogging.clear();
 }
 
@@ -115,11 +126,19 @@ void JsLogger::LogMessage(Utf8CP category, SEVERITY sev, Utf8CP msg) {
 
     if (canUseJavaScript()) {
         processDeferred();
-        logToJs(category, sev, msg);
-    } else {
-        // save this message in memory so it can be logged later on the JavaScript thread
-        m_deferredLogging.push_back(LoggedMessage(category, sev, msg));
+        try {
+            logToJs(category, sev, msg);
+            return;
+        } catch (...) {
+            // Push to deferred below, because JS log failed.
+            // logToJs triggers the backend JavaScript logging functionality. That functionality
+            // allows for custom log functions. Those custom log functions may throw an exception,
+            // and if they do so, that exception gets propogated to here. Catch that here so that
+            // we don't throw a C++ exception from this function.
+        }
     }
+    // save this message in memory so it can be logged later on the JavaScript thread
+    m_deferredLogging.push_back(LoggedMessage(category, sev, msg));
 }
 
 bool JsLogger::IsSeverityEnabled(Utf8CP category, SEVERITY sev) {
