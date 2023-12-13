@@ -353,10 +353,10 @@ BentleyStatus ECSqlParser::ParseDerivedColumn(std::unique_ptr<DerivedPropertyExp
         }
 
     OSQLParseNode const* first = parseNode->getChild(0);
-    OSQLParseNode const* opt_as_clause = parseNode->getChild(1);
 
     std::unique_ptr<ValueExp> valExp = nullptr;
     BentleyStatus stat = ParseValueExp(valExp, first);
+    OSQLParseNode const* opt_as_clause = parseNode->getChild(1);
     if (stat != SUCCESS)
         return stat;
 
@@ -4230,8 +4230,14 @@ BentleyStatus ECSqlParser::ParseNavValueCreationFuncExp(std::unique_ptr<NavValue
     );
 
     propNameExp->SetTypeInfo(ECSqlTypeInfo(ECSqlTypeInfo::Kind::Navigation));
-    derivedPropertyExp = std::move(std::make_unique<DerivedPropertyExp>(std::move(propNameExp), parseNode->getParent()->getChild(1)->getTokenValue().empty() ? nullptr : parseNode->getParent()->getChild(1)->getTokenValue().c_str()));
-
+    Utf8CP alias = parseNode->getParent()->getChild(1)->getTokenValue().empty() ? propPath[2].GetName().c_str() : parseNode->getParent()->getChild(1)->getTokenValue().c_str();
+    derivedPropertyExp = std::move(std::make_unique<DerivedPropertyExp>(std::move(propNameExp), alias));
+    
+    if (parseNode->getParent()->getChild(1)->count() == 0)
+        {
+        parseNode->getParent()->getChild(1)->append(new OSQLParseNode(alias, SQLNodeType::SQL_NODE_NAME)); //TODO: this actually is an AS keyowrd
+        parseNode->getParent()->getChild(1)->append(new OSQLParseNode(alias, SQLNodeType::SQL_NODE_NAME)); //TODO: check alis child rule id
+        }
     std::unique_ptr<ValueExp> idArgExp = nullptr;
     if (SUCCESS != ParseFunctionArg(idArgExp, *parseNode->getChild(4)))
         return ERROR;
@@ -4241,7 +4247,6 @@ BentleyStatus ECSqlParser::ParseNavValueCreationFuncExp(std::unique_ptr<NavValue
         return ERROR;
 
     valueCreationFuncExp = std::make_unique<NavValueCreationFuncExp>(std::move(derivedPropertyExp), std::move(idArgExp), std::move(relECClassIdArgExp), std::move(classNameExp));
-    valueCreationFuncExp->SetTypeInfo(ECSqlTypeInfo(ECSqlTypeInfo::Kind::Navigation));
     return SUCCESS;
     }
 

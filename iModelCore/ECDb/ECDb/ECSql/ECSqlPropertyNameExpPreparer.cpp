@@ -384,11 +384,8 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                     }
 
                 nativeSqlSnippets = propertyRef->GetNativeSql();
-                if (ctx.GetCurrentScope().IsRootScope())
-                    {
-                    ECSqlFieldFactory::CreateField(ctx, referencedValueExp->GetAs<NavValueCreationFuncExp>().GetColumnRefExp()->GetAsCP<DerivedPropertyExp>(), ctx.GetCurrentScope().GetNativeSqlSelectClauseColumnCount());
-                    ctx.GetCurrentScopeR().IncrementNativeSqlSelectClauseColumnCount(1);
-                    }
+                if (ctx.GetCurrentScope().IsRootScope() && exp.GetParent()->GetType() == Exp::Type::DerivedProperty)
+                    ECSqlFieldFactory::CreateField(ctx, exp.GetParent()->GetAsCP<DerivedPropertyExp>(), ctx.GetCurrentScope().GetNativeSqlSelectClauseColumnCount());
                 break;
                 }
             default: {

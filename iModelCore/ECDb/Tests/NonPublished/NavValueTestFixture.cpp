@@ -173,7 +173,7 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue) {
 
         {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Property.Id from meta.PropertyCustomAttribute"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * from meta.PropertyCustomAttribute"));
         printf("%s\n", stmt.GetNativeSql());
         }
     }
