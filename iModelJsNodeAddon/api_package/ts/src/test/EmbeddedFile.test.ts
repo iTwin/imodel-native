@@ -71,7 +71,7 @@ describe("embedded files", () => {
     testEmbed(tempDgnDb);
     expect(tempDgnDb.hasUnsavedChanges()).to.be.false;
     expect(tempDgnDb.hasPendingTxns()).to.be.false;
-    tempDgnDb.closeIModel();
+    tempDgnDb.closeFile();
   });
 
   it("BlobIO", () => {
