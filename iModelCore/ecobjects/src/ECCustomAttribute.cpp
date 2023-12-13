@@ -459,9 +459,11 @@ CustomAttributeReadStatus IECCustomAttributeContainer::ReadCustomAttributes (pug
                 // In EC3 we will fail to load the schema if any invalid custom attributes are found, for EC2 schemas we will skip the invalid attributes and continue to load the schema
                 if (containerSchema.OriginalECXmlVersionAtLeast(ECVersion::V3_0))
                     {
+                    SchemaKey caSchemaKey;
+                    if (ECObjectsStatus::Success != SchemaKey::ParseSchemaFullName(caSchemaKey, ns.c_str()))
+                        return CustomAttributeReadStatus::InvalidCustomAttributes;
                     // In EC3, skip the custom attribute if it belongs to a pruned schema
-                    Utf8String caClassName = ns.substr(0, ns.find('.'));
-                    if (schemaContext.GetSchemasToPrune().end() != std::find(schemaContext.GetSchemasToPrune().begin(), schemaContext.GetSchemasToPrune().end(), caClassName.c_str()))
+                    if (schemaContext.GetSchemasToPrune().end() != std::find(schemaContext.GetSchemasToPrune().begin(), schemaContext.GetSchemasToPrune().end(), caSchemaKey.GetName().c_str()))
                         status = CustomAttributeReadStatus::SkippedCustomAttributes;
                     else
                         status = CustomAttributeReadStatus::InvalidCustomAttributes;
