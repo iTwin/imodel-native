@@ -11,32 +11,39 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 USING_NAMESPACE_ECPRESENTATIONTESTS
 
 #define TEST_SCHEMA R"xml(<?xml version="1.0" encoding="UTF-8"?>
-    <ECSchema schemaName="TestSchema" nameSpacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-        <ECClass typeName="TestClass" isDomainClass="True">
+    <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
+        <ECSchemaReference name="Units" version="01.00.07" alias="u" />
+        <ECEntityClass typeName="TestClass">
             <ECProperty propertyName="Prop1" typeName="string" displayLabel="Custom Label" />
             <ECProperty propertyName="Prop2" typeName="TestIntEnum" />
             <ECProperty propertyName="Prop3" typeName="TestStringEnum" />
             <ECProperty propertyName="Prop4" typeName="double" kindOfQuantity="Length" />
             <ECProperty propertyName="Prop5" typeName="double" />
-            <ECProperty propertyName="Prop6" typeName="point2d" />
-            <ECProperty propertyName="Prop7" typeName="point3d" />
+            <ECProperty propertyName="Point2dProp" typeName="point2d" />
+            <ECProperty propertyName="Point2dPropWithKoq" typeName="point2d" kindOfQuantity="Length" />
+            <ECProperty propertyName="Point3dProp" typeName="point3d" />
+            <ECProperty propertyName="Point3dPropWithKoq" typeName="point3d" kindOfQuantity="Length" />
             <ECProperty propertyName="Prop7" typeName="DateTime" />
             <ECProperty propertyName="SmallLengthProp" typeName="double" kindOfQuantity="SmallLength" />
-        </ECClass>
+            <ECProperty propertyName="TemperatureProp" typeName="double" kindOfQuantity="Temperature" />
+        </ECEntityClass>
         <ECEnumeration typeName="TestIntEnum" backingTypeName="int" isStrict="true">
-            <ECEnumerator value="0" displayLabel="Zero"/>
-            <ECEnumerator value="1" displayLabel="One"/>
-            <ECEnumerator value="2" displayLabel="Two"/>
+            <ECEnumerator value="0" name="Zero"/>
+            <ECEnumerator value="1" name="One"/>
+            <ECEnumerator value="2" name="Two"/>
         </ECEnumeration>
         <ECEnumeration typeName="TestStringEnum" backingTypeName="string" isStrict="true">
-            <ECEnumerator value="zero" displayLabel="Zero"/>
-            <ECEnumerator value="one" displayLabel="One"/>
-            <ECEnumerator value="two" displayLabel="Two"/>
+            <ECEnumerator value="zero" name="Zero"/>
+            <ECEnumerator value="one" name="One"/>
+            <ECEnumerator value="two" name="Two"/>
         </ECEnumeration>
-        <KindOfQuantity typeName="Length" displayLabel="Length" persistenceUnit="M" relativeError="1e-6"
-            presentationUnits="FT(real4u);M(real4u);FT(fi8);IN(real)" />
-        <KindOfQuantity typeName="SmallLength" displayLabel="Small Length" persistenceUnit="M" relativeError="0"
-            presentationUnits="FT(real4u);IN(real)" />
+        <KindOfQuantity typeName="Length" displayLabel="Length" persistenceUnit="u:M" relativeError="1e-6"
+            presentationUnits="f:DefaultRealU(4)[u:FT];f:DefaultRealU(4)[u:M];f:DefaultRealU(4)[u:FT];f:DefaultRealU(4)[u:IN]" />
+        <KindOfQuantity typeName="SmallLength" displayLabel="Small Length" persistenceUnit="u:M" relativeError="0"
+            presentationUnits="f:DefaultRealU(4)[u:FT];f:DefaultRealU(4)[u:IN]" />
+        <KindOfQuantity typeName="Temperature" displayLabel="Temperature" persistenceUnit="u:CELSIUS" relativeError="1e-6"
+            presentationUnits="f:DefaultRealU(4)[u:CELSIUS];f:DefaultRealU(4)[u:FAHRENHEIT];f:DefaultRealU(4)[u:K]" />
     </ECSchema>
 )xml"
 
@@ -157,11 +164,25 @@ TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesDoubleValu
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesPoint2dValues)
     {
-    ECPropertyCP prop = m_class->GetPropertyP("Prop6");
+    ECPropertyCP prop = m_class->GetPropertyP("Point2dProp");
     ECValue value(DPoint2d::From(1, 2));
     Utf8String formattedValue;
     EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value, ECPresentation::UnitSystem::Undefined));
-    EXPECT_STREQ("X: 1.00 Y: 2.00", formattedValue.c_str());
+    EXPECT_STREQ("X: 1.00; Y: 2.00", formattedValue.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesPoint2dValuesWithKoq)
+    {
+    ECPropertyCP prop = m_class->GetPropertyP("Point2dPropWithKoq");
+    NamedFormat namedFormat = prop->GetKindOfQuantity()->GetPresentationFormats()[1];
+    Utf8Char decimalSeparator = namedFormat.GetNumericSpec()->GetDecimalSeparator();
+    ECValue value(DPoint2d::From(1, 2));
+    Utf8String formattedValue;
+    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value, ECPresentation::UnitSystem::Metric));
+    EXPECT_STREQ(Utf8PrintfString("X: 1%c0 m; Y: 2%c0 m", decimalSeparator, decimalSeparator).c_str(), formattedValue.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -169,11 +190,25 @@ TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesPoint2dVal
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesPoint3dValues)
     {
-    ECPropertyCP prop = m_class->GetPropertyP("Prop7");
+    ECPropertyCP prop = m_class->GetPropertyP("Point3dProp");
     ECValue value(DPoint3d::From(1, 2, 3));
     Utf8String formattedValue;
     EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value, ECPresentation::UnitSystem::Undefined));
-    EXPECT_STREQ("X: 1.00 Y: 2.00 Z: 3.00", formattedValue.c_str());
+    EXPECT_STREQ("X: 1.00; Y: 2.00; Z: 3.00", formattedValue.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesPoint3dValuesWithKoq)
+    {
+    ECPropertyCP prop = m_class->GetPropertyP("Point3dPropWithKoq");
+    NamedFormat namedFormat = prop->GetKindOfQuantity()->GetPresentationFormats()[1];
+    Utf8Char decimalSeparator = namedFormat.GetNumericSpec()->GetDecimalSeparator();
+    ECValue value(DPoint3d::From(1, 2, 3));
+    Utf8String formattedValue;
+    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value, ECPresentation::UnitSystem::Metric));
+    EXPECT_STREQ(Utf8PrintfString("X: 1%c0 m; Y: 2%c0 m; Z: 3%c0 m", decimalSeparator, decimalSeparator, decimalSeparator).c_str(), formattedValue.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -222,4 +257,18 @@ TEST_F(DefaultPropertyFormatterTests, UsesPersistenceUnitFormatInsteadOfDefaultF
     Utf8String formattedValue;
     EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value, ECPresentation::UnitSystem::Metric));
     EXPECT_STREQ("123.0 m", formattedValue.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesPropertiesWithUnitsThatBelongToSiAndMetricUnitSystems)
+    {
+    ECPropertyCP prop = m_class->GetPropertyP("TemperatureProp");
+    Formatting::Format const* format = prop->GetKindOfQuantity()->GetDefaultPresentationFormat();
+    Utf8Char decimalSeparator = format->GetNumericSpec()->GetDecimalSeparator();
+    ECValue value(22.0);
+    Utf8String formattedValue;
+    EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value, ECPresentation::UnitSystem::Metric));
+    EXPECT_STREQ(Utf8PrintfString("22%c0 " "\xC2\xB0" "C", decimalSeparator).c_str(), formattedValue.c_str());
     }

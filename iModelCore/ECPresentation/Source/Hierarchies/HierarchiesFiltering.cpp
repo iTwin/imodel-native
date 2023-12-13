@@ -648,8 +648,15 @@ public:
     PresentationRuleSetPtr GetRuleset()
         {
         GetInProgressContentRule(); // just to make sure we have the ruleset
+
+        PresentationRuleSetCR hierarchyRuleset = m_props.GetRuleset().AsSupplemented() 
+            ? m_props.GetRuleset().AsSupplemented()->GetPrimaryRuleset()
+            : m_props.GetRuleset();
+
         PresentationRuleSetPtr ruleset = m_ruleset;
         m_ruleset->SetRuleSetId(Utf8String("NodesDescriptor:").append(m_contentRule->GetHash()));
+        for (ContentModifierCP modifier : hierarchyRuleset.GetContentModifierRules())
+            m_ruleset->AddPresentationRule(*new ContentModifier(*modifier));
         m_ruleset = nullptr;
         m_contentRule = nullptr;
         return ruleset;

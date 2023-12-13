@@ -102,9 +102,9 @@ Utf8String ContentDescriptor::Field::ArrayTypeDescription::CreateTypeName(TypeDe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptor::ContentDescriptor(IConnectionCR connection, PresentationRuleSetCR ruleset, RulesetVariables rulesetVariables, INavNodeKeysContainerCR inputKeys)
+ContentDescriptor::ContentDescriptor(IConnectionCR connection, PresentationRuleSetCR ruleset, RulesetVariables rulesetVariables, INavNodeKeysContainerCR inputKeys, Utf8CP preferredDisplayType, int requestedContentFlags, int usedContentFlags)
     : m_connectionId(connection.GetId()), m_ruleset(&ruleset), m_rulesetVariables(rulesetVariables), m_inputKeys(&inputKeys),
-    m_preferredDisplayType(ContentDisplayType::Undefined), m_contentFlags(0), m_unitSystem(UnitSystem::Undefined),
+    m_preferredDisplayType(preferredDisplayType), m_requestedContentFlags(requestedContentFlags), m_contentFlags(usedContentFlags), m_unitSystem(UnitSystem::Undefined),
     m_sortingFieldIndex(-1), m_sortDirection(SortDirection::Ascending), m_usesModifiedRuleset(false)
     {
     }
@@ -114,7 +114,7 @@ ContentDescriptor::ContentDescriptor(IConnectionCR connection, PresentationRuleS
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::ContentDescriptor(ContentDescriptorCR other)
     : m_preferredDisplayType(other.m_preferredDisplayType), m_classes(other.m_classes), m_specificationClasses(other.m_specificationClasses),
-    m_fieldsFilterExpression(other.m_fieldsFilterExpression), m_instanceFilter(other.m_instanceFilter), m_contentFlags(other.m_contentFlags),
+    m_fieldsFilterExpression(other.m_fieldsFilterExpression), m_instanceFilter(other.m_instanceFilter), m_contentFlags(other.m_contentFlags), m_requestedContentFlags(other.m_requestedContentFlags),
     m_sortingFieldIndex(other.m_sortingFieldIndex), m_sortDirection(other.m_sortDirection), m_connectionId(other.m_connectionId), m_inputKeys(other.m_inputKeys),
     m_selectionInfo(other.m_selectionInfo), m_categories(other.m_categories), m_totalFieldsCount(other.m_totalFieldsCount), m_unitSystem(other.m_unitSystem),
     m_ruleset(other.m_ruleset), m_rulesetVariables(other.m_rulesetVariables), m_usesModifiedRuleset(other.m_usesModifiedRuleset), m_exclusiveIncludePaths(other.m_exclusiveIncludePaths)
@@ -130,6 +130,16 @@ ContentDescriptor::~ContentDescriptor()
     {
     for (Field* field : m_fields)
         delete field;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptorPtr ContentDescriptor::Create(ContentDescriptorCR other, int additionalContentFlags)
+    {
+    ContentDescriptorPtr copy = new ContentDescriptor(other);
+    copy->AddContentFlags(additionalContentFlags);
+    return copy;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -604,7 +614,7 @@ void ContentDescriptor::MergeWith(ContentDescriptorCR other)
     NavNodeKeyList newKeys;
     for (NavNodeKeyCPtr inputKey : *other.m_inputKeys)
         {
-        if (m_inputKeys->end() != m_inputKeys->find(inputKey))
+        if (m_inputKeys->end() == m_inputKeys->find(inputKey))
             newKeys.push_back(inputKey);
         }
     if (0 != newKeys.size())
@@ -654,37 +664,7 @@ void ContentDescriptor::MergeWith(ContentDescriptorCR other)
             AddRootField(*sourceField->Clone());
         }
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentDescriptor::SetContentFlags(int flags)
-    {
-    int diff = flags ^ m_contentFlags;
-    int additions = flags & diff;
-    int removals = m_contentFlags & diff;
 
-    m_contentFlags = flags;
-
-    int steps = 0;
-    while (additions > 0)
-        {
-        int addition = (additions & 1) << steps;
-        if (0 != addition)
-            OnFlagAdded((ContentFlags)addition);
-        additions >>= 1;
-        ++steps;
-        }
-
-    steps = 0;
-    while (removals > 0)
-        {
-        int removal = removals & 1;
-        if (0 != removal)
-            OnFlagRemoved((ContentFlags)removal);
-        removals >>= 1;
-        ++steps;
-        }
-    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -692,36 +672,6 @@ bool ContentDescriptor::HasContentFlag(ContentFlags flag) const
     {
     return 0 != ((int)flag & m_contentFlags);
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentDescriptor::AddContentFlag(ContentFlags flag)
-    {
-    if (0 != ((int)flag & m_contentFlags))
-        return;
-
-    m_contentFlags |= (int)flag;
-    OnFlagAdded(flag);
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentDescriptor::RemoveContentFlag(ContentFlags flag)
-    {
-    if (0 == ((int)flag & m_contentFlags))
-        return;
-
-    m_contentFlags &= ~(int)flag;
-    OnFlagRemoved(flag);
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentDescriptor::OnFlagAdded(ContentFlags flag) {}
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentDescriptor::OnFlagRemoved(ContentFlags flag) {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -1611,7 +1561,7 @@ Formatting::Format const* DefaultPropertyFormatter::_GetActiveFormat(KindOfQuant
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DefaultPropertyFormatter::_ApplyEnumFormatting(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue) const
+BentleyStatus DefaultPropertyFormatter::ApplyEnumFormatting(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue) const
     {
     return ValueHelpers::GetEnumPropertyDisplayValue(formattedValue, ecProperty, ecValue);
     }
@@ -1619,83 +1569,30 @@ BentleyStatus DefaultPropertyFormatter::_ApplyEnumFormatting(Utf8StringR formatt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DefaultPropertyFormatter::_ApplyKoqFormatting(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue, ECPresentation::UnitSystem unitSystemGroup) const
+BentleyStatus DefaultPropertyFormatter::ApplyPoint3dFormatting(Utf8StringR formattedValue, DPoint3dCR point, std::function<Utf8String(double)> const& componentFormatter) const
     {
-    KindOfQuantityCP koq = ecProperty.GetKindOfQuantity();
-    if (nullptr == koq)
-        return ERROR;
-
-    // currently only doubles are supported
-    if (!ecValue.IsDouble())
-        return ERROR;
-
-    // determine the presentation unit
-    Formatting::Format const* format = GetActiveFormat(*koq, unitSystemGroup);
-    if (nullptr == format || nullptr == format->GetCompositeMajorUnit())
-        {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to format property '%s.%s' value as active format does not have a composite major unit",
-            ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str()));
-        return ERROR;
-        }
-
-    // apply formatting
-    ECQuantityFormattingStatus status;
-    formattedValue = ECQuantityFormatting::FormatPersistedValue(ecValue.GetDouble(), koq, *format->GetCompositeMajorUnit(), *format, &status);
-    if (ECQuantityFormattingStatus::Success != status)
-        {
-        formattedValue.clear();
-        return ERROR;
-        }
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DefaultPropertyFormatter::_ApplyDoubleFormatting(Utf8StringR formattedValue, double value) const
-    {
-    formattedValue.Sprintf("%.2f", value);
-    if (formattedValue.Equals("-0.00"))
-        formattedValue = "0.00";
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DefaultPropertyFormatter::_ApplyPoint3dFormatting(Utf8StringR formattedValue, DPoint3dCR point) const
-    {
-    Utf8String xValue, yValue, zValue;
-    if (SUCCESS != _ApplyDoubleFormatting(xValue, point.x) || SUCCESS != _ApplyDoubleFormatting(yValue, point.y) || SUCCESS != _ApplyDoubleFormatting(zValue, point.z))
-        return ERROR;
-
     formattedValue.clear();
-    formattedValue.append("X: ").append(xValue).append(" ");
-    formattedValue.append("Y: ").append(yValue).append(" ");
-    formattedValue.append("Z: ").append(zValue);
+    formattedValue.append("X: ").append(componentFormatter(point.x)).append("; ");
+    formattedValue.append("Y: ").append(componentFormatter(point.y)).append("; ");
+    formattedValue.append("Z: ").append(componentFormatter(point.z));
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DefaultPropertyFormatter::_ApplyPoint2dFormatting(Utf8StringR formattedValue, DPoint2dCR point) const
+BentleyStatus DefaultPropertyFormatter::ApplyPoint2dFormatting(Utf8StringR formattedValue, DPoint2dCR point, std::function<Utf8String(double)> const& componentFormatter) const
     {
-    Utf8String xValue, yValue;
-    if (SUCCESS != _ApplyDoubleFormatting(xValue, point.x) || SUCCESS != _ApplyDoubleFormatting(yValue, point.y))
-        return ERROR;
-
     formattedValue.clear();
-    formattedValue.append("X: ").append(xValue).append(" ");
-    formattedValue.append("Y: ").append(yValue);
+    formattedValue.append("X: ").append(componentFormatter(point.x)).append("; ");
+    formattedValue.append("Y: ").append(componentFormatter(point.y));
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DefaultPropertyFormatter::_ApplyDateTimeFormatting(Utf8StringR formattedValue, DateTimeCR dt) const
+BentleyStatus DefaultPropertyFormatter::ApplyDateTimeFormatting(Utf8StringR formattedValue, DateTimeCR dt) const
     {
     formattedValue = dt.ToString();
     return SUCCESS;
@@ -1704,7 +1601,7 @@ BentleyStatus DefaultPropertyFormatter::_ApplyDateTimeFormatting(Utf8StringR for
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DefaultPropertyFormatter::_ApplyBinaryFormatting(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue) const
+BentleyStatus DefaultPropertyFormatter::ApplyBinaryFormatting(Utf8StringR formattedValue, ECPropertyCR ecProperty, ECValueCR ecValue) const
     {
     if (!ecProperty.GetIsPrimitive() || ecProperty.GetAsPrimitiveProperty()->GetExtendedTypeName() != EXTENDED_TYPENAME_BeGuid)
         return ERROR;
@@ -1726,25 +1623,55 @@ BentleyStatus DefaultPropertyFormatter::_GetFormattedPropertyValue(Utf8StringR f
         return SUCCESS;
         }
 
-    if (SUCCESS == _ApplyEnumFormatting(formattedValue, ecProperty, ecValue))
+    std::function<Utf8String(double)> formatter = [](double rawValue)
+        {
+        Utf8PrintfString formattedValue("%.2f", rawValue);
+        if (formattedValue.Equals("-0.00"))
+            formattedValue.assign("0.00");
+        return formattedValue;
+        };
+
+    KindOfQuantityCP koq = nullptr;
+    Formatting::Format const* format = nullptr;
+    if (koq = ecProperty.GetKindOfQuantity())
+        {
+        // determine the presentation unit
+        format = GetActiveFormat(*koq, unitSystem);
+        if (nullptr == format || nullptr == format->GetCompositeMajorUnit())
+            {
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to format property '%s.%s' value - active format does not have a composite major unit.",
+                ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str()));
+            }
+        auto defaultFormatter = formatter;
+        formatter = [&](double rawValue)
+            {
+            ECQuantityFormattingStatus status;
+            auto formattedValue = ECQuantityFormatting::FormatPersistedValue(rawValue, koq, *format->GetCompositeMajorUnit(), *format, &status);
+            if (ECQuantityFormattingStatus::Success != status)
+                return defaultFormatter(rawValue);
+            return formattedValue;
+            };
+        }
+
+    if (ecValue.IsDouble())
+        {
+        formattedValue = formatter(ecValue.GetDouble());
+        return SUCCESS;
+        }
+
+    if (ecValue.IsPoint3d() && SUCCESS == ApplyPoint3dFormatting(formattedValue, ecValue.GetPoint3d(), formatter))
         return SUCCESS;
 
-    if (SUCCESS == _ApplyKoqFormatting(formattedValue, ecProperty, ecValue, unitSystem))
+    if (ecValue.IsPoint2d() && SUCCESS == ApplyPoint2dFormatting(formattedValue, ecValue.GetPoint2d(), formatter))
         return SUCCESS;
 
-    if (ecValue.IsDouble() && SUCCESS == _ApplyDoubleFormatting(formattedValue, ecValue.GetDouble()))
+    if (ecValue.IsDateTime() && SUCCESS == ApplyDateTimeFormatting(formattedValue, ecValue.GetDateTime()))
         return SUCCESS;
 
-    if (ecValue.IsPoint3d() && SUCCESS == _ApplyPoint3dFormatting(formattedValue, ecValue.GetPoint3d()))
+    if (ecValue.IsBinary() && SUCCESS == ApplyBinaryFormatting(formattedValue, ecProperty, ecValue))
         return SUCCESS;
 
-    if (ecValue.IsPoint2d() && SUCCESS == _ApplyPoint2dFormatting(formattedValue, ecValue.GetPoint2d()))
-        return SUCCESS;
-
-    if (ecValue.IsDateTime() && SUCCESS == _ApplyDateTimeFormatting(formattedValue, ecValue.GetDateTime()))
-        return SUCCESS;
-
-    if (ecValue.IsBinary() && SUCCESS == _ApplyBinaryFormatting(formattedValue, ecProperty, ecValue))
+    if (SUCCESS == ApplyEnumFormatting(formattedValue, ecProperty, ecValue))
         return SUCCESS;
 
     return ERROR;

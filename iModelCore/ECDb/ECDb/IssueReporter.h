@@ -414,7 +414,7 @@ struct ECDB_EXPORT ECDbIssueId
     static ECN::IssueId ECDb_0385;
     static ECN::IssueId ECDb_0386;
     static ECN::IssueId ECDb_0387;
-    static ECN::IssueId ECDb_0388;
+    static ECN::IssueId ECDb_0388;  // This issue id was being used to report unsupported deletion of KoQs. KoQ deletion support is now added and issue id is now unused.
     static ECN::IssueId ECDb_0389;
     static ECN::IssueId ECDb_0390;
     static ECN::IssueId ECDb_0391;
@@ -431,7 +431,7 @@ struct ECDB_EXPORT ECDbIssueId
     static ECN::IssueId ECDb_0401;
     static ECN::IssueId ECDb_0402;
     static ECN::IssueId ECDb_0403;
-    static ECN::IssueId ECDb_0404;
+    static ECN::IssueId ECDb_0404;  // This issue id was being used to report unsupported deletion of ECEnumerations. ECEnumerations deletion support is now added and issue id is now unused.
     static ECN::IssueId ECDb_0405;
     static ECN::IssueId ECDb_0406;
     static ECN::IssueId ECDb_0407;
@@ -660,6 +660,29 @@ struct ECDB_EXPORT ECDbIssueId
     static ECN::IssueId ECDb_0628;
     static ECN::IssueId ECDb_0629;
     static ECN::IssueId ECDb_0630;
+    static ECN::IssueId ECDb_0631;
+    static ECN::IssueId ECDb_0632;
+    static ECN::IssueId ECDb_0633;
+    static ECN::IssueId ECDb_0634;
+    static ECN::IssueId ECDb_0635;
+    static ECN::IssueId ECDb_0636;
+    static ECN::IssueId ECDb_0637;
+    static ECN::IssueId ECDb_0638;
+    static ECN::IssueId ECDb_0639;
+    static ECN::IssueId ECDb_0640;
+    static ECN::IssueId ECDb_0641;
+    static ECN::IssueId ECDb_0642;
+    static ECN::IssueId ECDb_0643;
+    static ECN::IssueId ECDb_0644;
+    static ECN::IssueId ECDb_0645;
+    static ECN::IssueId ECDb_0646;
+    static ECN::IssueId ECDb_0647;
+    static ECN::IssueId ECDb_0648;
+    static ECN::IssueId ECDb_0649;
+    static ECN::IssueId ECDb_0650;
+    static ECN::IssueId ECDb_0651;
+    static ECN::IssueId ECDb_0652;
+    static ECN::IssueId ECDb_0653;
     static ECN::IssueId ECDb_0654;
     static ECN::IssueId ECDb_0655;
     static ECN::IssueId ECDb_0656;
@@ -667,6 +690,24 @@ struct ECDB_EXPORT ECDbIssueId
     static ECN::IssueId ECDb_0658;
     static ECN::IssueId ECDb_0659;
     static ECN::IssueId ECDb_0660;
+    static ECN::IssueId ECDb_0661;
+    static ECN::IssueId ECDb_0662;
+    static ECN::IssueId ECDb_0663;
+    static ECN::IssueId ECDb_0664;
+    static ECN::IssueId ECDb_0665;
+    static ECN::IssueId ECDb_0666;
+    static ECN::IssueId ECDb_0667;
+    static ECN::IssueId ECDb_0668;
+    static ECN::IssueId ECDb_0669;
+    static ECN::IssueId ECDb_0670;
+    static ECN::IssueId ECDb_0671;
+    static ECN::IssueId ECDb_0672;
+    static ECN::IssueId ECDb_0673;
+    static ECN::IssueId ECDb_0674;
+    static ECN::IssueId ECDb_0675;
+    static ECN::IssueId ECDb_0676;
+    static ECN::IssueId ECDb_0677;
+    static ECN::IssueId ECDb_0678;
     };
 
 //---------------------------------------------------------------------------------------

@@ -241,18 +241,30 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedModels)
     {
     SetupSeedProject();
 
+    DgnElementCPtr dictionaryElm = m_db->Elements().GetElement(DgnElementId(DgnModel::DictionaryId().GetValue()));
+    ASSERT_TRUE(dictionaryElm.IsValid());
+    ASSERT_NE(dictionaryElm->GetFederationGuid(), BeSQLite::BeGuid(false));
+
+    DgnElementCPtr realityDataSourcesElm = m_db->Elements().GetElement(m_db->Elements().GetRealityDataSourcesPartitionId());
+    ASSERT_TRUE(realityDataSourcesElm.IsValid());
+    ASSERT_NE(realityDataSourcesElm->GetFederationGuid(), BeSQLite::BeGuid(false));
+
     DgnModelPtr repositoryModel = m_db->Models().GetModel(DgnModel::RepositoryModelId());
     DgnModelPtr dictionaryModel = m_db->Models().GetModel(DgnModel::DictionaryId());
+    DgnModelPtr realityDatasourcesModel = m_db->Models().GetModel(DgnModelId(m_db->Elements().GetRealityDataSourcesPartitionId().GetValue()));
     ASSERT_TRUE(repositoryModel.IsValid());
     ASSERT_TRUE(dictionaryModel.IsValid());
+    ASSERT_TRUE(realityDatasourcesModel.IsValid());
 
     ASSERT_TRUE(m_db->GetRepositoryModel().IsValid());
     ASSERT_TRUE(m_db->GetRealityDataSourcesModel().IsValid());
+    ASSERT_EQ(m_db->GetRealityDataSourcesModel()->GetModelId(), realityDatasourcesModel->GetModelId());
 
     // make sure that Delete against the root Subject fails
         {
         SubjectCPtr subject = m_db->Elements().GetRootSubject();
         ASSERT_TRUE(subject.IsValid());
+        ASSERT_TRUE(subject->GetFederationGuid() != BeSQLite::BeGuid(false));
         BeTest::SetFailOnAssert(false);
         DgnDbStatus status = subject->Delete();
         BeTest::SetFailOnAssert(true);
@@ -279,6 +291,17 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedModels)
         DgnDbStatus status = model->Delete();
         BeTest::SetFailOnAssert(true);
         ASSERT_NE(DgnDbStatus::Success, status);
+        }
+
+    // make sure that Delete against the RealityDataSourcesModel fails
+        {
+            DgnModelPtr model = m_db->Models().GetModel(DgnModelId(m_db->Elements().GetRealityDataSourcesPartitionId().GetValue()));
+            ASSERT_TRUE(model.IsValid());
+            ASSERT_FALSE(model->IsTemplate());
+            BeTest::SetFailOnAssert(false);
+            DgnDbStatus status = model->Delete();
+            BeTest::SetFailOnAssert(true);
+            ASSERT_NE(DgnDbStatus::Success, status);
         }
 
     // ensure the the root Subject still exists

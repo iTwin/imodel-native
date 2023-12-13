@@ -2119,7 +2119,7 @@ TEST(BsplineCurve, overStrokeFromLuca)
 TEST(BsplineCurve, UnclampedKnots)
     {
     // Unescaped raw_json_text is in between the following multicharacter delimiters: foo( raw_json_text )foo
-    static Utf8Chars s_inputs(u8R"foo([{"bcurve":{"points":[[0,0,0,1],[5,5,0,1],[10,-5,0,1],[15,10,0,1],[20,-10,0,1],[25,15,0,1]],"knots":[1,1,2,3,4,5,6,7,8,8],"closed":false,"order":4}},{"bcurve":{"points":[[5,2.5,0,1],[6.66666666666,1.66666666667,0,1],[10,-5,0,1],[15,10,0,1],[18.33333333332,-3.33333333332,0,1],[20,-2.5,0,1]],"knots":[3,3,3,3,4,5,6,6,6,6],"closed":false,"order":4}}])foo");
+    static Utf8Chars s_inputs(u8R"foo([{"bcurve":{"points":[[0,0,0,1],[5,5,0,1],[10,-5,0,1],[15,10,0,1],[20,-10,0,1],[25,15,0,1]],"knots":[1,1,2,3,4,5,6,7,8,8],"order":4}},{"bcurve":{"points":[[5,2.5,0,1],[6.66666666666,1.66666666667,0,1],[10,-5,0,1],[15,10,0,1],[18.33333333332,-3.33333333332,0,1],[20,-2.5,0,1]],"knots":[3,3,3,3,4,5,6,6,6,6],"order":4}}])foo");
     bvector<IGeometryPtr> inputs;
     if (Check::True(IModelJson::TryIModelJsonStringToGeometry(&s_inputs, inputs), "Parse inputs") &&
         Check::Size(inputs.size(), 2, "Have two inputs"))
@@ -2166,4 +2166,63 @@ TEST(Spiral, ClothoidProjectionFromClaude)
     result = DSpiral2dBase::ClosestPoint(clothoid, -0.01, 1.01, spiralToWorld, spacePoint, pointOn, fraction, distance);
     if (Check::True(result, "Clothoid ClosestPoint 2 of 2 succeeded."))
         Check::Near(fraction, -0.01, "Found closest point at start point.");
+    }
+
+TEST(BsplineCurve, roundTripClosure)
+    {
+    // roundtrip fake closure
+    auto ellipse = DEllipse3d::FromVectors(DPoint3d::FromZero(), DVec3d::From(1,1,1), DVec3d::From(-1,1), 0.0, msGeomConst_2pi);
+    auto curve0 = MSBsplineCurve::CreatePtr();
+    if (Check::True(SUCCESS == curve0->InitFromDEllipse3d(ellipse), "convert ellipse to B-spline curve"))
+        {
+        if (Check::True(curve0->IsClosed(), "B-spline curve is closed"))
+            {
+            if (Check::True(mdlBspline_curveShouldBeOpened(curve0.get()), "B-spline curve is *fake* closed"))
+                {
+                auto curve1 = MSBsplineCurve::CreatePtr();
+                if (Check::True(SUCCESS == curve1->CopyOpen(*curve0, 0.0), "Open the closed B-spline curve"))
+                    {
+                    if (Check::False(curve1->IsClosed(), "opened B-spline curve is open"))
+                        {
+                        if (Check::True(SUCCESS == curve1->MakeClosed(), "Close the open B-spline curve"))
+                            {
+                            Check::True(curve1->AlmostEqual(*curve0), "closed opened curve is same as closed original");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    // roundtrip periodic closure
+    static Utf8Chars s_json(u8R"foo([{"bcurve":{"closed":true,"knots":[-0.45000000000000007,-0.40000000000000002,-0.34999999999999998,-0.29999999999999993,-0.24999999999999989,-0.19999999999999984,-0.14999999999999980,-0.099999999999999756,-0.049999999999999711,0.0,0.050000000000000003,0.10000000000000001,0.15000000000000002,0.20000000000000001,0.250,0.29999999999999999,0.34999999999999998,0.39999999999999997,0.44999999999999996,0.49999999999999994,0.54999999999999993,0.59999999999999998,0.65000000000000002,0.70000000000000007,0.75000000000000011,0.80000000000000016,0.85000000000000020,0.90000000000000024,0.95000000000000029,1.0,1.050,1.1000000000000001,1.1499999999999999,1.20,1.250,1.30,1.3500000000000001,1.3999999999999999,1.450],"order":10,"points":[[50.0,50.0,0.0],[50.0,42.902599694550915,0.0],[56.067715950684452,37.001481627607653,0.0],[67.774842358496031,41.448701040376491,0.0],[79.99468963088330,37.942239580308744,0.0],[89.223665193245736,43.586787296515354,0.0],[89.223665193245736,54.191695126964134,0.0],[82.216480044044644,58.21129728850520,0.0],[89.565479102962868,66.421548512078445,0.0],[75.380201849702104,77.111979792772772,0.0],[73.671132301116472,65.224220208640673,0.0],[60.169482867289965,75.059416986879469,0.0],[69.654818861940228,77.111979792772772,0.0],[63.502168487031945,81.644722655787177,0.0],[55.554995086108754,74.802846636142789,0.0],[57.349518112123668,66.507071962323991,0.0],[66.151226287339682,66.507071962323991,0.0],[65.040331080759017,58.809961440224086,0.0],[56.922250724977260,60.777000795871835,0.0],[52.722822691309709,57.685938951282509,0.0]]}}])foo");
+    bvector<IGeometryPtr> inputs;
+    if (Check::True(IModelJson::TryIModelJsonStringToGeometry(&s_json, inputs), "Parse inputs") &&
+        Check::Size(inputs.size(), 1, "Have one input"))
+        {
+        auto cv = inputs[0]->GetAsICurvePrimitive();
+        if (Check::True(cv.IsValid(), "Input is valid"))
+            {
+            auto curve2 = cv->GetBsplineCurvePtr();
+            if (Check::True(curve2.IsValid(), "Input is a valid B-spline curve"))
+                {
+                if (Check::True(curve2->IsClosed(), "B-spline curve is closed"))
+                    {
+                    if (Check::False(mdlBspline_curveShouldBeOpened(curve2.get()), "B-spline curve is periodic"))
+                        {
+                        auto curve3 = MSBsplineCurve::CreatePtr();
+                        if (Check::True(SUCCESS == curve3->CopyOpen(*curve2, 0.0), "Open the closed B-spline curve"))
+                            {
+                            if (Check::False(curve3->IsClosed(), "opened B-spline curve is open"))
+                                {
+                                if (Check::True(SUCCESS == curve3->MakeClosed(), "Close the open B-spline curve"))
+                                    {
+                                    Check::True(curve3->AlmostEqual(*curve2), "closed opened curve is same as closed original");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }

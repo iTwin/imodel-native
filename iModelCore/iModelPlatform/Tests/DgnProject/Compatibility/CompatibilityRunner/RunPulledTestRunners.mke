@@ -10,4 +10,4 @@
 %include $(SrcRoot)imodel-native/iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/common.mki
 
 always:
-    python $(SrcRoot)/imodel-native/iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/RunPulledTestRunners.py $(TESTRUNNERS_SANDBOXDIR)
+    $(BBPYTHONCMD) $(SrcRoot)/imodel-native/iModelCore/iModelPlatform/Tests/DgnProject/Compatibility/CompatibilityRunner/RunPulledTestRunners.py $(TESTRUNNERS_SANDBOXDIR)

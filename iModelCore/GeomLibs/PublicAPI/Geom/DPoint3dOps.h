@@ -2238,6 +2238,7 @@ struct MinimumValuePriorityQueue
         // fill the hole at the root with the very last array entry.
         m_heap.front () = m_heap.back ();
         m_heap.pop_back ();
+        --n;
         size_t parent = 0;
         // push the new value back down until the sort condition is again in effect.
         for (;;)
