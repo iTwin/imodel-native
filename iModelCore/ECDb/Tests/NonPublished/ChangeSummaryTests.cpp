@@ -318,6 +318,223 @@ struct ChangeSummaryTestFixtureV1 : public ECDbTestFixture
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, DoNotCrash_if_MandatoryRelECClassIdIsSetToLinkTableRelationship) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("crash.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="ECDbMap" version="2.0" alias="ecdbmap"/>
+            <ECEntityClass typeName="Element">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.2.0">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECNavigationProperty propertyName="Parent" relationshipName="ElementOwnsChildElements" direction="Backward" description="The parent element that owns this element.">
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.2.0">
+                            <OnDeleteAction>NoAction</OnDeleteAction>
+                        </ForeignKeyConstraint>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding" modifier="None">
+                <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
+                    <Class class="Element"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+                    <Class class="Element"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="ElementRefersToElements" strength="referencing" modifier="Abstract">
+                <ECCustomAttributes>
+                    <LinkTableRelationshipMap xmlns="ECDbMap.2.0">
+                        <CreateForeignKeyConstraints>False</CreateForeignKeyConstraints>
+                    </LinkTableRelationshipMap>
+                    <ClassMap xmlns="ECDbMap.2.0">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.2.0">
+                        <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                    <Class class="Element"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
+                    <Class class="Element"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml")));
+    ReopenECDb();
+
+    auto classElementRefersToElements = m_ecdb.Schemas().FindClass("ts.ElementRefersToElements");
+    //Make sure change is that system table can be tracked.
+    TestChangeSet changeset1;
+    if ("insert invalid rel with invalid fk") {
+        TestChangeTracker tracker(m_ecdb);
+        tracker.EnableTracking(true);
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Element(Parent) VALUES(?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, BeInt64Id(1ull), classElementRefersToElements->GetId()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        tracker.EnableTracking(false);
+        ASSERT_TRUE(tracker.HasChanges());
+        ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker));
+    }
+    m_ecdb.SaveChanges();
+    ASSERT_EQ(BE_SQLITE_OK, AttachCache());
+    ECInstanceKey summary1Key;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summary1Key, ChangeSetArg(changeset1)));
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, DoNotCrash_if_MandatoryRelECClassIdIsSetToNotAnyKnowClass) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("crash.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="ECDbMap" version="2.0" alias="ecdbmap"/>
+            <ECEntityClass typeName="Element">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.2.0">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECNavigationProperty propertyName="Parent" relationshipName="ElementOwnsChildElements" direction="Backward" description="The parent element that owns this element.">
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.2.0">
+                            <OnDeleteAction>NoAction</OnDeleteAction>
+                        </ForeignKeyConstraint>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding" modifier="None">
+                <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
+                    <Class class="Element"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+                    <Class class="Element"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="ElementRefersToElements" strength="referencing" modifier="Abstract">
+                <ECCustomAttributes>
+                    <LinkTableRelationshipMap xmlns="ECDbMap.2.0">
+                        <CreateForeignKeyConstraints>False</CreateForeignKeyConstraints>
+                    </LinkTableRelationshipMap>
+                    <ClassMap xmlns="ECDbMap.2.0">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.2.0">
+                        <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                    <Class class="Element"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
+                    <Class class="Element"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml")));
+    ReopenECDb();
+
+    //Make sure change is that system table can be tracked.
+    TestChangeSet changeset1;
+    if ("insert invalid rel with invalid fk") {
+        TestChangeTracker tracker(m_ecdb);
+        tracker.EnableTracking(true);
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Element(Parent) VALUES(?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, BeInt64Id(1ull), ECN::ECClassId((uint64_t)0xffffff)));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        tracker.EnableTracking(false);
+        ASSERT_TRUE(tracker.HasChanges());
+        ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker));
+    }
+    m_ecdb.SaveChanges();
+    ASSERT_EQ(BE_SQLITE_OK, AttachCache());
+    ECInstanceKey summary1Key;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summary1Key, ChangeSetArg(changeset1)));
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, DoNotCrash_if_MandatoryRelECClassIdIsSetToAEntityClass) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("crash.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="ECDbMap" version="2.0" alias="ecdbmap"/>
+            <ECEntityClass typeName="Element">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.2.0">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECNavigationProperty propertyName="Parent" relationshipName="ElementOwnsChildElements" direction="Backward" description="The parent element that owns this element.">
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.2.0">
+                            <OnDeleteAction>NoAction</OnDeleteAction>
+                        </ForeignKeyConstraint>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding" modifier="None">
+                <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
+                    <Class class="Element"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+                    <Class class="Element"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="ElementRefersToElements" strength="referencing" modifier="Abstract">
+                <ECCustomAttributes>
+                    <LinkTableRelationshipMap xmlns="ECDbMap.2.0">
+                        <CreateForeignKeyConstraints>False</CreateForeignKeyConstraints>
+                    </LinkTableRelationshipMap>
+                    <ClassMap xmlns="ECDbMap.2.0">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    <ShareColumns xmlns="ECDbMap.2.0">
+                        <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                        <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                    </ShareColumns>
+                </ECCustomAttributes>
+                <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                    <Class class="Element"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
+                    <Class class="Element"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml")));
+    ReopenECDb();
+
+    auto classElement = m_ecdb.Schemas().FindClass("ts.Element");
+    //Make sure change is that system table can be tracked.
+    TestChangeSet changeset1;
+    if ("insert invalid rel with invalid fk") {
+        TestChangeTracker tracker(m_ecdb);
+        tracker.EnableTracking(true);
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Element(Parent) VALUES(?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, BeInt64Id(1ull), classElement->GetId()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        tracker.EnableTracking(false);
+        ASSERT_TRUE(tracker.HasChanges());
+        ASSERT_EQ(BE_SQLITE_OK, changeset1.FromChangeTrack(tracker));
+    }
+    m_ecdb.SaveChanges();
+    ASSERT_EQ(BE_SQLITE_OK, AttachCache());
+    ECInstanceKey summary1Key;
+    ASSERT_EQ(SUCCESS, m_ecdb.ExtractChangeSummary(summary1Key, ChangeSetArg(changeset1)));
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, SchemaAndApiConsistency)
     {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("changesummary_schemaandapiconsistency.ecdb"));
