@@ -401,7 +401,7 @@ public:
 
         if (m_schemaContext.GetSchemasToPrune().end() != std::find(m_schemaContext.GetSchemasToPrune().begin(), m_schemaContext.GetSchemasToPrune().end(), key.GetName()))
             {
-            LOG.warningv("CustomAttributeInstanceReadContext - Custom attribute schema %s is one of the schemas that are to be pruned. Skipping fallback mechanism.", key.GetFullSchemaName().c_str());
+            LOG.infov("Skipping loading of the custom attribute because its schema %s is being pruned.", key.GetFullSchemaName().c_str());
             return nullptr;
             }
 
