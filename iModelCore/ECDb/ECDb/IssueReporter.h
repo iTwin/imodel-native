@@ -708,6 +708,7 @@ struct ECDB_EXPORT ECDbIssueId
     static ECN::IssueId ECDb_0676;
     static ECN::IssueId ECDb_0677;
     static ECN::IssueId ECDb_0678;
+    static ECN::IssueId ECDb_0679;
     };
 
 //---------------------------------------------------------------------------------------
@@ -752,7 +753,7 @@ struct IssueDataSource final {
         void SetFilter(filter_callback_t filterCallback) const;
         // Clear filter callback
         void ClearFilter() const;
-        // Report issue which will be propagated 
+        // Report issue which will be propagated
         void Report(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const;
         template<typename ...FmtArgs>
         void ReportV(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message, FmtArgs&& ...fmtArgs) const {
