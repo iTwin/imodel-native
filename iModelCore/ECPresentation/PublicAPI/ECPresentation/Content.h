@@ -1466,15 +1466,17 @@ private:
     LabelDefinitionCPtr m_displayLabelDefinition;
     Utf8String m_imageId;
     bmap<Utf8String, bvector<ContentSetItemPtr>> m_nestedContent;
-    rapidjson::Document m_values;
-    rapidjson::Document m_displayValues;
+    std::pair<std::unique_ptr<rapidjson::Document::AllocatorType>, std::unique_ptr<rapidjson::Document>> m_values;
+    std::pair<std::unique_ptr<rapidjson::Document::AllocatorType>, std::unique_ptr<rapidjson::Document>> m_displayValues;
     rapidjson::Document m_extendedData;
     FieldPropertyInstanceKeyMap m_fieldPropertyInstanceKeys;
     bvector<Utf8String> m_mergedFieldNames;
 
 private:
     ContentSetItem(bvector<ECClassInstanceKey> inputKeys, bvector<ECClassInstanceKey> keys, LabelDefinitionCR displayLabelDefinition, Utf8String imageId,
-        bmap<Utf8String, bvector<ContentSetItemPtr>> nestedContent, rapidjson::Document&& values, rapidjson::Document&& displayValues,
+        bmap<Utf8String, bvector<ContentSetItemPtr>> nestedContent, 
+        std::pair<std::unique_ptr<rapidjson::Document::AllocatorType>, std::unique_ptr<rapidjson::Document>>&& values, 
+        std::pair<std::unique_ptr<rapidjson::Document::AllocatorType>, std::unique_ptr<rapidjson::Document>>&& displayValues,
         bvector<Utf8String> mergedFieldNames, FieldPropertyInstanceKeyMap fieldPropertyInstanceKeys)
         : m_class(nullptr), m_keys(std::move(keys)), m_displayLabelDefinition(&displayLabelDefinition), m_imageId(imageId), m_nestedContent(nestedContent),
         m_values(std::move(values)), m_displayValues(std::move(displayValues)), m_extendedData(rapidjson::kObjectType),
@@ -1483,10 +1485,10 @@ private:
 public:
     bmap<Utf8String, bvector<ContentSetItemPtr>>& GetNestedContent() {return m_nestedContent;}
     bmap<Utf8String, bvector<ContentSetItemPtr>> const& GetNestedContent() const {return m_nestedContent;}
-    rapidjson::Document& GetValues() {return m_values;}
-    rapidjson::Document const& GetValues() const { return m_values; }
-    rapidjson::Document& GetDisplayValues() {return m_displayValues;}
-    rapidjson::Document const& GetDisplayValues() const { return m_displayValues; }
+    rapidjson::Document& GetValues() {return *m_values.second;}
+    rapidjson::Document const& GetValues() const { return *m_values.second; }
+    rapidjson::Document& GetDisplayValues() {return *m_displayValues.second;}
+    rapidjson::Document const& GetDisplayValues() const { return *m_displayValues.second; }
     rapidjson::Document& GetExtendedData() { return m_extendedData; }
     bvector<Utf8String>& GetMergedFieldNames() {return m_mergedFieldNames;}
     bvector<ECClassInstanceKey>& GetKeys() {return m_keys;}
@@ -1504,7 +1506,9 @@ public:
     //! @param[in] mergedFieldNames Names of merged fields in this record.
     //! @param[in] fieldPropertyInstanceKeys ECClassInstanceKeys of related instances for each field in this record.
     static ContentSetItemPtr Create(bvector<ECClassInstanceKey> inputKeys, bvector<ECClassInstanceKey> keys, LabelDefinitionCR displayLabelDefinition, Utf8String imageId,
-        bmap<Utf8String, bvector<ContentSetItemPtr>> nestedContent,  rapidjson::Document&& values, rapidjson::Document&& displayValues,
+        bmap<Utf8String, bvector<ContentSetItemPtr>> nestedContent,  
+        std::pair<std::unique_ptr<rapidjson::Document::AllocatorType>, std::unique_ptr<rapidjson::Document>> values, 
+        std::pair<std::unique_ptr<rapidjson::Document::AllocatorType>, std::unique_ptr<rapidjson::Document>> displayValues,
         bvector<Utf8String> mergedFieldNames, FieldPropertyInstanceKeyMap fieldPropertyInstanceKeys)
         {
         return new ContentSetItem(std::move(inputKeys), std::move(keys), displayLabelDefinition, imageId, nestedContent,

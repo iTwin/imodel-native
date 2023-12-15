@@ -224,8 +224,8 @@ ECClassCP ContentItemBuilder::GetRecordClass() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentItemBuilder::_AddValue(Utf8CP name, rapidjson::Value&& value, rapidjson::Value&& displayValue, ECPropertyCP)
     {
-    m_values.AddMember(rapidjson::Value(name, m_values.GetAllocator()), value, m_values.GetAllocator());
-    m_displayValues.AddMember(rapidjson::Value(name, m_displayValues.GetAllocator()), displayValue, m_displayValues.GetAllocator());
+    m_values.second->AddMember(rapidjson::Value(name, m_values.second->GetAllocator()), value, m_values.second->GetAllocator());
+    m_displayValues.second->AddMember(rapidjson::Value(name, m_displayValues.second->GetAllocator()), displayValue, m_displayValues.second->GetAllocator());
     }
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
@@ -248,7 +248,7 @@ void ContentItemBuilder::AddValue(Utf8CP name, Utf8CP rawAndDisplayValue, ECProp
     if (!rawAndDisplayValue)
         AddNull(name, prop);
     else
-        _AddValue(name, rapidjson::Value(rawAndDisplayValue, m_values.GetAllocator()), rapidjson::Value(rawAndDisplayValue, m_displayValues.GetAllocator()), prop);
+        _AddValue(name, rapidjson::Value(rawAndDisplayValue, m_values.second->GetAllocator()), rapidjson::Value(rawAndDisplayValue, m_displayValues.second->GetAllocator()), prop);
     }
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
@@ -268,23 +268,23 @@ void ContentItemBuilder::AddValue(Utf8CP name, ECPropertyCR ecProperty, IECSqlVa
         {
         PrimitiveECPropertyCR primitiveProperty = *ecProperty.GetAsPrimitiveProperty();
         _AddValue(name,
-            ValueHelpers::GetJsonFromPrimitiveValue(primitiveProperty.GetType(), primitiveProperty.GetExtendedTypeName(), value, &m_values.GetAllocator()),
-            m_formatter.GetFormattedValue(primitiveProperty, value, &m_displayValues.GetAllocator()), 
+            ValueHelpers::GetJsonFromPrimitiveValue(primitiveProperty.GetType(), primitiveProperty.GetExtendedTypeName(), value, &m_values.second->GetAllocator()),
+            m_formatter.GetFormattedValue(primitiveProperty, value, &m_displayValues.second->GetAllocator()),
             &ecProperty);
         }
     else if (ecProperty.GetIsStruct())
         {
         StructECPropertyCR structProperty = *ecProperty.GetAsStructProperty();
         _AddValue(name,
-            ValueHelpers::GetJsonFromStructValue(structProperty.GetType(), value, &m_values.GetAllocator()),
-            m_formatter.GetFormattedValue(structProperty, value, &m_displayValues.GetAllocator()), 
+            ValueHelpers::GetJsonFromStructValue(structProperty.GetType(), value, &m_values.second->GetAllocator()),
+            m_formatter.GetFormattedValue(structProperty, value, &m_displayValues.second->GetAllocator()),
             &ecProperty);
         }
     else if (ecProperty.GetIsArray())
         {
         _AddValue(name,
-            ValueHelpers::GetJsonFromArrayValue(value, &m_values.GetAllocator()),
-            m_formatter.GetFormattedValue(*ecProperty.GetAsArrayProperty(), value, &m_displayValues.GetAllocator()),
+            ValueHelpers::GetJsonFromArrayValue(value, &m_values.second->GetAllocator()),
+            m_formatter.GetFormattedValue(*ecProperty.GetAsArrayProperty(), value, &m_displayValues.second->GetAllocator()),
             &ecProperty);
         }
     else if (ecProperty.GetIsNavigation())
@@ -297,9 +297,9 @@ void ContentItemBuilder::AddValue(Utf8CP name, ECPropertyCR ecProperty, IECSqlVa
         else
             {
             ECPresentationSerializerContext ctx;
-            _AddValue(name, 
-                ECPresentationManager::GetSerializer().AsJson(ctx, parsedValue, &m_values.GetAllocator()),
-                rapidjson::Value(parsedValue.GetLabel().GetDisplayValue().c_str(), m_displayValues.GetAllocator()),
+            _AddValue(name,
+                ECPresentationManager::GetSerializer().AsJson(ctx, parsedValue, &m_values.second->GetAllocator()),
+                rapidjson::Value(parsedValue.GetLabel().GetDisplayValue().c_str(), m_displayValues.second->GetAllocator()),
                 &ecProperty);
             }
         }
