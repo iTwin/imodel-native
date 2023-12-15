@@ -2257,6 +2257,108 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, SchemaCustomAttributes) {
     }
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbMetaSchemaECSqlTestFixture, JsonCustomAttributeSubQuery) {
+    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
+    ASSERT_EQ(SUCCESS, SetupECDbForCurrentTest(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECCustomAttributeClass typeName="ClassAlias" modifier="Sealed" appliesTo="EntityClass">
+            <ECProperty propertyName="Alias" typeName="string" />
+        </ECCustomAttributeClass>
+        <ECEntityClass typeName="Foo">
+            <ECCustomAttributes>
+                <ClassAlias>
+                    <Alias>F</Alias>
+                </ClassAlias>
+            </ECCustomAttributes>
+        </ECEntityClass>
+        <ECEntityClass typeName="Bar">
+            <ECCustomAttributes>
+                <ClassAlias>
+                    <Alias>B</Alias>
+                </ClassAlias>
+            </ECCustomAttributes>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    // Get Class Id for CA
+    auto* schema = m_ecdb.Schemas().GetSchema("TestSchema");
+    auto classAliasId = schema->GetClassCP("ClassAlias")->GetId();
+    
+    //Get the full name for the entity with alias F using bind for id
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT e.Name
+             FROM meta.ClassCustomAttribute ca
+             JOIN meta.ECClassDef e ON ca.Class.Id = e.ECInstanceId
+             WHERE ca.CustomAttributeClass.Id=? AND json_extract(ca.ValueJson, '$.ClassAlias.Alias')='F'
+            )stmt"));
+        stmt.BindId(1, classAliasId);
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ("Foo", stmt.GetValueText(0));
+    }
+
+    //Same but using ec_classid instead of bind
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT e.Name
+             FROM meta.ClassCustomAttribute ca
+             JOIN meta.ECClassDef e ON ca.Class.Id = e.ECInstanceId
+             WHERE ca.CustomAttributeClass.Id=ec_classid('TestSchema','ClassAlias') AND json_extract(ca.ValueJson, '$.ClassAlias.Alias')='F'
+            )stmt"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ("Foo", stmt.GetValueText(0));
+    }
+
+    //Same but using joins for class id instead of bind
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT e.Name
+             FROM meta.ClassCustomAttribute ca
+             JOIN meta.ECClassDef e ON ca.Class.Id = e.ECInstanceId
+             JOIN meta.ECClassDef cDef ON ca.CustomAttributeClass.Id = cDef.ECInstanceId
+             JOIN meta.ECSchemaDef sDef ON cDef.Schema.Id = sDef.ECInstanceId
+             WHERE sDef.Name='TestSchema' AND cDef.Name='ClassAlias' AND json_extract(ca.ValueJson, '$.ClassAlias.Alias')='F'
+            )stmt"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ("Foo", stmt.GetValueText(0));
+    }
+
+    auto fooId = schema->GetClassCP("Foo")->GetId();
+    //Get the Alias for class Foo
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT json_extract(ca.ValueJson, '$.ClassAlias.Alias')
+             FROM meta.ClassCustomAttribute ca
+                WHERE ca.Class.Id=? AND ca.CustomAttributeClass.Id=?
+            )stmt"));
+        ASSERT_EQ(stmt.BindId(1, fooId), ECSqlStatus::Success);
+        ASSERT_EQ(stmt.BindId(2, classAliasId), ECSqlStatus::Success);
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ("F", stmt.GetValueText(0));
+    }
+
+    //Same as above but using ec_classid
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT json_extract(ca.ValueJson, '$.ClassAlias.Alias')
+             FROM meta.ClassCustomAttribute ca
+                WHERE ca.Class.Id=ec_classid('TestSchema','Foo') AND ca.CustomAttributeClass.Id=ec_classid('TestSchema','ClassAlias')
+            )stmt"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ("F", stmt.GetValueText(0));
+    }
+}
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
