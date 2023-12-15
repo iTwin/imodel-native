@@ -5470,6 +5470,8 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
                 *result = ECPresentationUtils::GetContentDescriptor(*m_presentationManager, db->GetDgnDb(), params);
             else if (0 == strcmp("GetContent", requestId))
                 *result = ECPresentationUtils::GetContent(*m_presentationManager, db->GetDgnDb(), params);
+            else if (0 == strcmp("GetContentSet", requestId))
+                *result = ECPresentationUtils::GetContentSet(*m_presentationManager, db->GetDgnDb(), params);
             else if (0 == strcmp("GetContentSetSize", requestId))
                 *result = ECPresentationUtils::GetContentSetSize(*m_presentationManager, db->GetDgnDb(), params);
             else if (0 == strcmp("GetPagedDistinctValues", requestId))

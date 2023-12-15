@@ -126,6 +126,7 @@ struct ECPresentationUtils
     static folly::Future<ECPresentationResult> GetContentSources(ECPresentationManager&, ECDbR, RapidJsonValueCR params);
     static folly::Future<ECPresentationResult> GetContentDescriptor(ECPresentationManager&, ECDbR, RapidJsonValueCR params);
     static folly::Future<ECPresentationResult> GetContent(ECPresentationManager&, ECDbR, RapidJsonValueCR params);
+    static folly::Future<ECPresentationResult> GetContentSet(ECPresentationManager&, ECDbR, RapidJsonValueCR params);
     static folly::Future<ECPresentationResult> GetContentSetSize(ECPresentationManager&, ECDbR, RapidJsonValueCR params);
     static folly::Future<ECPresentationResult> GetPagedDistinctValues(ECPresentationManager&, ECDbR, RapidJsonValueCR params);
     static folly::Future<ECPresentationResult> GetDisplayLabel(ECPresentationManager&, ECDbR, RapidJsonValueCR params);
