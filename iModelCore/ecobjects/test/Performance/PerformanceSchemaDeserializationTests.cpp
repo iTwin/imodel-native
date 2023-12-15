@@ -70,14 +70,16 @@ Utf8String GenerateMainSchema(size_t numberOfCAClasses)
     for (size_t i = 0; i < numberOfCAClasses; i++) 
         {
         Utf8PrintfString caClassName("CustomAttrClass%zu", i);
-        innerXml = innerXml + "<ECCustomAttributes>\n" + "<" + caClassName + " xmlns=\"" + refSchemaName + ".01.01.01\" />\n" + "</ECCustomAttributes>\n";
+        innerXml = innerXml + "<" + caClassName + " xmlns=\"" + refSchemaName + ".01.01.01\" />\n";
         }
     
     Utf8PrintfString schemaXml = Utf8PrintfString(
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="%s" description="%s" alias="ts" version="01.01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECSchemaReference name="%s" version="01.01.01" alias="RefS" />
-            %s
+                <ECCustomAttributes>
+                    %s
+                </ECCustomAttributes>
             </ECSchema>
         )xml", schemaName.c_str(), description.c_str(), refSchemaName.c_str(), innerXml.c_str());
 
