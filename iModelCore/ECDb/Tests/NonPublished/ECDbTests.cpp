@@ -929,6 +929,7 @@ TEST_F(ECDbTestFixture, ElementRefersToElementsExtendedUniqueIndex)
     const auto bisCoreCommon = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="BisCore" alias="bis" version="01.00.%d" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+            %s
             <ECEntityClass typeName="Element" modifier="Abstract">
                 <ECCustomAttributes>
                     <ClassMap xmlns="ECDbMap.02.00.02">
@@ -950,7 +951,6 @@ TEST_F(ECDbTestFixture, ElementRefersToElementsExtendedUniqueIndex)
                         <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
                         <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
                     </ShareColumns>
-                    %s
                 </ECCustomAttributes>
                 <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
                     <Class class="Element"/>
@@ -989,10 +989,12 @@ TEST_F(ECDbTestFixture, ElementRefersToElementsExtendedUniqueIndex)
             </ECRelationshipClass>
         </ECSchema>)xml";
     const auto memberPriorityProp = R"xml(<ECProperty propertyName="MemberPriority" typeName="int" displayLabel="Member Priority" />)xml";
-    const auto useECDbVersion = R"xml(
-            <UseRequiresVersion xmlns="ECDbMap.02.00.02">
+    const auto importECDbVersion = R"xml(
+        <ECCustomAttributes>
+            <ImportRequiresVersion xmlns="ECDbMap.02.00.02">
                 <ECDbRuntimeVersion>4.0.0.5</ECDbRuntimeVersion>
-            </UseRequiresVersion>)xml";
+            </ImportRequiresVersion>
+        </ECCustomAttributes>)xml";
 
     auto importSchemasTestAndReset = [this](const SchemaItem& schemaForSetup, const std::vector<SchemaItem>& schemasToImport, const bool expectedToFailInsert)
         {
@@ -1063,12 +1065,12 @@ TEST_F(ECDbTestFixture, ElementRefersToElementsExtendedUniqueIndex)
     // Test Case 1:
     // Setup ECDb with older BisCore without MemberPriority property, import new BisCore with the new property and the test schema that references it.
     // New unique index should be set up correctly and inserts into GroupOfElements table should work.
-    importSchemasTestAndReset(SchemaItem(Utf8PrintfString(bisCoreCommon, 0, "", "")), {SchemaItem(Utf8PrintfString(bisCoreCommon, 1, useECDbVersion, memberPriorityProp)), SchemaItem(Utf8PrintfString(testSchema, 1))}, false);
+    importSchemasTestAndReset(SchemaItem(Utf8PrintfString(bisCoreCommon, 0, "", "")), {SchemaItem(Utf8PrintfString(bisCoreCommon, 1, importECDbVersion, memberPriorityProp)), SchemaItem(Utf8PrintfString(testSchema, 1))}, false);
     
     // Test Case 2:
     // Setup ECDb with newer BisCore with the new property, import the test schema that references it.
     // New unique index should be set up correctly at the setup itself and inserts into GroupOfElements table should work.
-    importSchemasTestAndReset(SchemaItem(Utf8PrintfString(bisCoreCommon, 0, useECDbVersion, memberPriorityProp)), {SchemaItem(Utf8PrintfString(testSchema, 0))}, false);
+    importSchemasTestAndReset(SchemaItem(Utf8PrintfString(bisCoreCommon, 0, importECDbVersion, memberPriorityProp)), {SchemaItem(Utf8PrintfString(testSchema, 0))}, false);
 
     // Test Case 3:
     // Setup ECDb with old BisCore without MemberPriority property, import the test schema.
