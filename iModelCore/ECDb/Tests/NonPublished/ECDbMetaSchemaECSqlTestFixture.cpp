@@ -2303,6 +2303,32 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, JsonCustomAttributeSubQuery) {
         ASSERT_STREQ("Foo", stmt.GetValueText(0));
     }
 
+    //Same as before but using polymorphic IS match for caClass
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT e.Name
+             FROM meta.ClassCustomAttribute ca
+             JOIN meta.ECClassDef e ON ca.Class.Id = e.ECInstanceId
+             WHERE ca.CustomAttributeClass.Id IS (TestSchema.ClassAlias) AND json_extract(ca.ValueJson, '$.ClassAlias.Alias')='F'
+            )stmt"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ("Foo", stmt.GetValueText(0));
+    }
+
+    //Same as before but using IS ONLY match for caClass
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT e.Name
+             FROM meta.ClassCustomAttribute ca
+             JOIN meta.ECClassDef e ON ca.Class.Id = e.ECInstanceId
+             WHERE ca.CustomAttributeClass.Id IS (ONLY TestSchema.ClassAlias) AND json_extract(ca.ValueJson, '$.ClassAlias.Alias')='F'
+            )stmt"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ("Foo", stmt.GetValueText(0));
+    }
+
     //Same but using ec_classid instead of bind
     {
         ECSqlStatement stmt;
@@ -2353,6 +2379,18 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, JsonCustomAttributeSubQuery) {
             SELECT json_extract(ca.ValueJson, '$.ClassAlias.Alias')
              FROM meta.ClassCustomAttribute ca
                 WHERE ca.Class.Id=ec_classid('TestSchema','Foo') AND ca.CustomAttributeClass.Id=ec_classid('TestSchema','ClassAlias')
+            )stmt"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ("F", stmt.GetValueText(0));
+    }
+
+    //Same as above but using IS syntax
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT json_extract(ca.ValueJson, '$.ClassAlias.Alias')
+             FROM meta.ClassCustomAttribute ca
+                WHERE ca.Class.Id IS (TestSchema.Foo) AND ca.CustomAttributeClass.Id IS (TestSchema.ClassAlias)
             )stmt"));
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
         ASSERT_STREQ("F", stmt.GetValueText(0));
