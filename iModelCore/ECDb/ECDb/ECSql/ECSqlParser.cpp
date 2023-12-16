@@ -4343,6 +4343,32 @@ ECSqlParseContext::ParseArg const* ECSqlParseContext::CurrentArg() const
 //+---------------+---------------+---------------+---------------+---------------+--------
 void ECSqlParseContext::PopArg() { m_finalizeParseArgs.pop_back(); }
 
+//Helper for TryResolveClass to check if te current node is a table node inside a type predicate
+//If the class is a custom attribute class,we allow it to be used despite what the policy says
+//Example syntax in ECSQL: "IS (mySchema.MyCustomAttribute)"
+bool IsTableNameInTypePredicateSpecialCase(ClassMap const& classMap, OSQLParseNode const& node)
+    {
+    if (classMap.GetMapStrategy().GetStrategy() != MapStrategy::NotMapped || !classMap.GetClass().IsCustomAttributeClass())
+        return false;
+
+    if (!SQL_ISRULE(&node, table_node))
+        return false; //node itself must be a table_node
+
+    auto parent = node.getParent();
+    if (parent == nullptr)
+        return false; //parent node is a helper node (type list item)
+
+    auto parentParent = parent->getParent();
+    if (parentParent == nullptr)
+        return false; // parent's parent node is a helper node (type list)
+
+    auto parentParentParent = parentParent->getParent();
+    if (parentParentParent == nullptr || !SQL_ISRULE(parentParentParent, type_predicate))
+        return false; //parent's parent's parent node must be type_predicate
+
+    return true;
+    }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -4377,17 +4403,11 @@ BentleyStatus ECSqlParseContext::TryResolveClass(std::shared_ptr<ClassNameExp::I
     Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(*classMap, ecsqlType, isPolymorphicExp));
     if (!policy.IsSupported())
         {
-        if (classMap->GetMapStrategy().GetStrategy() == MapStrategy::NotMapped && classMap->GetClass().IsCustomAttributeClass())
-            { //special case where a custom attribute class is used in type predicate
-            auto isTableNode = SQL_ISRULE(&node, table_node);//node is table node, (then there are 2 helper nodes in between), parent's parent's parent is type_predicate
-            if(isTableNode && node.getParent() != nullptr && node.getParent()->getParent() != nullptr && node.getParent()->getParent()->getParent() != nullptr)
-                {
-                if (SQL_ISRULE(node.getParent()->getParent()->getParent(), type_predicate))
-                    {
-                    classNameExpInfo = ClassNameExp::Info::Create(*classMap);
-                    return SUCCESS;
-                    }
-                }
+        //despite the policy we allow using a custom attribute class if it is used inside a type predicate
+        if (IsTableNameInTypePredicateSpecialCase(*classMap, node))
+            {
+            classNameExpInfo = ClassNameExp::Info::Create(*classMap);
+            return SUCCESS;
             }
 
         Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0496, "Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
