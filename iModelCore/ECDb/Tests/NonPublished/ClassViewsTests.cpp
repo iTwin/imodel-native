@@ -182,7 +182,7 @@ TEST_F(ClassViewsFixture, prepare_view_and_check_validate_sql_and_data) {
     if (true){
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, SchemaName, ClassName FROM ts.SchemaClassesView WHERE ClassName='View'"));
-        auto nativeSql = "SELECT [K0],[K1],[K2],[K3] FROM (SELECT [cd].[ECInstanceId] [K0],[cd].[ECClassId] [K1],[sc].[Name] [K2],[cd].[Name] [K3] FROM (SELECT [Id] ECInstanceId,35 ECClassId,[Name] FROM [main].[ec_Schema]) [sc] INNER JOIN (SELECT [Id] ECInstanceId,33 ECClassId,[SchemaId],[Name] FROM [main].[ec_Class]) [cd] ON [cd].[SchemaId]=[sc].[ECInstanceId]   GROUP BY [sc].[Name],[cd].[Name]  LIMIT 10) WHERE [K3]='View'";
+        auto nativeSql = "SELECT [K0],[K1],[K2],[K3] FROM (SELECT [cd].[ECInstanceId] [K0],[cd].[ECClassId] [K1],[sc].[Name] [K2],[cd].[Name] [K3] FROM (SELECT [Id] ECInstanceId,38 ECClassId,[Name] FROM [main].[ec_Schema]) [sc] INNER JOIN (SELECT [Id] ECInstanceId,36 ECClassId,[SchemaId],[Name] FROM [main].[ec_Class]) [cd] ON [cd].[SchemaId]=[sc].[ECInstanceId]   GROUP BY [sc].[Name],[cd].[Name]  LIMIT 10) [SchemaClassesView] WHERE [K3]='View'";
         ASSERT_STREQ(nativeSql, stmt.GetNativeSql());
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
         //ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), ECInstanceId(27ull));
@@ -326,7 +326,7 @@ TEST_F(ClassViewsFixture, fail_when_view_reference_itself_directly_or_indirectly
 
         listener.Reset();
         ASSERT_EQ(ERROR, ImportSchema(testSchema));
-        ASSERT_STREQ("Total of 1 view classes were checked and 1 were found to be invalid.", listener.PopLastError().c_str());
+        ASSERT_STREQ("Total of 4 view classes were checked and 1 were found to be invalid.", listener.PopLastError().c_str());
         ASSERT_STREQ("Invalid view class 'test_schema:SchemaView'. Failed to prepare view query (SELECT cd.ECInstanceId, cd.ECClassId FROM ts.SchemaView)", listener.PopLastError().c_str());
         ASSERT_STREQ("Invalid View Class 'test_schema:SchemaView'. View ECSQL failed to parse.", listener.PopLastError().c_str());
         ASSERT_STREQ("Invalid View Class 'test_schema:SchemaView'. View query references itself recusively (test_schema:SchemaView -> test_schema:SchemaView).", listener.PopLastError().c_str());
@@ -359,7 +359,7 @@ TEST_F(ClassViewsFixture, fail_when_view_reference_itself_directly_or_indirectly
 
         listener.Reset();
         ASSERT_EQ(ERROR, ImportSchema(testSchema));
-        ASSERT_STREQ("Total of 2 view classes were checked and 2 were found to be invalid.", listener.PopLastError().c_str());
+        ASSERT_STREQ("Total of 5 view classes were checked and 2 were found to be invalid.", listener.PopLastError().c_str());
         ASSERT_STREQ("Invalid view class 'test_schema:SchemaView'. Failed to prepare view query (SELECT cd.ECInstanceId, cd.ECClassId FROM ts.ClassView)", listener.PopLastError().c_str());
         ASSERT_STREQ("Invalid View Class 'test_schema:ClassView'. View ECSQL failed to parse.", listener.PopLastError().c_str());
         ASSERT_STREQ("Invalid View Class 'test_schema:SchemaView'. View ECSQL failed to parse.", listener.PopLastError().c_str());
@@ -403,7 +403,7 @@ TEST_F(ClassViewsFixture, fail_when_view_reference_itself_directly_or_indirectly
 
         listener.Reset();
         ASSERT_EQ(ERROR, ImportSchema(testSchema));
-        ASSERT_STREQ("Total of 3 view classes were checked and 3 were found to be invalid.", listener.PopLastError().c_str());
+        ASSERT_STREQ("Total of 6 view classes were checked and 3 were found to be invalid.", listener.PopLastError().c_str());
         ASSERT_STREQ("Invalid view class 'test_schema:View3'. Failed to prepare view query (SELECT cd.ECInstanceId, cd.ECClassId FROM ts.View1)", listener.PopLastError().c_str());
         ASSERT_STREQ("Invalid View Class 'test_schema:View1'. View ECSQL failed to parse.", listener.PopLastError().c_str());
         ASSERT_STREQ("Invalid View Class 'test_schema:View2'. View ECSQL failed to parse.", listener.PopLastError().c_str());
@@ -499,7 +499,7 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
 
         listener.Reset();
         ASSERT_EQ(ERROR, ImportSchema(testSchema));
-        ASSERT_STREQ("Total of 1 view classes were checked and 1 were found to be invalid.", listener.PopLastError().c_str());
+        ASSERT_STREQ("Total of 4 view classes were checked and 1 were found to be invalid.", listener.PopLastError().c_str());
         ASSERT_STREQ("Invalid view class 'test_schema:P_View'. View class has property 'doubleProp' which is not returned by view query.", listener.PopLastError().c_str());
         m_ecdb.AbandonChanges();
     }
@@ -530,7 +530,7 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
 
         listener.Reset();
         ASSERT_EQ(ERROR, ImportSchema(testSchema));
-        ASSERT_STREQ("Total of 1 view classes were checked and 1 were found to be invalid.", listener.PopLastError().c_str());
+        ASSERT_STREQ("Total of 4 view classes were checked and 1 were found to be invalid.", listener.PopLastError().c_str());
         ASSERT_STREQ("Invalid view class 'test_schema:P_View'. View class property 'doubleProp' type does not match the type returned by view query ('string' <> 'double').", listener.PopLastError().c_str());
         listener.Dump("listener");
         m_ecdb.AbandonChanges();
@@ -561,7 +561,7 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
 
         listener.Reset();
         ASSERT_EQ(ERROR, ImportSchema(testSchema));
-        ASSERT_STREQ("Total of 1 view classes were checked and 1 were found to be invalid.", listener.PopLastError().c_str());
+        ASSERT_STREQ("Total of 4 view classes were checked and 1 were found to be invalid.", listener.PopLastError().c_str());
         ASSERT_STREQ("Invalid view class 'test_schema:P_View'. View query return property 'doubleProp' which not defined in view class or is a invalid system property.", listener.PopLastError().c_str());
         listener.Dump("listener");
         m_ecdb.AbandonChanges();

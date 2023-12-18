@@ -4230,14 +4230,9 @@ BentleyStatus ECSqlParser::ParseNavValueCreationFuncExp(std::unique_ptr<NavValue
     );
 
     propNameExp->SetTypeInfo(ECSqlTypeInfo(ECSqlTypeInfo::Kind::Navigation));
-    Utf8CP alias = parseNode->getParent()->getChild(1)->getTokenValue().empty() ? propPath[2].GetName().c_str() : parseNode->getParent()->getChild(1)->getTokenValue().c_str();
+    Utf8CP alias = parseNode->getParent()->getChild(1)->getTokenValue().empty() ? nullptr : parseNode->getParent()->getChild(1)->getTokenValue().c_str();
     derivedPropertyExp = std::move(std::make_unique<DerivedPropertyExp>(std::move(propNameExp), alias));
-    
-    if (parseNode->getParent()->getChild(1)->count() == 0)
-        {
-        parseNode->getParent()->getChild(1)->append(new OSQLParseNode(alias, SQLNodeType::SQL_NODE_NAME)); //TODO: this actually is an AS keyowrd
-        parseNode->getParent()->getChild(1)->append(new OSQLParseNode(alias, SQLNodeType::SQL_NODE_NAME)); //TODO: check alis child rule id
-        }
+
     std::unique_ptr<ValueExp> idArgExp = nullptr;
     if (SUCCESS != ParseFunctionArg(idArgExp, *parseNode->getChild(4)))
         return ERROR;

@@ -94,6 +94,11 @@ Utf8String DerivedPropertyExp::GetName() const {
         return propertyNameExp.GetPropertyPath().ToString();
     }
 
+    if (GetExpression()->GetType() == Exp::Type::NavValueCreationFunc) {
+        NavValueCreationFuncExp const& navValueCreationFuncExp = GetExpression()->GetAs<NavValueCreationFuncExp>();
+        return navValueCreationFuncExp.GetColumnRefExp()->GetAs<DerivedPropertyExp>().GetExpression()->GetAs<PropertyNameExp>().GetPropertyPath().ToString();
+    }
+
     return GetExpression()->ToECSql();
 }
 //-----------------------------------------------------------------------------------------

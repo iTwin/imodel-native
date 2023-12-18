@@ -64,7 +64,8 @@ ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECProper
         }
 
     //exp that are no prop name exps (e.g. constants or A+B, prop refs (ref to property in a nested select) or alias items always need generated prop
-    const bool needsToGenerate = selectClauseItemPropNameExp == nullptr || !columnAlias.empty() || (selectClauseItemPropNameExp->IsPropertyRef() && !selectClauseItemPropNameExp->GetPropertyRef()->IsPure());
+    const bool needsToGenerate = selectClauseItemPropNameExp == nullptr || !columnAlias.empty() || (selectClauseItemPropNameExp->IsPropertyRef() && !selectClauseItemPropNameExp->GetPropertyRef()->IsPure()) 
+        || (selectClauseItemExp.GetParent() != nullptr && selectClauseItemExp.GetParent()->GetType() == Exp::Type::NavValueCreationFunc);
     if (needsToGenerate)
         {
         if (isDuplicateName)
