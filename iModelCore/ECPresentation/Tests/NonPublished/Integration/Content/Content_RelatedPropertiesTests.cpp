@@ -1102,7 +1102,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size()); // ParentClass_ParentProperty, Nested<ChildClass1 properties>, Nested<ChildClass2 properties>
 
@@ -1219,12 +1219,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedChildClass2FieldType) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualChildClass2FieldType);
 
-    // set the "merge results" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1406,16 +1402,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
         classB->GetFullName(), "*", RelationshipMeaning::RelatedInstance));
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size());
 
-    // set the "merge results" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1524,16 +1516,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
         classB->GetFullName(), "*", RelationshipMeaning::RelatedInstance));
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // A_StringProperty, Array<B_IntProperty + B_LongProperty>
 
-    // set the "merge results" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -1621,16 +1609,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
         classB->GetFullName(), "*", RelationshipMeaning::RelatedInstance));
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // A_StringProperty, Array<B_IntProperty + B_LongProperty>
 
-    // set the "merge results" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5870,16 +5854,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelatedPropertiesForMu
 
     // validate descriptor
     KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{element1, element2});
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", 0, *input)));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", (int)ContentFlags::MergeResults, *input)));
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size()); // Element_ElementMultiAspect
 
-    // set the "merge results" flag
-    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
-    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*mergingDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // expect 1 content set item
@@ -5999,16 +5979,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelatedPropertiesForMu
 
     // validate descriptor
     KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{element1, element2});
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", 0, *input)));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", (int)ContentFlags::MergeResults, *input)));
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size()); // Element_ElementMultiAspect
 
-    // set the "merge results" flag
-    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
-    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*mergingDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // expect 1 content set item
@@ -6269,16 +6245,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsSameClassRelatedProper
 
     // validate descriptor
     KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{model1, model2});
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", 0, *input)));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", (int)ContentFlags::MergeResults, *input)));
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size()); // Model_Element_ElementMultiAspect
 
-    // set the "merge results" flag
-    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
-    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*mergingDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // expect 1 content set item
@@ -6619,16 +6591,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelatedPropertiesForMu
 
     // validate descriptor
     KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{element1, element2});
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", 0, *input)));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", (int)ContentFlags::MergeResults, *input)));
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
 
-    // set the "merge results" flag
-    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
-    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*mergingDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // expect 1 content set item

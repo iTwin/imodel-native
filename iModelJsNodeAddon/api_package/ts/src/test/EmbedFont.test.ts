@@ -57,6 +57,6 @@ describe("embed fonts", () => {
     if (os.platform() === "win32") // Embedding system fonts is only supported on windows.
       tempDgnDb.embedFont({ systemFont: "times new roman", compress: true });
 
-    tempDgnDb.closeIModel();
+    tempDgnDb.closeFile();
   });
 });

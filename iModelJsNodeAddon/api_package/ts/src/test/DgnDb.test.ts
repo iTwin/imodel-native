@@ -27,7 +27,7 @@ describe("basic tests", () => {
   });
 
   after((done) => {
-    dgndb.closeIModel();
+    dgndb.closeFile();
     done();
   });
 
@@ -90,7 +90,7 @@ describe("basic tests", () => {
     assert.equal(localInfo?.id, sharedInfo?.id);
     assert.equal(localInfo?.dataVer, sharedInfo?.dataVer);
     assert.equal(localInfo?.dataVer, "0x2");
-    iModelDb.closeIModel();
+    iModelDb.closeFile();
 
     // create first briefcase
     const b0Uri = path.join(baseDir, "b0.bim");
@@ -169,9 +169,9 @@ describe("basic tests", () => {
     b0.saveChanges();
     b1.saveChanges();
     b2.saveChanges();
-    b0.closeIModel();
-    b1.closeIModel();
-    b2.closeIModel();
+    b0.closeFile();
+    b1.closeFile();
+    b2.closeFile();
   });
 
   // verify that throwing javascript exceptions from C++ works
@@ -335,7 +335,7 @@ describe("basic tests", () => {
     withWal.enableWalMode();
     withWal.performCheckpoint();
     withWal.setAutoCheckpointThreshold(2000);
-    withWal.closeIModel();
+    withWal.closeFile();
   });
 
   it("testGetSchemaProps", async () => {
@@ -497,11 +497,11 @@ describe("basic tests", () => {
 
     const dbForProfileUpgrade = openDgnDb(testFile, { profile: ProfileOptions.Upgrade, schemaLockHeld: true });
     dbForProfileUpgrade.saveChanges();
-    dbForProfileUpgrade.closeIModel();
+    dbForProfileUpgrade.closeFile();
 
     const dbForSchemaUpgrade = openDgnDb(testFile, { domain: DomainOptions.Upgrade, schemaLockHeld: true });
     dbForSchemaUpgrade.saveChanges();
-    dbForSchemaUpgrade.closeIModel();
+    dbForSchemaUpgrade.closeFile();
   });
 
   it("import schema with schemaLockHeld flag", async () => {
@@ -552,7 +552,7 @@ describe("basic tests", () => {
     rc = db.importXmlSchemas([generateSchema(20, 20)], { schemaLockHeld: true });
     assert.equal(rc, DbResult.BE_SQLITE_OK);
     db.saveChanges();
-    db.closeIModel();
+    db.closeFile();
   });
 
   it("ecsql query", async () => {
@@ -1056,6 +1056,6 @@ describe("basic tests", () => {
     expect(schemaXmlStr!.includes(propStr)).to.be.true;
     expect(schemaXmlStr!.includes(propCatStr)).to.be.true;
 
-    testDb.closeIModel();
+    testDb.closeFile();
   });
 });

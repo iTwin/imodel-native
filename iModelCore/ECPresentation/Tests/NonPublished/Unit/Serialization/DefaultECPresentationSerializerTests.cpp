@@ -1667,17 +1667,15 @@ TEST_F(DefaultECPresentationSerializerTests, ContentDescriptorSerializationNoSel
         NavNodeKey::Create("TypeName", "Spec", {"123", "abc"}),
         NavNodeKey::Create("TypeName2", "Spec2", {"456", "def"})
         });
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, *PresentationRuleSet::CreateInstance("test ruleset id"), RulesetVariables(), *container);
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, *PresentationRuleSet::CreateInstance("test ruleset id"), RulesetVariables(), *container, "DisplayTypeText", (int)ContentFlags::ShowLabels, (int)ContentFlags::ShowLabels);
     SelectClassInfo selectClassInfo(*testClassA, "", false);
     selectClassInfo.SetPathFromInputToSelectClass({RelatedClass(*testClassB, SelectClass<ECRelationshipClass>(*relClassAClassB, ""), true, SelectClass<ECClass>(*testClassA, ""))});
     selectClassInfo.SetRelatedPropertyPaths({{RelatedClass(*testClassA, SelectClass<ECRelationshipClass>(*relClassAClassB, ""), false, SelectClass<ECClass>(*testClassB, ""))}});
     descriptor->AddSelectClass(selectClassInfo, "");
     descriptor->AddRootField(*new ContentDescriptor::DisplayLabelField(nullptr, "Label", 10));
-    descriptor->SetPreferredDisplayType("DisplayTypeText");
     descriptor->SetUnitSystem(ECPresentation::UnitSystem::Metric);
     descriptor->SetSortingField(0);
     descriptor->SetSortDirection(SortDirection::Descending);
-    descriptor->SetContentFlags((int)ContentFlags::ShowLabels);
     descriptor->SetFieldsFilterExpression("ExpressionText");
     rapidjson::Document actual = descriptor->AsJson();
 

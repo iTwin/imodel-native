@@ -169,15 +169,15 @@ struct InstanceReader::Impl final {
             ECDbCR m_conn;
             mutable MemoryPoolAllocator m_allocator;
             mutable CrtAllocator m_stackAllocator;
-            mutable Document m_cachedXmlDoc;
+            mutable Document m_cachedJsonDoc;
             mutable ECInstanceKey m_instanceKey;
             mutable Utf8String m_accessString;
             mutable InstanceReader::JsonParams m_jsonParam;
-            Document& ClearAndGetCachedXmlDocument() const;
+            Document& ClearAndGetCachedJsonDocument() const;
 
         public:
-            RowRender(ECDbCR conn):m_conn(conn), m_cachedXmlDoc(&m_allocator, 1024, &m_stackAllocator){
-                m_cachedXmlDoc.SetObject();
+            RowRender(ECDbCR conn):m_conn(conn), m_cachedJsonDoc(&m_allocator, 1024, &m_stackAllocator){
+                m_cachedJsonDoc.SetObject();
             }
             BeJsValue GetInstanceJsonObject(ECInstanceKeyCR instanceKey, IECSqlRow const& ecsqlRow, InstanceReader::JsonParams const& param = InstanceReader::JsonParams()) const;
             BeJsValue GetPropertyJsonValue(ECInstanceKeyCR instanceKey, Utf8StringCR accessString, IECSqlValue const& ecsqlValue, InstanceReader::JsonParams const& param = InstanceReader::JsonParams()) const;
