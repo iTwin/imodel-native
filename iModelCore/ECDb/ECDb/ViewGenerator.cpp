@@ -870,7 +870,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
             sqlBuilder.Append(" AS INTEGER)");
         };
 
-    if (ctx.GetViewType() == ViewType::SelectFromView)
+    if (ClassViews::IsViewClass(*relationMap.GetRelationshipClass().GetTarget().GetAbstractConstraint()))
         {
         ECRelationshipClassCR relationshipClass = relationMap.GetRelationshipClass();
         ECClassCP targetClassConstraint = relationshipClass.GetTarget().GetAbstractConstraint();
@@ -890,12 +890,13 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
             return ERROR;
             }
 
-        std::string query = SqlPrintfString("SELECT [ECInstanceId] [ECInstanceId], %s [ECClassId], %s.Id [SourceECInstanceId], %s [SourceECClassId], [ECInstanceId] [TargetECInstanceId], %s [TargetECClassId] FROM %s",
+        std::string query = SqlPrintfString("SELECT [ECInstanceId] [ECInstanceId], %s [ECClassId], %s.Id [SourceECInstanceId], %s [SourceECClassId], [ECInstanceId] [TargetECInstanceId], %s [TargetECClassId] FROM %s WHERE %s.Id IS NOT NULL",
             std::to_string(relationshipClass.GetId().GetValue()).c_str(), //ECClassId of the ECRelationshipClass
             sourceNavProp->GetName().c_str(),
             std::to_string(sourceClassConstraint->GetId().GetValue()).c_str(), //ECClassId of the Source ECClass
             std::to_string(targetClassConstraint->GetId().GetValue()).c_str(), //ECClassId of the Target ECClass
-            targetClassConstraint->GetECSqlName().c_str()
+            targetClassConstraint->GetECSqlName().c_str(),
+            sourceNavProp->GetName().c_str()
         ).GetUtf8CP();
 
         ECSqlStatement stmt;
