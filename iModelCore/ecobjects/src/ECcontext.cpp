@@ -399,6 +399,12 @@ public:
         if (it != references.end())
             return it->second.get();
 
+        if (m_schemaContext.GetSchemasToPrune().end() != std::find(m_schemaContext.GetSchemasToPrune().begin(), m_schemaContext.GetSchemasToPrune().end(), key.GetName()))
+            {
+            LOG.infov("Skipping loading of the custom attribute because its schema %s is being pruned.", key.GetFullSchemaName().c_str());
+            return nullptr;
+            }
+
         LOG.errorv("CustomAttributeInstanceReadContext - Custom attribute schema %s not found in referenced schemas of %s. Trying fallback mechanism.", key.GetFullSchemaName().c_str(), m_containerSchema.GetFullSchemaName().c_str());
 
         SchemaKey nonConstKey(key);
