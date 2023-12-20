@@ -264,7 +264,7 @@ SupplementedSchemaStatus SupplementedSchemaBuilder::UpdateSchema(ECSchemaR prima
     
     timer.Stop();
     Utf8String primarySchemaName = primarySchema.GetFullSchemaName();
-    LOG.infov ("Supplemented (in %.4f seconds) %s with %d supplemental ECSchemas", timer.GetElapsedSeconds(), 
+    LOG.tracev ("Supplemented (in %.4f seconds) %s with %d supplemental ECSchemas", timer.GetElapsedSeconds(), 
         primarySchemaName.c_str(), supplementalSchemaList.size());
 
     return status;
@@ -319,7 +319,7 @@ SupplementedSchemaStatus SupplementedSchemaBuilder::CreateMergedSchemaFromSchema
 
     Utf8String supplementalSchemaFullName = schema2->GetFullSchemaName();
     Utf8String mergedSchemaFullName = schema1->GetFullSchemaName();
-    LOG.infov ("Merging %s into %s", supplementalSchemaFullName.c_str(), mergedSchemaFullName.c_str());
+    LOG.tracev ("Merging %s into %s", supplementalSchemaFullName.c_str(), mergedSchemaFullName.c_str());
     MergeCustomAttributeClasses(*mergedSchema, schema2->GetCustomAttributes(false), SCHEMA_PRECEDENCE_Equal, &supplementalSchemaFullName, &mergedSchemaFullName);
 
     SupplementedSchemaStatus status = SupplementedSchemaStatus::Success;
