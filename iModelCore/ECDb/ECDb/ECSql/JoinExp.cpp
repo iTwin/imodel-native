@@ -271,8 +271,8 @@ BentleyStatus UsingRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContex
         return ERROR;
         }
 
-    bmap<ECClassId, ClassNameExp const*> fromClassExistsInSourceList;
-    bmap<ECClassId, ClassNameExp const*> fromClassExistsInTargetList;
+    std::map<ECClassId, ClassNameExp const*> fromClassExistsInSourceList;
+    std::map<ECClassId, ClassNameExp const*> fromClassExistsInTargetList;
 
     for (RangeClassInfo const& classInfo : fromClassRefs)
         {
@@ -319,7 +319,7 @@ BentleyStatus UsingRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContex
 
     if (fromClassExistsInSourceList.size() == 1 && fromClassExistsInTargetList.size() == 1)
         {
-        if (fromClassExistsInSourceList.begin()->first != fromClassExistsInTargetList.begin()->first)
+        if (fromClassExistsInSourceList.begin()->first == fromClassExistsInTargetList.begin()->first)
             {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0543,
                 "Multiple classes in the FROM and JOIN clauses match an end of the relationship '%s'.", relationshipClass->GetFullName());
