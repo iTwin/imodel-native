@@ -543,7 +543,13 @@ void ContentProvider::LoadNestedContent(ContentSetItemR item, bvector<ContentDes
             {
             auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Handle nested content field `%s`", field->GetUniqueName().c_str()));
             ContentDescriptor::RelatedContentField const* relatedContentField = field->AsNestedContentField()->AsRelatedContentField();
-            if (relatedContentField && item.GetClass() && !item.GetClass()->Is(relatedContentField->GetPathFromSelectToContentClass().front().GetSourceClass()))
+            if (relatedContentField 
+                && item.GetClass() 
+                && (
+                    !item.GetClass()->Is(relatedContentField->GetPathFromSelectToContentClass().front().GetSourceClass())
+                    || !ContainerHelpers::Contains(relatedContentField->GetActualSourceClasses(), item.GetClass())
+                    )
+                )
                 {
                 // do not attempt to load related content for related content fields that don't match current item
                 DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("The field targets class `%s` and content item targets `%s` - skip.",
