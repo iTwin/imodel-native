@@ -245,9 +245,7 @@ void ContentItemBuilder::AddValue(Utf8CP name, Utf8CP rawAndDisplayValue, ECProp
     if (BeforeAddValueStatus::Skip == _OnBeforeAddValue(name))
         return;
 
-    if (!rawAndDisplayValue)
-        AddNull(name, prop);
-    else
+    if (rawAndDisplayValue)
         _AddValue(name, rapidjson::Value(rawAndDisplayValue, m_values.second->GetAllocator()), rapidjson::Value(rawAndDisplayValue, m_displayValues.second->GetAllocator()), prop);
     }
 /*---------------------------------------------------------------------------------**//**
@@ -260,7 +258,9 @@ void ContentItemBuilder::AddValue(Utf8CP name, ECPropertyCR ecProperty, IECSqlVa
 
     if (value.IsNull())
         {
-        AddNull(name, &ecProperty);
+        // only add nulls for structs and arrays (need that later for checking if they were loaded)
+        if (ecProperty.GetIsStruct() || ecProperty.GetIsArray())
+            AddNull(name, &ecProperty);
         return;
         }
 
@@ -290,11 +290,7 @@ void ContentItemBuilder::AddValue(Utf8CP name, ECPropertyCR ecProperty, IECSqlVa
     else if (ecProperty.GetIsNavigation())
         {
         auto parsedValue = ContentValueHelpers::ParseNavigationPropertyValue(value, m_schemaManager);
-        if (!parsedValue.IsValid())
-            {
-            AddNull(name, &ecProperty);
-            }
-        else
+        if (parsedValue.IsValid())
             {
             ECPresentationSerializerContext ctx;
             _AddValue(name,
@@ -302,10 +298,6 @@ void ContentItemBuilder::AddValue(Utf8CP name, ECPropertyCR ecProperty, IECSqlVa
                 rapidjson::Value(parsedValue.GetLabel().GetDisplayValue().c_str(), m_displayValues.second->GetAllocator()),
                 &ecProperty);
             }
-        }
-    else
-        {
-        AddNull(name, &ecProperty);
         }
     }
 /*---------------------------------------------------------------------------------**//**
