@@ -5342,8 +5342,8 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
                 retVal["result"].From(result.GetSuccessResponse());
             }
 
-        if (!result.GetDiagnostics().IsNull())
-            retVal["diagnostics"].From(result.GetDiagnostics());
+        if (result.GetDiagnostics())
+            retVal["diagnostics"].From(*result.GetDiagnostics());
 
         return retVal;
         }
@@ -5484,14 +5484,14 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             (*result)
             .then([this, requestGuid, startTime, diagnostics = *diagnostics, deferred = std::move(deferred)](ECPresentationResult result)
                 {
-                result.SetDiagnostics(diagnostics->BuildJson());
+                result.SetDiagnostics(std::make_unique<rapidjson::Document>(diagnostics->BuildJson()));
                 ResolvePromise(deferred, std::move(result));
                 ECPresentationUtils::GetLogger().debugv("Request %s completed successfully in %" PRIu64 " ms.",
                     requestGuid.c_str(), (BeTimeUtilities::GetCurrentTimeAsUnixMillis() - startTime));
                 })
             .onError([this, requestGuid, startTime, diagnostics = *diagnostics, deferred = std::move(deferred)](folly::exception_wrapper e)
                 {
-                ECPresentationResult result = ECPresentationUtils::CreateResultFromException(e, diagnostics->BuildJson());
+                ECPresentationResult result = ECPresentationUtils::CreateResultFromException(e, std::make_unique<rapidjson::Document>(diagnostics->BuildJson()));
                 if (ECPresentationStatus::Canceled == result.GetStatus())
                     {
                     ECPresentationUtils::GetLogger().debugv("Request %s cancelled after %" PRIu64 " ms.",
@@ -5513,12 +5513,12 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         catch (std::exception const& e)
             {
             ECPresentationUtils::GetLogger().errorv("Failed to queue request %s", requestGuid.c_str());
-            deferred.Resolve(CreateReturnValue(ECPresentationUtils::CreateResultFromException(folly::exception_wrapper{std::current_exception(), e}, (*diagnostics)->BuildJson())));
+            deferred.Resolve(CreateReturnValue(ECPresentationUtils::CreateResultFromException(folly::exception_wrapper{std::current_exception(), e}, std::make_unique<rapidjson::Document>((*diagnostics)->BuildJson()))));
             }
         catch (...)
             {
             ECPresentationUtils::GetLogger().errorv("Failed to queue request %s", requestGuid.c_str());
-            deferred.Resolve(CreateReturnValue(ECPresentationUtils::CreateResultFromException(folly::exception_wrapper{std::current_exception()}, (*diagnostics)->BuildJson())));
+            deferred.Resolve(CreateReturnValue(ECPresentationUtils::CreateResultFromException(folly::exception_wrapper{std::current_exception()}, std::make_unique<rapidjson::Document>((*diagnostics)->BuildJson()))));
             }
 
         return response;
@@ -5612,7 +5612,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
 
     Napi::Value GetUpdateInfo(NapiInfoCR info)
         {
-        return CreateReturnValue(ECPresentationResult(m_updateRecords->GetReport(), false));
+        return CreateReturnValue(ECPresentationResult(m_updateRecords->GetReport()));
         }
 
     void Terminate(NapiInfoCR info)

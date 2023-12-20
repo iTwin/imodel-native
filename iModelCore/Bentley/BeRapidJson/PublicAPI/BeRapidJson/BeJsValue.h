@@ -900,7 +900,8 @@ private:
     BeJsDocument& operator=(BeJsDocument const& rhs) = delete;
 public:
     // allow move but not copy.
-    BeJsDocument(BeJsDocument&& other) noexcept : m_doc(std::move(other.m_doc)) { m_val = new BeRapidJsonValue(&m_doc, m_doc.GetAllocator());  }
+    BeJsDocument(rapidjson::Document&& doc) noexcept : m_doc(std::move(doc)) { m_val = new BeRapidJsonValue(&m_doc, m_doc.GetAllocator()); }
+    BeJsDocument(BeJsDocument&& other) noexcept : BeJsDocument(std::move(other.m_doc)) {}
     // construct a blank BeJsDocument
     BeJsDocument() : BeJsValue() { m_val = new BeRapidJsonValue(&m_doc, m_doc.GetAllocator()); }
     // construct a "string" BeJsDocument. The bool parameter (whose value is ignored) indicates that the string is not
