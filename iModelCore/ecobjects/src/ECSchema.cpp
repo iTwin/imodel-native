@@ -3333,7 +3333,7 @@ SchemaReadStatus ECSchema::ReadFromXmlFile(ECSchemaPtr& schemaOut, WCharCP ecSch
         {
         //We have serialized a schema and its valid.
         timer.Stop();
-        LOG.infov (L"Read (in %.4f seconds) [%3" PRIu64 " ECClasses] %ls", timer.GetElapsedSeconds(), (uint64_t) schemaOut->m_classMap.size(), ecSchemaXmlFile);
+        LOG.tracev (L"Read (in %.4f seconds) [%3" PRIu64 " ECClasses] %ls", timer.GetElapsedSeconds(), (uint64_t) schemaOut->m_classMap.size(), ecSchemaXmlFile);
         }
 
     return status;
@@ -3381,7 +3381,7 @@ SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, Utf8CP ecSc
     else
         {
         timer.Stop();
-        LOG.infov (L"Read from string (in %.4f seconds) [%3" PRIx64 " ECClasses] %s", timer.GetElapsedSeconds(),
+        LOG.tracev (L"Read from string (in %.4f seconds) [%3" PRIu64 " ECClasses] %s", timer.GetElapsedSeconds(),
             (uint64_t) schemaOut->m_classMap.size(), WString(schemaOut->GetFullSchemaName().c_str(), true).c_str());
         }
 
@@ -3439,7 +3439,7 @@ POP_DISABLE_DEPRECATION_WARNINGS
     else
         {
         timer.Stop();
-        LOG.infov (L"Read from string (in %.4f seconds) [%3" PRIx64 " ECClasses] %s", timer.GetElapsedSeconds(),
+        LOG.tracev (L"Read from string (in %.4f seconds) [%3" PRIu64 " ECClasses] %s", timer.GetElapsedSeconds(),
             (uint64_t) schemaOut->m_classMap.size(), schemaOut->GetFullSchemaName().c_str());
         }
 
