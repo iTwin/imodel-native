@@ -1045,11 +1045,11 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
             {}
         RelatedContentField(RelatedContentField const& other)
             : NestedContentField(other), m_pathFromSelectClassToContentClass(other.m_pathFromSelectClassToContentClass), m_relationshipMeaning(other.m_relationshipMeaning),
-            m_isRelationshipField(other.m_isRelationshipField)
+            m_isRelationshipField(other.m_isRelationshipField), m_actualSourceClasses(other.m_actualSourceClasses)
             {}
         RelatedContentField(RelatedContentField&& other)
             : NestedContentField(std::move(other)), m_pathFromSelectClassToContentClass(std::move(other.m_pathFromSelectClassToContentClass)), m_relationshipMeaning(other.m_relationshipMeaning),
-            m_isRelationshipField(other.m_isRelationshipField)
+            m_isRelationshipField(other.m_isRelationshipField), m_actualSourceClasses(std::move(other.m_actualSourceClasses))
             {}
 
         //! Path from the select class to content class.
