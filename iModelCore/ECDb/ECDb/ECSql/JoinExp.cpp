@@ -147,14 +147,13 @@ void QualifiedJoinExp::_ToECSql(ECSqlRenderContext& ctx) const
 //+---------------+---------------+---------------+---------------+---------------+--------
 Exp::FinalizeParseStatus UsingRelationshipJoinExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
-    if (mode == FinalizeParseMode::AfterFinalizingChildren)
+    if (mode == FinalizeParseMode::BeforeFinalizingChildren)
         {
         if (ResolveRelationshipEnds(ctx) != SUCCESS)
             return FinalizeParseStatus::Error;
 
         return FinalizeParseStatus::Completed;
         }
-
     return FinalizeParseStatus::NotCompleted;
     }
 //-----------------------------------------------------------------------------------------
@@ -272,8 +271,8 @@ BentleyStatus UsingRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContex
         return ERROR;
         }
 
-    bmap<ECClassId, ClassNameExp const*> fromClassExistsInSourceList;
-    bmap<ECClassId, ClassNameExp const*> fromClassExistsInTargetList;
+    std::map<ECClassId, ClassNameExp const*> fromClassExistsInSourceList;
+    std::map<ECClassId, ClassNameExp const*> fromClassExistsInTargetList;
 
     for (RangeClassInfo const& classInfo : fromClassRefs)
         {
@@ -320,7 +319,7 @@ BentleyStatus UsingRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContex
 
     if (fromClassExistsInSourceList.size() == 1 && fromClassExistsInTargetList.size() == 1)
         {
-        if (fromClassExistsInSourceList.begin()->first != fromClassExistsInTargetList.begin()->first)
+        if (fromClassExistsInSourceList.begin()->first == fromClassExistsInTargetList.begin()->first)
             {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0543,
                 "Multiple classes in the FROM and JOIN clauses match an end of the relationship '%s'.", relationshipClass->GetFullName());
@@ -406,8 +405,13 @@ BentleyStatus UsingRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContex
 
     /////////////////////////////////////////
     std::vector<RangeClassInfo> classList;
-    classList.push_back(RangeClassInfo(*static_cast<RangeClassRefExp const*>(&GetFromClassRef()), RangeClassInfo::Scope::Local));
-    classList.push_back(RangeClassInfo(*static_cast<RangeClassRefExp const*>(&GetToClassRef()), RangeClassInfo::Scope::Local));
+    auto fromRef = dynamic_cast<RangeClassRefExp const*>(&GetFromClassRef());
+    auto toRef = dynamic_cast<RangeClassRefExp const*>(&GetToClassRef());
+    if (fromRef != nullptr)
+        classList.push_back(RangeClassInfo(*fromRef, RangeClassInfo::Scope::Local));
+
+    if (toRef != nullptr)
+        classList.push_back(RangeClassInfo(*toRef, RangeClassInfo::Scope::Local));
     classList.push_back(RangeClassInfo(GetRelationshipClassNameExp(), RangeClassInfo::Scope::Local));
     ctx.PushArg(std::make_unique<ECSqlParseContext::RangeClassArg>(classList));
 
@@ -426,12 +430,7 @@ BentleyStatus UsingRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContex
         std::make_unique<PropertyNameExp>(fromPath)
     );
 
-    if(fromSpecFilter->FinalizeParsing(ctx) != SUCCESS) {
-        ctx.PopArg();
-        return ERROR;
-    }
     m_fromSpecFilterIdx = AddChild(std::move(fromSpecFilter));
-
     PropertyPath toPath;
     toPath.Push(toEP.GetClassNameRef()->GetAlias().empty() ? toEP.GetClassNameRef()->GetClassName() : toEP.GetClassNameRef()->GetAlias());
     toPath.Push(ECDBSYS_PROP_ECInstanceId);
@@ -445,10 +444,6 @@ BentleyStatus UsingRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContex
         BooleanSqlOperator::EqualTo,
         std::make_unique<PropertyNameExp>(toPath)
     );
-    if (toSpecFilter->FinalizeParsing(ctx) != SUCCESS) {
-        ctx.PopArg();
-        return ERROR;
-    }
     m_toSpecFilterIdx = AddChild(std::move(toSpecFilter));
     ctx.PopArg();
     return SUCCESS;
