@@ -233,8 +233,6 @@ static void ReadValues(ContentItemBuilder& item, int& sqlColumnIndex, ECSqlState
             ContentDescriptor::ECPropertiesField const& propertiesField = *field->AsPropertiesField();
             if (ContentDescriptor::Property const* matchingProperty = contract.FindMatchingProperty(propertiesField, item.GetRecordClass()))
                 item.AddValue(fieldName.c_str(), matchingProperty->GetProperty(), statement.GetValue(sqlColumnIndex));
-            else
-                item.AddNull(fieldName.c_str(), nullptr);
             }
         ++sqlColumnIndex;
         }
