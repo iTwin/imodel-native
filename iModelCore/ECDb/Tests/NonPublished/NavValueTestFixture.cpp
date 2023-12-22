@@ -312,6 +312,17 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue) {
         ASSERT_STREQ("Author.RelECClassId", property->GetDisplayLabel().c_str());
         ASSERT_TRUE(property->GetIsPrimitive());
         }
+
+        // TODO: maybe create seperate test for error scenarios?
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "with a(NavProp) AS (SELECT NAV(ts.Book.Author, 1, 2)) SELECT * FROM a"));
+        }
+
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "with a(id, relid) AS (SELECT NAV(ts.Book.Author, 1, 2)) SELECT * FROM a"));
+        }
     }
 
 }
