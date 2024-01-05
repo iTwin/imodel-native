@@ -2374,9 +2374,7 @@ TEST(ClipPlaneSet,ClipNoneBoundary)
     CurveVectorPtr curve = CurveVector::CreateLinear(poly1, boundaryType);
     // clipper
     bvector<DPoint3d> poly2 {{-7,-7,0},{7,-7,0},{7,7,0},{-7,7,0},{-7,-7,0}};
-    ConvexClipPlaneSet convexClipPlaneSet;
-    convexClipPlaneSet.ReloadSweptConvexPolygon(poly2, DVec3d::From(0, 0, 1), 0);
-    ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
+    ClipPlaneSet clipPlaneSet = ClipPlaneSet::FromSweptPolygon(poly2.data(), poly2.size());
     // perform the clip
     bvector<CurveVectorPtr> clippedRegion;
     bool ret = clipPlaneSet.ClipCurveVector(*curve, clippedRegion);
@@ -2396,9 +2394,7 @@ TEST(ClipPlaneSet,ClipOpenBoundary)
     // clipper
     bvector<DPoint3d> poly2 {{-7,-7,0},{7,-7,0},{7,7,0},{-7,7,0},{-7,-7,0}};
     Check::SaveTransformed(poly2);
-    ConvexClipPlaneSet convexClipPlaneSet;
-    convexClipPlaneSet.ReloadSweptConvexPolygon(poly2, DVec3d::From(0, 0, 1), 0);
-    ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
+    ClipPlaneSet clipPlaneSet = ClipPlaneSet::FromSweptPolygon(poly2.data(), poly2.size());
     // perform the clip
     bvector<CurveVectorPtr> clippedRegion;
     bool ret = clipPlaneSet.ClipCurveVector(*curve, clippedRegion);
@@ -2422,9 +2418,7 @@ TEST(ClipPlaneSet,ClipNotOpenBoundary)
     // clipper
     bvector<DPoint3d> poly2 {{-7,-7,0},{7,-7,0},{7,7,0},{-7,7,0},{-7,-7,0}};
     Check::SaveTransformed(poly2);
-    ConvexClipPlaneSet convexClipPlaneSet;
-    convexClipPlaneSet.ReloadSweptConvexPolygon(poly2, DVec3d::From(0, 0, 1), 0);
-    ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
+    ClipPlaneSet clipPlaneSet = ClipPlaneSet::FromSweptPolygon(poly2.data(), poly2.size());
     // perform the clip
     bvector<CurveVectorPtr> clippedRegion;
     bool ret = clipPlaneSet.ClipCurveVector(*curve, clippedRegion);
@@ -2516,9 +2510,7 @@ TEST(ClipPlaneSet,ClipPlanarAndNonPlanarOpenBoundary)
     Check::SaveTransformed(clipper);
     Check::Shift(0, -30, 0);
     Check::SaveTransformed(clipper);
-    ConvexClipPlaneSet convexClipPlaneSet;
-    convexClipPlaneSet.ReloadSweptConvexPolygon(clipper, DVec3d::From(0, 0, 1), 0);
-    ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
+    ClipPlaneSet clipPlaneSet = ClipPlaneSet::FromSweptPolygon(clipper.data(), clipper.size());
 
     // perform the clip on planar curve
     bvector<CurveVectorPtr> planarClippedRegion;
@@ -2560,9 +2552,7 @@ TEST(ClipPlaneSet,ClipOpenBoundaryInsideClipper)
     // clipper
     bvector<DPoint3d> poly2 {{-7,-7,0},{7,-7,0},{7,7,0},{-7,7,0},{-7,-7,0}};
     Check::SaveTransformed(poly2);
-    ConvexClipPlaneSet convexClipPlaneSet;
-    convexClipPlaneSet.ReloadSweptConvexPolygon(poly2, DVec3d::From(0, 0, 1), 0);
-    ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
+    ClipPlaneSet clipPlaneSet = ClipPlaneSet::FromSweptPolygon(poly2.data(), poly2.size());
     // perform the clip
     bvector<CurveVectorPtr> clippedRegion;
     bool ret = clipPlaneSet.ClipCurveVector(*curve, clippedRegion);
@@ -2586,9 +2576,7 @@ TEST(ClipPlaneSet,ClipOpenBoundaryOutsideClipper)
     // clipper
     bvector<DPoint3d> poly2 {{-7,-7,0},{7,-7,0},{7,7,0},{-7,7,0},{-7,-7,0}};
     Check::SaveTransformed(poly2);
-    ConvexClipPlaneSet convexClipPlaneSet;
-    convexClipPlaneSet.ReloadSweptConvexPolygon(poly2, DVec3d::From(0, 0, 1), 0);
-    ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
+    ClipPlaneSet clipPlaneSet = ClipPlaneSet::FromSweptPolygon(poly2.data(), poly2.size());
     // perform the clip
     bvector<CurveVectorPtr> clippedRegion;
     bool ret = clipPlaneSet.ClipCurveVector(*curve, clippedRegion);
@@ -2612,9 +2600,7 @@ TEST(ClipPlaneSet,ClipOpenBoundaryWith2Parts)
     // clipper
     bvector<DPoint3d> poly2 {{-7,-7,0},{7,-7,0},{7,7,0},{-7,7,0},{-7,-7,0}};
     Check::SaveTransformed(poly2);
-    ConvexClipPlaneSet convexClipPlaneSet;
-    convexClipPlaneSet.ReloadSweptConvexPolygon(poly2, DVec3d::From(0, 0, 1), 0);
-    ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
+    ClipPlaneSet clipPlaneSet = ClipPlaneSet::FromSweptPolygon(poly2.data(), poly2.size());
     // perform the clip
     bvector<CurveVectorPtr> clippedRegion;
     bool ret = clipPlaneSet.ClipCurveVector(*curve, clippedRegion);
@@ -2642,9 +2628,7 @@ TEST(ClipPlaneSet,ClipParityRegionWith2Parts)
     // clipper
     bvector<DPoint3d> poly3 {{-7,-7,0},{7,-7,0},{7,7,0},{-7,7,0},{-7,-7,0}};
     Check::SaveTransformed(poly3);
-    ConvexClipPlaneSet convexClipPlaneSet;
-    convexClipPlaneSet.ReloadSweptConvexPolygon(poly3, DVec3d::From(0, 0, 1), 0);
-    ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
+    ClipPlaneSet clipPlaneSet = ClipPlaneSet::FromSweptPolygon(poly3.data(), poly3.size());
     // perform the clip
     bvector<CurveVectorPtr> clippedRegion;
     bool ret = clipPlaneSet.ClipCurveVector(*region, clippedRegion);
