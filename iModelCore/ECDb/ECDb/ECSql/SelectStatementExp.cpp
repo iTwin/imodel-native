@@ -1091,15 +1091,6 @@ SubqueryExp::SubqueryExp(std::unique_ptr<SelectStatementExp> selectExp) : QueryE
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SubqueryExp::SubqueryExp(std::vector<std::unique_ptr<SelectStatementExp>>& selectExps) : QueryExp(Type::Subquery)
-    {
-    for (auto& selectExp : selectExps)
-        AddChild(std::move(selectExp));
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
 PropertyMatchResult SubqueryExp::_FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const {
     return GetQuery()->FindProperty(ctx, propertyPath, options);
 }

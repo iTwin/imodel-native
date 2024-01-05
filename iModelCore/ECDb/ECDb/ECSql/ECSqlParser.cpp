@@ -2602,11 +2602,11 @@ BentleyStatus ECSqlParser::ParseSubquery(std::unique_ptr<SubqueryExp>& exp, OSQL
     if (SQL_ISRULE(childNode, values_commalist))
         {
         //values_commalist
-        std::vector<std::unique_ptr<SelectStatementExp>> valuesList;
-        if (SUCCESS != ParseValuesCommalist(valuesList, *childNode))
+        std::unique_ptr<SelectStatementExp> compound_select = nullptr;
+        if (SUCCESS != ParseValuesCommalist(compound_select, *childNode))
             return ERROR;
 
-        exp = std::make_unique<SubqueryExp>(valuesList);
+        exp = std::make_unique<SubqueryExp>(std::move(compound_select));
         }
     return SUCCESS;
     }
@@ -2614,7 +2614,7 @@ BentleyStatus ECSqlParser::ParseSubquery(std::unique_ptr<SubqueryExp>& exp, OSQL
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus ECSqlParser::ParseValuesCommalist(std::vector<std::unique_ptr<SelectStatementExp>>& valuesList, OSQLParseNode const& parseNode) const
+BentleyStatus ECSqlParser::ParseValuesCommalist(std::unique_ptr<SelectStatementExp>& exp, OSQLParseNode const& parseNode) const
     {
     if (!SQL_ISRULE(&parseNode, values_commalist))
         {
@@ -2622,6 +2622,7 @@ BentleyStatus ECSqlParser::ParseValuesCommalist(std::vector<std::unique_ptr<Sele
         return ERROR;
         }
 
+    std::unique_ptr<SelectStatementExp> prevSelectExp = nullptr;
     const size_t childCount = parseNode.count();
     for (size_t i = 0; i < childCount; i++)
         {
@@ -2631,21 +2632,30 @@ BentleyStatus ECSqlParser::ParseValuesCommalist(std::vector<std::unique_ptr<Sele
             BeAssert(false);
             return ERROR;
             }
+
         if (!SQL_ISRULE(childNode, values_or_query_spec))
             {
             BeAssert(false && "Invalid grammar. Expecting values_or_query_spec");
             return ERROR;
             }
 
+        // 1st: VALUES, 2nd:(, 3rd: row_value_constructor_commalist, 4th:)
+        BeAssert(childNode->count() == 4);
         std::unique_ptr<SingleSelectStatementExp> singleSelect = nullptr;
         if (SUCCESS != ParseSingleSelectStatement(singleSelect, childNode))
             return ERROR;
 
-        std::unique_ptr<SelectStatementExp> selectExp = nullptr;
-        selectExp = std::make_unique<SelectStatementExp>(std::move(singleSelect));
-        valuesList.push_back(std::move(selectExp));
+        if (prevSelectExp == nullptr)
+            prevSelectExp = std::make_unique<SelectStatementExp>(std::move(singleSelect));
+        else
+            {
+            std::unique_ptr<SelectStatementExp> selectExp = nullptr;
+            selectExp = std::make_unique<SelectStatementExp>(std::move(singleSelect), SelectStatementExp::CompoundOperator::Union, false /*isAll*/, std::move(prevSelectExp));
+            prevSelectExp = std::move(selectExp);
+            }
         }
 
+    exp = std::move(prevSelectExp);
     return SUCCESS;
     }
 

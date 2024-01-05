@@ -397,7 +397,6 @@ struct SubqueryExp final : QueryExp
         SelectClauseExp const* _GetSelection() const override;
     public:
         explicit SubqueryExp(std::unique_ptr<SelectStatementExp>);
-        explicit SubqueryExp(std::vector<std::unique_ptr<SelectStatementExp>>&);
         SelectStatementExp const* GetQuery() const;
     };
 
