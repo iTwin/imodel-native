@@ -75,8 +75,8 @@ private:
     mutable ECClassCP m_primaryInstanceClass;
     mutable bool m_determinedPrimaryInstanceClass;
     bvector<ECInstanceKey> m_inputKeys;
-    rapidjson::Document m_values;
-    rapidjson::Document m_displayValues;
+    std::pair<std::unique_ptr<rapidjson::Document::AllocatorType>, std::unique_ptr<rapidjson::Document>> m_values;
+    std::pair<std::unique_ptr<rapidjson::Document::AllocatorType>, std::unique_ptr<rapidjson::Document>> m_displayValues;
     std::map<Utf8String, NestedContentValues> m_nestedContentValues;
     bset<Utf8String> m_mergedFieldNames;
     LabelDefinitionCPtr m_displayLabel;
@@ -89,8 +89,8 @@ protected:
     bvector<ECInstanceKey>& GetPrimaryKeysR() { return m_primaryKeys; }
     bvector<ECInstanceKey>& GetInputKeysR() { return m_inputKeys; }
     bset<Utf8String>& GetMergedFieldNames() { return m_mergedFieldNames; }
-    rapidjson::Document& GetValues() { return m_values; }
-    rapidjson::Document& GetDisplayValues() { return m_displayValues; }
+    rapidjson::Document& GetValues() { return *m_values.second; }
+    rapidjson::Document& GetDisplayValues() { return *m_displayValues.second; }
     std::map<Utf8String, NestedContentValues>& GetNestedContentValues() { return m_nestedContentValues; }
     void InvalidateInstanceClass() { m_primaryInstanceClass = nullptr; m_determinedPrimaryInstanceClass = false; }
 
@@ -113,8 +113,13 @@ public:
     ContentItemBuilder(std::shared_ptr<Context> context, SchemaManagerCR schemaManager, ContentValuesFormatter formatter)
         : m_context(context ? context : std::make_shared<Context>()), m_schemaManager(schemaManager), m_formatter(formatter), m_primaryInstanceClass(nullptr), m_determinedPrimaryInstanceClass(false)
         {
-        m_values.SetObject();
-        m_displayValues.SetObject();
+        auto valuesAllocator = std::make_unique<rapidjson::Document::AllocatorType>(2048U);
+        auto values = std::make_unique<rapidjson::Document>(rapidjson::kObjectType, valuesAllocator.get());
+        m_values = std::make_pair(std::move(valuesAllocator), std::move(values));
+
+        auto displayValuesAllocator = std::make_unique<rapidjson::Document::AllocatorType>(1024U);
+        auto displayValues = std::make_unique<rapidjson::Document>(rapidjson::kObjectType, displayValuesAllocator.get());
+        m_displayValues = std::make_pair(std::move(displayValuesAllocator), std::move(displayValues));
         }
     ContentItemBuilder(std::shared_ptr<Context> context, SchemaManagerCR schemaManager, IECPropertyFormatter const* propertyFormatter, ECPresentation::UnitSystem unitSystem)
         : ContentItemBuilder(context, schemaManager, ContentValuesFormatter(propertyFormatter, unitSystem))

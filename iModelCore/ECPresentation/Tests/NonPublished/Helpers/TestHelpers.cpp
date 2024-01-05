@@ -506,14 +506,17 @@ static void ValidateContentSetItemPropertyFields(IECInstanceCR instance, Content
     RapidJsonValueCR values = json["Values"];
     for (ContentDescriptor::Field const* field : fields)
         {
-        Utf8CP fieldName = field->GetUniqueName().c_str();
-        ASSERT_TRUE(values.HasMember(fieldName));
         if (field->IsPropertiesField())
             {
             for (ContentDescriptor::Property const& prop : field->AsPropertiesField()->GetProperties())
                 {
                 if (&prop.GetProperty().GetClass() == &instance.GetClass())
-                    AssertInstanceValueValid(instance, values[fieldName], prop.GetProperty().GetName().c_str());
+                    {
+                    Utf8CP fieldName = field->GetUniqueName().c_str();
+                    static rapidjson::Value const s_nullValue;
+                    rapidjson::Value const& value = values.HasMember(fieldName) ? values[fieldName] : s_nullValue;
+                    AssertInstanceValueValid(instance, value, prop.GetProperty().GetName().c_str());
+                    }
                 }
             }
         }
