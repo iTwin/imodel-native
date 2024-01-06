@@ -2400,7 +2400,10 @@ GEOMDLLIMPEXP PolyfaceHeaderPtr CloneWithTranslatedFacets (bvector<size_t> &acti
 GEOMDLLIMPEXP PolyfaceHeaderPtr CloneWithIndexedDuplicatesRemoved () const;
 
 //! Clone the mesh with degenerate facets removed.
-//! Currently only topologically degenerate triangular and quadrilateral facets are filtered.
+//! <ul>
+//! <li> Face loops are trimmed to remove wrapped vertices.
+//! <li> Topologically degenerate triangular and quadrilateral facets are removed.
+//! </ul>
 GEOMDLLIMPEXP PolyfaceHeaderPtr CloneWithDegenerateFacetsRemoved() const;
 
 //! Clone the mesh with facets in random order.
