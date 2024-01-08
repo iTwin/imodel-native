@@ -708,6 +708,9 @@ public:
     //! @note For a builder using CreateWithAutoPlacement this also updates the placement origin/angles(s) using the local coordinate system computed from the first appended GeometricPrimitve.
     DGNPLATFORM_EXPORT BentleyStatus Finish(GeometrySourceR);
 
+    //! Clears GeometryStream of supplied GeometrySource and invalidates the element aligned bounding box.
+    DGNPLATFORM_EXPORT BentleyStatus ClearGeometryStream(GeometrySourceR);
+
     //! Enable option so that subsequent calls to Append a GeometricPrimitve produce sub-graphics with local ranges to optimize picking/range testing. Not valid when creating a DgnGeometryPart.
     void SetAppendAsSubGraphics() {m_appendAsSubGraphics = !m_isPartCreate;}
 

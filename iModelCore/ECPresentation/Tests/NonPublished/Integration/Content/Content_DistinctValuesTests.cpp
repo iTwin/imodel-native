@@ -1472,12 +1472,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetsContentDescriptorWithNa
     RapidJsonValueCR jsonValues = contentSet.Get(0)->GetValues();
     EXPECT_EQ(instanceA->GetClass().GetId().ToString(), jsonValues[FIELD_NAME(classB, "A")]["ECClassId"].GetString());
     EXPECT_EQ(instanceA->GetInstanceId(), jsonValues[FIELD_NAME(classB, "A")]["ECInstanceId"].GetString());
-    EXPECT_TRUE(jsonValues[FIELD_NAME(classC, "B")].IsNull());
+    EXPECT_FALSE(jsonValues.HasMember(FIELD_NAME(classC, "B")));
 
     RapidJsonValueCR jsonValues2 = contentSet.Get(1)->GetValues();
     EXPECT_EQ(instanceB->GetClass().GetId().ToString(), jsonValues2[FIELD_NAME(classC, "B")]["ECClassId"].GetString());
     EXPECT_EQ(instanceB->GetInstanceId(), jsonValues2[FIELD_NAME(classC, "B")]["ECInstanceId"].GetString());
-    EXPECT_TRUE(jsonValues2[FIELD_NAME(classB, "A")].IsNull());
+    EXPECT_FALSE(jsonValues2.HasMember(FIELD_NAME(classB, "A")));
     }
 
 #ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
