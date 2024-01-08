@@ -196,7 +196,7 @@ PolyfaceHeaderPtr PolyfaceHeader::CloneWithDegenerateFacetsRemoved() const
             {
             ; // TODO: n > 4
             }
-            
+
         appendVisitorIndices(*cloneFiltered, *this, *visitor, numWrap);
         }
     return cloneFiltered;
