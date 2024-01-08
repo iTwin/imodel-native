@@ -4430,7 +4430,9 @@ TEST(Polyface, ConnectedComponentsMaxFaces)
     region->Add(CurveVector::CreateDisk(hole, CurveVector::BOUNDARY_TYPE_Inner));
     auto builder = PolyfaceConstruction::Create(*IFacetOptions::Create());
     builder->AddRegion(*region);
-    data.push_back(builder->GetClientMeshPtr());
+    auto regionMesh = builder->GetClientMeshPtr();
+    if (Check::True(regionMesh.IsValid() && regionMesh->GetNumFacet() > 0, "region successfully triangulated"))
+        data.push_back(regionMesh);
 
     // load DTM test cases (skip mesh12M.imjs, a DTM with 12 million triangles, which takes several hours!)
     bvector<BeFileName> filenames{ BeFileName(L"mesh7K.imjs"), BeFileName(L"mesh10K-2components.imjs") };
