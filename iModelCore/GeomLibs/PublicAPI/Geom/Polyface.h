@@ -2401,8 +2401,8 @@ GEOMDLLIMPEXP PolyfaceHeaderPtr CloneWithIndexedDuplicatesRemoved () const;
 
 //! Clone the mesh with degenerate facets removed.
 //! <ul>
-//! <li> Face loops are trimmed to remove wrapped vertices.
 //! <li> Topologically degenerate triangular and quadrilateral facets are removed.
+//! <li> Face loops are trimmed to remove wrapped vertices.
 //! </ul>
 GEOMDLLIMPEXP PolyfaceHeaderPtr CloneWithDegenerateFacetsRemoved() const;
 
