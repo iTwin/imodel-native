@@ -4422,6 +4422,16 @@ TEST(Polyface, ConnectedComponentsMaxFaces)
     if (Check::True(sphereMesh.IsValid(), "successfully created sphere mesh"))
         data.push_back(sphereMesh);
 
+    // square with hole 
+    bvector<DPoint3d> rectPts{{10,0,0}, {0,10,0}, {-10,0,0}, {0,-10,0}};
+    DEllipse3d hole = DEllipse3d::FromCenterRadiusXY({0,0,0}, 2);
+    CurveVectorPtr region = CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion);
+    region->Add(CurveVector::CreateLinear(rectPts, CurveVector::BOUNDARY_TYPE_Outer));
+    region->Add(CurveVector::CreateDisk(hole, CurveVector::BOUNDARY_TYPE_Inner));
+    auto builder = PolyfaceConstruction::Create(*IFacetOptions::Create());
+    builder->AddRegion(*region);
+    data.push_back(builder->GetClientMeshPtr());
+
     // load DTM test cases (skip mesh12M.imjs, a DTM with 12 million triangles, which takes several hours!)
     bvector<BeFileName> filenames{ BeFileName(L"mesh7K.imjs"), BeFileName(L"mesh10K-2components.imjs") };
     for (auto const& filename : filenames)
