@@ -2410,7 +2410,7 @@ GEOMDLLIMPEXP PolyfaceHeaderPtr CloneWithDegenerateFacetsRemoved() const;
 GEOMDLLIMPEXP PolyfaceHeaderPtr CloneWithFacetsInRandomOrder() const;
 
 //! Search for adjacent, coplanar facets.
-//! Merge to get maximual planar facets.
+//! Merge to get maximal planar facets.
 //! Optionally remove vertices that have only two incident and colinear edges.
 GEOMDLLIMPEXP PolyfaceHeaderPtr CloneWithMaximalPlanarFacets
 (
