@@ -119,7 +119,7 @@ using namespace connectivity;
 %token <pParseNode> SQL_TOKEN_DOLLAR
 %token <pParseNode> SQL_BITWISE_NOT
 
-%token <pParseNode> SQL_TOKEN_NAV
+%token <pParseNode> SQL_TOKEN_NAVIGATION_VALUE
 
 /* time and date functions */
 %token <pParseNode> SQL_TOKEN_CURRENT_DATE SQL_TOKEN_CURRENT_TIME SQL_TOKEN_CURRENT_TIMESTAMP
@@ -1371,7 +1371,7 @@ function_name:
     ;
 
 value_creation_fct:
-        SQL_TOKEN_NAV '(' derived_column ',' function_arg opt_function_arg ')'
+        SQL_TOKEN_NAVIGATION_VALUE '(' derived_column ',' function_arg opt_function_arg ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);

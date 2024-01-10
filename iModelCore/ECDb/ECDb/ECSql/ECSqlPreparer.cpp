@@ -2844,6 +2844,49 @@ ECSqlStatus ECSqlExpPreparer::GenerateECClassIdFilter(Utf8StringR filterSqlExpre
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareNavValueCreationFuncExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, NavValueCreationFuncExp const& exp)
     {
+    if (!ctx.GetECDb().Schemas().GetClass(exp.GetClassRefExp()->GetAs<ClassNameExp>().GetSchemaName(), exp.GetClassRefExp()->GetAs<ClassNameExp>().GetClassName())->GetPropertyP(exp.GetColumnRefExp()->GetAs<DerivedPropertyExp>().GetExpression()->GetAs<PropertyNameExp>().GetPropertyPath()[0].GetName())->GetIsNavigation())
+        {
+        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0720, "NAV function expects first argument to be an ECNavigation property.");
+        return ECSqlStatus::InvalidECSql;
+        }
+
+    if ((exp.GetIdArgExp()->GetType() == Exp::Type::LiteralValue && !exp.GetIdArgExp()->GetTypeInfo().IsExactNumeric()) || (exp.GetRelECClassIdExp() != nullptr && exp.GetRelECClassIdExp()->GetType() == Exp::Type::LiteralValue && !exp.GetRelECClassIdExp()->GetTypeInfo().IsExactNumeric()))
+        {
+        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0721, "NAV function expects second and third arguments to be positive integers.");
+        return ECSqlStatus::InvalidECSql;
+        }
+
+    auto isUnaryValueValidForId = [&ctx](UnaryValueExp const * argExp) {
+        if (argExp->GetOperator() == UnaryValueExp::Operator::Minus || (argExp->GetOperand()->GetType() == Exp::Type::LiteralValue && argExp->GetOperand()->GetAs<LiteralValueExp>().GetRawValue() == "0"))
+            {
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0721, "NAV function expects second and third arguments to be positive integers.");
+            return false;
+            }
+        return true;
+    };
+
+    auto isLiteralValueValidForId = [&ctx](LiteralValueExp const * argExp) {
+        if (argExp->GetRawValue() == "0")
+            {
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0721, "NAV function expects second and third arguments to be positive integers.");
+            return false;
+            }
+        return true;
+    };
+
+    if (exp.GetIdArgExp()->GetType() == Exp::Type::UnaryValue && !isUnaryValueValidForId(exp.GetIdArgExp()->GetAsCP<UnaryValueExp>()))
+        return ECSqlStatus::InvalidECSql;
+
+    if (exp.GetIdArgExp()->GetType() == Exp::Type::LiteralValue && !isLiteralValueValidForId(exp.GetIdArgExp()->GetAsCP<LiteralValueExp>()))
+        return ECSqlStatus::InvalidECSql;
+
+    if (exp.GetRelECClassIdExp() != nullptr && exp.GetRelECClassIdExp()->GetType() == Exp::Type::UnaryValue && !isUnaryValueValidForId(exp.GetRelECClassIdExp()->GetAsCP<UnaryValueExp>()))
+        return ECSqlStatus::InvalidECSql;
+
+    if (exp.GetRelECClassIdExp() != nullptr && exp.GetRelECClassIdExp()->GetType() == Exp::Type::LiteralValue && !isLiteralValueValidForId(exp.GetRelECClassIdExp()->GetAsCP<LiteralValueExp>()))
+        return ECSqlStatus::InvalidECSql;
+
+
     NativeSqlBuilder idBuilder;
     NativeSqlBuilder relECClassIdBuilder;
     NativeSqlBuilder::List idNativeSql;
@@ -2855,7 +2898,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareNavValueCreationFuncExp(NativeSqlBuilder::L
     if (!stat.IsSuccess())
         return stat;
 
-    if (exp.GetRelECClassIdExp() == nullptr || (exp.GetRelECClassIdExp()->GetType() == Exp::Type::PropertyName && exp.GetRelECClassIdExp()->GetAs<PropertyNameExp>().GetSourceType() == PropertyNameExp::SourceType::ValueCreationFunc))
+    if (exp.GetRelECClassIdExp() == nullptr)
         stat = PrepareRelECClassIdFromNavProperty(relECClassIdNativeSql, ctx, exp.GetColumnRefExp()->GetAs<DerivedPropertyExp>().GetExpression()->GetAs<PropertyNameExp>());
     else
         stat = PrepareValueExp(relECClassIdNativeSql, ctx, *exp.GetRelECClassIdExp());
@@ -2891,14 +2934,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelECClassIdFromNavProperty(NativeSqlBuilde
     NativeSqlBuilder builder(std::to_string(ctx.GetECDb().Schemas().GetClass(exp.GetClassRefExp()->GetAs<ClassNameExp>().GetSchemaName(), exp.GetClassRefExp()->GetAs<ClassNameExp>().GetClassName())->GetPropertyP(exp.GetPropertyPath()[0].GetName())->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue()).c_str());
     nativeSqlSnippets.push_back(builder);
     return ECSqlStatus::Success;
-    // if (exp.GetECSqlPropertyPath().Size() != 3)
-    //     {
-    //     BeAssert(false && "PrepareRelECClassIdFromNavProperty expects to get three properties: SchemaName.ClassName.PropertyName");
-    //     return ECSqlStatus::InvalidECSql;
-    //     }
-    // NativeSqlBuilder builder(std::to_string(ctx.GetECDb().Schemas().GetClass(exp.GetECSqlPropertyPath()[0].GetName(), exp.GetECSqlPropertyPath()[1].GetName())->GetPropertyP(exp.GetECSqlPropertyPath()[2].GetName())->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue()).c_str());
-    // nativeSqlSnippets.push_back(builder);
-    // return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------

@@ -276,23 +276,6 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generated
                 }
                 case ECSqlTypeInfo::Kind::Navigation:
                 {
-                if (selectClauseItemExp.GetExpression()->GetType() == Exp::Type::PropertyName && selectClauseItemExp.GetExpression()->GetAs<PropertyNameExp>().GetSourceType() == PropertyNameExp::SourceType::ValueCreationFunc)
-                    {
-                    NavigationECPropertyP newNavProp = nullptr;
-                    NavigationECProperty const* navProp = ctx.GetECDb().Schemas().GetClass(
-                        selectClauseItemExp.GetExpression()->GetAs<PropertyNameExp>().GetECSqlPropertyPath()[0].GetName(),
-                        selectClauseItemExp.GetExpression()->GetAs<PropertyNameExp>().GetECSqlPropertyPath()[1].GetName()
-                    )->GetPropertyP(selectClauseItemExp.GetExpression()->GetAs<PropertyNameExp>().GetECSqlPropertyPath()[2].GetName())->GetAsNavigationProperty();
-                    ECRelationshipClassCR relClass = *navProp->GetRelationshipClass();
-                    if (SUCCESS != AddSchemaReference(relClass.GetSchema()))
-                        return ECSqlStatus::Error;
-
-                    if (ECObjectsStatus::Success != GetClass().CreateNavigationProperty(newNavProp, encodedPropName, relClass, navProp->GetDirection(), false))
-                        return ECSqlStatus::Error;
-
-                    generatedPropertyP = newNavProp;
-                    break;
-                    }
                 if (typeInfo.GetPropertyMap() == nullptr)
                     {
                     BeAssert(false);

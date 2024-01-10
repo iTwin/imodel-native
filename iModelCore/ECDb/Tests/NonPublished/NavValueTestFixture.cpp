@@ -51,6 +51,27 @@ void NavValueTestFixture::SetUp()
                     <Class class="Person"/>
                 </Target>
             </ECRelationshipClass>
+            <ECRelationshipClass typeName="CustomBookHasAuthor" modifier="Sealed" strength="referencing">
+                <Source multiplicity="(0..*)" roleLabel="A" polymorphic="false">
+                    <Class class="CustomBook"/>
+                </Source>
+                <Target multiplicity="(1..1)" roleLabel="B" polymorphic="false">
+                    <Class class="Person"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECEntityClass typeName="CustomBook" modifier="abstract">
+                <ECCustomAttributes>
+                    <View>
+                        <Query>
+                            SELECT
+                                [ECInstanceId],
+                                NAVIGATION_VALUE(ts.Book.Author, 1, 2)
+                            FROM ts.Book
+                        </Query>
+                    </View>
+                </ECCustomAttributes>
+                <ECNavigationProperty propertyName="Author" relationshipName="CustomBookHasAuthor" direction="Forward"/>
+            </ECEntityClass>
         </ECSchema>)xml"
     )));
 
@@ -73,18 +94,18 @@ void NavValueTestFixture::SetUp()
     }
     }
 
-//Select NAV(PropertyCustomAttribute.Property, 1) x FROM foo WHERE x.Id=2 && x.RelECClassId=3
+//Select NAVIGATION_VALUE(PropertyCustomAttribute.Property, 1) x FROM foo WHERE x.Id=2 && x.RelECClassId=3
     //    ECPropertyNameExpression
-//Select Nav(Foo:Parent, Parent.Id, Parent.RelECClassId) parent2 FROM foo WHERE parent2.Id=2 && parent2.RelECClassId=3
+//Select NAVIGATION_VALUE(Foo:Parent, Parent.Id, Parent.RelECClassId) parent2 FROM foo WHERE parent2.Id=2 && parent2.RelECClassId=3
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(NavValueTestFixture, SimpleSelectNavValue) {
+TEST_F(NavValueTestFixture, SimpleSelectNavValue)
     {
         { // construct from 3 static parameters
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NAV(ts.Book.Author, 1, 2)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NAVIGATION_VALUE(ts.Book.Author, 1, 2)"));
         printf("%s\n", stmt.GetNativeSql());
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
 
@@ -105,7 +126,7 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue) {
 
         { // construct from 2 static parameters (RelClassId should be taken from nav prop)
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NAV(ts.Book.Author, 1)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NAVIGATION_VALUE(ts.Book.Author, 1)"));
         printf("%s\n", stmt.GetNativeSql());
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
 
@@ -126,7 +147,7 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue) {
 
         { // construct from parameters
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NAV(ts.Book.Author, ?, ?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NAVIGATION_VALUE(ts.Book.Author, ?, ?)"));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, m_personInstanceKey.GetInstanceId()));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, m_bookHasAuthorClassId));
         printf("%s\n", stmt.GetNativeSql());
@@ -149,7 +170,7 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue) {
 
         { // construct from actual nav property row
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NAV(ts.Book.Author, Author.Id, Author.RelECClassId) [MyNavProp] FROM ts.Book LIMIT 1"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NAVIGATION_VALUE(ts.Book.Author, Author.Id, Author.RelECClassId) [MyNavProp] FROM ts.Book LIMIT 1"));
         printf("%s\n", stmt.GetNativeSql());
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
 
@@ -170,7 +191,7 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue) {
 
         { // check if ECSql handles duplicate names in NAV function
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NAV(ts.Book.Author, 1, 2), NAV(ts.Book.Author, 3, 4)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NAVIGATION_VALUE(ts.Book.Author, 1, 2), NAVIGATION_VALUE(ts.Book.Author, 3, 4)"));
         printf("%s\n", stmt.GetNativeSql());
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
 
@@ -202,10 +223,9 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue) {
         ASSERT_TRUE(property->GetIsNavigation());
         }
 
-        // TODO: create a ECClass with NAV function in another test and move next two test to the new test suite.
         { // check if fields are added correctly
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Property, Property.Id, Property, Property.RelECClassId, Property from meta.PropertyCustomAttribute"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Author, Author.Id, Author, Author.RelECClassId, Author from ts.CustomBook"));
         printf("%s\n", stmt.GetNativeSql());
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
 
@@ -236,27 +256,27 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue) {
 
         auto* property = firstColInfo.GetProperty();
         ASSERT_TRUE(property != nullptr);
-        ASSERT_STREQ("Property", property->GetName().c_str());
+        ASSERT_STREQ("Author", property->GetName().c_str());
         ASSERT_TRUE(property->GetIsNavigation());
 
         property = stmt.GetColumnInfo(1).GetProperty();
         ASSERT_TRUE(property != nullptr);
-        ASSERT_STREQ("Property.Id", property->GetDisplayLabel().c_str());
+        ASSERT_STREQ("Author.Id", property->GetDisplayLabel().c_str());
         ASSERT_TRUE(property->GetIsPrimitive());
 
         property = thirdColInfo.GetProperty();
         ASSERT_TRUE(property != nullptr);
-        ASSERT_STREQ("Property_1", property->GetName().c_str());
+        ASSERT_STREQ("Author_1", property->GetName().c_str());
         ASSERT_TRUE(property->GetIsNavigation());
 
         property = stmt.GetColumnInfo(3).GetProperty();
         ASSERT_TRUE(property != nullptr);
-        ASSERT_STREQ("Property.RelECClassId", property->GetDisplayLabel().c_str());
+        ASSERT_STREQ("Author.RelECClassId", property->GetDisplayLabel().c_str());
         ASSERT_TRUE(property->GetIsPrimitive());
 
         property = fifthColInfo.GetProperty();
         ASSERT_TRUE(property != nullptr);
-        ASSERT_STREQ("Property_2", property->GetName().c_str());
+        ASSERT_STREQ("Author_2", property->GetName().c_str());
         ASSERT_TRUE(property->GetIsNavigation());
         }
 
@@ -269,7 +289,7 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue) {
 
         { // check if NAV function works in select
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Author, Author.Id, Author.RelECClassId FROM (SELECT NAV(ts.Book.Author, 1, 2)) WHERE Author.Id = 1 AND Author.RelECClassId = 2"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Author, Author.Id, Author.RelECClassId FROM (SELECT NAVIGATION_VALUE(ts.Book.Author, 1, 2)) WHERE Author.Id = 1 AND Author.RelECClassId = 2"));
         printf("%s\n", stmt.GetNativeSql());
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
 
@@ -313,18 +333,87 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue) {
         ASSERT_TRUE(property->GetIsPrimitive());
         }
 
-        // TODO: maybe create seperate test for error scenarios?
-        {
+        { // check if NAV function can take a query as arguments
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "with a(NavProp) AS (SELECT NAV(ts.Book.Author, 1, 2)) SELECT * FROM a"));
-        }
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT NAVIGATION_VALUE(ts.Book.Author, (SELECT COUNT(*) FROM ts.Book), ((SELECT COUNT(*) FROM ts.Book) + 1))"));
+        printf("%s\n", stmt.GetNativeSql());
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
 
-        {
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "with a(id, relid) AS (SELECT NAV(ts.Book.Author, 1, 2)) SELECT * FROM a"));
+        ECClassId relClassId;
+        ECInstanceId instId = stmt.GetValueNavigation<ECInstanceId>(0, &relClassId);
+        ASSERT_EQ(ECClassId(2ull), relClassId);
+        ASSERT_EQ(ECInstanceId(1ull), instId);
+        auto& colInfo = stmt.GetColumnInfo(0);
+        ASSERT_TRUE(colInfo.IsValid());
+        ASSERT_TRUE(colInfo.IsGeneratedProperty());
+        ASSERT_TRUE(colInfo.GetDataType().IsNavigation());
+
+        auto* property = colInfo.GetProperty();
+        ASSERT_TRUE(property != nullptr);
+        ASSERT_STREQ("Author", property->GetName().c_str());
+        ASSERT_TRUE(property->GetIsNavigation());
         }
     }
 
-}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(NavValueTestFixture, SelectNavValueErrorScenarios) 
+    {
+        { // NAV function should fail in CTE
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "with a(NavProp) AS (SELECT NAVIGATION_VALUE(ts.Book.Author, 1, 2)) SELECT * FROM a"));
+        }
+
+        { // NAV function should fail in CTE
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "with a(id, relid) AS (SELECT NAVIGATION_VALUE(ts.Book.Author, 1, 2)) SELECT * FROM a"));
+        }
+
+        { // first arg is not a relationship property
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NAVIGATION_VALUE(ts.Book.Title, 1, 2)"));
+        }
+
+        { // more than 3 args
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NAVIGATION_VALUE(ts.Book.Author, 1, 2, 3)"));
+        }
+
+        { // schema does not exist
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NAVIGATION_VALUE(NonExistingSchema.Book.Author, 1, 2)"));
+        }
+
+        { // class does not exist
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NAVIGATION_VALUE(ts.NonExistingClass.Author, 1, 2)"));
+        }
+
+        { // property does not exist
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NAVIGATION_VALUE(ts.book.NonExistingProperty, 1, 2)"));
+        }
+
+        { // string instead of id
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NAVIGATION_VALUE(ts.Book.Author, 'one', 'two')"));
+        }
+
+        { // id's should be >= 0
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NAVIGATION_VALUE(ts.Book.Author, -1)"));
+        }
+
+        { // id's should be >= 0
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NAVIGATION_VALUE(ts.Book.Author, 5, 0)"));
+        }
+
+        { // NAV function should fail if id's are double type
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NAVIGATION_VALUE(ts.Book.Author, 1.15, 7.15)"));
+        }
+    }
 
 END_ECDBUNITTESTS_NAMESPACE

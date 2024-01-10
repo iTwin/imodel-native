@@ -4183,7 +4183,7 @@ BentleyStatus ECSqlParser::ParseValueCreationFuncExp(std::unique_ptr<ValueExp>& 
 
     switch (parseNode->getChild(0)->getTokenID())
         {
-        case SQL_TOKEN_NAV:
+        case SQL_TOKEN_NAVIGATION_VALUE:
             {
             std::unique_ptr<NavValueCreationFuncExp> navValueCreationFuncExp = nullptr;
             if (SUCCESS != ParseNavValueCreationFuncExp(navValueCreationFuncExp, parseNode))
@@ -4209,19 +4209,24 @@ BentleyStatus ECSqlParser::ParseNavValueCreationFuncExp(std::unique_ptr<NavValue
         return ERROR;
 
     if (derivedPropertyExp->GetExpression()->GetAs<PropertyNameExp>().GetPropertyPath().Size() != 3)
-        {
-        BeAssert(false && "NavValueCreationFunc expects first argument to get three properties: SchemaName.ClassName.PropertyName");
         return ERROR;
-        }
-    
+
     PropertyPath propPath = derivedPropertyExp->GetExpression()->GetAs<PropertyNameExp>().GetPropertyPath();
+
     ClassMap const* classMap = m_context->GetECDb().Schemas().GetDispatcher().GetClassMap(propPath[0].GetName(), propPath[1].GetName(), SchemaLookupMode::AutoDetect, nullptr);
+
+    if (classMap == nullptr)
+        return ERROR;
+
     propPath.SetClassMap(*classMap);
     std::shared_ptr<ClassNameExp::Info> classNameExpInfo = nullptr;
     if (SUCCESS != m_context->TryResolveClass(classNameExpInfo, nullptr, propPath[0].GetName(), propPath[1].GetName(), ECSqlType::Select, false, *parseNode))
         return ERROR;
 
     std::unique_ptr<ClassNameExp> classNameExp =  std::make_unique<ClassNameExp>(propPath[1].GetName().c_str(), propPath[0].GetName().c_str(), nullptr, classNameExpInfo);
+
+    if (classMap->GetPropertyMaps().Find(propPath[2].GetName().c_str()) == nullptr)
+        return ERROR;
 
     std::unique_ptr<PropertyNameExp> propNameExp = std::make_unique<PropertyNameExp>(
         *m_context,
@@ -4242,9 +4247,8 @@ BentleyStatus ECSqlParser::ParseNavValueCreationFuncExp(std::unique_ptr<NavValue
     if (parseNode->getChild(5)->count() != 0 && SUCCESS != ParseFunctionArg(relECClassIdArgExp, *parseNode->getChild(5)->getChild(1)))
         return ERROR;
 
-    auto smth = classMap->GetPropertyMaps().Find(propPath[2].GetName().c_str());
     valueCreationFuncExp = std::make_unique<NavValueCreationFuncExp>(std::move(derivedPropertyExp), std::move(idArgExp), std::move(relECClassIdArgExp), std::move(classNameExp));
-    valueCreationFuncExp->SetTypeInfo(ECSqlTypeInfo(*smth));
+    valueCreationFuncExp->SetTypeInfo(ECSqlTypeInfo(*classMap->GetPropertyMaps().Find(propPath[2].GetName().c_str())));
     return SUCCESS;
     }
 

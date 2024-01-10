@@ -565,8 +565,8 @@
                 <Query>
                     SELECT
                         [ca].[ECInstanceId],
-                        NAV(meta.PropertyCustomAttribute.Property, [ca].[ContainerId]),
-                        NAV(meta.PropertyCustomAttribute.CustomAttributeClass, [ca].[Class].[Id]),
+                        NAVIGATION_VALUE(meta.PropertyCustomAttribute.Property, [ca].[ContainerId]),
+                        NAVIGATION_VALUE(meta.PropertyCustomAttribute.CustomAttributeClass, [ca].[Class].[Id]),
                         XmlCAToJson([ca].[Class].[Id], [ca].[Instance]) [ValueJson]
                     FROM [meta].[CustomAttribute] [ca]
                     WHERE [ca].[ContainerType] = 992
@@ -601,8 +601,8 @@
                 <Query>
                     SELECT
                         [ca].[ECInstanceId],
-                        NAV(meta.ClassCustomAttribute.Class, [ca].[ContainerId]),
-                        NAV(meta.ClassCustomAttribute.CustomAttributeClass, [ca].[Class].[Id]),
+                        NAVIGATION_VALUE(meta.ClassCustomAttribute.Class, [ca].[ContainerId]),
+                        NAVIGATION_VALUE(meta.ClassCustomAttribute.CustomAttributeClass, [ca].[Class].[Id]),
                         XmlCAToJson([ca].[Class].[Id], [ca].[Instance]) [ValueJson]
                     FROM [meta].[CustomAttribute] [ca]
                     WHERE [ca].[ContainerType] = 30
@@ -637,8 +637,8 @@
                 <Query>
                     SELECT
                         [ca].[ECInstanceId],
-                        NAV(meta.SchemaCustomAttribute.Schema, [ca].[ContainerId]),
-                        NAV(meta.SchemaCustomAttribute.CustomAttributeClass, [ca].[Class].[Id]),
+                        NAVIGATION_VALUE(meta.SchemaCustomAttribute.Schema, [ca].[ContainerId]),
+                        NAVIGATION_VALUE(meta.SchemaCustomAttribute.CustomAttributeClass, [ca].[Class].[Id]),
                         XmlCAToJson([ca].[Class].[Id], [ca].[Instance]) [ValueJson]
                     FROM [meta].[CustomAttribute] [ca]
                     WHERE [ca].[ContainerType] = 1
