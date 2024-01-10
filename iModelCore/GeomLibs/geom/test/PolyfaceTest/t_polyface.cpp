@@ -4422,15 +4422,10 @@ TEST(Polyface, ConnectedComponentsMaxFaces)
     if (Check::True(sphereMesh.IsValid(), "successfully created sphere mesh"))
         data.push_back(sphereMesh);
 
-    // square with hole 
-    bvector<DPoint3d> rectPts{{10,0,0}, {0,10,0}, {-10,0,0}, {0,-10,0}};
-    DEllipse3d hole = DEllipse3d::FromCenterRadiusXY({0,0,0}, 2);
-    CurveVectorPtr region = CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion);
-    region->Add(CurveVector::CreateLinear(rectPts, CurveVector::BOUNDARY_TYPE_Outer));
-    region->Add(CurveVector::CreateDisk(hole, CurveVector::BOUNDARY_TYPE_Inner));
-    auto builder = PolyfaceConstruction::Create(*IFacetOptions::Create());
-    builder->AddRegion(*region);
-    auto regionMesh = builder->GetClientMeshPtr();
+    // load mesh with hole
+    auto options = IFacetOptions::CreateForCurves();
+    options->SetMaxEdgeLength(0.3);
+    auto regionMesh = DiamondAndCircleParityRegionMesh(20, 4, options.get());
     if (Check::True(regionMesh.IsValid() && regionMesh->GetNumFacet() > 0, "region successfully triangulated"))
         data.push_back(regionMesh);
 
@@ -4466,8 +4461,13 @@ TEST(Polyface, ConnectedComponentsMaxFaces)
             auto clone = mesh->CloneWithDegenerateFacetsRemoved();
             Check::True(clone.IsValid(), "successfully removed degenerate facets");
             auto newNumFacets = clone->GetNumFacet();
-            if (Check::True(newNumFacets <= numFacets, "filtering degenerates did not add more facets to mesh"))
-                Check::Print((uint64_t) (numFacets - newNumFacets), "degenFacets");
+            auto numDegenerateFacets = numFacets - newNumFacets;
+            Check::True(numDegenerateFacets >= 0, "filtering degenerates did not add more facets to mesh");
+            if (numDegenerateFacets > 0)
+                {
+                Check::Print(numDegenerateFacets, "degenFacets");
+                Check::PrintIndent(0);
+                }
             numFacets = newNumFacets;
             mesh = clone;
             }
@@ -4491,6 +4491,7 @@ TEST(Polyface, ConnectedComponentsMaxFaces)
                 bvector<bvector<MTGNodeId>> components;
                 pFacets->GetGraphP()->CollectConnectedComponents(components, MTG_EXTERIOR_MASK, maxFacets);
                 Check::Print((uint64_t) components.size(), "components");
+                Check::PrintIndent(1);
                 size_t numMeshFacets = 0;
                 for (auto const& component : components)
                     {
@@ -4507,6 +4508,7 @@ TEST(Polyface, ConnectedComponentsMaxFaces)
                         }
                     }
                 Check::Size(numMeshFacets, numFacets, "total subMesh facet count equals input mesh facet count");
+                Check::PrintIndent(0);
                 }
             pFacets = jmdlMTGFacets_free(pFacets);
             y += 10 * range.YLength();
