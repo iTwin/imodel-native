@@ -497,13 +497,13 @@ static MTGNodeId ExploreComponent(MTGGraph& graph, bvector<MTGNodeId>& component
         MTGNodeId front = candidates.front();
         while (!candidates.empty())
             {
-                // try to find a node at the boundary of both the geometry and previous component
-                MTGNodeId node = candidates.front();
-                candidates.pop();
-                if (graph.HasMaskAt(graph.VSucc(node), ignoreMask))
-                    return node;
-                if (graph.HasMaskAt(graph.EdgeMate(node), ignoreMask))
-                    return node;
+            // try to find a node at the boundary of both the geometry and previous component
+            MTGNodeId node = candidates.front();
+            candidates.pop();
+            if (graph.HasMaskAt(graph.VSucc(node), ignoreMask))
+                return node;
+            if (graph.HasMaskAt(graph.EdgeMate(node), ignoreMask))
+                return node;
             }
             return front;
         }
