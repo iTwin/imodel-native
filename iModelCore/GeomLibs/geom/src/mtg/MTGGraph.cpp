@@ -505,7 +505,7 @@ static MTGNodeId ExploreComponent(MTGGraph& graph, bvector<MTGNodeId>& component
             if (graph.HasMaskAt(graph.EdgeMate(node), ignoreMask))
                 return node;
             }
-            return front;
+        return front;
         }
     }
 
