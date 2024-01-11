@@ -222,6 +222,14 @@ ECClassCP ContentItemBuilder::GetRecordClass() const
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void ContentItemBuilder::OnFieldHandled(Utf8CP name)
+    {
+    if (m_handledFields.end() == m_handledFields.find(name))    
+        m_handledFields.Insert(name, { false });
+    }
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void ContentItemBuilder::_AddValue(Utf8CP name, rapidjson::Value&& value, rapidjson::Value&& displayValue, ECPropertyCP)
     {
     m_values.second->AddMember(rapidjson::Value(name, m_values.second->GetAllocator()), value, m_values.second->GetAllocator());
@@ -236,6 +244,7 @@ void ContentItemBuilder::AddNull(Utf8CP name, ECPropertyCP prop)
         return;
 
     _AddValue(name, rapidjson::Value(), rapidjson::Value(), prop);
+    OnFieldHandled(name);
     }
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
@@ -247,6 +256,7 @@ void ContentItemBuilder::AddValue(Utf8CP name, Utf8CP rawAndDisplayValue, ECProp
 
     if (rawAndDisplayValue)
         _AddValue(name, rapidjson::Value(rawAndDisplayValue, m_values.second->GetAllocator()), rapidjson::Value(rawAndDisplayValue, m_displayValues.second->GetAllocator()), prop);
+    OnFieldHandled(name);
     }
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
@@ -258,9 +268,10 @@ void ContentItemBuilder::AddValue(Utf8CP name, ECPropertyCR ecProperty, IECSqlVa
 
     if (value.IsNull())
         {
-        // only add nulls for structs and arrays (need that later for checking if they were loaded)
+        // only add nulls for structs and arrays (need them in resulting ContentItem for ContentProvider to know if they were loaded)
         if (ecProperty.GetIsStruct() || ecProperty.GetIsArray())
             AddNull(name, &ecProperty);
+        OnFieldHandled(name);
         return;
         }
 
@@ -299,6 +310,7 @@ void ContentItemBuilder::AddValue(Utf8CP name, ECPropertyCR ecProperty, IECSqlVa
                 &ecProperty);
             }
         }
+    OnFieldHandled(name);
     }
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
@@ -307,7 +319,10 @@ void ContentItemBuilder::_AddEmptyNestedContentValue(Utf8CP name)
     {
     auto iter = m_nestedContentValues.find(name);
     if (m_nestedContentValues.end() == iter)
+        {
         m_nestedContentValues.insert(std::make_pair(name, NestedContentValues()));
+        OnFieldHandled(name);
+        }
     }
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
@@ -316,7 +331,10 @@ ContentItemBuilder& ContentItemBuilder::_AddNestedContentValue(Utf8CP name, ECIn
     {
     auto iter = m_nestedContentValues.find(name);
     if (m_nestedContentValues.end() == iter)
+        {
         iter = m_nestedContentValues.insert(std::make_pair(name, NestedContentValues())).first;
+        OnFieldHandled(name);
+        }
     iter->second.values.push_back(_CreateNestedContentItemBuilder());
     iter->second.values.back()->SetPrimaryKey(key);
     iter->second.values.back()->GetExtendedData().MergeWith(GetExtendedData());
@@ -370,7 +388,7 @@ ContentSetItemPtr ContentItemBuilder::BuildItem()
     bmap<Utf8String, bvector<ContentSetItemPtr>> nestedContentItems;
     for (auto const& entry : m_nestedContentValues)
         {
-        if (GetMergedFieldNames().end() != GetMergedFieldNames().find(entry.first))
+        if (GetHandledFields()[entry.first].isMerged)
             {
             GetValues().AddMember(rapidjson::Value(entry.first.c_str(), GetValues().GetAllocator()), rapidjson::Value(), GetValues().GetAllocator());
             GetDisplayValues().AddMember(rapidjson::Value(entry.first.c_str(), GetDisplayValues().GetAllocator()), rapidjson::Value(s_variesStr.c_str(), GetDisplayValues().GetAllocator()), GetDisplayValues().GetAllocator());
@@ -386,8 +404,15 @@ ContentSetItemPtr ContentItemBuilder::BuildItem()
         label = s_emptyLabel.get();
         }
 
+    bvector<Utf8String> mergedFieldNames;
+    for (auto const& f : m_handledFields)
+        {
+        if (f.second.isMerged)
+            mergedFieldNames.push_back(f.first);
+        }
+
     auto item = ContentSetItem::Create(inputKeys, primaryKeys, *label, m_imageId, nestedContentItems,
-        std::move(m_values), std::move(m_displayValues), ContainerHelpers::TransformContainer<bvector<Utf8String>>(m_mergedFieldNames),
+        std::move(m_values), std::move(m_displayValues), mergedFieldNames,
         ContentSetItem::FieldPropertyInstanceKeyMap()); // wip_field_instance_keys
     item->SetClass(GetRecordClass());
     ContentSetItemExtendedData(*item).MergeWith(m_extendedData);
@@ -482,7 +507,8 @@ void MergingContentItemBuilder::_SetRelatedInstanceKeys(bvector<ContentSetItemEx
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentItemBuilder::BeforeAddValueStatus MergingContentItemBuilder::_OnBeforeAddValue(Utf8CP name)
     {
-    if (GetMergedFieldNames().end() != GetMergedFieldNames().find(name))
+    auto fieldIter = GetHandledFields().find(name);
+    if (fieldIter != GetHandledFields().end() && fieldIter->second.isMerged)
         return BeforeAddValueStatus::Skip;
     return BeforeAddValueStatus::Continue;
     }
@@ -491,17 +517,17 @@ ContentItemBuilder::BeforeAddValueStatus MergingContentItemBuilder::_OnBeforeAdd
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MergingContentItemBuilder::_AddValue(Utf8CP name, rapidjson::Value&& value, rapidjson::Value&& displayValue, ECPropertyCP prop)
     {
-    if (!GetValues().HasMember(name))
+    auto fieldIter = GetHandledFields().find(name);
+    if (fieldIter == GetHandledFields().end())
         {
         ContentItemBuilder::_AddValue(name, std::move(value), std::move(displayValue), prop);
+        OnFieldHandled(name);
         return;
         }
 
-    if (!GetValues().HasMember(name) || !GetDisplayValues().HasMember(name))
-        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, Utf8PrintfString("Attempting to merge value, but target is not set. Property name: '%s'", name));
-
-    RapidJsonValueR existingValue = GetValues()[name];
-    RapidJsonValueR existingDisplayValue = GetDisplayValues()[name];
+    static rapidjson::Value const s_nullValue;
+    RapidJsonValueCR existingValue = GetValues().HasMember(name) ? GetValues()[name] : s_nullValue;
+    RapidJsonValueCR existingDisplayValue = GetDisplayValues().HasMember(name) ? GetDisplayValues()[name] : s_nullValue;
 
     if (prop && prop->GetIsNavigation())
         {
@@ -515,19 +541,27 @@ void MergingContentItemBuilder::_AddValue(Utf8CP name, rapidjson::Value&& value,
         return;
         }
 
-    existingValue.SetNull();
+    // at this point we know the values are different... persist that
     static Utf8PrintfString const s_variesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
-    existingDisplayValue.SetString(s_variesStr.c_str(), GetDisplayValues().GetAllocator());
-    GetMergedFieldNames().insert(name);
+    if (GetValues().HasMember(name))
+        GetValues()[name].SetNull();
+    else
+        GetValues().AddMember(rapidjson::Value(name, GetValues().GetAllocator()), rapidjson::Value(), GetValues().GetAllocator());
+    if (GetDisplayValues().HasMember(name))
+        GetDisplayValues()[name].SetString(s_variesStr.c_str(), GetDisplayValues().GetAllocator());
+    else
+        GetDisplayValues().AddMember(rapidjson::Value(name, GetDisplayValues().GetAllocator()), rapidjson::Value(s_variesStr.c_str(), GetDisplayValues().GetAllocator()), GetDisplayValues().GetAllocator());
+    fieldIter->second.isMerged = true;
     }
 /*---------------------------------------------------------------------------------**//**
+// Note: this method assumes the given field is already in handled fields map.
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MergingContentItemBuilder::SetNestedContentValuesAsMerged(Utf8CP name, NestedContentValues& values)
     {
     values.values.clear();
     values.capturedCount = (size_t)0;
-    GetMergedFieldNames().insert(name);
+    GetHandledFields()[name].isMerged = true;
     }
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
@@ -600,7 +634,7 @@ void MergingContentItemBuilder::_CaptureNestedContentValueCounts()
     {
     for (auto& entry : GetNestedContentValues())
         {
-        if (GetMergedFieldNames().end() != GetMergedFieldNames().find(entry.first))
+        if (GetHandledFields()[entry.first].isMerged)
             {
             // nothing to do it the value is already set as merged
             DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Content, entry.second.values.empty(), Utf8PrintfString("Field is merged, but still has values. Field name: '%s'", entry.first.c_str()));

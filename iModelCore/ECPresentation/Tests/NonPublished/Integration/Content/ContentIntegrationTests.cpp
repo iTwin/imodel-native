@@ -10434,6 +10434,171 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesPrimitivePropertyFieldsWhenValuesAreEqual, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Prop" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitivePropertyFieldsWhenValuesAreEqual)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance)
+        {
+        instance.SetValue("Prop", ECValue("test"));
+        });
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance)
+        {
+        instance.SetValue("Prop", ECValue("test"));
+        });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", RulesEngineTestHelpers::CreateClassNamesList({ classA }), false, false));
+    rules->AddPresentationRule(*rule);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), 
+        rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(Utf8PrintfString(R"(
+        {
+        "%s": "test"
+        })", 
+        FIELD_NAME(classA, "Prop")).c_str());
+    EXPECT_EQ(expectedValues, record->GetValues())
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record->GetValues());
+    EXPECT_FALSE(record->IsMerged(FIELD_NAME(classA, "Prop")));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesPrimitivePropertyFieldsWhenValuesAreDifferent, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Prop" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitivePropertyFieldsWhenValuesAreDifferent)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance)
+        {
+        instance.SetValue("Prop", ECValue("111"));
+        });
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance)
+        {
+        instance.SetValue("Prop", ECValue("222"));
+        });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", RulesEngineTestHelpers::CreateClassNamesList({ classA }), false, false));
+    rules->AddPresentationRule(*rule);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
+        rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(Utf8PrintfString(R"(
+        {
+        "%s": null
+        })",
+        FIELD_NAME(classA, "Prop")).c_str());
+    EXPECT_EQ(expectedValues, record->GetValues())
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record->GetValues());
+    EXPECT_TRUE(record->IsMerged(FIELD_NAME(classA, "Prop")));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesPrimitivePropertyFieldsWhenOneValueIsNullAndOneIsNot, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Prop" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitivePropertyFieldsWhenOneValueIsNullAndOneIsNot)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance)
+        {
+        instance.SetValue("Prop", ECValue("test"));
+        });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", RulesEngineTestHelpers::CreateClassNamesList({ classA }), false, false));
+    rules->AddPresentationRule(*rule);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
+        rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(Utf8PrintfString(R"(
+        {
+        "%s": null
+        })",
+        FIELD_NAME(classA, "Prop")).c_str());
+    EXPECT_EQ(expectedValues, record->GetValues())
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record->GetValues());
+    EXPECT_TRUE(record->IsMerged(FIELD_NAME(classA, "Prop")));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(MergesPrimitiveArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesEqual, R"*(
     <ECEntityClass typeName="MyClassA">
         <ECArrayProperty propertyName="ArrayProperty" typeName="int" />
