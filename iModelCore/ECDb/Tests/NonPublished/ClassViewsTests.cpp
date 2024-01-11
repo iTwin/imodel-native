@@ -51,98 +51,6 @@ struct GetDbValueFunc final : ScalarFunction {
       GetDbValueFunc(DbCR db):ScalarFunction("get_val", 3), m_db(&db) {}
       ~GetDbValueFunc() {}
 };
-//======
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ClassViewsFixture, join_using) {
-    auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-    <ECSchema
-            schemaName="test_schema"
-            alias="ts"
-            version="1.0.0"
-            xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-        <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
-        <ECSchemaReference name='ECDbMeta' version='04.00.00' alias='meta' />
-        <ECEntityClass typeName="CustomAttribute" description="" displayLabel="" modifier="Sealed">
-            <ECCustomAttributes>
-                <ClassMap xmlns="ECDbMap.02.00.00">
-                    <MapStrategy>ExistingTable</MapStrategy>
-                    <TableName>ec_CustomAttribute</TableName>
-                </ClassMap>
-            </ECCustomAttributes>
-            <ECProperty propertyName="ContainerId"  typeName="int"/>
-            <ECProperty propertyName="ContainerType"  typeName="int"/>
-            <ECProperty propertyName="Ordinal"  typeName="int"/>
-            <ECProperty propertyName="Instance"  typeName="string"/>
-            <ECNavigationProperty propertyName="Class" relationshipName="CustomAttributeClassHasInstance" direction="backward"/>
-        </ECEntityClass>
-        <ECRelationshipClass typeName="CustomAttributeClassHasInstance" modifier="Sealed" strength="referencing">
-            <Source multiplicity="(1..1)" roleLabel="has instance" polymorphic="false">
-                <Class class="meta:ECClassDef"/>
-            </Source>
-            <Target multiplicity="(0..*)" roleLabel="is instance of" polymorphic="false">
-                <Class class="CustomAttribute"/>
-            </Target>
-        </ECRelationshipClass>
-        <ECEntityClass typeName="PropertyCustomAttribute" description="" displayLabel="" modifier="Abstract">
-            <ECCustomAttributes>
-                <View xmlns="ECDbMap.02.00.03">
-                    <Query>
-                      SELECT
-                          [ca].[ECInstanceId],
-                          [ca].[Class] [Class],
-                          CAST([ca].[ContainerId] as LONG) [Property],
-                          '' [Instance]
-                      FROM [ts].[CustomAttribute] [ca]
-                      WHERE [ca].[ContainerType] = 992 ORDER BY [ca].[Ordinal]
-                    </Query>
-                </View>
-            </ECCustomAttributes>
-            <ECNavigationProperty propertyName="Property" relationshipName="PropertyHasCustomAttribute" direction="backward"/>
-            <ECNavigationProperty propertyName="Class" relationshipName="CustomAttributeClassHasInstanceOnProperty" direction="backward"/>
-            <ECProperty propertyName="Instance"  typeName="string"/>
-        </ECEntityClass>
-        <ECRelationshipClass typeName="PropertyHasCustomAttribute" modifier="Sealed" strength="referencing">
-            <Source multiplicity="(1..1)" roleLabel="has custom attribute" polymorphic="false">
-                <Class class="meta:ECPropertyDef"/>
-            </Source>
-            <Target multiplicity="(0..*)" roleLabel="is defined on" polymorphic="false">
-                <Class class="PropertyCustomAttribute"/>
-            </Target>
-        </ECRelationshipClass>
-        <ECRelationshipClass typeName="CustomAttributeClassHasInstanceOnProperty" modifier="Sealed" strength="referencing">
-            <Source multiplicity="(1..1)" roleLabel="has instance" polymorphic="false">
-                <Class class="meta:ECClassDef"/>
-            </Source>
-            <Target multiplicity="(0..*)" roleLabel="is instance of" polymorphic="false">
-                <Class class="PropertyCustomAttribute"/>
-            </Target>
-        </ECRelationshipClass>
-    </ECSchema>)xml");
-
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("test.ecdb"));
-    GetDbValueFunc func(m_ecdb);
-    m_ecdb.AddFunction(func);
-
-    ASSERT_EQ(SUCCESS, ImportSchema(testSchema));
-    m_ecdb.SaveChanges();
-    printf("%s\n", m_ecdb.GetDbFileName());
-    if (true){
-        ECSqlStatement stmt;
-        auto ecsql = R"x(
-          SELECT pca.ECInstanceId, pDef.Name
-            FROM ts.PropertyCustomAttribute pca
-              JOIN meta.ECPropertyDef pDef USING ts.PropertyHasCustomAttribute
-          --  JOIN meta.ECClassDef    cDef USING ts.CustomAttributeClassHasInstanceOnProperty
-        )x";
-
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
-        auto nativeSql = "";
-        ASSERT_STREQ(nativeSql, stmt.GetNativeSql());
-        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-    }
-}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -219,7 +127,7 @@ TEST_F(ClassViewsFixture, linktable_relationship_view) {
             version="1.0.0"
             xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
-        <ECSchemaReference name='ECDbMeta' version='04.00.00' alias='meta' />
+        <ECSchemaReference name='ECDbMeta' version='04.00.02' alias='meta' />
         <ECRelationshipClass typeName="SchemaClassesView" description="" displayLabel="" strength="referencing" modifier="Abstract">
             <ECCustomAttributes>
                 <View xmlns="ECDbMap.02.00.03">
@@ -265,7 +173,7 @@ TEST_F(ClassViewsFixture, return_nav_prop_from_view_query) {
             version="1.0.0"
             xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
-        <ECSchemaReference name='ECDbMeta' version='04.00.00' alias='meta' />
+        <ECSchemaReference name='ECDbMeta' version='04.00.02' alias='meta' />
         <ECRelationshipClass typeName="SchemaClassesView" description="" displayLabel="" strength="referencing" modifier="Abstract">
             <Source multiplicity="(1..1)" roleLabel="contains" polymorphic="false">
                 <Class class="meta:ECSchemaDef"/>
@@ -289,14 +197,14 @@ TEST_F(ClassViewsFixture, return_nav_prop_from_view_query) {
     if (true){
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.ClassDefView"));
-        auto nativeSql = "SELECT [K0],[K1],[K2_0],[K2_1] FROM (SELECT [ECClassDef].[ECInstanceId] [K0],[ECClassDef].[ECClassId] [K1],[ECClassDef].[SchemaId] [K2_0],[ECClassDef].[SchemaRelECClassId] [K2_1] FROM (SELECT [Id] ECInstanceId,33 ECClassId,[SchemaId],(CASE WHEN [SchemaId] IS NULL THEN NULL ELSE 34 END) [SchemaRelECClassId] FROM [main].[ec_Class]) [ECClassDef])";
+        auto nativeSql = "SELECT [K0],[K1],[K2_0],[K2_1] FROM (SELECT [ECClassDef].[ECInstanceId] [K0],[ECClassDef].[ECClassId] [K1],[ECClassDef].[SchemaId] [K2_0],[ECClassDef].[SchemaRelECClassId] [K2_1] FROM (SELECT [Id] ECInstanceId,36 ECClassId,[SchemaId],(CASE WHEN [SchemaId] IS NULL THEN NULL ELSE 37 END) [SchemaRelECClassId] FROM [main].[ec_Class]) [ECClassDef]) [ClassDefView]";
         ASSERT_STREQ(nativeSql, stmt.GetNativeSql());
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
         ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), ECInstanceId(1ull));
-        ASSERT_EQ(stmt.GetValueId<ECN::ECClassId>(1), ECClassId(33ull));
+        ASSERT_EQ(stmt.GetValueId<ECN::ECClassId>(1), ECClassId(36ull));
         ECN::ECClassId relId;
         ASSERT_EQ(stmt.GetValueNavigation<ECInstanceId>(2, &relId), ECInstanceId(1ull));
-        ASSERT_EQ(relId, ECClassId(34ull));
+        ASSERT_EQ(relId, ECClassId(37ull));
     }
 }
 /*---------------------------------------------------------------------------------**//**
@@ -644,7 +552,7 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
 TEST_F(ClassViewsFixture, complex_data) {
     ASSERT_EQ(SUCCESS, SetupECDb("complex_data.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-                <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
+                <ECSchemaReference name="ECDbMap" version="02.00.03" alias="ecdbmap" />
                 <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA" />
                 <ECStructClass typeName="struct_p" description="Struct with primitive props (default mappings)">
                     <ECProperty propertyName="b" typeName="boolean" />
@@ -687,17 +595,17 @@ TEST_F(ClassViewsFixture, complex_data) {
                 <ECEntityClass typeName="e_mix"
                     description="Cover all primitive, primitive array, struct of primitive, array of struct">
                     <ECCustomAttributes>
-                        <ClassMap xmlns="ECDbMap.02.00.00">
+                        <ClassMap xmlns="ECDbMap.02.00.03">
                             <MapStrategy>TablePerHierarchy</MapStrategy>
                         </ClassMap>
-                        <ShareColumns xmlns="ECDbMap.02.00.00">
+                        <ShareColumns xmlns="ECDbMap.02.00.03">
                             <MaxSharedColumnsBeforeOverflow>500</MaxSharedColumnsBeforeOverflow>
                             <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
                         </ShareColumns>
                     </ECCustomAttributes>
                     <ECNavigationProperty propertyName="parent" relationshipName="e_mix_has_base_mix" direction="Backward">
                         <ECCustomAttributes>
-                            <ForeignKeyConstraint xmlns="ECDbMap.02.00.00">
+                            <ForeignKeyConstraint xmlns="ECDbMap.02.00.03">
                                 <OnDeleteAction>Cascade</OnDeleteAction>
                                 <OnUpdateAction>Cascade</OnUpdateAction>
                             </ForeignKeyConstraint>

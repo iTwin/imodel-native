@@ -12,3 +12,10 @@ $(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
 seedDataSource=$(thisDir)Data/
 $(BuildContext)Delivery/UnitTests/ECDbTestData : $(seedDataSource)
     $(LinkFirstDepToFirstTargetAsDirectory)
+
+# Remove these schemas when the profile version is 4.0.0.5
+$(BuildContext)../../Product/ECDb-Tests/Assets/ECDbMap.02.00.03.ecschema.xml : $(thisDir)../ECDb/ECSchemas/ECDbMap.02.00.03.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)../../Product/ECDb-Tests/Assets/ECDbMeta.04.00.02.ecschema.xml : $(thisDir)../ECDb/ECSchemas/ECDbMeta.04.00.02.ecschema.xml
+    $(LinkFirstDepToFirstTarget)

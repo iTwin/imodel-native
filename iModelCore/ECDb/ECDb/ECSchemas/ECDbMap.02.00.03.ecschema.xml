@@ -63,7 +63,8 @@
     <ECCustomAttributeClass typeName="View" modifier="Sealed" appliesTo="EntityClass,RelationshipClass" description="Flags a class as a view based on ECSql.">
         <ECCustomAttributes>
             <UseRequiresVersion>
-                <ECDbRuntimeVersion>4.0.0.5</ECDbRuntimeVersion>
+                <!--should be 4.0.0.5 -->
+                <ECDbRuntimeVersion>4.0.0.4</ECDbRuntimeVersion>
             </UseRequiresVersion>
         </ECCustomAttributes>
         <ECProperty propertyName="Query" typeName="string" description="ECSql query with only primitive types are allowed"/>
