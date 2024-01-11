@@ -35,7 +35,7 @@ void NavValueTestFixture::SetUp()
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("NavValueTests.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="ECDbMap" version="02.00.03" alias="ecdbmap"/>
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
             <ECEntityClass typeName="Person">
                 <ECProperty propertyName="Name" typeName="string" />
             </ECEntityClass>
