@@ -207,6 +207,8 @@ private:
     ContentValueHelpers() {}
 public:
     static NavigationPropertyValue ParseNavigationPropertyValue(IECSqlValue const& value, SchemaManagerCR schemas);
+    static void SetRapidJsonValue(RapidJsonValueR targetObject, Utf8CP memberName, rapidjson::Value&& value, rapidjson::Document::AllocatorType&);
+    static void SetRapidJsonValue(RapidJsonValueR targetObject, Utf8CP memberName, rapidjson::Value const& value, rapidjson::Document::AllocatorType&);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

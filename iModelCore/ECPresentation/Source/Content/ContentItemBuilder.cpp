@@ -181,6 +181,26 @@ NavigationPropertyValue ContentValueHelpers::ParseNavigationPropertyValue(IECSql
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void ContentValueHelpers::SetRapidJsonValue(RapidJsonValueR targetObject, Utf8CP memberName, rapidjson::Value&& value, rapidjson::Document::AllocatorType& allocator)
+    {
+    auto member = targetObject.FindMember(memberName);
+    if (member == targetObject.MemberEnd())
+        targetObject.AddMember(rapidjson::Value(memberName, allocator), std::move(value), allocator);
+    else
+        member->value.Swap(value);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentValueHelpers::SetRapidJsonValue(RapidJsonValueR targetObject, Utf8CP memberName, rapidjson::Value const& value, rapidjson::Document::AllocatorType& allocator)
+    {
+    SetRapidJsonValue(targetObject, memberName, rapidjson::Value(value, allocator), allocator);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 ContentItemBuilder::ItemReadAction ContentItemBuilder::_GetActionForPrimaryKey(ECInstanceKeyCR key) const
     {
     if (ContainerHelpers::Contains(GetPrimaryKeys(), key))
@@ -543,14 +563,8 @@ void MergingContentItemBuilder::_AddValue(Utf8CP name, rapidjson::Value&& value,
 
     // at this point we know the values are different... persist that
     static Utf8PrintfString const s_variesStr(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
-    if (GetValues().HasMember(name))
-        GetValues()[name].SetNull();
-    else
-        GetValues().AddMember(rapidjson::Value(name, GetValues().GetAllocator()), rapidjson::Value(), GetValues().GetAllocator());
-    if (GetDisplayValues().HasMember(name))
-        GetDisplayValues()[name].SetString(s_variesStr.c_str(), GetDisplayValues().GetAllocator());
-    else
-        GetDisplayValues().AddMember(rapidjson::Value(name, GetDisplayValues().GetAllocator()), rapidjson::Value(s_variesStr.c_str(), GetDisplayValues().GetAllocator()), GetDisplayValues().GetAllocator());
+    ContentValueHelpers::SetRapidJsonValue(GetValues(), name, rapidjson::Value(), GetValues().GetAllocator());
+    ContentValueHelpers::SetRapidJsonValue(GetDisplayValues(), name, rapidjson::Value(s_variesStr.c_str(), GetDisplayValues().GetAllocator()), GetValues().GetAllocator());
     fieldIter->second.isMerged = true;
     }
 /*---------------------------------------------------------------------------------**//**
