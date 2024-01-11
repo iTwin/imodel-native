@@ -86,12 +86,12 @@ public:
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
-struct ProfileUpgrader_4005 final : ProfileUpgrader
-    {
-    //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
-    private:
-        DbResult _Upgrade(ECDbCR) const override;
-    };
+// struct ProfileUpgrader_4005 final : ProfileUpgrader
+//     {
+//     //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
+//     private:
+//         DbResult _Upgrade(ECDbCR) const override;
+//     };
 
 //=======================================================================================
 // @bsiclass
