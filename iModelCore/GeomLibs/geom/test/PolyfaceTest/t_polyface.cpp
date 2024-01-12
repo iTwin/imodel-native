@@ -4465,7 +4465,7 @@ TEST(Polyface, ConnectedComponentsMaxFaces)
             Check::True(numDegenerateFacets >= 0, "filtering degenerates did not add more facets to mesh");
             if (numDegenerateFacets > 0)
                 {
-                Check::Print(numDegenerateFacets, "degenFacets");
+                Check::Print((size_t) numDegenerateFacets, "degenFacets");
                 Check::PrintIndent(0);
                 }
             numFacets = newNumFacets;
