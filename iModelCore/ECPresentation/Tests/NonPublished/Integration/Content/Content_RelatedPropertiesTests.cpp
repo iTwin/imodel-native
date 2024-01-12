@@ -1431,6 +1431,132 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(LoadsXToManyRelatedInstancesAsArrays_MergesArrayValuesWhenArraySizeIsMoreThanOneElementAndValuesAreEqual, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="LongProperty" typeName="long" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_B" strength="referencing" strengthDirection="forward" modifier="Sealed">
+        <Source multiplicity="(0..*)" roleLabel="A Has B" polymorphic="True">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="B Has A" polymorphic="True">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstancesAsArrays_MergesArrayValuesWhenArraySizeIsMoreThanOneElementAndValuesAreEqual)
+    {
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
+
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECRelationshipClassCP rel = GetClass("A_B")->GetRelationshipClassCP();
+
+    // set up data set
+    IECInstancePtr instanceA1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr instanceB11 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [&](IECInstanceR instance)
+        {
+        instance.SetValue("IntProperty", ECValue(1));
+        instance.SetValue("LongProperty", ECValue((int64_t)111));
+        });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instanceA1, *instanceB11);
+    IECInstancePtr instanceB12 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [&](IECInstanceR instance)
+        {
+        instance.SetValue("IntProperty", ECValue(2));
+        instance.SetValue("LongProperty", ECValue((int64_t)222));
+        });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instanceA1, *instanceB12);
+    IECInstancePtr instanceA2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr instanceB21 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [&](IECInstanceR instance)
+        {
+        instance.SetValue("IntProperty", ECValue(1));
+        instance.SetValue("LongProperty", ECValue((int64_t)111));
+        });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instanceA2, *instanceB21);
+    IECInstancePtr instanceB22 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [&](IECInstanceR instance)
+        {
+        instance.SetValue("IntProperty", ECValue(2));
+        instance.SetValue("LongProperty", ECValue((int64_t)222));
+        });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instanceA2, *instanceB22);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    rule->AddSpecification(*spec);
+
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel->GetFullName(),
+        classB->GetFullName(), "*", RelationshipMeaning::RelatedInstance));
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), 
+        rules->GetRuleSetId(), RulesetVariables(), "", (int)ContentFlags::MergeResults, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(2, descriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId":"%s", "ECInstanceId":"%s"}, {"ECClassId":"%s", "ECInstanceId":"%s"}],
+            "Values": {
+                "%s": 1,
+                "%s": 111
+                },
+            "DisplayValues": {
+                "%s": "1",
+                "%s": "111"
+                },
+            "MergedFieldNames": []
+            }, {
+            "PrimaryKeys": [{"ECClassId":"%s", "ECInstanceId":"%s"}, {"ECClassId":"%s", "ECInstanceId":"%s"}],
+            "Values": {
+                "%s": 2,
+                "%s": 222
+                },
+            "DisplayValues": {
+                "%s": "2",
+                "%s": "222"
+                },
+            "MergedFieldNames": []
+            }]
+        })",
+        NESTED_CONTENT_FIELD_NAME(classA, classB),
+        classB->GetId().ToString().c_str(), instanceB11->GetInstanceId().c_str(),
+        classB->GetId().ToString().c_str(), instanceB21->GetInstanceId().c_str(),
+        FIELD_NAME(classB, "IntProperty"), FIELD_NAME(classB, "LongProperty"),
+        FIELD_NAME(classB, "IntProperty"), FIELD_NAME(classB, "LongProperty"),
+        classB->GetId().ToString().c_str(), instanceB12->GetInstanceId().c_str(),
+        classB->GetId().ToString().c_str(), instanceB22->GetInstanceId().c_str(),
+        FIELD_NAME(classB, "IntProperty"), FIELD_NAME(classB, "LongProperty"),
+        FIELD_NAME(classB, "IntProperty"), FIELD_NAME(classB, "LongProperty")
+    ).c_str());
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+    EXPECT_FALSE(contentSet.Get(0)->IsMerged("A_B"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(LoadsXToManyRelatedInstancesAsArrays_MergesArrayValuesWhenSizesNotEqual, R"*(
     <ECEntityClass typeName="A">
         <ECProperty propertyName="StringProperty" typeName="string" />

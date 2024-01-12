@@ -67,6 +67,11 @@ struct ContentItemBuilder
         bset<ECInstanceKey> readInstanceKeys;
         };
 
+    struct HandledFieldAttributes
+        {
+        bool isMerged = false;
+        };
+
 private:
     std::shared_ptr<Context> m_context;
     SchemaManagerCR m_schemaManager;
@@ -78,7 +83,7 @@ private:
     std::pair<std::unique_ptr<rapidjson::Document::AllocatorType>, std::unique_ptr<rapidjson::Document>> m_values;
     std::pair<std::unique_ptr<rapidjson::Document::AllocatorType>, std::unique_ptr<rapidjson::Document>> m_displayValues;
     std::map<Utf8String, NestedContentValues> m_nestedContentValues;
-    bset<Utf8String> m_mergedFieldNames;
+    bmap<Utf8String, HandledFieldAttributes> m_handledFields;
     LabelDefinitionCPtr m_displayLabel;
     Utf8String m_imageId;
     ContentSetItemExtendedData m_extendedData;
@@ -88,11 +93,12 @@ protected:
     ContentValuesFormatter const& GetValuesFormatter() const { return m_formatter; }
     bvector<ECInstanceKey>& GetPrimaryKeysR() { return m_primaryKeys; }
     bvector<ECInstanceKey>& GetInputKeysR() { return m_inputKeys; }
-    bset<Utf8String>& GetMergedFieldNames() { return m_mergedFieldNames; }
+    bmap<Utf8String, HandledFieldAttributes>& GetHandledFields() { return m_handledFields; }
     rapidjson::Document& GetValues() { return *m_values.second; }
     rapidjson::Document& GetDisplayValues() { return *m_displayValues.second; }
     std::map<Utf8String, NestedContentValues>& GetNestedContentValues() { return m_nestedContentValues; }
     void InvalidateInstanceClass() { m_primaryInstanceClass = nullptr; m_determinedPrimaryInstanceClass = false; }
+    void OnFieldHandled(Utf8CP name);
 
 protected:
     virtual ItemReadAction _GetActionForPrimaryKey(ECInstanceKeyCR key) const;
@@ -141,7 +147,7 @@ public:
     void SetImageId(Utf8String id) { _SetImageId(id); }
     Utf8StringCR GetImageId() const { return m_imageId; }
 
-    bset<Utf8String> const& GetMergedFieldNames() const { return m_mergedFieldNames; }
+    bmap<Utf8String, HandledFieldAttributes> const& GetHandledFields() const { return m_handledFields; }
 
     void SetRelatedInstanceKeys(bvector<ContentSetItemExtendedData::RelatedInstanceKey> const& keys) { _SetRelatedInstanceKeys(keys); }
     ContentSetItemExtendedData& GetExtendedData() { return m_extendedData; }
@@ -201,6 +207,8 @@ private:
     ContentValueHelpers() {}
 public:
     static NavigationPropertyValue ParseNavigationPropertyValue(IECSqlValue const& value, SchemaManagerCR schemas);
+    static void SetRapidJsonValue(RapidJsonValueR targetObject, Utf8CP memberName, rapidjson::Value&& value, rapidjson::Document::AllocatorType&);
+    static void SetRapidJsonValue(RapidJsonValueR targetObject, Utf8CP memberName, rapidjson::Value const& value, rapidjson::Document::AllocatorType&);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

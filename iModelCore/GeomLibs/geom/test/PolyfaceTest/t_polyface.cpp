@@ -4057,7 +4057,7 @@ TEST(Polyface, TryGetAtReadIndex)
         FacetFaceData facetData;
         size_t _;
 
-        // compare per-face to full mesh indexing 
+        // compare per-face to full mesh indexing
         auto visitor = PolyfaceVisitor::Attach(*mesh);
         for (visitor->Reset(); visitor->AdvanceToNextFace();)
             {
@@ -4068,7 +4068,7 @@ TEST(Polyface, TryGetAtReadIndex)
 
                 Check::True(mesh->TryGetPointAtReadIndex(globalIndex, xyz));
                 Check::Exact(xyz, visitor->Point()[localIndex]);
-                
+
                 Check::True(mesh->TryGetNormalAtReadIndex(globalIndex, normal));
                 Check::Exact(normal, visitor->Normal()[localIndex]);
 
@@ -4145,7 +4145,7 @@ void testVisitorNumWrap(PolyfaceHeaderCR mesh, uint32_t maxNumWrap)
     auto visitor = PolyfaceVisitor::Attach(mesh);
     for (uint32_t numWrap = 0; numWrap <= maxNumWrap; ++numWrap)
         {
-        visitor->SetNumWrap(numWrap);        
+        visitor->SetNumWrap(numWrap);
         for (visitor->Reset(); visitor->AdvanceToNextFace();)
             {
             uint32_t n = visitor->NumEdgesThisFace();
@@ -4192,7 +4192,7 @@ void testVisitorNumWrap(PolyfaceHeaderCR mesh, uint32_t maxNumWrap)
                     auto a = visitor->IntColor();
                     Check::True(iHead < a.size());
                     Check::True(iTail < a.size());
-                    Check::Size(a[iHead], a[iTail]);                    
+                    Check::Size(a[iHead], a[iTail]);
                     }
                 if (auto a = visitor->GetFaceDataCP())
                     {
@@ -4429,9 +4429,9 @@ TEST(Polyface, ConnectedComponentsMaxFaces)
                 Check::Size(numMeshFacets, numFacets, "total subMesh facet count equals input mesh facet count");
                 }
             pFacets = jmdlMTGFacets_free(pFacets);
-            y += 10 * range.YLength();
+            y += 2 * range.YLength();
             }
-        x += 10 * range.XLength();
+        x += 2 * range.XLength();
         }
     Check::ClearGeometry("Polyface.ConnectedComponentsMaxFaces");
     }
