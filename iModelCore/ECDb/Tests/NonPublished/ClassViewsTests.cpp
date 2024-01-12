@@ -75,7 +75,7 @@ TEST_F(ClassViewsFixture, prepare_view_and_check_validate_sql_and_data) {
                         FROM meta.ECSchemaDef sc
                             JOIN meta.ECClassDef cd ON cd.Schema.Id=sc.ECInstanceId
                         GROUP BY sc.Name, cd.Name
-                        LIMIT 10
+                        LIMIT 50
                     </Query>
                 </View>
            </ECCustomAttributes>
@@ -90,7 +90,7 @@ TEST_F(ClassViewsFixture, prepare_view_and_check_validate_sql_and_data) {
     if (true){
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, SchemaName, ClassName FROM ts.SchemaClassesView WHERE ClassName='View'"));
-        auto nativeSql = "SELECT [K0],[K1],[K2],[K3] FROM (SELECT [cd].[ECInstanceId] [K0],[cd].[ECClassId] [K1],[sc].[Name] [K2],[cd].[Name] [K3] FROM (SELECT [Id] ECInstanceId,38 ECClassId,[Name] FROM [main].[ec_Schema]) [sc] INNER JOIN (SELECT [Id] ECInstanceId,36 ECClassId,[SchemaId],[Name] FROM [main].[ec_Class]) [cd] ON [cd].[SchemaId]=[sc].[ECInstanceId]   GROUP BY [sc].[Name],[cd].[Name]  LIMIT 10) [SchemaClassesView] WHERE [K3]='View'";
+        auto nativeSql = "SELECT [K0],[K1],[K2],[K3] FROM (SELECT [cd].[ECInstanceId] [K0],[cd].[ECClassId] [K1],[sc].[Name] [K2],[cd].[Name] [K3] FROM (SELECT [Id] ECInstanceId,38 ECClassId,[Name] FROM [main].[ec_Schema]) [sc] INNER JOIN (SELECT [Id] ECInstanceId,36 ECClassId,[SchemaId],[Name] FROM [main].[ec_Class]) [cd] ON [cd].[SchemaId]=[sc].[ECInstanceId]   GROUP BY [sc].[Name],[cd].[Name]  LIMIT 50) [SchemaClassesView] WHERE [K3]='View'";
         ASSERT_STREQ(nativeSql, stmt.GetNativeSql());
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
         //ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), ECInstanceId(27ull));
@@ -102,7 +102,7 @@ TEST_F(ClassViewsFixture, prepare_view_and_check_validate_sql_and_data) {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(*) FROM ts.SchemaClassesView"));
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-        ASSERT_EQ(stmt.GetValueInt(0), 10);
+        ASSERT_EQ(stmt.GetValueInt(0), 50);
     }
     if (true){
         // should fail to prepare insert against a view
@@ -120,6 +120,9 @@ TEST_F(ClassViewsFixture, prepare_view_and_check_validate_sql_and_data) {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassViewsFixture, linktable_relationship_view) {
+    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
     auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
     <ECSchema
             schemaName="test_schema"
@@ -870,7 +873,7 @@ TEST_F(ClassViewsFixture, complex_data) {
     expected.Parse(R"json([
   [
     "0x1",
-    "0x4a",
+    "0x57",
     null,
     true,
     "encoding=base64;SGVsbG8sIFdvcmxkIQ==",

@@ -749,7 +749,7 @@ TEST_F(InstanceReaderFixture, InstanceQueriesAfterUpdate)
     ECSqlStatement instanceQueryStatement;
     ASSERT_EQ(ECSqlStatus::Success, instanceQueryStatement.Prepare(m_ecdb, "select $ from ts.TestClass"));
     ASSERT_EQ(BE_SQLITE_ROW, instanceQueryStatement.Step());
-    EXPECT_STREQ(instanceQueryStatement.GetValueText(0), "{\"ECInstanceId\":\"0x1\",\"ECClassId\":\"0x4c\",\"StructProp\":{\"DoubleProp\":15.25,\"StringProp\":\"InitialValue\"},\"PrimitiveProp\":15.65}");
+    EXPECT_STREQ(instanceQueryStatement.GetValueText(0), "{\"ECInstanceId\":\"0x1\",\"ECClassId\":\"0x58\",\"StructProp\":{\"DoubleProp\":15.25,\"StringProp\":\"InitialValue\"},\"PrimitiveProp\":15.65}");
     instanceQueryStatement.Finalize();
 
     // Update data in TestClass
@@ -762,7 +762,7 @@ TEST_F(InstanceReaderFixture, InstanceQueriesAfterUpdate)
     // Instance queries should return updated values
     ASSERT_EQ(ECSqlStatus::Success, instanceQueryStatement.Prepare(m_ecdb, "select $ from ts.TestClass"));
     ASSERT_EQ(BE_SQLITE_ROW, instanceQueryStatement.Step());
-    EXPECT_STREQ(instanceQueryStatement.GetValueText(0), "{\"ECInstanceId\":\"0x1\",\"ECClassId\":\"0x4c\",\"StructProp\":{\"DoubleProp\":25.15,\"StringProp\":\"UpdatedValue\"},\"PrimitiveProp\":65.15}");
+    EXPECT_STREQ(instanceQueryStatement.GetValueText(0), "{\"ECInstanceId\":\"0x1\",\"ECClassId\":\"0x58\",\"StructProp\":{\"DoubleProp\":25.15,\"StringProp\":\"UpdatedValue\"},\"PrimitiveProp\":65.15}");
     instanceQueryStatement.Finalize();
     }
 
@@ -1097,7 +1097,7 @@ TEST_F(InstanceReaderFixture, ecsql_read_instance) {
 
     ASSERT_STREQ(stmt.GetNativeSql(), SqlPrintfString("SELECT json(extract_inst([ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId], 0x0)) FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Description] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Description]='Relates the property to its PropertyCategory.'", CLASS_ID(meta, ECClassDef)).GetUtf8CP());
     //! HARD_CODED_IDS
-    ASSERT_STREQ(stmt.GetValueText(0), R"json({"ECInstanceId":"0x2f","ECClassId":"0x21","Schema":{"Id":"0x5","RelECClassId":"0x22"},"Name":"PropertyHasCategory","Description":"Relates the property to its PropertyCategory.","Type":1,"Modifier":2,"RelationshipStrength":0,"RelationshipStrengthDirection":1})json");
+    ASSERT_STREQ(stmt.GetValueText(0), R"json({"ECInstanceId":"0x34","ECClassId":"0x24","Schema":{"Id":"0x4","RelECClassId":"0x25"},"Name":"PropertyHasCategory","Description":"Relates the property to its PropertyCategory.","Type":1,"Modifier":2,"RelationshipStrength":0,"RelationshipStrengthDirection":1})json");
 }
 
 //---------------------------------------------------------------------------------------
@@ -1193,11 +1193,11 @@ TEST_F(InstanceReaderFixture, instance_reader) {
     BeJsDocument doc;
     //! HARD_CODED_IDS
     doc.Parse(R"json({
-        "ECInstanceId": "0x30",
-        "ECClassId": "0x22",
+        "ECInstanceId": "0x34",
+        "ECClassId": "0x24",
         "Schema": {
             "Id": "0x4",
-            "RelECClassId": "0x23"
+            "RelECClassId": "0x25"
         },
         "Name": "PropertyHasCategory",
         "Description": "Relates the property to its PropertyCategory.",
@@ -1679,7 +1679,7 @@ TEST_F(InstanceReaderFixture, extract_prop) {
     if ("use syntax to extract property") {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $->s, $->i, $->d, $->p2d, $->p3d, $->bi, $->l, $->dt, $->b FROM ts.P"));
-        const auto expectedSQL = "SELECT extract_prop([P].[ECClassId],[P].[ECInstanceId],'s',0x0,:ecdb_this_ptr,0),extract_prop([P].[ECClassId],[P].[ECInstanceId],'i',0x0,:ecdb_this_ptr,1),extract_prop([P].[ECClassId],[P].[ECInstanceId],'d',0x0,:ecdb_this_ptr,2),extract_prop([P].[ECClassId],[P].[ECInstanceId],'p2d',0x0,:ecdb_this_ptr,3),extract_prop([P].[ECClassId],[P].[ECInstanceId],'p3d',0x0,:ecdb_this_ptr,4),extract_prop([P].[ECClassId],[P].[ECInstanceId],'bi',0x0,:ecdb_this_ptr,5),extract_prop([P].[ECClassId],[P].[ECInstanceId],'l',0x0,:ecdb_this_ptr,6),extract_prop([P].[ECClassId],[P].[ECInstanceId],'dt',0x0,:ecdb_this_ptr,7),extract_prop([P].[ECClassId],[P].[ECInstanceId],'b',0x0,:ecdb_this_ptr,8) FROM (SELECT [Id] ECInstanceId,75 ECClassId FROM [main].[ts_P]) [P]";
+        const auto expectedSQL = "SELECT extract_prop([P].[ECClassId],[P].[ECInstanceId],'s',0x0,:ecdb_this_ptr,0),extract_prop([P].[ECClassId],[P].[ECInstanceId],'i',0x0,:ecdb_this_ptr,1),extract_prop([P].[ECClassId],[P].[ECInstanceId],'d',0x0,:ecdb_this_ptr,2),extract_prop([P].[ECClassId],[P].[ECInstanceId],'p2d',0x0,:ecdb_this_ptr,3),extract_prop([P].[ECClassId],[P].[ECInstanceId],'p3d',0x0,:ecdb_this_ptr,4),extract_prop([P].[ECClassId],[P].[ECInstanceId],'bi',0x0,:ecdb_this_ptr,5),extract_prop([P].[ECClassId],[P].[ECInstanceId],'l',0x0,:ecdb_this_ptr,6),extract_prop([P].[ECClassId],[P].[ECInstanceId],'dt',0x0,:ecdb_this_ptr,7),extract_prop([P].[ECClassId],[P].[ECInstanceId],'b',0x0,:ecdb_this_ptr,8) FROM (SELECT [Id] ECInstanceId,87 ECClassId FROM [main].[ts_P]) [P]";
         EXPECT_STRCASEEQ(expectedSQL, stmt.GetNativeSql());
         if(stmt.Step() == BE_SQLITE_ROW) {
             int i = 0;
@@ -2016,7 +2016,7 @@ TEST_F(InstanceReaderFixture, nested_struct) {
     BeJsDocument expected;
     expected.Parse(R"json({
         "ECInstanceId": "0x1",
-        "ECClassId": "0x4b",
+        "ECClassId": "0x57",
         "b": true,
         "bi": "{\"bytes\":13}",
         "d": 3.141592653589793,

@@ -243,8 +243,8 @@ TEST_F(SchemaUpgradeTestFixture, ValidateMapCheck_CheckForOrphanCustomAttributeI
 
     // this should fail and generate issue messages
     ASSERT_EQ(ERROR, ImportSchema(SchemaItem(testSchemaXml1)));
-    Utf8String expected_msg1 = SqlPrintfString("Detected orphan custom attribute rows. CustomAttribute with id=39 applied to container of type 'ECClass' with container id=%d.", pipeClassId).GetUtf8CP();
-    Utf8String expected_msg2 = SqlPrintfString("Detected orphan custom attribute rows. CustomAttribute with id=38 applied to container of type 'ECProperty' with container id=%d.", p4PropId).GetUtf8CP();
+    Utf8String expected_msg1 = SqlPrintfString("Detected orphan custom attribute rows. CustomAttribute with id=45 applied to container of type 'ECClass' with container id=%d.", pipeClassId).GetUtf8CP();
+    Utf8String expected_msg2 = SqlPrintfString("Detected orphan custom attribute rows. CustomAttribute with id=44 applied to container of type 'ECProperty' with container id=%d.", p4PropId).GetUtf8CP();
     Utf8String expected_msg3 = "Detected 2 orphan rows in ec_CustomAttributes.";
 
     ASSERT_STREQ(expected_msg1.c_str(), listener.m_issues[0].c_str());
