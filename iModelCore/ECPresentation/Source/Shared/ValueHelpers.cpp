@@ -178,7 +178,8 @@ DPoint3d ValueHelpers::GetPoint3dFromJson(RapidJsonValueCR json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint2d ValueHelpers::GetPoint2dFromJsonString(Utf8CP str)
     {
-    rapidjson::Document json = ParseJson(str, nullptr);
+    rapidjson::Document::AllocatorType alloc(32U);
+    rapidjson::Document json = ParseJson(str, &alloc);
     if (json.IsNull() || !json.IsObject())
         return DPoint2d();
     return DPoint2d::From(json["x"].GetDouble(), json["y"].GetDouble());
@@ -189,7 +190,8 @@ DPoint2d ValueHelpers::GetPoint2dFromJsonString(Utf8CP str)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint3d ValueHelpers::GetPoint3dFromJsonString(Utf8CP str)
     {
-    rapidjson::Document json = ParseJson(str, nullptr);
+    rapidjson::Document::AllocatorType alloc(48U);
+    rapidjson::Document json = ParseJson(str, &alloc);
     if (json.IsNull() || !json.IsObject())
         return DPoint3d();
     return DPoint3d::From(json["x"].GetDouble(), json["y"].GetDouble(), json["z"].GetDouble());
