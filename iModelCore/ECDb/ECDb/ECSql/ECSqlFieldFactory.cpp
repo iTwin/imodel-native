@@ -111,7 +111,8 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoForProperty(ECSqlPrepareConte
             }
         }
 
-    if (propertyNameExp != nullptr && propertyNameExp->GetParent() != nullptr && propertyNameExp->GetParent()->GetParent() != nullptr && propertyNameExp->GetParent()->GetParent()->GetType() == Exp::Type::NavValueCreationFunc)
+    if (propertyNameExp != nullptr && propertyNameExp->GetParent() != nullptr && propertyNameExp->GetParent()->GetParent() != nullptr &&
+          propertyNameExp->GetParent()->GetParent()->GetType() == Exp::Type::NavValueCreationFunc)
         {
         ECClassCR ecClass = *ctx.GetECDb().Schemas().GetClass(
             propertyNameExp->GetClassRefExp()->GetAs<ClassNameExp>().GetSchemaName(),
@@ -129,6 +130,20 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoForProperty(ECSqlPrepareConte
             }
         else
             propertyPath.AddEntry(*ecProperty);
+
+        ECSqlColumnInfo::RootClass rootClassInfo;
+
+        if (rootClass == nullptr) 
+            {
+            const char* name = propertyNameExp->GetParent()->GetParent()->GetParent()->GetAs<DerivedPropertyExp>().HasAlias() 
+                ? propertyNameExp->GetParent()->GetParent()->GetParent()->GetAs<DerivedPropertyExp>().GetColumnAlias().c_str() 
+                : propertyNameExp->GetClassRefExp()->GetAs<ClassNameExp>().GetClassName().c_str();
+
+            rootClassInfo = ECSqlColumnInfo::RootClass(ecClass, propertyNameExp->GetPropertyPath()[0].GetName().c_str(), name);
+            }
+        else
+            rootClassInfo = ECSqlColumnInfo::RootClass(*rootClass, nullptr);
+
         return ECSqlColumnInfo(
             typeDescriptor,
             dateTimeInfo,
@@ -138,7 +153,7 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoForProperty(ECSqlPrepareConte
             true,
             true,
             std::move(propertyPath),
-            rootClass == nullptr ? ECSqlColumnInfo::RootClass(ecClass, propertyNameExp->GetPropertyPath()[0].GetName().c_str(), propertyNameExp->GetParent()->GetParent()->GetParent()->GetAs<DerivedPropertyExp>().HasAlias() ? propertyNameExp->GetParent()->GetParent()->GetParent()->GetAs<DerivedPropertyExp>().GetColumnAlias().c_str() : propertyNameExp->GetClassRefExp()->GetAs<ClassNameExp>().GetClassName().c_str()) : ECSqlColumnInfo::RootClass(*rootClass, nullptr),
+            rootClassInfo,
             isDynamic
         );
         }

@@ -45,7 +45,7 @@ bool ECSqlParseContext::ClassViewPrepareStack::IsOnStack(ECN::ECClassCR viewClas
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlParseContext::ClassViewPrepareStack::~ClassViewPrepareStack() { m_ctx.m_viewPrepareStack.pop_back(); }
+ECSqlParseContext::ClassViewPrepareStack::~ClassViewPrepareStack() { BeAssert(!m_ctx.m_viewPrepareStack.empty()); m_ctx.m_viewPrepareStack.pop_back(); }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -4343,12 +4343,12 @@ ECSqlParseContext::ParseArg const* ECSqlParseContext::CurrentArg() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-void ECSqlParseContext::PopArg() { m_finalizeParseArgs.pop_back(); }
+void ECSqlParseContext::PopArg() { BeAssert(!m_finalizeParseArgs.empty()); m_finalizeParseArgs.pop_back(); }
 
 //Helper for TryResolveClass to check if te current node is a table node inside a type predicate
 //If the class is a custom attribute class,we allow it to be used despite what the policy says
 //Example syntax in ECSQL: "IS (mySchema.MyCustomAttribute)"
-bool IsTableNameInTypePredicateSpecialCase(ClassMap const& classMap, OSQLParseNode const& node)
+bool IsSpecialTypePredicateCase(ClassMap const& classMap, OSQLParseNode const& node)
     {
     if (classMap.GetMapStrategy().GetStrategy() != MapStrategy::NotMapped || !classMap.GetClass().IsCustomAttributeClass())
         return false;
@@ -4406,7 +4406,7 @@ BentleyStatus ECSqlParseContext::TryResolveClass(std::shared_ptr<ClassNameExp::I
     if (!policy.IsSupported())
         {
         //despite the policy we allow using a custom attribute class if it is used inside a type predicate
-        if (IsTableNameInTypePredicateSpecialCase(*classMap, node))
+        if (IsSpecialTypePredicateCase(*classMap, node))
             {
             classNameExpInfo = ClassNameExp::Info::Create(*classMap);
             return SUCCESS;
