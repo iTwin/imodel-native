@@ -318,7 +318,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
             }
             case Exp::Type::NavValueCreationFunc:
                 {
-                PropertyNameExp const& referencedPropertyNameExp = referencedValueExp->GetAs<NavValueCreationFuncExp>().GetColumnRefExp()->GetAs<DerivedPropertyExp>().GetExpression()->GetAs<PropertyNameExp>();
+                PropertyNameExp const& referencedPropertyNameExp = *referencedValueExp->GetAs<NavValueCreationFuncExp>().GetPropertyNameExp();
                 if (!referencedPropertyNameExp.IsPropertyRef())
                     {
                     if (!propertyRef->WasToNativeSqlCalled())

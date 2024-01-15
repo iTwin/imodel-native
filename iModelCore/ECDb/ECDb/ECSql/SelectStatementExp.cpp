@@ -96,7 +96,7 @@ Utf8String DerivedPropertyExp::GetName() const {
 
     if (GetExpression()->GetType() == Exp::Type::NavValueCreationFunc) {
         NavValueCreationFuncExp const& navValueCreationFuncExp = GetExpression()->GetAs<NavValueCreationFuncExp>();
-        return navValueCreationFuncExp.GetColumnRefExp()->GetAs<DerivedPropertyExp>().GetExpression()->GetAs<PropertyNameExp>().GetPropertyPath().ToString();
+        return navValueCreationFuncExp.GetPropertyNameExp()->GetPropertyPath().ToString();
     }
 
     return GetExpression()->ToECSql();
@@ -890,7 +890,7 @@ PropertyMatchResult SingleSelectStatementExp::_FindProperty(ECSqlParseContext& c
 
             if (propertyNameExp == nullptr)
                 propertyNameExp = derivedPropertyExp.GetExpression()->GetType() == Exp::Type::NavValueCreationFunc ? derivedPropertyExp.GetExpression()->
-                    GetAs<NavValueCreationFuncExp>().GetColumnRefExp()->GetAs<DerivedPropertyExp>().GetExpression()->GetAsCP<PropertyNameExp>() : nullptr;
+                    GetAs<NavValueCreationFuncExp>().GetPropertyNameExp() : nullptr;
             // Match alias or indirect
             const auto matchUserAlias = !derivedPropertyExp.GetColumnAlias().empty() && derivedPropertyExp.GetColumnAlias().EqualsIAscii(effectivePath.First().GetName());
             const auto matchIndirect = derivedPropertyExp.GetColumnAlias().empty() && propertyNameExp != nullptr &&  propertyNameExp->GetPropertyPath().ToString().EqualsIAscii(effectivePath.First().GetName());

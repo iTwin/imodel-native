@@ -353,10 +353,10 @@ BentleyStatus ECSqlParser::ParseDerivedColumn(std::unique_ptr<DerivedPropertyExp
         }
 
     OSQLParseNode const* first = parseNode->getChild(0);
+    OSQLParseNode const* opt_as_clause = parseNode->getChild(1);
 
     std::unique_ptr<ValueExp> valExp = nullptr;
     BentleyStatus stat = ParseValueExp(valExp, first);
-    OSQLParseNode const* opt_as_clause = parseNode->getChild(1);
     if (stat != SUCCESS)
         return stat;
 
@@ -4206,6 +4206,9 @@ BentleyStatus ECSqlParser::ParseNavValueCreationFuncExp(std::unique_ptr<NavValue
     {
     std::unique_ptr<DerivedPropertyExp> derivedPropertyExp = nullptr;
     if (SUCCESS != ParseDerivedColumn(derivedPropertyExp, parseNode->getChild(2)))
+        return ERROR;
+
+    if (derivedPropertyExp->GetExpression()->GetType() != Exp::Type::PropertyName) // NAVIGATION_VALUE function should accept only PropertyName
         return ERROR;
 
     if (derivedPropertyExp->GetExpression()->GetAs<PropertyNameExp>().GetPropertyPath().Size() != 3)

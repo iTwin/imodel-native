@@ -111,53 +111,6 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoForProperty(ECSqlPrepareConte
             }
         }
 
-    if (propertyNameExp != nullptr && propertyNameExp->GetParent() != nullptr && propertyNameExp->GetParent()->GetParent() != nullptr &&
-          propertyNameExp->GetParent()->GetParent()->GetType() == Exp::Type::NavValueCreationFunc)
-        {
-        ECClassCR ecClass = *ctx.GetECDb().Schemas().GetClass(
-            propertyNameExp->GetClassRefExp()->GetAs<ClassNameExp>().GetSchemaName(),
-            propertyNameExp->GetClassRefExp()->GetAs<ClassNameExp>().GetClassName()
-        );
-        ECPropertyCP ecProperty = ecClass.GetPropertyP(propertyNameExp->GetPropertyPath()[0].GetName().c_str());
-        ECStructClassCP structType = nullptr;
-        DateTime::Info dateTimeInfo;
-        ECTypeDescriptor typeDescriptor = DetermineDataType(dateTimeInfo, structType, ctx.Issues(), *ecProperty);
-        ECSqlPropertyPath propertyPath;
-        if (isGenerated)
-            {
-            propertyPath.AddEntry(*generatedProperty);
-            rootClass = &generatedProperty->GetClass();
-            }
-        else
-            propertyPath.AddEntry(*ecProperty);
-
-        ECSqlColumnInfo::RootClass rootClassInfo;
-
-        if (rootClass == nullptr) 
-            {
-            const char* name = propertyNameExp->GetParent()->GetParent()->GetParent()->GetAs<DerivedPropertyExp>().HasAlias() 
-                ? propertyNameExp->GetParent()->GetParent()->GetParent()->GetAs<DerivedPropertyExp>().GetColumnAlias().c_str() 
-                : propertyNameExp->GetClassRefExp()->GetAs<ClassNameExp>().GetClassName().c_str();
-
-            rootClassInfo = ECSqlColumnInfo::RootClass(ecClass, propertyNameExp->GetPropertyPath()[0].GetName().c_str(), name);
-            }
-        else
-            rootClassInfo = ECSqlColumnInfo::RootClass(*rootClass, nullptr);
-
-        return ECSqlColumnInfo(
-            typeDescriptor,
-            dateTimeInfo,
-            structType,
-            generatedProperty == nullptr ? ecProperty : generatedProperty,
-            generatedProperty == nullptr ? ecProperty : generatedProperty,
-            true,
-            true,
-            std::move(propertyPath),
-            rootClassInfo,
-            isDynamic
-        );
-        }
-
     if(isGenerated)
         {
         isSystem = generatedProperty->HasId() && ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*generatedProperty).IsSystemProperty();

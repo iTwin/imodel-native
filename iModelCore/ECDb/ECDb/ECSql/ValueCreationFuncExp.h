@@ -16,17 +16,27 @@ struct ValueCreationFuncExp : ValueExp
     {
     private:
         size_t m_columnRefExpIndex = UNSET_CHILDINDEX;
-        size_t m_classRefExpIndex = UNSET_CHILDINDEX;
+        size_t m_classNameExpIndex = UNSET_CHILDINDEX;
 
     public:
         ValueCreationFuncExp(std::unique_ptr<DerivedPropertyExp> columnRefExp, std::unique_ptr<ClassRefExp> classRefExp, Type type) : ValueExp(type)
             { 
             m_columnRefExpIndex = AddChild(std::move(columnRefExp));
-            m_classRefExpIndex = AddChild(std::move(classRefExp));
+            m_classNameExpIndex = AddChild(std::move(classRefExp));
             }
 
-        Exp const* GetColumnRefExp() const { return GetChild<Exp>(m_columnRefExpIndex); }
-        ClassRefExp const* GetClassRefExp() const { return GetChild<ClassRefExp>(m_classRefExpIndex); }
+        DerivedPropertyExp const* GetColumnRefExp() const { return GetChild<DerivedPropertyExp>(m_columnRefExpIndex); }
+        ClassNameExp const* GetClassNameExp() const { return GetChild<ClassNameExp>(m_classNameExpIndex); }
+        PropertyNameExp const* GetPropertyNameExp() const
+            {
+            if (GetColumnRefExp()->GetExpression()->GetType() != Exp::Type::PropertyName)
+                {
+                BeAssert(false && "ValueCreationFuncExp column ref expression should be type of PropertyName");
+                return nullptr;
+                }
+    
+            return GetColumnRefExp()->GetExpression()->GetAsCP<PropertyNameExp>();
+            }
     };
 
 //=======================================================================================
@@ -44,8 +54,8 @@ struct NavValueCreationFuncExp final : ValueCreationFuncExp
         Utf8String _ToString() const override { return "NavValueCreationFuncExp"; }
 
     public:
-        NavValueCreationFuncExp(std::unique_ptr<DerivedPropertyExp> columnRefExp, std::unique_ptr<ValueExp> idArgExp, std::unique_ptr<ValueExp> relECClassIdArgExp, std::unique_ptr<ClassRefExp> classRefExp)
-            : ValueCreationFuncExp(std::move(columnRefExp), std::move(classRefExp), Type::NavValueCreationFunc)
+        NavValueCreationFuncExp(std::unique_ptr<DerivedPropertyExp> columnRefExp, std::unique_ptr<ValueExp> idArgExp, std::unique_ptr<ValueExp> relECClassIdArgExp, std::unique_ptr<ClassNameExp> classNameExp)
+            : ValueCreationFuncExp(std::move(columnRefExp), std::move(classNameExp), Type::NavValueCreationFunc)
             {
             m_idArgExpIndex = AddChild(std::move(idArgExp));
             

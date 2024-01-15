@@ -414,6 +414,16 @@ TEST_F(NavValueTestFixture, SelectNavValueErrorScenarios)
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NAVIGATION_VALUE(ts.Book.Author, 1.15, 7.15)"));
         }
+
+        { // should fail if first argument is not a property path
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NAVIGATION_VALUE(1, 1, 1"));
+        }
+
+        { // should fail if first argument is not a property path
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT NAVIGATION_VALUE('value', 1, 1"));
+        }
     }
 
 END_ECDBUNITTESTS_NAMESPACE
