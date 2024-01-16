@@ -79,6 +79,16 @@ bool ECDbMapCustomAttributeHelper::TryGetDbIndexList(DbIndexListCustomAttribute&
     return true;
     }
 
+bool ECDbMapCustomAttributeHelper::TryGetExtendDefaultIndexes(ExtendDefaultIndexesCustomAttribute& extendDefaultIndex, ECClassCR ecClass)
+    {
+    IECInstancePtr ca = CustomAttributeReader::Read(ecClass, ECDBMAP_SCHEMANAME, "ExtendDefaultIndexes");
+    if (!ca.IsValid())
+        return false;
+
+    extendDefaultIndex = ExtendDefaultIndexesCustomAttribute(ecClass, ca);
+    return true;
+    }
+
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -724,5 +734,97 @@ BentleyStatus CustomAttributeReader::TryGetBooleanValue(Nullable<bool>& val, IEC
     return SUCCESS;
     }
 
+BentleyStatus ExtendDefaultIndexesCustomAttribute::TryGetIndexNamesAndColumns(IssueDataSource const& issues, bmap<Utf8String, T_Utf8StringVector, CompareIUtf8Ascii>& indexesToExtend) const
+    {
+    if (m_ca == nullptr)
+        return ERROR;
+    
+    uint32_t propIx;
+    ECObjectsStatus stat = m_ca->GetEnablerR().GetPropertyIndex(propIx, "IndexesToExtend");
+    if (ECObjectsStatus::Success != stat)
+        {
+        issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0680,
+            "Failed to get property index for property 'IndexesToExtend' of custom attribute 'ExtendDefaultIndexes' on ECClass '%s'.", m_ecClass->GetFullName());
+        return ERROR;
+        }
+
+    ECValue indexesVal;
+    stat = m_ca->GetValue(indexesVal, propIx);
+    if (ECObjectsStatus::Success != stat)
+        return ERROR;
+
+    const uint32_t indexCount = indexesVal.IsNull() ? 0 : indexesVal.GetArrayInfo().GetCount();
+    if (indexCount == 0)
+        {
+        issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0681, 
+            "Failed to read custom attribute 'ExtendDefaultIndexes' on ECClass '%s'. Its property 'IndexesToExtend' must be defined and at contain at least one entry.", m_ecClass->GetFullName());
+        return ERROR;
+        }
+
+    for (uint32_t i = 0; i < indexCount; i++)
+        {
+        ECValue indexVal;
+        if (ECObjectsStatus::Success != m_ca->GetValue(indexVal, propIx, i))
+            {
+            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0682, "Index #%d on ECClass %s could not be retrieved.", i, m_ecClass->GetFullName());
+            return ERROR;
+            }
+
+        IECInstancePtr indexStruct = indexVal.GetStruct();
+        if (indexStruct == nullptr)
+            continue;
+
+        Nullable<Utf8String> indexName;
+        if (SUCCESS != CustomAttributeReader::TryGetTrimmedValue(indexName, *indexStruct, "IndexName"))
+            return ERROR;
+
+        if (indexName.IsNull() || indexName.Value().empty())
+            {
+            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0683, "Invalid Index #%d on ECClass %s. Index Name missing.", i, m_ecClass->GetFullName());
+            return ERROR;
+            }
+
+        //Properties are mandatory for the index to be valid, so fail if there are none
+        uint32_t propertiesPropIdx;
+        if (ECObjectsStatus::Success != indexStruct->GetEnablerR().GetPropertyIndex(propertiesPropIdx, "Properties"))
+            {
+            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0684, 
+                "Failed to get property index for property 'IndexesToExtend.Properties' of custom attribute 'ExtendDefaultIndexes' on ECClass '%s'.", m_ecClass->GetFullName());
+            return ERROR;
+            }
+
+        ECValue propertiesVal;
+        uint32_t propertiesCount = 0;
+        if (ECObjectsStatus::Success != indexStruct->GetValue(propertiesVal, propertiesPropIdx))
+            return ERROR;
+
+        if (propertiesVal.IsNull() || (propertiesCount = propertiesVal.GetArrayInfo().GetCount()) == 0)
+            {
+            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0685, 
+                "The property 'IndexesToExtend.Index.Properties' of the custom attribute 'ExtendDefaultIndexes' on ECClass '%s' is invalid. At least one property must be specified.", m_ecClass->GetFullName());
+            return ERROR;
+            }
+
+        T_Utf8StringVector propertyList;
+        for (uint32_t j = 0; j < propertiesCount; j++)
+            {
+            Nullable<Utf8String> propName;
+            if (SUCCESS != CustomAttributeReader::TryGetTrimmedValue(propName, *indexStruct, propertiesPropIdx, j) ||
+                propName.IsNull())
+                {
+                issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0686, 
+                    "Invalid property in Index #%d of the custom attribute 'ExtendDefaultIndexes' on ECClass '%s'. An array element of the property is an empty string.", i, m_ecClass->GetFullName());
+                return ERROR;
+                }
+
+            BeAssert(!propName.Value().empty());
+            propertyList.push_back(propName.Value());
+            }
+        indexesToExtend[indexName.Value()] = propertyList;
+        }
+
+    BeAssert(indexesToExtend.size() == indexCount);
+    return SUCCESS;
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

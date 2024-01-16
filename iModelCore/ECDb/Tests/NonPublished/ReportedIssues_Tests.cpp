@@ -286,7 +286,7 @@ TEST_F(ReportedIssuesTestFixture, VerticalPartitionShouldNeverIncludeOverflowTab
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT PAINT_CODE from pfunc.CONTROL_VALVE"));
     Utf8String nativeSql = stmt.GetNativeSql();
     ASSERT_EQ(Utf8String::npos, nativeSql.find("UNION"));
-    ASSERT_STREQ("SELECT [CONTROL_VALVE].[js23] FROM (SELECT [ElementId] ECInstanceId,[ECClassId],[js23] FROM [main].[func_FunctionalElement] WHERE [func_FunctionalElement].ECClassId=79) [CONTROL_VALVE]", stmt.GetNativeSql());
+    ASSERT_STREQ("SELECT [CONTROL_VALVE].[js23] FROM (SELECT [ElementId] ECInstanceId,[ECClassId],[js23] FROM [main].[func_FunctionalElement] WHERE [func_FunctionalElement].ECClassId=81) [CONTROL_VALVE]", stmt.GetNativeSql());
 }
 
 END_ECDBUNITTESTS_NAMESPACE

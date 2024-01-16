@@ -11449,4 +11449,377 @@ TEST_F(DbMappingTestFixture, CreateTableWith2kProperties)
     m_ecdb.CloseDb();
     }
 
+TEST_F(DbMappingTestFixture, ExtendDefaultIndexesCustomAttributeBasicTests)
+    {
+    const auto testSchema = R"xml(
+        <?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.%d" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="2.0.3" alias="ecdbmap"/>
+
+            <ECEntityClass typeName="SpecificElement" displayLabel="A specific Element">
+                <ECProperty propertyName="ElementId" typeName="int" />
+                <ECProperty propertyName="ElementName" typeName="string" />
+            </ECEntityClass>
+
+            <ECEntityClass typeName="ElementGroup" displayLabel="Group of Elements" >
+                <ECProperty propertyName="GroupId" typeName="int" />
+                <ECProperty propertyName="GroupName" typeName="string" />
+            </ECEntityClass>
+
+            <ECRelationshipClass typeName="GroupOfElements" strength="referencing" modifier="None" description="A relationship used to identify the SpecificElement that are members of a ElementGroup.">
+                <ECCustomAttributes>
+                    %s
+                    %s
+                </ECCustomAttributes>
+                <Source multiplicity="(0..*)" roleLabel="groups" polymorphic="true">
+                    <Class class="ElementGroup"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="is grouped by" polymorphic="true">
+                    <Class class="SpecificElement"/>
+                </Target>
+                %s
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+    const auto classMap = R"xml(
+        <ClassMap xmlns="ECDbMap.2.0.3">
+            <MapStrategy>TablePerHierarchy</MapStrategy>
+        </ClassMap>)xml";
+
+    const auto extendSystemIndexCA = R"xml(
+        <ExtendDefaultIndexes xmlns="ECDbMap.02.00.03">
+            <IndexesToExtend>
+                <Index>
+                    <IndexName>uix_ts_GroupOfElements_sourcetargetclassid</IndexName>
+                    <Properties><string>AddToIndex</string></Properties>
+                </Index>
+            </IndexesToExtend>
+        </ExtendDefaultIndexes>)xml";
+    const auto newProperties = R"xml(<ECProperty propertyName="AddToIndex" typeName="int" displayLabel="AddToIndex"/><ECProperty propertyName="NewProperty" typeName="int" displayLabel="TestProperty"/>)xml";
+
+    auto importSchemasTestAndReset = [&](const Utf8StringCR schemaXmlToSetup, const Utf8StringCR schemaXmlToImport, const bool expectedToFailInsert, const int lineNumber)
+        {
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("TestExtendDefaultIndexesCustomAttribute.ecdb", SchemaItem(schemaXmlToSetup)));
+        if (!Utf8String::IsNullOrEmpty(schemaXmlToImport.c_str()))
+            ASSERT_EQ(BentleyStatus::SUCCESS, GetHelper().ImportSchema(SchemaItem(schemaXmlToImport)));
+
+        ECSqlStatement statement;
+        statement.Prepare(m_ecdb, "INSERT INTO ts.SpecificElement(ElementId, ElementName) VALUES(1, 'FirstElement')");
+        ECInstanceKey firstElement;
+        ASSERT_EQ(statement.Step(firstElement), BE_SQLITE_DONE);
+
+        statement.Finalize();
+        statement.Prepare(m_ecdb, "INSERT INTO ts.ElementGroup(GroupId, GroupName) VALUES(1, 'FirstGroup')");
+        ECInstanceKey firstGroup;
+        ASSERT_EQ(statement.Step(firstGroup), BE_SQLITE_DONE);
+
+        // Insert duplicate entries where the only difference are the MemberPriority values.
+        // Out of these 4 entries, 2 are completely identical with MemberPriority set to Null.
+        // Sqlite considered Nulls as different values, so all 4 inserts should succeed.
+        bool secondInsert = false;
+        for (const auto& newIndexColumnValue : { 2, 0, 1, 0 })
+            {
+            // Create duplicate entries with the MemberPriority being the only difference
+            statement.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ts.GroupOfElements(SourceECClassId, SourceECInstanceId, TargetECClassId, TargetECInstanceId, AddToIndex, NewProperty) VALUES(?,?,?,?,?,?)"));
+            statement.BindId(1, firstGroup.GetClassId());
+            statement.BindId(2, firstGroup.GetInstanceId());
+            statement.BindId(3, firstElement.GetClassId());
+            statement.BindId(4, firstElement.GetInstanceId());
+            if (newIndexColumnValue == 0)
+                statement.BindNull(5);
+            else
+                statement.BindInt(5, newIndexColumnValue);
+            statement.BindInt(6, 10);
+
+            if (expectedToFailInsert && secondInsert)
+                {
+                ASSERT_EQ(statement.Step(), BE_SQLITE_CONSTRAINT_UNIQUE) << lineNumber;
+                statement.Finalize();
+                m_ecdb.AbandonChanges();
+                m_ecdb.CloseDb();
+                return;
+                }
+
+            ASSERT_EQ(statement.Step(), BE_SQLITE_DONE) << lineNumber;
+            secondInsert = true;
+            }
+
+        statement.Finalize();
+        // Run a select statement to verify if the elements are grouped correctly
+        statement.Prepare(m_ecdb, "select SourceECClassId, SourceECInstanceId, TargetECClassId, TargetECInstanceId, AddToIndex, NewProperty from ts.GroupOfElements where SourceECInstanceId=? and SourceECClassId=? ORDER BY AddToIndex");
+        statement.BindId(1, firstGroup.GetInstanceId());
+        statement.BindId(2, firstGroup.GetClassId());
+
+        for (const auto& newIndexColumnValue: { 0, 0, 1, 2 })
+            {
+            ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+            EXPECT_EQ(statement.GetValueText(0), firstGroup.GetClassId().ToString());
+            EXPECT_EQ(statement.GetValueText(1), firstGroup.GetInstanceId().ToString());
+            EXPECT_EQ(statement.GetValueText(2), firstElement.GetClassId().ToString());
+            EXPECT_EQ(statement.GetValueText(3), firstElement.GetInstanceId().ToString());
+            EXPECT_EQ(statement.GetValueDouble(4), newIndexColumnValue);
+            EXPECT_EQ(statement.GetValueDouble(5), 10);
+            }
+        statement.Finalize();
+        m_ecdb.AbandonChanges();
+        m_ecdb.CloseDb();
+        };
+
+    // Map Stragety set to TablePerHierarchy for the ECRelationshipClass GroupOfElements.
+        {
+        // Test Case 1:
+        // Setup schema with the new custom attribute from the start, thus not requiring schema upgrade.
+        // Result: Extended index should be setup and duplicate entries should be allowed
+        importSchemasTestAndReset(Utf8PrintfString(testSchema, 0, classMap, extendSystemIndexCA, newProperties), "", false, __LINE__);
+
+        // Test Case 2:
+        // Setup initial schema. Upgrade schema with the new custom attribute.
+        // Result: Index should get updated and duplicate entries should be allowed.
+        importSchemasTestAndReset(Utf8PrintfString(testSchema, 0, classMap, "", ""), Utf8PrintfString(testSchema, 1, classMap, extendSystemIndexCA, newProperties), false, __LINE__);
+
+        // Test Case 3:
+        // Setup schema without the new custom attribute.
+        // Result: Duplicate entries should not be allowed.
+        importSchemasTestAndReset(Utf8PrintfString(testSchema, 0, classMap, "", newProperties), "", true, __LINE__);
+
+        // Test Case 4:
+        // Setup initial schema. Upgrade schema with the new property but without the custom attribute.
+        // Result: Duplicate entries should not be allowed.
+        importSchemasTestAndReset(Utf8PrintfString(testSchema, 0, classMap, "", ""), Utf8PrintfString(testSchema, 1, classMap, "", newProperties), true, __LINE__);
+        }
+
+    // Map Stragety set to the default (OwnTable) for the ECRelationshipClass GroupOfElements.
+    // Since the custom attribute ExtendDefaultIndexes only applies to classes with TPH map stragety, index shouldn't get extended and duplicate inserts should fail.
+        {
+        importSchemasTestAndReset(Utf8PrintfString(testSchema, 0, "", extendSystemIndexCA, newProperties), "", false, __LINE__);
+        importSchemasTestAndReset(Utf8PrintfString(testSchema, 0, "", "", ""), Utf8PrintfString(testSchema, 1, "", extendSystemIndexCA, newProperties), false, __LINE__);
+        importSchemasTestAndReset(Utf8PrintfString(testSchema, 0, "", "", newProperties), "", true, __LINE__);
+        importSchemasTestAndReset(Utf8PrintfString(testSchema, 0, "", "", ""), Utf8PrintfString(testSchema, 1, "", "", newProperties), true, __LINE__);
+        }
+    }
+
+TEST_F(DbMappingTestFixture, ExtendDefaultIndexesCustomAttributeOnNewAndExistingSchemas)
+    {
+    // Static data for tests
+    const auto schema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.%d" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.03" alias="ecdbmap"/>
+
+            <ECEntityClass typeName="TestClass" displayLabel="TestClass">
+                <ECProperty propertyName="ClassId" typeName="int" />
+            </ECEntityClass>
+
+            <ECRelationshipClass typeName="TestRelationshipClass" strength="referencing" modifier="None" description="A relationship used to identify the SpecificElement that are members of a ElementGroup.">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.2.0.3">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    %s
+                </ECCustomAttributes>
+                <Source multiplicity="(0..*)" roleLabel="groups" polymorphic="true">
+                    <Class class="TestClass"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="is grouped by" polymorphic="true">
+                    <Class class="TestClass"/>
+                </Target>
+                <ECProperty propertyName="NewPropInIndex" typeName="double" />
+                <ECProperty propertyName="AnotherNewPropInIndex" typeName="double" />
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+    const auto extendDefaultIndexXml = R"xml(
+        <ExtendDefaultIndexes xmlns="ECDbMap.02.00.03">
+            <IndexesToExtend>%s</IndexesToExtend>
+        </ExtendDefaultIndexes>)xml";
+
+    const std::vector<std::tuple<int, Utf8CP, Utf8CP>> testCases = {
+        // No values present for first index
+        { 1, "<Index></Index>", "Invalid Index #0 on ECClass TestSchema:TestRelationshipClass. Index Name missing." },
+
+        // No values present for second index
+        { 2, R"xml(
+            <Index>
+                <IndexName>InvalidIndexName</IndexName>
+                <Properties><string>NewPropInIndex</string></Properties>
+            </Index>
+            <Index></Index>
+            )xml", "Invalid Index #1 on ECClass TestSchema:TestRelationshipClass. Index Name missing." },
+
+        // Index name valid, but no properties present
+        { 3, "<Index><IndexName>uix_ts_TestRelationshipClass_sourcetargetclassid</IndexName></Index>", 
+            "The property 'IndexesToExtend.Index.Properties' of the custom attribute 'ExtendDefaultIndexes' on ECClass 'TestSchema:TestRelationshipClass' is invalid. At least one property must be specified." },
+
+        // Index name not present, but properties present
+        { 4, "<Index><IndexName></IndexName><Properties><string>NewPropInIndex</string></Properties></Index>", "Invalid Index #0 on ECClass TestSchema:TestRelationshipClass. Index Name missing." },
+
+        // Invalid index name, invalid property
+        { 5, R"xml(
+            <Index>
+                <IndexName>InvalidIndexName</IndexName>
+                <Properties><string>ColumnDoesNotExist</string></Properties>
+            </Index>)xml", "Index name(s) 'InvalidIndexName' in the custom attribute 'ExtendDefaultIndexes' do not exist for the ECRelationshipClass 'TestSchema:TestRelationshipClass'." },
+
+        // Invalid index name, valid property
+        { 6, R"xml(
+            <Index>
+                <IndexName>InvalidIndexName</IndexName>
+                <Properties><string>NewPropInIndex</string></Properties>
+            </Index>)xml", "Index name(s) 'InvalidIndexName' in the custom attribute 'ExtendDefaultIndexes' do not exist for the ECRelationshipClass 'TestSchema:TestRelationshipClass'." },
+
+        // Valid index name, invalid property
+        { 7, R"xml(
+            <Index>
+                <IndexName>uix_ts_TestRelationshipClass_sourcetargetclassid</IndexName>
+                <Properties><string>ColumnDoesNotExist</string></Properties>
+            </Index>)xml", "Property(ies) 'ColumnDoesNotExist' specified in 'IndexesToExtend.Index.Properties' of the custom attribute 'ExtendDefaultIndexes' do not exist for the ECRelationshipClass 'TestSchema:TestRelationshipClass'." },
+
+        // Valid index name in custom attribute, but both invalid properties given
+        { 8, R"xml(
+            <Index>
+                <IndexName>uix_ts_TestRelationshipClass_sourcetargetclassid</IndexName>
+                <Properties>
+                    <string>ColumnDoesNotExist1</string>
+                    <string>ColumnDoesNotExist2</string>
+                </Properties>
+            </Index>)xml", "Property(ies) 'ColumnDoesNotExist1', 'ColumnDoesNotExist2' specified in 'IndexesToExtend.Index.Properties' of the custom attribute 'ExtendDefaultIndexes' do not exist for the ECRelationshipClass 'TestSchema:TestRelationshipClass'." },
+
+        // Valid index name in custom attribute, but 1 valid and another invalid property given
+        { 9, R"xml(
+            <Index>
+                <IndexName>uix_ts_TestRelationshipClass_sourcetargetclassid</IndexName>
+                <Properties>
+                    <string>NewPropInIndex</string>
+                    <string>ColumnDoesNotExist</string>
+                </Properties>
+            </Index>)xml", "Property(ies) 'ColumnDoesNotExist' specified in 'IndexesToExtend.Index.Properties' of the custom attribute 'ExtendDefaultIndexes' do not exist for the ECRelationshipClass 'TestSchema:TestRelationshipClass'." },
+
+        // Valid index name in custom attribute, valid single property given
+        { 10, R"xml(
+            <Index>
+                <IndexName>uix_ts_TestRelationshipClass_sourcetargetclassid</IndexName>
+                <Properties><string>NewPropInIndex</string></Properties>
+            </Index>)xml", "" },
+
+        // Valid index name in custom attribute, valid multiple properties given
+        { 11, R"xml(
+            <Index>
+                <IndexName>uix_ts_TestRelationshipClass_sourcetargetclassid</IndexName>
+                <Properties>
+                    <string>NewPropInIndex</string>
+                    <string>AnotherNewPropInIndex</string>
+                </Properties>
+            </Index>)xml", "" },
+
+        // Multiple indexes, both invalid
+        { 12, R"xml(
+            <Index>
+                <IndexName>InvalidIndexName1</IndexName>
+                <Properties><string>NewPropInIndex</string></Properties>
+            </Index>
+            <Index>
+                <IndexName>InvalidIndexName2</IndexName>
+                <Properties><string>NewPropInIndex</string></Properties>
+            </Index>)xml", "Index name(s) 'InvalidIndexName1', 'InvalidIndexName2' in the custom attribute 'ExtendDefaultIndexes' do not exist for the ECRelationshipClass 'TestSchema:TestRelationshipClass'." },
+
+        // Multiple indexes, one invalid, another is correct
+        { 13, R"xml(
+            <Index>
+                <IndexName>InvalidIndexName1</IndexName>
+                <Properties><string>NewPropInIndex</string></Properties>
+            </Index>
+            <Index>
+                <IndexName>uix_ts_TestRelationshipClass_sourcetargetclassid</IndexName>
+                <Properties><string>NewPropInIndex</string></Properties>
+            </Index>)xml", "Index name(s) 'InvalidIndexName1' in the custom attribute 'ExtendDefaultIndexes' do not exist for the ECRelationshipClass 'TestSchema:TestRelationshipClass'." },
+
+        // Multiple indexes, one invalid, another is correct
+        { 14, R"xml(
+            <Index>
+                <IndexName>InvalidIndexName1</IndexName>
+                <Properties><string>NewPropInIndex</string></Properties>
+            </Index>
+            <Index>
+                <IndexName>uix_ts_TestRelationshipClass_sourcetargetclassid</IndexName>
+                <Properties>
+                    <string>NewPropInIndex</string>
+                    <string>AnotherNewPropInIndex</string>
+                </Properties>
+            </Index>)xml", "Index name(s) 'InvalidIndexName1' in the custom attribute 'ExtendDefaultIndexes' do not exist for the ECRelationshipClass 'TestSchema:TestRelationshipClass'." },
+        
+        // Multiple indexes, first valid, second has invalid properties
+        { 15, R"xml(
+            <Index>
+                <IndexName>uix_ts_TestRelationshipClass_sourcetargetclassid</IndexName>
+                <Properties>
+                    <string>NewPropInIndex</string>
+                </Properties>
+            </Index>
+            <Index>
+                <IndexName>ix_ts_TestRelationshipClass_target</IndexName>
+                <Properties>
+                    <string>NewPropInIndex</string>
+                    <string>ColumnDoesNotExist1</string>
+                    <string>ColumnDoesNotExist2</string>
+                </Properties>
+            </Index>)xml", "Property(ies) 'ColumnDoesNotExist1', 'ColumnDoesNotExist2' specified in 'IndexesToExtend.Index.Properties' of the custom attribute 'ExtendDefaultIndexes' do not exist for the ECRelationshipClass 'TestSchema:TestRelationshipClass'." },
+
+        // Multiple indexes, both valid
+        { 16, R"xml(
+            <Index>
+                <IndexName>uix_ts_TestRelationshipClass_sourcetargetclassid</IndexName>
+                <Properties>
+                    <string>NewPropInIndex</string>
+                </Properties>
+            </Index>
+            <Index>
+                <IndexName>ix_ts_TestRelationshipClass_target</IndexName>
+                <Properties>
+                    <string>NewPropInIndex</string>
+                </Properties>
+            </Index>)xml", "" },
+    };
+
+    // Test the Custom Attribute ExtendDefaultIndexes applied on a fresh schema import
+        {
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ExtendDefaultIndexesCustomAttributeOnNewSchema.ecdb"));
+        for (const auto& [testNumber, caXML, expectedIssueMsg] : testCases)
+            {
+            ECIssueListener issueListener(m_ecdb);
+            const auto extendDefaultIndexCA = Utf8PrintfString(extendDefaultIndexXml, caXML);
+            const auto xmlStr = Utf8PrintfString(schema, 0, extendDefaultIndexCA.c_str());
+            const auto expectImportToSucceed = Utf8String::IsNullOrEmpty(expectedIssueMsg);
+
+            EXPECT_EQ(expectImportToSucceed ? BentleyStatus::SUCCESS : BentleyStatus::ERROR, ImportSchema(SchemaItem(xmlStr))) << "Test case number " << testNumber << " failed for new schema.";
+            m_ecdb.AbandonChanges();
+            const auto lastIssue = issueListener.GetIssue();
+            ASSERT_NE(lastIssue.has_value(), expectImportToSucceed);
+            if (!expectImportToSucceed)
+                EXPECT_STREQ(expectedIssueMsg, lastIssue.message.c_str()) << "Test case number " << testNumber << " failed for new schema.";
+            }
+        CloseECDb();
+        }
+
+    // Test the Custom Attribute ExtendDefaultIndexes applied when upgrading an existing schema
+        {
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ExtendDefaultIndexesCustomAttributeOnExistingSchema.ecdb", SchemaItem(Utf8PrintfString(schema, 0, ""))));
+        for (const auto& [testNumber, caXML, expectedIssueMsg] : testCases)
+            {
+            ECIssueListener issueListener(m_ecdb);
+            const auto extendDefaultIndexCA = Utf8PrintfString(extendDefaultIndexXml, caXML);
+            const auto xmlStr = Utf8PrintfString(schema, 1, extendDefaultIndexCA.c_str());
+            const auto expectImportToSucceed = Utf8String::IsNullOrEmpty(expectedIssueMsg);
+
+            EXPECT_EQ(expectImportToSucceed ? BentleyStatus::SUCCESS : BentleyStatus::ERROR, ImportSchema(SchemaItem(xmlStr))) << "Test case number " << testNumber << " failed for schema upgrade.";
+            m_ecdb.AbandonChanges();
+            const auto lastIssue = issueListener.GetIssue();
+            ASSERT_NE(lastIssue.has_value(), expectImportToSucceed);
+            if (!expectImportToSucceed)
+                EXPECT_STREQ(expectedIssueMsg, lastIssue.message.c_str()) << "Test case number " << testNumber << " failed for schema upgrade.";
+            }
+        CloseECDb();
+        }
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

@@ -236,12 +236,13 @@ struct RelationshipClassLinkTableMap final : RelationshipClassMap
         ClassMappingStatus MapSubClass(ClassMappingContext&);
         ClassMappingStatus CreateConstraintPropMaps(SchemaImportContext&, LinkTableRelationshipMapCustomAttribute const&, bool addSourceECClassIdColumnToTable, bool addTargetECClassIdColumnToTable);
         void AddIndices(SchemaImportContext&, bool allowDuplicateRelationship);
-        void AddIndex(SchemaImportContext&, RelationshipIndexSpec, bool addUniqueIndex);
+        Utf8String AddIndex(SchemaImportContext&, RelationshipIndexSpec, bool addUniqueIndex, Nullable<bmap<Utf8String, T_Utf8StringVector, CompareIUtf8Ascii>> indexesToExtend = nullptr);
         DbColumn* CreateConstraintColumn(Utf8CP columnName, PersistenceType);
         void DetermineConstraintClassIdColumnHandling(bool& addConstraintClassIdColumnNeeded, ECN::ECRelationshipConstraintCR) const;
         BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
         DbColumn* ConfigureForeignECClassIdKey(SchemaImportContext&, LinkTableRelationshipMapCustomAttribute const&, ECN::ECRelationshipEnd);
         static void GenerateIndexColumnList(std::vector<DbColumn const*>&, DbColumn const* col1, DbColumn const* col2, DbColumn const* col3, DbColumn const* col4, DbColumn const* col5);
+        std::unique_ptr<RelationshipIndexSpec> GetRelationShipIndexSpecFromIndexName(Utf8StringCR indexName);
         
         static Utf8String DetermineConstraintECInstanceIdColumnName(LinkTableRelationshipMapCustomAttribute const&, ECN::ECRelationshipEnd);
         static Utf8String DetermineConstraintECClassIdColumnName(LinkTableRelationshipMapCustomAttribute const&, ECN::ECRelationshipEnd);
@@ -249,7 +250,7 @@ struct RelationshipClassLinkTableMap final : RelationshipClassMap
         static bool DetermineAllowDuplicateRelationshipsFlagFromRoot(ECN::ECRelationshipClassCR baseRelClass);
 
         static bool GetAllowDuplicateRelationshipsFlag(Nullable<bool> const& allowDuplicateRelationshipFlag) { return allowDuplicateRelationshipFlag.IsNull() ? false : allowDuplicateRelationshipFlag.Value(); }
-        void AddDefaultIndexes(SchemaImportContext& ctx);
+        bool AddDefaultIndexes(ClassMappingContext& ctx);
         ClassMappingStatus _UpdateDefaultIndexes(ClassMappingContext&) override;
     public:
         RelationshipClassLinkTableMap(ECDb const&, TableSpaceSchemaManager const&, ECN::ECClassCR, MapStrategyExtendedInfo const&);

@@ -994,8 +994,8 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
 
     if (!GetMapStrategy().GetTphInfo().IsValid())
         AddIndices(ctx.GetImportCtx(), GetAllowDuplicateRelationshipsFlag(allowDuplicateRelationships));
-    else
-        AddDefaultIndexes(ctx.GetImportCtx());
+    else if (!AddDefaultIndexes(ctx))
+        return ClassMappingStatus::Error;
 
     return ClassMappingStatus::Success;
     }
@@ -1003,30 +1003,83 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //---------------------------------------------------------------------------------------
+std::unique_ptr<RelationshipClassLinkTableMap::RelationshipIndexSpec> RelationshipClassLinkTableMap::GetRelationShipIndexSpecFromIndexName(Utf8StringCR indexName)
+    {
+    if (indexName.EndsWithI("_sourcetargetclassid"))
+        return std::make_unique<RelationshipIndexSpec>(RelationshipIndexSpec::SourceAndTargetAndClassId);
+    if (indexName.EndsWithI("_sourcetarget"))
+        return std::make_unique<RelationshipIndexSpec>(RelationshipIndexSpec::SourceAndTarget);
+    if (indexName.EndsWithI("_target"))
+        return std::make_unique<RelationshipIndexSpec>(RelationshipIndexSpec::Target);
+    if (indexName.EndsWithI("_source"))
+        return std::make_unique<RelationshipIndexSpec>(RelationshipIndexSpec::Source);
+    
+    BeAssert(false);
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//---------------------------------------------------------------------------------------
 ClassMappingStatus RelationshipClassLinkTableMap::_UpdateDefaultIndexes(ClassMappingContext& ctx)
     {
-    // Replace the index created in BisCore:ElementRefersToElements
-    if (Utf8String(ctx.GetClassMappingInfo().GetClass().GetFullName()).Equals("BisCore:ElementRefersToElements") && GetPrimaryTable().FindColumn("MemberPriority") != nullptr)
+    if (!GetMapStrategy().GetTphInfo().IsValid())
+        return ClassMappingStatus::Success;
+
+    ExtendDefaultIndexesCustomAttribute replaceSystemIndexCA;
+    if (!ECDbMapCustomAttributeHelper::TryGetExtendDefaultIndexes(replaceSystemIndexCA, GetClass()))
+        return ClassMappingStatus::Success;
+
+    // Extend indexes as per custom attribute specified
+    bmap<Utf8String, T_Utf8StringVector, CompareIUtf8Ascii> indexesToExtend;
+    if (SUCCESS != replaceSystemIndexCA.TryGetIndexNamesAndColumns(GetECDb().GetImpl().Issues(), indexesToExtend))
+        return ClassMappingStatus::Error;
+
+    if (SUCCESS != ctx.GetImportCtx().GetSchemaManager().GetDbSchema().LoadIndexDefs())
+        return ClassMappingStatus::Error;
+
+    // Check if any index names are specified that don't exist for the class
+    Utf8String invalidIndexNames;
+    for (const auto& [indexName, propertiesToAdd] : indexesToExtend)
         {
-        if (SUCCESS != ctx.GetImportCtx().GetSchemaManager().GetDbSchema().LoadIndexDefs())
-            return ClassMappingStatus::Error;
+        if (!GetPrimaryTable().ContainsIndex(indexName))
+            invalidIndexNames = Utf8PrintfString("%s%s'%s'", invalidIndexNames.c_str(), Utf8String::IsNullOrEmpty(invalidIndexNames.c_str()) ? "" : ", ", indexName.c_str());
+        }
+    if (!Utf8String::IsNullOrEmpty(invalidIndexNames.c_str()))
+        {
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0687, 
+            "Index name(s) %s in the custom attribute 'ExtendDefaultIndexes' do not exist for the ECRelationshipClass '%s'.", invalidIndexNames.c_str(), GetClass().GetFullName());
+        return ClassMappingStatus::Error;
+        }
 
-        // Drop the old index and remove the entry from the table
-        if (GetPrimaryTable().RemoveIndexDef("uix_bis_ElementRefersToElements_sourcetargetclassid"))
+    // Delete and drop existing index and add the new extended one
+    for (const auto& [indexName, propertiesToAdd] : indexesToExtend)
+        {       
+        GetPrimaryTable().RemoveIndexDef(indexName);
+
+        if (!ctx.GetImportCtx().IsSynchronizeSchemas())
             {
-            if (!ctx.GetImportCtx().IsSynchronizeSchemas())
+            if (BE_SQLITE_OK != ctx.GetImportCtx().GetECDb().ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", indexName.c_str())))
                 {
-                if (BE_SQLITE_OK != ctx.GetImportCtx().GetECDb().ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = 'uix_bis_ElementRefersToElements_sourcetargetclassid'")))
-                    return ClassMappingStatus::Error;
-                }
-
-            if (BE_SQLITE_OK != ctx.GetImportCtx().GetECDb().ExecuteDdl("DROP INDEX IF EXISTS [uix_bis_ElementRefersToElements_sourcetargetclassid]"))
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0688, 
+                    "Failed to delete the index '%s' specified in the custom attribute 'ExtendDefaultIndexes' of the ECRelationshipClass '%s' from the database.", indexName.c_str(), GetClass().GetFullName());
                 return ClassMappingStatus::Error;
+                }
             }
 
-        // Add the new index introduced in Profile version 4.0.0.5 if not already present
-        if (!GetPrimaryTable().ContainsIndex("uix_bis_ElementRefersToElements_sourcetargetclassid_memberpriority"))
-            AddIndex(ctx.GetImportCtx(), RelationshipIndexSpec::SourceAndTargetAndClassId, true);
+        if (BE_SQLITE_OK != ctx.GetImportCtx().GetECDb().ExecuteDdl(SqlPrintfString("DROP INDEX IF EXISTS [%s]", indexName.c_str())))
+            {
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0689, 
+                "Failed to drop the index '%s' specified in the custom attribute 'ExtendDefaultIndexes' does not exist for the ECRelationshipClass '%s'.", indexName.c_str(), GetClass().GetFullName());
+            return ClassMappingStatus::Error;
+            }
+
+        if (const auto indexSpec = GetRelationShipIndexSpecFromIndexName(indexName); indexSpec != nullptr)
+            {
+            const auto indexStr = AddIndex(ctx.GetImportCtx(), *indexSpec, indexName.StartsWithI("uix_"), indexesToExtend);
+            if (Utf8String::IsNullOrEmpty(indexStr.c_str()))
+                return ClassMappingStatus::Error;
+            }
         }
     return ClassMappingStatus::Success;
     }
@@ -1228,20 +1281,61 @@ void RelationshipClassLinkTableMap::AddIndices(SchemaImportContext& ctx, bool al
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelationshipClassLinkTableMap::AddDefaultIndexes(SchemaImportContext& ctx)
+bool RelationshipClassLinkTableMap::AddDefaultIndexes(ClassMappingContext& ctx)
     {
     if (GetPrimaryTable().GetType() == DbTable::Type::Existing)
-        return;
-    
-    //1. Unique index on (source,target,classid)
-    AddIndex(ctx, RelationshipIndexSpec::SourceAndTargetAndClassId, true);
-    //2. None unique index on (target);
-    AddIndex(ctx, RelationshipIndexSpec::Target, false);
+        return true;
+
+    ExtendDefaultIndexesCustomAttribute replaceSystemIndexCA;
+    if (!ECDbMapCustomAttributeHelper::TryGetExtendDefaultIndexes(replaceSystemIndexCA, GetClass()))
+        {
+        //1. Unique index on (source,target,classid)
+        AddIndex(ctx.GetImportCtx(), RelationshipIndexSpec::SourceAndTargetAndClassId, true);
+        //2. None unique index on (target);
+        AddIndex(ctx.GetImportCtx(), RelationshipIndexSpec::Target, false);
+        return true;
+        }
+
+    // Extend the indexes as per the custom attribute given
+    bmap<Utf8String, T_Utf8StringVector, CompareIUtf8Ascii> indexesToExtend;
+    // Extract the index names and properties to extend those indexes with.
+    if (SUCCESS != replaceSystemIndexCA.TryGetIndexNamesAndColumns(GetECDb().GetImpl().Issues(), indexesToExtend))
+        return false;
+    if (indexesToExtend.size() > 2)
+        {
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0690, 
+            "ECRelationshipClass '%s' which has Mapping Strategy as TablePerHierarchy can only have 2 default indexes.", GetClass().GetFullName());
+        return false;
+        }
+        
+    //1. Add a Unique index on (source,target,classid)
+    const auto uniqueIndexStr = AddIndex(ctx.GetImportCtx(), RelationshipIndexSpec::SourceAndTargetAndClassId, true, indexesToExtend);
+    //2. Add a non-unique index on (target);
+    const auto targetIndexStr = AddIndex(ctx.GetImportCtx(), RelationshipIndexSpec::Target, false, indexesToExtend);
+
+    // Index extention failed as a property was specified that doesn't exist for the table.
+    if (Utf8String::IsNullOrEmpty(uniqueIndexStr.c_str()) || Utf8String::IsNullOrEmpty(targetIndexStr.c_str()))
+        return false;
+
+    // Check if any index names were given in the custom attribute that don't exist for the class.
+    Utf8String errorMsg;
+    for (const auto& [indexName, properties] : indexesToExtend)
+        {
+        if (indexName.CompareToI(uniqueIndexStr) != 0 && indexName.CompareToI(targetIndexStr) != 0)
+            errorMsg = Utf8PrintfString("%s%s'%s'", errorMsg.c_str(), Utf8String::IsNullOrEmpty(errorMsg.c_str()) ? "" : ", ", indexName.c_str());
+        }
+    if (!Utf8String::IsNullOrEmpty(errorMsg.c_str()))
+        {
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0691, 
+            "Index name(s) %s in the custom attribute 'ExtendDefaultIndexes' do not exist for the ECRelationshipClass '%s'.", errorMsg.c_str(), GetClass().GetFullName());
+        return false;
+        }
+    return true;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportContext, RelationshipIndexSpec spec, bool isUniqueIndex)
+Utf8String RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportContext, RelationshipIndexSpec spec, bool isUniqueIndex, Nullable<bmap<Utf8String, T_Utf8StringVector, CompareIUtf8Ascii>> indexesToExtend)
     {
     // Setup name of the index
     Utf8String name(isUniqueIndex ? "uix_" : "ix_");
@@ -1285,23 +1379,36 @@ void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportCo
                 GenerateIndexColumnList(columns, sourceECInstanceIdColumn, sourceECClassIdColumn, targetECInstanceIdColumn, targetECClassIdColumn, nullptr);
                 break;
             case RelationshipIndexSpec::SourceAndTargetAndClassId:
-                {
                 GenerateIndexColumnList(columns, sourceECInstanceIdColumn, sourceECClassIdColumn, targetECInstanceIdColumn, targetECClassIdColumn, classId);
-                
-                // ECDb Profile version 4.0.0.5 onwards, update the unique index `uix_bis_ElementRefersToElements_sourcetargetclassid` to `uix_bis_ElementRefersToElements_sourcetargetclassid_memberpriority`
-                if (name.Equals("uix_bis_ElementRefersToElements_sourcetargetclassid"))
-                    {
-                    if (auto memberPriorityColumn = GetPrimaryTable().FindColumn("MemberPriority"); memberPriorityColumn)
-                        {
-                        columns.push_back(memberPriorityColumn);
-                        name.append("_memberpriority");
-                        }
-                    }
                 break;
-                }
             default:
                 BeAssert(false);
                 break;
+        }
+
+    // Check if the index has to be extended with additional properties
+    if (indexesToExtend.IsValid())
+        {
+        if (const auto itr = indexesToExtend.Value().find(name); itr != indexesToExtend.Value().end())
+            {
+            Utf8String invalidProperties;
+            for (const auto& propertyName : itr->second)
+                {
+                // Check if the property exists in the class
+                if (const auto column = GetPrimaryTable().FindColumnP(propertyName.c_str()); column != nullptr)
+                    {
+                    columns.push_back(column);
+                    continue;
+                    }
+                invalidProperties = Utf8PrintfString("%s%s'%s'", invalidProperties.c_str(), Utf8String::IsNullOrEmpty(invalidProperties.c_str()) ? "" : ", ", propertyName.c_str());
+                }
+            if (!Utf8String::IsNullOrEmpty(invalidProperties.c_str()))
+                {
+                Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0692, 
+                    "Property(ies) %s specified in 'IndexesToExtend.Index.Properties' of the custom attribute 'ExtendDefaultIndexes' do not exist for the ECRelationshipClass '%s'.", invalidProperties.c_str(), GetClass().GetFullName());
+                return "";
+                }
+            }
         }
 
     if (SUCCESS != DbMappingManager::Tables::CreateIndex(schemaImportContext, GetPrimaryTable(), name, isUniqueIndex, columns, false, true, GetClass().GetId(),
@@ -1311,6 +1418,7 @@ void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportCo
         {
         BeAssert(false && "Failed to create index for link table relationship");
         }
+    return name;
     }
 
 /*---------------------------------------------------------------------------------**//**

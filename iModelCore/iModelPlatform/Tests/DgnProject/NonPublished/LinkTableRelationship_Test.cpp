@@ -56,3 +56,94 @@ TEST_F(LinkTableRelationshipTests, CRUD)
     ASSERT_EQ(BE_SQLITE_OK, m_db->DeleteLinkTableRelationships(BIS_SCHEMA("CategorySelectorRefersToCategories"), DgnElementId(), categoryId[1]));
     ASSERT_EQ(_countof(categoryId)-2, DgnDbTestUtils::SelectCountFromECClass(*m_db, BIS_SCHEMA("CategorySelectorRefersToCategories")));
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(LinkTableRelationshipTests, TestExtendDefaultIndexesCustomAttribute)
+    {
+    SetupSeedProject();
+
+    auto relationshipClass = m_db->Schemas().GetClass(BIS_ECSCHEMA_NAME, "CategorySelectorRefersToCategories")->GetRelationshipClassCP();
+    ASSERT_TRUE(relationshipClass);
+
+    CategorySelectorPtr categorySelector = new CategorySelector(m_db->GetDictionaryModel(), "TestCategorySelector");
+    ASSERT_TRUE(categorySelector.IsValid());
+    ASSERT_TRUE(categorySelector->Insert().IsValid());
+
+    SpatialCategory category(m_db->GetDictionaryModel(), "TestCategory", DgnCategory::Rank::Application);
+    auto spatialCategory = category.Insert(DgnSubCategory::Appearance());
+    EXPECT_TRUE(spatialCategory.IsValid());
+
+    ECInstanceKey relationshipInstanceKeys[5];
+    {
+    // Try to insert duplicate link table relationships
+    const auto sourceId = ECInstanceId(categorySelector->GetElementId().GetValue());
+    const auto targetId = ECInstanceId(spatialCategory->GetCategoryId().GetValue());
+    ASSERT_EQ(BE_SQLITE_OK, m_db->InsertLinkTableRelationship(relationshipInstanceKeys[0], *relationshipClass, sourceId, targetId));
+
+    // Second insert should fail as the index has not been extended to include the new MemberPriority property
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, m_db->InsertLinkTableRelationship(relationshipInstanceKeys[1], *relationshipClass, sourceId, targetId));
+    }
+
+    // Import new dummy BisCore which has the new custom attribute
+
+    /*  ECDbMap.02.00.03 and BisCore.01.00.17 are temporary assets for this test until they are released and hence require manual import.
+        Once both schemas are released, this test needs to be updated to remove these 2 imports. */
+    ECSchemaPtr schema = nullptr;
+    auto context = ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(m_db->GetSchemaLocater());
+
+    auto schemasDir = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    schemasDir.AppendToPath(L"ECSchemas");
+
+    auto ecdbMapSchemaPath = schemasDir;
+    ecdbMapSchemaPath.AppendToPath(L"ECDbMapDummy.02.00.03.ecschema.xml");
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(schema, ecdbMapSchemaPath.GetName(), *context));
+
+    auto bisCoreSchemaPath = schemasDir;
+    bisCoreSchemaPath.AppendToPath(L"BisCoreDummy.01.00.17.ecschema.xml");
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(schema, bisCoreSchemaPath.GetName(), *context));
+
+    ASSERT_EQ(SchemaStatus::Success, m_db->ImportSchemas(context->GetCache().GetSchemas(), true));
+    m_db->SaveChanges();
+
+    // Try to insert duplicate link table relationships with different MemberPriority values
+    // Should succeed
+    relationshipClass = m_db->Schemas().GetClass(BIS_ECSCHEMA_NAME, "CategorySelectorRefersToCategories")->GetRelationshipClassCP();
+    ASSERT_TRUE(relationshipClass);
+
+    auto relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relationshipClass);
+
+    for (const auto& memberPriorityValue : { 1, 2, 3 })
+        {
+        IECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance();
+        ASSERT_NE(relationshipInstance, nullptr);
+
+        ECValue value;
+        value.SetInteger(memberPriorityValue);
+        relationshipInstance->SetValue("MemberPriority", value);
+
+        ASSERT_EQ(BE_SQLITE_OK, m_db->InsertLinkTableRelationship(relationshipInstanceKeys[memberPriorityValue], *relationshipClass, ECInstanceId(categorySelector->GetElementId().GetValue()), 
+            ECInstanceId(spatialCategory->GetCategoryId().GetValue()), relationshipInstance.get())) << "Failed when inserting element with member priority value " << memberPriorityValue << "\n";
+        }
+
+    m_db->SaveChanges();
+
+    // Check if the all valid relationships were inserted correctly
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(*m_db, "SELECT * FROM " BIS_SCHEMA("CategorySelectorRefersToCategories") " ORDER BY MemberPriority"));
+    auto rowCount = 0;
+    while (BE_SQLITE_ROW == statement.Step())
+        {
+        EXPECT_EQ(statement.GetValueId<ECInstanceId>(0), relationshipInstanceKeys[rowCount].GetInstanceId());
+        EXPECT_EQ(statement.GetValueId<ECClassId>(1), relationshipInstanceKeys[rowCount].GetClassId());
+        EXPECT_EQ(statement.GetValueInt(2), rowCount);
+        EXPECT_EQ(statement.GetValueId<DgnElementId>(3), categorySelector->GetElementId());
+        EXPECT_EQ(statement.GetValueId<DgnClassId>(4), categorySelector->GetElementClassId());
+        EXPECT_EQ(statement.GetValueId<DgnElementId>(5), spatialCategory->GetCategoryId());
+        EXPECT_EQ(statement.GetValueId<DgnElementId>(6), spatialCategory->GetElementClassId());
+        ++rowCount;
+        }
+    EXPECT_EQ(rowCount, 4);
+    }

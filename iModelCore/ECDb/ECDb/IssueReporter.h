@@ -709,6 +709,19 @@ struct ECDB_EXPORT ECDbIssueId
     static ECN::IssueId ECDb_0677;
     static ECN::IssueId ECDb_0678;
     static ECN::IssueId ECDb_0679;
+    static ECN::IssueId ECDb_0680;
+    static ECN::IssueId ECDb_0681;
+    static ECN::IssueId ECDb_0682;
+    static ECN::IssueId ECDb_0683;
+    static ECN::IssueId ECDb_0684;
+    static ECN::IssueId ECDb_0685;
+    static ECN::IssueId ECDb_0686;
+    static ECN::IssueId ECDb_0687;
+    static ECN::IssueId ECDb_0688;
+    static ECN::IssueId ECDb_0689;
+    static ECN::IssueId ECDb_0690;
+    static ECN::IssueId ECDb_0691;
+    static ECN::IssueId ECDb_0692;
     };
 
 //---------------------------------------------------------------------------------------

@@ -7,12 +7,14 @@ This document including important changes to syntax or file format.
 | Profile | `4.0.0.5` |
 | ECSQL   | `1.2.9.2` |
 
-## `12/08/2023`: Modified unique index in bis:ElementRefersToElements to include new MemberPriority property
+## `15/01/2024`: Add support for ExtendDefaultIndexes custom attribute
 
 * ECDb profile version updated to `4.0.0.4` -> `4.0.0.5`.
-* BisCore domain schema has been upgraded to 1.0.17 which adds MemberPriority property in the class bis:ElementRefersToElement.
-* ECDb profile version has been incremented to support this change and extend the unique index to include this new property.
-* This new version of BisCore can only be imported when the runtime ECDb version is at least 4.0.0.5.
+* A new custom attribute `ExtendDefaultIndexes` added to the ECDbMap schema, the schema version is incremented to `02.00.03`
+* The custom attribute indicates if a default index is to be extended by including additional properties to the index.
+* The custom attribute can only be used to extend default indexes of an ECRelationshipClass that has map strategy of TablePerHierarchy.
+* It can be used on unique and non-unique indexes.
+* Existing data is not altered in any way.
 
 ## `10/27/2023`: Pragma integrity_check(check_nav_class_ids) performance improved
 

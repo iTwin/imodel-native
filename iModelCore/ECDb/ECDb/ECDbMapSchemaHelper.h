@@ -18,6 +18,7 @@ struct LinkTableRelationshipMapCustomAttribute;
 struct ForeignKeyConstraintCustomAttribute;
 struct ImportRequiresVersionCustomAttribute;
 struct UseRequiresVersionCustomAttribute;
+class ExtendDefaultIndexesCustomAttribute;
 
 //=======================================================================================    
 //! ECDbMapCustomAttributeHelper is a convenience API for the custom attributes defined
@@ -89,6 +90,12 @@ struct ECDbMapCustomAttributeHelper final
         //! @param[in] ecClass Class to retrieve the custom attribute from.
         //! @return true if @p schema has the custom attribute.
         static bool TryGetUseRequiresVersion(UseRequiresVersionCustomAttribute& ca, ECN::ECClassCR ecClass);
+
+        //! Tries to retrieve the ExtendDefaultIndexes custom attribute from the specified schema.
+        //! @param[out] ca Retrieved CA
+        //! @param[in] ecClass Class to retrieve the custom attribute from.
+        //! @return true if @p schema has the custom attribute.
+        static bool TryGetExtendDefaultIndexes(ExtendDefaultIndexesCustomAttribute& ca, ECN::ECClassCR ecClass);
     };
 
 //=======================================================================================    
@@ -455,6 +462,24 @@ struct UseRequiresVersionCustomAttribute final
         //! @param[issues] issue reporter to use
         //! @param[context] context info to provide with issues that are written
         BentleyStatus Verify(IssueDataSource const& issues, Utf8CP context) const;
+    };
+
+class ExtendDefaultIndexesCustomAttribute final
+    {
+    friend struct ECDbMapCustomAttributeHelper;
+
+    ECN::ECClassCP m_ecClass = nullptr;
+    ECN::IECInstancePtr m_ca = nullptr;
+
+    ExtendDefaultIndexesCustomAttribute(ECN::ECClassCR ecClass, ECN::IECInstancePtr ca) : m_ecClass(&ecClass), m_ca(ca) {}
+
+    public:
+    ExtendDefaultIndexesCustomAttribute() {}
+
+    //! @return true if ExtendDefaultIndexes CustomAttribute exists on the schema.
+    bool IsValid() const { return m_ecClass != nullptr && m_ca != nullptr; }
+
+    BentleyStatus TryGetIndexNamesAndColumns(IssueDataSource const& issues, bmap<Utf8String, T_Utf8StringVector, CompareIUtf8Ascii>& indexesToExtend) const;
     };
 
 //*****************************************************************

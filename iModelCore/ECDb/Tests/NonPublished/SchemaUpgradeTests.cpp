@@ -233,8 +233,8 @@ TEST_F(SchemaUpgradeTestFixture, ValidateMapCheck_CheckForOrphanCustomAttributeI
 
     // this should fail and generate issue messages
     ASSERT_EQ(ERROR, ImportSchema(SchemaItem(testSchemaXml1)));
-    auto expected_msg1 = "Detected orphan custom attribute rows. CustomAttribute with id=40 applied to container of type 'ECClass' with container id=78.";
-    auto expected_msg2 = "Detected orphan custom attribute rows. CustomAttribute with id=39 applied to container of type 'ECProperty' with container id=174.";
+    auto expected_msg1 = "Detected orphan custom attribute rows. CustomAttribute with id=40 applied to container of type 'ECClass' with container id=80.";
+    auto expected_msg2 = "Detected orphan custom attribute rows. CustomAttribute with id=39 applied to container of type 'ECProperty' with container id=177.";
     auto expected_msg3 = "Detected 2 orphan rows in ec_CustomAttributes.";
 
     ASSERT_STREQ(expected_msg1,listener.m_issues[0].c_str());
