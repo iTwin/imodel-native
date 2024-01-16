@@ -2232,16 +2232,16 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, SchemaCustomAttributes) {
     }
 
    {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
-        //     SELECT ca.ECInstanceId, s.Name
-        //      FROM meta.SchemaCustomAttribute ca
-        //         JOIN meta.ECSchenaDef s USING meta.SchemaHasCustomAttribute
-        //         JOIN meta.ECClassDef cDef USING meta.CustomAttributeClassHasInstanceOnSchema
-        //      WHERE cDef.Name='CAClass'
-        //     )stmt"));
-        // ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-        // ASSERT_STREQ("TestSchema", stmt.GetValueText(1));
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT ca.ECInstanceId, s.Name
+             FROM meta.SchemaCustomAttribute ca
+                JOIN meta.ECSchemaDef s USING meta.SchemaHasCustomAttribute
+                JOIN meta.ECClassDef cDef USING meta.CustomAttributeClassHasInstanceOnSchema
+             WHERE cDef.Name='CAClass'
+            )stmt"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ("TestSchema", stmt.GetValueText(1));
     }
 }
 
