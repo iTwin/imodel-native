@@ -10461,7 +10461,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitivePropertyFiel
     rules->AddPresentationRule(*rule);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), 
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
         rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
@@ -10479,7 +10479,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitivePropertyFiel
     expectedValues.Parse(Utf8PrintfString(R"(
         {
         "%s": "test"
-        })", 
+        })",
         FIELD_NAME(classA, "Prop")).c_str());
     EXPECT_EQ(expectedValues, record->GetValues())
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
@@ -10632,7 +10632,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitivePropertyFiel
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
         rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
-    ASSERT_TRUE(descriptor.IsValid());+
+    ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size());
 
     // request for content
@@ -10650,7 +10650,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitivePropertyFiel
         "%s": null,
         "%s": null
         })",
-        FIELD_NAME(classA, "PropA"), 
+        FIELD_NAME(classA, "PropA"),
         FIELD_NAME(classB, "PropB")
     ).c_str());
     EXPECT_EQ(expectedValues, record->GetValues())
