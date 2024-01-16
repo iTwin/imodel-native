@@ -4,12 +4,12 @@ This document including important changes to syntax or file format.
 
 | Module  | Version   |
 | ------- | --------- |
-| Profile | `4.0.0.5` |
+| Profile | `4.0.0.4` |
 | ECSQL   | `1.2.9.2` |
 
 ## `15/01/2024`: Add support for ExtendDefaultIndexes custom attribute
 
-* ECDb profile version updated to `4.0.0.4` -> `4.0.0.5`.
+* To-Do: ECDb profile version updated to `4.0.0.4` -> `4.0.0.5`.
 * A new custom attribute `ExtendDefaultIndexes` added to the ECDbMap schema, the schema version is incremented to `02.00.03`
 * The custom attribute indicates if a default index is to be extended by including additional properties to the index.
 * The custom attribute can only be used to extend default indexes of an ECRelationshipClass that has map strategy of TablePerHierarchy.

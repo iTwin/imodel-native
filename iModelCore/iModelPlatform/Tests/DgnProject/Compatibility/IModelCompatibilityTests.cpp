@@ -324,14 +324,6 @@ void Assert_BuiltinSchemaVersions_2_0_0_6(TestIModel& testDb)
     EXPECT_LE(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("CoreCustomAttributes")) << testDb.GetDescription();
     }
 
-void Assert_BuiltinSchemaVersions_2_0_0_7(TestIModel& testDb)
-    {
-    // TO-DO:
-    // BisCore domain schema will be upgraded to 1.0.17 which will have a CA to restrict it's import only to ECDb profile version 4.0.0.5 and greater.
-    // The check for this will have to be added here once the new BisCore schema is released.
-    Assert_BuiltinSchemaVersions_2_0_0_6(testDb);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -392,16 +384,14 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
                         Assert_BuiltinSchemaVersions_2_0_0_4(testDb);
                     else if (testDb.GetDgnDbProfileVersion() == ProfileVersion(2, 0, 0, 5))
                         Assert_BuiltinSchemaVersions_2_0_0_5(testDb);
-                    else if (testDb.GetDgnDbProfileVersion() == ProfileVersion(2, 0, 0, 6))
-                        Assert_BuiltinSchemaVersions_2_0_0_6(testDb);
                     else
                         FAIL() << "*ERROR* case not handled | " << testDb.GetDescription();
                     break;
                     }
                 case ProfileState::Age::UpToDate:
                     {
-                    if (testDb.GetDgnDbProfileVersion() == ProfileVersion(2, 0, 0, 7))
-                        Assert_BuiltinSchemaVersions_2_0_0_7(testDb);
+                    if (testDb.GetDgnDbProfileVersion() == ProfileVersion(2, 0, 0, 6))
+                        Assert_BuiltinSchemaVersions_2_0_0_6(testDb);
                     else 
                         FAIL() << "*ERROR* case not handled | " << testDb.GetDescription();
                     break;
