@@ -98,7 +98,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertSchemaDef(ECSchemaCR expectedSchema, 
             ASSERT_EQ(m_ecdb.Schemas().GetClass("ECDbMeta", "ECSchemaDef")->GetId(), val.GetId<ECClassId>()) << "ECSchemaDef.ECClassId";
             ASSERT_STREQ("ClassId", colInfo.GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str()) << "ECSchemaDef.ECClassId";
             }
-        else if (colName.EqualsI("Name") || colName.EqualsI("Name_1"))
+        else if (colName.EqualsI("Name"))
             ASSERT_STREQ(expectedSchema.GetName().c_str(), val.GetText()) << "ECSchemaDef.Name";
         else if (colName.EqualsI("DisplayLabel"))
             {
@@ -206,7 +206,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertClassDef(ECClassCR expectedClass, ECS
             continue;
             }
 
-        if (colName.EqualsI("Name") || colName.EqualsI("Name_1"))
+        if (colName.EqualsI("Name"))
             {
             ASSERT_STREQ(expectedClass.GetName().c_str(), val.GetText()) << "ECClassDef.Name";
             continue;
@@ -388,7 +388,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertEnumerationDef(ECEnumerationCR expect
             continue;
             }
 
-        if (colName.EqualsI("Name") || colName.EqualsI("Name_1"))
+        if (colName.EqualsI("Name"))
             {
             ASSERT_STREQ(expectedEnum.GetName().c_str(), val.GetText()) << "ECEnumerationDef.Name";
             continue;
@@ -573,7 +573,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertKindOfQuantityDef(KindOfQuantityCR ex
             continue;
             }
 
-        if (colName.EqualsI("Name") || colName.EqualsI("Name_1"))
+        if (colName.EqualsI("Name"))
             {
             ASSERT_STREQ(expectedKoq.GetName().c_str(), val.GetText()) << "KindOfQuantityDef.Name";
             continue;
@@ -699,7 +699,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertUnitSystemDef(UnitSystemCR expected, 
             continue;
             }
 
-        if (colName.EqualsI("Name") || colName.EqualsI("Name_1"))
+        if (colName.EqualsI("Name"))
             {
             ASSERT_STREQ(expected.GetName().c_str(), val.GetText()) << "UnitSystemDef.Name";
             continue;
@@ -793,7 +793,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPhenomenonDef(PhenomenonCR expected, 
             continue;
             }
 
-        if (colName.EqualsI("Name") || colName.EqualsI("Name_1"))
+        if (colName.EqualsI("Name"))
             {
             ASSERT_STREQ(expected.GetName().c_str(), val.GetText()) << "PhenomenonDef.Name";
             continue;
@@ -893,7 +893,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertUnitDef(ECUnitCR expected, ECSqlState
             continue;
             }
 
-        if (colName.EqualsI("Name") || colName.EqualsI("Name_1"))
+        if (colName.EqualsI("Name"))
             {
             ASSERT_STREQ(expected.GetName().c_str(), val.GetText()) << "UnitDef.Name of " << expected.GetFullName();
             continue;
@@ -1069,7 +1069,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertFormatDef(ECFormatCR expected, ECSqlS
             continue;
             }
 
-        if (colName.EqualsI("Name") || colName.EqualsI("Name_1"))
+        if (colName.EqualsI("Name"))
             {
             ASSERT_STREQ(expected.GetName().c_str(), val.GetText()) << "FormatDef.Name of " << expected.GetFullName();
             continue;
@@ -1261,7 +1261,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPropertyCategoryDef(PropertyCategoryC
             continue;
             }
 
-        if (colName.EqualsI("Name") || colName.EqualsI("Name_1"))
+        if (colName.EqualsI("Name"))
             {
             ASSERT_STREQ(expectedCat.GetName().c_str(), val.GetText()) << "PropertyCategoryDef.Name";
             continue;
@@ -1376,7 +1376,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp
             continue;
             }
 
-        if (colName.EqualsI("Name") || colName.EqualsI("Name_1"))
+        if (colName.EqualsI("Name"))
             {
             ASSERT_STREQ(expectedProp.GetName().c_str(), val.GetText()) << "ECPropertyDef.Name for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
             continue;
@@ -2025,7 +2025,7 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, CustomAttributes) {
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
     }
 
-    /*{
+    {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT c.Name FROM meta.CustomAttribute ca JOIN meta.ECClassDef c USING meta.CustomAttributeClassHasInstance"));
         while (BE_SQLITE_ROW == stmt.Step())
@@ -2033,7 +2033,7 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, CustomAttributes) {
             printf("%s\n", stmt.GetValueText(0));
             }
         //ASSERT_EQ(stmt.GetValueInt(0), 10);
-    }*/
+    }
 
     {
         ECSqlStatement stmt;
@@ -2120,16 +2120,16 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, PropertyCustomAttributes) {
     }
 
    {
-        // ECSqlStatement stmt;
-        // ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
-        //     SELECT ca.ECInstanceId, pDef.Name
-        //      FROM meta.PropertyCustomAttribute ca
-        //         JOIN meta.ECPropertyDef pDef USING meta.PropertyHasCustomAttribute
-        //         JOIN meta.ECClassDef cDef USING meta.CustomAttributeClassHasInstanceOnProperty
-        //      WHERE cDef.Name='CAClass'
-        //     )stmt"));
-        // ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-        // ASSERT_STREQ("Bar", stmt.GetValueText(1));
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT ca.ECInstanceId, pDef.Name
+             FROM meta.PropertyCustomAttribute ca
+                JOIN meta.ECPropertyDef pDef USING meta.PropertyHasCustomAttribute
+                JOIN meta.ECClassDef cDef USING meta.CustomAttributeClassHasInstanceOnProperty
+             WHERE cDef.Name='CAClass'
+            )stmt"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ("Bar", stmt.GetValueText(1));
     }
 }
 
