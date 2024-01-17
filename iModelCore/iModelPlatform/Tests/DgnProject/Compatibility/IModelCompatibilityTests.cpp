@@ -327,57 +327,6 @@ void Assert_BuiltinSchemaVersions_2_0_0_6(TestIModel& testDb)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-// void Assert_BuiltinSchemaVersions_2_0_0_7(TestIModel& testDb)
-//     {
-//     EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("CoreCustomAttributes") != nullptr) << testDb.GetDescription();
-//     EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbMap") != nullptr) << testDb.GetDescription();
-//     EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbFileInfo") != nullptr) << testDb.GetDescription();
-//     EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbMeta") != nullptr) << testDb.GetDescription();
-//     EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbSystem") != nullptr) << testDb.GetDescription();
-//     EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbSchemaPolicies") != nullptr) << testDb.GetDescription();
-//     EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Generic") != nullptr) << testDb.GetDescription();
-//     EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCore") != nullptr) << testDb.GetDescription();
-
-//     // BisCustomAttributes schema is added to the test files containing BisCore schema having reference schema BisCustomAttributes (e.g BisCore.1.0.16)
-//     if (testDb.GetSchemaVersion("BisCore") >= SchemaVersion(1, 0, 16))
-//         EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCustomAttributes") != nullptr) << testDb.GetDescription();
-
-//     //iModel built-in schema versions
-//     // Note: don't assert on original ecxml version for schemas that don't get upgraded automatically. That is to error-prone to test
-//     if (testDb.GetSchemaUpgradeOptions().AreDomainUpgradesAllowed())
-//         {
-//         EXPECT_LE(SchemaVersion(1, 0, 4), testDb.GetSchemaVersion("BisCore")) << testDb.GetDescription();
-//         EXPECT_LE(SchemaVersion(1, 0, 1), testDb.GetSchemaVersion("Generic")) << testDb.GetDescription();
-//         }
-
-//     //ECDb built-in schema versions
-//     EXPECT_EQ(SchemaVersion(2, 0, 1), testDb.GetSchemaVersion("ECDbFileInfo")) << testDb.GetDescription();
-//     EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << testDb.GetDescription();
-//     EXPECT_EQ(JsonValue(R"js({"classcount":4, "enumcount": 1})js"), testDb.GetSchemaItemCounts("ECDbFileInfo")) << testDb.GetDescription();
-    
-//     EXPECT_LE(SchemaVersion(2, 0, 3), testDb.GetSchemaVersion("ECDbMap")) << testDb.GetDescription();
-//     EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
-//     EXPECT_LE(11, testDb.GetSchemaItemCounts("ECDbMap").Value()["classcount"].asInt()) << testDb.GetDescription();
-    
-//     EXPECT_LE(SchemaVersion(4, 0, 1), testDb.GetSchemaVersion("ECDbMeta")) << testDb.GetDescription();
-//     EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << testDb.GetDescription();
-//     EXPECT_EQ(JsonValue(R"js({"classcount":38, "enumcount": 8})js"), testDb.GetSchemaItemCounts("ECDbMeta")) << testDb.GetDescription();
-    
-//     EXPECT_LE(SchemaVersion(5, 0, 2), testDb.GetSchemaVersion("ECDbSystem")) << testDb.GetDescription();
-//     EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbSystem")) << testDb.GetDescription();
-//     EXPECT_EQ(JsonValue(R"js({"classcount":4})js"), testDb.GetSchemaItemCounts("ECDbSystem")) << testDb.GetDescription();
-    
-//     EXPECT_LE(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion("ECDbSchemaPolicies")) << testDb.GetDescription();
-//     EXPECT_EQ(JsonValue(R"js({"classcount":3})js"), testDb.GetSchemaItemCounts("ECDbSchemaPolicies")) << testDb.GetDescription();
-
-//     //Standard schema versions (can get upgraded without a profile change)
-//     EXPECT_LE(SchemaVersion(1, 0, 3), testDb.GetSchemaVersion("CoreCustomAttributes")) << testDb.GetDescription();
-//     EXPECT_LE(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("CoreCustomAttributes")) << testDb.GetDescription();
-//     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
 void Assert_BuiltinSchemaVersions_2_X_X_X(TestIModel& testDb)
     {
     EXPECT_LE(8, testDb.GetSchemaCount()) << testDb.GetDescription();
