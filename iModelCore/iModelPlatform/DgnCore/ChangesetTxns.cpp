@@ -50,7 +50,8 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
             LOG.warning("UPDATE/DELETE before value do not match with one in db or CASCADE action was triggered.");
             iter.Dump(m_dgndb, false, 1);
         } else {
-            LOG.fatal("UPDATE/DELETE before value do not match with one in db or CASCADE action was triggered.");
+            m_lastErrorMessage = "UPDATE/DELETE before value do not match with one in db or CASCADE action was triggered.";
+            LOG.fatal(m_lastErrorMessage.c_str());
             iter.Dump(m_dgndb, false, 1);
             return ChangeSet::ConflictResolution::Abort;
         }
@@ -66,7 +67,8 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
             LOG.warning("PRIMARY KEY INSERT CONFLICT - resolved by replacing the existing row with the incoming row");
             iter.Dump(m_dgndb, false, 1);
         } else {
-            LOG.fatal("PRIMARY KEY INSERT CONFLICT - rejecting this changeset");
+            m_lastErrorMessage = "PRIMARY KEY INSERT CONFLICT - rejecting this changeset";
+            LOG.fatal(m_lastErrorMessage.c_str());
             iter.Dump(m_dgndb, false, 1);
             return ChangeSet::ConflictResolution::Abort;
         }
@@ -86,7 +88,9 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
             LOG.errorv("Detected %d foreign key conflicts in changeset. Continuing merge as 'DebugAllowFkViolations' flag is set. Run 'PRAGMA foreign_key_check' to get list of violations.", nConflicts);
             return ChangeSet::ConflictResolution::Skip;
         } else {
-            LOG.errorv("Detected %d foreign key conflicts in ChangeSet. Aborting merge.", nConflicts);
+
+            m_lastErrorMessage = Utf8PrintfString("Detected %d foreign key conflicts in ChangeSet. Aborting merge.", nConflicts);
+            LOG.error(m_lastErrorMessage.c_str());
             return ChangeSet::ConflictResolution::Abort;
         }
     }

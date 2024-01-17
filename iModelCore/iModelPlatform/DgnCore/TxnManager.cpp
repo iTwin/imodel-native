@@ -835,8 +835,13 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
     auto const fkNoAction = true;
 
     DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, mergeNeeded ? &rebase : nullptr, false, ignoreNoop, fkNoAction);
-    if (result != BE_SQLITE_OK)
-        m_dgndb.ThrowException("failed to apply changes", result);
+    if (result != BE_SQLITE_OK) {
+        if (changeStream.GetLastErrorMessage().empty())
+            m_dgndb.ThrowException("failed to apply changes", result);
+        else
+            m_dgndb.ThrowException(changeStream.GetLastErrorMessage().c_str(), result);
+    }
+    changeStream.ClearLastErrorMessage();
 
     ChangesetStatus status = ChangesetStatus::Success;
     UndoChangeSet indirectChanges;
