@@ -120,9 +120,7 @@ TEST_F(ClassViewsFixture, prepare_view_and_check_validate_sql_and_data) {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassViewsFixture, linktable_relationship_view) {
-    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
-    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
-    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
+  //This scenario is unsupported. A view for a relationship class requires its endpoint classes to be views as well instead of physical entities
     auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
     <ECSchema
             schemaName="test_schema"
@@ -148,23 +146,15 @@ TEST_F(ClassViewsFixture, linktable_relationship_view) {
         </ECRelationshipClass>
     </ECSchema>)xml");
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("test.ecdb"));
-    ASSERT_EQ(SUCCESS, ImportSchema(testSchema));
-    if (true){
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.SchemaClassesView"));
-        auto nativeSql = "SELECT [K0],[K1],[K2],[K3],[K4],[K5] FROM (SELECT [SchemaOwnsClasses].[ECInstanceId] [K0],[SchemaOwnsClasses].[ECClassId] [K1],[SchemaOwnsClasses].[SourceECInstanceId] [K2],[SchemaOwnsClasses].[SourceECClassId] [K3],[SchemaOwnsClasses].[TargetECInstanceId] [K4],[SchemaOwnsClasses].[TargetECClassId] [K5] FROM (SELECT [ec_Class].[Id] ECInstanceId,34 ECClassId,[ec_Class].[SchemaId] SourceECInstanceId,35 SourceECClassId,[ec_Class].[Id] TargetECInstanceId,33 TargetECClassId FROM [main].[ec_Class] WHERE [ec_Class].[SchemaId] IS NOT NULL) [SchemaOwnsClasses])";
-        ASSERT_STREQ(nativeSql, stmt.GetNativeSql());
-        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), ECInstanceId(1ull));
-        ASSERT_EQ(stmt.GetValueId<ECN::ECClassId>(1), ECClassId(34ull));
-        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(2), ECInstanceId(1ull));
-        ASSERT_EQ(stmt.GetValueId<ECClassId>(3), ECClassId(35ull));
-        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(4), ECInstanceId(1ull));
-        ASSERT_EQ(stmt.GetValueId<ECClassId>(5), ECClassId(33ull));
-    }
-    ASSERT_FALSE(m_ecdb.TableExists("ts_SchemaClassesView")) << "A abstract linktable is still mapped to a table.";
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDbForCurrentTest());
+    TestIssueListener listener;
+    m_ecdb.AddIssueListener(listener);
+    listener.Reset();
+    ASSERT_EQ(ERROR, ImportSchema(testSchema));
+    ASSERT_STREQ("Total of 4 view classes were checked and 1 were found to be invalid.", listener.PopLastError().c_str());
+    ASSERT_STREQ("Invalid view class 'test_schema:SchemaClassesView'. View class must be mapped to virtual table and not physical table.", listener.PopLastError().c_str());
 }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -214,7 +204,7 @@ TEST_F(ClassViewsFixture, return_nav_prop_from_view_query) {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassViewsFixture, fail_when_view_reference_itself_directly_or_indirectly) {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("test.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDbForCurrentTest());
     TestIssueListener listener;
     m_ecdb.AddIssueListener(listener);
 
