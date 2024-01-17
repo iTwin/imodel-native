@@ -250,10 +250,16 @@ void ContentItemBuilder::OnFieldHandled(Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentItemBuilder::_AddValue(Utf8CP name, rapidjson::Value&& value, rapidjson::Value&& displayValue, ECPropertyCP)
+void ContentItemBuilder::_AddValue(Utf8CP name, rapidjson::Value&& value, rapidjson::Value&& displayValue, ECPropertyCP prop)
     {
-    m_values.second->AddMember(rapidjson::Value(name, m_values.second->GetAllocator()), value, m_values.second->GetAllocator());
-    m_displayValues.second->AddMember(rapidjson::Value(name, m_displayValues.second->GetAllocator()), displayValue, m_displayValues.second->GetAllocator());
+    // add nulls for structs and arrays (need them in resulting ContentItem for ContentProvider to know if they were loaded)
+    bool propRequiresNullValues = prop && (prop->GetIsStruct() || prop->GetIsArray());
+    if (!value.IsNull() || propRequiresNullValues)
+        {
+        m_values.second->AddMember(rapidjson::Value(name, m_values.second->GetAllocator()), value, m_values.second->GetAllocator());
+        m_displayValues.second->AddMember(rapidjson::Value(name, m_displayValues.second->GetAllocator()), displayValue, m_displayValues.second->GetAllocator());
+        }
+    OnFieldHandled(name);
     }
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
@@ -264,7 +270,6 @@ void ContentItemBuilder::AddNull(Utf8CP name, ECPropertyCP prop)
         return;
 
     _AddValue(name, rapidjson::Value(), rapidjson::Value(), prop);
-    OnFieldHandled(name);
     }
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
@@ -274,9 +279,10 @@ void ContentItemBuilder::AddValue(Utf8CP name, Utf8CP rawAndDisplayValue, ECProp
     if (BeforeAddValueStatus::Skip == _OnBeforeAddValue(name))
         return;
 
-    if (rawAndDisplayValue)
+    if (!rawAndDisplayValue)
+        AddNull(name, prop);
+    else 
         _AddValue(name, rapidjson::Value(rawAndDisplayValue, m_values.second->GetAllocator()), rapidjson::Value(rawAndDisplayValue, m_displayValues.second->GetAllocator()), prop);
-    OnFieldHandled(name);
     }
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
@@ -288,10 +294,7 @@ void ContentItemBuilder::AddValue(Utf8CP name, ECPropertyCR ecProperty, IECSqlVa
 
     if (value.IsNull())
         {
-        // only add nulls for structs and arrays (need them in resulting ContentItem for ContentProvider to know if they were loaded)
-        if (ecProperty.GetIsStruct() || ecProperty.GetIsArray())
-            AddNull(name, &ecProperty);
-        OnFieldHandled(name);
+        AddNull(name, &ecProperty);
         return;
         }
 
@@ -330,7 +333,10 @@ void ContentItemBuilder::AddValue(Utf8CP name, ECPropertyCR ecProperty, IECSqlVa
                 &ecProperty);
             }
         }
-    OnFieldHandled(name);
+    else
+        {
+        AddNull(name, &ecProperty);
+        }
     }
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
@@ -541,7 +547,6 @@ void MergingContentItemBuilder::_AddValue(Utf8CP name, rapidjson::Value&& value,
     if (fieldIter == GetHandledFields().end())
         {
         ContentItemBuilder::_AddValue(name, std::move(value), std::move(displayValue), prop);
-        OnFieldHandled(name);
         return;
         }
 
