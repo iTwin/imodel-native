@@ -317,15 +317,6 @@ BentleyStatus UsingRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContex
         return ERROR;
         }
 
-    if (fromClassExistsInSourceList.size() == 1 && fromClassExistsInTargetList.size() == 1)
-        {
-        if (fromClassExistsInSourceList.begin()->first == fromClassExistsInTargetList.begin()->first)
-            {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0543,
-                "Multiple classes in the FROM and JOIN clauses match an end of the relationship '%s'.", relationshipClass->GetFullName());
-            return ERROR;
-            }
-        }
 
     if (!fromClassExistsInSourceList.empty())
         {

@@ -1546,6 +1546,7 @@ TEST_F(ECSqlStatementTestFixture, view_generator_must_use_escaped_class_name_whe
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("bug.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='Generic' alias='g' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'> "
+        "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' /> "
         "  <ECEntityClass typeName='Base' modifier='None'>"
         "    <ECCustomAttributes>"
         "      <ClassMap xmlns='ECDbMap.02.00'>"
@@ -1583,7 +1584,7 @@ TEST_F(ECSqlStatementTestFixture, view_generator_must_use_escaped_class_name_whe
     if ("escaped GROUP keyword as class name should prepare query fine and should be disqualified (+) at view generator") {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 FROM Generic:[Group]"));
-        ASSERT_STREQ(SqlPrintfString("SELECT 1 FROM (SELECT [Id] ECInstanceId,[ECClassId] FROM [main].[g_Base] WHERE +[g_Base].ECClassId=%s) [Group]", groupClassId.ToString().c_str()), stmt.GetNativeSql());
+        ASSERT_STREQ(SqlPrintfString("SELECT 1 FROM (SELECT [Id] ECInstanceId,[ECClassId] FROM [main].[g_Base] WHERE [g_Base].ECClassId=%s) [Group]", groupClassId.ToString().c_str()), stmt.GetNativeSql());
     }
 }
 
@@ -11115,7 +11116,7 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling_Point2D) {
     const auto neg_inf = -std::numeric_limits<double>::infinity();
     const auto nan_val = std::numeric_limits<double>::quiet_NaN();
     constexpr auto selectStmt = "select inf_pos, inf_neg, nan_val, inf_pos_combo_1, inf_pos_combo_2, inf_neg_combo_1, inf_neg_combo_2, nan_val_combo_1, nan_val_combo_2 from ts.Element";
-    
+
     if("insert row") {
         ECSqlStatement stmt;
         ASSERT_EQ(stmt.Prepare(m_ecdb, "insert into ts.Element(inf_pos, inf_pos_combo_1, inf_pos_combo_2, inf_neg, inf_neg_combo_1, inf_neg_combo_2, nan_val, nan_val_combo_1, nan_val_combo_2) values(?,?,?,?,?,?,?,?,?)"), ECSqlStatus::Success);
@@ -11168,9 +11169,9 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling_Point2D) {
 
     // Simulate existing data with INF and NAN
     Statement stmt1;
-    ASSERT_EQ(BE_SQLITE_OK, stmt1.Prepare(m_ecdb, R"sqlstr(UPDATE ts_Element SET 
-        inf_pos_X=?, inf_pos_Y=?, inf_pos_combo_1_X=?, inf_pos_combo_1_Y=?, inf_pos_combo_2_X=?, inf_pos_combo_2_Y=?, 
-        inf_neg_X=?, inf_neg_Y=?, inf_neg_combo_1_X=?, inf_neg_combo_1_Y=?, inf_neg_combo_2_X=?, inf_neg_combo_2_Y=?, 
+    ASSERT_EQ(BE_SQLITE_OK, stmt1.Prepare(m_ecdb, R"sqlstr(UPDATE ts_Element SET
+        inf_pos_X=?, inf_pos_Y=?, inf_pos_combo_1_X=?, inf_pos_combo_1_Y=?, inf_pos_combo_2_X=?, inf_pos_combo_2_Y=?,
+        inf_neg_X=?, inf_neg_Y=?, inf_neg_combo_1_X=?, inf_neg_combo_1_Y=?, inf_neg_combo_2_X=?, inf_neg_combo_2_Y=?,
         nan_val_X=?, nan_val_Y=?, nan_val_combo_1_X=?, nan_val_combo_1_Y=?, nan_val_combo_2_X=?, nan_val_combo_2_Y=?)sqlstr"));
     columnNumber = 0;
     for (const auto& columnValue : { pos_inf, neg_inf, nan_val })
@@ -11214,7 +11215,7 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling_Point2D) {
 
             EXPECT_EQ(std::isinf(coordX), isCoordXInf) << "Test failed for column " << columnName;
             EXPECT_EQ(std::isinf(coordY), isCoordYInf) << "Test failed for column " << columnName;
-            
+
             EXPECT_FALSE(std::isnan(coordX)) << "Test failed for column " << columnName;
             EXPECT_FALSE(std::isnan(coordY)) << "Test failed for column " << columnName;
 
@@ -11288,7 +11289,7 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling_Point3D) {
             inf_pos, inf_pos_combo_1, inf_pos_combo_2, inf_pos_combo_3, inf_pos_combo_4, inf_pos_combo_5, inf_pos_combo_6,
             inf_neg, inf_neg_combo_1, inf_neg_combo_2, inf_neg_combo_3, inf_neg_combo_4, inf_neg_combo_5, inf_neg_combo_6,
             nan_val, nan_val_combo_1, nan_val_combo_2, nan_val_combo_3, nan_val_combo_4, nan_val_combo_5, nan_val_combo_6) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?))sqlstr"), ECSqlStatus::Success);
-        
+
         columnNumber = 0;
         for (const auto& columnValue : { pos_inf, neg_inf, nan_val })
             {
@@ -11341,15 +11342,15 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling_Point3D) {
         Utf8String json = rapidJson.Stringify();
         EXPECT_STREQ("{}", json.c_str());
     }
-    
+
     // Simulate existing data with INF and NAN
     Statement stmt1;
-    ASSERT_EQ(BE_SQLITE_OK, stmt1.Prepare(m_ecdb, R"sqlstr(UPDATE ts_Element SET 
+    ASSERT_EQ(BE_SQLITE_OK, stmt1.Prepare(m_ecdb, R"sqlstr(UPDATE ts_Element SET
         inf_pos_X=?, inf_pos_Y=?, inf_pos_Z=?, inf_pos_combo_1_X=?, inf_pos_combo_1_Y=?, inf_pos_combo_1_Z=?, inf_pos_combo_2_X=?, inf_pos_combo_2_Y=?, inf_pos_combo_2_Z=?, inf_pos_combo_3_X=?, inf_pos_combo_3_Y=?, inf_pos_combo_3_Z=?,
         inf_pos_combo_4_X=?, inf_pos_combo_4_Y=?, inf_pos_combo_4_Z=?, inf_pos_combo_5_X=?, inf_pos_combo_5_Y=?, inf_pos_combo_5_Z=?, inf_pos_combo_6_X=?, inf_pos_combo_6_Y=?, inf_pos_combo_6_Z=?,
         inf_neg_X=?, inf_neg_Y=?, inf_neg_Z=?,  inf_neg_combo_1_X=?, inf_neg_combo_1_Y=?, inf_neg_combo_1_Z=?, inf_neg_combo_2_X=?, inf_neg_combo_2_Y=?, inf_neg_combo_2_Z=?, inf_neg_combo_3_X=?, inf_neg_combo_3_Y=?, inf_neg_combo_3_Z=?,
         inf_neg_combo_4_X=?, inf_neg_combo_4_Y=?, inf_neg_combo_4_Z=?, inf_neg_combo_5_X=?, inf_neg_combo_5_Y=?, inf_neg_combo_5_Z=?, inf_neg_combo_6_X=?, inf_neg_combo_6_Y=?, inf_neg_combo_6_Z=?,
-        nan_val_X=?, nan_val_Y=?, nan_val_Z=?, nan_val_combo_1_X=?, nan_val_combo_1_Y=?, nan_val_combo_1_Z=?, nan_val_combo_2_X=?, nan_val_combo_2_Y=?, nan_val_combo_2_Z=?, nan_val_combo_3_X=?, nan_val_combo_3_Y=?, nan_val_combo_3_Z=?, 
+        nan_val_X=?, nan_val_Y=?, nan_val_Z=?, nan_val_combo_1_X=?, nan_val_combo_1_Y=?, nan_val_combo_1_Z=?, nan_val_combo_2_X=?, nan_val_combo_2_Y=?, nan_val_combo_2_Z=?, nan_val_combo_3_X=?, nan_val_combo_3_Y=?, nan_val_combo_3_Z=?,
         nan_val_combo_4_X=?, nan_val_combo_4_Y=?, nan_val_combo_4_Z=?, nan_val_combo_5_X=?, nan_val_combo_5_Y=?, nan_val_combo_5_Z=?, nan_val_combo_6_X=?, nan_val_combo_6_Y=?, nan_val_combo_6_Z=?)sqlstr"));
 
     columnNumber = 0;
@@ -11426,7 +11427,7 @@ TEST_F(ECSqlStatementTestFixture, verify_inf_and_nan_handling_Point3D) {
             EXPECT_EQ(std::isinf(coordX), isCoordXInf) << "Test failed for column " << columnName;
             EXPECT_EQ(std::isinf(coordY), isCoordYInf) << "Test failed for column " << columnName;
             EXPECT_EQ(std::isinf(coordZ), isCoordZInf) << "Test failed for column " << columnName;
-            
+
             EXPECT_FALSE(std::isnan(coordX)) << "Test failed for column " << columnName;
             EXPECT_FALSE(std::isnan(coordY)) << "Test failed for column " << columnName;
             EXPECT_FALSE(std::isnan(coordZ)) << "Test failed for column " << columnName;
