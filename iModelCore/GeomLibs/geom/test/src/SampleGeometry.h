@@ -64,3 +64,4 @@ void SaveEdgeChains (PolyfaceHeaderR facets, bool showNoChainX);
 PolyfaceHeaderPtr DodecahedronMesh();
 PolyfaceHeaderPtr RhombicosidodecahedronMesh();
 PolyfaceHeaderPtr SphereMesh(DPoint3dCR origin, double radius, double radianAngle);
+PolyfaceHeaderPtr DiamondAndCircleParityRegionMesh(double diagonal, double diameter, IFacetOptionsP options = nullptr);
