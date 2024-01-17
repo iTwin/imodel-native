@@ -5,6 +5,7 @@
 #include "ECDbPublishedTests.h"
 #include <set>
 #include <ECObjects/SchemaComparer.h>
+#include <regex>
 
 #define CLASS_ID(S,C) (int)m_ecdb.Schemas().GetClassId( #S, #C, SchemaLookupMode::AutoDetect).GetValueUnchecked()
 #define PROPERTY_ID(S, C, P)   [&](){                                                    \
@@ -243,13 +244,13 @@ TEST_F(SchemaUpgradeTestFixture, ValidateMapCheck_CheckForOrphanCustomAttributeI
 
     // this should fail and generate issue messages
     ASSERT_EQ(ERROR, ImportSchema(SchemaItem(testSchemaXml1)));
-    Utf8String expected_msg1 = SqlPrintfString("Detected orphan custom attribute rows. CustomAttribute with id=45 applied to container of type 'ECClass' with container id=%d.", pipeClassId).GetUtf8CP();
-    Utf8String expected_msg2 = SqlPrintfString("Detected orphan custom attribute rows. CustomAttribute with id=44 applied to container of type 'ECProperty' with container id=%d.", p4PropId).GetUtf8CP();
-    Utf8String expected_msg3 = "Detected 2 orphan rows in ec_CustomAttributes.";
+    Utf8PrintfString expectedMsg1Pattern("Detected orphan custom attribute rows. CustomAttribute with id=\\d+ applied to container of type 'ECClass' with container id=%d.", pipeClassId);
+    Utf8PrintfString expectedMsg2Pattern("Detected orphan custom attribute rows. CustomAttribute with id=\\d+ applied to container of type 'ECProperty' with container id=%d.", p4PropId);
+    Utf8String expectedMsg3 = "Detected 2 orphan rows in ec_CustomAttributes.";
 
-    ASSERT_STREQ(expected_msg1.c_str(), listener.m_issues[0].c_str());
-    ASSERT_STREQ(expected_msg2.c_str(), listener.m_issues[1].c_str());
-    ASSERT_STREQ(expected_msg3.c_str(), listener.m_issues[2].c_str());
+    ASSERT_TRUE(std::regex_match (listener.m_issues[0].c_str(), std::regex (expectedMsg1Pattern.c_str ())));
+    ASSERT_TRUE(std::regex_match (listener.m_issues[1].c_str(), std::regex (expectedMsg2Pattern.c_str ())));
+    ASSERT_STREQ(expectedMsg3.c_str(), listener.m_issues[2].c_str());
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod

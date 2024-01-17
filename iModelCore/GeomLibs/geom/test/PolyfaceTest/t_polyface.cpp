@@ -4057,7 +4057,7 @@ TEST(Polyface, TryGetAtReadIndex)
         FacetFaceData facetData;
         size_t _;
 
-        // compare per-face to full mesh indexing 
+        // compare per-face to full mesh indexing
         auto visitor = PolyfaceVisitor::Attach(*mesh);
         for (visitor->Reset(); visitor->AdvanceToNextFace();)
             {
@@ -4068,7 +4068,7 @@ TEST(Polyface, TryGetAtReadIndex)
 
                 Check::True(mesh->TryGetPointAtReadIndex(globalIndex, xyz));
                 Check::Exact(xyz, visitor->Point()[localIndex]);
-                
+
                 Check::True(mesh->TryGetNormalAtReadIndex(globalIndex, normal));
                 Check::Exact(normal, visitor->Normal()[localIndex]);
 
@@ -4145,7 +4145,7 @@ void testVisitorNumWrap(PolyfaceHeaderCR mesh, uint32_t maxNumWrap)
     auto visitor = PolyfaceVisitor::Attach(mesh);
     for (uint32_t numWrap = 0; numWrap <= maxNumWrap; ++numWrap)
         {
-        visitor->SetNumWrap(numWrap);        
+        visitor->SetNumWrap(numWrap);
         for (visitor->Reset(); visitor->AdvanceToNextFace();)
             {
             uint32_t n = visitor->NumEdgesThisFace();
@@ -4192,7 +4192,7 @@ void testVisitorNumWrap(PolyfaceHeaderCR mesh, uint32_t maxNumWrap)
                     auto a = visitor->IntColor();
                     Check::True(iHead < a.size());
                     Check::True(iTail < a.size());
-                    Check::Size(a[iHead], a[iTail]);                    
+                    Check::Size(a[iHead], a[iTail]);
                     }
                 if (auto a = visitor->GetFaceDataCP())
                     {
@@ -4344,6 +4344,74 @@ TEST (PolyfaceConstruction, DegenerateFacet)
     Check::Size(mesh->Normal().size(), numDegenerateFacets, "installed default normals for degenerate facets");
     }
 
+TEST(Polyface, DegenerateFacet2)
+    {
+    auto mesh = PolyfaceHeader::CreateVariableSizeIndexed();
+    auto xyz = bvector<DPoint3d>{ {0,0}, {1,0}, {0,1}, {2,0}, {0,2}, {3,0} };
+    mesh->Point().CopyVectorFrom(xyz);
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,0 });           // 1 vertex
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,2,0 });         // 2 vertices
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,1,0 });         // 2 duplicate vertices
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { -1,1,0 });        // 2 duplicate vertices different flags
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,1,1,0 });       // 3 duplicate vertices
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,-1,1,0 });      // 3 duplicate vertices different flags
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,1,1,1,0 });     // 4 duplicate vertices
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,1,1,-1,0 });    // 4 duplicate vertices different flags
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,-1,1,-1,0 });   // 4 duplicate vertices different flags
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,2,2,0 });       // degenerate triangle
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 2,1,2,0 });       // degenerate triangle
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 2,2,1,0 });       // degenerate triangle
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,2,-2,0 });      // degenerate triangle different flags
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,1,1,2,0 });     // degenerate quad 3 duplicate vertices
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,2,2,2,0 });     // degenerate quad 3 duplicate vertices
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,2,1,1,0 });     // degenerate quad 3 duplicate vertices
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,1,2,1,0 });     // degenerate quad 3 duplicate vertices
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { -1,1,2,1,0 });    // degenerate quad 3 duplicate vertices different flags
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,1,2,2,0 });     // degenerate quad 2 pairs of duplicate vertices
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,2,1,2,0 });     // degenerate quad 2 pairs of duplicate vertices
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,2,2,1,0 });     // degenerate quad 2 pairs of duplicate vertices
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,2,-2,1,0 });    // degenerate quad 2 pairs of duplicate vertices different flags
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,2,3,2,0 });     // degenerate quad revisited vertex
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,2,1,3,0 });     // degenerate quad revisited vertex
+    auto mesh0 = mesh->CloneWithDegenerateFacetsRemoved();
+    Check::Size(0, mesh0->GetNumFacet(), "all faces are topologically degenerate and removed");
+
+    mesh->PointIndex().clear();
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,2,4,0 });       // geometrically degenerate triangle
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,2,4,6,0 });     // geometrically degenerate quad (no area)
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,2,3,4,0 });     // geometrically degenerate quad (triangle)
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,2,3,5,0 });     // geometrically degenerate quad (triangle)
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,2,3,3,0 });     // geometrically degenerate quad (triangle)
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,2,2,3,0 });     // geometrically degenerate quad (triangle)
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,1,2,3,0 });     // geometrically degenerate quad (triangle)
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,2,3,4,5,3,0 }); // geometrically degenerate self-intersecting face
+    auto mesh1 = mesh->CloneWithDegenerateFacetsRemoved();
+    Check::Size(mesh->GetNumFacet(), mesh1->GetNumFacet(), "no geometrically degenerate face is removed");
+    Check::Size(mesh->PointIndex().size(), mesh1->PointIndex().size(), "no geometrically degenerate face is trimmed");
+
+    mesh->PointIndex().clear();
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,2,3,1,0 });         // triangle with wrap 1
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,2,3,1,2,0 });       // triangle with wrap 2
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 1,2,3,1,2,3,0 });     // triangle with wrap 3
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 2,4,5,3,2,0 });       // quad with wrap 1
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 2,4,5,2,2,0 });       // quad with wrap 1 reduces to tri with wrap 1
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 2,4,5,3,2,4,0 });     // quad with wrap 2
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 2,4,5,3,2,4,5,0 });   // quad with wrap 3
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 2,4,5,3,2,4,5,3,0 }); // quad with wrap 4
+    mesh->PointIndex().insert(mesh->PointIndex().end(), { 2,4,5,3,2,2,0 });     // pentagon with wrap 1 reduces to quad with wrap 1
+    auto mesh2 = mesh->CloneWithDegenerateFacetsRemoved();
+    size_t numVerts, numFacet, numQuad, numTri, numImpTri, numVisEdge, numInvisEdge;
+    mesh2->CollectCounts(numVerts, numFacet, numQuad, numTri, numImpTri, numVisEdge, numInvisEdge);
+    Check::Size(mesh->GetNumFacet(), numFacet, "no wrapped face is removed");
+    Check::Size(3, numTri, "same # triangles");
+    Check::Size(5, numQuad, "same # quads");
+    Check::Size(mesh->PointIndex().size(), 18 + mesh2->PointIndex().size(), "expected number of wrapped edges removed");
+    auto mesh3 = mesh2->CloneWithDegenerateFacetsRemoved();
+    Check::Size(mesh2->PointIndex().size(), 2 + mesh3->PointIndex().size(), "expected number of wrapped edges removed");
+    auto mesh4 = mesh3->CloneWithDegenerateFacetsRemoved();
+    Check::True(mesh3->IsSameStructureAndGeometry(*mesh4, 0.0), "CloneWithDegenerateFacets is eventually idempotent");
+    }
+
 TEST(Polyface, ConnectedComponentsMaxFaces)
     {
     Check::SetMaxVolume(10);
@@ -4353,6 +4421,13 @@ TEST(Polyface, ConnectedComponentsMaxFaces)
     auto sphereMesh = SphereMesh(DPoint3d::FromZero(), 10, 0.15);
     if (Check::True(sphereMesh.IsValid(), "successfully created sphere mesh"))
         data.push_back(sphereMesh);
+
+    // load mesh with hole
+    auto options = IFacetOptions::CreateForCurves();
+    options->SetMaxEdgeLength(0.3);
+    auto regionMesh = DiamondAndCircleParityRegionMesh(20, 4, options.get());
+    if (Check::True(regionMesh.IsValid() && regionMesh->GetNumFacet() > 0, "region successfully triangulated"))
+        data.push_back(regionMesh);
 
     // load DTM test cases (skip mesh12M.imjs, a DTM with 12 million triangles, which takes several hours!)
     bvector<BeFileName> filenames{ BeFileName(L"mesh7K.imjs"), BeFileName(L"mesh10K-2components.imjs") };
@@ -4386,8 +4461,13 @@ TEST(Polyface, ConnectedComponentsMaxFaces)
             auto clone = mesh->CloneWithDegenerateFacetsRemoved();
             Check::True(clone.IsValid(), "successfully removed degenerate facets");
             auto newNumFacets = clone->GetNumFacet();
-            if (Check::True(newNumFacets <= numFacets, "filtering degenerates did not add more facets to mesh"))
-                Check::Print((uint64_t) (numFacets - newNumFacets), "degenFacets");
+            auto numDegenerateFacets = numFacets - newNumFacets;
+            Check::True(numDegenerateFacets >= 0, "filtering degenerates did not add more facets to mesh");
+            if (numDegenerateFacets > 0)
+                {
+                Check::Print((uint64_t) numDegenerateFacets, "degenFacets");
+                Check::PrintIndent(0);
+                }
             numFacets = newNumFacets;
             mesh = clone;
             }
@@ -4411,6 +4491,7 @@ TEST(Polyface, ConnectedComponentsMaxFaces)
                 bvector<bvector<MTGNodeId>> components;
                 pFacets->GetGraphP()->CollectConnectedComponents(components, MTG_EXTERIOR_MASK, maxFacets);
                 Check::Print((uint64_t) components.size(), "components");
+                Check::PrintIndent(1);
                 size_t numMeshFacets = 0;
                 for (auto const& component : components)
                     {
@@ -4427,11 +4508,12 @@ TEST(Polyface, ConnectedComponentsMaxFaces)
                         }
                     }
                 Check::Size(numMeshFacets, numFacets, "total subMesh facet count equals input mesh facet count");
+                Check::PrintIndent(0);
                 }
             pFacets = jmdlMTGFacets_free(pFacets);
-            y += 10 * range.YLength();
+            y += 2 * range.YLength();
             }
-        x += 10 * range.XLength();
+        x += 2 * range.XLength();
         }
     Check::ClearGeometry("Polyface.ConnectedComponentsMaxFaces");
     }

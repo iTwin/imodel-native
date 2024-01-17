@@ -119,10 +119,8 @@ TEST_F(ClassViewsFixture, prepare_view_and_check_validate_sql_and_data) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ClassViewsFixture, linktable_relationship_view_is_not_supported) {
-    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
-    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
-    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
+TEST_F(ClassViewsFixture, linktable_relationship_view) {
+  //This scenario is unsupported. A view for a relationship class requires its endpoint classes to be views as well instead of physical entities
     auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
     <ECSchema
             schemaName="test_schema"
@@ -148,9 +146,15 @@ TEST_F(ClassViewsFixture, linktable_relationship_view_is_not_supported) {
         </ECRelationshipClass>
     </ECSchema>)xml");
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("test.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDbForCurrentTest());
+    TestIssueListener listener;
+    m_ecdb.AddIssueListener(listener);
+    listener.Reset();
     ASSERT_EQ(ERROR, ImportSchema(testSchema));
+    ASSERT_STREQ("Total of 4 view classes were checked and 1 were found to be invalid.", listener.PopLastError().c_str());
+    ASSERT_STREQ("Invalid view class 'test_schema:SchemaClassesView'. View class must be mapped to virtual table and not physical table.", listener.PopLastError().c_str());
 }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -200,7 +204,7 @@ TEST_F(ClassViewsFixture, return_nav_prop_from_view_query) {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassViewsFixture, fail_when_view_reference_itself_directly_or_indirectly) {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("test.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDbForCurrentTest());
     TestIssueListener listener;
     m_ecdb.AddIssueListener(listener);
 
