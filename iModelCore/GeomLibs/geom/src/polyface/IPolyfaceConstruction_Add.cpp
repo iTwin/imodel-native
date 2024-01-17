@@ -4009,6 +4009,8 @@ bool     capped
 
     if (pCurve)
         AddRotationalSweep_singleRegion (*this, *pCurve, origin, axis, totalSweepRadians, capped);
+
+    NeutralizeDisconnects(GetClientMeshPtr()->Point());
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -4044,6 +4046,8 @@ void IPolyfaceConstruction::AddRegion (CurveVectorCR region)
             AddTriangulation (points);
             }
         }
+
+    NeutralizeDisconnects(GetClientMeshPtr()->Point());
     }
 
 
