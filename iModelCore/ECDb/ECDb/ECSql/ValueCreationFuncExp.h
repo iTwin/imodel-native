@@ -18,13 +18,14 @@ struct ValueCreationFuncExp : ValueExp
         size_t m_columnRefExpIndex = UNSET_CHILDINDEX;
         size_t m_classNameExpIndex = UNSET_CHILDINDEX;
 
-    public:
+    protected:
         ValueCreationFuncExp(std::unique_ptr<DerivedPropertyExp> columnRefExp, std::unique_ptr<ClassRefExp> classRefExp, Type type) : ValueExp(type)
             { 
             m_columnRefExpIndex = AddChild(std::move(columnRefExp));
             m_classNameExpIndex = AddChild(std::move(classRefExp));
             }
 
+    public:
         DerivedPropertyExp const* GetColumnRefExp() const { return GetChild<DerivedPropertyExp>(m_columnRefExpIndex); }
         ClassNameExp const* GetClassNameExp() const { return GetChild<ClassNameExp>(m_classNameExpIndex); }
         PropertyNameExp const* GetPropertyNameExp() const
@@ -50,7 +51,7 @@ struct NavValueCreationFuncExp final : ValueCreationFuncExp
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override { return FinalizeParseStatus::Completed; }
         bool _TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const override { parameterExp.SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Long)); return true; }
         void _ToECSql(ECSqlRenderContext&) const override;
-        void _ToJson(BeJsValue, JsonFormat const&) const override {}
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override { return "NavValueCreationFuncExp"; }
 
     public:

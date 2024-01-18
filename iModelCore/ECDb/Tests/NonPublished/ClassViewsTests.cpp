@@ -104,6 +104,14 @@ TEST_F(ClassViewsFixture, prepare_view_and_check_validate_sql_and_data) {
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
         ASSERT_EQ(stmt.GetValueInt(0), 50);
     }
+    if (true) {
+      ECSqlStatement stmt;
+      ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $ FROM ts.SchemaClassesView"));
+      auto nativeSql = "SELECT json(extract_inst([K0],[K1], 0x0)) FROM (SELECT [cd].[ECInstanceId] [K1],[cd].[ECClassId] [K0],[sc].[Name],[cd].[Name] FROM (SELECT [Id] ECInstanceId,38 ECClassId,[Name] FROM [main].[ec_Schema]) [sc] INNER JOIN (SELECT [Id] ECInstanceId,36 ECClassId,[SchemaId],[Name] FROM [main].[ec_Class]) [cd] ON [cd].[SchemaId]=[sc].[ECInstanceId]   GROUP BY [sc].[Name],[cd].[Name]  LIMIT 50) [SchemaClassesView]";
+      ASSERT_STREQ(nativeSql, stmt.GetNativeSql());
+      ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+      ASSERT_STREQ(stmt.GetValueText(0), R"json({"ECInstanceId":"0x1","ECClassId":"0x24","Schema":{"Id":"0x1","RelECClassId":"0x25"},"Name":"ClassHasCurrentTimeStampProperty","Type":3,"Modifier":2,"CustomAttributeContainerType":2})json");
+    }
     if (true){
         // should fail to prepare insert against a view
         ECSqlStatement stmt;
@@ -152,7 +160,7 @@ TEST_F(ClassViewsFixture, linktable_relationship_view) {
     listener.Reset();
     ASSERT_EQ(ERROR, ImportSchema(testSchema));
     ASSERT_STREQ("Total of 4 view classes were checked and 1 were found to be invalid.", listener.PopLastError().c_str());
-    ASSERT_STREQ("Invalid view class 'test_schema:SchemaClassesView'. View class must be mapped to virtual table and not physical table.", listener.PopLastError().c_str());
+    ASSERT_STREQ("Invalid view class 'test_schema:SchemaClassesView'. If view is applied to the ECRelationshipClass, then source and target classes must be view classes as well.", listener.PopLastError().c_str());
 }
 
 /*---------------------------------------------------------------------------------**//**

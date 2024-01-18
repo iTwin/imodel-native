@@ -113,6 +113,16 @@ bool ClassViews::IsValid(ECN::ECClassCR viewClass, ECDbCR conn){
                 IssueType::ECDbIssue, ECDbIssueId::ECDb_0716,"Invalid view class '%s'. View class does not have a classmap", viewClassName);
         return false;
     }
+    if (viewClass.IsRelationshipClass()) {
+        auto relationshipClass = viewClass.GetRelationshipClassCP();
+        if (!IsViewClass(*relationshipClass->GetTarget().GetAbstractConstraint()) || !IsViewClass(*relationshipClass->GetSource().GetAbstractConstraint())) {
+            conn.GetImpl().Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue, ECDbIssueId::ECDb_0722,"Invalid view class '%s'. If view is applied to the ECRelationshipClass, then source and target classes must be view classes as well.", viewClassName);
+            return false;
+        }
+    }
     if (classMap->GetPrimaryTable().GetType() != DbTable::Type::Virtual) {
         conn.GetImpl().Issues().ReportV(
                 IssueSeverity::Error,
