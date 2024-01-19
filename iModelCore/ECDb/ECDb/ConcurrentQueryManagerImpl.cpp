@@ -195,15 +195,6 @@ void CachedConnection::UpdateSqlFunctions(ConnectionAction action) {
                     m_db.AddFunction(*info.GetFunction());
             }
         }
-    } else { // closing
-        for (auto& info : GetPrimaryDbSqlFunctions()) {
-            DbFunction *tmpFunc;
-            if (m_db.TryGetSqlFunction(tmpFunc, info.GetName().c_str(), info.GetNumArgs())) {
-                if (tmpFunc == info.GetFunction() && dynamic_cast<RTreeMatchFunction*>(info.GetFunction()) == nullptr) {
-                    m_db.RemoveFunction(*tmpFunc);
-                }
-            }
-        }
     }
 }
 
