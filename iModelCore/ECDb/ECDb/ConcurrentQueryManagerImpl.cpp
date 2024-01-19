@@ -204,6 +204,9 @@ void CachedConnection::UpdateSqlFunctions(ConnectionAction action) {
 std::vector<CachedConnection::FunctionInfo> CachedConnection::GetPrimaryDbSqlFunctions() const {
     std::vector<FunctionInfo> funcs;
     std::regex funcFilter("^imodel_\\w*", std::regex_constants::ECMAScript | std::regex_constants::icase);
+    if (!m_cache.GetPrimaryDb().IsDbOpen())
+        return funcs;
+
     for(auto func : m_cache.GetPrimaryDb().GetSqlFunctions()) {
         FunctionInfo info(func->GetName(), func->GetNumArgs(), func);
         if (std::regex_match(info.GetName(), funcFilter)) {
