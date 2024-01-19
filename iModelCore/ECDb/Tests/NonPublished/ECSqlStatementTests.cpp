@@ -169,6 +169,16 @@ TEST_F(ECSqlStatementTestFixture, NestedValConstructor) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, RowValConstructor) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("RowValConstructor.ecdb"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,"SELECT * FROM (VALUES(1,2), VALUES(3,4))"));
+    ASSERT_STREQ(stmt.GetNativeSql(), "SELECT [K0],[K1] FROM (SELECT 3 [K0],4 [K1] UNION ALL SELECT 1,2)");
+}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, PopulateECSql_TestDbWithTestData)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));

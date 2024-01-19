@@ -2650,7 +2650,7 @@ BentleyStatus ECSqlParser::ParseValuesCommalist(std::unique_ptr<SelectStatementE
         else
             {
             std::unique_ptr<SelectStatementExp> selectExp = nullptr;
-            selectExp = std::make_unique<SelectStatementExp>(std::move(singleSelect), SelectStatementExp::CompoundOperator::Union, false /*isAll*/, std::move(prevSelectExp));
+            selectExp = std::make_unique<SelectStatementExp>(std::move(singleSelect), SelectStatementExp::CompoundOperator::Union, true /*isAll*/, std::move(prevSelectExp));
             prevSelectExp = std::move(selectExp);
             }
         }
