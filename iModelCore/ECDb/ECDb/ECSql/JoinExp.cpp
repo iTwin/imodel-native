@@ -172,14 +172,6 @@ BentleyStatus UsingRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContex
         }
         return nullptr;
     };
-    auto getClass = [&](ClassNameExp const& classNameExp) {
-        return
-            ctx.Schemas().GetClass(
-            classNameExp.GetSchemaName(),
-            classNameExp.GetClassName(),
-            SchemaLookupMode::AutoDetect,
-            classNameExp.GetTableSpace().empty() ? nullptr : classNameExp.GetTableSpace().c_str());
-    };
     enum class TriState {
         True,
         False,
