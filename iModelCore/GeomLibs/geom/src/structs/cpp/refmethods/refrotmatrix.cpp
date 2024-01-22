@@ -253,20 +253,20 @@ double RotMatrix::ConditionNumber
 
 
 /*-----------------------------------------------------------------*//**
-* @description Tests if a matrix is the identity matrix.
-* @param [in] pMatrix The matrix to test
-* @return true if matrix is approximately an identity.
 * @bsimethod
 +----------------------------------------------------------------------*/
-bool RotMatrix::IsIdentity
-(
-
-) const
+bool RotMatrix::IsIdentity() const
     {
     /* Entries in an identity matrix are strictly in the 0..1 range,*/
     /* hence a simple tolerance near machine precision is warranted.*/
-    double tol = s_mediumRelTol;
+    return IsIdentity(s_mediumRelTol);
+    }
 
+/*-----------------------------------------------------------------*//**
+* @bsimethod
++----------------------------------------------------------------------*/
+bool RotMatrix::IsIdentity(double tol) const
+    {
     if (
            fabs(form3d[0][0] - 1.0)   <= tol
         && fabs(form3d[1][0]      )   <= tol
@@ -286,7 +286,7 @@ bool RotMatrix::IsIdentity
 
 
 /*-----------------------------------------------------------------*//**
-* @description Tests if a matrix has small offdiagonal entries compared to
+* @description Tests if a matrix has small off-diagonal entries compared to
 *                   diagonals.   The specific test condition is that the
 *                   largest off diagonal absolute value is less than a tight tolerance
 *                   fraction times the largest diagonal entry.
@@ -309,10 +309,10 @@ bool RotMatrix::IsDiagonal
 
 
 /*-----------------------------------------------------------------*//**
-* @description Tests if a matrix has (nearly) equal diagaonal entries and
+* @description Tests if a matrix has (nearly) equal diagonal entries and
 *           (nearly) zero off diagonals.  Tests use a tight relative tolerance.
 * @param [in] pMatrix The matrix to test
-* @param [out] maxScale the largest diagaonal entry
+* @param [out] maxScale the largest diagonal entry
 * @return true if matrix is approximately diagonal
 * @bsimethod
 +----------------------------------------------------------------------*/
@@ -643,13 +643,6 @@ bool RotMatrix::IsOrthogonal
 
 
 /*-----------------------------------------------------------------*//**
-* @description Test if this instance matrix has orthonormal columns, i.e. its columns
-* are all perpendicular to one another.
-* @param [out] columns (optional) matrix containing the unit vectors along the columns.
-* @param [out] axisScales (optional) point whose x, y, and z components are the magnitudes of the
-*           original columns.
-* @param *axisRatio <= (optional) smallest axis length divided by largest.
-* @return true if the matrix is orthonormal.
 * @bsimethod
 +----------------------------------------------------------------------*/
 bool RotMatrix::IsOrthonormal
@@ -657,7 +650,20 @@ bool RotMatrix::IsOrthonormal
 RotMatrixR columns,
 DVec3dR    axisScales,
 double     &axisRatio
+) const
+    {
+    return IsOrthonormal(columns, axisScales, axisRatio, s_mediumRelTol);
+    }
 
+/*-----------------------------------------------------------------*//**
+* @bsimethod
++----------------------------------------------------------------------*/
+bool RotMatrix::IsOrthonormal
+(
+RotMatrixR columns,
+DVec3dR    axisScales,
+double     &axisRatio,
+double     tol
 ) const
     {
     DVec3d column[3];
@@ -678,77 +684,74 @@ double     &axisRatio
     else
         axisRatio = 0.0;
 
-    return matrixRTR.IsIdentity ();
-    }
-
-
-/*-----------------------------------------------------------------*//**
-* @description Test if this instance matrix is composed of only rigid rotation and scaling.
-* @param [out] columns (optional) matrix containing the unit vectors along the columns.
-* @param [out] scale largest axis scale factor.  If function value is true,
-*       the min scale is the same.  Use areColumnsOrthonormal to get
-*       separate column scales.
-* @return true if the matrix is orthonormal.
-* @bsimethod
-+----------------------------------------------------------------------*/
-bool RotMatrix::IsRigidScale
-(
-RotMatrixR columns,
-double     &scale
-) const
-    {
-    double almostOne = 1.0 - s_mediumRelTol;
-    DVec3d axisScales;
-    double ratio;
-
-    bool ortho = this->IsOrthonormal (columns, axisScales, ratio);
-
-    scale = axisScales.x;
-    if (axisScales.y > scale)
-        scale = axisScales.y;
-    if (axisScales.z > scale)
-        scale = axisScales.z;
-
-    return ortho && ratio > almostOne && this->Determinant () > 0.0;
+    return matrixRTR.IsIdentity(tol);
     }
 
 /*-----------------------------------------------------------------*//**
-* @description Test if this instance matrix is composed of only rigid rotation and (possibly negative) scaling
-* @param [out] columns (optional) matrix containing the unit vectors along the columns.
-* @param [out] scale largest axis scale factor.  If function value is true,
-*       the min scale is the same.  Use areColumnsOrthonormal to get
-*       separate column scales.
-* @return true if the matrix is orthonormal.
 * @bsimethod
 +----------------------------------------------------------------------*/
-bool RotMatrix::IsRigidSignedScale
+static bool isRigidScale
 (
-RotMatrixR columns,
-double     &scale
-) const
+RotMatrixCR instance,
+RotMatrixR  columns,
+double&     scale,
+bool        allowMirror = false,
+bool        descaleColumns = false,
+double      tol = s_mediumRelTol
+)
     {
-    double almostOne = 1.0 - s_mediumRelTol;
     DVec3d axisScales;
     double ratio;
+    bool isOrtho = instance.IsOrthonormal(columns, axisScales, ratio, tol);
+    bool isMirror = instance.Determinant() < 0.0;
+    
+    double maxScale = axisScales.MaxAbs();
+    double minScale = axisScales.MinAbs();
+    scale = (allowMirror && isMirror) ? -maxScale : maxScale;
+    
+    if (descaleColumns && scale != 0.0)
+        {
+        // overwrite unit columns with descaled columns
+        double s1 = 1.0 / scale;
+        columns.ScaleColumns(instance, s1, s1, s1);
+        }
 
-    bool ortho = this->IsOrthonormal (columns, axisScales, ratio);
-    // Start scale as largest absolute scale ...
-    scale = axisScales.x;
-    if (axisScales.y > scale)
-        scale = axisScales.y;
-    if (axisScales.z > scale)
-        scale = axisScales.z;
-    // adjust for determinant ..
-    if (Determinant () < 0.0)
-        scale = - scale;
-    double s1 = 1.0 / scale;
-    columns.ScaleColumns (*this, s1, s1, s1);
-    return ortho && ratio > almostOne;
+    // Previous uniformity test was too tight for small scales: isUniformScale = minScale/maxScale > 1 - tol.
+    // For example, scales = 0.0001+e, where |e| < 1.0e-14, were classified as nonuniform with default tol.
+    // The current test adds an absolute tol to the previous test's relative tol to relax the test a bit:
+    //  minScale/maxScale > 1 - tol   =>   maxScale - minScale < maxScale * tol < (1 + maxScale) * tol 
+    bool isUniformScale = maxScale - minScale <= (1.0 + maxScale) * tol;
+    
+    return isOrtho && isUniformScale && (allowMirror || !isMirror);
+    }
+
+/*-----------------------------------------------------------------*//**
+* @bsimethod
++----------------------------------------------------------------------*/
+bool RotMatrix::IsRigidScale(RotMatrixR columns, double& scale) const
+    {
+    return isRigidScale(*this, columns, scale);
+    }
+
+/*-----------------------------------------------------------------*//**
+* @bsimethod
++----------------------------------------------------------------------*/
+bool RotMatrix::IsRigidSignedScale(RotMatrixR columns, double& scale) const
+    {
+    return isRigidScale(*this, columns, scale, true, true);
+    }
+
+/*-----------------------------------------------------------------*//**
+* @bsimethod
++----------------------------------------------------------------------*/
+bool RotMatrix::IsRigidSignedScale(RotMatrixR columns, double& scale, double tol) const
+    {
+    return isRigidScale(*this, columns, scale, true, true, tol);
     }
 
 /*-----------------------------------------------------------------*//**
 * @description Tests if this instance matrix has no effects perpendicular to any plane with the given normal.  This
-* will be true if the matrix represents a combination of (a) scaling perpencicular to the normal
+* will be true if the matrix represents a combination of (a) scaling perpendicular to the normal
 * and (b) rotation around the normal.
 
 * @param [in] normal The plane normal
