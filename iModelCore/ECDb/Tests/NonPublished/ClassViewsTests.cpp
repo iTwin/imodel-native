@@ -201,11 +201,11 @@ TEST_F(ClassViewsFixture, return_nav_prop_from_view_query) {
         auto nativeSql = "SELECT [K0],[K1],[K2_0],[K2_1] FROM (SELECT [ECClassDef].[ECInstanceId] [K0],[ECClassDef].[ECClassId] [K1],[ECClassDef].[SchemaId] [K2_0],[ECClassDef].[SchemaRelECClassId] [K2_1] FROM (SELECT [Id] ECInstanceId,36 ECClassId,[SchemaId],(CASE WHEN [SchemaId] IS NULL THEN NULL ELSE 37 END) [SchemaRelECClassId] FROM [main].[ec_Class]) [ECClassDef]) [ClassDefView]";
         ASSERT_STREQ(nativeSql, stmt.GetNativeSql());
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), ECInstanceId(1ull));
-        ASSERT_EQ(stmt.GetValueId<ECN::ECClassId>(1), ECClassId(36ull));
+        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), ECInstanceId(UINT64_C(1)));
+        ASSERT_EQ(stmt.GetValueId<ECN::ECClassId>(1), ECClassId(UINT64_C(36)));
         ECN::ECClassId relId;
-        ASSERT_EQ(stmt.GetValueNavigation<ECInstanceId>(2, &relId), ECInstanceId(1ull));
-        ASSERT_EQ(relId, ECClassId(37ull));
+        ASSERT_EQ(stmt.GetValueNavigation<ECInstanceId>(2, &relId), ECInstanceId(UINT64_C(1)));
+        ASSERT_EQ(relId, ECClassId(UINT64_C(37)));
     }
 }
 /*---------------------------------------------------------------------------------**//**

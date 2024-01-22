@@ -104,8 +104,8 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue)
 
         ECClassId relClassId;
         ECInstanceId instId = stmt.GetValueNavigation<ECInstanceId>(0, &relClassId);
-        ASSERT_EQ(ECClassId(2ull), relClassId);
-        ASSERT_EQ(ECInstanceId(1ull), instId);
+        ASSERT_EQ(ECClassId(UINT64_C(2)), relClassId);
+        ASSERT_EQ(ECInstanceId(UINT64_C(1)), instId);
         auto& colInfo = stmt.GetColumnInfo(0);
         ASSERT_TRUE(colInfo.IsValid());
         ASSERT_TRUE(colInfo.IsGeneratedProperty());
@@ -126,7 +126,7 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue)
         ECClassId relClassId;
         ECInstanceId instId = stmt.GetValueNavigation<ECInstanceId>(0, &relClassId);
         ASSERT_EQ(m_bookHasAuthorClassId, relClassId);
-        ASSERT_EQ(ECInstanceId(1ull), instId);
+        ASSERT_EQ(ECInstanceId(UINT64_C(1)), instId);
         auto& colInfo = stmt.GetColumnInfo(0);
         ASSERT_TRUE(colInfo.IsValid());
         ASSERT_TRUE(colInfo.IsGeneratedProperty());
@@ -190,8 +190,8 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue)
 
         ECClassId relClassId;
         ECInstanceId instId = stmt.GetValueNavigation<ECInstanceId>(0, &relClassId);
-        ASSERT_EQ(ECClassId(2ull), relClassId);
-        ASSERT_EQ(ECInstanceId(1ull), instId);
+        ASSERT_EQ(ECClassId(UINT64_C(2)), relClassId);
+        ASSERT_EQ(ECInstanceId(UINT64_C(1)), instId);
         auto& firstColInfo = stmt.GetColumnInfo(0);
         ASSERT_TRUE(firstColInfo.IsValid());
         ASSERT_TRUE(firstColInfo.IsGeneratedProperty());
@@ -203,8 +203,8 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue)
         ASSERT_TRUE(property->GetIsNavigation());
 
         instId = stmt.GetValueNavigation<ECInstanceId>(1, &relClassId);
-        ASSERT_EQ(ECClassId(4ull), relClassId);
-        ASSERT_EQ(ECInstanceId(3ull), instId);
+        ASSERT_EQ(ECClassId(UINT64_C(4)), relClassId);
+        ASSERT_EQ(ECInstanceId(UINT64_C(3)), instId);
         auto& secondColInfo = stmt.GetColumnInfo(1);
         ASSERT_TRUE(secondColInfo.IsValid());
         ASSERT_TRUE(secondColInfo.IsGeneratedProperty());
@@ -289,8 +289,8 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue)
         ECClassId relClassId;
         ECInstanceId instId = stmt.GetValueId<ECInstanceId>(0);
         instId = stmt.GetValueNavigation<ECInstanceId>(0, &relClassId);
-        ASSERT_EQ(ECInstanceId(2ull), relClassId);
-        ASSERT_EQ(ECInstanceId(1ull), instId);
+        ASSERT_EQ(ECInstanceId(UINT64_C(2)), relClassId);
+        ASSERT_EQ(ECInstanceId(UINT64_C(1)), instId);
         auto& firstColInfo = stmt.GetColumnInfo(0);
         ASSERT_TRUE(firstColInfo.IsValid());
         ASSERT_TRUE(firstColInfo.IsGeneratedProperty());
@@ -302,7 +302,7 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue)
         ASSERT_TRUE(property->GetIsNavigation());
 
         instId = stmt.GetValueId<ECInstanceId>(1);
-        ASSERT_EQ(ECInstanceId(1ull), instId);
+        ASSERT_EQ(ECInstanceId(UINT64_C(1)), instId);
         auto& secondColInfo = stmt.GetColumnInfo(1);
         ASSERT_TRUE(secondColInfo.IsValid());
         ASSERT_TRUE(secondColInfo.IsGeneratedProperty());
@@ -314,7 +314,7 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue)
         ASSERT_TRUE(property->GetIsPrimitive());
 
         instId = stmt.GetValueId<ECInstanceId>(2);
-        ASSERT_EQ(ECInstanceId(2ull), instId);
+        ASSERT_EQ(ECInstanceId(UINT64_C(2)), instId);
         auto& thirdColInfo = stmt.GetColumnInfo(2);
         ASSERT_TRUE(thirdColInfo.IsValid());
         ASSERT_TRUE(thirdColInfo.IsGeneratedProperty());
@@ -335,7 +335,7 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue)
         ECClassId relClassId;
         ECInstanceId instId = stmt.GetValueNavigation<ECInstanceId>(0, &relClassId);
         ASSERT_EQ(ECClassId(2ull), relClassId);
-        ASSERT_EQ(ECInstanceId(1ull), instId);
+        ASSERT_EQ(ECInstanceId(UINT64_C(1)), instId);
         auto& colInfo = stmt.GetColumnInfo(0);
         ASSERT_TRUE(colInfo.IsValid());
         ASSERT_TRUE(colInfo.IsGeneratedProperty());
