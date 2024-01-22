@@ -156,7 +156,7 @@ BsplineParam*   pParams         // <=> potentially modified only if poles given
     if (badFullKnots)
         {
         /* the whole knot vector is bad; replace it with uniform knots */
-        return bspknot_computeKnotVector (pKnots, pParams, NULL);
+        bspknot_computeKnotVector (pKnots, pParams, NULL);
         }
     else
         {
