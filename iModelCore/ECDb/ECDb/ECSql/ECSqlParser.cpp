@@ -4240,7 +4240,7 @@ BentleyStatus ECSqlParser::ParseNavValueCreationFuncExp(std::unique_ptr<NavValue
 
     propNameExp->SetTypeInfo(ECSqlTypeInfo(ECSqlTypeInfo::Kind::Navigation));
     Utf8CP alias = parseNode->getParent()->getChild(1)->getTokenValue().empty() ? nullptr : parseNode->getParent()->getChild(1)->getTokenValue().c_str();
-    derivedPropertyExp = std::move(std::make_unique<DerivedPropertyExp>(std::move(propNameExp), alias));
+    derivedPropertyExp = std::make_unique<DerivedPropertyExp>(std::move(propNameExp), alias);
 
     std::unique_ptr<ValueExp> idArgExp = nullptr;
     if (SUCCESS != ParseFunctionArg(idArgExp, *parseNode->getChild(4)))
