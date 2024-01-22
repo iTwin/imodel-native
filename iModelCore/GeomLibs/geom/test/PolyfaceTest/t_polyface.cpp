@@ -4517,3 +4517,89 @@ TEST(Polyface, ConnectedComponentsMaxFaces)
         }
     Check::ClearGeometry("Polyface.ConnectedComponentsMaxFaces");
     }
+
+TEST (PolyfaceQuery, FacetOrientation)
+    {
+    // unpeeled octahedron ("hat") with ccw faces, inferred normals pointing into upper half-space
+    auto meshSurf = PolyfaceHeader::CreateVariableSizeIndexed();
+    auto xyz = bvector<DPoint3d>{ {0,0,2}, {1,0,0}, {0,1,0}, {-1,0,0}, {0,-1,0}, {1,1,1}, {-1,1,1}, {-1,-1,1}, {1,-1,1} };
+    for (size_t i = 0; i < xyz.size(); i++)
+        meshSurf->Point().push_back(xyz[i]);
+    meshSurf->PointIndex().insert(meshSurf->PointIndex().end(), { 1,2,3,0 });
+    meshSurf->PointIndex().insert(meshSurf->PointIndex().end(), { 1,3,4,0 });
+    meshSurf->PointIndex().insert(meshSurf->PointIndex().end(), { 1,4,5,0 });
+    meshSurf->PointIndex().insert(meshSurf->PointIndex().end(), { 1,5,2,0 });
+    meshSurf->PointIndex().insert(meshSurf->PointIndex().end(), { 2,6,3,0 });
+    meshSurf->PointIndex().insert(meshSurf->PointIndex().end(), { 3,7,4,0 });
+    meshSurf->PointIndex().insert(meshSurf->PointIndex().end(), { 4,8,5,0 });
+    meshSurf->PointIndex().insert(meshSurf->PointIndex().end(), { 5,9,2,0 });
+    // octahedron with ccw faces, inferred normals pointing out
+    auto meshSolid = PolyfaceHeader::CreateVariableSizeIndexed();
+    xyz = bvector<DPoint3d>{ {0,0,1}, {1,0,0}, {0,1,0}, {-1,0,0}, {0,-1,0}, {0,0,-1} };
+    for (size_t i = 0; i < xyz.size(); i++)
+        meshSolid->Point().push_back(xyz[i]);
+    meshSolid->PointIndex().insert(meshSolid->PointIndex().end(), { 1,2,3,0 });
+    meshSolid->PointIndex().insert(meshSolid->PointIndex().end(), { 1,3,4,0 });
+    meshSolid->PointIndex().insert(meshSolid->PointIndex().end(), { 1,4,5,0 });
+    meshSolid->PointIndex().insert(meshSolid->PointIndex().end(), { 1,5,2,0 });
+    meshSolid->PointIndex().insert(meshSolid->PointIndex().end(), { 2,6,3,0 });
+    meshSolid->PointIndex().insert(meshSolid->PointIndex().end(), { 3,6,4,0 });
+    meshSolid->PointIndex().insert(meshSolid->PointIndex().end(), { 4,6,5,0 });
+    meshSolid->PointIndex().insert(meshSolid->PointIndex().end(), { 5,6,2,0 });
+    auto getFaceCentroidNormal = [](PolyfaceQueryCR mesh, DPoint3dR centroid, DVec3dR normal, size_t iFacet = 0) -> bool
+        {
+        double area;
+        auto visitor = PolyfaceVisitor::Attach(mesh, false);
+        for (size_t i = 0; i < iFacet; ++i)
+            visitor->AdvanceToNextFace();   // advance to facet i-1
+        return visitor->AdvanceToNextFace() && visitor->TryGetFacetCentroidNormalAndArea(centroid, normal, area);
+        };
+    for (auto mesh : {meshSurf, meshSolid})
+        {
+        auto reset0 = Check::GetTransform();
+        Check::SaveTransformed(mesh);
+        Check::True(mesh->IsFacetOrientationConsistent(), "facet orientation is consistent for surface");
+        for (size_t readIndex : {0*4+1, 4*4+0, 7*4+2})
+            {
+            // reverse the face loop index pair starting at readIndex
+            auto perturbed = mesh->Clone();
+            size_t numFacet = perturbed->GetNumFacet();
+            size_t iFacet = readIndex / 4;
+            Check::True(iFacet < numFacet, "valid face loop to reverse");
+            size_t iOtherFacet = (iFacet + 1) % numFacet;
+            size_t iLoop = readIndex % 4;
+            size_t iLoopSwap = (iLoop + 1) % 3;
+            std::swap(perturbed->PointIndex()[4 * iFacet + iLoop], perturbed->PointIndex()[4 * iFacet + iLoopSwap]);
+            
+            Check::Shift(0, 3, 0);
+            Check::SaveTransformed(perturbed);
+            auto reset1 = Check::GetTransform();
+            if (Check::False(perturbed->IsFacetOrientationConsistent(), "facet orientation is inconsistent"))
+                {
+                // check reference direction for surfaces (ignored for solid)
+                for (auto dir : {DVec3d::UnitZ(), DVec3d::From(0, 0, -1)})
+                    {
+                    auto corrected = perturbed->CloneWithConsistentlyOrientedFacets(&dir);
+                    Check::Shift(0, 0, 3);
+                    Check::SaveTransformed(corrected);
+                    Check::True(corrected->IsFacetOrientationConsistent(), "corrected facet orientation is consistent");
+                    // spot-check normal orientation of two facets
+                    DPoint3d centroid;
+                    DVec3d normal;
+                    for (auto iFacet0 : { iFacet, iOtherFacet})
+                        {
+                        Check::True(getFaceCentroidNormal(*corrected, centroid, normal, iFacet0), "computed face centroid and normal");
+                        if (corrected->IsClosedByEdgePairing())
+                            Check::True(normal.DotProduct(centroid) > 0, "solid facets oriented outward");
+                        else
+                            Check::True(normal.DotProduct(dir) > 0, "facets oriented per reference direction");
+                        }
+                    }
+                }
+            Check::SetTransform(reset1);
+            }
+        Check::SetTransform(reset0);
+        Check::Shift(3, 0, 0);
+        }
+    Check::ClearGeometry("PolyfaceQuery.FacetOrientation");
+    }
