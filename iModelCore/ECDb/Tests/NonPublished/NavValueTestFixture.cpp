@@ -334,7 +334,7 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue)
 
         ECClassId relClassId;
         ECInstanceId instId = stmt.GetValueNavigation<ECInstanceId>(0, &relClassId);
-        ASSERT_EQ(ECClassId(2ull), relClassId);
+        ASSERT_EQ(ECClassId(UINT64_C(2)), relClassId);
         ASSERT_EQ(ECInstanceId(UINT64_C(1)), instId);
         auto& colInfo = stmt.GetColumnInfo(0);
         ASSERT_TRUE(colInfo.IsValid());

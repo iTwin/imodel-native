@@ -745,7 +745,7 @@ TEST_F(InstanceReaderFixture, InstanceQueriesAfterUpdate)
 
     m_ecdb.SaveChanges();
 
-    auto classId = SqlPrintfString(m_ecdb.Schemas().GetClassId("ts", "TestClass").ToHexStr().c_str());
+    auto classId = SqlPrintfString(m_ecdb.Schemas().GetClassId("ts", "TestClass").ToHexStr().c_str()).GetUtf8CP();
 
     Utf8PrintfString expectedStatement ("{\"ECInstanceId\":\"0x1\",\"ECClassId\":\"%s\",\"StructProp\":{\"DoubleProp\":15.25,\"StringProp\":\"InitialValue\"},\"PrimitiveProp\":15.65}", classId);
     // Instance queries should return initial values
