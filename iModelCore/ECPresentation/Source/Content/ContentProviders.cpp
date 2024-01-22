@@ -205,7 +205,7 @@ static void MergePrimaryKeys(bvector<ContentSetItemPtr> const& targetSetItems, b
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void MergeField(RapidJsonValueR targetValue, RapidJsonValueR targetDisplayValue,
+static void MergeFieldValue(RapidJsonValueR targetValue, RapidJsonValueR targetDisplayValue,
     rapidjson::Document::AllocatorType& targetDisplayValueAllocator)
     {
     targetValue.SetNull();
@@ -216,13 +216,13 @@ static void MergeField(RapidJsonValueR targetValue, RapidJsonValueR targetDispla
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool MergeContent(RapidJsonValueR targetValues, RapidJsonValueR targetDisplayValues,
+static bool TryMergeContent(RapidJsonValueR targetValues, RapidJsonValueR targetDisplayValues,
     rapidjson::Document::AllocatorType& targetDisplayValuesAllocator, RapidJsonValueCR source)
     {
     if (targetValues != source)
         {
         // values are different - set the "varies" string
-        MergeField(targetValues, targetDisplayValues, targetDisplayValuesAllocator);
+        MergeFieldValue(targetValues, targetDisplayValues, targetDisplayValuesAllocator);
         return true;
         }
     return false;
@@ -231,9 +231,9 @@ static bool MergeContent(RapidJsonValueR targetValues, RapidJsonValueR targetDis
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool MergeContent(rapidjson::Document& targetValues, rapidjson::Document& targetDisplayValues, RapidJsonValueCR source)
+static bool TryMergeContent(rapidjson::Document& targetValues, rapidjson::Document& targetDisplayValues, RapidJsonValueCR source)
     {
-    return MergeContent(targetValues, targetDisplayValues, targetDisplayValues.GetAllocator(), source);
+    return TryMergeContent(targetValues, targetDisplayValues, targetDisplayValues.GetAllocator(), source);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -252,30 +252,7 @@ static bool MergeContentSetItems(bvector<ContentSetItemPtr> const& targetSetItem
         RapidJsonValueR lhsValues = targetSetItems[i]->GetValues();
         RapidJsonValueCR rhsValues = sourceSetItems[i]->GetValues();
         if (lhsValues != rhsValues)
-            {
-            if (1 < targetSetItems.size())
-                {
-                // values are only merged if there is one item in contentSetItems vector
-                return true;
-                }
-
-            if (!lhsValues.IsObject() || !rhsValues.IsObject())
-                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Both LHS and RHS should be JSON objects but are not");
-
-            RapidJsonDocumentR lhsDisplayValues = targetSetItems[i]->GetDisplayValues();
-            for (rapidjson::Value::ConstMemberIterator iterator = lhsValues.MemberBegin(); iterator != lhsValues.MemberEnd(); ++iterator)
-                {
-                Utf8CP fieldName = iterator->name.GetString();
-                if (!lhsValues.HasMember(fieldName) || !rhsValues.HasMember(fieldName))
-                    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, Utf8PrintfString("Either LHS or RHS doesn't have a value for: '%s'", fieldName));
-
-                if (!targetSetItems[i]->IsMerged(fieldName) && lhsValues[fieldName] != rhsValues[fieldName])
-                    {
-                    targetSetItems[i]->GetMergedFieldNames().push_back(fieldName);
-                    MergeField(lhsValues[fieldName], lhsDisplayValues[fieldName], lhsDisplayValues.GetAllocator());
-                    }
-                }
-            }
+            return true;
         }
 
     MergePrimaryKeys(targetSetItems, sourceSetItems);
@@ -349,14 +326,12 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
                     contentDisplayValues = std::move(instanceDisplayValues);
                     firstPass = false;
                     }
-                else if (MergeContent(contentValues, contentDisplayValues, instanceValues))
+                else if (TryMergeContent(contentValues, contentDisplayValues, instanceValues))
                     {
                     // if detected different values during merge, stop
                     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Detected different composite content values.");
-                    if (item.GetValues().HasMember(fieldName))
-                        item.GetValues()[fieldName].CopyFrom(contentValues, item.GetValues().GetAllocator());
-                    if (item.GetDisplayValues().HasMember(fieldName))
-                        item.GetDisplayValues()[fieldName].CopyFrom(contentDisplayValues, item.GetDisplayValues().GetAllocator());
+                    ContentValueHelpers::SetRapidJsonValue(item.GetValues(), fieldName, contentValues, item.GetValues().GetAllocator());
+                    ContentValueHelpers::SetRapidJsonValue(item.GetDisplayValues(), fieldName, contentDisplayValues, item.GetDisplayValues().GetAllocator());
                     item.GetMergedFieldNames().push_back(fieldName);
                     break;
                     }
@@ -385,7 +360,7 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
             {
             if (mergeAllField)
                 {
-                MergeField(contentValues, contentDisplayValues, contentDisplayValues.GetAllocator());
+                MergeFieldValue(contentValues, contentDisplayValues, contentDisplayValues.GetAllocator());
                 DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Merged the whole related content field value.");
                 }
             else
@@ -407,19 +382,19 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
         if (item.GetDisplayValues().HasMember(fieldName) || item.GetValues().HasMember(fieldName))
             {
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Successfully loaded nested content.");
-            if (item.GetMergedFieldNames().end() == std::find(item.GetMergedFieldNames().begin(), item.GetMergedFieldNames().end(), fieldName))
+            if (!ContainerHelpers::Contains(item.GetMergedFieldNames(), [fieldName](Utf8StringCR mergedFieldName){return 0 == strcmp(mergedFieldName.c_str(), fieldName);}))
                 {
                 // note: only need to do this if the field is not yet set as merged
                 RapidJsonValueR values = item.GetValues()[fieldName];
                 RapidJsonValueR displayValues = item.GetDisplayValues()[fieldName];
-                bool areValuesDifferent = MergeContent(values, displayValues, item.GetDisplayValues().GetAllocator(), contentValues);
+                bool areValuesDifferent = TryMergeContent(values, displayValues, item.GetDisplayValues().GetAllocator(), contentValues);
                 if (areValuesDifferent)
                     item.GetMergedFieldNames().push_back(fieldName);
                 }
             }
         else
             {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Nested content is not loaded - add NULL values");
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Nested content is not loaded - just add loaded values");
             item.GetDisplayValues().AddMember(rapidjson::Value(fieldName, item.GetDisplayValues().GetAllocator()),
                 rapidjson::Value(contentDisplayValues, item.GetDisplayValues().GetAllocator()), item.GetDisplayValues().GetAllocator());
             item.GetValues().AddMember(rapidjson::Value(fieldName, item.GetValues().GetAllocator()),
@@ -543,7 +518,13 @@ void ContentProvider::LoadNestedContent(ContentSetItemR item, bvector<ContentDes
             {
             auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Handle nested content field `%s`", field->GetUniqueName().c_str()));
             ContentDescriptor::RelatedContentField const* relatedContentField = field->AsNestedContentField()->AsRelatedContentField();
-            if (relatedContentField && item.GetClass() && !item.GetClass()->Is(relatedContentField->GetPathFromSelectToContentClass().front().GetSourceClass()))
+            if (relatedContentField 
+                && item.GetClass() 
+                && (
+                    !item.GetClass()->Is(relatedContentField->GetPathFromSelectToContentClass().front().GetSourceClass())
+                    || !ContainerHelpers::Contains(relatedContentField->GetActualSourceClasses(), item.GetClass())
+                    )
+                )
                 {
                 // do not attempt to load related content for related content fields that don't match current item
                 DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("The field targets class `%s` and content item targets `%s` - skip.",

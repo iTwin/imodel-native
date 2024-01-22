@@ -2400,14 +2400,17 @@ GEOMDLLIMPEXP PolyfaceHeaderPtr CloneWithTranslatedFacets (bvector<size_t> &acti
 GEOMDLLIMPEXP PolyfaceHeaderPtr CloneWithIndexedDuplicatesRemoved () const;
 
 //! Clone the mesh with degenerate facets removed.
-//! Currently only topologically degenerate triangular and quadrilateral facets are filtered.
+//! <ul>
+//! <li> Topologically degenerate triangular and quadrilateral facets are removed.
+//! <li> Face loops are trimmed to remove wrapped vertices.
+//! </ul>
 GEOMDLLIMPEXP PolyfaceHeaderPtr CloneWithDegenerateFacetsRemoved() const;
 
 //! Clone the mesh with facets in random order.
 GEOMDLLIMPEXP PolyfaceHeaderPtr CloneWithFacetsInRandomOrder() const;
 
 //! Search for adjacent, coplanar facets.
-//! Merge to get maximual planar facets.
+//! Merge to get maximal planar facets.
 //! Optionally remove vertices that have only two incident and colinear edges.
 GEOMDLLIMPEXP PolyfaceHeaderPtr CloneWithMaximalPlanarFacets
 (
