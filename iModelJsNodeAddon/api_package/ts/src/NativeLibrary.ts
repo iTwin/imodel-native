@@ -1263,7 +1263,7 @@ export declare namespace IModelJsNative {
         serializedFormat: string;
       }>;
     };
-    isChangeTrackingEnabled: boolean;
+    updateCallback: (updateInfo: any) => void;
     cacheConfig: ECPresentationHierarchyCacheConfig;
     contentCacheSize?: number;
     workerConnectionCacheSize?: number;
@@ -1284,7 +1284,6 @@ export declare namespace IModelJsNative {
     public removeRuleset(rulesetId: string, hash: string): ECPresentationManagerResponse<boolean>;
     public clearRulesets(): ECPresentationManagerResponse<void>;
     public handleRequest(db: DgnDb, options: string): { result: Promise<ECPresentationManagerResponse<Buffer>>, cancel: () => void };
-    public getUpdateInfo(): ECPresentationManagerResponse<any>;
     public dispose(): void;
   }
 
