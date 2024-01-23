@@ -745,9 +745,9 @@ TEST_F(InstanceReaderFixture, InstanceQueriesAfterUpdate)
 
     m_ecdb.SaveChanges();
 
-    auto classId = SqlPrintfString(m_ecdb.Schemas().GetClassId("ts", "TestClass").ToHexStr().c_str()).GetUtf8CP();
+    Utf8String classId = m_ecdb.Schemas().GetClassId("ts", "TestClass").ToHexStr();
 
-    Utf8PrintfString expectedStatement ("{\"ECInstanceId\":\"0x1\",\"ECClassId\":\"%s\",\"StructProp\":{\"DoubleProp\":15.25,\"StringProp\":\"InitialValue\"},\"PrimitiveProp\":15.65}", classId);
+    Utf8PrintfString expectedStatement ("{\"ECInstanceId\":\"0x1\",\"ECClassId\":\"%s\",\"StructProp\":{\"DoubleProp\":15.25,\"StringProp\":\"InitialValue\"},\"PrimitiveProp\":15.65}", classId.c_str());
     // Instance queries should return initial values
     ECSqlStatement instanceQueryStatement;
     ASSERT_EQ(ECSqlStatus::Success, instanceQueryStatement.Prepare(m_ecdb, "select $ from ts.TestClass"));
@@ -762,12 +762,13 @@ TEST_F(InstanceReaderFixture, InstanceQueriesAfterUpdate)
     updateStatement.Finalize();
     m_ecdb.SaveChanges();
 
-    expectedStatement = Utf8PrintfString("{\"ECInstanceId\":\"0x1\",\"ECClassId\":\"%s\",\"StructProp\":{\"DoubleProp\":25.15,\"StringProp\":\"UpdatedValue\"},\"PrimitiveProp\":65.15}", classId);
+    expectedStatement = Utf8PrintfString("{\"ECInstanceId\":\"0x1\",\"ECClassId\":\"%s\",\"StructProp\":{\"DoubleProp\":25.15,\"StringProp\":\"UpdatedValue\"},\"PrimitiveProp\":65.15}", classId.c_str());
     // Instance queries should return updated values
     ASSERT_EQ(ECSqlStatus::Success, instanceQueryStatement.Prepare(m_ecdb, "select $ from ts.TestClass"));
     ASSERT_EQ(BE_SQLITE_ROW, instanceQueryStatement.Step());
     EXPECT_STREQ(instanceQueryStatement.GetValueText(0), expectedStatement.c_str());
     instanceQueryStatement.Finalize();
+    // 0\xA6\xD9\x98\xAD\x1
     }
 
 //---------------------------------------------------------------------------------------

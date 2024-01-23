@@ -321,7 +321,7 @@ TEST_F(SchemaSyncTestFixture, PushSchemaWithoutInitializingSchemaChannel)
             ASSERT_EQ(BE_SQLITE_OK, b1->AbandonChanges());
             CheckHashes(*b1);
             //use specific hash below, because schema sync db is not using a seed but creating the db with the latest profile.
-            schemaSyncDb.WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, "ec57bb141e6a79b28eff2390f2c70404d7ddb90a0e30f3eade0abb2f04c92714", "c887d7114b3378d804bc3bfb1debdec859c269fda727f94db9289ba8faa6f015", "c4ca1cdd07de041e71f3e8d4b1942d29da89653c85276025d786688b6f576443"); });
+            schemaSyncDb.WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, "ce8e97f8d0fd9527da4e752164197fa0d6909db8e0513e41e5f343c7ba2f706c", "e59f21be420a4dfb1795db018ff17e5265dc15f5abe541df64c1752979dc3e68", "c4ca1cdd07de041e71f3e8d4b1942d29da89653c85276025d786688b6f576443"); });
             }
     );
     }
