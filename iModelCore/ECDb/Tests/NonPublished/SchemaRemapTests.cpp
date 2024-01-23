@@ -7073,8 +7073,9 @@ TEST_F(SchemaRemapTestFixture, TooManyColumnsInResultSet)
     ASSERT_EQ(10, fooClass->GetPropertyCount(true /*includeBaseProperties*/));
     }
 
+    {
     Utf8String innerXml = "";
-    for (size_t i = 1; i <= 1997; i++) 
+    for (size_t i = 1; i <= 1988; i++) 
         {
         Utf8PrintfString propName("PropElement%zu", i);
         innerXml += "<ECProperty propertyName=\"" + propName + "\" typeName=\"string\" />\n";
@@ -7114,7 +7115,11 @@ TEST_F(SchemaRemapTestFixture, TooManyColumnsInResultSet)
         )xml", innerXml.c_str());
 
     SchemaItem updatedSchema = SchemaItem(updatedSchemaXml);
-    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(updatedSchema)) << "Import schema should fail since SELECT * on TestSchema.Foo class would return more than 2009 columns including ECInstanceId and ECClassId";
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(updatedSchema)) << "Importing Foo's schema is safe. It has 1988 properties, 10 from its base class, and 2 system properties. That's a total of 2000 mapped columns, which is under the 2000 limit.";
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM TestSchema.Foo"));
+    }
 
     {
     ECClassCP kooClass = m_ecdb.Schemas().GetClass("TestSchema", "Koo");
@@ -7123,13 +7128,56 @@ TEST_F(SchemaRemapTestFixture, TooManyColumnsInResultSet)
 
     ECClassCP fooClass = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
     ASSERT_NE(fooClass, nullptr);
-    ASSERT_EQ(1997, fooClass->GetPropertyCount(false /*includeBaseProperties*/));
-    ASSERT_EQ(2007, fooClass->GetPropertyCount(true /*includeBaseProperties*/));
+    ASSERT_EQ(1988, fooClass->GetPropertyCount(false /*includeBaseProperties*/));
+    ASSERT_EQ(1998, fooClass->GetPropertyCount(true /*includeBaseProperties*/));
     }
 
     {
+    Utf8String innerXml = "";
+    for (size_t i = 1; i <= 1989; i++) 
+        {
+        Utf8PrintfString propName("PropElement%zu", i);
+        innerXml += "<ECProperty propertyName=\"" + propName + "\" typeName=\"string\" />\n";
+        }
+
+    Utf8PrintfString updatedSchemaXml = Utf8PrintfString(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Koo">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                  <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+              </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName='L1' typeName='long' />
+            <ECProperty propertyName='L2' typeName='long' />
+            <ECProperty propertyName='L3' typeName='long' />
+            <ECProperty propertyName='L4' typeName='long' />
+            <ECProperty propertyName='L5' typeName='long' />
+            <ECProperty propertyName='S1' typeName='string' />
+            <ECProperty propertyName='S2' typeName='string' />
+            <ECProperty propertyName='S3' typeName='string' />
+            <ECProperty propertyName='S4' typeName='string' />
+            <ECProperty propertyName='S5' typeName='string' />
+          </ECEntityClass>
+          <ECEntityClass typeName="Foo">
+            <BaseClass>Koo</BaseClass>
+            %s
+          </ECEntityClass>
+        </ECSchema>
+        )xml", innerXml.c_str());
+
+    SchemaItem updatedSchema = SchemaItem(updatedSchemaXml);
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(updatedSchema)) << "Schema import should fail because it exceeds the maximum column limit. With system properties included, it has 2001 mapped columns, one more than the allowed limit of 2000.";
+
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM TestSchema.Foo"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM TestSchema.Foo")) << "Query should successfully parse since schema update failed.";
     }
     }
 END_ECDBUNITTESTS_NAMESPACE

@@ -749,6 +749,14 @@ BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
         return SUCCESS;
         }
 
+    if (classMap.GetPropertyMaps().Size() > GetECDb().GetLimit(DbLimits::Column))
+        {
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0158,
+                "The '%s' class has %d property mappings, exceeding the limit set by SQLITE_MAX_COLUMN, which is currently %d. This limit also applies to the results of a SELECT statement, so a 'SELECT *' query on this class would fail.",
+                classMap.GetClass().GetFullName(), classMap.GetPropertyMaps().Size(), GetECDb().GetLimit(DbLimits::Column));
+        return ERROR;
+        }
+
     int dataPropertyMapCount = 0;
     int systemPropertyMapCount = 0;
     bset<Utf8String, CompareIUtf8Ascii> mappedDataPropertyNames;
