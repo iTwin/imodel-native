@@ -227,4 +227,20 @@ PolyfaceHeaderPtr PolyfaceHeader::CloneWithFacetsInRandomOrder() const
     return shuffledMesh;
     }
 
+PolyfaceHeaderPtr PolyfaceHeader::CloneWithConsistentlyOrientedFacets(DVec3dCP surfaceNormal) const
+    {
+    auto newMesh = PolyfaceHeader::CreateVariableSizeIndexed();
+    
+    // use tight tolerances: we assume the input mesh already shares vertices 
+    MTGFacets* facets = jmdlMTGFacets_grab();
+    bvector<MTGNodeId> meshVertexToNodeId;  // needed to preserve visible edges!
+    if (PolyfaceToMTG(facets, &meshVertexToNodeId, nullptr, *this, true, Angle::SmallAngle(), Angle::SmallAngle(), 1))
+        AddMTGFacetsToIndexedPolyface(facets, *newMesh);
+    jmdlMTGFacets_drop(facets);
+    if (!newMesh->HasFacets())
+        return nullptr;
+    newMesh->ReverseIndicesWithTest(surfaceNormal);
+    return newMesh;
+    }
+
 END_BENTLEY_GEOMETRY_NAMESPACE

@@ -313,8 +313,6 @@ BlockedVectorInt::IndexAction normalIndexAction
 
     int const*pPointIndex  = (int const*)GetPointIndexCP ();
     int const*pNormalIndex = (int const*)GetNormalIndexCP ();
-    //int *pParamIndex  = (int *)GetParamIndexCP ();
-    //int *pColorIndex  = (int *)GetColorIndexCP ();
     DVec3dP pNormal   = const_cast<DVec3dP>(GetNormalCP ());
     size_t numNormal  = GetNormalCount ();
     size_t numIndex = GetPointIndexCount ();
@@ -361,8 +359,43 @@ BlockedVectorInt::IndexAction normalIndexAction
     return true;
     }
 
-
-
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+bool PolyfaceQuery::ReverseIndicesWithTest(DVec3dCP surfaceNormal)
+    {
+    // facets are assumed to be consistently oriented, but possibly incorrectly. Reverse them as necessary.
+    bool reverse = false;
+    if (IsClosedByEdgePairing())
+        {
+        reverse = 0.0 > SumTetrahedralVolumes(GetPointCP()[0]);
+        }
+    else if (surfaceNormal)
+        {
+        DPoint3d centroid;
+        DVec3d normal;
+        double area;
+        auto visitor = PolyfaceVisitor::Attach(*this, false);
+        while (visitor->AdvanceToNextFace())
+            {
+            if (visitor->TryGetFacetCentroidNormalAndArea(centroid, normal, area))
+                {   // found a non-degenerate face to test
+                reverse = 0.0 > normal.DotProduct(*surfaceNormal);
+                break;
+                }
+            }
+        }
+    return reverse ? ReverseIndicesAllFaces() : false;
+    }
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+bool PolyfaceQuery::IsFacetOrientationConsistent() const
+    {
+    size_t numHalfEdges, numManifoldEdges, numBoundaryEdges, numHalfEdgePairs, numHalfEdgeTriples, numHalfEdgeQuads, numHalfEdge5PlusTuples, numDegenerateEdges;
+    CountSharedEdges(numHalfEdges, numManifoldEdges, numBoundaryEdges, numHalfEdgePairs, numHalfEdgeTriples, numHalfEdgeQuads, numHalfEdge5PlusTuples, numDegenerateEdges);
+    return numHalfEdgePairs == numManifoldEdges;
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
