@@ -7023,4 +7023,113 @@ TEST_F(SchemaRemapTestFixture, RevitStoryScenarioWithSiblingAndMixins)
     ASSERT_EQ(JsonValue(R"json([{"RevitId":"RevitId","Description":"Description","Label":"Label","ELEM_CATEGORY_PARAM":"ELEM_CATEGORY_PARAM","IFC_GUID":"IFC_GUID","FOO":"FOO"}])json"), result);
     }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaRemapTestFixture, TooManyColumnsInResultSet)
+    {
+    SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Koo">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                  <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+              </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName='L1' typeName='long' />
+            <ECProperty propertyName='L2' typeName='long' />
+            <ECProperty propertyName='L3' typeName='long' />
+            <ECProperty propertyName='L4' typeName='long' />
+            <ECProperty propertyName='L5' typeName='long' />
+            <ECProperty propertyName='S1' typeName='string' />
+            <ECProperty propertyName='S2' typeName='string' />
+            <ECProperty propertyName='S3' typeName='string' />
+            <ECProperty propertyName='S4' typeName='string' />
+            <ECProperty propertyName='S5' typeName='string' />
+          </ECEntityClass>
+          <ECEntityClass typeName="Foo">
+            <BaseClass>Koo</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+        )schema");
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("TooManyColumnsInResultSet.ecdb", schemaItem));
+
+    {
+    ECClassCP kooClass = m_ecdb.Schemas().GetClass("TestSchema", "Koo");
+    ASSERT_NE(kooClass, nullptr);
+    ASSERT_EQ(10, kooClass->GetPropertyCount());
+
+    ECClassCP fooClass = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
+    ASSERT_NE(fooClass, nullptr);
+    ASSERT_EQ(0, fooClass->GetPropertyCount(false /*includeBaseProperties*/));
+    ASSERT_EQ(10, fooClass->GetPropertyCount(true /*includeBaseProperties*/));
+    }
+
+    Utf8String innerXml = "";
+    for (size_t i = 1; i <= 1997; i++) 
+        {
+        Utf8PrintfString propName("PropElement%zu", i);
+        innerXml += "<ECProperty propertyName=\"" + propName + "\" typeName=\"string\" />\n";
+        }
+
+    Utf8PrintfString updatedSchemaXml = Utf8PrintfString(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+          <ECEntityClass typeName="Koo">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                  <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+              </ShareColumns>
+            </ECCustomAttributes>
+            <ECProperty propertyName='L1' typeName='long' />
+            <ECProperty propertyName='L2' typeName='long' />
+            <ECProperty propertyName='L3' typeName='long' />
+            <ECProperty propertyName='L4' typeName='long' />
+            <ECProperty propertyName='L5' typeName='long' />
+            <ECProperty propertyName='S1' typeName='string' />
+            <ECProperty propertyName='S2' typeName='string' />
+            <ECProperty propertyName='S3' typeName='string' />
+            <ECProperty propertyName='S4' typeName='string' />
+            <ECProperty propertyName='S5' typeName='string' />
+          </ECEntityClass>
+          <ECEntityClass typeName="Foo">
+            <BaseClass>Koo</BaseClass>
+            %s
+          </ECEntityClass>
+        </ECSchema>
+        )xml", innerXml.c_str());
+
+    SchemaItem updatedSchema = SchemaItem(updatedSchemaXml);
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(updatedSchema)) << "Import schema should fail since SELECT * on TestSchema.Foo class would return more than 2009 columns including ECInstanceId and ECClassId";
+
+    {
+    ECClassCP kooClass = m_ecdb.Schemas().GetClass("TestSchema", "Koo");
+    ASSERT_NE(kooClass, nullptr);
+    ASSERT_EQ(10, kooClass->GetPropertyCount());
+
+    ECClassCP fooClass = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
+    ASSERT_NE(fooClass, nullptr);
+    ASSERT_EQ(1997, fooClass->GetPropertyCount(false /*includeBaseProperties*/));
+    ASSERT_EQ(2007, fooClass->GetPropertyCount(true /*includeBaseProperties*/));
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM TestSchema.Foo"));
+    }
+    }
 END_ECDBUNITTESTS_NAMESPACE
