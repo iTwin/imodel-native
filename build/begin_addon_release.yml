@@ -1,0 +1,57 @@
+name: Begin-Addon-Release-$(Date:yyyy.MM.dd)$(Rev:.r)
+
+trigger:
+  branches:
+    include:
+    - main
+    - release/* #FIXME: double check logic still works for this
+  paths:
+    exclude:
+    - iModelJsNodeAddon/package_version.txt
+
+pr: none
+
+variables:
+- group: imodel-native secret variables
+
+stages:
+- stage: queue_bump_version
+  displayName: Queue bump-version.yml
+  jobs:
+  - job: get_id_then_queue
+    displayName: Get Build Id then Queue
+    pool:
+      vmImage: ubuntu-latest
+
+    steps:
+      - checkout: self
+        persistCredentials: true
+      - task: NodeTool@0
+        inputs:
+          versionSpec: '18.x'
+
+      - bash: az devops configure --defaults organization=$(System.TeamFoundationCollectionUri) project=$(System.TeamProject)
+        displayName: Setup Azure CLI
+
+      - bash: |
+            pr_title=$(gh pr view 361 --json title -q '.title') # FIXME: Temp for testing
+            native_build_id=$(echo "$pr_title" | grep -o '\[buildID:[^]]*\]')
+            # Cannot use above method because trigger will no know what branch/PR triggered commit into main. 
+            # native_build_id=$(echo "$(Build.SourceVersionMessage)" | grep -o '\[buildID:[^]]*\]')
+            native_build_id="${native_build_id//[!0-9]/}"
+
+            echo "##vso[task.setvariable variable=NATIVE_BUILD_ID;isoutput=true]$native_build_id"
+        env:
+          GITHUB_TOKEN: $(GH_TOKEN)
+        displayName: get build id from commit
+        name: getBuildId
+
+      - bash: |
+          echo $(getBuildId.NATIVE_BUILD_ID)
+          az pipelines run \
+            --branch $(Build.SourceBranch) \
+            --id  8467\
+            --parameters "NativeBuildId=$(getBuildId.NATIVE_BUILD_ID)" "BumpType=patch"
+        displayName: queue bump-version.yml
+        env:
+          AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
