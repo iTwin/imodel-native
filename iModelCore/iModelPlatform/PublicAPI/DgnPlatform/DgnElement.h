@@ -1214,8 +1214,8 @@ protected:
     };
 
     mutable Flags m_flags;
-    mutable uint32_t m_ecPropertyDataSize;
-    mutable Byte* m_ecPropertyData;
+    // mutable uint32_t m_ecPropertyDataSize;
+    // mutable Byte* m_ecPropertyData;
     DgnDbR m_dgndb;
     DgnElementId m_elementId;
     RelatedElement m_parent;
@@ -1228,6 +1228,8 @@ protected:
     ECN::StructInstanceVector* m_structInstances;
 public:
     NapiObjectCP m_napiObj;
+    BeJsConst* m_jsonPropertyData;
+    uint32_t m_jsonPropertyDataSize;
 
 protected:
     virtual Utf8CP _GetHandlerECClassName() const {return MyHandlerECClassName();} //!< @private
@@ -1471,7 +1473,7 @@ protected:
     //! @note Subclasses of DgnElement that add any member variables should override this method using this template:
     //! uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + myAllocedSize;}
     //! where "myAllocedSize" is the number of bytes allocated for this element, held through member variable pointers.
-    virtual uint32_t _GetMemSize() const {return sizeof(*this) + m_ecPropertyDataSize;}
+    virtual uint32_t _GetMemSize() const {return sizeof(*this) + m_jsonPropertyData->size();}
 
     //! Virtual writeable deep copy method.
     //! @remarks If no CreateParams are supplied, a new DgnCode will be generated for the cloned element - it will \em not be copied from this element's DgnCode.

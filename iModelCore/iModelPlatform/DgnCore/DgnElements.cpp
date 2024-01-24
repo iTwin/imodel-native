@@ -168,7 +168,7 @@ CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
 DgnElement::DgnElement(CreateParams const& params) :  m_elementId(params.m_id),
     m_dgndb(params.m_dgndb), m_modelId(params.m_modelId), m_classId(params.m_classId),
     m_federationGuid(params.m_federationGuid), m_code(params.m_code), m_parent(params.m_parentId, params.m_parentId.IsValid() ? params.m_parentRelClassId : DgnClassId()),
-    m_userLabel(params.m_userLabel), m_ecPropertyData(nullptr), m_ecPropertyDataSize(0), m_structInstances(nullptr), m_napiObj(nullptr)
+    m_userLabel(params.m_userLabel), m_jsonPropertyData(nullptr), m_jsonPropertyDataSize(0), m_structInstances(nullptr), m_napiObj(nullptr)
     {
 #if !defined (NDEBUG)
     auto& elements = GetDgnDb().Elements();

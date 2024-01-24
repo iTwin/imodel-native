@@ -370,7 +370,8 @@ Napi::String JsInterop::InsertElement(DgnDbR dgndb, Napi::Object obj, Napi::Valu
         if (!el.IsValid())
             throwBadArg();
 
-        el->FromJson(inJson);
+        // el->FromJson(inJson);
+        el->m_jsonPropertyData = &inJson;
 
         // if no federationGuid was supplied, create one for the element before we add it.
         if (!inJson.isStringMember(json_federationGuid()))

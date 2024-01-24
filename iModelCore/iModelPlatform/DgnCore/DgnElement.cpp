@@ -1301,7 +1301,7 @@ void DgnElement::_ToJson(BeJsValue val, BeJsConst opts) const {
     ToBaseJson(val);
 
     // if auto-handled properties are already in memory
-    if (nullptr != m_ecPropertyData) {
+    if (nullptr != m_jsonPropertyData) {
         ElementAutoHandledPropertiesECInstanceAdapterPtr autoHandledAdapter = ElementAutoHandledPropertiesECInstanceAdapter::Create(*this, true);
         if (autoHandledAdapter.IsNull())
             return;
@@ -1667,7 +1667,7 @@ void DgnElement::_CopyFrom(DgnElementCR other, CopyFromOptions const& opts)
                 else
                     ecThis->CopyFromBuffer(*ecOther);
 
-                if (nullptr != m_ecPropertyData)
+                if (nullptr != m_jsonPropertyData)
                     m_flags.m_propState = DgnElement::PropState::Dirty;
                 }
             }
