@@ -41,6 +41,11 @@ stages:
             native_build_id="${native_build_id//[!0-9]/}"
 
             echo "##vso[task.setvariable variable=NATIVE_BUILD_ID;isoutput=true]$native_build_id"
+
+            noCi="[no ci]"
+            if [[ $pr_title != *"$noCi"* ]]; then
+              echo "##vso[task.setvariable variable=SKIP_ADDON;isoutput=true]true"
+            fi
         env:
           GITHUB_TOKEN: $(GH_TOKEN)
         displayName: get build id from commit
@@ -55,3 +60,4 @@ stages:
         displayName: queue bump-version.yml
         env:
           AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+        condition: eq($(getBuildId.SKIP_ADDON), false)

@@ -7,7 +7,7 @@ trigger:
       - release/*
 pr:
   autoCancel: true
-  drafts: false
+  drafts: true #FIXME: revert to true after tests
   branches:
     include:
       - main
