@@ -22,14 +22,14 @@ private:
     BeMutex m_wipReportMutex;
     std::unique_ptr<WipReport> m_wipReport;
     std::unique_ptr<FinalReport> m_finalReport;
+    std::function<void(rapidjson::Document&&)> m_updateCallback;
 protected:
     void _Start() override;
     void _Accept(FullUpdateRecord const&) override;
     void _Finish() override;
 public:
-    IModelJsECPresentationUpdateRecordsHandler();
+    IModelJsECPresentationUpdateRecordsHandler(std::function<void(rapidjson::Document&&)> updateCallback);
     ~IModelJsECPresentationUpdateRecordsHandler();
-    rapidjson::Document GetReport();
 };
 
 /*=================================================================================**//**
