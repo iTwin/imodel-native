@@ -1574,7 +1574,7 @@ ClassMappingStatus MainSchemaManager::MapClass(SchemaImportContext& ctx, ClassMa
     if (status == ClassMappingStatus::BaseClassesNotMapped || status == ClassMappingStatus::Error)
         return status;
 
-    if (SUCCESS != DbMappingManager::Classes::MapUserDefinedIndexes(ctx, *classMapP))
+    if (SUCCESS != DbMappingManager::Classes::MapIndexes(ctx, *classMapP, false))
         return ClassMappingStatus::Error;
 
     return MapDerivedClasses(ctx, mappingInfo.GetClass());
