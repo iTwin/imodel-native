@@ -15,8 +15,8 @@ $(BuildContext)Delivery/UnitTests/ECDbTestData : $(seedDataSource)
 
 # Remove these schemas when the profile version is 4.0.0.5
 
-$(OutRoot)$(TARGET_PROCESSOR_DIRECTORY)Product/ECDb-Tests/Assets/ECDbMap.02.00.03.ecschema.xml : $(thisDir)../ECDb/ECSchemas/ECDbMap.02.00.03.ecschema.xml
+$(OutRoot)$(TARGET_PROCESSOR_DIRECTORY)/Product/ECDb-Tests/Assets/ECDbMap.02.00.03.ecschema.xml : $(thisDir)../ECDb/ECSchemas/ECDbMap.02.00.03.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
-$(OutRoot)$(TARGET_PROCESSOR_DIRECTORY)Product/ECDb-Tests/Assets/ECDbMeta.04.00.02.ecschema.xml : $(thisDir)../ECDb/ECSchemas/ECDbMeta.04.00.02.ecschema.xml
+$(OutRoot)$(TARGET_PROCESSOR_DIRECTORY)/Product/ECDb-Tests/Assets/ECDbMeta.04.00.02.ecschema.xml : $(thisDir)../ECDb/ECSchemas/ECDbMeta.04.00.02.ecschema.xml
     $(LinkFirstDepToFirstTarget)
