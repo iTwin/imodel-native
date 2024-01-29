@@ -2623,8 +2623,8 @@ BentleyStatus ECSqlParser::ParseValuesCommalist(std::unique_ptr<SelectStatementE
         }
 
     std::unique_ptr<SelectStatementExp> prevSelectExp = nullptr;
-    const size_t childCount = parseNode.count();
-    for (size_t i = 0; i < childCount; i++)
+    // traverse in reverse order so the converted native SQL is in the same order as input
+    for (int i = (int)parseNode.count() - 1; i >= 0; i--)
         {
         OSQLParseNode const* childNode = parseNode.getChild(i);
         if (childNode == nullptr)
