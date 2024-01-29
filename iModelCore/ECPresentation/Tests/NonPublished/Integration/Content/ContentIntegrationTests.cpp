@@ -4852,8 +4852,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsZeroContentSetSizeWh
     rules->AddPresentationRule(*rule);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), 
-        rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create({ ECClassInstanceKey(classA, ECInstanceId(1ull)) }))));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
+        rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create({ ECClassInstanceKey(classA, ECInstanceId((uint64_t)1)) }))));
     ASSERT_TRUE(descriptor.IsValid());
 
     // validate content set size
