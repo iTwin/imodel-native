@@ -333,11 +333,8 @@ ECPresentationManager* ECPresentationUtils::CreatePresentationManager(Dgn::Platf
     params.SetECPropertyFormatter(new DefaultPropertyFormatter(CreateDefaultFormatsMap(props["defaultFormats"])));
     params.SetCachingParams(CreateCachingParams(props["cacheConfig"]));
     params.SetLocalState(&localState);
-    if (props["isChangeTrackingEnabled"].asBool())
-        {
-        params.SetECInstanceChangeEventSources({std::make_shared<DgnDbECInstanceChangeEventSource>()});
-        params.SetUpdateRecordsHandlers({updateRecordsHandler});
-        }
+    params.SetECInstanceChangeEventSources({std::make_shared<DgnDbECInstanceChangeEventSource>()});
+    params.SetUpdateRecordsHandlers({ updateRecordsHandler });
     return new ECPresentationManager(params);
     }
 

@@ -130,8 +130,8 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-IModelJsECPresentationUpdateRecordsHandler::IModelJsECPresentationUpdateRecordsHandler()
-    : m_finalReport(std::make_unique<FinalReport>())
+IModelJsECPresentationUpdateRecordsHandler::IModelJsECPresentationUpdateRecordsHandler(std::function<void(rapidjson::Document&&)> updateCallback)
+    : m_finalReport(std::make_unique<FinalReport>()), m_updateCallback(updateCallback)
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -165,14 +165,7 @@ void IModelJsECPresentationUpdateRecordsHandler::_Finish()
     m_finalReport->Accept(*m_wipReport);
     m_wipReport.reset();
     m_wipReportMutex.unlock();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document IModelJsECPresentationUpdateRecordsHandler::GetReport()
-    {
-    return m_finalReport->BuildJsonAndReset();
+    m_updateCallback(m_finalReport->BuildJsonAndReset());
     }
 
 /*---------------------------------------------------------------------------------**//**
