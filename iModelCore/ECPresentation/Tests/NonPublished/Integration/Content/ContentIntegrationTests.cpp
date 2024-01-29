@@ -4836,6 +4836,34 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ReturnsZeroContentSetSizeWhenRequestingContentForNonExistingInstancesAndMergingResults, R"*(
+    <ECEntityClass typeName="A" />
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsZeroContentSetSizeWhenRequestingContentForNonExistingInstancesAndMergingResults)
+    {
+    ECClassCP classA = GetClass("A");
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification());
+    rules->AddPresentationRule(*rule);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), 
+        rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create({ ECClassInstanceKey(classA, ECInstanceId(1ull)) }))));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // validate content set size
+    size_t size = *m_manager->GetContentSetSize(AsyncContentRequestParams::Create(s_project->GetECDb(), *descriptor)).get();
+    ASSERT_EQ(0, size);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(SetsClassWhenMergingRecordsAndClassesAreEqual, R"*(
     <ECEntityClass typeName="A" />
 )*");
