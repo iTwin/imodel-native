@@ -81,14 +81,19 @@ struct ECDbMapCustomAttributeHelper final
         //! Tries to retrieve the ImportRequiresVersion custom attribute from the specified schema.
         //! @param[out] ca Retrieved CA
         //! @param[in] ecClass Class to retrieve the custom attribute from.
-        //! @return true if @p schema has the custom attribute.
+        //! @return true if @p ecClass has the custom attribute.
         static bool TryGetImportRequiresVersion(ImportRequiresVersionCustomAttribute& ca, ECN::ECSchemaCR schema);
 
         //! Tries to retrieve the UseRequiresVersion custom attribute from the specified schema.
         //! @param[out] ca Retrieved CA
         //! @param[in] ecClass Class to retrieve the custom attribute from.
-        //! @return true if @p schema has the custom attribute.
+        //! @return true if @p ecClass has the custom attribute.
         static bool TryGetUseRequiresVersion(UseRequiresVersionCustomAttribute& ca, ECN::ECClassCR ecClass);
+
+        //! Checks if the provided relationship class is flagged with the implicit view custom attribute
+        //! @param[in] ecClass Class to check the custom attribute on.
+        //! @return true if @p ecClass has the custom attribute.
+        static bool IsImplicitView(ECN::ECRelationshipClassCR ecClass);
     };
 
 //=======================================================================================    

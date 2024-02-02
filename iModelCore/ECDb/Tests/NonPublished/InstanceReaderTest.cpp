@@ -1102,7 +1102,7 @@ TEST_F(InstanceReaderFixture, ecsql_read_instance) {
 
     ASSERT_STREQ(stmt.GetNativeSql(), SqlPrintfString("SELECT json(extract_inst([ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId], 0x0)) FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Description] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Description]='Relates the property to its PropertyCategory.'", CLASS_ID(meta, ECClassDef)).GetUtf8CP());
     //! HARD_CODED_IDS
-    ASSERT_STREQ(stmt.GetValueText(0), R"json({"ECInstanceId":"0x34","ECClassId":"0x24","Schema":{"Id":"0x4","RelECClassId":"0x25"},"Name":"PropertyHasCategory","Description":"Relates the property to its PropertyCategory.","Type":1,"Modifier":2,"RelationshipStrength":0,"RelationshipStrengthDirection":1})json");
+    ASSERT_STREQ(stmt.GetValueText(0), R"json({"ECInstanceId":"0x35","ECClassId":"0x25","Schema":{"Id":"0x4","RelECClassId":"0x26"},"Name":"PropertyHasCategory","Description":"Relates the property to its PropertyCategory.","Type":1,"Modifier":2,"RelationshipStrength":0,"RelationshipStrengthDirection":1})json");
 }
 
 //---------------------------------------------------------------------------------------
@@ -1198,11 +1198,11 @@ TEST_F(InstanceReaderFixture, instance_reader) {
     BeJsDocument doc;
     //! HARD_CODED_IDS
     doc.Parse(R"json({
-        "ECInstanceId": "0x34",
-        "ECClassId": "0x24",
+        "ECInstanceId": "0x35",
+        "ECClassId": "0x25",
         "Schema": {
             "Id": "0x4",
-            "RelECClassId": "0x25"
+            "RelECClassId": "0x26"
         },
         "Name": "PropertyHasCategory",
         "Description": "Relates the property to its PropertyCategory.",
@@ -2022,7 +2022,7 @@ TEST_F(InstanceReaderFixture, nested_struct) {
     BeJsDocument expected;
     expected.Parse(R"json({
         "ECInstanceId": "0x1",
-        "ECClassId": "0x57",
+        "ECClassId": "0x58",
         "b": true,
         "bi": "{\"bytes\":13}",
         "d": 3.141592653589793,

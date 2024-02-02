@@ -870,9 +870,24 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
             sqlBuilder.Append(" AS INTEGER)");
         };
 
-    if (ClassViews::IsViewClass(*relationMap.GetRelationshipClass().GetTarget().GetAbstractConstraint()))
+    ECRelationshipClassCR relationshipClass = relationMap.GetRelationshipClass();
+    if (ECDbMapCustomAttributeHelper::IsImplicitView(relationshipClass))
         {
-        ECRelationshipClassCR relationshipClass = relationMap.GetRelationshipClass();
+        if (!ClassViews::IsViewClass(*relationshipClass.GetSource().GetAbstractConstraint()) &&
+            !ClassViews::IsViewClass(*relationshipClass.GetTarget().GetAbstractConstraint()))
+            {
+            ctx.GetECDb().GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0723,
+                "Relationship class %s is marked as implicit view, so at least one side if the constraint classes must be a view class.", relationshipClass.GetFullName());
+            return ERROR;
+            }
+
+        if (ClassViews::IsViewClass(relationshipClass)) 
+            {
+            ctx.GetECDb().GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0724,
+                "Relationship class %s is marked as implicit view, but it is also a view class. It cannot be both.", relationshipClass.GetFullName());
+            return ERROR;
+            }
+
         ECClassCP targetClassConstraint = relationshipClass.GetTarget().GetAbstractConstraint();
         ECClassCP sourceClassConstraint = relationshipClass.GetSource().GetAbstractConstraint();
         NavigationECPropertyCP sourceNavProp = nullptr;

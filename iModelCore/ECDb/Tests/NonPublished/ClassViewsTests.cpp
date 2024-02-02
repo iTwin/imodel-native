@@ -90,7 +90,7 @@ TEST_F(ClassViewsFixture, prepare_view_and_check_validate_sql_and_data) {
     if (true){
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, SchemaName, ClassName FROM ts.SchemaClassesView WHERE ClassName='View'"));
-        auto nativeSql = "SELECT [K0],[K1],[K2],[K3] FROM (SELECT [cd].[ECInstanceId] [K0],[cd].[ECClassId] [K1],[sc].[Name] [K2],[cd].[Name] [K3] FROM (SELECT [Id] ECInstanceId,38 ECClassId,[Name] FROM [main].[ec_Schema]) [sc] INNER JOIN (SELECT [Id] ECInstanceId,36 ECClassId,[SchemaId],[Name] FROM [main].[ec_Class]) [cd] ON [cd].[SchemaId]=[sc].[ECInstanceId]   GROUP BY [sc].[Name],[cd].[Name]  LIMIT 50) [SchemaClassesView] WHERE [K3]='View'";
+        auto nativeSql = "SELECT [K0],[K1],[K2],[K3] FROM (SELECT [cd].[ECInstanceId] [K0],[cd].[ECClassId] [K1],[sc].[Name] [K2],[cd].[Name] [K3] FROM (SELECT [Id] ECInstanceId,39 ECClassId,[Name] FROM [main].[ec_Schema]) [sc] INNER JOIN (SELECT [Id] ECInstanceId,37 ECClassId,[SchemaId],[Name] FROM [main].[ec_Class]) [cd] ON [cd].[SchemaId]=[sc].[ECInstanceId]   GROUP BY [sc].[Name],[cd].[Name]  LIMIT 50) [SchemaClassesView] WHERE [K3]='View'";
         ASSERT_STREQ(nativeSql, stmt.GetNativeSql());
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
         //ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), ECInstanceId(27ull));
@@ -107,10 +107,10 @@ TEST_F(ClassViewsFixture, prepare_view_and_check_validate_sql_and_data) {
     if (true) {
       ECSqlStatement stmt;
       ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT $ FROM ts.SchemaClassesView"));
-      auto nativeSql = "SELECT json(extract_inst([K0],[K1], 0x0)) FROM (SELECT [cd].[ECInstanceId] [K1],[cd].[ECClassId] [K0],[sc].[Name],[cd].[Name] FROM (SELECT [Id] ECInstanceId,38 ECClassId,[Name] FROM [main].[ec_Schema]) [sc] INNER JOIN (SELECT [Id] ECInstanceId,36 ECClassId,[SchemaId],[Name] FROM [main].[ec_Class]) [cd] ON [cd].[SchemaId]=[sc].[ECInstanceId]   GROUP BY [sc].[Name],[cd].[Name]  LIMIT 50) [SchemaClassesView]";
+      auto nativeSql = "SELECT json(extract_inst([K0],[K1], 0x0)) FROM (SELECT [cd].[ECInstanceId] [K1],[cd].[ECClassId] [K0],[sc].[Name],[cd].[Name] FROM (SELECT [Id] ECInstanceId,39 ECClassId,[Name] FROM [main].[ec_Schema]) [sc] INNER JOIN (SELECT [Id] ECInstanceId,37 ECClassId,[SchemaId],[Name] FROM [main].[ec_Class]) [cd] ON [cd].[SchemaId]=[sc].[ECInstanceId]   GROUP BY [sc].[Name],[cd].[Name]  LIMIT 50) [SchemaClassesView]";
       ASSERT_STREQ(nativeSql, stmt.GetNativeSql());
       ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-      ASSERT_STREQ(stmt.GetValueText(0), R"json({"ECInstanceId":"0x1","ECClassId":"0x24","Schema":{"Id":"0x1","RelECClassId":"0x25"},"Name":"ClassHasCurrentTimeStampProperty","Type":3,"Modifier":2,"CustomAttributeContainerType":2})json");
+      ASSERT_STREQ(stmt.GetValueText(0), R"json({"ECInstanceId":"0x1","ECClassId":"0x25","Schema":{"Id":"0x1","RelECClassId":"0x26"},"Name":"ClassHasCurrentTimeStampProperty","Type":3,"Modifier":2,"CustomAttributeContainerType":2})json");
     }
     if (true){
         // should fail to prepare insert against a view
@@ -198,14 +198,14 @@ TEST_F(ClassViewsFixture, return_nav_prop_from_view_query) {
     if (true){
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.ClassDefView"));
-        auto nativeSql = "SELECT [K0],[K1],[K2_0],[K2_1] FROM (SELECT [ECClassDef].[ECInstanceId] [K0],[ECClassDef].[ECClassId] [K1],[ECClassDef].[SchemaId] [K2_0],[ECClassDef].[SchemaRelECClassId] [K2_1] FROM (SELECT [Id] ECInstanceId,36 ECClassId,[SchemaId],(CASE WHEN [SchemaId] IS NULL THEN NULL ELSE 37 END) [SchemaRelECClassId] FROM [main].[ec_Class]) [ECClassDef]) [ClassDefView]";
+        auto nativeSql = "SELECT [K0],[K1],[K2_0],[K2_1] FROM (SELECT [ECClassDef].[ECInstanceId] [K0],[ECClassDef].[ECClassId] [K1],[ECClassDef].[SchemaId] [K2_0],[ECClassDef].[SchemaRelECClassId] [K2_1] FROM (SELECT [Id] ECInstanceId,37 ECClassId,[SchemaId],(CASE WHEN [SchemaId] IS NULL THEN NULL ELSE 38 END) [SchemaRelECClassId] FROM [main].[ec_Class]) [ECClassDef]) [ClassDefView]";
         ASSERT_STREQ(nativeSql, stmt.GetNativeSql());
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
         ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), ECInstanceId(UINT64_C(1)));
-        ASSERT_EQ(stmt.GetValueId<ECN::ECClassId>(1), ECClassId(UINT64_C(36)));
+        ASSERT_EQ(stmt.GetValueId<ECN::ECClassId>(1), ECClassId(UINT64_C(37)));
         ECN::ECClassId relId;
         ASSERT_EQ(stmt.GetValueNavigation<ECInstanceId>(2, &relId), ECInstanceId(UINT64_C(1)));
-        ASSERT_EQ(relId, ECClassId(UINT64_C(37)));
+        ASSERT_EQ(relId, ECClassId(UINT64_C(38)));
     }
 }
 /*---------------------------------------------------------------------------------**//**
@@ -871,7 +871,7 @@ TEST_F(ClassViewsFixture, complex_data) {
     expected.Parse(R"json([
   [
     "0x1",
-    "0x57",
+    "0x58",
     null,
     true,
     "encoding=base64;SGVsbG8sIFdvcmxkIQ==",

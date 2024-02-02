@@ -149,6 +149,16 @@ bool ECDbMapCustomAttributeHelper::TryGetUseRequiresVersion(UseRequiresVersionCu
     return true;
     }
 
+//static
+bool ECDbMapCustomAttributeHelper::IsImplicitView(ECN::ECRelationshipClassCR ecClass)
+    {
+    IECInstancePtr inst = CustomAttributeReader::Read(ecClass, ECDBMAP_SCHEMANAME, "ImplicitView");
+    if (!inst.IsValid())
+        return false;
+
+    return true;
+    }
+
 //*****************************************************************
 //SchemaMapCustomAttribute
 //*****************************************************************

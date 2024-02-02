@@ -69,4 +69,13 @@
         </ECCustomAttributes>
         <ECProperty propertyName="Query" typeName="string" description="ECSql query with only primitive types are allowed"/>
     </ECCustomAttributeClass>
+
+    <ECCustomAttributeClass typeName="ImplicitView" modifier="Sealed" appliesTo="RelationshipClass" description="Flags a relationship as a view, based on navigation properties on the constraint classes.">
+        <ECCustomAttributes>
+            <UseRequiresVersion>
+                <!--should be 4.0.0.5 -->
+                <ECDbRuntimeVersion>4.0.0.4</ECDbRuntimeVersion>
+            </UseRequiresVersion>
+        </ECCustomAttributes>
+    </ECCustomAttributeClass>
 </ECSchema>
