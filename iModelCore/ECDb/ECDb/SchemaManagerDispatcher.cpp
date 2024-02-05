@@ -1627,7 +1627,7 @@ BentleyStatus MainSchemaManager::CanCreateOrUpdateRequiredTables() const
             [co].[IsVirtual] = 0
             AND [cm].[MapStrategy] <> 3
         GROUP BY [cl].[Id], tb.Id
-        HAVING COUNT (*) >= %d;)sql", maxColumns);
+        HAVING COUNT (*) > %d;)sql", maxColumns);
 
     Statement stmt;
     stmt.Prepare(m_ecdb, ecsql.c_str());
