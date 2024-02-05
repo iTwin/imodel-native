@@ -48,7 +48,7 @@ stages:
             fi
 
             echo "##vso[task.setvariable variable=ITWINJS_BRANCH;isoutput=true]$iTwinjsBranchName"
-            echo "##vso[task.setvariable variable=NATIVE_BUILD_NUM;isoutput=true]imodel-native-internal-$nativeBuildNum"
+            echo "##vso[task.setvariable variable=NATIVE_BUILD_NUM;isoutput=true]imodel-native-$nativeBuildNum"
 
             noCi="[no ci]"
             if [[ $pr_title != *"$noCi"* ]]; then
