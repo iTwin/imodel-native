@@ -63,7 +63,7 @@ stages:
           echo $(getBuildId.NATIVE_BUILD_ID)
           az pipelines run \
             --branch $(Build.SourceBranch) \
-            --id  8467\
+            --id  8467 \
             --parameters "NativeBuildNum=$(getBuildId.NATIVE_BUILD_NUM)" "BumpType=patch" "iTwinjsBranch=$(getBuildId.ITWINJS_BRANCH)"
         displayName: queue bump-version.yml
         env:
