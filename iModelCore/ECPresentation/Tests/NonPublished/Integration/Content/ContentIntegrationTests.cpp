@@ -17375,6 +17375,43 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SortingRule_OnlySortBaseCla
 /*---------------------------------------------------------------------------------**//**
 // @betest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SortingRule_SortingByECClassIdProperty, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <BaseClass>A</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>A</BaseClass>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, SortingRule_SortingByECClassIdProperty)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr c = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    ContentRule* contentRule = new ContentRule();
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), true, false));
+    rules->AddPresentationRule(*contentRule);
+    rules->AddPresentationRule(*new SortingRule("", 1, classA->GetSchema().GetName(), classA->GetName(), "ECClassId", false, false, true));
+    m_locater->AddRuleSet(*rules);
+
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{c.get(), b.get(), a.get()}, *content, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @betest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(PropertyOverrideRuleWithAsteriskReturnsCorrectProperties, R"*(
     <ECEntityClass typeName="A">
         <ECProperty propertyName="IntPropA" typeName="int"/>
