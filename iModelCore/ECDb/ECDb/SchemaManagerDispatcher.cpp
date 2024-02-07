@@ -1607,7 +1607,8 @@ ClassMappingStatus MainSchemaManager::MapDerivedClasses(SchemaImportContext& ctx
 BentleyStatus MainSchemaManager::CanCreateOrUpdateRequiredTables() const
     {
     ECDB_PERF_LOG_SCOPE("Schema import> Can create or update tables");
-    const int maxColumns = m_ecdb.GetLimit(DbLimits::Column);
+    // Note: maxColumns should never be less than the limit defined by SQLITE_MAX_COLUMN; previous limit was 2000
+    const int maxColumns = 2000;
 
     Utf8String ecsql;
     ecsql.Sprintf(R"sql(

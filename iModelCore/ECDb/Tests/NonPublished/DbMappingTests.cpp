@@ -11456,7 +11456,7 @@ TEST_F(DbMappingTestFixture, CreateTableWith2kProperties)
 TEST_F(DbMappingTestFixture, Only2kColumnsAreAllowedPerTable)
     {    
     Utf8String innerXml = "";
-    for (size_t i = 1; i <= 1998; i++)
+    for (size_t i = 1; i <= 1999; i++)
         {
         Utf8PrintfString propName("PropElement%zu", i);
         innerXml += "<ECProperty propertyName=\"" + propName + "\" typeName=\"string\" />\n";
@@ -11472,11 +11472,11 @@ TEST_F(DbMappingTestFixture, Only2kColumnsAreAllowedPerTable)
         )xml", innerXml.c_str());
 
     SchemaItem schemaItem = SchemaItem(schemaXml);
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("Only2kColumnsAreAllowedPerTable.ecdb", schemaItem)) << "Schema import should succeed as there are 2000 persisted columns, 1 for primary key, 1 for ECClassId and 1998 for properties";
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("Only2kColumnsAreAllowedPerTable.ecdb", schemaItem)) << "Schema import should succeed as there are 2000 persisted columns, 1 for primary key and 1999 for properties";
     m_ecdb.SaveChanges();
 
     innerXml = "";
-    for (size_t i = 1; i <= 1999; i++) 
+    for (size_t i = 1; i <= 2000; i++) 
         {
         Utf8PrintfString propName("PropElement%zu", i);
         innerXml += "<ECProperty propertyName=\"" + propName + "\" typeName=\"string\" />\n";
