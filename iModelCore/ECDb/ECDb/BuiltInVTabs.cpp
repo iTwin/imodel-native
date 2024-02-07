@@ -151,8 +151,191 @@ DbResult ClassPropsModule::Connect(DbVirtualTable*& out, Config& conf, int argc,
     return BE_SQLITE_OK;
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+bool RelatedInstanceModule::RelatedInstanceTable::RelatedInstanceCursor::Eof() { return m_iRowid < 1 || m_iRowid > (int64_t)m_results.size() ; }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult RelatedInstanceModule::RelatedInstanceTable::RelatedInstanceCursor::Next() {
+    ++m_iRowid;
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult RelatedInstanceModule::RelatedInstanceTable::RelatedInstanceCursor::GetColumn(int i, Context& ctx) {
+
+    switch( (Columns)i ) {
+        case Columns::toId:
+            ctx.SetResultInt64(m_results[m_iRowid - 1].GetTo().GetInstanceId().GetValueUnchecked());
+            return BE_SQLITE_OK;
+        case Columns::toClassId:
+            ctx.SetResultInt64(m_results[m_iRowid - 1].GetTo().GetClassId().GetValueUnchecked());
+            return BE_SQLITE_OK;
+        case Columns::fromId:
+            ctx.SetResultInt64(m_results[m_iRowid - 1].GetFrom().GetInstanceId().GetValueUnchecked());
+            return BE_SQLITE_OK;
+        case Columns::fromClassId:
+            ctx.SetResultInt64(m_results[m_iRowid - 1].GetFrom().GetClassId().GetValueUnchecked());
+            return BE_SQLITE_OK;
+        case Columns::relClassId:
+            ctx.SetResultInt64(m_results[m_iRowid - 1].GetRelationshipClassId().GetValueUnchecked());
+            return BE_SQLITE_OK;
+        case Columns::direction:
+            ctx.SetResultInt((int)m_results[m_iRowid - 1].GetDirection());
+            return BE_SQLITE_OK;
+    }
+    return BE_SQLITE_ERROR;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult RelatedInstanceModule::RelatedInstanceTable::RelatedInstanceCursor::GetRowId(int64_t& rowId) {
+    rowId = m_iRowid;
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult RelatedInstanceModule::RelatedInstanceTable::RelatedInstanceCursor::Filter(int idxNum, const char *idxStr, int argc, DbValue* argv) {
+    int i = 0;
+    if( idxNum & 1 ){
+        m_id = argv[i++].GetValueId<ECInstanceId>();
+    }else{
+        m_id = ECInstanceId();
+    }
+    if( idxNum & 2 ){
+        m_classId = argv[i++].GetValueId<ECClassId>();
+    }else{
+        m_classId = ECClassId();
+    }
+    if( idxNum & 3 ){
+        Utf8String x = argv[i++].GetValueText();
+        if (x.EqualsIAscii("forward") || x.EqualsIAscii("f"))
+            m_dirFilter = RelatedInstanceFinder::DirectionFilter::Forward;
+        else if (x.EqualsIAscii("backward") || x.EqualsIAscii("b"))
+            m_dirFilter = RelatedInstanceFinder::DirectionFilter::Backward;
+        else if (x.EqualsIAscii("both") || x.EqualsIAscii("a"))
+            m_dirFilter = RelatedInstanceFinder::DirectionFilter::Both;
+        else
+            m_dirFilter = RelatedInstanceFinder::DirectionFilter::Both;
+    } else {
+        m_dirFilter = RelatedInstanceFinder::DirectionFilter::Both;
+    }
+    auto&  finder = reinterpret_cast<ECDbCR>(GetTable().GetModule().GetDb()).GetRelatedInstanceFinder();
+    m_results = finder.FindAll(ECInstanceKey(m_classId, m_id), m_dirFilter);
+    m_iRowid = 1;
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult RelatedInstanceModule::RelatedInstanceTable::Open(DbCursor*& cur) {
+    cur = new RelatedInstanceCursor(*this);
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult RelatedInstanceModule::RelatedInstanceTable::BestIndex(IndexInfo& indexInfo) {
+    int i, j;              /* Loop over constraints */
+    int idxNum = 0;        /* The query plan bitmask */
+    int unusableMask = 0;  /* Mask of unusable constraints */
+    int nArg = 0;          /* Number of arguments that seriesFilter() expects */
+    int aIdx[3];           /* Constraints on start, stop, and step */
+    const int SQLITE_SERIES_CONSTRAINT_VERIFY = 0;
+    aIdx[0] = aIdx[1] = aIdx[2] = -1;
+    int nConstraint = indexInfo.GetConstraintCount();
+
+    for(i=0; i<nConstraint; i++){
+        auto pConstraint = indexInfo.GetConstraint(i);
+        int iCol;    /* 0 for start, 1 for stop, 2 for step */
+        int iMask;   /* bitmask for those column */
+        if( pConstraint->GetColumn()< (int)RelatedInstanceCursor::Columns::id) continue;
+        iCol = pConstraint->GetColumn() - (int)RelatedInstanceCursor::Columns::id;
+        iMask = 1 << iCol;
+        if (!pConstraint->IsUsable()){
+            unusableMask |=  iMask;
+            continue;
+        } else if (pConstraint->GetOp() == IndexInfo::Operator::EQ ){
+            idxNum |= iMask;
+            aIdx[iCol] = i;
+        }
+    }
+    for( i = 0; i < 3; i++) {
+        if( (j = aIdx[i]) >= 0 ) {
+            indexInfo.GetConstraintUsage(j)->SetArgvIndex(++nArg);
+            indexInfo.GetConstraintUsage(j)->SetOmit(!SQLITE_SERIES_CONSTRAINT_VERIFY);
+        }
+    }
+
+    if ((unusableMask & ~idxNum)!=0 ){
+        return BE_SQLITE_CONSTRAINT;
+    }
+
+    indexInfo.SetEstimatedCost(2.0);
+    indexInfo.SetEstimatedRows(1000);
+    indexInfo.SetIdxNum(idxNum);
+    return BE_SQLITE_OK;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+RelatedInstanceModule::RelatedInstanceModule(ECDbR db): ECDbModule(
+    db,
+    "related_instances",
+    "CREATE TABLE x(fromId, fromClassId, toId, toClassId, relClassId, direction,id hidden,classId hidden, dirFilter hidden)",
+    R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema
+            schemaName="rel1"
+            alias="rel1"
+            version="1.0.0"
+            xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbVirtual" version="01.00.00" alias="ecdbvir" />
+        <ECCustomAttributes>
+            <VirtualSchema xmlns="ECDbVirtual.01.00.00"/>
+        </ECCustomAttributes>
+        <ECEntityClass typeName="related_instances" modifier="Abstract">
+            <ECCustomAttributes>
+                <VirtualType xmlns="ECDbVirtual.01.00.00"/>
+            </ECCustomAttributes>
+            <ECProperty propertyName="fromId" typeName="long" extendedTypeName="Id" />
+            <ECProperty propertyName="fromClassId" typeName="long" extendedTypeName="ClassId"/>
+            <ECProperty propertyName="toId" typeName="long" extendedTypeName="Id"/>
+            <ECProperty propertyName="toClassId" typeName="long" extendedTypeName="ClassId"/>
+            <ECProperty propertyName="relClassId" typeName="long" extendedTypeName="ClassId"/>
+            <ECProperty propertyName="direction" typeName="integer"/>
+        </ECEntityClass>
+    </ECSchema>)xml") {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult RelatedInstanceModule::Connect(DbVirtualTable*& out, Config& conf, int argc, const char* const* argv) {
+    out = new RelatedInstanceTable(*this);
+    conf.SetTag(Config::Tags::Innocuous);
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 DbResult RegisterBuildInVTabs(ECDbR ecdb) {
     auto rc = (new ClassPropsModule(ecdb))->Register();
+    if (rc != BE_SQLITE_OK)
+        return rc;
+
+    rc = (new RelatedInstanceModule(ecdb))->Register();
     return rc;
 }
 END_BENTLEY_SQLITE_EC_NAMESPACE

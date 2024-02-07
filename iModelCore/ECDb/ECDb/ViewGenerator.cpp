@@ -888,9 +888,11 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
         //ECClassId
         if (partition->GetECClassIdColumn().IsVirtual())
             unionQuerySql.Append(classId);
-        else
-            toSql(unionQuerySql, partition->GetECClassIdColumn());
-
+        else{
+            NativeSqlBuilder temp;
+            toSql(temp, partition->GetECClassIdColumn());
+            unionQuerySql.Append("COALESCE(").Append(temp).AppendComma().Append(classId).Append(")");
+        }
         if (appendAlias)
             unionQuerySql.AppendSpace().Append(ECDBSYS_PROP_ECClassId);
 
@@ -988,7 +990,9 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
             {
             const bool isPolymorphic = ctx.GetViewType() == ViewType::SelectFromView ? ctx.GetAs<SelectFromViewContext>().GetPolymorphicInfo().IsPolymorphic() : true;
             unionQuerySql.Append(" AND ");
-            toSql(unionQuerySql, partition->GetECClassIdColumn());
+            NativeSqlBuilder temp;
+            toSql(temp, partition->GetECClassIdColumn());
+            unionQuerySql.Append("COALESCE(").Append(temp).AppendComma().Append(classId).Append(")");
             if (isPolymorphic)
                 unionQuerySql.AppendFormatted(" IN (SELECT ClassId FROM [%s]." TABLE_ClassHierarchyCache " WHERE BaseClassId=%s)", ctx.GetSchemaManager().GetTableSpace().GetName().c_str(), relationMap.GetClass().GetId().ToString().c_str());
             else
