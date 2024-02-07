@@ -7027,55 +7027,52 @@ TEST_F(SchemaRemapTestFixture, RevitStoryScenarioWithSiblingAndMixins)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaRemapTestFixture, TooManyColumnsInResultSet)
+TEST_F(SchemaRemapTestFixture, MaxColumnLimitPerTable2000)
     {
-    SchemaItem schemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    Utf8String baseInnerXml = "";
+    for (size_t i = 1; i <= 999; i++)
+        {
+        Utf8PrintfString propName("PropElement%zu", i);
+        baseInnerXml += "<ECProperty propertyName=\"" + propName + "\" typeName=\"string\" />\n";
+        }
+    
+    Utf8PrintfString schemaXml = Utf8PrintfString(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
           <ECEntityClass typeName="Koo">
             <ECCustomAttributes>
               <ClassMap xmlns="ECDbMap.02.00.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
               </ClassMap>
-              <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
               <ShareColumns xmlns="ECDbMap.02.00.00">
-                  <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
-                  <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
               </ShareColumns>
             </ECCustomAttributes>
-            <ECProperty propertyName='L1' typeName='long' />
-            <ECProperty propertyName='L2' typeName='long' />
-            <ECProperty propertyName='L3' typeName='long' />
-            <ECProperty propertyName='L4' typeName='long' />
-            <ECProperty propertyName='L5' typeName='long' />
-            <ECProperty propertyName='S1' typeName='string' />
-            <ECProperty propertyName='S2' typeName='string' />
-            <ECProperty propertyName='S3' typeName='string' />
-            <ECProperty propertyName='S4' typeName='string' />
-            <ECProperty propertyName='S5' typeName='string' />
+            %s
           </ECEntityClass>
           <ECEntityClass typeName="Foo">
             <BaseClass>Koo</BaseClass>
           </ECEntityClass>
         </ECSchema>
-        )schema");
+        )xml", baseInnerXml.c_str());
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("TooManyColumnsInResultSet.ecdb", schemaItem));
+    SchemaItem schemaItem(schemaXml);
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("MaxColumnLimitPerTable2000.ecdb", schemaItem));
 
     {
     ECClassCP kooClass = m_ecdb.Schemas().GetClass("TestSchema", "Koo");
     ASSERT_NE(kooClass, nullptr);
-    ASSERT_EQ(10, kooClass->GetPropertyCount());
+    ASSERT_EQ(999, kooClass->GetPropertyCount());
 
     ECClassCP fooClass = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
     ASSERT_NE(fooClass, nullptr);
     ASSERT_EQ(0, fooClass->GetPropertyCount(false /*includeBaseProperties*/));
-    ASSERT_EQ(10, fooClass->GetPropertyCount(true /*includeBaseProperties*/));
+    ASSERT_EQ(999, fooClass->GetPropertyCount(true /*includeBaseProperties*/));
     }
 
-    {
     Utf8String innerXml = "";
-    for (size_t i = 1; i <= 1988; i++) 
+    for (size_t i = 1000; i <= 1998; i++)
         {
         Utf8PrintfString propName("PropElement%zu", i);
         innerXml += "<ECProperty propertyName=\"" + propName + "\" typeName=\"string\" />\n";
@@ -7090,94 +7087,97 @@ TEST_F(SchemaRemapTestFixture, TooManyColumnsInResultSet)
               <ClassMap xmlns="ECDbMap.02.00.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
               </ClassMap>
-              <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
               <ShareColumns xmlns="ECDbMap.02.00.00">
-                  <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
-                  <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
               </ShareColumns>
             </ECCustomAttributes>
-            <ECProperty propertyName='L1' typeName='long' />
-            <ECProperty propertyName='L2' typeName='long' />
-            <ECProperty propertyName='L3' typeName='long' />
-            <ECProperty propertyName='L4' typeName='long' />
-            <ECProperty propertyName='L5' typeName='long' />
-            <ECProperty propertyName='S1' typeName='string' />
-            <ECProperty propertyName='S2' typeName='string' />
-            <ECProperty propertyName='S3' typeName='string' />
-            <ECProperty propertyName='S4' typeName='string' />
-            <ECProperty propertyName='S5' typeName='string' />
+            %s
           </ECEntityClass>
           <ECEntityClass typeName="Foo">
             <BaseClass>Koo</BaseClass>
             %s
           </ECEntityClass>
         </ECSchema>
-        )xml", innerXml.c_str());
+        )xml", baseInnerXml.c_str(), innerXml.c_str());
 
     SchemaItem updatedSchema = SchemaItem(updatedSchemaXml);
-    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(updatedSchema)) << "Importing Foo's schema is safe. It has 1988 properties, 10 from its base class, and 2 system properties. That's a total of 2000 mapped columns, which is under the 2000 limit.";
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(updatedSchema)) << "Schema import should pass as it has 1998 columns mapped for properties and 2 columns for system properties, which is equal to our max columns limit per table.";
+    m_ecdb.SaveChanges();
 
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM TestSchema.Foo"));
-    }
-
-    {
     ECClassCP kooClass = m_ecdb.Schemas().GetClass("TestSchema", "Koo");
     ASSERT_NE(kooClass, nullptr);
-    ASSERT_EQ(10, kooClass->GetPropertyCount());
+    ASSERT_EQ(999, kooClass->GetPropertyCount());
 
     ECClassCP fooClass = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
     ASSERT_NE(fooClass, nullptr);
-    ASSERT_EQ(1988, fooClass->GetPropertyCount(false /*includeBaseProperties*/));
+    ASSERT_EQ(999, fooClass->GetPropertyCount(false /*includeBaseProperties*/));
     ASSERT_EQ(1998, fooClass->GetPropertyCount(true /*includeBaseProperties*/));
-    }
-
-    {
-    Utf8String innerXml = "";
-    for (size_t i = 1; i <= 1989; i++) 
-        {
-        Utf8PrintfString propName("PropElement%zu", i);
-        innerXml += "<ECProperty propertyName=\"" + propName + "\" typeName=\"string\" />\n";
-        }
-
-    Utf8PrintfString updatedSchemaXml = Utf8PrintfString(
-        R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-          <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
-          <ECEntityClass typeName="Koo">
-            <ECCustomAttributes>
-              <ClassMap xmlns="ECDbMap.02.00.00">
-                <MapStrategy>TablePerHierarchy</MapStrategy>
-              </ClassMap>
-              <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
-              <ShareColumns xmlns="ECDbMap.02.00.00">
-                  <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
-                  <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
-              </ShareColumns>
-            </ECCustomAttributes>
-            <ECProperty propertyName='L1' typeName='long' />
-            <ECProperty propertyName='L2' typeName='long' />
-            <ECProperty propertyName='L3' typeName='long' />
-            <ECProperty propertyName='L4' typeName='long' />
-            <ECProperty propertyName='L5' typeName='long' />
-            <ECProperty propertyName='S1' typeName='string' />
-            <ECProperty propertyName='S2' typeName='string' />
-            <ECProperty propertyName='S3' typeName='string' />
-            <ECProperty propertyName='S4' typeName='string' />
-            <ECProperty propertyName='S5' typeName='string' />
-          </ECEntityClass>
-          <ECEntityClass typeName="Foo">
-            <BaseClass>Koo</BaseClass>
-            %s
-          </ECEntityClass>
-        </ECSchema>
-        )xml", innerXml.c_str());
-
-    SchemaItem updatedSchema = SchemaItem(updatedSchemaXml);
-    ASSERT_EQ(ERROR, GetHelper().ImportSchema(updatedSchema)) << "Schema import should fail because it exceeds the maximum column limit. With system properties included, it has 2001 mapped columns, one more than the allowed limit of 2000.";
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM TestSchema.Foo")) << "Query should successfully parse since schema update failed.";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM TestSchema.Foo"));
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM TestSchema.Koo"));
+    stmt.Finalize();
+
+    if (true)
+      {
+      Utf8PrintfString invalidSchemaXml = Utf8PrintfString(
+          R"xml(<?xml version="1.0" encoding="UTF-8"?>
+          <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Koo">
+              <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                  <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                </ShareColumns>
+              </ECCustomAttributes>
+              %s
+              <ECProperty propertyName="AdditionalProperty" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Foo">
+              <BaseClass>Koo</BaseClass>
+              %s
+            </ECEntityClass>
+          </ECSchema>
+          )xml", baseInnerXml.c_str(), innerXml.c_str());
+
+      SchemaItem invalidSchema = SchemaItem(invalidSchemaXml);
+      ASSERT_EQ(ERROR, GetHelper().ImportSchema(invalidSchema)) << "Schema import should fail as TestSchema:Foo class will have 2001 persisted columns, but we have maximum limit of 2000 columns per table.";
+      m_ecdb.SaveChanges();
+      }
+
+    if (true)
+      {
+      Utf8PrintfString invalidSchemaXml = Utf8PrintfString(
+          R"xml(<?xml version="1.0" encoding="UTF-8"?>
+          <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Koo">
+              <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00.00">
+                  <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+                <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                </ShareColumns>
+              </ECCustomAttributes>
+              %s
+            </ECEntityClass>
+            <ECEntityClass typeName="Foo">
+              <BaseClass>Koo</BaseClass>
+              %s
+              <ECProperty propertyName="AdditionalProperty" typeName="string" />
+            </ECEntityClass>
+          </ECSchema>
+          )xml", baseInnerXml.c_str(), innerXml.c_str());
+
+      SchemaItem invalidSchema = SchemaItem(invalidSchemaXml);
+      ASSERT_EQ(ERROR, GetHelper().ImportSchema(invalidSchema)) << "Schema import should fail as TestSchema:Foo class will have 2001 persisted columns, but we have maximum limit of 2000 columns per table.";
+      m_ecdb.SaveChanges();
+      }
     }
-    }
+
 END_ECDBUNITTESTS_NAMESPACE
