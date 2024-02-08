@@ -80,7 +80,8 @@ static CachedECSqlStatementPtr GetStatement(IConnectionCR connection, Presentati
 
     Utf8CP queryString = query.GetQueryString().c_str();
     ECSqlStatus status;
-    CachedECSqlStatementPtr statement = connection.GetStatementCache().GetPreparedStatement(connection.GetECDb().Schemas(), connection.GetDb(), queryString, false, &status);
+    LastErrorListener errorListener(connection.GetECDb());
+    CachedECSqlStatementPtr statement = connection.GetStatementCache().GetPreparedStatement(connection.GetECDb().Schemas(), connection.GetDb(), queryString, true, &status);
     if (statement.IsNull())
         {
         if (status.IsSQLiteError() && status.GetSQLiteError() == BE_SQLITE_INTERRUPT)
@@ -90,7 +91,7 @@ static CachedECSqlStatementPtr GetStatement(IConnectionCR connection, Presentati
             }
 
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to prepare query. Error: '%s'. Query: %s",
-            connection.GetDb().GetLastError().c_str(), queryString));
+            errorListener.GetLastError().c_str(), queryString));
         }
 
     query.BindValues(*statement);

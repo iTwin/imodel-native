@@ -1503,6 +1503,22 @@ Utf8String QueryBuilderHelpers::CreatePropertySortingClause(SortingRuleCR rule, 
 
     if (!rule.GetSortAscending())
         orderByClause.append(" DESC");
+
+    return orderByClause;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String CreateSystemPropertySortingClause(SortingRuleCR rule, SelectClass<ECClass> selectClass)
+    {
+    Utf8String orderByClause;
+    orderByClause.append("[").append(selectClass.GetAlias()).append("].")
+        .append("[").append(rule.GetPropertyName()).append("]");
+
+    if (!rule.GetSortAscending())
+        orderByClause.append(" DESC");
+
     return orderByClause;
     }
 
@@ -1511,6 +1527,7 @@ Utf8String QueryBuilderHelpers::CreatePropertySortingClause(SortingRuleCR rule, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String QueryBuilderHelpers::CreatePropertySortingClause(bvector<ClassSortingRule> const& rules, SelectClassWithExcludes<ECClass> selectClass)
     {
+    static bvector<Utf8CP> const s_systemPropertyNames = { "ECClassId", "ECInstanceId" };
     Utf8String orderByClause;
     for (ClassSortingRule const& rule : rules)
         {
@@ -1520,19 +1537,33 @@ Utf8String QueryBuilderHelpers::CreatePropertySortingClause(bvector<ClassSorting
             // don't apply the rule if it's not polymorphic and we're selecting polymorphically
             continue;
             }
+
         DiagnosticsHelpers::ReportRule(rule.GetRule());
         if (rule.GetRule().GetDoNotSort())
             break;
+
+        Utf8String sortingColumnSelectClause;
         ECPropertyCP ecProperty = rule.GetSelectClass().GetClass().GetPropertyP(rule.GetRule().GetPropertyName().c_str());
-        if (nullptr == ecProperty)
+        if (nullptr != ecProperty)
+            {
+            sortingColumnSelectClause = CreatePropertySortingClause(rule.GetRule(), rule.GetSelectClass(), *ecProperty);
+            }
+        else if (ContainerHelpers::Contains(s_systemPropertyNames, [&rule](Utf8CP systemPropertyName){return rule.GetRule().GetPropertyName().EqualsI(systemPropertyName);}))
+            {
+            sortingColumnSelectClause = CreateSystemPropertySortingClause(rule.GetRule(), rule.GetSelectClass());
+            }
+        else
             {
             DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested sorting rule property not found: '%s.%s'",
                 rule.GetSelectClass().GetClass().GetFullName(), rule.GetRule().GetPropertyName().c_str()));
-            continue;
             }
-        if (!orderByClause.empty())
-            orderByClause.append(", ");
-        orderByClause.append(CreatePropertySortingClause(rule.GetRule(), rule.GetSelectClass(), *ecProperty));
+
+        if (!sortingColumnSelectClause.empty())
+            {
+            if (!orderByClause.empty())
+                orderByClause.append(", ");
+            orderByClause.append(sortingColumnSelectClause);
+            }
         }
     return orderByClause;
     }
