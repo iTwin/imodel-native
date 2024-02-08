@@ -1197,7 +1197,7 @@ TEST_F(BeSQliteTestFixture, TableValueFunction_TokenizeModule) {
 TEST_F(BeSQliteTestFixture, IntegrityCheckShouldRunOnReadOnlyFileWithFTS5) {
     BeFileName testFileWithFts5;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(testFileWithFts5);
-    testFileWithFts5.AppendUtf8("BeSQLiteTestData\\test.bim");
+    testFileWithFts5.AppendUtf8("BeSQLiteTestData/test.bim");
     Db db;
     ASSERT_EQ(BE_SQLITE_OK, db.OpenBeSQLiteDb(testFileWithFts5, Db::OpenParams(Db::OpenMode::Readonly)));
     auto stmt = db.GetCachedStatement("PRAGMA integrity_check");
