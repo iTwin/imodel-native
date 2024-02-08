@@ -34,12 +34,8 @@ stages:
         displayName: Setup Azure CLI
 
       - bash: |
-            pr_title=$(gh pr view 361 --json title -q '.title') # FIXME: Temp for testing
-            nativeBuildNum=$(echo "$pr_title" | grep -o '\[buildNum:[^]]*\]' | grep -oP '\[buildNum:\K[^]]+') # FIXME: Temp for testing
-            itwinjsPR=$(echo "$pr_title" | grep -o '\[itwinjsPR:[^]]*\]' | grep -o '[0-9]\+') # FIXME: Temp for testing
-            # Cannot use above method because trigger will no know what branch/PR triggered commit into main. 
-            # nativeBuildNum=$(echo "$(Build.SourceVersionMessage)" | grep -o '\[buildNum:[^]]*\]' | grep -oP '\[buildNum:\K[^]]+')
-            # itwinjsPR=$(echo "$(Build.SourceVersionMessage)" | grep -o '\[itwinjsPR:[^]]*\]' | grep -o '[0-9]\+')
+            nativeBuildNum=$(echo "$(Build.SourceVersionMessage)" | grep -o '\[buildNum:[^]]*\]' | grep -oP '\[buildNum:\K[^]]+')
+            itwinjsPR=$(echo "$(Build.SourceVersionMessage)" | grep -o '\[itwinjsPR:[^]]*\]' | grep -o '[0-9]\+')
 
             if [[ -z "$itwinjsPR" ]]; then
               iTwinjsBranchName='master'
@@ -51,7 +47,7 @@ stages:
             echo "##vso[task.setvariable variable=NATIVE_BUILD_NUM;isoutput=true]imodel-native-$nativeBuildNum"
 
             noCi="[no ci]"
-            if [[ $pr_title != *"$noCi"* ]]; then
+            if [[ $(Build.SourceVersionMessage) != *"$noCi"* ]]; then
               echo "##vso[task.setvariable variable=SKIP_ADDON;isoutput=true]true"
             fi
         env:
@@ -60,11 +56,12 @@ stages:
         name: getBuildId
 
       - bash: |
-          echo $(getBuildId.NATIVE_BUILD_ID)
-          az pipelines run \
-            --branch $(Build.SourceBranch) \
-            --id  8467 \
-            --parameters "NativeBuildNum=$(getBuildId.NATIVE_BUILD_NUM)" "BumpType=patch" "iTwinjsBranch=$(getBuildId.ITWINJS_BRANCH)"
+          echo $(getBuildId.NATIVE_BUILD_NUM)
+          echo $(getBuildId.ITWINJS_BRANCH)
+          # az pipelines run \
+          #   --branch $(Build.SourceBranch) \
+          #   --id  8467 \
+          #   --parameters "NativeBuildNum=$(getBuildId.NATIVE_BUILD_NUM)" "BumpType=patch" "iTwinjsBranch=$(getBuildId.ITWINJS_BRANCH)"
         displayName: queue bump-version.yml
         env:
           AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
