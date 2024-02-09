@@ -36,7 +36,7 @@ always:
 
 USING_BREAKPAD = 0
 
-%if defined (BSI)
+%if defined (BSI) && !defined (IS_VERACODE_BUILD)
     %if ($(TARGET_PROCESSOR_ARCHITECTURE) == "x64") 
         USING_BREAKPAD = 1
     %endif

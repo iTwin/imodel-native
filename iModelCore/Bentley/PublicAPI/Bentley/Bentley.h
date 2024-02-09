@@ -64,7 +64,7 @@
         #error Windows compile options not specified correctly. Use windowsToolContext.mke.
     #endif
 
-#if defined(_ITERATOR_DEBUG_LEVEL)
+#if defined(_ITERATOR_DEBUG_LEVEL) && !defined (IS_VERACODE_BUILD)
     // Enabling checked iterators changes the size of std containers and iterators
     static_assert(0 == _ITERATOR_DEBUG_LEVEL, "Checked iterators are not supported.");
 #endif
