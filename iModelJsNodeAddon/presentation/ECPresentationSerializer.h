@@ -97,6 +97,7 @@ protected:
 public:
     using IECPresentationSerializer::AsJson;
 
+    rapidjson::Document AsJson(ContextR, ECClassCP, rapidjson::Document::AllocatorType* = nullptr) const;
     rapidjson::Document AsJson(ContextR, NavNodesContainer const&, rapidjson::Document::AllocatorType* = nullptr) const;
     rapidjson::Document AsJson(ContextR, DataContainer<ContentSetItemCPtr> const&, rapidjson::Document::AllocatorType* = nullptr) const;
 
@@ -118,7 +119,7 @@ struct CompressedClassSerializer : IECClassSerializer
 private:
 	bset<ECClassCP> m_ecClasses;
 protected:
-    virtual rapidjson::Document _SerializeECClass(ECClassCR, rapidjson::Document::AllocatorType&) override;
+    virtual rapidjson::Document _SerializeECClass(ECClassCP, rapidjson::Document::AllocatorType&) override;
 public:
     bset<ECClassCP> const& GetClasses() const {return m_ecClasses;};
     rapidjson::Document CreateAccumulatedClassesMap(rapidjson::Document::AllocatorType*) const;
@@ -131,7 +132,7 @@ public:
 struct DefaultClassSerializer : IECClassSerializer
 {
 protected:
-	virtual rapidjson::Document _SerializeECClass(ECClassCR, rapidjson::Document::AllocatorType&) override;
+	virtual rapidjson::Document _SerializeECClass(ECClassCP, rapidjson::Document::AllocatorType&) override;
 };
 
 /*=================================================================================**//**
