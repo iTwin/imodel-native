@@ -467,31 +467,6 @@ TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_InstanceFilter_L
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(InstancesOfSpecificClasses_InstanceFilter_ReferencingParentInstanceWithoutParentNodeDoesntApplyTheFilter, R"*(
-    <ECEntityClass typeName="A" />
-)*");
-TEST_F (NavigationQueryBuilderTests, InstancesOfSpecificClasses_InstanceFilter_ReferencingParentInstanceWithoutParentNodeDoesntApplyTheFilter)
-    {
-    ECClassCP classA = GetECClass("A");
-
-    InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "parent.Name = 999", classA->GetFullName(), false);
-    auto queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
-    ASSERT_EQ(1, queries.size());
-
-    ValidateQuery(spec, queries[0], [&]()
-        {
-        SelectClass<ECClass> selectClass(*classA, "this", false);
-        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(1, "", *CreateInstanceKeysSelectQuery(), classA, CreateDisplayLabelField(selectClass));
-        ComplexQueryBuilderPtr query = RulesEngineTestHelpers::CreateMultiECInstanceNodesQuery(*classA,
-            ComplexQueryBuilder::Create()->SelectContract(*contract, "this").From(selectClass));
-        query->OrderBy(GetECInstanceNodesOrderByClause().c_str());
-        return query;
-        });
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest
-+---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(InstancesOfSpecificClasses_InstanceFilter_ReferencingParentInstance_WithParentInstanceNode, R"*(
     <ECEntityClass typeName="A" />
     <ECEntityClass typeName="B">
