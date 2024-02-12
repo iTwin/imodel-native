@@ -726,34 +726,6 @@ BentleyStatus DbMapValidator::ValidateDbMap() const
             return ERROR;
         }
 
-    const int maxColumnsForSelectStmt = GetECDb().GetLimit(DbLimits::Column);
-    Utf8String sql = SqlPrintfString(R"x(
-        SELECT
-            [pm].[ClassId] [ClassId],
-            COUNT (*) + 2 [ColumnCount]
-        FROM
-            [ec_PropertyMap] [pm]
-            JOIN [ec_PropertyPath] [pp] ON [pp].[Id] = [pm].[PropertyPathId]
-        WHERE
-            [pp].[AccessString] NOT IN ('ECInstanceId', 'ECClassId')
-        GROUP BY [pm].[ClassId]
-        HAVING [ColumnCount] > %d)x", maxColumnsForSelectStmt).GetUtf8CP();
-
-    if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), sql.c_str()))
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-    if (BE_SQLITE_ROW == stmt.Step())
-        {
-        const int classId = stmt.GetValueInt(0);
-        const int mappedColumns = stmt.GetValueInt(1);
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0157,
-            "The class Id: %d has properties mapped to %d columns, which exceeds the current limit of %d", classId, mappedColumns, maxColumnsForSelectStmt);
-        return ERROR;
-        }
-    stmt.Finalize();
-
     return SUCCESS;
     }
 

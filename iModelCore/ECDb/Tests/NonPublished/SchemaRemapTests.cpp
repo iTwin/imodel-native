@@ -7320,16 +7320,14 @@ TEST_F(SchemaRemapTestFixture, TooManyColumnsInResultSet)
             <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
             <ECEntityClass typeName="Koo">
               <ECCustomAttributes>
-                <ECCustomAttributes>
-                <ClassMap xmlns="ECDbMap.02.00.00">
-                    <MapStrategy>TablePerHierarchy</MapStrategy>
-                </ClassMap>
-                <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
-                <ShareColumns xmlns="ECDbMap.02.00.00">
-                    <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
-                    <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
-                </ShareColumns>
-                </ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                  <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                  <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+              </ShareColumns>
               </ECCustomAttributes>
               %s
             </ECEntityClass>
@@ -7338,6 +7336,7 @@ TEST_F(SchemaRemapTestFixture, TooManyColumnsInResultSet)
               %s
               <ECProperty propertyName="AdditionalProperty" typeName="string" />
             </ECEntityClass>
+          </ECSchema>
           )xml", baseInnerXml.c_str(), innerXml.c_str());
 
       SchemaItem invalidSchema = SchemaItem(invalidSchemaXml);
