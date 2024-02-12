@@ -1675,10 +1675,13 @@ BentleyStatus MainSchemaManager::CheckForSelectWildCardLimit() const
     while (BE_SQLITE_ROW == stmt.Step())
         {
         limitExceeded = true;
-        const int classId = stmt.GetValueInt(0);
+        ECClassId classId = stmt.GetValueId<ECClassId>(0);
         const int mappedColumns = stmt.GetValueInt(1);
+        ECClassCP ecClass = m_ecdb.Schemas().GetClass(classId, nullptr);
+        if (ecClass == nullptr)
+            continue;
         Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0157,
-            "The class Id: %d has properties mapped to %d columns, which exceeds the current limit of %d", classId, mappedColumns, selectWildCardLimit);
+            "Schema Import> Error importing %s class. The %s class has properties mapped to %d columns, which exceeds the current limit of %d defined by SQLITE_MAX_COLUMN.", ecClass->GetFullName(), ecClass->GetFullName(), mappedColumns, selectWildCardLimit);
         }
     return limitExceeded ? ERROR : SUCCESS;
     }
@@ -1833,7 +1836,7 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
 
         if (usedIndexNames.find(index.GetName().c_str()) != usedIndexNames.end())
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0288,
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0680,
                 "Failed to create index %s on table %s. An index with the same name already exists.", index.GetName().c_str(), index.GetTable().GetName().c_str());
             return ERROR;
             }

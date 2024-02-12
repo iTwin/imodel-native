@@ -7307,7 +7307,7 @@ TEST_F(SchemaRemapTestFixture, TooManyColumnsInResultSet)
           )xml", baseInnerXml.c_str(), innerXml.c_str());
 
       SchemaItem invalidSchema = SchemaItem(invalidSchemaXml);
-      ASSERT_EQ(ERROR, GetHelper().ImportSchema(invalidSchema)) << "Schema import should fail as TestSchema:Foo class will have properties mapped to 2201 columns, which exceeds current limit of 22 defined by SQLITE_MAX_COLUMN.";
+      ASSERT_EQ(ERROR, GetHelper().ImportSchema(invalidSchema)) << "Schema import should fail as TestSchema:Foo class will have properties mapped to 2201 columns, which exceeds current limit of 2200 defined by SQLITE_MAX_COLUMN.";
 
       m_ecdb.SaveChanges();
       }
@@ -7340,7 +7340,7 @@ TEST_F(SchemaRemapTestFixture, TooManyColumnsInResultSet)
           )xml", baseInnerXml.c_str(), innerXml.c_str());
 
       SchemaItem invalidSchema = SchemaItem(invalidSchemaXml);
-      ASSERT_EQ(ERROR, GetHelper().ImportSchema(invalidSchema)) << "Schema import should fail as TestSchema:Foo class will have properties mapped to 2201 columns, which exceeds current limit of 22 defined by SQLITE_MAX_COLUMN.";
+      ASSERT_EQ(ERROR, GetHelper().ImportSchema(invalidSchema)) << "Schema import should fail as TestSchema:Foo class will have properties mapped to 2201 columns, which exceeds current limit of 2200 defined by SQLITE_MAX_COLUMN.";
 
       m_ecdb.SaveChanges();
       }
@@ -7498,7 +7498,7 @@ TEST_F(SchemaRemapTestFixture, TooManyColumnsInResultSetHierarchical)
           )xml", baseInnerXml.c_str(), fooInnerXml.c_str(), gooInnerXml.c_str());
 
       SchemaItem invalidSchema = SchemaItem(invalidSchemaXml);
-      ASSERT_EQ(ERROR, GetHelper().ImportSchema(invalidSchema)) << "Schema import should fail as TestSchema:Foo and TestSchema:Goo classes will have properties mapped to 2201 columns, which exceeds current limit of 22 defined by SQLITE_MAX_COLUMN.";
+      ASSERT_EQ(ERROR, GetHelper().ImportSchema(invalidSchema)) << "Schema import should fail as TestSchema:Foo and TestSchema:Goo classes will have properties mapped to 2201 columns, which exceeds current limit of 2200 defined by SQLITE_MAX_COLUMN.";
 
       m_ecdb.SaveChanges();
       }
@@ -7536,7 +7536,7 @@ TEST_F(SchemaRemapTestFixture, TooManyColumnsInResultSetHierarchical)
           )xml", baseInnerXml.c_str(), fooInnerXml.c_str(), gooInnerXml.c_str());
 
       SchemaItem invalidSchema = SchemaItem(invalidSchemaXml);
-      ASSERT_EQ(ERROR, GetHelper().ImportSchema(invalidSchema)) << "Schema import should fail as TestSchema:Foo and TestSchema:Goo classes will have properties mapped to 2201 columns, which exceeds current limit of 22 defined by SQLITE_MAX_COLUMN.";
+      ASSERT_EQ(ERROR, GetHelper().ImportSchema(invalidSchema)) << "Schema import should fail as TestSchema:Foo and TestSchema:Goo classes will have properties mapped to 2201 columns, which exceeds current limit of 2200 defined by SQLITE_MAX_COLUMN.";
 
       m_ecdb.SaveChanges();
       }
