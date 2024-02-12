@@ -91,7 +91,6 @@ public:
 
     //! Defines a way to access related instance through a class and instance IDs. This should be mutually exclusive
     //! with relationship path.
-    //! @warning This part of specification is not read from / written to JSON.
     RelatedInstanceTargetInstancesSpecification const* GetTargetInstancesSpecification() const {return m_targetInstancesSpecification.get();}
 
     //! Related instance alias which will be used to access properties of this instance. Must be unique per parent specification.
