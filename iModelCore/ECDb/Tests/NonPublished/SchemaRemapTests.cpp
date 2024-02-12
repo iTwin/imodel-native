@@ -7346,4 +7346,200 @@ TEST_F(SchemaRemapTestFixture, TooManyColumnsInResultSet)
       }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaRemapTestFixture, TooManyColumnsInResultSetHierarchical)
+    {
+    Utf8String baseInnerXml = "";
+    for (size_t i = 1; i <= 1099; i++)
+        {
+        Utf8PrintfString propName("PropElement%zu", i);
+        baseInnerXml += "<ECProperty propertyName=\"" + propName + "\" typeName=\"string\" />\n";
+        }
+
+    Utf8PrintfString schemaXml = Utf8PrintfString(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Koo">
+              <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                  <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                  <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+              </ShareColumns>
+              </ECCustomAttributes>
+              %s
+            </ECEntityClass>
+            <ECEntityClass typeName="Foo">
+              <BaseClass>Koo</BaseClass>
+            </ECEntityClass>
+            <ECEntityClass typeName="Goo">
+              <BaseClass>Koo</BaseClass>
+            </ECEntityClass>
+        </ECSchema>
+        )xml", baseInnerXml.c_str());
+
+    SchemaItem schemaItem(schemaXml);
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("TooManyColumnsInResultSetHierarchical.ecdb", schemaItem));
+
+    {
+    ECClassCP kooClass = m_ecdb.Schemas().GetClass("TestSchema", "Koo");
+    ASSERT_NE(kooClass, nullptr);
+    ASSERT_EQ(1099, kooClass->GetPropertyCount());
+
+    ECClassCP fooClass = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
+    ASSERT_NE(fooClass, nullptr);
+    ASSERT_EQ(0, fooClass->GetPropertyCount(false /*includeBaseProperties*/));
+    ASSERT_EQ(1099, fooClass->GetPropertyCount(true /*includeBaseProperties*/));
+    }
+
+    Utf8String fooInnerXml = "";
+    for (size_t i = 1100; i <= 2198; i++)
+        {
+        Utf8PrintfString propName("PropElement%zu", i);
+        fooInnerXml += "<ECProperty propertyName=\"" + propName + "\" typeName=\"string\" />\n";
+        }
+
+    Utf8String gooInnerXml = "";
+    for (size_t i = 2199; i <= 3297; i++)
+        {
+        Utf8PrintfString propName("PropElement%zu", i);
+        gooInnerXml += "<ECProperty propertyName=\"" + propName + "\" typeName=\"string\" />\n";
+        }
+
+    Utf8PrintfString updatedSchemaXml = Utf8PrintfString(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Koo">
+              <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                  <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                  <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+              </ShareColumns>
+              </ECCustomAttributes>
+              %s
+            </ECEntityClass>
+            <ECEntityClass typeName="Foo">
+              <BaseClass>Koo</BaseClass>
+              %s
+            </ECEntityClass>
+            <ECEntityClass typeName="Goo">
+              <BaseClass>Koo</BaseClass>
+              %s
+            </ECEntityClass>
+        </ECSchema>
+        )xml", baseInnerXml.c_str(), fooInnerXml.c_str(), gooInnerXml.c_str());
+
+    SchemaItem updatedSchema = SchemaItem(updatedSchemaXml);
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(updatedSchema));
+    m_ecdb.SaveChanges();
+
+    ECClassCP kooClass = m_ecdb.Schemas().GetClass("TestSchema", "Koo");
+    ASSERT_NE(kooClass, nullptr);
+    ASSERT_EQ(1099, kooClass->GetPropertyCount());
+
+    ECClassCP fooClass = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
+    ASSERT_NE(fooClass, nullptr);
+    ASSERT_EQ(1099, fooClass->GetPropertyCount(false /*includeBaseProperties*/));
+    ASSERT_EQ(2198, fooClass->GetPropertyCount(true /*includeBaseProperties*/));
+
+    ECClassCP gooClass = m_ecdb.Schemas().GetClass("TestSchema", "Goo");
+    ASSERT_NE(gooClass, nullptr);
+    ASSERT_EQ(1099, gooClass->GetPropertyCount(false /*includeBaseProperties*/));
+    ASSERT_EQ(2198, gooClass->GetPropertyCount(true /*includeBaseProperties*/));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM TestSchema.Koo"));
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM TestSchema.Foo"));
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM TestSchema.Goo"));
+    stmt.Finalize();
+
+    if (true)
+      {
+      Utf8PrintfString invalidSchemaXml = Utf8PrintfString(
+          R"xml(<?xml version="1.0" encoding="UTF-8"?>
+          <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Koo">
+              <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                  <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                  <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+              </ShareColumns>
+              </ECCustomAttributes>
+              %s
+              <ECProperty propertyName="AdditionalProperty" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Foo">
+              <BaseClass>Koo</BaseClass>
+              %s
+            </ECEntityClass>
+            <ECEntityClass typeName="Goo">
+              <BaseClass>Koo</BaseClass>
+              %s
+            </ECEntityClass>
+          </ECSchema>
+          )xml", baseInnerXml.c_str(), fooInnerXml.c_str(), gooInnerXml.c_str());
+
+      SchemaItem invalidSchema = SchemaItem(invalidSchemaXml);
+      ASSERT_EQ(ERROR, GetHelper().ImportSchema(invalidSchema)) << "Schema import should fail as TestSchema:Foo and TestSchema:Goo classes will have properties mapped to 2201 columns, which exceeds current limit of 22 defined by SQLITE_MAX_COLUMN.";
+
+      m_ecdb.SaveChanges();
+      }
+
+    if (true)
+      {
+      Utf8PrintfString invalidSchemaXml = Utf8PrintfString(
+          R"xml(<?xml version="1.0" encoding="UTF-8"?>
+          <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Koo">
+              <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                  <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+              <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00.00"/>
+              <ShareColumns xmlns="ECDbMap.02.00.00">
+                  <MaxSharedColumnsBeforeOverflow>10</MaxSharedColumnsBeforeOverflow>
+                  <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+              </ShareColumns>
+              </ECCustomAttributes>
+              %s
+            </ECEntityClass>
+            <ECEntityClass typeName="Foo">
+              <BaseClass>Koo</BaseClass>
+              %s
+              <ECProperty propertyName="AdditionalProperty1" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Goo">
+              <BaseClass>Koo</BaseClass>
+              %s
+              <ECProperty propertyName="AdditionalProperty2" typeName="string" />
+            </ECEntityClass>
+          </ECSchema>
+          )xml", baseInnerXml.c_str(), fooInnerXml.c_str(), gooInnerXml.c_str());
+
+      SchemaItem invalidSchema = SchemaItem(invalidSchemaXml);
+      ASSERT_EQ(ERROR, GetHelper().ImportSchema(invalidSchema)) << "Schema import should fail as TestSchema:Foo and TestSchema:Goo classes will have properties mapped to 2201 columns, which exceeds current limit of 22 defined by SQLITE_MAX_COLUMN.";
+
+      m_ecdb.SaveChanges();
+      }
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

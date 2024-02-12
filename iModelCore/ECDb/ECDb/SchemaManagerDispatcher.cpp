@@ -1671,15 +1671,16 @@ BentleyStatus MainSchemaManager::CheckForSelectWildCardLimit() const
         BeAssert(false);
         return ERROR;
         }
-    if (BE_SQLITE_ROW == stmt.Step())
+    bool limitExceeded = false;
+    while (BE_SQLITE_ROW == stmt.Step())
         {
+        limitExceeded = true;
         const int classId = stmt.GetValueInt(0);
         const int mappedColumns = stmt.GetValueInt(1);
         Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0157,
             "The class Id: %d has properties mapped to %d columns, which exceeds the current limit of %d", classId, mappedColumns, selectWildCardLimit);
-        return ERROR;
         }
-    return SUCCESS;
+    return limitExceeded ? ERROR : SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
