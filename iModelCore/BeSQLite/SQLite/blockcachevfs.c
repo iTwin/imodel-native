@@ -1442,7 +1442,6 @@ static int bcvfsReadWriteDatabase(
     assert( bWrite==0 );
     return SQLITE_IOERR_SHORT_READ;
   }
-  assert( (iAmt & (iAmt-1))==0 );
 
   /* Take the VFS mutex and do three things under its cover:
   **
