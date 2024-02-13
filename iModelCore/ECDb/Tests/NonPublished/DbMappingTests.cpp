@@ -11454,7 +11454,7 @@ TEST_F(DbMappingTestFixture, CreateTableWith2kProperties)
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, Only2kColumnsAreAllowedPerTable)
-    {    
+    {
     Utf8String innerXml = "";
     for (size_t i = 1; i <= 1999; i++)
         {
