@@ -41,7 +41,6 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
             arg.Set("indirect", Napi::Boolean::New(env, indirect != 0));
             arg.Set("tableName", Napi::String::New(env, tableName));
             arg.Set("changesetFile", Napi::String::New(env, GetFiles().front().GetNameUtf8()));
-            arg.Set("hasLocalChanges", Napi::Boolean::New(env, m_dgndb.Txns().HasPendingTxns()));
             arg.Set("getForeignKeyConflicts", Napi::Function::New(env, [&](const Napi::CallbackInfo&) -> Napi::Value {
                 int nConflicts = 0;
                 iter.GetFKeyConflicts(&nConflicts);
