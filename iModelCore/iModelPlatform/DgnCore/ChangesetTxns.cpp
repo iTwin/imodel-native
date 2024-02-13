@@ -29,7 +29,55 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
     BeAssert(result == BE_SQLITE_OK);
     UNUSED_VARIABLE(result);
 
-    if (cause == ChangeSet::ConflictCause::Data) {
+    const auto jsIModelDb = m_dgndb.GetJsIModelDb();
+    if (nullptr != jsIModelDb) {
+        const auto jsDgnDb = jsIModelDb->Value();
+        const auto env = jsDgnDb.Env();
+        const auto onChangesetConflictFunc = jsDgnDb.Get("onChangesetConflict").As<Napi::Function>();
+        if (onChangesetConflictFunc.IsFunction()) {
+            auto arg = Napi::Object::New(env);
+            arg.Set("cause", Napi::Number::New(env, (int)cause));
+            arg.Set("opcode", Napi::Number::New(env, (int)opcode));
+            arg.Set("indirect", Napi::Boolean::New(env, indirect != 0));
+            arg.Set("tableName", Napi::String::New(env, tableName));
+            arg.Set("changesetFile", Napi::String::New(env, GetFiles().front().GetNameUtf8()));
+            arg.Set("hasLocalChanges", Napi::Boolean::New(env, m_dgndb.Txns().HasPendingTxns()));
+            arg.Set("getForeignKeyConflicts", Napi::Function::New(env, [&](const Napi::CallbackInfo&) -> Napi::Value {
+                int nConflicts = 0;
+                iter.GetFKeyConflicts(&nConflicts);
+                return Napi::Number::New(env, nConflicts);
+            }));
+
+            arg.Set("dump", Napi::Function::New(env, [&](const Napi::CallbackInfo&) -> void {
+                iter.Dump(m_dgndb, false, 1);
+            }));
+            arg.Set("setLastError", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> void {
+                if (info.Length() != 1)
+                    BeNapi::ThrowJsException(jsDgnDb.Env(), "setLastError() Expect a string type arg");
+
+                auto val = info[0];
+                if (!val.IsString())
+                    BeNapi::ThrowJsException(jsDgnDb.Env(), "setLastError() Expect a string type arg");
+
+                m_lastErrorMessage = val.As<Napi::String>().Utf8Value();
+            }));
+            const auto resolutionJsVal = onChangesetConflictFunc.Call(jsDgnDb, {arg});
+
+            // if handler return undefined we revert to native handler.
+            if (!resolutionJsVal.IsUndefined()) {
+                if (!resolutionJsVal.IsNumber())
+                    BeNapi::ThrowJsException(jsDgnDb.Env(), "onChangesetConflict did not return a number", (int) DgnDbStatus::BadArg);
+
+                const auto resolution = (ChangeSet::ConflictResolution)resolutionJsVal.As<Napi::Number>().Int32Value();
+                if (resolution != ChangeSet::ConflictResolution::Abort  && resolution != ChangeSet::ConflictResolution::Replace && resolution != ChangeSet::ConflictResolution::Skip )
+                    BeNapi::ThrowJsException(jsDgnDb.Env(), "onChangesetConflict returned unsupported value for conflict resolution", (int) DgnDbStatus::BadArg);
+
+                return resolution;
+            }
+        }
+    }
+
+    if (cause == ChangeSet::ConflictCause::Data && !indirect) {
         /*
         * From SQLite Docs CHANGESET_DATA as the second argument
         * when processing a DELETE or UPDATE change if a row with the required
