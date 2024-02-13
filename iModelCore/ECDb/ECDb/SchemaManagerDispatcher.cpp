@@ -1610,7 +1610,7 @@ BentleyStatus MainSchemaManager::CheckForPerTableColumnLimit() const
     // Note: maxColumns should never be less than the limit defined by SQLITE_MAX_COLUMN; previous limit was 2000
     const int maxColumns = 2000;
 
-    Utf8String sql = SqlPrintfString(R"sql(
+    Utf8CP sql = R"(
         SELECT
             [pm].[ClassId] [ClassId],
             [tb].[Name] [TableName],
@@ -1625,10 +1625,10 @@ BentleyStatus MainSchemaManager::CheckForPerTableColumnLimit() const
             [co].[IsVirtual] = 0
             AND [cm].[MapStrategy] <> 3
         GROUP BY [cl].[Id], [tb].[Id]
-        HAVING COUNT (*) > ?;)sql").GetUtf8CP();
+        HAVING COUNT (*) > ?;)";
 
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, sql.c_str()))
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, sql))
         {
         BeAssert(false);
         return ERROR;
@@ -1653,7 +1653,7 @@ BentleyStatus MainSchemaManager::CheckForSelectWildCardLimit() const
     {
     ECDB_PERF_LOG_SCOPE("Schema import> Check for select wild card limit");
     const int selectWildCardLimit = GetECDb().GetLimit(DbLimits::Column);
-    Utf8String sql = SqlPrintfString(R"sql(
+    Utf8CP sql = R"(
         SELECT
             [pm].[ClassId] [ClassId],
             COUNT (*) + 2 [ColumnCount]
@@ -1663,10 +1663,10 @@ BentleyStatus MainSchemaManager::CheckForSelectWildCardLimit() const
         WHERE
             [pp].[AccessString] NOT IN ('ECInstanceId', 'ECClassId')
         GROUP BY [pm].[ClassId]
-        HAVING [ColumnCount] > ?;)sql").GetUtf8CP();
+        HAVING [ColumnCount] > ?;)";
 
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, sql.c_str()))
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, sql))
         {
         BeAssert(false);
         return ERROR;
@@ -1679,7 +1679,7 @@ BentleyStatus MainSchemaManager::CheckForSelectWildCardLimit() const
         ECClassId classId = stmt.GetValueId<ECClassId>(0);
         const int mappedColumns = stmt.GetValueInt(1);
         ECClassCP ecClass = m_ecdb.Schemas().GetClass(classId, nullptr);
-        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0157,
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0680,
             "Schema Import> Error importing %s class. The %s class has properties mapped to %d columns, which exceeds the current limit of %d defined by SQLITE_MAX_COLUMN.",
             ecClass->GetFullName(), ecClass->GetFullName(), mappedColumns, selectWildCardLimit);
         }
@@ -1836,7 +1836,7 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
 
         if (usedIndexNames.find(index.GetName().c_str()) != usedIndexNames.end())
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0680,
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0288,
                 "Failed to create index %s on table %s. An index with the same name already exists.", index.GetName().c_str(), index.GetTable().GetName().c_str());
             return ERROR;
             }
