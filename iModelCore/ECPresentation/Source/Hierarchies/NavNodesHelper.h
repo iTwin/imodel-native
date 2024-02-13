@@ -47,4 +47,24 @@ public:
     static NavNodePtr DeserializeNodeFromJson(RapidJsonValueCR);
 };
 
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct HierarchiesInstanceFilteringHelper
+{
+    struct ParentClassInstanceIds
+        {
+        SelectClass<ECClass> selectClass;
+        bvector<ECInstanceId> instanceIds;
+        };
+    struct ParentInstanceFilteringInfo
+        {
+        Utf8String modifiedInstanceFilter;
+        bvector<ParentClassInstanceIds> classInstanceIds;
+        };
+    static ParentInstanceFilteringInfo CreateParentInstanceFilteringInfo(IHierarchyCacheCR, NavNodeCP parentInstanceNode, Utf8StringCR filterExpression);
+
+    static NavNodeCPtr GetParentInstanceNode(IHierarchyCacheCR, NavNodeCR);
+};
+
 END_BENTLEY_ECPRESENTATION_NAMESPACE

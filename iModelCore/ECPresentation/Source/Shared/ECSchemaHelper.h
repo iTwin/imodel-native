@@ -169,11 +169,10 @@ struct ECSchemaHelper : NonCopyableClass
             std::unordered_set<ECClassCP> m_actualSourceClasses;
             };
         private:
-            bvector<bvector<RelationshipPathResult>> m_indexedPaths;
+            bmap<size_t, bvector<RelationshipPathResult>> m_indexedPaths;
         public:
-            RelationshipPathsResponse(size_t pathsCount) : m_indexedPaths(pathsCount) {}
-            bvector<RelationshipPathResult>& GetPaths(size_t targetIndex) {return m_indexedPaths[targetIndex];}
-            bvector<RelationshipPathResult> const& GetPaths(size_t targetIndex) const {return m_indexedPaths[targetIndex];}
+            bmap<size_t, bvector<RelationshipPathResult>>& GetPaths() {return m_indexedPaths;}
+            bmap<size_t, bvector<RelationshipPathResult>> const& GetPaths() const {return m_indexedPaths;}
         };
 
 private:

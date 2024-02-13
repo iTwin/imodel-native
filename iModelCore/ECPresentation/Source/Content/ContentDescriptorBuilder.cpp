@@ -1140,7 +1140,7 @@ static void AssignFieldNames(bmap<Utf8String, uint64_t>& requestedNameCounts, bv
             else
                 {
                 ++iter->second;
-                field->SetUniqueName(Utf8String(requestedName).append("_").append(std::to_string(iter->second)));
+                field->SetUniqueName(Utf8String(requestedName).append("/").append(std::to_string(iter->second)));
                 }
             }
         if (field->IsNestedContentField())
