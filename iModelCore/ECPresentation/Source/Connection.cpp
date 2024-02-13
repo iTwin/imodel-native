@@ -7,7 +7,7 @@
 #include <Bentley/BeThreadLocalStorage.h>
 #include <Bentley/BeThread.h>
 
-#define STATEMENT_CACHE_SIZE 50
+#define STATEMENT_CACHE_SIZE 200
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
