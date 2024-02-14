@@ -1684,7 +1684,7 @@ TEST_F (BeSQLiteDbTests, Limits)
     EXPECT_TRUE (m_db.IsDbOpen ());
 
     ASSERT_EQ(10, m_db.GetLimit(DbLimits::Attached));
-    ASSERT_EQ(2000, m_db.GetLimit(DbLimits::Column));
+    ASSERT_EQ(2200, m_db.GetLimit(DbLimits::Column));
     ASSERT_EQ(500, m_db.GetLimit(DbLimits::CompoundSelect));
     ASSERT_EQ(2000, m_db.GetLimit(DbLimits::ExprDepth));
     ASSERT_EQ(127, m_db.GetLimit(DbLimits::FunctionArg));
