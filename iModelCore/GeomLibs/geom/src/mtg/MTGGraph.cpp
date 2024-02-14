@@ -303,7 +303,7 @@ void MTGGraph::InitNonNodeParts (bool preserveLabels)
         m_facePropertyMask = MTG_DEFAULT_FACE_PROPERTY_MASK;
         }
     }
-    
+
 void MTGGraph::DeleteNodes ()
     {
     m_nodeData.clear ();
@@ -490,7 +490,23 @@ static MTGNodeId ExploreComponent(MTGGraph& graph, bvector<MTGNodeId>& component
             }
         MTGARRAY_END_FACE_LOOP(myNode, &graph, node)
         }
-    return candidates.empty() ? MTG_NULL_NODEID : candidates.front();
+    if (candidates.empty())
+        return MTG_NULL_NODEID;
+    else
+        {
+        MTGNodeId front = candidates.front();
+        while (!candidates.empty())
+            {
+            // try to find a node at the boundary of both the geometry and previous component
+            MTGNodeId node = candidates.front();
+            candidates.pop();
+            if (graph.HasMaskAt(graph.VSucc(node), ignoreMask))
+                return node;
+            if (graph.HasMaskAt(graph.EdgeMate(node), ignoreMask))
+                return node;
+            }
+        return front;
+        }
     }
 
 // Breadth-first flood...
@@ -641,7 +657,7 @@ static void ExploreComponent (MTGGraph &graph, bvector <MTGNodeId> &component, b
                     }
                 }
             }
-        // and this is the node side ..            
+        // and this is the node side ..
         TestMarkAndPush (graph, stack, graph.FSucc (node), visitMask);
         TestMarkAndPush (graph, stack, graph.VSucc (node), visitMask);
         }
@@ -694,7 +710,7 @@ size_t MTGGraph::CountFaceLoops(MTGMask ignoreMask)
 
 size_t MTGGraph::CountFaceLoops ()
     {
-    return CountFaceLoops(MTG_NULL_MASK); 
+    return CountFaceLoops(MTG_NULL_MASK);
     }
 
 size_t MTGGraph::CountVertexLoops ()
@@ -798,7 +814,7 @@ void MTGGraph::LoadFromBinaryStream(void* serialized, size_t ct)
     offset += sizeof(int);
     for (int i = 0; i < length / (int)(2 * sizeof(int) + sizeof(MTGLabelMask)); i++)
         {
-        m_nodeLabels.push_back(LabelSet(*(int*)( (char*)serialized + offset + 3 * sizeof(int)* i), 
+        m_nodeLabels.push_back(LabelSet(*(int*)( (char*)serialized + offset + 3 * sizeof(int)* i),
                                 *(int*)( (char*)serialized + offset + 3 * sizeof(int)* i + sizeof(int) ),
                                *(MTGLabelMask*)( (char*)serialized + offset + 3 * sizeof(int)*i +2 * sizeof(int) ) ));
         }
@@ -964,7 +980,7 @@ size_t MTGGraph::CountNodesAroundFace (MTGNodeId nodeId) const
 
 size_t MTGGraph::CountNodesAroundVertex (MTGNodeId nodeId) const
     {
-    size_t n = 0;    
+    size_t n = 0;
     MTGARRAY_VERTEX_LOOP (currNodeId, this, nodeId)
         {
         n++;
@@ -1082,7 +1098,7 @@ size_t MTGGraph::CountMaskAroundFace   (MTGNodeId nodeId, MTGMask mask) const
     }
 size_t MTGGraph::CountMaskAroundVertex (MTGNodeId nodeId, MTGMask mask) const
     {
-    size_t n = 0;    
+    size_t n = 0;
     MTGARRAY_VERTEX_LOOP (currNodeId, this, nodeId)
         {
         if (GetMaskAt (currNodeId, mask))
@@ -1093,7 +1109,7 @@ size_t MTGGraph::CountMaskAroundVertex (MTGNodeId nodeId, MTGMask mask) const
     }
 size_t MTGGraph::CountMask   (MTGMask mask) const
     {
-    size_t n = 0;    
+    size_t n = 0;
     MTGARRAY_SET_LOOP (currNodeId, this)
         {
         if (GetMaskAt (currNodeId, mask))

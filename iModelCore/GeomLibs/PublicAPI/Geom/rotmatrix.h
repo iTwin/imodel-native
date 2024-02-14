@@ -1279,15 +1279,23 @@ double ConditionNumber () const;
 //flex|| || bool matrix.OffDiagonalSignedRange (outMinValue, outMaxValue) || bool matrix.OffDiagonalAbsRange (outMinValue, outMaxValue) ||
 //flex|| || a = matrix.SumSquares () || a = matrix.SumDiagonalSquares () || a = matrix.SumOffDiagonalSquares () ||
 //flex|| || a = matrix.MaxAbs () || a = matrix.MaxDiff () ||
-//
+
 //!
 //! @description Tests if a matrix is the identity matrix.
+//! @remarks An absolute tolerance of 1.0e-12 is used to compare matrix entries.
 //! @return true if matrix is approximately an identity.
 //!
 bool IsIdentity () const;
 
 //!
-//! @description Tests if a matrix has small offdiagonal entries compared to
+//! @description Tests if a matrix is the identity matrix.
+//! @param [in] tol absolute tolerance for comparing matrix entries.
+//! @return true if matrix is approximately an identity.
+//!
+bool IsIdentity(double tol) const;
+
+//!
+//! @description Tests if a matrix has small off-diagonal entries compared to
 //!                   diagonals.   The specific test condition is that the
 //!                   largest off diagonal absolute value is less than a tight tolerance
 //!                   fraction times the largest diagonal entry.
@@ -1296,9 +1304,9 @@ bool IsIdentity () const;
 bool IsDiagonal () const;
 
 //!
-//! @description Tests if a matrix has (nearly) equal diagaonal entries and
+//! @description Tests if a matrix has (nearly) equal diagonal entries and
 //!           (nearly) zero off diagonals.  Tests use a tight relative tolerance.
-//! @param [out] maxScale the largest diagaonal entry
+//! @param [out] maxScale the largest diagonal entry
 //! @return true if matrix is approximately diagonal
 //!
 bool IsUniformScale
@@ -1427,11 +1435,10 @@ bool IsRigid () const;
 bool IsOrthogonal () const;
 
 //!
-//! @description Test if this instance matrix has orthonormal columns, i.e. its columns
-//! are all perpendicular to one another.
+//! @description Test if this instance matrix has orthonormal columns, i.e. its columns are all perpendicular to one another.
+//! @remarks Internally, an absolute tolerance of 1.0e-12 is passed into IsIdentity.
 //! @param [out] columns matrix containing the unit vectors along the columns.
-//! @param [out] axisScales  point whose x, y, and z components are the magnitudes of the
-//!           original columns.
+//! @param [out] axisScales xyz components are the magnitudes of the original columns.
 //! @param [out] axisRatio smallest axis length divided by largest.
 //! @return true if the matrix is orthonormal.
 //!
@@ -1443,11 +1450,26 @@ double          &axisRatio
 ) const;
 
 //!
+//! @description Test if this instance matrix has orthonormal columns, i.e. its columns are all perpendicular to one another.
+//! @param [out] columns matrix containing the unit vectors along the columns.
+//! @param [out] axisScales xyz components are the magnitudes of the original columns.
+//! @param [out] axisRatio smallest axis length divided by largest.
+//! @param [in] tol absolute tolerance passed into IsIdentity.
+//! @return true if the matrix is orthonormal.
+//!
+bool IsOrthonormal
+(
+RotMatrixR      columns,
+DVec3dR         axisScales,
+double          &axisRatio,
+double          tol
+) const;
+
+//!
 //! @description Test if this instance matrix is composed of only rigid rotation and scaling.
-//! @param [out] columns  matrix containing the unit vectors along the columns.
-//! @param [out] scale largest axis scale factor.  If function value is true,
-//!       the min scale is the same.  Use areColumnsOrthonormal to get
-//!       separate column scales.
+//! @remarks Internally, an absolute tolerance of 1.0e-12 is passed into IsOrthonormal.
+//! @param [out] columns matrix containing normalized instance columns.
+//! @param [out] scale largest column magnitude. If this function returns true, all instance columns have the same magnitude. Use IsOrthonormal to get separate column scales.
 //! @return true if the matrix is orthonormal.
 //!
 bool IsRigidScale
@@ -1457,17 +1479,30 @@ double          &scale
 ) const;
 
 //!
-//! @description Test if this instance matrix is composed of only rigid rotation and scaling, allowing negative (mirror) scale
-//! @param [out] columns  descaled matrix.  (Specifically: The original matrix multiplied by the inverse of the scale)
-//! @param [out] scale signed scale of largest magnitude. If function value is true,
-//!       the min scale is the same.  Use areColumnsOrthonormal to get
-//!       separate column scales.
-//! @return true if the matrix is orthonormal (i.e. the return columns are a rotation)
+//! @description Test if this instance matrix is composed of only rigid rotation and scaling, allowing negative (mirror) scale.
+//! @remarks Internally, an absolute tolerance of 1.0e-12 is passed into IsOrthonormal.
+//! @param [out] columns descaled matrix. Specifically: instance columns scaled by the inverse of the returned scale.
+//! @param [out] scale largest column magnitude, negated if mirror. If this function returns true, all instance columns have the same magnitude. Use IsOrthonormal to get separate column scales.
+//! @return true if the matrix is orthonormal (i.e. columns is a rotation)
 //!
 bool IsRigidSignedScale
 (
 RotMatrixR      columns,
 double          &scale
+) const;
+
+//!
+//! @description Test if this instance matrix is composed of only rigid rotation and scaling, allowing negative (mirror) scale.
+//! @param [out] columns descaled matrix. Specifically: instance columns scaled by the inverse of the returned scale.
+//! @param [out] scale largest column magnitude, negated if mirror. If this function returns true, all instance columns have the same magnitude. Use IsOrthonormal to get separate column scales.
+//! @param [in] tol absolute tolerance passed into IsOrthonormal.
+//! @return true if the matrix is orthonormal (i.e. columns is a rotation)
+//!
+bool IsRigidSignedScale
+(
+RotMatrixR      columns,
+double          &scale,
+double          tol
 ) const;
 
 //! Determine if a matrix is close to a pure rotate and scale.

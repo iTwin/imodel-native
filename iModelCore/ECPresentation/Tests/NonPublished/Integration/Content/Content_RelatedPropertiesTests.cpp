@@ -152,7 +152,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RelatedPropertyValuesAreCor
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues1;
     expectedValues1.Parse(Utf8PrintfString(R"({
-        "%s": null,
         "%s": "Test A",
         "%s": [{
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
@@ -165,7 +164,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RelatedPropertyValuesAreCor
             "MergedFieldNames": []
             }]
     })",
-        descriptor->GetVisibleFields()[0]->GetUniqueName().c_str(),
         descriptor->GetVisibleFields()[1]->GetUniqueName().c_str(),
         descriptor->GetVisibleFields()[2]->GetUniqueName().c_str(),
         classB->GetId().ToString().c_str(), instanceB1->GetInstanceId().c_str(),
@@ -180,11 +178,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RelatedPropertyValuesAreCor
     rapidjson::Document expectedValues2;
     expectedValues2.Parse(Utf8PrintfString(R"({
         "%s": "Test B 2",
-        "%s": null,
         "%s": []
     })",
         descriptor->GetVisibleFields()[0]->GetUniqueName().c_str(),
-        descriptor->GetVisibleFields()[1]->GetUniqueName().c_str(),
         descriptor->GetVisibleFields()[2]->GetUniqueName().c_str(),
         classB->GetId().ToString().c_str(), instanceB1->GetInstanceId().c_str(),
         descriptor->GetVisibleFields()[2]->AsNestedContentField()->AsRelatedContentField()->GetFields().front()->GetUniqueName().c_str(),
@@ -259,7 +255,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesRelat
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": "InstanceA",
-        "%s": null,
         "%s": {"ECClassId": "%s", "ECInstanceId": "%s", "Label": %s},
         "%s": [{
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
@@ -273,7 +268,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesRelat
             }]
     })",
         descriptor->GetVisibleFields()[0]->GetUniqueName().c_str(),
-        descriptor->GetVisibleFields()[1]->GetUniqueName().c_str(),
         descriptor->GetVisibleFields()[2]->GetUniqueName().c_str(), instanceB->GetClass().GetId().ToString().c_str(), instanceB->GetInstanceId().c_str(), GetNavigationPropertyTargetLabel().c_str(),
         descriptor->GetVisibleFields()[3]->GetUniqueName().c_str(),
         classB->GetId().ToString().c_str(), instanceB->GetInstanceId().c_str(),
@@ -775,10 +769,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesNestedContentWhenBas
                 "%s": [{
                     "PrimaryKeys": [{"ECClassId":"%s", "ECInstanceId":"%s"}],
                     "Values": {
-                        "%s": null
                     },
                     "DisplayValues": {
-                        "%s": null
                     },
                     "MergedFieldNames": []
                 }]
@@ -786,7 +778,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesNestedContentWhenBas
             "DisplayValues": {
                 "%s": [{
                     "DisplayValues": {
-                        "%s": null
                     }
                 }]
             },
@@ -797,9 +788,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesNestedContentWhenBas
         classC->GetId().ToString().c_str(), c->GetInstanceId().c_str(),
         NESTED_CONTENT_FIELD_NAME(classB, classD),
         classD->GetId().ToString().c_str(), d->GetInstanceId().c_str(),
-        FIELD_NAME(classD, "Prop"), FIELD_NAME(classD, "Prop"),
-        NESTED_CONTENT_FIELD_NAME(classB, classD),
-        FIELD_NAME(classD, "Prop")
+        NESTED_CONTENT_FIELD_NAME(classB, classD)
     ).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
@@ -934,10 +923,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesNestedContentWhenBas
                         "%s": [{
                             "PrimaryKeys": [{"ECClassId":"%s", "ECInstanceId":"%s"}],
                             "Values": {
-                                "%s": null
                             },
                             "DisplayValues": {
-                                "%s": null
                             },
                             "MergedFieldNames": []
                         }]
@@ -945,7 +932,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesNestedContentWhenBas
                     "DisplayValues": {
                         "%s": [{
                             "DisplayValues": {
-                                "%s": null
                             }
                         }]
                     },
@@ -957,7 +943,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesNestedContentWhenBas
                     "DisplayValues": {
                         "%s": [{
                             "DisplayValues": {
-                                "%s": null
                             }
                         }]
                     }
@@ -972,12 +957,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesNestedContentWhenBas
         classD->GetId().ToString().c_str(), d->GetInstanceId().c_str(),
         NESTED_CONTENT_FIELD_NAME(classD, classE),
         classE->GetId().ToString().c_str(), e->GetInstanceId().c_str(),
-        FIELD_NAME(classE, "Prop"), FIELD_NAME(classE, "Prop"),
         NESTED_CONTENT_FIELD_NAME(classD, classE),
-        FIELD_NAME(classE, "Prop"),
         NESTED_CONTENT_FIELD_NAME(classB, classD),
-        NESTED_CONTENT_FIELD_NAME(classD, classE),
-        FIELD_NAME(classE, "Prop")
+        NESTED_CONTENT_FIELD_NAME(classD, classE)
     ).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
@@ -1230,7 +1212,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
-        "%s": null,
         "%s": [{
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
@@ -1311,7 +1292,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
             "MergedFieldNames": []
             }]
         })",
-        FIELD_NAME(parentClass, "ParentProperty"),
         NESTED_CONTENT_FIELD_NAME(parentClass, childClass1),
         childClass1->GetId().ToString().c_str(), child1->GetInstanceId().c_str(),
         FIELD_NAME(childClass1, "Parent"), parent->GetClass().GetId().ToString().c_str(), parent->GetInstanceId().c_str(), GetNavigationPropertyTargetLabel().c_str(),
@@ -1417,7 +1397,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
-        "%s": null,
         "%s": [{
             "PrimaryKeys": [{"ECClassId":"%s", "ECInstanceId":"%s"}, {"ECClassId":"%s", "ECInstanceId":"%s"}, {"ECClassId":"%s", "ECInstanceId":"%s"}],
             "Values": {
@@ -1433,7 +1412,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
             "MergedFieldNames": ["%s"]
             }]
         })",
-        FIELD_NAME(classA, "StringProperty"), NESTED_CONTENT_FIELD_NAME(classA, classB),
+        NESTED_CONTENT_FIELD_NAME(classA, classB),
         classB->GetId().ToString().c_str(), instanceB1->GetInstanceId().c_str(),
         classB->GetId().ToString().c_str(), instanceB2->GetInstanceId().c_str(),
         classB->GetId().ToString().c_str(), instanceB3->GetInstanceId().c_str(),
@@ -1442,6 +1421,132 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
         FIELD_NAME(classB, "A"), varies_string.c_str(),
         FIELD_NAME(classB, "IntProperty"), FIELD_NAME(classB, "LongProperty"),
         FIELD_NAME(classB, "A")
+    ).c_str());
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+    EXPECT_FALSE(contentSet.Get(0)->IsMerged("A_B"));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(LoadsXToManyRelatedInstancesAsArrays_MergesArrayValuesWhenArraySizeIsMoreThanOneElementAndValuesAreEqual, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="LongProperty" typeName="long" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_B" strength="referencing" strengthDirection="forward" modifier="Sealed">
+        <Source multiplicity="(0..*)" roleLabel="A Has B" polymorphic="True">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="B Has A" polymorphic="True">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstancesAsArrays_MergesArrayValuesWhenArraySizeIsMoreThanOneElementAndValuesAreEqual)
+    {
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
+
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECRelationshipClassCP rel = GetClass("A_B")->GetRelationshipClassCP();
+
+    // set up data set
+    IECInstancePtr instanceA1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr instanceB11 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [&](IECInstanceR instance)
+        {
+        instance.SetValue("IntProperty", ECValue(1));
+        instance.SetValue("LongProperty", ECValue((int64_t)111));
+        });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instanceA1, *instanceB11);
+    IECInstancePtr instanceB12 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [&](IECInstanceR instance)
+        {
+        instance.SetValue("IntProperty", ECValue(2));
+        instance.SetValue("LongProperty", ECValue((int64_t)222));
+        });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instanceA1, *instanceB12);
+    IECInstancePtr instanceA2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr instanceB21 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [&](IECInstanceR instance)
+        {
+        instance.SetValue("IntProperty", ECValue(1));
+        instance.SetValue("LongProperty", ECValue((int64_t)111));
+        });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instanceA2, *instanceB21);
+    IECInstancePtr instanceB22 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [&](IECInstanceR instance)
+        {
+        instance.SetValue("IntProperty", ECValue(2));
+        instance.SetValue("LongProperty", ECValue((int64_t)222));
+        });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *instanceA2, *instanceB22);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    rule->AddSpecification(*spec);
+
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel->GetFullName(),
+        classB->GetFullName(), "*", RelationshipMeaning::RelatedInstance));
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), 
+        rules->GetRuleSetId(), RulesetVariables(), "", (int)ContentFlags::MergeResults, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(2, descriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId":"%s", "ECInstanceId":"%s"}, {"ECClassId":"%s", "ECInstanceId":"%s"}],
+            "Values": {
+                "%s": 1,
+                "%s": 111
+                },
+            "DisplayValues": {
+                "%s": "1",
+                "%s": "111"
+                },
+            "MergedFieldNames": []
+            }, {
+            "PrimaryKeys": [{"ECClassId":"%s", "ECInstanceId":"%s"}, {"ECClassId":"%s", "ECInstanceId":"%s"}],
+            "Values": {
+                "%s": 2,
+                "%s": 222
+                },
+            "DisplayValues": {
+                "%s": "2",
+                "%s": "222"
+                },
+            "MergedFieldNames": []
+            }]
+        })",
+        NESTED_CONTENT_FIELD_NAME(classA, classB),
+        classB->GetId().ToString().c_str(), instanceB11->GetInstanceId().c_str(),
+        classB->GetId().ToString().c_str(), instanceB21->GetInstanceId().c_str(),
+        FIELD_NAME(classB, "IntProperty"), FIELD_NAME(classB, "LongProperty"),
+        FIELD_NAME(classB, "IntProperty"), FIELD_NAME(classB, "LongProperty"),
+        classB->GetId().ToString().c_str(), instanceB12->GetInstanceId().c_str(),
+        classB->GetId().ToString().c_str(), instanceB22->GetInstanceId().c_str(),
+        FIELD_NAME(classB, "IntProperty"), FIELD_NAME(classB, "LongProperty"),
+        FIELD_NAME(classB, "IntProperty"), FIELD_NAME(classB, "LongProperty")
     ).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
@@ -1531,10 +1636,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
-        "%s": null,
         "%s": "%s"
         })",
-        FIELD_NAME(classA, "StringProperty"), NESTED_CONTENT_FIELD_NAME(classA, classB),
+        NESTED_CONTENT_FIELD_NAME(classA, classB),
         varies_string.c_str()
     ).c_str());
 
@@ -1624,7 +1728,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
-        "%s": null,
         "%s": [{
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}, {"ECClassId": "%s", "ECInstanceId": "%s"}, {"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
@@ -1640,7 +1743,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
             "MergedFieldNames": ["%s", "%s", "%s"]
         }]
     })",
-        FIELD_NAME(classA, "StringProperty"), NESTED_CONTENT_FIELD_NAME(classA, classB),
+        NESTED_CONTENT_FIELD_NAME(classA, classB),
         classB->GetId().ToString().c_str(), instanceB1->GetInstanceId().c_str(),
         classB->GetId().ToString().c_str(), instanceB2->GetInstanceId().c_str(),
         classB->GetId().ToString().c_str(), instanceB3->GetInstanceId().c_str(),
@@ -1735,31 +1838,25 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
-        "%s": null,
         "%s": [{
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "%s": null,
                 "%s": {"ECClassId": "%s", "ECInstanceId": "%s", "Label": %s},
                 "%s": [{
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
-                        "%s": null,
                         "%s": {"ECClassId": "%s", "ECInstanceId": "%s", "Label": %s}
                         },
                     "DisplayValues": {
-                        "%s": null,
                         "%s": "%s"
                         },
                     "MergedFieldNames": []
                     }]
                 },
             "DisplayValues": {
-                "%s": null,
                 "%s": "%s",
                 "%s": [{
                     "DisplayValues": {
-                        "%s": null,
                         "%s": "%s"
                         }
                     }]
@@ -1767,18 +1864,16 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
             "MergedFieldNames": []
             }]
         })",
-        FIELD_NAME(classA, "PropertyA"), NESTED_CONTENT_FIELD_NAME(classA, classB),
+        NESTED_CONTENT_FIELD_NAME(classA, classB),
         classB->GetId().ToString().c_str(), instanceB->GetInstanceId().c_str(),
-        FIELD_NAME(classB, "PropertyB"),
         FIELD_NAME(classB, "A"), instanceA->GetClass().GetId().ToString().c_str(), instanceA->GetInstanceId().c_str(), GetNavigationPropertyTargetLabel().c_str(),
         NESTED_CONTENT_FIELD_NAME(classB, classC),
         classC->GetId().ToString().c_str(), instanceC->GetInstanceId().c_str(),
-        FIELD_NAME(classC, "PropertyC"),
         FIELD_NAME(classC, "B"), instanceB->GetClass().GetId().ToString().c_str(), instanceB->GetInstanceId().c_str(), GetNavigationPropertyTargetLabel().c_str(),
-        FIELD_NAME(classC, "PropertyC"), FIELD_NAME(classC, "B"), CommonStrings::LABEL_NOTSPECIFIED,
-        FIELD_NAME(classB, "PropertyB"), FIELD_NAME(classB, "A"), CommonStrings::LABEL_NOTSPECIFIED,
+        FIELD_NAME(classC, "B"), CommonStrings::LABEL_NOTSPECIFIED,
+        FIELD_NAME(classB, "A"), CommonStrings::LABEL_NOTSPECIFIED,
         NESTED_CONTENT_FIELD_NAME(classB, classC),
-        FIELD_NAME(classC, "PropertyC"), FIELD_NAME(classC, "B"), CommonStrings::LABEL_NOTSPECIFIED
+        FIELD_NAME(classC, "B"), CommonStrings::LABEL_NOTSPECIFIED
     ).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
@@ -1865,18 +1960,15 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
-        "%s": null,
         "%s": [{
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": [{
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
-                        "%s": null,
                         "%s": {"ECClassId": "%s", "ECInstanceId": "%s", "Label": %s}
                         },
                     "DisplayValues": {
-                        "%s": null,
                         "%s": "%s"
                         },
                     "MergedFieldNames": []
@@ -1885,7 +1977,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
             "DisplayValues": {
                 "%s": [{
                     "DisplayValues": {
-                        "%s": null,
                         "%s": "%s"
                         }
                     }]
@@ -1893,14 +1984,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
             "MergedFieldNames": []
             }]
         })",
-        FIELD_NAME(classA, "PropertyA"),
         NESTED_CONTENT_FIELD_NAME(classA, classB), classB->GetId().ToString().c_str(), instanceB->GetInstanceId().c_str(),
         NESTED_CONTENT_FIELD_NAME(classB, classC), classC->GetId().ToString().c_str(), instanceC->GetInstanceId().c_str(),
-        FIELD_NAME(classC, "PropertyC"),
         FIELD_NAME(classC, "B"), instanceB->GetClass().GetId().ToString().c_str(), instanceB->GetInstanceId().c_str(), GetNavigationPropertyTargetLabel().c_str(),
-        FIELD_NAME(classC, "PropertyC"), FIELD_NAME(classC, "B"), CommonStrings::LABEL_NOTSPECIFIED,
+        FIELD_NAME(classC, "B"), CommonStrings::LABEL_NOTSPECIFIED,
         NESTED_CONTENT_FIELD_NAME(classB, classC),
-        FIELD_NAME(classC, "PropertyC"), FIELD_NAME(classC, "B"), CommonStrings::LABEL_NOTSPECIFIED
+        FIELD_NAME(classC, "B"), CommonStrings::LABEL_NOTSPECIFIED
     ).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
@@ -2023,8 +2112,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToOneToManyRelatedNes
                     }]
                 },
             "MergedFieldNames": []
-            }],
-        "%s": null
+            }]
         })",
         NESTED_CONTENT_FIELD_NAME(classA, classB),
         classB->GetId().ToString().c_str(), b->GetInstanceId().c_str(),
@@ -2034,8 +2122,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToOneToManyRelatedNes
         FIELD_NAME(classC, "PropC"), FIELD_NAME(classC, "PropC"),
         FIELD_NAME(classB, "PropB"),
         NESTED_CONTENT_FIELD_NAME(classB, classC),
-        FIELD_NAME(classC, "PropC"),
-        FIELD_NAME(classD, "PropD")
+        FIELD_NAME(classC, "PropC")
     ).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"

@@ -3233,7 +3233,7 @@ DgnDbStatus GeometryStreamIO::ProcessGeometryStream(DgnDbR db, Napi::Object cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometryStreamIO::BuildGeometryStream(DgnElementR element, GeometryBuilderParams const& bparams, Napi::Array entryArrayObj)
+DgnDbStatus GeometryStreamIO::BuildGeometryStream(DgnElementR element, GeometryBuilderParams const& bParams, Napi::Array entryArrayObj)
     {
     auto& db = element.GetDgnDb();
 
@@ -3242,14 +3242,18 @@ DgnDbStatus GeometryStreamIO::BuildGeometryStream(DgnElementR element, GeometryB
     if (nullptr == source && nullptr == part)
         return DgnDbStatus::BadElement;
 
-    GeometryBuilderPtr builder = (nullptr != source ? GeometryBuilder::Create(*source) : GeometryBuilder::CreateGeometryPart(db, !bparams.is2dPart));
+    GeometryBuilderPtr builder = (nullptr != source ? GeometryBuilder::Create(*source) : GeometryBuilder::CreateGeometryPart(db, !bParams.is2dPart));
     if (!builder.IsValid())
         return DgnDbStatus::BadElement;
 
-    if (bparams.viewIndependent)
+    if (bParams.viewIndependent)
         builder->SetHeaderFlags(GeometryStreamIO::Header::Flags::ViewIndependent);
 
-    GeometryBuilder::CoordSystem coordSys = bparams.isWorld ? GeometryBuilder::CoordSystem::World : GeometryBuilder::CoordSystem::Local;
+    // A zero length array means clear the geometry stream and invalidate element aligned box...
+    if (0 == entryArrayObj.Length() && nullptr != source)
+        return (SUCCESS == builder->ClearGeometryStream(*source) ? DgnDbStatus::Success : DgnDbStatus::NoGeometry);
+
+    GeometryBuilder::CoordSystem coordSys = bParams.isWorld ? GeometryBuilder::CoordSystem::World : GeometryBuilder::CoordSystem::Local;
 
     Render::GeometryParams geomParams = builder->GetGeometryParams();
     Reader reader(db);
@@ -5510,6 +5514,44 @@ BentleyStatus GeometryBuilder::Finish(GeometrySourceR source)
         }
 
     source.GetGeometryStreamR().SaveData(&m_writer.m_buffer.front(), (uint32_t) m_writer.m_buffer.size());
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus GeometryBuilder::ClearGeometryStream(GeometrySourceR source)
+    {
+    if (m_isPartCreate)
+        return ERROR; // Invalid for parts...
+
+    if (m_is3d)
+        {
+        GeometrySource3dP source3d;
+
+        if (nullptr == (source3d = source.GetAsGeometrySource3dP()))
+            return ERROR;
+
+        Placement3d placement3d = source3d->GetPlacement();
+        
+        placement3d.GetElementBoxR() = ElementAlignedBox3d();
+        source3d->SetPlacement(placement3d);
+        }
+    else
+        {
+        GeometrySource2dP source2d;
+
+        if (nullptr == (source2d = source.GetAsGeometrySource2dP()))
+            return ERROR;
+
+        Placement2d placement2d = source2d->GetPlacement();
+        
+        placement2d.GetElementBoxR() = ElementAlignedBox2d();
+        source2d->SetPlacement(placement2d);
+        }
+
+    source.GetGeometryStreamR().Clear();
 
     return SUCCESS;
     }
