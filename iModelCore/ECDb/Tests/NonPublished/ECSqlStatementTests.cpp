@@ -173,11 +173,11 @@ TEST_F(ECSqlStatementTestFixture, RowValConstructor) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("RowValConstructor.ecdb"));
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,"SELECT * FROM (VALUES(1,2), VALUES(3,4))"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,"SELECT * FROM (VALUES(1,2), (3,4))"));
     ASSERT_STREQ(stmt.GetNativeSql(), "SELECT [K0],[K1] FROM (SELECT 1 [K0],2 [K1] UNION ALL SELECT 3,4)");
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,"SELECT * FROM (VALUES(1,2), VALUES(3,4), VALUES(5,1))"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,"SELECT * FROM (VALUES(1,2), (3,4), (5,1))"));
     ASSERT_STREQ(stmt.GetNativeSql(), "SELECT [K0],[K1] FROM (SELECT 1 [K0],2 [K1] UNION ALL SELECT 3,4 UNION ALL SELECT 5,1)");
     stmt.Finalize();
 }

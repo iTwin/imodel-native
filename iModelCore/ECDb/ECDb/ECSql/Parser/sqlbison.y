@@ -560,15 +560,19 @@ insert_statement:
     ;
 
 values_commalist:
-        values_commalist ',' values_or_query_spec
+        values_commalist ',' '(' row_value_constructor_commalist ')'
         {
-            $1->append($3);
+            $$->append($3 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($4);
+            $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
             $$ = $1;
         }
-    |   values_or_query_spec
+    |   '(' row_value_constructor_commalist ')'
         {
             $$ = SQL_NEW_COMMALISTRULE;
-            $$->append($1);
+            $$->append($1 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($2);
+            $$->append($3 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     ;
 
@@ -1229,12 +1233,13 @@ unique_test:
             $$->append($2);}
     ;
 subquery:
-        '(' values_commalist ')'
+        '(' SQL_TOKEN_VALUES values_commalist ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
             $$->append($2);
-            $$->append($3 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+            $$->append($4 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
     |   '(' select_statement ')'
         {

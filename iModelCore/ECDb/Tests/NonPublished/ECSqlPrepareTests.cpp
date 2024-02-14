@@ -1089,7 +1089,7 @@ TEST_F(ECSqlSelectPrepareTests, Misc)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT 1 FROM ecsql.PSA WHERE 10 = ALL (SELECT 10)"));
 
     // Row constructor list
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT * FROM (VALUES(1,2), VALUES(2,3))"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT * FROM (VALUES(1,2), (2,3))"));
     }
 
 //---------------------------------------------------------------------------------------
