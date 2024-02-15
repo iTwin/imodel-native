@@ -198,14 +198,10 @@ public:
     void _Visit(InstanceNodesOfSpecificClassesSpecification const& spec) override
         {
         HandleCommonAttributes(spec);
-        if (spec.GetInstanceFilter().ContainsI("parent."))
-            REPORT_ISSUE(Utf8PrintfString("%s does not support filtering due to \"parent\" symbol being used in instance filter", DiagnosticsHelpers::CreateRuleIdentifier(spec).c_str()));
         }
     void _Visit(RelatedInstanceNodesSpecification const& spec) override
         {
         HandleCommonAttributes(spec);
-        if (spec.GetInstanceFilter().ContainsI("parent."))
-            REPORT_ISSUE(Utf8PrintfString("%s does not support filtering due to \"parent\" symbol being used in instance filter", DiagnosticsHelpers::CreateRuleIdentifier(spec).c_str()));
         if (spec.GetSkipRelatedLevel() != 0)
             REPORT_ISSUE(Utf8PrintfString("%s does not support filtering due to deprecated \"skip related level\" attribute", DiagnosticsHelpers::CreateRuleIdentifier(spec).c_str()));
         if (!spec.GetSupportedSchemas().empty())
@@ -370,7 +366,7 @@ struct HierarchySpecsToContentRulesetConverter : PresentationRuleSpecificationVi
         ChainedSpecificationsContext(HierarchySpecsToContentRulesetConverter& converter, RelatedInstanceNodesSpecification const& spec, RepeatableRelationshipPathSpecification const& path)
             : m_restoreState(CreateStateRestoreFunc(converter))
             {
-            if (!converter.m_isParentGroupingNode)
+            if (!converter.IsParentGroupingNode())
                 converter.m_pathPrefix.push_back(&path);
             converter.m_specsStack.push_back(&spec);
             }
@@ -383,7 +379,7 @@ struct HierarchySpecsToContentRulesetConverter : PresentationRuleSpecificationVi
 
 private:
     TraverseHierarchyRulesProps const& m_props;
-    bool m_isParentGroupingNode;
+    NavNodeCP m_parentNode;
 
     PresentationRuleSetPtr m_ruleset;
     ContentRuleP m_contentRule;
@@ -412,6 +408,11 @@ private:
             }
         return *m_contentRule;
         }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    bool IsParentGroupingNode() const {return m_parentNode && m_parentNode->GetKey()->AsGroupingNodeKey();}
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
@@ -480,22 +481,37 @@ protected:
             return;
             }
 
-        if (m_isParentGroupingNode && m_specsStack.empty())
+        if (IsParentGroupingNode() && m_specsStack.empty())
             {
             AddSelectedNodeInstancesSpec();
             return;
             }
 
+        // acquire information for handling `parent` symbols in instance filter
+        NavNodeCPtr parentInstanceNode = m_parentNode
+            ? HierarchiesInstanceFilteringHelper::GetParentInstanceNode(m_props.GetNodesCache(), *m_parentNode)
+            : nullptr;
+        auto parentInstanceFilteringInfo = HierarchiesInstanceFilteringHelper::CreateParentInstanceFilteringInfo(m_props.GetNodesCache(),
+            parentInstanceNode.get(), specification.GetInstanceFilter());
+
         auto contentSpec = new ContentInstancesOfSpecificClassesSpecification(
             1000,
             false,
-            specification.GetInstanceFilter(),
+            parentInstanceFilteringInfo.modifiedInstanceFilter,
             ContainerHelpers::TransformContainer<bvector<MultiSchemaClass*>>(specification.GetClasses(), [](auto srcP){return new MultiSchemaClass(*srcP);}),
             ContainerHelpers::TransformContainer<bvector<MultiSchemaClass*>>(specification.GetExcludedClasses(), [](auto srcP){return new MultiSchemaClass(*srcP);}),
             true
             );
         for (auto const& relatedInstanceSpec : specification.GetRelatedInstances())
             contentSpec->AddRelatedInstance(*new RelatedInstanceSpecification(*relatedInstanceSpec));
+        for (auto const& relatedClassInstanceIds : parentInstanceFilteringInfo.classInstanceIds)
+            {
+            contentSpec->AddRelatedInstance(*new RelatedInstanceSpecification(
+                std::make_unique<RelatedInstanceTargetInstancesSpecification>(relatedClassInstanceIds.selectClass.GetClass().GetFullName(), relatedClassInstanceIds.instanceIds),
+                relatedClassInstanceIds.selectClass.GetAlias(),
+                true
+                ));
+            }
         GetInProgressContentRule().AddSpecification(*contentSpec);
         }
 
@@ -556,7 +572,7 @@ protected:
             return;
             }
 
-        if (m_isParentGroupingNode && m_specsStack.empty())
+        if (IsParentGroupingNode() && m_specsStack.empty())
             {
             AddSelectedNodeInstancesSpec();
             return;
@@ -587,9 +603,24 @@ protected:
                 }
             );
 
-        auto contentSpec = new ContentRelatedInstancesSpecification(1000, false, specification.GetInstanceFilter(), paths);
+        // acquire information for handling `parent` symbols in instance filter
+        NavNodeCPtr parentInstanceNode = m_parentNode
+            ? HierarchiesInstanceFilteringHelper::GetParentInstanceNode(m_props.GetNodesCache(), *m_parentNode)
+            : nullptr;
+        auto parentInstanceFilteringInfo = HierarchiesInstanceFilteringHelper::CreateParentInstanceFilteringInfo(m_props.GetNodesCache(),
+            parentInstanceNode.get(), specification.GetInstanceFilter());
+
+        auto contentSpec = new ContentRelatedInstancesSpecification(1000, false, parentInstanceFilteringInfo.modifiedInstanceFilter, paths);
         for (auto const& relatedInstanceSpec : specification.GetRelatedInstances())
             contentSpec->AddRelatedInstance(*new RelatedInstanceSpecification(*relatedInstanceSpec));
+        for (auto const& relatedClassInstanceIds : parentInstanceFilteringInfo.classInstanceIds)
+            {
+            contentSpec->AddRelatedInstance(*new RelatedInstanceSpecification(
+                std::make_unique<RelatedInstanceTargetInstancesSpecification>(relatedClassInstanceIds.selectClass.GetClass().GetFullName(), relatedClassInstanceIds.instanceIds),
+                relatedClassInstanceIds.selectClass.GetAlias(),
+                true
+                ));
+            }
         GetInProgressContentRule().AddSpecification(*contentSpec);
         }
 
@@ -609,7 +640,7 @@ protected:
             return;
             }
 
-        if (m_isParentGroupingNode && m_specsStack.empty())
+        if (IsParentGroupingNode() && m_specsStack.empty())
             {
             AddSelectedNodeInstancesSpec();
             return;
@@ -638,8 +669,8 @@ public:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    HierarchySpecsToContentRulesetConverter(TraverseHierarchyRulesProps const& props, bool isParentGroupingNode)
-        : m_contentRule(nullptr), m_props(props), m_inputReset(false), m_isParentGroupingNode(isParentGroupingNode), m_didAddSelectedNodeInstancesSpec(false)
+    HierarchySpecsToContentRulesetConverter(TraverseHierarchyRulesProps const& props, NavNodeCP parentNode)
+        : m_contentRule(nullptr), m_props(props), m_inputReset(false), m_parentNode(parentNode), m_didAddSelectedNodeInstancesSpec(false)
         {}
 
     /*---------------------------------------------------------------------------------**//**
@@ -649,7 +680,7 @@ public:
         {
         GetInProgressContentRule(); // just to make sure we have the ruleset
 
-        PresentationRuleSetCR hierarchyRuleset = m_props.GetRuleset().AsSupplemented() 
+        PresentationRuleSetCR hierarchyRuleset = m_props.GetRuleset().AsSupplemented()
             ? m_props.GetRuleset().AsSupplemented()->GetPrimaryRuleset()
             : m_props.GetRuleset();
 
@@ -669,8 +700,7 @@ public:
 PresentationRuleSetPtr HierarchiesFilteringHelper::CreateHierarchyLevelDescriptorRuleset(NavNodeCP parentNode, TraverseHierarchyRulesProps const& props)
     {
     bvector<ChildNodeSpecificationCP> nodeSpecs = GetDirectChildNodeSpecifications(parentNode, props.GetRulesPreprocessor());
-    bool isParentGroupingNode = parentNode && parentNode->GetKey()->AsGroupingNodeKey();
-    HierarchySpecsToContentRulesetConverter contentRulesetFactory(props, isParentGroupingNode);
+    HierarchySpecsToContentRulesetConverter contentRulesetFactory(props, parentNode);
     for (auto spec : nodeSpecs)
         spec->Accept(contentRulesetFactory);
     return contentRulesetFactory.GetRuleset();
