@@ -3392,7 +3392,7 @@ protected:
             "       AND [ds].[InstanceFilter] IS ? "
             "       AND [ds].[ResultSetSizeLimit] IS ? "
             "       AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], ?) "
-            " ORDER BY [ds].[Index], [dsn].[NodeIndex]";
+            "ORDER BY " NODESCACHE_FUNCNAME_ConcatBinaryIndex "([ds].[Index], [dsn].[NodeIndex])";
         return query;
         }
 
