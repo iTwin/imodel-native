@@ -1055,7 +1055,7 @@ public:
         // use the field we found
         if (mergeResult.field)
             {
-            if (relatedPropertySpecsStack.back()->ShouldSkipIfDuplicate())
+            if (relatedPropertySpecsStack.back()->ShouldSkipIfDuplicate() && mergeResult.field->GetSpecificationIdentifier() != relatedPropertySpecsStack.back()->GetHash())
                 {
                 DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Found a similar related content field and we're skipping duplicate fields - skip creating the related content field.");
                 return { nullptr, nullptr, nullptr };
@@ -1089,6 +1089,7 @@ public:
             fieldAttributes.GetLabel(), pathFromSelectToContentClass, bvector<ContentDescriptor::Field*>(), fieldAttributes.ShouldAutoExpand(),
             ContentDescriptor::Property::DEFAULT_PRIORITY, actualPropertyClass.IsRelationshipClass());
 
+        relatedContentField->SetSpecificationIdentifier(relatedPropertySpecsStack.back()->GetHash());
         relatedContentField->SetActualSourceClasses(actualSourceClasses);
         relatedContentField->SetRelationshipMeaning(relatedPropertySpecsStack.back()->GetRelationshipMeaning());
 
