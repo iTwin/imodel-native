@@ -147,32 +147,8 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
          * Note: If ConflictCause = NotFound, the primary key was not found, and returning ConflictResolution::Replace is
          * not an option at all - this will cause a BE_SQLITE_MISUSE error.
          */
-        if (opcode == DbOpcode::Delete) {
-            // Caused by CASCADE DELETE on a foreign key, and is usually not a problem.
-            return ChangeSet::ConflictResolution::Skip;
-        }
-
-        if (opcode == DbOpcode::Update && 0 == ::strncmp(tableName, "ec_", 3)) {
-            // Caused by a ON DELETE SET NULL constraint on a foreign key - this is known to happen with "ec_" tables, but needs investigation if it happens otherwise
-            return ChangeSet::ConflictResolution::Skip;
-        }
-
-#if defined(WORK_ON_CHANGE_MERGING)
-        if (!letControlHandleThis)
-#endif
-        {
-            // Refer to comment below
-            return opcode == DbOpcode::Update ? ChangeSet::ConflictResolution::Skip : ChangeSet::ConflictResolution::Replace;
-        }
+        return ChangeSet::ConflictResolution::Skip;
     }
-
-#if defined(WORK_ON_CHANGE_MERGING)
-    if (letControlHandleThis) {
-        // if we have a concurrency control, then we allow it to decide how to handle conflicts with local changes.
-        // (We don't call the control in the case where there are no local changes. As explained below, we always want the incoming changes in that case.)
-        return control->_OnConflict(m_dgndb, cause, iter);
-    }
-#endif
 
     if (ChangeSet::ConflictCause::Constraint == cause) {
         if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO)) {
