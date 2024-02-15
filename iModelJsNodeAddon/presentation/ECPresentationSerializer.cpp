@@ -703,7 +703,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, Cont
             {
             json.AddMember("displayValues", rapidjson::Value(rapidjson::kObjectType), json.GetAllocator());
             }
-        else 
+        else
             {
             json.AddMember("displayValues", rapidjson::Value(contentSetItem.GetDisplayValues(), json.GetAllocator()), json.GetAllocator());
             for (auto const& nestedContentEntry : contentSetItem.GetNestedContent())
@@ -833,18 +833,24 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, Cont
     rapidjson::Document json(allocator);
     json.SetObject();
     json.AddMember("descriptor", content.GetDescriptor().AsJson(ctx, &json.GetAllocator()), json.GetAllocator());
+    json.AddMember("contentSet", AsJson(ctx, content.GetContentSet(), &json.GetAllocator()), json.GetAllocator());
+    return json;
+    }
 
-    rapidjson::Value set(rapidjson::kArrayType);
-    DataContainer<ContentSetItemCPtr> container = content.GetContentSet();
-    for (ContentSetItemCPtr item : container)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document IModelJsECPresentationSerializer::AsJson(ContextR ctx, DataContainer<ContentSetItemCPtr> const& items, rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetArray();
+    for (auto const& item : items)
         {
         if (item.IsValid())
-            set.PushBack(item->AsJson(ctx, ContentSetItem::SERIALIZE_All, &json.GetAllocator()), json.GetAllocator());
+            json.PushBack(item->AsJson(ctx, ContentSetItem::SERIALIZE_All, &json.GetAllocator()), json.GetAllocator());
         else
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, NativeLogging::LOG_ERROR, "Attempted to serialize NULL ContentSetItem object");
         }
-    json.AddMember("contentSet", set, json.GetAllocator());
-
     return json;
     }
 

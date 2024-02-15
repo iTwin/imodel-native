@@ -871,7 +871,7 @@ BentleyStatus RemapManager::UpdateRemappedData(std::vector<RemappedColumnInfo*>&
         if (remapInfo->m_isSameTableName)
             {
                 {
-                const Utf8String desc = SqlPrintfString("update remapped property columns (circular) for %s",remapInfo->ToString().c_str()).GetUtf8CP();
+                const Utf8String desc = SqlPrintfString("Moving remapped data to new column for %s",remapInfo->ToString().c_str()).GetUtf8CP();
                 const Utf8String sql = SqlPrintfString("UPDATE [%s] SET [%s]=[%s] WHERE([ECClassId]=%s)",
                                                        remapInfo->m_newTableName.c_str(),
                                                        remapInfo->m_newColumnName.c_str(),
@@ -882,7 +882,7 @@ BentleyStatus RemapManager::UpdateRemappedData(std::vector<RemappedColumnInfo*>&
                 }
 
                 {
-                const Utf8String desc = SqlPrintfString("update remapped property columns (circular) for %s",remapInfo->ToString().c_str()).GetUtf8CP();
+                const Utf8String desc = SqlPrintfString("Cleaning up old column after remap for %s",remapInfo->ToString().c_str()).GetUtf8CP();
                 const Utf8String sql = SqlPrintfString("UPDATE [%s] SET [%s]=NULL WHERE([ECClassId]=%s)",
                                                        remapInfo->m_newTableName.c_str(),
                                                        remapInfo->m_cleanedMapping.m_columnName.c_str(),
@@ -979,7 +979,7 @@ BentleyStatus RemapManager::UpdateRemappedCircularData(std::vector<std::vector<R
             }
         SqlPrintfString classIdPart(" WHERE([ECClassId]=%s)", first->m_cleanedMapping.m_classId.ToHexStr().c_str());
         updateStmt.append(classIdPart.GetUtf8CP());
-        const Utf8String desc = SqlPrintfString("update remapped property columns (circular) for %s",first->ToString().c_str()).GetUtf8CP();
+        const Utf8String desc = SqlPrintfString("Moving remapped data between columns (circular) for %s",first->ToString().c_str()).GetUtf8CP();
         ctx.GetDataTransform().Append(desc, updateStmt);
         }
 

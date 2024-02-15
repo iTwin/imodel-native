@@ -98,6 +98,7 @@ public:
     using IECPresentationSerializer::AsJson;
 
     rapidjson::Document AsJson(ContextR, NavNodesContainer const&, rapidjson::Document::AllocatorType* = nullptr) const;
+    rapidjson::Document AsJson(ContextR, DataContainer<ContentSetItemCPtr> const&, rapidjson::Document::AllocatorType* = nullptr) const;
 
     static bvector<NavNodeKeyCPtr> GetNavNodeKeysFromSerializedJson(IConnectionCR, Utf8CP serializedJson);
     static ECClassCP GetClassFromFullName(ECDbCR, BeJsConst);

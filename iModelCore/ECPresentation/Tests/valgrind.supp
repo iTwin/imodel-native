@@ -1,6 +1,6 @@
 # This might be a real problem or a false alarm. I don't see anything wrong with it, but we do get a bunch of reports related to it.
 {
-   ConditionalJump: BeFileListIterator::GetNextFileName
+   <BeFileListIterator::GetNextFileName - uninitialized CPU condition code>
    Memcheck:Cond
    fun:__wmemchr_avx2
    fun:_ZNKSt7__cxx1112basic_stringIwSt11char_traitsIwESaIwEE4findEwm
@@ -8,10 +8,26 @@
    ...
 }
 
+{
+   <re2 - uninitialized 8 bytes variable>
+   Memcheck:Value8
+   ...
+   fun:_ZNK3re2*
+   ...
+}
+
+{
+   <re2 - uninitialized CPU condition code>
+   Memcheck:Cond
+   ...
+   fun:_ZNK3re2*
+   ...
+}
+
 # PresentationManager uses a static `ThreadPool::GetCpuPool()` for returning folly futures. There's no way to destroy the thread pool - it
 # only gets cleaned up when terminating the application.
 {
-   CpuThreadPool
+   <Static CpuThreadPool>
    Memcheck:Leak
    match-leak-kinds: possible
    ...
@@ -19,11 +35,17 @@
    fun:Start
    fun:_ZN7BeFolly10ThreadPoolC1EiPKc
    fun:CpuThreadPoolImp
-   fun:operator()
-   fun:_ZNSt17_Function_handlerIFPN12_GLOBAL__N_116CpuThreadPoolImpEvEZN5folly9SingletonIS1_NS4_6detail10DefaultTagES7_EC1EDnSt8functionIFvS2_EEEUlvE_E9_M_invokeERKSt9_Any_data
-   fun:operator()
+   ...
    fun:_ZN5folly6detail15SingletonHolderIN12_GLOBAL__N_116CpuThreadPoolImpEE14createInstanceEv
    ...
    fun:_ZN7BeFolly10ThreadPool10GetCpuPoolEv
    ...
+}
+
+{
+   <Auto Generated ECDb Parser code which we have no control over>
+   Memcheck:Leak
+   match-leak-kinds: all
+   ...
+   fun:*OSQLParser*
 }

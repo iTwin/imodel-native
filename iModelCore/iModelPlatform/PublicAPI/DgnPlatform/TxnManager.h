@@ -456,7 +456,7 @@ private:
     BeSQLite::DbResult ReadDataChanges(BeSQLite::ChangeSet&, TxnId rowid, TxnAction);
 
     void ApplyTxnChanges(TxnId, TxnAction);
-    BeSQLite::DbResult ApplyChanges(BeSQLite::ChangeStreamCR, TxnAction txnAction, bool containsSchemaChanges, BeSQLite::Rebase* = nullptr, bool invert = false, bool ignoreNoop = false);
+    BeSQLite::DbResult ApplyChanges(BeSQLite::ChangeStreamCR, TxnAction txnAction, bool containsSchemaChanges, BeSQLite::Rebase* = nullptr, bool invert = false, bool ignoreNoop = false, bool fkNoAction = false);
     BeSQLite::DbResult ApplyDdlChanges(BeSQLite::DdlChangesCR);
 
     void OnBeginApplyChanges();
@@ -1017,8 +1017,12 @@ struct EXPORT_VTABLE_ATTRIBUTE ChangesetFileReader : BeSQLite::ChangesetFileRead
 private:
     DGNPLATFORM_EXPORT BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause, BeSQLite::Changes::Change iter) override;
     DgnDbR m_dgndb;
+    Utf8String m_lastErrorMessage;
+
 public:
     ChangesetFileReader(BeFileNameCR pathname, DgnDbR dgndb) : BeSQLite::ChangesetFileReaderBase({pathname}, dgndb), m_dgndb(dgndb) {}
+    Utf8StringCR GetLastErrorMessage() const { return m_lastErrorMessage; }
+    void ClearLastErrorMessage() { m_lastErrorMessage.clear(); }
 };
 
 

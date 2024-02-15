@@ -5265,8 +5265,9 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
     RefCountedPtr<SimpleRuleSetLocater> m_supplementalRulesets;
     RefCountedPtr<SimpleRuleSetLocater> m_primaryRulesets;
     ECPresentation::JsonLocalState m_localState;
-    std::shared_ptr<IModelJsECPresentationUpdateRecordsHandler> m_updateRecords;
+    std::shared_ptr<IModelJsECPresentationUpdateRecordsHandler> m_updatesHandler;
     Napi::ThreadSafeFunction m_threadSafeFunc;
+    Napi::ThreadSafeFunction m_updateCallback;
 
     static bool InstanceOf(Napi::Value val) {
         if (!val.IsObject())
@@ -5293,7 +5294,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             InstanceMethod("removeRuleset", &NativeECPresentationManager::RemoveRuleset),
             InstanceMethod("clearRulesets", &NativeECPresentationManager::ClearRulesets),
             InstanceMethod("handleRequest", &NativeECPresentationManager::HandleRequest),
-            InstanceMethod("getUpdateInfo", &NativeECPresentationManager::GetUpdateInfo),
             InstanceMethod("dispose", &NativeECPresentationManager::Terminate)
             });
 
@@ -5342,8 +5342,8 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
                 retVal["result"].From(result.GetSuccessResponse());
             }
 
-        if (!result.GetDiagnostics().IsNull())
-            retVal["diagnostics"].From(result.GetDiagnostics());
+        if (result.GetDiagnostics())
+            retVal["diagnostics"].From(*result.GetDiagnostics());
 
         return retVal;
         }
@@ -5354,8 +5354,8 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         REQUIRE_ARGUMENT_ANY_OBJ(0, props);
         if (!props.Get("id").IsString())
             THROW_JS_TYPE_EXCEPTION("props.id must be a string");
-        if (!props.Get("isChangeTrackingEnabled").IsBoolean())
-            THROW_JS_TYPE_EXCEPTION("props.isChangeTrackingEnabled must be a boolean");
+        if (!props.Get("updateCallback").IsFunction())
+            THROW_JS_TYPE_EXCEPTION("props.updateCallback must be a function");
         if (!props.Get("taskAllocationsMap").IsObject())
             THROW_JS_TYPE_EXCEPTION("props.taskAllocationsMap must be an object");
         if (!props.Get("defaultFormats").IsObject())
@@ -5365,14 +5365,25 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
 
         try
             {
-            m_updateRecords = std::make_shared<IModelJsECPresentationUpdateRecordsHandler>();
+            m_updateCallback = Napi::ThreadSafeFunction::New(Env(), props.Get("updateCallback").As<Napi::Function>(), "NativeECPresentationManager data update callback", 0, 1);
+            m_updatesHandler = std::make_shared<IModelJsECPresentationUpdateRecordsHandler>([this](rapidjson::Document&& updateInfo)
+                {
+                auto updateInfoPtr = new rapidjson::Document(std::move(updateInfo));
+                m_updateCallback.BlockingCall(updateInfoPtr, [](Napi::Env env, Napi::Function jsCallback, rapidjson::Document* updateInfoPtr)
+                    {
+                    BeJsNapiObject res(env);
+                    res.From(*updateInfoPtr);
+                    jsCallback.Call({ res });
+                    delete updateInfoPtr;
+                    });
+                });
             m_presentationManager = std::unique_ptr<ECPresentationManager>(ECPresentationUtils::CreatePresentationManager(T_HOST.GetIKnownLocationsAdmin(),
-                m_localState, m_updateRecords, props));
+                m_localState, m_updatesHandler, props));
             m_supplementalRulesets = SimpleRuleSetLocater::Create();
             m_presentationManager->GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(*m_supplementalRulesets));
             m_primaryRulesets = SimpleRuleSetLocater::Create();
             m_presentationManager->GetLocaters().RegisterLocater(*NonSupplementalRuleSetLocater::Create(*m_primaryRulesets));
-            m_threadSafeFunc = Napi::ThreadSafeFunction::New(Env(), Napi::Function::New(Env(), [](NapiInfoCR info) {}), "NativeECPresentationManager", 0, 1);
+            m_threadSafeFunc = Napi::ThreadSafeFunction::New(Env(), Napi::Function::New(Env(), [](NapiInfoCR info) {}), "NativeECPresentationManager result resolver", 0, 1);
             }
         catch (std::exception const& e)
             {
@@ -5470,6 +5481,8 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
                 *result = ECPresentationUtils::GetContentDescriptor(*m_presentationManager, db->GetDgnDb(), params);
             else if (0 == strcmp("GetContent", requestId))
                 *result = ECPresentationUtils::GetContent(*m_presentationManager, db->GetDgnDb(), params);
+            else if (0 == strcmp("GetContentSet", requestId))
+                *result = ECPresentationUtils::GetContentSet(*m_presentationManager, db->GetDgnDb(), params);
             else if (0 == strcmp("GetContentSetSize", requestId))
                 *result = ECPresentationUtils::GetContentSetSize(*m_presentationManager, db->GetDgnDb(), params);
             else if (0 == strcmp("GetPagedDistinctValues", requestId))
@@ -5482,14 +5495,14 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             (*result)
             .then([this, requestGuid, startTime, diagnostics = *diagnostics, deferred = std::move(deferred)](ECPresentationResult result)
                 {
-                result.SetDiagnostics(diagnostics->BuildJson());
+                result.SetDiagnostics(std::make_unique<rapidjson::Document>(diagnostics->BuildJson()));
                 ResolvePromise(deferred, std::move(result));
                 ECPresentationUtils::GetLogger().debugv("Request %s completed successfully in %" PRIu64 " ms.",
                     requestGuid.c_str(), (BeTimeUtilities::GetCurrentTimeAsUnixMillis() - startTime));
                 })
             .onError([this, requestGuid, startTime, diagnostics = *diagnostics, deferred = std::move(deferred)](folly::exception_wrapper e)
                 {
-                ECPresentationResult result = ECPresentationUtils::CreateResultFromException(e, diagnostics->BuildJson());
+                ECPresentationResult result = ECPresentationUtils::CreateResultFromException(e, std::make_unique<rapidjson::Document>(diagnostics->BuildJson()));
                 if (ECPresentationStatus::Canceled == result.GetStatus())
                     {
                     ECPresentationUtils::GetLogger().debugv("Request %s cancelled after %" PRIu64 " ms.",
@@ -5511,12 +5524,12 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         catch (std::exception const& e)
             {
             ECPresentationUtils::GetLogger().errorv("Failed to queue request %s", requestGuid.c_str());
-            deferred.Resolve(CreateReturnValue(ECPresentationUtils::CreateResultFromException(folly::exception_wrapper{std::current_exception(), e}, (*diagnostics)->BuildJson())));
+            deferred.Resolve(CreateReturnValue(ECPresentationUtils::CreateResultFromException(folly::exception_wrapper{std::current_exception(), e}, std::make_unique<rapidjson::Document>((*diagnostics)->BuildJson()))));
             }
         catch (...)
             {
             ECPresentationUtils::GetLogger().errorv("Failed to queue request %s", requestGuid.c_str());
-            deferred.Resolve(CreateReturnValue(ECPresentationUtils::CreateResultFromException(folly::exception_wrapper{std::current_exception()}, (*diagnostics)->BuildJson())));
+            deferred.Resolve(CreateReturnValue(ECPresentationUtils::CreateResultFromException(folly::exception_wrapper{std::current_exception()}, std::make_unique<rapidjson::Document>((*diagnostics)->BuildJson()))));
             }
 
         return response;
@@ -5608,14 +5621,10 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         return CreateReturnValue(std::move(result));
         }
 
-    Napi::Value GetUpdateInfo(NapiInfoCR info)
-        {
-        return CreateReturnValue(ECPresentationResult(m_updateRecords->GetReport(), false));
-        }
-
     void Terminate(NapiInfoCR info)
         {
         m_presentationManager.reset();
+        m_updateCallback.Release();
         m_threadSafeFunc.Release();
         }
     };

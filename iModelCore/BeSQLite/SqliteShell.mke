@@ -46,9 +46,13 @@ $(o)sqlite3$(oext): $(SQLiteDir)sqlite3.c ${MultiCompileDepends} ${bcvheaders}
 
 $(o)bcvutil$(oext): $(SQLiteDir)bcvutil.c ${MultiCompileDepends} ${bcvheaders}
 
+$(o)bcvlog$(oext): $(SQLiteDir)bcvlog.c ${MultiCompileDepends} ${bcvheaders}
+
 $(o)blockcachevfs$(oext): $(SQLiteDir)blockcachevfs.c ${MultiCompileDepends} ${bcvheaders}
 
 $(o)bcvmodule$(oext) : $(SQLiteDir)bcvmodule.c ${MultiCompileDepends} ${bcvheaders} ${bcvheaders}
+
+$(o)bcvencrypt$(oext) : $(SQLiteDir)bcvencrypt.c ${MultiCompileDepends} ${bcvheaders}
 
 $(o)shell$(oext): $(SQLiteDir)shell.c ${MultiCompileDepends}
 

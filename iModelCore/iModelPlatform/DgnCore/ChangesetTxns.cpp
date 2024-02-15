@@ -29,6 +29,33 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
     BeAssert(result == BE_SQLITE_OK);
     UNUSED_VARIABLE(result);
 
+    if (cause == ChangeSet::ConflictCause::Data) {
+        /*
+        * From SQLite Docs CHANGESET_DATA as the second argument
+        * when processing a DELETE or UPDATE change if a row with the required
+        * PRIMARY KEY fields is present in the database, but one or more other
+        * (non primary-key) fields modified by the update do not contain the
+        * expected "before" values.
+        *
+        * The conflicting row, in this case, is the database row with the matching
+        * primary key.
+        *
+        * Another reason this will be invoked is when SQLITE_CHANGESETAPPLY_FKNOACTION
+        * is passed ApplyChangeset(). The flag will disable CASCADE action and treat
+        * them as CASCADE NONE resulting in conflict handler been called.
+        */
+        if (!m_dgndb.Txns().HasPendingTxns()) {
+            // This changeset is bad. However, it is already in the timeline. We must allow services such as
+            // checkpoint-creation, change history, and other apps to apply any changeset that is in the timeline.
+            LOG.warning("UPDATE/DELETE before value do not match with one in db or CASCADE action was triggered.");
+            iter.Dump(m_dgndb, false, 1);
+        } else {
+            m_lastErrorMessage = "UPDATE/DELETE before value do not match with one in db or CASCADE action was triggered.";
+            LOG.fatal(m_lastErrorMessage.c_str());
+            iter.Dump(m_dgndb, false, 1);
+            return ChangeSet::ConflictResolution::Abort;
+        }
+    }
     // Handle some special cases
     if (cause == ChangeSet::ConflictCause::Conflict) {
         // From the SQLite docs: "CHANGESET_CONFLICT is passed as the second argument to the conflict handler while processing an INSERT change if the operation would result in duplicate primary key values."
@@ -37,10 +64,11 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
         if (!m_dgndb.Txns().HasPendingTxns()) {
             // This changeset is bad. However, it is already in the timeline. We must allow services such as
             // checkpoint-creation, change history, and other apps to apply any changeset that is in the timeline.
-            LOG.info("PRIMARY KEY INSERT CONFLICT - resolved by replacing the existing row with the incoming row");
+            LOG.warning("PRIMARY KEY INSERT CONFLICT - resolved by replacing the existing row with the incoming row");
             iter.Dump(m_dgndb, false, 1);
         } else {
-            LOG.fatal("PRIMARY KEY INSERT CONFLICT - rejecting this changeset");
+            m_lastErrorMessage = "PRIMARY KEY INSERT CONFLICT - rejecting this changeset";
+            LOG.fatal(m_lastErrorMessage.c_str());
             iter.Dump(m_dgndb, false, 1);
             return ChangeSet::ConflictResolution::Abort;
         }
@@ -60,7 +88,9 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
             LOG.errorv("Detected %d foreign key conflicts in changeset. Continuing merge as 'DebugAllowFkViolations' flag is set. Run 'PRAGMA foreign_key_check' to get list of violations.", nConflicts);
             return ChangeSet::ConflictResolution::Skip;
         } else {
-            LOG.errorv("Detected %d foreign key conflicts in ChangeSet. Aborting merge.", nConflicts);
+
+            m_lastErrorMessage = Utf8PrintfString("Detected %d foreign key conflicts in ChangeSet. Aborting merge.", nConflicts);
+            LOG.error(m_lastErrorMessage.c_str());
             return ChangeSet::ConflictResolution::Abort;
         }
     }
