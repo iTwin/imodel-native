@@ -68,6 +68,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 #define PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_DataSourceIndex "DataSourceIndex"
 #define PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_Variables "Variables"
 #define PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_InstanceFilter "InstanceFilter"
+#define PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_ResultSetSizeLimit "ResultSetSizeLimit"
 #define PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_HierarchyLevelId "HierarchyLevelId"
 #define PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_VirtualParentNodeId "VirtualParentNodeId"
 #define PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_PhysicalHierarchyLevelId "PhysicalHierarchyLevelId"
@@ -81,6 +82,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
         PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_DataSourceIndex ", " \
         PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_Variables ", " \
         PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_InstanceFilter ", " \
+        PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_ResultSetSizeLimit ", " \
         PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_HierarchyLevelId ", " \
         PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_VirtualParentNodeId ", " \
         PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_PhysicalHierarchyLevelId ", " \
@@ -92,6 +94,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
     "           ds.[Index], " \
     "           dsv.Variables, " \
     "           ds.InstanceFilter, " \
+    "           ds.ResultSetSizeLimit, " \
     "           " PHYSICAL_HIERARCHY_LEVELS_SETUP_HL_TABLE_ALIAS ".Id, " \
     "           " PHYSICAL_HIERARCHY_LEVELS_SETUP_HL_TABLE_ALIAS ".ParentNodeId, " \
     "           " PHYSICAL_HIERARCHY_LEVELS_SETUP_HL_TABLE_ALIAS ".Id, " \
@@ -107,6 +110,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
     "           " NODESCACHE_FUNCNAME_ConcatBinaryIndex "([phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_DataSourceIndex "], [dsn].[NodeIndex], [ds].[Index]), " \
     "           dsv.Variables, " \
     "           ds.InstanceFilter, " \
+    "           ds.ResultSetSizeLimit, " \
     "           chl.Id, " \
     "           dsn.NodeId, " \
     "           phl." PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_PhysicalHierarchyLevelId ", " \
@@ -119,6 +123,7 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
     "    CROSS JOIN [" NODESCACHE_TABLENAME_DataSources "] AS ds " \
     "         ON     [ds].[HierarchyLevelId] = [chl].[Id] " \
     "            AND [ds].[InstanceFilter] IS [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_InstanceFilter "] " \
+    "            AND [ds].[ResultSetSizeLimit] IS [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_ResultSetSizeLimit "] " \
     "    CROSS JOIN [" NODESCACHE_TABLENAME_Variables "] AS dsv " \
     "         ON     [dsv].[Id] = [ds].[VariablesId] " \
     "            AND " NODESCACHE_FUNCNAME_VariablesMatch "([dsv].[Variables], [phl].[" PHYSICAL_HIERARCHY_LEVELS_COLUMN_NAME_Variables "]) " \

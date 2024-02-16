@@ -1190,6 +1190,24 @@ TEST_F(BeSQliteTestFixture, TableValueFunction_TokenizeModule) {
         ASSERT_EQ(i, 9);
     }
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQliteTestFixture, IntegrityCheckShouldRunOnReadOnlyFileWithFTS5) {
+    BeFileName testFileWithFts5;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(testFileWithFts5);
+    testFileWithFts5.AppendUtf8("BeSQLiteTestData/test.bim");
+    Db db;
+    ASSERT_EQ(BE_SQLITE_OK, db.OpenBeSQLiteDb(testFileWithFts5, Db::OpenParams(Db::OpenMode::Readonly)));
+    auto stmt = db.GetCachedStatement("PRAGMA integrity_check");
+    ASSERT_TRUE(stmt != nullptr);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+    ASSERT_EQ(BE_SQLITE_DONE, stmt->Step());
+    stmt = nullptr;
+    db.CloseDb();
+}
+
 #ifdef ANALYZE_MEMORY_USAGE
 //---------------------------------------------------------------------------------------
 // @bsimethod

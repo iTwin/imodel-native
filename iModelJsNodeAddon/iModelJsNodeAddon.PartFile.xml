@@ -106,7 +106,7 @@
     <SubPart PartName="napi-lib" PartFile="node-addon-api/node-addon-api"/>
     <SubPart PartName="iModelJsNativeLibCommon"/>
     <Bindings>
-        <Directory SourceName="Delivery/imodeljs-addon-objs" SubPartDirectory="imodeljs-addon-objs" />
+        <Directory SourceName="Delivery/imodeljs-objs" SubPartDirectory="imodeljs-objs" />
         <Files SubPartDirectory="imodeljs-addon-build-tools">
             Delivery/IModelJsNative_input_libs.mki
         </Files>

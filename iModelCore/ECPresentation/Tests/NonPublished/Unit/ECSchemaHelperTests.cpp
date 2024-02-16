@@ -1124,7 +1124,8 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_ReturnsPathsWithTargetInstanceC
     ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, true);
 
     ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
-    EXPECT_EQ(1, response.GetPaths(0).size());
+    EXPECT_EQ(1, response.GetPaths().size());
+    EXPECT_EQ(1, response.GetPaths().find(0)->second.size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1177,9 +1178,10 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_OmitsRelationshipPathsWithoutTa
     ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, true);
     ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
 
-    ASSERT_EQ(2, response.GetPaths(0).size());
+    auto const& pathsResult = response.GetPaths().find(0)->second;
+    ASSERT_EQ(2, pathsResult.size());
 
-    RelatedClassPathCR path1 = response.GetPaths(0)[0].m_path;
+    RelatedClassPathCR path1 = pathsResult[0].m_path;
     EXPECT_EQ(classA, path1[0].GetSourceClass());
     EXPECT_EQ(classB, &path1[0].GetTargetClass().GetClass());
     EXPECT_FALSE(path1[0].GetTargetClass().IsSelectPolymorphic());
@@ -1187,7 +1189,7 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_OmitsRelationshipPathsWithoutTa
     EXPECT_TRUE(path1[0].IsForwardRelationship());
     EXPECT_EQ(2, path1.GetTargetsCount().Value());
 
-    RelatedClassPathCR path2 = response.GetPaths(0)[1].m_path;
+    RelatedClassPathCR path2 = pathsResult[1].m_path;
     EXPECT_EQ(classA, path2[0].GetSourceClass());
     EXPECT_EQ(classC, &path2[0].GetTargetClass().GetClass());
     EXPECT_FALSE(path2[0].GetTargetClass().IsSelectPolymorphic());
@@ -1246,9 +1248,10 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_OmitsRelationshipPathsWithoutTa
     ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, false);
     ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
 
-    ASSERT_EQ(2, response.GetPaths(0).size());
+    auto const& pathsResult = response.GetPaths().find(0)->second;
+    ASSERT_EQ(2, pathsResult.size());
 
-    RelatedClassPathCR path1 = response.GetPaths(0)[0].m_path;
+    RelatedClassPathCR path1 = pathsResult[0].m_path;
     EXPECT_EQ(classA, path1[0].GetSourceClass());
     EXPECT_EQ(classB, &path1[0].GetTargetClass().GetClass());
     EXPECT_FALSE(path1[0].GetTargetClass().IsSelectPolymorphic());
@@ -1256,7 +1259,7 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_OmitsRelationshipPathsWithoutTa
     EXPECT_TRUE(path1[0].IsForwardRelationship());
     EXPECT_TRUE(path1.GetTargetsCount().IsNull());
 
-    RelatedClassPathCR path2 = response.GetPaths(0)[1].m_path;
+    RelatedClassPathCR path2 = pathsResult[1].m_path;
     EXPECT_EQ(classA, path2[0].GetSourceClass());
     EXPECT_EQ(classC, &path2[0].GetTargetClass().GetClass());
     EXPECT_FALSE(path2[0].GetTargetClass().IsSelectPolymorphic());
@@ -1299,7 +1302,8 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_ReturnsPathsWithNonPolymorphicT
     ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, true);
 
     ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
-    EXPECT_EQ(1, response.GetPaths(0).size());
+    auto const& pathsResult = response.GetPaths().find(0)->second;
+    EXPECT_EQ(1, pathsResult.size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1336,7 +1340,7 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_DoesntReturnPathsWithNonPolymor
     ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, true);
 
     ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
-    EXPECT_EQ(0, response.GetPaths(0).size());
+    EXPECT_EQ(0, response.GetPaths().size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1384,9 +1388,10 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_ReturnsPathsWithPolymorphicTarg
     ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, true);
 
     ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
-    ASSERT_EQ(2, response.GetPaths(0).size());
-    EXPECT_EQ(classB, &response.GetPaths(0)[0].m_path.back().GetTargetClass().GetClass());
-    EXPECT_EQ(classC, &response.GetPaths(0)[1].m_path.back().GetTargetClass().GetClass());
+    auto const& pathsResult = response.GetPaths().find(0)->second;
+    ASSERT_EQ(2, pathsResult.size());
+    EXPECT_EQ(classB, &pathsResult[0].m_path.back().GetTargetClass().GetClass());
+    EXPECT_EQ(classC, &pathsResult[1].m_path.back().GetTargetClass().GetClass());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1434,7 +1439,7 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_DoesntReturnPathsWithPolymorphi
     ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, true);
 
     ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
-    EXPECT_EQ(0, response.GetPaths(0).size());
+    EXPECT_EQ(0, response.GetPaths().size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1495,12 +1500,13 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_ReturnsPathsWithTargetInstances
     ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, true);
 
     ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
-    EXPECT_EQ(1, response.GetPaths(0).size());
-    EXPECT_EQ(2, response.GetPaths(0)[0].m_path.size());
-    EXPECT_EQ(classB, &response.GetPaths(0)[0].m_path[0].GetTargetClass().GetClass());
-    EXPECT_STREQ(Utf8PrintfString("[%s].[PropB] = 'bbb'", response.GetPaths(0)[0].m_path[0].GetTargetClass().GetAlias().c_str()).c_str(), response.GetPaths(0)[0].m_path[0].GetTargetInstanceFilter().c_str());
-    EXPECT_EQ(classC, &response.GetPaths(0)[0].m_path[1].GetTargetClass().GetClass());
-    EXPECT_STREQ(Utf8PrintfString("[%s].[PropC] = 'ddd'", response.GetPaths(0)[0].m_path[1].GetTargetClass().GetAlias().c_str()).c_str(), response.GetPaths(0)[0].m_path[1].GetTargetInstanceFilter().c_str());
+    auto const& pathsResult = response.GetPaths().find(0)->second;
+    EXPECT_EQ(1, pathsResult.size());
+    EXPECT_EQ(2, pathsResult[0].m_path.size());
+    EXPECT_EQ(classB, &pathsResult[0].m_path[0].GetTargetClass().GetClass());
+    EXPECT_STREQ(Utf8PrintfString("[%s].[PropB] = 'bbb'", pathsResult[0].m_path[0].GetTargetClass().GetAlias().c_str()).c_str(), pathsResult[0].m_path[0].GetTargetInstanceFilter().c_str());
+    EXPECT_EQ(classC, &pathsResult[0].m_path[1].GetTargetClass().GetClass());
+    EXPECT_STREQ(Utf8PrintfString("[%s].[PropC] = 'ddd'", pathsResult[0].m_path[1].GetTargetClass().GetAlias().c_str()).c_str(), pathsResult[0].m_path[1].GetTargetInstanceFilter().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1559,11 +1565,12 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_ReturnsPathsWithTargetInstances
     ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, true);
 
     ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
-    EXPECT_EQ(1, response.GetPaths(0).size());
-    EXPECT_EQ(2, response.GetPaths(0)[0].m_path.size());
-    EXPECT_EQ(classB, &response.GetPaths(0)[0].m_path[0].GetTargetClass().GetClass());
-    EXPECT_STREQ(Utf8PrintfString("[%s].[PropB] = 'bbb'", response.GetPaths(0)[0].m_path[0].GetTargetClass().GetAlias().c_str()).c_str(), response.GetPaths(0)[0].m_path[0].GetTargetInstanceFilter().c_str());
-    EXPECT_EQ(classC, &response.GetPaths(0)[0].m_path[1].GetTargetClass().GetClass());
+    auto const& pathsResult = response.GetPaths().find(0)->second;
+    EXPECT_EQ(1, pathsResult.size());
+    EXPECT_EQ(2, pathsResult[0].m_path.size());
+    EXPECT_EQ(classB, &pathsResult[0].m_path[0].GetTargetClass().GetClass());
+    EXPECT_STREQ(Utf8PrintfString("[%s].[PropB] = 'bbb'", pathsResult[0].m_path[0].GetTargetClass().GetAlias().c_str()).c_str(), pathsResult[0].m_path[0].GetTargetInstanceFilter().c_str());
+    EXPECT_EQ(classC, &pathsResult[0].m_path[1].GetTargetClass().GetClass());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1609,9 +1616,10 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_ReturnsPathsWithRequestedTarget
     ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, true);
 
     ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
-    ASSERT_EQ(1, response.GetPaths(0).size());
-    ASSERT_EQ(1, response.GetPaths(0)[0].m_path.size());
-    RelatedClassCR path = response.GetPaths(0)[0].m_path[0];
+    auto const& pathsResult = response.GetPaths().find(0)->second;
+    ASSERT_EQ(1, pathsResult.size());
+    ASSERT_EQ(1, pathsResult[0].m_path.size());
+    RelatedClassCR path = pathsResult[0].m_path[0];
     EXPECT_EQ(classA, path.GetSourceClass());
     EXPECT_EQ(relAB, &path.GetRelationship().GetClass());
     EXPECT_TRUE(path.IsForwardRelationship());
@@ -1688,10 +1696,11 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_ReturnsPathsWhenIntermediateCla
     ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, true);
 
     ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
-    ASSERT_EQ(2, response.GetPaths(0).size());
+    auto const& pathsResult = response.GetPaths().find(0)->second;
+    ASSERT_EQ(2, pathsResult.size());
 
-    ASSERT_EQ(2, response.GetPaths(0)[0].m_path.size());
-    RelatedClassPath path1 = response.GetPaths(0)[0].m_path;
+    ASSERT_EQ(2, pathsResult[0].m_path.size());
+    RelatedClassPathCR path1 = pathsResult[0].m_path;
     EXPECT_EQ(relAB, &path1[0].GetRelationship().GetClass());
     EXPECT_TRUE(path1[0].IsForwardRelationship());
     EXPECT_EQ(classB1, &path1[0].GetTargetClass().GetClass());
@@ -1699,8 +1708,8 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_ReturnsPathsWhenIntermediateCla
     EXPECT_TRUE(path1[1].IsForwardRelationship());
     EXPECT_EQ(classC, &path1[1].GetTargetClass().GetClass());
 
-    ASSERT_EQ(2, response.GetPaths(0)[1].m_path.size());
-    RelatedClassPath path2 = response.GetPaths(0)[1].m_path;
+    ASSERT_EQ(2, pathsResult[1].m_path.size());
+    RelatedClassPathCR path2 = pathsResult[1].m_path;
     EXPECT_EQ(relAB, &path2[0].GetRelationship().GetClass());
     EXPECT_TRUE(path2[0].IsForwardRelationship());
     EXPECT_EQ(classB2, &path2[0].GetTargetClass().GetClass());
@@ -1760,7 +1769,7 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_PathsAreNotCreatedWhenLastStepS
     ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, true);
 
     ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
-    ASSERT_EQ(0, response.GetPaths(0).size());
+    ASSERT_EQ(0, response.GetPaths().size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1828,7 +1837,7 @@ TEST_F(ECSchemaHelperTests, GetRelationshipPaths_PathsAreNotCreatedWhenIntermedi
     ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(*classA, ""), pathSpecs, nullptr, bvector<RelatedClassPath>(), counter, true);
 
     ECSchemaHelper::RelationshipPathsResponse response = m_helper->GetRelationshipPaths(params);
-    ASSERT_EQ(0, response.GetPaths(0).size());
+    ASSERT_EQ(0, response.GetPaths().size());
     }
 
 #ifdef wip
