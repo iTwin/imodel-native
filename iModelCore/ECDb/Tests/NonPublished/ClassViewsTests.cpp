@@ -1603,4 +1603,139 @@ TEST_F(ClassViewsFixture, complex_data) {
     }
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassViewsFixture, demo_usecase_pipes) {
+    std::vector<Utf8String> jsonObjects = {
+          R"({"type": "pipe", "diameter": 10, "length": 100, "material": "steel"})",
+          R"({"type": "pipe", "diameter": 15, "length": 200, "material": "copper"})",
+          R"({"type": "pipe", "diameter": 20, "length": 150, "material": "plastic"})",
+          R"({"type": "cable", "diameter": 5, "length": 500, "material": "copper", "type": "coaxial"})",
+          R"({"type": "cable", "diameter": 2, "length": 1000, "material": "fiber optic", "type": "single-mode"})",
+          R"({"type": "cable", "diameter": 3, "length": 750, "material": "aluminum", "type": "twisted pair"})"
+    };
+
+  //Test schema and data used for sprint review demo
+    auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
+        <ECEntityClass typeName="JsonObject">
+            <ECProperty propertyName="json" typeName="string" extendedTypeName="Json" />
+        </ECEntityClass>
+        <ECEntityClass typeName="Pipe" modifier="Abstract">
+            <ECCustomAttributes>
+                <View xmlns="ECDbMap.02.00.03">
+                    <Query>
+                        SELECT
+                            jo.ECInstanceId,
+                            CAST(json_extract(jo.json, '$.diameter') AS INTEGER) [Diameter],
+                            CAST(json_extract(jo.json, '$.length') AS INTEGER) [Length],
+                            json_extract(jo.json, '$.material') [Material]
+                        FROM ts.JsonObject jo
+                        WHERE json_extract(jo.json, '$.type') = 'pipe'
+                    </Query>
+                </View>
+           </ECCustomAttributes>
+            <ECProperty propertyName="Diameter" typeName="int" />
+            <ECProperty propertyName="Length"  typeName="int"/>
+            <ECProperty propertyName="Material" typeName="string" />
+        </ECEntityClass>
+    </ECSchema>)xml");
+
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDbForCurrentTest());
+    ASSERT_EQ(SUCCESS, ImportSchema(testSchema));
+
+    { //insert test data
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.JsonObject(json) VALUES(?)"));
+    for (const auto& jsonObject : jsonObjects)
+        {
+        stmt.BindText(1, jsonObject.c_str(), IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        stmt.ClearBindings();
+        stmt.Reset();
+        }
+    }
+
+    { //Select pipes
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Length, Diameter, Material FROM ts.Pipe"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(100, stmt.GetValueInt(0));
+    ASSERT_EQ(10, stmt.GetValueInt(1));
+    ASSERT_STREQ("steel", stmt.GetValueText(2));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(200, stmt.GetValueInt(0));
+    ASSERT_EQ(15, stmt.GetValueInt(1));
+    ASSERT_STREQ("copper", stmt.GetValueText(2));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(150, stmt.GetValueInt(0));
+    ASSERT_EQ(20, stmt.GetValueInt(1));
+    ASSERT_STREQ("plastic", stmt.GetValueText(2));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ClassViewsFixture, ExistingViewsWithNoAdditionalRootEntityClasses)  {
+    //We create a view in the DB, then we import a schema which prevents additional root classes from being imported
+    //We expect this to run successfully
+    auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
+        <ECEntityClass typeName="SchemaDefView" modifier="Abstract">
+            <ECCustomAttributes>
+                <View xmlns="ECDbMap.02.00.03">
+                    <Query>
+                        SELECT
+                            sc.ECInstanceId,
+                            sc.Name
+                        FROM meta.ECSchemaDef sc
+                    </Query>
+                </View>
+           </ECCustomAttributes>
+            <ECProperty propertyName="Name" typeName="string" />
+        </ECEntityClass>
+    </ECSchema>)xml");
+
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
+    ASSERT_EQ(SUCCESS, ImportSchema(testSchema));
+
+    auto rootSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema schemaName="RootSchema" alias="rs" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="ECDbSchemaPolicies" version="01.00.00" alias="ecdbpol"/>
+        <ECCustomAttributes>
+             <NoAdditionalRootEntityClasses xmlns="ECDbSchemaPolicies.01.00.00"/>
+        </ECCustomAttributes>
+        <ECEntityClass typeName="OnlyRootClass" modifier="Abstract">
+             <ECProperty propertyName="Name" typeName="string" />
+        </ECEntityClass>
+    </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, ImportSchema(rootSchema));
+
+    auto testSchema2 = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
+        <ECEntityClass typeName="SchemaDefView" modifier="Abstract">
+            <ECCustomAttributes>
+                <View xmlns="ECDbMap.02.00.03">
+                    <Query>
+                        SELECT
+                            sc.ECInstanceId,
+                            sc.Name
+                        FROM meta.ECSchemaDef sc
+                    </Query>
+                </View>
+           </ECCustomAttributes>
+            <ECProperty propertyName="Name" typeName="string" />
+        </ECEntityClass>
+    </ECSchema>)xml");
+
+    ASSERT_EQ(ERROR, ImportSchema(testSchema2));
+}
+
 END_ECDBUNITTESTS_NAMESPACE
