@@ -1690,7 +1690,7 @@ TEST_F(SchemaManagerTests, LoadAllUnitsImplicitly)
     //! the units count includes inverted and constants
     const int standardUnitSystemCount = 12;
     const int standardPhenCount = 79;
-    const int standardUnitCount = 518;
+    const int standardUnitCount = 519;
     const int standardFormatCount = 10;
 
     assertLoadCount(m_ecdb, "TestSchema", 0, 0, 0, 0, 0, "No schema elements are expected to be loaded at this point");
