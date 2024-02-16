@@ -858,9 +858,6 @@ Napi::String JsInterop::InsertLinkTableRelationship(DgnDbR dgndb, Napi::Object o
     targetId.FromJson(inJson["targetId"]);
 
     ECN::StandaloneECRelationshipInstancePtr props = getRelationshipProperties(relClass, inJson, dgndb);
-    if (props == nullptr) {
-        ThrowJsException("Fail to insert relationship instance.");
-    }
 
     BeSQLite::EC::ECInstanceKey relKey;
     auto rc = dgndb.InsertLinkTableRelationship(relKey, *relClass, sourceId, targetId, props.get()); // nullptr is okay if there are no props
