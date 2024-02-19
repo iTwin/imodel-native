@@ -1735,7 +1735,21 @@ TEST_F(ClassViewsFixture, ExistingViewsWithNoAdditionalRootEntityClasses)  {
         </ECEntityClass>
     </ECSchema>)xml");
 
-    ASSERT_EQ(ERROR, ImportSchema(testSchema2));
+    ASSERT_EQ(SUCCESS, ImportSchema(testSchema2)); //View class should import with no problem
+
+    auto testSchema3 = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema schemaName="TestSchema3" alias="ts3" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
+        <ECEntityClass typeName="NewRootClass" modifier="Abstract">
+            <ECProperty propertyName="Name" typeName="string" />
+        </ECEntityClass>
+    </ECSchema>)xml");
+
+    TestIssueListener listener;
+    m_ecdb.AddIssueListener(listener);
+    listener.Reset();
+    ASSERT_EQ(ERROR, ImportSchema(testSchema3));
+    ASSERT_STREQ("Failed to import ECClass 'TestSchema3:NewRootClass'. It violates against the 'No additional root entity classes' policy which means that all entity classes must subclass from classes defined in the ECSchema RootSchema", listener.GetLastError().c_str());
 }
 
 END_ECDBUNITTESTS_NAMESPACE
