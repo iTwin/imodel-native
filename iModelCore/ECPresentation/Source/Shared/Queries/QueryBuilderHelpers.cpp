@@ -718,8 +718,12 @@ private:
         bvector<RelatedClassPath> noRelatedInstances;
         ECSchemaHelper::RelationshipPathsRequestParams params(m_selectClass, pathSpecs, nullptr, noRelatedInstances, counter, false);
         auto result = m_schemaHelper.GetRelationshipPaths(params);
+        auto pathsIter = result.GetPaths().find(0);
+        if (result.GetPaths().end() == pathsIter)
+            return nullptr;
+
         RefCountedPtr<PresentationQueryBuilder> query;
-        for (auto& path : result.GetPaths(0))
+        for (auto& path : pathsIter->second)
             {
             if (path.m_path.empty())
                 DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Got an empty path from select to property class when constructing instance label override query");
