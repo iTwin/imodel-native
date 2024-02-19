@@ -541,7 +541,7 @@
     </ECEnumeration>
 
     <!-- Flat list of Custom Attributes without relationships to their container -->
-    <ECEntityClass typeName="CustomAttribute" description="" displayLabel="" modifier="Sealed">
+    <ECEntityClass typeName="CustomAttribute" displayLabel="CustomAttribute" description="Returns all existing custom attributes, there are specialized versions of this for Property, Class and Schema."  modifier="Sealed">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00.03">
                 <MapStrategy>ExistingTable</MapStrategy>
@@ -564,7 +564,7 @@
     </ECRelationshipClass>
 
     <!-- Concrete Custom Attribute instances for property/class/schema -->
-    <ECEntityClass typeName="PropertyCustomAttribute" description="" displayLabel="" modifier="Abstract">
+    <ECEntityClass typeName="PropertyCustomAttribute" modifier="Abstract">
         <ECCustomAttributes>
             <View xmlns="ECDbMap.02.00.03">
                 <Query>
@@ -606,7 +606,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="ClassCustomAttribute" description="" displayLabel="" modifier="Abstract">
+    <ECEntityClass typeName="ClassCustomAttribute" modifier="Abstract">
         <ECCustomAttributes>
             <View xmlns="ECDbMap.02.00.03">
                 <Query>
@@ -648,7 +648,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="SchemaCustomAttribute" description="" displayLabel="" modifier="Abstract">
+    <ECEntityClass typeName="SchemaCustomAttribute" modifier="Abstract">
         <ECCustomAttributes>
             <View xmlns="ECDbMap.02.00.03">
                 <Query>
