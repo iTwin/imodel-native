@@ -1752,4 +1752,144 @@ TEST_F(ClassViewsFixture, ExistingViewsWithNoAdditionalRootEntityClasses)  {
     ASSERT_STREQ("Failed to import ECClass 'TestSchema3:NewRootClass'. It violates against the 'No additional root entity classes' policy which means that all entity classes must subclass from classes defined in the ECSchema RootSchema", listener.GetLastError().c_str());
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassViewsFixture, update_views_in_dynamic_schema) {
+  //uses a CTE to return 2 static values from a view query, then updates the dynamic schema containing the view and adjusts it to 3 static values
+
+  // TODO: instead of UNION we should use "VALUES ('dog'), ('cat'))" however,
+  //  that values syntax is not yet supported
+  auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+  <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+      <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
+      <ECSchemaReference name="CoreCustomAttributes" version="01.00.04" alias="CoreCA"/>
+      <ECCustomAttributes>
+        <DynamicSchema xmlns="CoreCustomAttributes.01.00.04"/>
+      </ECCustomAttributes>
+      <ECEntityClass typeName="Animals" modifier="Abstract">
+          <ECCustomAttributes>
+              <View xmlns="ECDbMap.02.00.03">
+                  <Query>
+                  SELECT * FROM(SELECT 'dog' as Name UNION SELECT 'cat' as NAME)
+                  </Query>
+              </View>
+          </ECCustomAttributes>
+          <ECProperty propertyName="Name" typeName="string" />
+      </ECEntityClass>
+  </ECSchema>)xml");
+
+  ASSERT_EQ(BE_SQLITE_OK, SetupECDbForCurrentTest());
+  ASSERT_EQ(SUCCESS, ImportSchema(testSchema));
+
+  { //Select count of animals
+  ECSqlStatement stmt;
+  ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Count(Name) from ts.Animals"));
+  ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+  ASSERT_EQ(2, stmt.GetValueInt(0));
+  ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+  }
+
+  //Test schema and data used for sprint review demo
+  auto testSchema2 = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+  <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+      <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
+      <ECSchemaReference name="CoreCustomAttributes" version="01.00.04" alias="CoreCA"/>
+      <ECCustomAttributes>
+        <DynamicSchema xmlns="CoreCustomAttributes.01.00.04"/>
+      </ECCustomAttributes>
+      <ECEntityClass typeName="Animals" modifier="Abstract">
+          <ECCustomAttributes>
+              <View xmlns="ECDbMap.02.00.03">
+                  <Query>
+                  SELECT * FROM(SELECT 'dog' as Name UNION SELECT 'cat' as NAME UNION SELECT 'elephant' as NAME)
+                  </Query>
+              </View>
+          </ECCustomAttributes>
+          <ECProperty propertyName="Name" typeName="string" />
+      </ECEntityClass>
+  </ECSchema>)xml");
+
+  ASSERT_EQ(SUCCESS, ImportSchema(testSchema2));
+
+  { //Select count of animals
+  ECSqlStatement stmt;
+  ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Count(Name) from ts.Animals"));
+  ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+  ASSERT_EQ(3, stmt.GetValueInt(0));
+  ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+  }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassViewsFixture, update_views_in_dynamic_schema_cte) {
+  //uses a CTE to return 2 static values from a view query, then updates the dynamic schema containing the view and adjusts it to 3 static values
+
+  // TODO: instead of "WITH cte(col) AS (SELECT 'dog' UNION SELECT 'cat')"" we should use "WITH cte(col) AS (VALUES ('dog'), ('cat'))" however,
+  //  that values syntax is not yet supported
+  auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+  <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+      <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
+      <ECSchemaReference name="CoreCustomAttributes" version="01.00.04" alias="CoreCA"/>
+      <ECCustomAttributes>
+        <DynamicSchema xmlns="CoreCustomAttributes.01.00.04"/>
+      </ECCustomAttributes>
+      <ECEntityClass typeName="Animals" modifier="Abstract">
+          <ECCustomAttributes>
+              <View xmlns="ECDbMap.02.00.03">
+                  <Query>
+                  WITH cte(col) AS (SELECT 'dog' UNION SELECT 'cat')
+                  SELECT col as [Name] FROM cte
+                  </Query>
+              </View>
+          </ECCustomAttributes>
+          <ECProperty propertyName="Name" typeName="string" />
+      </ECEntityClass>
+  </ECSchema>)xml");
+
+  ASSERT_EQ(BE_SQLITE_OK, SetupECDbForCurrentTest());
+  ASSERT_EQ(SUCCESS, ImportSchema(testSchema)); 
+
+  { //Select count of animals
+  ECSqlStatement stmt;
+  ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT Count(Name) from ts.Animals")); // CTE is not allowed in views
+  //ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+  //ASSERT_EQ(2, stmt.GetValueInt(0));
+  //ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+  }
+
+  //Test schema and data used for sprint review demo
+  auto testSchema2 = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+  <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+      <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
+      <ECSchemaReference name="CoreCustomAttributes" version="01.00.04" alias="CoreCA"/>
+      <ECCustomAttributes>
+        <DynamicSchema xmlns="CoreCustomAttributes.01.00.04"/>
+      </ECCustomAttributes>
+      <ECEntityClass typeName="Animals" modifier="Abstract">
+          <ECCustomAttributes>
+              <View xmlns="ECDbMap.02.00.03">
+                  <Query>
+                  WITH cte(col) AS (SELECT 'dog' UNION SELECT 'cat' UNION SELECT 'elephant')
+                  SELECT col as [Name] FROM cte
+                  </Query>
+              </View>
+          </ECCustomAttributes>
+          <ECProperty propertyName="Name" typeName="string" />
+      </ECEntityClass>
+  </ECSchema>)xml");
+
+  ASSERT_EQ(SUCCESS, ImportSchema(testSchema2)); 
+
+  { //Select count of animals
+  ECSqlStatement stmt;
+  ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT Count(Name) from ts.Animals"));// CTE is not allowed in views
+  //ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+  //ASSERT_EQ(3, stmt.GetValueInt(0));
+  //ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+  }
+}
+
 END_ECDBUNITTESTS_NAMESPACE
