@@ -1299,6 +1299,8 @@ public:
 
     //! Confirm basic validity
     GEOMDLLIMPEXP bool IsValidGeometry(GeometryValidatorPtr &validator) const;
+    //! Confirm basic validity using default validator
+    GEOMDLLIMPEXP bool IsValidGeometry() const;
 
     //! Compute intersections of a ray with a ruled surface between two curves.
     //! @return false if curves are not compatible.
