@@ -1020,6 +1020,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         std::unordered_set<ECClassCP> m_actualSourceClasses;
         RelationshipMeaning m_relationshipMeaning;
         bool m_isRelationshipField;
+        Utf8String m_specificationIdentifier;
 
     private:
         Utf8String CreateRelationshipName() const;
@@ -1072,6 +1073,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         bool IsRelationshipField() const {return m_isRelationshipField;}
         ECClassCR GetRelationshipClass() const {return m_pathFromSelectClassToContentClass.back().GetRelationship().GetClass();}
         Utf8StringCR GetRelationshipClassAlias() const {return m_pathFromSelectClassToContentClass.back().GetRelationship().GetAlias();}
+
+        void SetSpecificationIdentifier(Utf8String value) {m_specificationIdentifier = value;}
+        Utf8StringCR GetSpecificationIdentifier() const {return m_specificationIdentifier;}
     };
 
     //===================================================================================
