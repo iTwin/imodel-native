@@ -2687,11 +2687,77 @@ BentleyStatus ECSqlParser::ParseSubquery(std::unique_ptr<SubqueryExp>& exp, OSQL
         return ERROR;
         }
 
-    std::unique_ptr<SelectStatementExp> compound_select = nullptr;
-    if (SUCCESS != ParseSelectStatement(compound_select, *parseNode->getChild(1/*query_exp*/)))
-        return ERROR;
+    OSQLParseNode const* queryExpNode = parseNode->getChild(1/*query_exp*/);
+    if (SQL_ISRULE(queryExpNode, select_statement))
+        {
+        //select_statement
+        std::unique_ptr<SelectStatementExp> compound_select = nullptr;
+        if (SUCCESS != ParseSelectStatement(compound_select, *queryExpNode))
+            return ERROR;
 
-    exp = std::make_unique<SubqueryExp>(std::move(compound_select));
+        exp = std::make_unique<SubqueryExp>(std::move(compound_select));
+        }
+
+    OSQLParseNode const* valuesCommalistNode = parseNode->getChild(2/*values_commalist*/);
+    if (SQL_ISRULE(valuesCommalistNode, values_commalist))
+        {
+        //values_commalist
+        std::unique_ptr<SelectStatementExp> compound_select = nullptr;
+        if (SUCCESS != ParseValuesCommalist(compound_select, *valuesCommalistNode))
+            return ERROR;
+
+        exp = std::make_unique<SubqueryExp>(std::move(compound_select));
+        }
+    return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+BentleyStatus ECSqlParser::ParseValuesCommalist(std::unique_ptr<SelectStatementExp>& exp, OSQLParseNode const& parseNode) const
+    {
+    if (!SQL_ISRULE(&parseNode, values_commalist))
+        {
+        BeAssert(false && "Invalid grammar. Expecting values_commalist");
+        return ERROR;
+        }
+
+    // 1st:(, 2nd: row_value_constructor_commalist, 3rd:)
+    BeAssert(parseNode.count() % 3 == 0);
+
+    std::unique_ptr<SelectStatementExp> prevSelectExp = nullptr;
+    // traverse in reverse order so the converted native SQL is in the same order as input
+    for (int i = (int)parseNode.count() - 1; i >= 0; i = i - 3)
+        {
+        OSQLParseNode const* listNode = parseNode.getChild(i - 1);
+        if (listNode == nullptr)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        if (!SQL_ISRULE(listNode, row_value_constructor_commalist))
+            {
+            BeAssert(false && "Invalid grammar. Expecting row_value_constructor_commalist");
+            return ERROR;
+            }
+
+        std::vector<std::unique_ptr<ValueExp>> valueExpList;
+        if (SUCCESS != ParseRowValueConstructorCommalist(valueExpList, *listNode))
+            return ERROR;
+
+        std::unique_ptr<SingleSelectStatementExp> singleSelect = std::make_unique<SingleSelectStatementExp>(valueExpList);
+        if (prevSelectExp == nullptr)
+            prevSelectExp = std::make_unique<SelectStatementExp>(std::move(singleSelect));
+        else
+            {
+            std::unique_ptr<SelectStatementExp> selectExp = nullptr;
+            selectExp = std::make_unique<SelectStatementExp>(std::move(singleSelect), SelectStatementExp::CompoundOperator::Union, true /*isAll*/, std::move(prevSelectExp));
+            prevSelectExp = std::move(selectExp);
+            }
+        }
+
+    exp = std::move(prevSelectExp);
     return SUCCESS;
     }
 
@@ -3371,7 +3437,7 @@ BentleyStatus ECSqlParser::ParseValueExpCommalist(std::unique_ptr<ValueExpListEx
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus ECSqlParser::ParseValuesOrQuerySpec(std::vector<std::unique_ptr<ValueExp>>& valeExpList, OSQLParseNode const& parseNode) const
+BentleyStatus ECSqlParser::ParseValuesOrQuerySpec(std::vector<std::unique_ptr<ValueExp>>& valueExpList, OSQLParseNode const& parseNode) const
     {
     if (!SQL_ISRULE(&parseNode, values_or_query_spec))
         {
@@ -3388,7 +3454,7 @@ BentleyStatus ECSqlParser::ParseValuesOrQuerySpec(std::vector<std::unique_ptr<Va
         return ERROR;
         }
 
-    return ParseRowValueConstructorCommalist(valeExpList, *listNode);
+    return ParseRowValueConstructorCommalist(valueExpList, *listNode);
     }
 
 //-----------------------------------------------------------------------------------------
