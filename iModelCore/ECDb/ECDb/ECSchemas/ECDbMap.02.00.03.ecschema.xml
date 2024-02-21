@@ -60,7 +60,7 @@
         <ECProperty propertyName="ECSqlVersion" typeName="string" description="Optional. EC SQL profile version number e.g. 1.2.0.0." />
     </ECCustomAttributeClass>
 
-    <ECCustomAttributeClass typeName="View" modifier="Sealed" appliesTo="EntityClass,RelationshipClass" description="Flags a class as a view based on ECSql.">
+    <ECCustomAttributeClass typeName="View" modifier="Sealed" appliesTo="EntityClass" description="Flags a class as a view based on ECSQL.">
         <ECCustomAttributes>
             <UseRequiresVersion>
                 <!--should be 4.0.0.5 -->
@@ -70,7 +70,7 @@
         <ECProperty propertyName="Query" typeName="string" description="ECSql query with only primitive types are allowed"/>
     </ECCustomAttributeClass>
 
-    <ECCustomAttributeClass typeName="ImplicitView" modifier="Sealed" appliesTo="RelationshipClass" description="Flags a relationship as a view, based on navigation properties on the constraint classes.">
+    <ECCustomAttributeClass typeName="ForeignKeyBasedView" modifier="Sealed" appliesTo="RelationshipClass" description="Flags a relationship to be an automatic view, based on navigation properties on the constraint classes.">
         <ECCustomAttributes>
             <UseRequiresVersion>
                 <!--should be 4.0.0.5 -->

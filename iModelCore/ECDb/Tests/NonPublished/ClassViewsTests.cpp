@@ -124,44 +124,6 @@ TEST_F(ClassViewsFixture, prepare_view_and_check_validate_sql_and_data) {
     }
 }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ClassViewsFixture, linktable_relationship_view) {
-  //This scenario is unsupported. A view for a relationship class requires its endpoint classes to be views as well instead of physical entities
-    auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-    <ECSchema
-            schemaName="test_schema"
-            alias="ts"
-            version="1.0.0"
-            xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-        <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
-        <ECSchemaReference name='ECDbMeta' version='04.00.02' alias='meta' />
-        <ECRelationshipClass typeName="SchemaClassesView" description="" displayLabel="" strength="referencing" modifier="Abstract">
-            <ECCustomAttributes>
-                <View xmlns="ECDbMap.02.00.03">
-                    <Query>
-                        SELECT * FROM meta.SchemaOwnsClasses
-                    </Query>
-                </View>
-            </ECCustomAttributes>
-            <Source multiplicity="(1..1)" roleLabel="contains" polymorphic="false">
-                <Class class="meta:ECSchemaDef"/>
-            </Source>
-            <Target multiplicity="(0..*)" roleLabel="is defined in" polymorphic="false">
-                <Class class="meta:ECClassDef"/>
-            </Target>
-        </ECRelationshipClass>
-    </ECSchema>)xml");
-
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDbForCurrentTest());
-    TestIssueListener listener;
-    m_ecdb.AddIssueListener(listener);
-    listener.Reset();
-    ASSERT_EQ(ERROR, ImportSchema(testSchema));
-    ASSERT_STREQ("Total of 4 view classes were checked and 1 were found to be invalid.", listener.PopLastError().c_str());
-    ASSERT_STREQ("Invalid view class 'test_schema:SchemaClassesView'. If view is applied to the ECRelationshipClass, then source and target classes must be view classes as well.", listener.PopLastError().c_str());
-}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -208,59 +170,6 @@ TEST_F(ClassViewsFixture, return_nav_prop_from_view_query) {
         ASSERT_EQ(relId, ECClassId(UINT64_C(38)));
 
     }
-}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ClassViewsFixture, relationship_view_with_implicitview) {
-  //Should raise an error of both custom attributes are present
-  auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-  <ECSchema
-          schemaName="test_schema"
-          alias="ts"
-          version="1.0.0"
-          xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-      <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
-      <ECSchemaReference name='ECDbMeta' version='04.00.02' alias='meta' />
-      <ECRelationshipClass typeName="SchemaClassesView" description="" displayLabel="" strength="referencing" modifier="Abstract">
-          <ECCustomAttributes>
-              <View xmlns="ECDbMap.02.00.03">
-                  <Query>
-                      SELECT * FROM meta.SchemaOwnsClasses
-                  </Query>
-              </View>
-              <ImplicitView xmlns="ECDbMap.02.00.03" />
-          </ECCustomAttributes>
-          <Source multiplicity="(1..1)" roleLabel="contains" polymorphic="false">
-              <Class class="SchemaDefView"/>
-          </Source>
-          <Target multiplicity="(0..*)" roleLabel="is defined in" polymorphic="false">
-              <Class class="ClassDefView"/>
-          </Target>
-      </ECRelationshipClass>
-      <ECEntityClass typeName="ClassDefView" description="" displayLabel="" modifier="Abstract">
-          <ECCustomAttributes>
-              <View xmlns="ECDbMap.02.00.03">
-                  <Query>SELECT ECInstanceId, ECClassId FROM meta.ECClassDef</Query>
-              </View>
-          </ECCustomAttributes>
-      </ECEntityClass>
-      <ECEntityClass typeName="SchemaDefView" description="" displayLabel="" modifier="Abstract">
-          <ECCustomAttributes>
-              <View xmlns="ECDbMap.02.00.03">
-                  <Query>SELECT ECInstanceId, ECClassId FROM meta.ECSchemaDef</Query>
-              </View>
-          </ECCustomAttributes>
-      </ECEntityClass>
-  </ECSchema>)xml");
-
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("test.ecdb"));
-    TestIssueListener listener;
-    m_ecdb.AddIssueListener(listener);
-    ASSERT_EQ(ERROR, ImportSchema(testSchema));
-    // This scenario is still unsupported, so the actual test message (not allowed to apply both CAs is not returned here but this one instead:)
-    ASSERT_STREQ("Failed to map ECRelationshipClass 'test_schema:SchemaClassesView'. Source or target constraint classes are abstract without subclasses. Consider applying the MapStrategy 'TablePerHierarchy' to the abstract constraint class.", listener.PopLastError().c_str());
 }
 
 /*---------------------------------------------------------------------------------**//**

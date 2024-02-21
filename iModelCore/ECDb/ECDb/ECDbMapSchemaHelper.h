@@ -90,10 +90,10 @@ struct ECDbMapCustomAttributeHelper final
         //! @return true if @p ecClass has the custom attribute.
         static bool TryGetUseRequiresVersion(UseRequiresVersionCustomAttribute& ca, ECN::ECClassCR ecClass);
 
-        //! Checks if the provided relationship class is flagged with the implicit view custom attribute
+        //! Checks if the provided relationship class is flagged with the ForeignKeyBasedView custom attribute
         //! @param[in] ecClass Class to check the custom attribute on.
         //! @return true if @p ecClass has the custom attribute.
-        static bool IsImplicitView(ECN::ECRelationshipClassCR ecClass);
+        static bool IsForeignKeyBasedView(ECN::ECRelationshipClassCR ecClass);
     };
 
 //=======================================================================================    

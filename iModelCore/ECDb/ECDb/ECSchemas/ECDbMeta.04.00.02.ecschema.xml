@@ -585,7 +585,7 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="PropertyHasCustomAttribute" modifier="Abstract" strength="referencing">
         <ECCustomAttributes>
-            <ImplicitView xmlns="ECDbMap.02.00.03" />
+            <ForeignKeyBasedView xmlns="ECDbMap.02.00.03" />
         </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="has custom attribute" polymorphic="false">
             <Class class="ECPropertyDef"/>
@@ -596,7 +596,7 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="CustomAttributeClassHasInstanceOnProperty" modifier="Abstract" strength="referencing">
         <ECCustomAttributes>
-            <ImplicitView xmlns="ECDbMap.02.00.03" />
+            <ForeignKeyBasedView xmlns="ECDbMap.02.00.03" />
         </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="has instance on" polymorphic="false">
             <Class class="ECClassDef"/>
@@ -627,7 +627,7 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="ClassHasCustomAttribute" modifier="Abstract" strength="referencing">
         <ECCustomAttributes>
-            <ImplicitView xmlns="ECDbMap.02.00.03" />
+            <ForeignKeyBasedView xmlns="ECDbMap.02.00.03" />
         </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="has custom attribute" polymorphic="false">
             <Class class="ECClassDef"/>
@@ -638,7 +638,7 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="CustomAttributeClassHasInstanceOnClass" modifier="Abstract" strength="referencing">
         <ECCustomAttributes>
-            <ImplicitView xmlns="ECDbMap.02.00.03" />
+            <ForeignKeyBasedView xmlns="ECDbMap.02.00.03" />
         </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="has instance on" polymorphic="false">
             <Class class="ECClassDef"/>
@@ -669,7 +669,7 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="SchemaHasCustomAttribute" modifier="Abstract" strength="referencing">
         <ECCustomAttributes>
-            <ImplicitView xmlns="ECDbMap.02.00.03" />
+            <ForeignKeyBasedView xmlns="ECDbMap.02.00.03" />
         </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="has custom attribute" polymorphic="false">
             <Class class="ECSchemaDef"/>
@@ -680,7 +680,7 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="CustomAttributeClassHasInstanceOnSchema" modifier="Abstract" strength="referencing">
         <ECCustomAttributes>
-            <ImplicitView xmlns="ECDbMap.02.00.03" />
+            <ForeignKeyBasedView xmlns="ECDbMap.02.00.03" />
         </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="has instance on" polymorphic="false">
             <Class class="ECClassDef"/>
