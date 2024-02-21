@@ -295,6 +295,7 @@ namespace connectivity
                 value_exp,
                 value_exp_commalist,
                 value_exp_primary,
+                values_commalist,
                 values_or_query_spec,
                 where_clause,
                 window_clause,
