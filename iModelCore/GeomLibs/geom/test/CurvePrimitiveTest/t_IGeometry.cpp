@@ -1015,7 +1015,7 @@ TEST(FlatBuffer, IsNanValues)
     Check::True(cv->GetMSBsplineCurve(myCurve), "GetMSBsplineCurve validates valid curve");
     myCurve.knots = nullptr;    // invalidate it
     cv = ICurvePrimitive::CreateBsplineCurveSwapFromSource(myCurve);
-    Check::False(cv->GetMSBsplineCurve(myCurve), "GetMSBsplineCurve validates invalid curve");
+    Check::False(cv->GetMSBsplineCurve(myCurve), "GetMSBsplineCurve invalidates invalid curve");
 
     bvector<IGeometryPtr> gVectorA {goodGCV, badGCV};
     bvector<IGeometryPtr> gVectorB, gVectorC, gVectorD;
