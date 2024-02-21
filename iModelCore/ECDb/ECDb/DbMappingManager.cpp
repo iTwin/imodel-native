@@ -717,9 +717,26 @@ BentleyStatus DbMappingManager::Classes::MapIndexes(SchemaImportContext& importC
             systemIndexes.insert(dbIndex->GetName());
         }
 
-    for (const auto& indexCA : indexCAs)
+    // Check if the imodel is an older one (<= 4.0.0.2)
+    Utf8String versionStr;
+    importCtx.GetECDb().QueryProperty(versionStr, PropertySpec("InitialSchemaVersion", ECDB_PROPSPEC_NAMESPACE));
+
+    const auto checkDerivedClassIndexes = ProfileVersion(versionStr.c_str()) <= BeVersion(4, 0, 0, 2);
+
+    for (auto& indexCA : indexCAs)
         {
-        const auto isSystemIndex = systemIndexes.find(indexCA.GetName()) != systemIndexes.end();
+        auto indexName = indexCA.GetName();
+        auto isSystemIndex = systemIndexes.find(indexName) != systemIndexes.end();
+
+        // Special case: Older imodels ( <= 4.0.0.2) do not have a common unique index on the base TPH table to handle all the derived classes at once.
+        // In such a case, check if a unique index exists without the classid and select that as the index to update instead.
+        if (checkDerivedClassIndexes && !isSystemIndex && indexName.EndsWithI("_sourcetargetclassid"))
+            {
+            auto oldIndexName = indexName.substr(0, indexName.size() - Utf8String("classid").size());
+            if (isSystemIndex = systemIndexes.find(oldIndexName) != systemIndexes.end(); isSystemIndex)
+                indexCA.SetIndexName(oldIndexName);
+            }
+
         if (isSystemIndex)
             {
             if (!classMap.GetClass().IsRelationshipClass() || !classMap.GetMapStrategy().GetTphInfo().IsValid())
@@ -730,11 +747,34 @@ BentleyStatus DbMappingManager::Classes::MapIndexes(SchemaImportContext& importC
                 return ERROR;
                 }
             }
-        if (updateIndexes || isSystemIndex )
+        if (updateIndexes || isSystemIndex)
             table.RemoveIndexDef(indexCA.GetName());
 
         if (SUCCESS != MapIndex(importCtx, classMap, indexCA, isSystemIndex))
             return ERROR;
+
+        // Special case: Since older imodels ( <= 4.0.0.2) have individual unique indexes for the derived classes as well, just updating the one for the base class is not enough.
+        // As we have already updated the unique index in the base class to handle the uniqueness in the derived classes as well, we can now remove the unique indexes in the derived classes.
+        if (checkDerivedClassIndexes && isSystemIndex && indexCA.IsUnique())
+            {
+            if (const auto allDerivedClasses = importCtx.GetECDb().Schemas().GetAllDerivedClassesInternal(classMap.GetClass()); allDerivedClasses.IsValid())
+                {
+                for (ECClassCP derivedClass : allDerivedClasses.Value())
+                    {
+                    if (const auto itr = systemIndexes.find(Utf8PrintfString("uix_%s_%s_sourcetarget", classMap.GetClass().GetSchema().GetAlias().c_str(), derivedClass->GetName().c_str())); itr != systemIndexes.end())
+                        {
+                        const auto foundIndex = *itr;
+                        table.RemoveIndexDef(foundIndex);
+
+                        if (BE_SQLITE_OK != importCtx.GetECDb().ExecuteDdl(SqlPrintfString("DROP INDEX IF EXISTS [%s]", foundIndex.c_str())))
+                            return ERROR;
+
+                        if (BE_SQLITE_OK != importCtx.GetECDb().ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", foundIndex.c_str())))
+                            return ERROR;
+                        }
+                    }
+                }
+            }
         }
 
     return SUCCESS;

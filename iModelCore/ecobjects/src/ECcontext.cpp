@@ -47,6 +47,11 @@ bool ECSchemaReadContext::GetStandardPaths(bvector<WString>& searchPaths)
     standardPath.AppendSeparator();
     searchPaths.push_back(standardPath.GetName());
 
+    BeFileName ecdbPath = rootDir;
+    ecdbPath.AppendToPath(ECDB_SCHEMAS_DIRECTORY);
+    ecdbPath.AppendSeparator();
+    searchPaths.push_back(ecdbPath.GetName());
+
     return true;
     }
 

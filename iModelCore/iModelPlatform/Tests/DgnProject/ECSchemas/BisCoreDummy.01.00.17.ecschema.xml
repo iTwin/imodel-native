@@ -30,7 +30,7 @@
         <NoAdditionalLinkTables xmlns="ECDbSchemaPolicies.01.00.00"/>
         <SchemaHasBehavior xmlns="BisCore.01.00.00"/>
         <ImportRequiresVersion xmlns="ECDbMap.02.00.02">
-            <ECDbRuntimeVersion>4.0.0.4</ECDbRuntimeVersion>
+            <ECDbRuntimeVersion>4.0.0.5</ECDbRuntimeVersion>
         </ImportRequiresVersion>
     </ECCustomAttributes>
 

@@ -390,7 +390,7 @@ TEST_F(ProfileTestFixture, ImportRequiresVersionCustomAttribute)
     ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema));
     auto lastIssue = issueListener.GetIssue();
     ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
-    ASSERT_STREQ("ECSchema Schema1.01.00.01 requires ECDb version 999.9.9.9, but the current runtime version is only 4.0.0.4.", lastIssue.message.c_str());
+    ASSERT_STREQ(Utf8PrintfString("ECSchema Schema1.01.00.01 requires ECDb version 999.9.9.9, but the current runtime version is only %s.", m_ecdb.GetECDbProfileVersion().ToString().c_str()).c_str(), lastIssue.message.c_str());
     }
 
     CloseECDb();
@@ -503,7 +503,7 @@ TEST_F(ProfileTestFixture, ApplyImportRequiresVersionToExistingSchema)
     ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema));
     auto lastIssue = issueListener.GetIssue();
     ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
-    ASSERT_STREQ("ECSchema Schema1.01.00.03 requires ECDb version 999.9.9.9, but the current runtime version is only 4.0.0.4.", lastIssue.message.c_str());
+    ASSERT_STREQ(Utf8PrintfString("ECSchema Schema1.01.00.03 requires ECDb version 999.9.9.9, but the current runtime version is only %s.", m_ecdb.GetECDbProfileVersion().ToString().c_str()).c_str(), lastIssue.message.c_str());
     }
 
     CloseECDb();

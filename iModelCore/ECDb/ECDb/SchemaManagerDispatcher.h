@@ -56,6 +56,7 @@ public:
     ECN::ECClassId GetClassId(ECN::ECClassCR ecClass) const { return m_reader.GetClassId(ecClass); }
     // returns nullptr in case of errors
     ECN::ECDerivedClassesList const* GetDerivedClasses(ECN::ECClassCR baseClass) const;
+    Nullable<ECN::ECDerivedClassesList> GetAllDerivedClasses(ECN::ECClassCR baseClass) const;
 
     ECN::ECPropertyId GetPropertyId(ECN::ECPropertyCR prop) const { return m_reader.GetPropertyId(prop); }
 
@@ -344,6 +345,7 @@ struct SchemaManager::Dispatcher final
 
         // returns nullptr in case of errors
         ECN::ECDerivedClassesList const* GetDerivedClasses(ECN::ECClassCR baseClass, Utf8CP tableSpace) const;
+        Nullable<ECN::ECDerivedClassesList> GetAllDerivedClasses(ECN::ECClassCR baseClass, Utf8CP tableSpace) const;
 
         ECN::ECEnumerationCP GetEnumeration(Utf8StringCR schemaNameOrAlias, Utf8StringCR enumName, SchemaLookupMode, Utf8CP tableSpace) const;
         ECN::KindOfQuantityCP GetKindOfQuantity(Utf8StringCR schemaNameOrAlias, Utf8StringCR koqName, SchemaLookupMode, Utf8CP tableSpace) const;
