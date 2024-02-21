@@ -439,7 +439,11 @@ bvector<std::unique_ptr<RelatedPropertySpecificationPaths>> ContentSpecification
     bvector<std::unique_ptr<RelatedPropertySpecificationPaths>> result;
     for (size_t i = 0; i < flatSpecs.size(); ++i)
         {
-        auto thisPaths = ContainerHelpers::MoveTransformContainer<bvector<RelatedPropertySpecificationPaths::Path>>(paths.GetPaths(i), [](auto&& p)
+        auto pathsIter = paths.GetPaths().find(i);
+        if (paths.GetPaths().end() == pathsIter)
+            continue;
+
+        auto thisPaths = ContainerHelpers::MoveTransformContainer<bvector<RelatedPropertySpecificationPaths::Path>>(pathsIter->second, [](auto&& p)
             {
             return RelatedPropertySpecificationPaths::Path(std::move(p.m_path), std::move(p.m_actualSourceClasses));
             });

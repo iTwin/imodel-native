@@ -194,6 +194,8 @@ private:
     ClassMappingStatus MapClass(SchemaImportContext&, ClassMappingInfo const&) const;
     ClassMappingStatus MapDerivedClasses(SchemaImportContext&, ECN::ECClassCR baseClass) const;
     BentleyStatus SaveDbSchema(SchemaImportContext&) const;
+    BentleyStatus CheckForPerTableColumnLimit() const;
+    BentleyStatus CheckForSelectWildCardLimit() const;
     BentleyStatus CanCreateOrUpdateRequiredTables() const;
     BentleyStatus FindIndexes(std::vector<DbIndex const*>& indexes) const;
     BentleyStatus LoadIndexesSQL(std::map<Utf8String, Utf8String, CompareIUtf8Ascii>& sqliteIndexes) const;
