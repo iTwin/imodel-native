@@ -1263,7 +1263,6 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
         auto result = changeset.ApplyChanges(m_dgndb, rebase, invert, ignoreNoop, fkNoAction); // this actually updates the database with the changes
         if (result != BE_SQLITE_OK) {
             LOG.errorv("failed to apply changeset: %s", BeSQLiteLib::GetErrorName(result));
-            BeAssert(false);
             m_dgndb.AbandonChanges();
             if (containsSchemaChanges)
                 m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
