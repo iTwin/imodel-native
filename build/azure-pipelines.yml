@@ -7,7 +7,7 @@ trigger:
       - release/*
 pr:
   autoCancel: true
-  drafts: false
+  drafts: true #FIXME: revert to true afters
   branches:
     include:
       - main
@@ -17,11 +17,11 @@ parameters:
 - name: defaultNativeBranch
   displayName: Default Native Branch Used for PR Validation
   type: string
-  default: 'main' # Change to appropriate branch name when creating new release branch
+  default: 'dan/trigger-addon-on-merge' # Change to appropriate branch name when creating new release branch
 - name: defaultCoreBranch
   displayName: Default itwinjs-core Branch Used for PR Validation
   type: string
-  default: 'imodel02' # Change to appropriate branch name when creating new release branch
+  default: 'master' # Change to appropriate branch name when creating new release branch
 
 
 resources:
