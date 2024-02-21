@@ -469,6 +469,7 @@ bool MSBsplineCurve::AlmostEqual (MSBsplineCurveCR other, double tolerance) cons
     }
 
 /*--------------------------------------------------------------------*//**
+* @bsimethod
 +----------------------------------------------------------------------*/
 bool MSBsplineCurve::IsValidGeometry (GeometryValidatorPtr &validator) const
     {
@@ -501,6 +502,16 @@ bool MSBsplineCurve::IsValidGeometry (GeometryValidatorPtr &validator) const
             return false;
     return true;
     }
+
+/*--------------------------------------------------------------------*//**
+* @bsimethod
++----------------------------------------------------------------------*/
+bool MSBsplineCurve::IsValidGeometry() const
+    {
+    static GeometryValidatorPtr s_validator = GeometryValidator::Create();
+    return IsValidGeometry(s_validator);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
