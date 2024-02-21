@@ -1714,3 +1714,88 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValues_Descripto
     ASSERT_EQ(1, values.GetSize());
     EXPECT_STREQ("2", values[0]->GetDisplayValue().c_str());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetDistinctRelatedPrimitivePropertyValuesWhenPolymorphicallyHandlingContentInstancesOfSpecificClassesSpecification, R"*(
+    <ECEntityClass typeName="A">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <BaseClass>A</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>A</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="D">
+        <ECProperty propertyName="Label" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="AD" strength="referencing" strengthDirection="Forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ad" polymorphic="True">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="da" polymorphic="True">
+            <Class class="D" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctRelatedPrimitivePropertyValuesWhenPolymorphicallyHandlingContentInstancesOfSpecificClassesSpecification)
+    {
+    // set up dataset
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECClassCP classD = GetClass("D");
+    ECRelationshipClassCP rel = GetClass("AD")->GetRelationshipClassCP();
+
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr d1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD, [](IECInstanceR instance) {instance.SetValue("Label", ECValue("1"));});
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel, *b, *d1);
+
+    IECInstancePtr c = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    IECInstancePtr d2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD, [](IECInstanceR instance) {instance.SetValue("Label", ECValue("2"));});
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel, *c, *d2);
+
+    // create a ruleset
+    PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*ruleset);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    ruleset->AddPresentationRule(*rule);
+
+    auto contentSpec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), true, true);
+    rule->AddSpecification(*contentSpec);
+
+    auto relatedPropertiesSpec = new RelatedPropertiesSpecification(
+        *new RelationshipPathSpecification({ new RelationshipStepSpecification(rel->GetFullName(), RequiredRelationDirection_Forward) }),
+        { new PropertySpecification("Label") }, RelationshipMeaning::RelatedInstance, true);
+    relatedPropertiesSpec->SetSkipIfDuplicate(true);
+    contentSpec->AddRelatedProperty(*relatedPropertiesSpec);
+
+    // get distinct values
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
+        ruleset->GetRuleSetId(), RulesetVariables(), "", 0, *KeySet::Create())));
+    auto fieldMatcher = std::make_shared<PropertiesContentFieldMatcher>(
+        *classD->GetPropertyP("Label"),
+        RelatedClassPath{ RelatedClass(*classA, SelectClass<ECRelationshipClass>(*rel, ""), true, SelectClass<ECClass>(*classD, "")) }
+    );
+    PagedDataContainer<DisplayValueGroupCPtr> values = GetValidatedResponse(m_manager->GetDistinctValues(AsyncDistinctValuesRequestParams::Create(s_project->GetECDb(), *descriptor, fieldMatcher)));
+
+    // validate
+    ASSERT_EQ(2, values.GetSize());
+    size_t valueIndex = 0;
+
+    EXPECT_STREQ("1", values[valueIndex]->GetDisplayValue().c_str());
+    EXPECT_EQ(1, values[valueIndex]->GetRawValues().size());
+    EXPECT_STREQ("1", values[valueIndex]->GetRawValues()[0].GetString());
+    ++valueIndex;
+
+    EXPECT_STREQ("2", values[valueIndex]->GetDisplayValue().c_str());
+    EXPECT_EQ(1, values[valueIndex]->GetRawValues().size());
+    EXPECT_STREQ("2", values[valueIndex]->GetRawValues()[0].GetString());
+    }
