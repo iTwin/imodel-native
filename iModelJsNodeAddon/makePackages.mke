@@ -24,3 +24,18 @@ always:
     |-- Making package imodeljs-$(NodeOS)-$(NodeCPU) --
     -@$(rmdirRecursiveCmd) $(o)
     $(BBPYTHONCMD) $(_MakeFilePath)makePackages.py $(ProductDir) $(o) $(baseDir)package_version.txt $(baseDir) $(TARGET_PROCESSOR_ARCHITECTURE)
+
+%if defined (IS_VERACODE_BUILD)
+    veracodeDir = ${OutputRootDir}/Veracode/bin/
+    pdbDir = ${OutputRootDir}/PDBs/
+    dllDir = ${OutputRootDir}/imodeljsnodeaddon_pkgs/imodeljs-win32-x64/
+
+    %mkdir $(veracodeDir)
+
+    always:
+        ~linkfile $(pdbDir)iTwinDaemon_exe.pdb=${OutputRootDir}/static/build/BeSQLite/ITwinDaemon/iTwinDaemon_exe.pdb
+        ~linkmultifiles $(veracodeDir)=$(dllDir)
+        ~linkmultifiles $(veracodeDir)=$(pdbDir)
+        $(BuildToolCache)bsitools/zip.exe ${OutputRootDir}/Veracode/Veracode.zip $(veracodeDir)/*
+
+%endif

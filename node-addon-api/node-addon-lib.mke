@@ -38,6 +38,11 @@ DLM_NOENTRY             = 1
 DLM_NO_BENTLEY_LIB      = 1
 LINKER_LIBRARIES    = $(ContextSubpartsLibs)$(libprefix)iTwinBentley$(stlibext)
 
+%if (IS_VERACODE_BUILD)
+    # Since we create 2 DLLs with the same name, we can't link in the PDB
+    %undef DLM_CREATE_PDB_LINK
+%endif
+
 %include $(sharedMki)linkLibrary.mki
 
 %if ($(TARGET_PLATFORM) == "Windows")
@@ -53,6 +58,9 @@ LINKER_LIBRARIES    = $(ContextSubpartsLibs)$(libprefix)iTwinBentley$(stlibext)
 
     $(o)napi_stub$(oext) : $(baseDir)napi_stub.cpp ${MultiCompileDepends}
 
+    %if (IS_VERACODE_BUILD)
+        DLM_CREATE_PDB_LINK = 1
+    %endif
     objs = $(o)napi_stub$(oext)
     %include $(sharedMki)linkLibrary.mki
 

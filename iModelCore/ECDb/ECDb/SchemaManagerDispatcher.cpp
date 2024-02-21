@@ -1605,40 +1605,99 @@ ClassMappingStatus MainSchemaManager::MapDerivedClasses(SchemaImportContext& ctx
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus MainSchemaManager::CanCreateOrUpdateRequiredTables() const
+BentleyStatus MainSchemaManager::CheckForPerTableColumnLimit() const
     {
-    ECDB_PERF_LOG_SCOPE("Schema import> Can create or update tables");
-    const int maxColumns = m_ecdb.GetLimit(DbLimits::Column);
+    ECDB_PERF_LOG_SCOPE("Schema import> Check for per table column limit");
+    // Note: maxColumns should never be less than the limit defined by SQLITE_MAX_COLUMN; previous limit was 2000
+    const int maxColumns = 2000;
 
-    Utf8String ecsql;
-    ecsql.Sprintf(R"sql(
+    Utf8CP sql = R"(
         SELECT
-            [sc].[Name] [SchemaName],
-            [cl].[Name] [ClassName],
-            tb.name [Table],
+            [pm].[ClassId] [ClassId],
+            [tb].[Name] [TableName],
             COUNT (*) [PersistedColumns]
         FROM
             [ec_PropertyMap] [pm]
             JOIN [ec_Column] [co] ON [co].[Id] = [pm].[ColumnId]
             JOIN [ec_Table] [tb] ON [tb].[Id] = [co].[TableId]
             JOIN [ec_Class] [cl] ON [cl].[Id] = [pm].[ClassId]
-            JOIN [ec_Schema] [sc] ON [sc].[Id] = [cl].[SchemaId]
             JOIN [ec_ClassMap] [cm] ON [cm].[ClassId] = [cl].[id]
         WHERE
             [co].[IsVirtual] = 0
             AND [cm].[MapStrategy] <> 3
-        GROUP BY [cl].[Id], tb.Id
-        HAVING COUNT (*) >= %d;)sql", maxColumns);
+        GROUP BY [cl].[Id], [tb].[Id]
+        HAVING COUNT (*) > ?;)";
 
     Statement stmt;
-    stmt.Prepare(m_ecdb, ecsql.c_str());
-    if (stmt.Step() == BE_SQLITE_ROW)
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, sql))
         {
-        m_ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0286,
-            "Schema Import> Error importing %s:%s class. Could not create or update %s table as there are %d persisted columns, but a maximum of %d columns is allowed for a table.",
-            stmt.GetValueText(0), stmt.GetValueText(1), stmt.GetValueText(2), stmt.GetValueInt64(3), maxColumns);
+        BeAssert(false);
         return ERROR;
         }
+    stmt.BindInt(1, maxColumns);
+    if (BE_SQLITE_ROW == stmt.Step())
+        {
+        ECClassId classId = stmt.GetValueId<ECClassId>(0);
+        ECClassCP ecClass = m_ecdb.Schemas().GetClass(classId, nullptr);
+        m_ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0286,
+            "Schema Import> Error importing %s class. Could not create or update %s table as there are %d persisted columns, but a maximum of %d columns is allowed for a table.",
+            ecClass->GetFullName(), stmt.GetValueText(1), stmt.GetValueInt64(2), maxColumns);
+        return ERROR;
+        }
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus MainSchemaManager::CheckForSelectWildCardLimit() const
+    {
+    ECDB_PERF_LOG_SCOPE("Schema import> Check for select wild card limit");
+    const int selectWildCardLimit = GetECDb().GetLimit(DbLimits::Column);
+    Utf8CP sql = R"(
+        SELECT
+            [pm].[ClassId] [ClassId],
+            COUNT (*) + 2 [ColumnCount]
+        FROM
+            [ec_PropertyMap] [pm]
+            JOIN [ec_PropertyPath] [pp] ON [pp].[Id] = [pm].[PropertyPathId]
+        WHERE
+            [pp].[AccessString] NOT IN ('ECInstanceId', 'ECClassId')
+        GROUP BY [pm].[ClassId]
+        HAVING [ColumnCount] > ?;)";
+
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, sql))
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+    stmt.BindInt(1, selectWildCardLimit);
+    bool limitExceeded = false;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        limitExceeded = true;
+        ECClassId classId = stmt.GetValueId<ECClassId>(0);
+        const int mappedColumns = stmt.GetValueInt(1);
+        ECClassCP ecClass = m_ecdb.Schemas().GetClass(classId, nullptr);
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0680,
+            "Schema Import> Error importing %s class. The %s class has properties mapped to %d columns, which exceeds the current limit of %d defined by SQLITE_MAX_COLUMN.",
+            ecClass->GetFullName(), ecClass->GetFullName(), mappedColumns, selectWildCardLimit);
+        }
+    return limitExceeded ? ERROR : SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus MainSchemaManager::CanCreateOrUpdateRequiredTables() const
+    {
+    if (SUCCESS != CheckForPerTableColumnLimit())
+        return ERROR;
+
+    if (SUCCESS != CheckForSelectWildCardLimit())
+        return ERROR;
+
     return SUCCESS;
     }
 
