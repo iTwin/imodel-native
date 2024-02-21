@@ -3301,7 +3301,6 @@ Utf8String ECSchema::ComputeCheckSum()
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ECSchema::ReadFromXmlFile(ECSchemaPtr& schemaOut, WCharCP ecSchemaXmlFile, ECSchemaReadContextR schemaContext, bool addFilePathAsSearchPath)
     {
-    StopWatch timer(true);
     LOG.debugv (L"About to read native ECSchema from file: fileName='%ls'", ecSchemaXmlFile);
     schemaOut = nullptr;
 
@@ -3329,12 +3328,6 @@ SchemaReadStatus ECSchema::ReadFromXmlFile(ECSchemaPtr& schemaOut, WCharCP ecSch
         schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
         }
-    else
-        {
-        //We have serialized a schema and its valid.
-        timer.Stop();
-        LOG.infov (L"Read (in %.4f seconds) [%3" PRIu64 " ECClasses] %ls", timer.GetElapsedSeconds(), (uint64_t) schemaOut->m_classMap.size(), ecSchemaXmlFile);
-        }
 
     return status;
     }
@@ -3344,7 +3337,6 @@ SchemaReadStatus ECSchema::ReadFromXmlFile(ECSchemaPtr& schemaOut, WCharCP ecSch
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, Utf8CP ecSchemaXml, ECSchemaReadContextR schemaContext)
     {
-    StopWatch timer(true);
     schemaOut = nullptr;
     SchemaReadStatus status = SchemaReadStatus::Success;
 
@@ -3378,12 +3370,6 @@ SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, Utf8CP ecSc
         schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
         }
-    else
-        {
-        timer.Stop();
-        LOG.infov (L"Read from string (in %.4f seconds) [%3" PRIx64 " ECClasses] %s", timer.GetElapsedSeconds(),
-            (uint64_t) schemaOut->m_classMap.size(), WString(schemaOut->GetFullSchemaName().c_str(), true).c_str());
-        }
 
     return status;
     }
@@ -3393,7 +3379,6 @@ SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, Utf8CP ecSc
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, WCharCP ecSchemaXml, ECSchemaReadContextR schemaContext)
     {
-    StopWatch timer(true);
     schemaOut = nullptr;
     SchemaReadStatus status = SchemaReadStatus::Success;
 
@@ -3436,12 +3421,6 @@ POP_DISABLE_DEPRECATION_WARNINGS
         schemaContext.RemoveSchema(*schemaOut);
         schemaOut = nullptr;
         }
-    else
-        {
-        timer.Stop();
-        LOG.infov (L"Read from string (in %.4f seconds) [%3" PRIx64 " ECClasses] %s", timer.GetElapsedSeconds(),
-            (uint64_t) schemaOut->m_classMap.size(), schemaOut->GetFullSchemaName().c_str());
-        }
 
     return status;
     }
@@ -3463,27 +3442,12 @@ bool ECSchema::IsSchemaReferenced(ECSchemaCR thisSchema, ECSchemaCR potentiallyR
     return referencedSchemas.end() != referencedSchemas.Find(potentiallyReferencedSchema.GetSchemaKey(), matchType);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* Returns true if thisSchema directly references possiblyReferencedSchema
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool DirectlyReferences(ECSchemaCP thisSchema, ECSchemaCP possiblyReferencedSchema)
-    {
-    ECSchemaReferenceListCR referencedSchemas = thisSchema->GetReferencedSchemas();
-    for (ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
-        {
-        if (it->second.get() == possiblyReferencedSchema)
-            return true;
-        }
-    return false;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 static bool DependsOn(ECSchemaCP thisSchema, ECSchemaCP possibleDependency)
     {
-    if (DirectlyReferences(thisSchema, possibleDependency))
+    if (ECSchema::IsSchemaReferenced(*thisSchema, *possibleDependency))
         return true;
 
     SupplementalSchemaMetaDataPtr metaData;

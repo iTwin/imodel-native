@@ -133,15 +133,18 @@ BY                  {SQL_NEW_KEYWORD(SQL_TOKEN_BY);  }
 
 CASE                {SQL_NEW_KEYWORD(SQL_TOKEN_CASE);  }
 CAST                {SQL_NEW_KEYWORD(SQL_TOKEN_CAST);  }
-COMMIT              {SQL_NEW_KEYWORD(SQL_TOKEN_COMMIT);  }
+COLLATE             {SQL_NEW_KEYWORD(SQL_TOKEN_COLLATE);  }
 COUNT               {SQL_NEW_KEYWORD(SQL_TOKEN_COUNT);  }
 CROSS               {SQL_NEW_KEYWORD(SQL_TOKEN_CROSS);  }
+CUME_DIST           {SQL_NEW_KEYWORD(SQL_TOKEN_CUME_DIST);  }
+CURRENT             {SQL_NEW_KEYWORD(SQL_TOKEN_CURRENT);  }
 CURRENT_DATE        {SQL_NEW_KEYWORD(SQL_TOKEN_CURRENT_DATE);  }
 CURRENT_TIME        {SQL_NEW_KEYWORD(SQL_TOKEN_CURRENT_TIME);  }
 CURRENT_TIMESTAMP   {SQL_NEW_KEYWORD(SQL_TOKEN_CURRENT_TIMESTAMP);  }
 
 DATE                {SQL_NEW_KEYWORD(SQL_TOKEN_DATE);  }
 DELETE              {SQL_NEW_KEYWORD(SQL_TOKEN_DELETE);  }
+DENSE_RANK          {SQL_NEW_KEYWORD(SQL_TOKEN_DENSE_RANK);  }
 DESC                {SQL_NEW_KEYWORD(SQL_TOKEN_DESC);  }
 DISTINCT            {SQL_NEW_KEYWORD(SQL_TOKEN_DISTINCT);  }
 DOUBLE              {SQL_NEW_KEYWORD(SQL_TOKEN_DOUBLE);  }
@@ -153,20 +156,26 @@ END                 {SQL_NEW_KEYWORD(SQL_TOKEN_END);  }
 ESCAPE              {SQL_NEW_KEYWORD(SQL_TOKEN_ESCAPE);  }
 EVERY               {SQL_NEW_KEYWORD(SQL_TOKEN_EVERY);  }
 EXCEPT              {SQL_NEW_KEYWORD(SQL_TOKEN_EXCEPT);  }
+EXCLUDE             {SQL_NEW_KEYWORD(SQL_TOKEN_EXCLUDE); }
 EXISTS              {SQL_NEW_KEYWORD(SQL_TOKEN_EXISTS);  }
 FALSE               {SQL_NEW_KEYWORD(SQL_TOKEN_FALSE);  }
 FLOAT               {SQL_NEW_KEYWORD(SQL_TOKEN_FLOAT);  }
 
 FIRST               {SQL_NEW_KEYWORD(SQL_TOKEN_FIRST);  }
-LAST               {SQL_NEW_KEYWORD(SQL_TOKEN_LAST);  }
+LAST                {SQL_NEW_KEYWORD(SQL_TOKEN_LAST);  }
 NULLS               {SQL_NEW_KEYWORD(SQL_TOKEN_NULLS);  }
 
+FILTER              {SQL_NEW_KEYWORD(SQL_TOKEN_FILTER);  }
+FIRST_VALUE         {SQL_NEW_KEYWORD(SQL_TOKEN_FIRST_VALUE);  }
+FOLLOWING           {SQL_NEW_KEYWORD(SQL_TOKEN_FOLLOWING);  }
 FOR                 {SQL_NEW_KEYWORD(SQL_TOKEN_FOR);  }
 FORWARD             {SQL_NEW_KEYWORD(SQL_TOKEN_FORWARD);  }
 FROM                {SQL_NEW_KEYWORD(SQL_TOKEN_FROM);  }
 FULL                {SQL_NEW_KEYWORD(SQL_TOKEN_FULL);  }
 
 GROUP               {SQL_NEW_KEYWORD(SQL_TOKEN_GROUP);  }
+GROUP_CONCAT        {SQL_NEW_KEYWORD(SQL_TOKEN_GROUP_CONCAT);  }
+GROUPS              {SQL_NEW_KEYWORD(SQL_TOKEN_GROUPS);  }
 
 HAVING              {SQL_NEW_KEYWORD(SQL_TOKEN_HAVING);  }
 
@@ -182,6 +191,9 @@ IS                  {SQL_NEW_KEYWORD(SQL_TOKEN_IS);  }
 
 JOIN                {SQL_NEW_KEYWORD(SQL_TOKEN_JOIN);  }
 
+LAG                 {SQL_NEW_KEYWORD(SQL_TOKEN_LAG);  }
+LAST_VALUE          {SQL_NEW_KEYWORD(SQL_TOKEN_LAST_VALUE); }
+LEAD                {SQL_NEW_KEYWORD(SQL_TOKEN_LEAD);  }
 LEFT                {SQL_NEW_KEYWORD(SQL_TOKEN_LEFT);  }
 LIKE                {SQL_NEW_KEYWORD(SQL_TOKEN_LIKE);  }
 LIMIT               {SQL_NEW_KEYWORD(SQL_TOKEN_LIMIT);  }
@@ -192,7 +204,11 @@ MAX                 {SQL_NEW_KEYWORD(SQL_TOKEN_MAX);  }
 MIN                 {SQL_NEW_KEYWORD(SQL_TOKEN_MIN);  }
 
 NATURAL             {SQL_NEW_KEYWORD(SQL_TOKEN_NATURAL);  }
+NO                  {SQL_NEW_KEYWORD(SQL_TOKEN_NO);  }
+NOCASE              {SQL_NEW_KEYWORD(SQL_TOKEN_NOCASE);  }
 NOT                 {SQL_NEW_KEYWORD(SQL_TOKEN_NOT);  }
+NTH_VALUE           {SQL_NEW_KEYWORD(SQL_TOKEN_NTH_VALUE); }
+NTILE               {SQL_NEW_KEYWORD(SQL_TOKEN_NTILE);  }
 NULL                {SQL_NEW_KEYWORD(SQL_TOKEN_NULL);  }
 
 OFFSET              {SQL_NEW_KEYWORD(SQL_TOKEN_OFFSET);  }
@@ -200,14 +216,24 @@ ON                  {SQL_NEW_KEYWORD(SQL_TOKEN_ON);  }
 ONLY                {SQL_NEW_KEYWORD(SQL_TOKEN_ONLY);  }
 OR                  {SQL_NEW_KEYWORD(SQL_TOKEN_OR);  }
 ORDER               {SQL_NEW_KEYWORD(SQL_TOKEN_ORDER);  }
+OTHERS              {SQL_NEW_KEYWORD(SQL_TOKEN_OTHERS);  }
 OUTER               {SQL_NEW_KEYWORD(SQL_TOKEN_OUTER);  }
+OVER                {SQL_NEW_KEYWORD(SQL_TOKEN_OVER);  }
 
+PARTITION           {SQL_NEW_KEYWORD(SQL_TOKEN_PARTITION);  }
+PERCENT_RANK        {SQL_NEW_KEYWORD(SQL_TOKEN_PERCENT_RANK);  }
 PRAGMA              {SQL_NEW_KEYWORD(SQL_TOKEN_PRAGMA);  }
+PRECEDING           {SQL_NEW_KEYWORD(SQL_TOKEN_PRECEDING);  }
 
+RANGE               {SQL_NEW_KEYWORD(SQL_TOKEN_RANGE);  }
+RANK                {SQL_NEW_KEYWORD(SQL_TOKEN_RANK);  }
 REAL                {SQL_NEW_KEYWORD(SQL_TOKEN_REAL);  }
-RECURSIVE           {SQL_NEW_KEYWORD(SQL_TOKEN_RECURSIVE);}
+RECURSIVE           {SQL_NEW_KEYWORD(SQL_TOKEN_RECURSIVE);  }
 RIGHT               {SQL_NEW_KEYWORD(SQL_TOKEN_RIGHT);  }
-ROLLBACK            {SQL_NEW_KEYWORD(SQL_TOKEN_ROLLBACK);  }
+ROW                 {SQL_NEW_KEYWORD(SQL_TOKEN_ROW);  }
+ROWS                {SQL_NEW_KEYWORD(SQL_TOKEN_ROWS);  }
+ROW_NUMBER          {SQL_NEW_KEYWORD(SQL_TOKEN_ROW_NUMBER);  }
+RTRIM               {SQL_NEW_KEYWORD(SQL_TOKEN_RTRIM);  }
 
 SELECT              {SQL_NEW_KEYWORD(SQL_TOKEN_SELECT);  }
 SET                 {SQL_NEW_KEYWORD(SQL_TOKEN_SET);  }
@@ -216,11 +242,13 @@ STRING              {SQL_NEW_KEYWORD(SQL_TOKEN_STRING);  }
 SUM                 {SQL_NEW_KEYWORD(SQL_TOKEN_SUM);  }
 
 THEN                {SQL_NEW_KEYWORD(SQL_TOKEN_THEN);  }
+TIES                {SQL_NEW_KEYWORD(SQL_TOKEN_TIES);  }
 TIME                {SQL_NEW_KEYWORD(SQL_TOKEN_TIME);  }
 TIMESTAMP           {SQL_NEW_KEYWORD(SQL_TOKEN_TIMESTAMP);  }
-
+TOTAL               {SQL_NEW_KEYWORD(SQL_TOKEN_TOTAL);  }
 TRUE                {SQL_NEW_KEYWORD(SQL_TOKEN_TRUE);  }
 
+UNBOUNDED           {SQL_NEW_KEYWORD(SQL_TOKEN_UNBOUNDED);  }
 UNION               {SQL_NEW_KEYWORD(SQL_TOKEN_UNION);  }
 UNIQUE              {SQL_NEW_KEYWORD(SQL_TOKEN_UNIQUE);  }
 UNKNOWN             {SQL_NEW_KEYWORD(SQL_TOKEN_UNKNOWN);  }
@@ -233,7 +261,8 @@ VARCHAR             {SQL_NEW_KEYWORD(SQL_TOKEN_VARCHAR);  }
 
 WHEN                {SQL_NEW_KEYWORD(SQL_TOKEN_WHEN);  }
 WHERE               {SQL_NEW_KEYWORD(SQL_TOKEN_WHERE);  }
-WITH                {SQL_NEW_KEYWORD(SQL_TOKEN_WITH);}
+WITH                {SQL_NEW_KEYWORD(SQL_TOKEN_WITH);  }
+WINDOW              {SQL_NEW_KEYWORD(SQL_TOKEN_WINDOW);  }
 "$"                 {SQL_NEW_KEYWORD(SQL_TOKEN_DOLLAR);}
 
 "<"                 { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_LESS);return SQL_LESS;}
@@ -501,12 +530,12 @@ sal_Int32 gatherName(yyscan_t yyscanner, const sal_Char* text)
         case IParseContext::KEY_MAX:
         case IParseContext::KEY_MIN:
         case IParseContext::KEY_SUM:
-    case IParseContext::KEY_EVERY:
-    case IParseContext::KEY_ANY:
-    case IParseContext::KEY_SOME:
-    case IParseContext::KEY_COLLECT:
-    case IParseContext::KEY_FUSION:
-    case IParseContext::KEY_INTERSECTION:
+        case IParseContext::KEY_EVERY:
+        case IParseContext::KEY_ANY:
+        case IParseContext::KEY_SOME:
+        case IParseContext::KEY_COLLECT:
+        case IParseContext::KEY_FUSION:
+        case IParseContext::KEY_INTERSECTION:
             nToken = mapEnumToToken(eKeyCode);
             SQL_NEW_KEYWORD(nToken);
             break;
@@ -544,12 +573,12 @@ sal_Int32 gatherNamePre(yyscan_t yyscanner, const sal_Char* text)
         case IParseContext::KEY_MAX:
         case IParseContext::KEY_MIN:
         case IParseContext::KEY_SUM:
-    case IParseContext::KEY_EVERY:
-    case IParseContext::KEY_ANY:
-    case IParseContext::KEY_SOME:
-    case IParseContext::KEY_COLLECT:
-    case IParseContext::KEY_FUSION:
-    case IParseContext::KEY_INTERSECTION:
+        case IParseContext::KEY_EVERY:
+        case IParseContext::KEY_ANY:
+        case IParseContext::KEY_SOME:
+        case IParseContext::KEY_COLLECT:
+        case IParseContext::KEY_FUSION:
+        case IParseContext::KEY_INTERSECTION:
             nToken = mapEnumToToken(eKeyCode);
             SQL_NEW_KEYWORD(nToken);
             break;

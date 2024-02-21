@@ -168,7 +168,7 @@ struct RulesEngineTestHelpers
         name.append(SerializeClassNames(ecClasses));
         name.append("_").append(propertyName);
         if (counter != 0)
-            name.append("_").append(std::to_string(counter));
+            name.append("/").append(std::to_string(counter));
         return name;
         }
     static Utf8String CreateFieldName(ECClassCP ecClass, Utf8CP propertyName, uint64_t counter = 0)
@@ -197,7 +197,7 @@ struct RulesEngineTestHelpers
         name.append("rc_").append(SerializeClassNames(relationshipClasses));
         name.append("_ncc_").append(Utf8String(nestedContentClass->GetSchema().GetAlias()).append("_").append(nestedContentClass->GetName()));
         if (counter != 0)
-            name.append("_").append(std::to_string(counter));
+            name.append("/").append(std::to_string(counter));
         return name;
         }
     static Utf8String CreateNestedContentFieldName(ECClassCP relationshipClass, ECClassCP nestedContentClass, uint64_t counter = 0)

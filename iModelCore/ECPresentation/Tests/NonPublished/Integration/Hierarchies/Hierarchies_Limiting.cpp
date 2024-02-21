@@ -649,3 +649,91 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Limiting_ThrowsWhenThere
     params.SetLimit(2);
     ExpectHierarchyLevelTooLargeException(*m_manager, params);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(Limiting_ThrowsWhenThereAreTooManyInstancesInSameLabelMergedHierarchyLevelWithHiddenIntermediateLevel, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="Prop" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="AB" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ab" polymorphic="false">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ba" polymorphic="false">
+            <Class class="B"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, Limiting_ThrowsWhenThereAreTooManyInstancesInSameLabelMergedHierarchyLevelWithHiddenIntermediateLevel)
+    {
+    // dataset
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECRelationshipClassCP relAB = GetClass("AB")->GetRelationshipClassCP();
+
+    auto a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    auto a2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+
+    auto b1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue("x")); });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a1, *b1);
+    auto b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue("2")); });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a1, *b2);
+
+    auto b3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue("x")); });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a2, *b3);
+    auto b4 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("Prop", ECValue("4")); });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a2, *b4);
+
+    // ruleset
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, false, classB->GetFullName(),
+        {
+        new InstanceLabelOverridePropertyValueSpecification("Prop"),
+        }));
+
+    auto groupingRule = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "", "", "");
+    groupingRule->AddGroup(*new SameLabelInstanceGroup(SameLabelInstanceGroupApplicationStage::PostProcess));
+    rules->AddPresentationRule(*groupingRule);
+
+    auto rootRule = new RootNodeRule();
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, true, false, false, false, "",
+        {
+        new MultiSchemaClass(classA->GetSchema().GetName(), true, bvector<Utf8String>{ classA->GetName() })
+        }, {}));
+    rules->AddPresentationRule(*rootRule);
+
+    auto childRule = new ChildNodeRule(Utf8PrintfString("ParentNode.IsOfClass(\"%s\", \"%s\")", classA->GetName().c_str(), classA->GetSchema().GetName().c_str()), 1, false);
+    childRule->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "",
+        {
+        new RepeatableRelationshipPathSpecification({ new RepeatableRelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward) }),
+        }));
+    rules->AddPresentationRule(*childRule);
+
+    // set up full hierarchy validator
+    auto validate = [&](AsyncHierarchyRequestParams const& p)
+        {
+        ValidateHierarchy(p,
+            {
+            CreateInstanceNodeValidator({ b2 }),
+            CreateInstanceNodeValidator({ b4 }),
+            CreateInstanceNodeValidator({ b1, b3 }),
+            });
+        };
+
+    // validate the hierarchy with no limit
+    auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
+    validate(params);
+
+    // validate the hierarchy with large limit (note: we count instances, not nodes)
+    params.SetLimit(4);
+    validate(params);
+
+    // verify request throws when limit is too small
+    params.SetLimit(2);
+    ExpectHierarchyLevelTooLargeException(*m_manager, params);
+    }

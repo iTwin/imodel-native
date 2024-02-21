@@ -6214,7 +6214,7 @@ TEST_F(DbMappingTestFixture, AbstractClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
     {
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("propertywithsamenameasstructmembercol.ecdb", SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("propertywithsamenameasstructmembercol1.ecdb", SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
                                                                                           "  <ECStructClass typeName='ElementCode' modifier='None'>"
                                                                                           "    <ECProperty propertyName='Name' typeName='string' />"
                                                                                           "  </ECStructClass>"
@@ -6234,7 +6234,7 @@ TEST_F(DbMappingTestFixture, PropertyWithSameNameAsStructMemberColumn)
     ASSERT_TRUE(m_ecdb.ColumnExists("ts_Foo", expectedColumnName.c_str()));
 
     //now flip order of struct prop and prim prop
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("propertywithsamenameasstructmembercol.ecdb", SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("propertywithsamenameasstructmembercol2.ecdb", SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
                                                                                           "  <ECStructClass typeName='ElementCode' modifier='None'>"
                                                                                           "    <ECProperty propertyName='Name' typeName='string' />"
                                                                                           "  </ECStructClass>"
@@ -11422,7 +11422,7 @@ TEST_F(DbMappingTestFixture, CreateTableWith2kProperties)
         </ECSchema>
         )schema";
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("Bisification.ecdb", SchemaItem(bisCoreXml)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("CreateTableWith2kProperties.ecdb", SchemaItem(bisCoreXml)));
 
     SchemaKey bisCoreKey("BisCore", 1, 0, 15);
     ECSchemaReadContextPtr schemaReadContext = ECN::ECSchemaReadContext::CreateContext();
@@ -11434,6 +11434,7 @@ TEST_F(DbMappingTestFixture, CreateTableWith2kProperties)
     ECEntityClassP geomElementClass;
     testSchema->CreateEntityClass(geomElementClass, "GeomElement");
     ASSERT_TRUE(geomElementClass != nullptr);
+    ASSERT_FALSE(geomElementClass->HasBaseClasses());
     geomElementClass->AddBaseClass(*bisCorePtr->GetClassP("GeometricElement3d"));
     ASSERT_TRUE(geomElementClass->HasBaseClasses());
 
@@ -11444,9 +11445,54 @@ TEST_F(DbMappingTestFixture, CreateTableWith2kProperties)
     }
     ASSERT_EQ(2001, geomElementClass->GetPropertyCount(false));
 
-    ASSERT_EQ(ERROR, m_ecdb.Schemas().ImportSchemas({testSchema.get()})) << "Import should fail because there are more than 2001 properties present, which exceeds our current limit of 2000 columns in a table.";
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AbandonChanges());
+    ASSERT_EQ(ERROR, m_ecdb.Schemas().ImportSchemas({testSchema.get()})) << "Import should fail because there are 2001 persisted columns in bis_GeometricElement3d_Overflow table, which exceeds our current limit of 2000 columns in a table.";
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
     m_ecdb.CloseDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, Only2kColumnsAreAllowedPerTable)
+    {
+    Utf8String innerXml = "";
+    for (size_t i = 1; i <= 1999; i++)
+        {
+        Utf8PrintfString propName("PropElement%zu", i);
+        innerXml += "<ECProperty propertyName=\"" + propName + "\" typeName=\"string\" />\n";
+        }
+
+    Utf8PrintfString schemaXml = Utf8PrintfString(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="Foo">
+            %s
+          </ECEntityClass>
+        </ECSchema>
+        )xml", innerXml.c_str());
+
+    SchemaItem schemaItem = SchemaItem(schemaXml);
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("Only2kColumnsAreAllowedPerTable.ecdb", schemaItem)) << "Schema import should succeed as there are 2000 persisted columns, 1 for primary key and 1999 for properties";
+    m_ecdb.SaveChanges();
+
+    innerXml = "";
+    for (size_t i = 1; i <= 2000; i++) 
+        {
+        Utf8PrintfString propName("PropElement%zu", i);
+        innerXml += "<ECProperty propertyName=\"" + propName + "\" typeName=\"string\" />\n";
+        }
+
+    Utf8PrintfString updatedSchemaXml = Utf8PrintfString(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="Foo">
+            %s
+          </ECEntityClass>
+        </ECSchema>
+        )xml", innerXml.c_str());
+
+    SchemaItem updatedSchema = SchemaItem(updatedSchemaXml);
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(updatedSchema)) << "Schema import should fail because there are 2001 persisted columns, but a maximum of 2000 columns is allowed for a table";
     }
 
 END_ECDBUNITTESTS_NAMESPACE

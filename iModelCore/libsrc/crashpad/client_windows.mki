@@ -49,6 +49,9 @@ nameToDefine = _UNICODE
 nameToDefine = CRASHPAD_ZLIB_SOURCE_EXTERNAL
 %include cdefapnd.mki
 
+nameToDefine = CRASHPAD_FLOCK_ALWAYS_SUPPORTED
+%include cdefapnd.mki
+
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 %include MultiCppCompileRule.mki
 

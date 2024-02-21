@@ -1023,7 +1023,7 @@ BentleyStatus SchemaWriter::ImportFormatComposite(Context& ctx, ECFormatCR forma
         if (SUCCESS != ImportUnit(ctx, *unit))
             return ERROR;
 
-        Nullable<Utf8String> label = spec.HasMajorLabel() ? spec.GetMajorLabel() : nullptr;
+        auto label = spec.HasMajorLabel() ? Nullable<Utf8String>(spec.GetMajorLabel()) : nullptr;
         if (SUCCESS != insertUnit(*stmt, formatId, label, *unit, ordinal))
             return ERROR;
         }
@@ -1034,7 +1034,7 @@ BentleyStatus SchemaWriter::ImportFormatComposite(Context& ctx, ECFormatCR forma
         if (SUCCESS != ImportUnit(ctx, *unit))
             return ERROR;
 
-        Nullable<Utf8String> label = spec.HasMiddleLabel() ? spec.GetMiddleLabel() : nullptr;
+        auto label = spec.HasMiddleLabel() ? Nullable<Utf8String>(spec.GetMiddleLabel()) : nullptr;
         if (SUCCESS != insertUnit(*stmt, formatId, label, *unit, ordinal))
             return ERROR;
         }
@@ -1046,7 +1046,7 @@ BentleyStatus SchemaWriter::ImportFormatComposite(Context& ctx, ECFormatCR forma
         if (SUCCESS != ImportUnit(ctx, *unit))
             return ERROR;
 
-        Nullable<Utf8String> label = spec.HasMinorLabel() ? spec.GetMinorLabel() : nullptr;
+        auto label = spec.HasMinorLabel() ? Nullable<Utf8String>(spec.GetMinorLabel()) : nullptr;
         if (SUCCESS != insertUnit(*stmt, formatId, label, *unit, ordinal))
             return ERROR;
         }
@@ -1058,7 +1058,7 @@ BentleyStatus SchemaWriter::ImportFormatComposite(Context& ctx, ECFormatCR forma
         if (SUCCESS != ImportUnit(ctx, *unit))
             return ERROR;
 
-        Nullable<Utf8String> label = spec.HasSubLabel() ? spec.GetSubLabel() : nullptr;
+        auto label = spec.HasSubLabel() ? Nullable<Utf8String>(spec.GetSubLabel()) : nullptr;
         if (SUCCESS != insertUnit(*stmt, formatId, label, *unit, ordinal))
             return ERROR;
         }
@@ -2153,8 +2153,9 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propert
         {
         if (ctx.IgnoreIllegalDeletionsAndModifications())
             {
-            LOG.infov("Ignoring upgrade error: ECSchema Upgrade failed. ECProperty: '%s.%s'. Changing the name of an ECProperty is not supported.",
-                        oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+            ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0632,
+                "Ignoring upgrade error: ECProperty: '%s.%s'. Changing the name of an ECProperty is not supported. Error suppressed and property will not be renamed.",
+                oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
             return SUCCESS;
             }
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0335,
@@ -2179,7 +2180,7 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propert
             {
             if (ctx.IgnoreIllegalDeletionsAndModifications())
                 {
-                LOG.infov("Ignoring upgrade error: %s", error.c_str());
+                ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0633, "Ignoring upgrade error: %s. Error suppressed, type will not be changed.", error.c_str());
                 return SUCCESS;
                 }
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0336, error.c_str());
@@ -2375,7 +2376,7 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, PropertyChange& propert
             if (ctx.IgnoreIllegalDeletionsAndModifications())
                 {
                 ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0343,
-                    "Changes to ECProperty %s.%s skipped because %s a property is not supported without an appropriate 'AllowUnitChange' custom attribute applied the property.",
+                    "Changes to ECProperty %s.%s not allowed because %s a property is not supported without an appropriate 'AllowUnitChange' custom attribute applied the property. Error suppressed, property will not be changed.",
                     oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str(), change.GetNew().IsNull() ? "removing a KindOfQuantity from" : "changing the persistence unit of");
                 return SUCCESS;
                 }
@@ -2713,7 +2714,10 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersisten
                 {
                 // Not sure why the SchemaComparer found the new CA but it isn't here now; however, we can't fail the import because of this.
                 if (ctx.IgnoreIllegalDeletionsAndModifications())
+                    {
+                    ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0635, "Ignoring upgrade error: Found a new custom attribute added that is null. Error suppressed no new custom attribute will be added.");
                     continue;
+                    }
                 return ERROR;
                 }
             if (ImportClass(ctx, ca->GetClass()) != SUCCESS)
@@ -2734,7 +2738,10 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(Context& ctx, SchemaPersisten
             if (ca == nullptr)
                 {
                 if (ctx.IgnoreIllegalDeletionsAndModifications())
+                    {
+                    ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0636, "Ignoring upgrade error: Found a deleted custom attribute that is null. Error suppressed, no changes to custom attributes.");
                     continue;
+                    }
 
                 BeAssert(false);
                 return ERROR;
@@ -2900,8 +2907,9 @@ BentleyStatus SchemaWriter::UpdateBaseClasses(Context& ctx, BaseClassChanges& ba
                         "ECSchema Upgrade failed. ECClass %s, BaseClass %s: Removing a base class from an ECClass is not supported.", oldClass.GetFullName(), oldBaseClass->GetFullName());
                     return ERROR;
                     }
-                LOG.infov("Ignoring upgrade error: ECSchema Upgrade failed. ECClass %s, BaseClass %s: Removing a base class from an ECClass is not supported.",
-                                     oldClass.GetFullName(), oldBaseClass->GetFullName());
+                ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0637,
+                    "Ignoring upgrade error: ECSchema Upgrade failed. ECClass %s, BaseClass %s: Removing a base class from an ECClass is not supported. Error suppressed, base class will remain unchanged.",
+                    oldClass.GetFullName(), oldBaseClass->GetFullName());
                 }
             }
         else if (change.GetOpCode() == ECChange::OpCode::New)
@@ -2920,8 +2928,9 @@ BentleyStatus SchemaWriter::UpdateBaseClasses(Context& ctx, BaseClassChanges& ba
                         "ECSchema Upgrade failed. ECClass %s, BaseClass %s: Adding a new base class to an ECClass is not supported.", oldClass.GetFullName(), newBaseClass->GetFullName());
                     return ERROR;
                     }
-                LOG.infov("Ignoring upgrade error: ECSchema Upgrade failed. ECClass %s, BaseClass %s: Adding a new base class to an ECClass is not supported.",
-                                     oldClass.GetFullName(), newBaseClass->GetFullName());
+                ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0638,
+                    "Ignoring upgrade error: ECSchema Upgrade failed. ECClass %s, BaseClass %s: Adding a new base class to an ECClass is not supported. Error suppressed, base class will not be added.",
+                    oldClass.GetFullName(), newBaseClass->GetFullName());
                 }
             }
         else if (change.GetOpCode() == ECChange::OpCode::Modified)
@@ -2993,8 +3002,9 @@ BentleyStatus SchemaWriter::UpdateClass(Context& ctx, ClassChange& classChange, 
                 "ECSchema Upgrade failed. ECClass %s: Changing the name of an ECClass is not supported.", oldClass.GetFullName());
             return ERROR;
             }
-        LOG.infov("Ignoring update error: ECSchema Upgrade failed: ECClass %s: Changing name of an ECClass is not supported.",
-                    oldClass.GetFullName());
+        ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0639,
+            "Ignoring update error: ECSchema Upgrade failed: ECClass %s: Changing name of an ECClass is not supported. Error suppressed, class will not be renamed.",
+            oldClass.GetFullName());
         }
 
     ECClassId classId = ctx.GetSchemaManager().GetClassId(newClass);
@@ -3398,6 +3408,31 @@ BentleyStatus SchemaWriter::DeleteCustomAttributeClass(Context& ctx, ECCustomAtt
     return SUCCESS;
     }
 
+namespace
+    {
+    Utf8String IsMajorVersionChangeAllowed(const EC::SchemaWriter::Context& ctx, const ECN::ECSchemaId schemaId, const bool isDynamicSchema)
+        {
+        auto errorMessage = "";
+        if (!ctx.IsMajorSchemaVersionChange(schemaId)) // Check if the schema "Read" version has been updated to allow the major change
+            errorMessage = "the 'Read' version number of the ECSchema was not incremented.";
+
+        else if (!ctx.AreMajorSchemaVersionChangesAllowed()) // Check if the major version changes are disabled for all schemas with SchemaImportOptions::DisallowMajorSchemaUpgrade (default behavior)
+            {
+            // Major version changes are disabled. Check if schema is dynamic to decide if major version changes can still be done.
+            if (isDynamicSchema)
+                {
+                if (!ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas()) // Schema is dynamic, check if major schema changed enabled for dynamic schemas with SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas
+                    errorMessage = "major schema version changes have not been enabled for dynamic schemas.";
+                }
+            else
+                {
+                errorMessage = "major schema version changes are disabled for all schemas.";
+                }
+            }
+        return errorMessage;
+        }
+    };
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -3405,29 +3440,13 @@ BentleyStatus SchemaWriter::DeleteClass(Context& ctx, ClassChange& classChange, 
     {
     // Allow Major schema upgrade for dynamic schemas if AllowMajorSchemaUpgradeForDynamicSchemas import option is set irrespective of the DisallowMajorSchemaUpgrade import option
     // For more information about major schema upgrade rules and examples, see https://dev.azure.com/bentleycs/iModelTechnologies/_wiki/wikis/iModelTechnologies.wiki/36117/Major-Schema-Upgrades
-    Utf8String errorMessage = "";
-    if (!ctx.IsMajorSchemaVersionChange(deletedClass.GetSchema().GetId())) // Check if the schema "Read" version has been updated to allow the major change
-        errorMessage = "the 'Read' version number of the ECSchema was not incremented.";
-
-    else if (!ctx.AreMajorSchemaVersionChangesAllowed()) // Check if the major version changes are disabled for all schemas with SchemaImportOptions::DisallowMajorSchemaUpgrade (default behavior)
-        {
-        // Major version changes are disabled. Check if schema is dynamic to decide if major version changes can still be done.
-        if (isDynamicSchema)
-            {
-            if (!ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas()) // Schema is dynamic, check if major schema changed enabled for dynamic schemas with SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas
-                errorMessage = "major schema version changes have not been enabled for dynamic schemas.";
-            }
-        else
-            {
-            errorMessage = "major schema version changes are disabled for all schemas.";
-            }
-        }
-
-    if (!Utf8String::IsNullOrEmpty(errorMessage.c_str()))
+    if (const auto errorMessage = IsMajorVersionChangeAllowed(ctx, deletedClass.GetSchema().GetId(), isDynamicSchema); !Utf8String::IsNullOrEmpty(errorMessage.c_str()))
         {
         if (ctx.IgnoreIllegalDeletionsAndModifications())
             {
-            LOG.infov("Ignoring upgrade error:  ECSchema Upgrade failed. ECSchema %s: Cannot delete ECClass '%s'. This is a major ECSchema change. %s", deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str(), errorMessage.c_str());
+            ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0640, 
+                "Ignoring upgrade error: ECSchema Upgrade failed. ECSchema %s: Cannot delete ECClass '%s'. This is a major ECSchema change. %s. Error suppressed, class will not be deleted.",
+                deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str(), errorMessage.c_str());
             return SUCCESS;
             }
 
@@ -3595,30 +3614,13 @@ BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, PropertyChange& propert
     if (!isOverriddenProperty)
         {
         // Property is not overriden, hence major schema change rules will be applied
-        Utf8String errorMessage = "";
-        if (!ctx.IsMajorSchemaVersionChange(deletedProperty.GetClass().GetSchema().GetId())) // Check if the schema "Read" version has been updated to allow the major change
-            errorMessage = "the 'Read' version number of the ECSchema was not incremented.";
-
-        else if (!ctx.AreMajorSchemaVersionChangesAllowed()) // Check if the major version changes are disabled for all schemas with SchemaImportOptions::DisallowMajorSchemaUpgrade (default behavior)
-            {
-            // Major version changes are disabled. Check if schema is dynamic to decide if major version changes can still be done.
-            if (isDynamicSchema)
-                {
-                if (!ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas()) // Schema is dynamic, check if major schema changed enabled for dynamic schemas with SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas
-                    errorMessage = "major schema version changes have not been enabled for dynamic schemas.";
-                }
-            else
-                {
-                errorMessage = "major schema version changes are disabled for all schemas.";
-                }
-            }
-
-        if (!Utf8String::IsNullOrEmpty(errorMessage.c_str()))
+        if (const auto errorMessage = IsMajorVersionChangeAllowed(ctx, deletedProperty.GetClass().GetSchema().GetId(), isDynamicSchema); !Utf8String::IsNullOrEmpty(errorMessage.c_str()))
             {
             if (ctx.IgnoreIllegalDeletionsAndModifications())
                 {
-                LOG.infov("Ignoring update error: ECSchema Upgrade failed. ECSchema %s: Cannot delete ECProperty '%s.%s'. %s",
-                                ecClass.GetSchema().GetFullSchemaName().c_str(), ecClass.GetName().c_str(), deletedProperty.GetName().c_str(), errorMessage.c_str());
+                ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0641, 
+                    "Ignoring update error: ECSchema Upgrade failed. ECSchema %s: Cannot delete ECProperty '%s.%s'. %s. Error suppressed, property will not be deleted.",
+                    ecClass.GetSchema().GetFullSchemaName().c_str(), ecClass.GetName().c_str(), deletedProperty.GetName().c_str(), errorMessage.c_str());
                 return SUCCESS;
                 }
 
@@ -3631,8 +3633,7 @@ BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, PropertyChange& propert
                 ecClass.GetSchema().GetFullSchemaName().c_str(),
                 ecClass.GetName().c_str(),
                 deletedProperty.GetName().c_str(),
-                errorMessage.c_str()
-            );
+                errorMessage.c_str());
             return ERROR;
             }
         }
@@ -3856,6 +3857,55 @@ BentleyStatus SchemaWriter::UpdateClasses(Context& ctx, ClassChanges& classChang
     return SUCCESS;
     }
 
+BentleyStatus SchemaWriter::DeleteKindOfQuantity(Context& ctx, ECN::KindOfQuantityCR deletedKoQ, const bool isDynamicSchema)
+    {
+    // Check if major version change is allowed for given schema
+    if (const auto errorMessage = IsMajorVersionChangeAllowed(ctx, deletedKoQ.GetSchema().GetId(), isDynamicSchema); !Utf8String::IsNullOrEmpty(errorMessage.c_str()))
+        {
+        if (ctx.IgnoreIllegalDeletionsAndModifications())
+            {
+            ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0642, 
+                "Ignoring update error: ECSchema Upgrade failed. ECSchema %s: KindOfQuantity %s: Deleting KindOfQuantity from an ECSchema is not supported. Error suppressed, KindOfQuantity will not be deleted.",
+                deletedKoQ.GetSchema().GetFullSchemaName().c_str(), deletedKoQ.GetName().c_str());
+            return SUCCESS;
+            }
+
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0677,
+            "ECSchema Upgrade failed. ECSchema %s: Cannot delete KindOfQuantity '%s'. This is a major ECSchema change. %s", deletedKoQ.GetSchema().GetFullSchemaName().c_str(), deletedKoQ.GetName().c_str(), errorMessage.c_str());
+        return ERROR;
+        }
+
+    const auto koQId = deletedKoQ.GetId();
+
+    // The properties that are using the KoQ must be updated before we delete the actual KoQ, otherwise they will be dropped.
+    if (auto updatePropertyStmt = ctx.GetCachedStatement("UPDATE main." TABLE_Property " SET KindOfQuantityId=NULL WHERE KindOfQuantityId=?");
+        updatePropertyStmt == nullptr || updatePropertyStmt->BindId(1, koQId) != BE_SQLITE_OK || updatePropertyStmt->Step() != BE_SQLITE_DONE)
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0677,
+            "ECSchema Upgrade failed. ECSchema %s: Failed to drop references to deleted KindOfQuantity '%s'", deletedKoQ.GetSchema().GetFullSchemaName().c_str(), deletedKoQ.GetName().c_str());
+        return ERROR;
+        }
+
+    // Delete the KoQ
+    Statement deleteStatement;
+    if (deleteStatement.Prepare(ctx.GetECDb(), "DELETE FROM main." TABLE_KindOfQuantity " WHERE Id=?") != BE_SQLITE_OK)
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0677,
+            "ECSchema Upgrade failed. ECSchema %s: Failed to delete KindOfQuantity '%s'", deletedKoQ.GetSchema().GetFullSchemaName().c_str(), deletedKoQ.GetName().c_str());
+        return ERROR;
+        }
+
+    deleteStatement.BindId(1, koQId);
+    if (deleteStatement.Step() != BE_SQLITE_DONE)
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0677,
+            "ECSchema Upgrade failed. ECSchema %s: Failed to delete KindOfQuantity '%s'", deletedKoQ.GetSchema().GetFullSchemaName().c_str(), deletedKoQ.GetName().c_str());
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -3872,15 +3922,8 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantities(Context& ctx, KindOfQuantityC
 
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
-            if (ctx.IgnoreIllegalDeletionsAndModifications())
-                {
-                LOG.infov("Ignoring update error: ECSchema Upgrade failed. ECSchema %s: KindOfQuantity %s: Deleting KindOfQuantity from an ECSchema is not supported.",
-                                oldSchema.GetFullSchemaName().c_str(), oldKoq->GetFullName().c_str());
+            if (DeleteKindOfQuantity(ctx, *oldKoq, newSchema.IsDynamicSchema()) == SUCCESS)
                 continue;
-                }
-
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0388,
-                "ECSchema Upgrade failed. ECSchema %s: KindOfQuantity %s: Deleting KindOfQuantity from an ECSchema is not supported.", oldSchema.GetFullSchemaName().c_str(), oldKoq->GetFullName().c_str());
             return ERROR;
             }
 
@@ -3929,22 +3972,18 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantity(Context& ctx, KindOfQuantityCha
     if (change.Name().IsChanged())
         {
         ctx.IgnoreIllegalDeletionsAndModifications() ?
-            LOG.infov("ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Changing the name of a KindOfQuantity is not supported. Modified '%s' to '%s'",
-                                    oldSchema.GetFullSchemaName().c_str(),
-                                    oldKoq.GetFullName().c_str(),
-                                    oldKoq.GetFullName().c_str(),
-                                    newKoq.GetFullName().c_str()) :
-            ctx.Issues().ReportV(
-                IssueSeverity::Error,
-                IssueCategory::BusinessProperties,
-                IssueType::ECDbIssue,
-                ECDbIssueId::ECDb_0389,
-                "ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Changing the name of a KindOfQuantity is not supported. Modified '%s' to '%s'",
+            ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0643, 
+                "Ignoring update error: ECShema %s: KindOfQuantity %s: Changing the name of a KindOfQuantity is not supported. Modified '%s' to '%s'. Error suppressed, KindOfQuantity will not be renamed",
+                oldSchema.GetFullSchemaName().c_str(), 
+                oldKoq.GetFullName().c_str(), 
+                oldKoq.GetFullName().c_str(), 
+                newKoq.GetFullName().c_str()) :
+
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0389, "ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Changing the name of a KindOfQuantity is not supported. Modified '%s' to '%s'",
                 oldSchema.GetFullSchemaName().c_str(),
                 oldKoq.GetFullName().c_str(),
                 oldKoq.GetFullName().c_str(),
-                newKoq.GetFullName().c_str()
-            );
+                newKoq.GetFullName().c_str());
 
         return ERROR;
         }
@@ -3974,8 +4013,12 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantity(Context& ctx, KindOfQuantityCha
         if (change.RelativeError().GetNew().IsNull())
             {
             ctx.IgnoreIllegalDeletionsAndModifications() ?
-                LOG.infov("ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Removing the RelativeError of a KindOfQuantity is not valid. A KindOfQuantity must always have a RelativeError. RelativeError removed: %f",
-                            oldSchema.GetFullSchemaName().c_str(), newKoq.GetFullName().c_str(), change.RelativeError().GetOld().Value()) :
+                ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0644, 
+                    "ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Removing the RelativeError of a KindOfQuantity is not valid. A KindOfQuantity must always have a RelativeError. RelativeError removed: %f. Error suppressed, RelativeError will not be removed.",
+                    oldSchema.GetFullSchemaName().c_str(),
+                    newKoq.GetFullName().c_str(),
+                    change.RelativeError().GetOld().Value()) :
+
                 ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0390,
                     "ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Removing the RelativeError of a KindOfQuantity is not valid. A KindOfQuantity must always have a RelativeError. RelativeError removed: %f",
                     oldSchema.GetFullSchemaName().c_str(), newKoq.GetFullName().c_str(), change.RelativeError().GetOld().Value());
@@ -4005,8 +4048,10 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantity(Context& ctx, KindOfQuantityCha
     if (change.MemberChangesCount() > actualChanges)
         {
         ctx.IgnoreIllegalDeletionsAndModifications() ?
-            LOG.infov("ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Changing properties of KindOfQuantity is not supported except for RelativeError, PresentationFormats, DisplayLabel and Description.",
-                        oldSchema.GetFullSchemaName().c_str(), oldKoq.GetFullName().c_str()) :
+            ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0645, 
+                "ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Changing properties of KindOfQuantity is not supported except for RelativeError, PresentationFormats, DisplayLabel and Description. Error suppressed, unsupported properties will not be changed.",
+                oldSchema.GetFullSchemaName().c_str(), oldKoq.GetFullName().c_str()) :
+
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0391,
                 "ECSchema Upgrade failed. ECShema %s: KindOfQuantity %s: Changing properties of KindOfQuantity is not supported except for RelativeError, PresentationFormats, DisplayLabel and Description.",
                 oldSchema.GetFullSchemaName().c_str(), oldKoq.GetFullName().c_str());
@@ -4025,8 +4070,10 @@ static bool IsPropertyCategoryDeletionValid(SchemaWriter::Context& ctx, Property
     if (!toDeleteCategoryName.IsValid())
         {
         ctx.IgnoreIllegalDeletionsAndModifications() ?
-            LOG.infov("ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s: Old name of PropertyCategory to delete did not exist",
-                                oldSchema.GetFullSchemaName().c_str(), toDeleteCategoryName.Value().c_str()) :
+            ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0646, 
+                "ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s: Old name of PropertyCategory to delete did not exist. Error suppressed, no PropertyCategory deleted.",
+                oldSchema.GetFullSchemaName().c_str(), toDeleteCategoryName.Value().c_str()) :
+
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0392,
                 "ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s: Old name of PropertyCategory to delete did not exist",
                 oldSchema.GetFullSchemaName().c_str(), toDeleteCategoryName.Value().c_str());
@@ -4042,10 +4089,12 @@ static bool IsPropertyCategoryDeletionValid(SchemaWriter::Context& ctx, Property
                     property->GetCategory()->GetName() == toDeleteCategoryName.Value())
                     {
                     ctx.IgnoreIllegalDeletionsAndModifications() ?
-                        LOG.infov("ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s: Cannot delete PropertyCategory which is still referenced by a property, %s.%s.",
+                        ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0647, 
+                            "ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s: Cannot delete PropertyCategory which is still referenced by a property, %s.%s. Error suppressed, PropertyCategory will not be deleted.",
                             oldSchema.GetFullSchemaName().c_str(),
                             toDeleteCategoryName.Value().c_str(),
                             property->GetClass().GetFullName(), property->GetName().c_str()) :
+
                         ctx.Issues().ReportV(
                             IssueSeverity::Error,
                             IssueCategory::BusinessProperties,
@@ -4055,8 +4104,7 @@ static bool IsPropertyCategoryDeletionValid(SchemaWriter::Context& ctx, Property
                             oldSchema.GetFullSchemaName().c_str(),
                             toDeleteCategoryName.Value().c_str(),
                             property->GetClass().GetFullName(),
-                            property->GetName().c_str()
-                        );
+                            property->GetName().c_str());
                     return true;
                     }
                 }
@@ -4175,11 +4223,13 @@ BentleyStatus SchemaWriter::UpdatePropertyCategory(Context& ctx, PropertyCategor
     if (change.Name().IsChanged())
         {
         ctx.IgnoreIllegalDeletionsAndModifications() ?
-            LOG.infov("ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s:  Changing the name of a PropertyCategory is not supported. Modified '%s' to '%s'",
-                                oldSchema.GetFullSchemaName().c_str(),
-                                oldCat.GetFullName().c_str(),
-                                oldCat.GetFullName().c_str(),
-                                newCat.GetFullName().c_str()) :
+            ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0648,
+                "ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s:  Changing the name of a PropertyCategory is not supported. Modified '%s' to '%s'. Error suppressed, PropertyCategory will not be renamed.",
+                oldSchema.GetFullSchemaName().c_str(),
+                oldCat.GetFullName().c_str(),
+                oldCat.GetFullName().c_str(),
+                newCat.GetFullName().c_str()) :
+
             ctx.Issues().ReportV(
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
@@ -4189,8 +4239,7 @@ BentleyStatus SchemaWriter::UpdatePropertyCategory(Context& ctx, PropertyCategor
                 oldSchema.GetFullSchemaName().c_str(),
                 oldCat.GetFullName().c_str(),
                 oldCat.GetFullName().c_str(),
-                newCat.GetFullName().c_str()
-            );
+                newCat.GetFullName().c_str());
         return ERROR;
         }
 
@@ -4227,8 +4276,10 @@ BentleyStatus SchemaWriter::UpdatePropertyCategory(Context& ctx, PropertyCategor
     if (change.MemberChangesCount() > actualChanges)
         {
         ctx.IgnoreIllegalDeletionsAndModifications() ?
-            LOG.infov("ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s: Changing properties of PropertyCategory is not supported except for Priority, DisplayLabel and Description.",
-                                oldSchema.GetFullSchemaName().c_str(), oldCat.GetFullName().c_str()) :
+            ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0649, 
+                "ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s: Changing attributes of PropertyCategory is not supported except for Priority, DisplayLabel and Description. Error suppressed, unsupported attributes not changed.",
+                oldSchema.GetFullSchemaName().c_str(), oldCat.GetFullName().c_str()) :
+
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0395,
                 "ECSchema Upgrade failed. ECSchema %s: PropertyCategory %s: Changing properties of PropertyCategory is not supported except for Priority, DisplayLabel and Description.",
                 oldSchema.GetFullSchemaName().c_str(), oldCat.GetFullName().c_str());
@@ -4416,6 +4467,9 @@ BentleyStatus SchemaWriter::VerifyEnumeratorChanges(Context& ctx, ECSchemaCR old
                     oldSchema.GetFullSchemaName().c_str(), oldEnum.GetFullName().c_str());
                 return ERROR;
                 }
+            ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0650, 
+                "Ignoring upgrade error: ECSchema %s: Enumeration %s: An enumerator was deleted from Enumeration which is not supported. Error suppressed, enumerator not deleted.",
+                oldSchema.GetFullSchemaName().c_str(), oldEnum.GetFullName().c_str());
             }
         }
     else
@@ -4435,7 +4489,62 @@ BentleyStatus SchemaWriter::VerifyEnumeratorChanges(Context& ctx, ECSchemaCR old
                     oldSchema.GetFullSchemaName().c_str(), oldEnum.GetFullName().c_str());
                 return ERROR;
                 }
+            ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0651,
+                "Ignoring upgrade error: ECSchema %s: Enumeration %s: An enumerator was deleted from Enumeration which is not supported. Error suppressed, Enumerator not deleted.",
+                oldSchema.GetFullSchemaName().c_str(), oldEnum.GetFullName().c_str());
             }
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::DeleteEnumeration(Context& ctx, ECN::ECEnumerationCR deletedEnum, bool isDynamicSchema)
+    {
+    // Check if major version change is allowed for given schema
+    if (const auto errorMessage = IsMajorVersionChangeAllowed(ctx, deletedEnum.GetSchema().GetId(), isDynamicSchema); !Utf8String::IsNullOrEmpty(errorMessage.c_str()))
+        {
+        if (ctx.IgnoreIllegalDeletionsAndModifications())
+            {
+            ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0652,
+                "Ignoring upgrade error: ECSchema Upgrade failed. ECSchema %s: ECEnumeration %s: Deleting ECEnumerations from an ECSchema is not supported. Error suppressed, Enumeration not deleted.",
+                deletedEnum.GetSchema().GetFullSchemaName().c_str(), deletedEnum.GetName().c_str());
+            return SUCCESS;
+            }
+
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0678,
+            "ECSchema Upgrade failed. ECSchema %s: Cannot delete ECEnumeration '%s'. This is a major ECSchema change. %s", deletedEnum.GetSchema().GetFullSchemaName().c_str(), deletedEnum.GetName().c_str(), errorMessage.c_str());
+        return ERROR;
+        }
+
+    const auto enumId = deletedEnum.GetId();
+
+    // The properties that are using the ECEnumeration must be updated before we delete the actual ECEnumeration, otherwise they will be dropped.
+    if (auto updatePropertyStmt = ctx.GetCachedStatement("UPDATE main." TABLE_Property " SET EnumerationId=NULL WHERE EnumerationId=?");
+        updatePropertyStmt == nullptr || updatePropertyStmt->BindId(1, enumId) != BE_SQLITE_OK || updatePropertyStmt->Step() != BE_SQLITE_DONE)
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0678,
+            "ECSchema Upgrade failed. ECSchema %s: Failed to drop references to deleted ECEnumeration '%s'", deletedEnum.GetSchema().GetFullSchemaName().c_str(), deletedEnum.GetName().c_str());
+        return ERROR;
+        }
+
+    // Delete the ECEnumeration
+    Statement deleteStatement;
+    if (deleteStatement.Prepare(ctx.GetECDb(), "DELETE FROM main." TABLE_Enumeration " WHERE Id=?") != BE_SQLITE_OK)
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0678,
+            "ECSchema Upgrade failed. ECSchema %s: Failed to delete ECEnumeration '%s'", deletedEnum.GetSchema().GetFullSchemaName().c_str(), deletedEnum.GetName().c_str());
+        return ERROR;
+        }
+
+    deleteStatement.BindId(1, enumId);
+    if (deleteStatement.Step() != BE_SQLITE_DONE)
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0678,
+            "ECSchema Upgrade failed. ECSchema %s: Failed to delete ECEnumeration '%s'", deletedEnum.GetSchema().GetFullSchemaName().c_str(), deletedEnum.GetName().c_str());
+        return ERROR;
         }
 
     return SUCCESS;
@@ -4454,16 +4563,8 @@ BentleyStatus SchemaWriter::UpdateEnumerations(Context& ctx, EnumerationChanges&
 
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
-            ECEnumerationCP ecEnum = oldSchema.GetEnumerationCP(change.GetChangeName());
-            if (ctx.IgnoreIllegalDeletionsAndModifications())
-                {
-                LOG.infov("Ignoring upgrade error: ECSchema Upgrade failed. ECSchema %s: ECEnumeration %s: Deleting ECEnumerations from an ECSchema is not supported.",
-                            oldSchema.GetFullSchemaName().c_str(), ecEnum->GetFullName().c_str());
+            if (const auto ecEnum = oldSchema.GetEnumerationCP(change.GetChangeName()); ecEnum != nullptr && DeleteEnumeration(ctx, *ecEnum, newSchema.IsDynamicSchema()) == SUCCESS)
                 continue;
-                }
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0404,
-                "ECSchema Upgrade failed. ECSchema %s: ECEnumeration %s: Deleting ECEnumerations from an ECSchema is not supported.",
-                oldSchema.GetFullSchemaName().c_str(), ecEnum->GetFullName().c_str());
             return ERROR;
             }
 
@@ -5111,10 +5212,13 @@ BentleyStatus SchemaWriter::UpdateFormat(Context& ctx, FormatChange& change, ECS
             sqlUpdateBuilder.AddSetExp("CompositeSpec", SchemaPersistenceHelper::SerializeCompositeSpecWithoutUnits(*newVal.GetCompositeSpec()).c_str());
         }
 
-    FormatId formatId = oldVal.GetId();
-    sqlUpdateBuilder.AddWhereExp("Id", formatId.GetValue());
-    if (SUCCESS != sqlUpdateBuilder.ExecuteSql(ctx.GetECDb()))
-        return ERROR;
+    auto formatId = oldVal.GetId();
+    if (sqlUpdateBuilder.IsValid())
+        {
+        sqlUpdateBuilder.AddWhereExp("Id", formatId.GetValue());
+        if (SUCCESS != sqlUpdateBuilder.ExecuteSql(ctx.GetECDb()))
+            return ERROR;
+        }
 
     if (SUCCESS != UpdateFormatCompositeUnitLabel(ctx, formatId, compSpecChange.MajorLabel(), 0))
         return ERROR;
@@ -5255,8 +5359,9 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
                 oldSchema.GetFullSchemaName().c_str(), oldSchema.GetAlias().c_str(), newSchema.GetAlias().c_str());
             return ERROR;
             }
-        LOG.infov("Ignoring upgrade error: ECSchema Upgrade failed. ECSchema %s: Modifying the Alias is not supported.  Old '%s', New '%s",
-                oldSchema.GetFullSchemaName().c_str(), oldSchema.GetAlias().c_str(), newSchema.GetAlias().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0653, 
+            "Ignoring upgrade error: ECSchema %s: Modifying the Alias is not supported.  Old '%s', New '%s. Error suppressed, alias not changed",
+            oldSchema.GetFullSchemaName().c_str(), oldSchema.GetAlias().c_str(), newSchema.GetAlias().c_str());
         }
 
     if (schemaChange.ECVersion().IsChanged())

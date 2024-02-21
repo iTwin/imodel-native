@@ -969,7 +969,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DescriptorOverride_FiltersB
     {
     ECClassCP classA = GetClass("A");
     BeGuid instanceGuid1 = BeGuid(true);
-    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid1](IECInstanceR instance) 
+    IECInstancePtr instance1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [instanceGuid1](IECInstanceR instance)
         {
         instance.SetValue("GuidProp", ECValue((Byte const*)&instanceGuid1, sizeof(BeGuid)));
         });
@@ -3137,6 +3137,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     ContentRuleP rule = new ContentRule("", 1, false);
     ContentSpecificationP specification = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("instance id", 1000, "this.ECInstanceId"));
+    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("class id", 1000, "this.ECClassId"));
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label1", 1000, "\"Value\""));
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1100, "1+2"));
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label3", 1200, "this.Property"));
@@ -3146,23 +3148,31 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-    ASSERT_EQ(4, descriptor->GetVisibleFields().size());
+    ASSERT_EQ(6, descriptor->GetVisibleFields().size());
 
     ASSERT_TRUE(descriptor->GetVisibleFields()[1]->IsCalculatedPropertyField());
     ASSERT_TRUE(descriptor->GetVisibleFields()[2]->IsCalculatedPropertyField());
     ASSERT_TRUE(descriptor->GetVisibleFields()[3]->IsCalculatedPropertyField());
+    ASSERT_TRUE(descriptor->GetVisibleFields()[4]->IsCalculatedPropertyField());
+    ASSERT_TRUE(descriptor->GetVisibleFields()[5]->IsCalculatedPropertyField());
 
-    EXPECT_STREQ("label1", descriptor->GetVisibleFields()[1]->AsCalculatedPropertyField()->GetLabel().c_str());
-    EXPECT_STREQ("label2", descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetLabel().c_str());
-    EXPECT_STREQ("label3", descriptor->GetVisibleFields()[3]->AsCalculatedPropertyField()->GetLabel().c_str());
+    EXPECT_STREQ("instance id", descriptor->GetVisibleFields()[1]->AsCalculatedPropertyField()->GetLabel().c_str());
+    EXPECT_STREQ("class id", descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetLabel().c_str());
+    EXPECT_STREQ("label1", descriptor->GetVisibleFields()[3]->AsCalculatedPropertyField()->GetLabel().c_str());
+    EXPECT_STREQ("label2", descriptor->GetVisibleFields()[4]->AsCalculatedPropertyField()->GetLabel().c_str());
+    EXPECT_STREQ("label3", descriptor->GetVisibleFields()[5]->AsCalculatedPropertyField()->GetLabel().c_str());
 
     EXPECT_EQ(1000, descriptor->GetVisibleFields()[1]->GetPriority());
-    EXPECT_EQ(1100, descriptor->GetVisibleFields()[2]->GetPriority());
-    EXPECT_EQ(1200, descriptor->GetVisibleFields()[3]->GetPriority());
+    EXPECT_EQ(1000, descriptor->GetVisibleFields()[2]->GetPriority());
+    EXPECT_EQ(1000, descriptor->GetVisibleFields()[3]->GetPriority());
+    EXPECT_EQ(1100, descriptor->GetVisibleFields()[4]->GetPriority());
+    EXPECT_EQ(1200, descriptor->GetVisibleFields()[5]->GetPriority());
 
-    EXPECT_STREQ("\"Value\"", descriptor->GetVisibleFields()[1]->AsCalculatedPropertyField()->GetValueExpression().c_str());
-    EXPECT_STREQ("1+2", descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetValueExpression().c_str());
-    EXPECT_STREQ("this.Property", descriptor->GetVisibleFields()[3]->AsCalculatedPropertyField()->GetValueExpression().c_str());
+    EXPECT_STREQ("this.ECInstanceId", descriptor->GetVisibleFields()[1]->AsCalculatedPropertyField()->GetValueExpression().c_str());
+    EXPECT_STREQ("this.ECClassId", descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetValueExpression().c_str());
+    EXPECT_STREQ("\"Value\"", descriptor->GetVisibleFields()[3]->AsCalculatedPropertyField()->GetValueExpression().c_str());
+    EXPECT_STREQ("1+2", descriptor->GetVisibleFields()[4]->AsCalculatedPropertyField()->GetValueExpression().c_str());
+    EXPECT_STREQ("this.Property", descriptor->GetVisibleFields()[5]->AsCalculatedPropertyField()->GetValueExpression().c_str());
 
     // request for content
     ContentCPtr content = GetVerifiedContent(*descriptor);
@@ -3174,9 +3184,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
 
-    EXPECT_STREQ("Value", jsonValues["CalculatedProperty_0"].GetString());
-    EXPECT_STREQ("3", jsonValues["CalculatedProperty_1"].GetString());
-    EXPECT_STREQ("Test", jsonValues["CalculatedProperty_2"].GetString());
+    EXPECT_STREQ(BeInt64Id::FromString(instance->GetInstanceId().c_str()).ToHexStr().c_str(), jsonValues["CalculatedProperty_0"].GetString());
+    EXPECT_STREQ(BeInt64Id(classA->GetId()).ToHexStr().c_str(), jsonValues["CalculatedProperty_1"].GetString());
+    EXPECT_STREQ("Value", jsonValues["CalculatedProperty_2"].GetString());
+    EXPECT_STREQ("3", jsonValues["CalculatedProperty_3"].GetString());
+    EXPECT_STREQ("Test", jsonValues["CalculatedProperty_4"].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3236,14 +3248,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CalculatedPropertiesSpecifi
     rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
     EXPECT_STREQ("1000", jsonValues["CalculatedProperty_0"].GetString());
-    EXPECT_TRUE(jsonValues[FIELD_NAME(classA, "PropertyA")].IsNull());
+    EXPECT_FALSE(jsonValues.HasMember(FIELD_NAME(classA, "PropertyA")));
     EXPECT_EQ(1000, jsonValues[FIELD_NAME(classB, "PropertyB")].GetInt());
-    EXPECT_TRUE(jsonValues[FIELD_NAME(classC, "PropertyC")].IsNull());
+    EXPECT_FALSE(jsonValues.HasMember(FIELD_NAME(classC, "PropertyC")));
 
     rapidjson::Document jsonDoc1 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR jsonValues1 = jsonDoc1["Values"];
     EXPECT_STREQ("2000", jsonValues1["CalculatedProperty_0"].GetString());
-    EXPECT_TRUE(jsonValues1[FIELD_NAME(classA, "PropertyA")].IsNull());
+    EXPECT_FALSE(jsonValues1.HasMember(FIELD_NAME(classA, "PropertyA")));
     EXPECT_EQ(2000, jsonValues1[FIELD_NAME(classB, "PropertyB")].GetInt());
     EXPECT_FALSE(jsonValues1[FIELD_NAME(classC, "PropertyC")].IsNull());
     }
@@ -3614,16 +3626,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size()); // Gadget.MyID, Gadget.Description, Gadget.Widget
 
-    // set the "merge results" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3673,16 +3681,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPropertyValueInstanceKe
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(4, descriptor->GetVisibleFields().size()); // Gadget.MyID + Sprocket.MyID, Gadget.Description + Sprocket.MyID, Gadget.Widget, Sprocket.Gadget
 
-    // set the "merge results" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3773,7 +3777,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
     ContentSetItemCPtr widgetRecord = contentSet.Get(0);
     bvector<ECClassInstanceKey> widgetKeys = widgetRecord->GetPropertyValueKeys(fp);
     EXPECT_TRUE(widgetKeys.empty());
-    EXPECT_TRUE(widgetRecord->AsJson()["Values"][fp.GetFieldName().c_str()].IsNull());
+    EXPECT_FALSE(widgetRecord->AsJson()["Values"].HasMember(fp.GetFieldName().c_str()));
 
     ContentSetItemCPtr sprocketRecord = contentSet.Get(1);
     bvector<ECClassInstanceKey> sprocketKeys = sprocketRecord->GetPropertyValueKeys(fp);
@@ -3823,16 +3827,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsRelatedPropertyValue
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(9, descriptor->GetVisibleFields().size()); // 7 Widget properties (2 of them merged with Sprocket MyID and Description), Gadget.MyID, Sprocket.Gadget
 
-    // set the "merge results" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -3906,7 +3906,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectsNullRelatedPropertyV
     bvector<ECClassInstanceKey> sprocketKeys = sprocketRecord->GetPropertyValueKeys(fp);
     ASSERT_EQ(1, sprocketKeys.size());
     EXPECT_EQ(ECClassInstanceKey(m_gadgetClass, ECInstanceId()), sprocketKeys[0]);
-    EXPECT_TRUE(sprocketRecord->AsJson()["Values"][fp.GetFieldName().c_str()].IsNull());
+    EXPECT_FALSE(sprocketRecord->AsJson()["Values"].HasMember(fp.GetFieldName().c_str()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4069,16 +4069,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullPropertyValueInstan
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(s_project->GetECDb(),
-        nullptr, 0, *KeySet::Create(), nullptr, options.GetJson()));
+        nullptr, (int)ContentFlags::MergeResults, *KeySet::Create(), nullptr, options.GetJson()));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(4, descriptor->GetVisibleFields().size()); // Gadget.MyID, Gadget.Description, Gadget.Widget, Widget.MyID
 
-    // set the "merge results" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -4141,15 +4137,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelProperty)
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
 
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -4203,15 +4195,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, UsesRelatedInstanceInLabelO
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
 
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -4264,15 +4252,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DEPRECATED_UsesRelatedInsta
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
 
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -4618,15 +4602,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_SetsD
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
 
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -4665,16 +4645,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LabelOverride_SetsDisplayLa
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    int contentFlags = (int)ContentFlags::ShowLabels | (int)ContentFlags::MergeResults;
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, contentFlags, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
 
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -4713,16 +4689,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_SetsD
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    int contentFlags = (int)ContentFlags::ShowLabels | (int)ContentFlags::MergeResults;
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, contentFlags, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
 
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -4761,16 +4733,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LabelOverride_SetsDisplayLa
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    int contentFlags = (int)ContentFlags::ShowLabels | (int)ContentFlags::MergeResults;
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, contentFlags, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
 
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -4809,16 +4777,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_SetsD
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    int contentFlags = (int)ContentFlags::ShowLabels | (int)ContentFlags::MergeResults;
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, contentFlags, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
 
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -4855,22 +4819,46 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhe
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    int contentFlags = (int)ContentFlags::ShowLabels | (int)ContentFlags::MergeResults;
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, contentFlags, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
 
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
     EXPECT_STREQ(CommonStrings::LABEL_MULTIPLEINSTANCES, contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ReturnsZeroContentSetSizeWhenRequestingContentForNonExistingInstancesAndMergingResults, R"*(
+    <ECEntityClass typeName="A" />
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsZeroContentSetSizeWhenRequestingContentForNonExistingInstancesAndMergingResults)
+    {
+    ECClassCP classA = GetClass("A");
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification());
+    rules->AddPresentationRule(*rule);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
+        rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create({ ECClassInstanceKey(classA, ECInstanceId((uint64_t)1)) }))));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    // validate content set size
+    size_t size = *m_manager->GetContentSetSize(AsyncContentRequestParams::Create(s_project->GetECDb(), *descriptor)).get();
+    ASSERT_EQ(0, size);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4898,15 +4886,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsClassWhenMergingRecords
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
 
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -4942,15 +4926,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNullClassWhenMergingRec
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
 
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5012,7 +4992,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsPointPropertyContent
     rapidjson::Document expectedDisplayValues;
     expectedDisplayValues.Parse(Utf8PrintfString(R"(
         {
-        "%s": "X: 1.00 Y: 2.00 Z: 3.00"
+        "%s": "X: 1.00; Y: 2.00; Z: 3.00"
         })", FIELD_NAME(classA, "Property")).c_str());
     EXPECT_EQ(expectedDisplayValues, recordJson["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues) << "\r\n"
@@ -5054,16 +5034,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RecordFromDifferrentSpecifi
     rule->AddSpecification(*specA);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size());
 
-    // set the "merge results" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -5110,16 +5086,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LabelOverride_DisplayLabelG
     rules->AddPresentationRule(*rule);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size()); // no display label in the descriptor
 
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
     EXPECT_EQ(3, content->GetDescriptor().GetVisibleFields().size()); // content created with a descriptor that has a display label
 
@@ -5166,16 +5138,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Displ
     rules->AddPresentationRule(*rule);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(3, descriptor->GetVisibleFields().size()); // no display label in the descriptor
 
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
     EXPECT_EQ(3, content->GetDescriptor().GetVisibleFields().size()); // content created with a descriptor that has a display label
 
@@ -5583,9 +5551,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, FindsCachedDescriptorWhenAl
     spec->AddPropertyOverride(*new PropertySpecification("Property", 1000, "", nullptr, "GetVariableBoolValue(\"related\")"));
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor1 = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), 
+    ContentDescriptorCPtr descriptor1 = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(),
         RulesetVariables({ RulesetVariableEntry("related", true), RulesetVariableEntry("not_related", false) }), nullptr, 0, *input)));
-    ContentDescriptorCPtr descriptor2 = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), 
+    ContentDescriptorCPtr descriptor2 = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(),
         RulesetVariables({ RulesetVariableEntry("related", true), RulesetVariableEntry("not_related", true) }), nullptr, 0, *input)));
 
     EXPECT_EQ(descriptor1, descriptor2);
@@ -5728,7 +5696,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
-    EXPECT_TRUE(jsonValues["CalculatedProperty_0"].IsNull());
+    EXPECT_FALSE(jsonValues.HasMember("CalculatedProperty_0"));
 
     rapidjson::Document jsonDoc2 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR jsonValues2 = jsonDoc2["Values"];
@@ -5812,7 +5780,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
     EXPECT_STREQ("C", jsonValues[FIELD_NAME(classB, "Property")].GetString());
-    EXPECT_TRUE(jsonValues["CalculatedProperty_0"].IsNull());
+    EXPECT_FALSE(jsonValues.HasMember("CalculatedProperty_0"));
     EXPECT_EQ(instanceA->GetClass().GetId().ToString(), jsonValues[FIELD_NAME((bvector<ECClassCP>{classC, classD}), "A")]["ECClassId"].GetString());
     EXPECT_EQ(instanceA->GetInstanceId(), jsonValues[FIELD_NAME((bvector<ECClassCP>{classC, classD}), "A")]["ECInstanceId"].GetString());
 
@@ -5887,13 +5855,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
     EXPECT_STREQ("Derived1", jsonValues[FIELD_NAME(baseClass, "Property")].GetString());
     EXPECT_STREQ("-111", jsonValues[FIELD_NAME(derived1Class, "Property1")].GetString());
-    EXPECT_TRUE(jsonValues[FIELD_NAME(derived2Class, "Property2")].IsNull());
-    EXPECT_TRUE(jsonValues["CalculatedProperty_0"].IsNull());
+    EXPECT_FALSE(jsonValues.HasMember(FIELD_NAME(derived2Class, "Property2")));
+    EXPECT_FALSE(jsonValues.HasMember("CalculatedProperty_0"));
 
     rapidjson::Document jsonDoc2 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR jsonValues2 = jsonDoc2["Values"];
     EXPECT_STREQ("Derived2", jsonValues2[FIELD_NAME(baseClass, "Property")].GetString());
-    EXPECT_TRUE(jsonValues2[FIELD_NAME(derived1Class, "Property1")].IsNull());
+    EXPECT_FALSE(jsonValues2.HasMember(FIELD_NAME(derived1Class, "Property1")));
     EXPECT_STREQ("-222", jsonValues2[FIELD_NAME(derived2Class, "Property2")].GetString());
     EXPECT_STREQ("Derived2-222", jsonValues2["CalculatedProperty_0"].GetString());
     }
@@ -6087,6 +6055,140 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     EXPECT_EQ(1, fieldsC.size()); // PropertyC
     EXPECT_STREQ("PropertyC", fieldsC[0]->GetLabel().c_str());
     EXPECT_STREQ("InstanceC", jsonValues[NESTED_CONTENT_FIELD_NAME(classA, classB)][0]["Values"][NESTED_CONTENT_FIELD_NAME(classB, classC)][0]["Values"][FIELD_NAME(classC, "PropertyC")].GetString());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ContentInstancesOfSpecificClassesSpecification_ContentModifierAppliesSpecificRelatedPropertiesOnNestedContentProperties, R"*(
+    <ECEntityClass typeName="A">
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <ECProperty propertyName="PropertyC1" typeName="string" />
+        <ECProperty propertyName="PropertyC2" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_Has_B" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="references" polymorphic="True">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="True">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="B_Has_C" strength="referencing" strengthDirection="forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="references" polymorphic="True">
+            <Class class="B" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="True">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClassesSpecification_ContentModifierAppliesSpecificRelatedPropertiesOnNestedContentProperties)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP relationshipAHasB = GetClass("A_Has_B")->GetRelationshipClassCP();
+    ECRelationshipClassCP relationshipBHasC = GetClass("B_Has_C")->GetRelationshipClassCP();
+
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) {});
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance) {});
+    IECInstancePtr instanceC = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance)
+        {
+        instance.SetValue("PropertyC1", ECValue("C1"));
+        instance.SetValue("PropertyC2", ECValue("C2"));
+        });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAHasB, *instanceA, *instanceB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipBHasC, *instanceB, *instanceC);
+
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    contentRule->AddSpecification(*spec);
+
+    ContentModifierP relatedPropertiesModifierAtoB = new ContentModifier(GetSchema()->GetName(), classA->GetName());
+    relatedPropertiesModifierAtoB->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relationshipAHasB->GetFullName(), RequiredRelationDirection_Forward, classB->GetFullName())
+        }), { new PropertySpecification("*") }, RelationshipMeaning::RelatedInstance));
+
+    ContentModifierP relatedPropertiesModifierBtoC = new ContentModifier(GetSchema()->GetName(), classB->GetName());
+    relatedPropertiesModifierBtoC->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relationshipBHasC->GetFullName(), RequiredRelationDirection_Forward, classC->GetFullName())
+        }), { new PropertySpecification("*") }, RelationshipMeaning::RelatedInstance));
+    relatedPropertiesModifierBtoC->SetApplyOnNestedContent(true);
+
+    rules->AddPresentationRule(*contentRule);
+    rules->AddPresentationRule(*relatedPropertiesModifierAtoB);
+    rules->AddPresentationRule(*relatedPropertiesModifierBtoC);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+
+    // only select PropertyC2
+    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
+    auto classBField = modifiedDescriptor->GetVisibleFields()[0]->AsNestedContentField();
+    auto classCField = classBField->GetFields()[0]->AsNestedContentField();
+    auto propertyC2Field = classCField->GetFields()[1];
+    EXPECT_STREQ("PropertyC2", propertyC2Field->GetLabel().c_str());
+    modifiedDescriptor->ExclusivelyIncludeFields({ propertyC2Field });
+    modifiedDescriptor->SetExclusiveIncludePaths(std::make_shared<RelatedClassPathsList>(RelatedClassPathsList{
+        RelatedClassPath{
+            RelatedClass(*classA, SelectClass<ECRelationshipClass>(*relationshipAHasB, ""), true, SelectClassWithExcludes<ECClass>(*classB, "")),
+            RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relationshipBHasC, ""), true, SelectClassWithExcludes<ECClass>(*classC, "")),
+            },
+        }));
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ASSERT_TRUE(content.IsValid());
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+
+    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": [{
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
+            "Values": {
+                "%s": [{
+                    "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
+                    "Values": {
+                        "%s": "C2"
+                        },
+                    "DisplayValues": {
+                        "%s": "C2"
+                        },
+                    "MergedFieldNames": []
+                    }]
+                },
+            "DisplayValues": {
+                "%s": [{
+                    "DisplayValues": {
+                        "%s": "C2"
+                        }
+                    }]
+                },
+            "MergedFieldNames": []
+            }]
+    })",
+        NESTED_CONTENT_FIELD_NAME(classA, classB),
+        instanceB->GetClass().GetId().ToString().c_str(), instanceB->GetInstanceId().c_str(),
+        NESTED_CONTENT_FIELD_NAME(classB, classC),
+        instanceC->GetClass().GetId().ToString().c_str(), instanceC->GetInstanceId().c_str(),
+        FIELD_NAME(classC, "PropertyC2"), FIELD_NAME(classC, "PropertyC2"),
+        NESTED_CONTENT_FIELD_NAME(classB, classC),
+        FIELD_NAME(classC, "PropertyC2")
+    ).c_str());
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6397,7 +6499,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
     EXPECT_STREQ("InstanceA", jsonValues[FIELD_NAME(classA, "SharedProperty")].GetString());
-    EXPECT_TRUE(jsonValues[FIELD_NAME(classA, "PropertyA")].IsNull());
+    EXPECT_FALSE(jsonValues.HasMember(FIELD_NAME(classA, "PropertyA")));
     EXPECT_STREQ("InstanceA", jsonValues["CalculatedProperty_0"].GetString());
     }
 
@@ -6464,7 +6566,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
     EXPECT_STREQ("InstanceA", jsonValues[FIELD_NAME(classA, "SharedProperty")].GetString());
-    EXPECT_TRUE(jsonValues[FIELD_NAME(classA, "PropertyA")].IsNull());
+    EXPECT_FALSE(jsonValues.HasMember(FIELD_NAME(classA, "PropertyA")));
     EXPECT_STREQ("InstanceB", jsonValues["CalculatedProperty_0"].GetString());
     }
 
@@ -6546,8 +6648,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
     EXPECT_EQ(instanceA->GetClass().GetId().ToString(), jsonValues[FIELD_NAME(classB, "A")]["ECClassId"].GetString());
     EXPECT_EQ(instanceA->GetInstanceId(), jsonValues[FIELD_NAME(classB, "A")]["ECInstanceId"].GetString());
-    EXPECT_TRUE(jsonValues[FIELD_NAME(classC, "PropertyC")].IsNull());
-    EXPECT_TRUE(jsonValues["CalculatedProperty_0"].IsNull());
+    EXPECT_FALSE(jsonValues.HasMember(FIELD_NAME(classC, "PropertyC")));
+    EXPECT_FALSE(jsonValues.HasMember("CalculatedProperty_0"));
 
     rapidjson::Document jsonDoc1 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR jsonValues1 = jsonDoc1["Values"];
@@ -6560,8 +6662,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     RapidJsonValueCR jsonValues2 = jsonDoc2["Values"];
     EXPECT_EQ(instanceA->GetClass().GetId().ToString(), jsonValues2[FIELD_NAME(classB, "A")]["ECClassId"].GetString());
     EXPECT_EQ(instanceA->GetInstanceId(), jsonValues2[FIELD_NAME(classB, "A")]["ECInstanceId"].GetString());
-    EXPECT_TRUE(jsonValues2[FIELD_NAME(classC, "PropertyC")].IsNull());
-    EXPECT_TRUE(jsonValues2["CalculatedProperty_0"].IsNull());
+    EXPECT_FALSE(jsonValues2.HasMember(FIELD_NAME(classC, "PropertyC")));
+    EXPECT_FALSE(jsonValues2.HasMember("CalculatedProperty_0"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6685,8 +6787,8 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Cont
 
     rapidjson::Document jsonDoc2 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR jsonValues2 = jsonDoc2["Values"];
-    EXPECT_TRUE(jsonValues2[FIELD_NAME((bvector<ECClassCP>{classA, classB}), "Property")].IsNull());
-    EXPECT_TRUE(jsonValues2["CalculatedProperty_0"].IsNull());
+    EXPECT_FALSE(jsonValues2.HasMember(FIELD_NAME((bvector<ECClassCP>{classA, classB}), "Property")));
+    EXPECT_FALSE(jsonValues2.HasMember("CalculatedProperty_0"));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6838,29 +6940,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRawEnumValueWhenItsNot
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["DisplayValues"]);
 
     recordJson = contentSet.Get(1)->AsJson();
-    expectedValues.Parse(Utf8PrintfString(R"({
-        "%s": null,
-        "%s": null,
-        "%s": null,
-        "%s": null
-        })",
-        FIELD_NAME(classA, "StrictIntEnum"),
-        FIELD_NAME(classA, "StrictStrEnum"),
-        FIELD_NAME(classA, "LooseIntEnum"),
-        FIELD_NAME(classA, "LooseStrEnum")).c_str());
+    expectedValues.Parse("{}");
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
-    expectedDisplayValues.Parse(Utf8PrintfString(R"({
-        "%s": null,
-        "%s": null,
-        "%s": null,
-        "%s": null
-        })",
-        FIELD_NAME(classA, "StrictIntEnum"),
-        FIELD_NAME(classA, "StrictStrEnum"),
-        FIELD_NAME(classA, "LooseIntEnum"),
-        FIELD_NAME(classA, "LooseStrEnum")).c_str());
+    expectedDisplayValues.Parse("{}");
     EXPECT_EQ(expectedDisplayValues, recordJson["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["DisplayValues"]);
@@ -7605,6 +7689,98 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyDisplayOverride_Use
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), variables, nullptr, 0, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(0, descriptor->GetVisibleFields().size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyRenderer_AppliesMultilineRendererForPrimitiveStringPropertiesWithMultilinePlainTextExtendedType, R"*(
+    <ECEntityClass typeName="ClassX">
+        <ECProperty propertyName="Primitive" typeName="string" extendedTypeName="MultilinePlainText" />
+        <ECArrayProperty propertyName="PrimitivesArray" typeName="string" extendedTypeName="MultilinePlainText" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyRenderer_AppliesMultilineRendererForPrimitiveStringPropertiesWithMultilinePlainTextExtendedType)
+    {
+    // set up the dataset
+    ECClassCP classX = GetClass("ClassX");
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classX->GetFullName(), false, false));
+    rules->AddPresentationRule(*contentRule);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(2, descriptor->GetVisibleFields().size());
+    EXPECT_STREQ("multiline", descriptor->GetVisibleFields()[0]->GetRenderer()->GetName().c_str());
+    EXPECT_STREQ("multiline", descriptor->GetVisibleFields()[1]->GetRenderer()->GetName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyRenderer_Priorities_SpecificationOverrideOverridesDefaultRenderer, R"*(
+    <ECEntityClass typeName="ClassX">
+        <ECProperty propertyName="Prop" typeName="string" extendedTypeName="MultilinePlainText" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyRenderer_Priorities_SpecificationOverrideOverridesDefaultRenderer)
+    {
+    // set up the dataset
+    ECClassCP classX = GetClass("ClassX");
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classX->GetFullName(), false, false);
+    spec->AddPropertyOverride(*new PropertySpecification("Prop", 1, "", nullptr, nullptr, new CustomRendererSpecification("Specification Renderer")));
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
+    EXPECT_STREQ("Specification Renderer", descriptor->GetVisibleFields()[0]->GetRenderer()->GetName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(PropertyRendererOverride_Priorities_ModifierOverrideOverridesDefaultRenderer, R"*(
+    <ECEntityClass typeName="ClassX">
+        <ECProperty propertyName="Prop" typeName="string" extendedTypeName="MultilinePlainText" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyRendererOverride_Priorities_ModifierOverrideOverridesDefaultRenderer)
+    {
+    // set up the dataset
+    ECClassCP classX = GetClass("ClassX");
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classX->GetFullName(), false, false));
+    rules->AddPresentationRule(*contentRule);
+
+    ContentModifierP modifier = new ContentModifier(classX->GetSchema().GetName(), classX->GetName());
+    modifier->AddPropertyOverride(*new PropertySpecification("Prop", 1, "", nullptr, nullptr, new CustomRendererSpecification("Modifier Renderer")));
+    rules->AddPresentationRule(*modifier);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
+    EXPECT_STREQ("Modifier Renderer", descriptor->GetVisibleFields()[0]->GetRenderer()->GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -9278,20 +9454,20 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstance_GetDif
     rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
     RapidJsonValueCR displayValues = recordJson["DisplayValues"];
     EXPECT_EQ(GetDefaultDisplayLabel(*instanceA), displayValues[FIELD_NAME(classB, "A")].GetString());
-    EXPECT_TRUE(displayValues[FIELD_NAME(classC, "B")].IsNull());
+    EXPECT_FALSE(displayValues.HasMember(FIELD_NAME(classC, "B")));
     RapidJsonValueCR values = recordJson["Values"];
     EXPECT_EQ(instanceA->GetClass().GetId().ToString(), values[FIELD_NAME(classB, "A")]["ECClassId"].GetString());
     EXPECT_EQ(instanceA->GetInstanceId(), values[FIELD_NAME(classB, "A")]["ECInstanceId"].GetString());
-    EXPECT_TRUE(values[FIELD_NAME(classC, "B")].IsNull());
+    EXPECT_FALSE(values.HasMember(FIELD_NAME(classC, "B")));
 
     rapidjson::Document recordJson1 = contentSet.Get(1)->AsJson();
     RapidJsonValueCR displayValues1 = recordJson1["DisplayValues"];
     EXPECT_EQ(GetDefaultDisplayLabel(*instanceB), displayValues1[FIELD_NAME(classC, "B")].GetString());
-    EXPECT_TRUE(displayValues1[FIELD_NAME(classB, "A")].IsNull());
+    EXPECT_FALSE(displayValues1.HasMember(FIELD_NAME(classB, "A")));
     RapidJsonValueCR values1 = recordJson1["Values"];
     EXPECT_EQ(instanceB->GetClass().GetId().ToString(), values1[FIELD_NAME(classC, "B")]["ECClassId"].GetString());
     EXPECT_EQ(instanceB->GetInstanceId(), values1[FIELD_NAME(classC, "B")]["ECInstanceId"].GetString());
-    EXPECT_TRUE(values1[FIELD_NAME(classB, "A")].IsNull());
+    EXPECT_FALSE(values1.HasMember(FIELD_NAME(classB, "A")));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -9750,8 +9926,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDerivedClassNavigationPr
     ASSERT_EQ(2, contentSet.GetSize());
 
     rapidjson::Document recordJson1 = contentSet.Get(0)->AsJson();
-    EXPECT_TRUE(recordJson1["Values"][FIELD_NAME(classC, "A")].IsNull());
-    EXPECT_TRUE(recordJson1["DisplayValues"][FIELD_NAME(classC, "A")].IsNull());
+    EXPECT_FALSE(recordJson1["Values"].HasMember(FIELD_NAME(classC, "A")));
+    EXPECT_FALSE(recordJson1["DisplayValues"].HasMember(FIELD_NAME(classC, "A")));
 
     rapidjson::Document recordJson2 = contentSet.Get(1)->AsJson();
     EXPECT_EQ(instanceA->GetClass().GetId().ToString(), recordJson2["Values"][FIELD_NAME(classC, "A")]["ECClassId"].GetString());
@@ -10049,7 +10225,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPointsArrayPropertyVal
     rapidjson::Document expectedDisplayValues1;
     expectedDisplayValues1.Parse(Utf8PrintfString(R"(
         {
-        "%s": ["X: 0.00 Y: 0.00 Z: 0.00", "X: 1.00 Y: 1.00 Z: 1.00"]
+        "%s": ["X: 0.00; Y: 0.00; Z: 0.00", "X: 1.00; Y: 1.00; Z: 1.00"]
         })", FIELD_NAME(ecClass, "PointsArrayProperty")).c_str());
     EXPECT_EQ(expectedDisplayValues1, recordJson1["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues1) << "\r\n"
@@ -10070,7 +10246,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPointsArrayPropertyVal
     rapidjson::Document expectedDisplayValues2;
     expectedDisplayValues2.Parse(Utf8PrintfString(R"(
         {
-        "%s": ["X: 3.00 Y: 3.00 Z: 3.00", "X: 4.00 Y: 4.00 Z: 4.00", "X: 5.00 Y: 5.00 Z: 5.00"]
+        "%s": ["X: 3.00; Y: 3.00; Z: 3.00", "X: 4.00; Y: 4.00; Z: 4.00", "X: 5.00; Y: 5.00; Z: 5.00"]
         })", FIELD_NAME(ecClass, "PointsArrayProperty")).c_str());
     EXPECT_EQ(expectedDisplayValues2, recordJson2["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues2) << "\r\n"
@@ -10202,9 +10378,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DoesntMergePropertiesOfSame
     rapidjson::Document expectedValues2;
     expectedValues2.Parse(Utf8PrintfString(R"(
         {
-        "%s": null,
         "%s": [2, 3]
-        })", FIELD_NAME(classA, "Prop"), FIELD_NAME(classB, "Prop")).c_str());
+        })", FIELD_NAME(classB, "Prop")).c_str());
     EXPECT_EQ(expectedValues2, recordJson2["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["Values"]);
@@ -10287,6 +10462,235 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesPrimitivePropertyFieldsWhenValuesAreEqual, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Prop" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitivePropertyFieldsWhenValuesAreEqual)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance)
+        {
+        instance.SetValue("Prop", ECValue("test"));
+        });
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance)
+        {
+        instance.SetValue("Prop", ECValue("test"));
+        });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", RulesEngineTestHelpers::CreateClassNamesList({ classA }), false, false));
+    rules->AddPresentationRule(*rule);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
+        rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(Utf8PrintfString(R"(
+        {
+        "%s": "test"
+        })",
+        FIELD_NAME(classA, "Prop")).c_str());
+    EXPECT_EQ(expectedValues, record->GetValues())
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record->GetValues());
+    EXPECT_FALSE(record->IsMerged(FIELD_NAME(classA, "Prop")));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesPrimitivePropertyFieldsWhenValuesAreDifferent, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Prop" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitivePropertyFieldsWhenValuesAreDifferent)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance)
+        {
+        instance.SetValue("Prop", ECValue("111"));
+        });
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance)
+        {
+        instance.SetValue("Prop", ECValue("222"));
+        });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", RulesEngineTestHelpers::CreateClassNamesList({ classA }), false, false));
+    rules->AddPresentationRule(*rule);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
+        rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(Utf8PrintfString(R"(
+        {
+        "%s": null
+        })",
+        FIELD_NAME(classA, "Prop")).c_str());
+    EXPECT_EQ(expectedValues, record->GetValues())
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record->GetValues());
+    EXPECT_TRUE(record->IsMerged(FIELD_NAME(classA, "Prop")));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesPrimitivePropertyFieldsWhenOneValueIsNullAndOneIsNot, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Prop" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitivePropertyFieldsWhenOneValueIsNullAndOneIsNot)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance)
+        {
+        instance.SetValue("Prop", ECValue("test"));
+        });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", RulesEngineTestHelpers::CreateClassNamesList({ classA }), false, false));
+    rules->AddPresentationRule(*rule);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
+        rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(Utf8PrintfString(R"(
+        {
+        "%s": null
+        })",
+        FIELD_NAME(classA, "Prop")).c_str());
+    EXPECT_EQ(expectedValues, record->GetValues())
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record->GetValues());
+    EXPECT_TRUE(record->IsMerged(FIELD_NAME(classA, "Prop")));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesPrimitivePropertyFieldsWhenRequestingContentForInstancesOfDifferentClasses, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="PropA" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="PropB" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitivePropertyFieldsWhenRequestingContentForInstancesOfDifferentClasses)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance)
+        {
+        instance.SetValue("PropA", ECValue("test"));
+        });
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance)
+        {
+        instance.SetValue("PropB", ECValue(123));
+        });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", RulesEngineTestHelpers::CreateClassNamesList({ classA, classB }), false, false));
+    rules->AddPresentationRule(*rule);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
+        rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(2, descriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(Utf8PrintfString(R"(
+        {
+        "%s": null,
+        "%s": null
+        })",
+        FIELD_NAME(classA, "PropA"),
+        FIELD_NAME(classB, "PropB")
+    ).c_str());
+    EXPECT_EQ(expectedValues, record->GetValues())
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(record->GetValues());
+    EXPECT_TRUE(record->IsMerged(FIELD_NAME(classA, "PropA")));
+    EXPECT_TRUE(record->IsMerged(FIELD_NAME(classB, "PropB")));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(MergesPrimitiveArrayPropertyFieldsAndRowsOfDifferentClassesWhenValuesEqual, R"*(
     <ECEntityClass typeName="MyClassA">
         <ECArrayProperty propertyName="ArrayProperty" typeName="int" />
@@ -10324,15 +10728,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
-    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
-    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*mergingDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -10394,15 +10795,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
-    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
-    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*mergingDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -10453,15 +10851,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
-    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
-    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*mergingDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -10511,15 +10906,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
-    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
-    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*mergingDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -10577,15 +10969,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
-    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
-    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*mergingDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -10637,15 +11026,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
-    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
-    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*mergingDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -10695,15 +11081,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesPrimitiveArrayPropert
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
-    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
-    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*mergingDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -11043,15 +11426,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsA
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
-    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
-    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*mergingDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -11116,15 +11496,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsA
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
-    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
-    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*mergingDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -11153,7 +11530,6 @@ DEFINE_SCHEMA(MergesStructPropertyValuesWhenValuesAreEqual, R"*(
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesWhenValuesAreEqual)
     {
     // set up data set
-    // unused - ECClassCP structClass = GetClass("MyStruct");
     ECClassCP ecClass = GetClass("MyClass");
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
@@ -11177,15 +11553,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesW
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
-    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
-    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*mergingDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -11224,7 +11597,6 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesW
     Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
 
     // set up data set
-    // unused - ECClassCP structClass = GetClass("MyStruct");
     ECClassCP ecClass = GetClass("MyClass");
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
@@ -11248,15 +11620,67 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesW
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
-    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
-    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    ContentSetItemCPtr record = contentSet.Get(0);
+    rapidjson::Document recordJson = record->AsJson();
+    EXPECT_TRUE(recordJson["Values"][FIELD_NAME(ecClass, "StructProperty")].IsNull());
+    EXPECT_STREQ(varies_string.c_str(), recordJson["DisplayValues"][FIELD_NAME(ecClass, "StructProperty")].GetString());
+    EXPECT_TRUE(record->IsMerged(FIELD_NAME(ecClass, "StructProperty")));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(MergesStructPropertyValuesWhenOneValueIsNullAndOneIsNot, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+        <ECProperty propertyName="StringProperty" typeName="string" />
+    </ECStructClass>
+    <ECEntityClass typeName="MyClass">
+        <ECStructProperty propertyName="StructProperty" typeName="MyStruct" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesWhenOneValueIsNullAndOneIsNot)
+    {
+    Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, CommonStrings::LABEL_VARIES);
+
+    // set up data set
+    ECClassCP ecClass = GetClass("MyClass");
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass);
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
+        {
+        instance.SetValue("StructProperty.IntProperty", ECValue(456));
+        instance.SetValue("StructProperty.StringProperty", ECValue("def"));
+        });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false, false);
+    rule->AddSpecification(*spec);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = GetVerifiedContent(*mergingDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -11309,15 +11733,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValueWh
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
-    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
-    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*mergingDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -11611,15 +12032,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFi
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
-    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
-    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*mergingDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -11695,15 +12113,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyFi
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
-    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
-    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*mergingDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -11768,15 +12183,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
-    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
-    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*mergingDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -11858,15 +12270,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
-    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
-    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*mergingDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -11933,15 +12342,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
-    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
-    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*mergingDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -12000,15 +12406,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructArrayPropertyVa
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
-    ContentDescriptorPtr mergingDescriptor = ContentDescriptor::Create(*descriptor);
-    mergingDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*mergingDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -13158,15 +13561,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Overr
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
 
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -13218,15 +13617,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Overr
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
 
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -13270,15 +13665,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Appli
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
 
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -13313,15 +13704,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_WhenN
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
 
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -13356,15 +13743,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Asser
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
 
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -13491,15 +13874,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_Handl
     rule->AddSpecification(*spec);
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
 
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -13565,16 +13944,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RelatedInstanceLabelIsOverr
     rules->AddPresentationRule(*rule);
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classA->GetFullName(), "BaseStringProperty"));
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *input)));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *input)));
     ASSERT_TRUE(descriptor.IsValid());
-
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_EQ(1, modifiedDescriptor->GetVisibleFields().size());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -13617,16 +13992,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingBaseClassPolymorph
     rules->AddPresentationRule(*rule);
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classB->GetFullName(), "BaseStringProperty"));
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_EQ(1, modifiedDescriptor->GetVisibleFields().size());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -13661,16 +14032,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNotSpecifiedLabelWhenUs
             { new InstanceLabelOverrideCompositeValueSpecification::Part(*new InstanceLabelOverrideStringValueSpecification("")) })
         }));
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_TRUE(modifiedDescriptor->GetDisplayLabelField() != nullptr);
+    EXPECT_TRUE(descriptor->GetDisplayLabelField() != nullptr);
 
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -13701,16 +14068,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNotSpecifiedLabelWhenUs
     rules->AddPresentationRule(*rule);
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classA->GetFullName(), { new InstanceLabelOverrideCompositeValueSpecification() }));
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_TRUE(modifiedDescriptor->GetDisplayLabelField() != nullptr);
+    EXPECT_TRUE(descriptor->GetDisplayLabelField() != nullptr);
 
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -13742,16 +14105,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNotSpecifiedLabelWhenUs
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classA->GetFullName(), { new InstanceLabelOverrideStringValueSpecification("") }));
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_TRUE(modifiedDescriptor->GetDisplayLabelField() != nullptr);
+    EXPECT_TRUE(descriptor->GetDisplayLabelField() != nullptr);
 
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -13788,16 +14147,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsNotSpecifiedLabelWhenUs
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classA->GetFullName(), { new InstanceLabelOverridePropertyValueSpecification("BaseStringProperty") }));
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_TRUE(modifiedDescriptor->GetDisplayLabelField() != nullptr);
+    EXPECT_TRUE(descriptor->GetDisplayLabelField() != nullptr);
 
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -13853,23 +14208,19 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPointValueLabelWhenUsin
         }));
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_TRUE(modifiedDescriptor->GetDisplayLabelField() != nullptr);
+    EXPECT_TRUE(descriptor->GetDisplayLabelField() != nullptr);
 
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ("X: 1.00 Y: 2.00 Z: 3.00", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("X: 1.00; Y: 2.00; Z: 3.00", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -13899,23 +14250,19 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPointValueLabelWhenUsin
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classA->GetFullName(), { new InstanceLabelOverridePropertyValueSpecification("PointProperty") }));
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_TRUE(modifiedDescriptor->GetDisplayLabelField() != nullptr);
+    EXPECT_TRUE(descriptor->GetDisplayLabelField() != nullptr);
 
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ("X: 1.00 Y: 2.00 Z: 3.00", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("X: 1.00; Y: 2.00; Z: 3.00", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -13945,23 +14292,19 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsPointValueLabelWhenUsin
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classA->GetFullName(), { new InstanceLabelOverridePropertyValueSpecification("PointProperty") }));
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_TRUE(modifiedDescriptor->GetDisplayLabelField() != nullptr);
+    EXPECT_TRUE(descriptor->GetDisplayLabelField() != nullptr);
 
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
 
-    EXPECT_STREQ("X: 1.00 Y: 2.00", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
+    EXPECT_STREQ("X: 1.00; Y: 2.00", contentSet.Get(0)->GetDisplayLabelDefinition().GetDisplayValue().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -14008,16 +14351,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingBaseClassPolymorph
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classA->GetFullName(), "BaseStringProperty"));
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classC->GetFullName(), "ClassC_String"));
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_EQ(1, modifiedDescriptor->GetVisibleFields().size());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -14066,16 +14405,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classA->GetFullName(), "BaseStringProperty"));
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_EQ(2, modifiedDescriptor->GetVisibleFields().size());
+    EXPECT_EQ(2, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -14129,16 +14464,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classA1->GetFullName(), "CodeValue"));
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_EQ(1, modifiedDescriptor->GetVisibleFields().size());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -14194,16 +14525,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
     rules->AddPresentationRule(*new InstanceLabelOverride(1, false, classA1->GetFullName(), "CodeValue"));
     rules->AddPresentationRule(*new InstanceLabelOverride(1, false, classB->GetFullName(), "UserLabel"));
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_EQ(2, modifiedDescriptor->GetVisibleFields().size());
+    EXPECT_EQ(2, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -14382,16 +14709,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
         1, Utf8PrintfString("this.GetRelatedDisplayLabel(\"%s\", \"Forward\", \"%s\")", classAHasClassB->GetFullName(), classB->GetFullName()), ""));
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_EQ(1, modifiedDescriptor->GetVisibleFields().size());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -14443,16 +14766,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
         1, Utf8PrintfString("this.GetRelatedDisplayLabel(\"%s\", \"Forward\", \"%s\")", classAHasClassB->GetFullName(), classB->GetFullName()), ""));
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_EQ(1, modifiedDescriptor->GetVisibleFields().size());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -14504,16 +14823,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
         1, Utf8PrintfString("this.GetRelatedDisplayLabel(\"%s\", \"Backward\", \"%s\")", classAHasClassB->GetFullName(), classA->GetFullName()), ""));
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_EQ(1, modifiedDescriptor->GetVisibleFields().size());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -14563,16 +14878,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
         1, Utf8PrintfString("this.GetRelatedDisplayLabel(\"%s\", \"Forward\", \"%s\")", classAHasClassB->GetFullName(), classB->GetFullName()), ""));
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_EQ(1, modifiedDescriptor->GetVisibleFields().size());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -14623,16 +14934,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SelectingClassInstanceLabel
         1, Utf8PrintfString("this.GetRelatedDisplayLabel(\"%s\", \"Forward\", \"%s\")", classAHasClassB->GetFullName(), classB->GetFullName()), ""));
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::ShowLabels, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-
-    // set the "show labels" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::ShowLabels);
-    EXPECT_EQ(1, modifiedDescriptor->GetVisibleFields().size());
+    EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -15397,7 +15704,7 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
     rule->AddSpecification(*specInstance);
 
     // params with unit system
-    auto descriptorParams = AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create());
+    auto descriptorParams = AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create());
     descriptorParams.SetUnitSystem(ECPresentation::UnitSystem::BritishImperial);
 
     // validate descriptor
@@ -15405,12 +15712,8 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(6, descriptor->GetVisibleFields().size());
 
-    // set the "merge results" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -15497,7 +15800,7 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
         rel->GetFullName(), aspectClass->GetFullName(), "*", RelationshipMeaning::SameInstance));
 
     // params with unit system
-    auto descriptorParams = AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create());
+    auto descriptorParams = AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create());
     descriptorParams.SetUnitSystem(ECPresentation::UnitSystem::Metric);
 
     // validate descriptor
@@ -15505,12 +15808,8 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
-    // set the "merge results" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -15611,7 +15910,7 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
     rule->AddSpecification(*spec);
 
     // params with unit system
-    auto descriptorParams = AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create());
+    auto descriptorParams = AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create());
     descriptorParams.SetUnitSystem(ECPresentation::UnitSystem::UsCustomary);
 
     // validate descriptor
@@ -15619,12 +15918,8 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
 
-    // set the "merge results" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -15678,7 +15973,7 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
     rule->AddSpecification(*spec);
 
     // params with unit system
-    auto descriptorParams = AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create());
+    auto descriptorParams = AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create());
     descriptorParams.SetUnitSystem(ECPresentation::UnitSystem::UsSurvey);
 
     // validate descriptor
@@ -15686,12 +15981,8 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
 
-    // set the "merge results" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -15766,16 +16057,12 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
         rel->GetFullName(), aspectClass->GetFullName(), "*", RelationshipMeaning::SameInstance));
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
 
-    // set the "merge results" flag
-    ContentDescriptorPtr modifiedDescriptor = ContentDescriptor::Create(*descriptor);
-    modifiedDescriptor->AddContentFlag(ContentFlags::MergeResults);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*modifiedDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content set
@@ -17088,6 +17375,43 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SortingRule_OnlySortBaseCla
 /*---------------------------------------------------------------------------------**//**
 // @betest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SortingRule_SortingByECClassIdProperty, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <BaseClass>A</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>A</BaseClass>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, SortingRule_SortingByECClassIdProperty)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr c = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    ContentRule* contentRule = new ContentRule();
+    contentRule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), true, false));
+    rules->AddPresentationRule(*contentRule);
+    rules->AddPresentationRule(*new SortingRule("", 1, classA->GetSchema().GetName(), classA->GetName(), "ECClassId", false, false, true));
+    m_locater->AddRuleSet(*rules);
+
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{c.get(), b.get(), a.get()}, *content, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+// @betest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(PropertyOverrideRuleWithAsteriskReturnsCorrectProperties, R"*(
     <ECEntityClass typeName="A">
         <ECProperty propertyName="IntPropA" typeName="int"/>
@@ -17169,7 +17493,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetContentForDisplayLabelGr
 
     // validate content descriptor
     NavNodeKeyCPtr selectedNode = rootNodes[0]->GetKey();
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), 
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
         rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create(*selectedNode))));
     ASSERT_TRUE(descriptor.IsValid());
 

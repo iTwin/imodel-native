@@ -1033,7 +1033,7 @@ RefCountedPtr<ProviderBasedNodesDataSource> RulesDrivenECPresentationManagerImpl
     // check if the hierarchy level supports filtering
     auto supportsFiltering = HierarchiesFilteringHelper::SupportsFiltering(
         context.GetVirtualParentNode().get(),
-        TraverseHierarchyRulesProps(context.GetNodesFactory(), context.GetRulesPreprocessor(), context.GetSchemaHelper()),
+        TraverseHierarchyRulesProps(context.GetNodesCache(), context.GetNodesFactory(), context.GetRulesPreprocessor(), context.GetRuleset(), context.GetSchemaHelper()),
         nullptr
     );
 
@@ -1192,7 +1192,7 @@ ContentDescriptorCPtr RulesDrivenECPresentationManagerImpl::_GetNodesDescriptor(
     auto context = CreateNodesProviderContext(HierarchyRequestImplParams::Create(HierarchyRequestParams(params, params.GetParentNodeKey()), params));
     auto ruleset = HierarchiesFilteringHelper::CreateHierarchyLevelDescriptorRuleset(
         context->GetVirtualParentNode().get(),
-        TraverseHierarchyRulesProps(context->GetNodesFactory(), context->GetRulesPreprocessor(), context->GetSchemaHelper())
+        TraverseHierarchyRulesProps(context->GetNodesCache(), context->GetNodesFactory(), context->GetRulesPreprocessor(), context->GetRuleset(), context->GetSchemaHelper())
         );
     TempRulesetRegistration registerRuleset(*m_locaters, *ruleset);
 
@@ -1594,7 +1594,7 @@ ContentDescriptorCPtr RulesDrivenECPresentationManagerImpl::_GetContentDescripto
 SpecificationContentProviderPtr RulesDrivenECPresentationManagerImpl::GetContentProvider(ContentRequestImplParams const& params) const
     {
     ContentDescriptorCR descriptor = params.GetContentDescriptor();
-    ContentProviderKey key(params.GetConnection().GetId(), descriptor.GetRuleset().GetRuleSetId(), descriptor.GetPreferredDisplayType(), descriptor.GetContentFlags(),
+    ContentProviderKey key(params.GetConnection().GetId(), descriptor.GetRuleset().GetRuleSetId(), descriptor.GetPreferredDisplayType(), descriptor.GetRequestedContentFlags(),
         descriptor.GetUnitSystem(), descriptor.GetInputNodeKeys(), descriptor.GetSelectionInfo(), descriptor.GetExclusiveIncludePaths());
     return GetContentProvider(params.GetConnection(), params.GetCancellationToken(), key, descriptor.GetRulesetVariables());
     }

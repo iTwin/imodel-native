@@ -53,6 +53,7 @@ BE_JSON_NAME(geographicCoordinateSystem)
         case DgnDbStatus::BadSchema:      msg = "bad schema"; break;
         case DgnDbStatus::DuplicateCode:  msg = "duplicate code"; break;
         case DgnDbStatus::DuplicateName:  msg = "duplicate name"; break;
+        case DgnDbStatus::InvalidCategory: msg = "invalid category"; break;
         case DgnDbStatus::InvalidId:      msg = "Invalid id"; break;
         case DgnDbStatus::InvalidParent:  msg = "invalid parent"; break;
         case DgnDbStatus::MissingId:      msg = "missing id"; break;
@@ -772,7 +773,7 @@ ECN::ECRelationshipClassCP parseRelClass(DgnDbR dgndb, BeJsConst inJson)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::EC::ECInstanceKey parseECRelationshipInstanceKeyKey(DgnDbR dgndb, BeJsConst inJson)
+BeSQLite::EC::ECInstanceKey parseECRelationshipInstanceKey(DgnDbR dgndb, BeJsConst inJson)
     {
     auto relClass = parseRelClass(dgndb, inJson);
     if (nullptr == relClass)
@@ -790,7 +791,13 @@ BeSQLite::EC::ECInstanceKey parseECRelationshipInstanceKeyKey(DgnDbR dgndb, BeJs
 static ECN::StandaloneECRelationshipInstancePtr getRelationshipProperties(ECN::ECRelationshipClassCP relClass, BeJsConst inJson, DgnDbR dgndb)
     {
     ECN::StandaloneECRelationshipEnablerPtr relationshipEnabler = ECN::StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*relClass);
+    if (relationshipEnabler.IsNull())
+        return nullptr;
+
     auto relationshipInstance = relationshipEnabler->CreateRelationshipInstance ();
+    if (relationshipInstance.IsNull())
+        return nullptr;
+
     ECN::IECInstanceR instance = *relationshipInstance;
     IECClassLocaterR classLocater = dgndb.GetClassLocater();
     bool hasProperties = false;
@@ -842,6 +849,10 @@ Napi::String JsInterop::InsertLinkTableRelationship(DgnDbR dgndb, Napi::Object o
     if (nullptr == relClass)
         throwSqlError();
 
+    if (ECClassModifier::Abstract == relClass->GetClassModifier()) {
+        ThrowJsException(SqlPrintfString("Failed to insert relationship. Relationship class '%s' is abstract.", relClass->GetFullName()));
+    }
+
     DgnElementId sourceId, targetId;
     sourceId.FromJson(inJson["sourceId"]);
     targetId.FromJson(inJson["targetId"]);
@@ -863,10 +874,14 @@ void JsInterop::UpdateLinkTableRelationship(DgnDbR dgndb, Napi::Object obj)
     {
     BeJsConst inJson(obj);
 
-    BeSQLite::EC::ECInstanceKey relKey = parseECRelationshipInstanceKeyKey(dgndb, inJson);
+    BeSQLite::EC::ECInstanceKey relKey = parseECRelationshipInstanceKey(dgndb, inJson);
     auto relClass = parseRelClass(dgndb, inJson);
     if (nullptr == relClass)
         throwNotFound();
+
+    if (ECClassModifier::Abstract == relClass->GetClassModifier()) {
+        ThrowJsException(SqlPrintfString("Failed to update relationship. Relationship class '%s' is abstract.", relClass->GetFullName()));
+    }
 
     ECN::StandaloneECRelationshipInstancePtr props = getRelationshipProperties(relClass, inJson, dgndb);
     if (!props.IsValid())
@@ -882,7 +897,7 @@ void JsInterop::UpdateLinkTableRelationship(DgnDbR dgndb, Napi::Object obj)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void JsInterop::DeleteLinkTableRelationship(DgnDbR dgndb, Napi::Object inJson)
     {
-    BeSQLite::EC::ECInstanceKey relKey = parseECRelationshipInstanceKeyKey(dgndb, inJson);
+    BeSQLite::EC::ECInstanceKey relKey = parseECRelationshipInstanceKey(dgndb, inJson);
     auto stat = dgndb.DeleteLinkTableRelationship(relKey);
     if (stat != BE_SQLITE_DONE)
         ThrowJsException("error deleting relationship");

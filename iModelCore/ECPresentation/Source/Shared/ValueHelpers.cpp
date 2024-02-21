@@ -178,7 +178,8 @@ DPoint3d ValueHelpers::GetPoint3dFromJson(RapidJsonValueCR json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint2d ValueHelpers::GetPoint2dFromJsonString(Utf8CP str)
     {
-    rapidjson::Document json = ParseJson(str, nullptr);
+    rapidjson::Document::AllocatorType alloc(32U);
+    rapidjson::Document json = ParseJson(str, &alloc);
     if (json.IsNull() || !json.IsObject())
         return DPoint2d();
     return DPoint2d::From(json["x"].GetDouble(), json["y"].GetDouble());
@@ -189,7 +190,8 @@ DPoint2d ValueHelpers::GetPoint2dFromJsonString(Utf8CP str)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint3d ValueHelpers::GetPoint3dFromJsonString(Utf8CP str)
     {
-    rapidjson::Document json = ParseJson(str, nullptr);
+    rapidjson::Document::AllocatorType alloc(48U);
+    rapidjson::Document json = ParseJson(str, &alloc);
     if (json.IsNull() || !json.IsObject())
         return DPoint3d();
     return DPoint3d::From(json["x"].GetDouble(), json["y"].GetDouble(), json["z"].GetDouble());
@@ -967,19 +969,53 @@ Utf8String ValueHelpers::GuidToString(BeGuidCR guid)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<Utf8String> const& GetUnitSystemGroupNames(ECPresentation::UnitSystem group)
+static bool MatchUnitSystem(Units::UnitSystemCR unitSystem, Utf8CP name)
     {
-    static bvector<Utf8String> s_metricUnitSystems{ "SI", "METRIC", "INTERNATIONAL", "FINANCE" };
-    static bvector<Utf8String> s_britishImperialUnitSystems{ "IMPERIAL", "USCUSTOM", "INTERNATIONAL", "FINANCE" };
-    static bvector<Utf8String> s_usCustomaryUnitSystems{ "USCUSTOM", "INTERNATIONAL", "FINANCE" };
-    static bvector<Utf8String> s_usSurveyUnitSystems{ "USSURVEY", "USCUSTOM", "INTERNATIONAL", "FINANCE" };
-    static bvector<Utf8String> s_empty;
+    return unitSystem.GetName().EqualsI(name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool MatchUnitSystems(Units::UnitSystemCR unitSystem, bvector<Utf8CP> names)
+    {
+    return ContainerHelpers::Contains(names, [&](Utf8CP name){return MatchUnitSystem(unitSystem, name);});
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static bvector<std::function<bool(Units::UnitSystemCR)>> const& GetUnitSystemGroupMatchers(ECPresentation::UnitSystem group)
+    {
+    static bvector<std::function<bool(Units::UnitSystemCR)>> s_metricUnitSystemMatchers{
+        [](Units::UnitSystemCR unitSystem){return MatchUnitSystems(unitSystem, {"SI", "METRIC"});},
+        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "INTERNATIONAL");},
+        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "FINANCE");},
+        };
+    static bvector<std::function<bool(Units::UnitSystemCR)>> s_britishImperialUnitSystemMatchers{
+        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "IMPERIAL");},
+        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "USCUSTOM");},        
+        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "INTERNATIONAL");},
+        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "FINANCE");},
+        };
+    static bvector<std::function<bool(Units::UnitSystemCR)>> s_usCustomaryUnitSystemMatchers{
+        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "USCUSTOM");},        
+        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "INTERNATIONAL");},
+        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "FINANCE");},
+        };
+    static bvector<std::function<bool(Units::UnitSystemCR)>> s_usSurveyUnitSystemMatchers{
+        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "USSURVEY");},
+        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "USCUSTOM");},        
+        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "INTERNATIONAL");},
+        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "FINANCE");},
+        };
+    static bvector<std::function<bool(Units::UnitSystemCR)>> s_empty;
     switch (group)
         {
-        case ECPresentation::UnitSystem::Metric: return s_metricUnitSystems;
-        case ECPresentation::UnitSystem::BritishImperial: return s_britishImperialUnitSystems;
-        case ECPresentation::UnitSystem::UsCustomary: return s_usCustomaryUnitSystems;
-        case ECPresentation::UnitSystem::UsSurvey: return s_usSurveyUnitSystems;
+        case ECPresentation::UnitSystem::Metric: return s_metricUnitSystemMatchers;
+        case ECPresentation::UnitSystem::BritishImperial: return s_britishImperialUnitSystemMatchers;
+        case ECPresentation::UnitSystem::UsCustomary: return s_usCustomaryUnitSystemMatchers;
+        case ECPresentation::UnitSystem::UsSurvey: return s_usSurveyUnitSystemMatchers;
         }
     return s_empty;
     }
@@ -990,15 +1026,15 @@ static bvector<Utf8String> const& GetUnitSystemGroupNames(ECPresentation::UnitSy
 Formatting::Format const* ValueHelpers::GetPresentationFormat(KindOfQuantityCR koq, ECPresentation::UnitSystem unitSystemGroup, std::map<std::pair<Utf8String, ECPresentation::UnitSystem>, std::shared_ptr<Formatting::Format>> const& defaultFormats)
     {
     Formatting::Format const* format = nullptr;
-    bvector<Utf8String> const& unitSystems = GetUnitSystemGroupNames(unitSystemGroup);
-    for (Utf8StringCR unitSystemName : unitSystems)
+    auto const& unitSystemMatchers = GetUnitSystemGroupMatchers(unitSystemGroup);
+    for (auto const& matcher : unitSystemMatchers)
         {
-        // find the first presentation format that uses one of the unit systems in the group
-        auto formatIter = std::find_if(koq.GetPresentationFormats().begin(), koq.GetPresentationFormats().end(), [&unitSystemName](NamedFormatCR f)
+        // find the first presentation format that matches one of the unit systems in the group
+        auto formatIter = std::find_if(koq.GetPresentationFormats().begin(), koq.GetPresentationFormats().end(), [&matcher](NamedFormatCR f)
             {
             return f.HasCompositeMajorUnit()
                 && f.GetCompositeMajorUnit()->GetUnitSystem()
-                && f.GetCompositeMajorUnit()->GetUnitSystem()->GetName().EqualsI(unitSystemName);
+                && matcher(*f.GetCompositeMajorUnit()->GetUnitSystem());
             });
         if (koq.GetPresentationFormats().end() != formatIter)
             {
@@ -1018,8 +1054,15 @@ Formatting::Format const* ValueHelpers::GetPresentationFormat(KindOfQuantityCR k
         }
 
     // if persistence unit matches one of the unit systems in the group, use it
-    if (!format && ContainerHelpers::Contains(unitSystems, [&](Utf8String const& unitSystemName) {return koq.GetPersistenceUnit()->GetUnitSystem()->GetName().EqualsI(unitSystemName); }))
+    if (!format 
+        && ContainerHelpers::Contains(
+            unitSystemMatchers, 
+            [&](std::function<bool(Units::UnitSystemCR)> const& matcher){return matcher(*koq.GetPersistenceUnit()->GetUnitSystem());}
+        )
+    )
+        {
         format = koq.GetPersistenceFormat();
+        }
 
     // if format based on requested unit systems group was not found, use default
     if (!format)

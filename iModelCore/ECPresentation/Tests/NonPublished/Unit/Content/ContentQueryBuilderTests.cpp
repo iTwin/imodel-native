@@ -20,7 +20,7 @@ void ContentQueryBuilderTests::SetUp()
     m_context = std::make_unique<ContentDescriptorBuilder::Context>(GetSchemaHelper(), GetConnections(), GetConnection(), &GetCancellationToken(),
         *m_rulesPreprocessor, *m_ruleset, ContentDisplayType::Undefined, s_emptyVariables, m_categorySupplier, nullptr, ECPresentation::UnitSystem::Undefined,
         *NavNodeKeyListContainer::Create(), nullptr, nullptr, nullptr);
-    m_context->SetContentFlagsCalculator([](int defaultFlags){return defaultFlags | (int)ContentFlags::SkipInstancesCheck;});
+    m_context->SetContentFlagsCalculator([&](int defaultFlags){return GetDefaultFlags(defaultFlags);});
     m_descriptorBuilder = std::make_unique<ContentDescriptorBuilder>(*m_context);
     m_queryBuilder = std::make_unique<ContentQueryBuilder>(ContentQueryBuilderParameters(GetSchemaHelper(), GetConnections(),
         m_nodesLocater, GetConnection(), &GetCancellationToken(), *m_rulesPreprocessor, *m_ruleset, m_rulesetVariables, GetSchemaHelper().GetECExpressionsCache(),
@@ -234,12 +234,9 @@ std::shared_ptr<ContentDescriptor::Category> ContentQueryBuilderTests::CreateCat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentDescriptorPtr ContentQueryBuilderTests::GetEmptyContentDescriptor(Utf8CP displayType)
+ContentDescriptorPtr ContentQueryBuilderTests::GetEmptyContentDescriptor(Utf8CP displayType, int contentFlags)
     {
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create(GetConnection(), *PresentationRuleSet::CreateInstance(""), RulesetVariables(), *NavNodeKeyListContainer::Create());
-    descriptor->SetPreferredDisplayType(displayType);
-    descriptor->AddContentFlag(ContentFlags::SkipInstancesCheck);
-    return descriptor;
+    return ContentDescriptor::Create(GetConnection(), *PresentationRuleSet::CreateInstance(""), RulesetVariables(), *NavNodeKeyListContainer::Create(), displayType, contentFlags, contentFlags);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -862,12 +859,11 @@ TEST_F (ContentQueryBuilderTests, SetsShowImagesFlag)
     auto querySet = GetQueryBuilder().CreateQuerySet(spec, *descriptor, info);
     ValidateQueries(querySet, [&]()
         {
-        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Undefined, GetDefaultFlags((int)ContentFlags::ShowImages));
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false), "");
 
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("Prop")));
-        descriptor->AddContentFlag(ContentFlags::ShowImages);
 
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query), "this");
@@ -903,12 +899,11 @@ TEST_F (ContentQueryBuilderTests, SetsShowLabelsFlagForGridContentType)
     auto querySet = GetQueryBuilder().CreateQuerySet(spec, *descriptor, info);
     ValidateQueries(querySet, [&]()
         {
-        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Grid);
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Grid, GetDefaultFlags((int)ContentFlags::ShowLabels));
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false), "");
 
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("Prop")));
-        descriptor->AddContentFlag(ContentFlags::ShowLabels);
 
         SelectClass<ECClass> selectClass(*classA, "this", false);
         ComplexQueryBuilderPtr nested = ComplexQueryBuilder::Create();
@@ -951,10 +946,9 @@ TEST_F (ContentQueryBuilderTests, SetsNoFieldsAndKeysOnlyFlagForGraphicsContentT
     auto querySet = GetQueryBuilder().CreateQuerySet(spec, *descriptor, info);
     ValidateQueries(querySet, [&]()
         {
-        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Graphics);
+        int flags = (int)ContentFlags::KeysOnly | (int)ContentFlags::NoFields;
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Graphics, GetDefaultFlags(flags));
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false), "");
-        descriptor->AddContentFlag(ContentFlags::KeysOnly);
-        descriptor->AddContentFlag(ContentFlags::NoFields);
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0));
 
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
@@ -988,10 +982,9 @@ TEST_F (ContentQueryBuilderTests, SetsNoFieldsAndShowLabelsFlagsForListContentTy
     auto querySet = GetQueryBuilder().CreateQuerySet(spec, *descriptor, info);
     ValidateQueries(querySet, [&]()
         {
-        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::List);
+        int flags = (int)ContentFlags::ShowLabels | (int)ContentFlags::NoFields;
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::List, GetDefaultFlags(flags));
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false), "");
-        descriptor->AddContentFlag(ContentFlags::ShowLabels);
-        descriptor->AddContentFlag(ContentFlags::NoFields);
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0));
 
         SelectClass<ECClass> selectClass(*classA, "this", false);

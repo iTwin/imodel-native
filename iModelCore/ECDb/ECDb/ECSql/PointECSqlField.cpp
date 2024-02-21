@@ -13,9 +13,12 @@ bool PointECSqlField::_IsNull() const
     {
     //To be consistent with the ECSQL parser which translates "MyPoint IS NULL" to "MyPoint.X IS NULL *AND* MyPoint.Y IS NULL"
     //this method uses the same semantics.
-    return GetSqliteStatement().IsColumnNull(m_xColumnIndex) &&
-        GetSqliteStatement().IsColumnNull(m_yColumnIndex) &&
-        (!IsPoint3d() || GetSqliteStatement().IsColumnNull(m_zColumnIndex));
+    auto& stmt = GetSqliteStatement();
+    const auto coordXValue = stmt.GetValueDouble(m_xColumnIndex);
+    const auto coordYValue = stmt.GetValueDouble(m_yColumnIndex);
+    const auto coordZValue = stmt.GetValueDouble(m_zColumnIndex);
+    return (stmt.IsColumnNull(m_xColumnIndex) || std::isinf(coordXValue) || std::isnan(coordXValue) || stmt.IsColumnNull(m_yColumnIndex) || std::isinf(coordYValue) || std::isnan(coordYValue)
+        || (IsPoint3d() && (stmt.IsColumnNull(m_zColumnIndex) || std::isinf(coordZValue) || std::isnan(coordZValue))));
     }
 
 //-----------------------------------------------------------------------------------------
