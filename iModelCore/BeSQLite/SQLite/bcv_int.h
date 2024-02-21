@@ -362,7 +362,7 @@ Manifest *bcvManifestRef(Manifest *p);
 int bcvManifestDup(Manifest *p, Manifest **ppNew);
 void bcvManifestExpand(int*, Manifest**, int);
 
-void bcvBlockidToText(Manifest *p, const u8 *pBlk, char *aBuf);
+void bcvBlockidToText(int nName, const u8 *pBlk, char *aBuf);
 
 int bcvWritefile(sqlite3_file *pFd, const u8 *aData, int nData, i64 iOff);
 int bcvOpenLocal(const char *, int bWal, int bReadonly, sqlite3_file **ppFd);
