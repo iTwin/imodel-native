@@ -363,7 +363,7 @@ describe("basic tests", () => {
 
   it("testGetSchemaPropsAsync", async () => {
     assert.isTrue(dgndb.isOpen());
-    await expect(dgndb.getSchemaPropsAsync("DoesNotExist")).rejectedWith("schema not found");
+    await expect(dgndb.getSchemaPropsAsync("DoesNotExist")).to.be.rejectedWith("schema not found");
     const props = await dgndb.getSchemaPropsAsync("BisCore");
     expect(props.name).equal("BisCore");
   });
@@ -455,11 +455,11 @@ describe("basic tests", () => {
   describe("generateElementMeshes", () => {
     it("throws if source is not a geometric element", async () => {
       const msg = "Geometric element required";
-      await expect(dgndb.generateElementMeshes({ source: "NotAnId" })).rejectedWith(msg);
-      await expect(dgndb.generateElementMeshes({})).rejectedWith(msg);
-      await expect(dgndb.generateElementMeshes({ source: "0" })).rejectedWith(msg);
-      await expect(dgndb.generateElementMeshes({ source: "0x1" })).rejectedWith(msg);
-      await expect(dgndb.generateElementMeshes({ source: "0x123456789" })).rejectedWith(msg);
+      await expect(dgndb.generateElementMeshes({ source: "NotAnId" })).to.be.rejectedWith(msg);
+      await expect(dgndb.generateElementMeshes({})).to.be.rejectedWith(msg);
+      await expect(dgndb.generateElementMeshes({ source: "0" })).to.be.rejectedWith(msg);
+      await expect(dgndb.generateElementMeshes({ source: "0x1" })).to.be.rejectedWith(msg);
+      await expect(dgndb.generateElementMeshes({ source: "0x123456789" })).to.be.rejectedWith(msg);
     });
 
     it("produces meshes", async () => {
