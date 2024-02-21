@@ -72,6 +72,10 @@ TEST_F(LinkTableRelationshipTests, CRUD)
 TEST_F(LinkTableRelationshipTests, BisCore17ImportShouldFail)
     {
     SetupSeedProject();
+    const auto bisCoreSchema = m_db->Schemas().GetSchema("BisCore");
+    ASSERT_EQ(bisCoreSchema->GetVersionRead(), 1U);
+    ASSERT_EQ(bisCoreSchema->GetVersionWrite(), 0U);
+    ASSERT_LT(bisCoreSchema->GetVersionMinor(), 17U);
 
     // Import new dummy BisCore which has the new DbIndex added to ElementRefersToElements
     ECSchemaPtr schema = nullptr;
