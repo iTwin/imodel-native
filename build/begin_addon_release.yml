@@ -11,9 +11,6 @@ trigger:
 
 pr: none
 
-variables:
-- group: imodel-native secret variables
-
 stages:
 - stage: queue_bump_version
   displayName: Queue bump-version.yml
@@ -26,9 +23,6 @@ stages:
     steps:
       - checkout: self
         persistCredentials: true
-      - task: NodeTool@0
-        inputs:
-          versionSpec: '18.x'
 
       - bash: az devops configure --defaults organization=$(System.TeamFoundationCollectionUri) project=$(System.TeamProject)
         displayName: Setup Azure CLI
@@ -51,8 +45,6 @@ stages:
             if [[ $(Build.SourceVersionMessage) != *"$noCi"* ]]; then
               echo "##vso[task.setvariable variable=SKIP_ADDON;isoutput=true]true"
             fi
-        env:
-          GITHUB_TOKEN: $(GH_TOKEN)
         displayName: get build num from commit
         name: getBuildNum
 
