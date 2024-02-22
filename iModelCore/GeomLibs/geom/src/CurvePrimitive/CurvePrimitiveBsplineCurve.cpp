@@ -319,6 +319,10 @@ bool _AdjustFractionToBreakFraction(double fraction, Rounding::RoundingMode mode
 +--------------------------------------------------------------------------------------*/
 bool _GetMSBsplineCurve(MSBsplineCurveR curve, double fractionA, double fractionB) const override
         {
+        // avoid crashing tile generator on bad data that has snuck in somehow (reported by Sentry)
+        if (!m_curve->IsValidGeometry())
+            return false;
+        
         return SUCCESS == curve.CopySegment (*m_curve,
             m_curve->FractionToKnot (fractionA), m_curve->FractionToKnot (fractionB));
         }
