@@ -28,7 +28,7 @@ stages:
         displayName: Setup Azure CLI
 
       - bash: |
-            # Greps the PR title for buildNum. -o returns just the matching results in the regex not the entire line, -P enables Pearl regex matching, \K ignores anything before it in the final output, so the result is only what is inside the brackets 
+            # Greps the PR title for buildNum. -o returns just the matching results in the regex not the entire line, -P enables Perl regex matching, \K ignores anything before it in the final output, so the result is only what is inside the brackets 
             nativeBuildNum=$(echo "$(Build.SourceVersionMessage)" | grep -o '\[buildNum:[^]]*\]' | grep -oP '\[buildNum:\K[^]]+')
             itwinjsPR=$(echo "$(Build.SourceVersionMessage)" | grep -o '\[itwinjsPR:[^]]*\]' | grep -o '[0-9]\+')
 
@@ -46,7 +46,7 @@ stages:
             if [[ '$(Build.SourceVersionMessage)' == *"$noCi"* ]]; then
               echo "##vso[task.setvariable variable=CREATE_ADDON;isoutput=true]false"
             else
-              echo "##vso[task.setvariable variable=CREATE_ADDON;isoutput=true]true
+              echo "##vso[task.setvariable variable=CREATE_ADDON;isoutput=true]true"
             fi
         displayName: get build num from commit
         name: getBuildNum
