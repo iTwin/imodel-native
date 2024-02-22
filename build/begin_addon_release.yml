@@ -34,6 +34,7 @@ stages:
         displayName: Setup Azure CLI
 
       - bash: |
+            # Greps the PR title for buildNum. -o returns just the matching results in the regex not the entire line, -P enables Perl regex matching, \K ignores anything before it in the final output, so the result is only what is inside the brackets 
             nativeBuildNum=$(echo "$(Build.SourceVersionMessage)" | grep -o '\[buildNum:[^]]*\]' | grep -oP '\[buildNum:\K[^]]+')
             itwinjsPR=$(echo "$(Build.SourceVersionMessage)" | grep -o '\[itwinjsPR:[^]]*\]' | grep -o '[0-9]\+')
 
@@ -48,8 +49,10 @@ stages:
 
             # This value is set in pipeline.yml during PR validation so we know to skip builds if native PRs are linked
             noCi="[no ci]"
-            if [[ $(Build.SourceVersionMessage) != *"$noCi"* ]]; then
-              echo "##vso[task.setvariable variable=SKIP_ADDON;isoutput=true]true"
+            if [[ "$(Build.SourceVersionMessage)" == *"$noCi"* ]]; then
+              echo "##vso[task.setvariable variable=CREATE_ADDON;isoutput=true]false"
+            else
+              echo "##vso[task.setvariable variable=CREATE_ADDON;isoutput=true]true"
             fi
         env:
           GITHUB_TOKEN: $(GH_TOKEN)
@@ -66,4 +69,4 @@ stages:
         displayName: queue bump-version.yml
         env:
           AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
-        condition: eq($(getBuildNum.SKIP_ADDON), false)
+        condition: eq(variables['getBuildNum.CREATE_ADDON'], true)

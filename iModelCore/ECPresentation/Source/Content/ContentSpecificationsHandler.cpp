@@ -401,7 +401,9 @@ static void FilterFlatSpecsByExclusiveIncludePaths(bvector<std::unique_ptr<Flatt
         {
         for (auto const& relatedClassPath : *exclusiveIncludePaths)
             {
-            if (HasSamePath(relatedClassPath, spec->GetFlattened().GetPropertiesSource()->GetSteps(), helper))
+            // when the related properties spec is created using deprecated attributes, we have no properties source... so just
+            // always included those specs no matter if they match given include paths or not.
+            if (!spec->GetFlattened().GetPropertiesSource() || HasSamePath(relatedClassPath, spec->GetFlattened().GetPropertiesSource()->GetSteps(), helper))
                 {
                 std::unique_ptr<FlattenedRelatedPropertiesSpecification> dummy;
                 std::swap(spec, dummy);
