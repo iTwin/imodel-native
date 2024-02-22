@@ -58,4 +58,4 @@ stages:
         displayName: queue bump-version.yml
         env:
           AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
-        condition: eq(variables[getBuildNum.SKIP_ADDON], false)
+        condition: eq(variables['getBuildNum.SKIP_ADDON'], false)
