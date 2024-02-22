@@ -28,6 +28,7 @@ stages:
         displayName: Setup Azure CLI
 
       - bash: |
+            # Greps the PR title for buildNum. -o returns just the matching results in the regex not the entire line, -P enables Pearl regex matching, \K ignores anything before it in the final output, so the result is only what is inside the brackets 
             nativeBuildNum=$(echo "$(Build.SourceVersionMessage)" | grep -o '\[buildNum:[^]]*\]' | grep -oP '\[buildNum:\K[^]]+')
             itwinjsPR=$(echo "$(Build.SourceVersionMessage)" | grep -o '\[itwinjsPR:[^]]*\]' | grep -o '[0-9]\+')
 
