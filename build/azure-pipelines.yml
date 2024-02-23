@@ -39,6 +39,10 @@ resources:
     - repository: imodeljs-build-pipeline-scripts
       type: git
       name: iModelTechnologies/imodeljs-build-pipeline-scripts
+    - repository: MendScan
+      type: git
+      name: ReleaseServices/MendScan
+      ref: refs/heads/main
 
 extends:
   template: /build/templates/pipeline.yml@imodel-native-internal
