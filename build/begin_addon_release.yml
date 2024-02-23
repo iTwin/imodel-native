@@ -1,0 +1,72 @@
+name: Begin-Addon-Release-$(Date:yyyy.MM.dd)$(Rev:.r)
+
+trigger:
+  branches:
+    include:
+    - main
+    # - release/* #FIXME: double check logic still works for this
+  paths:
+    exclude:
+    - iModelJsNodeAddon/package_version.txt
+
+pr: none
+
+variables:
+- group: imodel-native secret variables
+
+stages:
+- stage: queue_bump_version
+  displayName: Queue bump-version.yml
+  jobs:
+  - job: get_num_then_queue
+    displayName: Get Build Num then Queue
+    pool:
+      vmImage: ubuntu-latest
+
+    steps:
+      - checkout: self
+        persistCredentials: true
+      - task: NodeTool@0
+        inputs:
+          versionSpec: '18.x'
+
+      - bash: az devops configure --defaults organization=$(System.TeamFoundationCollectionUri) project=$(System.TeamProject)
+        displayName: Setup Azure CLI
+
+      - bash: |
+            # Greps the PR title for buildNum. -o returns just the matching results in the regex not the entire line, -P enables Perl regex matching, \K ignores anything before it in the final output, so the result is only what is inside the brackets 
+            nativeBuildNum=$(echo "$(Build.SourceVersionMessage)" | grep -o '\[buildNum:[^]]*\]' | grep -oP '\[buildNum:\K[^]]+')
+            itwinjsPR=$(echo "$(Build.SourceVersionMessage)" | grep -o '\[itwinjsPR:[^]]*\]' | grep -o '[0-9]\+')
+
+            if [[ -z "$itwinjsPR" ]]; then
+              iTwinjsBranchName='master'
+            else
+              iTwinjsBranchName=$(gh pr view $itwinjsPR --json headRefName  --repo iTwin/itwinjs-core -q '.headRefName')
+            fi
+
+            echo "##vso[task.setvariable variable=ITWINJS_BRANCH;isoutput=true]$iTwinjsBranchName"
+            echo "##vso[task.setvariable variable=NATIVE_BUILD_NUM;isoutput=true]open-source-$nativeBuildNum"
+
+            # This value is set in pipeline.yml during PR validation so we know to skip builds if native PRs are linked
+            noCi="[no ci]"
+            if [[ "$(Build.SourceVersionMessage)" == *"$noCi"* ]]; then
+              echo "##vso[task.setvariable variable=CREATE_ADDON;isoutput=true]false"
+            else
+              echo "##vso[task.setvariable variable=CREATE_ADDON;isoutput=true]true"
+            fi
+        env:
+          GITHUB_TOKEN: $(GH_TOKEN)
+        displayName: get build num from commit
+        name: getBuildNum
+
+      - bash: |
+          echo $(getBuildNum.NATIVE_BUILD_NUM)
+          echo $(getBuildNum.ITWINJS_BRANCH)
+          # az pipelines run \
+          #   --branch $(Build.SourceBranch) \
+          #   --id  8467 \
+          #   --parameters "NativeBuildNum=$(getBuildNum.NATIVE_BUILD_NUM)" "BumpType=patch" "iTwinjsBranch=$(getBuildNum.ITWINJS_BRANCH)"
+        displayName: queue bump-version.yml
+        env:
+          AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
+        condition: eq(variables['getBuildNum.CREATE_ADDON'], true)
