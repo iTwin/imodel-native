@@ -22,25 +22,55 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 class BentleyGeometryFlatBuffer
 {
 private:
-BentleyGeometryFlatBuffer (){} // no intances.
+BentleyGeometryFlatBuffer (){} // no instances.
+// template <class PtrName, class ReaderMethodName>
+// PtrName BytesToXXXSafe(Byte const *buffer, size_t const bufferSize, bool applyValidation);
+
 public:
 
 // test if the bytes have the signature for BentleyGeomFlatBuffer.
-static BGFBIMPEXP bool IsFlatBufferFormat (bvector <Byte> &buffer);
-static BGFBIMPEXP bool IsFlatBufferFormat (Byte const *buffer);
+static BGFBIMPEXP bool IsFlatBufferFormat(bvector <Byte> &buffer);
+static BGFBIMPEXP bool IsFlatBufferFormat(Byte const *buffer);
 
-static BGFBIMPEXP IGeometryPtr BytesToGeometry (bvector <Byte> &buffer, bool applyValidation = true);
-static BGFBIMPEXP IGeometryPtr BytesToGeometry (Byte const *buffer, bool applyValidation = true);
+static BGFBIMPEXP IGeometryPtr BytesToGeometry(bvector <Byte> &buffer, bool applyValidation = true);
+//! @deprecated in 4.x. Use `BytesToGeometrySafe`.
+static BGFBIMPEXP IGeometryPtr BytesToGeometry(Byte const *buffer, bool applyValidation = true);
+static BGFBIMPEXP IGeometryPtr BytesToGeometrySafe(Byte const *buffer, size_t const bufferSize, bool applyValidation = true);
 
-static BGFBIMPEXP ISolidPrimitivePtr BytesToSolidPrimitive (Byte const *buffer, bool applyValidation = true);
-static BGFBIMPEXP ICurvePrimitivePtr BytesToCurvePrimitive (Byte const *buffer, bool applyValidation = true);
-static BGFBIMPEXP CurveVectorPtr BytesToCurveVector (Byte const *buffer, bool applyValidation = true);
-static BGFBIMPEXP PolyfaceHeaderPtr BytesToPolyfaceHeader (Byte const *buffer, bool applyValidation = true);
-static BGFBIMPEXP MSBsplineSurfacePtr BytesToMSBsplineSurface (Byte const *buffer, bool applyValidation = true);
+//! @deprecated in 4.x. Use `BytesToSolidPrimitiveSafe`.
+static BGFBIMPEXP ISolidPrimitivePtr BytesToSolidPrimitive(Byte const *buffer, bool applyValidation = true);
+static BGFBIMPEXP ISolidPrimitivePtr BytesToSolidPrimitiveSafe(Byte const *buffer, size_t const bufferSize, bool applyValidation = true);
 
+//! @deprecated in 4.x. Use `BytesToCurvePrimitiveSafe`.
+static BGFBIMPEXP ICurvePrimitivePtr BytesToCurvePrimitive(Byte const *buffer, bool applyValidation = true);
+static BGFBIMPEXP ICurvePrimitivePtr BytesToCurvePrimitiveSafe(Byte const *buffer, size_t const bufferSize, bool applyValidation = true);
 
-static BGFBIMPEXP bool BytesToPolyfaceQueryCarrier (Byte const *buffer, PolyfaceQueryCarrier &carrier, bool applyValidation = true);
+//! @deprecated in 4.x. Use `BytesToCurveVectorSafe`.
+static BGFBIMPEXP CurveVectorPtr BytesToCurveVector(Byte const *buffer, bool applyValidation = true);
+static BGFBIMPEXP CurveVectorPtr BytesToCurveVectorSafe(Byte const *buffer, size_t const bufferSize, bool applyValidation = true);
 
+//! @deprecated in 4.x. Use `BytesToPolyfaceHeaderSafe`.
+static BGFBIMPEXP PolyfaceHeaderPtr BytesToPolyfaceHeader(Byte const *buffer, bool applyValidation = true);
+static BGFBIMPEXP PolyfaceHeaderPtr BytesToPolyfaceHeaderSafe(Byte const *buffer, size_t const bufferSize, bool applyValidation = true);
+
+//! @deprecated in 4.x. Use `BytesToMSBsplineSurfaceSafe`.
+static BGFBIMPEXP MSBsplineSurfacePtr BytesToMSBsplineSurface(Byte const *buffer, bool applyValidation = true);
+static BGFBIMPEXP MSBsplineSurfacePtr BytesToMSBsplineSurfaceSafe(Byte const *buffer, size_t const bufferSize, bool applyValidation = true);
+
+//! @deprecated in 4.x. Use `BytesToPolyfaceQueryCarrierSafe`.
+static BGFBIMPEXP bool BytesToPolyfaceQueryCarrier
+(
+    Byte const *buffer,
+    PolyfaceQueryCarrier &carrier,
+    bool applyValidation = true
+);
+static BGFBIMPEXP bool BytesToPolyfaceQueryCarrierSafe
+(
+    Byte const *buffer,
+    size_t const bufferSize,
+    PolyfaceQueryCarrier &carrier,
+    bool applyValidation = true
+);
 //!
 //! <ul>
 //! <li>Read geometry from the buffer
@@ -51,9 +81,13 @@ static BGFBIMPEXP bool BytesToPolyfaceQueryCarrier (Byte const *buffer, Polyface
 //!    </ul>
 //! </ul>
 //!
-static BGFBIMPEXP bool BytesToVectorOfGeometry(bvector <Byte> &buffer, bvector<IGeometryPtr> &dest,
+static BGFBIMPEXP bool BytesToVectorOfGeometry
+(
+    bvector <Byte> &buffer,
+    bvector<IGeometryPtr> &dest,
     bool applyValidation = true,
-    bvector<IGeometryPtr> *invalidGeometry = nullptr);
+    bvector<IGeometryPtr> *invalidGeometry = nullptr
+);
 //! NOTE: GeometryToBytes methods ALWAYS apply the validator (see SetFBWriteValidation)
 static BGFBIMPEXP void GeometryToBytes (IGeometryCR geometry, bvector<Byte>& buffer);
 static BGFBIMPEXP void GeometryToBytes (PolyfaceQueryCR mesh, bvector<Byte>& buffer);
@@ -73,10 +107,12 @@ static BGFBIMPEXP void GeometryToBytes (CurveVectorCR mesh, bvector<Byte>& buffe
 //! <li>If no validator is active, all geometry is written to the FB (dangerous!), and both optional arrays are cleared.
 //! </ul>
 //!
-static BGFBIMPEXP void GeometryToBytes (bvector<IGeometryPtr> &geometry, bvector<Byte>& buffer,
+static BGFBIMPEXP void GeometryToBytes (
+    bvector<IGeometryPtr> &geometry,
+    bvector<Byte>& buffer,
     bvector<IGeometryPtr> *validGeometry = nullptr,
-    bvector<IGeometryPtr> *invalidGeometry = nullptr);
+    bvector<IGeometryPtr> *invalidGeometry = nullptr
+);
 };
 
 END_BENTLEY_GEOMETRY_NAMESPACE
-

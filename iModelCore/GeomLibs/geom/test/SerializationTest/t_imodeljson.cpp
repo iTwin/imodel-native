@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "testHarness.h"
 #include <stdio.h>
+#include <filesystem>
 
 #include "SampleGeometry.h"
 #include <BeJsonCpp/BeJsonUtilities.h>
@@ -18,8 +19,8 @@ WCharCP outputDirectory,
 WCharCP nameB,
 WCharCP nameC,
 WCharCP extension,
-WCharCP flatbufferBinaryExtension = nullptr,           // optionally mirror every file to flatbuffer and write as binary file.  NOT IMPLEMENTED
-WCharCP flatbufferUInt8Extension = nullptr  // optionall write flatbuffer to string "[i0,i1,...]"
+WCharCP flatbufferBinaryExtension = nullptr, // optionally mirror every file to flatbuffer and write as binary file.  NOT IMPLEMENTED
+WCharCP flatbufferUInt8Extension = nullptr   // optionally write flatbuffer to string "[i0,i1,...]"
 )
     {
     geometry.clear ();
@@ -53,7 +54,6 @@ WCharCP flatbufferUInt8Extension = nullptr  // optionall write flatbuffer to str
                 bvector<Byte> bytes;
                 BentleyGeometryFlatBuffer::GeometryToBytes (geometry, bytes);
                 GTestFileOps::WriteByteArrayToTextFile(bytes, L"IModelJsonFromNative", nameB, nameC, flatbufferUInt8Extension);
-
                 }
             }
         else
@@ -63,8 +63,58 @@ WCharCP flatbufferUInt8Extension = nullptr  // optionall write flatbuffer to str
     return stat;
     }
 
+bool ReadIModelBytes(bvector<Byte> &buffer, BeFileName dataPath)
+    {
+    buffer.clear ();
+    bool stat = false;
+    Check::StartScope ("ReadICrashFiles");
+    printf ("ReadICrashFiles file %ls\n", dataPath.c_str ());
+    if (Check::True(GTestFileOps::ReadAsBytes(dataPath, buffer), "Read file to byte array"))
+        stat = true;
+    Check::EndScope();
+    return stat;
+    }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(IModelJson,BytesToGeometrySafe)
+    {
+    // if (!Check::GetEnableLongTests())
+    //     return;
+    BeFileName directoryPath;
+    BeTest::GetHost().GetDocumentsRoot(directoryPath);
+    directoryPath.AppendToPath(L"GeomLibsTestData");
+    directoryPath.AppendToPath(L"CrashFiles");
+    WCharCP dirPath = directoryPath.GetName();
+    for (const auto &entry : std::filesystem::directory_iterator(dirPath))
+    {
+        auto filePath = BeFileName(entry.path().c_str());
+    // for (auto filePath :
+    //      bvector<BeFileName>{
+            //  BeFileName("d:\\repos\\imodel-native\\out\\Winx64\\Product\\GeomLibs-Gtest\\Assets\\Documents\\GeomLibsTestData\\CrashFiles\\crash-3f1f74a88c98ce5125cb489fc404538beca8e7ac"),
+            //  BeFileName("d:\\repos\\imodel-native\\out\\Winx64\\Product\\GeomLibs-Gtest\\Assets\\Documents\\GeomLibsTestData\\CrashFiles\\crash-98a3d9aa91aa1925478b6bc6fe129914f9c539e1"),
+        //  })
+        // {
+        bvector<Byte> buffer;
+        if (Check::True(ReadIModelBytes(buffer, filePath)))
+            {
+            IGeometryPtr g;
+            g = BentleyGeometryFlatBuffer::BytesToGeometrySafe(buffer.data(), buffer.size());
+            if (g != nullptr)
+                Check::Fail("expect BytesToGeometrySafe to return nullptr for invalid bytes");
+            bool ret;
+            bvector<IGeometryPtr> dest;
+            ret = BentleyGeometryFlatBuffer::BytesToVectorOfGeometry(buffer, dest);
+            if (ret)
+                Check::Fail("expect BytesToVectorOfGeometry to return false for invalid bytes");
+            PolyfaceQueryCarrier carrier(0, false, 0, 0, nullptr, nullptr);
+            ret = BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrierSafe(buffer.data(), buffer.size(), carrier);
+            if (ret)
+                Check::Fail("expect BytesToPolyfaceQueryCarrierSafe to return false for invalid bytes");
+            }
+        }
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -198,7 +248,7 @@ TEST(BeJs,isAlmostEqual)
     double e0 = 1.0e-18;
     double e1 = 1.0e-8;
     for (double sign : {-1.0, 1.0})
-        { 
+        {
         for (double x0 = 1.0e-10; x0 < 1.0e20; x0 *= 10.0)
             {
             double x = sign * x0;
@@ -363,9 +413,7 @@ PolyfaceHeaderPtr RoundTripMeshQueryCarrier(PolyfaceHeaderPtr & meshA)
     BentleyGeometryFlatBuffer::GeometryToBytes(*IGeometry::Create(meshA), bytes);
     bvector<IGeometryPtr> geometryC;
     PolyfaceQueryCarrier carrier(0, false, 0, 0, nullptr, nullptr);
-    if (Check::True (BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(
-                    bytes.data (),
-                    carrier, false), "Bytes to QueryCarrier"))
+    if (Check::True (BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrierSafe(bytes.data(), bytes.size(),carrier, false), "Bytes to QueryCarrier"))
         {
         auto meshC = carrier.CloneAsVariableSizeIndexed (carrier);
         if (Check::True (meshC.IsValid ()))
@@ -378,7 +426,7 @@ PolyfaceHeaderPtr RoundTripMeshQueryCarrier(PolyfaceHeaderPtr & meshA)
 PolyfaceHeaderPtr RoundTripMeshIMJS(PolyfaceHeaderPtr & meshA)
     {
     auto jsonA = Json::Value();
-    Check::True(IModelJson::TryGeometryToIModelJsonValue(BeJsValue(jsonA), 
+    Check::True(IModelJson::TryGeometryToIModelJsonValue(BeJsValue(jsonA),
             *IGeometry::Create(meshA)), "geomery to json");
     bvector<IGeometryPtr> geometryB;
     if (Check::True(IModelJson::TryIModelJsonValueToGeometry(BeJsValue(jsonA), geometryB), "json to geometry"))

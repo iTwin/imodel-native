@@ -33,7 +33,7 @@ namespace BackDoor
 
     namespace BentleyGeometryFlatBuffer
         {
-        IGeometryPtr BytesToGeometry(Byte const*);
+        IGeometryPtr BytesToGeometrySafe(Byte const*, size_t const bufferSize);
         void GeometryToBytes(bvector<Byte>&, IGeometryCR);
         }
     };
