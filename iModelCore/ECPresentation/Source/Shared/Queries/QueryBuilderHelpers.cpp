@@ -744,6 +744,13 @@ private:
             targetECInstanceIdField->SetPrefixOverride(targetClassAlias);
 
             auto valueSelectField = valueSelectFieldFactory(*targetECClassIdField, *targetECInstanceIdField, targetClass.GetClass(), targetClassAlias);
+            if (valueSelectField.IsNull())
+                {
+                // return rather than continue here to ignore the whole related property value specification rather than just this path - this
+                // should help rule writers notice that's something's wrong with the specification
+                return nullptr;
+                }
+
             auto contract = SimpleQueryContract::Create({ valueSelectField });
             auto pathQuery = ComplexQueryBuilder::Create();
             pathQuery->SelectContract(*contract, targetClassAlias.c_str())
@@ -764,7 +771,15 @@ private:
 
     static PresentationQueryContractFieldPtr CreatePropertyValueField(PresentationQueryContractFieldCR ecClassIdField, Utf8StringCR propertyName, ECClassCR ecClass, Utf8StringCR prefix)
         {
-        PrimitiveType const& propertyType = ecClass.GetPropertyP(propertyName)->GetAsPrimitiveProperty()->GetType();
+        ECPropertyCP classProperty = ecClass.GetPropertyP(propertyName);
+        if (!classProperty || !classProperty->GetIsPrimitive())
+            {
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to create instance label override using property value. "
+                "Either class `%s` doesn't have the property `%s` or it's not primitive.", ecClass.GetFullName(), propertyName.c_str()));
+            return nullptr;
+            }
+
+        PrimitiveType const& propertyType = classProperty->GetAsPrimitiveProperty()->GetType();
         PresentationQueryContractFieldPtr propertyValueField;
         if (propertyType == PRIMITIVETYPE_Point3d || propertyType == PRIMITIVETYPE_Point2d)
             propertyValueField = QueryContractHelpers::CreatePointAsJsonStringSelectField(propertyName, prefix, (propertyType == PRIMITIVETYPE_Point2d) ? 2 : 3);
@@ -834,7 +849,8 @@ protected:
                 });
             if (relatedInstancePropertyValueField.IsNull())
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to create %s instance label override - is the specified relationship path valid?", spec.GetJsonElementType()));
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to create %s instance label override. Possible problems: invalid relationship path, "
+                    "target doesn't have the specified property or it's not primitive.", spec.GetJsonElementType()));
                 }
             else
                 {
@@ -842,7 +858,10 @@ protected:
                 return;
                 }
             }
-        m_fields.push_back(CreatePropertyValueField(*m_ecClassIdField, spec.GetPropertyName(), m_selectClass.GetClass(), m_selectClass.GetAlias()));
+
+        auto propertyValueField = CreatePropertyValueField(*m_ecClassIdField, spec.GetPropertyName(), m_selectClass.GetClass(), m_selectClass.GetAlias());
+        if (propertyValueField.IsValid())
+            m_fields.push_back(propertyValueField);
         }
 
     void _Visit(InstanceLabelOverrideClassNameValueSpecification const& spec) override
