@@ -1,4 +1,3 @@
-# If this value is changed, please modify begin_addon_release.yml to address the NATIVE_BUILD_NUM var
 name: open-source-$(Date:yyyy.MM.dd)$(Rev:.r)
 
 trigger:
