@@ -32,8 +32,7 @@ std::unique_ptr<PresentationQuery> CreateInstanceLabelQuery(ECSchemaHelper const
 +---------------+---------------+---------------+---------------+---------------+------*/
 LabelDefinitionPtr NodeLabelCalculator::_GetNodeLabel(ECClassInstanceKeyCR key, bvector<ECInstanceKey> const& prevLabelRequestsStack) const
     {
-    auto instanceLabelOverridesValuesMap = QueryBuilderHelpers::GetLabelOverrideValuesMap(m_schemaHelper, m_rulesPreprocessor.GetInstanceLabelOverrides());
-    auto labelOverrideSpecs = QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(instanceLabelOverridesValuesMap, *key.GetClass());
+    auto labelOverrideSpecs = QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(m_schemaHelper, m_rulesPreprocessor.GetInstanceLabelOverrides(), *key.GetClass());
     auto labelQuery = CreateInstanceLabelQuery(m_schemaHelper, key, labelOverrideSpecs, prevLabelRequestsStack);
     Utf8String label = QueryExecutorHelper::ReadText(m_schemaHelper.GetConnection(), *labelQuery);
     return LabelDefinition::FromString(label.c_str());

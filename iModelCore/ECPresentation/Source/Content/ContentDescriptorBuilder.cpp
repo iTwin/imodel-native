@@ -1409,7 +1409,7 @@ public:
             {
             auto fieldCategory = CategoriesSupplier(*m_categoriesSupplierContext).GetParentCategory(true);
             ContentDescriptor::DisplayLabelField* field = new ContentDescriptor::DisplayLabelField(fieldCategory, CommonStrings::FIELD_DISPLAYLABEL);
-            field->SetLabelOverrideSpecs(QueryBuilderHelpers::GetLabelOverrideValuesMap(GetContext().GetSchemaHelper(), GetContext().GetRulesPreprocessor().GetInstanceLabelOverrides()));
+            field->SetLabelOverrideSpecs(GetContext().GetRulesPreprocessor().GetInstanceLabelOverrides());
             m_descriptor->AddRootField(*field);
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Added display label field.");
             }
