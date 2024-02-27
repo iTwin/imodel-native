@@ -414,7 +414,7 @@ struct ECDB_EXPORT ECDbIssueId
     static ECN::IssueId ECDb_0385;
     static ECN::IssueId ECDb_0386;
     static ECN::IssueId ECDb_0387;
-    static ECN::IssueId ECDb_0388;
+    static ECN::IssueId ECDb_0388;  // This issue id was being used to report unsupported deletion of KoQs. KoQ deletion support is now added and issue id is now unused.
     static ECN::IssueId ECDb_0389;
     static ECN::IssueId ECDb_0390;
     static ECN::IssueId ECDb_0391;
@@ -431,7 +431,7 @@ struct ECDB_EXPORT ECDbIssueId
     static ECN::IssueId ECDb_0401;
     static ECN::IssueId ECDb_0402;
     static ECN::IssueId ECDb_0403;
-    static ECN::IssueId ECDb_0404;
+    static ECN::IssueId ECDb_0404;  // This issue id was being used to report unsupported deletion of ECEnumerations. ECEnumerations deletion support is now added and issue id is now unused.
     static ECN::IssueId ECDb_0405;
     static ECN::IssueId ECDb_0406;
     static ECN::IssueId ECDb_0407;
@@ -706,6 +706,10 @@ struct ECDB_EXPORT ECDbIssueId
     static ECN::IssueId ECDb_0674;
     static ECN::IssueId ECDb_0675;
     static ECN::IssueId ECDb_0676;
+    static ECN::IssueId ECDb_0677;
+    static ECN::IssueId ECDb_0678;
+    static ECN::IssueId ECDb_0679;
+    static ECN::IssueId ECDb_0680;
     };
 
 //---------------------------------------------------------------------------------------
@@ -750,7 +754,7 @@ struct IssueDataSource final {
         void SetFilter(filter_callback_t filterCallback) const;
         // Clear filter callback
         void ClearFilter() const;
-        // Report issue which will be propagated 
+        // Report issue which will be propagated
         void Report(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const;
         template<typename ...FmtArgs>
         void ReportV(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message, FmtArgs&& ...fmtArgs) const {

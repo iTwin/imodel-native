@@ -982,18 +982,17 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_SelectPointPropertyRaw
     ECClassCP classB = GetECClass("B");
     ECRelationshipClassCP relAB = GetECClass("A_To_B")->GetRelationshipClassCP();
     ContentRelatedInstancesSpecification spec(1, 0, false, "", RequiredRelationDirection_Forward, relAB->GetFullName(), classB->GetFullName());
+    GetDescriptorBuilder().GetContext().SetContentFlagsCalculator([&](int initial){return GetDefaultFlags(initial) | (int)ContentFlags::DistinctValues;});
 
     TestParsedInput info(*classA, ECInstanceId((uint64_t)123));
     ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
-    descriptor->AddContentFlag(ContentFlags::DistinctValues);
 
     auto querySet = GetQueryBuilder().CreateQuerySet(spec, *descriptor, info);
     ValidateQueries(querySet, [&]()
         {
         RelatedClass aTob(*classA, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), true, SelectClass<ECClass>(*classB, RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), true), false);
-        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
-        descriptor->AddContentFlag(ContentFlags::DistinctValues);
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Undefined, GetDefaultFlags((int)ContentFlags::DistinctValues));
         descriptor->AddSelectClass(SelectClassInfo(*classB, "this", true)
             .SetPathFromInputToSelectClass({aTob}), "");
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0));
@@ -1044,11 +1043,11 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_InstanceLabelOverride_
     ContentRelatedInstancesSpecification spec(1, 0, false, "", RequiredRelationDirection_Forward, "", classB->GetFullName());
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, false, classB->GetFullName(), "PropB1"));
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(2, false, classB->GetFullName(), "PropB2"));
+    GetDescriptorBuilder().GetContext().SetContentFlagsCalculator([&](int initial){return GetDefaultFlags(initial) | (int)ContentFlags::ShowLabels;});
 
     TestParsedInput info(*classA, ECInstanceId((uint64_t)123));
     ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec, info);
     ASSERT_TRUE(descriptor.IsValid());
-    descriptor->AddContentFlag(ContentFlags::ShowLabels);
 
     auto querySet = GetQueryBuilder().CreateQuerySet(spec, *descriptor, info);
     ValidateQueries(querySet, [&]()
@@ -1060,16 +1059,15 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_InstanceLabelOverride_
 
         RelatedClass aTob(*classA, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), true, SelectClass<ECClass>(*classB, RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), true), false);
 
-        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Undefined, GetDefaultFlags((int)ContentFlags::ShowLabels));
         descriptor->AddSelectClass(SelectClassInfo(*classB, "this", true)
             .SetPathFromInputToSelectClass({aTob}), "");
 
         ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0);
-        displayLabelField->SetLabelOverrideSpecs(CreateLabelOverrideSpecificationsMap(*classB, labelOverride));
+        displayLabelField->SetLabelOverrideSpecs({ &labelOverride });
         AddField(*descriptor, *displayLabelField);
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, ContentDescriptor::Property("this", *classB, *classB->GetPropertyP("PropB1")));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, ContentDescriptor::Property("this", *classB, *classB->GetPropertyP("PropB2")));
-        descriptor->AddContentFlag(ContentFlags::ShowLabels);
 
         SelectClass<ECClass> selectClass(*classB, "this", true);
 
@@ -1132,7 +1130,7 @@ TEST_F (ContentQueryBuilderTests, ContentRelatedInstances_InstanceLabelOverride_
             .SetNavigationPropertyClasses({navbToa}), "");
 
         ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0);
-        displayLabelField->SetLabelOverrideSpecs(CreateLabelOverrideSpecificationsMap(*classA, labelOverride));
+        displayLabelField->SetLabelOverrideSpecs({ &labelOverride });
         AddField(*descriptor, *displayLabelField);
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classB, *classB->GetPropertyP("PropB")));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty(RULES_ENGINE_NAV_CLASS_ALIAS(*classA, 0), *classB, *classB->GetPropertyP("NavA")));

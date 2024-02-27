@@ -21,6 +21,7 @@
     <ClCompile Include="NonPublished\Integration\Content\Content_PropertyCategorizationTests.cpp" />
     <ClCompile Include="NonPublished\Integration\Content\Content_RelatedPropertiesTests.cpp" />
     <ClCompile Include="NonPublished\Integration\Content\Content_UpdateTests.cpp" />
+    <ClCompile Include="NonPublished\Integration\Content\Content_WithExclusiveIncludePaths.cpp" />
     <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchiesCompareTests.cpp" />
     <ClCompile Include="NonPublished\Integration\Hierarchies\HierarchiesWithRulesetVariablesTests.cpp" />
     <ClCompile Include="NonPublished\Integration\Hierarchies\Hierarchies_Limiting.cpp" />

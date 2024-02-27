@@ -718,8 +718,12 @@ private:
         bvector<RelatedClassPath> noRelatedInstances;
         ECSchemaHelper::RelationshipPathsRequestParams params(m_selectClass, pathSpecs, nullptr, noRelatedInstances, counter, false);
         auto result = m_schemaHelper.GetRelationshipPaths(params);
+        auto pathsIter = result.GetPaths().find(0);
+        if (result.GetPaths().end() == pathsIter)
+            return nullptr;
+
         RefCountedPtr<PresentationQueryBuilder> query;
-        for (auto& path : result.GetPaths(0))
+        for (auto& path : pathsIter->second)
             {
             if (path.m_path.empty())
                 DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Got an empty path from select to property class when constructing instance label override query");
@@ -740,6 +744,13 @@ private:
             targetECInstanceIdField->SetPrefixOverride(targetClassAlias);
 
             auto valueSelectField = valueSelectFieldFactory(*targetECClassIdField, *targetECInstanceIdField, targetClass.GetClass(), targetClassAlias);
+            if (valueSelectField.IsNull())
+                {
+                // return rather than continue here to ignore the whole related property value specification rather than just this path - this
+                // should help rule writers notice that's something's wrong with the specification
+                return nullptr;
+                }
+
             auto contract = SimpleQueryContract::Create({ valueSelectField });
             auto pathQuery = ComplexQueryBuilder::Create();
             pathQuery->SelectContract(*contract, targetClassAlias.c_str())
@@ -760,7 +771,15 @@ private:
 
     static PresentationQueryContractFieldPtr CreatePropertyValueField(PresentationQueryContractFieldCR ecClassIdField, Utf8StringCR propertyName, ECClassCR ecClass, Utf8StringCR prefix)
         {
-        PrimitiveType const& propertyType = ecClass.GetPropertyP(propertyName)->GetAsPrimitiveProperty()->GetType();
+        ECPropertyCP classProperty = ecClass.GetPropertyP(propertyName);
+        if (!classProperty || !classProperty->GetIsPrimitive())
+            {
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to create instance label override using property value. "
+                "Either class `%s` doesn't have the property `%s` or it's not primitive.", ecClass.GetFullName(), propertyName.c_str()));
+            return nullptr;
+            }
+
+        PrimitiveType const& propertyType = classProperty->GetAsPrimitiveProperty()->GetType();
         PresentationQueryContractFieldPtr propertyValueField;
         if (propertyType == PRIMITIVETYPE_Point3d || propertyType == PRIMITIVETYPE_Point2d)
             propertyValueField = QueryContractHelpers::CreatePointAsJsonStringSelectField(propertyName, prefix, (propertyType == PRIMITIVETYPE_Point2d) ? 2 : 3);
@@ -830,7 +849,8 @@ protected:
                 });
             if (relatedInstancePropertyValueField.IsNull())
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to create %s instance label override - is the specified relationship path valid?", spec.GetJsonElementType()));
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to create %s instance label override. Possible problems: invalid relationship path, "
+                    "target doesn't have the specified property or it's not primitive.", spec.GetJsonElementType()));
                 }
             else
                 {
@@ -838,7 +858,10 @@ protected:
                 return;
                 }
             }
-        m_fields.push_back(CreatePropertyValueField(*m_ecClassIdField, spec.GetPropertyName(), m_selectClass.GetClass(), m_selectClass.GetAlias()));
+
+        auto propertyValueField = CreatePropertyValueField(*m_ecClassIdField, spec.GetPropertyName(), m_selectClass.GetClass(), m_selectClass.GetAlias());
+        if (propertyValueField.IsValid())
+            m_fields.push_back(propertyValueField);
         }
 
     void _Visit(InstanceLabelOverrideClassNameValueSpecification const& spec) override
@@ -1024,70 +1047,28 @@ ECValue QueryBuilderHelpers::CreateECValueFromJson(RapidJsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bmap<ECClassCP, bvector<InstanceLabelOverride const*>> QueryBuilderHelpers::GetLabelOverrideValuesMap(ECSchemaHelper const& helper, bvector<InstanceLabelOverrideCP> labelOverrides)
+bvector<InstanceLabelOverrideValueSpecification const*> QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(ECSchemaHelper const& schemaHelper, bvector<InstanceLabelOverrideCP> const& instanceLabelOverrides, ECClassCR ecClass)
     {
-    std::sort(labelOverrides.begin(), labelOverrides.end(), [](InstanceLabelOverrideCP a, InstanceLabelOverrideCP b) {return a->GetPriority() > b->GetPriority();});
-    bmap<ECClassCP, bvector<InstanceLabelOverride const*>> mappedFields;
-    for (auto labelOverride : labelOverrides)
+    bool handled = false;
+    bvector<InstanceLabelOverrideValueSpecification const*> specs;
+    for (auto ovr : instanceLabelOverrides)
         {
-        ECClassCP ecClass = helper.GetECClass(labelOverride->GetClassName().c_str());
-        if (nullptr == ecClass)
+        if (ovr->GetOnlyIfNotHandled() && handled)
+            continue;
+
+        auto ovrClass = schemaHelper.GetECClass(ovr->GetClassName().c_str());
+        if (!ovrClass)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("LabelOverride class not found: '%s'", labelOverride->GetClassName().c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("InstanceLabelOverride class not found: '%s'", ovr->GetClassName().c_str()));
             continue;
             }
 
-        auto iter = mappedFields.find(ecClass);
-        if (iter == mappedFields.end())
-            iter = mappedFields.Insert(ecClass, bvector<InstanceLabelOverride const*>()).first;
-
-        iter->second.push_back(labelOverride);
-        }
-    return mappedFields;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-static bvector<T> SerializeECClassMapPolymorphically(bmap<ECClassCP, bvector<T>> const& map, ECClassCR ecClass, std::function<bool(T const&, ECClassCR)> const& pred)
-    {
-    bvector<T> list;
-    auto iter = map.find(&ecClass);
-    if (iter != map.end())
-        {
-        for (auto const& item : iter->second)
+        if (ecClass.Is(ovrClass))
             {
-            if (pred(item, ecClass))
-                list.push_back(item);
+            DiagnosticsHelpers::ReportRule(*ovr);
+            ContainerHelpers::Push(specs, ovr->GetValueSpecifications());
+            handled = true;
             }
-        }
-    for (ECClassCP baseClass : ecClass.GetBaseClasses())
-        {
-        bvector<T> baseList = SerializeECClassMapPolymorphically(map, *baseClass, pred);
-        std::move(baseList.begin(), baseList.end(), std::back_inserter(list));
-        }
-    return list;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<InstanceLabelOverrideValueSpecification const*> QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(bmap<ECClassCP, bvector<InstanceLabelOverride const*>> const& instanceLabelOverrides, ECClassCR ecClass)
-    {
-    bool handled = false;
-    bvector<InstanceLabelOverride const*> usedOverrides = SerializeECClassMapPolymorphically<InstanceLabelOverride const*>(instanceLabelOverrides, ecClass, [&handled](InstanceLabelOverride const* ovr, ECClassCR)
-        {
-        if (ovr->GetOnlyIfNotHandled() && handled)
-            return false;
-        handled = true;
-        return true;
-        });
-    bvector<InstanceLabelOverrideValueSpecification const*> specs;
-    for (auto const& ovr : usedOverrides)
-        {
-        DiagnosticsHelpers::ReportRule(*ovr);
-        ContainerHelpers::Push(specs, ovr->GetValueSpecifications());
         }
     return specs;
     }
@@ -1503,6 +1484,22 @@ Utf8String QueryBuilderHelpers::CreatePropertySortingClause(SortingRuleCR rule, 
 
     if (!rule.GetSortAscending())
         orderByClause.append(" DESC");
+
+    return orderByClause;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String CreateSystemPropertySortingClause(SortingRuleCR rule, SelectClass<ECClass> selectClass)
+    {
+    Utf8String orderByClause;
+    orderByClause.append("[").append(selectClass.GetAlias()).append("].")
+        .append("[").append(rule.GetPropertyName()).append("]");
+
+    if (!rule.GetSortAscending())
+        orderByClause.append(" DESC");
+
     return orderByClause;
     }
 
@@ -1511,6 +1508,7 @@ Utf8String QueryBuilderHelpers::CreatePropertySortingClause(SortingRuleCR rule, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String QueryBuilderHelpers::CreatePropertySortingClause(bvector<ClassSortingRule> const& rules, SelectClassWithExcludes<ECClass> selectClass)
     {
+    static bvector<Utf8CP> const s_systemPropertyNames = { "ECClassId", "ECInstanceId" };
     Utf8String orderByClause;
     for (ClassSortingRule const& rule : rules)
         {
@@ -1520,19 +1518,33 @@ Utf8String QueryBuilderHelpers::CreatePropertySortingClause(bvector<ClassSorting
             // don't apply the rule if it's not polymorphic and we're selecting polymorphically
             continue;
             }
+
         DiagnosticsHelpers::ReportRule(rule.GetRule());
         if (rule.GetRule().GetDoNotSort())
             break;
+
+        Utf8String sortingColumnSelectClause;
         ECPropertyCP ecProperty = rule.GetSelectClass().GetClass().GetPropertyP(rule.GetRule().GetPropertyName().c_str());
-        if (nullptr == ecProperty)
+        if (nullptr != ecProperty)
+            {
+            sortingColumnSelectClause = CreatePropertySortingClause(rule.GetRule(), rule.GetSelectClass(), *ecProperty);
+            }
+        else if (ContainerHelpers::Contains(s_systemPropertyNames, [&rule](Utf8CP systemPropertyName){return rule.GetRule().GetPropertyName().EqualsI(systemPropertyName);}))
+            {
+            sortingColumnSelectClause = CreateSystemPropertySortingClause(rule.GetRule(), rule.GetSelectClass());
+            }
+        else
             {
             DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested sorting rule property not found: '%s.%s'",
                 rule.GetSelectClass().GetClass().GetFullName(), rule.GetRule().GetPropertyName().c_str()));
-            continue;
             }
-        if (!orderByClause.empty())
-            orderByClause.append(", ");
-        orderByClause.append(CreatePropertySortingClause(rule.GetRule(), rule.GetSelectClass(), *ecProperty));
+
+        if (!sortingColumnSelectClause.empty())
+            {
+            if (!orderByClause.empty())
+                orderByClause.append(", ");
+            orderByClause.append(sortingColumnSelectClause);
+            }
         }
     return orderByClause;
     }

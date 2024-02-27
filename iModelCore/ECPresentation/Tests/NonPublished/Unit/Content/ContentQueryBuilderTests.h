@@ -35,6 +35,7 @@ struct ContentQueryBuilderTests : QueryBuilderTest
 
     ContentDescriptorBuilder& GetDescriptorBuilder() {return *m_descriptorBuilder;}
     ContentQueryBuilder& GetQueryBuilder() {return *m_queryBuilder;}
+    int GetDefaultFlags(int initialFlags) {return initialFlags | (int)ContentFlags::SkipInstancesCheck;}
 
     void ValidateContentQuerySet(QuerySet const& querySet);
     QuerySet PrepareContentQuerySet(std::function<QuerySet()> querySetFactory);
@@ -57,8 +58,7 @@ struct ContentQueryBuilderTests : QueryBuilderTest
     ContentDescriptor::Field& AddField(ContentDescriptorR descriptor, ContentDescriptor::Field& field);
     ContentDescriptor::Property CreateProperty(Utf8String prefix, ECClassCR propertyClass, ECPropertyCR ecProperty);
     std::shared_ptr<ContentDescriptor::Category> CreateCategory(ECClassCR ecClass, std::shared_ptr<ContentDescriptor::Category> parentCategory = nullptr);
-    ContentDescriptorPtr GetEmptyContentDescriptor(Utf8CP displayType = ContentDisplayType::Undefined);
-    bmap<ECClassCP, bvector<InstanceLabelOverride const*>> CreateLabelOverrideSpecificationsMap(ECClassCR ecClass, InstanceLabelOverride const& spec);
+    ContentDescriptorPtr GetEmptyContentDescriptor(Utf8CP displayType = ContentDisplayType::Undefined, int contentFlags = (int)ContentFlags::SkipInstancesCheck);
     RelatedClassPath ReverseRelationshipPath(RelatedClassPath path, Utf8CP targetClassAlias, bool isTargetPolymorphic);
     };
 

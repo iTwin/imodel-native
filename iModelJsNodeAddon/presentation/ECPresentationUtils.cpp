@@ -10,10 +10,23 @@
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
+
+/*---------------------------------------------------------------------------------**/ /**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+static BeJsConst ToBeJsConst(rapidjson::Value const& value)
+    {
+    // `BeJsConst` for `rapidjson::Value const&` requires an allocator, although it's completely
+    // read-only and doesn't use it. The only reason it requires an allocator is that it uses
+    // a read-write `BeJsValue` for all the operations.
+    static rapidjson::MemoryPoolAllocator<> s_staticRapidJsonAllocator(8);
+    return BeJsConst(value, s_staticRapidJsonAllocator);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationResult ECPresentationUtils::CreateResultFromException(folly::exception_wrapper const& ew, rapidjson::Document&& diagnostics)
+ECPresentationResult ECPresentationUtils::CreateResultFromException(folly::exception_wrapper const& ew, std::unique_ptr<rapidjson::Document> diagnostics)
     {
     if (!ew)
         return ECPresentationResult(ECPresentationStatus::Error, "Invalid exception", std::move(diagnostics));
@@ -227,27 +240,30 @@ static std::map<std::pair<Utf8String, ECPresentation::UnitSystem>, std::shared_p
     if (unitsSchema == nullptr)
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Failed to find Units schema");
 
-    jsMap.ForEachProperty([&](Utf8CP name, BeJsConst value)
+    jsMap.ForEachProperty([&](Utf8CP phenomenon, BeJsConst formatsArray)
         {
-        if (!value.hasMember("serializedFormat") || !value.hasMember("unitSystems"))
-            return false;
-
-        Utf8String phenomenon = name;
-        auto format = std::make_shared<Formatting::Format>();
-        Utf8String serializedFormatJson = value["serializedFormat"].asString();
-        if (!Formatting::Format::FromJson(*format, serializedFormatJson.c_str(), &unitsSchema->GetUnitsContext()))
-            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to read Format from JSON: '%s'", serializedFormatJson.c_str()));
-
-        BeJsConst unitSystems = value["unitSystems"];
-        unitSystems.ForEachArrayMember([&](BeJsConst::ArrayIndex _, BeJsConst unitSystem)
+        formatsArray.ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst value)
             {
-            if (!unitSystem.isString())
+            if (!value.hasMember("serializedFormat") || !value.hasMember("unitSystems"))
                 return false;
 
-            auto parsedUnitSystem = ParseUnitSystemFromString(unitSystem.asCString());
-            if (parsedUnitSystem.IsSuccess())
-                defaultFormats.insert(std::make_pair(std::make_pair(phenomenon.ToUpper(), parsedUnitSystem.GetValue()), format));
+            auto format = std::make_shared<Formatting::Format>();
+            Utf8String serializedFormatJson = value["serializedFormat"].asString();
+            if (!Formatting::Format::FromJson(*format, serializedFormatJson.c_str(), &unitsSchema->GetUnitsContext()))
+                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to read Format from JSON: '%s'", serializedFormatJson.c_str()));
 
+            BeJsConst unitSystems = value["unitSystems"];
+            unitSystems.ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst unitSystem)
+                {
+                if (!unitSystem.isString())
+                    return false;
+
+                auto parsedUnitSystem = ParseUnitSystemFromString(unitSystem.asCString());
+                if (parsedUnitSystem.IsSuccess())
+                    defaultFormats.insert(std::make_pair(std::make_pair(Utf8String(phenomenon).ToUpper(), parsedUnitSystem.GetValue()), format));
+
+                return false;
+                });
             return false;
             });
         return false;
@@ -267,10 +283,10 @@ void ECPresentationResult::SerializeSuccessResponse() const
         return;
         }
 
-    if (!m_serializedSuccessResponse.empty())
+    if (!m_successResponse || !m_serializedSuccessResponse.empty())
         return;
 
-    m_serializedSuccessResponse = m_successResponse.Stringify();
+    m_serializedSuccessResponse = m_successResponse->Stringify();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -317,11 +333,8 @@ ECPresentationManager* ECPresentationUtils::CreatePresentationManager(Dgn::Platf
     params.SetECPropertyFormatter(new DefaultPropertyFormatter(CreateDefaultFormatsMap(props["defaultFormats"])));
     params.SetCachingParams(CreateCachingParams(props["cacheConfig"]));
     params.SetLocalState(&localState);
-    if (props["isChangeTrackingEnabled"].asBool())
-        {
-        params.SetECInstanceChangeEventSources({std::make_shared<DgnDbECInstanceChangeEventSource>()});
-        params.SetUpdateRecordsHandlers({updateRecordsHandler});
-        }
+    params.SetECInstanceChangeEventSources({std::make_shared<DgnDbECInstanceChangeEventSource>()});
+    params.SetUpdateRecordsHandlers({ updateRecordsHandler });
     return new ECPresentationManager(params);
     }
 
@@ -332,7 +345,7 @@ ECPresentationResult ECPresentationUtils::SetupRulesetDirectories(ECPresentation
     {
     Utf8String joinedDirectories = BeStringUtilities::Join(directories, ";");
     manager.GetLocaters().RegisterLocater(*DirectoryRuleSetLocater::Create(joinedDirectories.c_str()));
-    return ECPresentationResult(BeJsDocument::Null(), true);
+    return ECPresentationResult(rapidjson::Value());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -342,7 +355,7 @@ ECPresentationResult ECPresentationUtils::SetupSupplementalRulesetDirectories(EC
     {
     Utf8String joinedDirectories = BeStringUtilities::Join(directories, ";");
     manager.GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(*DirectoryRuleSetLocater::Create(joinedDirectories.c_str())));
-    return ECPresentationResult(BeJsDocument::Null(), true);
+    return ECPresentationResult(rapidjson::Value());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -358,7 +371,7 @@ ECPresentationResult ECPresentationUtils::GetRulesets(SimpleRuleSetLocater& loca
         hashedRulesetJson["ruleset"].From(ruleset->WriteToJsonValue());
         hashedRulesetJson["hash"] = ruleset->GetHash();
         }
-    return ECPresentationResult(std::move(json), true);
+    return ECPresentationResult(std::move(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -372,19 +385,7 @@ ECPresentationResult ECPresentationUtils::AddRuleset(SimpleRuleSetLocater& locat
     locater.AddRuleSet(*ruleset);
     rapidjson::Document result;
     result.SetString(ruleset->GetHash().c_str(), result.GetAllocator());
-    return ECPresentationResult(BeJsConst(result), true);
-    }
-
-/*---------------------------------------------------------------------------------**/ /**
- * @bsimethod
- +---------------+---------------+---------------+---------------+---------------+------*/
-static BeJsConst ToBeJsConst(rapidjson::Value const& value)
-    {
-    // `BeJsConst` for `rapidjson::Value const&` requires an allocator, although it's completely
-    // read-only and doesn't use it. The only reason it requires an allocator is that it uses
-    // a read-write `BeJsValue` for all the operations.
-    static rapidjson::MemoryPoolAllocator<> s_staticRapidJsonAllocator(8);
-    return BeJsConst(value, s_staticRapidJsonAllocator);
+    return ECPresentationResult(std::move(result));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -398,10 +399,10 @@ ECPresentationResult ECPresentationUtils::RemoveRuleset(SimpleRuleSetLocater& lo
         if (ruleset->GetHash().Equals(hash))
             {
             locater.RemoveRuleSet(rulesetId);
-            return ECPresentationResult(ToBeJsConst(rapidjson::Value(true)), true);
+            return ECPresentationResult(rapidjson::Value(true));
             }
         }
-    return ECPresentationResult(ToBeJsConst(rapidjson::Value(false)), true);
+    return ECPresentationResult(rapidjson::Value(false));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -410,7 +411,7 @@ ECPresentationResult ECPresentationUtils::RemoveRuleset(SimpleRuleSetLocater& lo
 ECPresentationResult ECPresentationUtils::ClearRulesets(SimpleRuleSetLocater& locater)
     {
     locater.Clear();
-    return ECPresentationResult(BeJsDocument::Null(), true);
+    return ECPresentationResult(rapidjson::Value());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -537,7 +538,7 @@ ECPresentationResult ECPresentationUtils::GetRulesetVariableValue(ECPresentation
         }
     else
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, "type");
-    return ECPresentationResult(std::move(response), false);
+    return ECPresentationResult(std::move(response));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -570,7 +571,7 @@ ECPresentationResult ECPresentationUtils::SetRulesetVariableValue(ECPresentation
         }
     else
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, "type");
-    return ECPresentationResult(BeJsDocument::Null(), false);
+    return ECPresentationResult(rapidjson::Value());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -580,7 +581,7 @@ ECPresentationResult ECPresentationUtils::UnsetRulesetVariableValue(ECPresentati
     {
     IUserSettings& settings = manager.GetUserSettings().GetSettings(rulesetId);
     settings.UnsetValue(variableId.c_str());
-    return ECPresentationResult(BeJsDocument::Null(), false);
+    return ECPresentationResult(rapidjson::Value());
     }
 
 #define PRESENTATION_JSON_ATTRIBUTE_BaseRequestParams_UnitSystem    "unitSystem"
@@ -753,7 +754,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodesCount(ECPre
 
     return manager.GetNodesCount(CreateAsyncParams(params, db, paramsJson)).then([](NodesCountResponse response)
         {
-        return ECPresentationResult(ToBeJsConst(rapidjson::Value((int64_t)*response)), true);
+        return ECPresentationResult(rapidjson::Value((int64_t)*response));
         });
     }
 
@@ -790,7 +791,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodes(ECPresenta
         .then([](NodesResponse nodesResponse)
             {
             ECPresentationSerializerContext ctx;
-            return ECPresentationResult(IModelJsECPresentationSerializer().AsJson(ctx, *nodesResponse), true);
+            return ECPresentationResult(IModelJsECPresentationSerializer().AsJson(ctx, *nodesResponse));
             });
     }
 
@@ -849,7 +850,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildrenCount(ECPres
     return manager.GetNodesCount(CreateAsyncParams(params, connection->GetECDb(), paramsJson))
         .then([](NodesCountResponse nodesCountResponse)
             {
-            return ECPresentationResult(ToBeJsConst(rapidjson::Value((int64_t)*nodesCountResponse)), true);
+            return ECPresentationResult(rapidjson::Value((int64_t)*nodesCountResponse));
             });
     }
 
@@ -890,7 +891,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildren(ECPresentat
         .then([](NodesResponse nodesResponse)
             {
             ECPresentationSerializerContext ctx;
-            return ECPresentationResult(IModelJsECPresentationSerializer().AsJson(ctx, *nodesResponse), true);
+            return ECPresentationResult(IModelJsECPresentationSerializer().AsJson(ctx, *nodesResponse));
             });
     }
 
@@ -917,10 +918,10 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetHierarchyLevelDescri
             {
             auto const& descriptor = *descriptorResponse;
             if (descriptor.IsNull())
-                return ECPresentationResult(BeJsDocument::Null(), true);
+                return ECPresentationResult(rapidjson::Value());
 
             ECPresentationSerializerContext serializerCtx(descriptor->GetUnitSystem(), formatter);
-            return ECPresentationResult(descriptor->AsJson(serializerCtx), true);
+            return ECPresentationResult(descriptor->AsJson(serializerCtx));
             });
     }
 
@@ -999,7 +1000,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetNodesPaths(ECPresent
             json.SetArray();
             for (size_t i = 0; i < paths.size(); i++)
                 json.PushBack(paths[i].AsJson(&json.GetAllocator()), json.GetAllocator());
-            return ECPresentationResult(std::move(json), true);
+            return ECPresentationResult(std::move(json));
             });
     }
 
@@ -1041,7 +1042,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetFilteredNodesPaths(E
             json.SetArray();
             for (size_t i = 0; i < paths.size(); i++)
                 json.PushBack(paths[i].AsJson(&json.GetAllocator()), json.GetAllocator());
-            return ECPresentationResult(std::move(json), true);
+            return ECPresentationResult(std::move(json));
             });
     }
 
@@ -1172,7 +1173,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContentSources(ECPre
             json.AddMember("sources", selectClassesJson, json.GetAllocator());
             json.AddMember("classesMap", ecClassSerializer.CreateAccumulatedClassesMap(&json.GetAllocator()), json.GetAllocator());
 
-            return ECPresentationResult(std::move(json), true);
+            return ECPresentationResult(std::move(json));
             });
     }
 
@@ -1464,16 +1465,6 @@ public:
         {
         bool didModifyDescriptor = false;
         ContentDescriptorPtr descriptorCopy = ContentDescriptor::Create(*descriptor);
-        if (!m_contentFlags.IsNull())
-            {
-            descriptorCopy->SetContentFlags(m_contentFlags.Value());
-            didModifyDescriptor = true;
-            }
-        if (!m_displayType.IsNull())
-            {
-            descriptorCopy->SetPreferredDisplayType(m_displayType.Value());
-            didModifyDescriptor = true;
-            }
         if (!m_fieldsFilterExpression.IsNull())
             {
             descriptorCopy->SetFieldsFilterExpression(m_fieldsFilterExpression.Value());
@@ -1546,17 +1537,22 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContentDescriptor(EC
             {
             auto const& descriptor = *response;
             if (descriptor.IsNull())
-                return ECPresentationResult(BeJsDocument::Null(), true);
+                return ECPresentationResult(rapidjson::Value());
 
             ECPresentationSerializerContext serializerCtx(descriptor->GetUnitSystem(), formatter);
-            return ECPresentationResult(descriptor->AsJson(serializerCtx), true);
+            return ECPresentationResult(descriptor->AsJson(serializerCtx));
             });
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<ECPresentationResult> ECPresentationUtils::GetContent(ECPresentationManager& manager, ECDbR db, RapidJsonValueCR paramsJson)
+static folly::Future<ECPresentationResult> GetSerializedContent(
+    ECPresentationManager& manager,
+    ECDbR db,
+    RapidJsonValueCR paramsJson,
+    std::function<ECPresentationResult(Content const&, ECPresentationSerializerContext&)> contentSerializer
+)
     {
     IConnectionCPtr connection = manager.GetConnections().CreateConnection(db);
     if (connection.IsNull())
@@ -1585,17 +1581,17 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContent(ECPresentati
         ContentMetadataRequestParams(rulesetParams.GetValue(), descriptorOverrides.GetValue().GetDisplayType(), descriptorOverrides.GetValue().GetContentFlags()),
         *keys.GetValue(), descriptorOverrides.GetValue().GetExclusiveIncludePaths());
     return manager.GetContentDescriptor(CreateAsyncParams(descriptorParams, db, paramsJson))
-        .then([&manager, &db, descriptorOverrides = descriptorOverrides.GetValue(), pageOptions = pageOptions.GetValue(), formatter = &manager.GetFormatter(), diagnostics, omitFormattedValues](ContentDescriptorResponse descriptorResponse) -> folly::Future<ECPresentationResult>
+        .then([&manager, &db, descriptorOverrides = descriptorOverrides.GetValue(), pageOptions = pageOptions.GetValue(), formatter = &manager.GetFormatter(), diagnostics, omitFormattedValues, contentSerializer](ContentDescriptorResponse descriptorResponse) -> folly::Future<ECPresentationResult>
             {
             auto scope = diagnostics->Hold();
 
             ContentDescriptorCPtr descriptor = *descriptorResponse;
             if (descriptor.IsNull())
-                return ECPresentationResult(BeJsDocument::Null(), true);
+                return ECPresentationResult(rapidjson::Value());
 
             descriptorOverrides.Apply(descriptor);
             return manager.GetContent(ECPresentation::MakePaged(AsyncContentRequestParams::Create(db, *descriptor), pageOptions))
-                .then([formatter, omitFormattedValues](ContentResponse contentResponse)
+                .then([formatter, omitFormattedValues, contentSerializer](ContentResponse contentResponse)
                     {
                     auto const& content = *contentResponse;
                     if (content.IsNull())
@@ -1603,9 +1599,31 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContent(ECPresentati
 
                     ECPresentationSerializerContext serializerCtx(content->GetDescriptor().GetUnitSystem(), formatter);
                     serializerCtx.SetOmitDisplayValues(omitFormattedValues);
-                    return ECPresentationResult(content->AsJson(serializerCtx), true);
+                    return contentSerializer(*content, serializerCtx);
                     });
             });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<ECPresentationResult> ECPresentationUtils::GetContent(ECPresentationManager& manager, ECDbR db, RapidJsonValueCR paramsJson)
+    {
+    return ::GetSerializedContent(manager, db, paramsJson, [](Content const& content, ECPresentationSerializerContext& serializerCtx)
+        {
+        return ECPresentationResult(content.AsJson(serializerCtx));
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<ECPresentationResult> ECPresentationUtils::GetContentSet(ECPresentationManager& manager, ECDbR db, RapidJsonValueCR paramsJson)
+    {
+    return ::GetSerializedContent(manager, db, paramsJson, [](Content const& content, ECPresentationSerializerContext& serializerCtx)
+        {
+        return ECPresentationResult(IModelJsECPresentationSerializer().AsJson(serializerCtx, content.GetContentSet()));
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1641,12 +1659,12 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContentSetSize(ECPre
 
         ContentDescriptorCPtr descriptor = *descriptorResponse;
         if (descriptor.IsNull())
-            return ECPresentationResult(ToBeJsConst(rapidjson::Value(0)), true);
+            return ECPresentationResult(rapidjson::Value(0));
 
         descriptorOverrides.Apply(descriptor);
         return manager.GetContentSetSize(AsyncContentRequestParams::Create(db, *descriptor)).then([](ContentSetSizeResponse contentSetSizeResponse)
             {
-            return ECPresentationResult(ToBeJsConst(rapidjson::Value((int64_t)*contentSetSizeResponse)), true);
+            return ECPresentationResult(rapidjson::Value((int64_t)*contentSetSizeResponse));
             });
         });
     }
@@ -1707,7 +1725,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetPagedDistinctValues(
                         PUSH_JSON_IF_VALID(valuesJson, response.GetAllocator(), value);
                     response.AddMember("items", valuesJson, response.GetAllocator());
                     response.AddMember("total", (uint64_t)(*distinctValuesResponse).GetTotalSize(), response.GetAllocator());
-                    return ECPresentationResult(std::move(response), true);
+                    return ECPresentationResult(std::move(response));
                     });
             });
     }
@@ -1734,7 +1752,7 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetDisplayLabel(ECPrese
             if (labelDefinition.IsNull())
                 return ECPresentationResult(ECPresentationStatus::Error, "Failed to get requested label");
 
-            return ECPresentationResult(labelDefinition->AsJson(), true);
+            return ECPresentationResult(labelDefinition->AsJson());
             });
     }
 
@@ -1858,6 +1876,6 @@ folly::Future<ECPresentationResult> ECPresentationUtils::CompareHierarchies(ECPr
                     rapidjson::Value(continuationToken->second.c_str(), json.GetAllocator()), json.GetAllocator());
                 json.AddMember(PRESENTATION_JSON_ATTRIBUTE_HierarchyCompare_ContinuationToken, continuationJson.Move(), json.GetAllocator());
                 }
-            return ECPresentationResult(std::move(json), true);
+            return ECPresentationResult(std::move(json));
             });
     }

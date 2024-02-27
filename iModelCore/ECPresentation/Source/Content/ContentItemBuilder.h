@@ -67,6 +67,11 @@ struct ContentItemBuilder
         bset<ECInstanceKey> readInstanceKeys;
         };
 
+    struct HandledFieldAttributes
+        {
+        bool isMerged = false;
+        };
+
 private:
     std::shared_ptr<Context> m_context;
     SchemaManagerCR m_schemaManager;
@@ -75,10 +80,10 @@ private:
     mutable ECClassCP m_primaryInstanceClass;
     mutable bool m_determinedPrimaryInstanceClass;
     bvector<ECInstanceKey> m_inputKeys;
-    rapidjson::Document m_values;
-    rapidjson::Document m_displayValues;
+    std::pair<std::unique_ptr<rapidjson::Document::AllocatorType>, std::unique_ptr<rapidjson::Document>> m_values;
+    std::pair<std::unique_ptr<rapidjson::Document::AllocatorType>, std::unique_ptr<rapidjson::Document>> m_displayValues;
     std::map<Utf8String, NestedContentValues> m_nestedContentValues;
-    bset<Utf8String> m_mergedFieldNames;
+    bmap<Utf8String, HandledFieldAttributes> m_handledFields;
     LabelDefinitionCPtr m_displayLabel;
     Utf8String m_imageId;
     ContentSetItemExtendedData m_extendedData;
@@ -88,11 +93,12 @@ protected:
     ContentValuesFormatter const& GetValuesFormatter() const { return m_formatter; }
     bvector<ECInstanceKey>& GetPrimaryKeysR() { return m_primaryKeys; }
     bvector<ECInstanceKey>& GetInputKeysR() { return m_inputKeys; }
-    bset<Utf8String>& GetMergedFieldNames() { return m_mergedFieldNames; }
-    rapidjson::Document& GetValues() { return m_values; }
-    rapidjson::Document& GetDisplayValues() { return m_displayValues; }
+    bmap<Utf8String, HandledFieldAttributes>& GetHandledFields() { return m_handledFields; }
+    rapidjson::Document& GetValues() { return *m_values.second; }
+    rapidjson::Document& GetDisplayValues() { return *m_displayValues.second; }
     std::map<Utf8String, NestedContentValues>& GetNestedContentValues() { return m_nestedContentValues; }
     void InvalidateInstanceClass() { m_primaryInstanceClass = nullptr; m_determinedPrimaryInstanceClass = false; }
+    void OnFieldHandled(Utf8CP name);
 
 protected:
     virtual ItemReadAction _GetActionForPrimaryKey(ECInstanceKeyCR key) const;
@@ -113,8 +119,13 @@ public:
     ContentItemBuilder(std::shared_ptr<Context> context, SchemaManagerCR schemaManager, ContentValuesFormatter formatter)
         : m_context(context ? context : std::make_shared<Context>()), m_schemaManager(schemaManager), m_formatter(formatter), m_primaryInstanceClass(nullptr), m_determinedPrimaryInstanceClass(false)
         {
-        m_values.SetObject();
-        m_displayValues.SetObject();
+        auto valuesAllocator = std::make_unique<rapidjson::Document::AllocatorType>(2048U);
+        auto values = std::make_unique<rapidjson::Document>(rapidjson::kObjectType, valuesAllocator.get());
+        m_values = std::make_pair(std::move(valuesAllocator), std::move(values));
+
+        auto displayValuesAllocator = std::make_unique<rapidjson::Document::AllocatorType>(1024U);
+        auto displayValues = std::make_unique<rapidjson::Document>(rapidjson::kObjectType, displayValuesAllocator.get());
+        m_displayValues = std::make_pair(std::move(displayValuesAllocator), std::move(displayValues));
         }
     ContentItemBuilder(std::shared_ptr<Context> context, SchemaManagerCR schemaManager, IECPropertyFormatter const* propertyFormatter, ECPresentation::UnitSystem unitSystem)
         : ContentItemBuilder(context, schemaManager, ContentValuesFormatter(propertyFormatter, unitSystem))
@@ -136,7 +147,7 @@ public:
     void SetImageId(Utf8String id) { _SetImageId(id); }
     Utf8StringCR GetImageId() const { return m_imageId; }
 
-    bset<Utf8String> const& GetMergedFieldNames() const { return m_mergedFieldNames; }
+    bmap<Utf8String, HandledFieldAttributes> const& GetHandledFields() const { return m_handledFields; }
 
     void SetRelatedInstanceKeys(bvector<ContentSetItemExtendedData::RelatedInstanceKey> const& keys) { _SetRelatedInstanceKeys(keys); }
     ContentSetItemExtendedData& GetExtendedData() { return m_extendedData; }
@@ -196,6 +207,8 @@ private:
     ContentValueHelpers() {}
 public:
     static NavigationPropertyValue ParseNavigationPropertyValue(IECSqlValue const& value, SchemaManagerCR schemas);
+    static void SetRapidJsonValue(RapidJsonValueR targetObject, Utf8CP memberName, rapidjson::Value&& value, rapidjson::Document::AllocatorType&);
+    static void SetRapidJsonValue(RapidJsonValueR targetObject, Utf8CP memberName, rapidjson::Value const& value, rapidjson::Document::AllocatorType&);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

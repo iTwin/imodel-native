@@ -502,7 +502,7 @@ export declare namespace IModelJsNative {
     public cancelTo(txnId: TxnIdString): IModelStatus;
     public classIdToName(idString: string): string;
     public classNameToId(className: string): Id64String;
-    public closeIModel(): void;
+    public closeFile(): void;
     public completeCreateChangeset(arg: { index: number }): void;
     public computeProjectExtents(wantFullExtents: boolean, wantOutlierIds: boolean): { extents: Range3dProps, fullExtents?: Range3dProps, outliers?: Id64Array };
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
@@ -1258,12 +1258,12 @@ export declare namespace IModelJsNative {
     id: string;
     taskAllocationsMap: { [priority: number]: number };
     defaultFormats: {
-      [phenomenon: string]: {
+      [phenomenon: string]: Array<{
         unitSystems: string[];
         serializedFormat: string;
-      };
+      }>;
     };
-    isChangeTrackingEnabled: boolean;
+    updateCallback: (updateInfo: any) => void;
     cacheConfig: ECPresentationHierarchyCacheConfig;
     contentCacheSize?: number;
     workerConnectionCacheSize?: number;
@@ -1284,7 +1284,6 @@ export declare namespace IModelJsNative {
     public removeRuleset(rulesetId: string, hash: string): ECPresentationManagerResponse<boolean>;
     public clearRulesets(): ECPresentationManagerResponse<void>;
     public handleRequest(db: DgnDb, options: string): { result: Promise<ECPresentationManagerResponse<Buffer>>, cancel: () => void };
-    public getUpdateInfo(): ECPresentationManagerResponse<any>;
     public dispose(): void;
   }
 
@@ -1350,26 +1349,23 @@ export declare namespace IModelJsNative {
 
   type ChangeValueType = Uint8Array | number | string | null | undefined;
 
-  interface ChangedValue {
-    new?: ChangeValueType;
-    old?: ChangeValueType;
-  }
-
   class ChangesetReader {
-    public close(): DbResult;
-    public getColumnCount(): number | undefined;
+    public close(): void;
+    public getColumnCount(): number;
     public getColumnValue(col: number, stage: DbChangeStage): ChangeValueType;
     public getColumnValueType(col: number, stage: DbChangeStage): DbValueType | undefined;
-    public getFileName(): string | undefined;
-    public getOpCode(): DbOpcode | undefined;
-    public getRow(): ChangedValue[] | undefined;
     public getDdlChanges(): string | undefined;
-    public getTableName(): string | undefined;
-    public isIndirectChange(): boolean | undefined;
-    public isPrimaryKeyColumn(col: number): boolean | undefined;
-    public open(fileName: string, invert: boolean): DbResult;
-    public reset(): DbResult;
-    public step(): DbResult;
+    public getOpCode(): DbOpcode;
+    public getPrimaryKeys(): ChangeValueType[];
+    public getRow(stage: DbChangeStage): ChangeValueType[];
+    public getTableName(): string;
+    public isIndirectChange(): boolean;
+    public isPrimaryKeyColumn(col: number): boolean;
+    public openFile(fileName: string, invert: boolean): void;
+    public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean): void;
+    public reset(): void;
+    public step(): boolean;
+    public hasRow(): boolean;
   }
 
   class DisableNativeAssertions implements IDisposable {

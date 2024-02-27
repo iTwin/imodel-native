@@ -332,6 +332,7 @@ TEST_F (ContentProviderTests, CreatesLabelWhenSpecified)
     NavNodeKeyList keys;
     keys.push_back(node->GetKey());
     m_context->SetInputKeys(*NavNodeKeyListContainer::Create(keys));
+    m_context->SetContentFlags((int)ContentFlags::ShowLabels);
 
     bvector<ECInstanceKey> instanceKeys;
     std::transform(node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().begin(), node->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys().end(),
@@ -346,16 +347,11 @@ TEST_F (ContentProviderTests, CreatesLabelWhenSpecified)
 
     ContentDescriptorCP descriptor = provider->GetContentDescriptor();
     ASSERT_TRUE(nullptr != descriptor);
-
-    ContentDescriptorPtr ovr = ContentDescriptor::Create(*descriptor);
-    ovr->AddContentFlag(ContentFlags::ShowLabels);
-
-    provider->SetContentDescriptor(*ovr);
     ASSERT_EQ(1, provider->GetContentSetSize());
 
     ContentSetItemPtr item;
     ASSERT_TRUE(provider->GetContentSetItem(item, 0));
-    RulesEngineTestHelpers::ValidateContentSetItem(*instance, *item, *ovr, "Test MyID");
+    RulesEngineTestHelpers::ValidateContentSetItem(*instance, *item, *descriptor, "Test MyID");
     }
 
 /*---------------------------------------------------------------------------------**//**

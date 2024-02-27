@@ -1667,17 +1667,15 @@ TEST_F(DefaultECPresentationSerializerTests, ContentDescriptorSerializationNoSel
         NavNodeKey::Create("TypeName", "Spec", {"123", "abc"}),
         NavNodeKey::Create("TypeName2", "Spec2", {"456", "def"})
         });
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, *PresentationRuleSet::CreateInstance("test ruleset id"), RulesetVariables(), *container);
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, *PresentationRuleSet::CreateInstance("test ruleset id"), RulesetVariables(), *container, "DisplayTypeText", (int)ContentFlags::ShowLabels, (int)ContentFlags::ShowLabels);
     SelectClassInfo selectClassInfo(*testClassA, "", false);
     selectClassInfo.SetPathFromInputToSelectClass({RelatedClass(*testClassB, SelectClass<ECRelationshipClass>(*relClassAClassB, ""), true, SelectClass<ECClass>(*testClassA, ""))});
     selectClassInfo.SetRelatedPropertyPaths({{RelatedClass(*testClassA, SelectClass<ECRelationshipClass>(*relClassAClassB, ""), false, SelectClass<ECClass>(*testClassB, ""))}});
     descriptor->AddSelectClass(selectClassInfo, "");
     descriptor->AddRootField(*new ContentDescriptor::DisplayLabelField(nullptr, "Label", 10));
-    descriptor->SetPreferredDisplayType("DisplayTypeText");
     descriptor->SetUnitSystem(ECPresentation::UnitSystem::Metric);
     descriptor->SetSortingField(0);
     descriptor->SetSortDirection(SortDirection::Descending);
-    descriptor->SetContentFlags((int)ContentFlags::ShowLabels);
     descriptor->SetFieldsFilterExpression("ExpressionText");
     rapidjson::Document actual = descriptor->AsJson();
 
@@ -1918,18 +1916,21 @@ TEST_F(DefaultECPresentationSerializerTests, ContentSetSerializationItemWithClas
         ECClassInstanceKey(*GetClassA(), ECInstanceId((uint64_t)1)),
         ECClassInstanceKey(*GetClassB(), ECInstanceId((uint64_t)2))
         };
-    rapidjson::Document values(rapidjson::kObjectType);
-    values.AddMember("FieldName", "FieldValue", values.GetAllocator());
-    rapidjson::Document displayValues(rapidjson::kObjectType);
-    displayValues.AddMember("FieldName", "FieldDisplayValue", values.GetAllocator());
+    auto valuesAllocator = std::make_unique<rapidjson::Document::AllocatorType>();
+    auto values = std::make_unique<rapidjson::Document>(rapidjson::kObjectType, valuesAllocator.get());
+    values->AddMember("FieldName", "FieldValue", values->GetAllocator());
+    auto displayValuesAllocator = std::make_unique<rapidjson::Document::AllocatorType>();
+    auto displayValues = std::make_unique<rapidjson::Document>(rapidjson::kObjectType, displayValuesAllocator.get());
+    displayValues->AddMember("FieldName", "FieldDisplayValue", values->GetAllocator());
     bvector<Utf8String> mergedFieldNames {"MergedField1", "MergedField2"};
     ContentDescriptor::ECPropertiesField ecPropertiesField(nullptr, "field1", ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("String")));
     ContentDescriptor::ECPropertiesField ecPropertiesField1(nullptr, "field2", ContentDescriptor::Property("this", *testClass, *testClass->GetPropertyP("Int")));
     ContentSetItem::FieldPropertyInstanceKeyMap fieldPropertyInstanceKeys;
     fieldPropertyInstanceKeys.Insert(ContentSetItem::FieldPropertyIdentifier(ecPropertiesField, 0), keys);
     fieldPropertyInstanceKeys.Insert(ContentSetItem::FieldPropertyIdentifier(ecPropertiesField1, 1), keys);
-    ContentSetItemPtr contentSetItem = ContentSetItem::Create({}, keys, *LabelDefinition::Create("DisplayLabelText"), "ImageIdText",
-        bmap<Utf8String, bvector<ContentSetItemPtr>>(), std::move(values), std::move(displayValues), mergedFieldNames, std::move(fieldPropertyInstanceKeys));
+    ContentSetItemPtr contentSetItem = ContentSetItem::Create({}, keys, *LabelDefinition::Create("DisplayLabelText"), "ImageIdText", bmap<Utf8String, bvector<ContentSetItemPtr>>(), 
+        std::make_pair(std::move(valuesAllocator), std::move(values)), std::make_pair(std::move(displayValuesAllocator), std::move(displayValues)),
+        mergedFieldNames, std::move(fieldPropertyInstanceKeys));
     contentSetItem->SetClass(testClass);
     rapidjson::Document actual = contentSetItem->AsJson();
 
@@ -2002,11 +2003,15 @@ TEST_F(DefaultECPresentationSerializerTests, ContentSetSerializationItemWithClas
 //---------------------------------------------------------------------------------------
 TEST_F(DefaultECPresentationSerializerTests, ContentSetItemSerializationNoClassSet)
     {
-    rapidjson::Document values(rapidjson::kObjectType);
-    rapidjson::Document displayValues(rapidjson::kObjectType);
-    ContentSetItemPtr contentSetItem = ContentSetItem::Create({}, { ECClassInstanceKey() }, *LabelDefinition::Create(), "",
-        bmap<Utf8String, bvector<ContentSetItemPtr>>(), std::move(values), std::move(displayValues),
+    auto valuesAllocator = std::make_unique<rapidjson::Document::AllocatorType>();
+    auto values = std::make_unique<rapidjson::Document>(rapidjson::kObjectType, valuesAllocator.get());
+    auto displayValuesAllocator = std::make_unique<rapidjson::Document::AllocatorType>();
+    auto displayValues = std::make_unique<rapidjson::Document>(rapidjson::kObjectType, valuesAllocator.get());
+
+    ContentSetItemPtr contentSetItem = ContentSetItem::Create({}, { ECClassInstanceKey() }, *LabelDefinition::Create(), "", bmap<Utf8String, bvector<ContentSetItemPtr>>(), 
+        std::make_pair(std::move(valuesAllocator), std::move(values)), std::make_pair(std::move(displayValuesAllocator), std::move(displayValues)),
         bvector<Utf8String>(), bmap<ContentSetItem::FieldPropertyIdentifier, bvector<ECClassInstanceKey>>());
+
     rapidjson::Document actual = contentSetItem->AsJson(ContentSetItem::SerializationFlags::SERIALIZE_ClassInfo);
 
     rapidjson::Document expected;
@@ -2052,11 +2057,15 @@ TEST_F(DefaultECPresentationSerializerTests, ContentSerialization)
     ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, *PresentationRuleSet::CreateInstance("test ruleset id"),
         RulesetVariables(), *NavNodeKeyListContainer::Create(bvector<NavNodeKeyCPtr>{}));
 
-    rapidjson::Document values(rapidjson::kObjectType);
-    rapidjson::Document displayValues(rapidjson::kObjectType);
-    ContentSetItemPtr contentSetItem = ContentSetItem::Create({}, { primaryKey }, *LabelDefinition::Create(), "",
-        bmap<Utf8String, bvector<ContentSetItemPtr>>(), std::move(values), std::move(displayValues),
+    auto valuesAllocator = std::make_unique<rapidjson::Document::AllocatorType>();
+    auto values = std::make_unique<rapidjson::Document>(rapidjson::kObjectType, valuesAllocator.get());
+    auto displayValuesAllocator = std::make_unique<rapidjson::Document::AllocatorType>();
+    auto displayValues = std::make_unique<rapidjson::Document>(rapidjson::kObjectType, valuesAllocator.get());
+
+    ContentSetItemPtr contentSetItem = ContentSetItem::Create({}, { primaryKey }, *LabelDefinition::Create(), "", bmap<Utf8String, bvector<ContentSetItemPtr>>(),
+        std::make_pair(std::move(valuesAllocator), std::move(values)), std::make_pair(std::move(displayValuesAllocator), std::move(displayValues)),
         bvector<Utf8String>(), bmap<ContentSetItem::FieldPropertyIdentifier, bvector<ECClassInstanceKey>>());
+
     RefCountedPtr<TestContentDataSource> dataSource = TestContentDataSource::Create();
     dataSource->AddContentSetItem(contentSetItem);
 

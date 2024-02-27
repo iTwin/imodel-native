@@ -193,6 +193,8 @@ private:
     ClassMappingStatus MapClass(SchemaImportContext&, ClassMappingInfo const&) const;
     ClassMappingStatus MapDerivedClasses(SchemaImportContext&, ECN::ECClassCR baseClass) const;
     BentleyStatus SaveDbSchema(SchemaImportContext&) const;
+    BentleyStatus CheckForPerTableColumnLimit() const;
+    BentleyStatus CheckForSelectWildCardLimit() const;
     BentleyStatus CanCreateOrUpdateRequiredTables() const;
     BentleyStatus FindIndexes(std::vector<DbIndex const*>& indexes) const;
     BentleyStatus LoadIndexesSQL(std::map<Utf8String, Utf8String, CompareIUtf8Ascii>& sqliteIndexes) const;
@@ -321,7 +323,7 @@ struct SchemaManager::Dispatcher final
         TableSpaceSchemaManager const* GetManager(Utf8CP tableSpaceName) const;
 
     public:
-        Dispatcher(ECDbCR ecdb, BeMutex& mutex) : m_ecdb(ecdb), m_mutex(mutex) { InitMain(); }
+        Dispatcher(ECDbCR ecdb, BeMutex& mutex) : m_ecdb(ecdb), m_mutex(mutex), m_unsupportedClassesLoaded(false), m_unsupportedClassIdCache() { InitMain(); }
         ~Dispatcher() {}
 
         MainSchemaManager const& Main() const { BeAssert(m_main != nullptr); return *m_main; }

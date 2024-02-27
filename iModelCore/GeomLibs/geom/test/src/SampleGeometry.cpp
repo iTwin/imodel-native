@@ -243,6 +243,27 @@ PolyfaceHeaderPtr SphereMesh(DPoint3dCR origin, double radius, double radianAngl
     return builder->Add(sphere) ? builder->GetClientMeshPtr() : nullptr;    // NOTE: the mesh has degenerate facets!
     }
 
+/**
+ * Make two origin-centered loops (diamond, circle), form parity region, triangulate, return mesh.
+ * @param diagonal length of diagonal of the square diamond (measured along the x-axis)
+ * @param diameter length of diameter of the circle
+ * @param options how to facet the region
+ */
+PolyfaceHeaderPtr DiamondAndCircleParityRegionMesh(double diagonal, double diameter, IFacetOptionsP options)
+    {
+    double side = 0.5 * diagonal;
+    bvector<DPoint3d> diamondPts{{side,0,0}, {0,side,0}, {-side,0,0}, {0,-side,0}};
+    double radius = 0.5 * diameter;
+    DEllipse3d hole = DEllipse3d::FromCenterRadiusXY({0,0,0}, radius);
+    CurveVectorPtr region = CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion);
+    auto diamondIsOuter = diameter < 0.5 * sqrt(2) * diagonal;
+    region->Add(CurveVector::CreateLinear(diamondPts, diamondIsOuter ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Inner));
+    region->Add(CurveVector::CreateDisk(hole, diamondIsOuter ? CurveVector::BOUNDARY_TYPE_Inner : CurveVector::BOUNDARY_TYPE_Outer));
+    auto builder = PolyfaceConstruction::Create(options ? *options : *IFacetOptions::Create());
+    builder->AddRegion(*region);
+    return builder->GetClientMeshPtr();
+    }
+
 bvector<DPoint3d> CreateL
 (
 double x0,  // x coordinate at point 0,5,6

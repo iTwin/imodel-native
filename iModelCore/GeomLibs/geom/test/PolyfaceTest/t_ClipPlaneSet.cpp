@@ -532,12 +532,13 @@ void TestClipper (bvector<DPoint3d> const &points, AlternatingConvexClipTreeNode
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RecursiveClipSets, Test1)
     {
-    for (size_t numPoints : bvector<size_t>{5, 8, 12, 15, 23, 37, 67})
+    for (size_t numPoints : {5, 8, 12, 15, 23, 37, 67})
         {
         SaveAndRestoreCheckTransform shifter(10,0,0);
         bvector<DPoint3d> points;
         SampleGeometryCreator::StrokeUnitCircle (points, numPoints);
         points.pop_back ();
+        --numPoints;
         double f0 = 0.4;
         double f = 0.3;
         double af = 1.4;
@@ -2373,9 +2374,7 @@ TEST(ClipPlaneSet,ClipNoneBoundary)
     CurveVectorPtr curve = CurveVector::CreateLinear(poly1, boundaryType);
     // clipper
     bvector<DPoint3d> poly2 {{-7,-7,0},{7,-7,0},{7,7,0},{-7,7,0},{-7,-7,0}};
-    ConvexClipPlaneSet convexClipPlaneSet;
-    convexClipPlaneSet.ReloadSweptConvexPolygon(poly2, DVec3d::From(0, 0, 1), 0);
-    ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
+    ClipPlaneSet clipPlaneSet = ClipPlaneSet::FromSweptPolygon(poly2.data(), poly2.size());
     // perform the clip
     bvector<CurveVectorPtr> clippedRegion;
     bool ret = clipPlaneSet.ClipCurveVector(*curve, clippedRegion);
@@ -2390,14 +2389,12 @@ TEST(ClipPlaneSet,ClipOpenBoundary)
     // curve
     bvector<DPoint3d> poly1 {{0,10,0},{-10,0,0},{0,-10,0},{10,0,0},{0,10,0}};
     Check::SaveTransformed(poly1);
-    CurveVector::BoundaryType boundaryType = CurveVector::BoundaryType::BOUNDARY_TYPE_Open;
+    CurveVector::BoundaryType boundaryType = CurveVector::BOUNDARY_TYPE_Open;
     CurveVectorPtr curve = CurveVector::CreateLinear(poly1, boundaryType);
     // clipper
     bvector<DPoint3d> poly2 {{-7,-7,0},{7,-7,0},{7,7,0},{-7,7,0},{-7,-7,0}};
     Check::SaveTransformed(poly2);
-    ConvexClipPlaneSet convexClipPlaneSet;
-    convexClipPlaneSet.ReloadSweptConvexPolygon(poly2, DVec3d::From(0, 0, 1), 0);
-    ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
+    ClipPlaneSet clipPlaneSet = ClipPlaneSet::FromSweptPolygon(poly2.data(), poly2.size());
     // perform the clip
     bvector<CurveVectorPtr> clippedRegion;
     bool ret = clipPlaneSet.ClipCurveVector(*curve, clippedRegion);
@@ -2421,9 +2418,7 @@ TEST(ClipPlaneSet,ClipNotOpenBoundary)
     // clipper
     bvector<DPoint3d> poly2 {{-7,-7,0},{7,-7,0},{7,7,0},{-7,7,0},{-7,-7,0}};
     Check::SaveTransformed(poly2);
-    ConvexClipPlaneSet convexClipPlaneSet;
-    convexClipPlaneSet.ReloadSweptConvexPolygon(poly2, DVec3d::From(0, 0, 1), 0);
-    ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
+    ClipPlaneSet clipPlaneSet = ClipPlaneSet::FromSweptPolygon(poly2.data(), poly2.size());
     // perform the clip
     bvector<CurveVectorPtr> clippedRegion;
     bool ret = clipPlaneSet.ClipCurveVector(*curve, clippedRegion);
@@ -2515,9 +2510,7 @@ TEST(ClipPlaneSet,ClipPlanarAndNonPlanarOpenBoundary)
     Check::SaveTransformed(clipper);
     Check::Shift(0, -30, 0);
     Check::SaveTransformed(clipper);
-    ConvexClipPlaneSet convexClipPlaneSet;
-    convexClipPlaneSet.ReloadSweptConvexPolygon(clipper, DVec3d::From(0, 0, 1), 0);
-    ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
+    ClipPlaneSet clipPlaneSet = ClipPlaneSet::FromSweptPolygon(clipper.data(), clipper.size());
 
     // perform the clip on planar curve
     bvector<CurveVectorPtr> planarClippedRegion;
@@ -2554,14 +2547,12 @@ TEST(ClipPlaneSet,ClipOpenBoundaryInsideClipper)
     // curve
     bvector<DPoint3d> poly1 {{0,5,0},{-5,0,0},{0,-5,0},{5,0,0},{0,5,0}};
     Check::SaveTransformed(poly1);
-    CurveVector::BoundaryType boundaryType = CurveVector::BoundaryType::BOUNDARY_TYPE_Open;
+    CurveVector::BoundaryType boundaryType = CurveVector::BOUNDARY_TYPE_Open;
     CurveVectorPtr curve = CurveVector::CreateLinear(poly1, boundaryType);
     // clipper
     bvector<DPoint3d> poly2 {{-7,-7,0},{7,-7,0},{7,7,0},{-7,7,0},{-7,-7,0}};
     Check::SaveTransformed(poly2);
-    ConvexClipPlaneSet convexClipPlaneSet;
-    convexClipPlaneSet.ReloadSweptConvexPolygon(poly2, DVec3d::From(0, 0, 1), 0);
-    ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
+    ClipPlaneSet clipPlaneSet = ClipPlaneSet::FromSweptPolygon(poly2.data(), poly2.size());
     // perform the clip
     bvector<CurveVectorPtr> clippedRegion;
     bool ret = clipPlaneSet.ClipCurveVector(*curve, clippedRegion);
@@ -2580,14 +2571,12 @@ TEST(ClipPlaneSet,ClipOpenBoundaryOutsideClipper)
     // curve
     bvector<DPoint3d> poly1 {{0,20,0},{-20,0,0},{0,-20,0},{20,0,0},{0,20,0}};
     Check::SaveTransformed(poly1);
-    CurveVector::BoundaryType boundaryType = CurveVector::BoundaryType::BOUNDARY_TYPE_Open;
+    CurveVector::BoundaryType boundaryType = CurveVector::BOUNDARY_TYPE_Open;
     CurveVectorPtr curve = CurveVector::CreateLinear(poly1, boundaryType);
     // clipper
     bvector<DPoint3d> poly2 {{-7,-7,0},{7,-7,0},{7,7,0},{-7,7,0},{-7,-7,0}};
     Check::SaveTransformed(poly2);
-    ConvexClipPlaneSet convexClipPlaneSet;
-    convexClipPlaneSet.ReloadSweptConvexPolygon(poly2, DVec3d::From(0, 0, 1), 0);
-    ClipPlaneSet clipPlaneSet(convexClipPlaneSet);
+    ClipPlaneSet clipPlaneSet = ClipPlaneSet::FromSweptPolygon(poly2.data(), poly2.size());
     // perform the clip
     bvector<CurveVectorPtr> clippedRegion;
     bool ret = clipPlaneSet.ClipCurveVector(*curve, clippedRegion);
@@ -2596,6 +2585,58 @@ TEST(ClipPlaneSet,ClipOpenBoundaryOutsideClipper)
     for (CurveVectorPtr clippedCurve : clippedRegion)
         Check::SaveTransformed(*clippedCurve);
     Check::ClearGeometry("ClipPlaneSet.ClipOpenBoundaryOutsideClipper");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ClipPlaneSet,ClipOpenBoundaryWith2Parts)
+    {
+    // curve
+    bvector<DPoint3d> poly1 {{-20,0,0},{0,-20,0},{20,0,0},{0,20,0},{0,5,0},{5,0,0},{0,-5,0},{-5,0,0},{0,5,0},{0,20,0},{-20,0,0}};
+    Check::SaveTransformed(poly1);
+    CurveVector::BoundaryType boundaryType = CurveVector::BOUNDARY_TYPE_Open;
+    CurveVectorPtr curve = CurveVector::CreateLinear(poly1, boundaryType);
+    // clipper
+    bvector<DPoint3d> poly2 {{-7,-7,0},{7,-7,0},{7,7,0},{-7,7,0},{-7,-7,0}};
+    Check::SaveTransformed(poly2);
+    ClipPlaneSet clipPlaneSet = ClipPlaneSet::FromSweptPolygon(poly2.data(), poly2.size());
+    // perform the clip
+    bvector<CurveVectorPtr> clippedRegion;
+    bool ret = clipPlaneSet.ClipCurveVector(*curve, clippedRegion);
+    Check::Shift(30,0,0);
+    Check::True(ret);
+    for (CurveVectorPtr clippedCurve : clippedRegion)
+        Check::SaveTransformed(*clippedCurve);
+    Check::ClearGeometry("ClipPlaneSet.ClipOpenBoundaryWith2Parts");
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(ClipPlaneSet,ClipParityRegionWith2Parts)
+    {
+    // curve
+    bvector<DPoint3d> poly1 {{-20,0,0},{0,-20,0},{20,0,0},{0,20,0},{-20,0,0}};
+    bvector<DPoint3d> poly2 {{0,5,0},{5,0,0},{0,-5,0},{-5,0,0},{0,5,0}};
+    Check::SaveTransformed(poly1);
+    Check::SaveTransformed(poly2);
+    CurveVectorPtr outerLoop = CurveVector::CreateLinear(poly1, CurveVector::BOUNDARY_TYPE_Outer);
+    CurveVectorPtr holeLoop = CurveVector::CreateLinear(poly2, CurveVector::BOUNDARY_TYPE_Inner);
+    CurveVectorPtr region = CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion);
+    region->push_back(ICurvePrimitive::CreateChildCurveVector(outerLoop));
+    region->push_back(ICurvePrimitive::CreateChildCurveVector(holeLoop));
+    // clipper
+    bvector<DPoint3d> poly3 {{-7,-7,0},{7,-7,0},{7,7,0},{-7,7,0},{-7,-7,0}};
+    Check::SaveTransformed(poly3);
+    ClipPlaneSet clipPlaneSet = ClipPlaneSet::FromSweptPolygon(poly3.data(), poly3.size());
+    // perform the clip
+    bvector<CurveVectorPtr> clippedRegion;
+    bool ret = clipPlaneSet.ClipCurveVector(*region, clippedRegion);
+    Check::Shift(30,0,0);
+    Check::True(ret);
+    for (CurveVectorPtr clippedCurve : clippedRegion)
+        Check::SaveTransformed(*clippedCurve);
+    Check::ClearGeometry("ClipPlaneSet.ClipParityRegionWith2Parts");
     }
 
 /*---------------------------------------------------------------------------------**//**

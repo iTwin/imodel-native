@@ -38,6 +38,9 @@ private:
 
     BE_SQLITE_EXPORT ChangeSet::ConflictResolution _OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) override;
 
+protected:
+    bvector<BeFileName> const& GetFiles() const { return m_files; }
+
 public:
     virtual ~ChangesetFileReaderBase(){}
     bool _IsEmpty() const override { return m_files.size() == 0; }

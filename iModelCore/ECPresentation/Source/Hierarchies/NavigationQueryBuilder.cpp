@@ -14,6 +14,7 @@
 #include "NavNodeProviders.h"
 #include "NavNodesDataSource.h"
 #include "NavNodesCache.h"
+#include "NavNodesHelper.h"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -702,19 +703,8 @@ private:
     void Init(NavNodeCP node)
         {
         m_parentNode = node;
-        m_parentInstanceNode = m_parentNode;
         m_parentGrouping = nullptr;
-
-        while (m_parentInstanceNode.IsValid() && nullptr == m_parentInstanceNode->GetKey()->AsECInstanceNodeKey())
-            {
-            auto parentIds = NavNodeExtendedData(*m_parentInstanceNode).GetVirtualParentIds();
-            if (parentIds.empty())
-                {
-                m_parentInstanceNode = nullptr;
-                break;
-                }
-            m_parentInstanceNode = m_queryBuilderParams.GetNodesCache().GetNode(parentIds.front()).get();
-            }
+        m_parentInstanceNode = node ? HierarchiesInstanceFilteringHelper::GetParentInstanceNode(m_queryBuilderParams.GetNodesCache(), *node) : nullptr;
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -1033,134 +1023,15 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    static bset<unsigned> GetUsedParentInstanceLevels(Utf8StringCR instanceFilter)
+    static void ApplyParentFiltering(ComplexQueryBuilder& query, bvector<HierarchiesInstanceFilteringHelper::ParentClassInstanceIds> const& filters)
         {
-        bset<unsigned> levels;
-        size_t startPos = 0, endPos = 0;
-        while (Utf8String::npos != (endPos = instanceFilter.find("parent.", endPos)))
+        for (auto const& filter : filters)
             {
-            endPos += 7; // strlen("parent.") = 7
-            startPos = instanceFilter.find("parent", startPos);
-            Utf8String selector(instanceFilter.begin() + startPos, instanceFilter.begin() + endPos);
-            startPos = endPos;
-            unsigned count = 1;
-            for (Utf8Char const& c : selector)
-                {
-                if (c == '_')
-                    count++;
-                }
-            levels.insert(count);
+            query.From(filter.selectClass);
+
+            ValuesFilteringHelper helper(filter.instanceIds);
+            query.Where(helper.CreateWhereClause(Utf8PrintfString("[%s].[ECInstanceId]", filter.selectClass.GetAlias().c_str()).c_str()).c_str(), helper.CreateBoundValues());
             }
-        return levels;
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    static bvector<NavNodeCPtr> GetParentInstanceNodesByLevel(IHierarchyCacheCR nodesCache, bvector<NavNodeCPtr> currInstanceNodes, unsigned currNodeLevel, unsigned targetNodeLevel)
-        {
-        bvector<NavNodeCPtr> curr = currInstanceNodes;
-        while (!curr.empty() && currNodeLevel < targetNodeLevel)
-            {
-            bset<BeGuid> parentIds;
-            for (auto const& currNode : curr)
-                ContainerHelpers::Push(parentIds, NavNodeExtendedData(*currNode).GetVirtualParentIds());
-
-            curr.clear();
-            for (auto const& parentId : parentIds)
-                {
-                NavNodeCPtr parentNode = nodesCache.GetNode(parentId);
-                if (parentNode.IsNull())
-                    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, "Failed to find parent node by ID");
-                curr.push_back(parentNode);
-                }
-
-            if (ContainerHelpers::Contains(curr, [](auto const& node) {return node->GetKey()->AsECInstanceNodeKey();}))
-                ++currNodeLevel;
-            }
-        return curr;
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    static bset<ECClassCP> GetInstanceKeyClasses(bvector<ECClassInstanceKey> const& keys)
-        {
-        bset<ECClassCP> classes;
-        for (ECClassInstanceKey const& key : keys)
-            classes.insert(key.GetClass());
-        return classes;
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    static bvector<ECInstanceId> GetInstanceIdsWithClass(bvector<ECClassInstanceKey> const& keys, ECClassCR ecClass)
-        {
-        bvector<ECInstanceId> ids;
-        for (ECClassInstanceKeyCR key : keys)
-            {
-            if (key.GetClass() == &ecClass)
-                ids.push_back(key.GetId());
-            }
-        return ids;
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    static BentleyStatus AppendParents(ComplexQueryBuilder& query, bset<unsigned> const& usedParents,
-        NavigationQueryBuilderParameters const& params, NavNodeCR parentNode)
-        {
-        bvector<NavNodeCPtr> previousParents = { &parentNode };
-        unsigned previousLevel = 1;
-        Utf8String parentAlias = "parent";
-        for (unsigned targetLevel : usedParents)
-            {
-            bvector<NavNodeCPtr> parentInstanceNodes = GetParentInstanceNodesByLevel(params.GetNodesCache(), previousParents, previousLevel, targetLevel);
-            bvector<ECClassInstanceKey> parentInstanceKeys;
-            for (NavNodeCPtr const& parentInstanceNode : parentInstanceNodes)
-                {
-                ECInstancesNodeKey const& parentNodeKey = *parentInstanceNode->GetKey()->AsECInstanceNodeKey();
-                ContainerHelpers::Push(parentInstanceKeys, parentNodeKey.GetInstanceKeys());
-                }
-            if (parentInstanceKeys.empty())
-                {
-                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Hierarchies, Utf8PrintfString("Didn't find any parent instance keys for requested parent '%s' and target level %d",
-                    BeRapidJsonUtilities::ToString(parentNode.GetKey()->AsJson()).c_str(), (int)targetLevel));
-                }
-
-            bset<ECClassCP> parentClasses = GetInstanceKeyClasses(parentInstanceKeys);
-            ECClassCP parentClass = *parentClasses.begin();
-            if (parentClasses.size() > 1)
-                {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_WARNING, Utf8PrintfString("Used parent instance node represents instances of more than 1 ECClass. "
-                    "Using just the first one: '%s'.", parentClass->GetFullName()));
-                }
-            for (unsigned i = previousLevel; i < targetLevel; ++i)
-                parentAlias.append("_parent");
-            SelectClass<ECClass> parentSelectClass(*parentClass, parentAlias, false);
-
-            query.From(parentSelectClass);
-
-            ValuesFilteringHelper helper(GetInstanceIdsWithClass(parentInstanceKeys, *parentClass));
-            query.Where(helper.CreateWhereClause(Utf8PrintfString("[%s].[ECInstanceId]", parentAlias.c_str()).c_str()).c_str(), helper.CreateBoundValues());
-            OnSelected(parentSelectClass, params);
-
-            previousLevel = targetLevel;
-            previousParents = parentInstanceNodes;
-            }
-        return SUCCESS;
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    static Utf8String FormatInstanceFilter(Utf8StringCR filter)
-        {
-        Utf8String formattedFilter(filter);
-        formattedFilter.ReplaceAll(".parent", "_parent");
-        return formattedFilter;
         }
 
 public:
@@ -1182,10 +1053,12 @@ public:
             if (!instanceFilterDef || instanceFilterDef->GetExpression().empty())
                 continue;
 
-            Utf8String instanceFilter = FormatInstanceFilter(instanceFilterDef->GetExpression());
-            bset<unsigned> usedParentInstanceLevels = GetUsedParentInstanceLevels(instanceFilter);
-            if (!usedParentInstanceLevels.empty() && (!parentInstanceNode || SUCCESS != AppendParents(query, usedParentInstanceLevels, params, *parentInstanceNode)))
-                continue;
+            auto parentInstanceFilteringInfo = HierarchiesInstanceFilteringHelper::CreateParentInstanceFilteringInfo(params.GetNodesCache(),
+                parentInstanceNode, instanceFilterDef->GetExpression());
+            ApplyParentFiltering(query, parentInstanceFilteringInfo.classInstanceIds);
+
+            for (auto const& filter : parentInstanceFilteringInfo.classInstanceIds)
+                OnSelected(filter.selectClass, params);
 
             for (RelatedClassPath relatedInstancePath : instanceFilterDef->GetRelatedInstances())
                 {
@@ -1202,10 +1075,14 @@ public:
             ECExpressionContextsProvider::NodeRulesContextParameters contextParams(parentNode, params.GetConnection(),
                 params.GetRulesetVariables(), params.GetUsedVariablesListener());
             auto expressionContext = ECExpressionContextsProvider::GetNodeRulesContext(contextParams);
-            query.Where(ECExpressionsHelper(params.GetECExpressionsCache()).ConvertToECSql(instanceFilter, nullptr, expressionContext.get()));
+            query.Where(ECExpressionsHelper(params.GetECExpressionsCache()).ConvertToECSql(parentInstanceFilteringInfo.modifiedInstanceFilter,
+                nullptr, expressionContext.get()));
 
             if (nullptr != params.GetUsedClassesListener())
-                UsedClassesHelper::NotifyListenerWithUsedClasses(*params.GetUsedClassesListener(), params.GetSchemaHelper(), instanceFilter);
+                {
+                UsedClassesHelper::NotifyListenerWithUsedClasses(*params.GetUsedClassesListener(), params.GetSchemaHelper(),
+                    parentInstanceFilteringInfo.modifiedInstanceFilter);
+                }
             }
         }
 };
@@ -2831,19 +2708,36 @@ static void AssignRelatedInstanceClasses(bvector<SelectQueryInfo>& infos, ChildN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+static bvector<ECClassCP> GetInstanceLabelOverrideClasses(ECSchemaHelper const& schemaHelper, bvector<InstanceLabelOverrideCP> const& overrides)
+    {
+    bvector<ECClassCP> uniqueClasses;
+    for (auto ovr : overrides)
+        {
+        auto ovrClass = schemaHelper.GetECClass(ovr->GetClassName().c_str());
+        if (!ovrClass || ContainerHelpers::Contains(uniqueClasses, ovrClass))
+            continue;
+
+        uniqueClasses.push_back(ovrClass);
+        }
+    return uniqueClasses;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TSpecification>
 static bvector<SelectQueryInfo> CreateSelectInfos(TSpecification const& spec, bvector<SelectClassWithExcludes<ECClass>> const& selectClasses, GroupingResolver const& resolver,
-    bmap<ECClassCP, bvector<InstanceLabelOverride const*>> const& instanceLabelOverrides, NavNodeCP parentNode,
+    bvector<InstanceLabelOverrideCP> const& instanceLabelOverrides, NavNodeCP parentNode,
     bvector<InstanceFilterDefinitionCP> const& instanceFilterDefinitions, QueryClauseAndBindings instanceFilterECSqlExpression,
     NavigationQueryBuilderParameters const& params, ECClassUseCounter& relationshipUseCounter)
     {
-    bvector<ECClassCP> instanceLabelOverrideClasses = ContainerHelpers::GetMapKeys(instanceLabelOverrides);
+    bvector<ECClassCP> instanceLabelOverrideClasses = GetInstanceLabelOverrideClasses(params.GetSchemaHelper(), instanceLabelOverrides);
     bvector<SelectClassWithExcludes<ECClass>> selects = ProcessSelectClassesBasedOnCustomizationRules(selectClasses, resolver,
         instanceLabelOverrideClasses, parentNode, params);
     bvector<SelectQueryInfo> selectInfos = ContainerHelpers::TransformContainer<bvector<SelectQueryInfo>>(selects, [&](auto const& sc)
         {
         SelectQueryInfo info(sc);
-        info.SetLabelOverrideValueSpecs(QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(instanceLabelOverrides, info.GetSelectClass().GetClass()));
+        info.SetLabelOverrideValueSpecs(QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(params.GetSchemaHelper(), instanceLabelOverrides, info.GetSelectClass().GetClass()));
         info.SetInstanceFilterDefinitions(instanceFilterDefinitions);
         info.SetInstanceFilterECSqlExpression(instanceFilterECSqlExpression);
         return info;
@@ -2856,10 +2750,10 @@ static bvector<SelectQueryInfo> CreateSelectInfos(TSpecification const& spec, bv
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bvector<SelectQueryInfo> CreateSelectInfos(RelatedInstanceNodesSpecification const& spec, bvector<RelatedClassPath> const& pathsFromParentToSelectClass, GroupingResolver const& resolver,
-    bmap<ECClassCP, bvector<InstanceLabelOverride const*>> const& instanceLabelOverrides, NavNodeCP parentNode, bvector<ECInstanceId> const& parentInstanceIds,
+    bvector<InstanceLabelOverrideCP> const& instanceLabelOverrides, NavNodeCP parentNode, bvector<ECInstanceId> const& parentInstanceIds,
     bvector<InstanceFilterDefinitionCP> const& instanceFilterDefinitions, NavigationQueryBuilderParameters const& params, ECClassUseCounter& relationshipUseCounter)
     {
-    bvector<ECClassCP> instanceLabelOverrideClasses = ContainerHelpers::GetMapKeys(instanceLabelOverrides);
+    bvector<ECClassCP> instanceLabelOverrideClasses = GetInstanceLabelOverrideClasses(params.GetSchemaHelper(), instanceLabelOverrides);
     bvector<RelatedClassPath> processedPathsFromParentToSelectClass = ProcessSelectPathsBasedOnCustomizationRules(pathsFromParentToSelectClass, resolver,
         instanceLabelOverrideClasses, parentNode, params);
     bvector<SelectQueryInfo> selectInfos = ContainerHelpers::TransformContainer<bvector<SelectQueryInfo>>(processedPathsFromParentToSelectClass, [&](RelatedClassPath const& path)
@@ -2867,7 +2761,7 @@ static bvector<SelectQueryInfo> CreateSelectInfos(RelatedInstanceNodesSpecificat
         SelectQueryInfo info(path.back().GetTargetClass());
         info.GetSelectClass().SetAlias("this");
         info.SetInstanceFilterDefinitions(instanceFilterDefinitions);
-        info.SetLabelOverrideValueSpecs(QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(instanceLabelOverrides, info.GetSelectClass().GetClass()));
+        info.SetLabelOverrideValueSpecs(QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(params.GetSchemaHelper(), instanceLabelOverrides, info.GetSelectClass().GetClass()));
         info.GetPathFromParentToSelectClass() = path;
         for (RelatedClass& rc : info.GetPathFromParentToSelectClass())
             rc.SetIsTargetOptional(false);
@@ -2977,8 +2871,7 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
         }
 
     // determine instance label overrides
-    bmap<ECClassCP, bvector<InstanceLabelOverride const*>> instanceLabelOverrides = QueryBuilderHelpers::GetLabelOverrideValuesMap(m_params.GetSchemaHelper(),
-        m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(IRulesPreprocessor::CustomizationRuleBySpecParameters(specification)));
+    bvector<InstanceLabelOverrideCP> instanceLabelOverrides = m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(IRulesPreprocessor::CustomizationRuleBySpecParameters(specification));
 
     // create select infos
     bvector<SelectQueryInfo> selectInfos = CreateSelectInfos(specification, selectClasses, groupingResolver,
@@ -3030,8 +2923,7 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
         }
 
     // determine instance label overrides
-    bmap<ECClassCP, bvector<InstanceLabelOverride const*>> instanceLabelOverrides = QueryBuilderHelpers::GetLabelOverrideValuesMap(m_params.GetSchemaHelper(),
-        m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(IRulesPreprocessor::CustomizationRuleBySpecParameters(specificationHash)));
+    bvector<InstanceLabelOverrideCP> instanceLabelOverrides = m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(IRulesPreprocessor::CustomizationRuleBySpecParameters(specification));
 
     // get the parent instance keys
     bvector<ECClassInstanceKey> const& parentInstanceKeys = groupingResolver.GetParentInstanceNode()->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys();
@@ -3125,8 +3017,7 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
         }
 
     // determine instance label overrides
-    bmap<ECClassCP, bvector<InstanceLabelOverride const*>> instanceLabelOverrides = QueryBuilderHelpers::GetLabelOverrideValuesMap(m_params.GetSchemaHelper(),
-        m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(IRulesPreprocessor::CustomizationRuleBySpecParameters(specification)));
+    bvector<InstanceLabelOverrideCP> instanceLabelOverrides = m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(IRulesPreprocessor::CustomizationRuleBySpecParameters(specification));
 
     // preserve specification instance filter
     auto specificationInstanceFilter = std::make_unique<InstanceFilterDefinition>(specification.GetInstanceFilter());
@@ -3290,9 +3181,7 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
     ECClassUseCounter classesCounter;
     GroupingResolver groupingResolver(m_params, parentNode, specification.GetHash(), specification);
     RootQueryContext queryContext(groupingResolver);
-
-    bmap<ECClassCP, bvector<InstanceLabelOverride const*>> instanceLabelOverrides = QueryBuilderHelpers::GetLabelOverrideValuesMap(m_params.GetSchemaHelper(),
-        m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(IRulesPreprocessor::CustomizationRuleBySpecParameters(specification)));
+    bvector<InstanceLabelOverrideCP> instanceLabelOverrides = m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(IRulesPreprocessor::CustomizationRuleBySpecParameters(specification));
 
     // create a query for each class
     for (QuerySpecification* querySpecification : specification.GetQuerySpecifications())

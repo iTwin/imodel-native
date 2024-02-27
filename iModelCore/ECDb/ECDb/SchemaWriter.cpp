@@ -1023,7 +1023,7 @@ BentleyStatus SchemaWriter::ImportFormatComposite(Context& ctx, ECFormatCR forma
         if (SUCCESS != ImportUnit(ctx, *unit))
             return ERROR;
 
-        Nullable<Utf8String> label = spec.HasMajorLabel() ? spec.GetMajorLabel() : nullptr;
+        auto label = spec.HasMajorLabel() ? Nullable<Utf8String>(spec.GetMajorLabel()) : nullptr;
         if (SUCCESS != insertUnit(*stmt, formatId, label, *unit, ordinal))
             return ERROR;
         }
@@ -1034,7 +1034,7 @@ BentleyStatus SchemaWriter::ImportFormatComposite(Context& ctx, ECFormatCR forma
         if (SUCCESS != ImportUnit(ctx, *unit))
             return ERROR;
 
-        Nullable<Utf8String> label = spec.HasMiddleLabel() ? spec.GetMiddleLabel() : nullptr;
+        auto label = spec.HasMiddleLabel() ? Nullable<Utf8String>(spec.GetMiddleLabel()) : nullptr;
         if (SUCCESS != insertUnit(*stmt, formatId, label, *unit, ordinal))
             return ERROR;
         }
@@ -1046,7 +1046,7 @@ BentleyStatus SchemaWriter::ImportFormatComposite(Context& ctx, ECFormatCR forma
         if (SUCCESS != ImportUnit(ctx, *unit))
             return ERROR;
 
-        Nullable<Utf8String> label = spec.HasMinorLabel() ? spec.GetMinorLabel() : nullptr;
+        auto label = spec.HasMinorLabel() ? Nullable<Utf8String>(spec.GetMinorLabel()) : nullptr;
         if (SUCCESS != insertUnit(*stmt, formatId, label, *unit, ordinal))
             return ERROR;
         }
@@ -1058,7 +1058,7 @@ BentleyStatus SchemaWriter::ImportFormatComposite(Context& ctx, ECFormatCR forma
         if (SUCCESS != ImportUnit(ctx, *unit))
             return ERROR;
 
-        Nullable<Utf8String> label = spec.HasSubLabel() ? spec.GetSubLabel() : nullptr;
+        auto label = spec.HasSubLabel() ? Nullable<Utf8String>(spec.GetSubLabel()) : nullptr;
         if (SUCCESS != insertUnit(*stmt, formatId, label, *unit, ordinal))
             return ERROR;
         }
@@ -3408,6 +3408,31 @@ BentleyStatus SchemaWriter::DeleteCustomAttributeClass(Context& ctx, ECCustomAtt
     return SUCCESS;
     }
 
+namespace
+    {
+    Utf8String IsMajorVersionChangeAllowed(const EC::SchemaWriter::Context& ctx, const ECN::ECSchemaId schemaId, const bool isDynamicSchema)
+        {
+        auto errorMessage = "";
+        if (!ctx.IsMajorSchemaVersionChange(schemaId)) // Check if the schema "Read" version has been updated to allow the major change
+            errorMessage = "the 'Read' version number of the ECSchema was not incremented.";
+
+        else if (!ctx.AreMajorSchemaVersionChangesAllowed()) // Check if the major version changes are disabled for all schemas with SchemaImportOptions::DisallowMajorSchemaUpgrade (default behavior)
+            {
+            // Major version changes are disabled. Check if schema is dynamic to decide if major version changes can still be done.
+            if (isDynamicSchema)
+                {
+                if (!ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas()) // Schema is dynamic, check if major schema changed enabled for dynamic schemas with SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas
+                    errorMessage = "major schema version changes have not been enabled for dynamic schemas.";
+                }
+            else
+                {
+                errorMessage = "major schema version changes are disabled for all schemas.";
+                }
+            }
+        return errorMessage;
+        }
+    };
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -3415,25 +3440,7 @@ BentleyStatus SchemaWriter::DeleteClass(Context& ctx, ClassChange& classChange, 
     {
     // Allow Major schema upgrade for dynamic schemas if AllowMajorSchemaUpgradeForDynamicSchemas import option is set irrespective of the DisallowMajorSchemaUpgrade import option
     // For more information about major schema upgrade rules and examples, see https://dev.azure.com/bentleycs/iModelTechnologies/_wiki/wikis/iModelTechnologies.wiki/36117/Major-Schema-Upgrades
-    Utf8String errorMessage = "";
-    if (!ctx.IsMajorSchemaVersionChange(deletedClass.GetSchema().GetId())) // Check if the schema "Read" version has been updated to allow the major change
-        errorMessage = "the 'Read' version number of the ECSchema was not incremented.";
-
-    else if (!ctx.AreMajorSchemaVersionChangesAllowed()) // Check if the major version changes are disabled for all schemas with SchemaImportOptions::DisallowMajorSchemaUpgrade (default behavior)
-        {
-        // Major version changes are disabled. Check if schema is dynamic to decide if major version changes can still be done.
-        if (isDynamicSchema)
-            {
-            if (!ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas()) // Schema is dynamic, check if major schema changed enabled for dynamic schemas with SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas
-                errorMessage = "major schema version changes have not been enabled for dynamic schemas.";
-            }
-        else
-            {
-            errorMessage = "major schema version changes are disabled for all schemas.";
-            }
-        }
-
-    if (!Utf8String::IsNullOrEmpty(errorMessage.c_str()))
+    if (const auto errorMessage = IsMajorVersionChangeAllowed(ctx, deletedClass.GetSchema().GetId(), isDynamicSchema); !Utf8String::IsNullOrEmpty(errorMessage.c_str()))
         {
         if (ctx.IgnoreIllegalDeletionsAndModifications())
             {
@@ -3607,25 +3614,7 @@ BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, PropertyChange& propert
     if (!isOverriddenProperty)
         {
         // Property is not overriden, hence major schema change rules will be applied
-        Utf8String errorMessage = "";
-        if (!ctx.IsMajorSchemaVersionChange(deletedProperty.GetClass().GetSchema().GetId())) // Check if the schema "Read" version has been updated to allow the major change
-            errorMessage = "the 'Read' version number of the ECSchema was not incremented.";
-
-        else if (!ctx.AreMajorSchemaVersionChangesAllowed()) // Check if the major version changes are disabled for all schemas with SchemaImportOptions::DisallowMajorSchemaUpgrade (default behavior)
-            {
-            // Major version changes are disabled. Check if schema is dynamic to decide if major version changes can still be done.
-            if (isDynamicSchema)
-                {
-                if (!ctx.IsMajorSchemaVersionChangeAllowedForDynamicSchemas()) // Schema is dynamic, check if major schema changed enabled for dynamic schemas with SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas
-                    errorMessage = "major schema version changes have not been enabled for dynamic schemas.";
-                }
-            else
-                {
-                errorMessage = "major schema version changes are disabled for all schemas.";
-                }
-            }
-
-        if (!Utf8String::IsNullOrEmpty(errorMessage.c_str()))
+        if (const auto errorMessage = IsMajorVersionChangeAllowed(ctx, deletedProperty.GetClass().GetSchema().GetId(), isDynamicSchema); !Utf8String::IsNullOrEmpty(errorMessage.c_str()))
             {
             if (ctx.IgnoreIllegalDeletionsAndModifications())
                 {
@@ -3644,8 +3633,7 @@ BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, PropertyChange& propert
                 ecClass.GetSchema().GetFullSchemaName().c_str(),
                 ecClass.GetName().c_str(),
                 deletedProperty.GetName().c_str(),
-                errorMessage.c_str()
-            );
+                errorMessage.c_str());
             return ERROR;
             }
         }
@@ -3869,6 +3857,55 @@ BentleyStatus SchemaWriter::UpdateClasses(Context& ctx, ClassChanges& classChang
     return SUCCESS;
     }
 
+BentleyStatus SchemaWriter::DeleteKindOfQuantity(Context& ctx, ECN::KindOfQuantityCR deletedKoQ, const bool isDynamicSchema)
+    {
+    // Check if major version change is allowed for given schema
+    if (const auto errorMessage = IsMajorVersionChangeAllowed(ctx, deletedKoQ.GetSchema().GetId(), isDynamicSchema); !Utf8String::IsNullOrEmpty(errorMessage.c_str()))
+        {
+        if (ctx.IgnoreIllegalDeletionsAndModifications())
+            {
+            ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0642, 
+                "Ignoring update error: ECSchema Upgrade failed. ECSchema %s: KindOfQuantity %s: Deleting KindOfQuantity from an ECSchema is not supported. Error suppressed, KindOfQuantity will not be deleted.",
+                deletedKoQ.GetSchema().GetFullSchemaName().c_str(), deletedKoQ.GetName().c_str());
+            return SUCCESS;
+            }
+
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0677,
+            "ECSchema Upgrade failed. ECSchema %s: Cannot delete KindOfQuantity '%s'. This is a major ECSchema change. %s", deletedKoQ.GetSchema().GetFullSchemaName().c_str(), deletedKoQ.GetName().c_str(), errorMessage.c_str());
+        return ERROR;
+        }
+
+    const auto koQId = deletedKoQ.GetId();
+
+    // The properties that are using the KoQ must be updated before we delete the actual KoQ, otherwise they will be dropped.
+    if (auto updatePropertyStmt = ctx.GetCachedStatement("UPDATE main." TABLE_Property " SET KindOfQuantityId=NULL WHERE KindOfQuantityId=?");
+        updatePropertyStmt == nullptr || updatePropertyStmt->BindId(1, koQId) != BE_SQLITE_OK || updatePropertyStmt->Step() != BE_SQLITE_DONE)
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0677,
+            "ECSchema Upgrade failed. ECSchema %s: Failed to drop references to deleted KindOfQuantity '%s'", deletedKoQ.GetSchema().GetFullSchemaName().c_str(), deletedKoQ.GetName().c_str());
+        return ERROR;
+        }
+
+    // Delete the KoQ
+    Statement deleteStatement;
+    if (deleteStatement.Prepare(ctx.GetECDb(), "DELETE FROM main." TABLE_KindOfQuantity " WHERE Id=?") != BE_SQLITE_OK)
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0677,
+            "ECSchema Upgrade failed. ECSchema %s: Failed to delete KindOfQuantity '%s'", deletedKoQ.GetSchema().GetFullSchemaName().c_str(), deletedKoQ.GetName().c_str());
+        return ERROR;
+        }
+
+    deleteStatement.BindId(1, koQId);
+    if (deleteStatement.Step() != BE_SQLITE_DONE)
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0677,
+            "ECSchema Upgrade failed. ECSchema %s: Failed to delete KindOfQuantity '%s'", deletedKoQ.GetSchema().GetFullSchemaName().c_str(), deletedKoQ.GetName().c_str());
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -3885,16 +3922,8 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantities(Context& ctx, KindOfQuantityC
 
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
-            if (ctx.IgnoreIllegalDeletionsAndModifications())
-                {
-                ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0642, 
-                    "Ignoring update error: ECSchema Upgrade failed. ECSchema %s: KindOfQuantity %s: Deleting KindOfQuantity from an ECSchema is not supported. Error suppressed, KindOfQuantity will not be deleted.",
-                    oldSchema.GetFullSchemaName().c_str(), oldKoq->GetFullName().c_str());
+            if (DeleteKindOfQuantity(ctx, *oldKoq, newSchema.IsDynamicSchema()) == SUCCESS)
                 continue;
-                }
-
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0388,
-                "ECSchema Upgrade failed. ECSchema %s: KindOfQuantity %s: Deleting KindOfQuantity from an ECSchema is not supported.", oldSchema.GetFullSchemaName().c_str(), oldKoq->GetFullName().c_str());
             return ERROR;
             }
 
@@ -4472,6 +4501,58 @@ BentleyStatus SchemaWriter::VerifyEnumeratorChanges(Context& ctx, ECSchemaCR old
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::DeleteEnumeration(Context& ctx, ECN::ECEnumerationCR deletedEnum, bool isDynamicSchema)
+    {
+    // Check if major version change is allowed for given schema
+    if (const auto errorMessage = IsMajorVersionChangeAllowed(ctx, deletedEnum.GetSchema().GetId(), isDynamicSchema); !Utf8String::IsNullOrEmpty(errorMessage.c_str()))
+        {
+        if (ctx.IgnoreIllegalDeletionsAndModifications())
+            {
+            ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0652,
+                "Ignoring upgrade error: ECSchema Upgrade failed. ECSchema %s: ECEnumeration %s: Deleting ECEnumerations from an ECSchema is not supported. Error suppressed, Enumeration not deleted.",
+                deletedEnum.GetSchema().GetFullSchemaName().c_str(), deletedEnum.GetName().c_str());
+            return SUCCESS;
+            }
+
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0678,
+            "ECSchema Upgrade failed. ECSchema %s: Cannot delete ECEnumeration '%s'. This is a major ECSchema change. %s", deletedEnum.GetSchema().GetFullSchemaName().c_str(), deletedEnum.GetName().c_str(), errorMessage.c_str());
+        return ERROR;
+        }
+
+    const auto enumId = deletedEnum.GetId();
+
+    // The properties that are using the ECEnumeration must be updated before we delete the actual ECEnumeration, otherwise they will be dropped.
+    if (auto updatePropertyStmt = ctx.GetCachedStatement("UPDATE main." TABLE_Property " SET EnumerationId=NULL WHERE EnumerationId=?");
+        updatePropertyStmt == nullptr || updatePropertyStmt->BindId(1, enumId) != BE_SQLITE_OK || updatePropertyStmt->Step() != BE_SQLITE_DONE)
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0678,
+            "ECSchema Upgrade failed. ECSchema %s: Failed to drop references to deleted ECEnumeration '%s'", deletedEnum.GetSchema().GetFullSchemaName().c_str(), deletedEnum.GetName().c_str());
+        return ERROR;
+        }
+
+    // Delete the ECEnumeration
+    Statement deleteStatement;
+    if (deleteStatement.Prepare(ctx.GetECDb(), "DELETE FROM main." TABLE_Enumeration " WHERE Id=?") != BE_SQLITE_OK)
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0678,
+            "ECSchema Upgrade failed. ECSchema %s: Failed to delete ECEnumeration '%s'", deletedEnum.GetSchema().GetFullSchemaName().c_str(), deletedEnum.GetName().c_str());
+        return ERROR;
+        }
+
+    deleteStatement.BindId(1, enumId);
+    if (deleteStatement.Step() != BE_SQLITE_DONE)
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0678,
+            "ECSchema Upgrade failed. ECSchema %s: Failed to delete ECEnumeration '%s'", deletedEnum.GetSchema().GetFullSchemaName().c_str(), deletedEnum.GetName().c_str());
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateEnumerations(Context& ctx, EnumerationChanges& enumChanges, ECSchemaCR oldSchema, ECSchemaCR newSchema)
     {
     for (size_t i = 0; i < enumChanges.Count(); i++)
@@ -4482,17 +4563,8 @@ BentleyStatus SchemaWriter::UpdateEnumerations(Context& ctx, EnumerationChanges&
 
         if (change.GetOpCode() == ECChange::OpCode::Deleted)
             {
-            ECEnumerationCP ecEnum = oldSchema.GetEnumerationCP(change.GetChangeName());
-            if (ctx.IgnoreIllegalDeletionsAndModifications())
-                {
-                ctx.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0652,
-                    "Ignoring upgrade error: ECSchema Upgrade failed. ECSchema %s: ECEnumeration %s: Deleting ECEnumerations from an ECSchema is not supported. Error suppressed, Enumeration not deleted.",
-                    oldSchema.GetFullSchemaName().c_str(), ecEnum->GetFullName().c_str());
+            if (const auto ecEnum = oldSchema.GetEnumerationCP(change.GetChangeName()); ecEnum != nullptr && DeleteEnumeration(ctx, *ecEnum, newSchema.IsDynamicSchema()) == SUCCESS)
                 continue;
-                }
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0404,
-                "ECSchema Upgrade failed. ECSchema %s: ECEnumeration %s: Deleting ECEnumerations from an ECSchema is not supported.",
-                oldSchema.GetFullSchemaName().c_str(), ecEnum->GetFullName().c_str());
             return ERROR;
             }
 
@@ -5140,10 +5212,13 @@ BentleyStatus SchemaWriter::UpdateFormat(Context& ctx, FormatChange& change, ECS
             sqlUpdateBuilder.AddSetExp("CompositeSpec", SchemaPersistenceHelper::SerializeCompositeSpecWithoutUnits(*newVal.GetCompositeSpec()).c_str());
         }
 
-    FormatId formatId = oldVal.GetId();
-    sqlUpdateBuilder.AddWhereExp("Id", formatId.GetValue());
-    if (SUCCESS != sqlUpdateBuilder.ExecuteSql(ctx.GetECDb()))
-        return ERROR;
+    auto formatId = oldVal.GetId();
+    if (sqlUpdateBuilder.IsValid())
+        {
+        sqlUpdateBuilder.AddWhereExp("Id", formatId.GetValue());
+        if (SUCCESS != sqlUpdateBuilder.ExecuteSql(ctx.GetECDb()))
+            return ERROR;
+        }
 
     if (SUCCESS != UpdateFormatCompositeUnitLabel(ctx, formatId, compSpecChange.MajorLabel(), 0))
         return ERROR;

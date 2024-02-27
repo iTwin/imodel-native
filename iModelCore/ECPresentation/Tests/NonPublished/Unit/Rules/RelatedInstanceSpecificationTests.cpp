@@ -42,7 +42,7 @@ TEST_F(RelatedInstanceSpecificationTests, LoadsFromJsonDeprecated)
 /*---------------------------------------------------------------------------------**//**
 * @betest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RelatedInstanceSpecificationTests, LoadsFromJson)
+TEST_F(RelatedInstanceSpecificationTests, LoadsFromJsonWithPath)
     {
     static Utf8CP jsonString = R"({
         "relationshipPath": {
@@ -62,6 +62,32 @@ TEST_F(RelatedInstanceSpecificationTests, LoadsFromJson)
     EXPECT_STREQ("a:b", spec.GetRelationshipPath().GetSteps().front()->GetRelationshipClassName().c_str());
     EXPECT_STREQ("c:d", spec.GetRelationshipPath().GetSteps().front()->GetTargetClassName().c_str());
     EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Forward, spec.GetRelationshipPath().GetSteps().front()->GetRelationDirection());
+    EXPECT_STREQ("TestAlias", spec.GetAlias().c_str());
+    EXPECT_TRUE(spec.IsRequired());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RelatedInstanceSpecificationTests, LoadsFromJsonWithTargetInstances)
+    {
+    static Utf8CP jsonString = R"({
+        "targetInstances": {
+            "class": {"schemaName": "a", "className": "b"},
+            "instanceIds": ["0x1", "0x3"]
+        },
+        "alias": "TestAlias",
+        "isRequired": true
+    })";
+    BeJsDocument json(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    RelatedInstanceSpecification spec;
+    EXPECT_TRUE(spec.ReadJson(json));
+    ASSERT_EQ(0, spec.GetRelationshipPath().GetSteps().size());
+    ASSERT_TRUE(nullptr != spec.GetTargetInstancesSpecification());
+    EXPECT_STREQ("a:b", spec.GetTargetInstancesSpecification()->GetClassName().c_str());
+    EXPECT_EQ((bvector<ECInstanceId>{ ECInstanceId((uint64_t)1), ECInstanceId((uint64_t)3) }), spec.GetTargetInstancesSpecification()->GetInstanceIds());
     EXPECT_STREQ("TestAlias", spec.GetAlias().c_str());
     EXPECT_TRUE(spec.IsRequired());
     }
@@ -293,6 +319,24 @@ TEST_F(RelatedInstanceSpecificationTests, WritesToXmlWithIsRequiredAttribute)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RelatedInstanceSpecificationTests, WriteToJsonWithTargetInstances)
+    {
+    RelatedInstanceSpecification spec(std::make_unique<RelatedInstanceTargetInstancesSpecification>("a:b", bvector<ECInstanceId>{ ECInstanceId((uint64_t)4), ECInstanceId((uint64_t)5) }), "a", true);
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
+        "targetInstances": {
+            "class": {"schemaName": "a", "className": "b"},
+            "instanceIds": ["0x4", "0x5"]
+        },
+        "alias": "a",
+        "isRequired": true
+    })");
+    EXPECT_TRUE(expected.isExactEqual(json));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RelatedInstanceSpecificationTests, ComputesCorrectHashes)
@@ -306,6 +350,9 @@ TEST_F(RelatedInstanceSpecificationTests, ComputesCorrectHashes)
     // Make sure that copy has the same hash
     RelatedInstanceSpecification copySpec(defaultSpec);
     EXPECT_STREQ(DEFAULT_HASH, copySpec.GetHash().c_str());
+
+    RelatedInstanceSpecification specWithTargetInstances(std::make_unique<RelatedInstanceTargetInstancesSpecification>("", bvector<ECInstanceId>()), "", false);
+    EXPECT_STRNE(defaultSpec.GetHash().c_str(), specWithTargetInstances.GetHash().c_str());
 
     // TODO: test that each attribute affects the hash
     }

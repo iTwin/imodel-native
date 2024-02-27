@@ -448,10 +448,8 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_SetsMergeRes
     auto querySet = GetQueryBuilder().CreateQuerySet(spec, *descriptor);
     ValidateQueries(querySet, [&]()
         {
-        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::PropertyPane);
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::PropertyPane, GetDefaultFlags((int)ContentFlags::MergeResults));
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false), "");
-
-        descriptor->AddContentFlag(ContentFlags::MergeResults);
 
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("Prop")));
@@ -505,16 +503,15 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_SelectPointP
     {
     ECClassCP classA = GetECClass("A");
     ContentInstancesOfSpecificClassesSpecification spec(1, false, "", {CreateMultiSchemaClass({classA}, false)}, {}, false);
+    GetDescriptorBuilder().GetContext().SetContentFlagsCalculator([&](int initialFlags){return GetDefaultFlags(initialFlags) | (int)ContentFlags::DistinctValues;});
 
     ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
-    descriptor->AddContentFlag(ContentFlags::DistinctValues);
     ASSERT_TRUE(descriptor.IsValid());
 
     auto querySet = GetQueryBuilder().CreateQuerySet(spec, *descriptor);
     ValidateQueries(querySet, [&]()
         {
-        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
-        descriptor->AddContentFlag(ContentFlags::DistinctValues);
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Undefined, GetDefaultFlags((int)ContentFlags::DistinctValues));
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false), "");
 
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0));
@@ -550,10 +547,10 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_InstanceLabe
     ContentInstancesOfSpecificClassesSpecification spec(1, false, "", {CreateMultiSchemaClass({classA}, false)}, {}, false);
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, false, classA->GetFullName(), "Prop1"));
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(2, false, classA->GetFullName(), "Prop2"));
+    GetDescriptorBuilder().GetContext().SetContentFlagsCalculator([&](int initialFlags){return GetDefaultFlags(initialFlags) | (int)ContentFlags::ShowLabels;});
 
     ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());
-    descriptor->AddContentFlag(ContentFlags::ShowLabels);
 
     auto querySet = GetQueryBuilder().CreateQuerySet(spec, *descriptor);
     ValidateQueries(querySet, [&]()
@@ -563,15 +560,14 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_InstanceLabe
             new InstanceLabelOverridePropertyValueSpecification("Prop1")
             }));
 
-        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Undefined, GetDefaultFlags((int)ContentFlags::ShowLabels));
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false), "");
 
         ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0);
-        displayLabelField->SetLabelOverrideSpecs(CreateLabelOverrideSpecificationsMap(*classA, labelOverride));
+        displayLabelField->SetLabelOverrideSpecs({ &labelOverride });
         AddField(*descriptor, *displayLabelField);
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("Prop1")));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("Prop2")));
-        descriptor->AddContentFlag(ContentFlags::ShowLabels);
 
         SelectClass<ECClass> selectClass(*classA, "this", false);
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
@@ -598,10 +594,10 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_InstanceLabe
     ECClassCP classB = GetECClass("B");
     ContentInstancesOfSpecificClassesSpecification spec(1, false, "", {CreateMultiSchemaClass({classA, classB}, false)}, {}, false);
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, classA->GetFullName(), "PropA"));
+    GetDescriptorBuilder().GetContext().SetContentFlagsCalculator([&](int initialFlags){return GetDefaultFlags(initialFlags) | (int)ContentFlags::ShowLabels;});
 
     ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());
-    descriptor->AddContentFlag(ContentFlags::ShowLabels);
 
     auto querySet = GetQueryBuilder().CreateQuerySet(spec, *descriptor);
     ValidateQueries(querySet, [&]()
@@ -610,16 +606,15 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_InstanceLabe
             new InstanceLabelOverridePropertyValueSpecification("PropA")
             }));
 
-        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Undefined, GetDefaultFlags((int)ContentFlags::ShowLabels));
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false), "");
         descriptor->AddSelectClass(SelectClassInfo(*classB, "this", false), "");
 
         ContentDescriptor::DisplayLabelField* displayLabelField = new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0);
-        displayLabelField->SetLabelOverrideSpecs(CreateLabelOverrideSpecificationsMap(*classA, labelOverride));
+        displayLabelField->SetLabelOverrideSpecs({ &labelOverride });
         AddField(*descriptor, *displayLabelField);
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("PropA")));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classB, *classB->GetPropertyP("PropB")));
-        descriptor->AddContentFlag(ContentFlags::ShowLabels);
 
         SelectClass<ECClass> selectClass1(*classA, "this", false);
         ComplexQueryBuilderPtr q1 = ComplexQueryBuilder::Create();
@@ -663,17 +658,17 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_InstanceLabe
     ECRelationshipClassCP relBA = GetECClass("B_To_A")->GetRelationshipClassCP();
     ContentInstancesOfSpecificClassesSpecification spec(1, false, "", {CreateMultiSchemaClass({classA}, false)}, {}, false);
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, classB->GetFullName(), "PropB"));
+    GetDescriptorBuilder().GetContext().SetContentFlagsCalculator([&](int initialFlags){return GetDefaultFlags(initialFlags) | (int)ContentFlags::ShowLabels;});
 
     ContentDescriptorPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());
-    descriptor->AddContentFlag(ContentFlags::ShowLabels);
 
     auto querySet = GetQueryBuilder().CreateQuerySet(spec, *descriptor);
     ValidateQueries(querySet, [&]()
         {
         RelatedClass aTob(*classA, SelectClass<ECRelationshipClass>(*relBA, RULES_ENGINE_NAV_CLASS_ALIAS(*relBA, 0)), false, SelectClass<ECClass>(*classB, RULES_ENGINE_NAV_CLASS_ALIAS(*classB, 0), true));
 
-        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor();
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Undefined, GetDefaultFlags((int)ContentFlags::ShowLabels));
         descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false)
             .SetNavigationPropertyClasses({aTob}), "");
 
@@ -681,7 +676,6 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_InstanceLabe
         AddField(*descriptor, *displayLabelField);
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("PropA")));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty(RULES_ENGINE_NAV_CLASS_ALIAS(*classB, 0), *classA, *classA->GetPropertyP("NavB")));
-        descriptor->AddContentFlag(ContentFlags::ShowLabels);
 
         SelectClass<ECClass> selectClass(*classA, "this", false);
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();

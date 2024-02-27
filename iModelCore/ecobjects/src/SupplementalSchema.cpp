@@ -233,7 +233,6 @@ SupplementedSchemaStatus SupplementedSchemaBuilder::UpdateSchema(ECSchemaR prima
 SupplementedSchemaStatus SupplementedSchemaBuilder::UpdateSchema(ECSchemaR primarySchema, bvector<ECSchemaP>& supplementalSchemaList, ECSchemaReadContextR schemaContext, Utf8CP locale, bool createCopyOfSupplementalCustomAttribute)
     {
     m_createCopyOfSupplementalCustomAttribute = createCopyOfSupplementalCustomAttribute;
-    StopWatch timer(true);
     bmap<uint32_t, ECSchemaP> schemasByPrecedence;
     SupplementedSchemaStatus status = OrderSupplementalSchemas(schemasByPrecedence, primarySchema, supplementalSchemaList);
     if (SupplementedSchemaStatus::Success != status)
@@ -261,11 +260,6 @@ SupplementedSchemaStatus SupplementedSchemaBuilder::UpdateSchema(ECSchemaR prima
         primarySchema.SetSupplementalSchemaInfo(nullptr, schemaContext); // NEEDS_WORK: Should probably attempt to rollback partial changes
 
     primarySchema.SetIsSupplemented(true);
-    
-    timer.Stop();
-    Utf8String primarySchemaName = primarySchema.GetFullSchemaName();
-    LOG.infov ("Supplemented (in %.4f seconds) %s with %d supplemental ECSchemas", timer.GetElapsedSeconds(), 
-        primarySchemaName.c_str(), supplementalSchemaList.size());
 
     return status;
     }
@@ -319,7 +313,7 @@ SupplementedSchemaStatus SupplementedSchemaBuilder::CreateMergedSchemaFromSchema
 
     Utf8String supplementalSchemaFullName = schema2->GetFullSchemaName();
     Utf8String mergedSchemaFullName = schema1->GetFullSchemaName();
-    LOG.infov ("Merging %s into %s", supplementalSchemaFullName.c_str(), mergedSchemaFullName.c_str());
+    LOG.tracev ("Merging %s into %s", supplementalSchemaFullName.c_str(), mergedSchemaFullName.c_str());
     MergeCustomAttributeClasses(*mergedSchema, schema2->GetCustomAttributes(false), SCHEMA_PRECEDENCE_Equal, &supplementalSchemaFullName, &mergedSchemaFullName);
 
     SupplementedSchemaStatus status = SupplementedSchemaStatus::Success;

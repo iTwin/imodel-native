@@ -1010,6 +1010,15 @@ TEST(FlatBuffer, IsNanValues)
     curvePtr3->weights[2] = 1.0;
     Check::True(validator->IsValidGeometry(curvePtr3));
 
+    MSBsplineCurve myCurve;
+    auto cv = ICurvePrimitive::CreateBsplineCurve(curvePtr1);
+    Check::True(cv->GetMSBsplineCurve(myCurve), "GetMSBsplineCurve validates valid curve");
+    // invalidate it
+    BSIBaseGeom::Free(myCurve.knots);
+    myCurve.knots = nullptr;
+    cv = ICurvePrimitive::CreateBsplineCurveSwapFromSource(myCurve);
+    Check::False(cv->GetMSBsplineCurve(myCurve), "GetMSBsplineCurve invalidates invalid curve");
+
     bvector<IGeometryPtr> gVectorA {goodGCV, badGCV};
     bvector<IGeometryPtr> gVectorB, gVectorC, gVectorD;
     bvector<Byte> bufferAB;

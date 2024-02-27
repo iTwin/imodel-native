@@ -205,7 +205,7 @@ static void MergePrimaryKeys(bvector<ContentSetItemPtr> const& targetSetItems, b
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void MergeField(RapidJsonValueR targetValue, RapidJsonValueR targetDisplayValue,
+static void MergeFieldValue(RapidJsonValueR targetValue, RapidJsonValueR targetDisplayValue,
     rapidjson::Document::AllocatorType& targetDisplayValueAllocator)
     {
     targetValue.SetNull();
@@ -216,13 +216,13 @@ static void MergeField(RapidJsonValueR targetValue, RapidJsonValueR targetDispla
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool MergeContent(RapidJsonValueR targetValues, RapidJsonValueR targetDisplayValues,
+static bool TryMergeContent(RapidJsonValueR targetValues, RapidJsonValueR targetDisplayValues,
     rapidjson::Document::AllocatorType& targetDisplayValuesAllocator, RapidJsonValueCR source)
     {
     if (targetValues != source)
         {
         // values are different - set the "varies" string
-        MergeField(targetValues, targetDisplayValues, targetDisplayValuesAllocator);
+        MergeFieldValue(targetValues, targetDisplayValues, targetDisplayValuesAllocator);
         return true;
         }
     return false;
@@ -231,9 +231,9 @@ static bool MergeContent(RapidJsonValueR targetValues, RapidJsonValueR targetDis
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool MergeContent(rapidjson::Document& targetValues, rapidjson::Document& targetDisplayValues, RapidJsonValueCR source)
+static bool TryMergeContent(rapidjson::Document& targetValues, rapidjson::Document& targetDisplayValues, RapidJsonValueCR source)
     {
-    return MergeContent(targetValues, targetDisplayValues, targetDisplayValues.GetAllocator(), source);
+    return TryMergeContent(targetValues, targetDisplayValues, targetDisplayValues.GetAllocator(), source);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -252,30 +252,7 @@ static bool MergeContentSetItems(bvector<ContentSetItemPtr> const& targetSetItem
         RapidJsonValueR lhsValues = targetSetItems[i]->GetValues();
         RapidJsonValueCR rhsValues = sourceSetItems[i]->GetValues();
         if (lhsValues != rhsValues)
-            {
-            if (1 < targetSetItems.size())
-                {
-                // values are only merged if there is one item in contentSetItems vector
-                return true;
-                }
-
-            if (!lhsValues.IsObject() || !rhsValues.IsObject())
-                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Both LHS and RHS should be JSON objects but are not");
-
-            RapidJsonDocumentR lhsDisplayValues = targetSetItems[i]->GetDisplayValues();
-            for (rapidjson::Value::ConstMemberIterator iterator = lhsValues.MemberBegin(); iterator != lhsValues.MemberEnd(); ++iterator)
-                {
-                Utf8CP fieldName = iterator->name.GetString();
-                if (!lhsValues.HasMember(fieldName) || !rhsValues.HasMember(fieldName))
-                    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, Utf8PrintfString("Either LHS or RHS doesn't have a value for: '%s'", fieldName));
-
-                if (!targetSetItems[i]->IsMerged(fieldName) && lhsValues[fieldName] != rhsValues[fieldName])
-                    {
-                    targetSetItems[i]->GetMergedFieldNames().push_back(fieldName);
-                    MergeField(lhsValues[fieldName], lhsDisplayValues[fieldName], lhsDisplayValues.GetAllocator());
-                    }
-                }
-            }
+            return true;
         }
 
     MergePrimaryKeys(targetSetItems, sourceSetItems);
@@ -349,14 +326,12 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
                     contentDisplayValues = std::move(instanceDisplayValues);
                     firstPass = false;
                     }
-                else if (MergeContent(contentValues, contentDisplayValues, instanceValues))
+                else if (TryMergeContent(contentValues, contentDisplayValues, instanceValues))
                     {
                     // if detected different values during merge, stop
                     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Detected different composite content values.");
-                    if (item.GetValues().HasMember(fieldName))
-                        item.GetValues()[fieldName].CopyFrom(contentValues, item.GetValues().GetAllocator());
-                    if (item.GetDisplayValues().HasMember(fieldName))
-                        item.GetDisplayValues()[fieldName].CopyFrom(contentDisplayValues, item.GetDisplayValues().GetAllocator());
+                    ContentValueHelpers::SetRapidJsonValue(item.GetValues(), fieldName, contentValues, item.GetValues().GetAllocator());
+                    ContentValueHelpers::SetRapidJsonValue(item.GetDisplayValues(), fieldName, contentDisplayValues, item.GetDisplayValues().GetAllocator());
                     item.GetMergedFieldNames().push_back(fieldName);
                     break;
                     }
@@ -385,7 +360,7 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
             {
             if (mergeAllField)
                 {
-                MergeField(contentValues, contentDisplayValues, contentDisplayValues.GetAllocator());
+                MergeFieldValue(contentValues, contentDisplayValues, contentDisplayValues.GetAllocator());
                 DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Merged the whole related content field value.");
                 }
             else
@@ -407,19 +382,19 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
         if (item.GetDisplayValues().HasMember(fieldName) || item.GetValues().HasMember(fieldName))
             {
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Successfully loaded nested content.");
-            if (item.GetMergedFieldNames().end() == std::find(item.GetMergedFieldNames().begin(), item.GetMergedFieldNames().end(), fieldName))
+            if (!ContainerHelpers::Contains(item.GetMergedFieldNames(), [fieldName](Utf8StringCR mergedFieldName){return 0 == strcmp(mergedFieldName.c_str(), fieldName);}))
                 {
                 // note: only need to do this if the field is not yet set as merged
                 RapidJsonValueR values = item.GetValues()[fieldName];
                 RapidJsonValueR displayValues = item.GetDisplayValues()[fieldName];
-                bool areValuesDifferent = MergeContent(values, displayValues, item.GetDisplayValues().GetAllocator(), contentValues);
+                bool areValuesDifferent = TryMergeContent(values, displayValues, item.GetDisplayValues().GetAllocator(), contentValues);
                 if (areValuesDifferent)
                     item.GetMergedFieldNames().push_back(fieldName);
                 }
             }
         else
             {
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Nested content is not loaded - add NULL values");
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Nested content is not loaded - just add loaded values");
             item.GetDisplayValues().AddMember(rapidjson::Value(fieldName, item.GetDisplayValues().GetAllocator()),
                 rapidjson::Value(contentDisplayValues, item.GetDisplayValues().GetAllocator()), item.GetDisplayValues().GetAllocator());
             item.GetValues().AddMember(rapidjson::Value(fieldName, item.GetValues().GetAllocator()),
@@ -543,7 +518,13 @@ void ContentProvider::LoadNestedContent(ContentSetItemR item, bvector<ContentDes
             {
             auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Handle nested content field `%s`", field->GetUniqueName().c_str()));
             ContentDescriptor::RelatedContentField const* relatedContentField = field->AsNestedContentField()->AsRelatedContentField();
-            if (relatedContentField && item.GetClass() && !item.GetClass()->Is(relatedContentField->GetPathFromSelectToContentClass().front().GetSourceClass()))
+            if (relatedContentField 
+                && item.GetClass() 
+                && (
+                    !item.GetClass()->Is(relatedContentField->GetPathFromSelectToContentClass().front().GetSourceClass())
+                    || !ContainerHelpers::Contains(relatedContentField->GetActualSourceClasses(), item.GetClass())
+                    )
+                )
                 {
                 // do not attempt to load related content for related content fields that don't match current item
                 DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("The field targets class `%s` and content item targets `%s` - skip.",
@@ -969,14 +950,18 @@ QuerySet SpecificationContentProvider::_GetCountQuerySet() const
     {
     auto scope = Diagnostics::Scope::Create("Create content set size queries");
 
-    ContentDescriptorPtr countDescriptor = ContentDescriptor::Create(*GetContentDescriptor());
-    if (countDescriptor->GetFieldsFilterExpression().empty())
+    ContentDescriptorPtr countDescriptor;
+    if (GetContentDescriptor()->GetFieldsFilterExpression().empty())
         {
         // note: can't add `KeysOnly` if there's a filter expression - we need to select properties to filter by them
 #ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
-        if (!countDescriptor->OnlyDistinctValues())
+        if (!GetContentDescriptor()->OnlyDistinctValues())
 #endif
-            countDescriptor->AddContentFlag(ContentFlags::KeysOnly);
+            countDescriptor = ContentDescriptor::Create(*GetContentDescriptor(), (int)ContentFlags::KeysOnly);
+        }
+    if (countDescriptor.IsNull()) 
+        {
+        countDescriptor = ContentDescriptor::Create(*GetContentDescriptor());
         }
 
     QueryBuilder builder(GetContext(), *countDescriptor, false, true);
@@ -1256,21 +1241,44 @@ size_t ContentProvider::GetFullContentSetSize() const
     if (nullptr == m_fullContentSetSize)
         {
         auto scope = Diagnostics::Scope::Create("Initialize content set size");
+        if (!GetContext().IsQueryContext())
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Failed to get content set size due to missing query context.");
+
+        IECPropertyFormatter const* formatter = GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr;
+        ECPresentation::UnitSystem unitSystem = GetContext().IsPropertyFormattingContext() ? GetContext().GetUnitSystem() : ECPresentation::UnitSystem::Undefined;
+        CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetConnection(),
+            GetContext().GetRuleset().GetRuleSetId(), GetContext().GetRulesPreprocessor(), GetContext().GetRulesetVariables(), &GetContext().GetUsedVariablesListener(),
+            GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), nullptr, nullptr, nullptr, formatter, unitSystem);
+
+        auto countQuerySet = _GetCountQuerySet();
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, Utf8PrintfString("Content is built from %" PRIu64 " queries", (uint64_t)countQuerySet.GetQueries().size()));
+
         if (GetContentDescriptor() && GetContentDescriptor()->MergeResults())
             {
-            m_fullContentSetSize = std::make_unique<size_t>(1);
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, "Descriptor is valid and requests merged rows. Set size to 1.");
-            }
-        else if (GetContext().IsQueryContext())
-            {
-            IECPropertyFormatter const* formatter = GetContext().IsPropertyFormattingContext() ? &GetContext().GetECPropertyFormatter() : nullptr;
-            ECPresentation::UnitSystem unitSystem = GetContext().IsPropertyFormattingContext() ? GetContext().GetUnitSystem() : ECPresentation::UnitSystem::Undefined;
-            CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetConnection(),
-                GetContext().GetRuleset().GetRuleSetId(), GetContext().GetRulesPreprocessor(), GetContext().GetRulesetVariables(), &GetContext().GetUsedVariablesListener(),
-                GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), nullptr, nullptr, nullptr, formatter, unitSystem);
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Descriptor is valid and requests merged rows. Check if there's at least one content record and return either 1 or 0.");
+            for (auto const& query : countQuerySet.GetQueries())
+                {
+                if (query.IsNull())
+                    continue;
 
-            auto countQuerySet = _GetCountQuerySet();
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, Utf8PrintfString("Content is built from %" PRIu64 " queries", (uint64_t)countQuerySet.GetQueries().size()));
+                auto queryScope = Diagnostics::Scope::Create("Execute limited count query");
+                ComplexQueryBuilderPtr limitedQuery = &ComplexQueryBuilder::Create()->SelectAll().From(*query).Limit(1);
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, Utf8PrintfString("Query: `%s`", limitedQuery->GetQuery()->GetQueryString().c_str()));
+                if ((size_t)QueryExecutorHelper::ReadUInt64(GetContext().GetConnection(), *limitedQuery->GetQuery()) > 0)
+                    {
+                    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Query has rows, set content set size to 1.");
+                    m_fullContentSetSize = std::make_unique<size_t>(1);
+                    break;
+                    }
+                }
+            if (!m_fullContentSetSize)
+                {
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "None of the queries have rows, set content set size to 0.");
+                m_fullContentSetSize = std::make_unique<size_t>(0);
+                }
+            }
+        else
+            {
             size_t fullSize = 0;
             for (auto const& query : countQuerySet.GetQueries())
                 {
@@ -1278,11 +1286,11 @@ size_t ContentProvider::GetFullContentSetSize() const
                     continue;
 
                 auto queryScope = Diagnostics::Scope::Create("Execute count query");
-                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, Utf8PrintfString("Query: `%s`", query->GetQuery()->GetQueryString().c_str()));
+                DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Query: `%s`", query->GetQuery()->GetQueryString().c_str()));
                 fullSize += (size_t)QueryExecutorHelper::ReadUInt64(GetContext().GetConnection(), *query->GetQuery());
                 }
             m_fullContentSetSize = std::make_unique<size_t>(fullSize);
-            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, Utf8PrintfString("Total content set size: %" PRIu64, (uint64_t)*m_fullContentSetSize));
+            DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Total content set size: %" PRIu64, (uint64_t)*m_fullContentSetSize));
             }
         }
     return m_fullContentSetSize ? *m_fullContentSetSize : 0;
