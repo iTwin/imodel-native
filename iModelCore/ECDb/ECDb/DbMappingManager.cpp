@@ -755,25 +755,27 @@ BentleyStatus DbMappingManager::Classes::MapIndexes(SchemaImportContext& importC
 
         // Special case: Since older imodels ( <= 4.0.0.2) have individual unique indexes for the derived classes as well, just updating the one for the base class is not enough.
         // As we have already updated the unique index in the base class to handle the uniqueness in the derived classes as well, we can now remove the unique indexes in the derived classes.
-        if (checkDerivedClassIndexes && isSystemIndex && indexCA.IsUnique())
+        if (!checkDerivedClassIndexes || !isSystemIndex || !indexCA.IsUnique())
+            continue;
+
+        const auto allDerivedClasses = importCtx.GetECDb().Schemas().GetAllDerivedClassesInternal(classMap.GetClass());
+        if (allDerivedClasses.IsNull())
+            continue;
+
+        for (ECClassCP derivedClass : allDerivedClasses.Value())
             {
-            if (const auto allDerivedClasses = importCtx.GetECDb().Schemas().GetAllDerivedClassesInternal(classMap.GetClass()); allDerivedClasses.IsValid())
-                {
-                for (ECClassCP derivedClass : allDerivedClasses.Value())
-                    {
-                    if (const auto itr = systemIndexes.find(Utf8PrintfString("uix_%s_%s_sourcetarget", classMap.GetClass().GetSchema().GetAlias().c_str(), derivedClass->GetName().c_str())); itr != systemIndexes.end())
-                        {
-                        const auto foundIndex = *itr;
-                        table.RemoveIndexDef(foundIndex);
+            const auto itr = systemIndexes.find(Utf8PrintfString("uix_%s_%s_sourcetarget", classMap.GetClass().GetSchema().GetAlias().c_str(), derivedClass->GetName().c_str()));
+            if (itr == systemIndexes.end())
+                continue;
 
-                        if (BE_SQLITE_OK != importCtx.GetECDb().ExecuteDdl(SqlPrintfString("DROP INDEX IF EXISTS [%s]", foundIndex.c_str())))
-                            return ERROR;
+            const auto foundIndex = *itr;
+            table.RemoveIndexDef(foundIndex);
 
-                        if (BE_SQLITE_OK != importCtx.GetECDb().ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", foundIndex.c_str())))
-                            return ERROR;
-                        }
-                    }
-                }
+            if (BE_SQLITE_OK != importCtx.GetECDb().ExecuteDdl(SqlPrintfString("DROP INDEX IF EXISTS [%s]", foundIndex.c_str())))
+                return ERROR;
+
+            if (BE_SQLITE_OK != importCtx.GetECDb().ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", foundIndex.c_str())))
+                return ERROR;
             }
         }
 
