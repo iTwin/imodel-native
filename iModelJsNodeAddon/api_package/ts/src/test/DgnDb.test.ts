@@ -356,14 +356,14 @@ describe("basic tests", () => {
 
   it("testGetSchemaProps", async () => {
     assert.isTrue(dgndb.isOpen());
-    expect(() => dgndb.getSchemaProps("DoesNotExist")).to.throw("schema not found");
+    expect(() => dgndb.getSchemaProps("DoesNotExist")).to.throw("schema not found").with.property("errorNumber", IModelStatus.NotFound);
     const props = dgndb.getSchemaProps("BisCore");
     expect(props.name).equal("BisCore");
   });
 
   it("testGetSchemaPropsAsync", async () => {
     assert.isTrue(dgndb.isOpen());
-    await expect(dgndb.getSchemaPropsAsync("DoesNotExist")).rejectedWith("schema not found");
+    await expect(dgndb.getSchemaPropsAsync("DoesNotExist")).rejectedWith("schema not found").eventually.with.property("errorNumber", IModelStatus.NotFound);
     const props = await dgndb.getSchemaPropsAsync("BisCore");
     expect(props.name).equal("BisCore");
   });
