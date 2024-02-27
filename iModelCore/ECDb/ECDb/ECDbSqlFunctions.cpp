@@ -5,34 +5,6 @@
 #include "ECDbPch.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-//================================[PropExistsFunc]=======================================
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<PropExistsFunc> PropExistsFunc::Create(ECDbCR ecdb) {
-    return std::make_unique<PropExistsFunc>(ecdb);
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-void PropExistsFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
-    if (nArgs != 2) {
-        ctx.SetResultError("prop_exists(I,S]) expect two args");
-        return;
-    }
-
-    DbValue const& classIdVal = args[0];
-    if (classIdVal.IsNull() || classIdVal.GetValueType() != DbValueType::IntegerVal )
-        return;
-
-    DbValue const& propVal = args[1];
-    if (propVal.IsNull() || propVal.GetValueType() != DbValueType::TextVal )
-        return;
-
-    ECN::ECClassId classId(classIdVal.GetValueUInt64());
-    ctx.SetResultInt(m_propMap.Exist(classId, propVal.GetValueText()) ? 1 : 0);
-}
 
 //===============================[ExtractPropFunc]=======================================
 //---------------------------------------------------------------------------------------
@@ -46,8 +18,8 @@ std::unique_ptr<ExtractPropFunc> ExtractPropFunc::Create(ECDbCR ecdb) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void ExtractPropFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
-    if (nArgs != 3) {
-        ctx.SetResultError("extract_prop(I,I,S]) expect three args");
+    if (nArgs < 3) {
+        ctx.SetResultError("extract_prop(I,I,I,S,P,I) expect atleast three args");
         return;
     }
 
@@ -63,10 +35,37 @@ void ExtractPropFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
     if (accessStringVal.IsNull() || accessStringVal.GetValueType() != DbValueType::TextVal )
         return;
 
+    unsigned int jsonFlags = 0;
+    if (nArgs > 3) {
+        DbValue const& jsonFlagsVal = args[3];
+        if (jsonFlagsVal.GetValueType() == DbValueType::IntegerVal ) {
+            jsonFlags = static_cast<unsigned int>(jsonFlagsVal.GetValueInt());
+        }
+    }
+
+    // The 4th arg P is pointer to ECSqlStatement while 5th is columnIndex.
+    ECSqlField* field = nullptr;
+    ECSqlSelectPreparedStatement* stmt = nullptr;
+    int columnInfoIndex = -1;
+    if (nArgs == 6) {
+        auto& ptrArg = args[4];
+        if (ptrArg.FromBinding()) {
+            stmt = (ECSqlSelectPreparedStatement*)ptrArg.GetValuePointer(ECSqlSelectPreparedStatement::SELECT_PTR_NAME);
+            auto& colIdxArg = args[5];
+            if (colIdxArg.GetNumericType() == DbValueType::IntegerVal) {
+                columnInfoIndex = colIdxArg.GetValueInt();
+                if (columnInfoIndex < 0 && columnInfoIndex >= stmt->GetColumnCount() && !stmt->GetValue(columnInfoIndex).GetColumnInfo().IsDynamic()) {
+                    stmt = nullptr;
+                } else {
+                    field = stmt->GetField(columnInfoIndex);
+                }
+            }
+        }
+    }
 
     ECInstanceId instanceId(instanceIdVal.GetValueUInt64());
     ECN::ECClassId classId(classIdVal.GetValueUInt64());
-
+    if (field) field->SetDynamicColumnInfo(ECSqlColumnInfo());
     m_ecdb.GetInstanceReader().Seek(
         InstanceReader::Position(instanceId, classId, accessStringVal.GetValueText()),
         [&](InstanceReader::IRowContext const& row){
@@ -81,33 +80,42 @@ void ExtractPropFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
                 int blobSize = 0;
                 auto blob = val.GetBlob(&blobSize);
                 ctx.SetResultBlob(blob, blobSize);
+                if (field) field->SetDynamicColumnInfo(ci);
                 return;
             }
             if (type == ECN::PrimitiveType::PRIMITIVETYPE_Boolean) {
                 ctx.SetResultInt(val.GetBoolean()?1:0);
+                if (field) field->SetDynamicColumnInfo(ci);
                 return;
             }
             if (type == ECN::PrimitiveType::PRIMITIVETYPE_DateTime) {
-                double jdt;
-                val.GetDateTime().ToJulianDay(jdt);
-                ctx.SetResultDouble(jdt);
+                ctx.SetResultDouble(val.GetDouble());
+                if (field) field->SetDynamicColumnInfo(ci);
                 return;
             }
             if (type == ECN::PrimitiveType::PRIMITIVETYPE_Double) {
                 ctx.SetResultDouble(val.GetDouble());
+                if (field) field->SetDynamicColumnInfo(ci);
                 return;
             }
             if (type == ECN::PrimitiveType::PRIMITIVETYPE_Integer ||
                 type == ECN::PrimitiveType::PRIMITIVETYPE_Long) {
                 ctx.SetResultInt64(val.GetInt64());
+                if (field) field->SetDynamicColumnInfo(ci);
                 return;
             }
             if (type == ECN::PrimitiveType::PRIMITIVETYPE_String) {
                 ctx.SetResultText(val.GetText(), (int)strlen(val.GetText()), Context::CopyData::Yes );
+                if (field) field->SetDynamicColumnInfo(ci);
                 return;
             }
         }
-        const auto json = row.GetJson().Stringify();
+
+        InstanceReader::JsonParams params;
+        params.SetUseJsName(jsonFlags & InstanceReader::FLAGS_UseJsPropertyNames);
+        params.SetAbbreviateBlobs(!(jsonFlags & InstanceReader::FLAGS_DoNotTruncateBlobs));
+
+        const auto json = row.GetJson(params).Stringify();
         ctx.SetResultText(json.c_str(), static_cast<int>(json.length()), Context::CopyData::Yes);
     });
 }
@@ -125,7 +133,7 @@ std::unique_ptr<ExtractInstFunc> ExtractInstFunc::Create(ECDbCR ecdb) {
 //+---------------+---------------+---------------+---------------+---------------+------
 void ExtractInstFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
     if (nArgs < 2 || nArgs > 3) {
-        ctx.SetResultError("extract_inst(I,I]) expect two args");
+        ctx.SetResultError("extract_inst(I,I,I]) expect two args");
         return;
     }
 
@@ -138,16 +146,21 @@ void ExtractInstFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
     if (instanceIdVal.IsNull() || instanceIdVal.GetValueType() != DbValueType::IntegerVal )
         return;
 
-    InstanceReader::JsonParams opts;
-    if (nArgs == 3) {
-        DbValue const& optsVal = args[2];
-        if (optsVal.IsNull() || optsVal.GetValueType() != DbValueType::TextVal){
-            return;
+
+    unsigned int jsonFlags = 0;
+    if (nArgs > 2) {
+        DbValue const& jsonFlagsVal = args[2];
+        if (jsonFlagsVal.GetValueType() == DbValueType::IntegerVal ) {
+            jsonFlags = static_cast<unsigned int>(jsonFlagsVal.GetValueInt());
         }
     }
 
+    InstanceReader::JsonParams params;
+    params.SetUseJsName(jsonFlags & InstanceReader::FLAGS_UseJsPropertyNames);
+    params.SetAbbreviateBlobs(!(jsonFlags & InstanceReader::FLAGS_DoNotTruncateBlobs));
+
     auto setResult = [&](InstanceReader::IRowContext const& row){
-        const auto json = row.GetJson().Stringify();
+        const auto json = row.GetJson(params).Stringify();
         ctx.SetResultText(json.c_str(), static_cast<int>(json.length()), Context::CopyData::Yes);
     };
 
@@ -164,7 +177,6 @@ void ExtractInstFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
         m_ecdb.GetInstanceReader().Seek(
             InstanceReader::Position(instanceId, classIdVal.GetValueText(), nullptr),
             setResult);
-
     }
 }
 
@@ -704,6 +716,69 @@ void ChangedValueSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* a
         }
 
     ctx.SetResultError(SqlPrintfString("SQL function " SQLFUNC_ChangedValue " failed: executing the ECSQL '%s' returned an unsupported data type (%s).", stmt->GetECSql(), valType));
+    }
+
+//************************************************************************************
+// XmlCAToJson
+//************************************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+std::unique_ptr<XmlCAToJson> XmlCAToJson::Create(SchemaManager const& schemaManager) { return std::unique_ptr<XmlCAToJson>(new XmlCAToJson(schemaManager));}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void XmlCAToJson::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
+    {
+    if(nArgs != 2)
+        {
+        ctx.SetResultError("SQL function " SQLFUNC_XmlCAToJson " failed: invalid number of arguments. Expected 2 arguments.");
+        return;
+        }
+
+    DbValue const& idValue = args[0];
+    if (idValue.IsNull() || idValue.GetValueType() != DbValueType::IntegerVal) 
+        {
+        ctx.SetResultNull();
+        return;
+        }
+
+    ECClassId caClassId = idValue.GetValueId<ECClassId>();
+    ECClassCP caClass = m_schemaManager->GetClass(caClassId);
+    if(caClass == nullptr)
+        {
+        ctx.SetResultError("SQL function " SQLFUNC_XmlCAToJson " failed: could not find custom attribute's class.");
+        return;
+        }
+
+    DbValue const& xmlValue = args[1];
+    if (xmlValue.IsNull() || xmlValue.GetValueType() != DbValueType::TextVal) 
+        {
+        ctx.SetResultNull();
+        return;
+        }
+
+    Utf8CP caXml = xmlValue.GetValueText();
+
+    ECInstanceReadContextPtr readContext = ECInstanceReadContext::CreateContext(caClass->GetSchema());
+    IECInstancePtr deserializedCa = nullptr;
+    if (InstanceReadStatus::Success != IECInstance::ReadFromXmlString(deserializedCa, caXml, *readContext))
+        {
+        ctx.SetResultError("SQL function " SQLFUNC_XmlCAToJson " failed: unable to read custom attribute xml.");
+        return;
+        }
+
+    Json::Value caJson;
+    if (SUCCESS != JsonEcInstanceWriter::WriteInstanceToJson(caJson, *deserializedCa, nullptr, false))
+        {
+        ctx.SetResultError("SQL function " SQLFUNC_XmlCAToJson " failed: unable to serialize instance to json.");
+        return;
+        }
+
+    Utf8String strVal = caJson.ToString();
+    const int len = (int) strlen(strVal.c_str());
+    ctx.SetResultText(strVal.c_str(), len, Context::CopyData::Yes);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

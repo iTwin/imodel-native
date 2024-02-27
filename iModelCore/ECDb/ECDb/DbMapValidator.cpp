@@ -9,6 +9,13 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMapValidator::ValidateClassViews() const {
+    return ClassViews::CheckViews(m_schemaImportContext.GetECDb()) ? SUCCESS : ERROR;
+}
+
 BentleyStatus DbMapValidator::ValidateCustomAttributeTable() const {
     // We do not enforce forignkey constraint on ec_CustomAttribute.ContainerId and
     // thus it is possible that deleting schema might result in orphan row in this table.
@@ -195,7 +202,10 @@ BentleyStatus DbMapValidator::Validate() const
     if (SUCCESS != CheckDuplicateDataPropertyMap())
         return ERROR;
 
-    return ValidateCustomAttributeTable();
+    if (SUCCESS != ValidateCustomAttributeTable())
+        return ERROR;
+
+    return ValidateClassViews();
     }
 
 //---------------------------------------------------------------------------------------

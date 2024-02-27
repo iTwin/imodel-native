@@ -58,7 +58,8 @@ BentleyStatus ViewGenerator::GenerateSelectFromViewSql(NativeSqlBuilder& viewSql
 
     if (!memberFunctionCallExp->GetFunctionName().EqualsIAscii(ECSQLFUNC_Changes))
         {
-        ctx.GetECDb().GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Class exp has member function call %s which is not supported yet.", memberFunctionCallExp->GetFunctionName().c_str());
+        ctx.GetECDb().GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0444,
+            "Class exp has member function call %s which is not supported yet.", memberFunctionCallExp->GetFunctionName().c_str());
         return ERROR;
         }
 
@@ -75,7 +76,8 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
 
     if (ecdb.IsReadonly())
         {
-        ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Can only call ECDb::CreateClassViewsInDb() on an ECDb file with read-write access.");
+        ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0445,
+            "Can only call ECDb::CreateClassViewsInDb() on an ECDb file with read-write access.");
         return ERROR;
         }
 
@@ -133,8 +135,9 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb, bvector<ECClassId> 
         if (mapStrategy == MapStrategy::NotMapped || (!classMap->GetClass().IsEntityClass() && !classMap->GetClass().IsRelationshipClass())
             || mapStrategy == MapStrategy::ForeignKeyRelationshipInSourceTable || mapStrategy == MapStrategy::ForeignKeyRelationshipInTargetTable)
             {
-            ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Cannot create ECClassView for ECClass '%s' (Id: %s) because it is not mapped or not an ECEntityClass or a link table ECRelationshipClass.",
-                                           classMap->GetClass().GetFullName(), classId.ToString().c_str());
+            ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0446,
+                "Cannot create ECClassView for ECClass '%s' (Id: %s) because it is not mapped or not an ECEntityClass or a link table ECRelationshipClass.",
+                classMap->GetClass().GetFullName(), classId.ToString().c_str());
             return ERROR;
             }
 
@@ -239,13 +242,15 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
 
     if (memberFuncCallExp.GetChildrenCount() != 2)
         {
-        ctx.GetECDb().GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Class exp's member function '%s' is called with invalid number of arguments.", memberFuncCallExp.GetFunctionName().c_str());
+        ctx.GetECDb().GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0447,
+            "Class exp's member function '%s' is called with invalid number of arguments.", memberFuncCallExp.GetFunctionName().c_str());
         return ERROR;
         }
 
     if (!ctx.GetECDb().IsChangeCacheAttached())
         {
-        ctx.GetECDb().GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to prepare ECSQL. When using the function " ECSQLFUNC_Changes " the Change Cache file must have been attached before.");
+        ctx.GetECDb().GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0448,
+            "Failed to prepare ECSQL. When using the function " ECSQLFUNC_Changes " the Change Cache file must have been attached before.");
         return ERROR;
         }
 
@@ -304,7 +309,8 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
         ECValue stateVal;
         if (SUCCESS != changeValueStateExp->GetAs<LiteralValueExp>().TryParse(stateVal) || !(stateVal.IsLong() || stateVal.IsInteger() || stateVal.IsString()) )
             {
-            ctx.GetECDb().GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to prepare ECSQL. Invalid ChangedValueStatue expression '%s' in function " ECSQLFUNC_Changes ".", changeValueStateExp->ToECSql().c_str());
+            ctx.GetECDb().GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0449,
+                "Failed to prepare ECSQL. Invalid ChangedValueStatue expression '%s' in function " ECSQLFUNC_Changes ".", changeValueStateExp->ToECSql().c_str());
             return ERROR;
             }
 
@@ -317,7 +323,8 @@ BentleyStatus ViewGenerator::GenerateChangeSummaryViewSql(NativeSqlBuilder& view
 
         if (changedValueState == nullptr)
             {
-            ctx.GetECDb().GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to prepare ECSQL. Invalid ChangedValueStatue expression '%s' in function " ECSQLFUNC_Changes ".", changeValueStateExp->ToECSql().c_str());
+            ctx.GetECDb().GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0449,
+                "Failed to prepare ECSQL. Invalid ChangedValueStatue expression '%s' in function " ECSQLFUNC_Changes ".", changeValueStateExp->ToECSql().c_str());
             return ERROR;
             }
 
@@ -645,7 +652,6 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
         return ERROR;
 
     viewSql.Append(" FROM ").AppendEscaped(contextTable.GetTableSpace().GetName()).AppendDot().AppendEscaped(contextTable.GetName());
-
     const bool disqualifyPrimaryJoin = ctx.GetViewType() == ViewType::SelectFromView ? ctx.GetAs<SelectFromViewContext>().IsDisqualifyPrimaryJoin() : false;
     //Join necessary table for table
     for(DbTable const* to : requireJoinTo)
@@ -831,6 +837,59 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
         if (requiresCast)
             sqlBuilder.Append(" AS INTEGER)");
         };
+
+    ECRelationshipClassCR relationshipClass = relationMap.GetRelationshipClass();
+    if (ECDbMapCustomAttributeHelper::IsForeignKeyBasedView(relationshipClass))
+        {
+        if (!ClassViews::IsViewClass(*relationshipClass.GetSource().GetAbstractConstraint()) &&
+            !ClassViews::IsViewClass(*relationshipClass.GetTarget().GetAbstractConstraint()))
+            {
+            ctx.GetECDb().GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0723,
+                "Relationship class %s is marked as a foreign key based view, so at least one side if the constraint classes must be a view class.", relationshipClass.GetFullName());
+            return ERROR;
+            }
+
+        if (ClassViews::IsViewClass(relationshipClass)) 
+            {
+            ctx.GetECDb().GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0724,
+                "Relationship class %s is marked as a foreign key based view, but it is also a view class. It cannot be both.", relationshipClass.GetFullName());
+            return ERROR;
+            }
+
+        ECClassCP targetClassConstraint = relationshipClass.GetTarget().GetAbstractConstraint();
+        ECClassCP sourceClassConstraint = relationshipClass.GetSource().GetAbstractConstraint();
+        NavigationECPropertyCP sourceNavProp = nullptr;
+        for (const ECPropertyP& prop : targetClassConstraint->GetProperties())
+            {
+            if (prop->GetIsNavigation() && prop->GetAsNavigationProperty()->GetRelationshipClass()->GetId() == relationshipClass.GetId())
+                {
+                sourceNavProp = prop->GetAsNavigationPropertyP();
+                }
+            }
+
+        if (sourceNavProp == nullptr)
+            {
+            BeAssert(false && "Could not find navigation property");
+            return ERROR;
+            }
+
+        std::string query = SqlPrintfString("SELECT [ECInstanceId] [ECInstanceId], %s [ECClassId], %s.Id [SourceECInstanceId], %s [SourceECClassId], [ECInstanceId] [TargetECInstanceId], %s [TargetECClassId] FROM %s WHERE %s.Id IS NOT NULL",
+            std::to_string(relationshipClass.GetId().GetValue()).c_str(), //ECClassId of the ECRelationshipClass
+            sourceNavProp->GetName().c_str(),
+            std::to_string(sourceClassConstraint->GetId().GetValue()).c_str(), //ECClassId of the Source ECClass
+            std::to_string(targetClassConstraint->GetId().GetValue()).c_str(), //ECClassId of the Target ECClass
+            targetClassConstraint->GetECSqlName().c_str(),
+            sourceNavProp->GetName().c_str()
+        ).GetUtf8CP();
+
+        ECSqlStatement stmt;
+        if (ECSqlStatus::Success != stmt.Prepare(ctx.GetECDb(), query.c_str())){
+            BeAssert(false && "Failed to prepare ECRelationShipClass view");
+            return ERROR;
+        }
+        viewSql.AppendParenLeft().Append(stmt.GetNativeSql()).AppendParenRight();
+        return SUCCESS;
+        }
 
     const ECClassId classId = relationMap.GetClass().GetId();
     std::unique_ptr<ForeignKeyPartitionView> view = ForeignKeyPartitionView::CreateReadonly(ctx.GetSchemaManager(), relationMap.GetRelationshipClass());

@@ -5,6 +5,9 @@
 #include "ECDbPublishedTests.h"
 #include "NestedStructArrayTestSchemaHelper.h"
 #include <cmath>
+
+#define CLASS_ID(S,C) (int)m_ecdb.Schemas().GetClassId( #S, #C, SchemaLookupMode::AutoDetect).GetValueUnchecked()
+
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -1021,45 +1024,45 @@ TEST_F(JoinedTableTestFixture,  Disqualifying_PolymorphicFilter)
             const Utf8String nativeSql = stmt.GetNativeSql();
             for(const auto& sqlFragment : sqlFragments) {
                 if (!nativeSql.Contains(sqlFragment)) {
-                    EXPECT_TRUE(false) << "SQL Fragment: " << sqlFragment.c_str() << " does not exist in SQL: " << nativeSql.c_str();
+                    EXPECT_TRUE(false) << "SQL Fragment: " << sqlFragment.c_str() << " does not exist in SQL: " << nativeSql.c_str() << "\necsql:" << ecsql.c_str();
                 }
             }
         }
     };
     prepareAndMatchSql("SELECT * FROM +ALL ts.Goo", {
-        "[CHC_ts_Foo].[ClassId]=[ts_Foo].ECClassId AND [CHC_ts_Foo].[BaseClassId]=77"
+        SqlPrintfString("[CHC_ts_Foo].[ClassId]=[ts_Foo].ECClassId AND [CHC_ts_Foo].[BaseClassId]=%d", CLASS_ID(ts,Goo)).GetUtf8CP()
         }, ECSqlStatus::Success);
 
     prepareAndMatchSql("SELECT * FROM ALL ts.Goo", {
-        "[CHC_ts_Foo].[ClassId]=[ts_Foo].ECClassId AND [CHC_ts_Foo].[BaseClassId]=77"
+        SqlPrintfString("[CHC_ts_Foo].[ClassId]=[ts_Foo].ECClassId AND [CHC_ts_Foo].[BaseClassId]=%d", CLASS_ID(ts,Goo)).GetUtf8CP()
         }, ECSqlStatus::Success);
 
     prepareAndMatchSql("SELECT * FROM ts.Goo", {
-        "[CHC_ts_Foo].[ClassId]=[ts_Foo].ECClassId AND [CHC_ts_Foo].[BaseClassId]=77"
+        SqlPrintfString("[CHC_ts_Foo].[ClassId]=[ts_Foo].ECClassId AND [CHC_ts_Foo].[BaseClassId]=%d", CLASS_ID(ts,Goo)).GetUtf8CP()
         }, ECSqlStatus::Success);
 
     prepareAndMatchSql("SELECT * FROM ONLY ts.Goo", {
-        "[ts_Foo].ECClassId=77"
+        SqlPrintfString("[ts_Foo].ECClassId=%d", CLASS_ID(ts,Goo)).GetUtf8CP()
         }, ECSqlStatus::Success);
 
     prepareAndMatchSql("SELECT * FROM +ONLY ts.Goo", {
-        "+[ts_Foo].ECClassId=77"
+        SqlPrintfString("+[ts_Foo].ECClassId=%d", CLASS_ID(ts,Goo)).GetUtf8CP()
         }, ECSqlStatus::Success);
 
     prepareAndMatchSql("SELECT * FROM ONLY ts.Doo", {
-        "[ts_Foo].ECClassId=75"
+        SqlPrintfString("[ts_Foo].ECClassId=%d", CLASS_ID(ts,Doo)).GetUtf8CP()
         }, ECSqlStatus::Success);
 
     prepareAndMatchSql("SELECT * FROM +ONLY ts.Doo", {
-        "+[ts_Foo].ECClassId=75"
+        SqlPrintfString("+[ts_Foo].ECClassId=%d", CLASS_ID(ts,Doo)).GetUtf8CP()
         }, ECSqlStatus::Success);
 
     prepareAndMatchSql("SELECT * FROM ALL ts.Doo", {
-        "[ts_Foo].ECClassId=75"
+        SqlPrintfString("[ts_Foo].ECClassId=%d", CLASS_ID(ts,Doo)).GetUtf8CP()
         }, ECSqlStatus::Success);
 
     prepareAndMatchSql("SELECT * FROM +ALL ts.Doo", {
-        "+[ts_Foo].ECClassId=75"
+        SqlPrintfString("+[ts_Foo].ECClassId=%d", CLASS_ID(ts,Doo)).GetUtf8CP()
         }, ECSqlStatus::Success);
     }
 //---------------------------------------------------------------------------------------

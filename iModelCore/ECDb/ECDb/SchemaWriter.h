@@ -139,6 +139,9 @@ struct SchemaWriter final
                     .Append(ACCEPT, "CoreCustomAttributes", "IsMixin", MODIFIED)
                         .Append(ACCEPT, "AppliesToEntityClass", MODIFIED); // allow to modify AppliesToEntityClass
 
+                rules
+                    .Append(ACCEPT, "ECDbMap", "View", MODIFIED); //allow to modify views
+
                 rules.Append(REJECT, "ECDbMap", "*", ALL);
                 rules.Append(REJECT, "CoreCustomAttributes", "IsMixin", ALL);
                 rules.Append(ACCEPT, "*", "*", ALL);

@@ -238,7 +238,7 @@ std::unique_ptr<SchemaPolicy> NoAdditionalRootEntityClassesPolicy::Create(ECDbCR
 //---------------------------------------------------------------------------------------
 BentleyStatus NoAdditionalRootEntityClassesPolicy::Evaluate(ECDbCR ecdb, ECN::ECEntityClassCR ecClass) const
     {
-    if (ecClass.HasBaseClasses() || ecClass.IsMixin() || IsException(ecClass))
+    if (ecClass.HasBaseClasses() || ecClass.IsMixin() || ClassViews::IsViewClass(ecClass) || IsException(ecClass))
         return SUCCESS;
 
     ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import ECClass '%s'. It violates against the 'No additional root entity classes' policy which means that all entity classes must subclass from classes defined in the ECSchema %s",

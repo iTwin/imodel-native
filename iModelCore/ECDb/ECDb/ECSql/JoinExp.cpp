@@ -95,14 +95,13 @@ void QualifiedJoinExp::_ToECSql(ECSqlRenderContext& ctx) const
 //+---------------+---------------+---------------+---------------+---------------+--------
 Exp::FinalizeParseStatus ECRelationshipJoinExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
-    if (mode == FinalizeParseMode::AfterFinalizingChildren)
+    if (mode == FinalizeParseMode::BeforeFinalizingChildren)
         {
         if (ResolveRelationshipEnds(ctx) != SUCCESS)
             return FinalizeParseStatus::Error;
 
         return FinalizeParseStatus::Completed;
         }
-
     return FinalizeParseStatus::NotCompleted;
     }
 //-----------------------------------------------------------------------------------------
@@ -110,6 +109,64 @@ Exp::FinalizeParseStatus ECRelationshipJoinExp::_FinalizeParsing(ECSqlParseConte
 //+---------------+---------------+---------------+---------------+---------------+--------
 BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& ctx)
     {
+    auto getClassNameExp = [](ClassRefExp const& classRef) -> ClassNameExp const* {
+        if (classRef.GetType() == Exp::Type::SubqueryRef) {
+            auto queryRef = classRef.GetAsCP<SubqueryRefExp>();
+            if (queryRef->GetViewClass() != nullptr) {
+                return queryRef->GetViewClass();
+            }
+        } else if (classRef.GetType() == Exp::Type::ClassName) {
+            return classRef.GetAsCP<ClassNameExp>();
+        }
+        return nullptr;
+    };
+    enum class TriState {
+        True,
+        False,
+        None,
+        Error,
+    };
+    auto isFromIsInSource = [&](UsingRelationshipJoinExp::ClassLocation loc, JoinDirection direction) -> TriState {
+        switch (loc) {
+            case UsingRelationshipJoinExp::ClassLocation::ExistInBoth:
+                switch (direction) {
+                    case JoinDirection::Implied:
+                    case JoinDirection::Forward: return TriState::True;
+                    case JoinDirection::Backward: return TriState::False;
+                };
+                break;
+            case UsingRelationshipJoinExp::ClassLocation::ExistInSource:
+                if (direction != JoinDirection::Implied)
+                    if (direction != JoinDirection::Forward) {
+                        ctx.Issues().ReportV(
+                            IssueSeverity::Error,
+                            IssueCategory::BusinessProperties,
+                            IssueType::ECSQL,
+                            ECDbIssueId::ECDb_0718,
+                            "Invalid join direction BACKWARD in %s. Either specify FORWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.",
+                            ToString().c_str()
+                        );
+                        return TriState::Error;
+                    }
+                return TriState::True;
+            case UsingRelationshipJoinExp::ClassLocation::ExistInTarget:
+                if (direction != JoinDirection::Implied)
+                    if (direction != JoinDirection::Backward) {
+                        ctx.Issues().ReportV(
+                            IssueSeverity::Error,
+                            IssueCategory::BusinessProperties,
+                            IssueType::ECSQL,
+                            ECDbIssueId::ECDb_0719,
+                            "Invalid join direction FORWARD in %s. Either specify BACKWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.",
+                            ToString().c_str()
+                        );
+                        return TriState::Error;
+                    }
+                return TriState::False;
+        }
+        return TriState::None;
+    };
+
     FromExp const* fromExpression = FindFromExpression();
     PRECONDITION(fromExpression != nullptr, ERROR);
 
@@ -121,8 +178,12 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& 
     PRECONDITION(relationshipClass != nullptr, ERROR);
 
     ResolvedEndPoint fromEP, toEP;
-    toEP.SetClassRef(&GetToClassRef().GetAs<ClassNameExp>());
-    // Get flat list of relationship source and target classes. 
+    if (auto toEPClassRef = getClassNameExp(GetToClassRef()))
+        toEP.SetClassRef(toEPClassRef);
+    else {
+        return ERROR;
+    }
+    // Get flat list of relationship source and target classes.
     // It also consider IsPolymorphic attribute on source and target constraint in ECSchema
     ECSqlParseContext::ClassListById sourceList, targetList;
     if (SUCCESS != ctx.GetConstraintClasses(sourceList, relationshipClass->GetSource()))
@@ -145,37 +206,38 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& 
 
     if (toEP.GetLocation() == ClassLocation::NotResolved)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "'%s' class is not related to by the relationship '%s'", toECClass.GetFullName(), relationshipClass->GetFullName());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL,
+            "'%s' class is not related to by the relationship '%s'", toECClass.GetFullName(), relationshipClass->GetFullName());
         return ERROR;
         }
 
-    bmap<ECClassId, ClassNameExp const*> fromClassExistsInSourceList;
-    bmap<ECClassId, ClassNameExp const*> fromClassExistsInTargetList;
+    std::map<ECClassId, ClassNameExp const*> fromClassExistsInSourceList;
+    std::map<ECClassId, ClassNameExp const*> fromClassExistsInTargetList;
 
-    for (RangeClassInfo const& classRef : fromClassRefs)
+    for (RangeClassInfo const& classInfo : fromClassRefs)
         {
-        if (classRef.GetExp().GetType() != Exp::Type::ClassName)
+        if (&classInfo.GetExp() == &GetToClassRef() || &classInfo.GetExp() == &GetRelationshipClassNameExp())
             continue;
 
-        if (&classRef.GetExp() == &GetToClassRef() || &classRef.GetExp() == &GetRelationshipClassNameExp())
+        auto fromClassNameExpression = getClassNameExp(classInfo.GetExp());
+        if (fromClassNameExpression == nullptr)
             continue;
 
-        ClassNameExp const& fromClassNameExpression = classRef.GetExp().GetAs<ClassNameExp>();
-        ECClassId fromClassId = fromClassNameExpression.GetInfo().GetMap().GetClass().GetId();
+        ECClassId fromClassId = fromClassNameExpression->GetInfo().GetMap().GetClass().GetId();
 
         //Same ClassNameExp/ECClassId could exist in from SELECT * FROM FOO I, FOO B we need to skip same instance of these classes
         if (fromClassExistsInSourceList.find(fromClassId) == fromClassExistsInSourceList.end())
             {
             auto itor = sourceList.find(fromClassId);
             if (itor != sourceList.end())
-                fromClassExistsInSourceList[fromClassId] = &fromClassNameExpression;
+                fromClassExistsInSourceList[fromClassId] = fromClassNameExpression;
             }
 
         if (fromClassExistsInTargetList.find(fromClassId) == fromClassExistsInTargetList.end())
             {
             auto itor = targetList.find(fromClassId);
             if (itor != targetList.end())
-                fromClassExistsInTargetList[fromClassId] = &fromClassNameExpression;
+                fromClassExistsInTargetList[fromClassId] = fromClassNameExpression;
             }
         }
 
@@ -183,7 +245,8 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& 
 
     if (fromClassExistsInSourceList.empty() && fromClassExistsInTargetList.empty())
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "No ECClass in the FROM and JOIN clauses matches the ends of the relationship '%s'.", relationshipClass->GetFullName());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL,
+            "No ECClass in the FROM and JOIN clauses matches the ends of the relationship '%s'.", relationshipClass->GetFullName());
         return ERROR;
         }
 
@@ -239,26 +302,88 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& 
         //Rule: In self-join direction must be provided
         if (GetDirection() == JoinDirection::Implied)
             {
-            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "FORWARD or BACKWARD must be specified for joins where source and target cannot be identified unambiguously, e.g. joins between the same class.");
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL,
+                "FORWARD or BACKWARD must be specified for joins where source and target cannot be identified unambiguously, e.g. joins between the same class.");
             return ERROR;
             }
         }
 
     if (fromEP.GetLocation() == ClassLocation::NotResolved || fromEP.GetClassNameRef() == nullptr)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Could not find class on one of the ends of relationship %s", relationshipClass->GetFullName());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL,
+            "Could not find class on one of the ends of relationship %s", relationshipClass->GetFullName());
         return ERROR;
         }
 
     if (toEP.GetLocation() == ClassLocation::NotResolved || toEP.GetClassNameRef() == nullptr)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Could not find class on one of the ends of relationship %s", relationshipClass->GetFullName());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL,
+            "Could not find class on one of the ends of relationship %s", relationshipClass->GetFullName());
         return ERROR;
         }
 
     m_resolvedFrom = fromEP;
     m_resolvedTo = toEP;
 
+
+    auto fromIsSource = isFromIsInSource(fromEP.GetLocation(), GetDirection());
+    if (fromIsSource == TriState::Error || fromIsSource == TriState::None) {
+        return ERROR;
+    }
+
+    Utf8CP fromRelatedKey = nullptr;
+    Utf8CP toRelatedKey = nullptr;
+    if (fromIsSource == TriState::True) {
+        fromRelatedKey = ECDBSYS_PROP_SourceECInstanceId;
+        toRelatedKey = ECDBSYS_PROP_TargetECInstanceId;
+    } else {
+        fromRelatedKey = ECDBSYS_PROP_TargetECInstanceId;
+        toRelatedKey = ECDBSYS_PROP_SourceECInstanceId;
+    }
+
+    /////////////////////////////////////////
+    std::vector<RangeClassInfo> classList;
+    auto fromRef = dynamic_cast<RangeClassRefExp const*>(&GetFromClassRef());
+    auto toRef = dynamic_cast<RangeClassRefExp const*>(&GetToClassRef());
+    if (fromRef != nullptr)
+        classList.push_back(RangeClassInfo(*fromRef, RangeClassInfo::Scope::Local));
+
+    if (toRef != nullptr)
+        classList.push_back(RangeClassInfo(*toRef, RangeClassInfo::Scope::Local));
+    classList.push_back(RangeClassInfo(GetRelationshipClassNameExp(), RangeClassInfo::Scope::Local));
+    ctx.PushArg(std::make_unique<ECSqlParseContext::RangeClassArg>(classList));
+
+    auto& rel = GetRelationshipClassNameExp();
+    PropertyPath fromPath;
+    fromPath.Push(fromEP.GetClassNameRef()->GetAlias().empty() ? fromEP.GetClassNameRef()->GetClassName() : fromEP.GetClassNameRef()->GetAlias());
+    fromPath.Push(ECDBSYS_PROP_ECInstanceId);
+
+    PropertyPath fromRelPath;
+    fromRelPath.Push(rel.GetAlias().empty() ? rel.GetClassName() : rel.GetAlias());
+    fromRelPath.Push(fromRelatedKey);
+
+    auto fromSpecFilter = std::make_unique<BinaryBooleanExp>(
+        std::make_unique<PropertyNameExp>(fromRelPath),
+        BooleanSqlOperator::EqualTo,
+        std::make_unique<PropertyNameExp>(fromPath)
+    );
+
+    m_fromSpecFilterIdx = AddChild(std::move(fromSpecFilter));
+    PropertyPath toPath;
+    toPath.Push(toEP.GetClassNameRef()->GetAlias().empty() ? toEP.GetClassNameRef()->GetClassName() : toEP.GetClassNameRef()->GetAlias());
+    toPath.Push(ECDBSYS_PROP_ECInstanceId);
+
+    PropertyPath toRelPath;
+    toRelPath.Push(rel.GetAlias().empty() ? rel.GetClassName() : rel.GetAlias());
+    toRelPath.Push(toRelatedKey);
+
+    auto toSpecFilter = std::make_unique<BinaryBooleanExp>(
+        std::make_unique<PropertyNameExp>(toRelPath),
+        BooleanSqlOperator::EqualTo,
+        std::make_unique<PropertyNameExp>(toPath)
+    );
+    m_toSpecFilterIdx = AddChild(std::move(toSpecFilter));
+    ctx.PopArg();
     return SUCCESS;
     }
 
@@ -286,4 +411,3 @@ Utf8String ECRelationshipJoinExp::_ToString() const
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
-

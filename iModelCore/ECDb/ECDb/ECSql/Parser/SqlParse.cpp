@@ -231,6 +231,8 @@ namespace connectivity
                             {OSQLParseNode::unary_predicate, "unary_predicate"},
                             {OSQLParseNode::unique_test, "unique_test"},
                             {OSQLParseNode::update_statement_searched, "update_statement_searched"},
+                            {OSQLParseNode::value_creation_fct, "value_creation_fct"},
+                            {OSQLParseNode::value_exp, "value_exp"},
                             {OSQLParseNode::value_exp_commalist, "value_exp_commalist"},
                             {OSQLParseNode::value_exp_primary, "value_exp_primary"},
                             {OSQLParseNode::value_exp, "value_exp"},

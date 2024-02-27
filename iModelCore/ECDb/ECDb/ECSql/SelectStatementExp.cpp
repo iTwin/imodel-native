@@ -83,6 +83,11 @@ Utf8String DerivedPropertyExp::GetName() const {
         return propertyNameExp.GetPropertyPath().ToString();
     }
 
+    if (GetExpression()->GetType() == Exp::Type::NavValueCreationFunc) {
+        NavValueCreationFuncExp const& navValueCreationFuncExp = GetExpression()->GetAs<NavValueCreationFuncExp>();
+        return navValueCreationFuncExp.GetPropertyNameExp()->GetPropertyPath().ToString();
+    }
+
     return GetExpression()->ToECSql();
 }
 //-----------------------------------------------------------------------------------------
@@ -757,6 +762,9 @@ PropertyMatchResult SingleSelectStatementExp::_FindProperty(ECSqlParseContext& c
             DerivedPropertyExp const& derivedPropertyExp = selectClauseExp->GetAs<DerivedPropertyExp>();
             PropertyNameExp const *propertyNameExp = derivedPropertyExp.GetExpression()->GetType() == Exp::Type::PropertyName ? derivedPropertyExp.GetExpression()->GetAsCP<PropertyNameExp>() : nullptr;
 
+            if (propertyNameExp == nullptr)
+                propertyNameExp = derivedPropertyExp.GetExpression()->GetType() == Exp::Type::NavValueCreationFunc ? derivedPropertyExp.GetExpression()->
+                    GetAs<NavValueCreationFuncExp>().GetPropertyNameExp() : nullptr;
             // Match alias or indirect
             const auto matchUserAlias = !derivedPropertyExp.GetColumnAlias().empty() && derivedPropertyExp.GetColumnAlias().EqualsIAscii(effectivePath.First().GetName());
             const auto matchIndirect = derivedPropertyExp.GetColumnAlias().empty() && propertyNameExp != nullptr &&  propertyNameExp->GetPropertyPath().ToString().EqualsIAscii(effectivePath.First().GetName());
@@ -924,17 +932,37 @@ SelectStatementExp const* SubqueryExp::GetQuery() const { return GetChild<Select
 void SubqueryExp::_ToECSql(ECSqlRenderContext& ctx) const { ctx.AppendToECSql(*GetQuery()); }
 
 //****************************** SubqueryRefExp *****************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+ClassNameExp const* SubqueryRefExp::GetViewClass() const {
+    if (GetChildrenCount() < 2) {
+        return nullptr;
+    }
+    return GetChild<ClassNameExp>(1);
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SubqueryRefExp::SubqueryRefExp(std::unique_ptr<SubqueryExp> subquery, Utf8CP alias, PolymorphicInfo polymorphic)
+ClassNameExp * SubqueryRefExp::GetViewClassP() {
+    if (GetChildrenCount() < 2) {
+        return nullptr;
+    }
+    return GetChildP<ClassNameExp>(1);
+}
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SubqueryRefExp::SubqueryRefExp(std::unique_ptr<SubqueryExp> subquery, Utf8CP alias, PolymorphicInfo polymorphic, std::unique_ptr<ClassNameExp> viewClass)
     : RangeClassRefExp(Type::SubqueryRef, polymorphic)
     {
     if (!Utf8String::IsNullOrEmpty(alias))
         SetAlias(alias);
 
     AddChild(std::move(subquery));
+    if (viewClass != nullptr)
+        AddChild(std::move(viewClass));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -950,6 +978,29 @@ void SubqueryRefExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPr
         }
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SubqueryRefExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: SubqueryRefExp
+    val.SetEmptyObject();
+    auto viewClass = GetViewClass();
+    if (viewClass == nullptr) {
+    val["id"] = "SubqueryRefExp";
+        if (!GetAlias().empty())
+            val["alias"] = GetAlias();
+
+        GetSubquery()->ToJson(val["query"], fmt);
+        auto polymorphicInfo = GetPolymorphicInfo().ToECSql();
+        if (!polymorphicInfo.empty())
+            GetPolymorphicInfo().ToJson(val["polymorphicInfo"]);
+
+        if(!GetAlias().empty())
+            val["alias"] = GetAlias();
+    } else {
+        viewClass->ToJson(val, fmt);
+    }
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod

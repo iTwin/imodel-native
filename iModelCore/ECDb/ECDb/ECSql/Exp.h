@@ -184,6 +184,7 @@ struct Exp
             MemberFunctionCall,
             NamedPropertiesJoin,
             NaturalJoin,
+            NavValueCreationFunc,
             NonJoinQuery,
             Option,
             Options,

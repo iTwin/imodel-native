@@ -504,6 +504,12 @@ void ECDb::Impl::RegisterBuiltinFunctions() const
     m_propExistsFunc = PropExistsFunc::Create(m_ecdb);
     if (m_propExistsFunc != nullptr)
         m_ecdb.AddFunction(*m_propExistsFunc);
+
+    m_xmlCAToJsonFunc = XmlCAToJson::Create(m_ecdb.Schemas());
+    if (m_xmlCAToJsonFunc != nullptr)
+        m_ecdb.AddFunction(*m_xmlCAToJsonFunc);
+
+    RegisterBuildInVTabs(m_ecdb);
    }
 
 //---------------------------------------------------------------------------------------
@@ -544,6 +550,11 @@ void ECDb::Impl::UnregisterBuiltinFunctions() const
     if (m_propExistsFunc != nullptr) {
         m_ecdb.RemoveFunction(*m_propExistsFunc);
         m_propExistsFunc = nullptr;
+    }
+
+    if (m_xmlCAToJsonFunc != nullptr) {
+        m_ecdb.RemoveFunction(*m_xmlCAToJsonFunc);
+        m_xmlCAToJsonFunc = nullptr;
     }
     }
 

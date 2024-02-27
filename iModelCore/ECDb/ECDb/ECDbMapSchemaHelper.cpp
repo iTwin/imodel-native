@@ -149,6 +149,16 @@ bool ECDbMapCustomAttributeHelper::TryGetUseRequiresVersion(UseRequiresVersionCu
     return true;
     }
 
+//static
+bool ECDbMapCustomAttributeHelper::IsForeignKeyBasedView(ECN::ECRelationshipClassCR ecClass)
+    {
+    IECInstancePtr inst = CustomAttributeReader::Read(ecClass, ECDBMAP_SCHEMANAME, "ForeignKeyBasedView");
+    if (!inst.IsValid())
+        return false;
+
+    return true;
+    }
+
 //*****************************************************************
 //SchemaMapCustomAttribute
 //*****************************************************************

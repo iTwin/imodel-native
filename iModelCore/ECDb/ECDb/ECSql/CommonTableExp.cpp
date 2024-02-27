@@ -55,7 +55,8 @@ Exp::FinalizeParseStatus CommonTableBlockExp::_FinalizeParsing(ECSqlParseContext
         for (auto& col : m_columnList) {
             auto it = uniqueCols.insert(col.c_str());
             if (false == it.second) {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid ECSql : Common table '%s' has duplicate column with same name '%s'. %s", GetName().c_str(), col.c_str(), ToECSql().c_str());
+                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0452,
+                    "Invalid ECSql : Common table '%s' has duplicate column with same name '%s'. %s", GetName().c_str(), col.c_str(), ToECSql().c_str());
                 return FinalizeParseStatus::Error;
             }
         }
@@ -64,7 +65,8 @@ Exp::FinalizeParseStatus CommonTableBlockExp::_FinalizeParsing(ECSqlParseContext
         const auto columns = GetColumns().size();
         const auto values = GetQuery()->GetSelection()->GetChildrenCount();
         if (columns != values) {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid ECSql : Common table '%s' has %d values for columns %d. %s", GetName().c_str(), columns, values, ToECSql().c_str());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0453,
+                "Invalid ECSql : Common table '%s' has %d values for columns %d. %s", GetName().c_str(), columns, values, ToECSql().c_str());
             return FinalizeParseStatus::Error;
         }
         
@@ -285,12 +287,14 @@ const CommonTableBlockExp*  CommonTableBlockNameExp::ResolveBlock(ECSqlParseCont
         }
         if (m_blockExp == nullptr) {
             if (logError) {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid expression : Unable to find a common table expression block with '%s' name.", ToECSql().c_str());
+                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0454,
+                    "Invalid expression : Unable to find a common table expression block with '%s' name.", ToECSql().c_str());
             }
         }
     } else {
         if (logError) {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid ECSQL class expression '%s': Valid syntax: [<table space>.]<schema name or alias>.<class name>[.function call]", ToECSql().c_str());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0455,
+                "Invalid ECSQL class expression '%s': Valid syntax: [<table space>.]<schema name or alias>.<class name>[.function call]", ToECSql().c_str());
         }
     }
     return m_blockExp;
