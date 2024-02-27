@@ -1047,70 +1047,28 @@ ECValue QueryBuilderHelpers::CreateECValueFromJson(RapidJsonValueCR json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bmap<ECClassCP, bvector<InstanceLabelOverride const*>> QueryBuilderHelpers::GetLabelOverrideValuesMap(ECSchemaHelper const& helper, bvector<InstanceLabelOverrideCP> labelOverrides)
+bvector<InstanceLabelOverrideValueSpecification const*> QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(ECSchemaHelper const& schemaHelper, bvector<InstanceLabelOverrideCP> const& instanceLabelOverrides, ECClassCR ecClass)
     {
-    std::sort(labelOverrides.begin(), labelOverrides.end(), [](InstanceLabelOverrideCP a, InstanceLabelOverrideCP b) {return a->GetPriority() > b->GetPriority();});
-    bmap<ECClassCP, bvector<InstanceLabelOverride const*>> mappedFields;
-    for (auto labelOverride : labelOverrides)
+    bool handled = false;
+    bvector<InstanceLabelOverrideValueSpecification const*> specs;
+    for (auto ovr : instanceLabelOverrides)
         {
-        ECClassCP ecClass = helper.GetECClass(labelOverride->GetClassName().c_str());
-        if (nullptr == ecClass)
+        if (ovr->GetOnlyIfNotHandled() && handled)
+            continue;
+
+        auto ovrClass = schemaHelper.GetECClass(ovr->GetClassName().c_str());
+        if (!ovrClass)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("LabelOverride class not found: '%s'", labelOverride->GetClassName().c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("InstanceLabelOverride class not found: '%s'", ovr->GetClassName().c_str()));
             continue;
             }
 
-        auto iter = mappedFields.find(ecClass);
-        if (iter == mappedFields.end())
-            iter = mappedFields.Insert(ecClass, bvector<InstanceLabelOverride const*>()).first;
-
-        iter->second.push_back(labelOverride);
-        }
-    return mappedFields;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T>
-static bvector<T> SerializeECClassMapPolymorphically(bmap<ECClassCP, bvector<T>> const& map, ECClassCR ecClass, std::function<bool(T const&, ECClassCR)> const& pred)
-    {
-    bvector<T> list;
-    auto iter = map.find(&ecClass);
-    if (iter != map.end())
-        {
-        for (auto const& item : iter->second)
+        if (ecClass.Is(ovrClass))
             {
-            if (pred(item, ecClass))
-                list.push_back(item);
+            DiagnosticsHelpers::ReportRule(*ovr);
+            ContainerHelpers::Push(specs, ovr->GetValueSpecifications());
+            handled = true;
             }
-        }
-    for (ECClassCP baseClass : ecClass.GetBaseClasses())
-        {
-        bvector<T> baseList = SerializeECClassMapPolymorphically(map, *baseClass, pred);
-        std::move(baseList.begin(), baseList.end(), std::back_inserter(list));
-        }
-    return list;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<InstanceLabelOverrideValueSpecification const*> QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(bmap<ECClassCP, bvector<InstanceLabelOverride const*>> const& instanceLabelOverrides, ECClassCR ecClass)
-    {
-    bool handled = false;
-    bvector<InstanceLabelOverride const*> usedOverrides = SerializeECClassMapPolymorphically<InstanceLabelOverride const*>(instanceLabelOverrides, ecClass, [&handled](InstanceLabelOverride const* ovr, ECClassCR)
-        {
-        if (ovr->GetOnlyIfNotHandled() && handled)
-            return false;
-        handled = true;
-        return true;
-        });
-    bvector<InstanceLabelOverrideValueSpecification const*> specs;
-    for (auto const& ovr : usedOverrides)
-        {
-        DiagnosticsHelpers::ReportRule(*ovr);
-        ContainerHelpers::Push(specs, ovr->GetValueSpecifications());
         }
     return specs;
     }
