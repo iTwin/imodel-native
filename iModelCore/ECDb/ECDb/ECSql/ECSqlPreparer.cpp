@@ -1317,217 +1317,38 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
 
     NativeSqlBuilder& sql = ctx.GetSqlBuilder();
 
-    ///Resolve direction of the relationship
-    UsingRelationshipJoinExp::ResolvedEndPoint const& fromEP = exp.GetResolvedFromEndPoint();
-    UsingRelationshipJoinExp::ResolvedEndPoint const& toEP = exp.GetResolvedToEndPoint();
-    JoinDirection direction = exp.GetDirection();
-
-    enum class TriState
-        {
-        True,
-        False,
-        None,
-        } fromIsSource = TriState::None;
-
-    switch (fromEP.GetLocation())
-        {
-            case UsingRelationshipJoinExp::ClassLocation::ExistInBoth:
-            {
-            switch (direction)
-                {
-                    case JoinDirection::Implied:
-                    case JoinDirection::Forward:
-                    {
-                    fromIsSource = TriState::True;
-                    }
-                    break;
-                    case JoinDirection::Backward:
-                    {
-                    fromIsSource = TriState::False;
-                    }
-                    break;
-                };
-            break;
-            }
-            case UsingRelationshipJoinExp::ClassLocation::ExistInSource:
-            {
-            if (direction != JoinDirection::Implied)
-                {
-                if (direction != JoinDirection::Forward)
-                    {
-                    ctx.Issues().ReportV(
-                        IssueSeverity::Error,
-                        IssueCategory::BusinessProperties,
-                        IssueType::ECSQL,
-                        ECDbIssueId::ECDb_0522,
-                        "Invalid join direction BACKWARD in %s. Either specify FORWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.",
-                        exp.ToString().c_str()
-                    );
-                    return ECSqlStatus::InvalidECSql;
-                    }
-                }
-
-            fromIsSource = TriState::True;
-            }
-            break;
-            case UsingRelationshipJoinExp::ClassLocation::ExistInTarget:
-            {
-            if (direction != JoinDirection::Implied)
-                {
-                if (direction != JoinDirection::Backward)
-                    {
-                    ctx.Issues().ReportV(
-                        IssueSeverity::Error,
-                        IssueCategory::BusinessProperties,
-                        IssueType::ECSQL,
-                        ECDbIssueId::ECDb_0523,
-                        "Invalid join direction FORWARD in %s. Either specify BACKWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.",
-                        exp.ToString().c_str()
-                    );
-                    return ECSqlStatus::InvalidECSql;
-                    }
-                }
-
-            fromIsSource = TriState::False;
-            }
-            break;
-        }
-
-    PRECONDITION(fromIsSource != TriState::None, ECSqlStatus::Error);
-    ////Determine the from/to related keys
-    Utf8CP fromRelatedKey = nullptr;
-    Utf8CP toRelatedKey = nullptr;
-    if (fromIsSource == TriState::True)
-        {
-        fromRelatedKey = ECDBSYS_PROP_SourceECInstanceId;
-        toRelatedKey = ECDBSYS_PROP_TargetECInstanceId;
-        }
-    else
-        {
-        fromRelatedKey = ECDBSYS_PROP_TargetECInstanceId;
-        toRelatedKey = ECDBSYS_PROP_SourceECInstanceId;
-        }
-
-    ClassNameExp const& relationshipClassNameExp = exp.GetRelationshipClassNameExp();
-
-    //Render previous sql part as is
-    r = PrepareClassRefExp(sql, ctx, exp.GetFromClassRef());
-    if (!r.IsSuccess())
+    auto rc = PrepareClassRefExp(sql, ctx, exp.GetFromClassRef());
+    if (!rc.IsSuccess())
         return r;
 
-    //FromECClass To RelationView
     sql.Append(" INNER JOIN ");
 
-    //Append relationship view.
-    //ECSQL_TODO: we need to keep a list of view we add as we don't need to append them again and again. Instead use there alias everyWhere else
-    //            The PrepareContext scope can manage that and keep a list of already defined classes and there alias/name
-
-    if (ctx.GetECDb().GetECSqlConfig().GetOptimizationOption(OptimizationOptions::OptimizeJoinForNestedSelectQuery))
-        {
-        ClassMap const& classMap = relationshipClassNameExp.GetInfo().GetMap();
-        if (classMap.GetType() == ClassMap::Type::RelationshipLinkTable)
-            RemovePropertyRefs(ctx, relationshipClassNameExp, classMap);
-
-        }
-
-    //Generate view for relationship
-    NativeSqlBuilder relationshipView;
-    if (SUCCESS != ViewGenerator::GenerateSelectFromViewSql(relationshipView, ctx, relationshipClassNameExp.GetInfo().GetMap(), relationshipClassNameExp.GetPolymorphicInfo(), relationshipClassNameExp.DisqualifyPrimaryJoin(), nullptr, nullptr, &relationshipClassNameExp))
-        {
-        BeAssert(false && "Generating class view during preparation of relationship class name expression failed.");
-        return ECSqlStatus::Error;
-        }
-
-    sql.Append(relationshipView);
-    sql.AppendSpace();
-    sql.AppendEscaped(relationshipClassNameExp.GetId().c_str());
-
-    sql.Append(" ON ");
-    {
-    ECInstanceIdPropertyMap const* fromECInstanceIdPropMap = fromEP.GetClassNameRef()->GetInfo().GetMap().GetECInstanceIdPropertyMap();
-    if (fromECInstanceIdPropMap == nullptr)
-        {
-        BeAssert(false);
-        return ECSqlStatus::Error;
-        }
-
-    ToSqlPropertyMapVisitor fromECInstanceIdSqlVisitor(*fromECInstanceIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, fromEP.GetClassNameRef()->GetId());
-    fromECInstanceIdPropMap->AcceptVisitor(fromECInstanceIdSqlVisitor);
-    if (fromECInstanceIdSqlVisitor.GetResultSet().size() != 1)
-        {
-        BeAssert(false);
-        return ECSqlStatus::Error;
-        }
-
-    sql.Append(fromECInstanceIdSqlVisitor.GetResultSet().front().GetSqlBuilder().GetSql());
-    sql.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo));
-    }
-
-    {
-    PropertyMap const* fromRelatedIdPropMap = relationshipClassNameExp.GetInfo().GetMap().GetPropertyMaps().Find(fromRelatedKey);
-    if (fromRelatedIdPropMap == nullptr)
-        {
-        BeAssert(false);
-        return ECSqlStatus::Error;
-        }
-
-
-    ToSqlPropertyMapVisitor fromRelatedIdSqlVisitor(*fromRelatedIdPropMap->GetAs<ConstraintECInstanceIdPropertyMap>().GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, relationshipClassNameExp.GetId());
-    fromRelatedIdPropMap->AcceptVisitor(fromRelatedIdSqlVisitor);
-    if (fromRelatedIdSqlVisitor.GetResultSet().size() != 1)
-        {
-        BeAssert(false);
-        return ECSqlStatus::Error;
-        }
-
-    sql.Append(fromRelatedIdSqlVisitor.GetResultSet().front().GetSqlBuilder().GetSql());
-
-    //RelationView To ToECClass
-    sql.Append(" INNER JOIN ");
-    r = PrepareClassRefExp(sql, ctx, exp.GetToClassRef());
-    if (!r.IsSuccess())
+    rc = PrepareClassRefExp(sql, ctx, exp.GetRelationshipClassNameExp());
+    if (!rc.IsSuccess())
         return r;
 
     sql.Append(" ON ");
-    }
+    NativeSqlBuilder::List fromNativeSqlSnippets;
+    rc = PrepareBinaryBooleanExp(fromNativeSqlSnippets, ctx, *exp.GetFromSpecExp());
+    if (!rc.IsSuccess())
+        return r;
 
-    {
-    ECInstanceIdPropertyMap const*  toECInstanceIdPropMap = toEP.GetClassNameRef()->GetInfo().GetMap().GetECInstanceIdPropertyMap();
-    if (toECInstanceIdPropMap == nullptr)
-        {
-        BeAssert(false);
-        return ECSqlStatus::Error;
-        }
+    sql.Append(fromNativeSqlSnippets.front());
 
-    ToSqlPropertyMapVisitor toECInstanceIdSqlVisitor(*toECInstanceIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, toEP.GetClassNameRef()->GetId());
-    toECInstanceIdPropMap->AcceptVisitor(toECInstanceIdSqlVisitor);
-    if (toECInstanceIdSqlVisitor.GetResultSet().size() != 1)
-        {
-        BeAssert(false);
-        return ECSqlStatus::Error;
-        }
+    sql.Append(" INNER JOIN ");
 
-    sql.Append(toECInstanceIdSqlVisitor.GetResultSet().front().GetSqlBuilder().GetSql());
-    sql.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo));
-    }
+    rc = PrepareClassRefExp(sql, ctx, exp.GetToClassRef());
+    if (!rc.IsSuccess())
+        return r;
 
-    {
-    PropertyMap const* toRelatedIdPropMap = relationshipClassNameExp.GetInfo().GetMap().GetPropertyMaps().Find(toRelatedKey);
-    if (toRelatedIdPropMap == nullptr)
-        {
-        BeAssert(false);
-        return ECSqlStatus::Error;
-        }
+    sql.Append(" ON ");
 
-    ToSqlPropertyMapVisitor toRelatedIdSqlVisitor(*toRelatedIdPropMap->GetAs<ConstraintECInstanceIdPropertyMap>().GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, relationshipClassNameExp.GetId());
-    toRelatedIdPropMap->AcceptVisitor(toRelatedIdSqlVisitor);
-    if (toRelatedIdSqlVisitor.GetResultSet().size() != 1)
-        {
-        BeAssert(false);
-        return ECSqlStatus::Error;
-        }
-    sql.Append(toRelatedIdSqlVisitor.GetResultSet().front().GetSqlBuilder().GetSql());
-    }
+    NativeSqlBuilder::List toNativeSqlSnippets;
+    rc = PrepareBinaryBooleanExp(toNativeSqlSnippets, ctx, *exp.GetToSpecExp());
+    if (!rc.IsSuccess())
+        return r;
+
+    sql.Append(toNativeSqlSnippets.front());
 
     return ECSqlStatus::Success;
     }
@@ -1706,7 +1527,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryRefExp(ECSqlPrepareContext& ctx, Su
         return status;
 
     if (!exp.GetAlias().empty())
-        ctx.GetSqlBuilder().AppendSpace().AppendQuoted(exp.GetAlias().c_str());
+        ctx.GetSqlBuilder().AppendSpace().AppendEscaped(exp.GetAlias().c_str());
 
     return ECSqlStatus::Success;
     }
@@ -2630,6 +2451,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp(NativeSqlBuilder::List& nativeSqlS
             }
             case Exp::Type::WindowFunction:
                 return PrepareWindowFunctionExp(nativeSqlSnippets, ctx, exp.GetAs<WindowFunctionExp>());
+            case Exp::Type::NavValueCreationFunc:
+                return PrepareNavValueCreationFuncExp(nativeSqlSnippets, ctx, exp.GetAs<NavValueCreationFuncExp>());
             default:
                 break;
             }
@@ -2778,6 +2601,99 @@ ECSqlStatus ECSqlExpPreparer::GenerateECClassIdFilter(Utf8StringR filterSqlExpre
     if (partition->NeedsECClassIdFilter())
         filterSqlExpression.append(classIdColSql).append(" IN (SELECT ClassId FROM [").append(classMap.GetSchemaManager().GetTableSpace().GetName()).append("]." TABLE_ClassHierarchyCache " WHERE BaseClassId=").append(classIdStr).append(")");
 
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+ECSqlStatus ECSqlExpPreparer::PrepareNavValueCreationFuncExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, NavValueCreationFuncExp const& exp)
+    {
+    auto property = ctx.GetECDb().Schemas()
+        .GetClass(
+            exp.GetClassNameExp()->GetSchemaName(),
+            exp.GetClassNameExp()->GetClassName()
+        )->GetPropertyP(exp.GetPropertyNameExp()->GetPropertyPath()[0].GetName());
+
+    if (!property->GetIsNavigation())
+        {
+        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0720, "NAV function expects first argument to be an ECNavigation property.");
+        return ECSqlStatus::InvalidECSql;
+        }
+
+    if ((exp.GetIdArgExp()->GetType() == Exp::Type::LiteralValue && !exp.GetIdArgExp()->GetTypeInfo().IsExactNumeric()) || (exp.GetRelECClassIdExp() != nullptr && exp.GetRelECClassIdExp()->GetType() == Exp::Type::LiteralValue && !exp.GetRelECClassIdExp()->GetTypeInfo().IsExactNumeric()))
+        {
+        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0721, "NAV function expects second and third arguments to be positive integers.");
+        return ECSqlStatus::InvalidECSql;
+        }
+
+    auto isUnaryValueValidForId = [&ctx](UnaryValueExp const * argExp) {
+        if (argExp->GetOperator() == UnaryValueExp::Operator::Minus || (argExp->GetOperand()->GetType() == Exp::Type::LiteralValue && argExp->GetOperand()->GetAs<LiteralValueExp>().GetRawValue() == "0"))
+            {
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0721, "NAV function expects second and third arguments to be positive integers.");
+            return false;
+            }
+        return true;
+    };
+
+    auto isLiteralValueValidForId = [&ctx](LiteralValueExp const * argExp) {
+        if (argExp->GetRawValue() == "0")
+            {
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0721, "NAV function expects second and third arguments to be positive integers.");
+            return false;
+            }
+        return true;
+    };
+
+    if (exp.GetIdArgExp()->GetType() == Exp::Type::UnaryValue && !isUnaryValueValidForId(exp.GetIdArgExp()->GetAsCP<UnaryValueExp>()))
+        return ECSqlStatus::InvalidECSql;
+
+    if (exp.GetIdArgExp()->GetType() == Exp::Type::LiteralValue && !isLiteralValueValidForId(exp.GetIdArgExp()->GetAsCP<LiteralValueExp>()))
+        return ECSqlStatus::InvalidECSql;
+
+    if (exp.GetRelECClassIdExp() != nullptr && exp.GetRelECClassIdExp()->GetType() == Exp::Type::UnaryValue && !isUnaryValueValidForId(exp.GetRelECClassIdExp()->GetAsCP<UnaryValueExp>()))
+        return ECSqlStatus::InvalidECSql;
+
+    if (exp.GetRelECClassIdExp() != nullptr && exp.GetRelECClassIdExp()->GetType() == Exp::Type::LiteralValue && !isLiteralValueValidForId(exp.GetRelECClassIdExp()->GetAsCP<LiteralValueExp>()))
+        return ECSqlStatus::InvalidECSql;
+
+
+    NativeSqlBuilder idBuilder;
+    NativeSqlBuilder relECClassIdBuilder;
+    NativeSqlBuilder::List idNativeSql;
+    NativeSqlBuilder::List relECClassIdNativeSql;
+    if (ctx.GetCurrentScope().IsRootScope())
+        ECSqlFieldFactory::CreateField(ctx, exp.GetColumnRefExp(), ctx.GetCurrentScope().GetNativeSqlSelectClauseColumnCount());
+
+    auto stat = PrepareValueExp(idNativeSql, ctx, *exp.GetIdArgExp());
+    if (!stat.IsSuccess())
+        return stat;
+
+    if (exp.GetRelECClassIdExp() == nullptr)
+        relECClassIdNativeSql.push_back(NativeSqlBuilder (std::to_string(property->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue())));
+    else
+        stat = PrepareValueExp(relECClassIdNativeSql, ctx, *exp.GetRelECClassIdExp());
+    
+    if (!stat.IsSuccess())
+        return stat;
+
+    Utf8CP navName = exp.GetParent()->GetAs<DerivedPropertyExp>().GetNestedAlias().empty() ? exp.GetColumnRefExp()->GetColumnAlias().c_str() : exp.GetParent()->GetAs<DerivedPropertyExp>().GetNestedAlias().c_str();
+    idBuilder.Append(idNativeSql.at(0).GetSql()).AppendSpace().Append("[").Append(navName).Append("_0]");
+    nativeSqlSnippets.push_back(idBuilder);
+    relECClassIdBuilder.Append(relECClassIdNativeSql.at(0).GetSql()).AppendSpace().Append("[").Append(navName).Append("_1]");
+    if (exp.GetIdArgExp()->GetType() == Exp::Type::PropertyName)
+        {
+        if (exp.GetParent()->GetParent()->GetParent()->GetAs<SingleSelectStatementExp>().GetFrom() == nullptr)
+            {
+            BeAssert(false && "If class name specified, FROM clause should be specified as well");
+            return ECSqlStatus::Error;
+            }
+        nativeSqlSnippets.push_back(relECClassIdBuilder);
+        return ECSqlStatus::Success;
+        }
+
+    nativeSqlSnippets.push_back(relECClassIdBuilder);
     return ECSqlStatus::Success;
     }
 

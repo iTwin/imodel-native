@@ -10,11 +10,52 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 using namespace connectivity;
 USING_NAMESPACE_BENTLEY_EC
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+-----g----------+---------------+--------
+Utf8String ECSqlParseContext::ClassViewPrepareStack::GetStackAsString() const {
+    Utf8String stack;
+    for (auto i = 0; i < m_ctx.m_viewPrepareStack.size(); ++i) {
+        if (i > 0) {
+            stack.append(" -> ");
+        }
+        stack.append(m_ctx.m_viewPrepareStack[i]->GetFullName());
+    }
+    return stack;
+}
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql, IssueDataSource const& issues) const {
-    ScopedContext scopedContext(*this, ecdb , issues);
+ECSqlParseContext::ClassViewPrepareStack::ClassViewPrepareStack(ECSqlParseContext& ctx, ECN::ECClassCR viewClass) : m_ctx(ctx) {
+    m_ctx.m_viewPrepareStack.push_back(&viewClass);
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECSqlParseContext::ClassViewPrepareStack::IsOnStack(ECN::ECClassCR viewClass) const {
+    for (auto i = 0; i< m_ctx.m_viewPrepareStack.size() - 1; ++i) {
+        if (m_ctx.m_viewPrepareStack[i] == &viewClass)
+            return true;
+    }
+    return false;
+}
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSqlParseContext::ClassViewPrepareStack::~ClassViewPrepareStack() { BeAssert(!m_ctx.m_viewPrepareStack.empty()); m_ctx.m_viewPrepareStack.pop_back(); }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql, IssueDataSource const& issues, const ECSqlParser* parentParser) const {
+    if (parentParser == this) {
+        BeAssert(false && "parent parser cannot be same as current");
+        return nullptr;
+    }
+    ScopedContext scopedContext(*this, ecdb , issues, parentParser);
     //Parse statement
     Utf8String error;
     OSQLParser parser;
@@ -1539,7 +1580,65 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
                 if (SUCCESS != ParseTableNodeWithOptMemberCall(classNameExp, *thirdNode, ecsqlType, polymorphicConst, disqualifyPrimaryJoin))
                     return ERROR;
 
-                rangeClassRef = std::move(classNameExp);
+                // check and parse view query
+                auto classCP = m_context->GetECDb().Schemas().GetClass(classNameExp->GetSchemaName(), classNameExp->GetClassName(), SchemaLookupMode::AutoDetect, classNameExp->GetTableSpace().c_str());
+                if (classCP != nullptr && ClassViews::IsViewClass(*classCP)) {
+                    Utf8String ecsql;
+                    if (!ClassViews::TryGetQuery(ecsql,*classCP)) {
+                        m_context->Issues().ReportV(
+                            IssueSeverity::Error,
+                            IssueCategory::BusinessProperties,
+                            IssueType::ECSQL, ECDbIssueId::ECDb_0710, "Invalid View Class '%s'. There is not query supplied for view.", classCP->GetFullName());
+                        return ERROR;
+                    }
+
+                    if (polymorphicConst.IsOnly()) {
+                        m_context->Issues().ReportV(
+                            IssueSeverity::Error,
+                            IssueCategory::BusinessProperties,
+                            IssueType::ECSQL, ECDbIssueId::ECDb_0711, "ONLY keyword is not supported for view classes (ViewClass: %s).", classCP->GetFullName());
+                        return ERROR;
+                    }
+
+                    ECSqlParseContext::ClassViewPrepareStack viewStack(*m_context, *classCP);
+                    ECSqlParser parser;
+                    if (viewStack.IsOnStack(*classCP)) {
+                        m_context->Issues().ReportV(
+                            IssueSeverity::Error,
+                            IssueCategory::BusinessProperties,
+                            IssueType::ECSQL, ECDbIssueId::ECDb_0712, "Invalid View Class '%s'. View query references itself recusively (%s).", classCP->GetFullName(), viewStack.GetStackAsString().c_str());
+                        return ERROR;
+                    }
+
+                    auto parseTree = parser.Parse(m_context->GetECDb(), ecsql.c_str(), m_context->Issues(), this);
+                    if (parseTree == nullptr) {
+                        m_context->Issues().ReportV(
+                            IssueSeverity::Error,
+                            IssueCategory::BusinessProperties,
+                            IssueType::ECSQL, ECDbIssueId::ECDb_0713, "Invalid View Class '%s'. View ECSQL failed to parse.", classCP->GetFullName());
+                        return ERROR;
+                    }
+
+                    if (parseTree->GetType() != Exp::Type::Select) {
+                        m_context->Issues().ReportV(
+                            IssueSeverity::Error,
+                            IssueCategory::BusinessProperties,
+                            IssueType::ECSQL, ECDbIssueId::ECDb_0714, "Invalid View Class '%s'. View ECSQL is not a SELECT statement.", classCP->GetFullName());
+                        return ERROR;
+                    }
+
+                    std::unique_ptr<SelectStatementExp> selectExp;
+                    selectExp.reset(static_cast<SelectStatementExp*>(parseTree.get()));
+                    parseTree.release();
+                    rangeClassRef = std::make_unique<SubqueryRefExp>(
+                        std::make_unique<SubqueryExp>(
+                            std::move(selectExp)),
+                            classNameExp->GetAlias().empty()? classNameExp->GetClassName().c_str() : classNameExp->GetAlias().c_str(),
+                            polymorphicConst,
+                            std::move(classNameExp));
+                } else {
+                    rangeClassRef = std::move(classNameExp);
+                }
             }
             OSQLParseNode const* table_primary_as_range_column = parseNode->getChild(3);
             if (table_primary_as_range_column->count() > 0)
@@ -1890,7 +1989,7 @@ BentleyStatus ECSqlParser::ParseTableNode(std::unique_ptr<ClassNameExp>& exp, OS
     BeAssert(className != nullptr && !className->empty() && schemaName != nullptr && !schemaName->empty());
 
     std::shared_ptr<ClassNameExp::Info> classNameExpInfo = nullptr;
-    if (SUCCESS != m_context->TryResolveClass(classNameExpInfo, tableSpaceName, *schemaName, *className, ecsqlType, polymorphic.IsPolymorphic()))
+    if (SUCCESS != m_context->TryResolveClass(classNameExpInfo, tableSpaceName, *schemaName, *className, ecsqlType, polymorphic.IsPolymorphic(), tableNode))
         return ERROR;
 
     exp = std::make_unique<ClassNameExp>(*className, *schemaName, tableSpaceName, classNameExpInfo, polymorphic, nullptr);
@@ -2083,7 +2182,7 @@ BentleyStatus ECSqlParser::ParseTableNodeWithOptMemberCall(std::unique_ptr<Class
     Utf8CP tableSpaceName = tableSpaceNodeIx == 0 ? entryNames[tableSpaceNodeIx]->c_str() : nullptr;
 
     std::shared_ptr<ClassNameExp::Info> classNameExpInfo = nullptr;
-    if (SUCCESS != m_context->TryResolveClass(classNameExpInfo, tableSpaceName, *schemaName, *className, ecsqlType, polymorphic.IsPolymorphic()))
+    if (SUCCESS != m_context->TryResolveClass(classNameExpInfo, tableSpaceName, *schemaName, *className, ecsqlType, polymorphic.IsPolymorphic(), tableNode))
         return ERROR;
 
     std::unique_ptr<MemberFunctionCallExp> memberFuncCall;
@@ -3289,7 +3388,8 @@ BentleyStatus ECSqlParser::ParseValueExp(std::unique_ptr<ValueExp>& valueExp, OS
                     return ParseValueExpPrimary(valueExp, parseNode);
                 case OSQLParseNode::window_function:
                     return ParseWindowFunction(valueExp, parseNode);
-
+                case OSQLParseNode::value_creation_fct:
+                    return ParseValueCreationFuncExp(valueExp, parseNode);
                 default:
                     Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0493,
                         "ECSQL Parse error: Unsupported value_exp type: %d", (int) parseNode->getKnownRuleID());
@@ -4139,6 +4239,91 @@ BentleyStatus ECSqlParser::ParseWindowFrameExclusion(WindowFrameClauseExp::Windo
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
+BentleyStatus ECSqlParser::ParseValueCreationFuncExp(std::unique_ptr<ValueExp>& valueExp, OSQLParseNode const* parseNode) const
+    {
+    if (!SQL_ISRULE(parseNode, value_creation_fct))
+        {
+        BeAssert(false && "Invalid grammar. Expecting value_creation_fct");
+        return ERROR;
+        }
+
+    switch (parseNode->getChild(0)->getTokenID())
+        {
+        case SQL_TOKEN_NAVIGATION_VALUE:
+            {
+            std::unique_ptr<NavValueCreationFuncExp> navValueCreationFuncExp = nullptr;
+            if (SUCCESS != ParseNavValueCreationFuncExp(navValueCreationFuncExp, parseNode))
+                return ERROR;
+            valueExp = std::move(navValueCreationFuncExp);
+            return SUCCESS;
+            }
+        default:
+            {
+            BeAssert(false && "Unhandled tokenID in ValueCreationFuncExp");
+            return ERROR;
+            }
+        }
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+BentleyStatus ECSqlParser::ParseNavValueCreationFuncExp(std::unique_ptr<NavValueCreationFuncExp>& valueCreationFuncExp, OSQLParseNode const* parseNode) const
+    {
+    std::unique_ptr<DerivedPropertyExp> derivedPropertyExp = nullptr;
+    if (SUCCESS != ParseDerivedColumn(derivedPropertyExp, parseNode->getChild(2)))
+        return ERROR;
+
+    if (derivedPropertyExp->GetExpression()->GetType() != Exp::Type::PropertyName) // NAVIGATION_VALUE function should accept only PropertyName
+        return ERROR;
+
+    if (derivedPropertyExp->GetExpression()->GetAs<PropertyNameExp>().GetPropertyPath().Size() != 3)
+        return ERROR;
+
+    PropertyPath propPath = derivedPropertyExp->GetExpression()->GetAs<PropertyNameExp>().GetPropertyPath();
+
+    ClassMap const* classMap = m_context->GetECDb().Schemas().GetDispatcher().GetClassMap(propPath[0].GetName(), propPath[1].GetName(), SchemaLookupMode::AutoDetect, nullptr);
+
+    if (classMap == nullptr)
+        return ERROR;
+
+    propPath.SetClassMap(*classMap);
+    std::shared_ptr<ClassNameExp::Info> classNameExpInfo = nullptr;
+    if (SUCCESS != m_context->TryResolveClass(classNameExpInfo, nullptr, propPath[0].GetName(), propPath[1].GetName(), ECSqlType::Select, false, *parseNode))
+        return ERROR;
+
+    std::unique_ptr<ClassNameExp> classNameExp =  std::make_unique<ClassNameExp>(propPath[1].GetName().c_str(), propPath[0].GetName().c_str(), nullptr, classNameExpInfo);
+
+    if (classMap->GetPropertyMaps().Find(propPath[2].GetName().c_str()) == nullptr)
+        return ERROR;
+
+    std::unique_ptr<PropertyNameExp> propNameExp = std::make_unique<PropertyNameExp>(
+        *m_context,
+        propPath[2].GetName(),
+        *classNameExp.get(),
+        *classMap
+    );
+
+    propNameExp->SetTypeInfo(ECSqlTypeInfo(ECSqlTypeInfo::Kind::Navigation));
+    Utf8CP alias = parseNode->getParent()->getChild(1)->getTokenValue().empty() ? nullptr : parseNode->getParent()->getChild(1)->getTokenValue().c_str();
+    derivedPropertyExp = std::make_unique<DerivedPropertyExp>(std::move(propNameExp), alias);
+
+    std::unique_ptr<ValueExp> idArgExp = nullptr;
+    if (SUCCESS != ParseFunctionArg(idArgExp, *parseNode->getChild(4)))
+        return ERROR;
+
+    std::unique_ptr<ValueExp> relECClassIdArgExp = nullptr;
+    if (parseNode->getChild(5)->count() != 0 && SUCCESS != ParseFunctionArg(relECClassIdArgExp, *parseNode->getChild(5)->getChild(1)))
+        return ERROR;
+
+    valueCreationFuncExp = std::make_unique<NavValueCreationFuncExp>(std::move(derivedPropertyExp), std::move(idArgExp), std::move(relECClassIdArgExp), std::move(classNameExp));
+    valueCreationFuncExp->SetTypeInfo(ECSqlTypeInfo(*classMap->GetPropertyMaps().Find(propPath[2].GetName().c_str())));
+    return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
 //static
 Utf8CP ECSqlParser::SqlDataTypeKeywordToString(sal_uInt32 keywordId)
     {
@@ -4227,15 +4412,41 @@ ECSqlParseContext::ParseArg const* ECSqlParseContext::CurrentArg() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-void ECSqlParseContext::PopArg() { m_finalizeParseArgs.pop_back(); }
+void ECSqlParseContext::PopArg() { BeAssert(!m_finalizeParseArgs.empty()); m_finalizeParseArgs.pop_back(); }
+
+//Helper for TryResolveClass to check if te current node is a table node inside a type predicate
+//If the class is a custom attribute class,we allow it to be used despite what the policy says
+//Example syntax in ECSQL: "IS (mySchema.MyCustomAttribute)"
+bool IsSpecialTypePredicateCase(ClassMap const& classMap, OSQLParseNode const& node)
+    {
+    if (classMap.GetMapStrategy().GetStrategy() != MapStrategy::NotMapped || !classMap.GetClass().IsCustomAttributeClass())
+        return false;
+
+    if (!SQL_ISRULE(&node, table_node))
+        return false; //node itself must be a table_node
+
+    auto parent = node.getParent();
+    if (parent == nullptr)
+        return false; //parent node is a helper node (type list item)
+
+    auto parentParent = parent->getParent();
+    if (parentParent == nullptr)
+        return false; // parent's parent node is a helper node (type list)
+
+    auto parentParentParent = parentParent->getParent();
+    if (parentParentParent == nullptr || !SQL_ISRULE(parentParentParent, type_predicate))
+        return false; //parent's parent's parent node must be type_predicate
+
+    return true;
+    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParseContext::TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classNameExpInfo, Utf8CP tableSpaceName, Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ECSqlType ecsqlType, bool isPolymorphicExp)
+BentleyStatus ECSqlParseContext::TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classNameExpInfo, Utf8CP tableSpaceName, Utf8StringCR schemaNameOrAlias,
+    Utf8StringCR className, ECSqlType ecsqlType, bool isPolymorphicExp, OSQLParseNode const& node)
     {
     BeAssert(!schemaNameOrAlias.empty());
-
     ClassMap const* classMap = m_ecdb.Schemas().GetDispatcher().GetClassMap(schemaNameOrAlias, className, SchemaLookupMode::AutoDetect, tableSpaceName);
     if (classMap == nullptr)
         {
@@ -4263,6 +4474,13 @@ BentleyStatus ECSqlParseContext::TryResolveClass(std::shared_ptr<ClassNameExp::I
     Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(*classMap, ecsqlType, isPolymorphicExp));
     if (!policy.IsSupported())
         {
+        //despite the policy we allow using a custom attribute class if it is used inside a type predicate
+        if (IsSpecialTypePredicateCase(*classMap, node))
+            {
+            classNameExpInfo = ClassNameExp::Info::Create(*classMap);
+            return SUCCESS;
+            }
+
         Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0496, "Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
         return ERROR;
         }
