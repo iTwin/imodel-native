@@ -988,11 +988,8 @@ const Utf8CP ContentDescriptor::DisplayLabelField::NAME = "/DisplayLabel/";
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::DisplayLabelField::~DisplayLabelField()
     {
-    for (auto const& entry : m_labelOverrideSpecs)
-        {
-        for (auto classSpec : entry.second)
-            delete classSpec;
-        }
+    for (auto& spec : m_labelOverrideSpecs)
+        delete spec;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1014,16 +1011,11 @@ rapidjson::Document ContentDescriptor::DisplayLabelField::_AsJson(ECPresentation
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bmap<ECClassCP, bvector<InstanceLabelOverride const*>> ContentDescriptor::DisplayLabelField::CloneLabelOverrideValueSpecs(bmap<ECClassCP, bvector<InstanceLabelOverride const*>> const& specs)
+bvector<InstanceLabelOverrideCP> ContentDescriptor::DisplayLabelField::CloneLabelOverrideValueSpecs(bvector<InstanceLabelOverrideCP> const& specs)
     {
-    bmap<ECClassCP, bvector<InstanceLabelOverride const*>> result;
-    for (auto const& entry : specs)
-        {
-        bvector<InstanceLabelOverride const*> classSpecs;
-        for (auto classSpec : entry.second)
-            classSpecs.push_back(new InstanceLabelOverride(*classSpec));
-        result.Insert(entry.first, classSpecs);
-        }
+    bvector<InstanceLabelOverrideCP> result;
+    for (auto const& spec : specs)
+        result.push_back(new InstanceLabelOverride(*spec));
     return result;
     }
 
