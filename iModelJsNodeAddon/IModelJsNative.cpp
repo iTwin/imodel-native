@@ -476,7 +476,7 @@ public:
         REQUIRE_ARGUMENT_STRING(0, schemaName);
         auto schema = m_ecdb.Schemas().GetSchema(schemaName, true);
         if (nullptr == schema)
-            BeNapi::ThrowJsException(info.Env(), "schema not found");
+            BeNapi::ThrowJsException(info.Env(), "schema not found", (int) DgnDbStatus::NotFound);
 
         BeJsNapiObject props(info.Env());
         if (!schema->WriteToJsonValue(props))
@@ -881,6 +881,13 @@ struct ECSchemaSerializationAsyncWorker : DgnDbWorker {
         if (!schema->WriteToJsonValue(m_output))
             SetError("schema serialization error");
     }
+
+    void OnError(Napi::Error const& e) {
+        if (e.Message() == "schema not found")
+            e.Value()["errorNumber"] = (int) DgnDbStatus::NotFound;
+        DgnDbWorker::OnError(e);
+    }
+
     ECSchemaSerializationAsyncWorker(DgnDbR db, Napi::Env env, Utf8StringCR schemaName) : DgnDbWorker(db,env), m_schemaName(schemaName) {}
 };
 
@@ -1139,7 +1146,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         REQUIRE_ARGUMENT_STRING(0, schemaName);
         auto schema = m_dgndb->Schemas().GetSchema(schemaName, true);
         if (nullptr == schema)
-            BeNapi::ThrowJsException(info.Env(), "schema not found");
+            BeNapi::ThrowJsException(info.Env(), "schema not found", (int) DgnDbStatus::NotFound);
 
         BeJsNapiObject props(info.Env());
         if (!schema->WriteToJsonValue(props))
@@ -4978,6 +4985,8 @@ struct SnapRequest : BeObjectWrap<SnapRequest>
         void OnError(Napi::Error const& e) final
             {
             OnComplete();
+            if (e.Message() == "aborted")
+                e.Value()["errorNumber"] = (int) DgnDbStatus::Aborted;
             DgnDbWorker::OnError(e);
             }
 
