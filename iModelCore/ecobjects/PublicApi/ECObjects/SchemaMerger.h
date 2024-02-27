@@ -23,6 +23,7 @@
 #define SCHEMAMERGER_RENAMEPROPERTYONCONFLICT                 "#renamePropertyOnConflict"
 #define SCHEMAMERGER_PREFERRIGHTSIDEDISPLAYLABEL              "#preferRightSideDisplayLabel"
 #define SCHEMAMERGER_IGNORESTRENGTHCHANGEPROBLEMS             "#ignoreStrengthChangeProblems"
+#define SCHEMAMERGER_MERGEENTIRETREE                          "#mergeEntireTree"
 
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -99,6 +100,11 @@ public:
     //! Defaults to false
     void SetIgnoreStrengthChangeProblems(bool flag) { m_json[SCHEMAMERGER_IGNORESTRENGTHCHANGEPROBLEMS] = flag; }
     bool IgnoreStrengthChangeProblems() const { return m_json[SCHEMAMERGER_IGNORESTRENGTHCHANGEPROBLEMS].asBool(false); }
+
+    //! Setting this flag makes the merger locate the entire tree when copying.
+    //! Defaults to true
+    void SetMergeEntireTree(bool flag) { m_json[SCHEMAMERGER_MERGEENTIRETREE] = flag; }
+    bool MergeEntireTree() const { return m_json[SCHEMAMERGER_MERGEENTIRETREE].asBool(true); }
 
     Utf8String GetJson() const { return m_json.ToUtf8CP(); }
     void ReadFromJson(Utf8CP json) { return m_json.Parse(json); }

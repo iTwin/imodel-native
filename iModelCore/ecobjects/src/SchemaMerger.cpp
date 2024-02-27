@@ -238,7 +238,8 @@ BentleyStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSc
             if(!result.ContainsSchema(schema->GetName().c_str()))
                 {
                 ECSchemaPtr copiedSchema;
-                if(schema->CopySchema(copiedSchema, &result.GetSchemaCache()) != ECObjectsStatus::Success)
+                auto entireTree = options.MergeEntireTree();
+                if(schema->CopySchema(copiedSchema, entireTree ? &result.GetSchemaCache() : nullptr) != ECObjectsStatus::Success)
                     {
                     result.Issues().ReportV(IssueSeverity::Fatal, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0025,
                         "Schema '%s' from %s side failed to be copied.", schema->GetFullSchemaName().c_str(), side);
