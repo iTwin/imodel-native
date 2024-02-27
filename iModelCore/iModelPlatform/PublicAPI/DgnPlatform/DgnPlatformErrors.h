@@ -92,6 +92,7 @@ enum class DgnDbStatus : int
     WrongModel             = DGNDB_ERROR_BASE + 64,
     ConstraintNotUnique    = DGNDB_ERROR_BASE + 65,
     NoGeoLocation          = DGNDB_ERROR_BASE + 66,
+    Aborted                = DGNDB_ERROR_BASE + 72,
     };
 
 //! Status Values for DgnViewport methods

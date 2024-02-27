@@ -2708,19 +2708,36 @@ static void AssignRelatedInstanceClasses(bvector<SelectQueryInfo>& infos, ChildN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+static bvector<ECClassCP> GetInstanceLabelOverrideClasses(ECSchemaHelper const& schemaHelper, bvector<InstanceLabelOverrideCP> const& overrides)
+    {
+    bvector<ECClassCP> uniqueClasses;
+    for (auto ovr : overrides)
+        {
+        auto ovrClass = schemaHelper.GetECClass(ovr->GetClassName().c_str());
+        if (!ovrClass || ContainerHelpers::Contains(uniqueClasses, ovrClass))
+            continue;
+
+        uniqueClasses.push_back(ovrClass);
+        }
+    return uniqueClasses;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TSpecification>
 static bvector<SelectQueryInfo> CreateSelectInfos(TSpecification const& spec, bvector<SelectClassWithExcludes<ECClass>> const& selectClasses, GroupingResolver const& resolver,
-    bmap<ECClassCP, bvector<InstanceLabelOverride const*>> const& instanceLabelOverrides, NavNodeCP parentNode,
+    bvector<InstanceLabelOverrideCP> const& instanceLabelOverrides, NavNodeCP parentNode,
     bvector<InstanceFilterDefinitionCP> const& instanceFilterDefinitions, QueryClauseAndBindings instanceFilterECSqlExpression,
     NavigationQueryBuilderParameters const& params, ECClassUseCounter& relationshipUseCounter)
     {
-    bvector<ECClassCP> instanceLabelOverrideClasses = ContainerHelpers::GetMapKeys(instanceLabelOverrides);
+    bvector<ECClassCP> instanceLabelOverrideClasses = GetInstanceLabelOverrideClasses(params.GetSchemaHelper(), instanceLabelOverrides);
     bvector<SelectClassWithExcludes<ECClass>> selects = ProcessSelectClassesBasedOnCustomizationRules(selectClasses, resolver,
         instanceLabelOverrideClasses, parentNode, params);
     bvector<SelectQueryInfo> selectInfos = ContainerHelpers::TransformContainer<bvector<SelectQueryInfo>>(selects, [&](auto const& sc)
         {
         SelectQueryInfo info(sc);
-        info.SetLabelOverrideValueSpecs(QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(instanceLabelOverrides, info.GetSelectClass().GetClass()));
+        info.SetLabelOverrideValueSpecs(QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(params.GetSchemaHelper(), instanceLabelOverrides, info.GetSelectClass().GetClass()));
         info.SetInstanceFilterDefinitions(instanceFilterDefinitions);
         info.SetInstanceFilterECSqlExpression(instanceFilterECSqlExpression);
         return info;
@@ -2733,10 +2750,10 @@ static bvector<SelectQueryInfo> CreateSelectInfos(TSpecification const& spec, bv
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bvector<SelectQueryInfo> CreateSelectInfos(RelatedInstanceNodesSpecification const& spec, bvector<RelatedClassPath> const& pathsFromParentToSelectClass, GroupingResolver const& resolver,
-    bmap<ECClassCP, bvector<InstanceLabelOverride const*>> const& instanceLabelOverrides, NavNodeCP parentNode, bvector<ECInstanceId> const& parentInstanceIds,
+    bvector<InstanceLabelOverrideCP> const& instanceLabelOverrides, NavNodeCP parentNode, bvector<ECInstanceId> const& parentInstanceIds,
     bvector<InstanceFilterDefinitionCP> const& instanceFilterDefinitions, NavigationQueryBuilderParameters const& params, ECClassUseCounter& relationshipUseCounter)
     {
-    bvector<ECClassCP> instanceLabelOverrideClasses = ContainerHelpers::GetMapKeys(instanceLabelOverrides);
+    bvector<ECClassCP> instanceLabelOverrideClasses = GetInstanceLabelOverrideClasses(params.GetSchemaHelper(), instanceLabelOverrides);
     bvector<RelatedClassPath> processedPathsFromParentToSelectClass = ProcessSelectPathsBasedOnCustomizationRules(pathsFromParentToSelectClass, resolver,
         instanceLabelOverrideClasses, parentNode, params);
     bvector<SelectQueryInfo> selectInfos = ContainerHelpers::TransformContainer<bvector<SelectQueryInfo>>(processedPathsFromParentToSelectClass, [&](RelatedClassPath const& path)
@@ -2744,7 +2761,7 @@ static bvector<SelectQueryInfo> CreateSelectInfos(RelatedInstanceNodesSpecificat
         SelectQueryInfo info(path.back().GetTargetClass());
         info.GetSelectClass().SetAlias("this");
         info.SetInstanceFilterDefinitions(instanceFilterDefinitions);
-        info.SetLabelOverrideValueSpecs(QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(instanceLabelOverrides, info.GetSelectClass().GetClass()));
+        info.SetLabelOverrideValueSpecs(QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(params.GetSchemaHelper(), instanceLabelOverrides, info.GetSelectClass().GetClass()));
         info.GetPathFromParentToSelectClass() = path;
         for (RelatedClass& rc : info.GetPathFromParentToSelectClass())
             rc.SetIsTargetOptional(false);
@@ -2854,8 +2871,7 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
         }
 
     // determine instance label overrides
-    bmap<ECClassCP, bvector<InstanceLabelOverride const*>> instanceLabelOverrides = QueryBuilderHelpers::GetLabelOverrideValuesMap(m_params.GetSchemaHelper(),
-        m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(IRulesPreprocessor::CustomizationRuleBySpecParameters(specification)));
+    bvector<InstanceLabelOverrideCP> instanceLabelOverrides = m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(IRulesPreprocessor::CustomizationRuleBySpecParameters(specification));
 
     // create select infos
     bvector<SelectQueryInfo> selectInfos = CreateSelectInfos(specification, selectClasses, groupingResolver,
@@ -2907,8 +2923,7 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
         }
 
     // determine instance label overrides
-    bmap<ECClassCP, bvector<InstanceLabelOverride const*>> instanceLabelOverrides = QueryBuilderHelpers::GetLabelOverrideValuesMap(m_params.GetSchemaHelper(),
-        m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(IRulesPreprocessor::CustomizationRuleBySpecParameters(specificationHash)));
+    bvector<InstanceLabelOverrideCP> instanceLabelOverrides = m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(IRulesPreprocessor::CustomizationRuleBySpecParameters(specification));
 
     // get the parent instance keys
     bvector<ECClassInstanceKey> const& parentInstanceKeys = groupingResolver.GetParentInstanceNode()->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys();
@@ -3002,8 +3017,7 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
         }
 
     // determine instance label overrides
-    bmap<ECClassCP, bvector<InstanceLabelOverride const*>> instanceLabelOverrides = QueryBuilderHelpers::GetLabelOverrideValuesMap(m_params.GetSchemaHelper(),
-        m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(IRulesPreprocessor::CustomizationRuleBySpecParameters(specification)));
+    bvector<InstanceLabelOverrideCP> instanceLabelOverrides = m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(IRulesPreprocessor::CustomizationRuleBySpecParameters(specification));
 
     // preserve specification instance filter
     auto specificationInstanceFilter = std::make_unique<InstanceFilterDefinition>(specification.GetInstanceFilter());
@@ -3167,9 +3181,7 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
     ECClassUseCounter classesCounter;
     GroupingResolver groupingResolver(m_params, parentNode, specification.GetHash(), specification);
     RootQueryContext queryContext(groupingResolver);
-
-    bmap<ECClassCP, bvector<InstanceLabelOverride const*>> instanceLabelOverrides = QueryBuilderHelpers::GetLabelOverrideValuesMap(m_params.GetSchemaHelper(),
-        m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(IRulesPreprocessor::CustomizationRuleBySpecParameters(specification)));
+    bvector<InstanceLabelOverrideCP> instanceLabelOverrides = m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(IRulesPreprocessor::CustomizationRuleBySpecParameters(specification));
 
     // create a query for each class
     for (QuerySpecification* querySpecification : specification.GetQuerySpecifications())
