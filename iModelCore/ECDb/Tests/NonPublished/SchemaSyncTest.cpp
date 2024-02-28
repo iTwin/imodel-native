@@ -313,6 +313,15 @@ TEST_F(SchemaSyncTestFixture, PushSchemaWithoutInitializingSchemaChannel)
     SchemaSyncDb schemaSyncDb("sync-db");
     auto b1 = hub.CreateBriefcase();
 
+    Utf8String schemaHash;
+    Utf8String mapHash;
+    Utf8String dbSchemaHash;
+    schemaSyncDb.WithReadOnly([&](ECDbR syncDb) {
+        schemaHash = GetSchemaHash(syncDb);
+        mapHash = GetMapHash(syncDb);
+        dbSchemaHash = GetDbSchemaHash(syncDb);
+        });
+
     Test(
         "Create and import schema to schemaSyncDb without initializing schemaSyncDb",
         [&]()
@@ -321,7 +330,7 @@ TEST_F(SchemaSyncTestFixture, PushSchemaWithoutInitializingSchemaChannel)
             ASSERT_EQ(BE_SQLITE_OK, b1->AbandonChanges());
             CheckHashes(*b1);
             //use specific hash below, because schema sync db is not using a seed but creating the db with the latest profile.
-            schemaSyncDb.WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, "33d2f1178209ea2138adac30b372bdddb427363914da1c182d59a3da809ba49a", "17adf1cdba0c3c9970ec26d61bf5d8fa91808c3a98ce02f78ba0359e4eda11ee", "c4ca1cdd07de041e71f3e8d4b1942d29da89653c85276025d786688b6f576443"); });
+            schemaSyncDb.WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, schemaHash.c_str(), mapHash.c_str(), dbSchemaHash.c_str()); });
             }
     );
     }

@@ -138,12 +138,11 @@ struct QualifiedJoinExp final : JoinExp
         JoinSpecExp const* GetJoinSpec() const { return GetChild<JoinSpecExp>(m_nJoinSpecIndex); }
     };
 
-
-//=======================================================================================
-//! @bsiclass
-//+===============+===============+===============+===============+===============+======
-struct UsingRelationshipJoinExp final : JoinExp
-    {
+    struct BinaryBooleanExp;
+    //=======================================================================================
+    //! @bsiclass
+    //+===============+===============+===============+===============+===============+======
+    struct UsingRelationshipJoinExp final : JoinExp {
     public:
         enum class ClassLocation
             {
@@ -175,12 +174,15 @@ struct UsingRelationshipJoinExp final : JoinExp
             public:
                 ClassNameExp const* GetClassNameRef() const { return m_classRef; }
                 ClassLocation       GetLocation() const { return m_location; }
+                bool IsViewClass() const { return m_classRef != nullptr && m_classRef->GetParent() != nullptr && m_classRef->GetParent()->GetType() == Exp::Type::SubqueryRef; }
             };
     private:
         JoinDirection           m_direction;
         size_t                  m_relationshipClassNameExpIndex;
         ResolvedEndPoint        m_resolvedFrom;
         ResolvedEndPoint        m_resolvedTo;
+        size_t                  m_fromSpecFilterIdx = 0;
+        size_t                  m_toSpecFilterIdx = 0;
 
         void _ToECSql(ECSqlRenderContext& ctx) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
@@ -200,6 +202,8 @@ struct UsingRelationshipJoinExp final : JoinExp
         ResolvedEndPoint const&  GetResolvedFromEndPoint() const { return m_resolvedFrom; }
         ResolvedEndPoint const&  GetResolvedToEndPoint() const { return m_resolvedTo; }
 
+        BinaryBooleanExp const* GetFromSpecExp() const { return m_fromSpecFilterIdx == 0 ? nullptr : GetChild<BinaryBooleanExp>(m_fromSpecFilterIdx); }
+        BinaryBooleanExp const* GetToSpecExp() const   { return m_toSpecFilterIdx   == 0 ? nullptr : GetChild<BinaryBooleanExp>(m_toSpecFilterIdx); }
         JoinDirection GetDirection() const { return m_direction; }
     };
 
