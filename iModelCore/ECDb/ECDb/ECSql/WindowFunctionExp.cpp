@@ -3,7 +3,6 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "WindowFunctionExp.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
