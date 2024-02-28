@@ -218,8 +218,12 @@ BentleyStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSc
     //Make a copy of the input vectors so we don't modify the original (given to us as const anyways)
     bvector<ECSchemaCP> left(rawLeft);
     bvector<ECSchemaCP> right(rawRight);
-    ECSchema::SortSchemasInDependencyOrder(left);
-    ECSchema::SortSchemasInDependencyOrder(right);
+    auto mergeEntireTree = options.MergeEntireTree();
+    if(mergeEntireTree)
+        {
+        ECSchema::SortSchemasInDependencyOrder(left);
+        ECSchema::SortSchemasInDependencyOrder(right);
+        }
     bool dumpSchemas = false;
     auto dumpLocation = options.GetDumpSchemaLocation();
 
@@ -238,8 +242,7 @@ BentleyStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSc
             if(!result.ContainsSchema(schema->GetName().c_str()))
                 {
                 ECSchemaPtr copiedSchema;
-                auto entireTree = options.MergeEntireTree();
-                if(schema->CopySchema(copiedSchema, entireTree ? &result.GetSchemaCache() : nullptr) != ECObjectsStatus::Success)
+                if(schema->CopySchema(copiedSchema, mergeEntireTree ? &result.GetSchemaCache() : nullptr) != ECObjectsStatus::Success)
                     {
                     result.Issues().ReportV(IssueSeverity::Fatal, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0025,
                         "Schema '%s' from %s side failed to be copied.", schema->GetFullSchemaName().c_str(), side);
