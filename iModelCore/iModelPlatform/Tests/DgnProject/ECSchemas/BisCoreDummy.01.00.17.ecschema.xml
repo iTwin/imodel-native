@@ -1765,7 +1765,6 @@
                     <DbIndex>
                         <Name>uix_bis_ElementRefersToElements_sourcetargetclassid</Name>
                         <IsUnique>True</IsUnique>
-                        <IsSystemIndex>True</IsSystemIndex>
                         <Properties>
                             <string>SourceECInstanceId</string>
                             <string>TargetECInstanceId</string>
