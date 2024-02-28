@@ -5,7 +5,16 @@
 #include "ECDbPublishedTests.h"
 #include <set>
 #include <ECObjects/SchemaComparer.h>
+#include <regex>
 
+#define CLASS_ID(S,C) (int)m_ecdb.Schemas().GetClassId( #S, #C, SchemaLookupMode::AutoDetect).GetValueUnchecked()
+#define PROPERTY_ID(S, C, P)   [&](){                                                    \
+        if (auto cl = m_ecdb.Schemas().GetClass(#S, #C, SchemaLookupMode::AutoDetect)) { \
+            if (auto p = cl->GetPropertyP(#P))                                           \
+                return (int)(p->GetId().GetValueUnchecked());                            \
+        }                                                                                \
+        return 0;                                                                        \
+    }()
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
@@ -58,7 +67,7 @@ struct SchemaUpgradeTestFixture : public ECDbTestFixture
 
             IssueListener issueListener;
             ecdb.AddIssueListener(issueListener);
-            
+
             bool expectedToSucceed = expectedToSucceedList.first;
             Utf8String assertMessageFull("[Unrestricted schema import] ");
             assertMessageFull.append(assertMessage);
@@ -218,6 +227,8 @@ TEST_F(SchemaUpgradeTestFixture, ValidateMapCheck_CheckForOrphanCustomAttributeI
     </ECSchema>)xml";
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schema_del.ecdb", SchemaItem(testCaXml)));
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(testSchemaXml)));
+    const auto pipeClassId = CLASS_ID(TestSchema, Pipe);
+    const auto p4PropId = PROPERTY_ID(TestSchema, Pipe, p4);
 
     // *** Simulate by deleting the class ***
     m_ecdb.ClearECDbCache();
@@ -233,13 +244,13 @@ TEST_F(SchemaUpgradeTestFixture, ValidateMapCheck_CheckForOrphanCustomAttributeI
 
     // this should fail and generate issue messages
     ASSERT_EQ(ERROR, ImportSchema(SchemaItem(testSchemaXml1)));
-    auto expected_msg1 = "Detected orphan custom attribute rows. CustomAttribute with id=40 applied to container of type 'ECClass' with container id=78.";
-    auto expected_msg2 = "Detected orphan custom attribute rows. CustomAttribute with id=39 applied to container of type 'ECProperty' with container id=174.";
-    auto expected_msg3 = "Detected 2 orphan rows in ec_CustomAttributes.";
+    Utf8PrintfString expectedMsg1Pattern("Detected orphan custom attribute rows. CustomAttribute with id=\\d+ applied to container of type 'ECClass' with container id=%d.", pipeClassId);
+    Utf8PrintfString expectedMsg2Pattern("Detected orphan custom attribute rows. CustomAttribute with id=\\d+ applied to container of type 'ECProperty' with container id=%d.", p4PropId);
+    Utf8String expectedMsg3 = "Detected 2 orphan rows in ec_CustomAttributes.";
 
-    ASSERT_STREQ(expected_msg1,listener.m_issues[0].c_str());
-    ASSERT_STREQ(expected_msg2,listener.m_issues[1].c_str());
-    ASSERT_STREQ(expected_msg3,listener.m_issues[2].c_str());
+    ASSERT_TRUE(std::regex_match (listener.m_issues[0].c_str(), std::regex (expectedMsg1Pattern.c_str ())));
+    ASSERT_TRUE(std::regex_match (listener.m_issues[1].c_str(), std::regex (expectedMsg2Pattern.c_str ())));
+    ASSERT_STREQ(expectedMsg3.c_str(), listener.m_issues[2].c_str());
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -3176,7 +3187,7 @@ TEST_F(SchemaUpgradeTestFixture, DeletePropertyNoSharedColumn)
 
     constexpr Utf8CP dynamicSchemaUpdateTemplate = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />
-                                
+
                     <ECCustomAttributes>
                         <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
                     </ECCustomAttributes>
@@ -7627,7 +7638,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteECRelationshipConstraintClassUnsupported)
           <ECEntityClass typeName="GeometrySource" modifier="Abstract" />
           <ECEntityClass typeName="ElementGeometry">
             <ECProperty propertyName="Geom" typeName="binary" />
-            <ECNavigationProperty propertyName="Source" relationshipName="GeometrySourceHasGeometry" direction="Backward" />                 
+            <ECNavigationProperty propertyName="Source" relationshipName="GeometrySourceHasGeometry" direction="Backward" />
           </ECEntityClass>
           <ECEntityClass typeName="ExtendedElement">
             <BaseClass>Element</BaseClass>
@@ -13542,7 +13553,9 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
                                     <Format typeName="MyFormat" displayLabel="My Format" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
                                             precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" ">
                                         <Composite>
+                                            <Unit>u:KM</Unit>
                                             <Unit label="m">MyMeter</Unit>
+                                            <Unit label="">u:CM</Unit>
                                             <Unit label="mm">u:MM</Unit>
                                         </Composite>
                                     </Format>
@@ -13550,7 +13563,7 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
 
     assertFormat(m_ecdb, "MyFormat", "My Format", "",
                  JsonValue(R"json({"roundFactor":0.3, "type": "Fractional", "showSignOption": "OnlyNegative", "formatTraits": ["trailZeroes", "keepSingleZero"], "precision": 4, "decimalSeparator": ".", "thousandSeparator": ",", "uomSeparator": " "})json"),
-                 JsonValue(R"json({"includeZero":true, "units": [{"name":"MyMeter", "label":"m"}, {"name":"MM", "label":"mm"}]})json"));
+                 JsonValue(R"json({"includeZero":true, "units": [{"name":"KM"},{"name":"MyMeter", "label":"m"},{"name":"CM", "label":""},{"name":"MM", "label":"mm"}]})json"));
 
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                 <ECSchema schemaName="Schema" alias="ts" version="2.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -13559,7 +13572,9 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
                                     <Format typeName="MyFormat" displayLabel="My Format" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero"
                                             precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" ">
                                         <Composite spacer="=" includeZero="False">
+                                            <Unit label="">u:KM</Unit>
                                             <Unit label="meterle">MyMeter</Unit>
+                                            <Unit>u:CM</Unit>
                                             <Unit label="millimeterle">u:MM</Unit>
                                         </Composite>
                                     </Format>
@@ -13567,7 +13582,7 @@ TEST_F(SchemaUpgradeTestFixture, Formats)
 
     assertFormat(m_ecdb, "MyFormat", "My Format", "",
                  JsonValue(R"json({"roundFactor":0.3, "type": "Fractional", "showSignOption": "OnlyNegative", "formatTraits": ["trailZeroes", "keepSingleZero"], "precision": 4, "decimalSeparator": ".", "thousandSeparator": ",", "uomSeparator": " "})json"),
-                 JsonValue(R"json({"spacer":"=", "includeZero":false, "units": [{"name":"MyMeter", "label":"meterle"}, {"name":"MM", "label":"millimeterle"}]})json"));
+                 JsonValue(R"json({"spacer":"=", "includeZero":false, "units": [{"name":"KM", "label":""},{"name":"MyMeter", "label":"meterle"},{"name":"CM"},{"name":"MM", "label":"millimeterle"}]})json"));
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                 <ECSchema schemaName="Schema" alias="ts" version="2.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -17273,7 +17288,7 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradeDeletePropertyAndClass)
                             <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                 <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
                                 <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />
-                                
+
                                 <ECCustomAttributes>
                                     <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
                                 </ECCustomAttributes>
@@ -17373,7 +17388,7 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradePropertyTypeChangeFromPrim)
     constexpr Utf8CP errorMsgPoint2d = "ECSchema Upgrade failed. ECProperty TestSchema:TestClass.Name: Changing the type of a Primitive ECProperty is not supported. Cannot convert from 'string' to 'point2d'";
     constexpr Utf8CP errorMsgPoint3d = "ECSchema Upgrade failed. ECProperty TestSchema:TestClass.Name: Changing the type of a Primitive ECProperty is not supported. Cannot convert from 'string' to 'point3d'";
 
-    for (const auto& [lineNumber, newSchemaVersion, changedPropertyTypeName, importOption, expectedResult, expectedErrorMessage] 
+    for (const auto& [lineNumber, newSchemaVersion, changedPropertyTypeName, importOption, expectedResult, expectedErrorMessage]
         : std::vector<std::tuple<const int, Utf8CP, const Utf8String, const SchemaManager::SchemaImportOptions, const BentleyStatus, Utf8CP>>
         {
             // Change type to Primitive without changing major version. All should fail
@@ -17470,7 +17485,7 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradePropertyTypeChangeFromPrim)
                 {
                 const auto property = testClass->GetPropertyP("Name");
                 EXPECT_TRUE(property->GetTypeFullName().EqualsI(changedPropertyTypeName)) << errorMsg;
-                
+
                 const auto propertyType = testClass->GetPropertyP("Name")->GetAsPrimitiveProperty()->GetType();
                 if (changedPropertyTypeName.EqualsI("int"))
                     EXPECT_EQ(propertyType, PRIMITIVETYPE_Integer) << errorMsg;
@@ -17550,7 +17565,7 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradePropertyTypeChangeFromEnum)
     constexpr Utf8CP errorMsgEnumToDifferentType = "ECSchema Upgrade failed. ECProperty TestSchema:TestClass.Name: ECEnumeration specified for property must have same primitive type as new primitive property type";
     constexpr Utf8CP errorMsgEnumFromDifferentType = "ECSchema Upgrade failed. ECProperty TestSchema:TestClass.Name: Existing ECEnumeration has different primitive type from the new ECEnumeration specified";
 
-    for (const auto& [lineNumber, newSchemaVersion, basePropertyTypeName, changedPropertyTypeName, importOption, expectedResult, expectedErrorMessage] 
+    for (const auto& [lineNumber, newSchemaVersion, basePropertyTypeName, changedPropertyTypeName, importOption, expectedResult, expectedErrorMessage]
         : std::vector<std::tuple<const int, Utf8CP, Utf8CP, const Utf8String, const SchemaManager::SchemaImportOptions, const BentleyStatus, Utf8CP>>
         {
             // Test Case set 1 : Base property is Unstrict enum
@@ -17607,7 +17622,7 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradePropertyTypeChangeFromEnum)
             { __LINE__, "1.1", "UnstrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgEnumFromDifferentType },
             { __LINE__, "1.1", "UnstrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgEnumFromDifferentType },
             { __LINE__, "1.1", "UnstrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade | SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgEnumFromDifferentType },
-            
+
             { __LINE__, "2.0", "UnstrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::None, ERROR, errorMsgEnumFromDifferentType },
             { __LINE__, "2.0", "UnstrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, ERROR, errorMsgMajorVersionDisabled },
             { __LINE__, "2.0", "UnstrictEnumInt", "StrictEnumString", SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas, ERROR, errorMsgEnumFromDifferentType },
@@ -17687,7 +17702,7 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradePropertyTypeChangeFromEnum)
                 {
                 const auto property = testClass->GetPropertyP("Name");
                 EXPECT_TRUE(property->GetTypeFullName().EqualsI(changedPropertyTypeName)) << errorMsg;
-                
+
                 const auto propertyType = testClass->GetPropertyP("Name")->GetAsPrimitiveProperty()->GetType();
                 if (changedPropertyTypeName.EqualsI("int"))
                     EXPECT_EQ(propertyType, PRIMITIVETYPE_Integer) << errorMsg;
@@ -17704,7 +17719,7 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradePropertyTypeChangeFromEnum)
             ASSERT_EQ(issueListener.m_issues.size(), 1U) << errorMsg;
             EXPECT_STREQ(issueListener.m_issues[0].c_str(), expectedErrorMessage) << errorMsg;
             }
-        
+
         // Reset test setup for next case
         ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AbandonChanges()) << errorMsg;
         ASSERT_EQ(BE_SQLITE_OK, ReopenECDb()) << errorMsg;
@@ -17756,7 +17771,7 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradeVerifyDeletionOfPropertyAndCl
 
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
 
-    // Check that the data and instances have been created    
+    // Check that the data and instances have been created
     EXPECT_EQ(JsonValue(R"json([{"Code":10,"Name":"ParentTestProp1"},{"Code":20,"Name":"ParentTestProp2"},{"Code":20,"Name":"ChildTestProp3"}])json"), GetHelper().ExecuteSelectECSql("SELECT Name, Code FROM ts.TestClass"));
     EXPECT_EQ(JsonValue(R"json([{"Code":20,"Name":"ChildTestProp3","SubProp":50}])json"), GetHelper().ExecuteSelectECSql("SELECT Name, Code, SubProp FROM ts.SubClassToDelete"));
     EXPECT_EQ(JsonValue(R"json([{"NamePropToDelete":"TestInstance"}])json"), GetHelper().ExecuteSelectECSql("SELECT NamePropToDelete FROM ts.TestClassToDelete"));
@@ -17766,7 +17781,7 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradeVerifyDeletionOfPropertyAndCl
                             <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                 <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
                                 <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />
-                                
+
                                 <ECCustomAttributes>
                                     <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
                                 </ECCustomAttributes>
@@ -17800,7 +17815,7 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradeVerifyDeletionOfPropertyAndCl
                             <ECSchema schemaName="TestSchema" alias="ts" version="2.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                 <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
                                 <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />
-                                
+
                                 <ECCustomAttributes>
                                     <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
                                 </ECCustomAttributes>
@@ -17826,7 +17841,7 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradeVerifyDeletionOfPropertyAndCl
                             </ECSchema>)xml";
 
         ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(newSchema), SchemaManager::SchemaImportOptions::None));
-        
+
         testClass = m_ecdb.Schemas().GetClass("TestSchema", "TestClass");
         ASSERT_NE(testClass, nullptr);
 
@@ -17840,7 +17855,7 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradeVerifyDeletionOfPropertyAndCl
         // Check that instances for the re-added classes have been deleted
         EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql("SELECT Name, Code, SubProp FROM ts.SubClassToDelete"));
         EXPECT_EQ(JsonValue("[]"), GetHelper().ExecuteSelectECSql("SELECT NamePropToDelete FROM ts.TestClassToDelete"));
-        
+
         ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
     }
 
@@ -17876,8 +17891,8 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradeVerifyDataAfterTypeChange)
     // Populate with dummy property values
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.TestClass(intToLong, intToDouble, intToString, intToBinary, intToBoolean, intToDatetime, stringToLong, stringToDouble, stringToInt, stringToBinary, stringToBoolean, stringToDatetime) VALUES (10, 10, 10, 10, 10, 10, '10', '10', '10', '10', '10', '10')");
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
-      
-    // Check that the data has been created    
+
+    // Check that the data has been created
     EXPECT_EQ(JsonValue(R"json([{"intToBinary":10,"intToBoolean":10,"intToDatetime":10,"intToDouble":10,"intToLong":10,"intToString":10,"stringToBinary":"10","stringToBoolean":"10","stringToDatetime":"10","stringToDouble":"10","stringToInt":"10","stringToLong":"10"}])json"),
         GetHelper().ExecuteSelectECSql("SELECT intToLong, intToDouble, intToString, intToBinary, intToBoolean, intToDatetime, stringToLong, stringToDouble, stringToInt, stringToBinary, stringToBoolean, stringToDatetime FROM ts.TestClass"));
 
@@ -17886,7 +17901,7 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradeVerifyDataAfterTypeChange)
                             <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                 <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
                                 <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />
-                                
+
                                 <ECCustomAttributes>
                                     <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
                                 </ECCustomAttributes>
@@ -17898,7 +17913,7 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradeVerifyDataAfterTypeChange)
                                        </ClassMap>
                                        <ShareColumns xmlns="ECDbMap.02.00.00"/>
                                     </ECCustomAttributes>
-                                    
+
                                     <ECProperty propertyName="intToLong" typeName="long" />
                                     <ECProperty propertyName="intToDouble" typeName="double" />
                                     <ECProperty propertyName="intToString" typeName="string" />
@@ -17921,7 +17936,7 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradeVerifyDataAfterTypeChange)
         EXPECT_EQ(JsonValue(R"json([{"intToBinary":"encoding=base64;MTA=","intToBoolean":true,"intToDatetime":"-4713-12-04T12:00:00.000","intToDouble":10.0,"intToLong":10,"intToString":"10","stringToBinary":"encoding=base64;MTA=",
                 "stringToBoolean":true,"stringToDatetime":"-4713-12-04T12:00:00.000","stringToDouble":10.0,"stringToInt":10,"stringToLong":10}])json"),
         GetHelper().ExecuteSelectECSql("SELECT intToLong, intToDouble, intToString, intToBinary, intToBoolean, intToDatetime, stringToLong, stringToDouble, stringToInt, stringToBinary, stringToBoolean, stringToDatetime FROM ts.TestClass"));
-        
+
         ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
     }
 
@@ -18024,7 +18039,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteEnumsWithMajorSchemaChange)
     SchemaItem schemaItem(R"xml(
         <?xml version='1.0' encoding='utf-8'?>
         <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
-            <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />                    
+            <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />
             <ECCustomAttributes>
                 <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
             </ECCustomAttributes>
@@ -18077,7 +18092,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteEnumsWithMajorSchemaChange)
     SchemaItem updatedSchemaXml(R"xml(
         <?xml version='1.0' encoding='utf-8'?>
         <ECSchema schemaName='TestSchema' alias='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
-            <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />                    
+            <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />
             <ECCustomAttributes>
                 <DynamicSchema xmlns = 'CoreCustomAttributes.01.00.00' />
             </ECCustomAttributes>

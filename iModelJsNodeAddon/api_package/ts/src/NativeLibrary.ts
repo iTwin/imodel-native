@@ -502,7 +502,7 @@ export declare namespace IModelJsNative {
     public cancelTo(txnId: TxnIdString): IModelStatus;
     public classIdToName(idString: string): string;
     public classNameToId(className: string): Id64String;
-    public closeIModel(): void;
+    public closeFile(): void;
     public completeCreateChangeset(arg: { index: number }): void;
     public computeProjectExtents(wantFullExtents: boolean, wantOutlierIds: boolean): { extents: Range3dProps, fullExtents?: Range3dProps, outliers?: Id64Array };
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
@@ -1258,12 +1258,12 @@ export declare namespace IModelJsNative {
     id: string;
     taskAllocationsMap: { [priority: number]: number };
     defaultFormats: {
-      [phenomenon: string]: {
+      [phenomenon: string]: Array<{
         unitSystems: string[];
         serializedFormat: string;
-      };
+      }>;
     };
-    isChangeTrackingEnabled: boolean;
+    updateCallback: (updateInfo: any) => void;
     cacheConfig: ECPresentationHierarchyCacheConfig;
     contentCacheSize?: number;
     workerConnectionCacheSize?: number;
@@ -1284,7 +1284,6 @@ export declare namespace IModelJsNative {
     public removeRuleset(rulesetId: string, hash: string): ECPresentationManagerResponse<boolean>;
     public clearRulesets(): ECPresentationManagerResponse<void>;
     public handleRequest(db: DgnDb, options: string): { result: Promise<ECPresentationManagerResponse<Buffer>>, cancel: () => void };
-    public getUpdateInfo(): ECPresentationManagerResponse<any>;
     public dispose(): void;
   }
 

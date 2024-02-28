@@ -404,7 +404,7 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
     m_defaultModel = nullptr;
     m_db->SaveChanges("Deleted model and contained elements");
 
-    expectToThrow([&]() { m_db->Txns().MergeChangeset(*revision1); }, "failed to apply changes");
+    expectToThrow([&]() { m_db->Txns().MergeChangeset(*revision1); }, "Detected 1 foreign key conflicts in ChangeSet. Aborting merge.");
     }
 
 //---------------------------------------------------------------------------------------
@@ -1636,7 +1636,7 @@ TEST_F(RevisionTestFixture, CheckProfileVersionUpdateAfterMerge)
     BackupTestFile();
 
     BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
-    
+
     auto initialDgnDbVersion = m_db->GetProfileVersion();
     auto initialECDbVersion = m_db->GetECDbProfileVersion();
 
@@ -1662,7 +1662,7 @@ TEST_F(RevisionTestFixture, CheckProfileVersionUpdateAfterMerge)
     EXPECT_EQ(0, dgnDbVersion.CompareTo(initialDgnDbVersion));
     EXPECT_EQ(0, ecDbVersion.CompareTo(initialECDbVersion));
     }
-    
+
     EXPECT_EQ(ChangesetStatus::Success, m_db->Txns().MergeChangeset(*revision));
 
     {
@@ -1692,7 +1692,7 @@ TEST_F(RevisionTestFixture, BrokenECDbProfileInRevision)
     BackupTestFile();
 
     BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
-    
+
     {
     DbResult result = m_db->ExecuteSql("UPDATE be_Prop SET StrData = '____no___valid___json' WHERE Namespace = 'ec_Db' and Name = 'SchemaVersion'");
     EXPECT_EQ(result, DbResult::BE_SQLITE_OK);
@@ -1704,7 +1704,7 @@ TEST_F(RevisionTestFixture, BrokenECDbProfileInRevision)
     EXPECT_TRUE(revision.IsValid());
 
     RestoreTestFile();
-    
+
     expectToThrow([&]() { m_db->Txns().MergeChangeset(*revision); }, "failed to apply changes");
     }
 
@@ -1721,7 +1721,7 @@ TEST_F(RevisionTestFixture, BrokenDgnDbProfileInRevision)
     BackupTestFile();
 
     BeFileName fileName = BeFileName(m_db->GetDbFileName(), true);
-    
+
     {
     DbResult result = m_db->ExecuteSql("UPDATE be_Prop SET StrData = '____no___valid___json' WHERE Namespace = 'dgn_Db' and Name = 'SchemaVersion'");
     EXPECT_EQ(result, DbResult::BE_SQLITE_OK);
@@ -1733,6 +1733,6 @@ TEST_F(RevisionTestFixture, BrokenDgnDbProfileInRevision)
     EXPECT_TRUE(revision.IsValid());
 
     RestoreTestFile();
-    
+
     expectToThrow([&]() { m_db->Txns().MergeChangeset(*revision); }, "failed to apply changes");
     }

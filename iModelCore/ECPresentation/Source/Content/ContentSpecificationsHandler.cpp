@@ -401,7 +401,9 @@ static void FilterFlatSpecsByExclusiveIncludePaths(bvector<std::unique_ptr<Flatt
         {
         for (auto const& relatedClassPath : *exclusiveIncludePaths)
             {
-            if (HasSamePath(relatedClassPath, spec->GetFlattened().GetPropertiesSource()->GetSteps(), helper))
+            // when the related properties spec is created using deprecated attributes, we have no properties source... so just
+            // always included those specs no matter if they match given include paths or not.
+            if (!spec->GetFlattened().GetPropertiesSource() || HasSamePath(relatedClassPath, spec->GetFlattened().GetPropertiesSource()->GetSteps(), helper))
                 {
                 std::unique_ptr<FlattenedRelatedPropertiesSpecification> dummy;
                 std::swap(spec, dummy);
@@ -439,7 +441,11 @@ bvector<std::unique_ptr<RelatedPropertySpecificationPaths>> ContentSpecification
     bvector<std::unique_ptr<RelatedPropertySpecificationPaths>> result;
     for (size_t i = 0; i < flatSpecs.size(); ++i)
         {
-        auto thisPaths = ContainerHelpers::MoveTransformContainer<bvector<RelatedPropertySpecificationPaths::Path>>(paths.GetPaths(i), [](auto&& p)
+        auto pathsIter = paths.GetPaths().find(i);
+        if (paths.GetPaths().end() == pathsIter)
+            continue;
+
+        auto thisPaths = ContainerHelpers::MoveTransformContainer<bvector<RelatedPropertySpecificationPaths::Path>>(pathsIter->second, [](auto&& p)
             {
             return RelatedPropertySpecificationPaths::Path(std::move(p.m_path), std::move(p.m_actualSourceClasses));
             });

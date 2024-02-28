@@ -3,7 +3,7 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 import { DbResult, Id64Array, Id64String, IModelStatus, OpenMode } from "@itwin/core-bentley";
-import { BlobRange, DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, ProfileOptions } from "@itwin/core-common";
+import { BlobRange, DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, ProfileOptions, RelationshipProps } from "@itwin/core-common";
 import { DomainOptions } from "@itwin/core-common/lib/cjs/BriefcaseTypes";
 import { assert, expect } from "chai";
 import * as fs from "fs-extra";
@@ -27,7 +27,7 @@ describe("basic tests", () => {
   });
 
   after((done) => {
-    dgndb.closeIModel();
+    dgndb.closeFile();
     done();
   });
 
@@ -90,7 +90,7 @@ describe("basic tests", () => {
     assert.equal(localInfo?.id, sharedInfo?.id);
     assert.equal(localInfo?.dataVer, sharedInfo?.dataVer);
     assert.equal(localInfo?.dataVer, "0x2");
-    iModelDb.closeIModel();
+    iModelDb.closeFile();
 
     // create first briefcase
     const b0Uri = path.join(baseDir, "b0.bim");
@@ -169,9 +169,9 @@ describe("basic tests", () => {
     b0.saveChanges();
     b1.saveChanges();
     b2.saveChanges();
-    b0.closeIModel();
-    b1.closeIModel();
-    b2.closeIModel();
+    b0.closeFile();
+    b1.closeFile();
+    b2.closeFile();
   });
 
   // verify that throwing javascript exceptions from C++ works
@@ -280,7 +280,23 @@ describe("basic tests", () => {
     const notThere = dgndb.schemaToXmlString("NotThere.NotThere", IModelJsNative.ECVersion.V2_0);
     assert.isUndefined(notThere);
   });
+  it("crash inserting linktable", async () => {
+    const pathToDb = path.join(getAssetsDir(), "test.bim");
 
+    const testFile = path.join(getAssetsDir(), "crash-linktable.bim");
+    if (fs.existsSync(testFile)) {
+      fs.unlinkSync(testFile);
+    }
+    fs.copyFileSync(pathToDb, testFile);
+
+    const db = new iModelJsNative.DgnDb();
+    db.openIModel(testFile, OpenMode.ReadWrite);
+    const abstractRelationshipClass = "BisCore:ElementRefersToElements";
+    const insertRel: RelationshipProps = { classFullName: abstractRelationshipClass, sourceId: "0x37", targetId: "0x31" };
+    const updateRel: RelationshipProps = { classFullName: abstractRelationshipClass, id: "0xe", sourceId: "0x37", targetId: "0x31" };
+    expect(() => db.insertLinkTableRelationship(insertRel)).to.throw("Failed to insert relationship. Relationship class 'BisCore:ElementRefersToElements' is abstract");
+    expect(() => db.updateLinkTableRelationship(updateRel)).to.throw("Failed to update relationship. Relationship class 'BisCore:ElementRefersToElements' is abstract");
+  });
   it("testCrashReportingConfig", () => {
     if (os.platform() === "darwin" || process.env.AddressSanitizer === "yes") {
       // Currently unsupported on the Mac.
@@ -335,19 +351,19 @@ describe("basic tests", () => {
     withWal.enableWalMode();
     withWal.performCheckpoint();
     withWal.setAutoCheckpointThreshold(2000);
-    withWal.closeIModel();
+    withWal.closeFile();
   });
 
   it("testGetSchemaProps", async () => {
     assert.isTrue(dgndb.isOpen());
-    expect(() => dgndb.getSchemaProps("DoesNotExist")).to.throw("schema not found");
+    expect(() => dgndb.getSchemaProps("DoesNotExist")).to.throw("schema not found").with.property("errorNumber", IModelStatus.NotFound);
     const props = dgndb.getSchemaProps("BisCore");
     expect(props.name).equal("BisCore");
   });
 
   it("testGetSchemaPropsAsync", async () => {
     assert.isTrue(dgndb.isOpen());
-    await expect(dgndb.getSchemaPropsAsync("DoesNotExist")).rejectedWith("schema not found");
+    await expect(dgndb.getSchemaPropsAsync("DoesNotExist")).rejectedWith("schema not found").eventually.with.property("errorNumber", IModelStatus.NotFound);
     const props = await dgndb.getSchemaPropsAsync("BisCore");
     expect(props.name).equal("BisCore");
   });
@@ -497,11 +513,11 @@ describe("basic tests", () => {
 
     const dbForProfileUpgrade = openDgnDb(testFile, { profile: ProfileOptions.Upgrade, schemaLockHeld: true });
     dbForProfileUpgrade.saveChanges();
-    dbForProfileUpgrade.closeIModel();
+    dbForProfileUpgrade.closeFile();
 
     const dbForSchemaUpgrade = openDgnDb(testFile, { domain: DomainOptions.Upgrade, schemaLockHeld: true });
     dbForSchemaUpgrade.saveChanges();
-    dbForSchemaUpgrade.closeIModel();
+    dbForSchemaUpgrade.closeFile();
   });
 
   it("import schema with schemaLockHeld flag", async () => {
@@ -552,7 +568,7 @@ describe("basic tests", () => {
     rc = db.importXmlSchemas([generateSchema(20, 20)], { schemaLockHeld: true });
     assert.equal(rc, DbResult.BE_SQLITE_OK);
     db.saveChanges();
-    db.closeIModel();
+    db.closeFile();
   });
 
   it("ecsql query", async () => {
@@ -1056,6 +1072,6 @@ describe("basic tests", () => {
     expect(schemaXmlStr!.includes(propStr)).to.be.true;
     expect(schemaXmlStr!.includes(propCatStr)).to.be.true;
 
-    testDb.closeIModel();
+    testDb.closeFile();
   });
 });

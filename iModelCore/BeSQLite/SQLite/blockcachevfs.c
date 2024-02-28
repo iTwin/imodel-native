@@ -1442,7 +1442,6 @@ static int bcvfsReadWriteDatabase(
     assert( bWrite==0 );
     return SQLITE_IOERR_SHORT_READ;
   }
-  assert( (iAmt & (iAmt-1))==0 );
 
   /* Take the VFS mutex and do three things under its cover:
   **
@@ -4723,7 +4722,7 @@ static void bcvfsUploadOneBlockTry(UploadCtx2 *pCtx, int *pbRetry){
       memcpy(aName, aNew, nName);
       if( rc==SQLITE_OK && bSkip==0 ){
         char zFile[BCV_MAX_FSNAMEBYTES];
-        bcvBlockidToText(pCtx->pMan, aNew, zFile);
+        bcvBlockidToText(NAMEBYTES(pCtx->pMan), aNew, zFile);
         p->pCtx = pCtx;
         rc = bcvDispatchPut(pCtx->pDisp, pCtx->pBcv,
             zFile, 0, aBuf, nBuf, (void*)p, bcvfsUploadBlockDone

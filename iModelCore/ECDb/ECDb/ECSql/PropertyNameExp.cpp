@@ -57,6 +57,7 @@ void ExtractInstanceValueExp::_ToJson(BeJsValue val, JsonFormat const&) const {
 //+---------------+---------------+---------------+---------------+---------------+--------
 PropertyNameExp::PropertyNameExp(PropertyPath const& propPath) : ValueExp(Type::PropertyName),m_ecsqlPropertyPath(propPath), m_propertyPath(propPath), m_classRefExp(nullptr), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty()), m_sourceType(SourceType::ECSql),m_property(nullptr)
     {}
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -468,13 +469,16 @@ void PropertyNameExp::SetPropertyRef(DerivedPropertyExp const& derivedPropertyEx
 //+---------------+---------------+---------------+---------------+---------------+---------
 PropertyMap const* PropertyNameExp::GetPropertyMap() const
     {
-    BeAssert(GetClassRefExp() != nullptr);
+    auto classRefExp = GetClassRefExp();
+    if (classRefExp == nullptr)
+        return nullptr;
+
     PropertyMap const* propertyMap = nullptr;
-    switch (GetClassRefExp()->GetType())
+    switch (classRefExp->GetType())
         {
         case Exp::Type::ClassName:
             {
-            ClassNameExp const& classNameExp = GetClassRefExp()->GetAs<ClassNameExp>();
+            ClassNameExp const& classNameExp = classRefExp->GetAs<ClassNameExp>();
             propertyMap = classNameExp.GetInfo().GetMap().GetPropertyMaps().Find(GetPropertyPath().ToString(false).c_str());
             break;
             }
@@ -618,10 +622,10 @@ PropertyMap const * PropertyNameExp::PropertyRef::TryGetPropertyMap(PropertyPath
         return m_cachedPropertyMap;
 
     DerivedPropertyExp const &next = LinkedTo();
-    if (next.GetExpression()->GetType() != Exp::Type::PropertyName)
+    if (next.GetExpression()->GetType() != Exp::Type::PropertyName && next.GetExpression()->GetType() != Exp::Type::NavValueCreationFunc)
         return nullptr;
 
-    PropertyNameExp const &exp = next.GetExpression()->GetAs<PropertyNameExp>();
+    PropertyNameExp const &exp = next.GetExpression()->GetType() == Exp::Type::PropertyName ? next.GetExpression()->GetAs<PropertyNameExp>() : *next.GetExpression()->GetAs<NavValueCreationFuncExp>().GetPropertyNameExp();
     if (exp.IsPropertyRef())
         return exp.GetPropertyRef()->TryGetPropertyMap();
 

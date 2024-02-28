@@ -355,9 +355,18 @@ rapidjson::Document CompressedClassSerializer::CreateAccumulatedClassesMap(rapid
         {
         rapidjson::Document classJson(allocator);
         classJson.SetObject();
-        classJson.AddMember("name", rapidjson::StringRef(ecClass->GetFullName()), json.GetAllocator());
-        classJson.AddMember("label", rapidjson::StringRef(ecClass->GetDisplayLabel().c_str()), json.GetAllocator());
-        json.AddMember(rapidjson::Value(ecClass->GetId().ToString(BeInt64Id::UseHex::Yes).c_str(), json.GetAllocator()), classJson, json.GetAllocator());
+        if (ecClass)
+            {
+            classJson.AddMember("name", rapidjson::StringRef(ecClass->GetFullName()), json.GetAllocator());
+            classJson.AddMember("label", rapidjson::StringRef(ecClass->GetDisplayLabel().c_str()), json.GetAllocator());
+            json.AddMember(rapidjson::Value(ecClass->GetId().ToString(BeInt64Id::UseHex::Yes).c_str(), json.GetAllocator()), classJson, json.GetAllocator());
+            }
+        else
+            {
+            classJson.AddMember("name", "", json.GetAllocator());
+            classJson.AddMember("label", "", json.GetAllocator());
+            json.AddMember("0x0", classJson, json.GetAllocator());
+            }
         }
     return json;
     }
@@ -365,12 +374,12 @@ rapidjson::Document CompressedClassSerializer::CreateAccumulatedClassesMap(rapid
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document CompressedClassSerializer::_SerializeECClass(ECClassCR ecClass, rapidjson::Document::AllocatorType& allocator)
+rapidjson::Document CompressedClassSerializer::_SerializeECClass(ECClassCP ecClass, rapidjson::Document::AllocatorType& allocator)
     {
-    m_ecClasses.insert(&ecClass);
+    m_ecClasses.insert(ecClass);
 
     rapidjson::Document json(&allocator);
-    json.SetString(ecClass.GetId().ToString(BeInt64Id::UseHex::Yes).c_str(), json.GetAllocator());
+    json.SetString(ecClass ? ecClass->GetId().ToString(BeInt64Id::UseHex::Yes).c_str() : "0x0", json.GetAllocator());
 
     return json;
     };
@@ -378,13 +387,22 @@ rapidjson::Document CompressedClassSerializer::_SerializeECClass(ECClassCR ecCla
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document DefaultClassSerializer::_SerializeECClass(ECClassCR ecClass, rapidjson::Document::AllocatorType& allocator)
+rapidjson::Document DefaultClassSerializer::_SerializeECClass(ECClassCP ecClass, rapidjson::Document::AllocatorType& allocator)
     {
     rapidjson::Document json(&allocator);
     json.SetObject();
-    json.AddMember("id", rapidjson::Value(ecClass.GetId().ToString(BeInt64Id::UseHex::Yes).c_str(), json.GetAllocator()), json.GetAllocator());
-    json.AddMember("name", rapidjson::StringRef(ecClass.GetFullName()), json.GetAllocator());
-    json.AddMember("label", rapidjson::StringRef(ecClass.GetDisplayLabel().c_str()), json.GetAllocator());
+    if (ecClass)
+        {
+        json.AddMember("id", rapidjson::Value(ecClass->GetId().ToString(BeInt64Id::UseHex::Yes).c_str(), json.GetAllocator()), json.GetAllocator());
+        json.AddMember("name", rapidjson::StringRef(ecClass->GetFullName()), json.GetAllocator());
+        json.AddMember("label", rapidjson::StringRef(ecClass->GetDisplayLabel().c_str()), json.GetAllocator());
+        }
+    else
+        {
+        json.AddMember("id", "0x0", json.GetAllocator());
+        json.AddMember("name", "", json.GetAllocator());
+        json.AddMember("label", "", json.GetAllocator());
+        }
     return json;
     };
 
@@ -551,7 +569,7 @@ void IModelJsECPresentationSerializer::_AsJson(ContextR ctx, ContentDescriptor::
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, ECClassCR ecClass, rapidjson::Document::AllocatorType* allocator) const
+rapidjson::Document IModelJsECPresentationSerializer::AsJson(ContextR ctx, ECClassCP ecClass, rapidjson::Document::AllocatorType* allocator) const
     {
 	IECClassSerializer* serializer = ctx.GetClassSerializer();
 	if (nullptr == serializer)
@@ -561,6 +579,14 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, ECCl
 	    }
 
 	return serializer->SerializeECClass(ecClass, *allocator);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, ECClassCR ecClass, rapidjson::Document::AllocatorType* allocator) const
+    {
+    return AsJson(ctx, &ecClass, allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -703,7 +729,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, Cont
             {
             json.AddMember("displayValues", rapidjson::Value(rapidjson::kObjectType), json.GetAllocator());
             }
-        else 
+        else
             {
             json.AddMember("displayValues", rapidjson::Value(contentSetItem.GetDisplayValues(), json.GetAllocator()), json.GetAllocator());
             for (auto const& nestedContentEntry : contentSetItem.GetNestedContent())
@@ -833,18 +859,24 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, Cont
     rapidjson::Document json(allocator);
     json.SetObject();
     json.AddMember("descriptor", content.GetDescriptor().AsJson(ctx, &json.GetAllocator()), json.GetAllocator());
+    json.AddMember("contentSet", AsJson(ctx, content.GetContentSet(), &json.GetAllocator()), json.GetAllocator());
+    return json;
+    }
 
-    rapidjson::Value set(rapidjson::kArrayType);
-    DataContainer<ContentSetItemCPtr> container = content.GetContentSet();
-    for (ContentSetItemCPtr item : container)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document IModelJsECPresentationSerializer::AsJson(ContextR ctx, DataContainer<ContentSetItemCPtr> const& items, rapidjson::Document::AllocatorType* allocator) const
+    {
+    rapidjson::Document json(allocator);
+    json.SetArray();
+    for (auto const& item : items)
         {
         if (item.IsValid())
-            set.PushBack(item->AsJson(ctx, ContentSetItem::SERIALIZE_All, &json.GetAllocator()), json.GetAllocator());
+            json.PushBack(item->AsJson(ctx, ContentSetItem::SERIALIZE_All, &json.GetAllocator()), json.GetAllocator());
         else
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, NativeLogging::LOG_ERROR, "Attempted to serialize NULL ContentSetItem object");
         }
-    json.AddMember("contentSet", set, json.GetAllocator());
-
     return json;
     }
 
@@ -1685,15 +1717,28 @@ rapidjson::Value IModelJsECPresentationSerializer::_AsJson(ContextR ctx, KindOfQ
 rapidjson::Value IModelJsECPresentationSerializer::_AsJson(ContextR ctx, RelatedClassCR relatedClass, rapidjson::Document::AllocatorType& allocator) const
     {
     rapidjson::Value json(rapidjson::kObjectType);
-    json.AddMember("sourceClassInfo", IModelJsECPresentationSerializer::_AsJson(ctx, *relatedClass.GetSourceClass(), &allocator), allocator);
-    json.AddMember("targetClassInfo", IModelJsECPresentationSerializer::_AsJson(ctx, relatedClass.GetTargetClass().GetClass(), &allocator), allocator);
+    json.AddMember("sourceClassInfo", _AsJson(ctx, *relatedClass.GetSourceClass(), &allocator), allocator);
+    json.AddMember("targetClassInfo", _AsJson(ctx, relatedClass.GetTargetClass().GetClass(), &allocator), allocator);
     json.AddMember("isPolymorphicTargetClass", relatedClass.GetTargetClass().IsSelectPolymorphic(), allocator);
     if (relatedClass.GetRelationship().IsValid())
         {
-        json.AddMember("relationshipInfo", IModelJsECPresentationSerializer::_AsJson(ctx, relatedClass.GetRelationship().GetClass(), &allocator), allocator);
+        json.AddMember("relationshipInfo", _AsJson(ctx, relatedClass.GetRelationship().GetClass(), &allocator), allocator);
         json.AddMember("isPolymorphicRelationship", relatedClass.GetRelationship().IsSelectPolymorphic(), allocator);
+        json.AddMember("isForwardRelationship", relatedClass.IsForwardRelationship(), allocator);
         }
-    json.AddMember("isForwardRelationship", relatedClass.IsForwardRelationship(), allocator);
+    else
+        {
+        json.AddMember("relationshipInfo", AsJson(ctx, (ECClassCP)nullptr, &allocator), allocator);
+        json.AddMember("isPolymorphicRelationship", false, allocator);
+        json.AddMember("isForwardRelationship", true, allocator);
+        }
+    if (!relatedClass.GetTargetIds().empty())
+        {
+        rapidjson::Value targetIdsJson(rapidjson::kArrayType);
+        for (auto const& id : relatedClass.GetTargetIds())
+            targetIdsJson.PushBack(rapidjson::Value(id.ToHexStr().c_str(), allocator), allocator);
+        json.AddMember("targetInstanceIds", targetIdsJson, allocator);
+        }
     return json;
     }
 

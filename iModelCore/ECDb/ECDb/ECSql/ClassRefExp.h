@@ -163,6 +163,7 @@ private:
     PolymorphicInfo m_isPolymorphicConstraint;
 
     virtual Utf8StringCR _GetId() const = 0;
+    virtual void _OnAliasChanged() = 0;
     virtual void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const = 0;
     virtual PropertyMatchResult _FindProperty(ECSqlParseContext& ctx, PropertyPath const& propertyPath, const PropertyMatchOptions& options) const = 0;
 protected:
@@ -177,7 +178,7 @@ public:
 
     void ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const { _ExpandSelectAsterisk(expandedSelectClauseItemList, ctx); }
     PropertyMatchResult FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const { return _FindProperty(ctx, propertyPath, options); }
-    void SetAlias (Utf8StringCR alias) { m_alias = alias;}
+    void SetAlias (Utf8StringCR alias) { m_alias = alias; _OnAliasChanged();}
    };
 
 struct MemberFunctionCallExp;
@@ -210,6 +211,7 @@ private:
     Utf8String m_tableSpace;
     std::shared_ptr<Info> m_info;
     bool m_disqualifyPrimaryJoin;
+    virtual void _OnAliasChanged() override {}
     FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
     Utf8StringCR _GetId() const override;
     void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
@@ -241,6 +243,7 @@ friend struct ECSqlParser;
 private:
     ECN::ECEntityClassCP m_virtualEntityClass;
     Utf8String m_schemaName;
+    virtual void _OnAliasChanged() override {}
     virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
     virtual Utf8StringCR _GetId() const override;
     virtual void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;

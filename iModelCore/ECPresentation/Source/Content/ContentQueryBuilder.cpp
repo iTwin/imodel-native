@@ -326,7 +326,7 @@ ContentQueryContractPtr ContentQueryBuilder::CreateContract(ContentDescriptorCR 
     PresentationQueryContractFieldPtr displayLabelField;
     if (descriptor.ShowLabels() && descriptor.GetDisplayLabelField())
         {
-        auto labelOverrideValuesList = QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(descriptor.GetDisplayLabelField()->GetLabelOverrideSpecs(), selectInfo.GetSelectClass().GetClass());
+        auto labelOverrideValuesList = QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(m_params.GetSchemaHelper(), descriptor.GetDisplayLabelField()->GetLabelOverrideSpecs(), selectInfo.GetSelectClass().GetClass());
         displayLabelField = QueryBuilderHelpers::CreateDisplayLabelField(descriptor.GetDisplayLabelField()->GetUniqueName().c_str(), m_params.GetSchemaHelper(), selectInfo.GetSelectClass(),
             nullptr, nullptr, selectInfo.GetRelatedInstancePaths(), labelOverrideValuesList);
         }

@@ -6,7 +6,9 @@ CLANG_ALLOW_UNDEFINED=1
 BUILD_WITH_C20=1
 %include mdl.mki
 
-appName = imodeljs-addon
+appName = imodeljs
+
+DLM_EXTENSION=.node
 
 baseDir = $(_MakeFilePath)
 presentationDir = $(baseDir)presentation/
@@ -34,7 +36,7 @@ always:
 
 USING_BREAKPAD = 0
 
-%if defined (BSI)
+%if defined (BSI) && !defined (IS_VERACODE_BUILD)
     %if ($(TARGET_PROCESSOR_ARCHITECTURE) == "x64") 
         USING_BREAKPAD = 1
     %endif

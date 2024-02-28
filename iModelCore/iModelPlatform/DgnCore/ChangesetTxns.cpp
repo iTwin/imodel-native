@@ -29,6 +29,80 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
     BeAssert(result == BE_SQLITE_OK);
     UNUSED_VARIABLE(result);
 
+    const auto jsIModelDb = m_dgndb.GetJsIModelDb();
+    if (nullptr != jsIModelDb) {
+        const auto jsDgnDb = jsIModelDb->Value();
+        const auto env = jsDgnDb.Env();
+        const auto onChangesetConflictFunc = jsDgnDb.Get("onChangesetConflict").As<Napi::Function>();
+        if (onChangesetConflictFunc.IsFunction()) {
+            auto arg = Napi::Object::New(env);
+            arg.Set("cause", Napi::Number::New(env, (int)cause));
+            arg.Set("opcode", Napi::Number::New(env, (int)opcode));
+            arg.Set("indirect", Napi::Boolean::New(env, indirect != 0));
+            arg.Set("tableName", Napi::String::New(env, tableName));
+            arg.Set("changesetFile", Napi::String::New(env, GetFiles().front().GetNameUtf8()));
+            arg.Set("getForeignKeyConflicts", Napi::Function::New(env, [&](const Napi::CallbackInfo&) -> Napi::Value {
+                int nConflicts = 0;
+                iter.GetFKeyConflicts(&nConflicts);
+                return Napi::Number::New(env, nConflicts);
+            }));
+
+            arg.Set("dump", Napi::Function::New(env, [&](const Napi::CallbackInfo&) -> void {
+                iter.Dump(m_dgndb, false, 1);
+            }));
+            arg.Set("setLastError", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> void {
+                if (info.Length() != 1)
+                    BeNapi::ThrowJsException(jsDgnDb.Env(), "setLastError() Expect a string type arg");
+
+                auto val = info[0];
+                if (!val.IsString())
+                    BeNapi::ThrowJsException(jsDgnDb.Env(), "setLastError() Expect a string type arg");
+
+                m_lastErrorMessage = val.As<Napi::String>().Utf8Value();
+            }));
+            const auto resolutionJsVal = onChangesetConflictFunc.Call(jsDgnDb, {arg});
+
+            // if handler return undefined we revert to native handler.
+            if (!resolutionJsVal.IsUndefined()) {
+                if (!resolutionJsVal.IsNumber())
+                    BeNapi::ThrowJsException(jsDgnDb.Env(), "onChangesetConflict did not return a number", (int) DgnDbStatus::BadArg);
+
+                const auto resolution = (ChangeSet::ConflictResolution)resolutionJsVal.As<Napi::Number>().Int32Value();
+                if (resolution != ChangeSet::ConflictResolution::Abort  && resolution != ChangeSet::ConflictResolution::Replace && resolution != ChangeSet::ConflictResolution::Skip )
+                    BeNapi::ThrowJsException(jsDgnDb.Env(), "onChangesetConflict returned unsupported value for conflict resolution", (int) DgnDbStatus::BadArg);
+
+                return resolution;
+            }
+        }
+    }
+
+    if (cause == ChangeSet::ConflictCause::Data && !indirect) {
+        /*
+        * From SQLite Docs CHANGESET_DATA as the second argument
+        * when processing a DELETE or UPDATE change if a row with the required
+        * PRIMARY KEY fields is present in the database, but one or more other
+        * (non primary-key) fields modified by the update do not contain the
+        * expected "before" values.
+        *
+        * The conflicting row, in this case, is the database row with the matching
+        * primary key.
+        *
+        * Another reason this will be invoked is when SQLITE_CHANGESETAPPLY_FKNOACTION
+        * is passed ApplyChangeset(). The flag will disable CASCADE action and treat
+        * them as CASCADE NONE resulting in conflict handler been called.
+        */
+        if (!m_dgndb.Txns().HasPendingTxns()) {
+            // This changeset is bad. However, it is already in the timeline. We must allow services such as
+            // checkpoint-creation, change history, and other apps to apply any changeset that is in the timeline.
+            LOG.warning("UPDATE/DELETE before value do not match with one in db or CASCADE action was triggered.");
+            iter.Dump(m_dgndb, false, 1);
+        } else {
+            m_lastErrorMessage = "UPDATE/DELETE before value do not match with one in db or CASCADE action was triggered.";
+            LOG.fatal(m_lastErrorMessage.c_str());
+            iter.Dump(m_dgndb, false, 1);
+            return ChangeSet::ConflictResolution::Abort;
+        }
+    }
     // Handle some special cases
     if (cause == ChangeSet::ConflictCause::Conflict) {
         // From the SQLite docs: "CHANGESET_CONFLICT is passed as the second argument to the conflict handler while processing an INSERT change if the operation would result in duplicate primary key values."
@@ -37,10 +111,11 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
         if (!m_dgndb.Txns().HasPendingTxns()) {
             // This changeset is bad. However, it is already in the timeline. We must allow services such as
             // checkpoint-creation, change history, and other apps to apply any changeset that is in the timeline.
-            LOG.info("PRIMARY KEY INSERT CONFLICT - resolved by replacing the existing row with the incoming row");
+            LOG.warning("PRIMARY KEY INSERT CONFLICT - resolved by replacing the existing row with the incoming row");
             iter.Dump(m_dgndb, false, 1);
         } else {
-            LOG.fatal("PRIMARY KEY INSERT CONFLICT - rejecting this changeset");
+            m_lastErrorMessage = "PRIMARY KEY INSERT CONFLICT - rejecting this changeset";
+            LOG.fatal(m_lastErrorMessage.c_str());
             iter.Dump(m_dgndb, false, 1);
             return ChangeSet::ConflictResolution::Abort;
         }
@@ -60,7 +135,9 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
             LOG.errorv("Detected %d foreign key conflicts in changeset. Continuing merge as 'DebugAllowFkViolations' flag is set. Run 'PRAGMA foreign_key_check' to get list of violations.", nConflicts);
             return ChangeSet::ConflictResolution::Skip;
         } else {
-            LOG.errorv("Detected %d foreign key conflicts in ChangeSet. Aborting merge.", nConflicts);
+
+            m_lastErrorMessage = Utf8PrintfString("Detected %d foreign key conflicts in ChangeSet. Aborting merge.", nConflicts);
+            LOG.error(m_lastErrorMessage.c_str());
             return ChangeSet::ConflictResolution::Abort;
         }
     }
@@ -70,32 +147,8 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
          * Note: If ConflictCause = NotFound, the primary key was not found, and returning ConflictResolution::Replace is
          * not an option at all - this will cause a BE_SQLITE_MISUSE error.
          */
-        if (opcode == DbOpcode::Delete) {
-            // Caused by CASCADE DELETE on a foreign key, and is usually not a problem.
-            return ChangeSet::ConflictResolution::Skip;
-        }
-
-        if (opcode == DbOpcode::Update && 0 == ::strncmp(tableName, "ec_", 3)) {
-            // Caused by a ON DELETE SET NULL constraint on a foreign key - this is known to happen with "ec_" tables, but needs investigation if it happens otherwise
-            return ChangeSet::ConflictResolution::Skip;
-        }
-
-#if defined(WORK_ON_CHANGE_MERGING)
-        if (!letControlHandleThis)
-#endif
-        {
-            // Refer to comment below
-            return opcode == DbOpcode::Update ? ChangeSet::ConflictResolution::Skip : ChangeSet::ConflictResolution::Replace;
-        }
+        return ChangeSet::ConflictResolution::Skip;
     }
-
-#if defined(WORK_ON_CHANGE_MERGING)
-    if (letControlHandleThis) {
-        // if we have a concurrency control, then we allow it to decide how to handle conflicts with local changes.
-        // (We don't call the control in the case where there are no local changes. As explained below, we always want the incoming changes in that case.)
-        return control->_OnConflict(m_dgndb, cause, iter);
-    }
-#endif
 
     if (ChangeSet::ConflictCause::Constraint == cause) {
         if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO)) {

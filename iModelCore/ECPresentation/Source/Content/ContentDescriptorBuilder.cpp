@@ -342,7 +342,7 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    ContentDescriptor::CalculatedPropertyField* CreateCalculatedPropertyField(ECClassCP ecClass, Utf8StringCR name, CalculatedPropertiesSpecificationCR spec, 
+    ContentDescriptor::CalculatedPropertyField* CreateCalculatedPropertyField(ECClassCP ecClass, Utf8StringCR name, CalculatedPropertiesSpecificationCR spec,
         RelatedClassPathCR pathFromSelectToPropertyClass, RelationshipMeaning relationshipMeaning)
         {
         ContentDescriptor::CalculatedPropertyField* field = new ContentDescriptor::CalculatedPropertyField(m_categoriesSupplier.GetCalculatedFieldCategory(ecClass, spec, pathFromSelectToPropertyClass, relationshipMeaning),
@@ -370,7 +370,30 @@ protected:
     +---------------+---------------+---------------+---------------+---------------+------*/
     std::shared_ptr<ContentFieldRenderer const> CreateFieldRenderer(ECPropertyCR ecProperty, ECClassCR propertyClass, PropertySpecificationCP overrides) const
         {
-        return m_propertyInfos.GetPropertyRenderer(ecProperty, propertyClass, overrides);
+        auto renderer = m_propertyInfos.GetPropertyRenderer(ecProperty, propertyClass, overrides);
+        if (renderer)
+            return renderer;
+
+        if (ecProperty.GetIsPrimitive() || ecProperty.GetIsPrimitiveArray())
+            {
+            Nullable<PrimitiveType> primitiveType;
+            Utf8String extendedTypeName;
+            if (auto primitiveProperty = ecProperty.GetAsPrimitiveProperty())
+                {
+                primitiveType = primitiveProperty->GetType();
+                extendedTypeName = primitiveProperty->GetExtendedTypeName();
+                }
+            else if (auto primitiveArrayProperty = ecProperty.GetAsPrimitiveArrayProperty())
+                {
+                primitiveType = primitiveArrayProperty->GetType();
+                extendedTypeName = primitiveArrayProperty->GetExtendedTypeName();
+                }
+
+            if (primitiveType.IsValid() && primitiveType.Value() == PRIMITIVETYPE_String && extendedTypeName.EqualsI("MultilinePlainText"))
+                return std::make_shared<ContentFieldRenderer>("multiline");
+            }
+
+        return nullptr;
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -992,8 +1015,8 @@ public:
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
     RelatedContentPropertiesAppender(ContentDescriptorBuilder::Context& context, PropertyInfoStore const& propertyInfos, ContentDescriptorR descriptor,
-        CategoriesSupplier categoriesSupplier, ContentDescriptor::RelatedContentField& relatedContentField, PropertyCategorySpecificationsList const* scopePropertyCategories, 
-        std::unique_ptr<ContentSpecificationsHandler::PropertyAppendResult::ReplacedRelationshipPath> pathReplaceInfo, std::function<void(ContentDescriptor::RelatedContentField&)> onPropertiesAppended, 
+        CategoriesSupplier categoriesSupplier, ContentDescriptor::RelatedContentField& relatedContentField, PropertyCategorySpecificationsList const* scopePropertyCategories,
+        std::unique_ptr<ContentSpecificationsHandler::PropertyAppendResult::ReplacedRelationshipPath> pathReplaceInfo, std::function<void(ContentDescriptor::RelatedContentField&)> onPropertiesAppended,
         RelatedPropertiesSpecificationCR relatedSpec)
         : ContentPropertiesAppender(context, propertyInfos, descriptor, categoriesSupplier, scopePropertyCategories),
         m_relatedContentField(relatedContentField), m_pathReplaceInfo(std::move(pathReplaceInfo)), m_onPropertiesAppended(onPropertiesAppended), m_relatedSpec(relatedSpec)
@@ -1032,7 +1055,7 @@ public:
         // use the field we found
         if (mergeResult.field)
             {
-            if (relatedPropertySpecsStack.back()->ShouldSkipIfDuplicate())
+            if (relatedPropertySpecsStack.back()->ShouldSkipIfDuplicate() && mergeResult.field->GetSpecificationIdentifier() != relatedPropertySpecsStack.back()->GetHash())
                 {
                 DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Found a similar related content field and we're skipping duplicate fields - skip creating the related content field.");
                 return { nullptr, nullptr, nullptr };
@@ -1066,6 +1089,7 @@ public:
             fieldAttributes.GetLabel(), pathFromSelectToContentClass, bvector<ContentDescriptor::Field*>(), fieldAttributes.ShouldAutoExpand(),
             ContentDescriptor::Property::DEFAULT_PRIORITY, actualPropertyClass.IsRelationshipClass());
 
+        relatedContentField->SetSpecificationIdentifier(relatedPropertySpecsStack.back()->GetHash());
         relatedContentField->SetActualSourceClasses(actualSourceClasses);
         relatedContentField->SetRelationshipMeaning(relatedPropertySpecsStack.back()->GetRelationshipMeaning());
 
@@ -1117,7 +1141,7 @@ static void AssignFieldNames(bmap<Utf8String, uint64_t>& requestedNameCounts, bv
             else
                 {
                 ++iter->second;
-                field->SetUniqueName(Utf8String(requestedName).append("_").append(std::to_string(iter->second)));
+                field->SetUniqueName(Utf8String(requestedName).append("/").append(std::to_string(iter->second)));
                 }
             }
         if (field->IsNestedContentField())
@@ -1372,11 +1396,12 @@ public:
         m_propertyInfos = std::make_unique<PropertyInfoStore>(GetContext().GetSchemaHelper(), GetContext().GetRulesPreprocessor().GetContentModifiers(), specification, &GetContext().GetCategorySupplier());
         m_categoriesSupplierContext = std::make_unique<CategoriesSupplierContext>(context, *m_propertyInfos);
 
-        m_descriptor = ContentDescriptor::Create(GetContext().GetConnection(), context.GetRuleset(), context.GetRulesetVariables(), GetContext().GetInputKeys());
+        int requestedContentFlags = GetContext().GetContentFlagsCalculator() ? context.GetContentFlagsCalculator()(0) : 0;
+        int usedContentFlags = specification ? _GetContentFlags(*specification) : requestedContentFlags;
+
+        m_descriptor = ContentDescriptor::Create(GetContext().GetConnection(), context.GetRuleset(), context.GetRulesetVariables(), GetContext().GetInputKeys(), GetContext().GetPreferredDisplayType(), requestedContentFlags, usedContentFlags);
         m_descriptor->SetExclusiveIncludePaths(context.GetExclusiveIncludePaths());
         m_descriptor->SetUnitSystem(context.GetUnitSystem());
-        m_descriptor->SetPreferredDisplayType(GetContext().GetPreferredDisplayType());
-        m_descriptor->SetContentFlags(specification ? _GetContentFlags(*specification) : GetContext().GetContentFlagsCalculator() ? context.GetContentFlagsCalculator()(0) : 0);
         if (nullptr != GetContext().GetSelectionInfo())
             m_descriptor->SetSelectionInfo(*GetContext().GetSelectionInfo());
 
@@ -1384,7 +1409,7 @@ public:
             {
             auto fieldCategory = CategoriesSupplier(*m_categoriesSupplierContext).GetParentCategory(true);
             ContentDescriptor::DisplayLabelField* field = new ContentDescriptor::DisplayLabelField(fieldCategory, CommonStrings::FIELD_DISPLAYLABEL);
-            field->SetLabelOverrideSpecs(QueryBuilderHelpers::GetLabelOverrideValuesMap(GetContext().GetSchemaHelper(), GetContext().GetRulesPreprocessor().GetInstanceLabelOverrides()));
+            field->SetLabelOverrideSpecs(GetContext().GetRulesPreprocessor().GetInstanceLabelOverrides());
             m_descriptor->AddRootField(*field);
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Added display label field.");
             }

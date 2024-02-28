@@ -106,7 +106,7 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadSchemaReferencesFromXml(ECSchemaPtr& 
 
         if (m_schemaContext.AddAliasIfSchemaToPrune(schemaOut->GetName(), key.m_schemaName, alias))
             {
-            LOG.infov("Context was setup to prune encountered referenced schema, '%s' in schema '%s'", key.m_schemaName.c_str(), schemaOut->GetName().c_str());
+            LOG.tracev("Context was setup to prune encountered referenced schema, '%s' in schema '%s'", key.m_schemaName.c_str(), schemaOut->GetName().c_str());
             continue;
             }
 
@@ -1053,7 +1053,7 @@ SchemaReadStatus SchemaXmlReader::ReadSchemaContents(SchemaXmlReaderImpl* reader
 
     if (m_schemaContext.GetSkipValidation())
         {
-        LOG.infov("Skipping validation for '%s' because the read context has skip validation property set to true", schemaOut->GetFullSchemaName().c_str());
+        LOG.tracev("Skipping validation for '%s' because the read context has skip validation property set to true", schemaOut->GetFullSchemaName().c_str());
         return SchemaReadStatus::Success;
         }
 

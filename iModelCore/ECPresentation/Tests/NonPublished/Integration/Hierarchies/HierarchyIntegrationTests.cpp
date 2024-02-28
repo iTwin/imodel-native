@@ -5780,6 +5780,43 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingByEnu
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SortingRule_SortingByECInstanceIdProperty, R"*(
+    <ECEntityClass typeName="A" />
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingByECInstanceIdProperty)
+    {
+    ECClassCP classA = GetClass("A");
+    
+    IECInstancePtr a1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr a2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule();
+    auto spec = new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Never, false, false, false, false, "", classA->GetFullName(), {});
+    rule->AddSpecification(*spec);
+    rules->AddPresentationRule(*rule);
+
+    SortingRuleP sortingRule = new SortingRule("", 1, GetSchema()->GetName(), classA->GetName(), "ECInstanceId", false, false, false);
+    rules->AddPresentationRule(*sortingRule);
+
+    // request for nodes
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
+        );
+
+    // make sure we have 2 nodes sorted correctly by ECInstanceId in descending order
+    ASSERT_EQ(2, nodes.GetSize());
+    VerifyNodeInstance(rules->GetRuleSetId(), *nodes[0], *a2);
+    VerifyNodeInstance(rules->GetRuleSetId(), *nodes[1], *a1);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * VSTS#176463
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -11279,6 +11316,56 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_Ap
 /*---------------------------------------------------------------------------------**//**
 * @betest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(InstanceLabelOverride_NestedTakesPrecedenceOverRoot, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Prop" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <BaseClass>A</BaseClass>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceLabelOverride_NestedTakesPrecedenceOverRoot)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance)
+        {
+        instance.SetValue("Prop", ECValue("test"));
+        });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classB->GetFullName(), { new InstanceLabelOverrideClassNameValueSpecification() }));
+
+    RootNodeRule* rule1 = new RootNodeRule();
+    rule1->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(2, ChildrenHint::Unknown, false, false, false, false, "", classA->GetFullName(), true));
+    rule1->AddCustomizationRule(*new InstanceLabelOverride(1, false, classA->GetFullName(), { new InstanceLabelOverridePropertyValueSpecification("Prop") }));
+    rules->AddPresentationRule(*rule1);
+
+    RootNodeRule* rule2 = new RootNodeRule();
+    rule2->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "", classA->GetFullName(), true));
+    rules->AddPresentationRule(*rule2);
+
+    // request for nodes
+    DataContainer<NavNodeCPtr> nodes = RulesEngineTestHelpers::GetValidatedNodes(
+        [&](PageOptionsCR pageOptions){ return m_manager->GetNodes(MakePaged(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables()), pageOptions)).get(); },
+        [&](){ return m_manager->GetNodesCount(AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables())).get(); }
+    );
+    ASSERT_EQ(2, nodes.GetSize());
+
+    VerifyNodeInstance(rules->GetRuleSetId(), *nodes[0], *b);
+    EXPECT_STREQ("test", nodes[0]->GetLabelDefinition().GetDisplayValue().c_str());
+
+    VerifyNodeInstance(rules->GetRuleSetId(), *nodes[1], *b);
+    EXPECT_STREQ("B", nodes[1]->GetLabelDefinition().GetDisplayValue().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(InstanceLabelOverride_RespectsPriority, R"*(
     <ECEntityClass typeName="A">
         <ECProperty propertyName="Prop1" typeName="string" />
@@ -11778,8 +11865,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceNodesOfSpecificC
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
-    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classA1->GetFullName(), "CodeValue"));
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classC->GetFullName(), "UserLabel"));
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classA1->GetFullName(), "CodeValue"));
 
     RootNodeRule* rule = new RootNodeRule();
     rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, true, false, false, false, "", classA1->GetFullName(), false));
@@ -11884,8 +11971,8 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, AllInstanceNodesSpecific
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
     m_locater->AddRuleSet(*rules);
-    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classA->GetFullName(), "CodeValue"));
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classC->GetFullName(), "UserLabel"));
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classA->GetFullName(), "CodeValue"));
 
     RootNodeRule* rule = new RootNodeRule();
     AllInstanceNodesSpecificationP allInstanceNodesSpecification = new AllInstanceNodesSpecification(1, false, false, false, false, false, GetSchema()->GetName());

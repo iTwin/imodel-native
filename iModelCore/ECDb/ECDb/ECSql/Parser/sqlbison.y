@@ -119,6 +119,8 @@ using namespace connectivity;
 %token <pParseNode> SQL_TOKEN_DOLLAR
 %token <pParseNode> SQL_BITWISE_NOT
 
+%token <pParseNode> SQL_TOKEN_NAVIGATION_VALUE
+
 /* time and date functions */
 %token <pParseNode> SQL_TOKEN_CURRENT_DATE SQL_TOKEN_CURRENT_TIME SQL_TOKEN_CURRENT_TIMESTAMP
 
@@ -181,8 +183,8 @@ using namespace connectivity;
 %type <pParseNode> ordering_spec opt_asc_desc manipulative_statement opt_null_order first_last_desc
 %type <pParseNode> delete_statement_searched
 %type <pParseNode> type_predicate type_list type_list_item
-%type <pParseNode> insert_statement values_or_query_spec
-%type <pParseNode>  opt_all_distinct
+%type <pParseNode> insert_statement values_or_query_spec values_commalist
+%type <pParseNode> opt_all_distinct
 %type <pParseNode> assignment_commalist assignment
 %type <pParseNode> update_statement_searched opt_where_clause
 %type <pParseNode> single_select_statement selection table_exp from_clause table_ref_commalist table_ref
@@ -228,6 +230,7 @@ using namespace connectivity;
 %type <pParseNode> opt_ecsqloptions_clause ecsqloptions_clause ecsqloptions_list ecsqloption ecsqloptionvalue
 %type <pParseNode> cte opt_cte_recursive cte_column_list cte_table_name cte_block_list
 %type <pParseNode> pragma opt_pragma_set opt_pragma_set_val opt_pragma_func pragma_value pragma_path opt_pragma_for
+%type <pParseNode> value_creation_fct
 %%
 
 /* Parse Tree an OSQLParser zurueckliefern
@@ -558,6 +561,24 @@ insert_statement:
             $$->append($4);
             $$->append($5);}
     ;
+
+values_commalist:
+        values_commalist ',' '(' row_value_constructor_commalist ')'
+        {
+            $$->append($3 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($4);
+            $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
+            $$ = $1;
+        }
+    |   '(' row_value_constructor_commalist ')'
+        {
+            $$ = SQL_NEW_COMMALISTRULE;
+            $$->append($1 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($2);
+            $$->append($3 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
+        }
+    ;
+
 values_or_query_spec:
         SQL_TOKEN_VALUES '(' row_value_constructor_commalist ')'
         {$$ = SQL_NEW_RULE;
@@ -1215,7 +1236,15 @@ unique_test:
             $$->append($2);}
     ;
 subquery:
-        '(' select_statement ')'
+        '(' SQL_TOKEN_VALUES values_commalist ')'
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($2);
+            $$->append($3);
+            $$->append($4 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
+        }
+    |   '(' select_statement ')'
         {
             $$ = SQL_NEW_RULE;
             $$->append($1 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
@@ -1335,6 +1364,7 @@ iif_spec:
 fct_spec:
         aggregate_fct
     |   iif_spec
+    |   value_creation_fct
     |   function_name '(' ')'
         {
             $$ = SQL_NEW_RULE;
@@ -1366,6 +1396,19 @@ function_name:
     |   SQL_TOKEN_RTRIM
     ;
 
+value_creation_fct:
+        SQL_TOKEN_NAVIGATION_VALUE '(' derived_column ',' function_arg opt_function_arg ')'
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($3);
+            $$->append($4 = CREATE_NODE(",", SQL_NODE_PUNCTUATION));
+            $$->append($5);
+            $$->append($6);
+            $$->append($7 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
+        }
+        ;
 
 aggregate_fct:
         SQL_TOKEN_MAX '(' opt_all_distinct  function_args_commalist ')'

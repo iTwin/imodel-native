@@ -121,10 +121,10 @@ static void clearIndexArrays(PolyfaceHeaderR mesh)
     }
 
 // copy indices for all active data for the current face
-static void appendVisitorIndices(PolyfaceHeaderR dest, PolyfaceHeaderCR source, PolyfaceVisitorCR visitor)
+static void appendVisitorIndices(PolyfaceHeaderR dest, PolyfaceHeaderCR source, PolyfaceVisitorCR visitor, size_t numWrapToIgnore = 0)
     {
     size_t readIndex = visitor.GetReadIndex();
-    size_t numIndices = visitor.NumEdgesThisFace();
+    size_t numIndices = visitor.NumEdgesThisFace() - numWrapToIgnore;
     dest.PointIndex().AddAndTerminate(source.GetPointIndexCP() + readIndex, numIndices);
     if (dest.ParamIndex().Active())
         dest.ParamIndex().AddAndTerminate(source.GetParamIndexCP() + readIndex, numIndices);
@@ -150,28 +150,54 @@ PolyfaceHeaderPtr PolyfaceHeader::CloneWithDegenerateFacetsRemoved() const
 
     for (auto visitor = PolyfaceVisitor::Attach(*this, true); visitor->AdvanceToNextFace(); )
         {
-        if (visitor->NumEdgesThisFace() < 3)
-            continue;
+        size_t n = visitor->NumEdgesThisFace();
         auto pFaceIndices = visitor->GetClientPointIndexCP();   // zero based
+
+        // reduce edge count by wrapped edges, e.g., 1231, 12312, 123123 -> 123
+        size_t numWrap = 0;
+        for (size_t iWrapStart = n - 1; iWrapStart > 0; --iWrapStart)
+            {
+            if (pFaceIndices[0] == pFaceIndices[iWrapStart])
+                {
+                bool haveWrap = true;
+                for (size_t i = 1; iWrapStart + i < n && haveWrap; ++i)
+                    haveWrap = pFaceIndices[i] == pFaceIndices[iWrapStart + i];
+                if (haveWrap)
+                    numWrap = n - iWrapStart;
+                break;
+                }
+            }
+        n -= numWrap;
+        if (n < 3)
+            continue;
+
         auto i0 = pFaceIndices[0];
         auto i1 = pFaceIndices[1];
         auto i2 = pFaceIndices[2];
-        if (visitor->NumEdgesThisFace() == 3)
+        if (n == 3)
             {
+            // look for a single degenerate edge
             if (i0 == i1 || i0 == i2 || i1 == i2)
                 continue;
             }
-        else if (visitor->NumEdgesThisFace() == 4)
+        else if (n == 4)
             {
+            // look for two degenerate edges
             auto i3 = pFaceIndices[3];
-            if ((i0 == i3 && i1 == i2) || (i0 == i1 && i2 == i3))
+            if ((i0 == i1) && (i2 == i3))
+                continue;
+            if ((i0 == i3) && (i1 == i2))
+                continue;
+            // or a revisited vertex
+            if (i0 == i2 || i1 == i3)
                 continue;
             }
         else
             {
-            ; // TODO: faces with > 4 edges
+            ; // TODO: n > 4
             }
-        appendVisitorIndices(*cloneFiltered, *this, *visitor);
+
+        appendVisitorIndices(*cloneFiltered, *this, *visitor, numWrap);
         }
     return cloneFiltered;
     }
@@ -199,6 +225,22 @@ PolyfaceHeaderPtr PolyfaceHeader::CloneWithFacetsInRandomOrder() const
             appendVisitorIndices(*shuffledMesh, *this, *fullVisitor);
         }
     return shuffledMesh;
+    }
+
+PolyfaceHeaderPtr PolyfaceHeader::CloneWithConsistentlyOrientedFacets(DVec3dCP surfaceNormal) const
+    {
+    auto newMesh = PolyfaceHeader::CreateVariableSizeIndexed();
+    
+    // use tight tolerances: we assume the input mesh already shares vertices 
+    MTGFacets* facets = jmdlMTGFacets_grab();
+    bvector<MTGNodeId> meshVertexToNodeId;  // needed to preserve visible edges!
+    if (PolyfaceToMTG(facets, &meshVertexToNodeId, nullptr, *this, true, Angle::SmallAngle(), Angle::SmallAngle(), 1))
+        AddMTGFacetsToIndexedPolyface(facets, *newMesh);
+    jmdlMTGFacets_drop(facets);
+    if (!newMesh->HasFacets())
+        return nullptr;
+    newMesh->ReverseIndicesWithTest(surfaceNormal);
+    return newMesh;
     }
 
 END_BENTLEY_GEOMETRY_NAMESPACE

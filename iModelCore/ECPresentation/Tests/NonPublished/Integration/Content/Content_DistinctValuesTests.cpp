@@ -33,11 +33,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DEPRECATED_GetDistinctValue
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
-        rules->GetRuleSetId(), RulesetVariables(), "", 0, *KeySet::Create())));
+        rules->GetRuleSetId(), RulesetVariables(), "", (int)ContentFlags::DistinctValues, *KeySet::Create())));
 
     ContentDescriptorPtr overridenDescriptor = ContentDescriptor::Create(*descriptor);
     overridenDescriptor->ExclusivelyIncludeFields({ overridenDescriptor->FindField(PropertiesContentFieldMatcher(*classA->GetPropertyP("Property"), {})) });
-    overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
 
     // validate descriptor
     EXPECT_EQ(1, overridenDescriptor->GetVisibleFields().size());
@@ -115,11 +114,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DEPRECATED_GetDistinctValue
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
-        rules->GetRuleSetId(), RulesetVariables(), "", 0, *keyset)));
+        rules->GetRuleSetId(), RulesetVariables(), "", (int)ContentFlags::DistinctValues, *keyset)));
 
     ContentDescriptorPtr overridenDescriptor = ContentDescriptor::Create(*descriptor);
     overridenDescriptor->ExclusivelyIncludeFields({ overridenDescriptor->FindField(PropertiesContentFieldMatcher(*classB->GetPropertyP("Property"), {})) });
-    overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
 
     // validate descriptor
     EXPECT_EQ(1, overridenDescriptor->GetVisibleFields().size());
@@ -204,11 +202,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DEPRECATED_GetDistinctValue
 
     KeySetPtr keys = KeySet::Create(bvector<IECInstancePtr>{instanceA, instanceB1, instanceB2, instanceB3});
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
-        rules->GetRuleSetId(), RulesetVariables(), "", 0, *keys)));
+        rules->GetRuleSetId(), RulesetVariables(), "", (int)ContentFlags::DistinctValues, *keys)));
 
     ContentDescriptorPtr overridenDescriptor = ContentDescriptor::Create(*descriptor);
     overridenDescriptor->ExclusivelyIncludeFields({ overridenDescriptor->FindField(NamedContentFieldMatcher("CalculatedProperty_0")) });
-    overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
 
     // validate descriptor
     EXPECT_EQ(1, overridenDescriptor->GetVisibleFields().size());
@@ -284,14 +281,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DEPRECATED_GetDistinctValue
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classA->GetFullName(), "Property"));
     rules->AddPresentationRule(*new InstanceLabelOverride(1, true, classB->GetFullName(), "Property"));
 
+    int contentFlags = (int)ContentFlags::DistinctValues | (int)ContentFlags::ShowLabels;
     KeySetPtr keys = KeySet::Create(bvector<IECInstancePtr>{instanceB, instanceA1, instanceA2, instanceA3});
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
-        rules->GetRuleSetId(), RulesetVariables(), "", 0, *keys)));
+        rules->GetRuleSetId(), RulesetVariables(), "", contentFlags, *keys)));
 
     ContentDescriptorPtr overridenDescriptor = ContentDescriptor::Create(*descriptor);
     overridenDescriptor->ExclusivelyIncludeFields({ overridenDescriptor->FindField(GenericContentFieldMatcher([](auto const& field){return field.IsDisplayLabelField();})) });
-    overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
-    overridenDescriptor->AddContentFlag(ContentFlags::ShowLabels);
     EXPECT_EQ(0, overridenDescriptor->GetVisibleFields().size());
 
     // request for content
@@ -342,13 +338,12 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, DEPRECATED_GetDistinctValu
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
-        rules->GetRuleSetId(), RulesetVariables(), "", 0, *input)));
+        rules->GetRuleSetId(), RulesetVariables(), "", (int)ContentFlags::DistinctValues, *input)));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
     ContentDescriptorPtr overridenDescriptor = ContentDescriptor::Create(*descriptor);
     overridenDescriptor->ExclusivelyIncludeFields({ overridenDescriptor->FindField(PropertiesContentFieldMatcher(*classA->GetPropertyP("Property"), {})) });
-    overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
 
     // request for content
     ContentCPtr content = GetVerifiedContent(*overridenDescriptor);
@@ -1477,12 +1472,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetsContentDescriptorWithNa
     RapidJsonValueCR jsonValues = contentSet.Get(0)->GetValues();
     EXPECT_EQ(instanceA->GetClass().GetId().ToString(), jsonValues[FIELD_NAME(classB, "A")]["ECClassId"].GetString());
     EXPECT_EQ(instanceA->GetInstanceId(), jsonValues[FIELD_NAME(classB, "A")]["ECInstanceId"].GetString());
-    EXPECT_TRUE(jsonValues[FIELD_NAME(classC, "B")].IsNull());
+    EXPECT_FALSE(jsonValues.HasMember(FIELD_NAME(classC, "B")));
 
     RapidJsonValueCR jsonValues2 = contentSet.Get(1)->GetValues();
     EXPECT_EQ(instanceB->GetClass().GetId().ToString(), jsonValues2[FIELD_NAME(classC, "B")]["ECClassId"].GetString());
     EXPECT_EQ(instanceB->GetInstanceId(), jsonValues2[FIELD_NAME(classC, "B")]["ECInstanceId"].GetString());
-    EXPECT_TRUE(jsonValues2[FIELD_NAME(classB, "A")].IsNull());
+    EXPECT_FALSE(jsonValues2.HasMember(FIELD_NAME(classB, "A")));
     }
 
 #ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
@@ -1532,16 +1527,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctNavigationProper
 
     // validate content descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
-        rules->GetRuleSetId(), RulesetVariables(), "", 0, *KeySet::Create())));
+        rules->GetRuleSetId(), RulesetVariables(), "", (int)ContentFlags::DistinctValues, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(1, descriptor->GetVisibleFields().size());
 
-    // modify content descriptor
-    ContentDescriptorPtr overridenDescriptor = ContentDescriptor::Create(*descriptor);
-    overridenDescriptor->AddContentFlag(ContentFlags::DistinctValues);
-
     // request for content
-    ContentCPtr content = GetVerifiedContent(*overridenDescriptor);
+    ContentCPtr content = GetVerifiedContent(*descriptor);
     ASSERT_TRUE(content.IsValid());
 
     // validate content
@@ -1722,4 +1713,89 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctValues_Descripto
 
     ASSERT_EQ(1, values.GetSize());
     EXPECT_STREQ("2", values[0]->GetDisplayValue().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(GetDistinctRelatedPrimitivePropertyValuesWhenPolymorphicallyHandlingContentInstancesOfSpecificClassesSpecification, R"*(
+    <ECEntityClass typeName="A">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <BaseClass>A</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>A</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="D">
+        <ECProperty propertyName="Label" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="AD" strength="referencing" strengthDirection="Forward" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ad" polymorphic="True">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="da" polymorphic="True">
+            <Class class="D" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctRelatedPrimitivePropertyValuesWhenPolymorphicallyHandlingContentInstancesOfSpecificClassesSpecification)
+    {
+    // set up dataset
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECClassCP classD = GetClass("D");
+    ECRelationshipClassCP rel = GetClass("AD")->GetRelationshipClassCP();
+
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr d1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD, [](IECInstanceR instance) {instance.SetValue("Label", ECValue("1"));});
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel, *b, *d1);
+
+    IECInstancePtr c = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    IECInstancePtr d2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classD, [](IECInstanceR instance) {instance.SetValue("Label", ECValue("2"));});
+    RulesEngineTestHelpers::InsertRelationship(*s_project, *rel, *c, *d2);
+
+    // create a ruleset
+    PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*ruleset);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    ruleset->AddPresentationRule(*rule);
+
+    auto contentSpec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), true, true);
+    rule->AddSpecification(*contentSpec);
+
+    auto relatedPropertiesSpec = new RelatedPropertiesSpecification(
+        *new RelationshipPathSpecification({ new RelationshipStepSpecification(rel->GetFullName(), RequiredRelationDirection_Forward) }),
+        { new PropertySpecification("Label") }, RelationshipMeaning::RelatedInstance, true);
+    relatedPropertiesSpec->SetSkipIfDuplicate(true);
+    contentSpec->AddRelatedProperty(*relatedPropertiesSpec);
+
+    // get distinct values
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
+        ruleset->GetRuleSetId(), RulesetVariables(), "", 0, *KeySet::Create())));
+    auto fieldMatcher = std::make_shared<PropertiesContentFieldMatcher>(
+        *classD->GetPropertyP("Label"),
+        RelatedClassPath{ RelatedClass(*classA, SelectClass<ECRelationshipClass>(*rel, ""), true, SelectClass<ECClass>(*classD, "")) }
+    );
+    PagedDataContainer<DisplayValueGroupCPtr> values = GetValidatedResponse(m_manager->GetDistinctValues(AsyncDistinctValuesRequestParams::Create(s_project->GetECDb(), *descriptor, fieldMatcher)));
+
+    // validate
+    ASSERT_EQ(2, values.GetSize());
+    size_t valueIndex = 0;
+
+    EXPECT_STREQ("1", values[valueIndex]->GetDisplayValue().c_str());
+    EXPECT_EQ(1, values[valueIndex]->GetRawValues().size());
+    EXPECT_STREQ("1", values[valueIndex]->GetRawValues()[0].GetString());
+    ++valueIndex;
+
+    EXPECT_STREQ("2", values[valueIndex]->GetDisplayValue().c_str());
+    EXPECT_EQ(1, values[valueIndex]->GetRawValues().size());
+    EXPECT_STREQ("2", values[valueIndex]->GetRawValues()[0].GetString());
     }
