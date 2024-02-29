@@ -86,7 +86,7 @@ static PresentationRuleSetPtr FindRuleset(IRulesetLocaterManager const& locaters
     PresentationRuleSetPtr ruleset = RulesPreprocessor::GetPresentationRuleSet(locaters, connection, rulesetId);
     if (!ruleset.IsValid())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Ruleset with ID '%s' not found", rulesetId));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Ruleset with ID '%s' not found", rulesetId));
         return nullptr;
         }
     return ruleset;
@@ -1735,7 +1735,7 @@ PagingDataSourcePtr<DisplayValueGroupCPtr> RulesDrivenECPresentationManagerImpl:
     ContentDescriptor::Field const* field = params.GetContentDescriptor().FindField(params.GetDistinctFieldMatcher());
     if (field == nullptr)
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, "Descriptor doesn't contain requested field");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, "Descriptor doesn't contain requested field");
         return nullptr;
         }
 

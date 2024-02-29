@@ -149,7 +149,7 @@ protected:
         {}
     CustomFunctionsContext& GetContext() const {return m_manager.GetCurrentContext();}
     virtual void _Step(Context&, int nArgs, DbValue* args) = 0;
-    virtual void _Finish(Context&) = 0;                        
+    virtual void _Finish(Context&) = 0;
     void _StepAggregate(Context& ctx, int nArgs, DbValue* args) final
         {
         try {
@@ -282,7 +282,7 @@ public:
                 bvector<ECInstanceKey> labelRequestsStack = (nArgs == 3) ? ValueHelpers::GetECInstanceKeysFromJsonString(args[2].GetValueText()) : bvector<ECInstanceKey>();
                 if (ContainerHelpers::Contains(labelRequestsStack, [&requestKey](auto const& key){return key == requestKey;}))
                     {
-                    DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Detected recursion in labels calculation. "
+                    DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Detected recursion in labels calculation. "
                         "ECInstance keys stack: `%s`. Trying to get label for: `%s`", args[2].GetValueText(), ValueHelpers::GetECInstanceKeyAsJsonString(requestKey).c_str()));
                     }
                 else

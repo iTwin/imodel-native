@@ -36,7 +36,23 @@ chaiuse(chaiAsPromised);
 
 Logger.initializeToConsole();
 Logger.setLevelDefault(LogLevel.Error);
-iModelJsNative.logger = Logger;
+iModelJsNative.logger = {
+  // note: using private Logger fields is temporary until the version of `@itwin/core-bentley` is updated
+  // to a version where Logger has them public
+  get minLevel() {
+    return (Logger as any)._minLevel;
+  },
+  get categoryFilter() {
+    return [...((Logger as any)._categoryFilter as Map<string, LogLevel>).entries()].reduce(
+      (categoryFilter, [categoryName, logLevel]) => ({ ...categoryFilter, [categoryName]: logLevel }),
+      {},
+    );
+  },
+  logTrace: (c, m) => Logger.logTrace(c, m),
+  logInfo: (c, m) => Logger.logInfo(c, m),
+  logWarning: (c, m) => Logger.logWarning(c, m),
+  logError: (c, m) => Logger.logError(c, m),
+};
 
 export function openDgnDb(filename: string, upgradeOptions?: UpgradeOptions & IModelJsNative.SchemaImportOptions) {
   const db = new iModelJsNative.DgnDb();

@@ -210,7 +210,7 @@ static BentleyStatus CreatePropertyCategoryFromSpec(bvector<std::shared_ptr<Prop
     auto iter = std::find_if(specs.begin(), specs.end(), [&identifier](PropertyCategorySpecificationCP spec) {return spec->GetId().Equals(identifier.AsIdIdentifier()->GetCategoryId());});
     if (iter == specs.end())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to find category '%s' in current scope. Available categories: [%s]",
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Failed to find category '%s' in current scope. Available categories: [%s]",
             identifier.AsIdIdentifier()->GetCategoryId().c_str(),
             BeStringUtilities::Join(ContainerHelpers::TransformContainer<T_Utf8StringVector>(specs, [](auto const& spec) {return Utf8String("'").append(spec->GetId()).append("'"); })).c_str()));
         return ERROR;

@@ -427,7 +427,7 @@ bvector<PresentationRuleSetPtr> DirectoryRuleSetLocater::_LocateRuleSets(Utf8CP 
                 }
             else
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to load ruleset from file: '%s'", file.GetNameUtf8().c_str()));
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Failed to load ruleset from file: '%s'", file.GetNameUtf8().c_str()));
                 }
             }
 
