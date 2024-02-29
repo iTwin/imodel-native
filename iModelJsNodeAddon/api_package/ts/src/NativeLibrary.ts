@@ -50,6 +50,16 @@ export const NativeLoggerCategory = {
   UnitsNative: "UnitsNative",
 } as const;
 
+/** @internal */
+export interface NativeLogger {
+  readonly minLevel: LogLevel | undefined;
+  readonly categoryFilter: {[categoryName: string]: LogLevel};
+  logTrace: (category: string, message: string) => void;
+  logInfo: (category: string, message: string) => void;
+  logWarning: (category: string, message: string) => void;
+  logError: (category: string, message: string) => void;
+}
+
 /** Find and load the native node-addon library */
 export class NativeLibrary {
   public static get archName() {
@@ -179,7 +189,7 @@ export declare namespace IModelJsNative {
   }
 
   const version: string;
-  let logger: typeof Logger;
+  let logger: NativeLogger;
   function setMaxTileCacheSize(maxBytes: number): void;
   function getTileVersionInfo(): TileVersionInfo;
   function setCrashReporting(cfg: NativeCrashReportingConfig): void;
