@@ -48,6 +48,7 @@ stages:
             itwinjsPR=$(grep -o '^itwinjs-core: https://github.com/iTwin/itwinjs-core/pull/[0-9]\+' body.txt | grep -o '[0-9]\+')
             echo "itwinjs-core pr Num $itwinjsPR"
 
+            # Default itwinjs pr to 0. When this gets passed to bump_version.py it will check for the 0 and know not to include a PR number in the commit msg
             if [[ -z "$itwinjsPR" ]]; then
               itwinjsPR='0'
               echo "No itwinjs-core PR found. Defaulting PR num to: $itwinjsPR"
@@ -69,10 +70,10 @@ stages:
 
       - bash: |
           echo $(getBuildNum.ITWINJS_BRANCH)
-          az pipelines run \
-            --branch $(Build.SourceBranch) \
-            --id  8467 \
-            --parameters "BumpType=patch" "iTwinjsPrNum=$(getBuildNum.ITWINJS_PR_NUM)"
+          # az pipelines run \
+          #   --branch $(Build.SourceBranch) \
+          #   --id  8467 \
+          #   --parameters "BumpType=patch" "iTwinjsPrNum=$(getBuildNum.ITWINJS_PR_NUM)"
         displayName: queue bump-version.yml
         env:
           AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
