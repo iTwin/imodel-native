@@ -14,7 +14,7 @@ import type { NativeCloudSqlite } from "./NativeCloudSqlite";
  */
 
 import type {
-  BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IDisposable, IModelStatus, Logger, LogLevel, OpenMode,
+  BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IDisposable, IModelStatus, LogLevel, OpenMode,
   StatusCodeWithMessage,
 } from "@itwin/core-bentley";
 import type {
