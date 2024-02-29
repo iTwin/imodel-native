@@ -18,7 +18,7 @@ stages:
 - stage: queue_bump_version
   displayName: Queue bump-version.yml
   jobs:
-  - job: get_num_then_queue
+  - job: read_pr_and_queue_bump
     displayName: Get Build Num then Queue
     pool:
       vmImage: ubuntu-latest
@@ -65,15 +65,15 @@ stages:
             fi
         env:
           GITHUB_TOKEN: $(GH_TOKEN)
-        displayName: get build num from commit
-        name: getBuildNum
+        displayName: get itwinjs pr
+        name: getItwinjsPr
 
       - bash: |
           echo $(getBuildNum.ITWINJS_BRANCH)
-          # az pipelines run \
-          #   --branch $(Build.SourceBranch) \
-          #   --id  8467 \
-          #   --parameters "BumpType=patch" "iTwinjsPrNum=$(getBuildNum.ITWINJS_PR_NUM)"
+          az pipelines run \
+            --branch $(Build.SourceBranch) \
+            --id  8467 \
+            --parameters "BumpType=patch" "iTwinjsPrNum=$(getItwinjsPr.ITWINJS_PR_NUM)"
         displayName: queue bump-version.yml
         env:
           AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
