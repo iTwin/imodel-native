@@ -218,8 +218,8 @@ BentleyStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSc
     //Make a copy of the input vectors so we don't modify the original (given to us as const anyways)
     bvector<ECSchemaCP> left(rawLeft);
     bvector<ECSchemaCP> right(rawRight);
-    auto mergeEntireTree = options.MergeEntireTree();
-    if(mergeEntireTree)
+    auto doNotMergeReferences = options.DoNotMergeReferences();
+    if(!doNotMergeReferences)
         {
         ECSchema::SortSchemasInDependencyOrder(left);
         ECSchema::SortSchemasInDependencyOrder(right);
@@ -242,7 +242,7 @@ BentleyStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSc
             if(!result.ContainsSchema(schema->GetName().c_str()))
                 {
                 ECSchemaPtr copiedSchema;
-                if(schema->CopySchema(copiedSchema, mergeEntireTree ? &result.GetSchemaCache() : nullptr) != ECObjectsStatus::Success)
+                if(schema->CopySchema(copiedSchema, !doNotMergeReferences ? &result.GetSchemaCache() : nullptr) != ECObjectsStatus::Success)
                     {
                     result.Issues().ReportV(IssueSeverity::Fatal, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0025,
                         "Schema '%s' from %s side failed to be copied.", schema->GetFullSchemaName().c_str(), side);
