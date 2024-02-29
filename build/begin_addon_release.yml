@@ -42,7 +42,7 @@ stages:
             echo "Native PR Num: $nativePrNum"
 
             # Store PR description in txt file because vars behave strangely with multi line comments
-            gh pr view $nativePrNum --json body  --repo iTwin/imodel-native-internal -q '.body' >> body.txt
+            gh pr view $nativePrNum --json body  --repo iTwin/imodel-native -q '.body' >> body.txt
 
             # parse body.txt seraching for itwinjs-core pr URl and extract pull number from line. grep -o ensure the grep only returns the matching pattern instead of the entire line
             itwinjsPR=$(grep -o '^itwinjs-core: https://github.com/iTwin/itwinjs-core/pull/[0-9]\+' body.txt | grep -o '[0-9]\+')
