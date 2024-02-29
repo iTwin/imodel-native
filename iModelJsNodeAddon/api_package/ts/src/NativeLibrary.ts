@@ -14,7 +14,7 @@ import type { NativeCloudSqlite } from "./NativeCloudSqlite";
  */
 
 import type {
-  BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IDisposable, IModelStatus, Logger, OpenMode,
+  BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IDisposable, IModelStatus, Logger, LogLevel, OpenMode,
   StatusCodeWithMessage,
 } from "@itwin/core-bentley";
 import type {
@@ -179,9 +179,8 @@ export declare namespace IModelJsNative {
   }
 
   const version: string;
-  let logger: Logger;
+  let logger: typeof Logger;
   function setMaxTileCacheSize(maxBytes: number): void;
-  function flushLog(): void;
   function getTileVersionInfo(): TileVersionInfo;
   function setCrashReporting(cfg: NativeCrashReportingConfig): void;
   function setCrashReportProperty(name: string, value: string | undefined): void;
@@ -1419,6 +1418,7 @@ export declare namespace IModelJsNative {
    */
   class NativeDevTools {
     public static signal(signalType: number): boolean;
+    public static emitLogs(count: number, category: string, severity: LogLevel, thread: "main" | "worker", onDone: () => void): void;
   }
 
   /**
