@@ -121,9 +121,10 @@ private:
 public:
 
     //! Merges a vector of schemas with existing ones
-    //! @param[in] schemasToMerge - The new schemas which should be merged
-    //! @param[in] existingSchemas - All existing schemas
-    //! @param[out] mergedSchemas - returns the result of the merging process
+    //! @param[out] result Returns the merged schemas operation result
+    //! @param[in] left All existing schemas
+    //! @param[in] right The new schemas which should be merged
+    //! @param[in] options Custom settings for merge schemas operation
     ECOBJECTS_EXPORT static BentleyStatus MergeSchemas(SchemaMergeResult& result, bvector<ECSchemaCP> const& left, bvector<ECSchemaCP> const& right, SchemaMergeOptions const& options = SchemaMergeOptions());
 
     using ShouldMergeSchemaFunc = std::function<bool(ECSchemaCP schema)>;
