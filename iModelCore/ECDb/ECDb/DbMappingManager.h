@@ -166,8 +166,8 @@ struct DbMappingManager final
             static RelationshipConstraintMap const& GetConstraintMap(ECN::NavigationECPropertyCR, RelationshipClassMapCR, NavigationPropertyMap::NavigationEnd);
             static BentleyStatus DetermineColumnInfoForPrimitiveProperty(DbColumn::CreateParams&, ClassMap const&, ECN::PrimitiveECPropertyCR, Utf8StringCR accessString);
 
-            static BentleyStatus ValidateUserDefinedIndexes(SchemaImportContext & importCtx, ClassMap const & classMap);
-            static BentleyStatus MapUserDefinedIndex(SchemaImportContext&, ClassMap const&, DbIndexListCustomAttribute::DbIndex const&);
+            static BentleyStatus ValidateIndexes(SchemaImportContext & importCtx, ClassMap const & classMap);
+            static BentleyStatus MapIndex(SchemaImportContext&, ClassMap const&, DbIndexListCustomAttribute::DbIndex const&, const bool isSystemIndex = false);
             static std::set<DbTable const*> GetPropertyTables(DataPropertyMap const& inProp);
             static BentleyStatus MoveProperty(Context&, ECN::ECPropertyCR, CompoundDataPropertyMapDiff& diff);
         public:
@@ -178,8 +178,7 @@ struct DbMappingManager final
             //for mapping nav props, plus a third method related to nav props. This needs to be cleaned up.
             static ClassMappingStatus MapNavigationProperty(SchemaImportContext&, NavigationPropertyMap&);
 
-            static BentleyStatus MapUserDefinedIndexes(SchemaImportContext&, ClassMap const&);
-            static BentleyStatus UpdateUserDefinedIndexes(SchemaImportContext&, ClassMap const&);
+            static BentleyStatus MapIndexes(SchemaImportContext&, ClassMap const&, const bool updateIndexes);
 
             static BentleyStatus TryDetermineRelationshipMappingType(RelationshipMappingType&, SchemaImportContext const&, ECN::ECRelationshipClassCR);
 

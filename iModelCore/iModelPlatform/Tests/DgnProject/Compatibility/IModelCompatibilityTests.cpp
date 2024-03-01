@@ -2071,3 +2071,522 @@ TEST_F(IModelCompatibilityTestFixture, UpgradeDomainIModelToEC32)
 
     IModelEvolutionTestsDomain::GetDomain().SetRequired(DgnDomain::Required::No);
     }
+
+TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeleteClassPropertyAndEnums)
+    {
+    for (const auto& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
+        {
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+            {
+            TestIModel& testDb = *testDbPtr;
+            const auto openStat = testDb.Open();
+            const auto& params = static_cast<DgnDb::OpenParams const&> (testDb.GetOpenParams());
+
+            if (params.IsReadonly())
+                continue;
+
+            //schema import is possible to newer ECDb profile files or files that don't support EC3.2 as the profile version is automatically upgraded
+            ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
+
+            DgnDbR dgnDb = testDb.GetDgnDb();
+
+            // Setup test schema
+            auto deserializationCtx = TestFileCreator::DeserializeSchema(testDbPtr->GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
+
+                                <ECEnumeration typeName='UnstrictEnumInt' backingTypeName='int' isStrict='False'>
+                                    <ECEnumerator value = '0' displayLabel = 'txt' />
+                                    <ECEnumerator value = '1' displayLabel = 'bat' />
+                                </ECEnumeration>
+                                <ECEnumeration typeName='UnstrictEnumString' backingTypeName='string' isStrict='False'>
+                                    <ECEnumerator value = 'val0' displayLabel = 'txt' />
+                                    <ECEnumerator value = 'val1' displayLabel = 'bat' />
+                                </ECEnumeration>
+
+                                <ECEnumeration typeName='StrictEnumInt' backingTypeName='int' isStrict='True'>
+                                    <ECEnumerator value = '10' displayLabel = 'txt' />
+                                    <ECEnumerator value = '11' displayLabel = 'bat' />
+                                </ECEnumeration>
+                                <ECEnumeration typeName='StrictEnumString' backingTypeName='string' isStrict='True'>
+                                    <ECEnumerator value = 'val10' displayLabel = 'txt' />
+                                    <ECEnumerator value = 'val11' displayLabel = 'bat' />
+                                </ECEnumeration>
+
+                                <ECEntityClass typeName="TestClass" >
+                                    <BaseClass>bis:PhysicalElement</BaseClass>
+                                    <ECProperty propertyName="StringProp" typeName="string" />
+                                    <ECProperty propertyName="IntProp" typeName="int" />
+
+                                    <ECProperty propertyName="UnstrictEnumIntProp" typeName="UnstrictEnumInt" />
+                                    <ECProperty propertyName="UnstrictEnumStringProp" typeName="UnstrictEnumString" />
+                                    <ECProperty propertyName="StrictEnumIntProp" typeName="StrictEnumInt" />
+                                    <ECProperty propertyName="StrictEnumStringProp" typeName="StrictEnumString" />
+                                </ECEntityClass>
+                                <ECEntityClass typeName="SubClassToDelete" >
+                                    <BaseClass>TestClass</BaseClass>
+                                    <ECProperty propertyName="SubProp" typeName="int" />
+                                </ECEntityClass>
+
+                                <ECEntityClass typeName="TestClassToDelete" >
+                                    <BaseClass>bis:PhysicalElement</BaseClass>
+                                    <ECProperty propertyName="NameProp" typeName="string " />
+                                </ECEntityClass>
+                            </ECSchema>)xml"));
+            ASSERT_NE(deserializationCtx, nullptr) << testDbPtr->GetDescription();
+            ASSERT_EQ(SchemaStatus::Success, dgnDb.ImportSchemas(deserializationCtx->GetCache().GetSchemas())) << testDbPtr->GetDescription();
+
+            // Check that the data has been setup correctly
+            auto schema = dgnDb.Schemas().GetSchema("TestSchema");
+            ASSERT_NE(schema, nullptr);
+
+            auto testClass = schema->GetClassCP("TestClass");
+            ASSERT_NE(testClass, nullptr);
+            
+            EXPECT_NE(schema->GetEnumerationCP("UnstrictEnumInt"), nullptr);
+            EXPECT_NE(schema->GetEnumerationCP("UnstrictEnumString"), nullptr);
+            EXPECT_NE(schema->GetEnumerationCP("StrictEnumInt"), nullptr);
+            EXPECT_NE(schema->GetEnumerationCP("StrictEnumString"), nullptr);
+
+            auto stringProp = testClass->GetPropertyP("StringProp");
+            ASSERT_NE(stringProp, nullptr);
+
+            auto intProp = testClass->GetPropertyP("IntProp");
+            ASSERT_NE(intProp, nullptr);
+
+            auto enumProp1 = testClass->GetPropertyP("UnstrictEnumIntProp");
+            ASSERT_NE(enumProp1, nullptr);
+            EXPECT_NE(enumProp1->GetTypeFullName(), "int");
+
+            auto enumProp2 = testClass->GetPropertyP("UnstrictEnumStringProp");
+            ASSERT_NE(enumProp2, nullptr);
+            EXPECT_NE(enumProp2->GetTypeFullName(), "string");
+
+            auto enumProp3 = testClass->GetPropertyP("StrictEnumIntProp");
+            ASSERT_NE(enumProp3, nullptr);
+            EXPECT_NE(enumProp3->GetTypeFullName(), "int");
+
+            auto enumProp4 = testClass->GetPropertyP("StrictEnumStringProp");
+            ASSERT_NE(enumProp4, nullptr);
+            EXPECT_NE(enumProp4->GetTypeFullName(), "string");
+
+            EXPECT_NE(schema->GetClassCP("TestClassToDelete"), nullptr);
+            EXPECT_NE(schema->GetClassCP("SubClassToDelete"), nullptr);
+
+            // Perform major schema change by deleting property and class
+            auto deserializationCtxUpdate = TestFileCreator::DeserializeSchema(testDbPtr->GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+                                <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
+                                
+                                <ECCustomAttributes>
+                                    <DynamicSchema xmlns = 'CoreCustomAttributes.01.00' />
+                                </ECCustomAttributes>
+
+                                <ECEntityClass typeName="TestClass" >
+                                    <BaseClass>bis:PhysicalElement</BaseClass>
+                                    <ECProperty propertyName="StringProp" typeName="string" />
+
+                                    <ECProperty propertyName="UnstrictEnumIntProp" typeName="int" />
+                                    <ECProperty propertyName="UnstrictEnumStringProp" typeName="string" />
+                                    <ECProperty propertyName="StrictEnumIntProp" typeName="int" />
+                                    <ECProperty propertyName="StrictEnumStringProp" typeName="string" />
+                                </ECEntityClass>
+                            </ECSchema>)xml"));
+            ASSERT_NE(deserializationCtxUpdate, nullptr) << testDbPtr->GetDescription();
+            ASSERT_EQ(SchemaStatus::Success, dgnDb.ImportSchemas(deserializationCtxUpdate->GetCache().GetSchemas())) << testDbPtr->GetDescription();
+
+            schema = dgnDb.Schemas().GetSchema("TestSchema");
+            ASSERT_NE(schema, nullptr);
+
+            testClass = schema->GetClassCP("TestClass");
+            ASSERT_NE(testClass, nullptr);
+
+            // All enums should be deleted
+            EXPECT_EQ(schema->GetEnumerationCP("UnstrictEnumInt"), nullptr);
+            EXPECT_EQ(schema->GetEnumerationCP("UnstrictEnumString"), nullptr);
+            EXPECT_EQ(schema->GetEnumerationCP("StrictEnumInt"), nullptr);
+            EXPECT_EQ(schema->GetEnumerationCP("StrictEnumString"), nullptr);
+
+            // Property "StringProp" should exist
+            stringProp = testClass->GetPropertyP("StringProp");
+            ASSERT_NE(stringProp, nullptr);
+
+            // Property "IntProp" should be deleted
+            EXPECT_EQ(testClass->GetPropertyP("IntProp"), nullptr);
+
+            // Properties should not have enum type names
+            enumProp1 = testClass->GetPropertyP("UnstrictEnumIntProp");
+            ASSERT_NE(enumProp1, nullptr);
+            EXPECT_EQ(enumProp1->GetTypeFullName(), "int");
+
+            enumProp2 = testClass->GetPropertyP("UnstrictEnumStringProp");
+            ASSERT_NE(enumProp2, nullptr);
+            EXPECT_EQ(enumProp2->GetTypeFullName(), "string");
+
+            enumProp3 = testClass->GetPropertyP("StrictEnumIntProp");
+            ASSERT_NE(enumProp3, nullptr);
+            EXPECT_EQ(enumProp3->GetTypeFullName(), "int");
+
+            enumProp4 = testClass->GetPropertyP("StrictEnumStringProp");
+            ASSERT_NE(enumProp4, nullptr);
+            EXPECT_EQ(enumProp4->GetTypeFullName(), "string");
+
+            // Classes "TestClassToDelete" and "SubClassToDelete" were deleted
+            EXPECT_EQ(schema->GetClassCP("TestClassToDelete"), nullptr);
+            EXPECT_EQ(schema->GetClassCP("SubClassToDelete"), nullptr);
+
+            ASSERT_EQ(BE_SQLITE_OK, dgnDb.AbandonChanges());
+            }
+        }
+    }
+
+TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradeDeleteKoQs)
+    {
+    for (const auto& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
+        {
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+            {
+            TestIModel& testDb = *testDbPtr;
+            const auto openStat = testDb.Open();
+            const auto& params = static_cast<DgnDb::OpenParams const&> (testDb.GetOpenParams());
+
+            if (params.IsReadonly())
+                continue;
+
+            //schema import is possible to newer ECDb profile files or files that don't support EC3.2 as the profile version is automatically upgraded
+            ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
+
+            DgnDbR dgnDb = testDb.GetDgnDb();
+
+            // Profile version 4.0.0.1 doesn't support ECXML 3.2 schemas.
+            // This test requires the schema SchemaUpgradeCustomAttributes which provides the CA AllowUnitChange which is used when removing a KOQ from a property.
+            // As SchemaUpgradeCustomAttributes.1.0.0 is ECXML 3.2, it cannot be used by 4.0.0.1 profile version, and hence the 4.0.0.1 test file is skipped.
+            if (dgnDb.GetECDbProfileVersion().CompareTo(ProfileVersion(4, 0, 0, 1)) == 0)
+                continue;
+
+            // Setup test schema
+            auto deserializationCtx = TestFileCreator::DeserializeSchema(testDbPtr->GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
+
+                                <KindOfQuantity typeName='TestKoQ' description='TestKoQ' displayLabel='TestKoQ' persistenceUnit='CM' relativeError='.5' presentationUnits='FT;CM' />
+                                <KindOfQuantity typeName='AnotherTestKoQ' description='AnotherTestKoQ' displayLabel='AnotherTestKoQ' persistenceUnit='M' relativeError='.5' presentationUnits='FT;M' />
+
+                                <ECEntityClass typeName="TestClass" >
+                                    <BaseClass>bis:PhysicalElement</BaseClass>
+                                    <ECProperty propertyName="FirstProp" typeName="int" kindOfQuantity='TestKoQ' />
+                                    <ECProperty propertyName="SecondProp" typeName="int" kindOfQuantity='AnotherTestKoQ' />
+                                    <ECProperty propertyName="ThirdProp" typeName="int" />
+                                </ECEntityClass>
+                                <ECEntityClass typeName="SubClassToDelete" >
+                                    <BaseClass>TestClass</BaseClass>
+                                    <ECProperty propertyName="SubProp" typeName="int" kindOfQuantity='TestKoQ' />
+                                </ECEntityClass>
+
+                                <ECEntityClass typeName="TestClassToDelete" >
+                                    <BaseClass>bis:PhysicalElement</BaseClass>
+                                    <ECProperty propertyName="NameProp" typeName="int" kindOfQuantity='TestKoQ' />
+                                </ECEntityClass>
+                            </ECSchema>)xml"));
+            ASSERT_NE(deserializationCtx, nullptr) << testDbPtr->GetDescription();
+            ASSERT_EQ(SchemaStatus::Success, dgnDb.ImportSchemas(deserializationCtx->GetCache().GetSchemas())) << testDbPtr->GetDescription();
+
+            // Check that the data has been setup correctly
+            auto schema = dgnDb.Schemas().GetSchema("TestSchema");
+            ASSERT_NE(schema, nullptr);
+
+            auto testClass = schema->GetClassCP("TestClass");
+            ASSERT_NE(testClass, nullptr);
+
+            EXPECT_NE(testClass->GetSchema().GetKindOfQuantityCP("TestKoQ"), nullptr);
+            EXPECT_NE(testClass->GetSchema().GetKindOfQuantityCP("AnotherTestKoQ"), nullptr);
+
+            auto firstProp = testClass->GetPropertyP("FirstProp");
+            ASSERT_NE(firstProp, nullptr);
+            EXPECT_NE(firstProp->GetKindOfQuantity(), nullptr);
+
+            auto secondProp = testClass->GetPropertyP("SecondProp");
+            ASSERT_NE(secondProp, nullptr);
+            auto anotherKoq = secondProp->GetKindOfQuantity();
+            ASSERT_NE(anotherKoq, nullptr);
+            EXPECT_STREQ(anotherKoq->GetFullName().c_str(), "TestSchema:AnotherTestKoQ");
+
+            EXPECT_NE(testClass->GetPropertyP("ThirdProp"), nullptr);
+
+            EXPECT_NE(schema->GetClassCP("TestClassToDelete"), nullptr);
+            EXPECT_NE(schema->GetClassCP("SubClassToDelete"), nullptr);
+
+            // Perform major schema change by deleting property and class
+            auto deserializationCtxUpdate = TestFileCreator::DeserializeSchema(testDbPtr->GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+                                <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
+                                <ECSchemaReference name="SchemaUpgradeCustomAttributes" version="01.00.00" alias="SchemaUpgradeCA" />
+
+                                <KindOfQuantity typeName='AnotherTestKoQ' description='AnotherTestKoQ' displayLabel='AnotherTestKoQ' persistenceUnit='M' relativeError='.5' presentationUnits='FT;M' />
+                                
+                                <ECCustomAttributes>
+                                    <DynamicSchema xmlns = 'CoreCustomAttributes.01.00' />
+                                </ECCustomAttributes>
+
+                                <ECEntityClass typeName="TestClass" >
+                                    <BaseClass>bis:PhysicalElement</BaseClass>
+                                    <ECProperty propertyName="FirstProp" typeName="int">
+                                        <ECCustomAttributes>
+                                            <AllowUnitChange xmlns="SchemaUpgradeCustomAttributes.01.00.00">
+                                                <From>u:CM</From>
+                                                <To></To>
+                                            </AllowUnitChange>
+                                        </ECCustomAttributes>
+                                    </ECProperty>
+                                    <ECProperty propertyName="SecondProp" typeName="string" kindOfQuantity='AnotherTestKoQ' />
+                                </ECEntityClass>
+                            </ECSchema>)xml"));
+            ASSERT_NE(deserializationCtxUpdate, nullptr) << testDbPtr->GetDescription();
+            ASSERT_EQ(SchemaStatus::Success, dgnDb.ImportSchemas(deserializationCtxUpdate->GetCache().GetSchemas())) << testDbPtr->GetDescription();
+
+            schema = dgnDb.Schemas().GetSchema("TestSchema");
+            ASSERT_NE(schema, nullptr);
+
+            testClass = schema->GetClassCP("TestClass");
+            ASSERT_NE(testClass, nullptr);
+
+            // "TestKoq" should be deleted and "AnotherTestKoQ" should still exist
+            EXPECT_EQ(testClass->GetSchema().GetKindOfQuantityCP("TestKoQ"), nullptr);
+            EXPECT_NE(testClass->GetSchema().GetKindOfQuantityCP("AnotherTestKoQ"), nullptr);
+
+            // Property "FirstProp" should exist and no longer have KoQ "TestKoQ"
+            firstProp = testClass->GetPropertyP("FirstProp");
+            ASSERT_NE(firstProp, nullptr);
+            EXPECT_EQ(firstProp->GetKindOfQuantity(), nullptr);
+
+            // Property "SecondProp" should exist and still have the KoQ "AnotherTestKoQ"
+            secondProp = testClass->GetPropertyP("SecondProp");
+            ASSERT_NE(secondProp, nullptr);
+            anotherKoq = secondProp->GetKindOfQuantity();
+            ASSERT_NE(anotherKoq, nullptr);
+            EXPECT_STREQ(anotherKoq->GetFullName().c_str(), "TestSchema:AnotherTestKoQ");
+
+            // Property "ThirdProp" should be deleted
+            EXPECT_EQ(testClass->GetPropertyP("ThirdProp"), nullptr);
+
+            // Classes "TestClassToDelete" and "SubClassToDelete" were deleted
+            EXPECT_EQ(schema->GetClassCP("TestClassToDelete"), nullptr);
+            EXPECT_EQ(schema->GetClassCP("SubClassToDelete"), nullptr);
+
+            ASSERT_EQ(BE_SQLITE_OK, dgnDb.AbandonChanges());
+            }
+        }
+    }
+
+TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradePropertyTypeChange)
+    {
+    for (const auto& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
+        {
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+            {
+            TestIModel& testDb = *testDbPtr;
+            const auto openStat = testDb.Open();
+            const auto& params = static_cast<DgnDb::OpenParams const&> (testDb.GetOpenParams());
+
+            if (params.IsReadonly())
+                continue;
+
+            //schema import is possible to newer ECDb profile files or files that don't support EC3.2 as the profile version is automatically upgraded
+            ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
+
+            DgnDbR dgnDb = testDb.GetDgnDb();
+
+            // Setup test schema
+            auto deserializationCtx = TestFileCreator::DeserializeSchema(testDbPtr->GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
+
+                                <ECEnumeration typeName='UnstrictEnumInt' backingTypeName='int' isStrict='False'>
+                                    <ECEnumerator value = '0' displayLabel = 'txt' />
+                                    <ECEnumerator value = '1' displayLabel = 'bat' />
+                                </ECEnumeration>
+
+                                <ECEnumeration typeName='StrictEnumString' backingTypeName='string' isStrict='True'>
+                                    <ECEnumerator value = 'val10' displayLabel = 'txt' />
+                                    <ECEnumerator value = 'val11' displayLabel = 'bat' />
+                                </ECEnumeration>
+
+                                <ECEntityClass typeName="TestClass" >
+                                    <BaseClass>bis:PhysicalElement</BaseClass>
+                                    <ECProperty propertyName="PropStringToInt" typeName="string" />
+                                    <ECProperty propertyName="PropIntToString" typeName="int" />
+
+                                    <ECProperty propertyName="PropStringToEnum" typeName="string" />
+                                    <ECProperty propertyName="PropIntToEnum" typeName="int" />
+
+                                    <ECProperty propertyName="PropUnstrictEnumToString" typeName="UnstrictEnumInt" />
+                                    <ECProperty propertyName="PropUnstrictEnumToInt" typeName="UnstrictEnumInt" />
+                                    <ECProperty propertyName="PropStrictEnumToString" typeName="StrictEnumString" />
+                                    <ECProperty propertyName="PropStrictEnumToInt" typeName="StrictEnumString" />
+
+                                    <ECProperty propertyName="PropStrictEnumToUnstrictEnum" typeName="StrictEnumString" />
+                                </ECEntityClass>
+                            </ECSchema>)xml"));
+            ASSERT_NE(deserializationCtx, nullptr) << testDbPtr->GetDescription();
+            ASSERT_EQ(SchemaStatus::Success, dgnDb.ImportSchemas(deserializationCtx->GetCache().GetSchemas())) << testDbPtr->GetDescription();
+
+            // Perform major schema change by deleting property and class
+            auto deserializationCtxUpdate = TestFileCreator::DeserializeSchema(testDbPtr->GetDb(), SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
+                                <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
+                                
+                                <ECCustomAttributes>
+                                    <DynamicSchema xmlns = 'CoreCustomAttributes.01.00' />
+                                </ECCustomAttributes>
+
+                                <ECEnumeration typeName='UnstrictEnumInt' backingTypeName='int' isStrict='False'>
+                                    <ECEnumerator value = '0' displayLabel = 'txt' />
+                                    <ECEnumerator value = '1' displayLabel = 'bat' />
+                                </ECEnumeration>
+
+                                <ECEnumeration typeName='StrictEnumString' backingTypeName='string' isStrict='True'>
+                                    <ECEnumerator value = 'val10' displayLabel = 'txt' />
+                                    <ECEnumerator value = 'val11' displayLabel = 'bat' />
+                                </ECEnumeration>
+
+                                <ECEntityClass typeName="TestClass" >
+                                    <BaseClass>bis:PhysicalElement</BaseClass>
+                                    <ECProperty propertyName="PropStringToInt" typeName="int" />
+                                    <ECProperty propertyName="PropIntToString" typeName="string" />
+
+                                    <ECProperty propertyName="PropStringToEnum" typeName="UnstrictEnumInt" />
+                                    <ECProperty propertyName="PropIntToEnum" typeName="UnstrictEnumInt" />
+
+                                    <ECProperty propertyName="PropUnstrictEnumToString" typeName="string" />
+                                    <ECProperty propertyName="PropUnstrictEnumToInt" typeName="int" />
+                                    <ECProperty propertyName="PropStrictEnumToString" typeName="string" />
+                                    <ECProperty propertyName="PropStrictEnumToInt" typeName="int" />
+
+                                    <ECProperty propertyName="PropStrictEnumToUnstrictEnum" typeName="UnstrictEnumInt" />
+                                </ECEntityClass>
+                            </ECSchema>)xml"));
+            ASSERT_NE(deserializationCtxUpdate, nullptr) << testDbPtr->GetDescription();
+            ASSERT_EQ(SchemaStatus::Success, dgnDb.ImportSchemas(deserializationCtxUpdate->GetCache().GetSchemas())) << testDbPtr->GetDescription();
+
+            auto testClass = dgnDb.Schemas().GetClass("TestSchema", "TestClass");
+            ASSERT_NE(testClass, nullptr);
+
+            for (Utf8StringCR propertyName : { "PropStringToEnum", "PropIntToEnum", "PropStrictEnumToUnstrictEnum"})
+                {
+                const auto property = testClass->GetPropertyP(propertyName);
+                ASSERT_NE(property, nullptr);
+                EXPECT_TRUE(property->GetTypeFullName().EqualsI("TestSchema.UnstrictEnumInt"));
+
+                auto enumeration = property->GetAsPrimitiveProperty()->GetEnumeration();
+                ASSERT_NE(enumeration, nullptr);
+
+                EXPECT_EQ(enumeration->GetFullName(), "TestSchema:UnstrictEnumInt");
+                EXPECT_TRUE(enumeration->GetTypeName().EqualsI("int"));
+                }
+
+            for (Utf8StringCR propertyName : { "PropStringToInt", "PropIntToString", "PropUnstrictEnumToString", "PropUnstrictEnumToInt", "PropStrictEnumToString", "PropStrictEnumToInt"})
+                {
+                auto property = testClass->GetPropertyP(propertyName);
+                ASSERT_NE(property, nullptr);
+
+                EXPECT_TRUE(property->GetTypeFullName().EqualsI(propertyName.ContainsI("ToInt") ? "int" : "string"));
+                }
+
+            ASSERT_EQ(BE_SQLITE_OK, dgnDb.AbandonChanges());
+            }
+        }
+    }
+
+TEST_F(IModelCompatibilityTestFixture, TestBisCoreWithMemberPriorityChange)
+    {
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
+        {
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+            {
+            auto& testDb = *testDbPtr;
+            const auto& params = static_cast<const DgnDb::OpenParams&>(testDb.GetOpenParams());
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+
+            if (params.IsReadonly())
+                continue;
+
+            DgnDbR dgnDb = testDb.GetDgnDb();
+
+            if (testDb.GetAge() != ProfileState::Age::Newer)
+                {
+                // Try to import the latest BisCore into older/up-to-date imodels.
+                // The import should fail as BisCore.1.0.17 has an import restriction for profile versions < 4.0.0.5
+                ECSchemaPtr schema = nullptr;
+                auto context = ECSchemaReadContext::CreateContext();
+                context->AddSchemaLocater(dgnDb.GetSchemaLocater());
+                auto bisCoreSchemaPath = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+                bisCoreSchemaPath.AppendToPath(L"ECSchemas\\BisCoreDummy.01.00.17.ecschema.xml");
+
+                EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(schema, bisCoreSchemaPath.GetName(), *context)) << testDbPtr->GetDescription();
+                ASSERT_TRUE(schema.IsValid());
+
+                EXPECT_EQ(SchemaStatus::SchemaImportFailed, dgnDb.ImportSchemas(context->GetCache().GetSchemas(), true)) << testDbPtr->GetDescription();
+                }
+            else
+                {
+                // Newer imodels will already have BisCore.1.0.17
+                // Check for read and write compatability
+                auto relationshipClass = dgnDb.Schemas().GetClass(BIS_ECSCHEMA_NAME, "CategorySelectorRefersToCategories")->GetRelationshipClassCP();
+                ASSERT_TRUE(relationshipClass);
+
+                CategorySelectorPtr categorySelector = new CategorySelector(dgnDb.GetDictionaryModel(), "TestCategorySelector");
+                ASSERT_TRUE(categorySelector.IsValid());
+                ASSERT_TRUE(categorySelector->Insert().IsValid());
+
+                SpatialCategory category(dgnDb.GetDictionaryModel(), "TestCategory", DgnCategory::Rank::Application);
+                auto spatialCategory = category.Insert(DgnSubCategory::Appearance());
+                ASSERT_TRUE(spatialCategory.IsValid());
+
+                ECInstanceKey relationshipInstanceKeys[5];
+
+                auto relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relationshipClass);
+
+                auto index = 0;
+                for (const auto& memberPriorityValue : { 1, 2, 3, 4, 5 })
+                    {
+                    IECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance();
+                    ASSERT_NE(relationshipInstance, nullptr);
+
+                    ECValue value;
+                    value.SetInteger(memberPriorityValue);
+                    relationshipInstance->SetValue("MemberPriority", value);
+
+                    // Insert duplicate relationship entries with distinct member priority values
+                    EXPECT_EQ(BE_SQLITE_OK, dgnDb.InsertLinkTableRelationship(relationshipInstanceKeys[index], *relationshipClass, ECInstanceId(categorySelector->GetElementId().GetValue()), 
+                        ECInstanceId(spatialCategory->GetCategoryId().GetValue()), relationshipInstance.get())) << testDbPtr->GetDescription();
+                    index++;
+                    }
+
+                // Check if the all valid relationships were inserted correctly
+                ECSqlStatement statement;
+                if (ECSqlStatus::Success == statement.Prepare(testDb.GetDb(), "SELECT * FROM " BIS_SCHEMA("CategorySelectorRefersToCategories") " ORDER BY MemberPriority"))
+                    {
+                    auto rowCount = 0;
+                    while (BE_SQLITE_ROW == statement.Step())
+                        {
+                        EXPECT_EQ(statement.GetValueId<ECInstanceId>(0), relationshipInstanceKeys[rowCount].GetInstanceId());
+                        EXPECT_EQ(statement.GetValueId<ECClassId>(1), relationshipInstanceKeys[rowCount].GetClassId());
+                        EXPECT_EQ(statement.GetValueInt(2), ++rowCount);
+                        EXPECT_EQ(statement.GetValueId<DgnElementId>(3), categorySelector->GetElementId());
+                        EXPECT_EQ(statement.GetValueId<DgnClassId>(4), categorySelector->GetElementClassId());
+                        EXPECT_EQ(statement.GetValueId<DgnElementId>(5), spatialCategory->GetCategoryId());
+                        EXPECT_EQ(statement.GetValueId<DgnElementId>(6), spatialCategory->GetElementClassId());
+                        }
+                    EXPECT_EQ(rowCount, 5);
+                    }
+                }
+            }
+        }
+    }

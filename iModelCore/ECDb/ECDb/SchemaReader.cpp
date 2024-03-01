@@ -849,6 +849,25 @@ BentleyStatus SchemaReader::EnsureDerivedClassesExist(ECClassId ecClassId) const
     return ctx.Postprocess(*this);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+ECN::ECDerivedClassesList SchemaReader::GetAllDerivedClasses(ECClassId ecClassId) const
+    {
+    ECDerivedClassesList derivedClasses;
+    ECSqlStatement statement;
+    const auto sqlStr = SqlPrintfString("select SourceECInstanceId from meta.ClassHasAllBaseClasses where TargetECInstanceId=%d", ecClassId.GetValue()).GetUtf8CP();
+    Context ctx;
+    if (statement.Prepare(GetECDb(), sqlStr) == ECSqlStatus::Success)
+        {
+        while (statement.Step() == BE_SQLITE_ROW)
+            {
+            if (const auto derivedClass = GetClass(ctx, statement.GetValueId<ECClassId>(0)); derivedClass != nullptr)
+                derivedClasses.push_back(derivedClass);
+            }
+        }
+    return derivedClasses;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod

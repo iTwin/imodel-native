@@ -545,6 +545,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
 
         void ClearCache() const;
         ECN::ECDerivedClassesList const* GetDerivedClassesInternal(ECN::ECClassCR baseClass, Utf8CP tableSpace = nullptr) const;
+        Nullable<ECN::ECDerivedClassesList> GetAllDerivedClassesInternal(ECN::ECClassCR baseClass, Utf8CP tableSpace = nullptr) const;
         Dispatcher const& GetDispatcher() const;
         struct MainSchemaManager const& Main() const;
 #endif

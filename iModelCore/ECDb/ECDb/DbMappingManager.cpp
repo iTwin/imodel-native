@@ -636,16 +636,31 @@ ClassMappingStatus DbMappingManager::Classes::MapNavigationProperty(SchemaImport
 
         if (relMapStrategy.GetStrategy() == MapStrategy::NotMapped)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map navigation property '%s.%s'. Its relationship class '%s' has the map strategy 'NotMapped'. Therefore the navigation property's class '%s' must also have the strategy 'NotMapped'.",
-                                navProp.GetClass().GetFullName(), navProp.GetName().c_str(), navRel->GetFullName(), navProp.GetClass().GetName().c_str());
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                "Failed to map navigation property '%s.%s'. Its relationship class '%s' has the map strategy 'NotMapped'. Therefore the navigation property's class '%s' must also have the strategy 'NotMapped'.",
+                navProp.GetClass().GetFullName(),
+                navProp.GetName().c_str(),
+                navRel->GetFullName(),
+                navProp.GetClass().GetName().c_str()
+            );
             return ClassMappingStatus::Error;
             }
 
         if (!MapStrategyExtendedInfo::IsForeignKeyMapping(relMapStrategy))
             {
             //Schema upgrade case. Rel was mapped previously w/o nav prop and amounted to link table. That cannot be changed now
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map navigation property '%s.%s'. Its ECRelationshipClass '%s' is mapped as link table relationship.",
-                                navProp.GetClass().GetFullName(), navProp.GetName().c_str(), navRel->GetFullName());
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                "Failed to map navigation property '%s.%s'. Its ECRelationshipClass '%s' is mapped as link table relationship.",
+                navProp.GetClass().GetFullName(),
+                navProp.GetName().c_str(),
+                navRel->GetFullName()
+            );
             return ClassMappingStatus::Error;
             }
 
@@ -668,7 +683,7 @@ ClassMappingStatus DbMappingManager::Classes::MapNavigationProperty(SchemaImport
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus DbMappingManager::Classes::MapUserDefinedIndexes(SchemaImportContext& importCtx, ClassMap const& classMap)
+BentleyStatus DbMappingManager::Classes::MapIndexes(SchemaImportContext& importCtx, ClassMap const& classMap, const bool updateIndexes)
     {
     DbIndexListCustomAttribute dbIndexListCA;
     if (!ECDbMapCustomAttributeHelper::TryGetDbIndexList(dbIndexListCA, classMap.GetClass()))
@@ -681,47 +696,85 @@ BentleyStatus DbMappingManager::Classes::MapUserDefinedIndexes(SchemaImportConte
     if (indexCAs.empty())
         return SUCCESS;
 
-    if (SUCCESS != ValidateUserDefinedIndexes(importCtx, classMap))
+    if (SUCCESS != ValidateIndexes(importCtx, classMap))
         return ERROR;
 
-    for (DbIndexListCustomAttribute::DbIndex const& indexCA : indexCAs)
+    if (updateIndexes)
         {
-        if (SUCCESS != MapUserDefinedIndex(importCtx, classMap, indexCA))
+        if (SUCCESS != importCtx.GetSchemaManager().GetDbSchema().LoadIndexDefs())
             return ERROR;
         }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-BentleyStatus DbMappingManager::Classes::UpdateUserDefinedIndexes(SchemaImportContext& importCtx, ClassMap const& classMap)
-    {
-    DbIndexListCustomAttribute dbIndexListCA;
-    if (!ECDbMapCustomAttributeHelper::TryGetDbIndexList(dbIndexListCA, classMap.GetClass()))
-        return SUCCESS;
-
-    bvector<DbIndexListCustomAttribute::DbIndex> indexCAs;
-    if (SUCCESS != dbIndexListCA.GetIndexes(indexCAs))
-        return ERROR;
-
-    if (indexCAs.empty())
-        return SUCCESS;
-
-    if (SUCCESS != ValidateUserDefinedIndexes(importCtx, classMap))
-        return ERROR;
-
-    if (SUCCESS != importCtx.GetSchemaManager().GetDbSchema().LoadIndexDefs())
-        return ERROR;
 
     auto& table = classMap.GetJoinedOrPrimaryTable();
-    for (DbIndexListCustomAttribute::DbIndex const& indexCA : indexCAs)
+    
+    // Pre-process schema indexes to identify system indexes
+    bset<Utf8String> systemIndexes;
+    for (const auto& dbIndex : table.GetIndexes())
         {
-        table.RemoveIndexDef(indexCA.GetName());
+        if (dbIndex->IsAutoGenerated())
+            systemIndexes.insert(dbIndex->GetName());
+        }
 
-        if (SUCCESS != MapUserDefinedIndex(importCtx, classMap, indexCA))
+    // Check if the imodel is an older one (<= 4.0.0.2)
+    Utf8String versionStr;
+    importCtx.GetECDb().QueryProperty(versionStr, PropertySpec("InitialSchemaVersion", ECDB_PROPSPEC_NAMESPACE));
+
+    const auto checkDerivedClassIndexes = ProfileVersion(versionStr.c_str()) <= BeVersion(4, 0, 0, 2);
+
+    for (auto& indexCA : indexCAs)
+        {
+        auto indexName = indexCA.GetName();
+        auto isSystemIndex = systemIndexes.find(indexName) != systemIndexes.end();
+
+        // Special case: Older imodels ( <= 4.0.0.2) do not have a common unique index on the base TPH table to handle all the derived classes at once.
+        // In such a case, check if a unique index exists without the classid and select that as the index to update instead.
+        if (checkDerivedClassIndexes && !isSystemIndex && indexName.EndsWithI("_sourcetargetclassid"))
+            {
+            auto oldIndexName = indexName.substr(0, indexName.size() - Utf8String("classid").size());
+            if (isSystemIndex = systemIndexes.find(oldIndexName) != systemIndexes.end(); isSystemIndex)
+                indexCA.SetIndexName(oldIndexName);
+            }
+
+        if (isSystemIndex)
+            {
+            if (!classMap.GetClass().IsRelationshipClass() || !classMap.GetMapStrategy().GetTphInfo().IsValid())
+                {
+                importCtx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0680,
+                    "The system index '%s' specified in the custom attribute 'DbIndexList' for class '%s' is not eligible for a modification. System-generated indexes can only be modified in relationship classes with TPH map strategy.",
+                    indexCA.GetName().c_str(), classMap.GetClass().GetFullName());
+                return ERROR;
+                }
+            }
+        if (updateIndexes || isSystemIndex)
+            table.RemoveIndexDef(indexCA.GetName());
+
+        if (SUCCESS != MapIndex(importCtx, classMap, indexCA, isSystemIndex))
             return ERROR;
+
+        // Special case: Since older imodels ( <= 4.0.0.2) have individual unique indexes for the derived classes as well, just updating the one for the base class is not enough.
+        // As we have already updated the unique index in the base class to handle the uniqueness in the derived classes as well, we can now remove the unique indexes in the derived classes.
+        if (!checkDerivedClassIndexes || !isSystemIndex || !indexCA.IsUnique())
+            continue;
+
+        const auto allDerivedClasses = importCtx.GetECDb().Schemas().GetAllDerivedClassesInternal(classMap.GetClass());
+        if (allDerivedClasses.IsNull())
+            continue;
+
+        for (ECClassCP derivedClass : allDerivedClasses.Value())
+            {
+            const auto itr = systemIndexes.find(Utf8PrintfString("uix_%s_%s_sourcetarget", classMap.GetClass().GetSchema().GetAlias().c_str(), derivedClass->GetName().c_str()));
+            if (itr == systemIndexes.end())
+                continue;
+
+            const auto foundIndex = *itr;
+            table.RemoveIndexDef(foundIndex);
+
+            if (BE_SQLITE_OK != importCtx.GetECDb().ExecuteDdl(SqlPrintfString("DROP INDEX IF EXISTS [%s]", foundIndex.c_str())))
+                return ERROR;
+
+            if (BE_SQLITE_OK != importCtx.GetECDb().ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", foundIndex.c_str())))
+                return ERROR;
+            }
         }
 
     return SUCCESS;
@@ -730,23 +783,26 @@ BentleyStatus DbMappingManager::Classes::UpdateUserDefinedIndexes(SchemaImportCo
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus DbMappingManager::Classes::ValidateUserDefinedIndexes(SchemaImportContext& importCtx, ClassMap const& classMap)
+BentleyStatus DbMappingManager::Classes::ValidateIndexes(SchemaImportContext& importCtx, ClassMap const& classMap)
     {
     if (classMap.GetClass().IsEntityClass() && classMap.GetClass().GetEntityClassCP()->IsMixin())
         {
-        importCtx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map mixin ECClass %s. Mixins cannot have user-defined indexes.", classMap.GetClass().GetFullName());
+        importCtx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+            "Failed to map mixin ECClass %s. Mixins cannot have user-defined indexes.", classMap.GetClass().GetFullName());
         return ERROR;
         }
 
     if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
         {
-        importCtx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECRelationshipClass %s. Foreign key type relationships cannot have user-defined indexes.", classMap.GetClass().GetFullName());
+        importCtx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+            "Failed to map ECRelationshipClass %s. Foreign key type relationships cannot have user-defined indexes.", classMap.GetClass().GetFullName());
         return ERROR;
         }
 
     if (classMap.GetMapStrategy().GetStrategy() == MapStrategy::ExistingTable || (!classMap.GetMapStrategy().IsTablePerHierarchy() && classMap.GetClass().GetClassModifier() != ECClassModifier::Sealed))
         {
-        importCtx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECClass %s. A user-defined index can only be defined on classes with MapStrategy 'TablePerHierarchy' or on sealed classes that don't have the MapStrategy 'ExistingTable'.", classMap.GetClass().GetFullName());
+        importCtx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+            "Failed to map ECClass %s. A user-defined index can only be defined on classes with MapStrategy 'TablePerHierarchy' or on sealed classes that don't have the MapStrategy 'ExistingTable'.", classMap.GetClass().GetFullName());
         return ERROR;
         }
 
@@ -756,7 +812,7 @@ BentleyStatus DbMappingManager::Classes::ValidateUserDefinedIndexes(SchemaImport
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus DbMappingManager::Classes::MapUserDefinedIndex(SchemaImportContext& importCtx, ClassMap const& classMap, DbIndexListCustomAttribute::DbIndex const& indexCA)
+BentleyStatus DbMappingManager::Classes::MapIndex(SchemaImportContext& importCtx, ClassMap const& classMap, DbIndexListCustomAttribute::DbIndex const& indexCA, const bool isSystemIndex)
     {
     ECClassCR ecClass = classMap.GetClass();
 
@@ -768,7 +824,8 @@ BentleyStatus DbMappingManager::Classes::MapUserDefinedIndex(SchemaImportContext
 
     if (classMap.GetMapStrategy().GetStrategy() == MapStrategy::ExistingTable)
         {
-        importCtx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECClass %s. It is mapped using the 'ExistingTable' strategy but also has the DbIndexList custom attribute. Indexes cannot be created in this case.", ecClass.GetFullName());
+        importCtx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+            "Failed to map ECClass %s. It is mapped using the 'ExistingTable' strategy but also has the DbIndexList custom attribute. Indexes cannot be created in this case.", ecClass.GetFullName());
         return ERROR;
         }
 
@@ -779,7 +836,8 @@ BentleyStatus DbMappingManager::Classes::MapUserDefinedIndex(SchemaImportContext
             addPropsAreNotNullWhereExp = true;
         else
             {
-            importCtx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECClass %s. Invalid where clause in DbIndexList::DbIndex: %s. Only 'IndexedColumnsAreNotNull' is supported by ECDb.", ecClass.GetFullName(), indexCA.GetWhereClause().Value().c_str());
+            importCtx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+                "Failed to map ECClass %s. Invalid where clause in DbIndexList::DbIndex: %s. Only 'IndexedColumnsAreNotNull' is supported by ECDb.", ecClass.GetFullName(), indexCA.GetWhereClause().Value().c_str());
             return ERROR;
             }
         }
@@ -790,18 +848,19 @@ BentleyStatus DbMappingManager::Classes::MapUserDefinedIndex(SchemaImportContext
         PropertyMap const* propertyMap = classMap.GetPropertyMaps().Find(propertyAccessString.c_str());
         if (propertyMap == nullptr)
             {
-            importCtx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbIndex custom attribute '%s' on ECClass '%s' is invalid: "
-                          "The specified ECProperty '%s' does not exist or is not mapped.",
-                          indexCA.GetName().c_str(), ecClass.GetFullName(), propertyAccessString.c_str());
+            if (isSystemIndex)
+                continue;
+
+            importCtx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+                "DbIndex custom attribute '%s' on ECClass '%s' is invalid: The specified ECProperty '%s' does not exist or is not mapped.", indexCA.GetName().c_str(), ecClass.GetFullName(), propertyAccessString.c_str());
             return ERROR;
             }
 
         ECPropertyCR prop = propertyMap->GetProperty();
         if (!prop.GetIsPrimitive())
             {
-            importCtx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbIndex custom attribute '%s' on ECClass '%s' is invalid: "
-                          "The specified ECProperty '%s' is not of a primitive type.",
-                          indexCA.GetName().c_str(), ecClass.GetFullName(), propertyAccessString.c_str());
+            importCtx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+                "DbIndex custom attribute '%s' on ECClass '%s' is invalid: The specified ECProperty '%s' is not of a primitive type.", indexCA.GetName().c_str(), ecClass.GetFullName(), propertyAccessString.c_str());
             return ERROR;
             }
 
@@ -809,9 +868,14 @@ BentleyStatus DbMappingManager::Classes::MapUserDefinedIndex(SchemaImportContext
         if (propertyMap->GetType() == PropertyMap::Type::ConstraintECClassId)
             {
             BeAssert(classMap.GetType() == ClassMap::Type::RelationshipLinkTable);
-            importCtx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbIndex custom attribute '%s' on ECRelationshipClass '%s' is invalid. Cannot define index on the "
-                          "system properties " ECDBSYS_PROP_SourceECClassId " or " ECDBSYS_PROP_TargetECClassId ".",
-                          indexCA.GetName().c_str(), ecClass.GetFullName());
+            importCtx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                "DbIndex custom attribute '%s' on ECRelationshipClass '%s' is invalid. Cannot define index on the system properties " ECDBSYS_PROP_SourceECClassId " or " ECDBSYS_PROP_TargetECClassId ".",
+                indexCA.GetName().c_str(),
+                ecClass.GetFullName()
+            );
             return ERROR;
             }
 
@@ -820,9 +884,15 @@ BentleyStatus DbMappingManager::Classes::MapUserDefinedIndex(SchemaImportContext
         propertyMap->AcceptVisitor(columnVisitor);
         if (table.GetType() == DbTable::Type::Virtual || columnVisitor.GetVirtualColumnCount() > 0)
             {
-            importCtx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbIndex custom attribute '%s' on ECClass '%s' is invalid: "
-                          "The specified ECProperty '%s' cannot be used in the index as it is not mapped to a column (aka virtual column).",
-                          indexCA.GetName().c_str(), ecClass.GetFullName(), propertyAccessString.c_str());
+            importCtx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                "DbIndex custom attribute '%s' on ECClass '%s' is invalid: The specified ECProperty '%s' cannot be used in the index as it is not mapped to a column (aka virtual column).",
+                indexCA.GetName().c_str(),
+                ecClass.GetFullName(),
+                propertyAccessString.c_str()
+            );
             return ERROR;
             }
 
@@ -830,16 +900,19 @@ BentleyStatus DbMappingManager::Classes::MapUserDefinedIndex(SchemaImportContext
             {
             if (classMap.GetMapStrategy().GetTphInfo().IsValid() && classMap.GetMapStrategy().GetTphInfo().GetJoinedTableInfo() != JoinedTableInfo::None)
                 {
-                importCtx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbIndex custom attribute '%s' on ECClass '%s' is invalid. "
-                              "The properties that make up the index are mapped to different tables because the 'JoinedTablePerDirectSubclass' custom attribute "
-                              "is applied to this class hierarchy.",
-                              indexCA.GetName().c_str(), ecClass.GetFullName());
+                importCtx.Issues().ReportV(
+                    IssueSeverity::Error,
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECDbIssue,
+                    "DbIndex custom attribute '%s' on ECClass '%s' is invalid. The properties that make up the index are mapped to different tables because the 'JoinedTablePerDirectSubclass' custom attribute is applied to this class hierarchy.",
+                    indexCA.GetName().c_str(),
+                    ecClass.GetFullName()
+                );
                 }
             else
                 {
-                importCtx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "DbIndex custom attribute '%s' on ECClass '%s' is invalid. "
-                              "The properties that make up the index are mapped to different tables.",
-                              indexCA.GetName().c_str(), ecClass.GetFullName());
+                importCtx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0077,
+                    "DbIndex custom attribute '%s' on ECClass '%s' is invalid. The properties that make up the index are mapped to different tables.", indexCA.GetName().c_str(), ecClass.GetFullName());
 
                 BeAssert(false && "Properties of DbIndex are mapped to different tables although JoinedTable option is not applied.");
                 }
@@ -850,7 +923,7 @@ BentleyStatus DbMappingManager::Classes::MapUserDefinedIndex(SchemaImportContext
         totalColumns.insert(totalColumns.end(), columnVisitor.GetColumns().begin(), columnVisitor.GetColumns().end());
         }
 
-    return Tables::CreateIndex(importCtx, classMap.GetJoinedOrPrimaryTable(), indexCA.GetName(), indexCA.IsUnique(), totalColumns, addPropsAreNotNullWhereExp, false, ecClass.GetId());
+    return Tables::CreateIndex(importCtx, classMap.GetJoinedOrPrimaryTable(), indexCA.GetName(), indexCA.IsUnique(), totalColumns, addPropsAreNotNullWhereExp, isSystemIndex, ecClass.GetId());
     }
 
 //---------------------------------------------------------------------------------------
@@ -871,8 +944,8 @@ BentleyStatus DbMappingManager::Classes::DetermineColumnInfoForPrimitiveProperty
         {
         if (classMap.GetClass().IsEntityClass() && classMap.GetClass().GetEntityClassCP()->IsMixin())
             {
-            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map Mixin ECClass '%s': Its ECProperty '%s' has the Custom Attribute PropertyMap which is not allowed for mixins.",
-                          ecProp.GetClass().GetFullName(), ecProp.GetName().c_str());
+            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+                "Failed to map Mixin ECClass '%s': Its ECProperty '%s' has the Custom Attribute PropertyMap which is not allowed for mixins.", ecProp.GetClass().GetFullName(), ecProp.GetName().c_str());
             return ERROR;
             }
 
@@ -887,8 +960,14 @@ BentleyStatus DbMappingManager::Classes::DetermineColumnInfoForPrimitiveProperty
         if (!colNameFromCA.IsNull() && classMap.GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
             {
             BeAssert(!colNameFromCA.Value().empty());
-            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECClass '%s': Its ECProperty '%s' has the Custom Attribute PropertyMap with a value for 'ColumnName'. Only ECClasses with map strategy 'ExistingTable' may specify a column name.",
-                          ecProp.GetClass().GetFullName(), ecProp.GetName().c_str());
+            issues.ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                "Failed to map ECClass '%s': Its ECProperty '%s' has the Custom Attribute PropertyMap with a value for 'ColumnName'. Only ECClasses with map strategy 'ExistingTable' may specify a column name.",
+                ecProp.GetClass().GetFullName(),
+                ecProp.GetName().c_str()
+            );
             return ERROR;
             }
 
@@ -917,8 +996,8 @@ BentleyStatus DbMappingManager::Classes::DetermineColumnInfoForPrimitiveProperty
             {
             if (!DbColumn::Constraints::TryParseCollationString(collation, collationStr.Value()))
                 {
-                issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECClass '%s': Its ECProperty '%s' has the Custom Attribute PropertyMap with an invalid value for 'Collation': %s",
-                              ecProp.GetClass().GetFullName(), ecProp.GetName().c_str(), collationStr.Value().c_str());
+                issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+                    "Failed to map ECClass '%s': Its ECProperty '%s' has the Custom Attribute PropertyMap with an invalid value for 'Collation': %s", ecProp.GetClass().GetFullName(), ecProp.GetName().c_str(), collationStr.Value().c_str());
                 return ERROR;
                 }
             }
@@ -954,8 +1033,12 @@ BentleyStatus DbMappingManager::Classes::TryDetermineRelationshipMappingType(Rel
 
     if (!isRootClass && hasLinkTableCA)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECRelationshipClass %s. It has a base class and therefore must not have the 'LinkTableRelationshipMap' custom attribute. Only the root relationship class of a hierarchy can have this custom attribute.",
-                                        relClass.GetFullName());
+        ctx.Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            "Failed to map ECRelationshipClass %s. It has a base class and therefore must not have the 'LinkTableRelationshipMap' custom attribute. Only the root relationship class of a hierarchy can have this custom attribute.",
+            relClass.GetFullName());
         return ERROR;
         }
 
@@ -973,8 +1056,15 @@ BentleyStatus DbMappingManager::Classes::TryDetermineRelationshipMappingType(Rel
         Utf8CP actualNavPropName = stmt->GetValueText(0);
         if (!isRootClass)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECRelationshipClass '%s'. A navigation property '%s' is defined on its constraint '%s' although it has a base class. Navigation properties may only be defined for root relationship classes.",
-                                           relClass.GetFullName(), actualNavPropName,  ctx.GetECDb().Schemas().GetClass(stmt->GetValueId<ECClassId>(1))->GetFullName());
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                "Failed to map ECRelationshipClass '%s'. A navigation property '%s' is defined on its constraint '%s' although it has a base class. Navigation properties may only be defined for root relationship classes.",
+                relClass.GetFullName(),
+                actualNavPropName,
+                ctx.GetECDb().Schemas().GetClass(stmt->GetValueId<ECClassId>(1))->GetFullName()
+            );
             return ERROR;
             }
 
@@ -984,9 +1074,8 @@ BentleyStatus DbMappingManager::Classes::TryDetermineRelationshipMappingType(Rel
             expectedNavPropName.assign(actualNavPropName);
         else if (!expectedNavPropName.EqualsIAscii(actualNavPropName))
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECRelationshipClass %s. The navigation properties must have the same name in all constraint classes. "
-                                           "Violating names: '%s' versus '%s'",
-                                           relClass.GetFullName(), expectedNavPropName.c_str(), actualNavPropName);
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+                "Failed to map ECRelationshipClass %s. The navigation properties must have the same name in all constraint classes. Violating names: '%s' versus '%s'", relClass.GetFullName(), expectedNavPropName.c_str(), actualNavPropName);
             return ERROR;
             }
         }
@@ -996,8 +1085,13 @@ BentleyStatus DbMappingManager::Classes::TryDetermineRelationshipMappingType(Rel
         {
         if (navPropCount > 0)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECRelationshipClass %s. It implies to be mapped as link table. However, a navigation property is defined for the relationship which is not supported for link table relationship classes.",
-                    relClass.GetFullName());
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                "Failed to map ECRelationshipClass %s. It implies to be mapped as link table. However, a navigation property is defined for the relationship which is not supported for link table relationship classes.",
+                relClass.GetFullName()
+            );
             return ERROR;
             }
         mappingType = RelationshipMappingType::LinkTable;
@@ -1026,14 +1120,25 @@ BentleyStatus DbMappingManager::Classes::TryDetermineRelationshipMappingType(Rel
             const auto constraintClassNavPropCount = std::count_if(properties.begin(), properties.end(), [&relClass](ECPropertyCP prop) { return prop->GetIsNavigation() && prop->GetAsNavigationProperty()->GetRelationshipClass()->GetId() == relClass.GetId(); });
             if (constraintClassNavPropCount == 0)
                 {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECRelationshipClass %s. Not all %s constraint classes define a navigation property for this relationship class.",
-                                               relClass.GetFullName(), fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? "source" : "target");
+                ctx.Issues().ReportV(
+                    IssueSeverity::Error,
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECDbIssue,
+                    "Failed to map ECRelationshipClass %s. Not all %s constraint classes define a navigation property for this relationship class.",
+                    relClass.GetFullName(),
+                    fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? "source" : "target"
+                );
                 return ERROR;
                 }
             if (constraintClassNavPropCount > 1)
                 {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECRelationshipClass %s. More navigation properties found for this relationship class than expected: every %s constraint classes must define exactly one navigation property for this relationship class.",
-                                               relClass.GetFullName(), fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? "source" : "target");
+                ctx.Issues().ReportV(
+                    IssueSeverity::Error,
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECDbIssue,
+                    "Failed to map ECRelationshipClass %s. More navigation properties found for this relationship class than expected: every %s constraint classes must define exactly one navigation property for this relationship class.",
+                    relClass.GetFullName(),
+                    fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? "source" : "target");
                 return ERROR;
                 }
             }
@@ -1086,8 +1191,15 @@ BentleyStatus DbMappingManager::FkRelationships::UpdatePersistedEnd(SchemaImport
         ECDbMapCustomAttributeHelper::TryGetForeignKeyConstraint(newCA, navProp);
         if (fkRelMappingInfo.GetFkConstraintCA() != newCA)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECClass %s. Its navigation property %s has a different ForeignKeyConstraint custom attribute than the navigation properties of the other constraint classes of the relationship '%s'.",
-                                  navProp.GetClass().GetFullName(), navProp.GetName().c_str(), fkRelMappingInfo.GetRelationshipClass().GetFullName());
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                "Failed to map ECClass %s. Its navigation property %s has a different ForeignKeyConstraint custom attribute than the navigation properties of the other constraint classes of the relationship '%s'.",
+                navProp.GetClass().GetFullName(),
+                navProp.GetName().c_str(),
+                fkRelMappingInfo.GetRelationshipClass().GetFullName()
+            );
 
             return ERROR;
             }
@@ -1097,8 +1209,14 @@ BentleyStatus DbMappingManager::FkRelationships::UpdatePersistedEnd(SchemaImport
         {
         if (navPropMap.GetClassMap().GetMapStrategy().GetStrategy() == MapStrategy::ExistingTable)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECClass %s. Its navigation property %s has the ForeignKeyConstraint custom attribute which cannot be applied for MapStrategy 'ExistingTable'.",
-                                  navPropMap.GetClassMap().GetClass().GetFullName(), navProp.GetName().c_str());
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                "Failed to map ECClass %s. Its navigation property %s has the ForeignKeyConstraint custom attribute which cannot be applied for MapStrategy 'ExistingTable'.",
+                navPropMap.GetClassMap().GetClass().GetFullName(),
+                navProp.GetName().c_str()
+            );
 
             return ERROR;
             }
@@ -1113,8 +1231,15 @@ BentleyStatus DbMappingManager::FkRelationships::UpdatePersistedEnd(SchemaImport
 
     if (navPropMap.GetClassMap().GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECRelationship '%s'. Its NavigationECProperty '%s' come from a ECClass %s which has the 'NotMapped' strategy.",
-                             fkRelMappingInfo.GetRelationshipClass().GetFullName(), navProp.GetName().c_str(), navProp.GetClass().GetFullName());
+        ctx.Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            "Failed to map ECRelationship '%s'. Its NavigationECProperty '%s' come from a ECClass %s which has the 'NotMapped' strategy.",
+            fkRelMappingInfo.GetRelationshipClass().GetFullName(),
+            navProp.GetName().c_str(),
+            navProp.GetClass().GetFullName()
+        );
         return ERROR;
         }
 
@@ -1126,11 +1251,17 @@ BentleyStatus DbMappingManager::FkRelationships::UpdatePersistedEnd(SchemaImport
         (fkEnd == ECRelationshipEnd_Target && navDirection == ECRelatedInstanceDirection::Forward))
         {
         Utf8CP constraintEndName = fkEnd == ECRelationshipEnd_Source ? "source" : "target";
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map Navigation property '%s.%s'. "
-                              "Navigation properties can only be defined on the %s constraint ECClass of the respective ECRelationshipClass '%s'. Reason: "
-                              "The Foreign Key is mapped to the %s end of this ECRelationshipClass.",
-                              navProp.GetClass().GetFullName(), navProp.GetName().c_str(), constraintEndName,
-                            fkRelMappingInfo.GetRelationshipClass().GetFullName(), constraintEndName);
+        ctx.Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            "Failed to map Navigation property '%s.%s'. Navigation properties can only be defined on the %s constraint ECClass of the respective ECRelationshipClass '%s'. Reason: The Foreign Key is mapped to the %s end of this ECRelationshipClass.",
+            navProp.GetClass().GetFullName(),
+            navProp.GetName().c_str(),
+            constraintEndName,
+            fkRelMappingInfo.GetRelationshipClass().GetFullName(),
+            constraintEndName
+        );
         return ERROR;
         }
 
@@ -1228,7 +1359,8 @@ BentleyStatus DbMappingManager::FkRelationships::FinishMapping(SchemaImportConte
     DbTable const* primaryTable = referencedEndTables.empty() ? nullptr : *std::begin(referencedEndTables);
     if (primaryTable == nullptr)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECRelationshipClass '%s'. It implies a foreign key constraint but its referenced end is not mapped to a physical table.", relClass.GetFullName());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+            "Failed to map ECRelationshipClass '%s'. It implies a foreign key constraint but its referenced end is not mapped to a physical table.", relClass.GetFullName());
         return ERROR;
         }
 
@@ -1308,7 +1440,8 @@ DbColumn* DbMappingManager::FkRelationships::CreateForeignKeyColumn(FkRelationsh
             return fkColumn;
             }
 
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECRelationshipClass '%s'. It is mapped to the existing table '%s' not owned by ECDb, but doesn't have a foreign key column called '%s'.",
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+            "Failed to map ECRelationshipClass '%s'. It is mapped to the existing table '%s' not owned by ECDb, but doesn't have a foreign key column called '%s'.",
                             mappingInfo.GetRelationshipClass().GetFullName(), fkTable.GetName().c_str(), fkColInfo.GetFkColumnName().c_str());
 
         return nullptr;
@@ -1317,8 +1450,15 @@ DbColumn* DbMappingManager::FkRelationships::CreateForeignKeyColumn(FkRelationsh
     //table owned by ECDb
     if (fkColumn != nullptr)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECRelationshipClass '%s'. ForeignKey column name '%s' is already used by another column in the table '%s'.",
-                              mappingInfo.GetRelationshipClass().GetFullName(), fkColInfo.GetFkColumnName().c_str(), fkTable.GetName().c_str());
+        ctx.Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            "Failed to map ECRelationshipClass '%s'. ForeignKey column name '%s' is already used by another column in the table '%s'.",
+            mappingInfo.GetRelationshipClass().GetFullName(),
+            fkColInfo.GetFkColumnName().c_str(),
+            fkTable.GetName().c_str()
+        );
         return nullptr;
         }
 
@@ -1337,8 +1477,8 @@ DbColumn* DbMappingManager::FkRelationships::CreateForeignKeyColumn(FkRelationsh
     fkColumn = navPropMap.GetClassMap().GetColumnFactory().Allocate(ctx, navPropMap.GetProperty(), DbColumn::Type::Integer, colCreateParams, navPropMap.GetAccessString() + "." + ECDBSYS_PROP_NavPropId, navPropMap.HasForeignKeyConstraint());
     if (fkColumn == nullptr)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECRelationshipClass '%s'. Could not create foreign key column '%s' in table '%s'.",
-                            mappingInfo.GetRelationshipClass().GetFullName(), fkColInfo.GetFkColumnName().c_str(), fkTable.GetName().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+            "Failed to map ECRelationshipClass '%s'. Could not create foreign key column '%s' in table '%s'.", mappingInfo.GetRelationshipClass().GetFullName(), fkColInfo.GetFkColumnName().c_str(), fkTable.GetName().c_str());
         BeAssert(false && "Could not create FK column for end table mapping");
         return nullptr;
         }
@@ -1363,15 +1503,15 @@ BentleyStatus DbMappingManager::FkRelationships::CreateForeignKeyConstraint(Sche
     ForeignKeyDbConstraint::ActionType onDeleteAction = ForeignKeyDbConstraint::ActionType::NotSpecified;
     if (SUCCESS != ForeignKeyDbConstraint::TryParseActionType(onDeleteAction, onDeleteActionStr))
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECRelationshipClass '%s'. Its navigation property's ForeignKeyConstraint custom attribute defines an invalid value for OnDeleteAction. See API documentation for valid values.",
-                            relClass.GetFullName());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+            "Failed to map ECRelationshipClass '%s'. Its navigation property's ForeignKeyConstraint custom attribute defines an invalid value for OnDeleteAction. See API documentation for valid values.", relClass.GetFullName());
         return ERROR;
         }
 
     if (onDeleteAction == ForeignKeyDbConstraint::ActionType::Cascade && relClass.GetStrength() != StrengthType::Embedding)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECRelationshipClass '%s'. Its navigation property's ForeignKeyConstraint custom attribute can only define 'Cascade' as OnDeleteAction if the relationship strength is 'Embedding'.",
-                            relClass.GetFullName());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+            "Failed to map ECRelationshipClass '%s'. Its navigation property's ForeignKeyConstraint custom attribute can only define 'Cascade' as OnDeleteAction if the relationship strength is 'Embedding'.", relClass.GetFullName());
         return ERROR;
         }
 
@@ -1390,8 +1530,8 @@ BentleyStatus DbMappingManager::FkRelationships::CreateForeignKeyConstraint(Sche
     ForeignKeyDbConstraint::ActionType onUpdateAction = ForeignKeyDbConstraint::ActionType::NotSpecified;
     if (SUCCESS != ForeignKeyDbConstraint::TryParseActionType(onUpdateAction, onUpdateActionStr))
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECRelationshipClass '%s'. Its navigation property's ForeignKeyConstraint custom attribute defines an invalid value for OnUpdateAction. See API documentation for valid values.",
-                            relClass.GetFullName());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+            "Failed to map ECRelationshipClass '%s'. Its navigation property's ForeignKeyConstraint custom attribute defines an invalid value for OnUpdateAction. See API documentation for valid values.", relClass.GetFullName());
         return ERROR;
         }
 
@@ -1405,13 +1545,21 @@ BentleyStatus DbMappingManager::FkRelationships::CreateForeignKeyConstraint(Sche
                 (onDeleteAction == ForeignKeyDbConstraint::ActionType::NotSpecified && mappingInfo.GetRelationshipClass().GetStrength() == StrengthType::Embedding))
                 {
                 if (onDeleteAction == ForeignKeyDbConstraint::ActionType::Cascade)
-                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECRelationshipClass %s. Its ForeignKeyConstraint custom attribute specifies the OnDelete action 'Cascade'. "
-                                          "This is only allowed if the foreign key end of the ECRelationship is not mapped to a joined table.",
-                                        relClass.GetFullName());
+                    ctx.Issues().ReportV(
+                        IssueSeverity::Error,
+                        IssueCategory::BusinessProperties,
+                        IssueType::ECDbIssue,
+                        "Failed to map ECRelationshipClass %s. Its ForeignKeyConstraint custom attribute specifies the OnDelete action 'Cascade'. This is only allowed if the foreign key end of the ECRelationship is not mapped to a joined table.",
+                        relClass.GetFullName()
+                    );
                 else
-                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECRelationshipClass %s. Its strength is 'Embedding' which implies the OnDelete action 'Cascade'. "
-                                          "This is only allowed if the foreign key end of the ECRelationship is not mapped to a joined table.",
-                                        relClass.GetFullName());
+                    ctx.Issues().ReportV(
+                        IssueSeverity::Error,
+                        IssueCategory::BusinessProperties,
+                        IssueType::ECDbIssue,
+                        "Failed to map ECRelationshipClass %s. Its strength is 'Embedding' which implies the OnDelete action 'Cascade'. This is only allowed if the foreign key end of the ECRelationship is not mapped to a joined table.",
+                        relClass.GetFullName()
+                    );
 
                 return ERROR;
                 }
@@ -1512,8 +1660,9 @@ BentleyStatus DbMappingManager::FkRelationships::TryDetermineFkEnd(ECN::ECRelati
         {
         if (strength == StrengthType::Embedding && strengthDirection == ECRelatedInstanceDirection::Backward)
             {
-            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECRelationshipClass %s. For strength 'Embedding', the cardinality '%s:%s' requires the strength direction to be 'Forward'.",
-                          relClass.GetFullName(), relClass.GetSource().GetMultiplicity().ToString().c_str(), relClass.GetTarget().GetMultiplicity().ToString().c_str());
+            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+                "Failed to map ECRelationshipClass %s. For strength 'Embedding', the cardinality '%s:%s' requires the strength direction to be 'Forward'.",
+                relClass.GetFullName(), relClass.GetSource().GetMultiplicity().ToString().c_str(), relClass.GetTarget().GetMultiplicity().ToString().c_str());
             return ERROR;
             }
 
@@ -1525,8 +1674,9 @@ BentleyStatus DbMappingManager::FkRelationships::TryDetermineFkEnd(ECN::ECRelati
         {
         if (strength == StrengthType::Embedding && strengthDirection == ECRelatedInstanceDirection::Forward)
             {
-            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECRelationshipClass %s. For strength 'Embedding', the cardinality '%s:%s' requires the strength direction to be 'Backward'.",
-                          relClass.GetFullName(), relClass.GetSource().GetMultiplicity().ToString().c_str(), relClass.GetTarget().GetMultiplicity().ToString().c_str());
+            issues.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue,
+                "Failed to map ECRelationshipClass %s. For strength 'Embedding', the cardinality '%s:%s' requires the strength direction to be 'Backward'.",
+                relClass.GetFullName(), relClass.GetSource().GetMultiplicity().ToString().c_str(), relClass.GetTarget().GetMultiplicity().ToString().c_str());
             return ERROR;
             }
 
@@ -1702,187 +1852,201 @@ BentleyStatus DbMappingManager::Tables::CreateVirtualTableForFkRelationship(Sche
     return SUCCESS;
     }
 
- //---------------------------------------------------------------------------------------
- // @bsimethod
- //+---------------+---------------+---------------+---------------+---------------+------
- DbTable* DbMappingManager::Tables::FindOrCreateTable(SchemaImportContext& ctx, ClassMap const& classMap, ClassMappingInfo const& info, DbTable::Type tableType, DbTable const* primaryTable)
-     {
-     BeAssert(!info.GetECInstanceIdColumnName().empty() && "should always be set (either to user value or default value) by this time");
-     const ECClassId exclusiveRootClassId = IsExclusiveRootClassOfTable(info) ? classMap.GetClass().GetId() : ECClassId();
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbTable* DbMappingManager::Tables::FindOrCreateTable(SchemaImportContext& ctx, ClassMap const& classMap, ClassMappingInfo const& info, DbTable::Type tableType, DbTable const* primaryTable)
+    {
+    BeAssert(!info.GetECInstanceIdColumnName().empty() && "should always be set (either to user value or default value) by this time");
+    const ECClassId exclusiveRootClassId = IsExclusiveRootClassOfTable(info) ? classMap.GetClass().GetId() : ECClassId();
 
-     DbTable* table = ctx.GetSchemaManager().GetDbSchema().FindTableP(info.GetTableName());
-     if (table != nullptr)
-         {
-         if (table->GetType() != tableType)
-             {
-             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Table %s is already used by another ECClass for a different mapping type.", table->GetName().c_str());
-             return nullptr;
-             }
+    DbTable* table = ctx.GetSchemaManager().GetDbSchema().FindTableP(info.GetTableName());
+    if (table != nullptr)
+        {
+        if (table->GetType() != tableType)
+            {
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0103,
+                "Table %s is already used by another ECClass for a different mapping type.", table->GetName().c_str());
+            return nullptr;
+            }
+
+        if (table->HasExclusiveRootECClass())
+            {
+            BeAssert(table->GetExclusiveRootECClassId() != exclusiveRootClassId);
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0104,
+                "Table %s is exclusively used by the ECClass with Id %s and therefore cannot be used by other ECClasses which are no subclass of the mentioned ECClass.", table->GetName().c_str(), table->GetExclusiveRootECClassId().ToString().c_str());
+            return nullptr;
+            }
+
+        if (exclusiveRootClassId.IsValid())
+            {
+            BeAssert(table->GetExclusiveRootECClassId() != exclusiveRootClassId);
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0105,
+                "The ECClass with Id %s requests exclusive use of the table %s, but it is already used by some other ECClass.", exclusiveRootClassId.ToString().c_str(), table->GetName().c_str());
+            return nullptr;
+            }
+
+        return table;
+        }
+
+    PersistenceType classIdColPersistenceType;
+    switch (info.GetMapStrategy().GetStrategy())
+        {
+        case MapStrategy::OwnTable:
+        case MapStrategy::ExistingTable:
+        case MapStrategy::ForeignKeyRelationshipInSourceTable:
+        case MapStrategy::ForeignKeyRelationshipInTargetTable:
+            classIdColPersistenceType = PersistenceType::Virtual;
+            break;
+
+        case MapStrategy::TablePerHierarchy:
+            classIdColPersistenceType = PersistenceType::Physical;
+            break;
+
+        default:
+            BeAssert(false && "Should have been handled before");
+            return nullptr;
+        }
 
 
-         if (table->HasExclusiveRootECClass())
-             {
-             BeAssert(table->GetExclusiveRootECClassId() != exclusiveRootClassId);
-             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Table %s is exclusively used by the ECClass with Id %s and therefore cannot be used by other ECClasses which are no subclass of the mentioned ECClass.",
-                                 table->GetName().c_str(), table->GetExclusiveRootECClassId().ToString().c_str());
-             return nullptr;
-             }
+    if (tableType != DbTable::Type::Existing)
+        return CreateTableForOtherStrategies(ctx, classMap, info.GetTableName(), tableType, info.GetECInstanceIdColumnName(), classIdColPersistenceType, exclusiveRootClassId, primaryTable);
 
-         if (exclusiveRootClassId.IsValid())
-             {
-             BeAssert(table->GetExclusiveRootECClassId() != exclusiveRootClassId);
-             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The ECClass with Id %s requests exclusive use of the table %s, "
-                                                 "but it is already used by some other ECClass.",
-                                                 exclusiveRootClassId.ToString().c_str(), table->GetName().c_str());
-             return nullptr;
-             }
+    return CreateTableForExistingTableStrategy(ctx, classMap, info.GetTableName(), info.GetECInstanceIdColumnName(), classIdColPersistenceType, exclusiveRootClassId);
+    }
 
-         return table;
-         }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbTable* DbMappingManager::Tables::CreateTableForOtherStrategies(SchemaImportContext& ctx, ClassMap const& classMap, Utf8StringCR tableName, DbTable::Type tableType, Utf8StringCR primaryKeyColumnName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable)
+    {
+    if (DbUtilities::TableExists(ctx.GetECDb(), tableName.c_str(), TABLESPACE_Main))
+        {
+        ctx.Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0106,
+            "Failed to map ECClass '%s'. It would be mapped to table '%s' which exists already and was not created by ECDb. Mapping classes to pre-existing tables requires the MapStrategy 'ExistingTable'.",
+            classMap.GetClass().GetFullName(),
+            tableName.c_str()
+        );
+        return nullptr;
+        }
 
-     PersistenceType classIdColPersistenceType;
-     switch (info.GetMapStrategy().GetStrategy())
-         {
-             case MapStrategy::OwnTable:
-             case MapStrategy::ExistingTable:
-             case MapStrategy::ForeignKeyRelationshipInSourceTable:
-             case MapStrategy::ForeignKeyRelationshipInTargetTable:
-                 classIdColPersistenceType = PersistenceType::Virtual;
-                 break;
-
-             case MapStrategy::TablePerHierarchy:
-                 classIdColPersistenceType = PersistenceType::Physical;
-                 break;
-
-             default:
-                 BeAssert(false && "Should have been handled before");
-                 return nullptr;
-         }
-
-
-     if (tableType != DbTable::Type::Existing)
-         return CreateTableForOtherStrategies(ctx, classMap, info.GetTableName(), tableType, info.GetECInstanceIdColumnName(), classIdColPersistenceType, exclusiveRootClassId, primaryTable);
-
-     return CreateTableForExistingTableStrategy(ctx, classMap, info.GetTableName(), info.GetECInstanceIdColumnName(), classIdColPersistenceType, exclusiveRootClassId);
-     }
-
- //---------------------------------------------------------------------------------------
- // @bsimethod
- //---------------------------------------------------------------------------------------
-  DbTable* DbMappingManager::Tables::CreateTableForOtherStrategies(SchemaImportContext& ctx, ClassMap const& classMap, Utf8StringCR tableName, DbTable::Type tableType, Utf8StringCR primaryKeyColumnName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable)
-     {
-      if (DbUtilities::TableExists(ctx.GetECDb(), tableName.c_str(), TABLESPACE_Main))
-          {
-          ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECClass '%s'. It would be mapped to table '%s' which exists already and was not created by ECDb. Mapping classes to pre-existing tables requires the MapStrategy 'ExistingTable'.",
-                              classMap.GetClass().GetFullName(), tableName.c_str());
-          return nullptr;
-          }
-
-     DbTable* table = nullptr;
-     if (primaryTable != nullptr)
+    DbTable* table = nullptr;
+    if (primaryTable != nullptr)
         table = ctx.GetSchemaManager().GetDbSchemaR().AddTable(tableName, tableType, exclusiveRootClassId, *primaryTable);
-     else
+    else
         table = ctx.GetSchemaManager().GetDbSchemaR().AddTable(tableName, tableType, exclusiveRootClassId);
 
-     DbColumn* pkColumn = table->AddColumn(primaryKeyColumnName, DbColumn::Type::Integer, DbColumn::Kind::ECInstanceId, PersistenceType::Physical);
-     if (table->GetType() != DbTable::Type::Virtual)
-         {
-         std::vector<DbColumn*> pkColumns {pkColumn};
-         if (SUCCESS != table->AddPrimaryKeyConstraint(pkColumns))
-             return nullptr;
-         }
+    DbColumn* pkColumn = table->AddColumn(primaryKeyColumnName, DbColumn::Type::Integer, DbColumn::Kind::ECInstanceId, PersistenceType::Physical);
+    if (table->GetType() != DbTable::Type::Virtual)
+        {
+        std::vector<DbColumn*> pkColumns {pkColumn};
+        if (SUCCESS != table->AddPrimaryKeyConstraint(pkColumns))
+            return nullptr;
+        }
 
-     if (SUCCESS != CreateClassIdColumn(ctx, *table, classIdColPersistenceType))
-         return nullptr;
+    if (SUCCESS != CreateClassIdColumn(ctx, *table, classIdColPersistenceType))
+        return nullptr;
 
-     return table;
-     }
+    return table;
+    }
 
- //---------------------------------------------------------------------------------------
- // @bsimethod
- //---------------------------------------------------------------------------------------
- DbTable* DbMappingManager::Tables::CreateTableForExistingTableStrategy(SchemaImportContext& ctx, ClassMap const& classMap, Utf8StringCR existingTableName, Utf8StringCR primaryKeyColName, PersistenceType classIdColPersistenceType, ECClassId exclusiveRootClassId)
-     {
-     BeAssert(!existingTableName.empty());
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbTable* DbMappingManager::Tables::CreateTableForExistingTableStrategy(SchemaImportContext& ctx, ClassMap const& classMap, Utf8StringCR existingTableName, Utf8StringCR primaryKeyColName, PersistenceType classIdColPersistenceType, ECClassId exclusiveRootClassId)
+    {
+    BeAssert(!existingTableName.empty());
 
-     std::vector<SqliteColumnInfo> existingColumnInfos;
-     if (SUCCESS != DbSchemaPersistenceManager::RunPragmaTableInfo(existingColumnInfos, ctx.GetECDb(), existingTableName.c_str()) ||
-         existingColumnInfos.empty())
-         {
-         BeAssert(false && "Failed to get column informations");
-         return nullptr;
-         }
+    std::vector<SqliteColumnInfo> existingColumnInfos;
+    if (SUCCESS != DbSchemaPersistenceManager::RunPragmaTableInfo(existingColumnInfos, ctx.GetECDb(), existingTableName.c_str()) ||
+        existingColumnInfos.empty())
+        {
+        BeAssert(false && "Failed to get column informations");
+        return nullptr;
+        }
 
-     if (existingColumnInfos.empty())
-         {
-         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECClass '%s'. The table '%s' specified in ClassMap custom attribute must exist if MapStrategy is ExistingTable.",
-                             classMap.GetClass().GetFullName(), existingTableName.c_str());
-         return nullptr;
-         }
+    if (existingColumnInfos.empty())
+        {
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0107,
+            "Failed to map ECClass '%s'. The table '%s' specified in ClassMap custom attribute must exist if MapStrategy is ExistingTable.", classMap.GetClass().GetFullName(), existingTableName.c_str());
+        return nullptr;
+        }
 
-     DbTable* table = ctx.GetSchemaManager().GetDbSchemaR().AddTable(existingTableName, DbTable::Type::Existing, exclusiveRootClassId);
-     if (table == nullptr)
-         return nullptr;
+    DbTable* table = ctx.GetSchemaManager().GetDbSchemaR().AddTable(existingTableName, DbTable::Type::Existing, exclusiveRootClassId);
+    if (table == nullptr)
+        return nullptr;
 
-     if (!table->GetEditHandle().CanEdit())
-         table->GetEditHandleR().BeginEdit();
+    if (!table->GetEditHandle().CanEdit())
+        table->GetEditHandleR().BeginEdit();
 
-     DbColumn* idColumn = nullptr;
-     std::vector<DbColumn*> pkColumns;
-     std::vector<size_t> pkOrdinals;
-     for (SqliteColumnInfo const& colInfo : existingColumnInfos)
-         {
-         DbColumn* column = table->AddColumn(colInfo.GetName(), colInfo.GetType(), DbColumn::Kind::Default, PersistenceType::Physical);
-         if (column == nullptr)
-             {
-             BeAssert(false && "Failed to create column");
-             return nullptr;
-             }
+    DbColumn* idColumn = nullptr;
+    std::vector<DbColumn*> pkColumns;
+    std::vector<size_t> pkOrdinals;
+    for (SqliteColumnInfo const& colInfo : existingColumnInfos)
+        {
+        DbColumn* column = table->AddColumn(colInfo.GetName(), colInfo.GetType(), DbColumn::Kind::Default, PersistenceType::Physical);
+        if (column == nullptr)
+            {
+            BeAssert(false && "Failed to create column");
+            return nullptr;
+            }
 
-         if (!colInfo.GetDefaultConstraint().empty())
-             column->GetConstraintsR().SetDefaultValueExpression(colInfo.GetDefaultConstraint().c_str());
+        if (!colInfo.GetDefaultConstraint().empty())
+            column->GetConstraintsR().SetDefaultValueExpression(colInfo.GetDefaultConstraint().c_str());
 
-         if (colInfo.IsNotNull())
-             column->GetConstraintsR().SetNotNullConstraint();
+        if (colInfo.IsNotNull())
+            column->GetConstraintsR().SetNotNullConstraint();
 
-         if (colInfo.GetPrimaryKeyOrdinal() > 0)
-             {
-             pkColumns.push_back(column);
-             pkOrdinals.push_back((size_t) (colInfo.GetPrimaryKeyOrdinal() - 1));
-             }
+        if (colInfo.GetPrimaryKeyOrdinal() > 0)
+            {
+            pkColumns.push_back(column);
+            pkOrdinals.push_back((size_t) (colInfo.GetPrimaryKeyOrdinal() - 1));
+            }
 
-         if (column->GetName().EqualsIAscii(primaryKeyColName))
-             idColumn = column;
-         }
+        if (column->GetName().EqualsIAscii(primaryKeyColName))
+            idColumn = column;
+        }
 
-     if (!pkColumns.empty())
-         {
-         if (pkColumns.size() > 1)
-             {
-             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECClass '%s'. Multi-column PK not supported for MapStrategy 'ExistingTable'. Table: %s",
-                                                 classMap.GetClass().GetFullName(), existingTableName.c_str());
-             return nullptr;
-             }
+    if (!pkColumns.empty())
+        {
+        if (pkColumns.size() > 1)
+            {
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0108,
+                "Failed to map ECClass '%s'. Multi-column PK not supported for MapStrategy 'ExistingTable'. Table: %s", classMap.GetClass().GetFullName(), existingTableName.c_str());
+            return nullptr;
+            }
 
-         if (SUCCESS != table->AddPrimaryKeyConstraint(pkColumns, &pkOrdinals))
-             return nullptr;
-         }
+        if (SUCCESS != table->AddPrimaryKeyConstraint(pkColumns, &pkOrdinals))
+            return nullptr;
+        }
 
-     if (idColumn != nullptr)
-         idColumn->SetKind(DbColumn::Kind::ECInstanceId);
-     else
-         {
-         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to map ECClass '%s'. " ECDBSYS_PROP_ECInstanceId " column '%s' does not exist in table '%s' which was specified in ClassMap custom attribute together with ExistingTable MapStrategy.",
-                                             classMap.GetClass().GetFullName(), primaryKeyColName.c_str(), existingTableName.c_str());
-         return nullptr;
-         }
+    if (idColumn != nullptr)
+        idColumn->SetKind(DbColumn::Kind::ECInstanceId);
+    else
+        {
+        ctx.Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0109,
+            "Failed to map ECClass '%s'. " ECDBSYS_PROP_ECInstanceId " column '%s' does not exist in table '%s' which was specified in ClassMap custom attribute together with ExistingTable MapStrategy.",
+            classMap.GetClass().GetFullName(),
+            primaryKeyColName.c_str(),
+            existingTableName.c_str()
+        );
+        return nullptr;
+        }
 
-     if (SUCCESS != CreateClassIdColumn(ctx, *table, classIdColPersistenceType))
-         return nullptr;
+    if (SUCCESS != CreateClassIdColumn(ctx, *table, classIdColPersistenceType))
+        return nullptr;
 
-     table->GetEditHandleR().EndEdit(); //we do not want this table to be editable;
-     return table;
-     }
+    table->GetEditHandleR().EndEdit(); //we do not want this table to be editable;
+    return table;
+    }
 
  //---------------------------------------------------------------------------------------
  // @bsimethod

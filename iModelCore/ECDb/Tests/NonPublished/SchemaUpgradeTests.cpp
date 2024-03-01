@@ -14238,9 +14238,9 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
                                 </ECEntityClass>
                             </ECSchema>)xml";
 
-    EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None)) << "Unique index on existing property must fail because adding a ECDbMap CA on existing class is not allowed.";
-    EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Unique index on existing property must fail because adding a ECDbMap CA on existing class is not allowed.";
-    EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None)) << "Unique index on existing property must fail because adding a ECDbMap CA on existing class is not allowed.";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None)) << "Unique index on existing property must fail because adding a ECDbMap CA on existing class is not allowed.";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Unique index on existing property must fail because adding a ECDbMap CA on existing class is not allowed.";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None)) << "Unique index on existing property must fail because adding a ECDbMap CA on existing class is not allowed.";
     EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Unique index on existing property must fail because adding a ECDbMap CA on existing class is not allowed.";
 
     newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -14275,9 +14275,9 @@ TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
                                 </ECEntityClass>
                             </ECSchema>)xml";
 
-    EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None)) << "Unique index on new property in existing class must fail because adding a ECDbMap CA on existing class is not allowed.";
-    EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Unique index on new property in existing class must fail because adding a ECDbMap CA on existing class is not allowed.";
-    EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None)) << "Unique index on new property in existing class must fail because adding a ECDbMap CA on existing class is not allowed.";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None)) << "Unique index on new property in existing class must fail because adding a ECDbMap CA on existing class is not allowed.";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Unique index on new property in existing class must fail because adding a ECDbMap CA on existing class is not allowed.";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None)) << "Unique index on new property in existing class must fail because adding a ECDbMap CA on existing class is not allowed.";
     EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Unique index on new property in existing class must fail because adding a ECDbMap CA on existing class is not allowed.";
 
     newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
