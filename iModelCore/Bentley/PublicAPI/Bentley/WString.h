@@ -256,7 +256,7 @@ public:
     // due to buffer overrun and should be avoided.
     template<typename... Args> static int Swscanf_safe(const wchar_t* buffer, const wchar_t* format, Args&&... args) {
 
-      // Use static assert and string_views if possible
+      // Use string_views if possible
       #if BENTLEY_CPLUSPLUS >= 201103L // C++17
         BeAssert(std::wstring_view(format).find(L"%s") == std::wstring::npos && "%s is unsafe, do not use sscanf for that purpose");
       #elif
@@ -508,7 +508,7 @@ public:
     // due to buffer overrun and should be avoided.
     template<typename... Args> static int Sscanf_safe(const char* const buffer, const char* const format, Args&&... args) {
 
-      // Use static assert and string_views if possible
+      // Use string_views if possible
       #if BENTLEY_CPLUSPLUS >= 201103L // C++17
         BeAssert(std::string_view(format).find("%s") == std::string::npos && "%s is unsafe, do not use sscanf for that purpose");
       #elif
