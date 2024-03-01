@@ -255,8 +255,17 @@ public:
     // A "safe" version of swscanf. Actually, all this does is make sure you don't use "%s" in your format string - that's not safe
     // due to buffer overrun and should be avoided.
     template<typename... Args> static int Swscanf_safe(const wchar_t* buffer, const wchar_t* format, Args&&... args) {
+
+      // Use static assert and string_views if possible
+      #if BENTLEY_CPLUSPLUS >= 201103L
+        BeAssert(std::wstring_view(format).find(L"%s") == std::wstring::npos && "%s is unsafe, do not use sscanf for that purpose");
+      #elif
         // The lambda is because of a compiler error with just the straight expression. It does not seem to like the temporary variable in the template.
         BeAssert([](const wchar_t* format) {return (std::wstring::npos == std::wstring(format).find(L"%s") && "%s is unsafe, do not use sscanf for that purpose");}(format));
+      #endif
+
+      // The lambda is because of a compiler error with just the straight expression. It does not seem to like the temporary variable in the template.
+        
 PUSH_DISABLE_DEPRECATION_WARNINGS
         return swscanf(buffer, format, std::forward<Args>(args)...);
 POP_DISABLE_DEPRECATION_WARNINGS
@@ -500,9 +509,15 @@ public:
     // A "safe" version of sscanf. Actually, all this does is make sure you don't use "%s" in your format string - that's not safe
     // due to buffer overrun and should be avoided.
     template<typename... Args> static int Sscanf_safe(const char* const buffer, const char* const format, Args&&... args) {
-        // NOTE: When we use C++17 this can be string_view and become a static_assert
+
+      // Use static assert and string_views if possible
+      #if BENTLEY_CPLUSPLUS >= 201103L
+        BeAssert(std::string_view(format).find("%s") == std::string::npos && "%s is unsafe, do not use sscanf for that purpose");
+      #elif
         // The lambda is because of a compiler error with just the straight expression. It does not seem to like the temporary variable in the template.
         BeAssert([](const char* const format) {return (std::string::npos == std::string(format).find("%s") && "%s is unsafe, do not use sscanf for that purpose");}(format));
+      #endif
+     
 PUSH_DISABLE_DEPRECATION_WARNINGS // this is safe, because we're sure the format string doesn't use
         return sscanf(buffer, format, std::forward<Args>(args)...);
 POP_DISABLE_DEPRECATION_WARNINGS
