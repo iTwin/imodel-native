@@ -380,7 +380,7 @@ QuerySet ContentQueryBuilder::CreateQuerySet(SelectedNodeInstancesSpecificationC
             classQuery = WrapQueryIntoGroupingClause(*classQuery, *contract);
 #endif
         classQuery->OrderBy(CreateOrderByClause(m_params.GetRulesPreprocessor().GetSortingRules(), selectClassInfo->GetSelectClass(), m_params.GetSchemaHelper()).c_str());
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, Utf8PrintfString("Created query: `%s`", classQuery->GetQuery()->GetQueryString().c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Created query: `%s`", classQuery->GetQuery()->GetQueryString().c_str()));
         QueryBuilderHelpers::AddToUnionSet(set, *classQuery);
         }
 
@@ -482,7 +482,7 @@ QuerySet ContentQueryBuilder::CreateQuerySet(ContentRelatedInstancesSpecificatio
             classQuery = WrapQueryIntoGroupingClause(*classQuery, *contract);
 #endif
         classQuery->OrderBy(CreateOrderByClause(m_params.GetRulesPreprocessor().GetSortingRules(), selectClassInfo->GetSelectClass(), m_params.GetSchemaHelper()).c_str());
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, Utf8PrintfString("Created query: `%s`", classQuery->GetQuery()->GetQueryString().c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Created query: `%s`", classQuery->GetQuery()->GetQueryString().c_str()));
         QueryBuilderHelpers::AddToUnionSet(set, *classQuery);
         }
 
@@ -525,7 +525,7 @@ QuerySet ContentQueryBuilder::CreateQuerySet(ContentInstancesOfSpecificClassesSp
             classQuery = WrapQueryIntoGroupingClause(*classQuery, *contract);
 #endif
         classQuery->OrderBy(CreateOrderByClause(m_params.GetRulesPreprocessor().GetSortingRules(), selectClassInfo->GetSelectClass(), m_params.GetSchemaHelper()).c_str());
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, Utf8PrintfString("Created query: `%s`", classQuery->GetQuery()->GetQueryString().c_str()));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Created query: `%s`", classQuery->GetQuery()->GetQueryString().c_str()));
         QueryBuilderHelpers::AddToUnionSet(set, *classQuery);
         }
 
@@ -590,7 +590,7 @@ QuerySet ContentQueryBuilder::CreateQuerySet(ContentDescriptor::NestedContentFie
         }
     else
         query->OrderBy(CreateOrderByClause(m_params.GetRulesPreprocessor().GetSortingRules(), selectClassInfo.GetSelectClass(), m_params.GetSchemaHelper()).c_str());
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_INFO, Utf8PrintfString("Created query: `%s`", query->GetQuery()->GetQueryString().c_str()));
+    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, Utf8PrintfString("Created query: `%s`", query->GetQuery()->GetQueryString().c_str()));
     return QuerySet({ query });
     }
 

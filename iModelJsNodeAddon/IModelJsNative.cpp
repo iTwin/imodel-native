@@ -5421,8 +5421,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         std::shared_ptr<ECPresentationResult> resultPtr = std::make_shared<ECPresentationResult>(std::move(result));
         m_threadSafeFunc.BlockingCall([resultPtr, deferred = std::move(deferred)](Napi::Env env, Napi::Function)
             {
-            // flush all our logs that accumulated while handling the request
-            s_jsLogger.FlushDeferred();
             deferred.Resolve(CreateReturnValue(env, *resultPtr, true));
             });
         }
@@ -5998,6 +5996,15 @@ public:
 //=======================================================================================
 struct NativeDevTools : BeObjectWrap<NativeDevTools>
 {
+    struct Finally
+    {
+    private:
+        std::function<void()> m_finallyCallback;
+    public:
+        Finally(std::function<void()> finallyCallback) : m_finallyCallback(finallyCallback) {}
+        ~Finally() {m_finallyCallback();}
+    };
+
 private:
 static Napi::Value Signal(NapiInfoCR info)
     {
@@ -6006,6 +6013,58 @@ static Napi::Value Signal(NapiInfoCR info)
     SignalType signalType = (SignalType) info[0].As<Napi::Number>().Int32Value();
     bool status = SignalTestUtility::Signal(signalType);
     return Napi::Number::New(info.Env(), status);
+    }
+static void EmitLogs(NapiInfoCR info)
+    {
+    if (info.Length() != 5)
+        THROW_JS_EXCEPTION("Must supply 5 arguments");
+    REQUIRE_ARGUMENT_UINTEGER(0, count);
+    REQUIRE_ARGUMENT_STRING(1, category);
+    if (!info[2].IsNumber())
+        THROW_JS_EXCEPTION("Argument 2 should be a number");
+    auto severity = JsLogger::JsLevelToSeverity(info[2].As<Napi::Number>());
+    REQUIRE_ARGUMENT_STRING(3, thread);
+    REQUIRE_ARGUMENT_FUNCTION(4, onDone);
+
+    auto doneCallback = Napi::ThreadSafeFunction::New(info.Env(), onDone, "Done callback", 0, 1);
+    auto doLog = [count, category, severity, doneCallback]()
+        {
+        Finally f([doneCallback]()
+            {
+            doneCallback.BlockingCall([=](Napi::Env, Napi::Function jsCallback)
+                {
+                jsCallback.Call({});
+                });
+            doneCallback.Release();
+            });
+        NativeLogging::CategoryLogger logger(category.c_str());
+        for (uint32_t i = 0; i < count; ++i)
+            {
+            logger.message(
+                severity,
+                Utf8PrintfString("[%u] ", i).append(
+                    "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. "
+                    "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. "
+                    "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. "
+                    "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+                    ).c_str()
+                );
+            BeThreadUtilities::BeSleep(1);
+            }
+        };
+    if (thread == "main")
+        {
+        doLog();
+        }
+    else if (thread == "worker")
+        {
+        std::thread workerThread([=](){ doLog(); });
+        workerThread.detach();
+        }
+    else
+        {
+        THROW_JS_EXCEPTION("Unexpected value for `thread` argument. Expecting either \"main\" or \"worker\".");
+        }
     }
 
 public:
@@ -6017,6 +6076,7 @@ static void Init(Napi::Env env, Napi::Object exports)
     Napi::HandleScope scope(env);
     Napi::Function t = DefineClass(env, "NativeDevTools", {
         StaticMethod("signal", &NativeDevTools::Signal),
+        StaticMethod("emitLogs", &NativeDevTools::EmitLogs),
     });
     exports.Set("NativeDevTools", t);
     }
@@ -6095,14 +6155,11 @@ static void setMaxTileCacheSize(NapiInfoCR info) {
   JsInterop::GetNativeLogger().error("Invalid argument for setMaxTileCacheSize: expected an unsigned integer");
 }
 
-static void flushLog(NapiInfoCR info) {
-  s_jsLogger.FlushDeferred();
-}
 static Napi::Value getLogger(NapiInfoCR info) {
-  return s_jsLogger.getJsLogger();
+  return s_jsLogger.GetJsLogger();
 }
 static void setLogger(NapiInfoCR info) {
-  s_jsLogger.setJsLogger(info);
+    s_jsLogger.SetJsLogger(info);
 }
 static void clearLogLevelCache(NapiInfoCR){
     s_jsLogger.SyncLogLevels();
@@ -6253,7 +6310,7 @@ extern "C"
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void onNodeExiting(void*) {
-    s_jsLogger.OnExit();
+    s_jsLogger.Cleanup();
     PlatformLib::Terminate(true); // for orderly shut down of static objects
 }
 
@@ -6326,14 +6383,13 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
         Napi::PropertyDescriptor::Function(env, exports, "clearLogLevelCache", &clearLogLevelCache),
         Napi::PropertyDescriptor::Function(env, exports, "computeSchemaChecksum", &computeSchemaChecksum),
         Napi::PropertyDescriptor::Function(env, exports, "enableLocalGcsFiles", &enableLocalGcsFiles),
-        Napi::PropertyDescriptor::Function(env, exports, "flushLog", &flushLog),
         Napi::PropertyDescriptor::Function(env, exports, "getCrashReportProperties", &getCrashReportProperties),
         Napi::PropertyDescriptor::Function(env, exports, "getTileVersionInfo", &getTileVersionInfo),
         Napi::PropertyDescriptor::Function(env, exports, "queryConcurrency", &queryConcurrency),
         Napi::PropertyDescriptor::Function(env, exports, "setCrashReporting", &setCrashReporting),
         Napi::PropertyDescriptor::Function(env, exports, "setCrashReportProperty", &setCrashReportProperty),
         Napi::PropertyDescriptor::Function(env, exports, "setMaxTileCacheSize", &setMaxTileCacheSize),
-});
+    });
 
     registerCloudSqlite(env, exports);
 

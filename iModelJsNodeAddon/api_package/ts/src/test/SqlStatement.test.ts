@@ -4,11 +4,11 @@
 *--------------------------------------------------------------------------------------------*/
 
 import { expect } from "chai";
-import { dbFileName, iModelJsNative } from "./utils";
+import * as sinon from "sinon";
 import { DbResult, Logger, LogLevel } from "@itwin/core-bentley";
 import { IModelJsNative } from "../NativeLibrary";
-import { openDgnDb } from ".";
-import * as sinon from "sinon";
+import { openDgnDb } from "./";
+import { dbFileName, iModelJsNative } from "./utils";
 
 describe("SQLite statements", () => {
   let dgndb: IModelJsNative.DgnDb;
@@ -114,13 +114,11 @@ describe("SQLite statements", () => {
     try {
       const sql = "SELECT 100 from xxx";
       expect(() => stmt.prepare(dgndb, sql, true)).throws("no such table");
-      iModelJsNative.flushLog();
       expect(errorLogStub.callCount).eq(1);
 
       Logger.setLevel("BeSQLite", LogLevel.None);
       iModelJsNative.clearLogLevelCache();
       expect(() => stmt.prepare(dgndb, sql, true)).throws("no such table");
-      iModelJsNative.flushLog();
       expect(errorLogStub.callCount).eq(1);
     } finally {
       stmt.dispose();
