@@ -347,6 +347,13 @@ BentleyStatus SchemaMerger::MergeItems(SchemaMergeResult& result, ECSchemaP left
         if (opCode == ECChange::OpCode::New)
             { //This may actually work
             auto newSchemaItem = (right->*getItemCP)(itemName);
+            if (newSchemaItem == nullptr)
+                {
+                result.Issues().ReportV(IssueSeverity::Fatal, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0059,
+                    "The schema is dirty. Another reference of the item with name %s already exists in the schema.", right->GetFullSchemaName().c_str());
+                return BentleyStatus::ERROR;
+                }
+
             if ( left->NamedElementExists(itemName) && 
                 ((left->*getItemP)(itemName) == nullptr))
                 { // An item of another type exists with the same name

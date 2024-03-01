@@ -84,6 +84,7 @@ IssueId ECIssueId::EC_0055 = IssueId("EC_0055");
 IssueId ECIssueId::EC_0056 = IssueId("EC_0056");
 IssueId ECIssueId::EC_0057 = IssueId("EC_0057");
 IssueId ECIssueId::EC_0058 = IssueId("EC_0058");
+IssueId ECIssueId::EC_0059 = IssueId("EC_0059");
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
