@@ -113,6 +113,7 @@ struct SchemaWriter final
                 const auto ALL = ECN::CustomAttributeValidator::ChangeType::All;
                 const auto MODIFIED = ECN::CustomAttributeValidator::ChangeType::Modified;
                 const auto NEW = ECN::CustomAttributeValidator::ChangeType::New;
+                const auto ADD_OR_MODIFY = ECN::CustomAttributeValidator::ChangeType::AddOrUpdate;
                 auto& rules = m_schemaUpgradeCustomAttributeValidator;
 
                 m_ec32AvailableInFile = FeatureManager::IsEC32Available(GetECDb());
@@ -122,7 +123,11 @@ struct SchemaWriter final
                         .Append(ACCEPT, "AllowDuplicateRelationships", ALL); // only this property can be modified
 
                 rules
-                    .Append(ACCEPT, "ECDbMap", "DbIndexList", MODIFIED)
+                    .Append(REJECT, "ECDbMap", "DbIndexList", MODIFIED)
+                        .Append(REJECT, "Indexes.Name", MODIFIED); // restrict renaming of indexes
+
+                rules
+                    .Append(ACCEPT, "ECDbMap", "DbIndexList", ADD_OR_MODIFY)
                         .Append(ACCEPT, "Indexes.*", NEW); // allow to add new Indexes
 
                 rules
