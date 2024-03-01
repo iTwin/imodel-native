@@ -263,8 +263,6 @@ public:
         // The lambda is because of a compiler error with just the straight expression. It does not seem to like the temporary variable in the template.
         BeAssert([](const wchar_t* format) {return (std::wstring::npos == std::wstring(format).find(L"%s") && "%s is unsafe, do not use sscanf for that purpose");}(format));
       #endif
-
-      // The lambda is because of a compiler error with just the straight expression. It does not seem to like the temporary variable in the template.
         
 PUSH_DISABLE_DEPRECATION_WARNINGS
         return swscanf(buffer, format, std::forward<Args>(args)...);
