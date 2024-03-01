@@ -494,13 +494,16 @@ public:
 struct IECClassSerializer
 {
 protected:
-    virtual rapidjson::Document _SerializeECClass(ECClassCR ecClass, rapidjson::Document::AllocatorType& allocator) = 0;
+    virtual rapidjson::Document _SerializeECClass(ECClassCP ecClass, rapidjson::Document::AllocatorType& allocator) = 0;
 public:
 	virtual ~IECClassSerializer() {}
-
+    rapidjson::Document SerializeECClass(ECClassCP ecClass, rapidjson::Document::AllocatorType& allocator)
+        {
+        return _SerializeECClass(ecClass, allocator);
+        }
 	rapidjson::Document SerializeECClass(ECClassCR ecClass, rapidjson::Document::AllocatorType& allocator)
 	    {
-		return _SerializeECClass(ecClass, allocator);
+		return _SerializeECClass(&ecClass, allocator);
 	    }
 };
 

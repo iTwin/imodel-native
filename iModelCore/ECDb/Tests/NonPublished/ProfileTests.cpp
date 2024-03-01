@@ -391,7 +391,7 @@ TEST_F(ProfileTestFixture, ImportRequiresVersionCustomAttribute)
     ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema));
     auto lastIssue = issueListener.GetIssue();
     ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
-    ASSERT_STREQ("ECSchema Schema1.01.00.01 requires ECDb version 999.9.9.9, but the current runtime version is only 4.0.0.4.", lastIssue.message.c_str());
+    ASSERT_STREQ(Utf8PrintfString("ECSchema Schema1.01.00.01 requires ECDb version 999.9.9.9, but the current runtime version is only %s.", m_ecdb.GetECDbProfileVersion().ToString().c_str()).c_str(), lastIssue.message.c_str());
     }
 
     CloseECDb();
@@ -451,6 +451,81 @@ TEST_F(ProfileTestFixture, InvalidImportRequiresVersionCustomAttribute)
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ProfileTestFixture, ReferenceOlderSchemaWhenImportRestrictedNewerSchemaAlreadyExists)
+    {
+    // Example Scenario:
+    //  Current ECDbRuntimeVersion is 4.0.0.4.
+    //  A newer imodel contains 2 schemas "TestBaseSchema.1.0.0" with no import restriction and "TestBaseSchema.1.0.1" which contains an import restriction for the next ECDbRuntimeVersion 4.0.0.5.
+    //  Try to import a new schema "TestSchema.1.0.0" which references "TestBaseSchema.1.0.0".
+    // Expected Result: Import should succeed
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDbForCurrentTest());
+
+    // Import the initial version of base schema "TestBaseSchema.1.0.0" which does not contain the "ImportRequiresVersion" CA
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestBaseSchema" alias="tbs1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+
+            <ECEntityClass typeName="Line" >
+                <ECProperty propertyName="Length" typeName="double" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+    auto baseSchema = m_ecdb.Schemas().GetSchema("TestBaseSchema");
+    ASSERT_NE(baseSchema, nullptr);
+    ASSERT_EQ(baseSchema->GetVersionMinor(), 0U);
+
+    // Perform a schema upgrade of the base schema "TestBaseSchema.1.0.1", which now contains the "ImportRequiresVersion" CA
+    const auto currVersion = ECDb::CurrentECDbProfileVersion();
+    const auto baseSchemaStr = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestBaseSchema" alias="tbs1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="02.00.02" alias="ecdbmap"/>
+            <ECCustomAttributes>
+                <ImportRequiresVersion xmlns="ECDbMap.02.00.02">
+                    <ECDbRuntimeVersion>%s</ECDbRuntimeVersion>
+                </ImportRequiresVersion>
+            </ECCustomAttributes>
+
+            <ECEntityClass typeName="Line" >
+                <ECProperty propertyName="Length" typeName="double" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(Utf8PrintfString(baseSchemaStr, currVersion.ToString().c_str()))));
+    baseSchema = m_ecdb.Schemas().GetSchema("TestBaseSchema");
+    ASSERT_NE(baseSchema, nullptr);
+    ASSERT_EQ(baseSchema->GetVersionMinor(), 1U);
+
+    // Following step is only done to simulate a newer imodel which contains the schema that restricts imports for the current ECDbRuntimeVersion.
+    const auto importRequiresVersionCA = baseSchema->GetCustomAttribute("ImportRequiresVersion");
+    ASSERT_TRUE(importRequiresVersionCA.IsValid());
+    ECValue ecdbRuntimeVersionValue;
+    importRequiresVersionCA->GetValue(ecdbRuntimeVersionValue, "ECDbRuntimeVersion");
+    ASSERT_STREQ(ecdbRuntimeVersionValue.ToString().c_str(), currVersion.ToString().c_str());
+
+    const auto nextVersion = ProfileVersion(currVersion.GetMajor(), currVersion.GetMinor(), currVersion.GetSub1(), currVersion.GetSub2() + 1).ToString();
+    importRequiresVersionCA->SetValue("ECDbRuntimeVersion", ECValue(nextVersion.c_str()));
+    importRequiresVersionCA->GetValue(ecdbRuntimeVersionValue, "ECDbRuntimeVersion");
+    ASSERT_STREQ(ecdbRuntimeVersionValue.ToString().c_str(), nextVersion.c_str());
+
+    // Import the new schema "TestSchema" that references the older version "TestBaseSchema.1.0.0" that does not have an import restriction.
+    const auto newSchemaStr = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="TestBaseSchema" version="1.0.0" alias="tbs1"/>
+
+            <ECEntityClass typeName="Plane" >
+                <BaseClass>tbs1:Line</BaseClass>
+                <ECProperty propertyName="Width" typeName="double" />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECIssueListener issueListener(m_ecdb);
+    EXPECT_EQ(SUCCESS, ImportSchema(SchemaItem(newSchemaStr)));
+    const auto lastIssue = issueListener.GetIssue();
+    EXPECT_FALSE(lastIssue.has_value()) << "No issues expected.";
+    EXPECT_STRNE(lastIssue.message.c_str(), Utf8PrintfString("ECSchema TestBaseSchema.01.00.01 requires ECDb version %s, but the current runtime version is only %s.", nextVersion.c_str(), currVersion.ToString().c_str()).c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ProfileTestFixture, ApplyImportRequiresVersionToExistingSchema)
     {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
@@ -504,7 +579,7 @@ TEST_F(ProfileTestFixture, ApplyImportRequiresVersionToExistingSchema)
     ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema));
     auto lastIssue = issueListener.GetIssue();
     ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
-    ASSERT_STREQ("ECSchema Schema1.01.00.03 requires ECDb version 999.9.9.9, but the current runtime version is only 4.0.0.4.", lastIssue.message.c_str());
+    ASSERT_STREQ(Utf8PrintfString("ECSchema Schema1.01.00.03 requires ECDb version 999.9.9.9, but the current runtime version is only %s.", m_ecdb.GetECDbProfileVersion().ToString().c_str()).c_str(), lastIssue.message.c_str());
     }
 
     CloseECDb();

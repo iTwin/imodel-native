@@ -269,7 +269,7 @@ void ECSchemaHelper::ParseECSchemas(ECSchemaSet& schemas, bool& exclude, Utf8Str
         ECSchemaCP schema = GetSchema(name.c_str(), false);
         if (nullptr == schema)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested ECSchema does not exist: '%s'", name.c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Requested ECSchema does not exist: '%s'", name.c_str()));
             continue;
             }
         schemas.insert(schema);
@@ -352,7 +352,7 @@ SupportedClassInfos ECSchemaHelper::GetECClassesFromClassList(bvector<MultiSchem
             auto ecClass = GetECClass(schemaClass->GetSchemaName().c_str(), className.c_str(), false);
             if (ecClass == nullptr)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Given ECClass `%s.%s` does not exist. Ignoring.",
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Given ECClass `%s.%s` does not exist. Ignoring.",
                     schemaClass->GetSchemaName().c_str(), className.c_str()));
                 continue;
                 }
@@ -2334,7 +2334,6 @@ ECSchemaHelper::RelationshipPathsResponse ECSchemaHelper::GetRelationshipPaths(R
     auto scope = Diagnostics::Scope::Create("Get relationship paths");
 
     // build a query that selects ECClassIds of all matching classes that have instances
-    int maxTargetIndex = -1;
     UnionQueryBuilderPtr unionQuery = UnionQueryBuilder::Create({});
     for (auto const& pathSpecEntry : *params.m_paths)
         {
@@ -2355,11 +2354,9 @@ ECSchemaHelper::RelationshipPathsResponse ECSchemaHelper::GetRelationshipPaths(R
             indexedQuery->From(*specQuery);
             unionQuery->AddQuery(*indexedQuery);
             }
-        if (pathSpecEntry.m_targetIndex > maxTargetIndex)
-            maxTargetIndex = pathSpecEntry.m_targetIndex;
         }
 
-    RelationshipPathsResponse paths(maxTargetIndex + 1);
+    RelationshipPathsResponse paths;
     if (unionQuery->GetQueries().empty())
         return paths;
 
@@ -2405,13 +2402,13 @@ ECSchemaHelper::RelationshipPathsResponse ECSchemaHelper::GetRelationshipPaths(R
         for (auto iter = sourceClassIdsJson.Begin(); iter != sourceClassIdsJson.End(); ++iter)
             sourceClasses.insert(m_connection.GetECDb().Schemas().GetClass(ECClassId(iter->GetUint64())));
 
-        paths.GetPaths(index).push_back(RelationshipPathsResponse::RelationshipPathResult{ path, sourceClasses });
+        paths.GetPaths()[index].push_back(RelationshipPathsResponse::RelationshipPathResult{ path, sourceClasses });
         }
 
     bvector<RelatedClassPath*> allPaths;
-    for (size_t i = 0; i <= maxTargetIndex; ++i)
+    for (auto& entry : paths.GetPaths())
         {
-        for (auto& pathResult : paths.GetPaths(i))
+        for (auto& pathResult : entry.second)
             allPaths.push_back(&pathResult.m_path);
         }
     AssignClassAliases(allPaths, params.m_relationshipsUseCounter);
@@ -2431,25 +2428,37 @@ ECSchemaHelper::RelationshipPathsResponse ECSchemaHelper::GetRelationshipPaths(R
 bmap<Utf8String, bvector<RelatedClassPath>> ECSchemaHelper::GetRelatedInstancePaths(ECClassCR selectClass,
     RelatedInstanceSpecificationList const& relatedInstanceSpecs, ECClassUseCounter& relationshipsUseCount) const
     {
-    size_t specIndex = 0;
-    auto pathSpecs = ContainerHelpers::TransformContainer<bvector<RelationshipPathsRequestParams::PathSpecification>>(relatedInstanceSpecs, [&specIndex](auto const& spec)
+    bvector<RelatedInstanceSpecification const*> targetInstancesSpecs;
+    bvector<RelationshipPathsRequestParams::PathSpecification> pathLookupSpecs;
+    for (size_t specIndex = 0; specIndex < relatedInstanceSpecs.size(); ++specIndex)
         {
-        return RelationshipPathsRequestParams::PathSpecification(specIndex++, spec->GetRelationshipPath(), bvector<bool>(spec->GetRelationshipPath().GetSteps().size(), false));
-        });
+        auto spec = relatedInstanceSpecs[specIndex];
+        if (!spec->GetRelationshipPath().GetSteps().empty())
+            pathLookupSpecs.push_back(RelationshipPathsRequestParams::PathSpecification(specIndex, spec->GetRelationshipPath(), bvector<bool>(spec->GetRelationshipPath().GetSteps().size(), false)));
+        else if (nullptr != spec->GetTargetInstancesSpecification())
+            targetInstancesSpecs.push_back(spec);
+        }
+
     bvector<RelatedClassPath> noRelatedInstances;
-    ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(selectClass, ""), pathSpecs, nullptr, noRelatedInstances, relationshipsUseCount, false);
+    ECSchemaHelper::RelationshipPathsRequestParams params(SelectClass<ECClass>(selectClass, ""), pathLookupSpecs, nullptr, noRelatedInstances, relationshipsUseCount, false);
     auto indexedPaths = GetRelationshipPaths(params);
 
     bmap<Utf8String, bvector<RelatedClassPath>> paths;
+
+    // this loop handles related instances that are targeted using relationship paths (the general case)
     for (size_t i = 0; i < relatedInstanceSpecs.size(); ++i)
         {
         RelatedInstanceSpecificationCR spec = *relatedInstanceSpecs[i];
         if (paths.end() != paths.find(spec.GetAlias()))
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Related instance alias must be unique per parent specification. Found multiple alias: '%s'", spec.GetAlias().c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Related instance alias must be unique per parent specification. Found multiple alias: '%s'", spec.GetAlias().c_str()));
             continue;
             }
-        for (auto& pathResult : indexedPaths.GetPaths(i))
+        auto pathIter = indexedPaths.GetPaths().find(i);
+        if (indexedPaths.GetPaths().end() == pathIter)
+            continue;
+
+        for (auto& pathResult : pathIter->second)
             {
             auto& path = pathResult.m_path;
             for (RelatedClassR step : path)
@@ -2457,9 +2466,30 @@ bmap<Utf8String, bvector<RelatedClassPath>> ECSchemaHelper::GetRelatedInstancePa
             if (!path.empty())
                 path.back().GetTargetClass().SetAlias(spec.GetAlias());
             }
-        if (!indexedPaths.GetPaths(i).empty())
-            paths.Insert(spec.GetAlias(), ContainerHelpers::TransformContainer<bvector<RelatedClassPath>>(indexedPaths.GetPaths(i), [](auto const& pathResult){return pathResult.m_path;}));
+        if (!pathIter->second.empty())
+            paths.Insert(spec.GetAlias(), ContainerHelpers::TransformContainer<bvector<RelatedClassPath>>(pathIter->second, [](auto const& pathResult){return pathResult.m_path;}));
         }
+
+    // this loop handles related instances that are targeted using `RelatedInstanceTargetInstancesSpecification`
+    for (auto spec : targetInstancesSpecs)
+        {
+        if (paths.end() != paths.find(spec->GetAlias()))
+            {
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Related instance alias must be unique per parent specification. Found multiple alias: '%s'", spec->GetAlias().c_str()));
+            continue;
+            }
+        ECClassCP targetClass = GetECClass(spec->GetTargetInstancesSpecification()->GetClassName().c_str());
+        if (!targetClass)
+            {
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Related instance join by IDs specification requested class `%s`, but it doesn't exist.", spec->GetTargetInstancesSpecification()->GetClassName().c_str()));
+            continue;
+            }
+        SelectClassWithExcludes<ECClass> target(*targetClass, spec->GetAlias(), false);
+        paths.Insert(spec->GetAlias(), bvector<RelatedClassPath>({ RelatedClassPath{
+            RelatedClass(selectClass, target, spec->GetTargetInstancesSpecification()->GetInstanceIds(), !spec->IsRequired())
+            } }));
+        }
+
     return paths;
     }
 
@@ -2494,7 +2524,7 @@ void SupportedClassesParser::Parse(ECSchemaHelper const& helper, Utf8StringCR st
         ECClassCP ecClass = helper.GetECClass(entry.GetSchemaName(), entry.GetClassName());
         if (nullptr == ecClass)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested ECClass not found: '%s.%s'", entry.GetSchemaName(), entry.GetClassName()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Requested ECClass not found: '%s.%s'", entry.GetSchemaName(), entry.GetClassName()));
             continue;
             }
         SupportedClassInfo<ECClass> info(*ecClass, entry.GetFlags());

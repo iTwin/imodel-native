@@ -1722,3 +1722,52 @@ TEST(RotMatrix, NavigationMatrix)
 
     Check::SetMaxVolume (volume);
     }
+
+TEST(RotMatrix, NearRigidFromIFC)
+    {
+    static constexpr double s_defaultTol = 1.0e-12;
+    static constexpr double s_looseTol = 1.0e-9;
+    bool isOrtho, hasUniformScale;
+    auto testMatrix = [&](RotMatrixCR matrix, double tol) -> void
+        {
+        RotMatrix skew, rot, skewUnitCols, skewDividedByMaxScale;
+        DVec3d scales;
+        double ratio, maxScale;
+        // cf. iModelBridgeCore/DgnDbSync/DgnV8/GeometryConversion.cpp
+        bool isFullRank = matrix.RotateAndSkewFactors(rot, skew, 0, 1);
+        if (Check::True(isFullRank, "input is full rank"))
+            {
+            isOrtho = skew.IsOrthonormal(skewUnitCols, scales, ratio, tol);
+            hasUniformScale = isOrtho ? skew.IsRigidSignedScale(skewDividedByMaxScale, maxScale, tol) : false;
+            }
+        };
+
+    // matrix parts of inputs to DgnV8PathEntry ctor
+    auto currentTransform = RotMatrix::FromRowValues(
+        -0.98694285926638936,   -0.13883497755164509,   -0.081661750846516237,
+        0.13836215383553430,    -0.99031553002476669,   0.011448378826615561,
+        -0.082460335489714043,  0,                      0.99659434730030649);
+    auto conversionScale = RotMatrix::FromRowValues(
+        0.00010000000000000000, -7.1525573730980355e-16,    0,
+        1.8119812011848355e-14, 0.00010000000001597404,     0,
+        0,                      0,                          0.00010000000000071528);
+    RotMatrix v8ToDgnDbMatrix;
+    v8ToDgnDbMatrix.InitProduct(conversionScale, currentTransform);
+    
+    // existing behavior uses historically tight tolerance
+    testMatrix(v8ToDgnDbMatrix, s_defaultTol);
+    Check::False(isOrtho, "IsOrthonormal returns false with default tolerance");
+    Check::False(hasUniformScale, "IsRigidSignedScale returns false with default tolerance");
+    
+    // new overload allows caller to pass looser tolerance
+    testMatrix(v8ToDgnDbMatrix, s_looseTol);
+    Check::True(isOrtho, "IsOrthonormal returns true with looser tolerance");
+    Check::True(hasUniformScale, "IsRigidSignedScale returns true with looser tolerance");
+    
+    // test old v. new scale uniformity test
+    double minScale, maxScale;
+    conversionScale.DiagonalAbsRange(minScale, maxScale);
+    double ratio = minScale / maxScale;
+    Check::False(ratio > 1.0 - s_defaultTol, "near-uniform scales fail old uniformity test with default tolerance");
+    Check::True(maxScale - minScale <= (1 + maxScale) * s_defaultTol, "near-uniform scales pass new uniformity test with default tolerance");
+    }

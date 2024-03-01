@@ -48,9 +48,6 @@ public:
     //! Return all filenames that match a wildcard expression in the specified directory
     static void WalkDirsAndMatch (bvector<BeFileName>& matches, BeFileNameCR topDir, WCharCP glob, bool recursive)
         {
-        BeFileName topDirPrefix (topDir);
-        topDirPrefix.AppendSeparator();
-
         BeFileName entryName;
         bool        isDir;
         for (BeDirectoryIterator dirs (topDir); dirs.GetCurrentEntry (entryName, isDir) == SUCCESS; dirs.ToNext())

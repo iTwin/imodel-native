@@ -476,7 +476,7 @@ public:
         REQUIRE_ARGUMENT_STRING(0, schemaName);
         auto schema = m_ecdb.Schemas().GetSchema(schemaName, true);
         if (nullptr == schema)
-            BeNapi::ThrowJsException(info.Env(), "schema not found");
+            BeNapi::ThrowJsException(info.Env(), "schema not found", (int) DgnDbStatus::NotFound);
 
         BeJsNapiObject props(info.Env());
         if (!schema->WriteToJsonValue(props))
@@ -881,6 +881,13 @@ struct ECSchemaSerializationAsyncWorker : DgnDbWorker {
         if (!schema->WriteToJsonValue(m_output))
             SetError("schema serialization error");
     }
+
+    void OnError(Napi::Error const& e) {
+        if (e.Message() == "schema not found")
+            e.Value()["errorNumber"] = (int) DgnDbStatus::NotFound;
+        DgnDbWorker::OnError(e);
+    }
+
     ECSchemaSerializationAsyncWorker(DgnDbR db, Napi::Env env, Utf8StringCR schemaName) : DgnDbWorker(db,env), m_schemaName(schemaName) {}
 };
 
@@ -1139,7 +1146,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         REQUIRE_ARGUMENT_STRING(0, schemaName);
         auto schema = m_dgndb->Schemas().GetSchema(schemaName, true);
         if (nullptr == schema)
-            BeNapi::ThrowJsException(info.Env(), "schema not found");
+            BeNapi::ThrowJsException(info.Env(), "schema not found", (int) DgnDbStatus::NotFound);
 
         BeJsNapiObject props(info.Env());
         if (!schema->WriteToJsonValue(props))
@@ -4978,6 +4985,8 @@ struct SnapRequest : BeObjectWrap<SnapRequest>
         void OnError(Napi::Error const& e) final
             {
             OnComplete();
+            if (e.Message() == "aborted")
+                e.Value()["errorNumber"] = (int) DgnDbStatus::Aborted;
             DgnDbWorker::OnError(e);
             }
 
@@ -5265,8 +5274,9 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
     RefCountedPtr<SimpleRuleSetLocater> m_supplementalRulesets;
     RefCountedPtr<SimpleRuleSetLocater> m_primaryRulesets;
     ECPresentation::JsonLocalState m_localState;
-    std::shared_ptr<IModelJsECPresentationUpdateRecordsHandler> m_updateRecords;
+    std::shared_ptr<IModelJsECPresentationUpdateRecordsHandler> m_updatesHandler;
     Napi::ThreadSafeFunction m_threadSafeFunc;
+    Napi::ThreadSafeFunction m_updateCallback;
 
     static bool InstanceOf(Napi::Value val) {
         if (!val.IsObject())
@@ -5293,7 +5303,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
             InstanceMethod("removeRuleset", &NativeECPresentationManager::RemoveRuleset),
             InstanceMethod("clearRulesets", &NativeECPresentationManager::ClearRulesets),
             InstanceMethod("handleRequest", &NativeECPresentationManager::HandleRequest),
-            InstanceMethod("getUpdateInfo", &NativeECPresentationManager::GetUpdateInfo),
             InstanceMethod("dispose", &NativeECPresentationManager::Terminate)
             });
 
@@ -5354,8 +5363,8 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         REQUIRE_ARGUMENT_ANY_OBJ(0, props);
         if (!props.Get("id").IsString())
             THROW_JS_TYPE_EXCEPTION("props.id must be a string");
-        if (!props.Get("isChangeTrackingEnabled").IsBoolean())
-            THROW_JS_TYPE_EXCEPTION("props.isChangeTrackingEnabled must be a boolean");
+        if (!props.Get("updateCallback").IsFunction())
+            THROW_JS_TYPE_EXCEPTION("props.updateCallback must be a function");
         if (!props.Get("taskAllocationsMap").IsObject())
             THROW_JS_TYPE_EXCEPTION("props.taskAllocationsMap must be an object");
         if (!props.Get("defaultFormats").IsObject())
@@ -5365,14 +5374,25 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
 
         try
             {
-            m_updateRecords = std::make_shared<IModelJsECPresentationUpdateRecordsHandler>();
+            m_updateCallback = Napi::ThreadSafeFunction::New(Env(), props.Get("updateCallback").As<Napi::Function>(), "NativeECPresentationManager data update callback", 0, 1);
+            m_updatesHandler = std::make_shared<IModelJsECPresentationUpdateRecordsHandler>([this](rapidjson::Document&& updateInfo)
+                {
+                auto updateInfoPtr = new rapidjson::Document(std::move(updateInfo));
+                m_updateCallback.BlockingCall(updateInfoPtr, [](Napi::Env env, Napi::Function jsCallback, rapidjson::Document* updateInfoPtr)
+                    {
+                    BeJsNapiObject res(env);
+                    res.From(*updateInfoPtr);
+                    jsCallback.Call({ res });
+                    delete updateInfoPtr;
+                    });
+                });
             m_presentationManager = std::unique_ptr<ECPresentationManager>(ECPresentationUtils::CreatePresentationManager(T_HOST.GetIKnownLocationsAdmin(),
-                m_localState, m_updateRecords, props));
+                m_localState, m_updatesHandler, props));
             m_supplementalRulesets = SimpleRuleSetLocater::Create();
             m_presentationManager->GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(*m_supplementalRulesets));
             m_primaryRulesets = SimpleRuleSetLocater::Create();
             m_presentationManager->GetLocaters().RegisterLocater(*NonSupplementalRuleSetLocater::Create(*m_primaryRulesets));
-            m_threadSafeFunc = Napi::ThreadSafeFunction::New(Env(), Napi::Function::New(Env(), [](NapiInfoCR info) {}), "NativeECPresentationManager", 0, 1);
+            m_threadSafeFunc = Napi::ThreadSafeFunction::New(Env(), Napi::Function::New(Env(), [](NapiInfoCR info) {}), "NativeECPresentationManager result resolver", 0, 1);
             }
         catch (std::exception const& e)
             {
@@ -5401,8 +5421,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         std::shared_ptr<ECPresentationResult> resultPtr = std::make_shared<ECPresentationResult>(std::move(result));
         m_threadSafeFunc.BlockingCall([resultPtr, deferred = std::move(deferred)](Napi::Env env, Napi::Function)
             {
-            // flush all our logs that accumulated while handling the request
-            s_jsLogger.FlushDeferred();
             deferred.Resolve(CreateReturnValue(env, *resultPtr, true));
             });
         }
@@ -5610,14 +5628,10 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         return CreateReturnValue(std::move(result));
         }
 
-    Napi::Value GetUpdateInfo(NapiInfoCR info)
-        {
-        return CreateReturnValue(ECPresentationResult(m_updateRecords->GetReport()));
-        }
-
     void Terminate(NapiInfoCR info)
         {
         m_presentationManager.reset();
+        m_updateCallback.Release();
         m_threadSafeFunc.Release();
         }
     };
@@ -5982,6 +5996,15 @@ public:
 //=======================================================================================
 struct NativeDevTools : BeObjectWrap<NativeDevTools>
 {
+    struct Finally
+    {
+    private:
+        std::function<void()> m_finallyCallback;
+    public:
+        Finally(std::function<void()> finallyCallback) : m_finallyCallback(finallyCallback) {}
+        ~Finally() {m_finallyCallback();}
+    };
+
 private:
 static Napi::Value Signal(NapiInfoCR info)
     {
@@ -5990,6 +6013,58 @@ static Napi::Value Signal(NapiInfoCR info)
     SignalType signalType = (SignalType) info[0].As<Napi::Number>().Int32Value();
     bool status = SignalTestUtility::Signal(signalType);
     return Napi::Number::New(info.Env(), status);
+    }
+static void EmitLogs(NapiInfoCR info)
+    {
+    if (info.Length() != 5)
+        THROW_JS_EXCEPTION("Must supply 5 arguments");
+    REQUIRE_ARGUMENT_UINTEGER(0, count);
+    REQUIRE_ARGUMENT_STRING(1, category);
+    if (!info[2].IsNumber())
+        THROW_JS_EXCEPTION("Argument 2 should be a number");
+    auto severity = JsLogger::JsLevelToSeverity(info[2].As<Napi::Number>());
+    REQUIRE_ARGUMENT_STRING(3, thread);
+    REQUIRE_ARGUMENT_FUNCTION(4, onDone);
+
+    auto doneCallback = Napi::ThreadSafeFunction::New(info.Env(), onDone, "Done callback", 0, 1);
+    auto doLog = [count, category, severity, doneCallback]()
+        {
+        Finally f([doneCallback]()
+            {
+            doneCallback.BlockingCall([=](Napi::Env, Napi::Function jsCallback)
+                {
+                jsCallback.Call({});
+                });
+            doneCallback.Release();
+            });
+        NativeLogging::CategoryLogger logger(category.c_str());
+        for (uint32_t i = 0; i < count; ++i)
+            {
+            logger.message(
+                severity,
+                Utf8PrintfString("[%u] ", i).append(
+                    "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. "
+                    "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. "
+                    "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. "
+                    "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+                    ).c_str()
+                );
+            BeThreadUtilities::BeSleep(1);
+            }
+        };
+    if (thread == "main")
+        {
+        doLog();
+        }
+    else if (thread == "worker")
+        {
+        std::thread workerThread([=](){ doLog(); });
+        workerThread.detach();
+        }
+    else
+        {
+        THROW_JS_EXCEPTION("Unexpected value for `thread` argument. Expecting either \"main\" or \"worker\".");
+        }
     }
 
 public:
@@ -6001,6 +6076,7 @@ static void Init(Napi::Env env, Napi::Object exports)
     Napi::HandleScope scope(env);
     Napi::Function t = DefineClass(env, "NativeDevTools", {
         StaticMethod("signal", &NativeDevTools::Signal),
+        StaticMethod("emitLogs", &NativeDevTools::EmitLogs),
     });
     exports.Set("NativeDevTools", t);
     }
@@ -6079,14 +6155,11 @@ static void setMaxTileCacheSize(NapiInfoCR info) {
   JsInterop::GetNativeLogger().error("Invalid argument for setMaxTileCacheSize: expected an unsigned integer");
 }
 
-static void flushLog(NapiInfoCR info) {
-  s_jsLogger.FlushDeferred();
-}
 static Napi::Value getLogger(NapiInfoCR info) {
-  return s_jsLogger.getJsLogger();
+  return s_jsLogger.GetJsLogger();
 }
 static void setLogger(NapiInfoCR info) {
-  s_jsLogger.setJsLogger(info);
+    s_jsLogger.SetJsLogger(info);
 }
 static void clearLogLevelCache(NapiInfoCR){
     s_jsLogger.SyncLogLevels();
@@ -6237,7 +6310,7 @@ extern "C"
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void onNodeExiting(void*) {
-    s_jsLogger.OnExit();
+    s_jsLogger.Cleanup();
     PlatformLib::Terminate(true); // for orderly shut down of static objects
 }
 
@@ -6310,14 +6383,13 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
         Napi::PropertyDescriptor::Function(env, exports, "clearLogLevelCache", &clearLogLevelCache),
         Napi::PropertyDescriptor::Function(env, exports, "computeSchemaChecksum", &computeSchemaChecksum),
         Napi::PropertyDescriptor::Function(env, exports, "enableLocalGcsFiles", &enableLocalGcsFiles),
-        Napi::PropertyDescriptor::Function(env, exports, "flushLog", &flushLog),
         Napi::PropertyDescriptor::Function(env, exports, "getCrashReportProperties", &getCrashReportProperties),
         Napi::PropertyDescriptor::Function(env, exports, "getTileVersionInfo", &getTileVersionInfo),
         Napi::PropertyDescriptor::Function(env, exports, "queryConcurrency", &queryConcurrency),
         Napi::PropertyDescriptor::Function(env, exports, "setCrashReporting", &setCrashReporting),
         Napi::PropertyDescriptor::Function(env, exports, "setCrashReportProperty", &setCrashReportProperty),
         Napi::PropertyDescriptor::Function(env, exports, "setMaxTileCacheSize", &setMaxTileCacheSize),
-});
+    });
 
     registerCloudSqlite(env, exports);
 

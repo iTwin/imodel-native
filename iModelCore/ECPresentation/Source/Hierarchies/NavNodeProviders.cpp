@@ -841,7 +841,8 @@ void NodesFinalizer::DetermineFilteringSupport(NavNodeR node) const
 
     node.SetSupportsFiltering(HierarchiesFilteringHelper::SupportsFiltering(
         &node,
-        TraverseHierarchyRulesProps(childrenContext->GetNodesFactory(), childrenContext->GetRulesPreprocessor(), childrenContext->GetRuleset(), childrenContext->GetSchemaHelper()),
+        TraverseHierarchyRulesProps(childrenContext->GetNodesCache(), childrenContext->GetNodesFactory(),
+            childrenContext->GetRulesPreprocessor(), childrenContext->GetRuleset(), childrenContext->GetSchemaHelper()),
         nullptr
         ));
     }
@@ -1553,13 +1554,13 @@ std::unique_ptr<DirectNodesIterator> CustomNodesProvider::_CreateDirectNodesIter
 
     if (m_specification.GetNodeType().empty())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, "Type is a required attribute for custom node specifications and is not set. Returning empty list.");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_ERROR, "Type is a required attribute for custom node specifications and is not set. Returning empty list.");
         return nullptr;
         }
 
     if (m_specification.GetLabel().empty())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, "Label is a required attribute for custom node specifications and is not set. Returning empty list.");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_ERROR, "Label is a required attribute for custom node specifications and is not set. Returning empty list.");
         return nullptr;
         }
 

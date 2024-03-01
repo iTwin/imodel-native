@@ -301,7 +301,7 @@ NodesPathElement NodePathsHelper::CreateNodePath(ECPresentationManager::Impl& ma
     auto parentEl = FindNode(manager, NodeByInstanceKeyRequestImplParams::Create(params.GetConnection(), params.GetCancellationToken(), params, params.GetInstanceKeyPath().front()));
     if (!parentEl.GetNode().IsValid())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, "Requested ECInstance keys path not found in hierarchy");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_ERROR, "Requested ECInstance keys path not found in hierarchy");
         return NodesPathElement();
         }
 

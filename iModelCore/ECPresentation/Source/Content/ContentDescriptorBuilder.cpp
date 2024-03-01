@@ -1055,7 +1055,7 @@ public:
         // use the field we found
         if (mergeResult.field)
             {
-            if (relatedPropertySpecsStack.back()->ShouldSkipIfDuplicate())
+            if (relatedPropertySpecsStack.back()->ShouldSkipIfDuplicate() && mergeResult.field->GetSpecificationIdentifier() != relatedPropertySpecsStack.back()->GetHash())
                 {
                 DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Found a similar related content field and we're skipping duplicate fields - skip creating the related content field.");
                 return { nullptr, nullptr, nullptr };
@@ -1089,6 +1089,7 @@ public:
             fieldAttributes.GetLabel(), pathFromSelectToContentClass, bvector<ContentDescriptor::Field*>(), fieldAttributes.ShouldAutoExpand(),
             ContentDescriptor::Property::DEFAULT_PRIORITY, actualPropertyClass.IsRelationshipClass());
 
+        relatedContentField->SetSpecificationIdentifier(relatedPropertySpecsStack.back()->GetHash());
         relatedContentField->SetActualSourceClasses(actualSourceClasses);
         relatedContentField->SetRelationshipMeaning(relatedPropertySpecsStack.back()->GetRelationshipMeaning());
 
@@ -1140,7 +1141,7 @@ static void AssignFieldNames(bmap<Utf8String, uint64_t>& requestedNameCounts, bv
             else
                 {
                 ++iter->second;
-                field->SetUniqueName(Utf8String(requestedName).append("_").append(std::to_string(iter->second)));
+                field->SetUniqueName(Utf8String(requestedName).append("/").append(std::to_string(iter->second)));
                 }
             }
         if (field->IsNestedContentField())
@@ -1408,7 +1409,7 @@ public:
             {
             auto fieldCategory = CategoriesSupplier(*m_categoriesSupplierContext).GetParentCategory(true);
             ContentDescriptor::DisplayLabelField* field = new ContentDescriptor::DisplayLabelField(fieldCategory, CommonStrings::FIELD_DISPLAYLABEL);
-            field->SetLabelOverrideSpecs(QueryBuilderHelpers::GetLabelOverrideValuesMap(GetContext().GetSchemaHelper(), GetContext().GetRulesPreprocessor().GetInstanceLabelOverrides()));
+            field->SetLabelOverrideSpecs(GetContext().GetRulesPreprocessor().GetInstanceLabelOverrides());
             m_descriptor->AddRootField(*field);
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Added display label field.");
             }

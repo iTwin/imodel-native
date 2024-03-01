@@ -3,14 +3,16 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 
+import { use as chaiuse } from "chai";
+import * as chaiAsPromised from "chai-as-promised";
 import * as fs from "fs";
 import * as Mocha from "mocha";
 import * as path from "path";
 import { Logger, LogLevel, OpenMode } from "@itwin/core-bentley";
-import { iModelJsNative } from "./utils";
-import type { UpgradeOptions } from "@itwin/core-common";
 import { IModelJsNative } from "../NativeLibrary";
+import { iModelJsNative } from "./utils";
 
+import type { UpgradeOptions } from "@itwin/core-common";
 // Run mocha tests on all *.test.ts files
 function runMochaTests() {
   const mocha = new Mocha();
@@ -30,9 +32,27 @@ function runMochaTests() {
   });
 }
 
+chaiuse(chaiAsPromised);
+
 Logger.initializeToConsole();
 Logger.setLevelDefault(LogLevel.Error);
-iModelJsNative.logger = Logger;
+iModelJsNative.logger = {
+  // note: using private Logger fields is temporary until the version of `@itwin/core-bentley` is updated
+  // to a version where Logger has them public
+  get minLevel() {
+    return (Logger as any)._minLevel;
+  },
+  get categoryFilter() {
+    return [...((Logger as any)._categoryFilter as Map<string, LogLevel>).entries()].reduce(
+      (categoryFilter, [categoryName, logLevel]) => ({ ...categoryFilter, [categoryName]: logLevel }),
+      {},
+    );
+  },
+  logTrace: (c, m) => Logger.logTrace(c, m),
+  logInfo: (c, m) => Logger.logInfo(c, m),
+  logWarning: (c, m) => Logger.logWarning(c, m),
+  logError: (c, m) => Logger.logError(c, m),
+};
 
 export function openDgnDb(filename: string, upgradeOptions?: UpgradeOptions & IModelJsNative.SchemaImportOptions) {
   const db = new iModelJsNative.DgnDb();

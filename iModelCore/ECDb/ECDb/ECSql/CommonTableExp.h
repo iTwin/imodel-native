@@ -46,7 +46,7 @@ struct CommonTableBlockExp: RangeClassRefExp {
         void _ToECSql(ECSqlRenderContext&) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
-
+        void _OnAliasChanged() override {}
         // RangeClass
         Utf8StringCR _GetId() const override;
         void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
@@ -95,6 +95,7 @@ struct CommonTableBlockNameExp final : RangeClassRefExp {
         void _ToECSql(ECSqlRenderContext&) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString () const override;
+        void _OnAliasChanged() override {}
 
         // RangeClass
         Utf8StringCR _GetId() const override;

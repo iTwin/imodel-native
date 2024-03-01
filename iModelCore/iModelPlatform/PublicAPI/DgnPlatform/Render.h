@@ -2036,8 +2036,10 @@ private:
         }
 
     static uint16_t Encode(DVec3dCR vec)
-        {
+        {				
+#if !defined(NDEBUG)
         VerifyNormalized(vec);
+#endif
         double denom = std::fabs(vec.x) + std::fabs(vec.y) + std::fabs(vec.z),
                rx = vec.x / denom,
                ry = vec.y / denom;
@@ -2049,18 +2051,16 @@ private:
             }
 
         uint16_t value = ToUInt16(ry) << 8 | ToUInt16(rx);
+		
+#if !defined(NDEBUG)
         VerifyEncoded(value, vec);
-
+#endif
         return value;
         }
 
-#if !defined(NDEBUG)
     DGNPLATFORM_EXPORT static void VerifyNormalized(DVec3dCR);
     DGNPLATFORM_EXPORT static void VerifyEncoded(uint16_t encoded, DVec3dCR input);
-#else
-    static void VerifyNormalized(DVec3dCR) { }
-    static void VerifyEncoded(uint16_t, DVec3dCR) { }
-#endif
+	
 public:
     //! Directly initialize from a previously-computed oct-encoding.
     void InitFrom(uint16_t value) { m_value = value; }

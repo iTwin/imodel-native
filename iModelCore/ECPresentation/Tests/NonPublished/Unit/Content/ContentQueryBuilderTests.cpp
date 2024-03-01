@@ -242,16 +242,6 @@ ContentDescriptorPtr ContentQueryBuilderTests::GetEmptyContentDescriptor(Utf8CP 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bmap<ECClassCP, bvector<InstanceLabelOverride const*>> ContentQueryBuilderTests::CreateLabelOverrideSpecificationsMap(ECClassCR ecClass, InstanceLabelOverride const& spec)
-    {
-    bmap<ECClassCP, bvector<InstanceLabelOverride const*>> labelOverrideMap;
-    labelOverrideMap.Insert(&ecClass, { &spec });
-    return labelOverrideMap;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 RelatedClassPath ContentQueryBuilderTests::ReverseRelationshipPath(RelatedClassPath path, Utf8CP targetClassAlias, bool isTargetPolymorphic)
     {
     path.Reverse(targetClassAlias, isTargetPolymorphic);

@@ -388,7 +388,7 @@ GEOMDLLIMPEXP bool MinMax (int &minValue, int &maxValue) const;
 
 GEOMDLLIMPEXP void AppendShifted (BlockedVectorInt const & source, int shift);
 
-//! enumeration for sign change effects on indices after reversal by ReverseIndicesOneFace and ReverseIndicesAllFaces
+//! enumeration for sign change effects on normal indices after reversal by ReverseIndicesOneFace and ReverseIndicesAllFaces
 enum IndexAction
     {
     None,
@@ -949,7 +949,7 @@ GEOMDLLIMPEXP DRange2d ParamRange () const;
 //! @remarks A face loop is reversed after the 1st index: the 2nd/last indices are swapped, the 3rd/penultimate indices are swapped, etc.
 //! @param [in] iFirst       0-based offset to the first index in the face loop
 //! @param [in] iLast       0-based offset to the last index of the face loop.
-//! @param [in] normalArrayIndexAction  selects action in normal array. This can be
+//! @param [in] normalArrayIndexAction  selects action in normal index array. This can be
 //! <ul>
 //! <li>IndexAction::None -- leave the index value unchanged
 //! <li>IndexAction::ForcePositive -- change to positive
@@ -984,11 +984,21 @@ bool           flipUnMarked = true,
 BlockedVectorInt::IndexAction normalIndexAction = BlockedVectorInt::None
 );
 
+//! Reverse mesh face loop orientations so that inferred normals point outward (if mesh is volumetric) or into same half-space as surfaceNormal (if mesh is non-volumetric).
+//! @remarks Input mesh facets are assumed to be consistently oriented.
+//! @see CloneWithConsistentlyOrientedFacets, IsFacetOrientationConsistent
+//! @param [in] surfaceNormal optional direction for orienting the facets of a non-volumetric mesh. If not supplied and mesh is non-volumetric, return false.  
+//! @return whether the mesh was reversed
+GEOMDLLIMPEXP bool ReverseIndicesWithTest(DVec3dCP surfaceNormal = nullptr);
 
+//! Test whether facets are oriented consistently by matching interior edges.
+//! @remarks Normals (inferred or auxiliary) are ignored.
+//! @remarks Consistently oriented facets satisfy the following heuristic: the number of pairs of matched undirected edges equals the number of pairs of opposite directed edges.
+//! @remarks For best results, mesh vertices should be unique, i.e., different absolute vertex indices refer to different vertices.
+//! @see CloneWithConsistentlyOrientedFacets, ReverseIndicesWithTest
+//! @return whether the facets are consistently oriented
+GEOMDLLIMPEXP bool IsFacetOrientationConsistent() const;
 
-
-
-//!
 //! Inspect edge-to-face incidence.
 //! @param [out] numPolygonEdge Total number of sides on all polygons. (i.e. each interior edge is counted twice in the usual case of an edge shared by two polygons.)
 //! @param [out] numMatedPair number of edges with exactly two incident faces, with the faces in the properly opposing orientation.
@@ -998,7 +1008,7 @@ BlockedVectorInt::IndexAction normalIndexAction = BlockedVectorInt::None
 //! @param [out] num4 Number of edges with 4 incident faces.
 //! @param [out] numMore Number of edges with 5 or more incident faces.
 //! @param [out] numCollapsed Number of polygon sides collapsed to points.
-//! @param [out] ignoreSliverFaces supresses counting edges on sliver faces
+//! @param [out] ignoreSliverFaces suppresses counting edges on sliver faces
 //! @param [out] numWith0Visible number of edge clusters with none visible
 //! @param [out] numwith1OrMoreVisible number of edge clusters with 1 or more visible.
 //!
@@ -1012,9 +1022,9 @@ GEOMDLLIMPEXP void CountSharedEdges (size_t &numPolygonEdge, size_t &numMatedPai
     size_t &num1, size_t &num2, size_t &num3, size_t &num4, size_t &numMore, size_t &numCollapsed,
     bool ignoreSliverFaces) const;
 
-
 GEOMDLLIMPEXP void CountSharedEdges (size_t &numPolygonEdge, size_t &numMatedPair,
     size_t &num1, size_t &num2, size_t &num3, size_t &num4, size_t &numMore, size_t &numCollapsed) const;
+
 //! @param [out] numVertex number of vertices
 //! @param [out] numFacet number of facets
 //! @param [out] numQuad number of 4-sided facets.
@@ -1032,7 +1042,6 @@ size_t &numImplicitTriangle,
 size_t &numVisibleEdges,
 size_t &numInvisibleEdges
 ) const;
-
 
 //! @param [out] minPerFace smallest count.
 //! @param [out] maxPerFace largest count.
@@ -2406,6 +2415,12 @@ GEOMDLLIMPEXP PolyfaceHeaderPtr CloneWithIndexedDuplicatesRemoved () const;
 //! </ul>
 GEOMDLLIMPEXP PolyfaceHeaderPtr CloneWithDegenerateFacetsRemoved() const;
 
+//! Clone the mesh with facets reoriented consistently.
+//! @remarks All auxiliary data is stripped.
+//! @see IsFacetOrientationConsistent, ReverseIndicesWithTest
+//! @param [in] surfaceNormal optional direction for orienting the facets of a non-volumetric mesh
+GEOMDLLIMPEXP PolyfaceHeaderPtr CloneWithConsistentlyOrientedFacets(DVec3dCP surfaceNormal = nullptr) const;
+
 //! Clone the mesh with facets in random order.
 GEOMDLLIMPEXP PolyfaceHeaderPtr CloneWithFacetsInRandomOrder() const;
 
@@ -2604,7 +2619,7 @@ GEOMDLLIMPEXP void ClearNormals (bool active);
 //! @param [in] active active state (true/false) to be applied after clearing.
 GEOMDLLIMPEXP void ClearParameters (bool active);
 
-//! Compute a normal vector for each faceet.   Install indices.
+//! Compute a normal vector for each facet.   Install indices.
 GEOMDLLIMPEXP bool BuildPerFaceNormals ();
 
 //! Compute face data for each facet.
