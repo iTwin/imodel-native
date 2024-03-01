@@ -48,6 +48,25 @@ ECSchemaCP SchemaMerger::FindSchemaByName(bvector<ECSchemaCP> const& schemas, Ut
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus SchemaMerger::ValidateUniqueSchemaNames(bvector<ECSchemaCP> const& schemas)
+    {
+    std::unordered_set<BentleyM0200::Utf8StringCR> schemaNames;
+
+    for(const auto& schema : schemas)
+        {
+        if(schema == nullptr)
+            continue;
+
+        auto name = schema->GetName();
+        if(!schemaNames.emplace(name).second) return BentleyStatus::ERROR;
+        }
+
+    return BentleyStatus::SUCCESS;
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 template <typename T, typename TSetter, typename TParent> //TSetter may differ from T, being the const or reference version of T
 BentleyStatus SchemaMerger::MergePrimitive(PrimitiveChange<T>& change, TParent* parent, ECObjectsStatus(TParent::*setPrimitive)(TSetter), Utf8CP parentKey, SchemaMergeResult& result, SchemaMergeOptions const& options, bool preferLeftValue)
     {
@@ -224,6 +243,24 @@ BentleyStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSc
         ECSchema::SortSchemasInDependencyOrder(left);
         ECSchema::SortSchemasInDependencyOrder(right);
         }
+    else
+        {
+        bool isValid = true;
+        if(SchemaMerger::ValidateUniqueSchemaNames(left) != BentleyStatus::SUCCESS)
+            {
+            result.Issues().ReportV(IssueSeverity::Fatal, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0060,
+                "At least a single existing schema name was non-unique.");
+            isValid = false;
+            }
+        if(SchemaMerger::ValidateUniqueSchemaNames(right) != BentleyStatus::SUCCESS)
+            {
+            result.Issues().ReportV(IssueSeverity::Fatal, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0060,
+                "At least a single schema to be merged name was non-unique.");
+            isValid = false;
+            }
+        if(!isValid) return BentleyStatus::ERROR;
+        }
+
     bool dumpSchemas = false;
     auto dumpLocation = options.GetDumpSchemaLocation();
 
@@ -280,6 +317,13 @@ BentleyStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSc
     fillSchemasToResult("right", right);
     if(failedToFillSchemas)
         return BentleyStatus::ERROR;
+
+     if(!doNotMergeReferences && SchemaMerger::ValidateUniqueSchemaNames(result.GetResults()) != BentleyStatus::SUCCESS)
+        {
+        result.Issues().ReportV(IssueSeverity::Fatal, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0060,
+            "Schema merge result included matching schema entries.");
+        return BentleyStatus::ERROR;
+        }
 
     SchemaComparer comparer;
     SchemaComparer::Options comparerOptions = SchemaComparer::Options(SchemaComparer::DetailLevel::NoSchemaElements, SchemaComparer::DetailLevel::NoSchemaElements);

@@ -167,6 +167,7 @@ private:
     template <typename T>
     static BentleyStatus MergeReferencedSchemaItem(SchemaMergeResult& result, StringChange& change, SchemaItemSetterFunc<T> setterFunc, SchemaItemGetterFunc<T> getterFunc, Utf8CP parentKey, SchemaMergeOptions const& options);
     static ECSchemaCP FindSchemaByName(bvector<ECSchemaCP> const& schemas, Utf8CP schemaName);
+    static BentleyStatus ValidateUniqueSchemaNames(bvector<ECSchemaCP> const& schemas);
 };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
