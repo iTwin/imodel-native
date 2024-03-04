@@ -1860,7 +1860,7 @@ bool Check::NearRoundTrip(IGeometryCR g, double tolerance, char const* pString)
     IGeometryPtr g1;
     BentleyGeometryFlatBuffer::GeometryToBytes(g, buffer);
     if (Check::False(buffer.empty(), (myString + "convert geometry to flatbuffer").c_str()) &&
-        Check::True((g1 = BentleyGeometryFlatBuffer::BytesToGeometry(buffer.data())).IsValid(), (myString + "convert flatbuffer to geometry").c_str()))
+        Check::True((g1 = BentleyGeometryFlatBuffer::BytesToGeometry(buffer)).IsValid(), (myString + "convert flatbuffer to geometry").c_str()))
         {
         roundTripFB = Check::True(g.IsSameStructureAndGeometry(*g1, tolerance), (myString + "geometry roundtrips through flatbuffer").c_str());
         }

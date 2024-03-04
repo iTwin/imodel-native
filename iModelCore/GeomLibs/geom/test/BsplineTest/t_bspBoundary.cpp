@@ -1153,7 +1153,7 @@ TEST(bsptrim, IvanSurface)
 
     bvector<Byte> buffer;
     BentleyGeometryFlatBuffer::GeometryToBytes(*surface, buffer);
-    MSBsplineSurfacePtr surfaceRoundtripped = BentleyGeometryFlatBuffer::BytesToMSBsplineSurfaceSafe(buffer.data(), buffer.size());
+    MSBsplineSurfacePtr surfaceRoundtripped = BentleyGeometryFlatBuffer::BytesToMSBsplineSurface(buffer.data(), buffer.size());
     Check::True(surface->IsSameStructureAndGeometry(*surfaceRoundtripped, 0.0), "Surface successfully roundtripped through flatbuffer");
 
     auto range = surface->TrimmedSurfaceRange(nullptr, 0.2, true);
@@ -1265,7 +1265,7 @@ TEST(bsptrim, IvanSurface2)
 
     bvector<Byte> buffer;
     BentleyGeometryFlatBuffer::GeometryToBytes(*surface, buffer);
-    MSBsplineSurfacePtr surfaceRoundtripped = BentleyGeometryFlatBuffer::BytesToMSBsplineSurfaceSafe(buffer.data(), buffer.size());
+    MSBsplineSurfacePtr surfaceRoundtripped = BentleyGeometryFlatBuffer::BytesToMSBsplineSurface(buffer.data(), buffer.size());
     Check::True(surface->IsSameStructureAndGeometry(*surfaceRoundtripped, 0.0), "Surface successfully roundtripped through flatbuffer");
 
     auto range = surface->TrimmedSurfaceRange(nullptr, 0.2, true);
@@ -1368,7 +1368,7 @@ TEST(bsptrim, MikeSurface)
 
     bvector<Byte> buffer;
     BentleyGeometryFlatBuffer::GeometryToBytes(*surface, buffer);
-    MSBsplineSurfacePtr surfaceRoundtripped = BentleyGeometryFlatBuffer::BytesToMSBsplineSurfaceSafe(buffer.data(), buffer.size());
+    MSBsplineSurfacePtr surfaceRoundtripped = BentleyGeometryFlatBuffer::BytesToMSBsplineSurface(buffer.data(), buffer.size());
     Check::True(surface->IsSameStructureAndGeometry(*surfaceRoundtripped, 0.0), "Surface successfully roundtripped through flatbuffer");
 
     // The trim boundary encloses zero area, and since holeOrigin == true, what's inside the loop survives, which is nothing.
@@ -1400,7 +1400,7 @@ TEST(bsptrim, EugeneSurface)
                 {
                 bvector<Byte> buffer;
                 BentleyGeometryFlatBuffer::GeometryToBytes(*surface, buffer);
-                MSBsplineSurfacePtr surfaceRoundtripped = BentleyGeometryFlatBuffer::BytesToMSBsplineSurfaceSafe(buffer.data(), buffer.size());
+                MSBsplineSurfacePtr surfaceRoundtripped = BentleyGeometryFlatBuffer::BytesToMSBsplineSurface(buffer.data(), buffer.size());
                 Check::True(surface->IsSameStructureAndGeometry(*surfaceRoundtripped, 0.0), "Surface successfully roundtripped through flatbuffer");
 
                 auto range = surface->TrimmedSurfaceRange(nullptr, 0.2, true);

@@ -78,10 +78,10 @@ bool ReadIModelBytes(bvector<Byte> &buffer, BeFileName dataPath)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(IModelJson,BytesToGeometrySafe)
+TEST(IModelJson,BytesToXXX)
     {
-    // if (!Check::GetEnableLongTests())
-    //     return;
+    if (!Check::GetEnableLongTests())
+        return;
     BeFileName directoryPath;
     BeTest::GetHost().GetDocumentsRoot(directoryPath);
     directoryPath.AppendToPath(L"GeomLibsTestData");
@@ -90,28 +90,29 @@ TEST(IModelJson,BytesToGeometrySafe)
     for (const auto &entry : std::filesystem::directory_iterator(dirPath))
     {
         auto filePath = BeFileName(entry.path().c_str());
+    // commented out lines below are kept for debug purposes
     // for (auto filePath :
     //      bvector<BeFileName>{
-            //  BeFileName("d:\\repos\\imodel-native\\out\\Winx64\\Product\\GeomLibs-Gtest\\Assets\\Documents\\GeomLibsTestData\\CrashFiles\\crash-3f1f74a88c98ce5125cb489fc404538beca8e7ac"),
-            //  BeFileName("d:\\repos\\imodel-native\\out\\Winx64\\Product\\GeomLibs-Gtest\\Assets\\Documents\\GeomLibsTestData\\CrashFiles\\crash-98a3d9aa91aa1925478b6bc6fe129914f9c539e1"),
-        //  })
-        // {
+    //          BeFileName("d:\\repos\\imodel-native\\out\\Winx64\\Product\\GeomLibs-Gtest\\Assets\\Documents\\GeomLibsTestData\\CrashFiles\\crash-3f1f74a88c98ce5125cb489fc404538beca8e7ac"),
+    //          BeFileName("d:\\repos\\imodel-native\\out\\Winx64\\Product\\GeomLibs-Gtest\\Assets\\Documents\\GeomLibsTestData\\CrashFiles\\crash-98a3d9aa91aa1925478b6bc6fe129914f9c539e1"),
+    //      })
+    //     {
         bvector<Byte> buffer;
         if (Check::True(ReadIModelBytes(buffer, filePath)))
             {
             IGeometryPtr g;
-            g = BentleyGeometryFlatBuffer::BytesToGeometrySafe(buffer.data(), buffer.size());
+            g = BentleyGeometryFlatBuffer::BytesToGeometry(buffer.data(), buffer.size());
             if (g != nullptr)
-                Check::Fail("expect BytesToGeometrySafe to return nullptr for invalid bytes");
+                Check::Fail("expect BytesToGeometry to return nullptr for invalid bytes");
             bool ret;
             bvector<IGeometryPtr> dest;
             ret = BentleyGeometryFlatBuffer::BytesToVectorOfGeometry(buffer, dest);
             if (ret)
                 Check::Fail("expect BytesToVectorOfGeometry to return false for invalid bytes");
             PolyfaceQueryCarrier carrier(0, false, 0, 0, nullptr, nullptr);
-            ret = BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrierSafe(buffer.data(), buffer.size(), carrier);
+            ret = BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(buffer.data(), buffer.size(), carrier);
             if (ret)
-                Check::Fail("expect BytesToPolyfaceQueryCarrierSafe to return false for invalid bytes");
+                Check::Fail("expect BytesToPolyfaceQueryCarrier to return false for invalid bytes");
             }
         }
     }
@@ -413,7 +414,7 @@ PolyfaceHeaderPtr RoundTripMeshQueryCarrier(PolyfaceHeaderPtr & meshA)
     BentleyGeometryFlatBuffer::GeometryToBytes(*IGeometry::Create(meshA), bytes);
     bvector<IGeometryPtr> geometryC;
     PolyfaceQueryCarrier carrier(0, false, 0, 0, nullptr, nullptr);
-    if (Check::True (BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrierSafe(bytes.data(), bytes.size(),carrier, false), "Bytes to QueryCarrier"))
+    if (Check::True (BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(bytes.data(), bytes.size(),carrier, false), "Bytes to QueryCarrier"))
         {
         auto meshC = carrier.CloneAsVariableSizeIndexed (carrier);
         if (Check::True (meshC.IsValid ()))

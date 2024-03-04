@@ -1954,44 +1954,8 @@ bool BentleyGeometryFlatBuffer::IsFlatBufferFormat(Byte const *buffer)
         return nullptr != fbStart;
     }
 
-#define IMPLEMENT_BytesToXXX(PtrName,MethodName,ReaderMethodName) \
-PtrName BentleyGeometryFlatBuffer::MethodName (Byte const *buffer, bool applyValidation) \
-    {\
-    if (nullptr == buffer)\
-        return nullptr;\
-    Byte const* fbStart = GetFBStart (buffer);\
-    if (nullptr == fbStart)\
-        return nullptr;\
-    auto fbRoot = flatbuffers::GetRoot <BGFB::VariantGeometry>(fbStart);\
-    if (nullptr != fbRoot\
-        && fbRoot->has_geometry_type ()\
-        && fbRoot->has_geometry ()\
-        )\
-        {\
-        PtrName result = FBReader::ReaderMethodName (fbRoot);\
-        if (result.IsValid ())\
-            {\
-            if (applyValidation && s_readValidator.IsValid ())\
-                {\
-                if (!result->IsValidGeometry (s_readValidator))\
-                    return nullptr;\
-                }\
-            return result;\
-            }\
-        }\
-    return nullptr;\
-    }
-
-// below macros are deprecated in 4.x
-IMPLEMENT_BytesToXXX(IGeometryPtr,BytesToGeometry,ReadGeometry)
-IMPLEMENT_BytesToXXX(ISolidPrimitivePtr,BytesToSolidPrimitive,ReadSolidPrimitive)
-IMPLEMENT_BytesToXXX(ICurvePrimitivePtr,BytesToCurvePrimitive,ReadCurvePrimitive)
-IMPLEMENT_BytesToXXX(CurveVectorPtr,BytesToCurveVector,ReadCurveVector)
-IMPLEMENT_BytesToXXX(PolyfaceHeaderPtr,BytesToPolyfaceHeader,ReadPolyfaceHeader)
-IMPLEMENT_BytesToXXX(MSBsplineSurfacePtr,BytesToMSBsplineSurface,ReadMSBsplineSurface)
-
 template <typename PtrType, typename ReaderMethodType>
-PtrType BytesToXXXSafe(Byte const *buffer, size_t const bufferSize, bool applyValidation, ReaderMethodType readerMethod)
+PtrType BytesToXXX(Byte const *buffer, size_t const bufferSize, bool applyValidation, ReaderMethodType readerMethod)
     {
     if (nullptr == buffer)
         return nullptr;
@@ -2016,39 +1980,39 @@ PtrType BytesToXXXSafe(Byte const *buffer, size_t const bufferSize, bool applyVa
     return nullptr;
     }
 
-IGeometryPtr BentleyGeometryFlatBuffer::BytesToGeometrySafe(Byte const *buffer, size_t const bufferSize, bool applyValidation)
+IGeometryPtr BentleyGeometryFlatBuffer::BytesToGeometry(Byte const *buffer, size_t const bufferSize, bool applyValidation)
     {
-    return BytesToXXXSafe<IGeometryPtr>(buffer, bufferSize, applyValidation, FBReader::ReadGeometry);
+    return BytesToXXX<IGeometryPtr>(buffer, bufferSize, applyValidation, FBReader::ReadGeometry);
     }
 
 IGeometryPtr BentleyGeometryFlatBuffer::BytesToGeometry (bvector<Byte> &buffer, bool applyValidation)
     {
-    return BytesToGeometrySafe(buffer.data(), buffer.size(), applyValidation);
+    return BytesToGeometry(buffer.data(), buffer.size(), applyValidation);
     }
 
-ISolidPrimitivePtr BentleyGeometryFlatBuffer::BytesToSolidPrimitiveSafe(Byte const *buffer, size_t const bufferSize, bool applyValidation)
+ISolidPrimitivePtr BentleyGeometryFlatBuffer::BytesToSolidPrimitive(Byte const *buffer, size_t const bufferSize, bool applyValidation)
     {
-    return BytesToXXXSafe<ISolidPrimitivePtr>(buffer, bufferSize, applyValidation, FBReader::ReadSolidPrimitive);
+    return BytesToXXX<ISolidPrimitivePtr>(buffer, bufferSize, applyValidation, FBReader::ReadSolidPrimitive);
     }
 
-ICurvePrimitivePtr BentleyGeometryFlatBuffer::BytesToCurvePrimitiveSafe(Byte const *buffer, size_t const bufferSize, bool applyValidation)
+ICurvePrimitivePtr BentleyGeometryFlatBuffer::BytesToCurvePrimitive(Byte const *buffer, size_t const bufferSize, bool applyValidation)
     {
-    return BytesToXXXSafe<ICurvePrimitivePtr>(buffer, bufferSize, applyValidation, FBReader::ReadCurvePrimitive);
+    return BytesToXXX<ICurvePrimitivePtr>(buffer, bufferSize, applyValidation, FBReader::ReadCurvePrimitive);
     }
 
-CurveVectorPtr BentleyGeometryFlatBuffer::BytesToCurveVectorSafe(Byte const *buffer, size_t const bufferSize, bool applyValidation)
+CurveVectorPtr BentleyGeometryFlatBuffer::BytesToCurveVector(Byte const *buffer, size_t const bufferSize, bool applyValidation)
     {
-    return BytesToXXXSafe<CurveVectorPtr>(buffer, bufferSize, applyValidation, FBReader::ReadCurveVector);
+    return BytesToXXX<CurveVectorPtr>(buffer, bufferSize, applyValidation, FBReader::ReadCurveVector);
     }
 
-PolyfaceHeaderPtr BentleyGeometryFlatBuffer::BytesToPolyfaceHeaderSafe(Byte const *buffer, size_t const bufferSize, bool applyValidation)
+PolyfaceHeaderPtr BentleyGeometryFlatBuffer::BytesToPolyfaceHeader(Byte const *buffer, size_t const bufferSize, bool applyValidation)
     {
-    return BytesToXXXSafe<PolyfaceHeaderPtr>(buffer, bufferSize, applyValidation, FBReader::ReadPolyfaceHeader);
+    return BytesToXXX<PolyfaceHeaderPtr>(buffer, bufferSize, applyValidation, FBReader::ReadPolyfaceHeader);
     }
 
-MSBsplineSurfacePtr BentleyGeometryFlatBuffer::BytesToMSBsplineSurfaceSafe(Byte const *buffer, size_t const bufferSize, bool applyValidation)
+MSBsplineSurfacePtr BentleyGeometryFlatBuffer::BytesToMSBsplineSurface(Byte const *buffer, size_t const bufferSize, bool applyValidation)
     {
-    return BytesToXXXSafe<MSBsplineSurfacePtr>(buffer, bufferSize, applyValidation, FBReader::ReadMSBsplineSurface);
+    return BytesToXXX<MSBsplineSurfacePtr>(buffer, bufferSize, applyValidation, FBReader::ReadMSBsplineSurface);
     }
 
 bool BentleyGeometryFlatBuffer::BytesToVectorOfGeometry
@@ -2082,32 +2046,6 @@ bool BentleyGeometryFlatBuffer::BytesToVectorOfGeometry
     }
 
 bool BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier
-(
-    Byte const *buffer,
-    PolyfaceQueryCarrier &carrier,
-    bool applyValidation
-)
-    {
-    if (nullptr == buffer)
-        return false;
-    Byte const* fbStart = GetFBStart (buffer);
-    if (nullptr == fbStart)
-        return false;
-    auto fbRoot = flatbuffers::GetRoot <BGFB::VariantGeometry>(fbStart);
-    if (nullptr != fbRoot && fbRoot->has_geometry_type () && fbRoot->has_geometry ())
-        {
-        if (BGFB::VariantGeometryUnion_Polyface != fbRoot->geometry_type())
-            return false;
-        auto result = FBReader::ReadPolyfaceQueryCarrierDirect (
-                    reinterpret_cast <const BGFB::Polyface *> (fbRoot->geometry ()),
-                    carrier);
-        if (result && (!applyValidation || carrier.IsValidGeometry (s_readValidator)))
-            return true;
-        }
-    return false;
-    }
-
-bool BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrierSafe
 (
     Byte const *buffer,
     size_t const bufferSize,

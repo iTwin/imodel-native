@@ -251,7 +251,7 @@ IGeometryPtr ArrayECSqlField::JsonECSqlValue::_GetGeometry() const
     int blobSize = -1;
     void const* fbBlob = _GetBlob(&blobSize);
 
-    return BentleyGeometryFlatBuffer::BytesToGeometrySafe((Byte const *)fbBlob, blobSize, true);
+    return BentleyGeometryFlatBuffer::BytesToGeometry((Byte const *)fbBlob, blobSize, true);
     }
 
 //---------------------------------------------------------------------------------------
