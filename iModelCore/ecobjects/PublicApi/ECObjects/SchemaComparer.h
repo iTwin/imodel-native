@@ -978,6 +978,7 @@ struct CustomAttributeValidator final : NonCopyableClass
         {
         New = 1,
         Modified = 2,
+        AddOrUpdate = New | Modified,
         Delete = 4,
         All = New | Modified | Delete,
         };

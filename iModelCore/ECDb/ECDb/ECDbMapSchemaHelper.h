@@ -258,6 +258,8 @@ struct DbIndexListCustomAttribute final
                 //! Gets the list of property names on which the index is to be defined.
                 //! @return Properties on which the index is defined.
                 std::vector<Utf8String> const& GetProperties() const { return m_properties; }
+
+                void SetIndexName(Utf8StringCR indexName) { m_name = indexName; }
             };
 
     private:
