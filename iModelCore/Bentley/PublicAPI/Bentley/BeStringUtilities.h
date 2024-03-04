@@ -6,6 +6,7 @@
 
 #include "Bentley.h"
 #include "bvector.h"
+#include "BeAssert.h"
 #include "NonCopyableClass.h"
 #include "CodePages.h"
 #include <stdarg.h>
@@ -28,6 +29,18 @@ enum class HexFormatOptions
     Uppercase         = 1 << 2,       // Use uppercase hexadecimal digits; also affects case of prefix. Analogous to "%X" printf specifier.
     LeadingZeros      = 1 << 3,       // Pad with leading zeros to meet minimum precision and/or width. Analogous to '0' printf option.
     UsePrecision      = 1 << 4,       // Without this option, default precision of 1 is used and leading zeros are applied to fulfill minimum width based on HexFormatOptions::LeadingZeros option.
+    };
+
+//=======================================================================================
+// For case-insensitive UTF-8 string comparisons in STL collections that only use ASCII
+// strings
+// @bsistruct
+//+===============+===============+===============+===============+===============+======
+struct CompareIUtf8Ascii
+    {
+    bool operator()(Utf8CP s1, Utf8CP s2) const { return BeStringUtilities::StricmpAscii(s1, s2) < 0; }
+    bool operator()(Utf8StringCR s1, Utf8StringCR s2) const { return BeStringUtilities::StricmpAscii(s1.c_str(), s2.c_str()) < 0;  }
+    bool operator()(Utf8StringCP s1, Utf8StringCP s2) const { BeAssert(s1 != nullptr && s2 != nullptr); return BeStringUtilities::StricmpAscii(s1->c_str(), s2->c_str()) < 0; }
     };
 
 /**

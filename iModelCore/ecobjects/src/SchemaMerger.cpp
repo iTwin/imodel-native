@@ -50,9 +50,9 @@ ECSchemaCP SchemaMerger::FindSchemaByName(bvector<ECSchemaCP> const& schemas, Ut
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus SchemaMerger::ValidateUniqueSchemaNames(bvector<ECSchemaCP> const& schemas)
     {
-    std::unordered_set<BentleyM0200::Utf8StringCR> schemaNames;
+    bset<Utf8StringCP, CompareIUtf8Ascii> schemaNames;
 
-    for(const auto& schema : schemas)
+    for(auto schema : schemas)
         {
         if(schema == nullptr)
             continue;
