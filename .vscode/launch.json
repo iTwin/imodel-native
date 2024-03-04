@@ -105,7 +105,7 @@
             "program": "${env:OutRoot}Winx64/Product/ECObjects-Gtest/ECObjectsTest.exe",
             "args": [
                 "--gtest_break_on_failure",
-                "--gtest_filter=*.ReferencesInWrongOrder"
+                "--gtest_filter=SchemaJsonSerializationTest.SchemaWithItems"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
