@@ -4,7 +4,7 @@ trigger:
   branches:
     include:
     - main
-    # - release/* #FIXME: double check logic still works for this
+
   paths:
     exclude:
     - iModelJsNodeAddon/package_version.txt
