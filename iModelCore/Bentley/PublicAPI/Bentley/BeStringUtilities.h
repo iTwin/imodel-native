@@ -606,9 +606,9 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct CompareIUtf8Ascii
     {
-    bool operator()(Utf8CP s1, Utf8CP s2) const;
-    bool operator()(Utf8StringCR s1, Utf8StringCR s2) const;
-    bool operator()(Utf8StringCP s1, Utf8StringCP s2) const;
+    BENTLEYDLL_EXPORT bool operator()(Utf8CP s1, Utf8CP s2) const;
+    BENTLEYDLL_EXPORT bool operator()(Utf8StringCR s1, Utf8StringCR s2) const;
+    BENTLEYDLL_EXPORT bool operator()(Utf8StringCP s1, Utf8StringCP s2) const;
     };
 
 END_BENTLEY_NAMESPACE
