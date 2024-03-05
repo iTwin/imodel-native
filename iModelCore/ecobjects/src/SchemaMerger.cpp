@@ -47,7 +47,7 @@ ECSchemaCP SchemaMerger::FindSchemaByName(bvector<ECSchemaCP> const& schemas, Ut
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
-//---------------+---------------+---------------+---------------+---------------+-------
+//---------------------------------------------------------------------------------------
 BentleyStatus SchemaMerger::ValidateUniqueSchemaNames(bvector<ECSchemaCP> const& schemas)
     {
     bset<Utf8CP, CompareIUtf8Ascii> schemaNames;
@@ -57,7 +57,7 @@ BentleyStatus SchemaMerger::ValidateUniqueSchemaNames(bvector<ECSchemaCP> const&
         if(schema == nullptr)
             continue;
 
-        if(!schemaNames.emplace(schema->GetName().c_str()).second) return BentleyStatus::ERROR;
+        if(!schemaNames.insert(schema->GetName().c_str()).second) return BentleyStatus::ERROR;
         }
 
     return BentleyStatus::SUCCESS;

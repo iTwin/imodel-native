@@ -30,18 +30,6 @@ enum class HexFormatOptions
     UsePrecision      = 1 << 4,       // Without this option, default precision of 1 is used and leading zeros are applied to fulfill minimum width based on HexFormatOptions::LeadingZeros option.
     };
 
-//=======================================================================================
-// For case-insensitive UTF-8 string comparisons in STL collections that only use ASCII
-// strings
-// @bsistruct
-//+===============+===============+===============+===============+===============+======
-struct CompareIUtf8Ascii
-    {
-    bool operator()(Utf8CP s1, Utf8CP s2) const;
-    bool operator()(Utf8StringCR s1, Utf8StringCR s2) const;
-    bool operator()(Utf8StringCP s1, Utf8StringCP s2) const;
-    };
-
 /**
 * @addtogroup GROUP_String Text String Module
 * Cross-platform utilities for working with text strings.
@@ -610,5 +598,17 @@ public:
     //! This does NOT ensure the string accurately represents what the user intends, however it can be used to discard obviously corrupt data.
     BENTLEYDLL_EXPORT static bool IsInvalidUtf8Sequence(Utf8CP);
 };
+
+//=======================================================================================
+// For case-insensitive UTF-8 string comparisons in STL collections that only use ASCII
+// strings
+// @bsistruct
+//+===============+===============+===============+===============+===============+======
+struct CompareIUtf8Ascii
+    {
+    bool operator()(Utf8CP s1, Utf8CP s2) const;
+    bool operator()(Utf8StringCR s1, Utf8StringCR s2) const;
+    bool operator()(Utf8StringCP s1, Utf8StringCP s2) const;
+    };
 
 END_BENTLEY_NAMESPACE
