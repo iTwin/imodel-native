@@ -603,7 +603,7 @@ export declare namespace IModelJsNative {
     public isTxnIdValid(txnId: TxnIdString): boolean;
     public isUndoPossible(): boolean;
     public logTxnError(fatal: boolean): void;
-    public openIModel(dbName: string, mode: OpenMode, upgradeOptions?: UpgradeOptions & SchemaImportOptions, props?: SnapshotOpenOptions, container?: CloudContainer): void;
+    public openIModel(dbName: string, mode: OpenMode, upgradeOptions?: UpgradeOptions & SchemaImportOptions, props?: SnapshotOpenOptions, container?: CloudContainer, sqliteOptions?: { busyTimeout?: number }): void;
     public pauseProfiler(): DbResult;
     public pollTileContent(treeId: string, tileId: string): ErrorStatusOrResult<IModelStatus, TileContentState | TileContent>;
     public processGeometryStream(requestProps: any/* ElementGeometryOptions */): IModelStatus;
@@ -639,6 +639,7 @@ export declare namespace IModelJsNative {
     public setIModelDb(iModelDb?: any/* IModelDb */): void;
     public setIModelId(guid: GuidString): DbResult;
     public setITwinId(guid: GuidString): DbResult;
+    public setBusyTimeout(ms: number): void;
     public setCodeValueBehavior(newBehavior: "exact" | "trim-unicode-whitespace"): void;
     public simplifyElementGeometry(simplifyArgs: any): DbResult;
     public startCreateChangeset(): ChangesetFileProps;
