@@ -1116,9 +1116,9 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         }
         if (info.Length() > 5) {
             BeJsConst sqliteOptions(info[5]);
-            if (opts.isObject()) {
-                if (opts.isNumericMember("busyTimeout")) {
-                    openParams.m_busyTimeout = opts["busyTimeout"].asInt();
+            if (sqliteOptions.isObject()) {
+                if (sqliteOptions.isNumericMember("busyTimeout")) {
+                    openParams.m_busyTimeout = sqliteOptions["busyTimeout"].asInt();
                 }
             }
         }

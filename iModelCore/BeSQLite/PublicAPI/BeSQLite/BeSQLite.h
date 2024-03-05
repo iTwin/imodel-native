@@ -2424,7 +2424,7 @@ protected:
     StatementCache m_statements;
     DbTxns m_txns;
     std::unique_ptr<ScalarFunction> m_regexFunc, m_regexExtractFunc, m_base36Func;
-    explicit DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode, std::optional<int> busyTimeout = std::nullopt);
+    explicit DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode, std::optional<int> busyTimeout);
     ~DbFile();
 
     DbResult SetBusyTimeout(int ms);

@@ -2050,7 +2050,7 @@ DbResult Db::CreateNewDb(Utf8CP inName, CreateParams const& params, BeGuid dbGui
     DisableBloomFilter(sqlDb);
 
     sqlite3_extended_result_codes(sqlDb, 1); // turn on extended error codes
-    m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode)params.m_startDefaultTxn);
+    m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode)params.m_startDefaultTxn, params.m_busyTimeout);
     m_isCloudDb = params.m_fromContainer;
 
     m_dbFile->m_defaultTxn.Begin();
@@ -2900,7 +2900,7 @@ DbResult Db::DoOpenDb(Utf8CP inName, OpenParams const& params) {
     m_tempfileBase = params.m_tempfileBase;
     m_isCloudDb = params.m_fromContainer;
 
-    m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode)params.m_startDefaultTxn);
+    m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode)params.m_startDefaultTxn, params.m_busyTimeout);
     m_dbFile->m_readonly = ((int)params.m_openMode & (int)OpenMode::Readonly) == (int)OpenMode::Readonly;
     sqlite3_extended_result_codes(sqlDb, 1); // turn on extended error codes
 
