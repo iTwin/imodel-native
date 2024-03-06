@@ -455,22 +455,17 @@ DgnElementId DgnCode::GetScopeElementId(DgnDbR db) const {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnCode::RelocateToDestinationDb(DgnImportContext& importer) {
+void DgnCode::RelocateToDestinationDb(DgnImportContext& importer, bool isRoot) {
     m_specId = importer.RemapCodeSpecId(m_specId);
-
-    uint64_t scopeElementId;
-    if (BentleyStatus::SUCCESS == BeStringUtilities::ParseUInt64(scopeElementId, m_scope.c_str()))
-        m_scope = importer.FindElementId(DgnElementId(scopeElementId)).ToHexStr();
+    if (isRoot) {
+        m_scope = DgnElements::GetRootSubjectId().ToHexStr();
+    } else {
+        uint64_t scopeElementId;
+        if (BentleyStatus::SUCCESS == BeStringUtilities::ParseUInt64(scopeElementId, m_scope.c_str()))
+            m_scope = importer.FindElementId(DgnElementId(scopeElementId)).ToHexStr();
+    }
+  
 }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnCode::relocate(DgnImportContext& importer) {
-    m_specId = importer.RemapCodeSpecId(m_specId);
-    m_scope = DgnElements::GetRootSubjectId().ToHexStr();
-}
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

@@ -1715,7 +1715,7 @@ void DgnElement::_RemapIds(DgnImportContext& importer)
 void DgnElement::remap(DgnImportContext& importer)
     {
     BeAssert(importer.IsBetweenDbs());
-    m_code.relocate(importer);
+    m_code.RelocateToDestinationDb(importer, true);
     m_parent.m_id = importer.FindElementId(m_parent.m_id);
     m_parent.m_relClassId = importer.RemapClassId(m_parent.m_relClassId);
     RemapAutoHandledNavigationproperties(importer);

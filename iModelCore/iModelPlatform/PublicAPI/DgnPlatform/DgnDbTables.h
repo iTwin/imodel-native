@@ -329,11 +329,7 @@ public:
     //! Get the CodeSpecId of the CodeSpec that issued this DgnCode.
     CodeSpecId GetCodeSpecId() const { return m_specId; }
 
-    DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
-
-    //! Root subject relocate to destination db
-    //! TODO: Might need to rename it
-    void relocate(DgnImportContext&);
+    DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&, bool isRoot=false);
 
     //! Create an empty, non-unique code with no special meaning.
     DGNPLATFORM_EXPORT static DgnCode CreateEmpty();

@@ -2330,7 +2330,7 @@ public:
 //! @ingroup GROUP_DgnElement
 // @bsiclass
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE   : GeometricElement, GeometrySource2d {
+struct EXPORT_VTABLE_ATTRIBUTE GeometricElement2d : GeometricElement, GeometrySource2d {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_GeometricElement2d, GeometricElement)
     friend struct dgn_ElementHandler::Geometric2d;
 
