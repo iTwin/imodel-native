@@ -12,6 +12,15 @@ USING_NAMESPACE_BENTLEY_EC;
 //========================================================================================
 struct LinkTableRelationshipTests : public DgnDbTestFixture
 {
+    struct TestIssueListener : ECN::IIssueListener
+    {
+    mutable bvector<Utf8String> m_issues;
+
+    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override
+        {
+        m_issues.push_back(message);
+        }
+    };
 };
 
 //---------------------------------------------------------------------------------------
@@ -55,4 +64,32 @@ TEST_F(LinkTableRelationshipTests, CRUD)
     ASSERT_EQ(BE_SQLITE_OK, m_db->DeleteLinkTableRelationships(BIS_SCHEMA("CategorySelectorRefersToCategories"), DgnElementId(), categoryId[3]));
     ASSERT_EQ(BE_SQLITE_OK, m_db->DeleteLinkTableRelationships(BIS_SCHEMA("CategorySelectorRefersToCategories"), DgnElementId(), categoryId[1]));
     ASSERT_EQ(_countof(categoryId)-2, DgnDbTestUtils::SelectCountFromECClass(*m_db, BIS_SCHEMA("CategorySelectorRefersToCategories")));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(LinkTableRelationshipTests, BisCore17ImportShouldFail)
+    {
+    SetupSeedProject();
+    const auto bisCoreSchema = m_db->Schemas().GetSchema("BisCore");
+    ASSERT_EQ(bisCoreSchema->GetVersionRead(), 1U);
+    ASSERT_EQ(bisCoreSchema->GetVersionWrite(), 0U);
+    ASSERT_LT(bisCoreSchema->GetVersionMinor(), 17U);
+
+    // Import new dummy BisCore which has the new DbIndex added to ElementRefersToElements
+    ECSchemaPtr schema = nullptr;
+    auto context = ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(m_db->GetSchemaLocater());
+    auto bisCoreSchemaPath = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    bisCoreSchemaPath.AppendToPath(L"ECSchemas\\BisCoreDummy.01.00.17.ecschema.xml");
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(schema, bisCoreSchemaPath.GetName(), *context));
+
+    TestIssueListener issueListener;
+    m_db->AddIssueListener(issueListener);
+
+    ASSERT_EQ(SchemaStatus::SchemaImportFailed, m_db->ImportSchemas(context->GetCache().GetSchemas(), true));
+
+    EXPECT_FALSE(issueListener.m_issues.empty());
+    EXPECT_STREQ(issueListener.m_issues.back().c_str(), Utf8PrintfString("ECSchema BisCore.01.00.17 requires ECDb version 4.0.0.5, but the current runtime version is only %s.", m_db->GetECDbProfileVersion().ToString().c_str()).c_str());
     }

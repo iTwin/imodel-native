@@ -14,7 +14,7 @@ import type { NativeCloudSqlite } from "./NativeCloudSqlite";
  */
 
 import type {
-  BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IDisposable, IModelStatus, Logger, OpenMode,
+  BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IDisposable, IModelStatus, LogLevel, OpenMode,
   StatusCodeWithMessage,
 } from "@itwin/core-bentley";
 import type {
@@ -49,6 +49,16 @@ export const NativeLoggerCategory = {
   SQLite: "SQLite",
   UnitsNative: "UnitsNative",
 } as const;
+
+/** @internal */
+export interface NativeLogger {
+  readonly minLevel: LogLevel | undefined;
+  readonly categoryFilter: {[categoryName: string]: LogLevel};
+  logTrace: (category: string, message: string) => void;
+  logInfo: (category: string, message: string) => void;
+  logWarning: (category: string, message: string) => void;
+  logError: (category: string, message: string) => void;
+}
 
 /** Find and load the native node-addon library */
 export class NativeLibrary {
@@ -179,9 +189,8 @@ export declare namespace IModelJsNative {
   }
 
   const version: string;
-  let logger: Logger;
+  let logger: NativeLogger;
   function setMaxTileCacheSize(maxBytes: number): void;
-  function flushLog(): void;
   function getTileVersionInfo(): TileVersionInfo;
   function setCrashReporting(cfg: NativeCrashReportingConfig): void;
   function setCrashReportProperty(name: string, value: string | undefined): void;
@@ -1419,6 +1428,7 @@ export declare namespace IModelJsNative {
    */
   class NativeDevTools {
     public static signal(signalType: number): boolean;
+    public static emitLogs(count: number, category: string, severity: LogLevel, thread: "main" | "worker", onDone: () => void): void;
   }
 
   /**

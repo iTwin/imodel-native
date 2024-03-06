@@ -806,7 +806,7 @@ PrimitiveECPropertyCP ContentDescriptor::Property::GetPrimitiveProperty(StructEC
         {
         if (!ecProperty->GetIsStruct())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid property access token '%s' for property '%s.%s'",
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Invalid property access token '%s' for property '%s.%s'",
                 accessString.c_str(), structProperty.GetClass().GetFullName(), structProperty.GetName().c_str()));
             break;
             }
@@ -815,7 +815,7 @@ PrimitiveECPropertyCP ContentDescriptor::Property::GetPrimitiveProperty(StructEC
         }
     if (nullptr == ecProperty || !ecProperty->GetIsPrimitive())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Access token '%s' for property '%s.%s' did not result in a valid primitive property",
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Access token '%s' for property '%s.%s' did not result in a valid primitive property",
             accessString.c_str(), structProperty.GetClass().GetFullName(), structProperty.GetName().c_str()));
         return nullptr;
         }
@@ -1631,7 +1631,7 @@ BentleyStatus DefaultPropertyFormatter::_GetFormattedPropertyValue(Utf8StringR f
         format = GetActiveFormat(*koq, unitSystem);
         if (nullptr == format || nullptr == format->GetCompositeMajorUnit())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to format property '%s.%s' value - active format does not have a composite major unit.",
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_WARNING, LOG_ERROR, Utf8PrintfString("Failed to format property '%s.%s' value - active format does not have a composite major unit.",
                 ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str()));
             }
         auto defaultFormatter = formatter;
