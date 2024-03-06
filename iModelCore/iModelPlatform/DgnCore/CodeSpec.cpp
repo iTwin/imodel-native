@@ -466,6 +466,15 @@ void DgnCode::RelocateToDestinationDb(DgnImportContext& importer) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DgnCode::relocate(DgnImportContext& importer) {
+    m_specId = importer.RemapCodeSpecId(m_specId);
+    m_scope = DgnElements::GetRootSubjectId().ToHexStr();
+}
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnCode::operator<(DgnCodeCR rhs) const {
     if (GetCodeSpecId().GetValueUnchecked() != rhs.GetCodeSpecId().GetValueUnchecked())
         return GetCodeSpecId().GetValueUnchecked() < rhs.GetCodeSpecId().GetValueUnchecked();

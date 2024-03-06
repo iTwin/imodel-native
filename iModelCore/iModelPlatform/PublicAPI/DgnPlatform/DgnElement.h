@@ -1508,6 +1508,11 @@ protected:
     //! @param[in] importer Specifies source and destination DgnDbs and knows how to remap IDs
     DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext& importer);
 
+    //! Remap root subject id in the source DgnDb.
+    //! TODO: Renaming issue 
+    //! @param[in] importer Specifies source and destination DgnDbs and knows how to remap IDs
+    void remap(DgnImportContext& importer);
+
     //! Apply X,Y offset and Yaw angle adjustment when importing from one DgnDb to another, in the case where source and destination GCSs are compatible but have the Cartesian coordinate system
     //! located at different geo locations and/or have different Azimuth angles.
     //! @param[in] importer Specifies source and destination DgnDbs and knows how to remap IDs
@@ -2325,7 +2330,7 @@ public:
 //! @ingroup GROUP_DgnElement
 // @bsiclass
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GeometricElement2d : GeometricElement, GeometrySource2d {
+struct EXPORT_VTABLE_ATTRIBUTE   : GeometricElement, GeometrySource2d {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_GeometricElement2d, GeometricElement)
     friend struct dgn_ElementHandler::Geometric2d;
 
