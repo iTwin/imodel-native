@@ -2667,6 +2667,15 @@ TEST_F(IModelCompatibilityTestFixture, TestBisCoreWithMemberPriorityChange)
             // Insert relationships which have the same source and target but different MemberPriority values (i.e. duplicates)
             for (const auto& memberPriorityValue : { 1, 2, 3, 4, 5 })
                 {
+
+                // Check if newer imodels have BisCore.1.0.17
+                // Test for read and write compatability
+                const auto bisCoreSchema = dgnDb.Schemas().GetSchema("BisCore");
+                ASSERT_GE(bisCoreSchema->GetVersionRead(), 1U);
+                ASSERT_GE(bisCoreSchema->GetVersionWrite(), 0U);
+                if (bisCoreSchema->GetVersionMinor() < 17U)
+                    continue;
+
                 IECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance();
                 ASSERT_NE(nullptr, relationshipInstance);
 
