@@ -5,4 +5,11 @@
   "end":[2,3,8],
   "radius":0.5
  }
+},
+{"cylinder":
+ {"capped":false,
+  "start":[5,6,7],
+  "end":[10,11,12],
+  "radius":1.5
+ }
 }]

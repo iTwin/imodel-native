@@ -46,14 +46,13 @@ WCharCP flatbufferUInt8Extension = nullptr   // optionally write flatbuffer to s
             {
             Utf8String stringB;
             if (IModelJson::TryGeometryToIModelJsonString (stringB, geometry))
-                GTestFileOps::WriteToFile (stringB, L"IModelJsonFromNative", nameB, nameC, extension);
+                GTestFileOps::WriteToFile (stringB, outputDirectory, nameB, nameC, extension);
             stat = true;
-
             if (flatbufferUInt8Extension != nullptr)
                 {
                 bvector<Byte> bytes;
                 BentleyGeometryFlatBuffer::GeometryToBytes (geometry, bytes);
-                GTestFileOps::WriteByteArrayToTextFile(bytes, L"IModelJsonFromNative", nameB, nameC, flatbufferUInt8Extension);
+                GTestFileOps::WriteByteArrayToTextFile(bytes, outputDirectory, nameB, nameC, flatbufferUInt8Extension);
                 }
             }
         else
@@ -80,23 +79,14 @@ bool ReadIModelBytes(bvector<Byte> &buffer, BeFileName dataPath)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(IModelJson,BytesToXXX)
     {
-    if (!Check::GetEnableLongTests())
-        return;
     BeFileName directoryPath;
     BeTest::GetHost().GetDocumentsRoot(directoryPath);
     directoryPath.AppendToPath(L"GeomLibsTestData");
-    directoryPath.AppendToPath(L"CrashFiles");
+    directoryPath.AppendToPath(L"FlatBufferFuzz");
     WCharCP dirPath = directoryPath.GetName();
     for (const auto &entry : std::filesystem::directory_iterator(dirPath))
-    {
-        auto filePath = BeFileName(entry.path().c_str());
-    // commented out lines below are kept for debug purposes
-    // for (auto filePath :
-    //      bvector<BeFileName>{
-    //          BeFileName("d:\\repos\\imodel-native\\out\\Winx64\\Product\\GeomLibs-Gtest\\Assets\\Documents\\GeomLibsTestData\\CrashFiles\\crash-3f1f74a88c98ce5125cb489fc404538beca8e7ac"),
-    //          BeFileName("d:\\repos\\imodel-native\\out\\Winx64\\Product\\GeomLibs-Gtest\\Assets\\Documents\\GeomLibsTestData\\CrashFiles\\crash-98a3d9aa91aa1925478b6bc6fe129914f9c539e1"),
-    //      })
-    //     {
+        {
+        BeFileName filePath = BeFileName(entry.path().c_str());
         bvector<Byte> buffer;
         if (Check::True(ReadIModelBytes(buffer, filePath)))
             {
@@ -121,44 +111,62 @@ TEST(IModelJson,BytesToXXX)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(IModelJson,ReadFiles)
     {
-    for (auto & name :
-        bvector<CharCP> {
-            "arc1",
-            "lineSegment5",
-            "arc",
-            "lineSegment",
-            "lineString",
-            "pointString",
-            "path",
-            "loop",
-            "parityRegion",
-            "bcurve",
-            "cylinder",
-            "cone",
-            "box",
-            "sphere",
-            "torusPipe",
-            "linearSweep",
-            "rotationalSweep",
-            "ruledSweep",
-            "bsurf",
-            "bsurfWithBoundary",
-            "indexedMesh",
-            })
+    BeFileName directoryPath;
+    BeTest::GetHost().GetDocumentsRoot(directoryPath);
+    directoryPath.AppendToPath(L"GeomLibsTestData");
+    directoryPath.AppendToPath(L"IModelJson");
+    WCharCP dirPath = directoryPath.GetName();
+    for (const auto &entry : std::filesystem::directory_iterator(dirPath))
         {
+        BeFileName filePath = BeFileName(entry.path().c_str());
+        WString fileNameStr;
+        filePath.ParseName(NULL, NULL, &fileNameStr, NULL);
+        WCharCP fileName = fileNameStr.c_str();
         bvector<IGeometryPtr> geometry;
-        WString wName;
-        wName.AppendA(name);
-        if (Check::True(ReadIModelJson (geometry, L"IModelJson", L"IModelJsonFromNative", wName.c_str(), nullptr, L"imjs", nullptr, L"fbjs"), "read imjs file"))
+        if (Check::True(ReadIModelJson (
+            geometry, L"IModelJson", L"IModelJsonFromNative", fileName, nullptr, L"imjs", nullptr, L"fbjs"),
+            "read imjs file"))
             {
-            for (auto const& g : geometry)
+            for (IGeometryPtr const& g : geometry)
                 {
                 if (Check::True(g.IsValid(), "Imported geometry is valid"))
-                    Check::NearRoundTrip(*g, 0.0, name);
+                    Check::NearRoundTrip(*g, 0.0, (char*) fileName);
                 }
             }
         }
     }
+TEST(IModelJson,GeometryToBytes)
+    {
+    ICurvePrimitivePtr arcSingle = ICurvePrimitive::CreateArc(
+        DEllipse3d::From(0,0,0,  3,0,0, 0,3,0,  0.0, Angle::PiOver2())
+    );
+
+    bvector<Byte> bytesSingle;
+    BentleyGeometryFlatBuffer::GeometryToBytes(*arcSingle, bytesSingle);
+    ICurvePrimitivePtr geometrySingle1 = BentleyGeometryFlatBuffer::BytesToGeometry(bytesSingle)->GetAsICurvePrimitive();
+    Check::True(arcSingle->IsSameStructureAndGeometry(*geometrySingle1, 0));
+
+    bvector<IGeometryPtr> geometryArray1;
+    BentleyGeometryFlatBuffer::BytesToVectorOfGeometry(bytesSingle, geometryArray1);
+    Check::Size(geometryArray1.size(), 1);
+    Check::True(arcSingle->IsSameStructureAndGeometry((*geometryArray1[0]->GetAsICurvePrimitive()), 0));
+
+    bvector<IGeometryPtr> *validGeometry = nullptr;
+    bvector<IGeometryPtr> *invalidGeometry = nullptr;
+    bvector<IGeometryPtr> arcArray;
+    arcArray.push_back(IGeometry::Create((ICurvePrimitivePtr)arcSingle));
+
+    bvector<Byte> bytesArray;
+    BentleyGeometryFlatBuffer::GeometryToBytes(arcArray, bytesArray, validGeometry, invalidGeometry);
+    bvector<IGeometryPtr> geometryArray2;
+    BentleyGeometryFlatBuffer::BytesToVectorOfGeometry(bytesArray, geometryArray2);
+    Check::Size(geometryArray2.size(), 1);
+    Check::True(arcSingle->IsSameStructureAndGeometry((*geometryArray2[0]->GetAsICurvePrimitive()), 0));
+
+    IGeometryPtr geometrySingle2 = BentleyGeometryFlatBuffer::BytesToGeometry(bytesArray);
+    Check::isNull(geometrySingle2.get());
+    }
+
 static  bvector<Byte>  jsSegmentBytes {
 98,103,48,48,48,49,102,98,4,0,0,0,144,255,255,255,12,0,0,0,0,15,
 6,0,8,0,4,0,6,0,0,0,4,0,0,0,2,0,0,0,92,0,0,0,12,0,0,0,8,0,12,0,

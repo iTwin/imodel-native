@@ -227,6 +227,10 @@ bool Check::True (bool a, char const*pString)
     return false;
     }
 
+bool Check::isNull (void* object, char const*pString)
+    {
+    return Check::True(object == nullptr, pString);
+    }
 
 bool Check::ValidateDistances
 (

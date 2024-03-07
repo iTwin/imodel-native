@@ -26,11 +26,13 @@ BentleyGeometryFlatBuffer (){} // no instances.
 
 public:
 
-// test if the bytes have the signature for BentleyGeomFlatBuffer.
-static BGFBIMPEXP bool IsFlatBufferFormat(bvector <Byte> &buffer);
+// Test if the bytes have the signature for BentleyGeomFlatBuffer.
+static BGFBIMPEXP bool IsFlatBufferFormat(bvector<Byte> &buffer);
 static BGFBIMPEXP bool IsFlatBufferFormat(Byte const *buffer);
 
-static BGFBIMPEXP IGeometryPtr BytesToGeometry(bvector <Byte> &buffer, bool applyValidation = true);
+// Convert flatbuffer bytes to geometry instance. If bytes represent an array of geometries, return nullptr.
+static BGFBIMPEXP IGeometryPtr BytesToGeometry(bvector<Byte> &buffer, bool applyValidation = true);
+// Convert flatbuffer bytes to geometry instance. If bytes represent an array of geometries, return nullptr.
 static BGFBIMPEXP IGeometryPtr BytesToGeometry(Byte const *buffer, size_t const bufferSize, bool applyValidation = true);
 
 static BGFBIMPEXP ISolidPrimitivePtr BytesToSolidPrimitive(Byte const *buffer, size_t const bufferSize, bool applyValidation = true);
@@ -48,17 +50,18 @@ static BGFBIMPEXP bool BytesToPolyfaceQueryCarrier
 );
 //!
 //! <ul>
-//! <li>Read geometry from the buffer
-//! <li>optionally apply validation to test each geometry.
+//! <li>Read geometry from the buffer.
+//! <li>Optionally apply validation to test each geometry.
 //!    <ul>
-//!    <li>Invalid geometry is recorded in the (optional) invalidGeometry array, and is NOT written to the FB
-//!    <li>Valid geometry is written to the FB
+//!    <li>Invalid geometry is recorded in the (optional) invalidGeometry array, and is NOT written to the FB.
+//!    <li>Valid geometry is written to the FB.
+//!    <li>Buffer can represent a geometry or an array of geometries.
 //!    </ul>
 //! </ul>
 //!
 static BGFBIMPEXP bool BytesToVectorOfGeometry
 (
-    bvector <Byte> &buffer,
+    bvector<Byte> &buffer,
     bvector<IGeometryPtr> &dest,
     bool applyValidation = true,
     bvector<IGeometryPtr> *invalidGeometry = nullptr

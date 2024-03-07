@@ -1940,18 +1940,18 @@ static void ReadVariantGeometry(const BGFB::VariantGeometry * fbGeometry, bvecto
 
 bool BentleyGeometryFlatBuffer::IsFlatBufferFormat(bvector<Byte> & buffer)
     {
-        if (buffer.size() == 0)
-            return false;
-        Byte *fbStart = GetFBStart(buffer);
-        return nullptr != fbStart;
+    if (buffer.size() == 0)
+        return false;
+    Byte *fbStart = GetFBStart(buffer);
+    return nullptr != fbStart;
     }
 
 bool BentleyGeometryFlatBuffer::IsFlatBufferFormat(Byte const *buffer)
     {
-        if (nullptr == buffer)
-            return false;
-        Byte const *fbStart = GetFBStart(buffer);
-        return nullptr != fbStart;
+    if (nullptr == buffer)
+        return false;
+    Byte const *fbStart = GetFBStart(buffer);
+    return nullptr != fbStart;
     }
 
 template <typename PtrType, typename ReaderMethodType>
@@ -1963,17 +1963,21 @@ PtrType BytesToXXX(Byte const *buffer, size_t const bufferSize, bool applyValida
     if (nullptr == fbStart)
         return nullptr;
     auto fbRoot = flatbuffers::GetRoot<BGFB::VariantGeometry>(fbStart);
+    if (nullptr == fbRoot)
+        return nullptr;
     auto myVerifier = flatbuffers::Verifier(fbStart, bufferSize - s_prefixBufferSize);
     if (!fbRoot->Verify(myVerifier))
         return nullptr;
-    if (nullptr != fbRoot && fbRoot->has_geometry_type() && fbRoot->has_geometry())
+    if (fbRoot->has_geometry_type() && fbRoot->has_geometry())
         {
         PtrType result = readerMethod(fbRoot);
         if (result.IsValid())
             {
             if (applyValidation && s_readValidator.IsValid())
+                {
                 if (!result->IsValidGeometry(s_readValidator))
                     return nullptr;
+                }
             return result;
             }
         }
@@ -2023,24 +2027,26 @@ bool BentleyGeometryFlatBuffer::BytesToVectorOfGeometry
     bvector<IGeometryPtr> *invalidGeometry
 )
     {
-    if (buffer.size () == 0)
+    if (buffer.size() == 0)
         return false;
-    Byte* fbStart = GetFBStart (buffer);
+    Byte* fbStart = GetFBStart(buffer);
     if (nullptr == fbStart)
         return false;
     dest.clear ();
     if (invalidGeometry)
         invalidGeometry->clear ();
-    auto fbRoot = flatbuffers::GetRoot <BGFB::VariantGeometry>(fbStart);
+    auto fbRoot = flatbuffers::GetRoot<BGFB::VariantGeometry>(fbStart);
+    if (nullptr == fbRoot)
+        return false;
     auto myVerifier = flatbuffers::Verifier(fbStart, buffer.size() - s_prefixBufferSize);
     if (!fbRoot->Verify(myVerifier))
         return false;
-    if (nullptr != fbRoot && fbRoot->has_geometry_type () && fbRoot->has_geometry ())
+    if (fbRoot->has_geometry_type() && fbRoot->has_geometry())
         {
-        FBReader::ReadVariantGeometry (fbRoot, dest);
-        if (applyValidation && s_readValidator.IsValid ())
-            GeometryValidator::RemoveInvalidGeometry (s_readValidator, dest, invalidGeometry);
-        return dest.size () > 0;
+        FBReader::ReadVariantGeometry(fbRoot, dest);
+        if (applyValidation && s_readValidator.IsValid())
+            GeometryValidator::RemoveInvalidGeometry(s_readValidator, dest, invalidGeometry);
+        return dest.size() > 0;
         }
     return false;
     }
@@ -2055,21 +2061,23 @@ bool BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier
     {
     if (nullptr == buffer)
         return false;
-    Byte const* fbStart = GetFBStart (buffer);
+    Byte const* fbStart = GetFBStart(buffer);
     if (nullptr == fbStart)
         return false;
-    auto fbRoot = flatbuffers::GetRoot <BGFB::VariantGeometry>(fbStart);
+    auto fbRoot = flatbuffers::GetRoot<BGFB::VariantGeometry>(fbStart);
+    if (nullptr == fbRoot)
+        return false;
     auto myVerifier = flatbuffers::Verifier(fbStart, bufferSize - s_prefixBufferSize);
     if (!fbRoot->Verify(myVerifier))
         return false;
-    if (nullptr != fbRoot && fbRoot->has_geometry_type () && fbRoot->has_geometry ())
+    if (fbRoot->has_geometry_type() && fbRoot->has_geometry())
         {
         if (BGFB::VariantGeometryUnion_Polyface != fbRoot->geometry_type())
             return false;
         auto result = FBReader::ReadPolyfaceQueryCarrierDirect (
-                    reinterpret_cast <const BGFB::Polyface *> (fbRoot->geometry ()),
+                    reinterpret_cast <const BGFB::Polyface*>(fbRoot->geometry ()),
                     carrier);
-        if (result && (!applyValidation || carrier.IsValidGeometry (s_readValidator)))
+        if (result && (!applyValidation || carrier.IsValidGeometry(s_readValidator)))
             return true;
         }
     return false;
