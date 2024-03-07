@@ -317,7 +317,7 @@ BentleyStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSc
     if(failedToFillSchemas)
         return BentleyStatus::ERROR;
 
-     if(!doNotMergeReferences && SchemaMerger::ValidateUniqueSchemaNames(result.GetResults()) != BentleyStatus::SUCCESS)
+     if(SchemaMerger::ValidateUniqueSchemaNames(result.GetResults()) != BentleyStatus::SUCCESS)
         {
         result.Issues().ReportV(IssueSeverity::Fatal, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0060,
             "Schema merge result included matching schema entries.");
