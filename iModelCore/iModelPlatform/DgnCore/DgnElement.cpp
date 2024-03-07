@@ -1608,7 +1608,7 @@ DgnElementPtr DgnElement::_CloneForImport(DgnDbStatus* inStat, DgnModelR destMod
         {
         if (this->GetElementId() == DgnElements::GetRootSubjectId()) {
             // root subject remapping
-            cloneElem->remap(importer);
+            cloneElem->remapRoot(importer);
         } else {
             cloneElem->_RemapIds(importer);
         }
@@ -1712,7 +1712,7 @@ void DgnElement::_RemapIds(DgnImportContext& importer)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::remap(DgnImportContext& importer)
+void DgnElement::remapRoot(DgnImportContext& importer)
     {
     BeAssert(importer.IsBetweenDbs());
     m_code.RelocateToDestinationDb(importer, true);
