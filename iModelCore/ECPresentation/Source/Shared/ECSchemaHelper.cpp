@@ -269,7 +269,7 @@ void ECSchemaHelper::ParseECSchemas(ECSchemaSet& schemas, bool& exclude, Utf8Str
         ECSchemaCP schema = GetSchema(name.c_str(), false);
         if (nullptr == schema)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested ECSchema does not exist: '%s'", name.c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Requested ECSchema does not exist: '%s'", name.c_str()));
             continue;
             }
         schemas.insert(schema);
@@ -352,7 +352,7 @@ SupportedClassInfos ECSchemaHelper::GetECClassesFromClassList(bvector<MultiSchem
             auto ecClass = GetECClass(schemaClass->GetSchemaName().c_str(), className.c_str(), false);
             if (ecClass == nullptr)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Given ECClass `%s.%s` does not exist. Ignoring.",
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Given ECClass `%s.%s` does not exist. Ignoring.",
                     schemaClass->GetSchemaName().c_str(), className.c_str()));
                 continue;
                 }
@@ -2451,7 +2451,7 @@ bmap<Utf8String, bvector<RelatedClassPath>> ECSchemaHelper::GetRelatedInstancePa
         RelatedInstanceSpecificationCR spec = *relatedInstanceSpecs[i];
         if (paths.end() != paths.find(spec.GetAlias()))
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Related instance alias must be unique per parent specification. Found multiple alias: '%s'", spec.GetAlias().c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Related instance alias must be unique per parent specification. Found multiple alias: '%s'", spec.GetAlias().c_str()));
             continue;
             }
         auto pathIter = indexedPaths.GetPaths().find(i);
@@ -2475,13 +2475,13 @@ bmap<Utf8String, bvector<RelatedClassPath>> ECSchemaHelper::GetRelatedInstancePa
         {
         if (paths.end() != paths.find(spec->GetAlias()))
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Related instance alias must be unique per parent specification. Found multiple alias: '%s'", spec->GetAlias().c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Related instance alias must be unique per parent specification. Found multiple alias: '%s'", spec->GetAlias().c_str()));
             continue;
             }
         ECClassCP targetClass = GetECClass(spec->GetTargetInstancesSpecification()->GetClassName().c_str());
         if (!targetClass)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Related instance join by IDs specification requested class `%s`, but it doesn't exist.", spec->GetTargetInstancesSpecification()->GetClassName().c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Related instance join by IDs specification requested class `%s`, but it doesn't exist.", spec->GetTargetInstancesSpecification()->GetClassName().c_str()));
             continue;
             }
         SelectClassWithExcludes<ECClass> target(*targetClass, spec->GetAlias(), false);
@@ -2524,7 +2524,7 @@ void SupportedClassesParser::Parse(ECSchemaHelper const& helper, Utf8StringCR st
         ECClassCP ecClass = helper.GetECClass(entry.GetSchemaName(), entry.GetClassName());
         if (nullptr == ecClass)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested ECClass not found: '%s.%s'", entry.GetSchemaName(), entry.GetClassName()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Requested ECClass not found: '%s.%s'", entry.GetSchemaName(), entry.GetClassName()));
             continue;
             }
         SupportedClassInfo<ECClass> info(*ecClass, entry.GetFlags());

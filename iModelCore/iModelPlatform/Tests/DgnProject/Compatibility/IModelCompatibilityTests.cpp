@@ -2554,3 +2554,96 @@ TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradePropertyTypeChange)
             }
         }
     }
+
+TEST_F(IModelCompatibilityTestFixture, TestBisCoreWithMemberPriorityChange)
+    {
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
+        {
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+            {
+            auto& testDb = *testDbPtr;
+            const auto& params = static_cast<const DgnDb::OpenParams&>(testDb.GetOpenParams());
+            ASSERT_EQ(BE_SQLITE_OK, testDb.Open()) << testDb.GetDescription();
+
+            if (params.IsReadonly())
+                continue;
+
+            DgnDbR dgnDb = testDb.GetDgnDb();
+
+            if (testDb.GetAge() != ProfileState::Age::Newer)
+                {
+                // Try to import the latest BisCore into older/up-to-date imodels.
+                // The import should fail as BisCore.1.0.17 has an import restriction for profile versions < 4.0.0.5
+                ECSchemaPtr schema = nullptr;
+                auto context = ECSchemaReadContext::CreateContext();
+                context->AddSchemaLocater(dgnDb.GetSchemaLocater());
+                auto bisCoreSchemaPath = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+                bisCoreSchemaPath.AppendToPath(L"ECSchemas\\BisCoreDummy.01.00.17.ecschema.xml");
+
+                EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(schema, bisCoreSchemaPath.GetName(), *context)) << testDbPtr->GetDescription();
+                ASSERT_TRUE(schema.IsValid());
+
+                EXPECT_EQ(SchemaStatus::SchemaImportFailed, dgnDb.ImportSchemas(context->GetCache().GetSchemas(), true)) << testDbPtr->GetDescription();
+                }
+            else
+                {
+                // Check if newer imodels have BisCore.1.0.17
+                // Test for read and write compatability
+                const auto bisCoreSchema = dgnDb.Schemas().GetSchema("BisCore");
+                ASSERT_GE(bisCoreSchema->GetVersionRead(), 1U);
+                ASSERT_GE(bisCoreSchema->GetVersionWrite(), 0U);
+                if (bisCoreSchema->GetVersionMinor() < 17U)
+                    continue;
+
+                auto relationshipClass = dgnDb.Schemas().GetClass(BIS_ECSCHEMA_NAME, "CategorySelectorRefersToCategories")->GetRelationshipClassCP();
+                ASSERT_TRUE(relationshipClass);
+
+                CategorySelectorPtr categorySelector = new CategorySelector(dgnDb.GetDictionaryModel(), "TestCategorySelector");
+                ASSERT_TRUE(categorySelector.IsValid());
+                ASSERT_TRUE(categorySelector->Insert().IsValid());
+
+                SpatialCategory category(dgnDb.GetDictionaryModel(), "TestCategory", DgnCategory::Rank::Application);
+                auto spatialCategory = category.Insert(DgnSubCategory::Appearance());
+                ASSERT_TRUE(spatialCategory.IsValid());
+
+                ECInstanceKey relationshipInstanceKeys[5];
+
+                auto relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relationshipClass);
+
+                auto index = 0;
+                for (const auto& memberPriorityValue : { 1, 2, 3, 4, 5 })
+                    {
+                    IECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance();
+                    ASSERT_NE(relationshipInstance, nullptr);
+
+                    ECValue value;
+                    value.SetInteger(memberPriorityValue);
+                    relationshipInstance->SetValue("MemberPriority", value);
+
+                    // Insert duplicate relationship entries with distinct member priority values
+                    EXPECT_EQ(BE_SQLITE_OK, dgnDb.InsertLinkTableRelationship(relationshipInstanceKeys[index], *relationshipClass, ECInstanceId(categorySelector->GetElementId().GetValue()), 
+                        ECInstanceId(spatialCategory->GetCategoryId().GetValue()), relationshipInstance.get())) << testDbPtr->GetDescription();
+                    index++;
+                    }
+
+                // Check if the all valid relationships were inserted correctly
+                ECSqlStatement statement;
+                if (ECSqlStatus::Success == statement.Prepare(testDb.GetDb(), "SELECT * FROM " BIS_SCHEMA("CategorySelectorRefersToCategories") " ORDER BY MemberPriority"))
+                    {
+                    auto rowCount = 0;
+                    while (BE_SQLITE_ROW == statement.Step())
+                        {
+                        EXPECT_EQ(statement.GetValueId<ECInstanceId>(0), relationshipInstanceKeys[rowCount].GetInstanceId());
+                        EXPECT_EQ(statement.GetValueId<ECClassId>(1), relationshipInstanceKeys[rowCount].GetClassId());
+                        EXPECT_EQ(statement.GetValueInt(2), ++rowCount);
+                        EXPECT_EQ(statement.GetValueId<DgnElementId>(3), categorySelector->GetElementId());
+                        EXPECT_EQ(statement.GetValueId<DgnClassId>(4), categorySelector->GetElementClassId());
+                        EXPECT_EQ(statement.GetValueId<DgnElementId>(5), spatialCategory->GetCategoryId());
+                        EXPECT_EQ(statement.GetValueId<DgnElementId>(6), spatialCategory->GetElementClassId());
+                        }
+                    EXPECT_EQ(rowCount, 5);
+                    }
+                }
+            }
+        }
+    }
