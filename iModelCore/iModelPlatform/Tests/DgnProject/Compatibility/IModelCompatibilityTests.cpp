@@ -2627,22 +2627,28 @@ TEST_F(IModelCompatibilityTestFixture, TestBisCoreWithMemberPriorityChange)
             DgnDbR dgnDb = testDb.GetDgnDb();
 
             // Import the latest BisCore
-            ECSchemaPtr schema = nullptr;
-            auto context = ECSchemaReadContext::CreateContext();
-            context->AddSchemaLocater(dgnDb.GetSchemaLocater());
-            auto bisCoreSchemaPath = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-            bisCoreSchemaPath.AppendToPath(L"ECSchemas\\BisCoreDummy.01.00.17.ecschema.xml");
-            EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(schema, bisCoreSchemaPath.GetName(), *context));
-
-            if (testDb.GetDb().GetECDbProfileVersion() == BeVersion(4, 0, 0, 1)
-                && (params.GetProfileUpgradeOptions() == Db::ProfileUpgradeOptions::None || !params.GetSchemaUpgradeOptions().AreDomainUpgradesAllowed()))  // imodel will not be upgraded and will remain 4.0.0.1
+            const auto bisCoreSchema = dgnDb.Schemas().GetSchema("BisCore");
+            ASSERT_GE(bisCoreSchema->GetVersionRead(), 1U);
+            ASSERT_GE(bisCoreSchema->GetVersionWrite(), 0U);
+            if (bisCoreSchema->GetVersionMinor() < 17U)
                 {
-                // ECDb profile version (4.0.0.1) only supports schemas with EC version < 3.2.
-                // So we expect the import to fail
-                ASSERT_EQ(SchemaStatus::SchemaImportFailed, dgnDb.ImportSchemas(context->GetCache().GetSchemas(), true));
-                continue;
+                ECSchemaPtr schema = nullptr;
+                auto context = ECSchemaReadContext::CreateContext();
+                context->AddSchemaLocater(dgnDb.GetSchemaLocater());
+                auto bisCoreSchemaPath = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+                bisCoreSchemaPath.AppendToPath(L"ECSchemas\\BisCoreDummy.01.00.17.ecschema.xml");
+                EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(schema, bisCoreSchemaPath.GetName(), *context));
+
+                if (testDb.GetDb().GetECDbProfileVersion() == BeVersion(4, 0, 0, 1)
+                    && (params.GetProfileUpgradeOptions() == Db::ProfileUpgradeOptions::None || !params.GetSchemaUpgradeOptions().AreDomainUpgradesAllowed()))  // imodel will not be upgraded and will remain 4.0.0.1
+                    {
+                    // ECDb profile version (4.0.0.1) only supports schemas with EC version < 3.2.
+                    // So we expect the import to fail
+                    ASSERT_EQ(SchemaStatus::SchemaImportFailed, dgnDb.ImportSchemas(context->GetCache().GetSchemas(), true));
+                    continue;
+                    }
+                ASSERT_EQ(SchemaStatus::Success, dgnDb.ImportSchemas(context->GetCache().GetSchemas(), true));
                 }
-            ASSERT_EQ(SchemaStatus::Success, dgnDb.ImportSchemas(context->GetCache().GetSchemas(), true));
  
             const auto categoryClass = dgnDb.Schemas().GetClass(BIS_ECSCHEMA_NAME, "CategorySelectorRefersToCategories");
             ASSERT_NE(nullptr, categoryClass);
