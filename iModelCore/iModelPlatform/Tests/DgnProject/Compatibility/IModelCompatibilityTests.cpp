@@ -2587,8 +2587,14 @@ TEST_F(IModelCompatibilityTestFixture, TestBisCoreWithMemberPriorityChange)
                 }
             else
                 {
-                // Newer imodels will already have BisCore.1.0.17
-                // Check for read and write compatability
+                // Check if newer imodels have BisCore.1.0.17
+                // Test for read and write compatability
+                const auto bisCoreSchema = dgnDb.Schemas().GetSchema("BisCore");
+                ASSERT_GE(bisCoreSchema->GetVersionRead(), 1U);
+                ASSERT_GE(bisCoreSchema->GetVersionWrite(), 0U);
+                if (bisCoreSchema->GetVersionMinor() < 17U)
+                    continue;
+
                 auto relationshipClass = dgnDb.Schemas().GetClass(BIS_ECSCHEMA_NAME, "CategorySelectorRefersToCategories")->GetRelationshipClassCP();
                 ASSERT_TRUE(relationshipClass);
 
