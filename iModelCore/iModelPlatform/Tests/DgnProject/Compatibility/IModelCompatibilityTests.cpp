@@ -362,7 +362,7 @@ void Assert_BuiltinSchemaVersions_2_0_0_7(TestIModel& testDb)
 
     EXPECT_LE(SchemaVersion(4, 0, 2), testDb.GetSchemaVersion("ECDbMeta")) << testDb.GetDescription();
     EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << testDb.GetDescription();
-    EXPECT_EQ(JsonValue(R"js({"classcount":38, "enumcount": 8})js"), testDb.GetSchemaItemCounts("ECDbMeta")) << testDb.GetDescription();
+    EXPECT_EQ(JsonValue(R"js({"classcount":49, "enumcount": 9})js"), testDb.GetSchemaItemCounts("ECDbMeta")) << testDb.GetDescription();
 
     EXPECT_LE(SchemaVersion(5, 0, 2), testDb.GetSchemaVersion("ECDbSystem")) << testDb.GetDescription();
     EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbSystem")) << testDb.GetDescription();
