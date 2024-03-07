@@ -278,7 +278,7 @@ public:
 
         auto pos = -1;
         for (auto& builder : innerStructArray)
-               outerStructBuilder.EmplaceProperty("StructStructArrayProperty", builder, innerStructArrayCount, ++pos);
+            outerStructBuilder.EmplaceProperty("StructStructArrayProperty", builder, innerStructArrayCount, ++pos);
 
         ASSERT_EQ(++pos, innerStructArrayCount) << "Wrong struct array count passed to the SetStructProperties() function.";
         }
