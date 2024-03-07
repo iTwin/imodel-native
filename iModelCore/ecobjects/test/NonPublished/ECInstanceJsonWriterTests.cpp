@@ -70,6 +70,8 @@ public:
         m_ecValue(value), m_isArrayMember(true), m_arrayCount(count), m_arrayIndex(index), m_instanceProperties(nullptr) {}
     template <typename T, typename = std::enable_if_t<std::is_base_of<T, ECInstanceBuilder>::value>> Value(T& value, int count, int index) :
         m_isArrayMember(true), m_arrayCount(count), m_arrayIndex(index), m_instanceProperties(nullptr) { m_ecValue.SetStruct(value.BuildInstance().get()); }
+    Value(std::nullptr_t value, int count, int index) :
+        m_isArrayMember(true), m_arrayCount(count), m_arrayIndex(index), m_instanceProperties(nullptr) { m_ecValue.SetStruct(nullptr); }
     };
 
 //=======================================================================================
@@ -104,9 +106,17 @@ public:
             }
         }
 
-    void EmplaceProperty(Utf8String name, ECInstanceBuilder& structInstanceBuilder, int arrayCount, int arrayIndex)
+    void EmplaceProperty(Utf8String name, ECInstanceBuilder* structInstanceBuilder, int arrayCount, int arrayIndex)
         {
-        m_instanceProperties.emplace(std::make_pair(name, std::make_unique<Value>(structInstanceBuilder, arrayCount, arrayIndex)));
+        if (structInstanceBuilder == nullptr) 
+            {
+               m_instanceProperties.emplace(std::make_pair(name, std::make_unique<Value>(nullptr, arrayCount, arrayIndex)));
+            }
+        else
+            {
+               m_instanceProperties.emplace(std::make_pair(name, std::make_unique<Value>(*structInstanceBuilder, arrayCount, arrayIndex)));
+            }
+        
         }
 
     auto BuildInstance()
@@ -268,7 +278,7 @@ public:
 
         auto pos = -1;
         for (auto& builder : innerStructArray)
-            outerStructBuilder.EmplaceProperty("StructStructArrayProperty", *builder, innerStructArrayCount, ++pos);
+               outerStructBuilder.EmplaceProperty("StructStructArrayProperty", builder, innerStructArrayCount, ++pos);
 
         ASSERT_EQ(++pos, innerStructArrayCount) << "Wrong struct array count passed to the SetStructProperties() function.";
         }
@@ -482,6 +492,57 @@ TEST_F(ECInstanceJsonWriterTests, WriteEmbeddedStructValueTest)
     ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue5, actualJsonValue5)) <<
         "Expected:\n" + expectedJsonValue5.Stringify() + "\nBut was:\n" + actualJsonValue5.Stringify();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ECInstanceJsonWriterTests, WritePartialInstanceToJsonWritesNullsInStructArray)
+   {
+   // Arrange
+
+    ECInstanceBuilder
+        sourceInstanceBuilder(*m_sourceClass),
+        structBuilder(*m_structClass),
+        structStructArrayMemberBuilder1(*m_structStructClass);
+
+    SetStructStructProperties(structStructArrayMemberBuilder1, -1234567890, 2.7182818284590452353602874713526624977572, "e 41 digits", nullptr, "EnumeratorB", 2, 0, {});
+    SetStructProperties(structBuilder, 1, 2.0, "2.0", nullptr, "EnumeratorA", 1, 0, {}, nullptr, 3, { nullptr, &structStructArrayMemberBuilder1, nullptr });
+    sourceInstanceBuilder.EmplaceProperty("StructProperty", structBuilder);
+
+    auto const sourceInstance = sourceInstanceBuilder.BuildInstance();
+
+    auto expectedJsonValue1 = BeJsDocument(Utf8Chars(u8R"(
+        {
+           "StructProperty" : {
+              "IntProperty" : 1,
+              "DoubleProperty" : 2.0,
+              "StringProperty" : "2.0",
+              "StrictEnumerationProperty" : "EnumeratorA",
+              "LooseEnumerationProperty" : 1,
+              "StructStructArrayProperty" : [
+               null,
+                 {
+                    "IntProperty" : -1234567890,
+                    "DoubleProperty" : 2.7182818284590452353602874713526624977572,
+                    "StringProperty" : "e 41 digits",
+                    "StrictEnumerationProperty" : "EnumeratorB",
+                    "LooseEnumerationProperty" : 2
+                 },
+               null
+              ]
+           }
+        })"));
+
+    // Act
+
+    BeJsDocument actualJsonValue1;
+   ASSERT_EQ(BSISUCCESS, JsonEcInstanceWriter::WritePartialInstanceToJson(actualJsonValue1, *sourceInstance, JsonEcInstanceWriter::MemberNameCasing::KeepOriginal, nullptr));
+
+   // Assert
+
+   ASSERT_TRUE(ECTestUtility::JsonDeepEqual(expectedJsonValue1, actualJsonValue1)) <<
+       "Expected:\n" + expectedJsonValue1.Stringify() + "\nBut was:\n" + actualJsonValue1.Stringify();
+   }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
