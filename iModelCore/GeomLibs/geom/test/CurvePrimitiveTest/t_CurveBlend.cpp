@@ -1367,13 +1367,15 @@ TEST(CurveVector,CloneWithGapsClosed)
     ICurvePrimitivePtr lineStringPrim1 = ICurvePrimitive::CreateLineString(lineString1);
     curve->push_back(lineStringPrim1);
     bvector<DPoint3d> lineString2 = {
-        DPoint3d::From(0, 1, 0),
-        DPoint3d::From(1, 1, 0)
+        DPoint3d::From(0, 0, 0),
+        DPoint3d::From(0, 1, 0)
     };
     ICurvePrimitivePtr lineStringPrim2 = ICurvePrimitive::CreateLineString(lineString2);
     curve->push_back(lineStringPrim2);
     CurveGapOptions gapOptions(1.0e-10, 1.0e-10, 1.0e-10);
-    curve->CloneWithGapsClosed(gapOptions);
+    CurveVectorPtr clonedCurve = curve->CloneWithGapsClosed(gapOptions);
+    Check::True(clonedCurve.IsValid());
+    Check::True(clonedCurve->IsSameStructureAndGeometry(*curve));
     }
 
 void testCurveCurveTaperFilletTaper
