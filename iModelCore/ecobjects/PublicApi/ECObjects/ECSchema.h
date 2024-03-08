@@ -4122,10 +4122,10 @@ public:
     ECOBJECTS_EXPORT static bool IsStandardSchema(Utf8StringCR schemaName);
 
     //! Sorts schemas in a vector by their dependency order (starting at leaf nodes with no dependencies).
-    //! Also adds missing referenced schemas from the dependency tree to the vector.
     //! Internally uses a reversed topological sort (https://en.wikipedia.org/wiki/Topological_sorting)
-    //! @param[in]  schemas  vector that will be modified
-    ECOBJECTS_EXPORT static void SortSchemasInDependencyOrder(bvector<ECN::ECSchemaCP>& schemas);
+    //! @param[in]  schemas                  Vector that will be modified
+    //! @param[in]  ignoreReferencedSchemas  If true then referenced schemas missing from the dependency tree are not added to the vector. Defaults to false.
+    ECOBJECTS_EXPORT static void SortSchemasInDependencyOrder(bvector<ECN::ECSchemaCP>& schemas, bool ignoreReferencedSchemas=false);
 
     //! Find all ECSchemas in the schema graph, avoiding duplicates and any cycles.
     //! @param[out]   allSchemas            Vector of schemas including rootSchema.

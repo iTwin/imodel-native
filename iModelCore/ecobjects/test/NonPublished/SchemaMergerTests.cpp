@@ -40,21 +40,6 @@ ECSchemaReadContextPtr InitializeReadContextWithAllSchemas(bvector<Utf8CP> const
     return readContext;
     }
 
-ECSchemaReadContextPtr InitializeReadContextWithAllSchemas(bvector<BeFileName> const& fileNames, bvector<ECSchemaCP>* loadedSchemas = nullptr)
-    {
-    ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
-
-    for (auto fileName : fileNames)
-        {
-        ECSchemaPtr schema;
-        EXPECT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(schema, fileName.GetName(), *readContext));
-        if(loadedSchemas != nullptr)
-            loadedSchemas->push_back(schema.get());
-        }
-
-    return readContext;
-    }
-
 void CompareResults(bvector<Utf8CP> const& expectedSchemasXml, SchemaMergeResult& actualResult, bool dumpFullSchemaOnError = false)
     {
     bvector<ECSchemaCP> expectedSchemas;
@@ -5557,7 +5542,7 @@ TEST_F(SchemaMergerTests, DuplicateSchemaNamesMergeResult)
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
-    bvector<Utf8String> expectedIssues { "Schema merge result included matching schema entries." };
+    bvector<Utf8String> expectedIssues { "The schema name entry MySchema is non-unique in the merge result schema list. The schemas names are case-insensitive." };
     CompareIssues(expectedIssues, issues.m_issues);
     }
 
@@ -5601,7 +5586,7 @@ TEST_F(SchemaMergerTests, DuplicateSchemaNamesMergeResultMergeNoReferences)
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
 
     // Compare issues
-    bvector<Utf8String> expectedIssues { "Schema merge result included matching schema entries." };
+    bvector<Utf8String> expectedIssues { "The schema name entry MySchema is non-unique in the merge result schema list. The schemas names are case-insensitive." };
     CompareIssues(expectedIssues, issues.m_issues);
     }
 
@@ -5623,6 +5608,21 @@ TEST_F(SchemaMergerTests, DuplicateSchemaNamesLeftMergeNoReferences)
         )schema",
       R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="MySchema" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A">
+          </ECEntityClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MyOtherSchema" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A">
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MYOTHERSCHEMA" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="A">
           </ECEntityClass>
         </ECSchema>
@@ -5652,7 +5652,8 @@ TEST_F(SchemaMergerTests, DuplicateSchemaNamesLeftMergeNoReferences)
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
 
     // Compare issues
-    bvector<Utf8String> expectedIssues { "At least a single existing schema name was non-unique." };
+    bvector<Utf8String> expectedIssues { "The schema name entry MyOtherSchema is non-unique in the left schema list. The schemas names are case-insensitive.",
+                                         "The schema name entry MySchema is non-unique in the left schema list. The schemas names are case-insensitive." };
     CompareIssues(expectedIssues, issues.m_issues);
     }
 
@@ -5688,6 +5689,21 @@ TEST_F(SchemaMergerTests, DuplicateSchemaNamesRightMergeNoReferences)
           <ECEntityClass typeName="A">
           </ECEntityClass>
         </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MyOtherSchema" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A">
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MYOTHERSCHEMA" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A">
+          </ECEntityClass>
+        </ECSchema>
         )schema"
     };
     ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
@@ -5702,7 +5718,8 @@ TEST_F(SchemaMergerTests, DuplicateSchemaNamesRightMergeNoReferences)
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
 
     // Compare issues
-    bvector<Utf8String> expectedIssues { "At least a single schema to be merged name was non-unique." };
+    bvector<Utf8String> expectedIssues { "The schema name entry MyOtherSchema is non-unique in the right schema list. The schemas names are case-insensitive.",
+                                         "The schema name entry MySchema is non-unique in the right schema list. The schemas names are case-insensitive." };
     CompareIssues(expectedIssues, issues.m_issues);
     }
   
@@ -5714,7 +5731,7 @@ TEST_F(SchemaMergerTests, DuplicateSchemaNamesLeftAndRightMergeNoReferences)
     // Initialize two sets of schemas
     bvector<Utf8CP> leftSchemasXml {
       R"schema(<?xml version='1.0' encoding='utf-8' ?>
-        <ECSchema schemaName="MySchema" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchema schemaName="MySchema1" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="A">
           </ECEntityClass>
           <ECEntityClass typeName="B">
@@ -5723,7 +5740,7 @@ TEST_F(SchemaMergerTests, DuplicateSchemaNamesLeftAndRightMergeNoReferences)
         </ECSchema>
         )schema",
       R"schema(<?xml version='1.0' encoding='utf-8' ?>
-        <ECSchema schemaName="MySchema" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchema schemaName="myschema1" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="A">
           </ECEntityClass>
         </ECSchema>
@@ -5735,13 +5752,13 @@ TEST_F(SchemaMergerTests, DuplicateSchemaNamesLeftAndRightMergeNoReferences)
 
     bvector<Utf8CP> rightSchemasXml {
       R"schema(<?xml version='1.0' encoding='utf-8' ?>
-        <ECSchema schemaName="MySchema" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchema schemaName="myschema2" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="A">
           </ECEntityClass>
         </ECSchema>
         )schema",
       R"schema(<?xml version='1.0' encoding='utf-8' ?>
-        <ECSchema schemaName="MySchema" alias="mys" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchema schemaName="myschema2" alias="mys" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="A">
           </ECEntityClass>
           <ECEntityClass typeName="B">
@@ -5765,8 +5782,8 @@ TEST_F(SchemaMergerTests, DuplicateSchemaNamesLeftAndRightMergeNoReferences)
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
 
     // Compare issues
-    bvector<Utf8String> expectedIssues { "At least a single existing schema name was non-unique.", 
-                                         "At least a single schema to be merged name was non-unique." };
+    bvector<Utf8String> expectedIssues { "The schema name entry myschema1 is non-unique in the left schema list. The schemas names are case-insensitive.", 
+                                         "The schema name entry myschema2 is non-unique in the right schema list. The schemas names are case-insensitive." };
     CompareIssues(expectedIssues, issues.m_issues);
     }
 
@@ -5952,7 +5969,7 @@ TEST_F(SchemaMergerTests, UncleanSchemaGraphMergedWithReferences)
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
-    bvector<Utf8String> expectedIssues { "The schema is dirty. Another reference of the item with name TestReference.01.00.07 already exists in the schema." };
+    bvector<Utf8String> expectedIssues { "Failed to find item with name MyCategory in right schema TestReference.01.00.07. This usually indicates a dirty schema graph where multiple memory references of the same schema with different contents are provided." };
     CompareIssues(expectedIssues, issues.m_issues);
     }
 

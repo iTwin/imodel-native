@@ -3492,9 +3492,11 @@ static void InsertSchemaInDependencyOrderedList(bvector<ECSchemaCP>& schemas, EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void BuildDependencyOrderedSchemaList(bvector<ECSchemaCP>& schemas, ECSchemaCP insertSchema)
+static void BuildDependencyOrderedSchemaList(bvector<ECSchemaCP>& schemas, ECSchemaCP insertSchema, bool ignoreReferencedSchemas = false)
     {
     InsertSchemaInDependencyOrderedList(schemas, insertSchema);
+    if (ignoreReferencedSchemas) return;
+
     ECSchemaReferenceListCR referencedSchemas = insertSchema->GetReferencedSchemas();
     for (const auto& refedSchema : referencedSchemas)
         BuildDependencyOrderedSchemaList(schemas, refedSchema.second.get());
@@ -3503,11 +3505,11 @@ static void BuildDependencyOrderedSchemaList(bvector<ECSchemaCP>& schemas, ECSch
 /*----------------------------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+-------------------------*/
-void ECSchema::SortSchemasInDependencyOrder(bvector<ECSchemaCP>& schemas)
+void ECSchema::SortSchemasInDependencyOrder(bvector<ECSchemaCP>& schemas, bool ignoreReferencedSchemas)
     {
     bvector<ECSchemaCP> temp;
     for (const auto& schema : schemas)
-        BuildDependencyOrderedSchemaList(temp, schema);
+        BuildDependencyOrderedSchemaList(temp, schema, ignoreReferencedSchemas);
     std::reverse(temp.begin(), temp.end());
     schemas = temp;
     }
