@@ -1604,10 +1604,14 @@ DgnElementPtr DgnElement::_CloneForImport(DgnDbStatus* inStat, DgnModelR destMod
         }
 
     cloneElem->CopyForCloneFrom(*this);
-
     if (importer.IsBetweenDbs())
         {
-        cloneElem->_RemapIds(importer);
+        if (this->GetElementId() == DgnElements::GetRootSubjectId()) {
+            // root subject remapping
+            cloneElem->_RemapRootSubjectId(importer);
+        } else {
+            cloneElem->_RemapIds(importer);
+        }
         cloneElem->_AdjustPlacementForImport(importer);
         }
     else if (GetParentId().IsValid())
@@ -1700,6 +1704,18 @@ void DgnElement::_RemapIds(DgnImportContext& importer)
     {
     BeAssert(importer.IsBetweenDbs());
     m_code.RelocateToDestinationDb(importer);
+    m_parent.m_id = importer.FindElementId(m_parent.m_id);
+    m_parent.m_relClassId = importer.RemapClassId(m_parent.m_relClassId);
+    RemapAutoHandledNavigationproperties(importer);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::_RemapRootSubjectId(DgnImportContext& importer)
+    {
+    BeAssert(importer.IsBetweenDbs());
+    m_code.RelocateToDestinationDb(importer, true);
     m_parent.m_id = importer.FindElementId(m_parent.m_id);
     m_parent.m_relClassId = importer.RemapClassId(m_parent.m_relClassId);
     RemapAutoHandledNavigationproperties(importer);
