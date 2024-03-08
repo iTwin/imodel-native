@@ -1801,4 +1801,65 @@ TEST_F(ClassViewsFixture, update_views_in_dynamic_schema_cte) {
   }
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassViewsFixture, ViewDynamicallyAddsECClassId) {
+    std::vector<Utf8String> values = {
+          "Apple",
+          "Banana",
+          "Cherry"
+    };
+
+  //Test schema and data used for sprint review demo
+    auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
+        <ECEntityClass typeName="Fruit">
+            <ECProperty propertyName="Name" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName="FruitView" modifier="Abstract">
+            <ECCustomAttributes>
+                <View xmlns="ECDbMap.02.00.03">
+                    <Query>
+                        SELECT
+                            f.ECInstanceId,
+                            f.Name [MyName]
+                        FROM ts.Fruit f
+                    </Query>
+                </View>
+           </ECCustomAttributes>
+            <ECProperty propertyName="MyName" typeName="string" />
+        </ECEntityClass>
+    </ECSchema>)xml");
+
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDbForCurrentTest());
+    ASSERT_EQ(SUCCESS, ImportSchema(testSchema));
+
+    { //insert test data
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Fruit(Name) VALUES(?)"));
+    for (const auto& v : values)
+        {
+        stmt.BindText(1, v.c_str(), IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        stmt.ClearBindings();
+        stmt.Reset();
+        }
+    }
+
+    { //Select from View
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECClassId, ECInstanceId, MyName FROM ts.FruitView WHERE MyName = 'Banana'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    auto instanceId = stmt.GetValueId<ECInstanceId>(0);
+    ASSERT_TRUE(instanceId.IsValid());
+    auto classId = stmt.GetValueId<ECClassId>(1);
+    ASSERT_TRUE(classId.IsValid());
+    ASSERT_EQ("Banana", stmt.GetValueText(2));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+}
+
+
 END_ECDBUNITTESTS_NAMESPACE
