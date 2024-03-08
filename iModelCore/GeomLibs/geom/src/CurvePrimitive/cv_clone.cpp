@@ -492,7 +492,7 @@ static ChildTerminusType ChildEndInfo (CurveVectorCR parent, size_t childIndex, 
         {
         bvector<DPoint3d> const * linestring = parent.at(childIndex)->GetLineStringCP ();
         size_t n = linestring->size ();
-        if (n > 0 && parent.at(childIndex)->TryGetSegmentInLineString (segment, n - 2))
+        if (n > 1 && parent.at(childIndex)->TryGetSegmentInLineString (segment, n - 2))
             {
             tangent.origin      = segment.point[1];
             tangent.direction   = DVec3d::FromStartEnd (segment.point[0], segment.point[1]);
