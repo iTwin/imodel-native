@@ -113,6 +113,11 @@ ECDerivedClassesList const* SchemaManager::GetDerivedClassesInternal(ECClassCR e
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
+//---------------------------------------------------------------------------------------
+Nullable<ECN::ECDerivedClassesList> SchemaManager::GetAllDerivedClassesInternal(ECClassCR ecClass, Utf8CP tableSpace) const { return m_dispatcher->GetAllDerivedClasses(ecClass, tableSpace); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 ECEnumerationCP SchemaManager::GetEnumeration(Utf8StringCR schemaNameOrAlias, Utf8StringCR enumName, SchemaLookupMode mode, Utf8CP tableSpace) const { return m_dispatcher->GetEnumeration(schemaNameOrAlias, enumName, mode, tableSpace); }
 

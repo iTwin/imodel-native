@@ -1086,7 +1086,7 @@ TEST_F(BeSQLiteEmbeddedFileTests, ReplaceExistingEmbeddedFile)
 
     //test file
     //  Using a much larger file so I could check that the embedded blobs were removed from the BE_Prop table.
-    Utf8CP testFileNameOld = "Bentley_Standard_CustomAttributes.01.13.ecschema.xml";
+    Utf8CP testFileNameOld = "Bentley_Standard_CustomAttributes.01.14.ecschema.xml";
     WString testFileNameOldW(testFileNameOld, BentleyCharEncoding::Utf8);
 
     BeFileName testFilePathOld;
@@ -1136,7 +1136,7 @@ TEST_F(BeSQLiteEmbeddedFileTests, ReadAddNewEntrySaveEmbeddedFile)
 
     //test file
     //  Used a fairly large file for this to verify that it correctly handles files that are larger than one blob.
-    Utf8CP testFileName = "Bentley_Standard_CustomAttributes.01.13.ecschema.xml";
+    Utf8CP testFileName = "Bentley_Standard_CustomAttributes.01.14.ecschema.xml";
     WString testFileNameW(testFileName, BentleyCharEncoding::Utf8);
 
     BeFileName testFilePath;
@@ -1156,7 +1156,7 @@ TEST_F(BeSQLiteEmbeddedFileTests, ReadAddNewEntrySaveEmbeddedFile)
     ASSERT_EQ(BE_SQLITE_OK, stat);
     ASSERT_TRUE(embeddedFileId.IsValid());
 
-    Utf8CP NewFileName = "Copy_Bentley_Standard_CustomAttributes.01.13.ecschema.xml";
+    Utf8CP NewFileName = "Copy_Bentley_Standard_CustomAttributes.01.14.ecschema.xml";
     WString NewFileNameW(NewFileName, BentleyCharEncoding::Utf8);
     ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.AddEntry(NewFileName, "xml"));
 
