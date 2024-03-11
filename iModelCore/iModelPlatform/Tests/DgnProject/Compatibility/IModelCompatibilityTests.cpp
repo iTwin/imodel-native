@@ -2693,7 +2693,7 @@ TEST_F(IModelCompatibilityTestFixture, TestBisCoreWithMemberPriorityChange)
                     ECInstanceId(spatialCategory->GetCategoryId().GetValue()), relationshipInstance.get())) << testDbPtr->GetDescription();
                 index++;
                 }
-
+          
             // Check if the all duplicate relationships were inserted correctly
             ECSqlStatement statement;
             ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(testDb.GetDb(), "SELECT * FROM " BIS_SCHEMA("CategorySelectorRefersToCategories") " ORDER BY MemberPriority")) << testDbPtr->GetDescription();
@@ -2709,6 +2709,17 @@ TEST_F(IModelCompatibilityTestFixture, TestBisCoreWithMemberPriorityChange)
                 EXPECT_EQ(statement.GetValueId<DgnElementId>(6), spatialCategory->GetElementClassId());
                 }
             EXPECT_EQ(5, rowCount);
+
+            // Try to insert a duplicate member priority value to make sure the new index works
+            IECRelationshipInstancePtr anotherRelationshipInstance = relationshipEnabler->CreateRelationshipInstance();
+            ASSERT_NE(nullptr, anotherRelationshipInstance);
+
+            ECValue anotherValue;
+            anotherValue.SetInteger(5);
+            anotherRelationshipInstance->SetValue("MemberPriority", anotherValue);
+
+            EXPECT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, dgnDb.InsertLinkTableRelationship(relationshipInstanceKeys[index], *relationshipClass, ECInstanceId(categorySelector->GetElementId().GetValue()), 
+                ECInstanceId(spatialCategory->GetCategoryId().GetValue()), anotherRelationshipInstance.get())) << testDbPtr->GetDescription();
             }
         }
     }
