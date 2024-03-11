@@ -2643,6 +2643,17 @@ TEST_F(IModelCompatibilityTestFixture, TestBisCoreWithMemberPriorityChange)
                         }
                     EXPECT_EQ(rowCount, 5);
                     }
+
+                // Try to insert a duplicate member priority value to make sure the new index works
+                IECRelationshipInstancePtr anotherRelationshipInstance = relationshipEnabler->CreateRelationshipInstance();
+                ASSERT_NE(nullptr, anotherRelationshipInstance);
+
+                ECValue anotherValue;
+                anotherValue.SetInteger(5);
+                anotherRelationshipInstance->SetValue("MemberPriority", anotherValue);
+
+                EXPECT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, dgnDb.InsertLinkTableRelationship(relationshipInstanceKeys[index], *relationshipClass, ECInstanceId(categorySelector->GetElementId().GetValue()), 
+                    ECInstanceId(spatialCategory->GetCategoryId().GetValue()), anotherRelationshipInstance.get())) << testDbPtr->GetDescription();
                 }
             }
         }
