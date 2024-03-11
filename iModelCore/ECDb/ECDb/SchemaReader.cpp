@@ -856,7 +856,7 @@ ECN::ECDerivedClassesList SchemaReader::GetAllDerivedClasses(ECClassId ecClassId
     {
     ECDerivedClassesList derivedClasses;
     ECSqlStatement statement;
-    const auto sqlStr = SqlPrintfString("select SourceECInstanceId from meta.ClassHasAllBaseClasses where TargetECInstanceId=%d", ecClassId.GetValue()).GetUtf8CP();
+    const auto sqlStr = SqlPrintfString("select SourceECInstanceId from meta.ClassHasAllBaseClasses where SourceECInstanceId != TargetECInstanceId and TargetECInstanceId=%d", ecClassId.GetValue()).GetUtf8CP();
     Context ctx;
     if (statement.Prepare(GetECDb(), sqlStr) == ECSqlStatus::Success)
         {

@@ -4350,6 +4350,17 @@ TEST_F(IndexTests, ExtendSystemIndexTPHClass)
             EXPECT_EQ(statement.GetValueInt(5), 10);
             }
         statement.Finalize();
+
+        // Try to insert a duplicate member priority value to make sure the new index works
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ts.GroupOfElements(SourceECClassId, SourceECInstanceId, TargetECClassId, TargetECInstanceId, AddToIndex, NewProperty) VALUES(?,?,?,?,?,?)"));
+        statement.BindId(1, firstGroup.GetClassId());
+        statement.BindId(2, firstGroup.GetInstanceId());
+        statement.BindId(3, firstElement.GetClassId());
+        statement.BindId(4, firstElement.GetInstanceId());
+        statement.BindInt(5, 2);
+        statement.BindInt(6, 10);
+        ASSERT_EQ(statement.Step(), BE_SQLITE_CONSTRAINT_UNIQUE) << "Should fail as unique index is present for test case " << testCaseNumber;
+
         m_ecdb.AbandonChanges();
         };
 
