@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<ECSchema schemaName="Bentley_Standard_CustomAttributes" nameSpacePrefix="bsca" version="1.13" description="Bentley Standard Custom Attributes" displayLabel="Bentley Standard Custom Attributes" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+<ECSchema schemaName="Bentley_Standard_CustomAttributes" nameSpacePrefix="bsca" version="1.14" description="Bentley Standard Custom Attributes" displayLabel="Bentley Standard Custom Attributes" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
     <ECSchemaReference name="EditorCustomAttributes" version="01.02" prefix="beca" />
     <!--Struct used for specifying whether duplicate values in localization key value pairs can be replaced by GUIDs-->
     <ECClass typeName="AllowDuplicateLocalizedValues" description="Keeps the localizable values from this element from being combined with those from another element if duplication occurs.  If combined a GUID is used as the key for the localizable value." displayLabel="Allow duplicate localized values" isDomainClass="False" isCustomAttributeClass="True">
@@ -11,7 +11,7 @@
     </ECClass>
     <ECClass typeName="BusinessKeySpecification" description="Business Key Specification" displayLabel="Business Key Specification" isDomainClass="False" isCustomAttributeClass="True">
         <ECCustomAttributes>
-            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.13">
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.14">
                 <PropertiesThatReferenceAProperty>
                     <string>PropertyName</string>
                 </PropertiesThatReferenceAProperty>
@@ -90,7 +90,7 @@
     </ECClass>
     <ECClass typeName="DGNPersistedGeometry" description="See Bentley.ECObjects.Standards.DGNPersistedGeometry. ECCustomAttributeClass for specifying that an IGeometry ECProperty is to be translated to DGN geometry when the instance is written to a DGN file with the default persistence strategy of the DgnECPlugin" displayLabel="Specificiation of DGN persisted geometry" isDomainClass="False" isCustomAttributeClass="True">
         <ECCustomAttributes>
-            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.13">
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.14">
                 <PropertiesThatReferenceAProperty>
                     <string>NameOfGeometryProperty</string>
                 </PropertiesThatReferenceAProperty>
@@ -121,7 +121,7 @@
          If you modify it, you must adjust the code of FilePropertiesHelper.cs -->
     <ECClass typeName="FileDependentProperties" isDomainClass="False" isCustomAttributeClass="True">
         <ECCustomAttributes>
-            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.13">
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.14">
                 <PropertiesThatReferenceAProperty>
                     <string>FileName</string>
                     <string>FileSize</string>
@@ -143,7 +143,7 @@
          If you modify it, you must adjust the code of FolderPropertiesHelper.cs -->
     <ECClass typeName="FolderDependentProperties" isDomainClass="False" isCustomAttributeClass="True">
         <ECCustomAttributes>
-            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.13">
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.14">
                 <PropertiesThatReferenceAProperty>
                     <string>FolderName</string>
                     <string>DateCreated</string>
@@ -159,7 +159,7 @@
     </ECClass>
     <ECClass typeName="GlobalIdSpecification" description="Global ID Specification" displayLabel="Global Id Specification" isDomainClass="False" isCustomAttributeClass="True">
         <ECCustomAttributes>
-            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.13">
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.14">
                 <PropertiesThatReferenceAProperty>
                     <string>PropertyName</string>
                 </PropertiesThatReferenceAProperty>
@@ -171,7 +171,7 @@
          If you modify it, you must adjust the code of ActivityPropertiesHelper.cs -->
     <ECClass typeName="IdentificationOfActivityProperties" isDomainClass="False" isCustomAttributeClass="True">
         <ECCustomAttributes>
-            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.13">
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.14">
                 <PropertiesThatReferenceAProperty>
                     <string>Name</string>
                     <string>Description</string>
@@ -185,7 +185,7 @@
          must adjust the code of RepositoryStandardClassesHelper class. -->
     <ECClass typeName="IdentificationOfStandardClasses" isDomainClass="False" isCustomAttributeClass="True">
         <ECCustomAttributes>
-            <ClassReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.13">
+            <ClassReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.14">
                 <PropertiesThatReferenceAClass>
                     <string>ProjectBaseClass</string>
                     <string>FolderBaseClass</string>
@@ -219,7 +219,7 @@
          If you modify it, you must adjust the code of UserGroupPropertiesHelper.cs -->
     <ECClass typeName="IdentificationOfUserGroupProperties" isDomainClass="False" isCustomAttributeClass="True">
         <ECCustomAttributes>
-            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.13">
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.14">
                 <PropertiesThatReferenceAProperty>
                     <string>Name</string>
                     <string>Description</string>
@@ -237,7 +237,7 @@
          If you modify it, you must adjust the code of UserPropertiesHelper.cs -->
     <ECClass typeName="IdentificationOfUserProperties" isDomainClass="False" isCustomAttributeClass="True">
         <ECCustomAttributes>
-            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.13">
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.14">
                 <PropertiesThatReferenceAProperty>
                     <string>Name</string>
                     <string>Description</string>
@@ -265,7 +265,7 @@
     </ECClass>
     <ECClass typeName="InstanceLabelSpecification" description="Specifies which ECProperty to use for the InstanceLabel for tree nodes and other GUI" displayLabel="InstanceLabel Specification" isDomainClass="False" isCustomAttributeClass="True">
         <ECCustomAttributes>
-            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.13">
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.14">
                 <PropertiesThatReferenceAProperty>
                     <string>PropertyName</string>
                 </PropertiesThatReferenceAProperty>
@@ -337,7 +337,7 @@
     <ECClass typeName="ItemsBrowserTreePresentation" displayLabel="ItemsBrowser tree presentation" isDomainClass="False" isCustomAttributeClass="True">
         <ECProperty propertyName="ShowAtTopLevel" typeName="boolean" />
     </ECClass>
-     <!--Struct used for key value pair specification-->
+    <!--Struct used for key value pair specification-->
     <ECClass typeName="LocalizationData" description="Contains a localized value and a key that identifies it.  The key may be a GUID or the original value.  If the value is a GUID 'IsGUID' is true." displayLabel="Localization Data" isStruct="True" isDomainClass="False">
         <ECProperty propertyName="Key" typeName="string" />
         <ECProperty propertyName="Value" typeName="string" />
@@ -424,7 +424,7 @@
     <!-- Class's attribute that identifies Synchronization ID property -->
     <ECClass typeName="SyncIDSpecification" description="Custom attribute that points on property that should be used as synchronization ID" displayLabel="SyncID Specification" isDomainClass="False" isCustomAttributeClass="True">
         <ECCustomAttributes>
-            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.13">
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.14">
                 <PropertiesThatReferenceAProperty>
                     <string>Property</string>
                 </PropertiesThatReferenceAProperty>
@@ -460,8 +460,8 @@
     <!-- ****** DEPRECATED: Use ECDbMap ECSchema instead ****** -->
     <ECClass typeName="ECDbSchemaHint" description="DEPRECATED: Use ECDbMap ECSchema instead" isDomainClass="False" isCustomAttributeClass="True">
         <ECProperty propertyName="TablePrefix"                  typeName="string" description="The prefix should be 2-4 letters followed by an underbar, e.g. plnt_." />
-	    <ECProperty propertyName="DefaultPropertyStrategy"      typeName="string" description="Optional and can have one possible value DoNotMap." />
-	    <ECProperty propertyName="DefaultClassMapStrategy"      typeName="string" description="Optional and can have two possible values. 1. DoNotMap 2. TableForThisClass" />		
+        <ECProperty propertyName="DefaultPropertyStrategy"      typeName="string" description="Optional and can have one possible value DoNotMap." />
+        <ECProperty propertyName="DefaultClassMapStrategy"      typeName="string" description="Optional and can have two possible values. 1. DoNotMap 2. TableForThisClass" />      
     </ECClass>
 
     <ECClass typeName="ECDbPropertyHint" description="DEPRECATED: Use ECDbMap ECSchema instead" isDomainClass="False" isCustomAttributeClass="True">
@@ -470,8 +470,8 @@
         <ECProperty propertyName="IsNullable"  typeName="boolean" description="Might not be honorable when multiple ECClasses are stored in a single table" />
         <ECProperty propertyName="IsUnique"    typeName="boolean" description="Only allow unique values for this column." />
         <ECProperty propertyName="Collate"     typeName="string" description="Specify how string compare should work for this property. Options 1) BINARY(default): bit to bit matching. 2). NOCASE: The same as binary, except the 26 upper case characters of ASCII are folded to their lower case equivalents before the comparison is performed. Note that is folds only ASCII not full UTF. 3) RTRIM: The same as binary, except that trailing space characters are ignored." />
-	    <ECProperty propertyName="Precision"    typeName="string" description="Only applied to ECDouble type properties. Possible value are 0-16 " />
-    	
+        <ECProperty propertyName="Precision"    typeName="string" description="Only applied to ECDouble type properties. Possible value are 0-16 " />
+
     </ECClass>
 
 
@@ -566,7 +566,7 @@
     <ECClass typeName="AdhocPropertySpecification" isDomainClass="False" isCustomAttributeClass="True">
         <ECProperty propertyName="AdhocPropertyContainer" typeName="string" />
     </ECClass>
-	<!-- Added this class for timestamp -->
+    <!-- Added this class for timestamp -->
     <ECClass typeName="ClassHasCurrentTimeStampProperty" isDomainClass="False" isCustomAttributeClass="True">
         <ECProperty propertyName="PropertyName" typeName="string" />
     </ECClass>
@@ -584,5 +584,25 @@
                         2 => DontShow
                     :AccessString: is the access string of the property to which the preceding presentation filter value is to be applied -->
         <ECProperty propertyName="PropertyName" typeName="string" />
+    </ECClass>
+    <ECClass typeName="AugmentationSchemaMetaData" description="Custom Attribute Class that is applied to a Augmentation schema" displayLabel="Augmentation Schema MetaData" isDomainClass="false" isCustomAttributeClass="true">
+        <ECProperty propertyName="SchemaName" typeName="string" description="The name of the schema that this schema augments" displayLabel="Primary Schema Name" />
+        <ECProperty propertyName="SchemaMajorVersion" typeName="int" description="The major version number of the augmented schema" displayLabel="Primary Schema Major Version" />
+        <ECProperty propertyName="SchemaMinorVersion" typeName="int" description="The minor version number of the augmented schema" displayLabel="Primary Schema Minor Version" />
+    </ECClass>
+    <ECClass typeName="DeletedItem" description="Custom Attribute Class to show that a single ECClass or ECProperty is to be deleted during merge" displayLabel="Deleted Item" isDomainClass="false" isCustomAttributeClass="true"/>
+    <ECClass typeName="DeletedItems" description="Custom Attribute Class to show that an array of items are to be deleted during merge" isStruct="false" isDomainClass="false" isCustomAttributeClass="true">
+        <ECArrayProperty propertyName="Names" typeName="string" description="Name of custom attribute to be deleted" readOnly="false" minOccurs="1" maxOccurs="unbounded"/>
+    </ECClass>
+    <ECClass typeName="Augmentation_MetaData" description="" displayLabel="Augmentation MetaData" isStruct="True" isDomainClass="false" isCustomAttributeClass="false">
+        <ECProperty propertyName="Operation" typeName="string" description="" displayLabel="Operation" />
+        <ECProperty propertyName="Hash" typeName="string" description="" displayLabel="Hash" />
+    </ECClass>
+    <ECClass typeName="Augmentation_MetaDataEntry" description="" displayLabel="Augmentation Augmentation_MetaDataEntry" isStruct="True" isDomainClass="false" isCustomAttributeClass="false">
+        <ECProperty propertyName="Name" typeName="string" description="" displayLabel="Custom Attribute Name" />
+        <ECArrayProperty propertyName="MetaDataEntries" typeName="Augmentation_MetaData" description="" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
+    </ECClass>
+    <ECClass typeName="Augmentation_MetaData_Map" description="" isStruct="false" isDomainClass="false" isCustomAttributeClass="true">
+        <ECArrayProperty propertyName="MapEntry" typeName="Augmentation_MetaDataEntry" description="" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
     </ECClass>
 </ECSchema>
