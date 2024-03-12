@@ -223,7 +223,10 @@ BentleyStatus SchemaMerger::MergeReferencedSchemaItem(SchemaMergeResult& result,
 //---------------+---------------+---------------+---------------+---------------+-------
 bool SchemaMergeResult::ContainsSchema(Utf8CP schemaName) const
     {
-    return this->GetSchema(schemaName) != nullptr;
+    return m_schemaCache.FindSchema([&schemaName](const std::pair<SchemaKey, ECSchemaPtr>& schemaPair) 
+        {
+        return BeStringUtilities::Stricmp(schemaName, schemaPair.first.GetName().c_str()) == 0;
+        });
     }
 
 //---------------------------------------------------------------------------------------
@@ -309,9 +312,6 @@ BentleyStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSc
 
     fillSchemasToResult("right", right);
     if(failedToFillSchemas)
-        return BentleyStatus::ERROR;
-
-     if(SchemaMerger::ValidateUniqueSchemaNames(result.GetResults(), result, "merge result") != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
 
     SchemaComparer comparer;

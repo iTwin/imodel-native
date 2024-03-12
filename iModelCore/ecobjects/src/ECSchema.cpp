@@ -3926,6 +3926,19 @@ ECSchemaP ECSchemaCache::GetSchema(SchemaKeyCR key, SchemaMatchType matchType) c
     return iter->second.get();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaP ECSchemaCache::FindSchema(const SchemaKeyMatchFnPredicate& predicate) const
+    {
+    SchemaMap::const_iterator iter = std::find_if(m_schemas.begin(), m_schemas.end(), predicate);
+
+    if (iter == m_schemas.end())
+        return nullptr;
+
+    return iter->second.get();
+    }
+
 //---------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
