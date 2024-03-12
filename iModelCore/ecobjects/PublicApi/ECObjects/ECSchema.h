@@ -2878,12 +2878,12 @@ public:
     //! Get the requested schema from this cache.
     //! @param[in] key  The SchemaKey fully describing the schema to be retrieved
     //! @param[in] matchType    The SchemaMatchType defining how exact of a match for the located schema is tolerated
-    //! @returns The ECSchema if it is contained in the cache; otherise nullptr.
+    //! @returns The ECSchema if it is contained in the cache; otherwise nullptr.
     ECOBJECTS_EXPORT ECSchemaP GetSchema(SchemaKeyCR key, SchemaMatchType matchType) const;
 
     //! Get a requested schema from this cache.
     //! @param[in] predicate    Predicate to match against cached schemas.
-    //! @returns The first matching ECSchema if it is contained in the cache; otherise nullptr.
+    //! @returns The first matching ECSchema if it is contained in the cache; otherwise nullptr.
     ECOBJECTS_EXPORT ECSchemaP FindSchema(const SchemaKeyMatchFnPredicate& predicate) const;
 
     virtual ~ECSchemaCache() {m_schemas.clear();} //!< Destructor
