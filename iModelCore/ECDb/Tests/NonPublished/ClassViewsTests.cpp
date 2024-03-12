@@ -361,7 +361,7 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
             <ECEntityClass typeName="P_View" description="" displayLabel="" modifier="Abstract">
                 <ECCustomAttributes>
                     <View xmlns="ECDbMap.02.00.03">
-                        <Query>SELECT intProp, longProp FROM ts.P</Query>
+                        <Query>SELECT intProp, longProp, ECInstanceId, ECClassId FROM ts.P</Query>
                     </View>
                 </ECCustomAttributes>
                 <ECProperty propertyName="intProp" typeName="int"/>
@@ -392,7 +392,7 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
             <ECEntityClass typeName="P_View" description="" displayLabel="" modifier="Abstract">
                 <ECCustomAttributes>
                     <View xmlns="ECDbMap.02.00.03">
-                        <Query>SELECT intProp, longProp, doubleProp FROM ts.P</Query>
+                        <Query>SELECT intProp, longProp, doubleProp, ECInstanceId, ECClassId FROM ts.P</Query>
                     </View>
                 </ECCustomAttributes>
                 <ECProperty propertyName="intProp" typeName="int"/>
@@ -424,7 +424,7 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
             <ECEntityClass typeName="P_View" description="" displayLabel="" modifier="Abstract">
                 <ECCustomAttributes>
                     <View xmlns="ECDbMap.02.00.03">
-                        <Query>SELECT intProp, longProp, doubleProp FROM ts.P</Query>
+                        <Query>SELECT intProp, longProp, doubleProp, ECInstanceId, ECClassId FROM ts.P</Query>
                     </View>
                 </ECCustomAttributes>
                 <ECProperty propertyName="intProp" typeName="int"/>
@@ -435,11 +435,11 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
         listener.Reset();
         ASSERT_EQ(ERROR, ImportSchema(testSchema));
         ASSERT_STREQ("Total of 4 view classes were checked and 1 were found to be invalid.", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid view class 'test_schema:P_View'. View query return property 'doubleProp' which not defined in view class or is a invalid system property.", listener.PopLastError().c_str());
+        ASSERT_STREQ("Invalid view class 'test_schema:P_View'. View query returns property 'doubleProp' which not defined in view class or is a invalid system property.", listener.PopLastError().c_str());
         listener.Dump("listener");
         m_ecdb.AbandonChanges();
     }
-    if ("system properties can be returned by view query for entity class") {
+    if ("system properties must be returned by view query for entity class") {
         auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema
                 schemaName="test_schema"
@@ -471,44 +471,6 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
         ASSERT_EQ(stmt.GetColumnCount(), 2);
         m_ecdb.AbandonChanges();
     }
-    if ("if system property is not selected view query, the select query will fail") {
-        auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-        <ECSchema
-                schemaName="test_schema"
-                alias="ts"
-                version="1.0.0"
-                xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
-            <ECEntityClass typeName="P" modifier="Sealed">
-                <ECProperty propertyName="intProp" typeName="int"/>
-                <ECProperty propertyName="longProp" typeName="long"/>
-                <ECProperty propertyName="doubleProp" typeName="double"/>
-            </ECEntityClass>
-            <ECEntityClass typeName="P_View" description="" displayLabel="" modifier="Abstract">
-                <ECCustomAttributes>
-                    <View xmlns="ECDbMap.02.00.03">
-                        <Query>SELECT intProp, longProp, doubleProp FROM ts.P</Query>
-                    </View>
-                </ECCustomAttributes>
-                <ECProperty propertyName="intProp" typeName="int"/>
-                <ECProperty propertyName="longProp" typeName="long"/>
-                <ECProperty propertyName="doubleProp" typeName="double"/>
-            </ECEntityClass>
-        </ECSchema>)xml");
-
-        listener.Reset();
-        ASSERT_EQ(SUCCESS, ImportSchema(testSchema));
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT intProp, longProp, doubleProp FROM ts.P_View"));
-        stmt.Finalize();
-        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId FROM ts.P_View"));
-        stmt.Finalize();
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.P_View"));
-        ASSERT_EQ(stmt.GetColumnCount(), 3) << "system prop is not returned as its not selected ";
-        stmt.Finalize();
-        m_ecdb.AbandonChanges();
-    }
-
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1538,6 +1500,7 @@ TEST_F(ClassViewsFixture, demo_usecase_pipes) {
                     <Query>
                         SELECT
                             jo.ECInstanceId,
+                            jo.ECClassId,
                             CAST(json_extract(jo.json, '$.diameter') AS INTEGER) [Diameter],
                             CAST(json_extract(jo.json, '$.length') AS INTEGER) [Length],
                             json_extract(jo.json, '$.material') [Material]
@@ -1601,6 +1564,7 @@ TEST_F(ClassViewsFixture, ExistingViewsWithNoAdditionalRootEntityClasses)  {
                     <Query>
                         SELECT
                             sc.ECInstanceId,
+                            sc.ECClassId,
                             sc.Name
                         FROM meta.ECSchemaDef sc
                     </Query>
@@ -1635,6 +1599,7 @@ TEST_F(ClassViewsFixture, ExistingViewsWithNoAdditionalRootEntityClasses)  {
                     <Query>
                         SELECT
                             sc.ECInstanceId,
+                            sc.ECClassId,
                             sc.Name
                         FROM meta.ECSchemaDef sc
                     </Query>
@@ -1680,7 +1645,8 @@ TEST_F(ClassViewsFixture, update_views_in_dynamic_schema) {
           <ECCustomAttributes>
               <View xmlns="ECDbMap.02.00.03">
                   <Query>
-                  SELECT * FROM(SELECT 'dog' as Name UNION SELECT 'cat' as NAME)
+                  SELECT *, ec_classid('TestSchema', 'Animals') as ECClassId FROM(SELECT 1 as ECInstanceId, 'dog' as Name 
+                  UNION SELECT 2 as ECInstanceId, 'cat' as NAME)
                   </Query>
               </View>
           </ECCustomAttributes>
@@ -1711,7 +1677,9 @@ TEST_F(ClassViewsFixture, update_views_in_dynamic_schema) {
           <ECCustomAttributes>
               <View xmlns="ECDbMap.02.00.03">
                   <Query>
-                  SELECT * FROM(SELECT 'dog' as Name UNION SELECT 'cat' as NAME UNION SELECT 'elephant' as NAME)
+                  SELECT *, ec_classid('TestSchema', 'Animals') as ECClassId FROM(SELECT 1 as ECInstanceId, 'dog' as Name 
+                  UNION SELECT 2 as ECInstanceId, 'cat' as NAME 
+                  UNION SELECT 3 as ECInstanceId, 'elephant' as NAME)
                   </Query>
               </View>
           </ECCustomAttributes>
@@ -1749,8 +1717,8 @@ TEST_F(ClassViewsFixture, update_views_in_dynamic_schema_cte) {
           <ECCustomAttributes>
               <View xmlns="ECDbMap.02.00.03">
                   <Query>
-                  WITH cte(col) AS (SELECT 'dog' UNION SELECT 'cat')
-                  SELECT col as [Name] FROM cte
+                  WITH cte(id,col) AS (SELECT 1, 'dog' UNION SELECT 2, 'cat')
+                  SELECT id as [ECInstanceId], ec_classid('TestSchema', 'Animals') as [ECClassId], col as [Name] FROM cte
                   </Query>
               </View>
           </ECCustomAttributes>
@@ -1781,8 +1749,8 @@ TEST_F(ClassViewsFixture, update_views_in_dynamic_schema_cte) {
           <ECCustomAttributes>
               <View xmlns="ECDbMap.02.00.03">
                   <Query>
-                  WITH cte(col) AS (SELECT 'dog' UNION SELECT 'cat' UNION SELECT 'elephant')
-                  SELECT col as [Name] FROM cte
+                  WITH cte(id,col) AS (SELECT 1, 'dog' UNION SELECT 2, 'cat' UNION SELECT 3, 'elephant')
+                  SELECT id as [ECInstanceId], ec_classid('TestSchema', 'Animals') as [ECClassId], col as [Name] FROM cte
                   </Query>
               </View>
           </ECCustomAttributes>

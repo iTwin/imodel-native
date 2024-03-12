@@ -62,6 +62,7 @@ void NavValueTestFixture::SetUp()
                         <Query>
                             SELECT
                                 [ECInstanceId],
+                                ec_classid('TestSchema', 'CustomBook') as [ECClassId],
                                 NAVIGATION_VALUE(ts.Book.Author, 1, 2)
                             FROM ts.Book
                         </Query>
