@@ -56,20 +56,13 @@ stages:
 
             echo "##vso[task.setvariable variable=ITWINJS_PR_NUM;isoutput=true]$itwinjsPR"
 
-            # This value is set in pipeline.yml during PR validation so we know to skip builds if native PRs are linked
-            noCi="[no ci]"
-            if [[ "$(Build.SourceVersionMessage)" == *"$noCi"* ]]; then
-              echo "##vso[task.setvariable variable=CREATE_ADDON;isoutput=true]false"
-            else
-              echo "##vso[task.setvariable variable=CREATE_ADDON;isoutput=true]true"
-            fi
         env:
           GITHUB_TOKEN: $(GH_TOKEN)
         displayName: get itwinjs pr
         name: getItwinjsPr
 
       - bash: |
-          echo $(getBuildNum.ITWINJS_BRANCH)
+          echo $(getItwinjsPr.ITWINJS_BRANCH)
           az pipelines run \
             --branch $(Build.SourceBranch) \
             --id  8467 \
@@ -77,4 +70,3 @@ stages:
         displayName: queue bump-version.yml
         env:
           AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)
-        condition: eq(variables['getBuildNum.CREATE_ADDON'], true)
