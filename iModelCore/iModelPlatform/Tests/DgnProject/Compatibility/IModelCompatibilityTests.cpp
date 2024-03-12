@@ -362,7 +362,7 @@ void Assert_BuiltinSchemaVersions_2_0_0_7(TestIModel& testDb)
 
     EXPECT_LE(SchemaVersion(4, 0, 2), testDb.GetSchemaVersion("ECDbMeta")) << testDb.GetDescription();
     EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << testDb.GetDescription();
-    EXPECT_EQ(JsonValue(R"js({"classcount":38, "enumcount": 8})js"), testDb.GetSchemaItemCounts("ECDbMeta")) << testDb.GetDescription();
+    EXPECT_EQ(JsonValue(R"js({"classcount":49, "enumcount": 9})js"), testDb.GetSchemaItemCounts("ECDbMeta")) << testDb.GetDescription();
 
     EXPECT_LE(SchemaVersion(5, 0, 2), testDb.GetSchemaVersion("ECDbSystem")) << testDb.GetDescription();
     EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbSystem")) << testDb.GetDescription();
@@ -2627,22 +2627,28 @@ TEST_F(IModelCompatibilityTestFixture, TestBisCoreWithMemberPriorityChange)
             DgnDbR dgnDb = testDb.GetDgnDb();
 
             // Import the latest BisCore
-            ECSchemaPtr schema = nullptr;
-            auto context = ECSchemaReadContext::CreateContext();
-            context->AddSchemaLocater(dgnDb.GetSchemaLocater());
-            auto bisCoreSchemaPath = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-            bisCoreSchemaPath.AppendToPath(L"ECSchemas\\BisCoreDummy.01.00.17.ecschema.xml");
-            EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(schema, bisCoreSchemaPath.GetName(), *context));
-
-            if (testDb.GetDb().GetECDbProfileVersion() == BeVersion(4, 0, 0, 1)
-                && (params.GetProfileUpgradeOptions() == Db::ProfileUpgradeOptions::None || !params.GetSchemaUpgradeOptions().AreDomainUpgradesAllowed()))  // imodel will not be upgraded and will remain 4.0.0.1
+            const auto bisCoreSchema = dgnDb.Schemas().GetSchema("BisCore");
+            ASSERT_GE(bisCoreSchema->GetVersionRead(), 1U);
+            ASSERT_GE(bisCoreSchema->GetVersionWrite(), 0U);
+            if (bisCoreSchema->GetVersionMinor() < 17U)
                 {
-                // ECDb profile version (4.0.0.1) only supports schemas with EC version < 3.2.
-                // So we expect the import to fail
-                ASSERT_EQ(SchemaStatus::SchemaImportFailed, dgnDb.ImportSchemas(context->GetCache().GetSchemas(), true));
-                continue;
+                ECSchemaPtr schema = nullptr;
+                auto context = ECSchemaReadContext::CreateContext();
+                context->AddSchemaLocater(dgnDb.GetSchemaLocater());
+                auto bisCoreSchemaPath = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+                bisCoreSchemaPath.AppendToPath(L"ECSchemas\\BisCoreDummy.01.00.17.ecschema.xml");
+                EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(schema, bisCoreSchemaPath.GetName(), *context));
+
+                if (testDb.GetDb().GetECDbProfileVersion() == BeVersion(4, 0, 0, 1)
+                    && (params.GetProfileUpgradeOptions() == Db::ProfileUpgradeOptions::None || !params.GetSchemaUpgradeOptions().AreDomainUpgradesAllowed()))  // imodel will not be upgraded and will remain 4.0.0.1
+                    {
+                    // ECDb profile version (4.0.0.1) only supports schemas with EC version < 3.2.
+                    // So we expect the import to fail
+                    ASSERT_EQ(SchemaStatus::SchemaImportFailed, dgnDb.ImportSchemas(context->GetCache().GetSchemas(), true));
+                    continue;
+                    }
+                ASSERT_EQ(SchemaStatus::Success, dgnDb.ImportSchemas(context->GetCache().GetSchemas(), true));
                 }
-            ASSERT_EQ(SchemaStatus::Success, dgnDb.ImportSchemas(context->GetCache().GetSchemas(), true));
  
             const auto categoryClass = dgnDb.Schemas().GetClass(BIS_ECSCHEMA_NAME, "CategorySelectorRefersToCategories");
             ASSERT_NE(nullptr, categoryClass);
@@ -2687,7 +2693,7 @@ TEST_F(IModelCompatibilityTestFixture, TestBisCoreWithMemberPriorityChange)
                     ECInstanceId(spatialCategory->GetCategoryId().GetValue()), relationshipInstance.get())) << testDbPtr->GetDescription();
                 index++;
                 }
-
+          
             // Check if the all duplicate relationships were inserted correctly
             ECSqlStatement statement;
             ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(testDb.GetDb(), "SELECT * FROM " BIS_SCHEMA("CategorySelectorRefersToCategories") " ORDER BY MemberPriority")) << testDbPtr->GetDescription();
@@ -2703,6 +2709,17 @@ TEST_F(IModelCompatibilityTestFixture, TestBisCoreWithMemberPriorityChange)
                 EXPECT_EQ(statement.GetValueId<DgnElementId>(6), spatialCategory->GetElementClassId());
                 }
             EXPECT_EQ(5, rowCount);
+
+            // Try to insert a duplicate member priority value to make sure the new index works
+            IECRelationshipInstancePtr anotherRelationshipInstance = relationshipEnabler->CreateRelationshipInstance();
+            ASSERT_NE(nullptr, anotherRelationshipInstance);
+
+            ECValue anotherValue;
+            anotherValue.SetInteger(5);
+            anotherRelationshipInstance->SetValue("MemberPriority", anotherValue);
+
+            EXPECT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, dgnDb.InsertLinkTableRelationship(relationshipInstanceKeys[index], *relationshipClass, ECInstanceId(categorySelector->GetElementId().GetValue()), 
+                ECInstanceId(spatialCategory->GetCategoryId().GetValue()), anotherRelationshipInstance.get())) << testDbPtr->GetDescription();
             }
         }
     }

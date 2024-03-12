@@ -198,11 +198,11 @@ void Assert_BuiltinSchemaVersions_4_0_0_5 (TestECDb& testDb)
 
     EXPECT_EQ(SchemaVersion(2, 0, 3), testDb.GetSchemaVersion("ECDbMap")) << testDb.GetDescription();
     EXPECT_EQ(BeVersion (3, 2), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
-    EXPECT_EQ(JsonValue(R"js({"classcount":11})js"), testDb.GetSchemaItemCounts("ECDbMap")) << testDb.GetDescription();
+    EXPECT_EQ(JsonValue(R"js({"classcount":13})js"), testDb.GetSchemaItemCounts("ECDbMap")) << testDb.GetDescription();
 
     EXPECT_EQ(SchemaVersion(4, 0, 2), testDb.GetSchemaVersion("ECDbMeta")) << testDb.GetDescription();
     EXPECT_EQ(BeVersion (3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << testDb.GetDescription();
-    EXPECT_EQ(JsonValue(R"js({"classcount":38, "enumcount": 8})js"), testDb.GetSchemaItemCounts("ECDbMeta")) << testDb.GetDescription();
+    EXPECT_EQ(JsonValue(R"js({"classcount":49, "enumcount": 9})js"), testDb.GetSchemaItemCounts("ECDbMeta")) << testDb.GetDescription();
 
     EXPECT_EQ(SchemaVersion(5, 0, 2), testDb.GetSchemaVersion("ECDbSystem")) << testDb.GetDescription();
     EXPECT_EQ(BeVersion (3, 2), testDb.GetOriginalECXmlVersion("ECDbSystem")) << testDb.GetDescription();
