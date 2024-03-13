@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2" version="01.00.01" schemaName="IBTYWUNPSE" alias="Myself_303">
+<ECSchema xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2" version="01.00.01" schemaName="Bracket" alias="Myself_303">
 	<ECSchemaReference name="BisCore" version="01.00.16" alias="bis"/>
 	<ECSchemaReference name="CoreCustomAttributes" version="01.00.03" alias="CoreCA"/>
 	<ECCustomAttributes>
