@@ -425,15 +425,16 @@ BentleyStatus SchemaMerger::MergeSchema(SchemaMergeResult& result, ECSchemaP lef
         return BentleyStatus::ERROR;
 
     if(schemaChange->VersionRead().IsChanged() || schemaChange->VersionWrite().IsChanged() || schemaChange->VersionMinor().IsChanged())
-        { //we are not merging versions like other properties. The highest version always wins and is applied to left
+        {
+        // We are not merging versions like other properties. The highest version always wins and is applied to left
         const auto leftKey = left->GetSchemaKey();
         const auto rightKey = right->GetSchemaKey();
         if(!options.GetKeepVersion() && leftKey.GetName().EqualsI(rightKey.GetName()) && leftKey.CompareByVersion(rightKey) < 0)
-              {
-              left->SetVersionRead(right->GetVersionRead());
-              left->SetVersionWrite(right->GetVersionWrite());
-              left->SetVersionMinor(right->GetVersionMinor());
-              }
+            {
+            left->SetVersionRead(right->GetVersionRead());
+            left->SetVersionWrite(right->GetVersionWrite());
+            left->SetVersionMinor(right->GetVersionMinor());
+            }
         }
 
     if(schemaChange->OriginalECXmlVersionMajor().IsChanged() || schemaChange->OriginalECXmlVersionMinor().IsChanged())
