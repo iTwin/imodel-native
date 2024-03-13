@@ -8,6 +8,7 @@ trigger:
   paths:
     exclude:
     - iModelJsNodeAddon/package_version.txt
+    - build/*
 
 pr: none
 
