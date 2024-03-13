@@ -3,6 +3,7 @@
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include <regex>
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -1772,34 +1773,33 @@ TEST_F(ClassViewsFixture, update_views_in_dynamic_schema_cte) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ClassViewsFixture, ViewDynamicallyAddsECClassId) {
+TEST_F(ClassViewsFixture, ViewRequiresClassIdAndInstanceId) {
     std::vector<Utf8String> values = {
           "Apple",
           "Banana",
           "Cherry"
     };
 
-  //Test schema and data used for sprint review demo
-    auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-        <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
-        <ECEntityClass typeName="Fruit">
-            <ECProperty propertyName="Name" typeName="string" />
-        </ECEntityClass>
-        <ECEntityClass typeName="FruitView" modifier="Abstract">
-            <ECCustomAttributes>
-                <View xmlns="ECDbMap.02.00.03">
-                    <Query>
-                        SELECT
-                            f.ECInstanceId,
-                            f.Name [MyName]
-                        FROM ts.Fruit f
-                    </Query>
-                </View>
-           </ECCustomAttributes>
-            <ECProperty propertyName="MyName" typeName="string" />
-        </ECEntityClass>
-    </ECSchema>)xml");
+    Utf8CP schemaTemplate = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+      <ECSchema schemaName="TestSchema" alias="ts" version="1.0.%d" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
+          <ECEntityClass typeName="Fruit">
+              <ECProperty propertyName="Name" typeName="string" />
+          </ECEntityClass>
+          <ECEntityClass typeName="FruitView" modifier="Abstract">
+              <ECCustomAttributes>
+                  <View xmlns="ECDbMap.02.00.03">
+                      <Query>
+                          %s
+                      </Query>
+                  </View>
+            </ECCustomAttributes>
+              <ECProperty propertyName="MyName" typeName="string" />
+          </ECEntityClass>
+      </ECSchema>)xml";
+
+    Utf8PrintfString initialSchemaXml(schemaTemplate, 0, "SELECT f.ECInstanceId, ec_classid('TestSchema', 'FruitView') as [ECClassId], f.Name [MyName] FROM ts.Fruit f");
+    SchemaItem testSchema(initialSchemaXml);
 
     ASSERT_EQ(BE_SQLITE_OK, SetupECDbForCurrentTest());
     ASSERT_EQ(SUCCESS, ImportSchema(testSchema));
@@ -1816,16 +1816,96 @@ TEST_F(ClassViewsFixture, ViewDynamicallyAddsECClassId) {
         }
     }
 
-    { //Select from View
+    auto fruitClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Fruit");
+    ASSERT_TRUE(fruitClassId.IsValid());
+    auto fruitViewClassId = m_ecdb.Schemas().GetClassId("TestSchema", "FruitView");
+    ASSERT_TRUE(fruitViewClassId.IsValid());
+
+    { //Verify data
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECClassId, ECInstanceId, MyName FROM ts.FruitView WHERE MyName = 'Banana'"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, MyName FROM ts.FruitView WHERE MyName = 'Banana'"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     auto instanceId = stmt.GetValueId<ECInstanceId>(0);
     ASSERT_TRUE(instanceId.IsValid());
+    auto idColInfo = stmt.GetColumnInfo(0);
+    ASSERT_EQ(true, idColInfo.IsSystemProperty());
+
     auto classId = stmt.GetValueId<ECClassId>(1);
+    auto cidColInfo = stmt.GetColumnInfo(1);
+    //ASSERT_EQ(true, cidColInfo.IsSystemProperty()); Does not work yet! Returns false.
     ASSERT_TRUE(classId.IsValid());
-    ASSERT_EQ("Banana", stmt.GetValueText(2));
+    ASSERT_EQ(fruitViewClassId, classId);
+
+    ASSERT_STREQ("Banana", stmt.GetValueText(2));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    Utf8PrintfString updatedSchemaXml(schemaTemplate, 1, "SELECT f.ECInstanceId, f.ECClassId, f.Name [MyName] FROM ts.Fruit f");
+    SchemaItem testSchema2(updatedSchemaXml);
+    ASSERT_EQ(SUCCESS, ImportSchema(testSchema2));
+
+    { //Select from View
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, MyName FROM ts.FruitView WHERE MyName = 'Banana'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    auto instanceId = stmt.GetValueId<ECInstanceId>(0);
+    ASSERT_TRUE(instanceId.IsValid());
+    auto idColInfo = stmt.GetColumnInfo(0);
+    ASSERT_EQ(true, idColInfo.IsSystemProperty());
+
+    auto classId = stmt.GetValueId<ECClassId>(1);
+    auto cidColInfo = stmt.GetColumnInfo(1);
+    ASSERT_EQ(true, cidColInfo.IsSystemProperty());
+    ASSERT_TRUE(classId.IsValid());
+    ASSERT_EQ(fruitClassId, classId);
+
+    ASSERT_STREQ("Banana", stmt.GetValueText(2));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    TestIssueListener listener;
+    m_ecdb.AddIssueListener(listener);
+    listener.Reset();
+
+    std::string pattern = "Total of \\d+ view classes were checked and 1 were found to be invalid.";
+    std::regex firstErrorRegex(pattern);
+
+    { //no ECInstanceId
+    Utf8PrintfString xml(schemaTemplate, 2, "SELECT f.ECClassId, f.Name [MyName] FROM ts.Fruit f");
+    SchemaItem invalidItem(xml);
+    ASSERT_EQ(ERROR, ImportSchema(invalidItem));
+    ASSERT_TRUE(std::regex_match(listener.PopLastError().c_str(), firstErrorRegex));
+    ASSERT_STREQ("Invalid view class 'TestSchema:FruitView'. View query must return ECInstanceId.", listener.PopLastError().c_str());
+    }
+
+    listener.Reset();
+
+    { //no ECClassId
+    Utf8PrintfString xml(schemaTemplate, 3, "SELECT f.ECInstanceId, f.Name [MyName] FROM ts.Fruit f");
+    SchemaItem invalidItem(xml);
+    ASSERT_EQ(ERROR, ImportSchema(invalidItem));
+    ASSERT_TRUE(std::regex_match(listener.PopLastError().c_str(), firstErrorRegex));
+    ASSERT_STREQ("Invalid view class 'TestSchema:FruitView'. View query must return ECClassId.", listener.PopLastError().c_str());
+    }
+
+    listener.Reset();
+
+    { //string as classId
+    Utf8PrintfString xml(schemaTemplate, 4, "SELECT 'FruitView' as ECClassId, f.ECInstanceId, f.Name [MyName] FROM ts.Fruit f");
+    SchemaItem invalidItem(xml);
+    ASSERT_EQ(ERROR, ImportSchema(invalidItem));
+    ASSERT_TRUE(std::regex_match(listener.PopLastError().c_str(), firstErrorRegex));
+    ASSERT_STREQ("Invalid view class 'TestSchema:FruitView'. ECClassId must be a primitive integer or long.", listener.PopLastError().c_str());
+    }
+
+    listener.Reset();
+
+    { //string as instanceId
+    Utf8PrintfString xml(schemaTemplate, 5, "SELECT f.ECClassId, 'FruitView' as ECInstanceId, f.Name [MyName] FROM ts.Fruit f");
+    SchemaItem invalidItem(xml);
+    ASSERT_EQ(ERROR, ImportSchema(invalidItem));
+    ASSERT_TRUE(std::regex_match(listener.PopLastError().c_str(), firstErrorRegex));
+    ASSERT_STREQ("Invalid view class 'TestSchema:FruitView'. ECInstanceId must be a primitive integer or long.", listener.PopLastError().c_str());
     }
 }
 
