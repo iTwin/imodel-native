@@ -5512,7 +5512,7 @@ TEST_F(SchemaMergerTests, DuplicateSchemaNamesMergeResult)
     // Initialize two sets of schemas
     bvector<Utf8CP> leftSchemasXml {
       R"schema(<?xml version='1.0' encoding='utf-8' ?>
-        <ECSchema schemaName="MySchema" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchema schemaName="MYSCHEMA" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="A">
           </ECEntityClass>
         </ECSchema>
@@ -5523,7 +5523,7 @@ TEST_F(SchemaMergerTests, DuplicateSchemaNamesMergeResult)
 
     bvector<Utf8CP> rightSchemasXml {
       R"schema(<?xml version='1.0' encoding='utf-8' ?>
-        <ECSchema schemaName="MYSCHEMA" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="A">
           </ECEntityClass>
           <ECEntityClass typeName="B">
@@ -5542,7 +5542,7 @@ TEST_F(SchemaMergerTests, DuplicateSchemaNamesMergeResult)
     // Compare result
     bvector<Utf8CP> expectedSchemasXml {
       R"schema(<?xml version='1.0' encoding='utf-8' ?>
-        <ECSchema schemaName="MySchema" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchema schemaName="MYSCHEMA" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
           <ECEntityClass typeName="A"/>
           <ECEntityClass typeName="B">
             <BaseClass>A</BaseClass>
@@ -5551,7 +5551,7 @@ TEST_F(SchemaMergerTests, DuplicateSchemaNamesMergeResult)
         )schema"
     };
 
-    CompareResults(expectedSchemasXml, result);
+    CompareResults(expectedSchemasXml, result, true);
     }
 
 /*---------------------------------------------------------------------------------------
