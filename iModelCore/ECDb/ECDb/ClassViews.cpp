@@ -208,7 +208,7 @@ bool ClassViews::IsValid(ECN::ECClassCR viewClass, ECDbCR conn){
         if (viewClassProps.find(sysProp->GetName()) == viewClassProps.end()) {
             const auto isSys = colInfo.IsSystemProperty();
             auto colName =  sysProp->GetName(); //Selecting any value as ECInstanceId or ECClassId is allowed
-            if(colName.EqualsI("ECInstanceId")) {
+            if(colName.EqualsI(ECDBSYS_PROP_ECInstanceId)) {
                 if(!colInfo.GetDataType().IsPrimitive() || 
                     (colInfo.GetDataType().GetPrimitiveType() != PrimitiveType::PRIMITIVETYPE_Long &&
                      colInfo.GetDataType().GetPrimitiveType() != PrimitiveType::PRIMITIVETYPE_Integer)) {
@@ -223,7 +223,7 @@ bool ClassViews::IsValid(ECN::ECClassCR viewClass, ECDbCR conn){
                 continue;
             }
 
-            if(colName.EqualsI("ECClassId")) {
+            if(colName.EqualsI(ECDBSYS_PROP_ECClassId)) {
                 if(!colInfo.GetDataType().IsPrimitive() || 
                     (colInfo.GetDataType().GetPrimitiveType() != PrimitiveType::PRIMITIVETYPE_Long &&
                      colInfo.GetDataType().GetPrimitiveType() != PrimitiveType::PRIMITIVETYPE_Integer)) {
