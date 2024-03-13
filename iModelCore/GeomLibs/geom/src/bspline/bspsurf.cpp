@@ -787,77 +787,70 @@ const MSBsplineSurface      *surfP
 )
     {
     int         uLeft, uSpan, vLeft, vSpan, index, uNumPoles, vNumPoles;
-    double      uBlend[MAX_BSORDER], vBlend[MAX_BSORDER], *weights,
-                dUBlend[MAX_BSORDER], dVBlend[MAX_BSORDER], *dUBLoc, *dVBLoc,
-                h, *uBPtr, *vBPtr, *dVBPtr, *dUBPtr, dHdU, dHdV,
-                product, weightFactor, *uBEnd, *vBEnd;
+    double      uBlend[MAX_BSORDER], vBlend[MAX_BSORDER],
+                dUBlend[MAX_BSORDER], dVBlend[MAX_BSORDER], product;
     DPoint3d    *pPtr, *poles, point;
 
     /* Compute The U Span and Blending Functions */
-    dUBLoc = dPdU ? dUBlend : NULL;
+    auto dUBLoc = dPdU ? dUBlend : NULL;
 
     bsputil_computeBlendingFunctions (uBlend, dUBLoc, &uLeft, surfP->uKnots, u, surfP->uParams.numPoles, surfP->uParams.order, surfP->uParams.closed);
 
     /* Compute The V Span and Blending Functions */
-    dVBLoc = dPdV ? dVBlend : NULL;
+    auto dVBLoc = dPdV ? dVBlend : NULL;
     bsputil_computeBlendingFunctions (vBlend, dVBLoc, &vLeft, surfP->vKnots, v, surfP->vParams.numPoles, surfP->vParams.order, surfP->vParams.closed);
 
-    point.x = point.y = point.z = h = dHdU = dHdV = 0.0;
+    point.x = point.y = point.z = 0.0;
     if (dPdU) dPdU->x = dPdU->y = dPdU->z = 0.0;
     if (dPdV) dPdV->x = dPdV->y = dPdV->z = 0.0;
 
     uSpan = uLeft - surfP->uParams.order;
     if (surfP->uParams.closed && uSpan < 0) uSpan += surfP->uParams.numPoles;
-    uBPtr = uBlend;
-    dUBPtr = dUBlend;
-    uBEnd = uBlend + surfP->uParams.order;
 
     uNumPoles = surfP->uParams.numPoles;
     vNumPoles = surfP->vParams.numPoles;
     poles = surfP->poles;
     if (surfP->rational)
         {
-        weights = surfP->weights;
-        for (; uBPtr < uBEnd; uSpan++, uBPtr++, dUBPtr++)
+        // The rational logic uses fewer pointers and calls SumOf to eliminate VS2022 compiler's fatal "optimization"
+        DPoint3d pole;
+        double* weights = surfP->weights;
+        double uB, vB, weight, h, dHdU, dHdV;
+        h = dHdU = dHdV = 0.0;
+        for (int32_t iUB = 0; iUB < surfP->uParams.order; ++iUB, ++uSpan)
             {
             uSpan %= uNumPoles;
 
             vSpan = vLeft - surfP->vParams.order;
             if (surfP->vParams.closed && vSpan < 0) vSpan += vNumPoles;
 
-            vBPtr = vBlend;
-            dVBPtr = dVBlend;
-            vBEnd = vBlend + surfP->vParams.order;
-            for (; vBPtr < vBEnd;  vSpan++, vBPtr++, dVBPtr++)
+            for (int32_t iVB = 0; iVB < surfP->vParams.order;  ++iVB, ++vSpan)
                 {
                 vSpan %= vNumPoles;
 
                 index = vSpan * uNumPoles + uSpan;
-                pPtr = poles + index;
-                weightFactor = *(weights+index);
+                pole = poles[index];
+                weight = weights[index];
 
-                product = *uBPtr * *vBPtr;
-                h += product * weightFactor;
+                uB = uBlend[iUB];
+                vB = vBlend[iVB];
+                product = uB * vB;
+                h += product * weight;
 
-                point.x += product * pPtr->x;
-                point.y += product * pPtr->y;
-                point.z += product * pPtr->z;
+                point.SumOf(point, pole, product);
 
                 if (dPdU)
                     {
-                    product = *dUBPtr * *vBPtr;
-                    dPdU->x += product * pPtr->x;
-                    dPdU->y += product * pPtr->y;
-                    dPdU->z += product * pPtr->z;
-                    dHdU += weightFactor * product;
+                    product = dUBlend[iUB] * vB;
+                    dPdU->SumOf(*dPdU, pole, product);
+                    dHdU += weight * product;
                     }
+
                 if (dPdV)
                     {
-                    product = *uBPtr * *dVBPtr;
-                    dPdV->x += product * pPtr->x;
-                    dPdV->y += product * pPtr->y;
-                    dPdV->z += product * pPtr->z;
-                    dHdV += weightFactor * product;
+                    product = uB * dVBlend[iVB];
+                    dPdV->SumOf(*dPdV, pole, product);
+                    dHdV += weight * product;
                     }
                 }
             }
@@ -870,19 +863,24 @@ const MSBsplineSurface      *surfP
 
         if (dPdU)
             {
-            dPdU->x = (dPdU->x - point.x * dHdU)/h;
-            dPdU->y = (dPdU->y - point.y * dHdU)/h;
-            dPdU->z = (dPdU->z - point.z * dHdU)/h;
+            dPdU->SumOf(*dPdU, point, -dHdU);
+            dPdU->x /= h;
+            dPdU->y /= h;
+            dPdU->z /= h;
             }
         if (dPdV)
             {
-            dPdV->x = (dPdV->x - point.x * dHdV)/h;
-            dPdV->y = (dPdV->y - point.y * dHdV)/h;
-            dPdV->z = (dPdV->z - point.z * dHdV)/h;
+            dPdV->SumOf(*dPdV, point, -dHdV);
+            dPdV->x /= h;
+            dPdV->y /= h;
+            dPdV->z /= h;
             }
         }
     else    /* non-rational */
         {
+        double *vBPtr, *uBPtr = uBlend;
+        double *dVBPtr, *dUBPtr = dUBlend;
+        double *vBEnd, *uBEnd = uBlend + surfP->uParams.order;
         for (; uBPtr<uBEnd;  uSpan++, uBPtr++, dUBPtr++)
             {
             uSpan %= uNumPoles;

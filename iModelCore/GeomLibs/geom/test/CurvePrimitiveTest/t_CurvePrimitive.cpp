@@ -2869,6 +2869,116 @@ TEST(CurveVector, Centroid)
     Check::ClearGeometry ("CurveVector.Centroid");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool centroidAreaXY(CurveVectorCR curves, DPoint3dR centroid, double& area)
+    {
+    if (curves.GetBoundaryType() != CurveVector::BOUNDARY_TYPE_None)
+        return curves.CentroidAreaXY(centroid, area);
+    // Geomlibs refuses to compute for boundary type "None", so temporarily treat as union
+    auto curvesR = const_cast<CurveVectorR>(curves);
+    curvesR.SetBoundaryType(CurveVector::BOUNDARY_TYPE_UnionRegion);
+    auto status = curvesR.CentroidAreaXY(centroid, area);
+    curvesR.SetBoundaryType(CurveVector::BOUNDARY_TYPE_None);
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(CurveVector, FlattenNestedUnionRegions)
+	{
+    auto loop0 = CurveVector::Create(ICurvePrimitive::CreateRectangle(3, 0, 4, 1, 0), CurveVector::BOUNDARY_TYPE_Outer);
+    auto loop1 = CurveVector::Create(ICurvePrimitive::CreateRectangle(5, 0, 6, 1, 0), CurveVector::BOUNDARY_TYPE_Outer);
+
+    // looks like a filled disk, but it's really a union of a washer and its pentagonal hole.
+    auto unionRegion = CurveVector::Create(CurveVector::BOUNDARY_TYPE_UnionRegion);
+    unionRegion->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*CurveVector::CreateRegularPolygonXY(DPoint3d::FromZero(), 1, 5, true)));
+    auto parityRegion = CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion);
+    parityRegion->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*CurveVector::CreateDisk(DEllipse3d::FromCenterRadiusXY(DPoint3d::FromZero(), 2))));
+    parityRegion->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*CurveVector::CreateRegularPolygonXY(DPoint3d::FromZero(), 1, 5, true, CurveVector::BOUNDARY_TYPE_Inner)));
+    unionRegion->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*parityRegion));
+
+    // union with union child
+    auto unionWithUnionChild = CurveVector::Create(CurveVector::BOUNDARY_TYPE_UnionRegion);
+    unionWithUnionChild->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*unionRegion->Clone()));
+
+    // none with union child
+    auto noneWithUnionChild = CurveVector::Create(CurveVector::BOUNDARY_TYPE_UnionRegion);
+    noneWithUnionChild->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*unionRegion->Clone()));
+
+    // lambda to flatten & verify
+    auto flattenAndVerify = [](CurveVectorCR cv) -> void
+        {
+        DPoint3d c0, c1;
+        double a0, a1;
+        size_t numPrimitives = cv.CountPrimitivesBelow();
+        Check::True(centroidAreaXY(cv, c0, a0));
+        auto flattened = cv.Clone();
+        flattened->FlattenNestedUnionRegions();
+        Check::True(centroidAreaXY(*flattened, c1, a1));
+        Check::Near(c0, c1, "flattened and original have same centroids");
+        Check::Near(a0, a1, "flattened and original have same areas");
+        auto flattened1 = flattened->Clone();
+        flattened1->FlattenNestedUnionRegions();
+        Check::True(flattened->IsSameStructureAndGeometry(*flattened1), "flatten is idempotent");
+        Check::Size(flattened->CountPrimitivesBelow(), numPrimitives, "flatten preserves primitive count");
+        Check::False(flattened->HasNestedUnionRegion(), "flatten removed all nested unions");
+
+        auto jsonA = Json::Value();
+        Check::True(IModelJson::TryGeometryToIModelJsonValue(BeJsValue(jsonA), *IGeometry::Create(cv.Clone())), "geometry to imjs");
+        bvector<IGeometryPtr> geometryB;
+        if (Check::True(IModelJson::TryIModelJsonValueToGeometry(BeJsValue(jsonA), geometryB), "imjs to geometry"))
+            {
+            auto curveB = geometryB.front()->GetAsCurveVector();
+            Check::True(curveB.IsValid() && curveB->IsSameStructureAndGeometry(*flattened), "round trip through imjs flattens");
+            }
+
+        bvector<Byte> flatBuf;
+        BentleyGeometryFlatBuffer::GeometryToBytes(cv, flatBuf);
+        if (Check::False(flatBuf.empty(), "geometry to flatbuffer"))
+            {
+            auto geomB = BentleyGeometryFlatBuffer::BytesToGeometry(flatBuf);
+            if (Check::True(geomB.IsValid(), "flatbuffer to geometry"))
+                {
+                auto curveB = geomB->GetAsCurveVector();
+                Check::True(curveB.IsValid() && curveB->IsSameStructureAndGeometry(*flattened), "round trip thru flatbuffer flattens");
+                }
+            }
+        };
+
+    // create a few permutations of nested and un-nested union regions
+    auto c = unionRegion->Clone();
+    flattenAndVerify(*c); // isolated union
+
+    for (auto boundaryType : {CurveVector::BOUNDARY_TYPE_None, CurveVector::BOUNDARY_TYPE_UnionRegion})
+        {
+        for (auto const& unionChild : {*unionRegion, *unionWithUnionChild, *noneWithUnionChild})
+            {
+            c = CurveVector::Create(boundaryType);
+            c->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*unionChild.Clone()));
+            flattenAndVerify(*c); // only child
+            
+            c = CurveVector::Create(boundaryType);
+            c->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*unionChild.Clone()));
+            c->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*loop0->Clone()));
+            flattenAndVerify(*c); // first child
+
+            c = CurveVector::Create(boundaryType);
+            c->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*loop0->Clone()));
+            c->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*unionChild.Clone()));
+            flattenAndVerify(*c); // union as last child
+
+            c = CurveVector::Create(boundaryType);
+            c->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*loop0->Clone()));
+            c->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*unionChild.Clone()));
+            c->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*loop1->Clone()));
+            flattenAndVerify(*c); // union as middle child
+            }
+        }
+    }
+    
 TEST(CurveVector, TunnelProfileShadowIntersectionsXY)
     {
     BeFileName dataFullPathName;
