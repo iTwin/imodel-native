@@ -30,7 +30,6 @@ describe("ImportContext", () => {
 
   it("should cloneElement properly on a spatialCategory within the same database", async () => {
     const sourceDb = openDgnDb(sourceDbPath, { profile: ProfileOptions.Upgrade, schemaLockHeld: true});
-    // const targetDb = openDgnDb(targetDbPath, {profile: ProfileOptions.Upgrade, schemaLockHeld: true});
     const elementProps = sourceDb.getElement({id: "0x2d"});
     expect(elementProps.classFullName).to.be.equal("BisCore:SpatialCategory");
     const nativeContext = new iModelJsNative.ImportContext(sourceDb, sourceDb);
