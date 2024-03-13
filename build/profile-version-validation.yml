@@ -27,6 +27,7 @@ resources:
       type: github
       endpoint: imodel-native
       name: iTwin/profileversion-tests
+      ref: 'io-remove-post'
 
     - repository: imodel-native-internal
       type: github
