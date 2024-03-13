@@ -22,7 +22,7 @@ parameters:
 - name: defaultCoreBranch
   displayName: Default itwinjs-core Branch Used for PR Validation
   type: string
-  default: 'imodel02' # Change to appropriate branch name when creating new release branch
+  default: 'master' # Change to appropriate branch name when creating new release branch
 
 
 resources:
