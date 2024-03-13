@@ -138,7 +138,7 @@ bvector<CurveAndSolidLocationDetail> &intersections
             DBilinearPatch3d xyzPatch (xyz00, xyz10, xyz01, xyz11);
             size_t num0 = intersections.size ();
             curve.AppendCurveBilinearPatchIntersections (xyzPatch, intersections);
-            // Promote uv coordinates from bilinear patch to 
+            // Promote uv coordinates from bilinear patch to
             for (size_t k = num0; k < intersections.size (); k++)
                 {
                 DPoint2d uvQuad = intersections[k].m_solidDetail.GetUV ();
@@ -225,12 +225,12 @@ bool EvaluateBezier (double u0, double u1, int numUin, double v0, double v1, int
     TensorProducts::EvaluateGrid2D (xyz, blendU, blendV, patch->poles, orderU, orderV);
     if (rational)
         TensorProducts::EvaluateGrid2D (xyzWeight, blendU, blendV, patch->weights, orderU, orderV);
-        
+
     if (derivatives)
         {
         TensorProducts::EvaluateGrid2D (dXdu, dBlenddU, blendV, patch->poles, orderU, orderV);
         TensorProducts::EvaluateGrid2D (dXdv, blendU, dBlenddV, patch->poles, orderU, orderV);
-        
+
         if (rational)
             {
             TensorProducts::EvaluateGrid2D (dWdu, dBlenddU, blendV, patch->weights, orderU, orderV);
@@ -239,7 +239,7 @@ bool EvaluateBezier (double u0, double u1, int numUin, double v0, double v1, int
         }
     return true;
     }
- 
+
 // Evaluate raw tensor products and derivatives -- do not deweight or take cross products for normals.
 bool EvaluateBezier (double u0, double u1, size_t numUIn, double v0, double v1, size_t numVIn, BSurfPatchCR patch, bool reverseU, size_t numDerivatives)
     {
@@ -298,8 +298,8 @@ bool EvaluateBezier (bvector<DPoint2d> uvIn,
     size_t numIn = uvIn.size ();
     if (numIn <= 0)
         return false;
-        
-        
+
+
     double du = u1 - u0;
     double dv = v1 - v0;
     double au = 1.0 / du;
@@ -375,7 +375,7 @@ bool ComputeNormalFromDerivatives (size_t i, MSBsplineSurfaceCP surface, bool re
     if (dXdv[i].Magnitude () < fc_epsilon)
         bspsurf_evaluateSurfacePoint (NULL, NULL, NULL, &dXdv[i],
                             NearbyCoordinate (uv[i].x, fc_epsilon), uv[i].y, surface);
-    
+
     normal[i].CrossProduct (*(DVec3d*)&dXdu[i], *(DVec3d*)&dXdv[i]);
     normal[i].Normalize ();
     if (reverse)

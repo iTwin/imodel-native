@@ -262,7 +262,7 @@ bool TryGetEdgeIndexAndDirection (MTGNodeId nodeId, size_t &index, bool &atStart
         atStart = 0 != GetMaskAt (nodeId, MY_START_MASK);
         return true;
         }
-    return false;        
+    return false;
     }
 bool TryGetVertexIndexAndXYZ(MTGNodeId nodeId, size_t &index, DPoint3dR xyz)
     {
@@ -367,7 +367,7 @@ CurveVectorPtr CurveVector::AssembleChains ()
             CurveVectorPtr loop = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
             MTGARRAY_FACE_LOOP (currNodeId, &assembler, seedNodeId)
                 {
-                assembler.SetMaskAroundEdge (currNodeId, visitMask); 
+                assembler.SetMaskAroundEdge (currNodeId, visitMask);
                 ExtendChain (currNodeId, assembler, *allPrimitives, *loop);
                 }
             MTGARRAY_END_FACE_LOOP (currNodeId, &assembler, seedNodeId)

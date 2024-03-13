@@ -135,7 +135,7 @@ bool DgnSphereDetail::TryGetMaxUVLength (SolidLocationDetail::FaceIndices const 
         }
     return false;
     }
-    
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -158,7 +158,7 @@ bool DgnConeDetail::TryGetMaxUVLength (SolidLocationDetail::FaceIndices const & 
         }
     return false;
     }
-    
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -248,7 +248,7 @@ public:
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-void ProcessPointPair(double f, DPoint3dCR xyz0, DPoint3dCR xyz1) override 
+void ProcessPointPair(double f, DPoint3dCR xyz0, DPoint3dCR xyz1) override
         {
         m_maxDist = DoubleOps::Max (m_maxDist, xyz0.Distance (xyz1));
         }

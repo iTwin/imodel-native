@@ -199,7 +199,7 @@ Public GEOMDLLIMPEXP bool     jmdlRG_collectAnalysisFaces
 (
 RG_Header           *pRG,
 AreaSelect        leafRule,    // Rule for in/out based on crossing counts at single leaf
-BoolSelect        compositeRule,    // rule for composite in/out 
+BoolSelect        compositeRule,    // rule for composite in/out
 MTG_MarkSet         *pMarkSet,
 bool                reverseSense = false,
 MTGMask             activeEdgeMask = 0
@@ -222,7 +222,7 @@ bool         initializeSetToOppositeValue //! true to preset the entire graph to
 //! @param [in] barrierMask mask for uncrossable edges.  This is tested on both sides.
 //! @param [inout] pMarkSet face set already accepted.   Flooding will not reenter these faces.  Flood faces are added to this set.
 //! @param [in] seedNode
-Public GEOMDLLIMPEXP  void jmdlMTG_floodToBoundary (MTGGraph *graph, 
+Public GEOMDLLIMPEXP  void jmdlMTG_floodToBoundary (MTGGraph *graph,
 MTG_MarkSet &markset,
 MTGMask barrierMask,
 MTGNodeId seedNodeId

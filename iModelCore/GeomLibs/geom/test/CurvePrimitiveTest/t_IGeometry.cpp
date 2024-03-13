@@ -55,10 +55,10 @@ bool CheckUpCastMatch (IGeometryPtr g)
 
     if (g->GetGeometryType () == IGeometry::GeometryType::Polyface)
         stat = g->GetAsPolyfaceHeader ().IsValid ();
-    
+
     return stat;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -66,8 +66,8 @@ TEST(IGeoemtry,HelloWorld)
     {
     ICurvePrimitivePtr line = ICurvePrimitive::CreateLine (DSegment3d::From (1,2,3, 4,2,9));
     CheckUpCastMatch (IGeometry::Create(line));
-    
-    }    
+
+    }
 
 // serializer=0 for flatbuffer, 2 for dgnjs string, 1 for imjs string
 void DoRoundTrip (IGeometryPtr g0, bool emitGeometry, int serializerSelect)
@@ -113,22 +113,22 @@ void DoRoundTrip (IGeometryPtr g0, bool emitGeometry, int serializerSelect)
     if (checkPolyfaceQueryCarrier && polyface.IsValid () && buffer0.size () > 8)
         {
 
-        PolyfaceQueryCarrier carrier0 (0, false, 0, 0, nullptr, nullptr);        
+        PolyfaceQueryCarrier carrier0 (0, false, 0, 0, nullptr, nullptr);
         Check::True (BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier (&buffer0[0], carrier0));
 
         bvector<Byte> buffer1;
         BentleyGeometryFlatBuffer::GeometryToBytes (*polyface, buffer1);
 
-        PolyfaceQueryCarrier carrier1 (0, false, 0, 0, nullptr, nullptr);        
+        PolyfaceQueryCarrier carrier1 (0, false, 0, 0, nullptr, nullptr);
         Check::True (BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier (&buffer1[0], carrier1));
         }
 
-    if (Check::True (g1.IsValid (), 
+    if (Check::True (g1.IsValid (),
             serializerSelect == 1 ? "JsonString RoundTrip" :"FlatBuffer Roundtrip"))
         {
         Check::True (g0->IsSameStructureAndGeometry (*g1), "BGFB IsSameStructureAndGeoemtry");
         }
-    
+
     }
 
 void DoRoundTrip (IGeometryPtr g0, bool emitGeometry)
@@ -158,7 +158,7 @@ void DoRoundTripMeshedSolid (IGeometryPtr g0, bool emitGeometry)
             }
         }
     }
-  
+
 #if defined (_WIN32) && !defined(BENTLEY_WINRT)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -182,7 +182,7 @@ TEST(BGFB,HelloWorld)
         cp2->TryAddLineStringPoint (DPoint3d::From (x,0,2 * x));
     IGeometryPtr g2 = IGeometry::Create (cp2);
     DoRoundTrip (g2, s_emitGeometry);
-    
+
     DEllipse3d arc;
     arc.InitFromXYMajorMinor (1,2,3, 1,4, Angle::DegreesToRadians (45),
             Angle::DegreesToRadians (10.0), Angle::DegreesToRadians (270.0));
@@ -208,7 +208,7 @@ TEST(BGFB,HelloWorld)
     ISolidPrimitivePtr cone = ISolidPrimitive::CreateDgnCone (coneDetail);
     DoRoundTrip (IGeometry::Create (cone), s_emitGeometry);
     DoRoundTripMeshedSolid (IGeometry::Create (cone), s_emitGeometry);
-    
+
     DgnBoxDetail boxDetail = DgnBoxDetail::InitFromCenterAndSize (DPoint3d::From (2,2,2), DPoint3d::From (3,4,5), false);
     ISolidPrimitivePtr Box = ISolidPrimitive::CreateDgnBox (boxDetail);
     DoRoundTrip (IGeometry::Create (Box), s_emitGeometry);
@@ -218,7 +218,7 @@ TEST(BGFB,HelloWorld)
     ISolidPrimitivePtr sphere = ISolidPrimitive::CreateDgnSphere (sphereDetail);
     DoRoundTrip (IGeometry::Create (sphere), s_emitGeometry);
     DoRoundTripMeshedSolid (IGeometry::Create (sphere), s_emitGeometry);
-    
+
     DgnTorusPipeDetail torusPipeDetail (
                 DPoint3d::From (2,2,2),
                 DVec3d::From (1,0,0),
@@ -266,8 +266,8 @@ TEST(BGFB,HelloWorld)
     mesh->PointIndex ().push_back (3);
     mesh->PointIndex ().push_back (4);
     mesh->PointIndex ().push_back (0);
-    
-    DoRoundTrip (IGeometry::Create (mesh), s_emitGeometry);    
+
+    DoRoundTrip (IGeometry::Create (mesh), s_emitGeometry);
 
     if (s_testPartialCurve)
     {
@@ -314,8 +314,8 @@ TEST(Flatbuffer, InterpolationCurve)
     ICurvePrimitivePtr ic0 = ICurvePrimitive::CreateInterpolationCurveSwapFromSource (curve);
     DoRoundTrip (IGeometry::Create(ic0), s_emitGeometry);
 
-    }    
- 
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -331,12 +331,12 @@ TEST(Flatbuffer, TransitionSpiral)
         DSpiral2dBase::TransitionType_Clothoid,
         0.2, 0.0,
         0.4, 0.01,
-        frame, 
+        frame,
         0.2, 0.9
         );
     DoRoundTrip (IGeometry::Create(ic0), s_emitGeometry);
 
-    }    
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

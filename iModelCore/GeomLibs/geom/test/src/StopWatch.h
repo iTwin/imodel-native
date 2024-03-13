@@ -11,16 +11,16 @@
 
 namespace Bentley {
 
-class StopWatch 
+class StopWatch
     {
 private:
     std::wstring       m_description;
     LARGE_INTEGER m_start;
     LARGE_INTEGER m_stop;
     LARGE_INTEGER m_frequency;
-    
+
     double ConvertLongIntegerToSeconds( LARGE_INTEGER & L);
-    
+
 public:
     DGNPLATFORMTEST_COMMON_EXPORT StopWatch(wchar_t * description = L"", bool startImmediately = false);
     DGNPLATFORMTEST_COMMON_EXPORT void         Start();
@@ -28,5 +28,5 @@ public:
     DGNPLATFORMTEST_COMMON_EXPORT double       GetElapsedSeconds();
     DGNPLATFORMTEST_COMMON_EXPORT std::wstring GetDescription();
     };
-    
+
 } // Bentley

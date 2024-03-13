@@ -198,7 +198,7 @@ TEST(BeJs,isAlmostEqual)
     double e0 = 1.0e-18;
     double e1 = 1.0e-8;
     for (double sign : {-1.0, 1.0})
-        { 
+        {
         for (double x0 = 1.0e-10; x0 < 1.0e20; x0 *= 10.0)
             {
             double x = sign * x0;
@@ -378,7 +378,7 @@ PolyfaceHeaderPtr RoundTripMeshQueryCarrier(PolyfaceHeaderPtr & meshA)
 PolyfaceHeaderPtr RoundTripMeshIMJS(PolyfaceHeaderPtr & meshA)
     {
     auto jsonA = Json::Value();
-    Check::True(IModelJson::TryGeometryToIModelJsonValue(BeJsValue(jsonA), 
+    Check::True(IModelJson::TryGeometryToIModelJsonValue(BeJsValue(jsonA),
             *IGeometry::Create(meshA)), "geomery to json");
     bvector<IGeometryPtr> geometryB;
     if (Check::True(IModelJson::TryIModelJsonValueToGeometry(BeJsValue(jsonA), geometryB), "json to geometry"))

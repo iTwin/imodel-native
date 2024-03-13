@@ -105,7 +105,7 @@ TEST(MTG, Masks)
 
     Check::Size (2 * (2 + numSplit), graph.GetNodeIdCount (), "node count");
     Check::Size (2 * (2 + numSplit), graph.GetActiveNodeCount (), "node count");
-    
+
     size_t numNode = graph.GetActiveNodeCount ();
     MTGMask myMask = MTG_PRIMARY_EDGE_MASK;
     graph.SetMask (myMask);
@@ -159,7 +159,7 @@ bvector< bvector <MTGNodeId> > & nodes
     if (numYEdge < 1)
         numYEdge = 1;
     nodes.clear ();
-    MTGNodeId nodeIdA0, nodeIdA1;   
+    MTGNodeId nodeIdA0, nodeIdA1;
     MTGNodeId nodeIdC, nodeIdD;
     graph.CreateEdge (nodeIdA0, nodeIdA1);
     if (numXEdge > 1)

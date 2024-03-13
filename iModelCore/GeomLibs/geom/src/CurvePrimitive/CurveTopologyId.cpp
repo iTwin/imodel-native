@@ -262,7 +262,7 @@ Utf8String CurveTopologyId::GetDebugString () const
                                      "BRep UnIdentified Edge",  // 27
                                      };
     // When a type is added ... 1) add the string above, 2) change the Type::XXX below to agree
-    
+
     Utf8String string = m_type <= Type::BRepUnIdentifiedEdge ? Utf8String(s_typeStrings[(uint8_t)m_type]) : Utf8String("Error: m_type > Type::Max");
 
     if (0 == GetCount())

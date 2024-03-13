@@ -665,7 +665,7 @@ DPoint3dCR point11
     int i;
     int numRoot = 0;
     DVec3d U, V, W, R, C;
-    DPoint3d D; 
+    DPoint3d D;
     double sbuf[2], tbuf[2];
     U.DifferenceOf (point10, point00);
     V.DifferenceOf (point01, point00);
@@ -858,7 +858,7 @@ DPoint2dR        ellipsePlaneCoordinates
     intersectionPoint.SumOf (ellipse.center,
                 ellipse.vector0, ellipsePlaneCoordinates.x,
                 ellipse.vector90, ellipsePlaneCoordinates.y);
-                
+
     return false;
     }
 
@@ -1094,7 +1094,7 @@ DRay3dCR rayB
         {
         pointA = rayA.origin;
         fractionA = 0.0;
-        rayB.ProjectPointUnbounded (pointB, fractionB, pointA);    
+        rayB.ProjectPointUnbounded (pointB, fractionB, pointA);
         }
     return  result;
     }

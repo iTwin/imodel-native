@@ -215,7 +215,7 @@ bool inputPointsHaveWeightsAppliedAlready
                 for (size_t i = 0; i < numUKnots; i++)
                     uKnots[i] = uKnotVector->at(i);
                 }
-            
+
             if (numVKnots == 0)
                 status = bspknot_computeKnotVector (vKnots, &vParams, NULL);
             else
@@ -304,7 +304,7 @@ MSBsplineStatus MSBsplineSurface::AllocateUKnots ()
     {
     if (NULL != uKnots)
         BSIBaseGeom::Free (uKnots);
-    int allocSize = uParams.NumberAllocatedKnots () * sizeof (double);        
+    int allocSize = uParams.NumberAllocatedKnots () * sizeof (double);
     if (NULL == (uKnots = static_cast<double *>(BSIBaseGeom::Malloc (allocSize))))
         return MDLERR_INSFMEMORY;
     return SUCCESS;
@@ -314,7 +314,7 @@ MSBsplineStatus MSBsplineSurface::AllocateVKnots ()
     {
     if (NULL != vKnots)
         BSIBaseGeom::Free (vKnots);
-    int allocSize = vParams.NumberAllocatedKnots () * sizeof (double);        
+    int allocSize = vParams.NumberAllocatedKnots () * sizeof (double);
     if (NULL == (vKnots = static_cast<double *>(BSIBaseGeom::Malloc (allocSize))))
         return MDLERR_INSFMEMORY;
     return SUCCESS;
@@ -479,7 +479,7 @@ void MSBsplineSurface::EvaluatePoint (DPoint3dR xyz, DVec3dR dPdU, DVec3dR dPdV,
     //! @param [in] numVPoint number of points in v direction
     //! @param [out] uParams u-direction evaluation parameters.
     //! @param [out] vParams v-direction evaluation parameters.
-    //! @param [out] gridPoints 
+    //! @param [out] gridPoints
 void MSBsplineSurface::EvaluateUniformGrid (size_t numUPoint, size_t numVPoint, bvector<double> &uParamsOut, bvector<double> &vParamsOut, bvector<DPoint3d> &gridPoints) const
     {
     double uMax, uMin, vMax, vMin;
@@ -542,7 +542,7 @@ double &curvatureA,
 DVec3dR unitB,
 double &curvatureB
 )
-    {            
+    {
     // conventional names L, M, N for curvature 2x2 entries ...
     // http://en.wikipedia.org/wiki/Parametric_surface
     // http://www.cs.iastate.edu/~cs577/
@@ -613,7 +613,7 @@ double &curvatureB
                 }
             }
         }
-    
+
     // fall through in disaster cases?
     // hm.. what if dPdu is zero and dPdv is not?
     RotMatrix R, R1;
@@ -886,9 +886,9 @@ bool MSBsplineSurface::IsBidirectionalTranslation (double relativeTolerance) con
             chainRange.Extend (poleB);
             }
         if (!IsSmallDelta (deltaRange, chainRange, relativeTolerance))
-            return false;            
+            return false;
         }
-    return true;        
+    return true;
     }
 
 
@@ -916,7 +916,7 @@ double MSBsplineSurface::FractionToKnot (double f, int direction) const
 double MSBsplineSurface::KnotToFraction (double knot, int direction) const
     {
     double knot0, knot1;
-    GetKnotRange (knot0, knot1, direction); 
+    GetKnotRange (knot0, knot1, direction);
     return (knot - knot0) / (knot1 - knot0);
     }
 
@@ -975,7 +975,7 @@ void GetBasePole (size_t select, bool closed, double *knots, size_t order, size_
             {
             basePole += numPoles;
             basePole -= order / 2;
-            }        
+            }
         while (basePole >= numPoles)
             basePole -= numPoles;
         }
@@ -1128,11 +1128,11 @@ MSBsplineStatus MSBsplineSurface::CleanKnots ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void weightSumDPoint4d
 (
-DPoint4d&       Cw, 
-double          alpha, 
-DPoint4d        Aw, 
-double          beta, 
-DPoint4d        Bw 
+DPoint4d&       Cw,
+double          alpha,
+DPoint4d        Aw,
+double          beta,
+DPoint4d        Bw
 )
     {
     Cw.x = alpha * Aw.x + beta * Bw.x;
@@ -1146,11 +1146,11 @@ DPoint4d        Bw
 +---------------+---------------+---------------+---------------+---------------+------*/
 static double distanceDPoint4d
 (
-DPoint4d    Pw, 
-DPoint4d    Qw 
+DPoint4d    Pw,
+DPoint4d    Qw
 )
     {
-    double  distance2; 
+    double  distance2;
 
     distance2  = (Pw.x - Qw.x)*(Pw.x - Qw.x) + (Pw.y - Qw.y)*(Pw.y - Qw.y);
     distance2 += (Pw.z - Qw.z)*(Pw.z - Qw.z);
@@ -1164,7 +1164,7 @@ DPoint4d    Qw
 +---------------+---------------+---------------+---------------+---------------+------*/
 static double getRemovalBound
 (
-MSBsplineSurfaceCP  pSurf, 
+MSBsplineSurfaceCP  pSurf,
 int                 r,  // index of removal knot
 int                 s,  // times want to remove.
 int                 dir // direction of knots to remove: 1=u, 2=v, 3=both.
@@ -1179,20 +1179,20 @@ int                 dir // direction of knots to remove: 1=u, 2=v, 3=both.
     double    *U = pSurf->uKnots, *V = pSurf->vKnots, del, omd, dw;
 
     DPoint4d A;
-    
-    int uNum = pSurf->uParams.numPoles; 
+
+    int uNum = pSurf->uParams.numPoles;
     n = uNum - 1;
     int vNum = pSurf->vParams.numPoles;
     m = vNum - 1;
     p = pSurf->uParams.order - 1;
     q = pSurf->vParams.order - 1;
     num = uNum*vNum;
-    
+
     i = std::max (p, q);
     bvector<double> alf (2*i+1), oma (2*i+1), bet (2*i+1), omb (2*i+1);
     bvector<DPoint4d> tmpPoles (2*i+1);
     bvector<DPoint4d> polesWeighted (num);
-    
+
     for (int k=0; k<num; k++)
         {
         if (pSurf->rational)
@@ -1204,13 +1204,13 @@ int                 dir // direction of knots to remove: 1=u, 2=v, 3=both.
     /* Remove knot in the requested direction */
 
     double mr = -1.0;
-    
+
     if( dir == 1)
         {
         /* Remove in u-direction */
 
-        first = r-p;    
-        last  = r-s;    
+        first = r-p;
+        last  = r-s;
         off   = first-1;
 
         /* Save some parameters */
@@ -1223,7 +1223,7 @@ int                 dir // direction of knots to remove: 1=u, 2=v, 3=both.
             oma[i-first] = 1.0 - alf[i-first];
             bet[j-first] = (U[j+p+1] - U[j])/(U[j+p+1] - U[r]);
             omb[j-first] = 1.0 - bet[j-first];
-            i++;  j--;  
+            i++;  j--;
             }
 
         del = (U[r] - U[i])/(U[i+p+1] - U[i]);
@@ -1247,7 +1247,7 @@ int                 dir // direction of knots to remove: 1=u, 2=v, 3=both.
                 {
                 weightSumDPoint4d(tmpPoles[ii], alf[i-first], polesWeighted[i+col*uNum], oma[i-first], tmpPoles[ii-1]);
                 weightSumDPoint4d(tmpPoles[jj], bet[j-first], polesWeighted[j+col*uNum], omb[j-first], tmpPoles[jj+1]);
-                i ++;  j --;  
+                i ++;  j --;
                 ii++;  jj--;
                 }
 
@@ -1264,15 +1264,15 @@ int                 dir // direction of knots to remove: 1=u, 2=v, 3=both.
                 }
 
             if( dw > mr )  mr = dw;
-            } 
+            }
         }
-        
+
     else
         {
         /* Remove in v-direction */
 
-        first = r-q;    
-        last  = r-s;    
+        first = r-q;
+        last  = r-s;
         off   = first-1;
 
         /* Save some parameters */
@@ -1285,7 +1285,7 @@ int                 dir // direction of knots to remove: 1=u, 2=v, 3=both.
             oma[i-first] = 1.0-alf[i-first];
             bet[j-first] = (V[j+q+1]-V[j])/(V[j+q+1]-V[r]);
             omb[j-first] = 1.0-bet[j-first];
-            i++;  j--;  
+            i++;  j--;
             }
 
         del = (V[r]-V[i])/(V[i+q+1]-V[i]);
@@ -1309,7 +1309,7 @@ int                 dir // direction of knots to remove: 1=u, 2=v, 3=both.
                 {
                 weightSumDPoint4d(tmpPoles[ii], alf[i-first], polesWeighted[row + i*uNum], oma[i-first], tmpPoles[ii-1]);
                 weightSumDPoint4d(tmpPoles[jj], bet[j-first], polesWeighted[row + j*uNum], omb[j-first], tmpPoles[jj+1]);
-                i ++;  j --;  
+                i ++;  j --;
                 ii++;  jj--;
                 }
 
@@ -1328,10 +1328,10 @@ int                 dir // direction of knots to remove: 1=u, 2=v, 3=both.
             if( dw > mr )  mr = dw;
             }
         }
-         
+
     return mr;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @description Remove knots from surface.
 * @remarks Individual oversaturated knots are flattened and reduced to maximum legal multiplicity before global knot removal.
@@ -1354,8 +1354,8 @@ double              tol
     int krm, i, j, k, l, row, col, ii, jj, first, last, off, fout, n, m, r, s,
             ru = 0, su = 0, rv = 0, sv = 0, ns;
     int p, q, noremu = 0, noremv = 0;
-    double *UQ = pSurf->uKnots, *VQ = pSurf->vKnots, lam = 0, oml = 0, wmin, wmax, pmax, al, be, bu = 0, bv = 0, wi, wj; 
-    
+    double *UQ = pSurf->uKnots, *VQ = pSurf->vKnots, lam = 0, oml = 0, wmin, wmax, pmax, al, be, bu = 0, bv = 0, wi, wj;
+
     n = pSurf->uParams.numPoles - 1;
     m = pSurf->vParams.numPoles - 1;
     p = pSurf->uParams.order - 1;
@@ -1365,7 +1365,7 @@ double              tol
     ns = n;
     int num = pSurf->uParams.numPoles * pSurf->vParams.numPoles;
     bvector<DPoint4d> polesWeighted (num);
-        
+
     for (k=0; k<num; k++)
         {
         if (pSurf->rational)
@@ -1373,17 +1373,17 @@ double              tol
         else
             polesWeighted[k].InitFrom (*(&pSurf->poles[k]), 1.0);
         }
-    
+
     if( pSurf->rational )
         {
         surfaceMinWeightAndMaxMagnitude(wmin, pmax, pSurf);
         tol = (tol * wmin) / (1.0 + pmax);
         rat = true;
         }
-    
+
     i = std::max (p, q);
     j = std::max (n, m);
-    
+
     int uNum = n + 1;
     //int vNum = m + 1;
     //int iNum = 2*i+1;
@@ -1395,7 +1395,7 @@ double              tol
     bvector<double> bru, brv;
     bvector<int> sru, nru, srv, nrv;
     bvector<double> er (uKnot*vKnot), te (uKnot*vKnot);
-    
+
     if( dir == 1 || dir == 3 )
         {
         bru.resize (r+1);
@@ -1407,12 +1407,12 @@ double              tol
             sru[i] = 0;
             nru[i] = 0;
             }
-            
+
         ru = p+1;
         while( ru <= n )
             {
             i = ru;
-            while( ru <= n && fabs (UQ[ru] - UQ[ru+1]) < RELATIVE_BSPLINE_KNOT_TOLERANCE )  
+            while( ru <= n && fabs (UQ[ru] - UQ[ru+1]) < RELATIVE_BSPLINE_KNOT_TOLERANCE )
                 ru++;
             sru[ru] = ru-i+1;
 
@@ -1432,12 +1432,12 @@ double              tol
             srv[j] = 0;
             nrv[i] = 0;
             }
-        
+
         rv = q+1;
         while( rv <= m )
             {
             i = rv;
-            while( rv <= m && fabs (VQ[rv] - VQ[rv+1])< RELATIVE_BSPLINE_KNOT_TOLERANCE )  
+            while( rv <= m && fabs (VQ[rv] - VQ[rv+1])< RELATIVE_BSPLINE_KNOT_TOLERANCE )
                 rv++;
             srv[rv] = rv-i+1;
 
@@ -1446,10 +1446,10 @@ double              tol
             rv++;
             }
         }
-    
+
     for( i=0; i<uKnot*vKnot; i++ )
         er[i] = 0.0;
-    
+
     /* Try to remove each knot */
 
 
@@ -1465,54 +1465,54 @@ double              tol
             ru = p+1;
             for( i=p+2; i<=r-p-1; i++ )
                 {
-                if( bru[i] < bu )  
+                if( bru[i] < bu )
                     {
-                    bu = bru[i];  
-                    su = sru[i];  
+                    bu = bru[i];
+                    su = sru[i];
                     ru = i;
                     noremu = nru[i];
                     }
                 }
             }
-        
+
         if( dir == 2 || dir == 3 )
             {
             bv = brv[q+1];
-            noremv = nrv[q+1]; 
+            noremv = nrv[q+1];
             sv = srv[q+1];
             rv = q+1;
             for( j=q+2; j<=s-q-1; j++ )
                 {
-                if( brv[j] < bv )  
+                if( brv[j] < bv )
                     {
-                    bv = brv[j];  
-                    sv = srv[j];  
+                    bv = brv[j];
+                    sv = srv[j];
                     rv = j;
                     noremv = nrv[j];
                     }
                 }
             }
-        
+
         if( dir == 1 )  {  if( noremu == 1 )  break;  }  else
         if( dir == 2 )  {  if( noremv == 1 )  break;  }  else
-        if( dir == 3 )  
-            {  
-            if( noremu == 1 && noremv == 1)  
+        if( dir == 3 )
+            {
+            if( noremu == 1 && noremv == 1)
                 break;
             }
 
-        if( dir == 3 )  
+        if( dir == 3 )
             {
-            if( bu < bv && noremu != 1)  
-                krm = 1;  
-            else  
+            if( bu < bv && noremu != 1)
+                krm = 1;
+            else
                 krm = 2;
             }
         else
             {
             krm = dir;
             }
-            
+
         if (krm == 1)
             {
             /* Remove in the u-direction */
@@ -1524,8 +1524,8 @@ double              tol
                 al  = (UQ[ru]-UQ[ru-k  ])/(UQ[ru-k+p+1]-UQ[ru-k  ]);
                 be  = (UQ[ru]-UQ[ru-k+1])/(UQ[ru-k+p+2]-UQ[ru-k+1]);
                 lam = al/(al+be);
-                oml = 1.0-lam; 
-                } 
+                oml = 1.0-lam;
+                }
             else
                 {
                 k = (p+su)/2;
@@ -1541,18 +1541,18 @@ double              tol
                     {
                     for( j=q; j<=s-q-1; j++ )
                         {
-                        if( fabs (VQ[j] - VQ[j+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE )  
-                            { 
+                        if( fabs (VQ[j] - VQ[j+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE )
+                            {
                             te[i+j*uKnot] = er[i+j*uKnot]+bu;
-                            if( te[i+j*uKnot] > tol )  
-                                {  
-                                rmf = false;  
-                                break;  
+                            if( te[i+j*uKnot] > tol )
+                                {
+                                rmf = false;
+                                break;
                                 }
                             }
                         }
-                    }    
-                if( rmf == false )  
+                    }
+                if( rmf == false )
                     break;
                 }
 
@@ -1560,20 +1560,20 @@ double              tol
 
             if( rmf == true )
                 {
-                for( i=ru-k; i<=l; i++ )  
+                for( i=ru-k; i<=l; i++ )
                     {
                     for( j=q; j<=s-q-1; j++ )
                         {
                         if( fabs (UQ[i] - UQ[i+1] ) > RELATIVE_BSPLINE_KNOT_TOLERANCE
-                              &&  fabs (VQ[j] - VQ[j+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE ) 
+                              &&  fabs (VQ[j] - VQ[j+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE )
                             {
                             er[i+j*uKnot] = te[i+j*uKnot];
                             }
                         }
                     }
 
-                fout  = (2*ru-su-p)/2; 
-                first = ru-p;              
+                fout  = (2*ru-su-p)/2;
+                first = ru-p;
                 last  = ru-su;
                 off   = first-1;
 
@@ -1587,7 +1587,7 @@ double              tol
                     oma[i-first] = 1.0-alf[i-first];
                     bet[j-first] = (UQ[j+p+1]-UQ[j])/(UQ[j+p+1]-UQ[ru]);
                     omb[j-first] = 1.0-bet[j-first];
-                    i++;  j--;  
+                    i++;  j--;
                     }
 
                 /* Remove the knot for each row */
@@ -1609,7 +1609,7 @@ double              tol
                         {
                         weightSumDPoint4d(tmpPoles[col + ii*jNum], alf[i-first], polesWeighted[i + col*uNum], oma[i-first], tmpPoles[col + (ii-1)*jNum]);
                         weightSumDPoint4d(tmpPoles[col + jj*jNum], bet[j-first], polesWeighted[j + col*uNum], omb[j-first], tmpPoles[col + (jj+1)*jNum]);
-                        i ++;  j --;  
+                        i ++;  j --;
                         ii++;  jj--;
                         }
 
@@ -1632,26 +1632,26 @@ double              tol
                             if( wj > wmax )  wmax = wj;
                             i++;  j--;
                             }
-                        if( wmin < WMIN || wmax > WMAX )  
-                            {  
-                            wfl = false;  
-                            break;  
+                        if( wmin < WMIN || wmax > WMAX )
+                            {
+                            wfl = false;
+                            break;
                             }
                         }
 
                 if( (p+su)%2 )
                     {
                     weightSumDPoint4d(tmpPoles[col + (jj+1)*jNum], lam, tmpPoles[col + (jj+1)*jNum], oml, tmpPoles[col + (ii-1)*jNum]);
-                    }            
+                    }
 
                 } /* End for each row */
 
                 /* See if weights are in the allowable range  */
 
-                if( wfl == false )  
-                    {  
+                if( wfl == false )
+                    {
                     nru[ru] = 1;
-                    continue;  
+                    continue;
                     }
                 else
                     {
@@ -1672,11 +1672,11 @@ double              tol
 
                     /* Successful removal -> shift down some entinties */
 
-                if( su == 1 )  
+                if( su == 1 )
                     {
                     for( j=q; j<=s-q-1; j++ )
                         {
-                        if( fabs (VQ[j] - VQ[j+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE ) 
+                        if( fabs (VQ[j] - VQ[j+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE )
                             {
                             er[(ru-1)+j*uKnot] = std::max (er[(ru-1)+j*uKnot], er[ru+j*uKnot]);
                             }
@@ -1690,7 +1690,7 @@ double              tol
                     bru[i-1] = bru[i];
                     sru[i-1] = sru[i];
                     UQ [i-1] = UQ [i];
-                    for( j=q; j<=m; j++ )  
+                    for( j=q; j<=m; j++ )
                         er[(i-1) + j*uKnot] = er[i+j*uKnot];
                     }
 
@@ -1725,8 +1725,8 @@ double              tol
                 l = std::min (n, ru+p-su);
                 for( i=k; i<=l; i++ )
                     {
-                    if( fabs (UQ[i] - UQ[i+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE && nru[i] != 1 ) 
-                        { 
+                    if( fabs (UQ[i] - UQ[i+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE && nru[i] != 1 )
+                        {
                         bru[i] = getRemovalBound (pSurf, i, sru[i], 1);
                         }
                     }
@@ -1735,8 +1735,8 @@ double              tol
                     {
                     for( j=q+1; j<=s-q-1; j++ )
                         {
-                        if( fabs (VQ[j] - VQ[j+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE && nrv[j] != 1 ) 
-                            { 
+                        if( fabs (VQ[j] - VQ[j+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE && nrv[j] != 1 )
+                            {
                             brv[j] = getRemovalBound (pSurf, j, srv[j], 2);
                             }
                         }
@@ -1758,7 +1758,7 @@ double              tol
                 al  = (VQ[rv]-VQ[rv-k  ])/(VQ[rv-k+q+1]-VQ[rv-k  ]);
                 be  = (VQ[rv]-VQ[rv-k+1])/(VQ[rv-k+q+2]-VQ[rv-k+1]);
                 lam = al/(al+be);
-                oml = 1.0-lam; 
+                oml = 1.0-lam;
                 }
             else
                 {
@@ -1775,18 +1775,18 @@ double              tol
                     {
                     for( i=p; i<=r-p-1; i++ )
                         {
-                        if( fabs (UQ[i] - UQ[i+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE )  
-                            { 
+                        if( fabs (UQ[i] - UQ[i+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE )
+                            {
                             te[i + j*uKnot] = er[i + j*uKnot]+bv;
-                            if( te[i + j*uKnot] > tol )  
-                                {  
-                                rmf = false;  
-                                break;  
+                            if( te[i + j*uKnot] > tol )
+                                {
+                                rmf = false;
+                                break;
                                 }
                             }
                         }
-                    }  
-                if( rmf == false )  
+                    }
+                if( rmf == false )
                     break;
                 }
 
@@ -1794,20 +1794,20 @@ double              tol
 
             if( rmf == true )
                 {
-                for( j=rv-k; j<=l; j++ )  
+                for( j=rv-k; j<=l; j++ )
                     {
                     for( i=p; i<=r-p-1; i++ )
                         {
                         if( fabs (VQ[j] - VQ[j+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE
-                              && fabs (UQ[i] - UQ[i+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE ) 
+                              && fabs (UQ[i] - UQ[i+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE )
                             {
                             er[i + j*uKnot] = te[i + j*uKnot];
                             }
                         }
                     }
 
-                fout  = (2*rv-sv-q)/2; 
-                first = rv-q;              
+                fout  = (2*rv-sv-q)/2;
+                first = rv-q;
                 last  = rv-sv;
                 off   = first-1;
 
@@ -1821,7 +1821,7 @@ double              tol
                     oma[i-first] = 1.0-alf[i-first];
                     bet[j-first] = (VQ[j+q+1]-VQ[j])/(VQ[j+q+1]-VQ[rv]);
                     omb[j-first] = 1.0-bet[j-first];
-                    i++;  j--;  
+                    i++;  j--;
                     }
 
                 /* Remove knot for each column */
@@ -1843,7 +1843,7 @@ double              tol
                         {
                         weightSumDPoint4d(tmpPoles[row + ii*jNum], alf[i-first], polesWeighted[row + i*uNum], oma[i-first], tmpPoles[row + (ii-1)*jNum]);
                         weightSumDPoint4d(tmpPoles[row + jj*jNum], bet[j-first], polesWeighted[row + j*uNum], omb[j-first], tmpPoles[row + (jj+1)*jNum]);
-                        i ++;  j --;  
+                        i ++;  j --;
                         ii++;  jj--;
                         }
 
@@ -1866,10 +1866,10 @@ double              tol
                             if( wj > wmax )  wmax = wj;
                             i++;  j--;
                             }
-                        if( wmin < WMIN || wmax > WMAX )  
-                            {  
-                            wfl = false;  
-                            break;  
+                        if( wmin < WMIN || wmax > WMAX )
+                            {
+                            wfl = false;
+                            break;
                             }
                         }
 
@@ -1878,20 +1878,20 @@ double              tol
                     if( (q+sv)%2 )
                         {
                         weightSumDPoint4d(tmpPoles[row + (jj+1)*jNum], lam, tmpPoles[row + (jj+1)*jNum], oml, tmpPoles[row + (ii-1)*jNum]);
-                        }            
+                        }
 
                     } /* End for each column */
 
                 /* See if weights are in the allowable range  */
 
-                if( wfl == false )  
-                    {  
+                if( wfl == false )
+                    {
                     nrv[rv] = 1;
-                    continue;  
+                    continue;
                     }
                 else
                     {
-                    /* Save control points */ 
+                    /* Save control points */
 
                     for( row=0; row<=n; row++ )
                         {
@@ -1908,11 +1908,11 @@ double              tol
 
                 /* Successful removal -> shift down some entinties */
 
-                if( sv == 1 )  
+                if( sv == 1 )
                     {
                     for( i=p; i<=r-p-1; i++ )
                         {
-                        if( fabs (UQ[i] - UQ[i+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE ) 
+                        if( fabs (UQ[i] - UQ[i+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE )
                             {
                             er[i + (rv-1)*uKnot] = std::max (er[i + (rv-1)*uKnot], er[i + rv*uKnot]);
                             }
@@ -1926,7 +1926,7 @@ double              tol
                     brv[j-1] = brv[j];
                     srv[j-1] = srv[j];
                     VQ [j-1] = VQ [j];
-                    for( i=p; i<=n; i++ )  
+                    for( i=p; i<=n; i++ )
                         er[i + (j-1)*uKnot] = er[i + j*uKnot];
                     }
 
@@ -1949,7 +1949,7 @@ double              tol
                     if (rat)
                         pSurf->weights[cpi+cpj*pSurf->uParams.numPoles] = polesWeighted[cpi+cpj*pSurf->uParams.numPoles].w;
                     }
-                    
+
                 /* If no more internal knots -> finished */
 
                 if( dir == 1  )  {  if( m == q          )  break;  }  else
@@ -1961,8 +1961,8 @@ double              tol
                 l = std::min (m, rv+q-sv);
                 for( j=k; j<=l; j++ )
                     {
-                    if( fabs (VQ[j] - VQ[j+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE && nrv[j] != 1 ) 
-                        { 
+                    if( fabs (VQ[j] - VQ[j+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE && nrv[j] != 1 )
+                        {
                         brv[j] = getRemovalBound (pSurf, j, srv[j], 2);
                         }
                     }
@@ -1971,8 +1971,8 @@ double              tol
                     {
                     for( i=p+1; i<=r-p-1; i++ )
                         {
-                        if( fabs (UQ[i] - UQ[i+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE && nru[i] != 1 ) 
-                            { 
+                        if( fabs (UQ[i] - UQ[i+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE && nru[i] != 1 )
+                            {
                             bru[i] = getRemovalBound(pSurf, i, sru[i], 1);
                             }
                         }
@@ -2004,7 +2004,7 @@ MSBsplineStatus MSBsplineSurface::RemoveKnotsBounded (int dir, double tol)
     vDegree = vParams.order - 1;
     int r = uParams.NumberAllocatedKnots () - 1;
     int s = vParams.NumberAllocatedKnots () - 1;
-    
+
     if (dir != 2)
         {
         // flatten first u-knot if oversaturated
@@ -2066,10 +2066,10 @@ MSBsplineStatus MSBsplineSurface::RemoveKnotsBounded (int dir, double tol)
                 }
             }
         }
-    
+
     if (SUCCESS == (status = CleanKnots ()))
         status = RemoveKnots (this, dir, tol);
-        
+
     return status;
     }
 
@@ -2167,7 +2167,7 @@ static bool CheckConditionalPointer (bool expectPointer, void *pointer)
 static bool ValidOrder (int order)
     {
     return order >= 2 && order <= MAX_ORDER; //TFS#22859
-    }    
+    }
 bool MSBsplineSurface::HasValidPoleAllocation () const { return poles != NULL;}
 bool MSBsplineSurface::HasValidWeightAllocation () const { return CheckConditionalPointer (rational != 0, weights);}
 bool MSBsplineSurface::HasValidBoundaryAllocation () const
@@ -2184,7 +2184,7 @@ bool MSBsplineSurface::HasValidBoundaryAllocation () const
         }
     return true;
     }
-    
+
 bool MSBsplineSurface::HasValidKnotAllocation () const {return uKnots != NULL && vKnots != NULL;}
 bool MSBsplineSurface::HasValidOrder () const {return ValidOrder (uParams.order) && ValidOrder (vParams.order);}
 bool MSBsplineSurface::HasValidPoleCounts () const {return uParams.numPoles >= uParams.order && vParams.numPoles >= vParams.order;}
@@ -2247,7 +2247,7 @@ ValidatedDPoint2d MSBsplineSurface::ControlPolygonFractionToKnot (size_t i, size
             DoubleOps::Interpolate (vKnots[orderV + j - 1], v, vKnots[orderV + j])
             ),
         stat
-        ); 
+        );
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2277,7 +2277,7 @@ ValidatedDPoint4d MSBsplineSurface::ControlPolygonFractionToControlPolygonDPoint
             DPoint4d::FromInterpolate (GetPoleDPoint4d (i,j+1), u, GetPoleDPoint4d (i+1,j+1))
             ),
         stat
-        ); 
+        );
     }
 
 /*---------------------------------------------------------------------------------**//**

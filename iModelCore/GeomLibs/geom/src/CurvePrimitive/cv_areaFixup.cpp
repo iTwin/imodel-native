@@ -58,7 +58,7 @@ void EnforceLoopOrientationAndType(double s)
             loop->ReverseCurvesInPlace ();
             m_area = - m_area;
             }
-        loop->SetBoundaryType (s > 0.0 ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Inner);            
+        loop->SetBoundaryType (s > 0.0 ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Inner);
         }
     }
 
@@ -110,7 +110,7 @@ bool FixupParityStructure(CurveVectorR allLoops)
         }
     // RULES:
     // A region contained in an ODD number of regions is a child of the smallest containing region.
-    size_t numGlobalParent = 0;            
+    size_t numGlobalParent = 0;
     size_t numRegions = regionData.size ();
     ptrdiff_t lastParentIndex = 0;
     for (size_t childIndex = 0; childIndex < numRegions; childIndex++)

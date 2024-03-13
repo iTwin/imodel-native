@@ -4,7 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "testHarness.h"
 #include <stdio.h>
-// ASSUME points are in quad grid layout 
+// ASSUME points are in quad grid layout
 void testDecimate (int select, bvector<DPoint3d> &points, int vertsPerRow, double shortEdge, size_t numCollapse, bool print = false)
     {
     if (select != 0)

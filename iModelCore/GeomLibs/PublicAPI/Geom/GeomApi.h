@@ -99,7 +99,7 @@ public:
     //! @param [in] mode selects mode.
     //! @param [in] lowerValue lower limit.
     //! @param [in] upperValue upper limit.
-    //! Remark: If lowerValue and upperValue are in reverse order, they are swapped. 
+    //! Remark: If lowerValue and upperValue are in reverse order, they are swapped.
   static GEOMDLLIMPEXP double Round (double value, RoundingMode mode, double lowerValue, double upperValue);
 };
 
@@ -363,7 +363,7 @@ struct  GeometryValidator : public RefCountedBase
             bvector< IGeometryPtr> &inout,
             bvector<IGeometryPtr> *invalidGeometry
             );
-        //! 
+        //!
         //! <ul>
         //! <li> null geometry pointer is ignored.
         //! <li> If no validator is given, consider the geometry valid.
@@ -377,7 +377,7 @@ struct  GeometryValidator : public RefCountedBase
             bvector<IGeometryPtr> *validGeometry,
             bvector<IGeometryPtr> *invalidGeometry
             );
-        //! 
+        //!
         //! <ul>
         //! <li> null geometry pointer is ignored.
         //! <li> If no validator is given, consider the geometry valid.
@@ -396,7 +396,7 @@ struct  GeometryValidator : public RefCountedBase
         GEOMDLLIMPEXP static bool IsValidGeometry (GeometryValidatorPtr &validator, IGeometryCR g);
 
 
-};        
+};
 
 //=======================================================================================
 //! Inlinable template for initial zeroing an object of size T.
@@ -668,7 +668,7 @@ virtual bool Accept (T const &data) = 0;
 
 
 //=======================================================================================
-//! Class for multiple RefCounted geometry types: ICurvePrimitive, CurveVector, 
+//! Class for multiple RefCounted geometry types: ICurvePrimitive, CurveVector,
 //! ISolidPrimitive, MSBsplineSurface, PolyfaceHeader.
 //!@bsiclass
 //=======================================================================================
@@ -927,7 +927,7 @@ struct TaggedNumericData
     struct TagType
         {
         private: TagType (){}       // no instances
-        public: 
+        public:
         static const int32_t SubdivisionSurface = -1000;
         };
     struct SubdivisionMethod
@@ -1114,13 +1114,13 @@ struct _dDisk3d
 struct _dCone3d
     {
     //! @description Coordinate frame for the cone (local to world).  Matrix part columns are cone axes in world coordinates; translation is
-//!            base center.  Cone base is the xy-plane unit circle in local coordinates (cos(theta), sin(theta), z=0). 
+//!            base center.  Cone base is the xy-plane unit circle in local coordinates (cos(theta), sin(theta), z=0).
 
     Transform    frame;
-    //! @description Scale factor to produce the z=1 cross section radius. 
+    //! @description Scale factor to produce the z=1 cross section radius.
 
     double          radiusFraction;
-    //! @description Range of parameters theta and z, in [-pi,pi] and [0,1], respectively. 
+    //! @description Range of parameters theta and z, in [-pi,pi] and [0,1], respectively.
 
     DRange2d        parameterRange;
     };
@@ -1137,19 +1137,19 @@ struct _dCone3d
 //!
 typedef struct _dConic4d
     {
-    //!  @description The homogeneous center. 
+    //!  @description The homogeneous center.
 
     DPoint4d center;
-    //!  @description The vector from the homogeneous center to the 0-degree point of the curve. 
+    //!  @description The vector from the homogeneous center to the 0-degree point of the curve.
 
     DPoint4d vector0;
-    //!  @description The vector from the homogeneous center to the 90-degree point of the curve. 
+    //!  @description The vector from the homogeneous center to the 90-degree point of the curve.
 
     DPoint4d vector90;
-    //!  @description The radian start angle of the arc in its parameter space. 
+    //!  @description The radian start angle of the arc in its parameter space.
 
     double start;
-    //!  @description The radian angle swept by the arc in its parameter space. 
+    //!  @description The radian angle swept by the arc in its parameter space.
 
     double sweep;
     } DConic4d;
@@ -1176,22 +1176,22 @@ typedef void (*HPointsMarkFunction)( HPoints *pHeader, int argVal);
 
 typedef struct _proximityData
     {
-    //! @description If false, remaining data fields have not be set. 
+    //! @description If false, remaining data fields have not be set.
 
     bool        dataValid;
-    //! @description Index of search step at which the closest point occurred. 
+    //! @description Index of search step at which the closest point occurred.
 
     int         closeIndex;
-    //! @description Parameter of closest approach. 
+    //! @description Parameter of closest approach.
 
     double      closeParam;
-    //! @description Homogeneous coordinates of closest approach. 
+    //! @description Homogeneous coordinates of closest approach.
 
     DPoint4d    closePoint;
-    //! @description Squared distance to the closest point. 
+    //! @description Squared distance to the closest point.
 
     double      closeDistanceSquared;
-    //! @description Point being tested. 
+    //! @description Point being tested.
 
     DPoint3d    testPoint;
     } ProximityData;

@@ -196,7 +196,7 @@ int             noisy
             {
             nodeId1 = jmdlMTGGraph_getEdgeMate (pGraph, nodeId0);
             jmdlEmbeddedIntArray_getInt (pNodeIdToVertexIndexArray, &vvn.cluster1, nodeId1);
-    
+
             if (noisy > 4)
                 {
                 if (vvn.cluster0 == vvn.cluster1)

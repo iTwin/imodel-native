@@ -489,11 +489,11 @@ GEOMDLLIMPEXP void CollectAllNodes(bvector <MTGNodeId> &allNodes);
 GEOMDLLIMPEXP void CollectConnectedComponents (bvector <bvector <MTGNodeId> > &components, MTGMarkScope scope);
 
 // Collect nodeIds by component using depth-first flood.
-// @param [out] components vector of node vectors, each of which is populated with all of the nodes in a component.  
+// @param [out] components vector of node vectors, each of which is populated with all of the nodes in a component.
 GEOMDLLIMPEXP void CollectConnectedComponents (bvector <bvector <MTGNodeId> > &components);
 
 // Collect nodeIds by component using breadth-first flood.
-// @param [out] components vector of node vectors, each of which is populated with one node per face of the component.  
+// @param [out] components vector of node vectors, each of which is populated with one node per face of the component.
 // @param [in] ignoreMask optional mask on faces to ignore, e.g., MTG_EXTERIOR_MASK.
 // @param [in] maxFaceCount if positive, limit size of each component to this number of faces
 GEOMDLLIMPEXP void CollectConnectedComponents (bvector<bvector<MTGNodeId>>& components, MTGMask ignoreMask, size_t maxFaceCount);
@@ -869,7 +869,7 @@ private:
 
 public:
     GEOMDLLIMPEXP  MTG_MarkSet (MTGGraphP _graph, MTGMarkScope _scope);
-    GEOMDLLIMPEXP MTG_MarkSet ();   // Construct with no graph.  Must follow with Attach 
+    GEOMDLLIMPEXP MTG_MarkSet ();   // Construct with no graph.  Must follow with Attach
     GEOMDLLIMPEXP void Attach (MTGGraphP _graph, MTGMarkScope _scope);
     GEOMDLLIMPEXP ~MTG_MarkSet ();
     GEOMDLLIMPEXP void AddNode (MTGNodeId nodeId);
@@ -1104,7 +1104,7 @@ struct MTGDoubleFaceFacets : MTGFacets
     // Call this before adding faces.
     // In the graph, a "face property label" is defined with specified default value
     // The specified inital value is saved for use by AddDoubleFace as the new facet's value of this label.
-    // The initialModalValue is saved in the label definition to be applied to edges created by 
+    // The initialModalValue is saved in the label definition to be applied to edges created by
     //     other means.  In expected use cases, this will never be used.
     GEOMDLLIMPEXP void DefineModalFaceLabel (int initialModalValue, int defaultValue);
     // Set the modal face id.

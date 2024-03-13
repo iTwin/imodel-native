@@ -20,7 +20,7 @@ baseGeom_build                      = $(geomlibs_build)basegeom/
     baseGeom_buildDoc               = $(baseGeom_build)doc/
     geomObj                         = $(baseGeom_build)obj/
     geomTestOut                     = $(baseGeom_build)test/
-    
+
 baseGeom_delivery                   = $(geomlibs_delivery)basegeom/
     baseGeom_symbols                = $(baseGeom_delivery)symbols/
     baseGeom_doc                    = $(baseGeom_delivery)doc/

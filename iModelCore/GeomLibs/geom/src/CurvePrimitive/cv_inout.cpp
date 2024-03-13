@@ -129,7 +129,7 @@ void RegisterON()
     {
     numOnPlane++;
     }
-public: 
+public:
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -203,7 +203,7 @@ void CheckArc(DEllipse3dCR ellipse)
         RegisterStartPoint (xyzA, hA);
         if (!IsClearEndPoint (xyzA, hA) || !IsClearEndPoint (xyzB, hB))
             {
-            // Don't try to sort out scanline intersections with endpoints 
+            // Don't try to sort out scanline intersections with endpoints
             }
         else if (AnalyticRoots::LinearTrigFormRoots (uC, u0, u90, angles, numCrossing, thetaMax, thetaMin, amplitude, tol))
             {
@@ -270,7 +270,7 @@ void CheckBCurve(MSBsplineCurveCR bcurve)
         size_t i = 0;
         while (i < n && params[i] < s_paramTol)
             i++;
-            
+
         if (n > 0 && i < n)
             {
             param0 = 0.0;
@@ -300,7 +300,7 @@ void CheckBCurve(MSBsplineCurveCR bcurve)
                     {
                     CheckPoint_leftRight (point1);
                     CheckPoint_leftRight (point1);
-                    }                
+                    }
                 }
             }
         RegisterEndPoint (xyzB, hB);
@@ -450,7 +450,7 @@ CurveVector::InOutClassification CurveVector::PointInOnOutXY (DPoint3dCR xyz) co
         {
         return ClassifySingleLoopInOnOut_go (*this, xyz);
         }
-        
+
     return INOUT_Unknown;
     }
 
@@ -470,10 +470,10 @@ SolidLocationDetailR hitDetail
             localRange
             );
     if (localCurve.IsValid ())
-        {        
+        {
         double rayFraction;
         DPoint3d uvw;
-        
+
         if (ray.IntersectZPlane (localToWorld, 0.0, uvw, rayFraction))
             {
             DVec3d uVector, vVector;
@@ -485,7 +485,7 @@ SolidLocationDetailR hitDetail
                 uvw.x, uvw.y,
                 uVector, vVector
                 );
-            
+
             if (!localRange.IsContainedXY (uvw))
                 return CurveVector::INOUT_Out;
             else
@@ -493,7 +493,7 @@ SolidLocationDetailR hitDetail
             }
         }
     hitDetail = SolidLocationDetail ();
-    return CurveVector::INOUT_Unknown;    
+    return CurveVector::INOUT_Unknown;
     }
 
 CurveVector::InOutClassification CurveVector::ClosestCurveOrRegionPoint
@@ -518,7 +518,7 @@ DPoint3dR  curveOrRegionPoint
                 localRange
                 );
         if (localCurve.IsValid ())
-            {        
+            {
             DPoint3d uvw = DPoint3d::FromProduct (worldToLocal, spacePoint);
             if (localRange.IsContainedXY (uvw))
                 {

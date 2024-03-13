@@ -10,14 +10,14 @@
 // Make a QUADRATIC bezier for which:
 // x component is the z component of the segment.
 // y component is the sum of segment x component squared and segment y component squared
-// 
+//
 void SegmentToZRRBezier (DSegment3dCR segment, DPoint4d bezier[3])
     {
     // x component of bezier is z component of segment, inflated to quadratic ...
     bezier[0].x =  segment.point[0].z;
     bezier[0].x = (segment.point[0].z + segment.point[1].z) * 0.5;
     bezier[0].x =  segment.point[1].z;
-    
+
     // y component of bezier is x^2+y^2 for segment ....
     bezier[0].y = segment.point[0].x * segment.point[0].x
                 + segment.point[0].y * segment.point[0].y;

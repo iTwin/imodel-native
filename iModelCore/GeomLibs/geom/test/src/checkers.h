@@ -370,7 +370,7 @@ static bool ValidIndex (size_t index, bvector<T> const &data, char const*pString
 static bool LessThanOrEqual (double a, double b, char const*pString = nullptr);
 
 // test if distances increase
-// 
+//
 static bool ValidateDistances
 (
 bvector<PathLocationDetailPair> const &data,
@@ -583,7 +583,7 @@ void DoShift (DVec3dCR vector, bool resetBaseTransform = false)
                             }
                             );
         Check::SaveTransformed (*box);
-        }    
+        }
     if (resetBaseTransform)
         {
         Check::SetTransform (m_baseTransform);

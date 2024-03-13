@@ -61,8 +61,8 @@ bool IPolyfaceConstruction::Add (DgnBoxDetailCR box)
         {
         edgeCount[0] = edgeCount[1] = edgeCount[2] = 1;
         }
-    bool needParams = GetFacetOptionsR ().GetParamsRequired ();        
-    bool needNormals = GetFacetOptionsR ().GetNormalsRequired ();        
+    bool needParams = GetFacetOptionsR ().GetParamsRequired ();
+    bool needNormals = GetFacetOptionsR ().GetNormalsRequired ();
     bool capped = box.m_capped;
     for (int faceIndex = 0; faceIndex < 6; faceIndex++)
         {
@@ -91,7 +91,7 @@ bool IPolyfaceConstruction::Add (DgnBoxDetailCR box)
                 {
                 uv.x = iX < numX ? iX * dX : 1.0;
                 paramB.push_back (DPoint2d::From
-                        (                        
+                        (
                         xMap.FractionToPoint (uv.x),
                         yMap.FractionToPoint (uv.y)
                         ));
@@ -216,7 +216,7 @@ bool IPolyfaceConstruction::Add (DgnBoxDetailCR box)
 #define OutputAlignedLoops
 #ifdef OutputAlignedLoops
         // This should match SS3.  But the reversal logic seems backwards.
-        bvector<DPoint3d> profilePoint[2];   // Around caps . . 
+        bvector<DPoint3d> profilePoint[2];   // Around caps . .
         bvector<size_t> profilePointIndex[2];
         cornerData.GetAlignedCapLoops (profilePoint[0], profilePoint[1]);
         FindOrAddPoints (profilePoint[0], profilePoint[0].size (), 0, profilePointIndex[0]);
@@ -340,7 +340,7 @@ bool IPolyfaceConstruction::Add (DgnConeDetailCR cone)
             reverse = axis.DotProduct (cross0) < 0.0;
         else
             reverse = axis.DotProduct (cross1) < 0.0;
-            
+
         if (reverse)
             ToggleIndexOrderAndNormalReversal ();
         AddRuled (ellipse0A, ellipse1A, cone.m_capped);
@@ -384,7 +384,7 @@ bool IPolyfaceConstruction::Add (DgnTorusPipeDetailCR detail)
         bool reverse = majorSweepRadians * DgnTorusPipeDetail::GetVector90Sign () < 0.0;   // ellipse orientation is controlled.
         AddRotationalSweepLoop (points, pipeTangents, axis.origin, axis.direction, majorSweepRadians,
             reverse, arcLength, &startPoints, &endPoints, nullptr);
-        
+
         AddTriangulationPair (startPoints, reverse, endPoints, !reverse,
                 detail.HasRealCaps (),
                 !Angle::IsFullCircle (majorSweepRadians), CurveTopologyId::Type::SweepProfile);

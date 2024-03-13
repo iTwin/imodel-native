@@ -222,7 +222,7 @@ bool ClipEdgeDataArray::AnalyzeCutPlane (size_t beginIndex, size_t endIndex, bve
             {
             numError = 0;
             }
-        }    
+        }
     return numError == 0;
     }
 

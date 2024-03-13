@@ -1,10 +1,10 @@
 !! make enum names distinct from classes
 enum VariantGeometryUnion\{<u>\}\;=enum VariantGeometryUnion\{@ApplyTagToIdentifiers{$1}\}
-!!  \L\N<I>\:=\n    public $1\: 
-!!  \L\N<I>\W\(\W<I>\:=\n    public $1($2\: 
-!!  \L\Nstatic <I>\W\(\W<I>\:=\n   public static $1($2\: 
-!!  \L\N<I>\W\(\W<I>\?\:=\n    public $1($2\?\: 
-!!  \L\N<I>()\:=\n    public $1()\: 
+!!  \L\N<I>\:=\n    public $1\:
+!!  \L\N<I>\W\(\W<I>\:=\n    public $1($2\:
+!!  \L\Nstatic <I>\W\(\W<I>\:=\n   public static $1($2\:
+!!  \L\N<I>\W\(\W<I>\?\:=\n    public $1($2\?\:
+!!  \L\N<I>()\:=\n    public $1()\:
 !!  \L\n  geometry\<T extends=\n    public geometry\<T extends
 VariantGeometryUnion\.<I>=VariantGeometryUnion\.tag$1
 

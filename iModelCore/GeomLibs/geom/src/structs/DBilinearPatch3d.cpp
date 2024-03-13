@@ -156,7 +156,7 @@ bvector<DPoint2d> &uv
     Polynomial::Bezier::Order3 r[2] =
         {
         Polynomial::Bezier::Order3 (q1,  1.0),
-        Polynomial::Bezier::Order3 (q0, -1.0),        
+        Polynomial::Bezier::Order3 (q0, -1.0),
         };
     Polynomial::Bezier::Order4 cubic[4] =
         {
@@ -174,13 +174,13 @@ bvector<DPoint2d> &uv
         cornerVector11
         };
 
-        
-    DVec3d edgeV[2] = 
+
+    DVec3d edgeV[2] =
         {
         DVec3d::FromStartEnd (point[0][0], point[0][1]),
         DVec3d::FromStartEnd (point[1][0], point[1][1])
         };
-        
+
     // accumulate cubic[i]*r[j] * vecA[i] DOT edgeV[j];
     Polynomial::Bezier::Order6 resultant;   // all zeros
     for (int i = 0; i < 4; i++)

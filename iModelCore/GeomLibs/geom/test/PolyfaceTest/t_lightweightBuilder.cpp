@@ -212,7 +212,7 @@ struct ClassicBuilderWrapped : BuilderWrapper
 TEST(LightweightBuilder, PointsAcrossBoundaries)
     {
     double x0 = 10.1;
-    // xMid is an exact coordinate in the integer grid . . 
+    // xMid is an exact coordinate in the integer grid . .
     double xMid = 20.0;
     double x3 = 29.9;
     double yShift = 0.1;

@@ -117,7 +117,7 @@ bool CurvePrimitiveLineString::_IsFractionSpace() const {return true;}
 bool CurvePrimitiveLineString::_FractionToPoint(double fraction, DPoint3dR point) const
     {
     if (m_points.size () == 0)
-        return false;        
+        return false;
     DVec3d tangentA, tangentB;
     if (bsiDPoint3d_interpolatePolyline (point, tangentA, tangentB, &m_points[0], (int)m_points.size (), fraction))
         return true;
@@ -127,7 +127,7 @@ bool CurvePrimitiveLineString::_FractionToPoint(double fraction, DPoint3dR point
 bool CurvePrimitiveLineString::_FractionToPointWithTwoSidedDerivative (double fraction, DPoint3dR point, DVec3dR tangentA, DVec3dR tangentB) const
     {
     if (m_points.size () == 0)
-        return false;        
+        return false;
     if (bsiDPoint3d_interpolatePolyline (point, tangentA, tangentB, &m_points[0], (int)m_points.size (), fraction))
         return true;
     return false;
@@ -155,7 +155,7 @@ bool CurvePrimitiveLineString::_FractionToPoint (double f, CurveLocationDetail &
 bool CurvePrimitiveLineString::_FractionToPoint(double fraction, DPoint3dR point, DVec3dR tangent) const
     {
     if (m_points.size () == 0)
-        return false;        
+        return false;
     if (bsiDPoint3d_interpolatePolyline (&point, &tangent, &m_points[0], (int)m_points.size (), fraction))
         return true;
     return false;
@@ -198,7 +198,7 @@ bool CurvePrimitiveLineString::_ComponentFractionToPoint(ptrdiff_t componentInde
 bool CurvePrimitiveLineString::_FractionToPoint(double fraction, DPoint3dR point, DVec3dR tangent, DVec3dR derivative2) const
     {
     if (m_points.size () == 0)
-        return false;        
+        return false;
     if (bsiDPoint3d_interpolatePolyline (&point, &tangent, &m_points[0], (int)m_points.size (), fraction))
         {
         derivative2.Zero ();
@@ -230,7 +230,7 @@ bool CurvePrimitiveLineString::_FractionToFrenetFrame(double f, TransformR frame
         {
         if (m_points.size () == 0)
             return false;
-        
+
         return PolylineOps::FractionToFrenetFrame (m_points, f, frame);
         }
 
@@ -283,7 +283,7 @@ double CurvePrimitiveLineString::_FastMaxAbs() const
     {
     return DPoint3dOps::LargestCoordinate (m_points);
     }
-    
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -477,7 +477,7 @@ bool CurvePrimitiveLineString::_PointAtSignedDistanceFromFraction(double startFr
                 segmentIndex, segmentFraction,
                 actualDistance))
         {
-        DPoint3d point = PolylineOps::SegmentFractionToPoint (m_points, segmentIndex, segmentFraction); 
+        DPoint3d point = PolylineOps::SegmentFractionToPoint (m_points, segmentIndex, segmentFraction);
         location = CurveLocationDetail (this, endFraction,
                         point,
                         segmentIndex, m_points.size () - 1, segmentFraction);
@@ -501,7 +501,7 @@ bool CurvePrimitiveLineString::_PointAtSignedDistanceFromFraction(RotMatrixCP wo
                 segmentIndex, segmentFraction,
                 actualDistance))
         {
-        DPoint3d point = PolylineOps::SegmentFractionToPoint (m_points, segmentIndex, segmentFraction); 
+        DPoint3d point = PolylineOps::SegmentFractionToPoint (m_points, segmentIndex, segmentFraction);
         location = CurveLocationDetail (this, endFraction,
                         point,
                         segmentIndex, m_points.size () - 1, segmentFraction);
@@ -815,7 +815,7 @@ ICurvePrimitivePtr ICurvePrimitive::CreateLineString (bvector<DPoint2d> const &p
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-CurvePrimitivePointString::CurvePrimitivePointString(DPoint3dCP points, size_t nPoints) 
+CurvePrimitivePointString::CurvePrimitivePointString(DPoint3dCP points, size_t nPoints)
     : CurvePrimitiveLineString (points, nPoints) {}
 
 /*--------------------------------------------------------------------------------**//**
@@ -849,7 +849,7 @@ bool CurvePrimitivePointString::_IsValidGeometry(GeometryValidatorPtr &validator
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-CurvePrimitivePointString::CurvePrimitivePointString(bvector<DPoint3d> points) 
+CurvePrimitivePointString::CurvePrimitivePointString(bvector<DPoint3d> points)
     : CurvePrimitiveLineString (points) {}
 
 
@@ -928,7 +928,7 @@ bool CurvePrimitivePointString::_ClosestPointBoundedXY(DPoint3dCR spacePoint, DM
 +--------------------------------------------------------------------------------------*/
 ICurvePrimitivePtr ICurvePrimitive::CreatePointString (DPoint3dCP points, size_t nPoints)
     {return CurvePrimitivePointString::Create (points, nPoints);}
-    
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/

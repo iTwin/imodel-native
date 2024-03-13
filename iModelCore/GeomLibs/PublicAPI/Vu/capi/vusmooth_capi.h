@@ -61,7 +61,7 @@ int *pNumSweep
 @param [in] pGraph
 @param [in] pWeightFunction function returning a face weight when called with
                 a node of the graph.  This is (internally, afterwards)
-                multiplied by the parametric triangle area. 
+                multiplied by the parametric triangle area.
                 (Hence the result should be positive!!!)
 @param [in] pWeightFunction function returning a xyz coordinates for given uv.
 @param [in] relTol stopping tolerance, as fraction of graph range.

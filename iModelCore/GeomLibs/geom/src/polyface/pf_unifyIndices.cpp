@@ -26,7 +26,7 @@ struct SectorIndices
         vertex = normal = param = color = face = newIndex = defaultIndex;
         flags = 0;
         }
-// bit masks for accessing flags ...        
+// bit masks for accessing flags ...
 static const uint32_t s_visibleBit = 0x01;
 static const uint32_t s_lastInFaceBit = 0x02;
 
@@ -63,7 +63,7 @@ static bool cb_compareByIndices (SectorIndices const &dataA, SectorIndices const
         return true;
     if (dataB.normal < dataA.normal)
         return false;
-     
+
     if (dataA.param < dataB.param)
         return true;
     if (dataB.param < dataA.param)
@@ -78,15 +78,15 @@ static bool cb_compareByIndices (SectorIndices const &dataA, SectorIndices const
         return true;
     if (dataB.face < dataA.face)
         return false;
-        
-    return false;        
+
+    return false;
     }
 
 static bool cb_compareByCounter (SectorIndices const &dataA, SectorIndices const &dataB)
     {
     return dataA.counter < dataB.counter;
     }
-    
+
 struct IndexUnificationContext
 {
 bvector<SectorIndices> m_indices;
@@ -103,7 +103,7 @@ IndexUnificationContext (PolyfaceQueryCR source, PolyfaceHeaderR dest)
     dest.ParamIndex ().SetActive (source.GetParamCount () > 0);
     dest.ColorIndex ().SetActive (source.GetColorCount () > 0  && source.GetIntColorCP () != NULL);
     }
-    
+
 void BuildSortData ()
     {
     int defaultIndex = -1;
@@ -135,7 +135,7 @@ void BuildSortData ()
 
             m_indices.push_back (indices);
             }
-        m_indices.back ().SetLastInFace (true);            
+        m_indices.back ().SetLastInFace (true);
         }
     }
 
@@ -154,8 +154,8 @@ size_t CreateNewSector (SectorIndices const &oldIndices)
             m_dest.IntColor ().push_back (m_source.GetIntColorCP()[(size_t)oldIndices.color]);
         }
     //if (oldIndices.face >= 0)
-    //    m_dest.FaceIndex ().push_back (m_source.FaceIndex()[(size_t)oldIndices.face]);                        
-    return newIndex;        
+    //    m_dest.FaceIndex ().push_back (m_source.FaceIndex()[(size_t)oldIndices.face]);
+    return newIndex;
     }
 
 void AssignNewIndicesAndCoordinateArrays ()
@@ -209,14 +209,14 @@ void BuildNewIndices ()
             }
         }
     }
-        
+
 void Go ()
     {
     BuildSortData ();
     AssignNewIndicesAndCoordinateArrays ();
     BuildNewIndices ();
     }
-    
+
 };
 
 PolyfaceHeaderPtr PolyfaceHeader::CreateUnifiedIndexMesh (PolyfaceQueryCR source)
@@ -226,5 +226,5 @@ PolyfaceHeaderPtr PolyfaceHeader::CreateUnifiedIndexMesh (PolyfaceQueryCR source
     context.Go ();
     return dest;
     }
-    
+
 END_BENTLEY_GEOMETRY_NAMESPACE

@@ -93,15 +93,15 @@ DPoint3d PathLocationDetail::PointAndUnitTangent (DVec3dR tangent) const
 ValidatedPathLocationDetail PathLocationDetail::CorrectIndex (CurveVectorCR path) const
     {
     if (m_curveDetail.curve == nullptr)
-        return ValidatedPathLocationDetail (*this, false);        
+        return ValidatedPathLocationDetail (*this, false);
     if ((size_t)m_pathIndex < path.size () && path[m_pathIndex].get () == m_curveDetail.curve)
         return ValidatedPathLocationDetail (*this, true);
     // Search for the curve.
     for (size_t i = 0; i < path.size (); i++)
         if (path[i].get () == m_curveDetail.curve)
             return ValidatedPathLocationDetail (*this, true);
-    return ValidatedPathLocationDetail (*this, false);        
-    }  
+    return ValidatedPathLocationDetail (*this, false);
+    }
 
 //============================================================================================
 //============================================================================================

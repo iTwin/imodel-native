@@ -62,7 +62,7 @@ bool      bXYZ
     return fabs(pKeyA->xyz.x - pKeyB->xyz.x) < abstol &&
            fabs(pKeyA->xyz.y - pKeyB->xyz.y) < abstol &&
            (!bXYZ || fabs(pKeyA->xyz.z - pKeyB->xyz.z) < abstol);
-#endif    
+#endif
     }
 
 
@@ -226,6 +226,5 @@ bool            bXYZ
     bsiDPoint3dArray_findClusters (xyzArray, numXYZ, blockedIndexArray, packedArray, absTol, bReassignXYZ, bXYZ, nullptr);
     }
 
-	
+
 END_BENTLEY_GEOMETRY_NAMESPACE
-	

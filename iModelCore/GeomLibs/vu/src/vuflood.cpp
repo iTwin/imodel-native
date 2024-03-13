@@ -371,7 +371,7 @@ Public void vu_searchMaximalUnmaskedFaces (VuSetP graph, VuMask exteriorMask, bv
             vu_setMask (seed, visitMask);
             if (   !vu_getMask (seed, exteriorMask)
                 &&  vu_getMask (vu_edgeMate (seed), exteriorMask)
-                )                
+                )
                 {
                 loops.push_back (bvector<VuP>());
                 auto &loop = loops.back ();
