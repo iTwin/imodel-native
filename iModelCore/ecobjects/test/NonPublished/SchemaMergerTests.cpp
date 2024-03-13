@@ -5551,7 +5551,7 @@ TEST_F(SchemaMergerTests, DuplicateSchemaNamesMergeResult)
         )schema"
     };
 
-    CompareResults(expectedSchemasXml, result, true);
+    CompareResults(expectedSchemasXml, result);
     }
 
 /*---------------------------------------------------------------------------------------
