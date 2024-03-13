@@ -1049,10 +1049,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         }
 
     void OpenIModelDb(BeFileNameCR dbname, DgnDb::OpenParams& openParams) {
-        if (!openParams.IsReadonly())
-            openParams.SetBusyRetry(new BeSQLite::BusyRetry(40, 500)); // retry 40 times, 1/2 second intervals (20 seconds total)
         NativeLogging::CategoryLogger("BeSQLite").infov(L"Opening DgnDb %ls", dbname.c_str());
-
         DbResult result;
         auto dgndb = DgnDb::OpenIModelDb(&result, dbname, openParams);
         if (BE_SQLITE_OK != result)
@@ -1071,6 +1068,12 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
         if (!fromDestructor)
             Value().Set(JSON_NAME(cloudContainer), Env().Undefined());
+    }
+
+    void SetBusyTimeout(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_INTEGER(0, ms);
+        if (BE_SQLITE_OK != m_dgndb->SetBusyTimeout(ms))
+            JsInterop::ThrowJsException("unable to set busyTimeout");
     }
 
     void OpenIModel(NapiInfoCR info) {
@@ -1097,6 +1100,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         openParams.SetProfileUpgradeOptions(profileOptions);
         openParams.m_schemaLockHeld = schemaLockHeld;
 
+
         BeJsConst props(info[3]);
         if (props.isObject()) {
             auto tempFileBase = props[JSON_NAME(tempFileBase)];
@@ -1105,6 +1109,19 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         }
 
         addContainerParams(Value(), dbName, openParams, info[4]);
+
+        if (!openParams.IsReadonly()) {
+            // 20 sec to retain previous behaviour.
+            openParams.m_busyTimeout =  20000;
+        }
+        if (info.Length() > 5) {
+            BeJsConst sqliteOptions(info[5]);
+            if (sqliteOptions.isObject()) {
+                if (sqliteOptions.isNumericMember("busyTimeout")) {
+                    openParams.m_busyTimeout = sqliteOptions["busyTimeout"].asInt();
+                }
+            }
+        }
         OpenIModelDb(BeFileName(dbName), openParams);
     }
 
@@ -2649,6 +2666,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("setIModelDb", &NativeDgnDb::SetIModelDb),
             InstanceMethod("setIModelId", &NativeDgnDb::SetIModelId),
             InstanceMethod("setITwinId", &NativeDgnDb::SetITwinId),
+            InstanceMethod("setBusyTimeout", &NativeDgnDb::SetBusyTimeout),
             InstanceMethod("simplifyElementGeometry", &NativeDgnDb::SimplifyElementGeometry),
             InstanceMethod("startCreateChangeset", &NativeDgnDb::StartCreateChangeset),
             InstanceMethod("startProfiler", &NativeDgnDb::StartProfiler),
