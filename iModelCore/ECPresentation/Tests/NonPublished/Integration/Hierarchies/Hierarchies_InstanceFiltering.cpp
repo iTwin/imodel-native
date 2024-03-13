@@ -3796,6 +3796,93 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_Filter
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(InstanceFiltering_FiltersWithHideNodesInHierarchy_WithRecursiveRelatedInstanceNodesSpecification, R"*(
+    <ECEntityClass typeName="C">
+        <ECProperty propertyName="Prop" typeName="int" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="R" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="f" polymorphic="false">
+            <Class class="C"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="b" polymorphic="false">
+            <Class class="C"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, InstanceFiltering_FiltersWithHideNodesInHierarchy_WithRecursiveRelatedInstanceNodesSpecification)
+    {
+    // dataset
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP rel = GetClass("R")->GetRelationshipClassCP();
+
+    IECInstancePtr c1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(1));});
+    IECInstancePtr c11 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(11));});
+    IECInstancePtr c12 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(12));});
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *c1, *c11);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *c1, *c12);
+
+    IECInstancePtr c2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [](IECInstanceR instance){instance.SetValue("Prop", ECValue(2));});
+
+    IECInstancePtr c0 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *c0, *c1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *rel, *c0, *c2);
+
+    // ruleset
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule();
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "this.Prop = NULL",
+        {
+        new MultiSchemaClass(classC->GetSchema().GetName(), true, bvector<Utf8String>{ classC->GetName() })
+        }, {}));
+    rules->AddPresentationRule(*rootRule);
+
+    ChildNodeRule* childRule1 = new ChildNodeRule(Utf8PrintfString("ParentNode.IsOfClass(\"%s\", \"%s\")", classC->GetName().c_str(), classC->GetSchema().GetName().c_str()), 1, false);
+    childRule1->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, true, false, false, false, "this.Prop = 1",
+        {
+        new RepeatableRelationshipPathSpecification({ new RepeatableRelationshipStepSpecification(rel->GetFullName(), RequiredRelationDirection_Forward) })
+        }));
+    rules->AddPresentationRule(*childRule1);
+
+    ChildNodeRule* childRule2 = new ChildNodeRule(Utf8PrintfString("ParentNode.IsOfClass(\"%s\", \"%s\")", classC->GetName().c_str(), classC->GetSchema().GetName().c_str()), 1, false);
+    childRule2->AddSpecification(*new RelatedInstanceNodesSpecification(1, ChildrenHint::Unknown, false, false, false, false, "this.Prop = 2",
+        {
+        new RepeatableRelationshipPathSpecification({ new RepeatableRelationshipStepSpecification(rel->GetFullName(), RequiredRelationDirection_Forward) })
+        }));
+    rules->AddPresentationRule(*childRule2);
+
+    // verify without instance filter
+    auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
+    auto hierarchy = ValidateHierarchy(params,
+        ExpectedHierarchyListDef(true,
+            {
+            ExpectedHierarchyDef(CreateInstanceNodeValidator({ c0 }),
+                ExpectedHierarchyListDef(true,
+                    {
+                    CreateInstanceNodeValidator({ c2 }),
+                    }))
+            })
+        );
+
+    // validate hierarchy level filter descriptor
+    params.SetParentNode(hierarchy[0].node.get());
+    ValidateHierarchyLevelDescriptor(*m_manager, params, CreateDescriptorValidator(
+        {
+        CreatePropertiesFieldValidator(*classC->GetPropertyP("Prop")),
+        }));
+
+    // verify with instance filter
+    params.SetInstanceFilter(std::make_unique<InstanceFilterDefinition>("this.Prop <> 12"));
+    ValidateHierarchy(params,
+        {
+        CreateInstanceNodeValidator({ c2 }),
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(InstanceFiltering_FiltersWithHideNodesInHierarchy_WithRelatedInstanceNodesInParentAndChildLevels_WhenChildrenGroupedByClass, R"*(
     <ECEntityClass typeName="A" />
     <ECEntityClass typeName="B" />

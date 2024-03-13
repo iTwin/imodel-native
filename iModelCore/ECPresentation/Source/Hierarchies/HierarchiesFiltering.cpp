@@ -255,12 +255,30 @@ public:
     bool DidFindAnyUnfilterableSpecifications() const {return m_hasIssues;}
 };
 
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct VisitedSpecsTracker
+{
+private:
+    bset<ChildNodeSpecificationCP>& m_specs;
+    ChildNodeSpecificationCR m_spec;
+public:
+    VisitedSpecsTracker(bset<ChildNodeSpecificationCP>& specs, ChildNodeSpecificationCR spec)
+        : m_specs(specs), m_spec(spec)
+        {
+        m_specs.insert(&m_spec);
+        }
+    ~VisitedSpecsTracker()
+        {
+        m_specs.erase(&m_spec);
+        }
+};
+
 #define ENSURE_NOT_VISITED(set, specCR) \
-    { \
     if (set.end() != set.find(&specCR)) \
         return; \
-    set.insert(&specCR); \
-    }
+    VisitedSpecsTracker _track_specification(set, specCR); \
 
 /*=================================================================================**//**
 * @bsiclass
