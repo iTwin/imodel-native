@@ -223,10 +223,7 @@ BentleyStatus SchemaMerger::MergeReferencedSchemaItem(SchemaMergeResult& result,
 //---------------+---------------+---------------+---------------+---------------+-------
 bool SchemaMergeResult::ContainsSchema(Utf8CP schemaName) const
     {
-    return m_schemaCache.FindSchema([&schemaName](const std::pair<SchemaKey, ECSchemaPtr>& schemaPair) 
-        {
-        return BeStringUtilities::Stricmp(schemaName, schemaPair.first.GetName().c_str()) == 0;
-        });
+    return this->GetSchema(schemaName) != nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -234,8 +231,7 @@ bool SchemaMergeResult::ContainsSchema(Utf8CP schemaName) const
 //---------------+---------------+---------------+---------------+---------------+-------
 ECSchemaP SchemaMergeResult::GetSchema(Utf8CP schemaName) const
     {
-    SchemaKey schemaKey(schemaName, 1, 0, 0);
-    return m_schemaCache.GetSchema(schemaKey, SchemaMatchType::Latest);
+    return m_schemaCache.FindSchemaByNameI(schemaName);
     }
 
 //---------------------------------------------------------------------------------------
