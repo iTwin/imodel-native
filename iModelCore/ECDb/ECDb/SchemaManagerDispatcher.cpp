@@ -555,6 +555,24 @@ ECDerivedClassesList const* SchemaManager::Dispatcher::GetDerivedClasses(ECN::EC
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+Nullable<ECN::ECDerivedClassesList> SchemaManager::Dispatcher::GetAllDerivedClasses(ECN::ECClassCR baseClass, Utf8CP tableSpace) const
+    {
+    Iterable iterable = GetIterable(tableSpace);
+    if (!iterable.IsValid())
+        return nullptr;
+
+    for (const TableSpaceSchemaManager* manager : iterable)
+        {
+        if (const auto subClasses = manager->GetAllDerivedClasses(baseClass); subClasses.IsValid())
+            return subClasses;
+        }
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 ECEnumerationCP SchemaManager::Dispatcher::GetEnumeration(Utf8StringCR schemaNameOrAlias, Utf8StringCR enumName, SchemaLookupMode mode, Utf8CP tableSpace) const
     {
     Iterable iterable = GetIterable(tableSpace);
@@ -843,6 +861,27 @@ ECDerivedClassesList const* TableSpaceSchemaManager::GetDerivedClasses(ECN::ECCl
         }
 
     return &baseClass.GetDerivedClasses();
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Nullable<ECDerivedClassesList> TableSpaceSchemaManager::GetAllDerivedClasses(ECN::ECClassCR baseClass) const
+    {
+    ECClassId id = m_reader.GetClassId(baseClass);
+    if (!id.IsValid())
+        {
+        LOG.errorv("SchemaManager::GetAllDerivedClasses failed for ECClass %s. The ECClass does not exist.", baseClass.GetFullName());
+        return nullptr;
+        }
+
+    if (SUCCESS != m_reader.EnsureDerivedClassesExist(id))
+        {
+        LOG.errorv("SchemaManager::GetAllDerivedClasses failed for ECClass %s. Its subclasses could not be loaded.", baseClass.GetFullName());
+        return nullptr;
+        }
+    
+    return Nullable<ECDerivedClassesList>(m_reader.GetAllDerivedClasses(id));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1575,7 +1614,7 @@ ClassMappingStatus MainSchemaManager::MapClass(SchemaImportContext& ctx, ClassMa
     if (status == ClassMappingStatus::BaseClassesNotMapped || status == ClassMappingStatus::Error)
         return status;
 
-    if (SUCCESS != DbMappingManager::Classes::MapUserDefinedIndexes(ctx, *classMapP))
+    if (SUCCESS != DbMappingManager::Classes::MapIndexes(ctx, *classMapP, false))
         return ClassMappingStatus::Error;
 
     return MapDerivedClasses(ctx, mappingInfo.GetClass());

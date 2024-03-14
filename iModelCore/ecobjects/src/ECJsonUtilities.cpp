@@ -1349,9 +1349,10 @@ StatusInt JsonEcInstanceWriter::WriteArrayPropertyValue(BeJsValue valueToPopulat
             structInstance = ecValue.GetStruct();
             if (!structInstance.IsValid())
                 {
-                // ###TODO: It is valid to have null struct array instances....
-                BeAssert(false);
-                break;
+                // Note that we could use the truth value of 'serializeNullValues' here to control whether or not we append a null value, but in the case of an array struct it seems more appropriate to maintain
+                // the arrays original structure and persist nulls.
+                arrayObj.appendValue().SetNull();
+                continue;
                 }
 
             ECClassCR   structClass = structInstance->GetClass();

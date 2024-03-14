@@ -476,7 +476,7 @@ public:
         REQUIRE_ARGUMENT_STRING(0, schemaName);
         auto schema = m_ecdb.Schemas().GetSchema(schemaName, true);
         if (nullptr == schema)
-            BeNapi::ThrowJsException(info.Env(), "schema not found");
+            BeNapi::ThrowJsException(info.Env(), "schema not found", (int) DgnDbStatus::NotFound);
 
         BeJsNapiObject props(info.Env());
         if (!schema->WriteToJsonValue(props))
@@ -881,6 +881,13 @@ struct ECSchemaSerializationAsyncWorker : DgnDbWorker {
         if (!schema->WriteToJsonValue(m_output))
             SetError("schema serialization error");
     }
+
+    void OnError(Napi::Error const& e) {
+        if (e.Message() == "schema not found")
+            e.Value()["errorNumber"] = (int) DgnDbStatus::NotFound;
+        DgnDbWorker::OnError(e);
+    }
+
     ECSchemaSerializationAsyncWorker(DgnDbR db, Napi::Env env, Utf8StringCR schemaName) : DgnDbWorker(db,env), m_schemaName(schemaName) {}
 };
 
@@ -1042,10 +1049,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         }
 
     void OpenIModelDb(BeFileNameCR dbname, DgnDb::OpenParams& openParams) {
-        if (!openParams.IsReadonly())
-            openParams.SetBusyRetry(new BeSQLite::BusyRetry(40, 500)); // retry 40 times, 1/2 second intervals (20 seconds total)
         NativeLogging::CategoryLogger("BeSQLite").infov(L"Opening DgnDb %ls", dbname.c_str());
-
         DbResult result;
         auto dgndb = DgnDb::OpenIModelDb(&result, dbname, openParams);
         if (BE_SQLITE_OK != result)
@@ -1064,6 +1068,12 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
         if (!fromDestructor)
             Value().Set(JSON_NAME(cloudContainer), Env().Undefined());
+    }
+
+    void SetBusyTimeout(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_INTEGER(0, ms);
+        if (BE_SQLITE_OK != m_dgndb->SetBusyTimeout(ms))
+            JsInterop::ThrowJsException("unable to set busyTimeout");
     }
 
     void OpenIModel(NapiInfoCR info) {
@@ -1090,6 +1100,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         openParams.SetProfileUpgradeOptions(profileOptions);
         openParams.m_schemaLockHeld = schemaLockHeld;
 
+
         BeJsConst props(info[3]);
         if (props.isObject()) {
             auto tempFileBase = props[JSON_NAME(tempFileBase)];
@@ -1098,6 +1109,19 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         }
 
         addContainerParams(Value(), dbName, openParams, info[4]);
+
+        if (!openParams.IsReadonly()) {
+            // 20 sec to retain previous behaviour.
+            openParams.m_busyTimeout =  20000;
+        }
+        if (info.Length() > 5) {
+            BeJsConst sqliteOptions(info[5]);
+            if (sqliteOptions.isObject()) {
+                if (sqliteOptions.isNumericMember("busyTimeout")) {
+                    openParams.m_busyTimeout = sqliteOptions["busyTimeout"].asInt();
+                }
+            }
+        }
         OpenIModelDb(BeFileName(dbName), openParams);
     }
 
@@ -1139,7 +1163,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         REQUIRE_ARGUMENT_STRING(0, schemaName);
         auto schema = m_dgndb->Schemas().GetSchema(schemaName, true);
         if (nullptr == schema)
-            BeNapi::ThrowJsException(info.Env(), "schema not found");
+            BeNapi::ThrowJsException(info.Env(), "schema not found", (int) DgnDbStatus::NotFound);
 
         BeJsNapiObject props(info.Env());
         if (!schema->WriteToJsonValue(props))
@@ -2642,6 +2666,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             InstanceMethod("setIModelDb", &NativeDgnDb::SetIModelDb),
             InstanceMethod("setIModelId", &NativeDgnDb::SetIModelId),
             InstanceMethod("setITwinId", &NativeDgnDb::SetITwinId),
+            InstanceMethod("setBusyTimeout", &NativeDgnDb::SetBusyTimeout),
             InstanceMethod("simplifyElementGeometry", &NativeDgnDb::SimplifyElementGeometry),
             InstanceMethod("startCreateChangeset", &NativeDgnDb::StartCreateChangeset),
             InstanceMethod("startProfiler", &NativeDgnDb::StartProfiler),
@@ -4978,6 +5003,8 @@ struct SnapRequest : BeObjectWrap<SnapRequest>
         void OnError(Napi::Error const& e) final
             {
             OnComplete();
+            if (e.Message() == "aborted")
+                e.Value()["errorNumber"] = (int) DgnDbStatus::Aborted;
             DgnDbWorker::OnError(e);
             }
 
@@ -5412,8 +5439,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         std::shared_ptr<ECPresentationResult> resultPtr = std::make_shared<ECPresentationResult>(std::move(result));
         m_threadSafeFunc.BlockingCall([resultPtr, deferred = std::move(deferred)](Napi::Env env, Napi::Function)
             {
-            // flush all our logs that accumulated while handling the request
-            s_jsLogger.FlushDeferred();
             deferred.Resolve(CreateReturnValue(env, *resultPtr, true));
             });
         }
@@ -5989,6 +6014,15 @@ public:
 //=======================================================================================
 struct NativeDevTools : BeObjectWrap<NativeDevTools>
 {
+    struct Finally
+    {
+    private:
+        std::function<void()> m_finallyCallback;
+    public:
+        Finally(std::function<void()> finallyCallback) : m_finallyCallback(finallyCallback) {}
+        ~Finally() {m_finallyCallback();}
+    };
+
 private:
 static Napi::Value Signal(NapiInfoCR info)
     {
@@ -5997,6 +6031,58 @@ static Napi::Value Signal(NapiInfoCR info)
     SignalType signalType = (SignalType) info[0].As<Napi::Number>().Int32Value();
     bool status = SignalTestUtility::Signal(signalType);
     return Napi::Number::New(info.Env(), status);
+    }
+static void EmitLogs(NapiInfoCR info)
+    {
+    if (info.Length() != 5)
+        THROW_JS_EXCEPTION("Must supply 5 arguments");
+    REQUIRE_ARGUMENT_UINTEGER(0, count);
+    REQUIRE_ARGUMENT_STRING(1, category);
+    if (!info[2].IsNumber())
+        THROW_JS_EXCEPTION("Argument 2 should be a number");
+    auto severity = JsLogger::JsLevelToSeverity(info[2].As<Napi::Number>());
+    REQUIRE_ARGUMENT_STRING(3, thread);
+    REQUIRE_ARGUMENT_FUNCTION(4, onDone);
+
+    auto doneCallback = Napi::ThreadSafeFunction::New(info.Env(), onDone, "Done callback", 0, 1);
+    auto doLog = [count, category, severity, doneCallback]()
+        {
+        Finally f([doneCallback]()
+            {
+            doneCallback.BlockingCall([=](Napi::Env, Napi::Function jsCallback)
+                {
+                jsCallback.Call({});
+                });
+            doneCallback.Release();
+            });
+        NativeLogging::CategoryLogger logger(category.c_str());
+        for (uint32_t i = 0; i < count; ++i)
+            {
+            logger.message(
+                severity,
+                Utf8PrintfString("[%u] ", i).append(
+                    "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. "
+                    "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. "
+                    "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. "
+                    "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+                    ).c_str()
+                );
+            BeThreadUtilities::BeSleep(1);
+            }
+        };
+    if (thread == "main")
+        {
+        doLog();
+        }
+    else if (thread == "worker")
+        {
+        std::thread workerThread([=](){ doLog(); });
+        workerThread.detach();
+        }
+    else
+        {
+        THROW_JS_EXCEPTION("Unexpected value for `thread` argument. Expecting either \"main\" or \"worker\".");
+        }
     }
 
 public:
@@ -6008,6 +6094,7 @@ static void Init(Napi::Env env, Napi::Object exports)
     Napi::HandleScope scope(env);
     Napi::Function t = DefineClass(env, "NativeDevTools", {
         StaticMethod("signal", &NativeDevTools::Signal),
+        StaticMethod("emitLogs", &NativeDevTools::EmitLogs),
     });
     exports.Set("NativeDevTools", t);
     }
@@ -6086,14 +6173,11 @@ static void setMaxTileCacheSize(NapiInfoCR info) {
   JsInterop::GetNativeLogger().error("Invalid argument for setMaxTileCacheSize: expected an unsigned integer");
 }
 
-static void flushLog(NapiInfoCR info) {
-  s_jsLogger.FlushDeferred();
-}
 static Napi::Value getLogger(NapiInfoCR info) {
-  return s_jsLogger.getJsLogger();
+  return s_jsLogger.GetJsLogger();
 }
 static void setLogger(NapiInfoCR info) {
-  s_jsLogger.setJsLogger(info);
+    s_jsLogger.SetJsLogger(info);
 }
 static void clearLogLevelCache(NapiInfoCR){
     s_jsLogger.SyncLogLevels();
@@ -6244,7 +6328,7 @@ extern "C"
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void onNodeExiting(void*) {
-    s_jsLogger.OnExit();
+    s_jsLogger.Cleanup();
     PlatformLib::Terminate(true); // for orderly shut down of static objects
 }
 
@@ -6317,14 +6401,13 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
         Napi::PropertyDescriptor::Function(env, exports, "clearLogLevelCache", &clearLogLevelCache),
         Napi::PropertyDescriptor::Function(env, exports, "computeSchemaChecksum", &computeSchemaChecksum),
         Napi::PropertyDescriptor::Function(env, exports, "enableLocalGcsFiles", &enableLocalGcsFiles),
-        Napi::PropertyDescriptor::Function(env, exports, "flushLog", &flushLog),
         Napi::PropertyDescriptor::Function(env, exports, "getCrashReportProperties", &getCrashReportProperties),
         Napi::PropertyDescriptor::Function(env, exports, "getTileVersionInfo", &getTileVersionInfo),
         Napi::PropertyDescriptor::Function(env, exports, "queryConcurrency", &queryConcurrency),
         Napi::PropertyDescriptor::Function(env, exports, "setCrashReporting", &setCrashReporting),
         Napi::PropertyDescriptor::Function(env, exports, "setCrashReportProperty", &setCrashReportProperty),
         Napi::PropertyDescriptor::Function(env, exports, "setMaxTileCacheSize", &setMaxTileCacheSize),
-});
+    });
 
     registerCloudSqlite(env, exports);
 

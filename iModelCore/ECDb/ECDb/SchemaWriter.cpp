@@ -203,6 +203,14 @@ SchemaImportResult SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemas
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaWriter::ImportSchema(Context& ctx, ECN::ECSchemaCR ecSchema)
     {
+    const auto isImportRestricted = [&ctx, &ecSchema]()
+        {
+        ImportRequiresVersionCustomAttribute requiresRuntimeCA;
+        return (ECDbMapCustomAttributeHelper::TryGetImportRequiresVersion(requiresRuntimeCA, ecSchema)
+            && requiresRuntimeCA.IsValid()
+            && requiresRuntimeCA.Verify(ctx.Issues(), ecSchema.GetFullSchemaName().c_str()) == BentleyStatus::ERROR);
+        };
+
     SchemaChange* schemaChange = ctx.GetDiff().GetSchemaChange(ecSchema.GetName());
     if (schemaChange != nullptr)
         {
@@ -211,6 +219,9 @@ BentleyStatus SchemaWriter::ImportSchema(Context& ctx, ECN::ECSchemaCR ecSchema)
 
         if (schemaChange->GetOpCode() == ECChange::OpCode::Modified)
             {
+            if (isImportRestricted())
+                return BentleyStatus::ERROR;
+
             ECSchemaCP existingSchema = nullptr;
             for (ECSchemaCP schema : ctx.GetExistingSchemas())
                 {
@@ -236,6 +247,9 @@ BentleyStatus SchemaWriter::ImportSchema(Context& ctx, ECN::ECSchemaCR ecSchema)
             return ERROR;
             }
         }
+
+    if (isImportRestricted())
+        return BentleyStatus::ERROR;
 
     if (ctx.GetSchemaManager().ContainsSchema(ecSchema.GetName()))
         return SUCCESS;
@@ -5712,13 +5726,6 @@ BentleyStatus SchemaWriter::Context::PreprocessSchemas(bvector<ECN::ECSchemaCP>&
                 );
                 return ERROR;
                 }
-            }
-
-        ImportRequiresVersionCustomAttribute requiresRuntimeCA;
-        if (ECDbMapCustomAttributeHelper::TryGetImportRequiresVersion(requiresRuntimeCA, *schema) && requiresRuntimeCA.IsValid())
-            {
-            if(requiresRuntimeCA.Verify(Issues(), schema->GetFullSchemaName().c_str()) != BentleyStatus::SUCCESS)
-                return BentleyStatus::ERROR;
             }
         }
 

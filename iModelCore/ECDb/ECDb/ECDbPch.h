@@ -69,6 +69,7 @@
 #include "InstanceReaderImpl.h"
 #include "IntegrityChecker.h"
 #include "BuiltInVTabs.h"
+#include "ClassViews.h"
 #include "ECSql/NativeSqlBuilder.h"
 #include "ECSql/Parser/SqlScan.h"
 #include "ECSql/Parser/SqlNode.h"
@@ -93,6 +94,7 @@
 #include "ECSql/ExpHelper.h"
 #include "ECSql/ECSqlTypeInfo.h"
 #include "ECSql/CommonTableExp.h"
+#include "ECSql/ValueCreationFuncExp.h"
 
 #include "ECSql/ECSqlPrepareContext.h"
 #include "ECSql/ECSqlPreparer.h"

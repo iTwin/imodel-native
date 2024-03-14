@@ -382,6 +382,7 @@
     <ClCompile Include="NonPublished\Integration\Hierarchies\Hierarchies_Limiting.cpp">
       <Filter>Integration\Hierarchies</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublished\Integration\Content\Content_WithExclusiveIncludePaths.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="NonPublished\Helpers\ECDbTestProject.h">

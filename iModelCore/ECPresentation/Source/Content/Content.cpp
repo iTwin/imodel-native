@@ -806,7 +806,7 @@ PrimitiveECPropertyCP ContentDescriptor::Property::GetPrimitiveProperty(StructEC
         {
         if (!ecProperty->GetIsStruct())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid property access token '%s' for property '%s.%s'",
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Invalid property access token '%s' for property '%s.%s'",
                 accessString.c_str(), structProperty.GetClass().GetFullName(), structProperty.GetName().c_str()));
             break;
             }
@@ -815,7 +815,7 @@ PrimitiveECPropertyCP ContentDescriptor::Property::GetPrimitiveProperty(StructEC
         }
     if (nullptr == ecProperty || !ecProperty->GetIsPrimitive())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Access token '%s' for property '%s.%s' did not result in a valid primitive property",
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Access token '%s' for property '%s.%s' did not result in a valid primitive property",
             accessString.c_str(), structProperty.GetClass().GetFullName(), structProperty.GetName().c_str()));
         return nullptr;
         }
@@ -988,11 +988,8 @@ const Utf8CP ContentDescriptor::DisplayLabelField::NAME = "/DisplayLabel/";
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::DisplayLabelField::~DisplayLabelField()
     {
-    for (auto const& entry : m_labelOverrideSpecs)
-        {
-        for (auto classSpec : entry.second)
-            delete classSpec;
-        }
+    for (auto& spec : m_labelOverrideSpecs)
+        delete spec;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1014,16 +1011,11 @@ rapidjson::Document ContentDescriptor::DisplayLabelField::_AsJson(ECPresentation
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bmap<ECClassCP, bvector<InstanceLabelOverride const*>> ContentDescriptor::DisplayLabelField::CloneLabelOverrideValueSpecs(bmap<ECClassCP, bvector<InstanceLabelOverride const*>> const& specs)
+bvector<InstanceLabelOverrideCP> ContentDescriptor::DisplayLabelField::CloneLabelOverrideValueSpecs(bvector<InstanceLabelOverrideCP> const& specs)
     {
-    bmap<ECClassCP, bvector<InstanceLabelOverride const*>> result;
-    for (auto const& entry : specs)
-        {
-        bvector<InstanceLabelOverride const*> classSpecs;
-        for (auto classSpec : entry.second)
-            classSpecs.push_back(new InstanceLabelOverride(*classSpec));
-        result.Insert(entry.first, classSpecs);
-        }
+    bvector<InstanceLabelOverrideCP> result;
+    for (auto const& spec : specs)
+        result.push_back(new InstanceLabelOverride(*spec));
     return result;
     }
 
@@ -1639,7 +1631,7 @@ BentleyStatus DefaultPropertyFormatter::_GetFormattedPropertyValue(Utf8StringR f
         format = GetActiveFormat(*koq, unitSystem);
         if (nullptr == format || nullptr == format->GetCompositeMajorUnit())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to format property '%s.%s' value - active format does not have a composite major unit.",
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_WARNING, LOG_ERROR, Utf8PrintfString("Failed to format property '%s.%s' value - active format does not have a composite major unit.",
                 ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str()));
             }
         auto defaultFormatter = formatter;

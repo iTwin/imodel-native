@@ -132,6 +132,7 @@
     <ClInclude Include="ECPresentationPch.h" />
     <ClInclude Include="Hierarchies\DataSourceInfo.h" />
     <ClInclude Include="Hierarchies\HierarchiesComparer.h" />
+    <ClInclude Include="Hierarchies\HierarchiesFiltering.h" />
     <ClInclude Include="Hierarchies\NavigationQuery.h" />
     <ClInclude Include="Hierarchies\NavigationQueryBuilder.h" />
     <ClInclude Include="Hierarchies\NavigationQueryContracts.h" />
@@ -190,6 +191,7 @@
     <ClCompile Include="ECPresentationManager.cpp" />
     <ClCompile Include="ECPresentationPch.cpp" />
     <ClCompile Include="Hierarchies\HierarchiesComparer.cpp" />
+    <ClCompile Include="Hierarchies\HierarchiesFiltering.cpp" />
     <ClCompile Include="Hierarchies\NavigationQuery.cpp" />
     <ClCompile Include="Hierarchies\NavigationQueryBuilder.cpp" />
     <ClCompile Include="Hierarchies\NavigationQueryContracts.cpp" />

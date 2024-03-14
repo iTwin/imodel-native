@@ -59,7 +59,6 @@ struct ContentQueryBuilderTests : QueryBuilderTest
     ContentDescriptor::Property CreateProperty(Utf8String prefix, ECClassCR propertyClass, ECPropertyCR ecProperty);
     std::shared_ptr<ContentDescriptor::Category> CreateCategory(ECClassCR ecClass, std::shared_ptr<ContentDescriptor::Category> parentCategory = nullptr);
     ContentDescriptorPtr GetEmptyContentDescriptor(Utf8CP displayType = ContentDisplayType::Undefined, int contentFlags = (int)ContentFlags::SkipInstancesCheck);
-    bmap<ECClassCP, bvector<InstanceLabelOverride const*>> CreateLabelOverrideSpecificationsMap(ECClassCR ecClass, InstanceLabelOverride const& spec);
     RelatedClassPath ReverseRelationshipPath(RelatedClassPath path, Utf8CP targetClassAlias, bool isTargetPolymorphic);
     };
 

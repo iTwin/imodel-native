@@ -10,6 +10,8 @@
 #include <set>
 #include <BeRapidJson/BeRapidJson.h>
 
+#define CLASS_ID(S,C) (int)m_ecdb.Schemas().GetClassId( #S, #C, SchemaLookupMode::AutoDetect).GetValueUnchecked()
+
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
@@ -138,44 +140,44 @@ TEST_F(CommonTableExpTestFixture, MetaQuery) {
         */
 
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "A").GetValue(), stmt.GetValueInt(0)) << "aId";
-        ASSERT_EQ(true, stmt.IsValueNull(1)) << "aParentId"; 
+        ASSERT_EQ(CLASS_ID(ts,A), stmt.GetValueInt(0)) << "aId";
+        ASSERT_EQ(true, stmt.IsValueNull(1)) << "aParentId";
         ASSERT_EQ(0, stmt.GetValueInt(2)) << "aDepth";
         ASSERT_STREQ("A", stmt.GetValueText(3)) << "aPath";
 
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "AA").GetValue(), stmt.GetValueInt(0)) << "aId";
-        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "A").GetValue(), stmt.GetValueInt(1)) << "aParentId";
+        ASSERT_EQ(CLASS_ID(ts,AA), stmt.GetValueInt(0)) << "aId";
+        ASSERT_EQ(CLASS_ID(ts,A), stmt.GetValueInt(1)) << "aParentId";
         ASSERT_EQ(1, stmt.GetValueInt(2)) << "aDepth";
         ASSERT_STREQ("A/AA", stmt.GetValueText(3)) << "aPath";
 
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "AAA").GetValue(), stmt.GetValueInt(0)) << "aId";
-        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "AA").GetValue(), stmt.GetValueInt(1)) << "aParentId";
+        ASSERT_EQ(CLASS_ID(ts,AAA), stmt.GetValueInt(0)) << "aId";
+        ASSERT_EQ(CLASS_ID(ts,AA), stmt.GetValueInt(1)) << "aParentId";
         ASSERT_EQ(2, stmt.GetValueInt(2)) << "aDepth";
         ASSERT_STREQ("A/AA/AAA", stmt.GetValueText(3)) << "aPath";
 
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "AAB").GetValue(), stmt.GetValueInt(0)) << "aId";
-        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "AA").GetValue(), stmt.GetValueInt(1)) << "aParentId";
+        ASSERT_EQ(CLASS_ID(ts,AAB), stmt.GetValueInt(0)) << "aId";
+        ASSERT_EQ(CLASS_ID(ts,AA), stmt.GetValueInt(1)) << "aParentId";
         ASSERT_EQ(2, stmt.GetValueInt(2)) << "aDepth";
         ASSERT_STREQ("A/AA/AAB", stmt.GetValueText(3)) << "aPath";
 
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "AB").GetValue(), stmt.GetValueInt(0)) << "aId";
-        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "A").GetValue(), stmt.GetValueInt(1)) << "aParentId";
+        ASSERT_EQ(CLASS_ID(ts,AB), stmt.GetValueInt(0)) << "aId";
+        ASSERT_EQ(CLASS_ID(ts,A), stmt.GetValueInt(1)) << "aParentId";
         ASSERT_EQ(1, stmt.GetValueInt(2)) << "aDepth";
         ASSERT_STREQ("A/AB", stmt.GetValueText(3)) << "aPath";
 
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "ABA").GetValue(), stmt.GetValueInt(0)) << "aId";
-        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "AB").GetValue(), stmt.GetValueInt(1)) << "aParentId";
+        ASSERT_EQ(CLASS_ID(ts,ABA), stmt.GetValueInt(0)) << "aId";
+        ASSERT_EQ(CLASS_ID(ts,AB), stmt.GetValueInt(1)) << "aParentId";
         ASSERT_EQ(2, stmt.GetValueInt(2)) << "aDepth";
         ASSERT_STREQ("A/AB/ABA", stmt.GetValueText(3)) << "aPath";
 
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "ABB").GetValue(), stmt.GetValueInt(0)) << "aId";
-        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "AB").GetValue(), stmt.GetValueInt(1)) << "aParentId";
+        ASSERT_EQ(CLASS_ID(ts,ABB), stmt.GetValueInt(0)) << "aId";
+        ASSERT_EQ(CLASS_ID(ts,AB), stmt.GetValueInt(1)) << "aParentId";
         ASSERT_EQ(2, stmt.GetValueInt(2)) << "aDepth";
         ASSERT_STREQ("A/AB/ABB", stmt.GetValueText(3)) << "aPath";
 

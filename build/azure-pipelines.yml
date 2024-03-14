@@ -22,7 +22,7 @@ parameters:
 - name: defaultCoreBranch
   displayName: Default itwinjs-core Branch Used for PR Validation
   type: string
-  default: 'imodel02' # Change to appropriate branch name when creating new release branch
+  default: 'master' # Change to appropriate branch name when creating new release branch
 
 
 resources:
@@ -40,6 +40,10 @@ resources:
     - repository: imodeljs-build-pipeline-scripts
       type: git
       name: iModelTechnologies/imodeljs-build-pipeline-scripts
+    - repository: MendScan
+      type: git
+      name: ReleaseServices/MendScan
+      ref: refs/heads/main
 
 extends:
   template: /build/templates/pipeline.yml@imodel-native-internal

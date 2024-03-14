@@ -132,11 +132,13 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/ECInstanceAdapterHelper.h \
                 $(baseDir)ECSql/CommonTableExp.h \
                 $(baseDir)ECSql/ECSqlPragmas.h \
+                $(baseDir)ECSql/ValueCreationFuncExp.h \
                 $(baseDir)DbSchema.h \
                 $(baseDir)DbSchemaPersistenceManager.h \
                 $(baseDir)LightweightCache.h \
                 $(baseDir)SqlNames.h \
-                $(baseDir)ClassMapColumnFactory.h
+                $(baseDir)ClassMapColumnFactory.h \
+                $(baseDir)ClassViews.h
 
 
 #----------------------------------------------------------------------
@@ -378,6 +380,8 @@ $(o)ECSqlPragmas$(oext):                   $(baseDir)ECSql/ECSqlPragmas.cpp $(EC
 
 $(o)DbSchema$(oext):                       $(baseDir)DbSchema.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)ValueCreationFuncExp$(oext):           $(baseDir)ECSql/ValueCreationFuncExp.cpp  $(ECDbAllHeaders) ${MultiCompileDepends}
+
 $(o)DbSchemaPersistenceManager$(oext):     $(baseDir)DbSchemaPersistenceManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbExpressionSymbolProvider$(oext):   $(baseDir)ECDbExpressionSymbolProvider.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
@@ -398,6 +402,7 @@ $(o)BuiltInVTabs$(oext):                   $(baseDir)BuiltInVTabs.cpp $(ECDbAllH
 
 $(o)RelatedInstanceFinder$(oext):          $(baseDir)RelatedInstanceFinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)ClassViews$(oext):                     $(baseDir)ClassViews.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)

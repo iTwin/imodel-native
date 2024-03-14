@@ -320,7 +320,7 @@ void RelatedPropertiesSpecification::ParsePropertiesFromPropertyJson(PropertySpe
                 {
                 Utf8PrintfString msg("Invalid value for `%s.%s[" PRIu64 "]`: `%s`. Expected property specification, name, '" INCLUDE_NO_PROPERTIES_SPEC "' or '" INCLUDE_ALL_PROPERTIES_SPEC "'.",
                         _GetJsonElementType(), propertySpecJsonAttributeName, (uint64_t)i, propertySpecsJson[i].Stringify().c_str());
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, msg);
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, msg);
                 }
             }
         }
@@ -348,16 +348,16 @@ bool RelatedPropertiesSpecification::_ReadJson(BeJsConst json)
         m_requiredDirection = CommonToolsInternal::ParseRequiredDirectionString(json[COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION].asCString(""), _GetJsonElementType());
         if (m_relationshipClassNames.empty() && m_relatedClassNames.empty())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid `%s` specification. Expected either `%s` or `%s` to be specified, but none of them is.",
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Invalid `%s` specification. Expected either `%s` or `%s` to be specified, but none of them is.",
                 _GetJsonElementType(), COMMON_JSON_ATTRIBUTE_RELATIONSHIPS, COMMON_JSON_ATTRIBUTE_RELATEDCLASSES));
             hasIssues = true;
             }
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_WARNING, Utf8PrintfString("Using deprecated attributes of `%s`: `%s`, `%s`, `%s`. It's recommended to switch to `%s`.",
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_WARNING, Utf8PrintfString("Using deprecated attributes of `%s`: `%s`, `%s`, `%s`. It's recommended to switch to `%s`.",
             _GetJsonElementType(), COMMON_JSON_ATTRIBUTE_RELATIONSHIPS, COMMON_JSON_ATTRIBUTE_RELATEDCLASSES, COMMON_JSON_ATTRIBUTE_REQUIREDDIRECTION, RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIESSOURCE));
         }
     else
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Missing required `%s` attribute: `%s`.", _GetJsonElementType(), RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIESSOURCE));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Missing required `%s` attribute: `%s`.", _GetJsonElementType(), RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIESSOURCE));
         hasIssues = true;
         }
 
@@ -382,7 +382,7 @@ bool RelatedPropertiesSpecification::_ReadJson(BeJsConst json)
     else if (json.isMember(RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAMES))
         {
         BeJsConst propertyAttributeJson = json[RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAMES];
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_WARNING, Utf8PrintfString("Using deprecated `%s.%s`. It's recommended to switch to `%s`.",
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_WARNING, Utf8PrintfString("Using deprecated `%s.%s`. It's recommended to switch to `%s`.",
             _GetJsonElementType(), RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTYNAMES, RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIES));
         ParsePropertiesFromPropertyJson(m_properties, propertyAttributeJson, RELATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_PROPERTIES);
         }
