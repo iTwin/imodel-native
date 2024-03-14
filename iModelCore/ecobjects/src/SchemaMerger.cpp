@@ -427,9 +427,7 @@ BentleyStatus SchemaMerger::MergeSchema(SchemaMergeResult& result, ECSchemaP lef
     if(schemaChange->VersionRead().IsChanged() || schemaChange->VersionWrite().IsChanged() || schemaChange->VersionMinor().IsChanged())
         {
         // We are not merging versions like other properties. The highest version always wins and is applied to left
-        const auto leftKey = left->GetSchemaKey();
-        const auto rightKey = right->GetSchemaKey();
-        if(!options.GetKeepVersion() && leftKey.CompareByVersion(rightKey) < 0)
+        if(!options.GetKeepVersion() && left->GetSchemaKey().CompareByVersion(right->GetSchemaKey()) < 0)
             {
             left->SetVersionRead(right->GetVersionRead());
             left->SetVersionWrite(right->GetVersionWrite());
