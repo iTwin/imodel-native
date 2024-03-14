@@ -1024,10 +1024,10 @@ TEST_F(JsonUpdaterTests, UpdateTimeOfDayValues)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(JsonUpdaterTests, StructPropertiesToNull)
+TEST_F(JsonUpdaterTests, UpdateStructPropertyToNull)
     {
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("structPropertiesToNull.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
-        <ECSchema schemaName="TestSchema" version="01.00.00" displayLabel="Display Label" description="Description" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updateStructPropertyToNull.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECStructClass typeName="MyStruct">
                 <ECProperty propertyName="MyStructNumber" typeName="int" />
             </ECStructClass>
@@ -1051,13 +1051,12 @@ TEST_F(JsonUpdaterTests, StructPropertiesToNull)
     ASSERT_TRUE(testClass != nullptr);
     EXPECT_EQ(JsonValue("[{\"IntProp\":15,\"ClassProp\":{\"MyStructNumber\":17}}]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT IntProp,ClassProp FROM ts.TestClass WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str()).c_str()));
 
-
     // Update test instance
     JsonUpdater updater(m_ecdb, *testClass, nullptr);
     ASSERT_TRUE(updater.IsValid());
     ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetInstanceId(), JsonValue("{\"IntProp\": 6, \"ClassProp\": null}").m_value));
 
-    // Check for null
+    // Check for ClassProp to not exist (be null)
     EXPECT_EQ(JsonValue("[{\"IntProp\":6}]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT IntProp,ClassProp FROM ts.TestClass WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str()).c_str()));
     }
 
