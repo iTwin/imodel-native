@@ -2466,7 +2466,7 @@ struct SchemaKeyLessThan
 };
 
 typedef bmap<SchemaKey , ECSchemaPtr> SchemaMap;
-typedef std::function<bool(SchemaKeyCR)> SchemaKeyMatchFn;
+typedef std::function<bool(SchemaKeyCR)> SchemaKeyMatchCallback;
 
 //=======================================================================================
 // @bsistruct
@@ -2884,7 +2884,7 @@ public:
     //! Get a requested schema from this cache.
     //! @param[in] predicate    Custom schema matching predicate against cached schemas.
     //! @returns The first matching ECSchema if it is contained in the cache; otherwise nullptr.
-    ECOBJECTS_EXPORT ECSchemaP FindSchema(const SchemaKeyMatchFn& predicate) const;
+    ECOBJECTS_EXPORT ECSchemaP FindSchema(const SchemaKeyMatchCallback& predicate) const;
 
     //! Get a requested schema from this cache by case-insensitive name.
     //! @param[in] schemaName    Schema name to match against cached schemas.
