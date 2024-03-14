@@ -33,25 +33,14 @@ struct RelatedInstanceFinder final {
     using Results = std::vector<Result>;
 
 private:
-    struct RelationshipInfo {
-    private:
-        ECN::ECRelationshipClassCR m_relationshipClass;
-        ECN::NavigationECPropertyCP m_navProp;
-        mutable ECSqlStatement m_querySourceStmt;
-        mutable ECSqlStatement m_queryTargetStmt;
-
-    public:
-        RelationshipInfo(ECN::ECRelationshipClassCR rel, ECN::NavigationECPropertyCP navProp) : m_relationshipClass(rel), m_navProp(navProp) {}
-        ECN::ECRelationshipClassCR GetRelationshipClass() const { return m_relationshipClass; }
-        ECN::NavigationECPropertyCP GetNavigationProperty() const { return m_navProp; }
-        ECDB_EXPORT ECSqlStatement* TryGetQueryStatement(ECDbCR ecdb, ECN::ECRelationshipEnd end) const;
-    };
 
     ECDbCR m_ecdb;
     mutable std::unique_ptr<Statement> m_queryRelationshipStmt;
-    mutable bmap<ECN::ECClassId, std::unique_ptr<RelationshipInfo>> m_relationshipMap;
+    mutable bmap<ECN::ECClassId, std::unique_ptr<ECSqlStatement>> m_relationshipCachedECSql;
+    mutable std::unique_ptr<bmap<ECN::ECClassId, std::vector<std::tuple<ECN::ECClassId, ECN::ECRelatedInstanceDirection>>>> m_relCache;
     mutable BeMutex m_mutex;
-    ECDB_EXPORT BentleyStatus FindRelevantRelationshipInfo(ECN::ECClassId classId, DirectionFilter direction, std::vector<std::tuple<RelationshipInfo*, ECN::ECRelationshipEnd>>& results) const;
+    ECDB_EXPORT BentleyStatus FindRelevantRelationshipInfo(ECN::ECClassId classId, std::vector<std::tuple<ECSqlStatement*, ECN::ECRelatedInstanceDirection>>& results) const;
+    BentleyStatus InitializeRelationshipCache() const;
 
 public:
     explicit RelatedInstanceFinder(ECDbCR ecdb):m_ecdb(ecdb){}
