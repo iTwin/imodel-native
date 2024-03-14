@@ -1922,6 +1922,7 @@ TransformR    worldToLocal
             }
         if (result->size () > 0)
             {
+            result->FlattenNestedUnionRegions();
             result->TransformInPlace (localToWorld);
             return result;
             }

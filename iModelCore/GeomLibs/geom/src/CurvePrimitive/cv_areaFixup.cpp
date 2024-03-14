@@ -255,4 +255,52 @@ bool CurveVector::FixupXYOuterInner (bool fullGeometryCheck)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CurveVector::HasNestedUnionRegion() const
+    {
+    bool isUnionParent = IsUnionRegion();
+    for (auto const& curve : *this)
+        {
+        if (auto child = curve->GetChildCurveVectorCP())
+            {
+            if (isUnionParent && child->IsUnionRegion())
+                return true;
+            if (child->HasNestedUnionRegion())
+                return true;
+            }
+        }
+    return false;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+void CurveVector::FlattenNestedUnionRegions()
+    {
+    // A union region parent with union region child:
+    // * is technically legal in geomlibs
+    // * is poorly supported outside geomlibs
+    // * cannot currently be converted to a DGN AssocRegion element
+    // * cannot currently be converted to an iTwin UnionRegion object
+    bool isUnionParent = IsUnionRegion();
+    for (size_t i = 0; i < size(); ) // compute size each time; we may have appended children to process
+        {
+        auto child = at(i)->GetChildCurveVectorP();
+        if (child.IsValid())
+            {
+            if (isUnionParent && child->IsUnionRegion())
+                {
+                if (!child->empty())
+                    insert(begin() + i + 1, child->begin(), child->end());
+                erase(begin() + i);
+                continue;   // reuse i to process children we just promoted
+                }
+            child->FlattenNestedUnionRegions();
+            }
+        ++i;
+        }
+    }
+
 END_BENTLEY_GEOMETRY_NAMESPACE

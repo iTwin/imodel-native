@@ -1221,6 +1221,16 @@ void Check::Print (RotMatrixCR data, char const *name)
     printf (");\n)");
     }
 
+void Check::Print(DMatrix4dCR data, char const *name)
+    {
+    if(!PrintFixedStructs())
+        return;
+    printf("\n    DMatrix4d::FromRowValues (//%s", NULL != name ? name : "DMatrix4d");
+    for (int i = 0; i < 4; i++)
+        printf("\n         %.17g, %.17g, %.17g, %.17g", data.coff[i][0], data.coff[i][1], data.coff[i][2], data.coff[i][3]);
+    printf(");\n)");
+    }
+
 void Check::Print (TransformCR data, char const *name, char const *terminator)
     {
     if (!PrintFixedStructs ())

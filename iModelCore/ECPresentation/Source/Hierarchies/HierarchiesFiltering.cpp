@@ -93,15 +93,35 @@ static bvector<ECClassCP> GetRelationshipPathTargetClasses(RepeatableRelationshi
 static void TraverseChildNodeSpecifications(
     PresentationRuleSpecificationVisitorR visitor,
     CustomNodeSpecificationCR specification,
-    TraverseHierarchyRulesProps const& props
+    TraverseHierarchyRulesProps const& props,
+    std::function<void(NavNodeCP)> const& onParentNodeOverride = [](NavNodeCP){}
 )
     {
     auto fakeParentNode = props.GetNodesFactory().CreateCustomNode(props.GetSchemaHelper().GetConnection(), specification.GetHash(), nullptr,
         *LabelDefinition::FromString(specification.GetLabel().c_str()), specification.GetDescription().c_str(), specification.GetImageId().c_str(),
         specification.GetNodeType().c_str(), nullptr);
+    onParentNodeOverride(fakeParentNode.get());
     auto childSpecs = GetDirectChildNodeSpecifications(fakeParentNode.get(), props.GetRulesPreprocessor());
     for (auto const& childSpec : childSpecs)
         childSpec->Accept(visitor);
+    onParentNodeOverride(nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static NavNodeCPtr CreateFakeInstanceNode(
+    TraverseHierarchyRulesProps const& props,
+    Utf8StringCR specificationHash,
+    ECClassId classId,
+    NavNodeCP parentNode
+)
+    {
+    auto node = props.GetNodesFactory().CreateECInstanceNode(props.GetSchemaHelper().GetConnection(), 
+        specificationHash, nullptr, classId, ECInstanceId(), *LabelDefinition::Create());
+    if (parentNode)
+        NavNodeExtendedData(*node).SetVirtualParentIds({ parentNode->GetNodeId() });
+    return node;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -110,17 +130,21 @@ static void TraverseChildNodeSpecifications(
 static void TraverseChildNodeSpecifications(
     PresentationRuleSpecificationVisitorR visitor,
     InstanceNodesOfSpecificClassesSpecificationCR specification,
-    TraverseHierarchyRulesProps const& props
+    TraverseHierarchyRulesProps const& props,
+    NavNodeCP parentNode = nullptr,
+    std::function<void(NavNodeCP)> const& onParentNodeOverride = [](NavNodeCP){}
 )
     {
     auto targetClasses = props.GetSchemaHelper().GetECClassesFromClassList(specification.GetClasses(), false);
-    auto fakeParentNodes = ContainerHelpers::TransformContainer<bvector<NavNodeCPtr>>(targetClasses, [&](auto const& targetClass)
+    for (auto const& targetClass : targetClasses)
         {
-        return props.GetNodesFactory().CreateECInstanceNode(props.GetSchemaHelper().GetConnection(), specification.GetHash(), nullptr, targetClass.GetClass().GetId(), ECInstanceId(), *LabelDefinition::Create());
-        });
-    auto childSpecs = GetDirectChildNodeSpecifications(fakeParentNodes, props.GetRulesPreprocessor());
-    for (auto const& childSpec : childSpecs)
-        childSpec->Accept(visitor);
+        auto fakeParentNode = CreateFakeInstanceNode(props, specification.GetHash(), targetClass.GetClass().GetId(), parentNode);
+        onParentNodeOverride(fakeParentNode.get());
+        auto childSpecs = GetDirectChildNodeSpecifications({ fakeParentNode }, props.GetRulesPreprocessor());
+        for (auto const& childSpec : childSpecs)
+            childSpec->Accept(visitor);
+        }
+    onParentNodeOverride(nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -130,17 +154,21 @@ static void TraverseChildNodeSpecifications(
     PresentationRuleSpecificationVisitorR visitor,
     RelatedInstanceNodesSpecificationCR specification,
     RepeatableRelationshipPathSpecification const& pathSpecification,
-    TraverseHierarchyRulesProps const& props
+    TraverseHierarchyRulesProps const& props,
+    NavNodeCP parentNode = nullptr,
+    std::function<void(NavNodeCP)> const& onParentNodeOverride = [](NavNodeCP){}
 )
     {
     auto targetClasses = GetRelationshipPathTargetClasses(pathSpecification, props.GetSchemaHelper());
-    auto fakeParentNodes = ContainerHelpers::TransformContainer<bvector<NavNodeCPtr>>(targetClasses, [&](auto const& targetClass)
+    for (auto const& targetClass : targetClasses)
         {
-        return props.GetNodesFactory().CreateECInstanceNode(props.GetSchemaHelper().GetConnection(), specification.GetHash(), nullptr, targetClass->GetId(), ECInstanceId(), *LabelDefinition::Create());
-        });
-    auto childSpecs = GetDirectChildNodeSpecifications(fakeParentNodes, props.GetRulesPreprocessor());
-    for (auto const& childSpec : childSpecs)
-        childSpec->Accept(visitor);
+        auto fakeParentNode = CreateFakeInstanceNode(props, specification.GetHash(), targetClass->GetId(), parentNode);
+        onParentNodeOverride(fakeParentNode.get());
+        auto childSpecs = GetDirectChildNodeSpecifications({ fakeParentNode }, props.GetRulesPreprocessor());
+        for (auto const& childSpec : childSpecs)
+            childSpec->Accept(visitor);
+        }
+    onParentNodeOverride(nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -149,17 +177,21 @@ static void TraverseChildNodeSpecifications(
 static void TraverseChildNodeSpecifications(
     PresentationRuleSpecificationVisitorR visitor,
     SearchResultInstanceNodesSpecificationCR specification,
-    TraverseHierarchyRulesProps const& props
+    TraverseHierarchyRulesProps const& props,
+    NavNodeCP parentNode = nullptr,
+    std::function<void(NavNodeCP)> const& onParentNodeOverride = [](NavNodeCP){}
 )
     {
     auto queryClasses = GetQuerySpecificationClasses(specification, props.GetSchemaHelper());
-    auto fakeParentNodes = ContainerHelpers::TransformContainer<bvector<NavNodeCPtr>>(queryClasses, [&](auto const& queryClass)
+    for (auto const& queryClass : queryClasses)
         {
-        return props.GetNodesFactory().CreateECInstanceNode(props.GetSchemaHelper().GetConnection(), specification.GetHash(), nullptr, queryClass->GetId(), ECInstanceId(), *LabelDefinition::Create());
-        });
-    auto childSpecs = GetDirectChildNodeSpecifications(fakeParentNodes, props.GetRulesPreprocessor());
-    for (auto const& childSpec : childSpecs)
-        childSpec->Accept(visitor);
+        auto fakeParentNode = CreateFakeInstanceNode(props, specification.GetHash(), queryClass->GetId(), parentNode);
+        onParentNodeOverride(fakeParentNode.get());
+        auto childSpecs = GetDirectChildNodeSpecifications({ fakeParentNode }, props.GetRulesPreprocessor());
+        for (auto const& childSpec : childSpecs)
+            childSpec->Accept(visitor);
+        }
+    onParentNodeOverride(nullptr);
     }
 
 #define REPORT_ISSUE(issue) \
@@ -223,12 +255,30 @@ public:
     bool DidFindAnyUnfilterableSpecifications() const {return m_hasIssues;}
 };
 
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct VisitedSpecsTracker
+{
+private:
+    bset<ChildNodeSpecificationCP>& m_specs;
+    ChildNodeSpecificationCR m_spec;
+public:
+    VisitedSpecsTracker(bset<ChildNodeSpecificationCP>& specs, ChildNodeSpecificationCR spec)
+        : m_specs(specs), m_spec(spec)
+        {
+        m_specs.insert(&m_spec);
+        }
+    ~VisitedSpecsTracker()
+        {
+        m_specs.erase(&m_spec);
+        }
+};
+
 #define ENSURE_NOT_VISITED(set, specCR) \
-    { \
     if (set.end() != set.find(&specCR)) \
         return; \
-    set.insert(&specCR); \
-    }
+    VisitedSpecsTracker _track_specification(set, specCR); \
 
 /*=================================================================================**//**
 * @bsiclass
@@ -380,6 +430,7 @@ struct HierarchySpecsToContentRulesetConverter : PresentationRuleSpecificationVi
 private:
     TraverseHierarchyRulesProps const& m_props;
     NavNodeCP m_parentNode;
+    NavNodeCP m_parentNodeOverride;
 
     PresentationRuleSetPtr m_ruleset;
     ContentRuleP m_contentRule;
@@ -413,6 +464,11 @@ private:
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
     bool IsParentGroupingNode() const {return m_parentNode && m_parentNode->GetKey()->AsGroupingNodeKey();}
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    NavNodeCP GetParentNode() const {return m_parentNodeOverride ? m_parentNodeOverride : m_parentNode;}
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
@@ -477,7 +533,7 @@ protected:
         if (specification.GetHideNodesInHierarchy())
             {
             ChainedSpecificationsContext chained(*this, specification);
-            TraverseChildNodeSpecifications(*this, specification, m_props);
+            TraverseChildNodeSpecifications(*this, specification, m_props, GetParentNode(), [&](NavNodeCP ovr){m_parentNodeOverride = ovr; });
             return;
             }
 
@@ -488,8 +544,8 @@ protected:
             }
 
         // acquire information for handling `parent` symbols in instance filter
-        NavNodeCPtr parentInstanceNode = m_parentNode
-            ? HierarchiesInstanceFilteringHelper::GetParentInstanceNode(m_props.GetNodesCache(), *m_parentNode)
+        NavNodeCPtr parentInstanceNode = GetParentNode()
+            ? HierarchiesInstanceFilteringHelper::GetParentInstanceNode(m_props.GetNodesCache(), *GetParentNode())
             : nullptr;
         auto parentInstanceFilteringInfo = HierarchiesInstanceFilteringHelper::CreateParentInstanceFilteringInfo(m_props.GetNodesCache(),
             parentInstanceNode.get(), specification.GetInstanceFilter());
@@ -541,7 +597,7 @@ protected:
             for (auto const& pathSpec : specification.GetRelationshipPaths())
                 {
                 ChainedSpecificationsContext chained(*this, specification, *pathSpec);
-                TraverseChildNodeSpecifications(*this, specification, *pathSpec, m_props);
+                TraverseChildNodeSpecifications(*this, specification, *pathSpec, m_props, GetParentNode(), [&](NavNodeCP ovr){m_parentNodeOverride = ovr;});
                 }
             return;
             }
@@ -604,8 +660,8 @@ protected:
             );
 
         // acquire information for handling `parent` symbols in instance filter
-        NavNodeCPtr parentInstanceNode = m_parentNode
-            ? HierarchiesInstanceFilteringHelper::GetParentInstanceNode(m_props.GetNodesCache(), *m_parentNode)
+        NavNodeCPtr parentInstanceNode = GetParentNode()
+            ? HierarchiesInstanceFilteringHelper::GetParentInstanceNode(m_props.GetNodesCache(), *GetParentNode())
             : nullptr;
         auto parentInstanceFilteringInfo = HierarchiesInstanceFilteringHelper::CreateParentInstanceFilteringInfo(m_props.GetNodesCache(),
             parentInstanceNode.get(), specification.GetInstanceFilter());
@@ -636,7 +692,7 @@ protected:
         if (specification.GetHideNodesInHierarchy())
             {
             ChainedSpecificationsContext chained(*this, specification);
-            TraverseChildNodeSpecifications(*this, specification, m_props);
+            TraverseChildNodeSpecifications(*this, specification, m_props, GetParentNode(), [&](NavNodeCP ovr){m_parentNodeOverride = ovr;});
             return;
             }
 
@@ -670,7 +726,8 @@ public:
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
     HierarchySpecsToContentRulesetConverter(TraverseHierarchyRulesProps const& props, NavNodeCP parentNode)
-        : m_contentRule(nullptr), m_props(props), m_inputReset(false), m_parentNode(parentNode), m_didAddSelectedNodeInstancesSpec(false)
+        : m_contentRule(nullptr), m_props(props), m_inputReset(false), m_parentNode(parentNode), m_parentNodeOverride(nullptr),
+        m_didAddSelectedNodeInstancesSpec(false)
         {}
 
     /*---------------------------------------------------------------------------------**//**

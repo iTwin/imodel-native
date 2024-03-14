@@ -473,6 +473,43 @@ TEST(MSBsplineSurface,TightPrincipalExtentsWeighted)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST(MSBsplineSurface,ComputeSecondMomentAreaProducts)
+    {
+    BeFileName dataPath;
+    BeTest::GetHost().GetDocumentsRoot(dataPath);
+    dataPath.AppendToPath(L"GeomLibsTestData");
+    dataPath.AppendToPath(L"BSpline");
+    dataPath.AppendToPath(L"bsurf_trimmed_rational_uclosed.imjs");  // in meters
+    bvector<IGeometryPtr> geometry;
+    if (Check::True(GTestFileOps::JsonFileToGeometry(dataPath, geometry), "Import geometry from JSON"))
+        {
+        if (Check::Size(geometry.size(), 1, "One geometry imported"))
+            {
+            auto surface = geometry[0]->GetAsMSBsplineSurface();
+            if (Check::True(surface.IsValid(), "Geometry is a B-spline surface"))
+                {
+                // VS2022 compiler optimization bug on bspsurf_evaluateSurfacePoint introduced NaNs into this matrix!
+                DMatrix4d products;
+                Check::True(surface->ComputeSecondMomentAreaProducts(products), "Computed SecondMomentAreaProducts");
+                DMatrix4d expectedProducts_x64 = DMatrix4d::FromRowValues
+                    (
+                    628725530.60963309, 9306233103.4515533, 4076218.4699301911, 1273.5310588479806,
+                    9306233103.4515533, 137748461545.37683, 60335134.195976652, 18850.478183433930,
+                    4076218.4699301911, 60335134.195976652, 26427.361712423015, 8.2566884457084768,
+                    1273.5310588479806, 18850.478183433930, 8.2566884457084768, 0.0025796333676442757
+                    );
+                Check::PushTolerance(ToleranceSelect_Loose);    // MacOS is within 1.0e-8 rel tol of x64
+                Check::Near(products, expectedProducts_x64, "SecondMomentAreaProducts are nearly the same");
+                Check::PopTolerance();                
+                }
+            }
+        }
+    Check::ClearGeometry ("MSBsplineSurface.ComputeSecondMomentAreaProducts");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(MSInterpolatingCurve,EndConditions)
     {
     bvector<bool> truefalse {true, false};

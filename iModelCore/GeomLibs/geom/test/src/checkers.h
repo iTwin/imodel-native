@@ -246,6 +246,7 @@ static void Print (DPoint4dCR, const char *name = NULL);
 static void Print (DPoint2dCR, const char *name = NULL);
 static void Print (DVec3dCR, const char *name = NULL);
 static void Print (RotMatrixCR data, char const *name = NULL);
+static void Print (DMatrix4dCR data, char const *name = NULL);
 static void Print (TransformCR data, char const *name = nullptr, char const *terminator = nullptr);
 static void Print (double data, char const *name = NULL);
 static void PrintE3 (double data, char const *name = NULL);
