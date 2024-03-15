@@ -103,12 +103,13 @@ DbResult ECDb::_OnDbOpened(OpenParams const& params)
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::_AfterSchemaChangeSetApplied() const
     {
+    ClearECDbCache();
+    Schemas().RepopulateCacheTables();
     if (!Schemas().GetSchemaSync().GetInfo().IsEmpty()) {
         if (Schemas().GetSchemaSync().UpdateDbSchema() != SchemaSync::Status::OK){
             return BE_SQLITE_ERROR;
         }
     }
-    Schemas().RepopulateCacheTables();
     Schemas().UpgradeECInstances();
     return BE_SQLITE_OK;
     }
