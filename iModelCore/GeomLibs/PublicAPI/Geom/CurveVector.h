@@ -144,6 +144,7 @@ enum BoundaryType
     BOUNDARY_TYPE_ParityRegion  = 4,
     //! Expected to contain (only) multiple CurveVectors, all of which have area. (No individual curves or open paths).
     //! These are to be analyzed by union rules.
+    //! Nested union regions are rare and poorly supported, and thus should be avoided.
     BOUNDARY_TYPE_UnionRegion   = 5,
     };
 
@@ -992,6 +993,13 @@ GEOMDLLIMPEXP void SimplifyLinestrings (double distanceTol, bool eliminateOverdr
 //! @param [in] fullGeometryCheck if true, perform all (expensive) tests for intersections among curves.  When this is enabled, the returned curve vector is typically
 //!    a (possibly significantly modified) clone of the original.
 GEOMDLLIMPEXP bool FixupXYOuterInner (bool fullGeometryCheck = false);
+
+//! Whether the instance contains a union region child of a union region parent.
+GEOMDLLIMPEXP bool HasNestedUnionRegion() const;
+
+//! Recursively flatten each union region child whose parent is a union region, so that no nested union region children remain.
+//! This simplifies the hierarchical structure of the CurveVector, while preserving its geometry.
+GEOMDLLIMPEXP void FlattenNestedUnionRegions();
 
 //! Reorder curve primitives to produce small head-to-tail gaps.
 //! reordering is applied only within boundary types None, Open, and Closed.

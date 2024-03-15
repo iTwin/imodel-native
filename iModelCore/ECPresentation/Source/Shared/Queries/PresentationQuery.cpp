@@ -639,7 +639,7 @@ bool ShouldSelectWithClause(PresentationQueryContractFieldCR field, Presentation
 
         if (nestedField->GetSelectClause() != field.GetSelectClause())
             return true;
-        
+
         if (FieldVisibility::Outer != nestedField->GetVisibility())
             return false;
         }
@@ -943,27 +943,23 @@ ComplexQueryBuilder& ComplexQueryBuilder::Join(RelatedClassPath const& path, boo
         bool shouldJoinTargetClass = (&relatedClass != &path[path.size() - 1]) || shouldJoinLastTargetClass;
         isJoinOptional |= relatedClass.IsTargetOptional(); // make it outer join as soon as we find an optional target
         std::unique_ptr<JoinClause> clause;
-        if (relatedClass.GetTargetIds().empty())
-            {
-            if (!relatedClass.GetRelationship().IsValid())
-                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Skipping JOIN as relationship is not specified");
-            if (relatedClass.GetRelationship().GetAlias().empty())
-                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Skipping JOIN as relationship doesn't have an alias");
-            clause = std::make_unique<JoinClassWithRelationshipClause>(relatedClass.GetTargetClass(), QueryClauseAndBindings(relatedClass.GetTargetInstanceFilter()),
-                relatedClass.GetRelationship(), relatedClass.IsForwardRelationship(), isJoinOptional ? JoinType::Outer : JoinType::Inner, shouldJoinTargetClass);
-            }
-        else if (relatedClass.GetRelationship().IsValid())
+
+        QueryClauseAndBindings joinFilter(relatedClass.GetTargetInstanceFilter());
+        if (!relatedClass.GetTargetIds().empty())
+            joinFilter.Append(ValuesFilteringHelper(relatedClass.GetTargetIds()).Create(QueryHelpers::Wrap(relatedClass.GetTargetClass().GetAlias()).append(".[ECInstanceId]").c_str()), " AND ");
+
+        if (relatedClass.GetRelationship().IsValid())
             {
             if (relatedClass.GetRelationship().GetAlias().empty())
                 DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, "Skipping JOIN as relationship doesn't have an alias");
-            clause = std::make_unique<JoinClassWithRelationshipClause>(relatedClass.GetTargetClass(),
-                ValuesFilteringHelper(relatedClass.GetTargetIds()).Create(QueryHelpers::Wrap(relatedClass.GetTargetClass().GetAlias()).append(".[ECInstanceId]").c_str()),
+            clause = std::make_unique<JoinClassWithRelationshipClause>(relatedClass.GetTargetClass(), joinFilter,
                 relatedClass.GetRelationship(), relatedClass.IsForwardRelationship(), isJoinOptional ? JoinType::Outer : JoinType::Inner, shouldJoinTargetClass);
             }
         else
             {
-            clause = std::make_unique<JoinClassClause>(relatedClass.GetTargetClass(),
-                ValuesFilteringHelper(relatedClass.GetTargetIds()).Create(QueryHelpers::Wrap(relatedClass.GetTargetClass().GetAlias()).append(".[ECInstanceId]").c_str()), isJoinOptional ? JoinType::Outer : JoinType::Inner);
+            if (joinFilter.GetClause().empty())
+                joinFilter = QueryClauseAndBindings("TRUE");
+            clause = std::make_unique<JoinClassClause>(relatedClass.GetTargetClass(), joinFilter, isJoinOptional ? JoinType::Outer : JoinType::Inner);
             }
         rootJoins.push_back(std::move(clause));
         }

@@ -351,7 +351,7 @@ static bvector<ECInstanceId> GetInstanceIdsWithClass(bvector<ECClassInstanceKey>
     bvector<ECInstanceId> ids;
     for (ECClassInstanceKeyCR key : keys)
         {
-        if (key.GetClass() == &ecClass)
+        if (key.GetClass() == &ecClass && key.GetId().IsValid())
             ids.push_back(key.GetId());
         }
     return ids;
