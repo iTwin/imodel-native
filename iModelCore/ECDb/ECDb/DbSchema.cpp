@@ -1736,6 +1736,7 @@ std::unique_ptr<PrimaryKeyDbConstraint> PrimaryKeyDbConstraint::Create(DbTable c
 
         pkConstraint->m_columns.push_back(col);
         col->SetIsPrimaryKeyColumn(*pkConstraint);
+        uniqueColNames.insert(col->GetName().c_str());
         }
 
     return pkConstraint;
