@@ -10,6 +10,34 @@
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <GeomSerialization/GeomSerializationApi.h>
 
+bool writeGeometryToFile
+(
+bvector<IGeometryPtr> &geometry,
+WCharCP directoryName,
+WCharCP nameB,
+WCharCP nameC,
+WCharCP extension
+)
+    {
+    Utf8String stringB;
+    if (IModelJson::TryGeometryToIModelJsonString(stringB, geometry))
+        return GTestFileOps::WriteToFile(stringB, directoryName, nameB, nameC, extension);
+    return false;
+    }
+
+bool writeGeometryToFile
+(
+IGeometryPtr &geometry,
+WCharCP directoryName,
+WCharCP nameB,
+WCharCP nameC,
+WCharCP extension
+)
+    {
+    bvector<IGeometryPtr> geometryVector;
+    geometryVector.push_back(geometry);
+    return writeGeometryToFile(geometryVector, directoryName, nameB, nameC, extension);
+    }
 
 bool ReadIModelJson
 (
@@ -44,9 +72,7 @@ WCharCP flatbufferUInt8Extension = nullptr   // optionally write flatbuffer to s
         {
         if (Check::True (IModelJson::TryIModelJsonStringToGeometry (string, geometry), "json string to geometry"))
             {
-            Utf8String stringB;
-            if (IModelJson::TryGeometryToIModelJsonString (stringB, geometry))
-                GTestFileOps::WriteToFile (stringB, outputDirectory, nameB, nameC, extension);
+            writeGeometryToFile(geometry, outputDirectory, nameB, nameC, extension);
             stat = true;
             if (flatbufferUInt8Extension != nullptr)
                 {
@@ -90,15 +116,21 @@ TEST(IModelJson,BytesToXXX)
         bvector<Byte> buffer;
         if (Check::True(ReadIModelBytes(buffer, filePath)))
             {
-            IGeometryPtr g;
-            g = BentleyGeometryFlatBuffer::BytesToGeometry(buffer.data(), buffer.size());
-            if (g != nullptr)
+            IGeometryPtr geometry;
+            geometry = BentleyGeometryFlatBuffer::BytesToGeometry(buffer.data(), buffer.size());
+            if (geometry != nullptr)
+                {
+                writeGeometryToFile(geometry, L"IModelJson.BytesToXXX", L"geometryVector", nullptr, L"imjs");
                 Check::Fail("expect BytesToGeometry to return nullptr for invalid bytes");
+                }
             bool ret;
-            bvector<IGeometryPtr> dest;
-            ret = BentleyGeometryFlatBuffer::BytesToVectorOfGeometry(buffer, dest);
+            bvector<IGeometryPtr> geometryVector;
+            ret = BentleyGeometryFlatBuffer::BytesToVectorOfGeometry(buffer, geometryVector);
             if (ret)
+                {
+                writeGeometryToFile(geometryVector, L"IModelJson.BytesToXXX", L"geometryVector", nullptr, L"imjs");
                 Check::Fail("expect BytesToVectorOfGeometry to return false for invalid bytes");
+                }
             PolyfaceQueryCarrier carrier(0, false, 0, 0, nullptr, nullptr);
             ret = BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(buffer.data(), buffer.size(), carrier);
             if (ret)
@@ -123,8 +155,8 @@ TEST(IModelJson,ReadFiles)
         filePath.ParseName(NULL, NULL, &fileNameStr, NULL);
         WCharCP fileName = fileNameStr.c_str();
         bvector<IGeometryPtr> geometry;
-        if (Check::True(ReadIModelJson (
-            geometry, L"IModelJson", L"IModelJsonFromNative", fileName, nullptr, L"imjs", nullptr, L"fbjs"),
+        if (Check::True(
+            ReadIModelJson(geometry, L"IModelJson", L"IModelJsonFromNative", fileName, nullptr, L"imjs", nullptr, L"fbjs"),
             "read imjs file"))
             {
             for (IGeometryPtr const& g : geometry)
