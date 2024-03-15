@@ -108,18 +108,19 @@ QueryJsonAdaptor& CachedQueryAdaptor::GetJsonAdaptor() {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void CachedConnection::Execute(std::function<void(QueryAdaptorCache&,RunnableRequestBase&)> cb, std::unique_ptr<RunnableRequestBase> request) {
-    recursive_guard_t lock(m_mutexReq);
-    if (!m_isChangeSummaryCacheAttached) {
-        BeFileName primaryChangeCacheFile;
-        if (GetPrimaryDb().TryGetChangeCacheFileName(primaryChangeCacheFile)) {
-            if (!m_db.IsChangeCacheAttached()) {
-                if (BE_SQLITE_OK == m_db.AttachChangeCache(primaryChangeCacheFile)) {
-                    m_isChangeSummaryCacheAttached = true;
+    if (true) {
+        recursive_guard_t lock(m_mutexReq);
+        if (!m_isChangeSummaryCacheAttached) {
+            BeFileName primaryChangeCacheFile;
+            if (GetPrimaryDb().TryGetChangeCacheFileName(primaryChangeCacheFile)) {
+                if (!m_db.IsChangeCacheAttached()) {
+                    if (BE_SQLITE_OK == m_db.AttachChangeCache(primaryChangeCacheFile)) {
+                        m_isChangeSummaryCacheAttached = true;
+                    }
                 }
             }
         }
     }
-
     SetRequest(std::move(request));
     cb(m_adaptorCache, *m_request);
     ClearRequest();
