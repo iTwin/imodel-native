@@ -2501,6 +2501,49 @@ TEST_F(SchemaCacheTest, DropSchema)
     EXPECT_EQ(cache->GetCount(), 0);
     }
 
+/*---------------------------------------------------------------------------------**//**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaCacheTest, FindSchema)
+    {
+    ECSchemaCachePtr cache = ECSchemaCache::Create();
+    ECSchemaPtr schema1;
+    ECSchemaPtr schema2;
+    ECSchemaPtr schema3;
+
+    ECSchema::CreateSchema(schema1, "Widget", "ts", 5, 0, 1);
+    ECSchema::CreateSchema(schema2, "BASESchema1", "ts", 2, 0, 0);
+    ECSchema::CreateSchema(schema3, "BaseSchema1", "ts", 5, 0, 5);
+
+    EXPECT_TRUE(cache->AddSchema(*schema1) == ECObjectsStatus::Success);
+    EXPECT_TRUE(cache->AddSchema(*schema2) == ECObjectsStatus::Success);
+    EXPECT_TRUE(cache->AddSchema(*schema3) == ECObjectsStatus::Success);
+    EXPECT_EQ(cache->FindSchema([](SchemaKeyCR key) { return key.GetVersionMinor() == 5; }), schema3.get());
+    EXPECT_EQ(cache->FindSchema([](SchemaKeyCR key) { return key.GetName() == "Widget"; }), schema1.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaCacheTest, FindSchemaByNameI)
+    {
+    ECSchemaCachePtr cache = ECSchemaCache::Create();
+    ECSchemaPtr schema1;
+    ECSchemaPtr schema2;
+    ECSchemaPtr schema3;
+
+    ECSchema::CreateSchema(schema1, "Widget", "ts", 5, 0, 1);
+    ECSchema::CreateSchema(schema2, "BASESchema1", "ts", 2, 0, 0);
+    ECSchema::CreateSchema(schema3, "BaseSchema1", "ts", 5, 0, 5);
+
+    EXPECT_TRUE(cache->AddSchema(*schema1) == ECObjectsStatus::Success);
+    EXPECT_TRUE(cache->AddSchema(*schema2) == ECObjectsStatus::Success);
+    EXPECT_TRUE(cache->AddSchema(*schema3) == ECObjectsStatus::Success);
+    EXPECT_EQ(cache->FindSchemaByNameI("Widget"), schema1.get());
+    EXPECT_EQ(cache->FindSchemaByNameI("WIDGET"), schema1.get());
+    EXPECT_EQ(cache->FindSchemaByNameI("baseschema1"), schema2.get());
+    }
+
 //=======================================================================================
 //! SchemaChecksumTest
 //=======================================================================================

@@ -480,6 +480,17 @@ flatbuffers::Offset<BGFB::CurveVector> WriteAsFBCurveVector (CurveVectorCP paren
     {
     if (nullptr == parent)
         return 0;
+
+    CurveVectorPtr flattened;
+    if (parent->HasNestedUnionRegion())
+        {
+        // requirement for PowerPlatform and iModel
+        flattened = parent->Clone();
+        flattened->FlattenNestedUnionRegions();
+        if (flattened.IsValid())
+            parent = flattened.get();
+        }
+
     CurveVector::BoundaryType type = parent->GetBoundaryType ();
     bvector<flatbuffers::Offset<BGFB::VariantGeometry>> fbCurves;
     for (size_t i = 0; i < parent->size (); i++)
@@ -1081,6 +1092,9 @@ static CurveVectorPtr ReadCurveVectorDirect (const BGFB::CurveVector * fbCurveVe
                 }
             }
         }
+
+    cvPtr->FlattenNestedUnionRegions(); // requirement for PowerPlatform and iModel
+
     return cvPtr;
     }
 
