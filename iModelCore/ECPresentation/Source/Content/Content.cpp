@@ -1239,7 +1239,13 @@ bool ContentDescriptor::NestedContentField::_Equals(Field const& other) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document ContentDescriptor::NestedContentField::_AsJson(ECPresentationSerializerContextR ctx, rapidjson::Document::AllocatorType* allocator) const
     {
-    return ECPresentationManager::GetSerializer().AsJson(ctx, *this, allocator);
+    if (auto relatedContentField = AsRelatedContentField())
+        return ECPresentationManager::GetSerializer().AsJson(ctx, *relatedContentField, allocator);
+
+    if (auto compositeContentField = AsCompositeContentField())
+        return ECPresentationManager::GetSerializer().AsJson(ctx, *compositeContentField, allocator);
+
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Unhandled nested content field type during serialization");
     }
 
 /*---------------------------------------------------------------------------------**//**

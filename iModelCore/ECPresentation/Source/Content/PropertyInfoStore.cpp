@@ -63,10 +63,10 @@ void ClassPropertyOverridesInfo::Merge(ClassPropertyOverridesInfo const& source)
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TValue>
-Nullable<ClassPropertyOverridesInfo::PrioritizedValue<TValue>> const& ClassPropertyOverridesInfo::GetOverrides(ECPropertyCR prop, Nullable<PrioritizedValue<TValue>> const& (*valuePicker)(Overrides const&)) const
+Nullable<ClassPropertyOverridesInfo::PrioritizedValue<TValue>> const& ClassPropertyOverridesInfo::GetOverrides(ECClassCR propertyClass, Utf8StringCR propertyName, Nullable<PrioritizedValue<TValue>> const& (*valuePicker)(Overrides const&)) const
     {
     // first, look for overrides specified specifically for some property
-    auto iter = m_propertyOverrides.find(prop.GetName());
+    auto iter = m_propertyOverrides.find(propertyName);
     if (m_propertyOverrides.end() != iter)
         return valuePicker(iter->second);
 
@@ -74,7 +74,7 @@ Nullable<ClassPropertyOverridesInfo::PrioritizedValue<TValue>> const& ClassPrope
     Nullable<PrioritizedValue<TValue>> const* matchingOverride = nullptr;
     for (auto const& entry : m_defaultClassPropertyOverrides)
         {
-        if (nullptr != entry.first && !entry.first->Is(&prop.GetClass()))
+        if (nullptr != entry.first && !entry.first->Is(&propertyClass))
             continue;
 
         Nullable<PrioritizedValue<TValue>> const& prioritizedValue = valuePicker(entry.second);
@@ -96,7 +96,15 @@ Nullable<ClassPropertyOverridesInfo::PrioritizedValue<TValue>> const& ClassPrope
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassPropertyOverridesInfo::NullablePrioritizedValue<BoolOrString> const& ClassPropertyOverridesInfo::GetDisplayOverride(ECPropertyCR prop) const
     {
-    return GetOverrides<BoolOrString>(prop, [](Overrides const& ovr) -> NullablePrioritizedValue<BoolOrString> const& {return ovr.GetDisplayOverride();});
+    return GetOverrides<BoolOrString>(prop.GetClass(), prop.GetName(), [](Overrides const& ovr) -> NullablePrioritizedValue<BoolOrString> const& {return ovr.GetDisplayOverride();});
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassPropertyOverridesInfo::NullablePrioritizedValue<std::shared_ptr<ContentFieldRenderer const>> const& ClassPropertyOverridesInfo::GetContentFieldRendererOverride(ECClassCR propertyClass, Utf8StringCR propertyName) const
+    {
+    return GetOverrides<std::shared_ptr<ContentFieldRenderer const>>(propertyClass, propertyName, [](Overrides const& ovr) -> auto const& {return ovr.GetRendererOverride();});
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -104,7 +112,15 @@ ClassPropertyOverridesInfo::NullablePrioritizedValue<BoolOrString> const& ClassP
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassPropertyOverridesInfo::NullablePrioritizedValue<std::shared_ptr<ContentFieldRenderer const>> const& ClassPropertyOverridesInfo::GetContentFieldRendererOverride(ECPropertyCR prop) const
     {
-    return GetOverrides<std::shared_ptr<ContentFieldRenderer const>>(prop, [](Overrides const& ovr) -> auto const& {return ovr.GetRendererOverride(); });
+    return GetContentFieldRendererOverride(prop.GetClass(), prop.GetName());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassPropertyOverridesInfo::NullablePrioritizedValue<std::shared_ptr<ContentFieldEditor const>> const& ClassPropertyOverridesInfo::GetContentFieldEditorOverride(ECClassCR propertyClass, Utf8StringCR propertyName) const
+    {
+    return GetOverrides<std::shared_ptr<ContentFieldEditor const>>(propertyClass, propertyName, [](Overrides const& ovr) -> auto const& {return ovr.GetEditorOverride();});
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -112,7 +128,7 @@ ClassPropertyOverridesInfo::NullablePrioritizedValue<std::shared_ptr<ContentFiel
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassPropertyOverridesInfo::NullablePrioritizedValue<std::shared_ptr<ContentFieldEditor const>> const& ClassPropertyOverridesInfo::GetContentFieldEditorOverride(ECPropertyCR prop) const
     {
-    return GetOverrides<std::shared_ptr<ContentFieldEditor const>>(prop, [](Overrides const& ovr) -> auto const& {return ovr.GetEditorOverride();});
+    return GetContentFieldEditorOverride(prop.GetClass(), prop.GetName());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -120,7 +136,7 @@ ClassPropertyOverridesInfo::NullablePrioritizedValue<std::shared_ptr<ContentFiel
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassPropertyOverridesInfo::NullablePrioritizedValue<Utf8String> const& ClassPropertyOverridesInfo::GetLabelOverride(ECPropertyCR prop) const
     {
-    return GetOverrides<Utf8String>(prop, [](Overrides const& ovr) -> NullablePrioritizedValue<Utf8String> const& {return ovr.GetLabelOverride();});
+    return GetOverrides<Utf8String>(prop.GetClass(), prop.GetName(), [](Overrides const& ovr) -> NullablePrioritizedValue<Utf8String> const& {return ovr.GetLabelOverride();});
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -128,7 +144,7 @@ ClassPropertyOverridesInfo::NullablePrioritizedValue<Utf8String> const& ClassPro
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassPropertyOverridesInfo::NullablePrioritizedValue<PropertyCategoryIdentifier const*> const& ClassPropertyOverridesInfo::GetCategoryOverride(ECPropertyCR prop) const
     {
-    return GetOverrides<PropertyCategoryIdentifier const*>(prop, [](Overrides const& ovr) -> NullablePrioritizedValue<PropertyCategoryIdentifier const*> const& {return ovr.GetCategoryOverride();});
+    return GetOverrides<PropertyCategoryIdentifier const*>(prop.GetClass(), prop.GetName(), [](Overrides const& ovr) -> NullablePrioritizedValue<PropertyCategoryIdentifier const*> const& {return ovr.GetCategoryOverride();});
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -136,7 +152,7 @@ ClassPropertyOverridesInfo::NullablePrioritizedValue<PropertyCategoryIdentifier 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassPropertyOverridesInfo::NullablePrioritizedValue<bool> const& ClassPropertyOverridesInfo::GetDoNotHideOtherPropertiesOnDisplayOverride(ECPropertyCR prop) const
     {
-    return GetOverrides<bool>(prop, [](Overrides const& ovr) -> NullablePrioritizedValue<bool> const& {return ovr.GetDoNotHideOtherPropertiesOnDisplayOverride();});
+    return GetOverrides<bool>(prop.GetClass(), prop.GetName(), [](Overrides const& ovr) -> NullablePrioritizedValue<bool> const& {return ovr.GetDoNotHideOtherPropertiesOnDisplayOverride();});
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -144,7 +160,7 @@ ClassPropertyOverridesInfo::NullablePrioritizedValue<bool> const& ClassPropertyO
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassPropertyOverridesInfo::NullablePrioritizedValue<bool> const& ClassPropertyOverridesInfo::GetReadOnlyOverride(ECPropertyCR prop) const
     {
-    return GetOverrides<bool>(prop, [](Overrides const& ovr) -> NullablePrioritizedValue<bool> const& {return ovr.GetReadOnlyOverride();});
+    return GetOverrides<bool>(prop.GetClass(), prop.GetName(), [](Overrides const& ovr) -> NullablePrioritizedValue<bool> const& {return ovr.GetReadOnlyOverride();});
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -152,7 +168,7 @@ ClassPropertyOverridesInfo::NullablePrioritizedValue<bool> const& ClassPropertyO
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassPropertyOverridesInfo::NullablePrioritizedValue<int> const& ClassPropertyOverridesInfo::GetPriorityOverride(ECPropertyCR prop) const
     {
-    return GetOverrides<int>(prop, [](Overrides const& ovr) -> NullablePrioritizedValue<int> const& {return ovr.GetPriorityOverride();});
+    return GetOverrides<int>(prop.GetClass(), prop.GetName(), [](Overrides const& ovr) -> NullablePrioritizedValue<int> const& {return ovr.GetPriorityOverride();});
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -446,9 +462,9 @@ bool PropertyInfoStore::ShouldDisplay(ECPropertyCR prop, ECClassCR ecClass, std:
 /*-----------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+-----------+------*/
-std::shared_ptr<ContentFieldRenderer const> PropertyInfoStore::GetPropertyRenderer(ECPropertyCR prop, ECClassCR ecClass, PropertySpecificationCP customOverride) const
+std::shared_ptr<ContentFieldRenderer const> PropertyInfoStore::GetPropertyRenderer(ECPropertyCR prop, ECClassCR ecClass, std::function<Utf8String(ECPropertyCR)> const& propertyNameGetter, PropertySpecificationCP customOverride) const
     {
-    auto const& ovr = GetOverrides(ecClass).GetContentFieldRendererOverride(prop);
+    auto const& ovr = GetOverrides(ecClass).GetContentFieldRendererOverride(prop.GetClass(), propertyNameGetter(prop));
     if (customOverride && customOverride->GetRendererOverride() && ovr.IsValid())
         return (ovr.Value().priority > customOverride->GetOverridesPriority()) ? ovr.Value().value : CreateRendererOverride(*customOverride->GetRendererOverride());
     if (customOverride && customOverride->GetRendererOverride())
@@ -461,9 +477,10 @@ std::shared_ptr<ContentFieldRenderer const> PropertyInfoStore::GetPropertyRender
 /*-----------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+-----------+------*/
-std::shared_ptr<ContentFieldEditor const> PropertyInfoStore::GetPropertyEditor(ECPropertyCR prop, ECClassCR ecClass, PropertySpecificationCP customOverride) const
+std::shared_ptr<ContentFieldEditor const> PropertyInfoStore::GetPropertyEditor(ECPropertyCR prop, ECClassCR ecClass, std::function<Utf8String(ECPropertyCR)> const& propertyNameGetter, PropertySpecificationCP customOverride) const
     {
-    auto const& ovr = GetOverrides(ecClass).GetContentFieldEditorOverride(prop);
+    // TODO: check if we can just pass ecClass rather than prop.GetClass()
+    auto const& ovr = GetOverrides(ecClass).GetContentFieldEditorOverride(prop.GetClass(), propertyNameGetter(prop));
     if (customOverride && customOverride->GetEditorOverride() && ovr.IsValid())
         return (ovr.Value().priority > customOverride->GetOverridesPriority()) ? ovr.Value().value : CreateEditorOverride(*customOverride->GetEditorOverride());
     if (customOverride && customOverride->GetEditorOverride())

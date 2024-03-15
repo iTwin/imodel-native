@@ -368,9 +368,9 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    std::shared_ptr<ContentFieldRenderer const> CreateFieldRenderer(ECPropertyCR ecProperty, ECClassCR propertyClass, PropertySpecificationCP overrides) const
+    std::shared_ptr<ContentFieldRenderer const> CreateFieldRenderer(ECPropertyCR ecProperty, ECClassCR propertyClass, PropertySpecificationCP overrides, std::function<Utf8String(ECPropertyCR)> const& propertyNameGetter) const
         {
-        auto renderer = m_propertyInfos.GetPropertyRenderer(ecProperty, propertyClass, overrides);
+        auto renderer = m_propertyInfos.GetPropertyRenderer(ecProperty, propertyClass, propertyNameGetter, overrides);
         if (renderer)
             return renderer;
 
@@ -399,9 +399,9 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    std::shared_ptr<ContentFieldEditor const> CreateFieldEditor(ECPropertyCR ecProperty, ECClassCR propertyClass, PropertySpecificationCP overrides) const
+    std::shared_ptr<ContentFieldEditor const> CreateFieldEditor(ECPropertyCR ecProperty, ECClassCR propertyClass, PropertySpecificationCP overrides, std::function<Utf8String(ECPropertyCR)> const& propertyNameGetter) const
         {
-        return m_propertyInfos.GetPropertyEditor(ecProperty, propertyClass, overrides);
+        return m_propertyInfos.GetPropertyEditor(ecProperty, propertyClass, propertyNameGetter, overrides);
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -419,6 +419,12 @@ protected:
         {
         return m_propertyInfos.GetPriorityOverride(ecProperty, propertyClass, overrides);
         }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual FieldAttributes _CreateFieldAttributes(ECPropertyCR ecProperty, ECClassCR propertyClass, PropertySpecificationsList const& overrides,
+        std::function<Utf8String(ECPropertyCR)> const& propertyNameGetter = [](ECPropertyCR p){return p.GetName();}) = 0;
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
@@ -521,6 +527,36 @@ protected:
         return PropertySpecificationOverrides(displayLabelOverrideSpec, propertiesFieldCategoryOverrideSpec, fieldRendererOverrideSpec,
             fieldEditorOverrideSpec, fieldReadOnlyOverrideSpec, fieldPriorityOverrideSpec);
         }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    std::unique_ptr<ContentDescriptor::ECPropertiesField> CreatePropertiesField(ECPropertyCR prop, FieldAttributes const& attributes)
+        {
+        if (prop.GetIsArray())
+            {
+            FieldAttributes itemsFieldAttributes = _CreateFieldAttributes(prop, prop.GetClass(), {}, [](ECPropertyCR p){return Utf8String(p.GetName()).append("[*]");});
+            return std::make_unique<ContentDescriptor::ECArrayPropertiesField>(
+                attributes.GetCategory(),
+                attributes.GetLabel(),
+                std::make_unique<ContentDescriptor::ECArrayItemsField>(
+                    new ContentDescriptor::Field::PrimitiveTypeDescription(ECSchemaHelper::GetTypeName(prop)), 
+                    itemsFieldAttributes.GetRenderer(), 
+                    itemsFieldAttributes.GetEditor()),
+                attributes.GetRenderer().get(),
+                attributes.GetEditor().get(),
+                attributes.GetIsReadOnly(),
+                attributes.GetPriority());
+            }
+
+        return std::make_unique<ContentDescriptor::ECPropertiesField>(
+            attributes.GetCategory(),
+            attributes.GetLabel(),
+            attributes.GetRenderer().get(),
+            attributes.GetEditor().get(),
+            attributes.GetIsReadOnly(),
+            attributes.GetPriority());
+        }
 };
 
 //===================================================================================
@@ -532,15 +568,16 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    FieldAttributes CreateFieldAttributes(ECPropertyCR ecProperty, ECClassCR propertyClass, PropertySpecificationsList const& overrides)
+    FieldAttributes _CreateFieldAttributes(ECPropertyCR ecProperty, ECClassCR propertyClass, PropertySpecificationsList const& overrides,
+        std::function<Utf8String(ECPropertyCR)> const& propertyNameGetter = [](ECPropertyCR p){return p.GetName();}) override
         {
         auto propertyOverrides = FindPropertySpecificationOverrides(overrides);
 
         return FieldAttributes(
             CreateFieldDisplayLabel(ecProperty, propertyClass, RelatedClassPath(), RelationshipMeaning::SameInstance, propertyOverrides.GetLabelOverrideSpecification()),
             CreatePropertiesFieldCategory(ecProperty, propertyClass, RelatedClassPath(), RelationshipMeaning::SameInstance, propertyOverrides.GetCategoryOverrideSpecification()),
-            CreateFieldRenderer(ecProperty, propertyClass, propertyOverrides.GetRendererOverrideSpecification()),
-            CreateFieldEditor(ecProperty, propertyClass, propertyOverrides.GetEditorOverrideSpecification()),
+            CreateFieldRenderer(ecProperty, propertyClass, propertyOverrides.GetRendererOverrideSpecification(), propertyNameGetter),
+            CreateFieldEditor(ecProperty, propertyClass, propertyOverrides.GetEditorOverrideSpecification(), propertyNameGetter),
             CreateFieldReadOnlyFlag(ecProperty, propertyClass, propertyOverrides.GetReadOnlyOverrideSpecification()),
             CreateFieldPriority(ecProperty, propertyClass, propertyOverrides.GetPriorityOverrideSpecification()),
             false);
@@ -582,18 +619,14 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     ContentDescriptor::ECPropertiesField* GetPropertiesField(ECPropertyCR ecProperty, ECClassCR propertyClass, Utf8CP propertyClassAlias, PropertySpecificationsList const& overrides)
         {
-        FieldAttributes fieldAttributes = CreateFieldAttributes(ecProperty, propertyClass, overrides);
+        FieldAttributes fieldAttributes = _CreateFieldAttributes(ecProperty, propertyClass, overrides);
 
         ContentDescriptor::ECPropertiesField* field = nullptr;
         if (FieldCreateAction::Skip == GetActionForPropertyField(field, m_descriptor.GetAllFields(), ecProperty, propertyClass, propertyClassAlias, fieldAttributes))
             return nullptr;
 
         if (nullptr == field)
-            {
-            // did not find a field with similar properties - create a new one
-            field = new ContentDescriptor::ECPropertiesField(fieldAttributes.GetCategory(), fieldAttributes.GetLabel(), fieldAttributes.GetRenderer().get(), fieldAttributes.GetEditor().get(),
-                fieldAttributes.GetIsReadOnly(), fieldAttributes.GetPriority());
-            }
+            field = CreatePropertiesField(ecProperty, fieldAttributes).release();
 
         return field;
         }
@@ -678,15 +711,15 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    FieldAttributes CreateFieldAttributes(ECPropertyCR ecProperty, ECClassCR propertyClass, PropertySpecificationsList const& overrides)
+    FieldAttributes _CreateFieldAttributes(ECPropertyCR ecProperty, ECClassCR propertyClass, PropertySpecificationsList const& overrides,
+        std::function<Utf8String(ECPropertyCR)> const& propertyNameGetter = [](ECPropertyCR p){return p.GetName();}) override
         {
         auto propertyOverrides = FindPropertySpecificationOverrides(overrides);
-
         return FieldAttributes(
             CreateFieldDisplayLabel(ecProperty, propertyClass, m_relatedContentField.GetPathFromSelectToContentClass(), m_relatedContentField.GetRelationshipMeaning(), propertyOverrides.GetLabelOverrideSpecification()),
             CreatePropertiesFieldCategory(ecProperty, propertyClass, m_relatedContentField.GetPathFromSelectToContentClass(), m_relatedContentField.GetRelationshipMeaning(), propertyOverrides.GetCategoryOverrideSpecification()),
-            CreateFieldRenderer(ecProperty, propertyClass, propertyOverrides.GetRendererOverrideSpecification()),
-            CreateFieldEditor(ecProperty, propertyClass, propertyOverrides.GetEditorOverrideSpecification()),
+            CreateFieldRenderer(ecProperty, propertyClass, propertyOverrides.GetRendererOverrideSpecification(), propertyNameGetter),
+            CreateFieldEditor(ecProperty, propertyClass, propertyOverrides.GetEditorOverrideSpecification(), propertyNameGetter),
             CreateFieldReadOnlyFlag(ecProperty, propertyClass, propertyOverrides.GetReadOnlyOverrideSpecification()),
             CreateFieldPriority(ecProperty, propertyClass, propertyOverrides.GetPriorityOverrideSpecification()),
             false);
@@ -991,13 +1024,13 @@ protected:
                 propertySourceAlias = m_relatedContentField.IsRelationshipField() ? m_relatedContentField.GetRelationshipClassAlias() : m_relatedContentField.GetContentClassAlias();
             }
 
-        FieldAttributes fieldAttributes = CreateFieldAttributes(ecProperty, propertyClass, overrides);
-        ContentDescriptor::ECPropertiesField propertyField(fieldAttributes.GetCategory(), fieldAttributes.GetLabel(), fieldAttributes.GetRenderer().get(), fieldAttributes.GetEditor().get());
-        propertyField.AddProperty(ContentDescriptor::Property(propertySourceAlias, propertyClass, ecProperty));
+        FieldAttributes fieldAttributes = _CreateFieldAttributes(ecProperty, propertyClass, overrides);
+        auto propertyField = CreatePropertiesField(ecProperty, fieldAttributes);
+        propertyField->AddProperty(ContentDescriptor::Property(propertySourceAlias, propertyClass, ecProperty));
 
         for (ContentDescriptor::Field* nestedField : m_relatedContentField.GetFields())
             {
-            if (*nestedField == propertyField)
+            if (*nestedField == *propertyField)
                 {
                 DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Related content field already contains a similar property field - skip.");
                 return ContentSpecificationsHandler::PropertyAppendResult(false, std::move(replacedPathFromSelectToPropertyClass));
@@ -1005,7 +1038,7 @@ protected:
             }
 
         DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Appended property field under the related content field.");
-        m_relatedContentField.GetFields().push_back(new ContentDescriptor::ECPropertiesField(propertyField));
+        m_relatedContentField.GetFields().push_back(propertyField.release());
         m_relatedContentField.GetFields().back()->SetParent(&m_relatedContentField);
         return ContentSpecificationsHandler::PropertyAppendResult(true, std::move(replacedPathFromSelectToPropertyClass));
         }

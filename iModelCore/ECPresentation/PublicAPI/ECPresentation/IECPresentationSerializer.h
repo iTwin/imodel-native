@@ -144,11 +144,7 @@ public:
     rapidjson::Document AsJson(ContextR ctx, FieldEditorRangeParams const& rangeParams, rapidjson::Document::AllocatorType* allocator = nullptr) const;
     rapidjson::Document AsJson(ContextR ctx, FieldEditorSliderParams const& sliderParams, rapidjson::Document::AllocatorType* allocator = nullptr) const;
 
-    rapidjson::Document AsJson(ContextR ctx, ContentDescriptor::Field::TypeDescription const& typeDescription, rapidjson::Document::AllocatorType* allocator = nullptr) const;
-    rapidjson::Document AsJson(ContextR ctx, ContentDescriptor::Field::PrimitiveTypeDescription const& primitiveTypeDescription, rapidjson::Document::AllocatorType* allocator = nullptr) const;
-    rapidjson::Document AsJson(ContextR ctx, ContentDescriptor::Field::ArrayTypeDescription const& arrayTypeDescription, rapidjson::Document::AllocatorType* allocator = nullptr) const;
-    rapidjson::Document AsJson(ContextR ctx, ContentDescriptor::Field::StructTypeDescription const& structTypeDescription, rapidjson::Document::AllocatorType* allocator = nullptr) const;
-    rapidjson::Document AsJson(ContextR ctx, ContentDescriptor::Field::NestedContentTypeDescription const& nestedContentTypeDescription, rapidjson::Document::AllocatorType* allocator = nullptr) const;
+    ECPRESENTATION_EXPORT rapidjson::Document AsJson(ContextR ctx, ContentDescriptor::Field::TypeDescription const& typeDescription, rapidjson::Document::AllocatorType* allocator = nullptr) const;
 
     rapidjson::Document AsJson(ContextR ctx, ContentSetItem const& contentSetItem, int flags = ContentSetItem::SERIALIZE_All, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(ctx, contentSetItem, flags, allocator);}
     rapidjson::Document AsJson(ContextR ctx, NavigationPropertyValueCR value, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(ctx, value, allocator);}
