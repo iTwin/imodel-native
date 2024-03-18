@@ -447,6 +447,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
                 virtual NestedContentTypeDescription const* _AsNestedContent() const {return nullptr;}
             public:
                 ECPRESENTATION_EXPORT static RefCountedPtr<TypeDescription> Create(ECPropertyCR);
+                ECPRESENTATION_EXPORT static RefCountedPtr<TypeDescription> Create(ArrayECPropertyCR, bool isItemType);
                 Utf8StringCR GetTypeName() const {return m_typeName;}
                 PrimitiveTypeDescription const* AsPrimitive() const {return _AsPrimitive();}
                 ArrayTypeDescription const* AsArray() const {return _AsArray();}
@@ -796,6 +797,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         mutable BeMutex m_matchingPropertiesCacheMutex;
         Nullable<bool> m_isReadOnly;
         Nullable<int> m_priority;
+        bool m_isArrayItemField;
 
     protected:
         ECPropertiesField* _AsPropertiesField() override {return this;}
@@ -817,13 +819,13 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! @param[in] editor The custom editor for this field.
         ECPropertiesField(std::shared_ptr<Category const> category, Utf8String label, ContentFieldRenderer const* renderer = nullptr, ContentFieldEditor const* editor = nullptr,
             Nullable<bool> isReadOnly = nullptr, Nullable<int> priority = nullptr)
-            : Field(category, label, renderer, editor), m_isReadOnly(isReadOnly), m_priority(priority)
+            : Field(category, label, renderer, editor), m_isReadOnly(isReadOnly), m_priority(priority), m_isArrayItemField(false)
             {}
 
         //! Constructor.
         ECPropertiesField(std::shared_ptr<Category const> category, Utf8String uniqueName, Utf8String label, ContentFieldRenderer const* renderer = nullptr, ContentFieldEditor const* editor = nullptr,
             Nullable<bool> isReadOnly = nullptr, Nullable<int> priority = nullptr)
-            : Field(category, uniqueName, label, renderer, editor), m_isReadOnly(isReadOnly), m_priority(priority)
+            : Field(category, uniqueName, label, renderer, editor), m_isReadOnly(isReadOnly), m_priority(priority), m_isArrayItemField(false)
             {}
 
         //! Constructor. Creates a field with a single @ref Property.
@@ -839,18 +841,21 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
             }
 
         //! Copy constructor.
-        ECPropertiesField(ECPropertiesField const& other) : Field(other), m_properties(other.m_properties), m_isReadOnly(other.m_isReadOnly), m_priority(other.m_priority) {}
+        ECPropertiesField(ECPropertiesField const& other) : Field(other), m_properties(other.m_properties), m_isReadOnly(other.m_isReadOnly), m_priority(other.m_priority), m_isArrayItemField(other.m_isArrayItemField) {}
 
         //! Move constructor.
-        ECPropertiesField(ECPropertiesField&& other) : Field(std::move(other)), m_properties(std::move(other.m_properties)), m_isReadOnly(std::move(other.m_isReadOnly)), m_priority(std::move(other.m_priority)) {}
+        ECPropertiesField(ECPropertiesField&& other) : Field(std::move(other)), m_properties(std::move(other.m_properties)), m_isReadOnly(std::move(other.m_isReadOnly)), m_priority(std::move(other.m_priority)), m_isArrayItemField(other.m_isArrayItemField) {}
 
         //! Is this field equal to the supplied one.
-        bool operator==(ECPropertiesField const& other) const {return Field::operator==(other) && m_properties == other.m_properties && m_isReadOnly == other.m_isReadOnly && m_priority == other.m_priority;}
+        bool operator==(ECPropertiesField const& other) const {return Field::operator==(other) && m_properties == other.m_properties && m_isReadOnly == other.m_isReadOnly && m_priority == other.m_priority && m_isArrayItemField == other.m_isArrayItemField;}
 
         //! Does this field contain composite properties (structs or arrays)
         ECPRESENTATION_EXPORT bool IsCompositePropertiesField() const; // FIXME
         ECArrayPropertiesField const* AsArrayPropertiesField() const {return _AsArrayPropertiesField();}
         ECStructPropertiesField const* AsStructPropertiesField() const {return _AsStructPropertiesField();}
+
+        void SetIsArrayItemsField(bool value) {m_isArrayItemField = value;}
+        bool IsArrayItemsField() const {return m_isArrayItemField;}
 
         //! Add property to this field.
         void AddProperty(Property prop) {m_properties.push_back(prop);}
@@ -866,35 +871,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
     };
 
     //===================================================================================
-    //! Describes a field for ECArrayPropertiesField's array items.
-    // @bsiclass
-    //===================================================================================
-    struct ECArrayItemsField
-    {
-    private:
-        Field::TypeDescriptionPtr m_type;
-        std::shared_ptr<ContentFieldRenderer const> m_renderer;
-        std::shared_ptr<ContentFieldEditor const> m_editor;
-    public:
-        ECArrayItemsField(Field::TypeDescriptionPtr type, std::shared_ptr<ContentFieldRenderer const> renderer, std::shared_ptr<ContentFieldEditor const> editor)
-            : m_type(type), m_renderer(renderer), m_editor(editor)
-            {}
-        ECArrayItemsField(ECArrayItemsField const& other)
-            : m_type(other.m_type), m_renderer(other.m_renderer), m_editor(other.m_editor)
-            {}
-        ECArrayItemsField(ECArrayItemsField&& other)
-            : m_type(std::move(other.m_type)), m_renderer(std::move(other.m_renderer)), m_editor(std::move(other.m_editor))
-            {}
-
-        Field::TypeDescription const& GetTypeDescription() const {return *m_type;}
-
-        ContentFieldRenderer const* GetRenderer() const {return m_renderer.get();}
-        void SetRenderer(std::shared_ptr<ContentFieldRenderer const> renderer) {m_renderer = renderer;}
-
-        ContentFieldEditor const* GetEditor() const {return m_editor.get();}
-        void SetEditor(std::shared_ptr<ContentFieldEditor const> editor) {m_editor = editor;}
-    };
-    //===================================================================================
     //! Describes a single content field which is based on ECArrayProperty. The field should
     //! be based on one or more properties of the similar type.
     // @bsiclass
@@ -902,7 +878,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
     struct ECArrayPropertiesField : ECPropertiesField
     {
     private:
-        std::unique_ptr<ECArrayItemsField> m_itemsField;
+        std::unique_ptr<ECPropertiesField> m_itemsField;
     protected:
         Field* _Clone() const override {return new ECArrayPropertiesField(*this);}
         ECArrayPropertiesField const* _AsArrayPropertiesField() const override {return this;}
@@ -910,16 +886,16 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         ECArrayPropertiesField(
             std::shared_ptr<Category const> category,
             Utf8String label,
-            std::unique_ptr<ECArrayItemsField> itemsField,
+            std::unique_ptr<ECPropertiesField> itemsField,
             ContentFieldRenderer const* renderer = nullptr,
             ContentFieldEditor const* editor = nullptr,
             Nullable<bool> isReadOnly = nullptr,
             Nullable<int> priority = nullptr
             ) : ECPropertiesField(category, label, renderer, editor, isReadOnly, priority), m_itemsField(std::move(itemsField))
             {}
-        ECArrayPropertiesField(ECArrayPropertiesField const& other) : ECPropertiesField(other), m_itemsField(std::make_unique<ECArrayItemsField>(*other.m_itemsField)) {}
+        ECArrayPropertiesField(ECArrayPropertiesField const& other) : ECPropertiesField(other), m_itemsField(std::make_unique<ECPropertiesField>(*other.m_itemsField)) {}
         ECArrayPropertiesField(ECArrayPropertiesField&& other) : ECPropertiesField(std::move(other)), m_itemsField(std::move(other.m_itemsField)) {}
-        ECArrayItemsField const& GetItemsField() const {return *m_itemsField;}
+        ECPropertiesField const& GetItemsField() const {return *m_itemsField;}
     };
     //===================================================================================
     //! Describes a single content field which is based on ECStructProperty. The field should

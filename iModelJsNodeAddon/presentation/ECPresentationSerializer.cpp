@@ -242,13 +242,7 @@ void IModelJsECPresentationSerializer::_AsJson(ContextR ctx, ContentDescriptor::
     if (auto arrayField = ecPropertiesField.AsArrayPropertiesField())
         {
         auto const& arrayItemsField = arrayField->GetItemsField();
-        rapidjson::Value itemsFieldJson(rapidjson::kObjectType);
-        itemsFieldJson.AddMember("type", AsJson(ctx, arrayItemsField.GetTypeDescription(), &fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
-        if (auto itemsFieldRenderer = arrayItemsField.GetRenderer())
-            itemsFieldJson.AddMember("renderer", AsJson(ctx, *itemsFieldRenderer, &fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
-        if (auto itemsFieldEditor = arrayItemsField.GetEditor())
-            itemsFieldJson.AddMember("editor", AsJson(ctx, *itemsFieldEditor, &fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
-        fieldBaseJson.AddMember("itemsField", itemsFieldJson, fieldBaseJson.GetAllocator());
+        fieldBaseJson.AddMember("itemsField", AsJson(ctx, arrayItemsField, &fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
         }
     if (auto structField = ecPropertiesField.AsStructPropertiesField())
         {

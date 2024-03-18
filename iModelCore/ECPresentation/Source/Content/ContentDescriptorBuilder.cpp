@@ -531,34 +531,40 @@ protected:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
-    std::unique_ptr<ContentDescriptor::ECPropertiesField> CreatePropertiesField(ECPropertyCR prop, FieldAttributes const& attributes)
+    std::unique_ptr<ContentDescriptor::ECPropertiesField> CreatePropertiesField(ECPropertyCR prop, FieldAttributes const& attributes, bool isItemsField = false)
         {
-        if (prop.GetIsArray())
+        if (prop.GetIsArray() && !isItemsField)
             {
             FieldAttributes itemsFieldAttributes = _CreateFieldAttributes(prop, prop.GetClass(), {}, [](ECPropertyCR p){return Utf8String(p.GetName()).append("[*]");});
+            auto itemsField = CreatePropertiesField(prop, itemsFieldAttributes, true);
+            itemsField->AddProperty(ContentDescriptor::Property("", prop.GetClass(), prop));
+            itemsField->SetIsArrayItemsField(true);
+            itemsField->SetUniqueName("[*]");
             return std::make_unique<ContentDescriptor::ECArrayPropertiesField>(
                 attributes.GetCategory(),
                 attributes.GetLabel(),
-                std::make_unique<ContentDescriptor::ECArrayItemsField>(
-                    new ContentDescriptor::Field::PrimitiveTypeDescription(ECSchemaHelper::GetTypeName(prop)), 
-                    itemsFieldAttributes.GetRenderer(), 
-                    itemsFieldAttributes.GetEditor()),
+                std::move(itemsField),
                 attributes.GetRenderer().get(),
                 attributes.GetEditor().get(),
                 attributes.GetIsReadOnly(),
                 attributes.GetPriority());
             }
+
+        ECStructClassCP structClass = nullptr;
         if (auto structProp = prop.GetAsStructProperty())
+            structClass = &structProp->GetType();
+        else if (auto structArrayProp = prop.GetAsStructArrayProperty())
+            structClass = &structArrayProp->GetStructElementType();
+        if (structClass)
             {
-            ECClassCR structClass = structProp->GetType();
             bvector<std::unique_ptr<ContentDescriptor::ECPropertiesField>> memberFields;
-            for (ECPropertyCP memberProperty : structClass.GetProperties(true))
+            for (ECPropertyCP memberProperty : structClass->GetProperties(true))
                 {
-                if (!m_propertyInfos.ShouldDisplay(*memberProperty, structClass, [this](){return CreateExpressionContext(m_context);}))
+                if (!m_propertyInfos.ShouldDisplay(*memberProperty, *structClass, [this](){return CreateExpressionContext(m_context);}))
                     continue;
 
-                auto memberField = CreatePropertiesField(*memberProperty, _CreateFieldAttributes(*memberProperty, structClass, {}));
-                memberField->AddProperty(ContentDescriptor::Property("", structClass, *memberProperty));
+                auto memberField = CreatePropertiesField(*memberProperty, _CreateFieldAttributes(*memberProperty, *structClass, {}));
+                memberField->AddProperty(ContentDescriptor::Property("", *structClass, *memberProperty));
                 memberField->SetUniqueName(memberProperty->GetName());
                 memberFields.push_back(std::move(memberField));
                 }
