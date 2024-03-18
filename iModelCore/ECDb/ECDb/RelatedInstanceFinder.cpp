@@ -50,10 +50,7 @@ RelatedInstanceFinder::Results RelatedInstanceFinder::FindAll(ECInstanceKey this
             const auto direction = (ECRelatedInstanceDirection)stmt->GetValueInt(0);
             const auto relationshipId = stmt->GetValueId<ECClassId>(1);
             const auto otherEnd = ECInstanceKey(stmt->GetValueId<ECClassId>(3), stmt->GetValueId<ECInstanceId>(2));
-            if (direction == ECRelatedInstanceDirection::Forward)
-                results.emplace_back(thisInstanceKey, otherEnd, relationshipId, ECRelatedInstanceDirection::Forward);
-            else
-                results.emplace_back(otherEnd, thisInstanceKey, relationshipId, ECRelatedInstanceDirection::Backward);
+            results.emplace_back(otherEnd, relationshipId, direction);
         }
     }
     return results;

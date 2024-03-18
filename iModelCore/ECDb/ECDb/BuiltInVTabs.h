@@ -51,15 +51,13 @@ struct RelatedInstanceModule : ECDbModule {
     struct RelatedInstanceTable : ECDbVirtualTable {
         struct RelatedInstanceCursor : ECDbCursor {
             enum class Columns{
-                fromId = 0,
-                fromClassId = 1,
-                toId = 2,
-                toClassId = 3,
-                relClassId = 4,
-                direction = 5 ,
-                id = 6,
-                classId = 7,
-                dirFilter = 8,
+                ecInstanceId = 0,
+                ecClassId = 1,
+                relClassId = 2,
+                direction = 3 ,
+                id = 4,
+                classId = 5,
+                dirFilter = 6,
             };
             private:
                 int64_t m_iRowid = 0;

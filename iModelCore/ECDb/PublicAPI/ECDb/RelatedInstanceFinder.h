@@ -18,15 +18,13 @@ struct RelatedInstanceFinder final {
 
     struct Result {
         private:
-            ECInstanceKey m_from;
-            ECInstanceKey m_to;
+            ECInstanceKey m_key;
             ECN::ECClassId m_relationshipClassId;
             ECN::ECRelatedInstanceDirection m_direction;
         public:
-            Result(ECInstanceKey const& from, ECInstanceKey const& to, ECN::ECClassId relationshipClassId, ECN::ECRelatedInstanceDirection direction)
-                :m_from(from), m_to(to), m_relationshipClassId(relationshipClassId), m_direction(direction){}
-            ECInstanceKey const& GetFrom() const { return m_from; }
-            ECInstanceKey const& GetTo() const { return m_to; }
+            Result(ECInstanceKey const& key, ECN::ECClassId relationshipClassId, ECN::ECRelatedInstanceDirection direction)
+                :m_key(key), m_relationshipClassId(relationshipClassId), m_direction(direction){}
+            ECInstanceKey const& GetRelatedKey() const { return m_key; }
             ECN::ECClassId GetRelationshipClassId() const { return m_relationshipClassId; }
             ECN::ECRelatedInstanceDirection GetDirection() const { return m_direction; }
     };

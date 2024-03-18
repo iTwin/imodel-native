@@ -170,17 +170,11 @@ DbResult RelatedInstanceModule::RelatedInstanceTable::RelatedInstanceCursor::Nex
 DbResult RelatedInstanceModule::RelatedInstanceTable::RelatedInstanceCursor::GetColumn(int i, Context& ctx) {
 
     switch( (Columns)i ) {
-        case Columns::toId:
-            ctx.SetResultInt64(m_results[m_iRowid - 1].GetTo().GetInstanceId().GetValueUnchecked());
+        case Columns::ecInstanceId:
+            ctx.SetResultInt64(m_results[m_iRowid - 1].GetRelatedKey().GetInstanceId().GetValueUnchecked());
             return BE_SQLITE_OK;
-        case Columns::toClassId:
-            ctx.SetResultInt64(m_results[m_iRowid - 1].GetTo().GetClassId().GetValueUnchecked());
-            return BE_SQLITE_OK;
-        case Columns::fromId:
-            ctx.SetResultInt64(m_results[m_iRowid - 1].GetFrom().GetInstanceId().GetValueUnchecked());
-            return BE_SQLITE_OK;
-        case Columns::fromClassId:
-            ctx.SetResultInt64(m_results[m_iRowid - 1].GetFrom().GetClassId().GetValueUnchecked());
+        case Columns::ecClassId:
+            ctx.SetResultInt64(m_results[m_iRowid - 1].GetRelatedKey().GetClassId().GetValueUnchecked());
             return BE_SQLITE_OK;
         case Columns::relClassId:
             ctx.SetResultInt64(m_results[m_iRowid - 1].GetRelationshipClassId().GetValueUnchecked());
@@ -216,7 +210,7 @@ DbResult RelatedInstanceModule::RelatedInstanceTable::RelatedInstanceCursor::Fil
         m_classId = ECClassId();
     }
     if( idxNum & 3 ){
-        Utf8String x = argv[i++].GetValueText();
+        Utf8String x = argc > 2 ? argv[i++].GetValueText() : "both";
         if (x.EqualsIAscii("forward") || x.EqualsIAscii("f"))
             m_dirFilter = RelatedInstanceFinder::DirectionFilter::Forward;
         else if (x.EqualsIAscii("backward") || x.EqualsIAscii("b"))
@@ -294,7 +288,7 @@ DbResult RelatedInstanceModule::RelatedInstanceTable::BestIndex(IndexInfo& index
 RelatedInstanceModule::RelatedInstanceModule(ECDbR db): ECDbModule(
     db,
     "related_instances",
-    "CREATE TABLE x(fromId, fromClassId, toId, toClassId, relClassId, direction,id hidden,classId hidden, dirFilter hidden)",
+    "CREATE TABLE x(ECInstanceId, ECClassId, RelECClassId, Direction,id hidden,classId hidden, dirFilter hidden)",
     R"xml(<?xml version="1.0" encoding="utf-8" ?>
     <ECSchema
             schemaName="rel1"
@@ -309,12 +303,10 @@ RelatedInstanceModule::RelatedInstanceModule(ECDbR db): ECDbModule(
             <ECCustomAttributes>
                 <VirtualType xmlns="ECDbVirtual.01.00.00"/>
             </ECCustomAttributes>
-            <ECProperty propertyName="fromId" typeName="long" extendedTypeName="Id" />
-            <ECProperty propertyName="fromClassId" typeName="long" extendedTypeName="ClassId"/>
-            <ECProperty propertyName="toId" typeName="long" extendedTypeName="Id"/>
-            <ECProperty propertyName="toClassId" typeName="long" extendedTypeName="ClassId"/>
-            <ECProperty propertyName="relClassId" typeName="long" extendedTypeName="ClassId"/>
-            <ECProperty propertyName="direction" typeName="integer"/>
+            <ECProperty propertyName="ECInstanceId" typeName="long" extendedTypeName="Id" />
+            <ECProperty propertyName="ECClassId" typeName="long" extendedTypeName="ClassId"/>
+            <ECProperty propertyName="RelECClassId" typeName="long" extendedTypeName="ClassId"/>
+            <ECProperty propertyName="Direction" typeName="integer"/>
         </ECEntityClass>
     </ECSchema>)xml") {}
 

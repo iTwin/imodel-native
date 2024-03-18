@@ -147,14 +147,12 @@ TEST_F(RelatedInstanceFinderFixture, Basic) {
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, R"s(
             SELECT JSON_GROUP_ARRAY(
                 JSON_OBJECT(
-                    'fromId', fromId,
-                    'fromClassId', ec_className(fromClassId),
-                    'toId', toId,
-                    'toClassId', ec_className(toClassId),
-                    'relClassId', ec_className(relClassId),
-                    'direction', direction)
+                    'ECInstanceId', ECInstanceId,
+                    'ECClassId', ec_className(ECClassId),
+                    'RelECClassId', ec_className(RelECClassId),
+                    'Direction', Direction)
                 ) out
-            FROM rel1.related_instances(?,?,?);
+            FROM rel1.related_instances(?,?,?) ORDER BY ECInstanceId;
         )s"));
 
         stmt.BindId(1, e1.GetInstanceId());
@@ -169,26 +167,22 @@ TEST_F(RelatedInstanceFinderFixture, Basic) {
     if ("e1 - forward") {
         const auto expected = reformatJson(R"([
             {
-                "fromId": 1,
-                "fromClassId": "TestSchema:Element",
-                "toId": 2,
-                "toClassId": "TestSchema:Element",
-                "relClassId": "TestSchema:ElementRefersToElements",
-                "direction": 1
-            }, {
-                "fromId": 1,
-                "fromClassId": "TestSchema:Element",
-                "toId": 1,
-                "toClassId": "TestSchema:Element",
-                "relClassId": "TestSchema:ElementRefersToElements",
-                "direction": 1
-            }, {
-                "fromId": 1,
-                "fromClassId": "TestSchema:Element",
-                "toId": 2,
-                "toClassId": "TestSchema:Element",
-                "relClassId": "TestSchema:ElementOwnsChildElements",
-                "direction": 1
+                "ECInstanceId": 2,
+                "ECClassId": "TestSchema:Element",
+                "RelECClassId": "TestSchema:ElementOwnsChildElements",
+                "Direction": 1
+            },
+            {
+                "ECInstanceId": 2,
+                "ECClassId": "TestSchema:Element",
+                "RelECClassId": "TestSchema:ElementRefersToElements",
+                "Direction": 1
+            },
+            {
+                "ECInstanceId": 1,
+                "ECClassId": "TestSchema:Element",
+                "RelECClassId": "TestSchema:ElementRefersToElements",
+                "Direction": 1
             }
         ])");
         // printf("%s\n", getRelatedInstanceJson(e1, "forward").c_str());
@@ -197,19 +191,16 @@ TEST_F(RelatedInstanceFinderFixture, Basic) {
     if ("e1 - backward") {
         const auto expected = reformatJson(R"([
             {
-                "fromId": 1,
-                "fromClassId": "TestSchema:Element",
-                "toId": 1,
-                "toClassId": "TestSchema:Element",
-                "relClassId": "TestSchema:ElementRefersToElements",
-                "direction": 2
-            }, {
-                "fromId": 2,
-                "fromClassId": "TestSchema:Element",
-                "toId": 1,
-                "toClassId": "TestSchema:Element",
-                "relClassId": "TestSchema:ElementRefersToElements",
-                "direction": 2
+                "ECInstanceId": 1,
+                "ECClassId": "TestSchema:Element",
+                "RelECClassId": "TestSchema:ElementRefersToElements",
+                "Direction": 2
+            },
+            {
+                "ECInstanceId": 2,
+                "ECClassId": "TestSchema:Element",
+                "RelECClassId": "TestSchema:ElementRefersToElements",
+                "Direction": 2
             }
         ])");
 
@@ -219,40 +210,34 @@ TEST_F(RelatedInstanceFinderFixture, Basic) {
     if ("e1 - both") {
         const auto expected = reformatJson(R"([
             {
-                "fromId": 1,
-                "fromClassId": "TestSchema:Element",
-                "toId": 2,
-                "toClassId": "TestSchema:Element",
-                "relClassId": "TestSchema:ElementRefersToElements",
-                "direction": 1
-            }, {
-                "fromId": 1,
-                "fromClassId": "TestSchema:Element",
-                "toId": 1,
-                "toClassId": "TestSchema:Element",
-                "relClassId": "TestSchema:ElementRefersToElements",
-                "direction": 1
-            }, {
-                "fromId": 1,
-                "fromClassId": "TestSchema:Element",
-                "toId": 1,
-                "toClassId": "TestSchema:Element",
-                "relClassId": "TestSchema:ElementRefersToElements",
-                "direction": 2
-            }, {
-                "fromId": 2,
-                "fromClassId": "TestSchema:Element",
-                "toId": 1,
-                "toClassId": "TestSchema:Element",
-                "relClassId": "TestSchema:ElementRefersToElements",
-                "direction": 2
-            }, {
-                "fromId": 1,
-                "fromClassId": "TestSchema:Element",
-                "toId": 2,
-                "toClassId": "TestSchema:Element",
-                "relClassId": "TestSchema:ElementOwnsChildElements",
-                "direction": 1
+                "ECInstanceId": 2,
+                "ECClassId": "TestSchema:Element",
+                "RelECClassId": "TestSchema:ElementOwnsChildElements",
+                "Direction": 1
+            },
+            {
+                "ECInstanceId": 2,
+                "ECClassId": "TestSchema:Element",
+                "RelECClassId": "TestSchema:ElementRefersToElements",
+                "Direction": 1
+            },
+            {
+                "ECInstanceId": 1,
+                "ECClassId": "TestSchema:Element",
+                "RelECClassId": "TestSchema:ElementRefersToElements",
+                "Direction": 1
+            },
+            {
+                "ECInstanceId": 1,
+                "ECClassId": "TestSchema:Element",
+                "RelECClassId": "TestSchema:ElementRefersToElements",
+                "Direction": 2
+            },
+            {
+                "ECInstanceId": 2,
+                "ECClassId": "TestSchema:Element",
+                "RelECClassId": "TestSchema:ElementRefersToElements",
+                "Direction": 2
             }
         ])");
         // printf("%s\n", getRelatedInstanceJson(e1, "both").c_str());
