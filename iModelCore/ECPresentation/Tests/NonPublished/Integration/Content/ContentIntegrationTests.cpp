@@ -10269,6 +10269,112 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPointsArrayPropertyVal
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(AssignsRendererAndEditorOverridesToDirectPrimitiveArrayItemsField, R"*(
+    <ECEntityClass typeName="MyClass">
+        <ECArrayProperty propertyName="ArrayProperty" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, AssignsRendererAndEditorOverridesToDirectPrimitiveArrayItemsField)
+    {
+    // set up data set
+    ECClassCP ecClass = GetClass("MyClass");
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false, false));
+    rules->AddPresentationRule(*rule);
+
+    auto modifier = new ContentModifier(ecClass->GetSchema().GetName(), ecClass->GetName());
+    modifier->AddPropertyOverride(*new PropertySpecification("ArrayProperty[*]", 1000, "", nullptr, nullptr,
+        new CustomRendererSpecification("test renderer"), new PropertyEditorSpecification("test editor")));
+    rules->AddPresentationRule(*modifier);
+
+    // validate descriptor
+    auto descriptorParams = AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create());
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(descriptorParams));
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
+
+    auto arrayField = descriptor->GetVisibleFields()[0]->AsPropertiesField()->AsArrayPropertiesField();
+    EXPECT_TRUE(arrayField->GetRenderer() == nullptr);
+    EXPECT_TRUE(arrayField->GetEditor() == nullptr);
+
+    auto const& itemsField = arrayField->GetItemsField();
+    EXPECT_STREQ("test renderer", itemsField.GetRenderer()->GetName().c_str());
+    EXPECT_STREQ("test editor", itemsField.GetEditor()->GetName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(AssignsRendererAndEditorOverridesToRelatedPrimitiveArrayItemsField, R"*(
+    <ECEntityClass typeName="A">
+        <ECArrayProperty propertyName="ArrayProperty" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B" />
+    <ECRelationshipClass typeName="AB" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ab" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ba" polymorphic="true">
+            <Class class="B"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, AssignsRendererAndEditorOverridesToRelatedPrimitiveArrayItemsField)
+    {
+    // set up data set
+    auto classA = GetClass("A");
+    auto classB = GetClass("B");
+    auto relAB = GetClass("AB")->GetRelationshipClassCP();
+
+    auto a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    auto b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a, *b);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    auto spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classB->GetFullName(), false, false);
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Backward)
+        }), { new PropertySpecification("*") }, RelationshipMeaning::RelatedInstance));
+    rule->AddSpecification(*spec);
+    rules->AddPresentationRule(*rule);
+
+    auto modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddPropertyOverride(*new PropertySpecification("ArrayProperty[*]", 1000, "", nullptr, nullptr,
+        new CustomRendererSpecification("test renderer"), new PropertyEditorSpecification("test editor")));
+    rules->AddPresentationRule(*modifier);
+
+    // validate descriptor
+    auto descriptorParams = AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create());
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(descriptorParams));
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
+
+    auto relatedContentField = descriptor->GetVisibleFields()[0]->AsNestedContentField();
+    ASSERT_STREQ(classA->GetDisplayLabel().c_str(), relatedContentField->GetLabel().c_str());
+
+    auto arrayField = relatedContentField->GetFields()[0]->AsPropertiesField()->AsArrayPropertiesField();
+    EXPECT_TRUE(arrayField->GetRenderer() == nullptr);
+    EXPECT_TRUE(arrayField->GetEditor() == nullptr);
+
+    auto const& itemsField = arrayField->GetItemsField();
+    EXPECT_STREQ("test renderer", itemsField.GetRenderer()->GetName().c_str());
+    EXPECT_STREQ("test editor", itemsField.GetEditor()->GetName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(MergesDescriptorsWithSimilarNavigationProperties, R"*(
     <ECEntityClass typeName="Element">
         <ECCustomAttributes>
@@ -11259,6 +11365,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructPropertyValue)
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
+    auto structField = descriptor->GetVisibleFields()[0]->AsPropertiesField()->AsStructPropertiesField();
     rapidjson::Document expectedFieldType;
     expectedFieldType.Parse(Utf8PrintfString(R"({
         "ValueFormat": "Struct",
@@ -11279,10 +11386,16 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructPropertyValue)
                 }
             }]
         })").c_str());
-    rapidjson::Document actualFieldType = descriptor->GetVisibleFields()[0]->GetTypeDescription().AsJson();
+    rapidjson::Document actualFieldType = structField->GetTypeDescription().AsJson();
     EXPECT_EQ(expectedFieldType, actualFieldType)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedFieldType) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualFieldType);
+
+    ASSERT_EQ(2, structField->GetMembers().size());
+    auto const& intPropertyField = structField->GetMembers()[0];
+    EXPECT_STREQ("IntProperty", intPropertyField->GetUniqueName().c_str());
+    auto const& stringPropertyField = structField->GetMembers()[1];
+    EXPECT_STREQ("StringProperty", stringPropertyField->GetUniqueName().c_str());
 
     // request for content
     ContentCPtr content = GetVerifiedContent(*descriptor);
@@ -11315,6 +11428,120 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructPropertyValue)
     EXPECT_EQ(expectedValues2, recordJson2["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(AssignsRendererAndEditorOverridesToDirectStructPropertyFields, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+    </ECStructClass>
+    <ECEntityClass typeName="MyClass">
+        <ECStructProperty propertyName="StructProperty" typeName="MyStruct" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, AssignsRendererAndEditorOverridesToDirectStructPropertyFields)
+    {
+    // set up data set
+    ECClassCP structClass = GetClass("MyStruct");
+    ECClassCP ecClass = GetClass("MyClass");
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false, false));
+    rules->AddPresentationRule(*rule);
+
+    auto modifier = new ContentModifier(structClass->GetSchema().GetName(), structClass->GetName());
+    modifier->AddPropertyOverride(*new PropertySpecification("IntProperty", 1000, "", nullptr, nullptr,
+        new CustomRendererSpecification("test renderer"), new PropertyEditorSpecification("test editor")));
+    rules->AddPresentationRule(*modifier);
+
+    // validate descriptor
+    auto descriptorParams = AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create());
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(descriptorParams));
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
+
+    auto structField = descriptor->GetVisibleFields()[0]->AsPropertiesField()->AsStructPropertiesField();
+    EXPECT_TRUE(structField->GetRenderer() == nullptr);
+    EXPECT_TRUE(structField->GetEditor() == nullptr);
+
+    auto const& memberField = structField->GetMembers()[0];
+    EXPECT_STREQ("test renderer", memberField->GetRenderer()->GetName().c_str());
+    EXPECT_STREQ("test editor", memberField->GetEditor()->GetName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(AssignsRendererAndEditorOverridesToRelatedStructPropertyFields, R"*(
+    <ECStructClass typeName="MyStruct">
+        <ECProperty propertyName="IntProperty" typeName="int" />
+    </ECStructClass>
+    <ECEntityClass typeName="A">
+        <ECStructProperty propertyName="StructProperty" typeName="MyStruct" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B" />
+    <ECRelationshipClass typeName="AB" strength="embedding" modifier="None">
+        <Source multiplicity="(0..1)" roleLabel="ab" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ba" polymorphic="true">
+            <Class class="B"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, AssignsRendererAndEditorOverridesToRelatedStructPropertyFields)
+    {
+    // set up data set
+    ECClassCP structClass = GetClass("MyStruct");
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECRelationshipClassCP relAB = GetClass("AB")->GetRelationshipClassCP();
+
+    auto a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    auto b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a, *b);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    auto spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classB->GetFullName(), false, false);
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Backward)
+        }), { new PropertySpecification("*") }, RelationshipMeaning::RelatedInstance));
+    rule->AddSpecification(*spec);
+    rules->AddPresentationRule(*rule);
+
+    auto modifier = new ContentModifier(structClass->GetSchema().GetName(), structClass->GetName());
+    modifier->AddPropertyOverride(*new PropertySpecification("IntProperty", 1000, "", nullptr, nullptr,
+        new CustomRendererSpecification("test renderer"), new PropertyEditorSpecification("test editor")));
+    rules->AddPresentationRule(*modifier);
+
+    // validate descriptor
+    auto descriptorParams = AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, (int)ContentFlags::MergeResults, *KeySet::Create());
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(descriptorParams));
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
+
+    auto relatedContentField = descriptor->GetVisibleFields()[0]->AsNestedContentField();
+    ASSERT_STREQ(classA->GetDisplayLabel().c_str(), relatedContentField->GetLabel().c_str());
+
+    auto structField = relatedContentField->GetFields()[0]->AsPropertiesField()->AsStructPropertiesField();
+    EXPECT_TRUE(structField->GetRenderer() == nullptr);
+    EXPECT_TRUE(structField->GetEditor() == nullptr);
+
+    auto const& memberField = structField->GetMembers()[0];
+    EXPECT_STREQ("test renderer", memberField->GetRenderer()->GetName().c_str());
+    EXPECT_STREQ("test editor", memberField->GetEditor()->GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -11825,6 +12052,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructArrayPropertyVal
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
+    auto arrayField = descriptor->GetVisibleFields()[0]->AsPropertiesField()->AsArrayPropertiesField();
     rapidjson::Document expectedFieldType;
     expectedFieldType.Parse(Utf8PrintfString(R"({
         "ValueFormat": "Array",
@@ -11849,10 +12077,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructArrayPropertyVal
                 }]
             }
         })").c_str());
-    rapidjson::Document actualFieldType = descriptor->GetVisibleFields()[0]->GetTypeDescription().AsJson();
+    rapidjson::Document actualFieldType = arrayField->GetTypeDescription().AsJson();
     EXPECT_EQ(expectedFieldType, actualFieldType)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedFieldType) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualFieldType);
+
+    // TODO: check array item to be struct and its members
 
     // request for content
     ContentCPtr content = GetVerifiedContent(*descriptor);
@@ -12481,6 +12711,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructWithArrayPropert
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
+    auto structField = descriptor->GetVisibleFields()[0]->AsPropertiesField()->AsStructPropertiesField();
     rapidjson::Document expectedFieldType;
     expectedFieldType.Parse(Utf8PrintfString(R"({
         "ValueFormat": "Struct",
@@ -12498,10 +12729,16 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructWithArrayPropert
                 }
             }]
         })").c_str());
-    rapidjson::Document actualFieldType = descriptor->GetVisibleFields()[0]->GetTypeDescription().AsJson();
+    rapidjson::Document actualFieldType = structField->GetTypeDescription().AsJson();
     EXPECT_EQ(expectedFieldType, actualFieldType)
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedFieldType) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualFieldType);
+
+    ASSERT_EQ(1, structField->GetMembers().size());
+    auto arrayField = structField->GetMembers()[0]->AsArrayPropertiesField();
+    EXPECT_STREQ("IntProperty", arrayField->GetUniqueName().c_str());
+    auto const& arrayItemsField = arrayField->GetItemsField();
+    EXPECT_STREQ("int", arrayItemsField.GetTypeDescription().GetTypeName().c_str());
 
     // request for content
     ContentCPtr content = GetVerifiedContent(*descriptor);
@@ -15948,112 +16185,6 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
     EXPECT_EQ(expectedDisplayValues, recordJson["DisplayValues"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedDisplayValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["DisplayValues"]);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest
-+---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(AssignsRendererAndEditorOverridesToDirectPrimitiveArrayItemsField, R"*(
-    <ECEntityClass typeName="MyClass">
-        <ECArrayProperty propertyName="ArrayProperty" typeName="int" />
-    </ECEntityClass>
-)*");
-TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, AssignsRendererAndEditorOverridesToDirectPrimitiveArrayItemsField)
-    {
-    // set up data set
-    ECClassCP ecClass = GetClass("MyClass");
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass);
-
-    // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
-    m_locater->AddRuleSet(*rules);
-
-    ContentRuleP rule = new ContentRule("", 1, false);
-    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", ecClass->GetFullName(), false, false));
-    rules->AddPresentationRule(*rule);
-
-    auto modifier = new ContentModifier(ecClass->GetSchema().GetName(), ecClass->GetName());
-    modifier->AddPropertyOverride(*new PropertySpecification("ArrayProperty[*]", 1000, "", nullptr, nullptr,
-        new CustomRendererSpecification("test renderer"), new PropertyEditorSpecification("test editor")));
-    rules->AddPresentationRule(*modifier);
-
-    // validate descriptor
-    auto descriptorParams = AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create());
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(descriptorParams));
-    ASSERT_TRUE(descriptor.IsValid());
-    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
-
-    auto arrayField = descriptor->GetVisibleFields()[0]->AsPropertiesField()->AsArrayPropertiesField();
-    EXPECT_TRUE(arrayField->GetRenderer() == nullptr);
-    EXPECT_TRUE(arrayField->GetEditor() == nullptr);
-
-    auto const& itemsField = arrayField->GetItemsField();
-    EXPECT_STREQ("test renderer", itemsField.GetRenderer()->GetName().c_str());
-    EXPECT_STREQ("test editor", itemsField.GetEditor()->GetName().c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsitest
-+---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(AssignsRendererAndEditorOverridesToRelatedPrimitiveArrayItemsField, R"*(
-    <ECEntityClass typeName="A">
-        <ECArrayProperty propertyName="ArrayProperty" typeName="int" />
-    </ECEntityClass>
-    <ECEntityClass typeName="B" />
-    <ECRelationshipClass typeName="AB" strength="embedding" modifier="None">
-        <Source multiplicity="(0..1)" roleLabel="ab" polymorphic="true">
-            <Class class="A"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="ba" polymorphic="true">
-            <Class class="B"/>
-        </Target>
-    </ECRelationshipClass>
-)*");
-TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, AssignsRendererAndEditorOverridesToRelatedPrimitiveArrayItemsField)
-    {
-    // set up data set
-    auto classA = GetClass("A");
-    auto classB = GetClass("B");
-    auto relAB = GetClass("AB")->GetRelationshipClassCP();
-
-    auto a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
-    auto b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
-    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a, *b);
-
-    // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
-    m_locater->AddRuleSet(*rules);
-
-    ContentRuleP rule = new ContentRule("", 1, false);
-    auto spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classB->GetFullName(), false, false);
-    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
-        {
-        new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Backward)
-        }), { new PropertySpecification("*") }, RelationshipMeaning::RelatedInstance));
-    rule->AddSpecification(*spec);
-    rules->AddPresentationRule(*rule);
-
-    auto modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
-    modifier->AddPropertyOverride(*new PropertySpecification("ArrayProperty[*]", 1000, "", nullptr, nullptr,
-        new CustomRendererSpecification("test renderer"), new PropertyEditorSpecification("test editor")));
-    rules->AddPresentationRule(*modifier);
-
-    // validate descriptor
-    auto descriptorParams = AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create());
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(descriptorParams));
-    ASSERT_TRUE(descriptor.IsValid());
-    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
-
-    auto relatedContentField = descriptor->GetVisibleFields()[0]->AsNestedContentField();
-    ASSERT_STREQ(classA->GetDisplayLabel().c_str(), relatedContentField->GetLabel().c_str());
-
-    auto arrayField = relatedContentField->GetFields()[0]->AsPropertiesField()->AsArrayPropertiesField();
-    EXPECT_TRUE(arrayField->GetRenderer() == nullptr);
-    EXPECT_TRUE(arrayField->GetEditor() == nullptr);
-
-    auto const& itemsField = arrayField->GetItemsField();
-    EXPECT_STREQ("test renderer", itemsField.GetRenderer()->GetName().c_str());
-    EXPECT_STREQ("test editor", itemsField.GetEditor()->GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

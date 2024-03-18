@@ -548,6 +548,29 @@ protected:
                 attributes.GetIsReadOnly(),
                 attributes.GetPriority());
             }
+        if (auto structProp = prop.GetAsStructProperty())
+            {
+            ECClassCR structClass = structProp->GetType();
+            bvector<std::unique_ptr<ContentDescriptor::ECPropertiesField>> memberFields;
+            for (ECPropertyCP memberProperty : structClass.GetProperties(true))
+                {
+                if (!m_propertyInfos.ShouldDisplay(*memberProperty, structClass, [this](){return CreateExpressionContext(m_context);}))
+                    continue;
+
+                auto memberField = CreatePropertiesField(*memberProperty, _CreateFieldAttributes(*memberProperty, structClass, {}));
+                memberField->AddProperty(ContentDescriptor::Property("", structClass, *memberProperty));
+                memberField->SetUniqueName(memberProperty->GetName());
+                memberFields.push_back(std::move(memberField));
+                }
+            return std::make_unique<ContentDescriptor::ECStructPropertiesField>(
+                attributes.GetCategory(),
+                attributes.GetLabel(),
+                std::move(memberFields),
+                attributes.GetRenderer().get(),
+                attributes.GetEditor().get(),
+                attributes.GetIsReadOnly(),
+                attributes.GetPriority());
+            }
 
         return std::make_unique<ContentDescriptor::ECPropertiesField>(
             attributes.GetCategory(),

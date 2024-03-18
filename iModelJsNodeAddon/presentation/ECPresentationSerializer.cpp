@@ -250,6 +250,13 @@ void IModelJsECPresentationSerializer::_AsJson(ContextR ctx, ContentDescriptor::
             itemsFieldJson.AddMember("editor", AsJson(ctx, *itemsFieldEditor, &fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
         fieldBaseJson.AddMember("itemsField", itemsFieldJson, fieldBaseJson.GetAllocator());
         }
+    if (auto structField = ecPropertiesField.AsStructPropertiesField())
+        {
+        rapidjson::Value structMembersJson(rapidjson::kArrayType);
+        for (auto const& structMember : structField->GetMembers())
+            structMembersJson.PushBack(AsJson(ctx, *structMember, &fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
+        fieldBaseJson.AddMember("memberFields", structMembersJson, fieldBaseJson.GetAllocator());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
