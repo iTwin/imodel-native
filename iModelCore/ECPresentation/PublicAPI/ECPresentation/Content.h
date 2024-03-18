@@ -849,10 +849,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! Is this field equal to the supplied one.
         bool operator==(ECPropertiesField const& other) const {return Field::operator==(other) && m_properties == other.m_properties && m_isReadOnly == other.m_isReadOnly && m_priority == other.m_priority && m_isArrayItemField == other.m_isArrayItemField;}
 
-        //! Does this field contain composite properties (structs or arrays)
-        ECPRESENTATION_EXPORT bool IsCompositePropertiesField() const; // FIXME
         ECArrayPropertiesField const* AsArrayPropertiesField() const {return _AsArrayPropertiesField();}
         ECStructPropertiesField const* AsStructPropertiesField() const {return _AsStructPropertiesField();}
+        bool IsCompositePropertiesField() const {return AsArrayPropertiesField() || AsStructPropertiesField();}
 
         void SetIsArrayItemsField(bool value) {m_isArrayItemField = value;}
         bool IsArrayItemsField() const {return m_isArrayItemField;}

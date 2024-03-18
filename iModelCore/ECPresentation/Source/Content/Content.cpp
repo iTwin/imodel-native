@@ -1082,18 +1082,6 @@ ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::ECPropertiesFiel
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentDescriptor::ECPropertiesField::IsCompositePropertiesField() const
-    {
-    if (m_properties.empty())
-        return false;
-
-    ECPropertyCR prop = m_properties.front().GetProperty();
-    return prop.GetIsStruct() || prop.GetIsArray();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool ContentDescriptor::ECPropertiesField::ContainsProperty(ECPropertyCR prop) const
     {
     return m_properties.end() != std::find_if(m_properties.begin(), m_properties.end(), [&](ContentDescriptor::Property const& propertyInfo)
