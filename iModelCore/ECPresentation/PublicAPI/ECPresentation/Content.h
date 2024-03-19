@@ -430,6 +430,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
     //===================================================================================
     struct Field
     {
+        struct PrimitiveTypeDescription;
+        struct ArrayTypeDescription;
+        struct StructTypeDescription;
+        struct NestedContentTypeDescription;
         struct EXPORT_VTABLE_ATTRIBUTE TypeDescription : RefCountedBase
             {
             private:
@@ -437,9 +441,18 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
             protected:
                 TypeDescription(Utf8String typeName) : m_typeName(typeName) {}
                 ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ECPresentationSerializerContextR, rapidjson::Document::AllocatorType* allocator) const;
+                virtual PrimitiveTypeDescription const* _AsPrimitive() const {return nullptr;}
+                virtual ArrayTypeDescription const* _AsArray() const {return nullptr;}
+                virtual StructTypeDescription const* _AsStruct() const {return nullptr;}
+                virtual NestedContentTypeDescription const* _AsNestedContent() const {return nullptr;}
             public:
                 ECPRESENTATION_EXPORT static RefCountedPtr<TypeDescription> Create(ECPropertyCR);
+                ECPRESENTATION_EXPORT static RefCountedPtr<TypeDescription> Create(ArrayECPropertyCR, bool isItemType);
                 Utf8StringCR GetTypeName() const {return m_typeName;}
+                PrimitiveTypeDescription const* AsPrimitive() const {return _AsPrimitive();}
+                ArrayTypeDescription const* AsArray() const {return _AsArray();}
+                StructTypeDescription const* AsStruct() const {return _AsStruct();}
+                NestedContentTypeDescription const* AsNestedContent() const {return _AsNestedContent();}
                 rapidjson::Document AsJson(ECPresentationSerializerContextR ctx, rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(ctx, allocator);}
                 ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const;
         };
@@ -451,6 +464,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         struct PrimitiveTypeDescription : TypeDescription
         {
         protected:
+            PrimitiveTypeDescription const* _AsPrimitive() const override {return this;}
             ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ECPresentationSerializerContextR, rapidjson::Document::AllocatorType* allocator) const override;
         public:
             PrimitiveTypeDescription(Utf8String type) : TypeDescription(type) {}
@@ -466,6 +480,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         private:
             ECPRESENTATION_EXPORT static Utf8String CreateTypeName(TypeDescription const& memberType);
         protected:
+            ArrayTypeDescription const* _AsArray() const override {return this;}
             ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ECPresentationSerializerContextR, rapidjson::Document::AllocatorType* allocator) const override;
         public:
             ArrayTypeDescription(TypeDescription& memberType) : TypeDescription(CreateTypeName(memberType)), m_memberType(&memberType) {}
@@ -480,6 +495,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         private:
             ECStructClassCR m_struct;
         protected:
+            StructTypeDescription const* _AsStruct() const override {return this;}
             ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ECPresentationSerializerContextR, rapidjson::Document::AllocatorType* allocator) const override;
         public:
             StructTypeDescription(ECStructClassCR structClass) : TypeDescription(structClass.GetName()), m_struct(structClass) {}
@@ -494,6 +510,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         private:
             NestedContentField const& m_field;
         protected:
+            NestedContentTypeDescription const* _AsNestedContent() const override {return this;}
             ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(ECPresentationSerializerContextR, rapidjson::Document::AllocatorType* allocator) const override;
         public:
             NestedContentTypeDescription(ContentDescriptor::NestedContentField const& field) : TypeDescription(field.GetContentClass().GetDisplayLabel()), m_field(field) {}
@@ -636,7 +653,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         Utf8String CreateName() const {return _CreateName();}
         //! Set unique name for this field.
         void SetUniqueName(Utf8String name) {m_uniqueName = name;}
-        //! Getet unique name of this field.
+        //! Get unique name of this field.
         Utf8StringCR GetUniqueName() const {return m_uniqueName;}
 
         //! Get the label of this field.
@@ -765,6 +782,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         void SetPriority(int priority) {m_priority = priority;}
     };
 
+    struct ECArrayPropertiesField;
+    struct ECStructPropertiesField;
     //===================================================================================
     //! Describes a single content field which is based on ECProperties. The field should
     //! be based on one or more properties of the similar type.
@@ -778,11 +797,14 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         mutable BeMutex m_matchingPropertiesCacheMutex;
         Nullable<bool> m_isReadOnly;
         Nullable<int> m_priority;
+        bool m_isArrayItemField;
 
     protected:
         ECPropertiesField* _AsPropertiesField() override {return this;}
         ECPropertiesField const* _AsPropertiesField() const override {return this;}
-        Field* _Clone() const override {return new ECPropertiesField(*this);}
+        virtual Field* _Clone() const override {return new ECPropertiesField(*this);}
+        virtual ECArrayPropertiesField const* _AsArrayPropertiesField() const {return nullptr;}
+        virtual ECStructPropertiesField const* _AsStructPropertiesField() const {return nullptr;}
         ECPRESENTATION_EXPORT TypeDescriptionPtr _CreateTypeDescription() const override;
         ECPRESENTATION_EXPORT bool _IsReadOnly() const override;
         ECPRESENTATION_EXPORT rapidjson::Document _AsJson(ECPresentationSerializerContextR, rapidjson::Document::AllocatorType* allocator) const override;
@@ -797,13 +819,13 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! @param[in] editor The custom editor for this field.
         ECPropertiesField(std::shared_ptr<Category const> category, Utf8String label, ContentFieldRenderer const* renderer = nullptr, ContentFieldEditor const* editor = nullptr,
             Nullable<bool> isReadOnly = nullptr, Nullable<int> priority = nullptr)
-            : Field(category, label, renderer, editor), m_isReadOnly(isReadOnly), m_priority(priority)
+            : Field(category, label, renderer, editor), m_isReadOnly(isReadOnly), m_priority(priority), m_isArrayItemField(false)
             {}
 
         //! Constructor.
         ECPropertiesField(std::shared_ptr<Category const> category, Utf8String uniqueName, Utf8String label, ContentFieldRenderer const* renderer = nullptr, ContentFieldEditor const* editor = nullptr,
             Nullable<bool> isReadOnly = nullptr, Nullable<int> priority = nullptr)
-            : Field(category, uniqueName, label, renderer, editor), m_isReadOnly(isReadOnly), m_priority(priority)
+            : Field(category, uniqueName, label, renderer, editor), m_isReadOnly(isReadOnly), m_priority(priority), m_isArrayItemField(false)
             {}
 
         //! Constructor. Creates a field with a single @ref Property.
@@ -819,16 +841,20 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
             }
 
         //! Copy constructor.
-        ECPropertiesField(ECPropertiesField const& other) : Field(other), m_properties(other.m_properties), m_isReadOnly(other.m_isReadOnly), m_priority(other.m_priority) {}
+        ECPropertiesField(ECPropertiesField const& other) : Field(other), m_properties(other.m_properties), m_isReadOnly(other.m_isReadOnly), m_priority(other.m_priority), m_isArrayItemField(other.m_isArrayItemField) {}
 
         //! Move constructor.
-        ECPropertiesField(ECPropertiesField&& other) : Field(std::move(other)), m_properties(std::move(other.m_properties)), m_isReadOnly(std::move(other.m_isReadOnly)), m_priority(std::move(other.m_priority)) {}
+        ECPropertiesField(ECPropertiesField&& other) : Field(std::move(other)), m_properties(std::move(other.m_properties)), m_isReadOnly(std::move(other.m_isReadOnly)), m_priority(std::move(other.m_priority)), m_isArrayItemField(other.m_isArrayItemField) {}
 
         //! Is this field equal to the supplied one.
-        bool operator==(ECPropertiesField const& other) const {return Field::operator==(other) && m_properties == other.m_properties && m_isReadOnly == other.m_isReadOnly && m_priority == other.m_priority;}
+        bool operator==(ECPropertiesField const& other) const {return Field::operator==(other) && m_properties == other.m_properties && m_isReadOnly == other.m_isReadOnly && m_priority == other.m_priority && m_isArrayItemField == other.m_isArrayItemField;}
 
-        //! Does this field contain composite properties (structs or arrays)
-        ECPRESENTATION_EXPORT bool IsCompositePropertiesField() const;
+        ECArrayPropertiesField const* AsArrayPropertiesField() const {return _AsArrayPropertiesField();}
+        ECStructPropertiesField const* AsStructPropertiesField() const {return _AsStructPropertiesField();}
+        bool IsCompositePropertiesField() const {return AsArrayPropertiesField() || AsStructPropertiesField();}
+
+        void SetIsArrayItemsField(bool value) {m_isArrayItemField = value;}
+        bool IsArrayItemsField() const {return m_isArrayItemField;}
 
         //! Add property to this field.
         void AddProperty(Property prop) {m_properties.push_back(prop);}
@@ -841,6 +867,66 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
 
         //! Does this field contain the given property
         ECPRESENTATION_EXPORT bool ContainsProperty(ECPropertyCR) const;
+    };
+
+    //===================================================================================
+    //! Describes a single content field which is based on ECArrayProperty. The field should
+    //! be based on one or more properties of the similar type.
+    // @bsiclass
+    //===================================================================================
+    struct ECArrayPropertiesField : ECPropertiesField
+    {
+    private:
+        std::unique_ptr<ECPropertiesField> m_itemsField;
+    protected:
+        Field* _Clone() const override {return new ECArrayPropertiesField(*this);}
+        ECArrayPropertiesField const* _AsArrayPropertiesField() const override {return this;}
+    public:
+        ECArrayPropertiesField(
+            std::shared_ptr<Category const> category,
+            Utf8String label,
+            std::unique_ptr<ECPropertiesField> itemsField,
+            ContentFieldRenderer const* renderer = nullptr,
+            ContentFieldEditor const* editor = nullptr,
+            Nullable<bool> isReadOnly = nullptr,
+            Nullable<int> priority = nullptr
+            ) : ECPropertiesField(category, label, renderer, editor, isReadOnly, priority), m_itemsField(std::move(itemsField))
+            {}
+        ECArrayPropertiesField(ECArrayPropertiesField const& other) : ECPropertiesField(other), m_itemsField(std::make_unique<ECPropertiesField>(*other.m_itemsField)) {}
+        ECArrayPropertiesField(ECArrayPropertiesField&& other) : ECPropertiesField(std::move(other)), m_itemsField(std::move(other.m_itemsField)) {}
+        ECPropertiesField const& GetItemsField() const {return *m_itemsField;}
+    };
+    //===================================================================================
+    //! Describes a single content field which is based on ECStructProperty. The field should
+    //! be based on one or more properties of the similar type.
+    // @bsiclass
+    //===================================================================================
+    struct ECStructPropertiesField : ECPropertiesField
+    {
+    private:
+        bvector<std::unique_ptr<ECPropertiesField>> m_members;
+    protected:
+        Field* _Clone() const override {return new ECStructPropertiesField(*this);}
+        ECStructPropertiesField const* _AsStructPropertiesField() const override {return this;}
+    public:
+        ECStructPropertiesField(
+            std::shared_ptr<Category const> category,
+            Utf8String label,
+            bvector<std::unique_ptr<ECPropertiesField>> members,
+            ContentFieldRenderer const* renderer = nullptr,
+            ContentFieldEditor const* editor = nullptr,
+            Nullable<bool> isReadOnly = nullptr,
+            Nullable<int> priority = nullptr
+            ) : ECPropertiesField(category, label, renderer, editor, isReadOnly, priority), m_members(std::move(members))
+            {}
+        ECStructPropertiesField(ECStructPropertiesField const& other)
+            : ECPropertiesField(other)
+            {
+            for (auto const& otherMember : other.m_members)
+                m_members.push_back(std::make_unique<ECPropertiesField>(*otherMember));
+            }
+        ECStructPropertiesField(ECStructPropertiesField&& other) : ECPropertiesField(std::move(other)), m_members(std::move(other.m_members)) {}
+        bvector<std::unique_ptr<ECPropertiesField>> const& GetMembers() const {return m_members;}
     };
 
     struct CompositeContentField;
@@ -1170,7 +1256,7 @@ protected:
 
 public:
     //! Creates a content descriptor.
-    static ContentDescriptorPtr Create(IConnectionCR connection, PresentationRuleSetCR ruleset, RulesetVariables rulesetVariables, INavNodeKeysContainerCR inputKeys, 
+    static ContentDescriptorPtr Create(IConnectionCR connection, PresentationRuleSetCR ruleset, RulesetVariables rulesetVariables, INavNodeKeysContainerCR inputKeys,
         Utf8CP preferredDisplayType = ContentDisplayType::Undefined, int requestedContentFlags = 0, int usedContentFlags = 0)
         {
         return new ContentDescriptor(connection, ruleset, rulesetVariables, inputKeys, preferredDisplayType, requestedContentFlags, usedContentFlags);
@@ -1478,8 +1564,8 @@ private:
 
 private:
     ContentSetItem(bvector<ECClassInstanceKey> inputKeys, bvector<ECClassInstanceKey> keys, LabelDefinitionCR displayLabelDefinition, Utf8String imageId,
-        bmap<Utf8String, bvector<ContentSetItemPtr>> nestedContent, 
-        std::pair<std::unique_ptr<rapidjson::Document::AllocatorType>, std::unique_ptr<rapidjson::Document>>&& values, 
+        bmap<Utf8String, bvector<ContentSetItemPtr>> nestedContent,
+        std::pair<std::unique_ptr<rapidjson::Document::AllocatorType>, std::unique_ptr<rapidjson::Document>>&& values,
         std::pair<std::unique_ptr<rapidjson::Document::AllocatorType>, std::unique_ptr<rapidjson::Document>>&& displayValues,
         bvector<Utf8String> mergedFieldNames, FieldPropertyInstanceKeyMap fieldPropertyInstanceKeys)
         : m_class(nullptr), m_keys(std::move(keys)), m_displayLabelDefinition(&displayLabelDefinition), m_imageId(imageId), m_nestedContent(nestedContent),
@@ -1510,8 +1596,8 @@ public:
     //! @param[in] mergedFieldNames Names of merged fields in this record.
     //! @param[in] fieldPropertyInstanceKeys ECClassInstanceKeys of related instances for each field in this record.
     static ContentSetItemPtr Create(bvector<ECClassInstanceKey> inputKeys, bvector<ECClassInstanceKey> keys, LabelDefinitionCR displayLabelDefinition, Utf8String imageId,
-        bmap<Utf8String, bvector<ContentSetItemPtr>> nestedContent,  
-        std::pair<std::unique_ptr<rapidjson::Document::AllocatorType>, std::unique_ptr<rapidjson::Document>> values, 
+        bmap<Utf8String, bvector<ContentSetItemPtr>> nestedContent,
+        std::pair<std::unique_ptr<rapidjson::Document::AllocatorType>, std::unique_ptr<rapidjson::Document>> values,
         std::pair<std::unique_ptr<rapidjson::Document::AllocatorType>, std::unique_ptr<rapidjson::Document>> displayValues,
         bvector<Utf8String> mergedFieldNames, FieldPropertyInstanceKeyMap fieldPropertyInstanceKeys)
         {

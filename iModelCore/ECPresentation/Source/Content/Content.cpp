@@ -37,16 +37,30 @@ ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::Field::TypeDescr
     if (prop.GetIsNavigation())
         return new PrimitiveTypeDescription("navigation");
 
-    if (prop.GetIsPrimitiveArray())
-        return new ArrayTypeDescription(*new PrimitiveTypeDescription(ECSchemaHelper::GetTypeName(prop)));
-
-    if (prop.GetIsStructArray())
-        return new ArrayTypeDescription(*new StructTypeDescription(prop.GetAsStructArrayProperty()->GetStructElementType()));
+    if (auto arrayProp = prop.GetAsArrayProperty())
+        return Create(*arrayProp, false);
 
     if (prop.GetIsStruct())
         return new StructTypeDescription(prop.GetAsStructProperty()->GetType());
 
     return new PrimitiveTypeDescription(ECSchemaHelper::GetTypeName(prop));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::Field::TypeDescription::Create(ArrayECPropertyCR prop, bool isItemType)
+    {
+    ContentDescriptor::Field::TypeDescriptionPtr itemType;
+    if (prop.GetIsPrimitiveArray())
+        itemType = new PrimitiveTypeDescription(ECSchemaHelper::GetTypeName(prop));
+    else if (auto structArrayProp = prop.GetAsStructArrayProperty())
+        itemType = new StructTypeDescription(structArrayProp->GetStructElementType());
+
+    if (isItemType)
+        return itemType;
+
+    return new ArrayTypeDescription(*itemType);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1039,6 +1053,7 @@ rapidjson::Document ContentDescriptor::CalculatedPropertyField::_AsJson(ECPresen
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::ECPropertiesField::ECPropertiesField(std::shared_ptr<Category const> category, Property const& prop)
+    : m_isArrayItemField(false)
     {
     SetCategory(category);
     SetLabel(prop.GetProperty().GetDisplayLabel());
@@ -1058,19 +1073,10 @@ rapidjson::Document ContentDescriptor::ECPropertiesField::_AsJson(ECPresentation
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::ECPropertiesField::_CreateTypeDescription() const
     {
-    return TypeDescription::Create(m_properties.front().GetProperty());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentDescriptor::ECPropertiesField::IsCompositePropertiesField() const
-    {
-    if (m_properties.empty())
-        return false;
-
     ECPropertyCR prop = m_properties.front().GetProperty();
-    return prop.GetIsStruct() || prop.GetIsArray();
+    if (prop.GetIsArray() && m_isArrayItemField)
+        return TypeDescription::Create(*prop.GetAsArrayProperty(), true);
+    return TypeDescription::Create(prop);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1239,7 +1245,13 @@ bool ContentDescriptor::NestedContentField::_Equals(Field const& other) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document ContentDescriptor::NestedContentField::_AsJson(ECPresentationSerializerContextR ctx, rapidjson::Document::AllocatorType* allocator) const
     {
-    return ECPresentationManager::GetSerializer().AsJson(ctx, *this, allocator);
+    if (auto relatedContentField = AsRelatedContentField())
+        return ECPresentationManager::GetSerializer().AsJson(ctx, *relatedContentField, allocator);
+
+    if (auto compositeContentField = AsCompositeContentField())
+        return ECPresentationManager::GetSerializer().AsJson(ctx, *compositeContentField, allocator);
+
+    DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Unhandled nested content field type during serialization");
     }
 
 /*---------------------------------------------------------------------------------**//**
