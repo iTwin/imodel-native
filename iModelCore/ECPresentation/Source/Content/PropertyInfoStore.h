@@ -195,8 +195,8 @@ private:
 public:
     PropertyInfoStore(ECSchemaHelper const& helper, bvector<ContentModifierCP> const& contentModifiers, ContentSpecificationCP spec, IPropertyCategorySupplierCP categorySupplier);
     bool ShouldDisplay(ECPropertyCR, ECClassCR, std::function<ExpressionContextPtr()> const& expressionContextFactory, PropertySpecificationsList const& = PropertySpecificationsList()) const;
-    std::shared_ptr<ContentFieldRenderer const> GetPropertyRenderer(ECPropertyCR, ECClassCR, std::function<Utf8String(ECPropertyCR)> const& propertyNameGetter, PropertySpecificationCP = nullptr) const;
-    std::shared_ptr<ContentFieldEditor const> GetPropertyEditor(ECPropertyCR, ECClassCR, std::function<Utf8String(ECPropertyCR)> const& propertyNameGetter, PropertySpecificationCP = nullptr) const;
+    std::shared_ptr<ContentFieldRenderer const> GetPropertyRenderer(ECClassCR, Utf8StringCR propertyName, PropertySpecificationCP = nullptr) const;
+    std::shared_ptr<ContentFieldEditor const> GetPropertyEditor(ECClassCR, Utf8StringCR propertyName, PropertySpecificationCP = nullptr) const;
     Utf8String GetLabelOverride(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr) const;
     CategoryOverrideInfo const* GetCategoryOverride(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr, PropertyCategorySpecificationsList const* = nullptr) const;
     CategoryOverrideInfo const* GetCategoryOverride(ECClassCP, CalculatedPropertiesSpecificationCR) const;

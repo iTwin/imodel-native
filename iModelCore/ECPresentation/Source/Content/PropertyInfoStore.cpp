@@ -462,9 +462,9 @@ bool PropertyInfoStore::ShouldDisplay(ECPropertyCR prop, ECClassCR ecClass, std:
 /*-----------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+-----------+------*/
-std::shared_ptr<ContentFieldRenderer const> PropertyInfoStore::GetPropertyRenderer(ECPropertyCR prop, ECClassCR ecClass, std::function<Utf8String(ECPropertyCR)> const& propertyNameGetter, PropertySpecificationCP customOverride) const
+std::shared_ptr<ContentFieldRenderer const> PropertyInfoStore::GetPropertyRenderer(ECClassCR ecClass, Utf8StringCR propertyName, PropertySpecificationCP customOverride) const
     {
-    auto const& ovr = GetOverrides(ecClass).GetContentFieldRendererOverride(prop.GetClass(), propertyNameGetter(prop));
+    auto const& ovr = GetOverrides(ecClass).GetContentFieldRendererOverride(ecClass, propertyName);
     if (customOverride && customOverride->GetRendererOverride() && ovr.IsValid())
         return (ovr.Value().priority > customOverride->GetOverridesPriority()) ? ovr.Value().value : CreateRendererOverride(*customOverride->GetRendererOverride());
     if (customOverride && customOverride->GetRendererOverride())
@@ -477,10 +477,9 @@ std::shared_ptr<ContentFieldRenderer const> PropertyInfoStore::GetPropertyRender
 /*-----------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+-----------+------*/
-std::shared_ptr<ContentFieldEditor const> PropertyInfoStore::GetPropertyEditor(ECPropertyCR prop, ECClassCR ecClass, std::function<Utf8String(ECPropertyCR)> const& propertyNameGetter, PropertySpecificationCP customOverride) const
+std::shared_ptr<ContentFieldEditor const> PropertyInfoStore::GetPropertyEditor(ECClassCR ecClass, Utf8StringCR propertyName, PropertySpecificationCP customOverride) const
     {
-    // TODO: check if we can just pass ecClass rather than prop.GetClass()
-    auto const& ovr = GetOverrides(ecClass).GetContentFieldEditorOverride(prop.GetClass(), propertyNameGetter(prop));
+    auto const& ovr = GetOverrides(ecClass).GetContentFieldEditorOverride(ecClass, propertyName);
     if (customOverride && customOverride->GetEditorOverride() && ovr.IsValid())
         return (ovr.Value().priority > customOverride->GetOverridesPriority()) ? ovr.Value().value : CreateEditorOverride(*customOverride->GetEditorOverride());
     if (customOverride && customOverride->GetEditorOverride())
