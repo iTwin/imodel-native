@@ -399,6 +399,9 @@
     <ClInclude Include="..\PublicAPI\ECPresentation\PresentationQuery.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Hierarchies\HierarchiesFiltering.h">
+      <Filter>Source Files\Hierarchies</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Connection.cpp">
@@ -697,6 +700,9 @@
     </ClCompile>
     <ClCompile Include="Content\ContentHelpers.cpp">
       <Filter>Source Files\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="Hierarchies\HierarchiesFiltering.cpp">
+      <Filter>Source Files\Hierarchies</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
