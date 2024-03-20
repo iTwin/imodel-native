@@ -978,8 +978,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         return val.As<Napi::Object>().InstanceOf(Constructor().Value());
         }
 
-    DgnDbR GetDgnDb() {return *m_dgndb;}
-
     template<typename STATUSTYPE>
     Napi::Object CreateBentleyReturnErrorObject(STATUSTYPE errCode, Utf8CP msg = nullptr) {return IModelJsNative::CreateBentleyReturnErrorObject(errCode, msg, Env());}
 
