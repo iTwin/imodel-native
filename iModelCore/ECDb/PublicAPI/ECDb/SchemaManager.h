@@ -144,6 +144,7 @@ public:
     void DisableSchemaSync() { m_disabledForProfileUpgrade = true; }
     void ReEnableSchemaSync() { m_disabledForProfileUpgrade = false; }
     bool IsSchemaSyncDisabled() const { return m_disabledForProfileUpgrade; }
+    ECDB_EXPORT Status UpdateDbSchema();
     ECDB_EXPORT LocalDbInfo GetInfo() const;
     ECDB_EXPORT Status SetDefaultSyncDbUri(SyncDbUri syncDbUri);
     ECDB_EXPORT Status Init(SyncDbUri const&);

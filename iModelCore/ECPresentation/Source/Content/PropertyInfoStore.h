@@ -129,12 +129,14 @@ private:
 
 private:
     template<typename TValue>
-    NullablePrioritizedValue<TValue> const& GetOverrides(ECPropertyCR, Nullable<PrioritizedValue<TValue>> const&(*valuePicker)(Overrides const&)) const;
+    NullablePrioritizedValue<TValue> const& GetOverrides(ECClassCR propertyClass, Utf8StringCR propertyName, Nullable<PrioritizedValue<TValue>> const& (*valuePicker)(Overrides const&)) const;
 
 public:
     NullablePrioritizedValue<BoolOrString> const& GetDisplayOverride(ECPropertyCR) const;
     NullablePrioritizedValue<std::shared_ptr<ContentFieldRenderer const>> const& GetContentFieldRendererOverride(ECPropertyCR) const;
+    NullablePrioritizedValue<std::shared_ptr<ContentFieldRenderer const>> const& GetContentFieldRendererOverride(ECClassCR, Utf8StringCR) const;
     NullablePrioritizedValue<std::shared_ptr<ContentFieldEditor const>> const& GetContentFieldEditorOverride(ECPropertyCR) const;
+    NullablePrioritizedValue<std::shared_ptr<ContentFieldEditor const>> const& GetContentFieldEditorOverride(ECClassCR, Utf8StringCR) const;
     NullablePrioritizedValue<Utf8String> const& GetLabelOverride(ECPropertyCR) const;
     NullablePrioritizedValue<PropertyCategoryIdentifier const*> const& GetCategoryOverride(ECPropertyCR) const;
     NullablePrioritizedValue<bool> const& GetDoNotHideOtherPropertiesOnDisplayOverride(ECPropertyCR) const;
@@ -193,8 +195,8 @@ private:
 public:
     PropertyInfoStore(ECSchemaHelper const& helper, bvector<ContentModifierCP> const& contentModifiers, ContentSpecificationCP spec, IPropertyCategorySupplierCP categorySupplier);
     bool ShouldDisplay(ECPropertyCR, ECClassCR, std::function<ExpressionContextPtr()> const& expressionContextFactory, PropertySpecificationsList const& = PropertySpecificationsList()) const;
-    std::shared_ptr<ContentFieldRenderer const> GetPropertyRenderer(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr) const;
-    std::shared_ptr<ContentFieldEditor const> GetPropertyEditor(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr) const;
+    std::shared_ptr<ContentFieldRenderer const> GetPropertyRenderer(ECClassCR, Utf8StringCR propertyName, PropertySpecificationCP = nullptr) const;
+    std::shared_ptr<ContentFieldEditor const> GetPropertyEditor(ECClassCR, Utf8StringCR propertyName, PropertySpecificationCP = nullptr) const;
     Utf8String GetLabelOverride(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr) const;
     CategoryOverrideInfo const* GetCategoryOverride(ECPropertyCR, ECClassCR, PropertySpecificationCP = nullptr, PropertyCategorySpecificationsList const* = nullptr) const;
     CategoryOverrideInfo const* GetCategoryOverride(ECClassCP, CalculatedPropertiesSpecificationCR) const;

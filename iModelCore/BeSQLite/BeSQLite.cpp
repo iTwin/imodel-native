@@ -944,7 +944,7 @@ static int besqliteBusyHandler(void* retry, int count) {return ((BusyRetry const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode) : m_sqlDb(sqlDb), m_cachedProps(nullptr), m_blvCache(*this),
+DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode, std::optional<int> busyTimeout) : m_sqlDb(sqlDb), m_cachedProps(nullptr), m_blvCache(*this),
             m_defaultTxn(*this, "default", defaultTxnMode), m_statements(10),
             m_regexFunc(RegExpFunc::Create()), m_regexExtractFunc(RegExpExtractFunc::Create()), m_base36Func(Base36Func::Create())
     {
@@ -952,8 +952,17 @@ DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode) :
     m_allowImplicitTxns = false;
     m_dataVersion = 0;
     m_readonly = false;
-    m_retry = retry ? retry : new BusyRetry();
-    sqlite3_busy_handler(sqlDb, besqliteBusyHandler, m_retry.get());
+
+    if(busyTimeout.has_value()) {
+        SetBusyTimeout(busyTimeout.value());
+    } else if (retry) {
+        m_retry = retry;
+        sqlite3_busy_handler(sqlDb, besqliteBusyHandler, m_retry.get());
+    } else {
+        // same as new BusyRetry()
+        SetBusyTimeout(5000);
+    }
+
     AddFunction(*m_regexFunc);
     AddFunction(*m_regexExtractFunc);
     AddFunction(*m_base36Func);
@@ -2041,7 +2050,7 @@ DbResult Db::CreateNewDb(Utf8CP inName, CreateParams const& params, BeGuid dbGui
     DisableBloomFilter(sqlDb);
 
     sqlite3_extended_result_codes(sqlDb, 1); // turn on extended error codes
-    m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode)params.m_startDefaultTxn);
+    m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode)params.m_startDefaultTxn, params.m_busyTimeout);
     m_isCloudDb = params.m_fromContainer;
 
     m_dbFile->m_defaultTxn.Begin();
@@ -2891,7 +2900,7 @@ DbResult Db::DoOpenDb(Utf8CP inName, OpenParams const& params) {
     m_tempfileBase = params.m_tempfileBase;
     m_isCloudDb = params.m_fromContainer;
 
-    m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode)params.m_startDefaultTxn);
+    m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode)params.m_startDefaultTxn, params.m_busyTimeout);
     m_dbFile->m_readonly = ((int)params.m_openMode & (int)OpenMode::Readonly) == (int)OpenMode::Readonly;
     sqlite3_extended_result_codes(sqlDb, 1); // turn on extended error codes
 
@@ -6160,6 +6169,27 @@ static int integrityCheckCallback(void* callbackArg, int numColumns, CharP* colu
 
     return 0;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult Db::SetBusyTimeout(int ms) {
+    if (m_dbFile)
+        return SetBusyTimeout(ms);
+
+    return BE_SQLITE_ERROR_NOTOPEN;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult DbFile::SetBusyTimeout(int ms) {
+    // sqlite will clear any existing busy handler as their can be only one per connection.
+    if (m_retry.IsValid())
+        m_retry = nullptr;
+
+    return (DbResult)sqlite3_busy_timeout(m_sqlDb, ms);
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod

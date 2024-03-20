@@ -1176,6 +1176,8 @@ CurveVector::BoundaryType boundaryType
                     }
                 }
             }
+
+        result->FlattenNestedUnionRegions();    // requirement for PowerPlatform and iModel
         return true;
         }
     return false;
