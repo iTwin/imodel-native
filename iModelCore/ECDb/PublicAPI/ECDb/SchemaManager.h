@@ -140,6 +140,7 @@ public:
     bool IsEnabled() const { return !GetInfo().IsEmpty(); }
     SyncDbUri const& GetDefaultSyncDbUri() const { return m_defaultSyncDbUri;  }
     Status SetDefaultSyncDbUri(Utf8CP syncDbUri) { return SetDefaultSyncDbUri(SyncDbUri(syncDbUri)); }
+    ECDB_EXPORT Status UpdateDbSchema();
     ECDB_EXPORT LocalDbInfo GetInfo() const;
     ECDB_EXPORT Status SetDefaultSyncDbUri(SyncDbUri syncDbUri);
     ECDB_EXPORT Status Init(SyncDbUri const&);
