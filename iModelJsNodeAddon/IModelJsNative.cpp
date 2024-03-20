@@ -106,7 +106,7 @@ template<typename T_Db> struct SQLiteOps {
     }
 
     T_Db& GetOpenedDb(NapiInfoCR info) {
-        const auto* db = _GetMyDb();
+        auto* db = _GetMyDb();
         if (db == nullptr || !db->IsDbOpen())
             BeNapi::ThrowJsException(info.Env(), "db is not open");
             
@@ -641,6 +641,7 @@ private:
 public:
     SQLiteDb(NapiInfoCR info) : Napi::ObjectWrap<SQLiteDb>(info) {}
     ~SQLiteDb() { CloseDbIfOpen(true); }
+    DbR GetDb() { return m_db; }
 
     static bool InstanceOf(Napi::Value val) {
         if (!val.IsObject())
@@ -1446,7 +1447,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING(0, dotFileName);
         REQUIRE_ARGUMENT_STRING_ARRAY(1, id64Array);
-        JsInterop::WriteAffectedElementDependencyGraphToFile(*db, dotFileName, id64Array);
+        JsInterop::WriteAffectedElementDependencyGraphToFile(db, dotFileName, id64Array);
         return Napi::Number::New(Env(), 0);
         }
 
@@ -1495,7 +1496,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto results = Napi::Array::New(Env());
         int i = 0;
 
-        auto& info = GetOpenedDb(info);
+        auto& db = GetOpenedDb(info);
         db.Txns().ForEachLocalChange(
             [&](ECInstanceKey const& key, DbOpcode changeType) {
                 auto result = Napi::Object::New(Env());
@@ -1923,7 +1924,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     void SchemaSyncInit(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
         auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
-        LastErrorListener lastError(GetOpenedDb());
+        LastErrorListener lastError(GetOpenedDb(info));
         auto rc = GetOpenedDb(info).Schemas().GetSchemaSync().Init(syncDbUri);
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
@@ -1967,7 +1968,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         auto& db = GetOpenedDb(info);
         OPTIONAL_ARGUMENT_STRING(0, schemaSyncDbUriStr);
         auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
-        LastErrorListener lastError(GetOpenedDb());
+        LastErrorListener lastError(GetOpenedDb(info));
         auto rc = db.PullSchemaChanges(syncDbUri);
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
@@ -2038,7 +2039,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         REQUIRE_ARGUMENT_STRING(1, exportDirectory);
         OPTIONAL_ARGUMENT_STRING(2, maybeOutFileName);
 
-        ECSchemaCP schema = GetOpenedDb().Schemas().GetSchema(schemaName);
+        ECSchemaCP schema = GetOpenedDb(info).Schemas().GetSchema(schemaName);
         if (nullptr == schema)
             BeNapi::ThrowJsException(info.Env(), "specified schema was not found");
 
@@ -2063,7 +2064,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     Napi::Value ExportSchemas(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_STRING(0, exportDirectory);
-        bvector<ECN::ECSchemaCP> schemas = GetOpenedDb().Schemas().GetSchemas();
+        bvector<ECN::ECSchemaCP> schemas = GetOpenedDb(info).Schemas().GetSchemas();
         for (ECSchemaCP schema : schemas)
             {
             BeFileName schemaFileName(exportDirectory);
@@ -2083,7 +2084,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         {
         REQUIRE_ARGUMENT_STRING(0, schemaName);
         OPTIONAL_ARGUMENT_UINTEGER(1, version, (uint32_t)ECVersion::Latest);
-        auto schema = GetOpenedDb().Schemas().GetSchema(schemaName, true);
+        auto schema = GetOpenedDb(info).Schemas().GetSchema(schemaName, true);
         if (nullptr == schema)
             return info.Env().Undefined();
 
@@ -2145,7 +2146,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         ChangesetFileReader changeStream(changesetFilePath, db);
         PERFLOG_START("iModelJsNative", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
         ECInstanceKey changeSummaryKey;
-        if (SUCCESS != ECDb::ExtractChangeSummary(changeSummaryKey, changeCacheECDb->GetECDb(), GetOpenedDb(), ChangeSetArg(changeStream)))
+        if (SUCCESS != ECDb::ExtractChangeSummary(changeSummaryKey, changeCacheECDb->GetECDb(), GetOpenedDb(info), ChangeSetArg(changeStream)))
             return CreateBentleyReturnErrorObject(BE_SQLITE_ERROR, Utf8PrintfString("Failed to extract ChangeSummary for ChangeSet file '%s'.", changesetFilePathStr.c_str()).c_str());
             
         PERFLOG_FINISH("iModelJsNative", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
@@ -2229,11 +2230,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     void UpdateProjectExtents(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_STRING(0, newExtentsJson)
-        JsInterop::UpdateProjectExtents(GetOpenedDb(), BeJsDocument(newExtentsJson));
+        JsInterop::UpdateProjectExtents(GetOpenedDb(info), BeJsDocument(newExtentsJson));
         }
 
     Napi::Value GetCodeValueBehavior(NapiInfoCR info) {
-        switch (GetOpenedDb().m_codeValueBehavior) {
+        switch (GetOpenedDb(info).m_codeValueBehavior) {
             case DgnCodeValue::Behavior::Exact: return Napi::String::New(info.Env(), "exact");
             case DgnCodeValue::Behavior::TrimUnicodeWhitespace: return Napi::String::New(info.Env(), "trim-unicode-whitespace");
             default: THROW_JS_EXCEPTION("Behavior was invalid. This is a bug.");
@@ -2249,7 +2250,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             newBehavior = DgnCodeValue::Behavior::TrimUnicodeWhitespace;
         else
             THROW_JS_EXCEPTION("Unsupported argument, should be one of the strings 'exact' or 'trim-unicode-whitespace'");
-        GetOpenedDb().m_codeValueBehavior = newBehavior;
+        GetOpenedDb(info).m_codeValueBehavior = newBehavior;
     }
 
     Napi::Value ComputeProjectExtents(NapiInfoCR info)
@@ -2259,7 +2260,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
         DRange3d fullExtents;
         bvector<BeInt64Id> outliers;
-        auto extents = GetOpenedDb().GeoLocation().ComputeProjectExtents(wantFullExtents ? &fullExtents : nullptr, wantOutliers ? &outliers : nullptr);
+        auto extents = GetOpenedDb(info).GeoLocation().ComputeProjectExtents(wantFullExtents ? &fullExtents : nullptr, wantOutliers ? &outliers : nullptr);
 
         BeJsNapiObject result(info.Env());
         BeJsGeomUtils::DRange3dToJson(result["extents"], extents);
@@ -2281,11 +2282,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
     void UpdateIModelProps(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, props)
-        JsInterop::UpdateIModelProps(GetOpenedDb(), BeJsConst(props));
+        JsInterop::UpdateIModelProps(GetOpenedDb(info), BeJsConst(props));
     }
 
     Napi::Value ReadFontMap(NapiInfoCR info) {
-        auto const& fontMap = GetOpenedDb().Fonts().FontMap();
+        auto const& fontMap = GetOpenedDb(info).Fonts().FontMap();
         BeJsNapiObject fonts(Env());
         auto fontList = fonts[JsInterop::json_fonts()];
         fontList.toArray();
@@ -2302,7 +2303,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     Napi::Value QueryLocalValue(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, name)
         Utf8String val;
-        auto stat = GetOpenedDb().QueryBriefcaseLocalValue(val, name.c_str());
+        auto stat = GetOpenedDb(info).QueryBriefcaseLocalValue(val, name.c_str());
         return (stat != BE_SQLITE_ROW) ? Env().Undefined() : toJsString(Env(), val);
     }
 
@@ -2313,7 +2314,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             return DeleteLocalValue(info);
 
         REQUIRE_ARGUMENT_STRING(1, val)
-        auto stat = GetOpenedDb().SaveBriefcaseLocalValue(name.c_str(), val);
+        auto stat = GetOpenedDb(info).SaveBriefcaseLocalValue(name.c_str(), val);
         if (stat != BE_SQLITE_DONE)
             JsInterop::throwSqlResult("error saving local value", name.c_str(), stat);
     }
@@ -2321,14 +2322,14 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     // delete a value from the be_local table.
     void DeleteLocalValue(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, name)
-        auto stat = GetOpenedDb().DeleteBriefcaseLocalValue(name.c_str());
+        auto stat = GetOpenedDb(info).DeleteBriefcaseLocalValue(name.c_str());
         if (stat != BE_SQLITE_DONE)
             JsInterop::throwSqlResult("error deleting local value", name.c_str(), stat);
     }
 
     // delete all local Txns. THIS IS VERY DANGEROUS! Don't use it unless you know what you're doing!
     void DeleteAllTxns(NapiInfoCR info) {
-        GetOpenedDb().Txns().DeleteAllTxns();
+        GetOpenedDb(info).Txns().DeleteAllTxns();
     }
 
     // get a texture image as a TextureData blob from the db. possibly downsample it to fit the client's maximum texture size, if specified.
