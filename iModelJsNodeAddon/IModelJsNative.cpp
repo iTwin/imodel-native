@@ -710,14 +710,14 @@ public:
     void Dispose(NapiInfoCR info) { CloseDbIfOpen(false);}
 
     void SaveChanges(NapiInfoCR info) {
-        auto& db = GetWritableDb(info);
+        auto& db = GetOpenedDb(info);
         DbResult status = db.SaveChanges();
         if (status != BE_SQLITE_OK)
             JsInterop::throwSqlResult("error in saveChanges", db.GetDbFileName(), status);
     }
 
     void AbandonChanges(NapiInfoCR info) {
-        auto& db = GetWritableDb(info);
+        auto& db = GetOpenedDb(info);
         DbResult status = db.AbandonChanges();
         if (status != BE_SQLITE_OK)
             JsInterop::throwSqlResult("error in abandonChanges", db.GetDbFileName(), status);
