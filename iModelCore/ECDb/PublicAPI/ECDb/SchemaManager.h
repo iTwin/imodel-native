@@ -117,6 +117,7 @@ struct SchemaSync final {
 private:
     ECDbR m_conn;
     SyncDbUri m_defaultSyncDbUri;
+    bool m_disabledForProfileUpgrade;
 
     DbResult UpdateOrCreateSyncDbInfo(DbR syncDb);
     DbResult UpdateOrCreateSyncDbInfo(SyncDbUri syncDbUri);
@@ -136,10 +137,13 @@ public:
     SchemaSync(SchemaSync const&)=delete;
     SchemaSync& operator=(SchemaSync&&)=delete;
     SchemaSync& operator=(SchemaSync const&)=delete;
-    explicit SchemaSync(ECDbR conn):m_conn(conn){}
+    explicit SchemaSync(ECDbR conn):m_conn(conn), m_disabledForProfileUpgrade(false) {}
     bool IsEnabled() const { return !GetInfo().IsEmpty(); }
     SyncDbUri const& GetDefaultSyncDbUri() const { return m_defaultSyncDbUri;  }
     Status SetDefaultSyncDbUri(Utf8CP syncDbUri) { return SetDefaultSyncDbUri(SyncDbUri(syncDbUri)); }
+    void DisableSchemaSync() { m_disabledForProfileUpgrade = true; }
+    void ReEnableSchemaSync() { m_disabledForProfileUpgrade = false; }
+    bool IsSchemaSyncDisabled() const { return m_disabledForProfileUpgrade; }
     ECDB_EXPORT LocalDbInfo GetInfo() const;
     ECDB_EXPORT Status SetDefaultSyncDbUri(SyncDbUri syncDbUri);
     ECDB_EXPORT Status Init(SyncDbUri const&);
