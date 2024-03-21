@@ -11800,4 +11800,421 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
         ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql(ecsql));
         }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, UpdateToNull)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ec_sql_update_to_null.ecdb", SchemaItem(R"xml(
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="TestClass" modifier="None">
+                <ECProperty propertyName="i" typeName="int"/>
+                <ECProperty propertyName="l" typeName="long"/>
+                <ECProperty propertyName="d" typeName="double"/>
+                <ECProperty propertyName="b" typeName="boolean"/>
+                <ECProperty propertyName="dt" typeName="dateTime"/>
+                <ECProperty propertyName="s" typeName="string"/>
+                <ECProperty propertyName="bin" typeName="binary"/>
+                <ECProperty propertyName="p2d" typeName="point2d"/>
+                <ECProperty propertyName="p3d" typeName="point3d"/>
+                <ECProperty propertyName="g" typeName="Bentley.Geometry.Common.IGeometry"/>
+                <ECStructProperty propertyName="st" typeName="ComplexStruct"/>
+                <ECArrayProperty propertyName="array_i" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="array_l" typeName="long" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="array_d" typeName="double" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="array_b" typeName="boolean" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="array_dt" typeName="dateTime" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="array_s" typeName="string" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="array_bin" typeName="binary" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="array_p2d" typeName="point2d" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="array_p3d" typeName="point3d" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="array_g" typeName="Bentley.Geometry.Common.IGeometry" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="array_st" typeName="ComplexStruct" minOccurs="0" maxOccurs="unbounded"/>
+            </ECEntityClass>
+            <ECStructClass typeName="BasicStruct" modifier="None">
+                <ECProperty propertyName="i" typeName="int"/>
+                <ECProperty propertyName="b" typeName="boolean"/>
+                <ECProperty propertyName="s" typeName="string"/>
+            </ECStructClass>
+            <ECStructClass typeName="ComplexStruct" modifier="None">
+                <ECProperty propertyName="i" typeName="int"/>
+                <ECProperty propertyName="l" typeName="long"/>
+                <ECProperty propertyName="d" typeName="double"/>
+                <ECProperty propertyName="b" typeName="boolean"/>
+                <ECProperty propertyName="dt" typeName="dateTime"/>
+                <ECProperty propertyName="s" typeName="string"/>
+                <ECProperty propertyName="bin" typeName="binary"/>
+                <ECProperty propertyName="p2d" typeName="point2d"/>
+                <ECProperty propertyName="p3d" typeName="point3d"/>
+                <ECProperty propertyName="g" typeName="Bentley.Geometry.Common.IGeometry"/>
+                <ECStructProperty propertyName="st" typeName="BasicStruct" />
+                <ECArrayProperty propertyName="array_i" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="array_l" typeName="long" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="array_d" typeName="double" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="array_b" typeName="boolean" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="array_dt" typeName="dateTime" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="array_s" typeName="string" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="array_bin" typeName="binary" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="array_p2d" typeName="point2d" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="array_p3d" typeName="point3d" minOccurs="0" maxOccurs="unbounded"/>
+                <ECArrayProperty propertyName="array_g" typeName="Bentley.Geometry.Common.IGeometry" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="array_st" typeName="BasicStruct" minOccurs="0" maxOccurs="unbounded"/>
+            </ECStructClass>
+        </ECSchema>
+    )xml")));
+
+    ///*** Insertable data
+    auto i = 123;
+    auto l = 0xffffffffa;
+    auto d = 3.12;
+    auto b = true;
+    auto dt = DateTime::GetCurrentTimeUtc();
+    auto s = Utf8String("Hello, World");
+    uint8_t bin[] = {0x10, 0x20, 0x30, 0x40, 0x50};
+    auto bin_size = 5;
+    auto p2d = DPoint2d::From(23.22, 31.11);
+    auto p3d = DPoint3d::From(41.33, 41.13, 12.25);
+    uint8_t g[] = {0x1f, 0x2f, 0x3f, 0x4f, 0x5f, 0x22};
+    auto g_size = 6;
+
+    auto st_i = 123411;
+    auto st_l = 0xffffab;
+    auto st_d = 31.1223;
+    auto st_b = false;
+    auto st_dt = DateTime::GetCurrentTimeUtc();
+    auto st_s = Utf8String("From ComplexStruct, Hello, World");
+    uint8_t st_bin[] = {0x1f, 0x2f, 0x3f, 0x4f, 0x5f};
+    auto st_bin_size = 5;
+    auto st_p2d = DPoint2d::From(53.22, 31.11);
+    auto st_p3d = DPoint3d::From(11.33, 31.13, 12.25);
+    uint8_t st_g[] = {0xaf, 0xaf, 0xaf, 0xaf, 0xaf, 0xa2};
+    auto st_g_size = 6;
+
+    auto st_st_i = 61272;
+    auto st_st_b = true;
+    auto st_st_s = Utf8String("From BasicStruct inside a ComplexStruct, Hello, World");
+
+    //*** Update all values to null
+    {
+    Utf8String ecsql;
+    ecsql.Sprintf("INSERT INTO ts.TestClass (i, l, d, b, dt, s, bin, p2d, p3d, g, st, "
+                  "array_i, array_l, array_d, array_b, array_dt, array_s, array_bin, array_p2d, array_p3d, array_g, array_st) "
+                  "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql.c_str();
+    stmt.BindInt(1, i);
+    stmt.BindInt64(2, l);
+    stmt.BindDouble(3, d);
+    stmt.BindBoolean(4, b);
+    stmt.BindDateTime(5, dt);
+    stmt.BindText(6, s.c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindBlob(7, (void*)&bin, bin_size, IECSqlBinder::MakeCopy::No);
+    stmt.BindPoint2d(8, p2d);
+    stmt.BindPoint3d(9, p3d);
+    stmt.BindBlob(10, (void*)g, g_size, IECSqlBinder::MakeCopy::No);
+    auto& st = stmt.GetBinder(11);
+
+    st["i"].BindInt(st_i);
+    st["l"].BindInt64(st_l);
+    st["d"].BindDouble(st_d);
+    st["b"].BindBoolean(st_b);
+    st["dt"].BindDateTime(st_dt);
+    st["s"].BindText(st_s.c_str(), IECSqlBinder::MakeCopy::No);
+    st["bin"].BindBlob((void*)st_bin, st_bin_size, IECSqlBinder::MakeCopy::No);
+    st["p2d"].BindPoint2d(st_p2d);
+    st["p3d"].BindPoint3d(st_p3d);
+    st["g"].BindBlob((void*)st_g, st_g_size, IECSqlBinder::MakeCopy::No);
+    st["st"]["i"].BindInt(st_st_i);
+    st["st"]["b"].BindBoolean(st_st_b);
+    st["st"]["s"].BindText(st_st_s.c_str(), IECSqlBinder::MakeCopy::No);
+
+    stmt.GetBinder(12).AddArrayElement().BindInt(i);
+    stmt.GetBinder(13).AddArrayElement().BindInt64(l);
+    stmt.GetBinder(14).AddArrayElement().BindDouble(d);
+    stmt.GetBinder(15).AddArrayElement().BindBoolean(b);
+    stmt.GetBinder(16).AddArrayElement().BindDateTime(dt);
+    stmt.GetBinder(17).AddArrayElement().BindText(s.c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.GetBinder(18).AddArrayElement().BindBlob((void*)&bin, bin_size, IECSqlBinder::MakeCopy::No);
+    stmt.GetBinder(19).AddArrayElement().BindPoint2d(p2d);
+    stmt.GetBinder(20).AddArrayElement().BindPoint3d(p3d);
+    stmt.GetBinder(21).AddArrayElement().BindBlob((void*)g, g_size, IECSqlBinder::MakeCopy::No);
+    auto& array0_st = stmt.GetBinder(22).AddArrayElement();
+
+    array0_st["i"].BindInt(st_i);
+    array0_st["l"].BindInt64(st_l);
+    array0_st["d"].BindDouble(st_d);
+    array0_st["b"].BindBoolean(st_b);
+    array0_st["dt"].BindDateTime(st_dt);
+    array0_st["s"].BindText(st_s.c_str(), IECSqlBinder::MakeCopy::No);
+    array0_st["bin"].BindBlob((void*)st_bin, st_bin_size, IECSqlBinder::MakeCopy::No);
+    array0_st["p2d"].BindPoint2d(st_p2d);
+    array0_st["p3d"].BindPoint3d(st_p3d);
+    array0_st["g"].BindBlob((void*)st_g, st_g_size, IECSqlBinder::MakeCopy::No);
+    array0_st["st"]["i"].BindInt(st_st_i);
+    array0_st["st"]["b"].BindBoolean(st_st_b);
+    array0_st["st"]["s"].BindText(st_st_s.c_str(), IECSqlBinder::MakeCopy::No);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ecsql.Sprintf("UPDATE ONLY ts.TestClass SET "
+                  "i=?, l=?, d=?, b=?, dt=?, s=?, bin=?, p2d=?, p3d=?, g=?, st=?, " 
+                  "array_i=?, array_l=?, array_d=?, array_b=?, array_dt=?, array_s=?, "
+                  "array_bin=?, array_p2d=?, array_p3d=?, array_g=?, array_st=? "
+                  "WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql.c_str();
+    for (int i = 1; i <= 22; ++i)
+        {
+        ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(i).BindNull());
+        }
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ecsql.Sprintf("SELECT i, l, d, b, dt, s, bin, p2d, p2d.X, p2d.Y, p3d, p3d.X, p3d.Y, p3d.Z, g, st, "
+                "array_i, array_l, array_d, array_b, array_dt, array_s, array_bin, array_p2d, array_p3d, array_g, array_st "
+                "FROM ts.TestClass WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str());
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql.c_str();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    for (int i = 0; i < stmt.GetColumnCount(); ++i)
+        {
+        ASSERT_TRUE(stmt.IsValueNull(i)) << "no values bound to " << stmt.GetECSql();
+        }
+
+    const int expectedMembersCount = (int) m_ecdb.Schemas().GetClass("TestSchema", "ComplexStruct")->GetPropertyCount(true);
+    IECSqlValue const& structVal = stmt.GetValue(15); // st is the 15th 0-indexed element
+    int actualMembersCount = 0;
+    for (IECSqlValue const& memberVal : structVal.GetStructIterable())
+        {
+        actualMembersCount++;
+        ASSERT_TRUE(memberVal.IsNull());
+        }
+    ASSERT_EQ(expectedMembersCount, actualMembersCount);
+
+    IECSqlValue const& structArrayVal = stmt.GetValue(26); // array_st is the 26th 0-indexed element
+    ASSERT_EQ(0, structArrayVal.GetArrayLength());
+    }
+
+    //*** Update each array to contain two null elements
+    {
+    Utf8String ecsql;
+    ecsql.Sprintf("INSERT INTO ts.TestClass (array_i, array_l, array_d, array_b, array_dt, array_s, array_bin, array_p2d, array_p3d, array_g, array_st) "
+                  "VALUES (?,?,?,?,?,?,?,?,?,?,?)");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql.c_str();
+    stmt.GetBinder(1).AddArrayElement().BindInt(i);
+    stmt.GetBinder(2).AddArrayElement().BindInt64(l);
+    stmt.GetBinder(3).AddArrayElement().BindDouble(d);
+    stmt.GetBinder(4).AddArrayElement().BindBoolean(b);
+    stmt.GetBinder(5).AddArrayElement().BindDateTime(dt);
+    stmt.GetBinder(6).AddArrayElement().BindText(s.c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.GetBinder(7).AddArrayElement().BindBlob((void*)&bin, bin_size, IECSqlBinder::MakeCopy::No);
+    stmt.GetBinder(8).AddArrayElement().BindPoint2d(p2d);
+    stmt.GetBinder(9).AddArrayElement().BindPoint3d(p3d);
+    stmt.GetBinder(10).AddArrayElement().BindBlob((void*)g, g_size, IECSqlBinder::MakeCopy::No);
+    auto& array0_st = stmt.GetBinder(11).AddArrayElement();
+
+    array0_st["i"].BindInt(st_i);
+    array0_st["l"].BindInt64(st_l);
+    array0_st["d"].BindDouble(st_d);
+    array0_st["b"].BindBoolean(st_b);
+    array0_st["dt"].BindDateTime(st_dt);
+    array0_st["s"].BindText(st_s.c_str(), IECSqlBinder::MakeCopy::No);
+    array0_st["bin"].BindBlob((void*)st_bin, st_bin_size, IECSqlBinder::MakeCopy::No);
+    array0_st["p2d"].BindPoint2d(st_p2d);
+    array0_st["p3d"].BindPoint3d(st_p3d);
+    array0_st["g"].BindBlob((void*)st_g, st_g_size, IECSqlBinder::MakeCopy::No);
+    array0_st["st"]["i"].BindInt(st_st_i);
+    array0_st["st"]["b"].BindBoolean(st_st_b);
+    array0_st["st"]["s"].BindText(st_st_s.c_str(), IECSqlBinder::MakeCopy::No);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ecsql.Sprintf("UPDATE ONLY ts.TestClass SET array_i=?, array_l=?, array_d=?, array_b=?, array_dt=?, "
+                  "array_s=?, array_bin=?, array_p2d=?, array_p3d=?, array_g=?, array_st=?, "
+                  "st.array_i=?, st.array_l=?, st.array_d=?, st.array_b=?, st.array_dt=?, "
+                  "st.array_s=?, st.array_bin=?, st.array_p2d=?, st.array_p3d=?, st.array_g=?, st.array_st=? "
+                  "WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql.c_str();
+    for (int i = 1; i <= 22; ++i)
+        {
+        IECSqlBinder& arrayBinder = stmt.GetBinder(i);
+        ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindNull());
+        ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindNull());
+        }
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ecsql.Sprintf("SELECT array_i, array_l, array_d, array_b, array_dt, "
+                  "array_s, array_bin, array_p2d, array_p3d, array_g, array_st, "
+                  "st.array_i, st.array_l, st.array_d, st.array_b, st.array_dt, "
+                  "st.array_s, st.array_bin, st.array_p2d, st.array_p3d, st.array_g, st.array_st "
+                  "FROM ts.TestClass WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str());
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql.c_str();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    for (int i = 0; i < stmt.GetColumnCount(); ++i)
+        {
+        IECSqlValue const& val = stmt.GetValue(i);
+        ASSERT_FALSE(val.IsNull()) << i << " " << stmt.GetECSql();
+        ASSERT_EQ(2, val.GetArrayLength());
+        for (IECSqlValue const& elementVal : val.GetArrayIterable())
+            {
+            ASSERT_TRUE(elementVal.IsNull()) << i << " " << stmt.GetECSql();
+
+            if (val.GetColumnInfo().GetDataType().IsStructArray())
+                {
+                for (IECSqlValue const& memberVal : elementVal.GetStructIterable())
+                    {
+                    ASSERT_TRUE(memberVal.IsNull());
+                    }
+                }
+            }
+        }
+    }
+
+    // Update points to be partially unset
+    {
+    Utf8String ecsql;
+    ecsql.Sprintf("INSERT INTO ts.TestClass (p2d, p3d, st) "
+                  "VALUES (?,?,?)");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql.c_str();
+    stmt.BindPoint2d(1, p2d);
+    stmt.BindPoint3d(2, p3d);
+    auto& st = stmt.GetBinder(3);
+    st["p2d"].BindPoint2d(st_p2d);
+    st["p3d"].BindPoint3d(st_p3d);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ecsql.Sprintf("UPDATE ONLY ts.TestClass SET p2d.X=?, p3d.Y=?, st.p2d.X=?, st.p3d.Y=? "
+                    "WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql.c_str();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNull(1)) << ecsql.c_str();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNull(2)) << ecsql.c_str();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNull(3)) << ecsql.c_str();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNull(4)) << ecsql.c_str();
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ecsql.Sprintf("SELECT p2d, p2d.X, p2d.Y, p3d, p3d.X, p3d.Y, p3d.Z, "
+                  "st.p2d, st.p2d.X, st.p2d.Y, st.p3d, st.p3d.X, st.p3d.Y, st.p3d.Z "
+                  "FROM ts.TestClass WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str());
+
+    std::set<Utf8String> nullItems {"p2d", "p2d.X", "p3d", "p3d.Y", "st.p2d", "st.p2d.X", "st.p3d", "st.p3d.Y"};
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql.c_str();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    for (int i = 0; i < stmt.GetColumnCount(); i++)
+        {
+        IECSqlValue const& val = stmt.GetValue(i);
+        Utf8String propPath = val.GetColumnInfo().GetPropertyPath().ToString();
+        const bool expectedToBeNull = nullItems.find(propPath) != nullItems.end();
+        ASSERT_EQ(expectedToBeNull, val.IsNull()) << "Select clause item " << i << " in " << stmt.GetECSql();
+        }
+    }
+
+    //*** Update nested struct to be partially unset
+    {
+    Utf8String ecsql;
+    ecsql.Sprintf("INSERT INTO ts.TestClass (st, array_st) "
+                  "VALUES (?,?)");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql.c_str();
+    
+    auto& st = stmt.GetBinder(1);
+    st["st"]["i"].BindInt(st_st_i);
+    st["st"]["b"].BindBoolean(st_st_b);
+    st["st"]["s"].BindText(st_st_s.c_str(), IECSqlBinder::MakeCopy::No);
+    auto& array0_st = stmt.GetBinder(2).AddArrayElement();
+    array0_st["st"]["i"].BindInt(st_st_i);
+    array0_st["st"]["b"].BindBoolean(st_st_b);
+    array0_st["st"]["s"].BindText(st_st_s.c_str(), IECSqlBinder::MakeCopy::No);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ecsql.Sprintf("UPDATE ONLY ts.TestClass SET st=?, array_st=? "
+                    "WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql.c_str();
+
+    auto& elementBinder = stmt.GetBinder(1);
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["st"]["i"].BindNull()); // Set st.st.i = null
+    auto& arrayElementBinder = stmt.GetBinder(2).AddArrayElement();
+    auto& nestedArrayElementBinder = arrayElementBinder["array_st"].AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, nestedArrayElementBinder["i"].BindNull()); // Set array_st[0].array_st[0].i = null
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ecsql.Sprintf("SELECT st, array_st FROM ts.TestClass WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str());
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql.c_str();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+
+    IECSqlValue const& structVal1 = stmt.GetValue(0);
+    IECSqlValue const& arrStructVal1 = stmt.GetValue(1);
+
+    structVal1;
+    arrStructVal1;
+
+    ASSERT_FALSE(stmt.IsValueNull(0));
+    IECSqlValue const& structVal = stmt.GetValue(0);
+    for (IECSqlValue const& memberVal : structVal.GetStructIterable())
+        {
+        if (memberVal.GetColumnInfo().GetProperty()->GetName().Equals("st"))
+            {
+            int memberCount = 0;
+            for (IECSqlValue const& nestedMemberVal : memberVal.GetStructIterable())
+                {
+                memberCount++;
+                if (nestedMemberVal.GetColumnInfo().GetProperty()->GetName().Equals("i"))
+                    ASSERT_TRUE(nestedMemberVal.IsNull());
+                else
+                    ASSERT_FALSE(nestedMemberVal.IsNull());
+                }
+            ASSERT_EQ((int) memberVal.GetColumnInfo().GetStructType()->GetPropertyCount(true), memberCount);
+            }
+        else
+            ASSERT_TRUE(memberVal.IsNull());
+        }
+    
+    ASSERT_FALSE(stmt.IsValueNull(1));
+    IECSqlValue const& arrayVal = stmt.GetValue(1);
+    ASSERT_EQ(1, arrayVal.GetArrayLength());
+    IECSqlValue const& structArrayElementVal = *arrayVal.GetArrayIterable().begin();
+    ASSERT_FALSE(structArrayElementVal.IsNull()) << stmt.GetECSql();
+    for (IECSqlValue const& memberVal : structArrayElementVal.GetStructIterable())
+        {
+        if (memberVal.GetColumnInfo().GetProperty()->GetName().Equals("array_st"))
+            {
+            ASSERT_EQ(1, memberVal.GetArrayLength()) << "array_st";
+            int memberCount = 0;
+            IECSqlValue const& nestedStructVal = *memberVal.GetArrayIterable().begin();
+            for (IECSqlValue const& nestedMemberVal : nestedStructVal.GetStructIterable())
+                {
+                memberCount++;
+                if (nestedMemberVal.GetColumnInfo().GetProperty()->GetName().Equals("i"))
+                    ASSERT_TRUE(nestedMemberVal.IsNull());
+                else
+                    ASSERT_FALSE(nestedMemberVal.IsNull());
+                }
+            ASSERT_EQ((int) nestedStructVal.GetColumnInfo().GetStructType()->GetPropertyCount(true), memberCount);
+            }
+        else
+            ASSERT_TRUE(memberVal.IsNull());
+        }
+    }
+    }
 END_ECDBUNITTESTS_NAMESPACE
