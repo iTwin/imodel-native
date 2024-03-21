@@ -162,7 +162,12 @@ TEST(IModelJson,ReadFiles)
             for (IGeometryPtr const& g : geometry)
                 {
                 if (Check::True(g.IsValid(), "Imported geometry is valid"))
-                    Check::NearRoundTrip(*g, 0.0, fileName);
+                    {
+                    constexpr size_t bufSize = 100;
+                    char buffer[bufSize];
+                    CharP charFileName = fileNameStr.ConvertToLocaleChars(buffer, bufSize);
+                    Check::NearRoundTrip(*g, 0.0, charFileName);
+                    }
                 }
             }
         }

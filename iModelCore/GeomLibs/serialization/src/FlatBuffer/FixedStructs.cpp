@@ -1622,7 +1622,7 @@ static ICurvePrimitivePtr ReadCurvePrimitive (const BGFB::VariantGeometry * fbGe
             double const * pKnots = numKnots > 0 ? (double const*)fbKnots->GetStructFromOffset(0) : nullptr;
 
             MSInterpolationCurve curve;
-            if(curve.Populate (
+            if (curve.Populate(
                     order,
                     closed,
                     fbInterpolationCurve->isChordLenKnots (),

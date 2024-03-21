@@ -991,7 +991,7 @@ TEST(Bspline,KnotByDistance)
 bool verifyRoundTripSurface(MSBsplineSurfaceCR surf)
     {
     IGeometryPtr geom = IGeometry::Create(surf.Clone());
-    return Check::NearRoundTrip(*geom, 0.0, WString("B-spline surface: ", BentleyCharEncoding::Locale).c_str());
+    return Check::NearRoundTrip(*geom, 0.0, "B-spline surface: ");
     }
 
 void doConeProjectionTest

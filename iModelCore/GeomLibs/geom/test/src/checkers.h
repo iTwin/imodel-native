@@ -455,7 +455,7 @@ static void ClearKeyins (char const *name);
 static void SetUp();
 static void TearDown();
 
-static bool NearRoundTrip(IGeometryCR, double tolerance = 0.0, WCharCP pString = nullptr);
+static bool NearRoundTrip(IGeometryCR, double tolerance = 0.0, char const* pString = nullptr);
 };
 
 // Macros to support older unit test harnesses.  (Deprecated)
