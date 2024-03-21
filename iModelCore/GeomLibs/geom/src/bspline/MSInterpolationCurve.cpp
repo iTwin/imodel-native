@@ -68,14 +68,14 @@ void MSInterpolationCurve::Zero ()
     memset (this, 0, sizeof (MSInterpolationCurve));
     }
 
-MSBsplineStatus MSInterpolationCurve::InitFromPointsAndEndTangents (DPoint3d *inPts, int numPts, bool remvData, double remvTol, DPoint3d *endTangents, 
+MSBsplineStatus MSInterpolationCurve::InitFromPointsAndEndTangents (DPoint3d *inPts, int numPts, bool remvData, double remvTol, DPoint3d *endTangents,
                                         bool closedCurve, bool colinearTangents, bool chordLenTangents, bool naturalTangents)
     {
     return bspcurv_constructInterpolationCurve (this, inPts, numPts, remvData, remvTol, endTangents, closedCurve, closedCurve ? false : true,
                             colinearTangents, chordLenTangents, naturalTangents);
     }
 
-MSBsplineStatus MSInterpolationCurve::InitFromPointsAndEndTangents (bvector<DPoint3d> &points, bool remvData, double remvTol, DPoint3d *endTangents, 
+MSBsplineStatus MSInterpolationCurve::InitFromPointsAndEndTangents (bvector<DPoint3d> &points, bool remvData, double remvTol, DPoint3d *endTangents,
                                         bool closedCurve, bool colinearTangents, bool chordLenTangents, bool naturalTangents)
     {
     if (points.size () < 2)
@@ -113,7 +113,7 @@ DVec3dCP tangent1
     params.isPeriodic = (int)isPeriodic;
     params.numPoints = numFitPoints;
     params.numKnots = numKnots;
-    
+
     params.isChordLenKnots = isChordLenKnots;
     params.isColinearTangents = isColinearTangents;
     params.isChordLenTangents = isChordLenTangents;
@@ -137,7 +137,7 @@ DVec3dCP tangent1
         knots = (double*)BSIBaseGeom::Malloc (numBytes);
         memcpy (knots, pKnots, numBytes);
         }
-    return SUCCESS;        
+    return SUCCESS;
     }
 
 

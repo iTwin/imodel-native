@@ -1112,9 +1112,9 @@ static PolyfaceAuxDataPtr ReadPolyfaceAuxData(const BGFB::PolyfaceAuxData* fbPol
     auto fbIndices = fbPolyfaceAuxData->indices();
     auto fbChannels = fbPolyfaceAuxData->channels();
     if (!fbIndices || !fbChannels)
-    return nullptr;
-        PolyfaceAuxData::Channels channels;
-    bvector<int32_t>            indices(fbIndices->Length());
+        return nullptr;
+    PolyfaceAuxData::Channels channels;
+    bvector<int32_t> indices(fbIndices->Length());
 
     memcpy(indices.data(), fbIndices->GetStructFromOffset(0), fbIndices->Length()*sizeof(int32_t));
 
@@ -1576,21 +1576,21 @@ static ICurvePrimitivePtr ReadCurvePrimitive (const BGFB::VariantGeometry * fbGe
             auto fbPoles = fbBsplineCurve->poles ();
             auto fbKnots = fbBsplineCurve->knots ();
             auto fbWeights = fbBsplineCurve->weights ();
-            if (!fbPoles || !fbKnots || !fbWeights)
+            if (!fbPoles || !fbKnots)
                 return nullptr;
 
-            int numPoles = fbPoles->Length () / 3;
+            int numPoles = fbPoles->Length() / 3;
             DPoint3dCP pPoles = numPoles > 0 ? (DPoint3dCP)fbPoles->GetStructFromOffset(0) : nullptr;
 
-            int numKnots = fbKnots ? fbKnots->Length () : 0;
+            int numKnots = fbKnots->Length ();
             double const * pKnots = numKnots > 0 ? (double const*)fbKnots->GetStructFromOffset(0) : nullptr;
 
             int numWeights = fbWeights ? fbWeights->Length () : 0;
             double const * pWeights = numWeights > 0 ? (double const*)fbWeights->GetStructFromOffset(0) : nullptr;
 
             MSBsplineCurve curve;
-            curve.Populate (pPoles, pWeights, numPoles,
-                        pKnots, numKnots, order, closed, true);
+            if (curve.Populate (pPoles, pWeights, numPoles, pKnots, numKnots, order, closed, true) != MSB_SUCCESS)
+                return nullptr;
             return ICurvePrimitive::CreateBsplineCurveSwapFromSource (curve);
             }
         case BGFB::VariantGeometryUnion_InterpolationCurve:
@@ -1605,7 +1605,7 @@ static ICurvePrimitivePtr ReadCurvePrimitive (const BGFB::VariantGeometry * fbGe
             auto fbKnots = fbInterpolationCurve->knots ();
             auto fbStartTangent = fbInterpolationCurve->startTangent ();
             auto fbEndTangent = fbInterpolationCurve->endTangent ();
-            if (!fbFitPoints || !fbKnots || !fbStartTangent || !fbEndTangent)
+            if (!fbFitPoints || !fbKnots)
                 return nullptr;
             int numPoles = fbFitPoints->Length() / 3;
             DPoint3dCP pFitPoints = numPoles > 0 ? (DPoint3dCP)fbFitPoints->GetStructFromOffset(0) : nullptr;
@@ -1618,11 +1618,11 @@ static ICurvePrimitivePtr ReadCurvePrimitive (const BGFB::VariantGeometry * fbGe
             if (nullptr != fbEndTangent)
                 endTangent = DVec3d::From (fbEndTangent->x (), fbEndTangent->y (), fbEndTangent->z ());
 
-            int numKnots = fbKnots ? fbKnots->Length () : 0;
+            int numKnots = fbKnots->Length ();
             double const * pKnots = numKnots > 0 ? (double const*)fbKnots->GetStructFromOffset(0) : nullptr;
 
             MSInterpolationCurve curve;
-            curve.Populate (
+            if(curve.Populate (
                     order,
                     closed,
                     fbInterpolationCurve->isChordLenKnots (),
@@ -1635,7 +1635,8 @@ static ICurvePrimitivePtr ReadCurvePrimitive (const BGFB::VariantGeometry * fbGe
                     numKnots,
                     &startTangent,
                     &endTangent
-                    );
+            ) != MSB_SUCCESS)
+                    return nullptr;
             return ICurvePrimitive::CreateInterpolationCurveSwapFromSource (curve);
             }
 
@@ -1661,6 +1662,8 @@ static ICurvePrimitivePtr ReadCurvePrimitive (const BGFB::VariantGeometry * fbGe
             if (!fbTransitionSpiral)
                 return nullptr;
             BGFB::TransitionSpiralDetail const *detail = fbTransitionSpiral->detail ();
+            if (!detail)
+                return nullptr;
             Transform frame = *(Transform const*)&detail->transform ();
 
             return ICurvePrimitive::CreateSpiralBearingCurvatureBearingCurvature (
@@ -1736,7 +1739,10 @@ static MSBsplineSurfacePtr ReadMSBsplineSurface (const BGFB::VariantGeometry * f
             auto fbWeights = fbBsplineSurface->weights ();
             int holeOrigin = fbBsplineSurface->holeOrigin ();
 
-            int numPoles = fbPoles == nullptr ? 0 : fbPoles->Length () / 3;
+            if (!fbPoles || !fbKnotsU || !fbKnotsV)
+                return nullptr;
+
+            int numPoles = fbPoles->Length () / 3;
             bvector<DPoint3d> poles;
             if (numPoles > 0)
                 {
@@ -1745,7 +1751,7 @@ static MSBsplineSurfacePtr ReadMSBsplineSurface (const BGFB::VariantGeometry * f
                     poles.push_back (pData[i]);
                 }
 
-            int numKnotsU = fbKnotsU  == nullptr ? 0 : fbKnotsU->Length ();
+            int numKnotsU = fbKnotsU->Length ();
             bvector<double>knotsU, knotsV, weights;
             if (numKnotsU > 0)
                 {
@@ -1754,7 +1760,7 @@ static MSBsplineSurfacePtr ReadMSBsplineSurface (const BGFB::VariantGeometry * f
                     knotsU.push_back (pData[i]);
                 }
 
-            int numKnotsV = fbKnotsV  == nullptr ? 0 : fbKnotsV->Length ();
+            int numKnotsV = fbKnotsV->Length ();
             if (numKnotsV > 0)
                 {
                 double const * pData = (double const*)fbKnotsV->GetStructFromOffset(0);
@@ -1763,7 +1769,7 @@ static MSBsplineSurfacePtr ReadMSBsplineSurface (const BGFB::VariantGeometry * f
                 }
 
 
-            int numWeights = fbWeights  == nullptr ? 0 : fbWeights->Length ();
+            int numWeights = (fbWeights  == nullptr) ? 0 : fbWeights->Length ();
             if (numWeights > 0)
                 {
                 double const * pData = (double const*)fbWeights->GetStructFromOffset(0);
@@ -1773,8 +1779,6 @@ static MSBsplineSurfacePtr ReadMSBsplineSurface (const BGFB::VariantGeometry * f
 
             auto fbBoundaries = fbBsplineSurface->boundaries ();
             CurveVectorPtr boundaries = ReadCurveVectorDirect (fbBoundaries);
-            if (boundaries == NULL)
-                return nullptr;
 
             MSBsplineSurfacePtr surface = MSBsplineSurface::CreateFromPolesAndOrder (
                         poles, &weights,
@@ -1853,7 +1857,7 @@ static ISolidPrimitivePtr ReadSolidPrimitive (const BGFB::VariantGeometry * fbGe
             if (!fbDgnExtrusion)
                 return nullptr;
             CurveVectorPtr baseCurve = ReadCurveVectorDirect (fbDgnExtrusion->baseCurve ());
-            if (baseCurve == NULL)
+            if (baseCurve.IsNull())
                 return nullptr;
             DgnExtrusionDetail detail (baseCurve,
                     *(DVec3dCP)fbDgnExtrusion->extrusionVector (),
@@ -1868,7 +1872,7 @@ static ISolidPrimitivePtr ReadSolidPrimitive (const BGFB::VariantGeometry * fbGe
             if (!fbDgnRotationalSweep)
                 return nullptr;
             CurveVectorPtr baseCurve = ReadCurveVectorDirect (fbDgnRotationalSweep->baseCurve ());
-            if (baseCurve == NULL)
+            if (baseCurve.IsNull())
                 return nullptr;
             DRay3d axis = *(DRay3dCP)fbDgnRotationalSweep->axis ();
             DgnRotationalSweepDetail detail (baseCurve,
@@ -2063,6 +2067,11 @@ IGeometryPtr BentleyGeometryFlatBuffer::BytesToGeometry(Byte const *buffer, size
     return BytesToXXX<IGeometryPtr>(buffer, bufferSize, applyValidation, FBReader::ReadGeometry);
     }
 
+IGeometryPtr BytesToGeometrySafe(Byte const *buffer, size_t const bufferSize, bool applyValidation)
+    {
+    return BentleyGeometryFlatBuffer::BytesToGeometry(buffer, bufferSize, applyValidation);
+    }
+
 IGeometryPtr BentleyGeometryFlatBuffer::BytesToGeometry (bvector<Byte> &buffer, bool applyValidation)
     {
     return BytesToGeometry(buffer.data(), buffer.size(), applyValidation);
@@ -2073,9 +2082,19 @@ ISolidPrimitivePtr BentleyGeometryFlatBuffer::BytesToSolidPrimitive(Byte const *
     return BytesToXXX<ISolidPrimitivePtr>(buffer, bufferSize, applyValidation, FBReader::ReadSolidPrimitive);
     }
 
+ISolidPrimitivePtr BytesToSolidPrimitiveSafe(Byte const *buffer, size_t const bufferSize, bool applyValidation)
+    {
+    return BentleyGeometryFlatBuffer::BytesToSolidPrimitive(buffer, bufferSize, applyValidation);
+    }
+
 ICurvePrimitivePtr BentleyGeometryFlatBuffer::BytesToCurvePrimitive(Byte const *buffer, size_t const bufferSize, bool applyValidation)
     {
     return BytesToXXX<ICurvePrimitivePtr>(buffer, bufferSize, applyValidation, FBReader::ReadCurvePrimitive);
+    }
+
+ICurvePrimitivePtr BytesToCurvePrimitiveSafe(Byte const *buffer, size_t const bufferSize, bool applyValidation)
+    {
+    return BentleyGeometryFlatBuffer::BytesToCurvePrimitive(buffer, bufferSize, applyValidation);
     }
 
 CurveVectorPtr BentleyGeometryFlatBuffer::BytesToCurveVector(Byte const *buffer, size_t const bufferSize, bool applyValidation)
@@ -2083,14 +2102,29 @@ CurveVectorPtr BentleyGeometryFlatBuffer::BytesToCurveVector(Byte const *buffer,
     return BytesToXXX<CurveVectorPtr>(buffer, bufferSize, applyValidation, FBReader::ReadCurveVector);
     }
 
+CurveVectorPtr BytesToCurveVectorSafe(Byte const *buffer, size_t const bufferSize, bool applyValidation)
+    {
+    return BentleyGeometryFlatBuffer::BytesToCurveVector(buffer, bufferSize, applyValidation);
+    }
+
 PolyfaceHeaderPtr BentleyGeometryFlatBuffer::BytesToPolyfaceHeader(Byte const *buffer, size_t const bufferSize, bool applyValidation)
     {
     return BytesToXXX<PolyfaceHeaderPtr>(buffer, bufferSize, applyValidation, FBReader::ReadPolyfaceHeader);
     }
 
+PolyfaceHeaderPtr BytesToPolyfaceHeaderSafe(Byte const *buffer, size_t const bufferSize, bool applyValidation)
+    {
+    return BentleyGeometryFlatBuffer::BytesToPolyfaceHeader(buffer, bufferSize, applyValidation);
+    }
+
 MSBsplineSurfacePtr BentleyGeometryFlatBuffer::BytesToMSBsplineSurface(Byte const *buffer, size_t const bufferSize, bool applyValidation)
     {
     return BytesToXXX<MSBsplineSurfacePtr>(buffer, bufferSize, applyValidation, FBReader::ReadMSBsplineSurface);
+    }
+
+MSBsplineSurfacePtr BytesToMSBsplineSurfaceSafe(Byte const *buffer, size_t const bufferSize, bool applyValidation)
+    {
+    return BentleyGeometryFlatBuffer::BytesToMSBsplineSurface(buffer, bufferSize, applyValidation);
     }
 
 bool BentleyGeometryFlatBuffer::BytesToVectorOfGeometry
@@ -2155,6 +2189,17 @@ bool BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier
             return true;
         }
     return false;
+    }
+
+bool BytesToPolyfaceQueryCarrierSafe
+(
+    Byte const *buffer,
+    size_t const bufferSize,
+    PolyfaceQueryCarrier &carrier,
+    bool applyValidation
+)
+    {
+    return BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(buffer, bufferSize,carrier, applyValidation);
     }
 
 END_BENTLEY_GEOMETRY_NAMESPACE

@@ -1839,14 +1839,12 @@ void Check::TearDown()
     }
 
 // verify geometry round trip through both JSON and FlatBuffer
-bool Check::NearRoundTrip(IGeometryCR g, double tolerance, char const* pString)
+bool Check::NearRoundTrip(IGeometryCR g, double tolerance, WCharCP pString)
     {
+    std::wstring ws(pString);
     std::string myString;
-    if (pString)
-        {
-        myString.append(pString);
-        myString.append(": ");
-        }
+    std::transform(ws.begin(), ws.end(), std::back_inserter(myString), [](wchar_t c){ return (char)c; });
+    myString.append(": ");
 
     bool roundTripJson = false;
     Utf8String json;

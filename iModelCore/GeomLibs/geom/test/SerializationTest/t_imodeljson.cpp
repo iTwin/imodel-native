@@ -72,7 +72,7 @@ WCharCP flatbufferUInt8Extension = nullptr   // optionally write flatbuffer to s
         {
         if (Check::True (IModelJson::TryIModelJsonStringToGeometry (string, geometry), "json string to geometry"))
             {
-            writeGeometryToFile(geometry, outputDirectory, nameB, nameC, extension);
+            Check::True(writeGeometryToFile(geometry, outputDirectory, nameB, nameC, extension));
             stat = true;
             if (flatbufferUInt8Extension != nullptr)
                 {
@@ -162,7 +162,7 @@ TEST(IModelJson,ReadFiles)
             for (IGeometryPtr const& g : geometry)
                 {
                 if (Check::True(g.IsValid(), "Imported geometry is valid"))
-                    Check::NearRoundTrip(*g, 0.0, (char*) fileName);
+                    Check::NearRoundTrip(*g, 0.0, fileName);
                 }
             }
         }
