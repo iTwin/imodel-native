@@ -233,6 +233,7 @@ TEST_F(ConcurrentQueryFixture, Blob_Metadata) {
     BeJsDocument expectedMetadataDoc;
     expectedMetadataDoc.Parse(R"json({
         "className":"TestSchema:testEntity",
+        "accessString":"bin",
         "generated":false,
         "index":0,
         "jsonName":"bin",
@@ -268,6 +269,7 @@ TEST_F(ConcurrentQueryFixture, Blob_Metadata) {
     res->ToJs(resJson, true);
     auto metadataJson = resJson["meta"][0];
 
+    ASSERT_STREQ(metadataJson["accessString"].asCString(), "bin");
     ASSERT_STREQ(metadataJson["typeName"].asCString(), "string");
     ASSERT_STREQ(metadataJson["extendedType"].asCString(), "Json");
     ASSERT_STREQ(metadataJson.Stringify(StringifyFormat::Indented).c_str(), expectedMetadataDoc.Stringify(StringifyFormat::Indented).c_str());
@@ -800,6 +802,7 @@ TEST_F(ConcurrentQueryFixture, ReaderSchema) {
         [
         {
             "className": "",
+            "accessString": "ECInstanceId",
             "generated": false,
             "index": 0,
             "jsonName": "id",
@@ -809,6 +812,7 @@ TEST_F(ConcurrentQueryFixture, ReaderSchema) {
         },
         {
             "className": "",
+            "accessString": "ECClassId",
             "generated": false,
             "index": 1,
             "jsonName": "className",
@@ -818,6 +822,7 @@ TEST_F(ConcurrentQueryFixture, ReaderSchema) {
         },
         {
             "className": "TestSchema:Foo",
+            "accessString": "I",
             "generated": false,
             "index": 2,
             "jsonName": "i",
@@ -827,6 +832,7 @@ TEST_F(ConcurrentQueryFixture, ReaderSchema) {
         },
         {
             "className": "TestSchema:Foo",
+            "accessString": "S",
             "generated": false,
             "index": 3,
             "jsonName": "s",
@@ -850,6 +856,7 @@ TEST_F(ConcurrentQueryFixture, ReaderSchema) {
         [
         {
             "className" : "",
+            "accessString": "COUNT(*)",
             "generated" : true,
             "index" : 0,
             "jsonName" : "cOUNT(*)",
