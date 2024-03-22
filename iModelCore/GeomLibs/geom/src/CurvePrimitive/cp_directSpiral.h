@@ -25,7 +25,7 @@ NominalLengthSpiralArcLengthIntegrands (DSpiral2dDirectEvaluation &directSpiral,
             m_matrix.Value () = (*viewingMatrix) * m_matrix.Value ();
             }
         }
-    
+
     }
 
 int GetVectorIntegrandCount () override { return 1;}
@@ -187,7 +187,7 @@ GEOMAPI_VIRTUAL DSpiral2dPlacementCP      _GetSpiralPlacementCP () const overrid
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-void _Process(ICurvePrimitiveProcessor &processor, DSegment1dCP interval) const override 
+void _Process(ICurvePrimitiveProcessor &processor, DSegment1dCP interval) const override
     {
     (const_cast <CurvePrimitiveDirectSpiral *> (this))->EnsureCachedCurve ();
     processor._ProcessBsplineCurve(*this, *_GetProxyBsplineCurvePtr (), interval);
@@ -437,13 +437,13 @@ bool _FractionToPoint (double f, DPoint3dR point, DVec3dR tangent, DVec3dR deriv
     }
 
 
-MSBsplineCurveCP _GetProxyBsplineCurveCP() const override 
+MSBsplineCurveCP _GetProxyBsplineCurveCP() const override
     {
     EnsureCachedCurve ();
     return m_curve.get();
     }
 
-MSBsplineCurvePtr _GetProxyBsplineCurvePtr() const override 
+MSBsplineCurvePtr _GetProxyBsplineCurvePtr() const override
     {
     EnsureCachedCurve ();
     return m_curve;
@@ -475,7 +475,7 @@ bool _IsValidGeometry(GeometryValidatorPtr &validator) const override
     return true;
     }
 
-ICurvePrimitivePtr _CloneAsSingleOffsetPrimitiveXY (CurveOffsetOptionsCR options) const override 
+ICurvePrimitivePtr _CloneAsSingleOffsetPrimitiveXY (CurveOffsetOptionsCR options) const override
     {
     double offsetDistance = options.GetOffsetDistance ();
     EnsureCachedCurve ();

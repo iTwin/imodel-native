@@ -224,10 +224,10 @@ double          tolerance           /* => max dist betw coincide pts or closed c
         return ERROR;
 
     outPts.resize(newNumPts);
-    
+
     if (inParams != nullptr)
         outParams.resize(newNumPts);
-    
+
     return SUCCESS;
     }
 #define BUFFER_SIZE     1024

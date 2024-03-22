@@ -33,7 +33,7 @@ static void printGraphSummary (MTGGraphP graph, CharCP title, int noisy)
             (int)jmdlMTGGraph_collectAndNumberFaceLoops (graph, NULL, NULL),
             (int)jmdlMTGGraph_collectAndNumberVertexLoops (graph, NULL, NULL),
             (int)jmdlMTGGraph_collectAndNumberConnectedComponents (graph, NULL, NULL)
-            );    
+            );
     }
 
 static void PrintNonZero (char const *title, size_t n, bool newline = true)
@@ -588,7 +588,7 @@ struct CutFillPatchArray : bvector<CutFillPatch>
       {
       m_origin.Zero ();
       }
-     
+
   void RegisterMeshes (bvector<PolyfaceHeaderPtr> &meshes, size_t parentIndex)
       {
 
@@ -833,7 +833,7 @@ TEST(PolyfaceIntersection,ImprintForCutFill)
     double z1 = 1.0;
     double z2 = 2.0;
     double y0 = -0.3;
- 
+
     pointB0.push_back (DPoint3d::From (x0, y0, z0));
     pointB0.push_back (DPoint3d::From (x1, y0, z1));
     pointB0.push_back (DPoint3d::From (x2, y0, z2));

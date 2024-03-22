@@ -20,10 +20,10 @@ void CheckCurveAccess (MSBsplineCurveCP curve, bvector<DPoint3d> &pointA, bvecto
         Check::Near (weightA[i], curve->GetWeight (i), "GetWeight");
         Check::Near (pointA[i], curve->GetReversePole (j), "GetReversePole");
         Check::Near (weightA[i], curve->GetReverseWeight (j), "GetReverseWeight");
-        
+
         DPoint3d pointB = DPoint3d::FromScale (pointA[i], 1.0 / weightA[i]);
-        Check::Near (pointB, curve->GetUnWeightedPole (i), "GetUnweightedPole");        
-        
+        Check::Near (pointB, curve->GetUnWeightedPole (i), "GetUnweightedPole");
+
         DPoint3d pointC = DPoint3d::FromScale (pointA[j], 1.0 / weightA[j]);
         Check::Near (pointC, curve->GetUnWeightedPole (j), "GetReverseUnweightedPole");
         }
@@ -55,7 +55,7 @@ TEST(BsplineCurve,PoleAccess)
         }
 
     MSBsplineCurvePtr curve = MSBsplineCurve::CreateFromPolesAndOrder (pointA, &weightA, &knotA, 3, false, true);
-    
+
     CheckCurveAccess<size_t> (curve.get (), pointA, weightA);
     CheckCurveAccess<int> (curve.get (), pointA, weightA);
 
@@ -218,7 +218,7 @@ void TestBasisFunctions (MSBsplineCurveCR curve)
     poles.push_back (DPoint3d::From (0,2,0));
     poles.push_back (DPoint3d::From (0,3,0));
     MSBsplineCurvePtr curve = MSBsplineCurve::CreateFromPolesAndOrder (poles, NULL, NULL, order, closed, true);
-    
+
     int numTotal = curve->NumberAllocatedKnots ();
     int numA, numB;
     if (s_printAllKnots)
@@ -230,7 +230,7 @@ void TestBasisFunctions (MSBsplineCurveCR curve)
     PrintKnots ("distinctB", knotB, numB, countB);
     TestBasisFunctions (*curve);
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -238,9 +238,9 @@ void TestBasisFunctions (MSBsplineCurveCR curve)
     {
     TestDistinctKnots (4, true);
     TestDistinctKnots (4, false);
-    }    
-    
-    
+    }
+
+
 double doubleFunc (size_t i)
     {
     return (double)i * 2.0 + 17.5;
@@ -275,7 +275,7 @@ TEST(ScopedArray, Allocations)
     for (size_t i = 1; i < 20000; i += 10 * i)
         ScopedArrayTest (i);
     }
-    
+
 #ifdef TestScopedRectangularMatrix
 static int s_noisy = 0;
 template <typename T>
@@ -833,4 +833,4 @@ TEST(ScopedRectangular, MediumInverse)
     // weak diagonal test matrix ...
     TestDiagonalInverse (1.0, 5.1, 3, 1, 1);
     }
-#endif    
+#endif

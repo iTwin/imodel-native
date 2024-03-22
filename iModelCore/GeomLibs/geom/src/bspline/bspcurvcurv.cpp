@@ -91,7 +91,7 @@ bool            openAll                /* => forces opening */
         }
     if (numCurves > MAX_POLES)
         return false;
-    
+
     bvector<int> numDistinct;
     bvector<KnotData> knotData;
     bvector<size_t> maxMult;
@@ -361,7 +361,7 @@ bool            openAll                /* => forces opening */
             // generate a "fake closed" curve so that numPoles doesn't change
             // EDL May 6 2018: This called mdlBspline_closeCurve_V7.
             // Is there a difference?  Would any V7 specific curve materialize here?
-            // per comments on mdlBspline_closeCurve, there is special behavior for 
+            // per comments on mdlBspline_closeCurve, there is special behavior for
             // linear curve knots
             if (SUCCESS != (status = bspcurv_closeCurve (cvP, cvP)))
                 goto wrapup;

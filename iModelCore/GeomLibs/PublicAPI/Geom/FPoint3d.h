@@ -586,7 +586,7 @@ static FPoint3d FromSumOf (FPoint3dCR point0, double scale0, FPoint3dCR point1, 
 
 //! Return {point + matrix * (x,y,z)}
 //! @param [in] point base point
-//! @param [in] matrix 
+//! @param [in] matrix
 //! @param [in] x x component
 //! @param [in] y y component
 //! @param [in] z z component
@@ -594,7 +594,7 @@ static FPoint3d FromMultiply (FPoint3dCR point, RotMatrixCR matrix, double x, do
 
 //! Return {point + matrix * vector}
 //! @param [in] point base point
-//! @param [in] matrix 
+//! @param [in] matrix
 //! @param [in] vector vector part
 static FPoint3d FromMultiply (FPoint3dCR point, RotMatrixCR matrix, DVec3dCR vector);
 

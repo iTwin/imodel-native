@@ -164,7 +164,7 @@ TEST(Bspline, CompatibleByArcLenth)
     AddPoint (pointC, 1,0,2);
     AddPoint (pointC, 3,1,2);
     AddPoint (pointC, 4,1,2);       // curveC lifted to z=2, no interior knot
-    
+
     AddPoint (pointD, 0,0,3);
     AddPoint (pointD, 1,0,3);
     AddPoint (pointD, 2,4,3);
@@ -178,7 +178,7 @@ TEST(Bspline, CompatibleByArcLenth)
     MSBsplineCurvePtr inputD = CreateCurve (pointD, 3);
     bvector<MSBsplineCurvePtr> inputCurves;
     bvector<MSBsplineCurvePtr> outputCurves;
-    
+
     Check::StartScope ("bspcurv_makeCompatibleByArcLength");
     inputCurves.push_back (inputA);
     inputCurves.push_back (inputB);
@@ -248,7 +248,7 @@ void PrintBearingCurvature (char const *title, DSpiral2dBase &spiral, double fra
     if (s_noisy)
         printf ("  at %s    (fraction %#.17g) (distance %#.17g)\n        (turn since start %#.17g deg) (radius %#.17g)\n", title, fraction, distance, turnDegrees, radius);
     }
-    
+
 static void PrintSpiral (char const *title, DSpiral2dBase &spiral, size_t numStep, DPoint2dCP xy0 = NULL)
     {
     if (!s_noisy)
@@ -281,7 +281,7 @@ void CheckSpiralStroke (DSpiral2dBaseR spiral)
     bvector <DVec2d> xy0,xy1, xy2;
     bvector <double> f0, f1, f2;
     double e0, e1, e2;
-    double strokeFraction1 = 0.5;   
+    double strokeFraction1 = 0.5;
     double strokeFraction2 = strokeFraction1 * 0.5;
     double strokeRadians1 = 1.0;        // try to eliminate this from participating
     DSpiral2dBase::Stroke (spiral, 0.0, 1.0, 0.0, xy0, f0, e0, DEFAULT_SPIRAL_MAX_STROKE_LENGTH);
@@ -372,7 +372,7 @@ TEST(BsplineCurve,CubicTransition)
         printf (" (a %g) (RL %g) (b %lg) (f1 %#.17g)\n (xyz1 %#.17g %#.17g\n",
                   a, R * L, b, f1, xyz1.x, xyz1.y);
         printf (" (tangent1 %#.17g %#.17g) (angle1 %#.17g)\n",
-                  tangent1.x, tangent1.y, 
+                  tangent1.x, tangent1.y,
                   Angle::RadiansToDegrees (atan2 (tangent1.y, tangent1.x)));
         }
     bvector<DPoint3d> pointA;
@@ -1023,10 +1023,10 @@ MSBsplineSurfacePtr CreateGridSurface (DPoint3dCR origin, double dx, double dy, 
         for (size_t i = 0; i < numX; i++)
             poles.push_back (DPoint3d::From (origin.x + i * dx, origin.y + j * dy, origin.z));
         }
-    return MSBsplineSurface::CreateFromPolesAndOrder (poles,  NULL, 
+    return MSBsplineSurface::CreateFromPolesAndOrder (poles,  NULL,
                 NULL, (int)order, (int)numX, false,
                 NULL, (int)order, (int)numY, false, true
-                );                
+                );
     }
 
 void AppendRepeated (bvector<double> &data, size_t n, double value)
@@ -1059,10 +1059,10 @@ MSBsplineSurfacePtr CreateGridSurfaceWithMultipleKnots (DPoint3dCR origin, doubl
         for (size_t i = 0; i < numXPoles; i++)
             poles.push_back (DPoint3d::From (origin.x + i * dx, origin.y + j * dy, origin.z));
         }
-    return MSBsplineSurface::CreateFromPolesAndOrder (poles,  NULL, 
+    return MSBsplineSurface::CreateFromPolesAndOrder (poles,  NULL,
                 &uKnots, (int)order, (int)numXPoles, false,
                 &vKnots, (int)order, (int)numYPoles, false, true
-                );                
+                );
     }
 
 
@@ -1354,7 +1354,7 @@ TEST(BSurfFastProjection,Test1)
         }
 
     MSBsplineSurfaceProjectionFunction F (*surface);
-    
+
     double uvTol = 1.0e-10;
     double maxStep = 0.20;
     NewtonIterationsRRToRR newton (uvTol);
@@ -1374,7 +1374,7 @@ TEST(BSurfFastProjection,Test1)
         if (!Check::Near (v, knownUV[i].y))
             break;
         }
-   
+
     }
 
 struct NewtonTestNonLinear3 : FunctionRRRToRRR
@@ -1409,7 +1409,7 @@ struct NewtonTestLinear3 : FunctionRRRToRRR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(Newton,Approx3)	
+TEST(Newton,Approx3)
     {
     NewtonTestNonLinear3 funcB;
     NewtonTestLinear3 funcA;
@@ -1461,7 +1461,7 @@ HermiteSpiral3Data(DPoint2dCR xyA, DPoint2dCR xyB, double betaA, double betaB, d
 // On input the following are assumed to be assigned:
 //  1) m_xy[index0], m_bearing[index0]
 //  2) m_curvature[index0] and m_curvature[index1]
-//  3) m_arLength[index0] 
+//  3) m_arLength[index0]
 // (with index1 = index0 + 1)
 // Todo:
 //   1) "Set" data in clothoid
@@ -1543,7 +1543,7 @@ struct HermiteSpiralEqualArcLengthFunction : HermiteSpiral3Data
 struct HermiteSpiralMonotoneCurvatureFunction: HermiteSpiral3Data
     {
     virtual char const *SolverName() const { return "HermiteSpiralMonotoneCurvatureFunction "; }
-    
+
     HermiteSpiralMonotoneCurvatureFunction(DPoint2dCR xyA, DPoint2dCR xyB, double betaA, double betaB, double curvatureA, double curvatureB)
         : HermiteSpiral3Data(xyA, xyB, betaA, betaB, curvatureA, curvatureB)
         {
@@ -1620,7 +1620,7 @@ void RunSpliceSolverTest (HermiteSpiral3Data &spliceFunction, DVec3dCR maxDU)
             );
         }
     // If the solver succeeds, we print and Check:: its results.
-    // If the solver fails, we print a notice but do NOT call it a "Check::True" failure.   
+    // If the solver fails, we print a notice but do NOT call it a "Check::True" failure.
     if (newton.RunApproximateNewton(U, spliceFunction, maxDU))
         {
         if (doPrint)
@@ -1713,7 +1713,7 @@ TEST(Spiral,HermiteSplice)
             DVec2d::From(2.0, 1.0),         // stretch x, leave y alone.
             DVec2d::From(1.0, 1.3)         // stretch y, leave x alone.
         }
-            )   
+            )
         {
         if (doPrint)
             printf ("\n\n**** (endPointFactor %.17g, %.17g)\n", endPointFactor.x, endPointFactor.y);
@@ -1773,7 +1773,7 @@ TEST(Spiral,HermiteSplice)
             RunSpliceSolverTest(spliceFunction, maxDU);
             Check::Shift(0.0, 3.0 * radiusB);
             }
-        }    
+        }
     Check::ClearGeometry ("Spiral.HermiteSplice");
     }
 
@@ -2124,7 +2124,7 @@ TEST(BsplineCurve, UnclampedKnots)
     if (Check::True(IModelJson::TryIModelJsonStringToGeometry(&s_inputs, inputs), "Parse inputs") &&
         Check::Size(inputs.size(), 2, "Have two inputs"))
         {
-        // verify that the unclamped IMJS curve imports as a clamped curve 
+        // verify that the unclamped IMJS curve imports as a clamped curve
         auto unclampedCP = inputs[0]->GetAsICurvePrimitive();
         auto clampedCP = inputs[1]->GetAsICurvePrimitive();
         if (Check::True(unclampedCP.IsValid() && clampedCP.IsValid(), "Inputs are valid"))

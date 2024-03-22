@@ -522,7 +522,7 @@ bool cb_compareLT_tagB_Z (DPoint3dSizeSize const &dataA, DPoint3dSizeSize const 
     if (dataA.GetTagB () > dataB.GetTagB ())
         return false;
     DPoint3d xyzA = dataA.GetCR ();
-    DPoint3d xyzB = dataB.GetCR ();        
+    DPoint3d xyzB = dataB.GetCR ();
     if (xyzA.z < xyzB.z)
         return true;
     return false;

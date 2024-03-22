@@ -131,12 +131,12 @@ struct _EmbeddedStructArray
     {
     int		    count;      /* The number of entries in this array.  The the number of entries that  */
                                 /* are "in use" is never larger than the capacity (number allocated).    */
-    
+
     int		    nAllocated; /* The current capacity of this array.  That is, the number of items     */
                                 /* that can be accomodated without reallocation.                         */
-    
+
     int		    itemSize;   /* The sizeof an individual structure within this array.                 */
-    
+
     char*           pList;      /* The pointer to the buffer that holds the array of structures.         */
     };
 END_BENTLEY_GEOMETRY_NAMESPACE
@@ -269,7 +269,7 @@ public:
     bool GEOMDLLIMPEXP AppendPrimitiveFrom (GraphicsPointArrayCR source, size_t index);
     bool GEOMDLLIMPEXP AppendIntervalFrom (GraphicsPointArrayCR source,
                 size_t index0, double fraction0, size_t index1, double fraction1);
-    
+
     bool GEOMDLLIMPEXP GetGraphicsPoint (size_t i, GraphicsPointR gp) const;
     bool GEOMDLLIMPEXP GetDPoint4d (size_t i, DPoint4dR xyzw) const;
     // Normalize the DPoint4d -- false if zero weight.
@@ -464,7 +464,7 @@ public:
     void GEOMDLLIMPEXP AddBezier (DPoint3dCP points, size_t numPoints);
     //! Add a (single) bezier curve (curve order equal {numPoints})
     void GEOMDLLIMPEXP AddBezier (DPoint4dCP points, size_t numPoints);
-    
+
     //! Multiply all xyzw data
     void GEOMDLLIMPEXP Multiply (DMatrix4dCR transform);
     //! Multiply all xyzw data
@@ -623,7 +623,7 @@ double chamferAngle = -1.0
 
 //! @description compute simple (point) intersections with a plane.
 //! @param [in] source candidate intersection geometry.
-//! @param [in] plane 
+//! @param [in] plane
 //! @param [in] extend true to extend lines and arcs
 GEOMDLLIMPEXP void AddPlaneIntersectionPoints
 (
@@ -635,7 +635,7 @@ bool                    extend = false
 //! @description compute line segments of intersections with a plane, using parity rules to determine in and out.
 //!    Intersection edges are added to the instance array in start-end pairs.
 //! @param [in] boundary boundary geometry
-//! @param [in] plane 
+//! @param [in] plane
 GEOMDLLIMPEXP void AddPlaneIntersectionEdges
 (
 GraphicsPointArrayCR    boundary,

@@ -576,7 +576,7 @@ TransformCP pFrame1
         /* In the local coordinates of ellipse0, ellipse0 itself is a unit circle.
            Ellipse 1 is not.
         */
-        
+
         ax = localFrame1.GetPointComponent (0);
         ux = localFrame1.GetFromMatrixByRowAndColumn (0, 0);
         vx = localFrame1.GetFromMatrixByRowAndColumn (0, 1);
@@ -589,7 +589,7 @@ TransformCP pFrame1
             (
              ux,  vx,  ax,
              uy,  vy,  ay,
-            0.0, 0.0, 1.0   
+            0.0, 0.0, 1.0
             );
 
         bsiBezier_conicIntersectUnitCircle (cosValue, sinValue, thetaValue, &numInt,
@@ -657,7 +657,7 @@ DPoint3dCP pPoint
     pEllipse->GetXYLocalFrame (transform, inverse);
 
     localVector = inverse * globalVector;    // And we trust that uses only the matrix part of the multiply!!
-    
+
     c = localVector.x;
     s = localVector.y;
 
@@ -1343,19 +1343,19 @@ DPoint3dCP pEndPoint
 
 +----------------------------------------------------------------------*/
 DEllipse3d DEllipse3d::From (double cx, double cy, double cz, double ux, double uy, double uz, double vx, double vy, double vz, double startRadiansIn, double sweepIn)
-    { 
+    {
     DEllipse3d ellipse;
     ellipse.Init(cx, cy, cz, ux, uy, uz, vx, vy, vz, startRadiansIn, sweepIn);
-    
+
     return ellipse;
     }
- 
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 DEllipse3d DEllipse3d::FromFractionInterval (DEllipse3dCR parent, double startFraction, double endFraction)
-    { 
+    {
     if (DoubleOps::IsExact01 (startFraction, endFraction))
         return parent;
     DEllipse3d ellipse = parent;
@@ -1368,19 +1368,19 @@ DEllipse3d DEllipse3d::FromFractionInterval (DEllipse3dCR parent, double startFr
 * @description Returns a DEllipse3d with given fields.
 
 +----------------------------------------------------------------------*/
- 
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 DEllipse3d DEllipse3d::FromXYMajorMinor (double cx, double cy, double cz, double rx, double ry, double thetaX, double startRadiansIn, double sweepIn)
-    { 
+    {
     DEllipse3d ellipse;
     ellipse.InitFromXYMajorMinor (cx, cy, cz, rx, ry, thetaX, startRadiansIn, sweepIn);
 
     return ellipse;
     }
- 
+
 /*-----------------------------------------------------------------*//**
 * @description Returns a DEllipse3d with given fields.
 
@@ -1391,13 +1391,13 @@ DEllipse3d DEllipse3d::FromXYMajorMinor (double cx, double cy, double cz, double
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 DEllipse3d DEllipse3d::FromPoints (DPoint3dCR centerIN, DPoint3dCR point0, DPoint3dCR point90, double startRadiansIn, double sweepIn)
-    { 
+    {
     DEllipse3d ellipse;
     ellipse.InitFromPoints (centerIN, point0, point90, startRadiansIn, sweepIn);
 
     return ellipse;
     }
- 
+
 /*-----------------------------------------------------------------*//**
 * @description Returns a DEllipse3d with given fields.
 
@@ -1408,13 +1408,13 @@ DEllipse3d DEllipse3d::FromPoints (DPoint3dCR centerIN, DPoint3dCR point0, DPoin
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 DEllipse3d DEllipse3d::FromPointsOnArc (DPoint3dCR start, DPoint3dCR middle, DPoint3dCR end)
-    { 
+    {
     DEllipse3d ellipse;
     ellipse.InitFromPointsOnArc (start, middle, end);
 
     return ellipse;
     }
- 
+
 ValidatedDEllipse3d DEllipse3d::FromStartTangentNormalRadiusSweep
 (
 DPoint3dCR pointA,
@@ -1455,13 +1455,13 @@ DVec3d DEllipse3d::CrossProductOfBasisVectors () const
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 DEllipse3d DEllipse3d::FromArcCenterStartEnd (DPoint3dCR centerIN, DPoint3dCR start, DPoint3dCR end)
-    { 
+    {
     DEllipse3d ellipse;
     ellipse.InitFromArcCenterStartEnd (centerIN, start, end);
 
     return ellipse;
     }
- 
+
 /*-----------------------------------------------------------------*//**
 * @description Returns a DEllipse3d with given fields.
 
@@ -1472,14 +1472,14 @@ DEllipse3d DEllipse3d::FromArcCenterStartEnd (DPoint3dCR centerIN, DPoint3dCR st
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 DEllipse3d DEllipse3d::FromVectors (DPoint3dCR centerIN, DVec3dCR vector0IN, DVec3dCR vector90IN, double startRadiansIn, double sweepIn)
-    { 
+    {
     DEllipse3d ellipse;
     ellipse.InitFromVectors (centerIN, vector0IN, vector90IN, startRadiansIn, sweepIn);
 
     return ellipse;
     }
- 
- 
+
+
 /*-----------------------------------------------------------------*//**
 * @description Returns a DEllipse3d with given fields.
 
@@ -1490,18 +1490,18 @@ DEllipse3d DEllipse3d::FromVectors (DPoint3dCR centerIN, DVec3dCR vector0IN, DVe
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 DEllipse3d DEllipse3d::FromScaledRotMatrix (DPoint3dCR centerIN, RotMatrixCR matrix, double r0, double r1, double startRadiansIn, double sweepIn)
-    { 
+    {
     DEllipse3d ellipse;
     ellipse.InitFromScaledRotMatrix (centerIN, matrix, r0, r1, startRadiansIn, sweepIn);
 
     return ellipse;
     }
- 
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 DEllipse3d DEllipse3d::FromScaledVectors (DEllipse3dCR source, double factor)
-    { 
+    {
     DEllipse3d ellipse = source;
     ellipse.vector0.Scale (factor);
     ellipse.vector90.Scale (factor);
@@ -1512,7 +1512,7 @@ DEllipse3d DEllipse3d::FromScaledVectors (DEllipse3dCR source, double factor)
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 DEllipse3d DEllipse3d::FromScaledVectors (DPoint3dCR centerIN, DVec3dCR vector0IN, DVec3dCR vector90IN, double r0, double r1, double startRadiansIn, double sweepIn)
-    { 
+    {
     DEllipse3d ellipse;
     ellipse.InitFromScaledVectors (centerIN, vector0IN, vector90IN, r0, r1, startRadiansIn, sweepIn);
 
@@ -1535,7 +1535,7 @@ DEllipse3d DEllipse3d::FromMajorMinor (DEllipse3dCR source)
 
     return ellipse;
     }
- 
+
 /*-----------------------------------------------------------------*//**
 * @description Returns a DEllipse3d with given fields.
 
@@ -1546,13 +1546,13 @@ DEllipse3d DEllipse3d::FromMajorMinor (DEllipse3dCR source)
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 DEllipse3d DEllipse3d::FromCenterNormalRadius (DPoint3dCR centerIN, DVec3dCR normal, double radius)
-    { 
+    {
     DEllipse3d ellipse;
     ellipse.InitFromCenterNormalRadius (centerIN, normal, radius);
 
     return ellipse;
     }
- 
+
 /*-----------------------------------------------------------------*//**
 * @description Returns a DEllipse3d with given fields.
 
@@ -1563,19 +1563,19 @@ DEllipse3d DEllipse3d::FromCenterNormalRadius (DPoint3dCR centerIN, DVec3dCR nor
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 DEllipse3d DEllipse3d::FromPerpendicularAxes (DEllipse3dCR source)
-    { 
+    {
     DEllipse3d ellipse;
     ellipse.InitWithPerpendicularAxes  (source);
 
     return ellipse;
     }
- 
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 DEllipse3d DEllipse3d::FromReversed (DEllipse3dCR source)
-    { 
+    {
     DEllipse3d ellipse;
     ellipse.InitReversed (source);
 
@@ -1586,7 +1586,7 @@ DEllipse3d DEllipse3d::FromReversed (DEllipse3dCR source)
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 DEllipse3d DEllipse3d::FromNegateVector90 (DEllipse3dCR source)
-    { 
+    {
     DEllipse3d ellipse = source;
     ellipse.vector90.Negate ();
     ellipse.start *= -1.0;
@@ -1599,7 +1599,7 @@ DEllipse3d DEllipse3d::FromNegateVector90 (DEllipse3dCR source)
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 DEllipse3d DEllipse3d::FromCopyWithPositiveSweep (DEllipse3dCR source)
-    { 
+    {
     if (source.sweep >= 0.0)
         return source;
     DEllipse3d result = source;
@@ -1614,7 +1614,7 @@ DEllipse3d DEllipse3d::FromCopyWithPositiveSweep (DEllipse3dCR source)
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 DEllipse3d DEllipse3d::FromRotatedAxes (DEllipse3dCR source, double newStart)
-    { 
+    {
     DEllipse3d ellipse = source;
     double theta = source.start - newStart;
     if (theta != 0.0)
@@ -1627,8 +1627,8 @@ DEllipse3d DEllipse3d::FromRotatedAxes (DEllipse3dCR source, double newStart)
         }
     return ellipse;
     }
- 
- 
+
+
 
 /*-----------------------------------------------------------------*//**
 @description Fill in ellipse data.
@@ -1783,7 +1783,7 @@ DPoint3dCR end
     perpendicularRay01.origin.SumOf (startPoint, vector01, 0.5);
     perpendicularRay12.origin.SumOf (middle, vector12, 0.5);
 
-    
+
     if (DRay3d::ClosestApproachUnboundedRayUnboundedRay
                 (param0, param1, center0, center1, perpendicularRay01, perpendicularRay12))
         {
@@ -2051,7 +2051,7 @@ DRay3dCP pRay
                   [W90]          [sin]
                   [WC]           [1  ]
     */
-    
+
     coefficients.form3d[0][0] = vectorW0.DotProduct (vectorS0);
     coefficients.form3d[0][1] = vectorW0.DotProduct (vectorS90);
     coefficients.form3d[0][2] = 0.0;
@@ -2062,7 +2062,7 @@ DRay3dCP pRay
 
     coefficients.form3d[2][0] = vectorWC.DotProduct (vectorS0);
     coefficients.form3d[2][1] = vectorWC.DotProduct (vectorS90);
-    coefficients.form3d[2][2] = 0.0;    
+    coefficients.form3d[2][2] = 0.0;
 
     if (bsiBezier_implicitConicIntersectUnitCircle
                     (
@@ -2601,11 +2601,11 @@ double          radius
 )
     {
     DVec3d uVector, vVector, wVector;
-    
+
     normal.GetNormalizedTriad(uVector, vVector, wVector);
     uVector.Scale (uVector, radius);
     vVector.Scale (vVector, radius);
-    
+
     this->InitFromVectors (centerIN, uVector, vVector, 0.0, Angle::TwoPi ());
     }
 
@@ -3810,7 +3810,7 @@ DPoint4dCR plane
 +----------------------------------------------------------------------*/
 int DEllipse3d::SolveTangentsPerpendicularToVector
 (
-double  *angles,   
+double  *angles,
 DVec3dR vector
 ) const
     {
@@ -4991,7 +4991,7 @@ double coff[5]
               + SW[i] * coff_S
               + CW[i] * coff_C
               + WW[i] * coff_1;
-        }    
+        }
     }
 
 
@@ -5133,7 +5133,7 @@ DPoint3dCR edgePoint
         }
     }
 
-//static 
+//static
 static bool TryConstruct_EdgePoint_XPoint_EdgePoint_XAngle_go
 (
 DEllipse3dR result,
@@ -5157,7 +5157,7 @@ bool reverseAngle
         vectorU.Negate ();
         vectorV.Negate ();
         }
-    
+
     DVec3d globalVector0 = DVec3d::FromStartEnd (xPoint, edgePoint0);
     DVec3d globalVector1 = DVec3d::FromStartEnd (xPoint, edgePoint1);
     DVec3d vector0 = DVec3d::From (globalVector0.DotProduct (vectorU), globalVector0.DotProduct (vectorV), 0.0);
@@ -5275,7 +5275,7 @@ double Evaluate_RtoR(double theta)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool EvaluateRRToRR(double theta0, double theta1, double &f0, double &f1) override 
+bool EvaluateRRToRR(double theta0, double theta1, double &f0, double &f1) override
     {
     f0 = Evaluate_RtoR (theta0);
     double b;
@@ -5345,7 +5345,7 @@ double a
                 vector90.Scale (vectorV, b);
                 ellipse.push_back (DEllipse3d::FromVectors (
                         center, vector0, vector90, 0.0, Angle::TwoPi ()));
-                        
+
                 //printf ("root angle %.16g\n", theta0);
                 }
             }
@@ -5368,7 +5368,7 @@ DRay3d     rayB
     DVec3d unitU, unitV, vectorW;
     vectorW.DifferenceOf (rayB.origin, pointA);
     unitU.UnitPerpendicularXY (directionA);
-    unitV.UnitPerpendicularXY (rayB.direction);    
+    unitV.UnitPerpendicularXY (rayB.direction);
     vectorW.z = unitU.z = unitV.z = 0.0;
 //   center is    C = A + s Uo
 //   center distance from line is (C-B).V
@@ -5634,8 +5634,8 @@ double sweepRadians    //!< [in] Constraint: sweep angle for output ellipse
 //         (-s1 * U + c1 * alpha * tangentA) CROSS tangentB = 0
 //         (-s1 * U CROSS tangentB + alpha * (c1 * tangentA CROSS tangentB) = 0
 //         (-s1 * (U.x * tangentB.y - U.y * tangentB.x) + alpha * c1 * tangentA CROSS tangentB) = 0
-// 
-// 
+//
+//
 // BINGO!!! 3 linear equations.
     double c1 = cos (sweepRadians);
     double s1 = sin (sweepRadians);
@@ -5692,7 +5692,7 @@ double     circleBRadius
 //  E DOT E + 2 r unitU DOT E + r^2 = r^2 +- 2 r rB + rB ^2
 //  E DOT E + 2 r unitU DOT E = +- 2r rB + rB^2
 //    r = (EE - rB^2) / (2  ( unitU DOT E -+ rB)
-// 
+//
     allCircles.clear ();
     DVec3d perpVector = DVec3d::From (directionA.y, -directionA.x, 0.0);
     auto unitU = perpVector.ValidatedNormalize ();
@@ -5719,7 +5719,7 @@ double     circleBRadius
                         directionA);
                 allCircles.push_back (ellipse);
                 }
-            }        
+            }
         }
 #else
 
@@ -5784,8 +5784,8 @@ double centerToCenterDistance,  //!< [in] distance between centers
 double radiusA,                 //!< [in] radius of first circle.
 double radiusB,                 //!< [in] radius of second circle
 bool outerTangents,             //!< [in] true for tangents from outside to ouside, false for tangents that cross between centers
-DPoint2dR uvA,                  //!< [in] fractional coordinates of tangency point on circle A, for use in DPoint3d::FromInterpolateAndPerpendicularXY 
-DPoint2dR uvB                  //!< [in] fractional coordinates of tangency point on circle B, for use in DPoint3d::FromInterpolateAndPerpendicularXY 
+DPoint2dR uvA,                  //!< [in] fractional coordinates of tangency point on circle A, for use in DPoint3d::FromInterpolateAndPerpendicularXY
+DPoint2dR uvB                  //!< [in] fractional coordinates of tangency point on circle B, for use in DPoint3d::FromInterpolateAndPerpendicularXY
 )
     {
     if (radiusA == 0.0 && radiusB == 0.0)

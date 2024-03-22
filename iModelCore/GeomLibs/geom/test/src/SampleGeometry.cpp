@@ -29,7 +29,7 @@ MSBsplineSurfacePtr SurfaceWithSinusoidalControlPolygon (int uOrder, int vOrder,
         poles, weight != 0.0 ? &weights : nullptr,
         NULL, uOrder, (int)numI, false,
         NULL, vOrder, (int)numJ, false,
-        true                
+        true
         );
     }
 
@@ -68,7 +68,7 @@ double wInterior
         poles, &weights,
         NULL, 3, 3, false,
         NULL, 3, 3, false,
-        true                
+        true
         );
 
 
@@ -125,7 +125,7 @@ MSBsplineSurfacePtr HyperbolicGridSurface (size_t uOrder, size_t vOrder, size_t 
         poles, NULL,
         NULL, (int)uOrder, (int)numI, false,
         NULL, (int)vOrder, (int)numJ, false,
-        true                
+        true
         );
     }
 
@@ -133,7 +133,7 @@ MSBsplineSurfacePtr HyperbolicGridSurface (size_t uOrder, size_t vOrder, size_t 
 PolyfaceHeaderPtr HyperbolicGridMesh (size_t numI, size_t numJ, double x11, double y11, double z11, double u1, double v1, bool triangulated = false)
     {
     MSBsplineSurfacePtr bsurf = HyperbolicGridSurface (2,2, numI, numJ, x11, y11, z11, u1, v1);
-    PolyfaceHeaderPtr mesh = triangulated 
+    PolyfaceHeaderPtr mesh = triangulated
             ? PolyfaceHeader::CreateTriangleGrid ((int)numI)
             : PolyfaceHeader::CreateQuadGrid ((int)numI);
     for (size_t i = 0; i < bsurf->GetNumPoles (); i++)
@@ -201,14 +201,14 @@ PolyfaceHeaderPtr DodecahedronMesh()
     bvector<IGeometryPtr> geometry;
     if (!GTestFileOps::JsonFileToGeometry(dataFullPathName, geometry))
         return nullptr;
-        
+
     auto mesh = geometry.front()->GetAsPolyfaceHeader();
     if (mesh.IsValid())
         {
         // ensure we have computable data installed
         mesh->BuildApproximateNormals();
         mesh->BuildPerFaceParameters(LocalCoordinateSelect::LOCAL_COORDINATE_SCALE_01RangeBothAxes);
-        mesh->BuildPerFaceFaceData();     
+        mesh->BuildPerFaceFaceData();
         }
     return mesh;
     }
@@ -223,14 +223,14 @@ PolyfaceHeaderPtr RhombicosidodecahedronMesh()
     bvector<IGeometryPtr> geometry;
     if (!GTestFileOps::JsonFileToGeometry(dataFullPathName, geometry))
         return nullptr;
-        
+
     auto mesh = geometry.front()->GetAsPolyfaceHeader();
     if (mesh.IsValid())
         {
         // ensure we have computable data installed
         mesh->BuildApproximateNormals();
         mesh->BuildPerFaceParameters(LocalCoordinateSelect::LOCAL_COORDINATE_SCALE_01RangeBothAxes);
-        mesh->BuildPerFaceFaceData();     
+        mesh->BuildPerFaceFaceData();
         }
     return mesh;
     }
@@ -337,7 +337,7 @@ MSBsplineSurfacePtr SimpleBilinearPatch (double u1, double v1, double w1)
         poles, NULL,
         NULL, 2, 2, false,
         NULL, 2, 2, false,
-        true                
+        true
         );
     }
 
@@ -381,7 +381,7 @@ PolyfaceHeaderPtr Mesh_XYGrid (int numXEdge, int numYEdge, double edgeX, double 
                     pointIndex.push_back (bottomRight);
                     pointIndex.push_back (topRight);
                     pointIndex.push_back (0);
-                    
+
                     }
                 else
                     {
@@ -511,7 +511,7 @@ bool close
     double x = dxLeft;
     double y = 0.0;
     bvector<DPoint3d> points;
- 
+
     points.push_back (DPoint3d::From (x,y));
     auto xyz0 = points.front ();
     x += dx;
@@ -573,12 +573,12 @@ bool splitUpperEdge
     xyz1.push_back(DPoint3d::From (-x2, y2));
 
     auto cv = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
-    cv->push_back (ICurvePrimitive::CreateLineString (xyz0));        
+    cv->push_back (ICurvePrimitive::CreateLineString (xyz0));
     cv->push_back (ICurvePrimitive::CreateArc (DEllipse3d::From (x2, y1, 0,
                     -dxFillet, 0,0,
                     0,dyFillet,0,
                     0.0, Angle::DegreesToRadians (90.0))));
-    cv->push_back (ICurvePrimitive::CreateLineString (xyz1));        
+    cv->push_back (ICurvePrimitive::CreateLineString (xyz1));
     cv->push_back (ICurvePrimitive::CreateArc (DEllipse3d::From (-x2, y1, 0,
                     0,dyFillet,0,
                     dxFillet, 0,0,
@@ -660,7 +660,7 @@ void StrokeFrustum (bvector<DSegment3d> &segments, DPoint3d corners[8], bool pat
     // +aaaaaaaaaaaaa   aaa  aaa  aaa+
     // first period over fractiona
     // Remainder divided to numB periods with trailing a solid
-    // 
+    //
     bvector<rangeEdgeDef> edgeDefs {
         {0,1, ax, 1},
         {2,3, ax , numC},

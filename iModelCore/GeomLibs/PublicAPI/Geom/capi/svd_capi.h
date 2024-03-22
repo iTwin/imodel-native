@@ -104,9 +104,9 @@ double      a11
 //!   [b10 b11]
 Public GEOMDLLIMPEXP int bsiSVD_realEigenvalues2x2
 (
-double b00, 
+double b00,
 double b01,
-double b10, 
+double b10,
 double b11,
 double lambda[2],
 DVec2d eigenvector[2]

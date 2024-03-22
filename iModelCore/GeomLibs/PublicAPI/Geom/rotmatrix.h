@@ -61,7 +61,7 @@ void InitFromScale (double scale);
 
 //! @description Returns a (rotation) that is a right-handed signed permutation of axes.
 //!<ul>
-//!<li>The transform is described by directing the local u and v axes along positive or negative direction of any combination 
+//!<li>The transform is described by directing the local u and v axes along positive or negative direction of any combination
 //!     of global axes.
 //!<li>(0,1,0,1) creates an identity -- u along positive x, v along positive y.
 //!<li>)0,1,2,1) points u axis along x, v axis along negative z.  {w=u cross v} is positive y.
@@ -694,7 +694,7 @@ int             preferredOrientation
 //! succeeds in squareAndNormalizeColumns.
 //!
 //! @param [in] inMatrix The input matrix
-//! @param [in] preferredOrientation 
+//! @param [in] preferredOrientation
 //! <pre>
 //! <ul>
 //! <li>1 for right handed system
@@ -1509,7 +1509,7 @@ double          tol
 //! If source is not near rigid, return false and copy to the output.
 //! If near an identity return identity.
 //! If nearly perpendicular with scales other than 1, clean preserving the length and direction of the primary axis.
-//! This is intended to be used with a crude (e.g. 1.0e-6) reltol to identify old DGN file matrices that are "dirty" by modern standards but were 
+//! This is intended to be used with a crude (e.g. 1.0e-6) reltol to identify old DGN file matrices that are "dirty" by modern standards but were
 //!   meant to be identity, rotation, or scaled rotations in the UOR era.
 //! @param [in] dest result matrix
 //! @param [in] primaryAxis axis whose orientation and direction is preserved.
@@ -1594,7 +1594,7 @@ int         secondaryAxis
 //! Factor the instance as a product B*V^ where B has mutually perpendicular columns and V is orthogonal.
 //! @param [out] matrixB orthogonal columns
 //! @param [out] matrixV transpose of right factor. (I.e. B = A*V)
-//! 
+//!
 bool    FactorOrthogonalColumns
 (
 RotMatrixR matrixB,

@@ -99,7 +99,7 @@ T *BlockedVector<T>::GetPtr
     else
         return NULL;
     }
-    
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -413,7 +413,7 @@ uint32_t BlockedVector<T>::ClearAndAppendByOneBasedIndices
 bvector<int> &zeroBasedIndices,
 bvector<BoolTypeForVector> *positive,
 T const *source,
-size_t sourceCount,            
+size_t sourceCount,
 int const *oneBasedIndices,
 size_t oneBasedIndexCount,
 uint32_t i0,
@@ -592,7 +592,7 @@ int terminator
         push_back (terminator);
         }
     }
-       
+
 // If the current array has blocked structsPerRow, expand to variable length 0-terminated form.
 // (ASSUMES all zeros in blocked form are placeholders.)
 void BlockedVectorInt::ConvertBlockedToZeroTerminated ()

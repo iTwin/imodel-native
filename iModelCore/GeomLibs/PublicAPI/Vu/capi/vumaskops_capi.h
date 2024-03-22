@@ -80,7 +80,7 @@ int numberForInterior = 1
 <li> Find all negative area faces.
 <li> Search recursively, increasing and decreasing winding number when singleExterioMask is on the outside
       of a crossing, decreasing it when singleExteriorMask is inside.
-</pre>    
+</pre>
 @param pGraph IN graph to search
 @param singleExteriorMask IN mask for winding number change.
 @param nodeDepth array giving one node per face and its depth.
@@ -159,7 +159,7 @@ Public GEOMDLLIMPEXP VuP vu_findMostNegativeAreaFace (VuSetP pGraph);
 
 /*---------------------------------------------------------------------------------**//**
 @description
- For each face 
+ For each face
     recursively search to neightbors without crossing any edge with barrier mask.
     (This visits a connected component bounded by the specified mask.)
     Delete the edges crossed in the search.

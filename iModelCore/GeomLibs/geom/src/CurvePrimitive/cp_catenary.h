@@ -62,7 +62,7 @@ bool _TryGetCatenary (DCatenary3dPlacementR data) const override {data = m_place
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-void _Process(ICurvePrimitiveProcessor &processor, DSegment1dCP interval) const override 
+void _Process(ICurvePrimitiveProcessor &processor, DSegment1dCP interval) const override
     {
     EnsureCachedCurve ();
     processor._ProcessBsplineCurve(*this, *_GetProxyBsplineCurvePtr (), interval);
@@ -191,13 +191,13 @@ bool _FractionToPoint (double f, DPoint3dR point, DVec3dR tangent, DVec3dR deriv
     }
 
 
-MSBsplineCurveCP _GetProxyBsplineCurveCP() const override 
+MSBsplineCurveCP _GetProxyBsplineCurveCP() const override
     {
     EnsureCachedCurve ();
     return m_curve.get();
     }
 
-MSBsplineCurvePtr _GetProxyBsplineCurvePtr() const override 
+MSBsplineCurvePtr _GetProxyBsplineCurvePtr() const override
     {
     EnsureCachedCurve ();
     return m_curve;
@@ -229,7 +229,7 @@ bool _IsValidGeometry(GeometryValidatorPtr &validator) const override
     return true;
     }
 
-ICurvePrimitivePtr _CloneAsSingleOffsetPrimitiveXY (CurveOffsetOptionsCR options) const override 
+ICurvePrimitivePtr _CloneAsSingleOffsetPrimitiveXY (CurveOffsetOptionsCR options) const override
     {
     double offsetDistance = options.GetOffsetDistance ();
     EnsureCachedCurve ();
@@ -264,7 +264,7 @@ bool _ClosestPointBounded (DPoint3dCR spacePoint, double &fraction, DPoint3dR cu
 #ifdef CatenaryDerivesFromBspline
     if (Super::_ClosestPointBounded (spacePoint, fraction, curvePoint, extend0, extend1))
         {
-        ImprovePerpendicularProjection (this, spacePoint, fraction, curvePoint);   
+        ImprovePerpendicularProjection (this, spacePoint, fraction, curvePoint);
         return true;
         }
     return false;
@@ -300,7 +300,7 @@ bool _AddStrokes (bvector <PathLocationDetail> &points, IFacetOptionsCR options,
             (CurveLocationDetail (this, f, xyz[i]), 0, distanceAlong));
         }
     return true;
-    } 
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod

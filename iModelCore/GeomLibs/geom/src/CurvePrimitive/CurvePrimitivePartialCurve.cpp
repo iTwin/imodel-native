@@ -122,7 +122,7 @@ bool _TryGetPartialCurveData (double &fractionA, double &fractionB, ICurvePrimit
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-void _Process(ICurvePrimitiveProcessor &processor, DSegment1dCP interval) const override 
+void _Process(ICurvePrimitiveProcessor &processor, DSegment1dCP interval) const override
     {
     DSegment1d myInterval (m_detail.fraction0, m_detail.fraction1);
     if (NULL == interval)
@@ -131,7 +131,7 @@ void _Process(ICurvePrimitiveProcessor &processor, DSegment1dCP interval) const 
         {
         DSegment1d newInterval = myInterval.BetweenFractions (interval->GetStart (), interval->GetEnd ());
         m_detail.parentCurve->_Process (processor, &newInterval);
-        }        
+        }
     }
 
 
@@ -212,7 +212,7 @@ bool _FractionToPoint(double fraction, DPoint3dR point, DVec3dR tangent) const o
         tangent.Scale (m_detail.fraction1 - m_detail.fraction0);
         return true;
         }
-    
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -350,7 +350,7 @@ double _FastMaxAbs() const override
 bool _IsSameStructureAndGeometry (ICurvePrimitiveCR other, double tolerance) const override
     {
     PartialCurveDetailCP otherDetail = GetPartialCurveDetailCP ();
-    
+
     if (NULL == otherDetail)
         return false;
     return DoubleOps::AlmostEqual (m_detail.fraction0, otherDetail->fraction0)
@@ -397,7 +397,7 @@ bool _GetBreakFraction(size_t breakFractionIndex, double &fraction) const overri
         else
             return false;
         }
-    
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -418,7 +418,7 @@ bool _AdjustFractionToBreakFraction(double fraction, Rounding::RoundingMode mode
         else
             return false;
         }
-#endif    
+#endif
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -521,7 +521,7 @@ bool PointAtSignedDistanceFromFraction_go (RotMatrixCP worldToLocal, double star
             }
         return false;
         }
-    
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -617,7 +617,7 @@ bool _ReverseCurvesInPlace () override
     }
 
 
-public: 
+public:
 
 static ICurvePrimitive* Create (ICurvePrimitiveP parentCurve, double fraction0, double fraction1, int64_t userData)
     {
@@ -628,7 +628,7 @@ static ICurvePrimitive* Create (ICurvePrimitiveP parentCurve, double fraction0, 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-void _AppendCurvePlaneIntersections(DPlane3dCR plane, bvector<CurveLocationDetailPair> &intersections, double tol) const override 
+void _AppendCurvePlaneIntersections(DPlane3dCR plane, bvector<CurveLocationDetailPair> &intersections, double tol) const override
     {
     size_t numIntersectionsIn = intersections.size ();
     m_detail.parentCurve->AppendCurvePlaneIntersections (plane, intersections, tol);

@@ -1773,7 +1773,7 @@ double GEOMDLLIMPEXP bsiDEllipse3d_maxAbs (DEllipse3dCP pInstance);
 //! @param [in] pEllipse1 first ellipse
 //! @param [in] pEllipse2 second ellipse
 //! @param [in] tangency tolerance.  If 0, a default will be supplied based on ellipse coordinates.
-//! @return true if (a) both ellipses are cicular (by isCircular), 
+//! @return true if (a) both ellipses are cicular (by isCircular),
 //!   (b) the normals are parallel (by isParallelTo).
 //!
 bool    GEOMDLLIMPEXP bsiDEllipse3d_isParallelPlaneCircleCircleIntersect

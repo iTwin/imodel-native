@@ -41,7 +41,7 @@ size_t numPerLevel,
 bool cap1
 )
     {
-    indices.clear ();    
+    indices.clear ();
     if (cap0)
         indices.push_back (SolidLocationDetail::FaceIndices::Cap0 ());
     if (cap1)
@@ -92,7 +92,7 @@ ptrdiff_t &index1      // FIRST index1 -- incremented through recursion
             }
         }
     }
-    
+
 // Conditionally add cap indices.
 // indices for intermediate levels.
 static void BuildSweepFaceIndices (
@@ -104,7 +104,7 @@ static void BuildSweepFaceIndices (
     CurveVectorCP curve1
     )
     {
-    indices.clear ();    
+    indices.clear ();
     if (cap0)
         indices.push_back (SolidLocationDetail::FaceIndices::Cap0 ());
     if (cap1)

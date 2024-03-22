@@ -26,7 +26,7 @@ bvector<struct ClipPlaneTree> m_children;
 //!<li>Each successive level is a convex hull of a "notch" into the polygon.
 //!<li>The polygon at each level is the convex hull at that level minus the notches below.
 //!</ul>
-//!      
+//!
 static void CreateNotchDifferenceTree (bvector<DPoint3d> &points, struct ClipPlaneTree &tree);
 
 ClipPlaneTree (NodeType nodeType) : m_nodeType (nodeType) {}

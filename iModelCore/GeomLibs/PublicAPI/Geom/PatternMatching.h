@@ -18,7 +18,7 @@ protected:
         {
         bvector<size_t> lps (pattern.size (), 0);
 
-        //length of the previous longest prefix suffix 
+        //length of the previous longest prefix suffix
         size_t length = 0;
         for (size_t i = 1; i < lps.size ();)
             {

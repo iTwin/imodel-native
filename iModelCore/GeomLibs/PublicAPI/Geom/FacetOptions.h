@@ -136,39 +136,39 @@ protected:
 
 public:
 
-//! Set the ChordTolerance facet control. 
+//! Set the ChordTolerance facet control.
 GEOMDLLIMPEXP void SetChordTolerance (double chordTolerance);
-//! Get the ChordTolerance facet control. 
+//! Get the ChordTolerance facet control.
 GEOMDLLIMPEXP double GetChordTolerance () const;
 
-//! Set the MaxEdgeLength facet control. 
+//! Set the MaxEdgeLength facet control.
 GEOMDLLIMPEXP void SetMaxEdgeLength (double maxEdgeLength);
-//! Get the MaxEdgeLength facet control. 
+//! Get the MaxEdgeLength facet control.
 GEOMDLLIMPEXP double GetMaxEdgeLength () const;
 
-//! Set the AngleTolerance facet control. 
+//! Set the AngleTolerance facet control.
 GEOMDLLIMPEXP void SetAngleTolerance (double normalAngleTolerance);
-//! Get the AngleTolerance facet control. 
+//! Get the AngleTolerance facet control.
 GEOMDLLIMPEXP double GetAngleTolerance () const;
 
-//! Set the MaxPerBezier facet control. 
+//! Set the MaxPerBezier facet control.
 GEOMDLLIMPEXP void SetMaxPerBezier (int maxPerBezier);
-//! Get the MaxPerBezier facet control. 
+//! Get the MaxPerBezier facet control.
 GEOMDLLIMPEXP int GetMaxPerBezier () const;
 
-//! Set the MinPerBezier facet control. 
+//! Set the MinPerBezier facet control.
 GEOMDLLIMPEXP void SetMinPerBezier (int minPerBezier);
-//! Get the MinPerBezier facet control. 
+//! Get the MinPerBezier facet control.
 GEOMDLLIMPEXP int GetMinPerBezier () const;
 
-//! Set the MaxPerFace facet control. 
+//! Set the MaxPerFace facet control.
 GEOMDLLIMPEXP void SetMaxPerFace (int maxPerFace);
-//! Get the MaxPerFace facet control. 
+//! Get the MaxPerFace facet control.
 GEOMDLLIMPEXP int GetMaxPerFace () const;
 
-//! Set the EdgeHiding facet control. 
+//! Set the EdgeHiding facet control.
 GEOMDLLIMPEXP void SetEdgeHiding (bool edgeHiding);
-//! Get the EdgeHiding facet control. 
+//! Get the EdgeHiding facet control.
 GEOMDLLIMPEXP bool GetEdgeHiding () const;
 
 //! Set edge hiding on bspline surface mesh.
@@ -182,22 +182,22 @@ GEOMDLLIMPEXP void SetBsplineSurfaceEdgeHiding (int edgeHiding);
 GEOMDLLIMPEXP int GetBsplineSurfaceEdgeHiding () const;
 
 
-//! Set the NormalsRequired facet control. 
+//! Set the NormalsRequired facet control.
 GEOMDLLIMPEXP void SetNormalsRequired (bool normalsRequired);
-//! Get the NormalsRequired facet control. 
+//! Get the NormalsRequired facet control.
 GEOMDLLIMPEXP bool GetNormalsRequired () const;
 
-//! Set the ParamsRequired facet control. 
+//! Set the ParamsRequired facet control.
 GEOMDLLIMPEXP void SetParamsRequired (bool paramsRequired);
-//! Get the ParamsRequired facet control. 
+//! Get the ParamsRequired facet control.
 GEOMDLLIMPEXP bool GetParamsRequired () const;
 
-//! Set the EdgeChainsRequired facet control. 
+//! Set the EdgeChainsRequired facet control.
 GEOMDLLIMPEXP void SetEdgeChainsRequired (bool edgeChainsRequired);
-//! Get the EdgeChainsRequired facet control. 
+//! Get the EdgeChainsRequired facet control.
 GEOMDLLIMPEXP bool GetEdgeChainsRequired () const;
 
-//! Set the SmoothTriangleFlow facet control.  (This can apply to both bspline and non-bspline.  See 
+//! Set the SmoothTriangleFlow facet control.  (This can apply to both bspline and non-bspline.  See
 GEOMDLLIMPEXP void SetSmoothTriangleFlowRequired (bool value);
 //! Get the SmoothTriangleFlow facet control.
 GEOMDLLIMPEXP bool GetSmoothTriangleFlowRequired () const;
@@ -217,64 +217,64 @@ GEOMDLLIMPEXP void SetCurvatureWeightFactor (double value);
 //! Get the CurvatureWeightFactor control.
 GEOMDLLIMPEXP double  GetCurvatureWeightFactor () const;
 
-//! Set the CurveParameterMapping facet control. 
+//! Set the CurveParameterMapping facet control.
 GEOMDLLIMPEXP void SetCurveParameterMapping (CurveParameterMapping curveParameterMapping);
-//! Get the CurveParameterMapping facet control. 
+//! Get the CurveParameterMapping facet control.
 GEOMDLLIMPEXP CurveParameterMapping GetCurveParameterMapping () const;
 
-//! Set the VertexColorsRequired facet control. 
+//! Set the VertexColorsRequired facet control.
 GEOMDLLIMPEXP void SetVertexColorsRequired (bool vertexColorsRequired);
-//! Get the VertexColorsRequired facet control. 
+//! Get the VertexColorsRequired facet control.
 GEOMDLLIMPEXP bool GetVertexColorsRequired () const;
 
-//! Set the SilhouetteDirection facet control. 
+//! Set the SilhouetteDirection facet control.
 GEOMDLLIMPEXP void SetSilhouetteDirection (DVec3d silhouetteDirection);
-//! Get the SilhouetteDirection facet control. 
+//! Get the SilhouetteDirection facet control.
 GEOMDLLIMPEXP DVec3d GetSilhouetteDirection () const;
 
-//! Set the SilhouetteOrigin facet control. 
+//! Set the SilhouetteOrigin facet control.
 GEOMDLLIMPEXP void SetSilhouetteOrigin (DPoint3d silhouetteOrigin);
-//! Get the SilhouetteOrigin facet control. 
+//! Get the SilhouetteOrigin facet control.
 GEOMDLLIMPEXP DPoint3d GetSilhouetteOrigin () const;
 
-//! Set the SilhouetteType facet control. 
+//! Set the SilhouetteType facet control.
 GEOMDLLIMPEXP void SetSilhouetteType (int silhouetteType);
-//! Get the SilhouetteType facet control. 
+//! Get the SilhouetteType facet control.
 GEOMDLLIMPEXP int GetSilhouetteType () const;
 
-//! Set the SilhouetteToleranceDivisor facet control. 
+//! Set the SilhouetteToleranceDivisor facet control.
 GEOMDLLIMPEXP void SetSilhouetteToleranceDivisor (double silhouetteToleranceDivisor);
-//! Get the SilhouetteToleranceDivisor facet control. 
+//! Get the SilhouetteToleranceDivisor facet control.
 GEOMDLLIMPEXP double GetSilhouetteToleranceDivisor () const;
 
-//! Set the CurvedSurfaceMaxPerFace facet control. 
+//! Set the CurvedSurfaceMaxPerFace facet control.
 GEOMDLLIMPEXP void SetCurvedSurfaceMaxPerFace (int curveSurfaceMaxPerFace);
-//! Get the CurvedSurfaceMaxPerFace facet control. 
+//! Get the CurvedSurfaceMaxPerFace facet control.
 GEOMDLLIMPEXP int GetCurvedSurfaceMaxPerFace () const;
 
-//! Set the CombineFacets facet control. 
+//! Set the CombineFacets facet control.
 GEOMDLLIMPEXP void SetCombineFacets (bool combineFacets);
-//! Get the CombineFacets facet control. 
+//! Get the CombineFacets facet control.
 GEOMDLLIMPEXP bool GetCombineFacets () const;
 
-//! Set the ConvexFacetsRequired facet control. 
+//! Set the ConvexFacetsRequired facet control.
 GEOMDLLIMPEXP void SetConvexFacetsRequired (bool convexFacetsRequired);
-//! Get the ConvexFacetsRequired facet control. 
+//! Get the ConvexFacetsRequired facet control.
 GEOMDLLIMPEXP bool GetConvexFacetsRequired () const;
 
-//! Set the ParamMode facet control. 
+//! Set the ParamMode facet control.
 GEOMDLLIMPEXP void SetParamMode (FacetParamMode paramMode);
-//! Get the ParamMode facet control. 
+//! Get the ParamMode facet control.
 GEOMDLLIMPEXP FacetParamMode GetParamMode () const;
 
-//! Set the ParamDistanceScale facet control. 
+//! Set the ParamDistanceScale facet control.
 GEOMDLLIMPEXP void SetParamDistanceScale (double paramDistanceScale);
-//! Get the ParamDistanceScale facet control. 
+//! Get the ParamDistanceScale facet control.
 GEOMDLLIMPEXP double GetParamDistanceScale () const;
 
-//! Set the ToleranceDistanceScale facet control. 
+//! Set the ToleranceDistanceScale facet control.
 GEOMDLLIMPEXP void SetToleranceDistanceScale (double toleranceDistanceScale);
-//! Get the ToleranceDistanceScale facet control. 
+//! Get the ToleranceDistanceScale facet control.
 GEOMDLLIMPEXP double GetToleranceDistanceScale () const;
 
 //! Set whether facets returned for BReps are separated by color/material when there is per-face symbology attachments.
@@ -386,7 +386,7 @@ typedef struct IPolyfaceConstruction *IPolyfaceConstructionP;
 typedef struct IPolyfaceConstruction &IPolyfaceConstructionR;
 
 
-//! Helper object for constructing polyface mesh. 
+//! Helper object for constructing polyface mesh.
 //! The construction object carries (a) facet options (b) the growing mesh (c) coordinate maps so duplicate points can be assigned a shared index.
 struct  IPolyfaceConstruction : public RefCountedBase
 {
@@ -594,7 +594,7 @@ GEOMDLLIMPEXP size_t AddColorIndexQuad (size_t index0, size_t index1, size_t ind
 GEOMDLLIMPEXP bool AddPolyface (PolyfaceQueryCR polyface, size_t drawMethodIndex=0);
 
 
-//! Ask if normals are needed. 
+//! Ask if normals are needed.
 GEOMDLLIMPEXP bool NeedNormals ();
 //! Ask if params are needed.
 GEOMDLLIMPEXP bool NeedParams ();
@@ -643,7 +643,7 @@ GEOMDLLIMPEXP DPoint3d MultiplyByLocalToWorld (DPoint3dCR localPoint) const;
 GEOMDLLIMPEXP DVec3d MultiplyNormalByLocalToWorld (DVec3dCR localNormal) const;
 
 //! Push the current transform and revesal state.
-//! @param [in] initializeCurrentState controls whether current state is 
+//! @param [in] initializeCurrentState controls whether current state is
 //!     reinitialized (true) or left unchanged (false)
 GEOMDLLIMPEXP void PushState (bool initializeCurrentState = false);
 //! Pop the current transform and revesal state.
@@ -656,7 +656,7 @@ GEOMDLLIMPEXP void SetReverseNewFacetIndexOrder (bool reverse);
 GEOMDLLIMPEXP void SetReverseNewNormals (bool reverse);
 
 //! Get the local to world matrix for surface normals.
-//! @param [out] matrix returned matrix 
+//! @param [out] matrix returned matrix
 //! @return false if no local to world transform is in effect.
 GEOMDLLIMPEXP bool GetLocalToWorldNormals (RotMatrixR matrix) const;
 
@@ -756,7 +756,7 @@ bvector<double> &curveLength                              //!< [out] array with 
 //! Return false if not a simple loop.
 //! @remark points are doubled at hard corners (so the incoming and outgoing tangents can be distinguished)
 GEOMDLLIMPEXP bool Stroke (CurveVectorCR curves, bvector<DPoint3d> &points, size_t &numLoop);
- 
+
 //! Triangulate a space polygon and add to mesh. Disconnect points separate multiple loops.
 GEOMDLLIMPEXP bool AddTriangulation (bvector<DPoint3d> const &points);
 
@@ -842,7 +842,7 @@ GEOMDLLIMPEXP void AddFullSphere (DPoint3dCR center, double radius, size_t numPe
 //! @param [in] radiusX equator radius at 0 degrees longitude
 //! @param [in] radiusY equator radius at 90 degrees longitude
 //! @param [in] radiusPole radius at pole.
-//! @param [in] numEastWestEdge overrides all option controls. 
+//! @param [in] numEastWestEdge overrides all option controls.
 //! @param [in] numNorthSouthEdge overrides all option controls.
 //! @param [in] longitudeStart in radians
 //! @param [in] longitudeSweep in radinas

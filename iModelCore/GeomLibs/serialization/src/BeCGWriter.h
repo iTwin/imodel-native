@@ -8,7 +8,7 @@
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
-struct BeCGWriter 
+struct BeCGWriter
     {
     private:
         IBeStructuredDataWriterR m_dest;

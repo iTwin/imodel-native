@@ -40,7 +40,7 @@ RotMatrixCR     matrix
 +----------------------------------------------------------------------*/
 Transform Transform::FromOriginAndXVector
 (
-DPoint2dCR origin, 
+DPoint2dCR origin,
 DVec2dCR xVector
 )
     {
@@ -63,7 +63,7 @@ DVec2dCR xVector
 //!<ul>
 Transform Transform::FromOriginAndBearingXY
 (
-DPoint3dCR origin, 
+DPoint3dCR origin,
 double bearingRadians
 )
     {
@@ -134,7 +134,7 @@ bool Transform::TryUniformScaleXYRangeFit (DRange3dCR rangeA, DRange3dCR rangeB,
                 q, 0, 0, centerA.x - q * centerB.x,
                 0, q, 0, centerA.y - q * centerB.y,
                 0,  0, q, centerA.z - q * centerB.z
-                );                
+                );
         return true;
         }
     AToB.InitIdentity ();
@@ -264,7 +264,7 @@ TransformR  derivativeTransform
     RotMatrix matrix, derivativeMatrix;
     matrix = RotMatrix::FromVectorAndRotationAngle (axis.direction, radians, derivativeMatrix);
 
-    
+
     /* We count on the vector rotation returning a valid identity matrix even if
         the vector is null */
     transform.InitFromMatrixAndFixedPoint (matrix, axis.origin);
@@ -471,10 +471,10 @@ bool            normalize
 +--------------------------------------------------------------------------------------*/
 bool Transform::InitFromMirrorPlane (DPoint3dCR origin, DVec3dCR normal)
     {
-    return InitFromScalePerpendicularToPlane (origin, normal, -1.0); 
+    return InitFromScalePerpendicularToPlane (origin, normal, -1.0);
     }
-    
-    
+
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -483,7 +483,7 @@ bool Transform::InitFromProjectionToPlane (DPoint3dCR origin, DVec3dCR normal)
     {
     return InitFromScalePerpendicularToPlane (origin, normal, 0.0);
     }
-    
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -617,7 +617,7 @@ double Transform::GetFromMatrixByRowAndColumn (int row, int col) const
     return form3d[row][col];
     }
 
-void Transform::SetMatrixByRowAndColumn (int row, int col, double value) 
+void Transform::SetMatrixByRowAndColumn (int row, int col, double value)
     {
     row = Angle::Cyclic3dAxis (row);
     col = Angle::Cyclic3dAxis (col);
@@ -716,7 +716,7 @@ double zScale
                 0, yScale,0,0,
                 0,0, zScale,0
                 );
-    }                
+    }
 
 
 
@@ -735,7 +735,7 @@ DPoint3dCR translation
 )
     {
     this->InitFrom (matrix);
-       
+
 
     form3d[0][3] = translation.x;
     form3d[1][3] = translation.y;
@@ -1203,7 +1203,7 @@ TransformP appliedTransformOldLocalToNewLocal
         ax = 1.0;
         ay = 1.0;
         }
-    
+
     double az = sqrt (ax * ay);
     double bz = 1.0;
     if (   (ax != 1.0 || ay != 1.0)
@@ -2132,7 +2132,7 @@ DPoint3dCR yPoint
     double relTol = Angle::SmallAngle ();
     double u = vectorU.NormalizedDifference (xPoint, origin);
     double v = vectorV.NormalizedDifference (yPoint, origin);
-    // What's zero?  Really hard to tell.  BUT.. 
+    // What's zero?  Really hard to tell.  BUT..
     if (    u > relTol * v
         &&  v > relTol * u
         )

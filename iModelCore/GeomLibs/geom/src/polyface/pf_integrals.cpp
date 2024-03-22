@@ -118,7 +118,7 @@ static void AddScaledOuterProduct (DMatrix4dR matrix, double *vectorA, double *v
 //  W = column vector (point00.x, point00.y, point00.z, 1.0) etc.
 static DMatrix4d TriangleProducts (DPoint3dCR point00, DPoint3dCR point10, DPoint3dCR point01)
     {
-    double vectors[3][4] = 
+    double vectors[3][4] =
       {
       {point00.x, point00.y, point00.z, 1.0},
       {point10.x, point10.y, point10.z, 1.0},
@@ -166,7 +166,7 @@ static void bsiDMatrix4d_zero (DMatrix4dR data)
 // directionalProducts[0] sum of tetrahedral moments from global origin.
 // directionalProducts[1] sum of tetrahedral moments for 3 tetrahedra formed when the triangle is swept in x direction to x=origin.x.
 // sim for [1] in y direction, 2 with z direction sweep.
-// 
+//
 static void AccumulateScaledPrincipalProducts
 (
 DirectionalVolumeData sums[7],
@@ -258,7 +258,7 @@ void AddTriangle (DPoint3dCR point0, DPoint3dCR point1, DPoint3dCR point2)
     // but it is scaled for voume frusta
     data[0].volume += 0.5 * cross.x * (triangleCentroid.x - origin.x);
     data[1].volume += 0.5 * cross.y * (triangleCentroid.y - origin.y);
-    data[2].volume += 0.5 * cross.z * (triangleCentroid.z - origin.z);            
+    data[2].volume += 0.5 * cross.z * (triangleCentroid.z - origin.z);
 
     }
 };
@@ -307,7 +307,7 @@ DPoint3dP             pOrigin
             point1  = point2;
             if (!jmdlMTGFacets_getNodeCoordinates (pFacetHeader, &point2, node2Id))
                 goto wrapup;
-            allData.AddTriangle (point0, point1, point2);            
+            allData.AddTriangle (point0, point1, point2);
             }
         }
     boolstat = TRUE;
@@ -347,7 +347,7 @@ DPoint3dR             origin
         {
         for (size_t i = 1; i + 1 < points.size (); i++)
             {
-            allData.AddTriangle (points[0], points[i], points[i+1]);            
+            allData.AddTriangle (points[0], points[i], points[i+1]);
             }
         }
 
@@ -365,7 +365,7 @@ DPoint3dR             origin
     }
 
 
-static void ExtractDirectionalSummaryData 
+static void ExtractDirectionalSummaryData
 (
 DirectionalVolumeData integrals[7],
 DVec3dR directionalVolumes,
@@ -384,7 +384,7 @@ DVec3dR missingFacetFactors
         int k1 = (k+2) % 3;
         int kAbs = 3 + k;
         // pluck out the 2nd moments from the other two planes.  axx is the properly signed integral (and should vanish), q uses absolute differentials (and should not)
-        // the ration is 
+        // the ration is
         axx.Init ( integrals[k].areaProducts.coff[k0][k0], integrals[k].areaProducts.coff[k0][k1], integrals[k].areaProducts.coff[k1][k1]);
         q.Init (   integrals[kAbs].areaProducts.coff[k0][k0], integrals[kAbs].areaProducts.coff[k0][k1], integrals[kAbs].areaProducts.coff[k1][k1]);
         DoubleOps::SafeDivide (ratios[k], axx.Magnitude (), q.Magnitude (), 1.0);
@@ -425,7 +425,7 @@ double relativeTolerance  //!< [in] relative tolerance for assessing the checksu
     if (products[2].ConvertInertiaProductsToPrincipalMoments (volume, centroid0, axes, momentxyz))
         {
         centroid = DPoint3d::FromSumOf (origin, centroid0);
-        return 
+        return
                absoluteDirectionalAreas.z > s_rangeAreaFactor * rangeArea.z       // reject if projection looks skinny.
             && fabs (signedDirectionalAreas.z) < relativeTolerance * absoluteDirectionalAreas.z
             && missingFacetFactors.z < relativeTolerance;

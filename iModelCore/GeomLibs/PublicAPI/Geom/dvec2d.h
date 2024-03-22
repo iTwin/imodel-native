@@ -11,13 +11,13 @@
 :Title: struct Bentley::DVec2d
 
 Summary: A vector in xy space.
- 
+
 !!! Fields
- 
+
 || Member  ||      ||
 || x       || x part ||
 || y       || y part ||
- 
+
 #endif
 */
 
@@ -467,7 +467,7 @@ ValidatedDouble ProjectionFraction (DVec2d const &other) const;
 //! @remark 0.0 is returned if instance length is zero !!!
 ValidatedDouble PerpendicularProjectionFraction (DVec2d const &other) const;
 
-//! Return a vector that 
+//! Return a vector that
 static DVec2d OffsetBisector (DVec2d const &unitPerpA, DVec2d const &unitPerpB, double offset);
 
 //! @description Returns the (signed) angle (in radians) between two vectors.  This angle is between -pi and

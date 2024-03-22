@@ -24,7 +24,7 @@ bool IndexedRangeHeap::Get (size_t index, DRange3dR range) const
         return true;
         }
     range.Init ();
-    return false;    
+    return false;
     }
 
 bool IndexedRangeHeap::Get (size_t index, DRange3dR range, size_t &i0, size_t &i1) const
@@ -38,7 +38,7 @@ bool IndexedRangeHeap::Get (size_t index, DRange3dR range, size_t &i0, size_t &i
         }
     i0 = i1 = SIZE_MAX;
     range.Init ();
-    return false;    
+    return false;
     }
 
 bool IndexedRangeHeap::IsLeafIndex (size_t index) const
@@ -141,7 +141,7 @@ void IndexedRangeHeap::SetRecursiveRange (size_t index, size_t i0, size_t i1)
 
 // Build index for source ranges i0 through i1 inclusive.
 // Each entry in the returned array has a (composite) range for source entry range (inclusively) TagA through TagB.
-// 
+//
 void IndexedRangeHeap::Build
 (
 size_t numPerEntry,

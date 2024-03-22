@@ -77,7 +77,7 @@ int planeBoxOverlap(FloatType normal[3], FloatType vert[3], FloatType maxbox[3])
 // a,b are y and z edge components of edge 01 or 12
 // fa,fb are their absolute values.
 // cross product of x with the vector is in the y z plane.
-// 
+//
 #define AXISTEST_X01(a, b, fa, fb)			   \
 p0 = a * v0[Y] - b * v0[Z];			       	   \
 p2 = a * v2[Y] - b * v2[Z];			       	   \
@@ -281,7 +281,7 @@ static const uint32_t s_planeBits[] =
         PointWithAltitudes::BitLowZ,
         PointWithAltitudes::BitHighZ
     };
- 
+
 /**
  * * return true if any part of the triangular area is within the range.
  * * return false if the triangle is entirely outside.

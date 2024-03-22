@@ -12,7 +12,7 @@ BEGIN_BENTLEY_NAMESPACE
 //!
 //! @param pMatrix IN      The matrix to apply
 //! @param pPoint IN OUT  The point to be updated
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void bsiRotMatrix_multiplyDPoint3d
 (
@@ -25,7 +25,7 @@ DPoint3dP pPoint
 //! @param pMatrix IN      The matrix.
 //! @param pResult OUT     result of the multiplication.
 //! @param pPoint IN      The known point.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void bsiRotMatrix_multiplyRotMatrixDPoint3d
 (
@@ -39,7 +39,7 @@ DPoint3dCP pPoint
 //! @param pMatrix IN      The the matrix.
 //! @param pResult OUT     result of the multiplication.
 //! @param pPoint IN      The known point.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void bsiRotMatrix_multiplyRotMatrixTransposeDPoint3d
 (
@@ -57,7 +57,7 @@ DPoint3dCP pPoint
 //! @param x IN      The x component of input point
 //! @param y IN      The y component of input point
 //! @param z IN      The z component of input point
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void bsiRotMatrix_multiplyComponents
 (
@@ -73,7 +73,7 @@ double         z
 //! The result overwrites the previous coordinates in the point.
 //! @param pMatrix IN      The matrix to apply
 //! @param pPoint IN OUT  The point to be multiplied
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void bsiRotMatrix_multiplyTransposeDPoint3d
 (
@@ -89,7 +89,7 @@ DPoint3dP pPoint
 //! @param x IN      The x component
 //! @param y IN      The y component
 //! @param z IN      The z component
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void bsiRotMatrix_multiplyTransposeComponents
 (
@@ -108,7 +108,7 @@ double      z
 //! @param pResult OUT     output points
 //! @param pPoint IN      The input points
 //! @param numPoint IN      The number of points
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void bsiRotMatrix_multiplyDPoint3dArray
 (
@@ -127,7 +127,7 @@ int            numPoint
 //! @param pResult OUT     output points
 //! @param pPoint IN      The input points
 //! @param numPoint IN      The number of points
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void bsiRotMatrix_multiplyTransposeDPoint3dArray
 (
