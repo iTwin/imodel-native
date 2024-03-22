@@ -4,11 +4,40 @@
 *--------------------------------------------------------------------------------------------*/
 #include "testHarness.h"
 #include <stdio.h>
+#include <filesystem>
 
 #include "SampleGeometry.h"
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <GeomSerialization/GeomSerializationApi.h>
 
+bool writeGeometryToFile
+(
+bvector<IGeometryPtr> &geometry,
+WCharCP directoryName,
+WCharCP nameB,
+WCharCP nameC,
+WCharCP extension
+)
+    {
+    Utf8String stringB;
+    if (IModelJson::TryGeometryToIModelJsonString(stringB, geometry))
+        return GTestFileOps::WriteToFile(stringB, directoryName, nameB, nameC, extension);
+    return false;
+    }
+
+bool writeGeometryToFile
+(
+IGeometryPtr &geometry,
+WCharCP directoryName,
+WCharCP nameB,
+WCharCP nameC,
+WCharCP extension
+)
+    {
+    bvector<IGeometryPtr> geometryVector;
+    geometryVector.push_back(geometry);
+    return writeGeometryToFile(geometryVector, directoryName, nameB, nameC, extension);
+    }
 
 bool ReadIModelJson
 (
@@ -18,8 +47,8 @@ WCharCP outputDirectory,
 WCharCP nameB,
 WCharCP nameC,
 WCharCP extension,
-WCharCP flatbufferBinaryExtension = nullptr,           // optionally mirror every file to flatbuffer and write as binary file.  NOT IMPLEMENTED
-WCharCP flatbufferUInt8Extension = nullptr  // optionall write flatbuffer to string "[i0,i1,...]"
+WCharCP flatbufferBinaryExtension = nullptr, // optionally mirror every file to flatbuffer and write as binary file.  NOT IMPLEMENTED
+WCharCP flatbufferUInt8Extension = nullptr   // optionally write flatbuffer to string "[i0,i1,...]"
 )
     {
     geometry.clear ();
@@ -43,17 +72,13 @@ WCharCP flatbufferUInt8Extension = nullptr  // optionall write flatbuffer to str
         {
         if (Check::True (IModelJson::TryIModelJsonStringToGeometry (string, geometry), "json string to geometry"))
             {
-            Utf8String stringB;
-            if (IModelJson::TryGeometryToIModelJsonString (stringB, geometry))
-                GTestFileOps::WriteToFile (stringB, L"IModelJsonFromNative", nameB, nameC, extension);
+            Check::True(writeGeometryToFile(geometry, outputDirectory, nameB, nameC, extension));
             stat = true;
-
             if (flatbufferUInt8Extension != nullptr)
                 {
                 bvector<Byte> bytes;
                 BentleyGeometryFlatBuffer::GeometryToBytes (geometry, bytes);
-                GTestFileOps::WriteByteArrayToTextFile(bytes, L"IModelJsonFromNative", nameB, nameC, flatbufferUInt8Extension);
-
+                GTestFileOps::WriteByteArrayToTextFile(bytes, outputDirectory, nameB, nameC, flatbufferUInt8Extension);
                 }
             }
         else
@@ -63,51 +88,122 @@ WCharCP flatbufferUInt8Extension = nullptr  // optionall write flatbuffer to str
     return stat;
     }
 
+bool ReadIModelBytes(bvector<Byte> &buffer, BeFileName dataPath)
+    {
+    buffer.clear ();
+    bool stat = false;
+    Check::StartScope ("ReadICrashFiles");
+    printf ("ReadICrashFiles file %ls\n", dataPath.c_str ());
+    if (Check::True(GTestFileOps::ReadAsBytes(dataPath, buffer), "Read file to byte array"))
+        stat = true;
+    Check::EndScope();
+    return stat;
+    }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(IModelJson,BytesToXXX)
+    {
+    BeFileName directoryPath;
+    BeTest::GetHost().GetDocumentsRoot(directoryPath);
+    directoryPath.AppendToPath(L"GeomLibsTestData");
+    directoryPath.AppendToPath(L"FlatBufferFuzz");
+    WCharCP dirPath = directoryPath.GetName();
+    for (const auto &entry : std::filesystem::directory_iterator(dirPath))
+        {
+        BeFileName filePath = BeFileName(entry.path().c_str());
+        bvector<Byte> buffer;
+        if (Check::True(ReadIModelBytes(buffer, filePath)))
+            {
+            IGeometryPtr geometry;
+            geometry = BentleyGeometryFlatBuffer::BytesToGeometry(buffer.data(), buffer.size());
+            if (geometry != nullptr)
+                {
+                writeGeometryToFile(geometry, L"IModelJson.BytesToXXX", L"geometryVector", nullptr, L"imjs");
+                Check::Fail("expect BytesToGeometry to return nullptr for invalid bytes");
+                }
+            bool ret;
+            bvector<IGeometryPtr> geometryVector;
+            ret = BentleyGeometryFlatBuffer::BytesToVectorOfGeometry(buffer, geometryVector);
+            if (ret)
+                {
+                writeGeometryToFile(geometryVector, L"IModelJson.BytesToXXX", L"geometryVector", nullptr, L"imjs");
+                Check::Fail("expect BytesToVectorOfGeometry to return false for invalid bytes");
+                }
+            PolyfaceQueryCarrier carrier(0, false, 0, 0, nullptr, nullptr);
+            ret = BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(buffer.data(), buffer.size(), carrier);
+            if (ret)
+                Check::Fail("expect BytesToPolyfaceQueryCarrier to return false for invalid bytes");
+            }
+        }
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(IModelJson,ReadFiles)
     {
-    for (auto & name :
-        bvector<CharCP> {
-            "arc1",
-            "lineSegment5",
-            "arc",
-            "lineSegment",
-            "lineString",
-            "pointString",
-            "path",
-            "loop",
-            "parityRegion",
-            "bcurve",
-            "cylinder",
-            "cone",
-            "box",
-            "sphere",
-            "torusPipe",
-            "linearSweep",
-            "rotationalSweep",
-            "ruledSweep",
-            "bsurf",
-            "bsurfWithBoundary",
-            "indexedMesh",
-            })
+    BeFileName directoryPath;
+    BeTest::GetHost().GetDocumentsRoot(directoryPath);
+    directoryPath.AppendToPath(L"GeomLibsTestData");
+    directoryPath.AppendToPath(L"IModelJson");
+    WCharCP dirPath = directoryPath.GetName();
+    for (const auto &entry : std::filesystem::directory_iterator(dirPath))
         {
+        BeFileName filePath = BeFileName(entry.path().c_str());
+        WString fileNameStr;
+        filePath.ParseName(NULL, NULL, &fileNameStr, NULL);
+        WCharCP fileName = fileNameStr.c_str();
         bvector<IGeometryPtr> geometry;
-        WString wName;
-        wName.AppendA(name);
-        if (Check::True(ReadIModelJson (geometry, L"IModelJson", L"IModelJsonFromNative", wName.c_str(), nullptr, L"imjs", nullptr, L"fbjs"), "read imjs file"))
+        if (Check::True(
+            ReadIModelJson(geometry, L"IModelJson", L"IModelJsonFromNative", fileName, nullptr, L"imjs", nullptr, L"fbjs"),
+            "read imjs file"))
             {
-            for (auto const& g : geometry)
+            for (IGeometryPtr const& g : geometry)
                 {
                 if (Check::True(g.IsValid(), "Imported geometry is valid"))
-                    Check::NearRoundTrip(*g, 0.0, name);
+                    {
+                    constexpr size_t bufSize = 100;
+                    char buffer[bufSize];
+                    CharP charFileName = fileNameStr.ConvertToLocaleChars(buffer, bufSize);
+                    Check::NearRoundTrip(*g, 0.0, charFileName);
+                    }
                 }
             }
         }
     }
+TEST(IModelJson,GeometryToBytes)
+    {
+    ICurvePrimitivePtr arcSingle = ICurvePrimitive::CreateArc(
+        DEllipse3d::From(0,0,0,  3,0,0, 0,3,0,  0.0, Angle::PiOver2())
+    );
+
+    bvector<Byte> bytesSingle;
+    BentleyGeometryFlatBuffer::GeometryToBytes(*arcSingle, bytesSingle);
+    ICurvePrimitivePtr geometrySingle1 = BentleyGeometryFlatBuffer::BytesToGeometry(bytesSingle)->GetAsICurvePrimitive();
+    Check::True(arcSingle->IsSameStructureAndGeometry(*geometrySingle1, 0));
+
+    bvector<IGeometryPtr> geometryArray1;
+    BentleyGeometryFlatBuffer::BytesToVectorOfGeometry(bytesSingle, geometryArray1);
+    Check::Size(geometryArray1.size(), 1);
+    Check::True(arcSingle->IsSameStructureAndGeometry((*geometryArray1[0]->GetAsICurvePrimitive()), 0));
+
+    bvector<IGeometryPtr> *validGeometry = nullptr;
+    bvector<IGeometryPtr> *invalidGeometry = nullptr;
+    bvector<IGeometryPtr> arcArray;
+    arcArray.push_back(IGeometry::Create((ICurvePrimitivePtr)arcSingle));
+
+    bvector<Byte> bytesArray;
+    BentleyGeometryFlatBuffer::GeometryToBytes(arcArray, bytesArray, validGeometry, invalidGeometry);
+    bvector<IGeometryPtr> geometryArray2;
+    BentleyGeometryFlatBuffer::BytesToVectorOfGeometry(bytesArray, geometryArray2);
+    Check::Size(geometryArray2.size(), 1);
+    Check::True(arcSingle->IsSameStructureAndGeometry((*geometryArray2[0]->GetAsICurvePrimitive()), 0));
+
+    IGeometryPtr geometrySingle2 = BentleyGeometryFlatBuffer::BytesToGeometry(bytesArray);
+    Check::isNull(geometrySingle2.get());
+    }
+
 static  bvector<Byte>  jsSegmentBytes {
 98,103,48,48,48,49,102,98,4,0,0,0,144,255,255,255,12,0,0,0,0,15,
 6,0,8,0,4,0,6,0,0,0,4,0,0,0,2,0,0,0,92,0,0,0,12,0,0,0,8,0,12,0,
@@ -198,7 +294,7 @@ TEST(BeJs,isAlmostEqual)
     double e0 = 1.0e-18;
     double e1 = 1.0e-8;
     for (double sign : {-1.0, 1.0})
-        { 
+        {
         for (double x0 = 1.0e-10; x0 < 1.0e20; x0 *= 10.0)
             {
             double x = sign * x0;
@@ -363,9 +459,7 @@ PolyfaceHeaderPtr RoundTripMeshQueryCarrier(PolyfaceHeaderPtr & meshA)
     BentleyGeometryFlatBuffer::GeometryToBytes(*IGeometry::Create(meshA), bytes);
     bvector<IGeometryPtr> geometryC;
     PolyfaceQueryCarrier carrier(0, false, 0, 0, nullptr, nullptr);
-    if (Check::True (BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(
-                    bytes.data (),
-                    carrier, false), "Bytes to QueryCarrier"))
+    if (Check::True (BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(bytes.data(), bytes.size(),carrier, false), "Bytes to QueryCarrier"))
         {
         auto meshC = carrier.CloneAsVariableSizeIndexed (carrier);
         if (Check::True (meshC.IsValid ()))
@@ -378,7 +472,7 @@ PolyfaceHeaderPtr RoundTripMeshQueryCarrier(PolyfaceHeaderPtr & meshA)
 PolyfaceHeaderPtr RoundTripMeshIMJS(PolyfaceHeaderPtr & meshA)
     {
     auto jsonA = Json::Value();
-    Check::True(IModelJson::TryGeometryToIModelJsonValue(BeJsValue(jsonA), 
+    Check::True(IModelJson::TryGeometryToIModelJsonValue(BeJsValue(jsonA),
             *IGeometry::Create(meshA)), "geomery to json");
     bvector<IGeometryPtr> geometryB;
     if (Check::True(IModelJson::TryIModelJsonValueToGeometry(BeJsValue(jsonA), geometryB), "json to geometry"))

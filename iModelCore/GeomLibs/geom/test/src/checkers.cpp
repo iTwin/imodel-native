@@ -227,6 +227,10 @@ bool Check::True (bool a, char const*pString)
     return false;
     }
 
+bool Check::isNull (void* object, char const*pString)
+    {
+    return Check::True(object == nullptr, pString);
+    }
 
 bool Check::ValidateDistances
 (
@@ -1835,7 +1839,7 @@ void Check::TearDown()
     }
 
 // verify geometry round trip through both JSON and FlatBuffer
-bool Check::NearRoundTrip(IGeometryCR g, double tolerance, char const* pString)
+bool Check::NearRoundTrip(IGeometryCR g, double tolerance, char const*  pString)
     {
     std::string myString;
     if (pString)
@@ -1860,7 +1864,7 @@ bool Check::NearRoundTrip(IGeometryCR g, double tolerance, char const* pString)
     IGeometryPtr g1;
     BentleyGeometryFlatBuffer::GeometryToBytes(g, buffer);
     if (Check::False(buffer.empty(), (myString + "convert geometry to flatbuffer").c_str()) &&
-        Check::True((g1 = BentleyGeometryFlatBuffer::BytesToGeometry(buffer.data())).IsValid(), (myString + "convert flatbuffer to geometry").c_str()))
+        Check::True((g1 = BentleyGeometryFlatBuffer::BytesToGeometry(buffer)).IsValid(), (myString + "convert flatbuffer to geometry").c_str()))
         {
         roundTripFB = Check::True(g.IsSameStructureAndGeometry(*g1, tolerance), (myString + "geometry roundtrips through flatbuffer").c_str());
         }

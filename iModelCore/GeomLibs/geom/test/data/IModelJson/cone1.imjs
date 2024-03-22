@@ -1,0 +1,10 @@
+{"cone":
+ {"capped":true,
+  "start":[0,0,0],
+  "end":[0,0,5],
+  "startRadius":1,
+  "endRadius":0.2,
+  "xyVectors":[[1,0,0],
+  [0,1,0]]
+ }
+}
