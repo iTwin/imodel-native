@@ -178,7 +178,7 @@ void vu_unmaskNullFaceParityChanges (VuSetP graph, VuMask exteriorMask, VuMask b
     END_VU_SET_LOOP (nodeA, graph)
     }
 
-// IF exteriorMask appears in opposing sense on pairs of 
+// IF exteriorMask appears in opposing sense on pairs of
 void vu_deleteNullFaceParityPairs (VuSetP graph, VuMask exteriorMask, bool deletePairedExteriors, bool deleteFullInterior)
     {
     VuMask deleteMask = vu_grabMask (graph);
@@ -322,7 +322,7 @@ MultipleCollectionClippper (double abstol)
     m_pFaceArray = vu_grabArray (m_pGraph);
     if (s_absTol > abstol)
         abstol = s_absTol;
-    vu_setTol (m_pGraph, abstol, s_relTol); 
+    vu_setTol (m_pGraph, abstol, s_relTol);
     m_debug = 0;
     }
 
@@ -437,7 +437,7 @@ void AddPolygon (size_t collectionIndex, bvector<DPoint3d> &xyz)
                 outsideNode = vu_vsucc(node);
             else
                 outsideNode = node;
-        
+
             vu_setMaskAroundFace (outsideNode, VU_EXTERIOR_EDGE);
             }
         else
@@ -461,7 +461,7 @@ size_t ActivateCollection (ptrdiff_t collectionIndex)
         return 0;
     if ((size_t)collectionIndex >= m_indexedNodeLists.size ())
         return 0;
-    size_t numTerms = m_indexedNodeLists[collectionIndex].size ();        
+    size_t numTerms = m_indexedNodeLists[collectionIndex].size ();
     for (; m_indexedNodeLists[collectionIndex].size () > 0; m_indexedNodeLists[collectionIndex].pop_back ())
         vu_restoreNodeList (m_pGraph, m_indexedNodeLists[collectionIndex].back ());
     m_indexedNodeLists[collectionIndex].clear ();
@@ -984,7 +984,7 @@ void BuildLoops (ptrdiff_t polygonCollectionIndex, size_t firstIndexOnOtherSide,
                 {
                 DPoint3d xyz = m_clipperLoop[0];
                 m_clipperLoop.push_back (xyz);
-                m_clipper.AddPolygon (polygonCollectionIndex, m_clipperLoop);  
+                m_clipper.AddPolygon (polygonCollectionIndex, m_clipperLoop);
                 }
             i0 = i1;
             }
@@ -1007,7 +1007,7 @@ void ApplyClipper (bvector<DPoint3d> const &clipper, PolygonSplitIndices const &
     size_t numNegative = 0;
     size_t numOn = 0;
     size_t numClipperPoints = m_clipperPoints.size ();
-    
+
     while (numClipperPoints > 1 && m_clipperPoints[0].IsEqual (m_clipperPoints[numClipperPoints - 1]))
         numClipperPoints--;
 
@@ -1075,7 +1075,7 @@ void ApplyXYClip (bvector<DPoint3d> const &clipper, ptrdiff_t collectionIndex)
     m_clipperAltitudes.clear ();
     m_clipperPointsOnPlane.clear ();
     size_t numClipperPoints = m_clipperPoints.size ();
-    
+
     while (numClipperPoints > 1 && m_clipperPoints[0].IsEqual (m_clipperPoints[numClipperPoints - 1]))
         numClipperPoints--;
 
@@ -1115,7 +1115,7 @@ void CollectClip (TaggedPolygonVectorR outputPolygons, bool subtractB, bool inte
     // 2) Saved collections ALWAYS have VU_EXTERIOR_EDGE set.
     // 3) MergeAndMark can use borrowed masks for role of exteriorA and exteriorB.
     // 4) "The collections" are powerful things !!!!
-          
+
     if (subtractB && intersectC)
         {
         m_clipper.MergeAndMarkComponents (
@@ -1152,7 +1152,7 @@ void CollectClip (TaggedPolygonVectorR outputPolygons, bool subtractB, bool inte
               NodeTest_Mask_OR,
               "keep = primary ^ below", s_indexFinal,
               VU_EXTERIOR_EDGE);
-        }        
+        }
 
     bvector<DPoint3d> xyz;
     m_clipper.PushGraph ();
@@ -1238,7 +1238,7 @@ bool LoadPrimaryPolygon (size_t index)
     return stat0 && stat1;
     }
 
-bool ShouldRecurseIntoSubtree (XYZRangeTreeRootP pRoot, XYZRangeTreeInteriorP pInterior) override 
+bool ShouldRecurseIntoSubtree (XYZRangeTreeRootP pRoot, XYZRangeTreeInteriorP pInterior) override
     {
     DRange3d nodeRange = pInterior->Range ();
     if (m_searchRange.IntersectsWith (nodeRange))
@@ -1261,7 +1261,7 @@ void ApplyClipperByIndex (size_t leafIndex)
     m_lowerSurfaceSplitter.ApplyClipper (m_polygons[leafIndex].GetPointsCR (), m_lowerSurfaceSplitter.GetClipperSplitIndices (m_polygons[leafIndex], leafIndex));
     }
 
-bool ShouldContinueAfterLeaf         (XYZRangeTreeRootP pRoot, XYZRangeTreeInteriorP pInterior, XYZRangeTreeLeafP pLeaf) override 
+bool ShouldContinueAfterLeaf         (XYZRangeTreeRootP pRoot, XYZRangeTreeInteriorP pInterior, XYZRangeTreeLeafP pLeaf) override
     {
     size_t leafIndex = (size_t)pLeaf->GetData ();
     if (leafIndex != m_currIndex)
@@ -1311,7 +1311,7 @@ void AddDebugPolygons (bvector<TaggedPolygonVector> &dest, double dyLowerSurface
     UpperSplitter ().AddDebugPolygons (dest, upperShift);
     LowerSplitter ().AddDebugPolygons (dest, lowerShift);
     }
-  
+
 };
 
 
@@ -1392,7 +1392,7 @@ bvector<TaggedPolygonVector> &debugShapes
     FixArea (surfaceAaboveB, 1.0);
     FixArea (surfaceBbelowA, -1.0);
     FixArea (surfaceBaboveA, 1.0);
-    FixArea (surfaceAbelowB, -1.0); 
+    FixArea (surfaceAbelowB, -1.0);
     }
 
 
@@ -1488,7 +1488,7 @@ bvector<TaggedPolygonVector> &debugShapes
     FixArea (surfaceAaboveB, 1.0);
     FixArea (surfaceBbelowA, -1.0);
     FixArea (surfaceBaboveA, 1.0);
-    FixArea (surfaceAbelowB, -1.0);        
+    FixArea (surfaceAbelowB, -1.0);
     static double s_debugShiftFactor = 1.4;
     searcher.AddDebugPolygons (debugShapes, (totalRange.high.y - totalRange.low.y) * s_debugShiftFactor);
     double loadFraction = FractionOf (loadTime, totalSearchTime);
@@ -1499,7 +1499,7 @@ bvector<TaggedPolygonVector> &debugShapes
     KeepAlive (collectFraction);
     XYZRangeTreeRoot::Free (rangeTree);
     }
-    
+
 static void AddPolygons (
 IPolyfaceConstructionR builder,
 TaggedPolygonVectorR polygons
@@ -1536,7 +1536,7 @@ TaggedPolygonVectorR polygons
     }
 
     }
-    
+
 static void SavePolygons (
 bvector<PolyfaceHeaderPtr> &result,
 TaggedPolygonVectorR polygons,
@@ -1555,7 +1555,7 @@ TaggedPolygonVectorP polygonB
     if (headerPtr->Point ().size () > 0)
         result.push_back (headerPtr);
     }
-	
+
 
 static PolyfaceHeaderPtr PolygonsToMesh (TaggedPolygonVectorR polygons, TransformCP localToWorld)
     {
@@ -1570,7 +1570,7 @@ static PolyfaceHeaderPtr PolygonsToMesh (TaggedPolygonVectorR polygons, Transfor
         mesh->Transform (*localToWorld);
     return mesh;
     }
-		
+
 static double   s_planarityLocalRelTol = 1.0e-13;
 
 void PolyfaceQuery::ComputeCutAndFill
@@ -1586,10 +1586,10 @@ bvector<PolyfaceHeaderPtr> &resultB
     //    IndexB = parent mesh index.  (This better not get used in the algorithm -- the single-polyface method makes this a facet index.
     for (size_t i = 0; i < polyfaceA.size (); i++)
         polyfaceA[i]->AddToTaggedPolygons (allInputPolygons, 0, 0);
-    
+
     for (size_t i = 0; i < polyfaceB.size (); i++)
         polyfaceB[i]->AddToTaggedPolygons (allInputPolygons, 1, 0);
-        
+
     DRange3d inputRange = PolygonVectorOps::GetRange (allInputPolygons);
 
 
@@ -1632,7 +1632,7 @@ bvector<PolyfaceHeaderPtr> &resultB
        }
     PolyfaceHeader::Transform (resultA, localToWorld);
     PolyfaceHeader::Transform (resultB, localToWorld);
-   
+
     }
 // test condition for distinguishing barrier polygons.
 void PolyfaceQuery::ComputeCutAndFill
@@ -1800,7 +1800,7 @@ bool LoadTargetPolygon (size_t index)
     return stat;
     }
 
-bool ShouldRecurseIntoSubtree (XYZRangeTreeRootP pRoot, XYZRangeTreeInteriorP pInterior) override 
+bool ShouldRecurseIntoSubtree (XYZRangeTreeRootP pRoot, XYZRangeTreeInteriorP pInterior) override
     {
     DRange3d nodeRange = pInterior->Range ();
     if (m_searchRange.IntersectsWith (nodeRange))
@@ -1817,7 +1817,7 @@ bool ShouldRecurseIntoSubtree (XYZRangeTreeRootP pRoot, XYZRangeTreeInteriorP pI
 
 bool ShouldContinueAfterSubtree      (XYZRangeTreeRootP pRoot, XYZRangeTreeInteriorP pInterior)    override {return true;}
 
-bool ShouldContinueAfterLeaf         (XYZRangeTreeRootP pRoot, XYZRangeTreeInteriorP pInterior, XYZRangeTreeLeafP pLeaf) override 
+bool ShouldContinueAfterLeaf         (XYZRangeTreeRootP pRoot, XYZRangeTreeInteriorP pInterior, XYZRangeTreeLeafP pLeaf) override
     {
     size_t leafIndex = (size_t)pLeaf->GetData ();
     DRange3d nodeRange = pLeaf->Range ();
@@ -1841,14 +1841,14 @@ void CollectClip (TaggedPolygonVectorR collector)
     else
         m_splitter.CollectClip (collector, true, false);
     }
-    
+
 void AddDebugPolygons (bvector<TaggedPolygonVector> &dest, double dyLowerSurface)
     {
     DVec3d upperShift;
     upperShift.Zero ();
     m_splitter.AddDebugPolygons (dest, upperShift);
     }
-  
+
 };  // PunchClipSearcher !!!!
 
 
@@ -1980,7 +1980,7 @@ bvector<PolyfaceHeaderPtr> &result
     //static int s_addIntermediatePolygonsToFile = true;        unused var removed in Graphite
 
     TaggedPolygonVector punchPolygons, targetPolygons;
-    
+
     punch.AddToTaggedPolygons (punchPolygons, 0, 0);
     target.AddToTaggedPolygons (targetPolygons, 0, 0);
 
@@ -2049,7 +2049,7 @@ DRange3dCP selectRange
             if (facetRange.IntersectsWith (*selectRange, 2))
                 PolygonVectorOps::AddPolygon (polygons, points, indexA, (ptrdiff_t)visitor->GetReadIndex (), 0.0);
             }
-        }            
+        }
     }
 
 void PolyfaceQuery::AddToTaggedPolygons
@@ -2075,7 +2075,7 @@ IPolyfaceVisitorFilter *filter
             if (filter->TestFacet (*visitor))
                 PolygonVectorOps::AddPolygon (polygons, points, indexA, (ptrdiff_t)visitor->GetReadIndex (), 0.0);
             }
-        }            
+        }
     }
 
 END_BENTLEY_GEOMETRY_NAMESPACE
@@ -2094,7 +2094,7 @@ bool computeAndApplyTransform
 )
     {
     TaggedPolygonVector punchPolygons, targetPolygons;
-    
+
     punch.AddToTaggedPolygons (punchPolygons, 0, 0);
 //    target.AddToTaggedPolygons (targetPolygons, 0, 0);
 
@@ -2134,10 +2134,10 @@ bool computeAndApplyTransform
         *debug = PolygonsToMesh (debugPolygons, &localToWorld);
 
     }
-// Compute what parts of meshB are hidden by meshA (the hider).   Both returned meshes are null 
+// Compute what parts of meshB are hidden by meshA (the hider).   Both returned meshes are null
 // if there is no hiding.
 void PolyfaceHeader::MeshHidesMeshXYByPlaneSets (
-PolyfaceHeaderPtr &hider,   // 
+PolyfaceHeaderPtr &hider,   //
 PolyfaceHeaderPtr &hidable,
 PolyfaceHeaderPtr &meshBVisible,
 PolyfaceHeaderPtr &meshBHidden,

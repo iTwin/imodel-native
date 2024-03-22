@@ -69,7 +69,7 @@ bool allowExtrapolation
     return newCurve;
     }
 
-ICurvePrimitivePtr _CloneAsSingleOffsetPrimitiveXY (CurveOffsetOptionsCR options) const override 
+ICurvePrimitivePtr _CloneAsSingleOffsetPrimitiveXY (CurveOffsetOptionsCR options) const override
     {
     double offsetDistance = options.GetOffsetDistance ();
     MSBsplineCurvePtr offsetBCurve = m_curve->CreateCopyOffsetXY (SetBCurveOffsetSign (offsetDistance), SetBCurveOffsetSign (offsetDistance), options);
@@ -101,7 +101,7 @@ MSBsplineCurvePtr _GetProxyBsplineCurvePtr() const        override {return m_cur
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-void _Process(ICurvePrimitiveProcessor &processor, DSegment1dCP interval) const override 
+void _Process(ICurvePrimitiveProcessor &processor, DSegment1dCP interval) const override
     {processor._ProcessBsplineCurve (*this, *m_curve, interval);}
 
 
@@ -137,7 +137,7 @@ bool _FractionToPoint(double fraction, DPoint3dR point, DVec3dR tangent) const o
         m_curve->FractionToPoint (point, tangent, fraction);
         return true;
         }
-    
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -188,7 +188,7 @@ bool _FractionToFrenetFrame(double f, TransformR frame) const override
             frame.InitFromOriginAndVectors (point, tmb[0], tmb[1], tmb[2]);
             return true;
             }
-        
+
         return false;
         }
 
@@ -291,7 +291,7 @@ bool _GetBreakFraction(size_t breakFractionIndex, double &fraction) const overri
         else
             return false;
         }
-    
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -322,7 +322,7 @@ bool _GetMSBsplineCurve(MSBsplineCurveR curve, double fractionA, double fraction
         // avoid crashing tile generator on bad data that has snuck in somehow (reported by Sentry)
         if (!m_curve->IsValidGeometry())
             return false;
-        
+
         return SUCCESS == curve.CopySegment (*m_curve,
             m_curve->FractionToKnot (fractionA), m_curve->FractionToKnot (fractionB));
         }
@@ -528,7 +528,7 @@ bool _WireCentroid(
         return true;
         }
 
-public: 
+public:
 
 static ICurvePrimitive* Create (MSBsplineCurveCR curve) {return new CurvePrimitiveBsplineCurve (curve);}
 
@@ -537,7 +537,7 @@ static ICurvePrimitive* Create (MSBsplineCurvePtr curve) {return new CurvePrimit
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-void _AppendCurvePlaneIntersections(DPlane3dCR plane, bvector<CurveLocationDetailPair> &intersections, double tol) const override 
+void _AppendCurvePlaneIntersections(DPlane3dCR plane, bvector<CurveLocationDetailPair> &intersections, double tol) const override
     {AppendTolerancedPlaneIntersections (plane, this, *m_curve, intersections, tol);}
 
 }; // CurvePrimitiveBsplineCurve
@@ -594,7 +594,7 @@ explicit CurvePrimitiveInterpolationCurve(MSInterpolationCurveCR fitCurve)
     FinishConstructor ();
     }
 
-// optionally 
+// optionally
 // swapWithSource true:  copy bits from source to m_fitCurve, then Zero the source.
 // swapWithSource false: clone the source
 explicit CurvePrimitiveInterpolationCurve(MSInterpolationCurveR fitCurve, bool swapFromSource)
@@ -635,7 +635,7 @@ MSInterpolationCurveCP _GetInterpolationCurveCP() const override {return &m_fitC
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-void _Process(ICurvePrimitiveProcessor &processor, DSegment1dCP interval) const override 
+void _Process(ICurvePrimitiveProcessor &processor, DSegment1dCP interval) const override
     {
     processor._ProcessInterpolationCurve (*this, m_fitCurve, interval);
     }
@@ -671,13 +671,13 @@ bool _ReverseCurvesInPlace () override
     }
 
 
-public: 
+public:
 
 static ICurvePrimitive* Create (MSInterpolationCurveCR fitCurve)
     {
     return new CurvePrimitiveInterpolationCurve (fitCurve);
     }
-    
+
 static ICurvePrimitive* CreateSwapFromSource (MSInterpolationCurveR fitCurve)
     {
     return new CurvePrimitiveInterpolationCurve (fitCurve, true);
@@ -735,7 +735,7 @@ bvector<DPoint3d> const*    _GetAkimaCurveCP () const override {return &m_points
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-void _Process(ICurvePrimitiveProcessor &processor, DSegment1dCP interval) const override 
+void _Process(ICurvePrimitiveProcessor &processor, DSegment1dCP interval) const override
     {
     processor._ProcessAkimaCurve (*this, m_points, interval);
     }
@@ -1082,7 +1082,7 @@ double endFraction          //!< [in] end fraction for active interval.
         // Create a circular arc ...
         double theta = lengthAB / radiusA;      // if radiusA is negative, all the vector and angle signs coordinate to move in positive x direction !!!
         DEllipse3d arc = DEllipse3d::FromStartTangentNormalRadiusSweep (
-                    startPoint, 
+                    startPoint,
                     DVec3d::From (cos (startRadians), sin (startRadians)),
                     DVec3d::From (0,0,1),
                     radiusA,
@@ -1117,7 +1117,7 @@ double maxEdgeLength
     int type = spiral.GetTransitionTypeCode ();
     if (type >= DSpiral2dBase::TransitionType_FirstDirectEvaluate)
         {
-        // ASSUME specific primary data  . . 
+        // ASSUME specific primary data  . .
         // DEMAND frame is xy plane except for origin and possible z rotation ...
         // DEMAND fractions are simple 0..1
         double radius0 = DoubleOps::ValidatedDivideDistance (1.0, spiral.mCurvature0);
@@ -1170,7 +1170,7 @@ double maxEdgeLength
                     fractionB
                     );
             }
-        
+
         return nullptr;
         }
 
@@ -1233,9 +1233,9 @@ bvector<double> const &extraData
     {
     DSpiral2dBaseP xySpiral = DSpiral2dBase::CreateBearingCurvatureBearingCurvature
         (transitionType,
-        startRadians, 
-        startRadius == 0.0 ? 0.0 : 1.0 / startRadius, 
-        endRadians, 
+        startRadians,
+        startRadius == 0.0 ? 0.0 : 1.0 / startRadius,
+        endRadians,
         endRadius == 0.0 ? 0.0 : 1.0 / endRadius, extraData
         );
     if (xySpiral == NULL)
@@ -1291,9 +1291,9 @@ bvector<double> const  &extraData
     auto endCurvature = radius1 == 0.0 ? 0.0 : 1.0 / radius1;
     DSpiral2dBaseP xySpiral = DSpiral2dBase::CreateBearingCurvatureLengthCurvature
         (transitionType,
-        startRadians, 
-        startCurvature, 
-        length, 
+        startRadians,
+        startCurvature,
+        length,
         endCurvature, extraData
         );
     if (xySpiral == NULL)

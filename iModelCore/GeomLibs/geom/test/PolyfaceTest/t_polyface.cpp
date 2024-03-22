@@ -4570,7 +4570,7 @@ TEST (PolyfaceQuery, FacetOrientation)
             size_t iLoop = readIndex % 4;
             size_t iLoopSwap = (iLoop + 1) % 3;
             std::swap(perturbed->PointIndex()[4 * iFacet + iLoop], perturbed->PointIndex()[4 * iFacet + iLoopSwap]);
-            
+
             Check::Shift(0, 3, 0);
             Check::SaveTransformed(perturbed);
             auto reset1 = Check::GetTransform();

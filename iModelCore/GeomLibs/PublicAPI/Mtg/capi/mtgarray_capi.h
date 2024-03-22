@@ -31,7 +31,7 @@ MTG_NodeArrayHeader *pArrayHeader
 /**
 * Inquires the heap memory size currently allocated to the MTG_NodeArrayHeader *
 * @return  size in bytes.
-* @param  pArrayHeader  IN      
+* @param  pArrayHeader  IN
 * @bsimethod
 +---------------+---------------+---------------+---------------+------*/
 Public GEOMDLLIMPEXP int jmdlMTGNodeArray_getHeapMemorySize

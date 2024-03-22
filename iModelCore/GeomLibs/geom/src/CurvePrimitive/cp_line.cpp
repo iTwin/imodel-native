@@ -26,7 +26,7 @@ ICurvePrimitivePtr CurvePrimitiveLine::_CloneBetweenFractions
 double fractionA,
 double fractionB,
 bool allowExtrapolation
-) const 
+) const
     {
     DSegment3d segment1;
     m_segment.FractionParameterToPoint (segment1.point[0], fractionA);
@@ -92,7 +92,7 @@ bool CurvePrimitiveLine::_IsFractionSpace() const {return true;}
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool CurvePrimitiveLine::_FractionToPoint(double fraction, DPoint3dR point) const 
+bool CurvePrimitiveLine::_FractionToPoint(double fraction, DPoint3dR point) const
         {
         m_segment.FractionParameterToPoint (point, fraction);
         return true;
@@ -101,7 +101,7 @@ bool CurvePrimitiveLine::_FractionToPoint(double fraction, DPoint3dR point) cons
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool CurvePrimitiveLine::_TrySetStart (DPoint3dCR xyz) 
+bool CurvePrimitiveLine::_TrySetStart (DPoint3dCR xyz)
         {
         m_segment.point[0] = xyz;
         return true;
@@ -110,7 +110,7 @@ bool CurvePrimitiveLine::_TrySetStart (DPoint3dCR xyz)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool CurvePrimitiveLine::_TrySetEnd (DPoint3dCR xyz) 
+bool CurvePrimitiveLine::_TrySetEnd (DPoint3dCR xyz)
         {
         m_segment.point[1] = xyz;
         return true;
@@ -119,17 +119,17 @@ bool CurvePrimitiveLine::_TrySetEnd (DPoint3dCR xyz)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool CurvePrimitiveLine::_FractionToPoint(double fraction, DPoint3dR point, DVec3dR tangent) const 
+bool CurvePrimitiveLine::_FractionToPoint(double fraction, DPoint3dR point, DVec3dR tangent) const
         {
         m_segment.FractionParameterToTangent (point, tangent, fraction);
         return true;
         }
-    
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool CurvePrimitiveLine::_FractionToPoint(double fraction, DPoint3dR point, DVec3dR tangent, DVec3dR derivative2) const 
+bool CurvePrimitiveLine::_FractionToPoint(double fraction, DPoint3dR point, DVec3dR tangent, DVec3dR derivative2) const
         {
         m_segment.FractionParameterToTangent (point, tangent, fraction);
         derivative2.Zero ();
@@ -140,19 +140,19 @@ bool CurvePrimitiveLine::_FractionToPoint(double fraction, DPoint3dR point, DVec
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool CurvePrimitiveLine::_FractionToPoint(double fraction, DPoint3dR point, DVec3dR tangent, DVec3dR derivative2, DVec3dR derivative3) const 
+bool CurvePrimitiveLine::_FractionToPoint(double fraction, DPoint3dR point, DVec3dR tangent, DVec3dR derivative2, DVec3dR derivative3) const
         {
         m_segment.FractionParameterToTangent (point, tangent, fraction);
         derivative2.Zero ();
         derivative3.Zero ();
         return true;
         }
-    
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool CurvePrimitiveLine::_FractionToFrenetFrame(double f, TransformR frame) const 
+bool CurvePrimitiveLine::_FractionToFrenetFrame(double f, TransformR frame) const
         {
         DPoint3d point;
         DVec3d tangent, xDir, yDir, zDir;
@@ -172,7 +172,7 @@ bool CurvePrimitiveLine::_FractionToFrenetFrame(double f, TransformR frame) cons
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool CurvePrimitiveLine::_Length(double &length) const 
+bool CurvePrimitiveLine::_Length(double &length) const
         {
         length = m_segment.Length();
         return true;
@@ -181,7 +181,7 @@ bool CurvePrimitiveLine::_Length(double &length) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool CurvePrimitiveLine::_Length(RotMatrixCP worldToLocal, double &length) const 
+bool CurvePrimitiveLine::_Length(RotMatrixCP worldToLocal, double &length) const
         {
         DVec3d vector = DVec3d::FromStartEnd (m_segment.point[0], m_segment.point[1]);
         worldToLocal->Multiply (vector);
@@ -194,7 +194,7 @@ bool CurvePrimitiveLine::_Length(RotMatrixCP worldToLocal, double &length) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool CurvePrimitiveLine::_GetRange(DRange3dR range) const 
+bool CurvePrimitiveLine::_GetRange(DRange3dR range) const
         {
         range.Init ();
         range.Extend (m_segment.point, 2);
@@ -205,7 +205,7 @@ bool CurvePrimitiveLine::_GetRange(DRange3dR range) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool CurvePrimitiveLine::_GetRange(DRange3dR range, TransformCR transform) const 
+bool CurvePrimitiveLine::_GetRange(DRange3dR range, TransformCR transform) const
         {
         range.Init ();
         range.Extend (transform, m_segment.point, 2);
@@ -217,7 +217,7 @@ bool CurvePrimitiveLine::_GetRange(DRange3dR range, TransformCR transform) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-double CurvePrimitiveLine::_FastMaxAbs() const 
+double CurvePrimitiveLine::_FastMaxAbs() const
         {
         return DoubleOps::Max (m_segment.point[0].MaxAbs (), m_segment.point[1].MaxAbs ());
         }
@@ -251,14 +251,14 @@ size_t CurvePrimitiveLine::_NumComponent () const  {return 1;}
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-DRange1d CurvePrimitiveLine::_ProjectedParameterRange(DRay3dCR ray) const 
+DRange1d CurvePrimitiveLine::_ProjectedParameterRange(DRay3dCR ray) const
     {
     return m_segment.ProjectedParameterRange (ray);
     }
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-DRange1d CurvePrimitiveLine::_ProjectedParameterRange(DRay3dCR ray, double fractionA, double fractionB) const 
+DRange1d CurvePrimitiveLine::_ProjectedParameterRange(DRay3dCR ray, double fractionA, double fractionB) const
     {
     return DSegment3d::FromFractionInterval (m_segment, fractionA, fractionB).ProjectedParameterRange (ray);
     }
@@ -266,7 +266,7 @@ DRange1d CurvePrimitiveLine::_ProjectedParameterRange(DRay3dCR ray, double fract
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool CurvePrimitiveLine::_GetBreakFraction(size_t breakFractionIndex, double &fraction) const 
+bool CurvePrimitiveLine::_GetBreakFraction(size_t breakFractionIndex, double &fraction) const
         {
         if (breakFractionIndex == 0)
             {
@@ -281,12 +281,12 @@ bool CurvePrimitiveLine::_GetBreakFraction(size_t breakFractionIndex, double &fr
         else
             return false;
         }
-    
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool CurvePrimitiveLine::_AdjustFractionToBreakFraction(double fraction, Rounding::RoundingMode mode, size_t &breakIndex, double &adjustedFraction) const 
+bool CurvePrimitiveLine::_AdjustFractionToBreakFraction(double fraction, Rounding::RoundingMode mode, size_t &breakIndex, double &adjustedFraction) const
         {
         adjustedFraction = Rounding::Round (fraction, mode, 0.0, 1.0);
         if (DoubleOps::AlmostEqual (adjustedFraction, 0.0))
@@ -296,12 +296,12 @@ bool CurvePrimitiveLine::_AdjustFractionToBreakFraction(double fraction, Roundin
 
         return true;
         }
-    
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool CurvePrimitiveLine::_GetMSBsplineCurve(MSBsplineCurveR curve, double fractionA, double fractionB) const 
+bool CurvePrimitiveLine::_GetMSBsplineCurve(MSBsplineCurveR curve, double fractionA, double fractionB) const
         {
         if (DoubleOps::IsExact01 (fractionA, fractionB))
             {
@@ -324,7 +324,7 @@ bool CurvePrimitiveLine::_AddStrokes(bvector <DPoint3d> &points, IFacetOptionsCR
                 bool includeStartPoint,
                 double startFraction,
                 double endFraction
-                ) const 
+                ) const
         {
         DSegment3d localSegment = DSegment3d::FromFractionInterval (m_segment, startFraction, endFraction);
 
@@ -352,10 +352,10 @@ bool CurvePrimitiveLine::_AddStrokes(bvector <DPoint3d> &points, IFacetOptionsCR
 bool CurvePrimitiveLine::_AddStrokes(bvector <PathLocationDetail> &points, IFacetOptionsCR options,
                 double startFraction,
                 double endFraction
-                ) const 
+                ) const
         {
         DSegment3d localSegment = DSegment3d::FromFractionInterval (m_segment, startFraction, endFraction);
-        
+
         size_t edgeCount = options.SegmentStrokeCount (localSegment);
         if (edgeCount < 1)
             edgeCount = 1;
@@ -382,7 +382,7 @@ bool CurvePrimitiveLine::_AddStrokes(bvector <PathLocationDetail> &points, IFace
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-size_t CurvePrimitiveLine::_GetStrokeCount(IFacetOptionsCR options, double startFraction, double endFraction) const 
+size_t CurvePrimitiveLine::_GetStrokeCount(IFacetOptionsCR options, double startFraction, double endFraction) const
     {
     DSegment3d localSegment = DSegment3d::FromFractionInterval (m_segment, startFraction, endFraction);
     return options.SegmentStrokeCount (localSegment);
@@ -392,7 +392,7 @@ size_t CurvePrimitiveLine::_GetStrokeCount(IFacetOptionsCR options, double start
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool CurvePrimitiveLine::_SignedDistanceBetweenFractions(double startFraction, double endFraction, double &length) const 
+bool CurvePrimitiveLine::_SignedDistanceBetweenFractions(double startFraction, double endFraction, double &length) const
         {
         length = (endFraction - startFraction) * m_segment.Length();
         return true;
@@ -401,7 +401,7 @@ bool CurvePrimitiveLine::_SignedDistanceBetweenFractions(double startFraction, d
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool CurvePrimitiveLine::_SignedDistanceBetweenFractions(RotMatrixCP worldToLocal, double startFraction, double endFraction, double &length) const 
+bool CurvePrimitiveLine::_SignedDistanceBetweenFractions(RotMatrixCP worldToLocal, double startFraction, double endFraction, double &length) const
         {
         Length (worldToLocal, length);
         length *= (endFraction - startFraction);
@@ -412,7 +412,7 @@ bool CurvePrimitiveLine::_SignedDistanceBetweenFractions(RotMatrixCP worldToLoca
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool CurvePrimitiveLine::_PointAtSignedDistanceFromFraction(double startFraction, double signedDistance, bool allowExtension, CurveLocationDetailR location) const 
+bool CurvePrimitiveLine::_PointAtSignedDistanceFromFraction(double startFraction, double signedDistance, bool allowExtension, CurveLocationDetailR location) const
         {
         location = CurveLocationDetail (this, 1);
         double a = m_segment.Length ();
@@ -430,7 +430,7 @@ bool CurvePrimitiveLine::_PointAtSignedDistanceFromFraction(double startFraction
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool CurvePrimitiveLine::_PointAtSignedDistanceFromFraction(RotMatrixCP worldToLocal, double startFraction, double signedDistance, bool allowExtension, CurveLocationDetailR location) const 
+bool CurvePrimitiveLine::_PointAtSignedDistanceFromFraction(RotMatrixCP worldToLocal, double startFraction, double signedDistance, bool allowExtension, CurveLocationDetailR location) const
         {
         location = CurveLocationDetail (this, 1);
         double a;
@@ -450,7 +450,7 @@ bool CurvePrimitiveLine::_PointAtSignedDistanceFromFraction(RotMatrixCP worldToL
 
 //    using ICurvePrimitive::_ClosestPointBounded;    // suppresses C4266
 
-bool CurvePrimitiveLine::_ClosestPointBounded (DPoint3dCR spacePoint, double &fraction, DPoint3dR curvePoint, bool extend0, bool extend1) const 
+bool CurvePrimitiveLine::_ClosestPointBounded (DPoint3dCR spacePoint, double &fraction, DPoint3dR curvePoint, bool extend0, bool extend1) const
     {
     return m_segment.ProjectPointBounded (curvePoint, fraction, spacePoint, extend0, extend1);
     }
@@ -459,7 +459,7 @@ bool CurvePrimitiveLine::_ClosestPointBounded (DPoint3dCR spacePoint, double &fr
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool CurvePrimitiveLine::_ClosestPointBoundedXY(DPoint3dCR spacePoint, DMatrix4dCP worldToLocal, CurveLocationDetailR location, bool extend0, bool extend1) const 
+bool CurvePrimitiveLine::_ClosestPointBoundedXY(DPoint3dCR spacePoint, DMatrix4dCP worldToLocal, CurveLocationDetailR location, bool extend0, bool extend1) const
         {
         location = CurveLocationDetail (this, 1);
         m_segment.ClosestPointBoundedXY (location.point, location.fraction, location.a, spacePoint, worldToLocal, extend0, extend1);
@@ -513,7 +513,7 @@ bool extend1                                //!< true to extend at end of primit
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool CurvePrimitiveLine::_TransformInPlace (TransformCR transform) 
+bool CurvePrimitiveLine::_TransformInPlace (TransformCR transform)
         {
         transform.Multiply (m_segment.point[0]);
         transform.Multiply (m_segment.point[1]);
@@ -523,7 +523,7 @@ bool CurvePrimitiveLine::_TransformInPlace (TransformCR transform)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool CurvePrimitiveLine::_ReverseCurvesInPlace () 
+bool CurvePrimitiveLine::_ReverseCurvesInPlace ()
         {
         std::swap (m_segment.point[0], m_segment.point[1]);
         return true;
@@ -542,7 +542,7 @@ void CurvePrimitiveLine::_AppendCurvePlaneIntersections
 (
 DPoint3dDVec3dDVec3dCR plane,  //!< [in] plane to intersect
 UVBoundarySelect   bounded,         //!< [in] selects Unbounded, Triangle, or Parallelogram boundaries.
-bvector<CurveAndSolidLocationDetail> &intersections   //!< [out] intersections 
+bvector<CurveAndSolidLocationDetail> &intersections   //!< [out] intersections
 ) const
     {
     DPoint2d uv;

@@ -420,7 +420,7 @@ double theta1
 
 
 static double sDefaultStrokeAngle = 0.04;
-// Return the recommended default stroke angle control 
+// Return the recommended default stroke angle control
 double DSpiral2dBase::DefaultStrokeAngle ()
     {
     return sDefaultStrokeAngle;
@@ -971,7 +971,7 @@ double&   minDistance
 
 /*-----------------------------------------------------------------*//**
 @description test if a length-from-inflection and final radius combination is "small enough" for reasonable use.
-@param 
+@param
 +---------------+---------------+---------------+---------------+------*/
 bool DSpiral2dBase::IsValidRLCombination(double lengthFromInflection, double radius, int spiralType)
     {
@@ -1496,7 +1496,7 @@ double     &junctionRadius
     lineToSpiralA.SumOf (lineLineIntersection, unitAX, -(spiralChord.x + ex));
     lineToSpiralB.SumOf (lineLineIntersection, unitBX, -(spiralChord.x + ex));
     spiralToSpiral.SumOf (lineLineIntersection, unitAX, -ex, unitAY, spiralChord.y);
-    
+
     spiralA.mTheta0 += thetaA;
     spiralA.mTheta1 += thetaA;
     spiralB.mTheta0 += thetaB;
@@ -1814,7 +1814,7 @@ DSpiral2dPlacement const &placementA,
 double activeFractionA,
 DSpiral2dPlacement const &placementB,
 double activeFractionB,
-double tolerance) 
+double tolerance)
     {
     double fractionA = placementA.ActiveFractionToGlobalFraction(activeFractionA);
     double fractionB = placementB.ActiveFractionToGlobalFraction(activeFractionB);
@@ -2012,7 +2012,7 @@ MappedLengthIntegrator (RotMatrixCR matrix, DSpiral2dPlacementCR placement)
     m_lastDistance = 0.0;
     }
 
-void EvaluateVectorIntegrand (double t, double *pF) override 
+void EvaluateVectorIntegrand (double t, double *pF) override
     {
     double dUV[10];
     m_placement.spiral->EvaluateVectorIntegrand (t, dUV);
@@ -2021,7 +2021,7 @@ void EvaluateVectorIntegrand (double t, double *pF) override
     }
 int  GetVectorIntegrandCount () override { return 1;}
 
-bool AnnounceIntermediateIntegral (double t, double *pIntegral) override 
+bool AnnounceIntermediateIntegral (double t, double *pIntegral) override
     {
     m_lastDistance = pIntegral[0];
     return true;
@@ -2031,7 +2031,7 @@ double IntegrateMappedLengthBetweenPrimaryFractions (double startFraction, doubl
     {
     BSIQuadraturePoints gauss;
     int numGauss = 4;
-    gauss.InitGauss (numGauss);     
+    gauss.InitGauss (numGauss);
     m_lastDistance = 0.0;
     double nominalLength = m_placement.SpiralLength01 ();
     double d0 = startFraction * nominalLength;

@@ -58,7 +58,7 @@ DPoint3dCR pointB
     E.AddScaledOuterProductInPlace (U, U, div3);
     double a = U.Magnitude ();
     E.ScaleColumns (E, a, a, a);
-    return E;    
+    return E;
     }
 
 
@@ -178,7 +178,7 @@ int     numFunc
                 m_bezierCurve.GetPoleP (),
                 (int)m_bezierCurve.GetOrder (),
                 &theta, 1);
-    
+
     DVec3d vectorV = DVec3d::FromStartEnd (m_xyz0, point);
     double distanceAlong = vectorV.DotProduct (m_unitEdgeVector);
     DPoint3d edgePoint;
@@ -191,7 +191,7 @@ int     numFunc
     DPoint3d centroid;
     DVec3d centroidVector;
     centroid.Interpolate (edgePoint, 0.5, point);
-    centroidVector.DifferenceOf (centroid, m_origin);    
+    centroidVector.DifferenceOf (centroid, m_origin);
 
     RotMatrix products;
     products.Zero ();
@@ -266,7 +266,7 @@ void Integrate(double u0, double u1, double *pF, int numIntegral, int numGauss)
         {
         pF[k] = F1[k];
         }
-    //double eMax = maxAbsDiff (pF, F0, numIntegral);    
+    //double eMax = maxAbsDiff (pF, F0, numIntegral);
     }
 };
 #ifdef CompileAll
@@ -385,7 +385,7 @@ DPoint3dR centroid
 
 GEOMDLLIMPEXP DRange1d CurveVector::ProjectedParameterRange (DRay3dCR ray) const
     {
-    DRange1d dotRange = DRange1d ();        // For lines etc, record range of simple dot products -- needs to be divided by 
+    DRange1d dotRange = DRange1d ();        // For lines etc, record range of simple dot products -- needs to be divided by
                                             // rayVectorMagnitudeSquared () at end.
     DRange1d parameterRange = DRange1d ();  // The real result.
     double rayVectorMagnitudeSquared = ray.direction.MagnitudeSquared ();
@@ -428,7 +428,7 @@ GEOMDLLIMPEXP DRange1d CurveVector::ProjectedParameterRange (DRay3dCR ray) const
             case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector:
                 {
                 CurveVectorCP       childCurveVector = at(i)->GetChildCurveVectorCP();
-                
+
                 if (NULL != childCurveVector)
                     {
                     DRange1d            curveVectorRange = childCurveVector->ProjectedParameterRange (ray);
@@ -794,7 +794,7 @@ TransformCR worldToLocal
     normal.Zero ();
     area = 0.0;
     DPoint3d referencePoint;
-    
+
     if (!curves.GetStartPoint (referencePoint))
         return false;
 

@@ -235,7 +235,7 @@ GEOMDLLIMPEXP double EvaluateImplicitFunction (double x, double y, double z) con
 //! Evaluate the implicit function at space point
 //! @param [in] xyz coordinates
 GEOMDLLIMPEXP double EvaluateImplicitFunction (DPoint3d xyz) const;
-    
+
 //! Evaluate the implicit function at weighted space point (wx/w, wy/w, wz/w)
 //! @param [in] wx (preweighted) x coordinate
 //! @param [in] wy (preweighted) y coordinate
@@ -309,7 +309,7 @@ GEOMDLLIMPEXP double EvaluateImplicitFunction (double x, double y, double z) con
 //! Evaluate the implicit function at space point
 //! @param [in] xyz coordinates
 GEOMDLLIMPEXP double EvaluateImplicitFunction (DPoint3d xyz) const;
-    
+
 //! Evaluate the implicit function at weighted space point (wx/w, wy/w, wz/w)
 //! @param [in] wx (preweighted) x coordinate
 //! @param [in] wy (preweighted) y coordinate

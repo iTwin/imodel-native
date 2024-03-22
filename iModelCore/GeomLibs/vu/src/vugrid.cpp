@@ -682,7 +682,7 @@ VuMask exteriorMask
     DPoint3d periods;
     bool bIsXPeriodic = false, bIsYPeriodic = false;
     vu_graphRange (pGraph, &range);
-    
+
     minX = range.low.x;
     maxX = range.high.x;
     minY = range.low.y;

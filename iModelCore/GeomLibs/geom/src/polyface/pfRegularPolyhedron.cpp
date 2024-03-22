@@ -506,7 +506,7 @@ TransformCP             transform
         ScaleAndOrientForRadiusAtKeyPoint(
                 *polyface,
                 DPoint3d::From (0,0,0),
-                radius, radiusSelect, 
+                radius, radiusSelect,
                 doRotation);
         if (transform)
             polyface->Transform (*transform);

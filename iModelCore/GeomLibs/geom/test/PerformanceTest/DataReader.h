@@ -8,7 +8,7 @@
 #include <BeSQLite/BeSQLite.h>
 #include "GeomLibsTests.h"
 
-USING_NAMESPACE_BENTLEY_SQLITE 
+USING_NAMESPACE_BENTLEY_SQLITE
 
 BEGIN_GEOMLIBS_TESTS_NAMESPACE
 
@@ -17,7 +17,7 @@ struct DataReader
     protected:
         virtual bool _GetNextTest(Utf8String& description, Utf8String& xml, int id) { return false; };
         void GetBeFileName(BeFileName& beFilename, WCharCP fileName);
-        DataReader() {} ; 
+        DataReader() {} ;
 
     public:
         bool GetNextTest(Utf8String& description, Utf8String& xml, int id) { return _GetNextTest(description, xml, id); }

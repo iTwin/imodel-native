@@ -302,7 +302,7 @@ TEST(bspsurf,computeZeroSurfNorm)
             }
         }
     Check::ClearGeometry ("bspsurf.computeZeroSurfNorm");
-    
+
     }
 
 enum class SurfaceAction {
@@ -338,7 +338,7 @@ TEST(bspsurf,computePartials)
     double frameScale = 0.1;
     // Action bits:
     // 0x01 = make rational
-    // 0x02 = 
+    // 0x02 =
     for (SurfaceAction action : {
                 SurfaceAction::None,
                 SurfaceAction::MakeRational,

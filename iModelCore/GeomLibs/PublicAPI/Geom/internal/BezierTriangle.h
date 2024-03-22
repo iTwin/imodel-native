@@ -21,11 +21,11 @@ template <typename T>
 
 struct GenericBezierTriangle
 {
-public: 
+public:
 // Should be private, but I don't see how to do the specialized accessors
 //s_numPoints, s_orderFP
-int m_order;         
-T m_controlPoints[MAX_BEZIER_TRIANGLE_POINTS];    
+int m_order;
+T m_controlPoints[MAX_BEZIER_TRIANGLE_POINTS];
 public:
 
 //! @description Construct a triangle from an array of control points
@@ -71,7 +71,7 @@ GEOMDLLIMPEXP GenericBezierTriangle (T pt0, T pt1, T pt2, T pt3, T pt4, T pt5);
 GEOMDLLIMPEXP GenericBezierTriangle (T pt0, T pt1, T pt2, T pt3, T pt4, T pt5,
 									 T pt6, T pt7, T pt8, T pt9);
 
-//! @description Construct an empty (order==0) triangle structure.  
+//! @description Construct an empty (order==0) triangle structure.
 GEOMDLLIMPEXP GenericBezierTriangle ();
 
 //! @description Does nothing
@@ -88,7 +88,7 @@ int GEOMDLLIMPEXP GetOrder () const;
 int GEOMDLLIMPEXP GetDegree () const;
 
 //! @description Gives the number of control points in the triangle
-//! @return The number of control points in the triangle	
+//! @return The number of control points in the triangle
 int GEOMDLLIMPEXP GetNumberPoints () const;
 
 //! @description Sets the order of the triangle
@@ -111,7 +111,7 @@ T GEOMDLLIMPEXP GetPoleR (int i, int j) const;
 //! @param [in] j The row position
 //! @param [out] cpnt The desired control point
 //! @return True or false, depending on if the index provided corresponds to an actual control point
-bool GEOMDLLIMPEXP TryGetPole (int i, int j, T &cpnt) const;	
+bool GEOMDLLIMPEXP TryGetPole (int i, int j, T &cpnt) const;
 
 //! @description Sets the pole number in the triangle equal to a new control point
 //! @param [in] i The index number of the control point
@@ -137,7 +137,7 @@ void GEOMDLLIMPEXP Zero ();
 //! @param [in] n The order to make the triangle
 void GEOMDLLIMPEXP ZeroSafe (int n);
 
-//! @description Raises the order of the triangle by one 
+//! @description Raises the order of the triangle by one
 //! @return The new raised-order triangle
 GenericBezierTriangle GEOMDLLIMPEXP RaiseOrder () const;
 
@@ -195,7 +195,7 @@ void GEOMDLLIMPEXP ComputeBasisFunctions (double u, double v, double *values) co
 //! @param [out] ddu The array derivatives wrt u
 //! @param [out] ddv The array derivatives wrt v
 void GEOMDLLIMPEXP ComputeBasisFunctions (double u, double v, double *values, double *ddu, double *ddv) const;
-	
+
 //! @description Compute basis functions for triangle
 //! @description Uses algorithm to compute basis functions
 //! @param [in] u The u-parameter for evaluation
@@ -211,8 +211,8 @@ void GEOMDLLIMPEXP ComputeBasisFunctionsCompact (double u, double v, double *val
 //! @param [out] ddu The array derivatives wrt u
 //! @param [out] ddv The array derivatives wrt v
 void GEOMDLLIMPEXP ComputeBasisFunctionsCompact (double u, double v, double *values, double *ddu, double *ddv) const;
-      
-//! @description Run the de Casteljau subdivision on the triangle 
+
+//! @description Run the de Casteljau subdivision on the triangle
 //! @description This is inplace and reduces the degree
 //! @param [in] u The u-parameter for evaluation
 //! @param [in] v The v-parameter for evaluation
@@ -227,14 +227,14 @@ void GEOMDLLIMPEXP InplaceDeCasteljauLayer (double u, double v);
 void GEOMDLLIMPEXP LayerTriangles (double u, double v, GenericBezierTriangle &bottom, GenericBezierTriangle &right, GenericBezierTriangle &left);
 
 //! @description Given the Barycentric coordinates of a control point,
-//! @description computes its values as a T using the de Casteljau algorithm 
+//! @description computes its values as a T using the de Casteljau algorithm
 //! @param [in] u The u-parameter for evaluation
 //! @param [in] v The v-parameter for evaluation
 //! @return The desired control point of type T
 T GEOMDLLIMPEXP LayerTrianglesEvaluate (double u, double v) const;
 
 //! @description Given the Barycentric coordinates of a control point, computes its values as a T
-//! @description as well as the derivatives of the triangle wrt u and v using the de Casteljau algorithm 
+//! @description as well as the derivatives of the triangle wrt u and v using the de Casteljau algorithm
 //! @param [in] u The u-parameter for evaluation
 //! @param [in] v The v-parameter for evaluation
 //! @param [out] cpnt The desired control point of type T
@@ -279,10 +279,10 @@ void GEOMDLLIMPEXP ComputeWeighedChildTriangle (GenericBezierTriangle &child, In
 //			 child.m_controlPoints[childIndex].z += m_controlPoints[parentIndex].z * w;
 //			 }
 //
-//#else 
-//		  int childIndex [120], parentIndex [120]; 
+//#else
+//		  int childIndex [120], parentIndex [120];
 //		  double wIndex [120];
-//			
+//
 //		  for (int i = 0; i < numWeights; i++)
 //             {
 //             childIndex[i] = weights[i].childIndex;
@@ -291,7 +291,7 @@ void GEOMDLLIMPEXP ComputeWeighedChildTriangle (GenericBezierTriangle &child, In
 //			 }
 //			 AddWeighted (child.m_controlPoints, childIndex, m_controlPoints, parentIndex, wIndex, numWeights);
 //#endif
-}; 
+};
 
 
 
@@ -309,14 +309,14 @@ GEOMDLLIMPEXP GenericBezierTriangleDPoint2d (DPoint2d *controlPoints, int size);
 //! @param [in] controlPoints The points from which to create the triangle
 GEOMDLLIMPEXP GenericBezierTriangleDPoint2d (bvector<DPoint2d> const &controlPoints);
 
-//! @description Construct an empty (order==0) triangle structure with DPoint2d control points.  
-GEOMDLLIMPEXP GenericBezierTriangleDPoint2d ();    
+//! @description Construct an empty (order==0) triangle structure with DPoint2d control points.
+GEOMDLLIMPEXP GenericBezierTriangleDPoint2d ();
 
-//! @description Copy constructor to promote the templatized class to a GenericBezierTriangleDPoint3d 
+//! @description Copy constructor to promote the templatized class to a GenericBezierTriangleDPoint3d
 //! @param [in] source The triangle to be copied
 GEOMDLLIMPEXP GenericBezierTriangleDPoint2d (GenericBezierTriangle <DPoint2d> const &source);
 
-//! @description Set templatized class equal to a GenericBezierTriangleDPoint2d 
+//! @description Set templatized class equal to a GenericBezierTriangleDPoint2d
 //! @param [in] source The triangle to be copied
 GenericBezierTriangleDPoint2d GEOMDLLIMPEXP operator = (GenericBezierTriangle<DPoint2d> const & source);
 
@@ -348,14 +348,14 @@ GEOMDLLIMPEXP GenericBezierTriangleDPoint3d (DPoint3d *controlPoints, int size);
 //! @param [in] controlPoints The points from which to create the triangle
 GEOMDLLIMPEXP GenericBezierTriangleDPoint3d (bvector<DPoint3d> const &controlPoints);
 
-//! @description Construct an empty (order==0) triangle structure with DPoint3d control points.  
-GEOMDLLIMPEXP GenericBezierTriangleDPoint3d ();    
+//! @description Construct an empty (order==0) triangle structure with DPoint3d control points.
+GEOMDLLIMPEXP GenericBezierTriangleDPoint3d ();
 
-//! @description Copy constructor to promote the templatized class to a GenericBezierTriangleDPoint3d 
+//! @description Copy constructor to promote the templatized class to a GenericBezierTriangleDPoint3d
 //! @param [in] source The triangle to be copied
 GEOMDLLIMPEXP GenericBezierTriangleDPoint3d (GenericBezierTriangle <DPoint3d> const &source);
 
-//! @description Set templatized class equal to a GenericBezierTriangleDPoint3d 
+//! @description Set templatized class equal to a GenericBezierTriangleDPoint3d
 //! @param [in] source The triangle to be copied
 GenericBezierTriangleDPoint3d GEOMDLLIMPEXP operator = (GenericBezierTriangle<DPoint3d> const & source);
 
@@ -399,14 +399,14 @@ GEOMDLLIMPEXP GenericBezierTriangleDPoint4d (DPoint4d *controlPoints, int size);
 //! @param [in] controlPoints The points from which to create the triangle
 GEOMDLLIMPEXP GenericBezierTriangleDPoint4d (bvector<DPoint4d> const &controlPoints);
 
-//! @description Construct an empty (order==0) triangle structure with DPoint4d control points.  
-GEOMDLLIMPEXP GenericBezierTriangleDPoint4d ();    
+//! @description Construct an empty (order==0) triangle structure with DPoint4d control points.
+GEOMDLLIMPEXP GenericBezierTriangleDPoint4d ();
 
-//! @description Copy constructor to promote the templatized class to a GenericBezierTriangleDPoint4d 
+//! @description Copy constructor to promote the templatized class to a GenericBezierTriangleDPoint4d
 //! @param [in] source The triangle to be copied
 GEOMDLLIMPEXP GenericBezierTriangleDPoint4d (GenericBezierTriangle <DPoint4d> const &source);
 
-//! @description Set templatized class equal to a GenericBezierTriangleDPoint4d 
+//! @description Set templatized class equal to a GenericBezierTriangleDPoint4d
 //! @param [in] source The triangle to be copied
 GenericBezierTriangleDPoint4d GEOMDLLIMPEXP operator = (GenericBezierTriangle<DPoint4d> const & source);
 
@@ -437,10 +437,10 @@ GEOMDLLIMPEXP GenericBezierTriangleD (double *controlPoints, int size);
 //! @param [in] controlPoints The points from which to create the triangle
 GEOMDLLIMPEXP GenericBezierTriangleD (bvector<double> const &controlPoints);
 
-//! @description Construct an empty (order==0) triangle structure with double control points.  
+//! @description Construct an empty (order==0) triangle structure with double control points.
 GEOMDLLIMPEXP GenericBezierTriangleD();
 
-//! @description Copy constructor to promote the templatized class to a GenericBezierTriangleD 
+//! @description Copy constructor to promote the templatized class to a GenericBezierTriangleD
 //! @param [in] source The triangle to be copied
 GEOMDLLIMPEXP GenericBezierTriangleD (GenericBezierTriangle <double> const &source);
 
@@ -465,14 +465,14 @@ GEOMDLLIMPEXP GenericBezierTriangleOfTriangles (GenericBezierTriangleD *controlP
 //! @param [in] controlPoints The points from which to create the triangle
 GEOMDLLIMPEXP GenericBezierTriangleOfTriangles (bvector<GenericBezierTriangleD> const &controlPoints);
 
-//! @description Construct an empty (order==0) triangle structure with GenericBezierTriangleD control points.  
+//! @description Construct an empty (order==0) triangle structure with GenericBezierTriangleD control points.
 GEOMDLLIMPEXP GenericBezierTriangleOfTriangles ();
 
 //! @description Copy constructor to promote the templatized class to a GenericBezierTriangleOfTriangles
 //! @param [in] source The triangle to be copied
 GEOMDLLIMPEXP GenericBezierTriangleOfTriangles (GenericBezierTriangle <GenericBezierTriangleD> const &source);
 
-//! @description Set templatized class equal to a GenericBezierTriangleOfTriangles 
+//! @description Set templatized class equal to a GenericBezierTriangleOfTriangles
 //! @param [in] source The triangle to be copied
 GenericBezierTriangleOfTriangles GEOMDLLIMPEXP operator = (GenericBezierTriangle<GenericBezierTriangleD> const & source);
 
@@ -506,9 +506,9 @@ struct BezierCurveDPoint3d
 	//! Construct empy n-order curve
 	BezierCurveDPoint3d (int order);
     public:
-    
+
     // STANDARD CONSTRUCTORS
-    
+
     //! @description Construct an empty curve
     GEOMDLLIMPEXP BezierCurveDPoint3d ();
     //! @description Construct a single point curve
@@ -546,7 +546,7 @@ struct BezierCurveDPoint3d
 	//! @param [in] points The array of vectors
 	//! @param [in] size The size of the array
 	GEOMDLLIMPEXP BezierCurveDPoint3d (DVec3d *points, int size);
-    
+
 	//! @description Gives the order of the curve
 	//! @return The order of the curve
     int GEOMDLLIMPEXP GetOrder () const;
@@ -579,10 +579,10 @@ struct BezierCurveDPoint3d
 	//! @param [in] xyz The new point value
 	void GEOMDLLIMPEXP SetPole (int i, DPoint3dCR xyz);
 
-	//! @description Raises the order of the curve by one 
+	//! @description Raises the order of the curve by one
 	//! @return The new raised-order curve
 	BezierCurveDPoint3d GEOMDLLIMPEXP RaiseOrder () const;
-	
+
 	//! @description Raises the order of the curve by an integer
 	//! @param [in] order The number by which to raise the order
 	//! @return The new raised-order curve
@@ -605,7 +605,7 @@ struct BezierCurveDPoint3d
     //! @description Construct from 0, 1, 2, 3, 4, or 5 control points of (empty, constant, linear, quadratic, cubic, quartic) curve
 	//! @param [in] controlPoints The points from which to create the curve
     GEOMDLLIMPEXP BezierCurveDPoint3d (bvector<DPoint3d> const &controlPoints);
-	
+
 	//! @description Compute Cartesian coordinates of a point in the curve given parametric coordinates
 	//! @description Uses precalculated basis functions
 	//! @param [in] u The u-parameter for evaluation
@@ -646,13 +646,13 @@ struct BezierCurveDPoint3d
 	//! @param [out] values The array of basis functions
 	//! @param [out] dXdu The array derivatives wrt u
 	void ComputeBasisFunctions (double u, double *values, double *dXdu) const;
-	
+
 	//! @description Compute basis functions for curve
 	//! @description Uses algorithm to compute basis functions
 	//! @param [in] u The u-parameter for evaluation
 	//! @param [out] values The array of basis functions
 	void GEOMDLLIMPEXP ComputeBasisFunctionsCompact (double u, double *values) const;
-	
+
 	//! @description Compute basis functions for curve and their derivatives
 	//! @description Uses algorithm to compute basis functions
 	//! @param [in] u The u-parameter for evaluation
@@ -668,7 +668,7 @@ struct BezierCurveDPoint3d
     //! @description Construct from 0, 1, 2, 3, 4, or 5 control points of (empty, constant, linear, quadratic, cubic, quartic) curve
 	//! @param [in] controlPoints The points from which to create the curve
     //! @return the order actually installed
-    int GEOMDLLIMPEXP SetControlPoints (bvector<DPoint3d> const &controlPoints);   
+    int GEOMDLLIMPEXP SetControlPoints (bvector<DPoint3d> const &controlPoints);
 
 	//! @description Gets a count of the number of facets in the curve
 	//! @param [in] chordTolerance The chord tolerance

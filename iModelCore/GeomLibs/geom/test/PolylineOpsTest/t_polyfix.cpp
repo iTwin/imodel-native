@@ -76,12 +76,12 @@ static bool cb_sort_masterEdges_band (TileBracket const &pairA, TileBracket cons
     return false;
 
     }
-bool SameMasterEdges (TileBracket const &other) const 
+bool SameMasterEdges (TileBracket const &other) const
     {
     return m_masterEdge0 == other.m_masterEdge0
         && m_masterEdge1 == other.m_masterEdge1;
     }
-bool IsInNextBand (TileBracket const &other) const 
+bool IsInNextBand (TileBracket const &other) const
     {
     return m_band + 1 == other.m_band;
     }

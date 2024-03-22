@@ -35,7 +35,7 @@ StatusInt   _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery) override
     {
     auto p = dynamic_cast <PolyfaceHeaderCP> (&polyfaceQuery);
     if (p != nullptr)
-        Check::SaveTransformed (*p); 
+        Check::SaveTransformed (*p);
     return SUCCESS;
     }
 StatusInt   _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader) override

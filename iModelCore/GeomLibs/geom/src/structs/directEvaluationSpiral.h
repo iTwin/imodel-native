@@ -93,7 +93,7 @@ double DSpiral2dDirectEvaluation::FractionToCurvature (double fraction) const
         curvature = parametricCurvature (uvD1.x, uvD1.y, uvD2.x, uvD2.y);
         }
     return curvature;
-    }    
+    }
 
 double DSpiral2dDirectEvaluation::FractionToVelocity(double fraction) const
     {
@@ -105,7 +105,7 @@ double DSpiral2dDirectEvaluation::FractionToVelocity(double fraction) const
         velocity = uvD1.Magnitude ();
         }
     return velocity;
-    }    
+    }
 
 double DSpiral2dDirectEvaluation::FractionToLocalAngle(double fraction) const
     {
@@ -117,7 +117,7 @@ double DSpiral2dDirectEvaluation::FractionToLocalAngle(double fraction) const
         radians = atan2 (uvD1.y, uvD1.x);
         }
     return radians;
-    }    
+    }
 
 bool DSpiral2dDirectEvaluation::FractionToDCurvatureDFraction (double fraction, double &curvature, double &dCurvatureDFraction) const
     {
@@ -132,7 +132,7 @@ bool DSpiral2dDirectEvaluation::FractionToDCurvatureDFraction (double fraction, 
     curvature = 0.0;
     dCurvatureDFraction = 0.0;
     return false;
-    }  
+    }
 
 // rotate each vector by radians ...
 void DSpiral2dDirectEvaluation::ApplyCCWRotation
@@ -494,7 +494,7 @@ bool DSpiral2dAustralianRailCorp::EvaluateAtDistanceInStandardOrientation
                 }
             }
         }
-        
+
     return true;
     }
 bool DSpiral2dAustralianRailCorp::EvaluateAtFraction
@@ -521,7 +521,7 @@ bool DSpiral2dAustralianRailCorp::EvaluateAtFraction
         if (stat && s_applyRotation)
             DSpiral2dDirectEvaluation::ApplyCCWRotation (mTheta0, xy, d1XY, d2XY, d3XY);;
         return stat;
-        }       
+        }
     return false;
     }
 DSpiral2dBaseP DSpiral2dAustralianRailCorp::Clone () const
@@ -603,7 +603,7 @@ bool DSpiral2dMXCubicAlongArc::EvaluateAtFraction
         if (stat)
             DSpiral2dDirectEvaluation::ApplyCCWRotation (mTheta0, xy, d1XY, d2XY, d3XY);;
         return stat;
-        }       
+        }
     return false;
     }
 DSpiral2dBaseP DSpiral2dMXCubicAlongArc::Clone () const
@@ -661,7 +661,7 @@ bool DSpiral2dItalian::EvaluateAtFraction
 //********************************************************************************************
 // ClothoidCosineApproximation -- support for approximating the cosine series in a clothoid.
 size_t ClothoidCosineApproximation::s_evaluationCount = 0;
-//! 
+//!
 //! <ul>
 //! <li>Instantiate the clothoid cosine approximation function with caller-supplied coefficient of u^5 term.
 //! <li>This is a low level constructor -- the caller is responsible for incorporating typical R, L and sign into gamma.
@@ -808,7 +808,7 @@ bool DSpiral2dDirectHalfCosine::EvaluateAtFractionInStandardOrientation
         d2XY->Init (0.0, d2ydu2);
     if (d3XY)
         d3XY->Init (0.0, d3ydu3);
-        
+
     return true;
     }
 
@@ -827,7 +827,7 @@ bool DSpiral2dDirectHalfCosine::EvaluateAtFraction
         if (stat)
             DSpiral2dDirectEvaluation::ApplyCCWRotation (mTheta0, xy, d1XY, d2XY, d3XY);;
         return stat;
-        }       
+        }
     return false;
     }
 
@@ -1147,7 +1147,7 @@ bool DSpiral2dPolish::EvaluateAtFraction
 
 //! Return poles for preferred representation as a bezier curve
 //! These are in the local coordinates of the standard orientation
-//! 
+//!
 bool DSpiral2dPolish::GetBezierPoles
 (
 bvector<DPoint3d> &poles,   //!< [out] poles

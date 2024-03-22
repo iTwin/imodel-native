@@ -25,7 +25,7 @@ bool            isUnimodel
     double      diff, dist, delta, deltaMin = DBL_MAX;
     DPoint3d    arcCenter0[2], arcCenter1[2];
     double factor0, factor1;
-    
+
     if (!DoubleOps::SafeDivide (factor0, rad0, radialDirection0.Magnitude (), 0.0))
         return false;
     if (!DoubleOps::SafeDivide (factor1, rad1, radialDirection1.Magnitude (), 0.0))

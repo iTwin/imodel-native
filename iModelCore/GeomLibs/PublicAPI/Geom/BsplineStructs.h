@@ -95,7 +95,7 @@ struct GEOMDLLIMPEXP bSplineParam
 	//! Not used.
     int32_t             numRules;
 
-    //! Return the number of knots in the allocated knot array.  
+    //! Return the number of knots in the allocated knot array.
 	//! Note that this number may be different from the value of the numKnots field of this structure because the numKnots field traditionally indicated only the number of interior knots.
     int NumberAllocatedKnots () const;
 	//! Return the number of knots needed for a curve with specified order, closure, and poles.
@@ -136,7 +136,7 @@ struct BCurveSegment
     {
     private:
     // Centroid, length integrals with optional centroid.
-    void WireIntegrals (double &length, DPoint3dP centroid, 
+    void WireIntegrals (double &length, DPoint3dP centroid,
             double fractionA, double fractionB);
     public:
     enum
@@ -187,13 +187,13 @@ struct BCurveSegment
 
     //! Copy from {source} and apply a transformation
     GEOMDLLIMPEXP void CopyFrom (BCurveSegmentCR source, TransformCR matrix);
-    
+
     //! Compute length and centroid of curve as wire.
     GEOMDLLIMPEXP void WireCentroid (double &length, DPoint3dR centroid, double fraction0, double fraction1);
 
-    //! Compute length between fractions 
+    //! Compute length between fractions
     GEOMDLLIMPEXP void Length (double &length, double fraction0, double fraction1);
-    //! Compute length between fractions 
+    //! Compute length between fractions
     GEOMDLLIMPEXP void Length (RotMatrixCP worldToLocal, double &length, double fraction0, double fraction1);
 
 
@@ -239,7 +239,7 @@ struct BCurveSegment
     GEOMDLLIMPEXP size_t GetWorkOrder ();
     //! Transform primary poles
     GEOMDLLIMPEXP void Multiply (TransformCR transform);
-    
+
     //! Transform primary poles into work poles.
     GEOMDLLIMPEXP void BuildWorkPoles (TransformCR transform);
 
@@ -290,7 +290,7 @@ struct BCurveSegment
 
     //! Find the intersection of the segment UMin, UMax and the given interval.
     //! If empty, return false.
-    //! If not empty, 
+    //! If not empty,
     GEOMDLLIMPEXP bool SubdivideToIntersection (DRange1dCR interval);
 
     //! Index (from start) in parent bspline
@@ -337,7 +337,7 @@ struct BCurveSegment1d
     double uMax;
     //! flag set to true if this is a null interval (high multiplicity knot)
     bool  isNullU;
-    
+
     GEOMDLLIMPEXP BCurveSegment1d ();
 
     //! Evalute the value at given fraction
@@ -474,7 +474,7 @@ GEOMDLLIMPEXP bool LoadSurfaceVKnots (MSBsplineSurfaceCR surface);
 //! query if u is strictly interior to the knot range.
 GEOMDLLIMPEXP bool IsStrictInteriorKnot (double u) const;
 
-//! return the multiplicity of a knotValue (and its corrected actual knot if it is "clsoe" to a knot) 
+//! return the multiplicity of a knotValue (and its corrected actual knot if it is "clsoe" to a knot)
 GEOMDLLIMPEXP void FindKnotMultiplicity (double knotValue, double &correctedKnotValue, size_t &multiplicityOut) const;
 
 //! access a knot and its multplicity, identified by index from the left of the active interval.

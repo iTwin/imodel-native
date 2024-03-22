@@ -26,7 +26,7 @@ void GrabArcs (bvector<CurveCurve::FilletDetail> &arcs)
     arcs.clear ();
     arcs.swap (m_arcs);
     }
-    
+
 CurveLocationDetail FinalizedDetail (CurveLocationDetailCR detail0, double fraction, DPoint3dCR xyz)
     {
     CurveLocationDetail detail = detail0;
@@ -153,16 +153,16 @@ bool bReverseOrder
                 {
                 tangentPointA.SumOf (centerPointA, perpA, -signA);
                 tangentPointB.SumOf (centerPointB, perpB, -signB);
-                GenerateFilletArc (centerPointA, 
+                GenerateFilletArc (centerPointA,
                         FinalizedDetail (detailA0, paramA, tangentPointA),
                         FinalizedDetail (detailB0, paramB, tangentPointB),
                         planeNormal, bReverseOrder);
                 }
             }
         }
-    
+
     }
-    
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -174,7 +174,7 @@ void ProcessLineLine(
     CurveLocationDetail detailA (curveA);
     CurveLocationDetail detailB (curveB);
     ProcessLineLine (detailA, segmentA, detailB, segmentB, bReverseOrder);
-    }    
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -231,7 +231,7 @@ void ProcessLinestringInternal(ICurvePrimitiveP curveA, bvector<DPoint3d> const 
     size_t numPointsA = linestringA.size ();
     CurveLocationDetail detailA (curveA, numPointsA - 1);
     CurveLocationDetail detailB (curveA, numPointsA - 1);
-    
+
     for (size_t i = 1; i < numPointsA; i++)
         {
         DSegment3d segmentA = DSegment3d::From (linestringA[i-1], linestringA[i]);
@@ -257,7 +257,7 @@ void ProcessLineArc(
         CurveLocationDetailCR detailB, DEllipse3dCR ellipseB,
         bool bReverseOrder)
     {
-    
+
     if (!ellipseB.IsCircular ())
         return;
     BentleyApi::Transform localToWorld, worldToLocal;
@@ -319,12 +319,12 @@ void ProcessLineArc(
                     localToWorld.Multiply (worldPointB, localPointB);
                     localToWorld.Multiply (worldCenter, localCenter[i]);
                     GenerateFilletArc (
-                         worldCenter, 
+                         worldCenter,
                          FinalizedDetail (detailA, lineFraction[i], worldPointA),
                          FinalizedDetail (detailB, fractionB, worldPointB),
                          planeNormal, bReverseOrder);
                     }
-                }            
+                }
             }
         }
     }
@@ -383,15 +383,15 @@ void ProcessArcArc(
        ||  !DoubleOps::AlmostEqual (rB0, rB90)
        )
        return;
-       
+
     // hm... should choose larger ellipse as working system.
     DVec3d normalA, normalB;
     localToWorldA.GetMatrixColumn (normalA, 2);
     localToWorldB.GetMatrixColumn (normalB, 2);
-    
+
     if (!normalA.IsParallelTo (normalB))
         return;
-        
+
     // build both offset circles ...
     DEllipse3d ellipseBinA;
     worldToLocalA.Multiply (ellipseBinA, ellipseB);
@@ -415,7 +415,7 @@ void ProcessArcArc(
         offsetB[i].vector0.Scale (unitB0, rB0 + dr);
         offsetB[i].vector90.Scale (unitB90, rB0 + dr);
         }
-    
+
     for (int i = 0; i < 2; i++)
         {
         for (int j = 0; j < 2; j++)
@@ -423,11 +423,11 @@ void ProcessArcArc(
             DPoint3d uvw[6];
             DPoint3d paramA[6];
             DPoint3d paramB[6];
-            
+
             int numUVW = offsetA[i].IntersectXYDEllipse3d (uvw, paramA, paramB, offsetB[j]);
             for (int k = 0; k < numUVW; k++)
                 {
-                // fraction parameters of offset intersection are fraction parameters of the tangency points 
+                // fraction parameters of offset intersection are fraction parameters of the tangency points
                 //  on the original circles.
                 double thetaA = atan2 (paramA[k].y, paramA[k].x);
                 double thetaB = atan2 (paramB[k].y, paramB[k].x);
@@ -530,9 +530,9 @@ void ProcessBsplineBspline(ICurvePrimitiveP curveA, ICurvePrimitiveP curveB, boo
 +--------------------------------------------------------------------------------------*/
 void CurveCurve::CollectFilletArcs
 (
-CurveVectorCR chainA, 
+CurveVectorCR chainA,
 CurveVectorCR chainB,
-double radius, 
+double radius,
 bool extend,
 bvector<CurveCurve::FilletDetail> &arcs
 )
@@ -545,7 +545,7 @@ bvector<CurveCurve::FilletDetail> &arcs
         for (size_t iA = 0, nA = chainA.size (); iA < nA; iA++)
             {
             for (size_t iB = 0, nB = chainB.size (); iB < nB; iB++)
-                processor.Process (chainA[iA].get (), chainB[iB].get ());                        
+                processor.Process (chainA[iA].get (), chainB[iB].get ());
             }
         }
     else
@@ -558,20 +558,20 @@ bvector<CurveCurve::FilletDetail> &arcs
                 {
                 processor.ProcessLinestringInternal (chainA[iA].get (), *linestring);
                 }
-            // all interactions with successors 
+            // all interactions with successors
             for (size_t iB = iA + 1, nB = chainB.size (); iB < nB; iB++)
-                processor.Process (chainA[iA].get (), chainB[iB].get ());                        
+                processor.Process (chainA[iA].get (), chainB[iB].get ());
             }
         }
-    processor.GrabArcs (arcs);        
+    processor.GrabArcs (arcs);
     }
-    
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 void CurveCurve::CollectFilletArcs
 (
-ICurvePrimitiveR curveA, 
+ICurvePrimitiveR curveA,
 ICurvePrimitiveR curveB,
 double radius,
 bool extend,
@@ -783,7 +783,7 @@ PointTangentCurveTangentNewtonFunction (CircleConstructionFunction_PointTangentP
     {
     }
 void SetCurve (ICurvePrimitiveCP curve) {m_curve = curve;}
-ValidatedDouble EvaluateRToR (double fraction) override 
+ValidatedDouble EvaluateRToR (double fraction) override
     {
     DPoint3d xyz;
     DVec3d tangent;
@@ -796,7 +796,7 @@ ValidatedDouble EvaluateRToR (double fraction) override
     return ValidatedDouble (0.0, false);
     }
 
-bool EvaluateRToRD (double fraction, double &f, double &dfdu) override 
+bool EvaluateRToRD (double fraction, double &f, double &dfdu) override
     {
     DPoint3d xyz;
     DVec3d tangent, skew;

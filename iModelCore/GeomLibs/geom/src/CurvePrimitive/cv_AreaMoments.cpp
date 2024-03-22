@@ -37,7 +37,7 @@ AbstractPrimitiveAreaIntegrator &m_integrator;
 bvector<DPoint3d> m_strokePoints;   // availalable for use by _process methods.
 bvector<double> m_strokeParameters;   // availalable for use by _process methods.
 
-IFacetOptionsPtr m_bcurveStrokeOptions;    
+IFacetOptionsPtr m_bcurveStrokeOptions;
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -74,7 +74,7 @@ InertiaProductsSums (AbstractPrimitiveAreaIntegrator &integrator, TransformCR lo
     m_products = DMatrix4d::FromZero ();
     m_worldToLocal = worldToLocal;
     m_localToWorld = localToWorld;
-    
+
     m_bcurveStrokeOptions = IFacetOptions::CreateForCurves ();
     m_bcurveStrokeOptions->SetParamsRequired (true);
     m_bcurveStrokeOptions->SetAngleTolerance (s_angleTolerance);
@@ -105,7 +105,7 @@ bool TryGetProducts(DMatrix4dR products, bool returnWorldProducts)
     }
 
 // Sweep a triangle from the origin to pointA, pointB.
-// 
+//
 void AddLocalTriangle(DPoint3dCR pointA, DPoint3dCR pointB)
     {
     DMatrix4d products;
@@ -132,7 +132,7 @@ void AddLocalEllipseSweep_byQuadratureOfLineStrips (DEllipse3dCR ellipse)
     //    gaussRule.InitClenshawCurtis (s_numQuadraturePoint);
     else // default to gauss rules
         gaussRule.InitGauss (s_numQuadraturePoint);
-        
+
     int numQuadraturePoints = gaussRule.GetNumEval ();
     DMatrix4d products = DMatrix4d::FromZero ();
 
@@ -266,7 +266,7 @@ void _ProcessBsplineCurve(ICurvePrimitiveCR curve, MSBsplineCurveCR bcurve, DSeg
     // The quadrature variable is the curve parameter.
     //    At each curve parameter required by the quadrature, the 1D integrand is the integral along the line from the
     //     curve point back to the stroke.
-    //    The width of the strip with the line at its center is the 1D integration variable times the part of the 
+    //    The width of the strip with the line at its center is the 1D integration variable times the part of the
     //     curve tangent along the stroke direction -- i.e. curveTangent.DotProduct(lineTangent)
     // Accuracy experience:
     // Really fine stroking -- 0.02 radians -- gives about 4 digits.
@@ -281,13 +281,13 @@ void _ProcessBsplineCurve(ICurvePrimitiveCR curve, MSBsplineCurveCR bcurve, DSeg
     //    gaussRule.InitClenshawCurtis (s_numQuadraturePoint);
     else // default to gauss rules
         gaussRule.InitGauss (s_numQuadraturePoint);
-        
+
     int numQuadraturePoints = gaussRule.GetNumEval ();
     DMatrix4d products = DMatrix4d::FromZero ();
     for (size_t i = 0; bcurve.AdvanceToBezier  (segment, i, true);)
         {
         m_strokePoints.clear ();
-        m_strokeParameters.clear ();       
+        m_strokeParameters.clear ();
         ApplyWorldToLocal (segment);
         segment.AddStrokes (m_strokePoints, NULL, &m_strokeParameters, *m_bcurveStrokeOptions, 0.0, 1.0, false, &bcurve);
         DPoint3d point0, point1, xyzCurve, xyzChord;
@@ -445,7 +445,7 @@ bool returnWorldProducts
                 return false;
 
             products = DMatrix4d::FromZero ();
-            
+
             for (size_t i = 0; i < childProducts.size (); i++)
                 {
                 double targetSign = referenceSign;
@@ -453,7 +453,7 @@ bool returnWorldProducts
                 if (i != maxAreaIndex)
                     {
                     if (boundaryType == CurveVector::BOUNDARY_TYPE_ParityRegion)
-                        targetSign *= -1.0;                    
+                        targetSign *= -1.0;
                     }
                 double factor = 1.0;
                 if (thisArea * targetSign < 0.0)
@@ -462,7 +462,7 @@ bool returnWorldProducts
                 }
             }
             return true;
-            
+
         case CurveVector::BOUNDARY_TYPE_Inner:
         case CurveVector::BOUNDARY_TYPE_Outer:
             {
@@ -525,14 +525,14 @@ void DifferentialStripLineProducts (DMatrix4dR products,  DPoint3dCR pointA, DPo
 static bool unitTriangleAreaProducts (DMatrix4dR integrals)
     {
     integrals = DMatrix4d::FromZero ();
-    
+
         integrals.coff[0][0] = 1.0 / 12.0;
         integrals.coff[1][0] = integrals.coff[0][1] = 1.0 / 24.0;
         integrals.coff[1][1] = 1.0 / 12.0;
         integrals.coff[0][3] = integrals.coff[3][0] = 1.0 / 6.0;
         integrals.coff[1][3] = integrals.coff[3][1] = 1.0 /6.0;
         integrals.coff[3][3] = 1.0 / 2.0;
-    
+
     return true;
     }
 
@@ -540,25 +540,25 @@ void TriangleAreaProducts (DPoint3dCR point0, DPoint3dCR pointA, DPoint3dCR poin
     {
     DMatrix4d local = DMatrix4d::FromZero ();
     unitTriangleAreaProducts ( local);
-    
+
     double ux = pointA.x - point0.x;
     double uy = pointA.y - point0.y;
     double uz = pointA.z - point0.z;
     double vx = pointB.x - point0.x;
     double vy = pointB.y - point0.y;
     double vz = pointB.z - point0.z;
-    
+
     DVec3d vecA = DVec3d::From (pointA);
     DVec3d vecB = DVec3d::From (pointB);
-    
+
     DVec3d J = DVec3d::FromCrossProduct (vecA, vecB);
     double detJ = J.z;  //  effectively view from above?
-    
+
     Transform localtoworld = Transform::FromRowValues
     (ux, vx, 0, point0.x,
      uy, vy, 0, point0.y,
      uz, vz, 0, point0.z);
-    
+
     products = DMatrix4d::FromSandwichProduct (localtoworld, local, detJ);
     }
 
@@ -578,15 +578,15 @@ static bool unitCircleSectorAreaProducts (double theta0, double theta1, DMatrix4
     double c0 = cos (theta0);
     double c1 = cos (theta1);
     double halfdiff_deltaSin2Theta = 0.5 * (sin (2.0 * theta1) - sin (2.0 * theta0));
-    
+
     integrals.coff[0][0] = 0.125 * (deltaTheta + halfdiff_deltaSin2Theta);
     integrals.coff[0][1] = integrals.coff[1][0] = 0.125 * (s1 * s1 - s0 * s0);
     integrals.coff[1][1] = 0.125 * (deltaTheta - halfdiff_deltaSin2Theta);
     integrals.coff[0][3] = integrals.coff[3][0] =  div3 * (s1 - s0);
     integrals.coff[1][3] = integrals.coff[3][1] = -div3 * (c1 - c0);
     integrals.coff[3][3] = 0.5 * deltaTheta;
-        
-    
+
+
     // (Do the integrals with given limits, but multiply all by sweepSign to make it act like
     //   theta0+sweep back to theta0 if sweep is negative)
     return true;
@@ -626,7 +626,7 @@ void EllipseCapProducts (DEllipse3dCR ellipse, DMatrix4dR products)
     {
     DMatrix4d local = DMatrix4d::FromZero ();
     unitChordArcAreaProducts (ellipse.start, ellipse.sweep, local);
-    
+
     double xc = ellipse.center.x;
     double yc = ellipse.center.y;
     double zc = ellipse.center.z;
@@ -636,32 +636,32 @@ void EllipseCapProducts (DEllipse3dCR ellipse, DMatrix4dR products)
     double vx = ellipse.vector90.x;
     double vy = ellipse.vector90.y;
     double vz = ellipse.vector90.z;
-    
+
     DVec3d J = DVec3d::FromCrossProduct (ellipse.vector0, ellipse.vector90);
     double detJ = J.z;
-    
-    Transform localtoworld = Transform::FromRowValues 
+
+    Transform localtoworld = Transform::FromRowValues
                         (
                         ux, vx, 0, xc,
                         uy, vy, 0, yc,
                         uz, vz, 0, zc
                         );
 
-    products = DMatrix4d::FromSandwichProduct (localtoworld, local, detJ);    
+    products = DMatrix4d::FromSandwichProduct (localtoworld, local, detJ);
     }
 
 struct FlatPrimitiveAreaIntegrator : AbstractPrimitiveAreaIntegrator
 {
-void _DifferentialStripLineProducts (DMatrix4dR products,  DPoint3dCR pointA, DPoint3dCR pointB, double scale) override 
+void _DifferentialStripLineProducts (DMatrix4dR products,  DPoint3dCR pointA, DPoint3dCR pointB, double scale) override
     {
     DifferentialStripLineProducts (products, pointA, pointB, scale);
     }
-void _TriangleProducts (DPoint3dCR point0, DPoint3dCR pointA, DPoint3dCR pointB, DMatrix4dR products) override 
+void _TriangleProducts (DPoint3dCR point0, DPoint3dCR pointA, DPoint3dCR pointB, DMatrix4dR products) override
     {
     TriangleAreaProducts (point0, pointA, pointB, products);
     }
 
-bool _EllipseCapProducts (DEllipse3dCR ellipse, DMatrix4dR products) override 
+bool _EllipseCapProducts (DEllipse3dCR ellipse, DMatrix4dR products) override
     {
     EllipseCapProducts (ellipse, products);
     return true;
@@ -679,7 +679,7 @@ ZWedgePrimitiveAreaIntegrator ()
     m_triangleGauss.InitStrang (8);
     m_lineGauss.InitGauss (4);  // integrating x^3 etc.  Maybe 2 would be enough?
     }
-void _DifferentialStripLineProducts (DMatrix4dR products,  DPoint3dCR pointA, DPoint3dCR pointB, double scale) override 
+void _DifferentialStripLineProducts (DMatrix4dR products,  DPoint3dCR pointA, DPoint3dCR pointB, double scale) override
     {
     DVec3d U = DVec3d::FromStartEnd (pointA, pointB);
     double a = U.Magnitude ();     // ugh.  maybe should be xz for consistency with triangle
@@ -694,7 +694,7 @@ void _DifferentialStripLineProducts (DMatrix4dR products,  DPoint3dCR pointA, DP
         }
     }
 
-void _TriangleProducts (DPoint3dCR point0, DPoint3dCR pointA, DPoint3dCR pointB, DMatrix4dR products) override 
+void _TriangleProducts (DPoint3dCR point0, DPoint3dCR pointA, DPoint3dCR pointB, DMatrix4dR products) override
     {
     DVec3d U = DVec3d::FromStartEnd (point0, pointA);
     DVec3d V = DVec3d::FromStartEnd (point0, pointB);
@@ -712,10 +712,10 @@ void _TriangleProducts (DPoint3dCR point0, DPoint3dCR pointA, DPoint3dCR pointB,
         }
     }
 
-bool _EllipseCapProducts (DEllipse3dCR ellipse, DMatrix4dR products) override 
+bool _EllipseCapProducts (DEllipse3dCR ellipse, DMatrix4dR products) override
     {
     return false;
-    }    
+    }
 };
 
 

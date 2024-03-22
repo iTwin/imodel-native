@@ -91,7 +91,7 @@ struct InOutStates
 //! <li> Create the structure (as a ref-counted pointee) with TransformedDRange3d::Create (range, localToWorld)
 //! <li> The create method will compute the inverse transform and the 8 points of the transformed range.
 //! <li> Subsequently query the range for various containment conditions:
-//! <ul> 
+//! <ul>
 //! <li> Classify(clipPlane) return ClipPlaneContainment versus a plane.
 //! <li> Classify(convexClipPlaneSet) return ClipPlaneContainment versus a plane.
 //! <li> IsAllInside(clipPlane) return true if entirely inside the clip plane
@@ -130,12 +130,12 @@ struct TransformedDRange3d : public RefCountedBase
         //!    <ul>
         //!    <li> Quick determination of _all_ "all in " cases
         //!    <li> Quick determination of a _subset of_  "all out" cases, specifically
-        //!               cases where a range is fully outside some single plane of the clipper 
+        //!               cases where a range is fully outside some single plane of the clipper
         //!    <li> Quick determination of cases where the range has at least one corner in
         //!              the clipper and one corner outside the clipper.
         //!    <li> Return as ambiguous in other cases.
-        //!    <li> The ambiguous case possibility is when the TransformedDRange3d 
-        //!             has all corners outside the clipper, but 
+        //!    <li> The ambiguous case possibility is when the TransformedDRange3d
+        //!             has all corners outside the clipper, but
         //!             is rotated so that it goes "by an edge" of the clipper at an angle
         //!             such that no single plane of the clipper determines simple out.
         //!    </ul>

@@ -2725,7 +2725,7 @@ Public GEOMDLLIMPEXP DRange3d vu_faceRange (VuP faceSeed)
     END_VU_FACE_LOOP (currNode, faceSeed)
     return range;
     }
-    
+
 /*------------------------------------------------------------------*//**
 * @bsimethod
 +----------------------------------------------------------------------*/
@@ -2952,5 +2952,5 @@ bvector<DPoint3d> &xyz
     END_VU_FACE_LOOP (node, faceP)
     }
 
-    
+
 END_BENTLEY_GEOMETRY_NAMESPACE
