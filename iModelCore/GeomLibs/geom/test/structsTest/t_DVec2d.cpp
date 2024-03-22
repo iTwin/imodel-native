@@ -15,7 +15,7 @@ TEST(DVec2d, Initialization)
     Check::Near (vector0.x, 1.0);
     Check::Near (vector0.y, 2.0);
     Check::Near (vector0, vector1);
-    } 
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -44,7 +44,7 @@ TEST(DVec2d, CrossProduct)
 	double pointDotProductAlternateMethod = point0.Magnitude () * point1.Magnitude () * cos (point0.AngleTo(point1));
 	double vectorDotProductPassedWithValuesCodedMethod = vector0.DotProduct (3.0, 4.0);
 	double vectorDotProductPassedWithValuesAlternateMethod = vector0.Magnitude () * vector1.Magnitude () * cos (vector0.AngleTo(vector1));
-	
+
 	Check::Near (vectorCrossProductCodedMethod, vectorCrossProductAlternateMethod);
 	Check::Near (vectorCrossProductCodedMethod * vectorCrossProductCodedMethod, vectorCrossProductSquaredCodedMethod);
 	Check::Near (vectorDotProductCodedMethod, vectorDotProductAlternateMethod);
@@ -71,7 +71,7 @@ TEST(DVec2d, NormalizedDifference)
 	//DVec2d vector1PreNormalized = DVec2d::From (3.0, 4.0);
 	double vector1NormalizedMagnitude = vector1.Magnitude ();
 	vector2.Normalize ();
-	
+
 	Check::Near (1.0, vector0NormalizedMagnitude);
 	Check::Near (0.0, angleBetweenPreNormalizedVectorAndNormalizedVector);
 	//Check::Near (1.0, DVec2d::From (5.0, 7.0).Normalize ());
@@ -122,7 +122,7 @@ TEST(DVec2d, AngleInSector)
 	Check::True(!(vector3.IsVectorInSmallerSector (vector0, vector1)));
 	Check::True(!(vector4.IsVectorInSmallerSector (vector0, vector1)));
 	Check::True(!(vector5.IsVectorInSmallerSector (vector0, vector1)));
-	
+
 
     // This loop tests:
     // vector.RotateCCW (baseVector, angle)
@@ -155,7 +155,7 @@ TEST(DVec2d, AngleInSector)
                     Check::True (testVector.IsVectorInCCWSector (baseVector, endVector));
                 else
                     Check::False (testVector.IsVectorInCCWSector (baseVector, endVector));
-                    
+
                 // CCWSector test flips with order....
                 Check::True (testVector.IsVectorInCCWSector (baseVector, endVector) !=
                             testVector.IsVectorInCCWSector (endVector, baseVector)
@@ -790,7 +790,7 @@ TEST(DVec2d, PointVector)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST(DVec2d, Interpolation) 
+TEST(DVec2d, Interpolation)
     {
     DVec2d vec0 = DVec2d::From(5, 5);
     DVec2d vec1 = DVec2d::From(7, 7);
@@ -817,7 +817,7 @@ TEST(DVec2d, Resultant)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST(DVec2d, ThreeDTo2D) 
+TEST(DVec2d, ThreeDTo2D)
     {
     DVec3d vec3d0 = DVec3d::From(5, 8, 2);
     DVec3d vec3d1 = DVec3d::From(9, 7, 2);
@@ -836,6 +836,6 @@ TEST(DVec2d, RotationEqual)
     vec0.Rotate90CW();
     vec0.Rotate90CW();
     vec0.Rotate90CW();
-    
+
     vec0.AlmostEqual(DVec2d::From(-3, 2));
     }

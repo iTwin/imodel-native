@@ -14,7 +14,7 @@ void DPoint3dDoubleArrays::AppendXF (DPoint3dCR xyz, double f)
     m_f.push_back (f);
     }
 
-//! Append xyz to its array, 
+//! Append xyz to its array,
 //! If there are prior fractions, add deltaF to the last.
 //! If not, make the begin () fraction 0.0;
 void DPoint3dDoubleArrays::AppendXdeltaF (DPoint3dCR xyz, double deltaF)

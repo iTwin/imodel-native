@@ -527,7 +527,7 @@ double DPlane3d::EvaluateVector (DVec3dCR vector) const
     <li>Also take as a third point the point that is most distant from the line connecting the two extremal points.</li>
     <li>Form plane through these 3 points.</li>
     </ul>
-* @param [out] plane computed plane 
+* @param [out] plane computed plane
 * @param pPoint [out] point array
 * @param numPoint [in] number of points
 * @param toleranceIn [in] requested tolerance for consdering points too close to define vectors.
@@ -600,7 +600,7 @@ bool DPlane3d::InitFromArray (DPoint3dCP pointArray, int numPoint, double &maxAb
         maxAbsDistance = EvaluateMaxAbs (pointArray, numPoint);
         return true;
         }
-    
+
     return false;
     }
 
@@ -636,7 +636,7 @@ bool DPlane3d::InitFromArray (DPoint3dCP pointArray, int numPoint)
         double maxAbsDistance = EvaluateMaxAbs (pointArray, numPoint);
         return maxAbsDistance <= effectiveTolerance;
         }
-    
+
     return false;
     }
 

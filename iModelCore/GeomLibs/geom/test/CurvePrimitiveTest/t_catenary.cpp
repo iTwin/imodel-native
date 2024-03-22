@@ -22,7 +22,7 @@ TEST(Catenary,HelloWorld)
         for (double intervalFactor : bvector<double>{1,2, 4})
             {
             double x1 = intervalFactor * a;      // small a ==> hard curvature approximation at origin
-            
+
             Check::PrintIndent (2);
             Check::Print (a, "Catenary Constant");
             Check::Print(x1, "interval length");
@@ -183,7 +183,7 @@ TEST(Cosh,IntersectHomogeneousLine)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(Catenary, TrimCatenary) 
+TEST(Catenary, TrimCatenary)
     {
     DPoint3dDVec3dDVec3d dTri3d = DPoint3dDVec3dDVec3d(DPoint3d::From(0, 0, 0), DVec3d::From(1, 0, 0), DVec3d::From(0, 1, 0));
     //double a = 2;
@@ -192,7 +192,7 @@ TEST(Catenary, TrimCatenary)
     auto bspline = cp0->CloneAsBspline();
     Check::SaveTransformed(*bspline);
     Check::Shift(2, 0, 0);
-    
+
 
     DCatenary3dPlacement dp;
     Check::True(cp0->TryGetCatenary(dp));
@@ -206,35 +206,35 @@ TEST(Catenary, TrimCatenary)
     dp.ReverseInPlace();
     Check::True(dp.AlmostEqual(dpReversed, tol));
 
-    
+
     double len, lenFraction;
     Check::True(bspline->Length(len));
     DCatenary3dPlacement fractionedCatenary = dp.CloneBetweenFractions(0.2, 0.7);
-    
+
     double parameter;
     DSegment1d startEnd;
     DPoint3dDVec3dDVec3d identity;
     fractionedCatenary.Get(parameter, identity, startEnd);
     auto fractionCatenary = ICurvePrimitive::CreateCatenary(10, identity, startEnd.GetStart(), startEnd.GetEnd());
-    
+
     auto bsplineFraction = fractionCatenary->CloneAsBspline();
     Check::SaveTransformed(*bsplineFraction);
     Check::True(bsplineFraction->Length(lenFraction));
-   
+
     Check::Near(Rounding::Round(lenFraction, Rounding::RoundingMode_Up, 8.5, 9), 0.5 * Rounding::Round(len, Rounding::RoundingMode_Up, 17.5, 18));
     Check::ClearGeometry("Catenary.TrimCatenary");
-    
+
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(Catenary, CloneBetweenFractions_Reverse) 
+TEST(Catenary, CloneBetweenFractions_Reverse)
     {
     DPoint3dDVec3dDVec3d dTri3d = DPoint3dDVec3dDVec3d(DPoint3d::From(0, 0, 0), DVec3d::From(1, 0, 0), DVec3d::From(0, 1, 0));
 
     auto cp0 = ICurvePrimitive::CreateCatenary(10, dTri3d, 2, 20);
-    
+
     //cloning
     auto cloned = cp0->CloneBetweenFractions(0.2, 0.6, false);
     auto bsplineFraction = cp0->CloneAsBspline();

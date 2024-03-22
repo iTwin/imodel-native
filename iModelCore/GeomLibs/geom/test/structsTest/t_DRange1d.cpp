@@ -59,7 +59,7 @@ TEST(DRange1d, RangeChecks)
 ////---------------------------------------------------------------------------------------
 //// @bsimethod
 ////---------------------------------------------------------------------------------------
-TEST(DRange1d, RangeExtension) 
+TEST(DRange1d, RangeExtension)
     {
     DRange1d rangeNull = DRange1d::NullRange();
     DRange1d rangeNull2;

@@ -50,12 +50,12 @@ typedef RefCountedPtr<ISolidPrimitive> ISolidPrimitivePtr;
 //! A DgnTorusPipeDetail represents a pipe elbow as a torus with partial sweep in the major circle and full circle of pipe.
 struct DgnTorusPipeDetail : ZeroInit<DgnTorusPipeDetail>
 {
-DPoint3d        m_center;       //!< Center of primary circle 
-DVec3d          m_vectorX;      //!< X vector of primary circle 
-DVec3d          m_vectorY;      //!< Y vector of primary circle 
-double          m_majorRadius;  //!< radius of elbow 
-double          m_minorRadius;  //!< radius of pipe section 
-double          m_sweepAngle;   //!< major circle sweep angle 
+DPoint3d        m_center;       //!< Center of primary circle
+DVec3d          m_vectorX;      //!< X vector of primary circle
+DVec3d          m_vectorY;      //!< Y vector of primary circle
+double          m_majorRadius;  //!< radius of elbow
+double          m_minorRadius;  //!< radius of pipe section
+double          m_sweepAngle;   //!< major circle sweep angle
 bool            m_capped;       //!< cap surface present (e.g. for incomplete sweep)
 
 //! Detail consructor with complete field list as parameters ...
@@ -66,14 +66,14 @@ bool            m_capped;       //!< cap surface present (e.g. for incomplete sw
 //! @param [in] minorRadius radius of pipe section
 //! @param [in] sweepAngle major circle sweep angle
 //! @param [in] capped true for solid
-GEOMDLLIMPEXP DgnTorusPipeDetail 
+GEOMDLLIMPEXP DgnTorusPipeDetail
     (
     DPoint3dCR  center,
     DVec3dCR    vectorX,
     DVec3dCR    vectorY,
     double      majorRadius,
     double      minorRadius,
-    double      sweepAngle, 
+    double      sweepAngle,
     bool        capped
     );
 
@@ -81,7 +81,7 @@ GEOMDLLIMPEXP DgnTorusPipeDetail
 //! @param [in] arc primary arc.
 //! @param [in] minorRadius radius of pipe section
 //! @param [in] capped true for solid
-GEOMDLLIMPEXP DgnTorusPipeDetail 
+GEOMDLLIMPEXP DgnTorusPipeDetail
     (
     DEllipse3dCR arc,
     double      minorRadius,
@@ -207,7 +207,7 @@ GEOMDLLIMPEXP bool ClosestPoint
 //! @param [out] dXdv derivative of face point wrt vFraction.
 GEOMDLLIMPEXP bool TryUVFractionToXYZ
     (
-    SolidLocationDetail::FaceIndices const &faceIndices, 
+    SolidLocationDetail::FaceIndices const &faceIndices,
     double uFraction,
     double vFraction,
     DPoint3dR xyz,
@@ -270,9 +270,9 @@ double &rMajor,            //!< [out] major radius
 double &rMinor,            //!< [out] minor radius
 double &sweepRadians,       //!< [out] pipe sweep
 bool boundedConeZ           //!< [in] if true, skip intersections outside the cone caps.
-) const;                              
+) const;
 
-//! set point, uv coordinates, and uv derivatives vectors 
+//! set point, uv coordinates, and uv derivatives vectors
 static GEOMDLLIMPEXP void SetDetailCoordinatesFromLocalPipeCoordinates
 (
 SolidLocationDetail &detail,//!< [in,out] detail to update
@@ -292,13 +292,13 @@ static GEOMDLLIMPEXP bool GetReverseVector90 ();
 //! A DgnConeDetail represents a (frustum of a) cone.
 struct DgnConeDetail : ZeroInit<DgnConeDetail>
 {
-DPoint3d    m_centerA;  // Center of base circle 
-DPoint3d    m_centerB;  // Center of top circle 
-DVec3d      m_vector0;  // 0 degree vector of base circle 
-DVec3d      m_vector90; // 0 degree vector of base circle 
-double      m_radiusA;  // radius at base (centerA) 
-double      m_radiusB;  // radius at top (centerB) 
-bool        m_capped;   // true if end cap is enabled 
+DPoint3d    m_centerA;  // Center of base circle
+DPoint3d    m_centerB;  // Center of top circle
+DVec3d      m_vector0;  // 0 degree vector of base circle
+DVec3d      m_vector90; // 0 degree vector of base circle
+double      m_radiusA;  // radius at base (centerA)
+double      m_radiusB;  // radius at top (centerB)
+bool        m_capped;   // true if end cap is enabled
 
 //! Detail consructor with complete field list as parameters ...
 //! @param [in] centerA Center of base circle
@@ -306,7 +306,7 @@ bool        m_capped;   // true if end cap is enabled
 //! @param [in] radiusA radius at base (centerA)
 //! @param [in] radiusB radius at top (centerB)
 //! @param [in] capped true if end cap is enabled
-GEOMDLLIMPEXP DgnConeDetail 
+GEOMDLLIMPEXP DgnConeDetail
     (
     DPoint3dCR  centerA,
     DPoint3dCR  centerB,
@@ -322,7 +322,7 @@ GEOMDLLIMPEXP DgnConeDetail
 //! @param [in] radiusA radius at base (centerA)
 //! @param [in] radiusB radius at top (centerB)
 //! @param [in] capped true if end cap is enabled
-GEOMDLLIMPEXP DgnConeDetail 
+GEOMDLLIMPEXP DgnConeDetail
     (
     DPoint3dCR      centerA,
     DPoint3dCR      centerB,
@@ -340,7 +340,7 @@ GEOMDLLIMPEXP DgnConeDetail
 //! @param [in] radiusA radius at base (centerA)
 //! @param [in] radiusB radius at top (centerB)
 //! @param [in] capped true if end cap is enabled
-GEOMDLLIMPEXP DgnConeDetail 
+GEOMDLLIMPEXP DgnConeDetail
     (
     DPoint3dCR      centerA,
     DPoint3dCR      centerB,
@@ -410,7 +410,7 @@ GEOMDLLIMPEXP bool GetSilhouettes (DSegment3dR segmentA, DSegment3dR segmentB, D
 //! Test if caps are active and the indicated cap has nonzero radius.
 GEOMDLLIMPEXP bool IsRealCap (int select01) const;
 
-//! Return true (with supporting data) if 
+//! Return true (with supporting data) if
 //! the cone is circular.
 GEOMDLLIMPEXP bool IsCircular (
     DPoint3dR centerA,
@@ -478,7 +478,7 @@ GEOMDLLIMPEXP bool ClosestPoint
     DPoint3dCR spacePoint,
     SolidLocationDetail &pickDetail
     ) const;
-    
+
 //! convert u,v fraction on specified face to xyz and derivatives.
 //! @param [in] faceIndices face selection indices
 //! @param [in] uFraction fractional coordinate in u direction.
@@ -533,7 +533,7 @@ GEOMDLLIMPEXP bool ComputeSecondMomentAreaProducts (TransformR localToWorld, DMa
 //! @param [out] localProducts integrated [xx xy xz x; xy yy yz y; xz yz zz z; x y z 1] dA
 //! @return false if unable to compute.
 GEOMDLLIMPEXP bool ComputeSecondMomentVolumeProducts (TransformR localToWorld, DMatrix4dR localProducts) const;
-                              
+
 //! Return curves which are silhoutte curves OTHER than hard edges
 //! @return return false if not implemented.   return true if implemented -- but curves may still be empty.
 GEOMDLLIMPEXP bool SilhouetteCurves(DPoint4dCR eyePoint, CurveVectorPtr &curves) const;
@@ -566,7 +566,7 @@ double &radius1,            //!< [out] local arc radius at z=1
 bool boundedConeZ           //!< [in] if true, skip intersections outside the cone caps.
 ) const;
 
-//! set point, uv coordinates, and uv derivatives vectors 
+//! set point, uv coordinates, and uv derivatives vectors
 static GEOMDLLIMPEXP void SetDetailCoordinatesFromFractionalizedConeCoordinates
 (
 SolidLocationDetail &detail,//!< [in,out] detail to update
@@ -581,15 +581,15 @@ double      r1             //!< [in] cone radius at w=1
 //! A DgnBoxDetail represents a boxlike surface with two paralell rectangular faces (bottom and top) and ruled side surfaces.
 struct DgnBoxDetail : ZeroInit<DgnBoxDetail>
 {
-DPoint3d m_baseOrigin; // origin of base rectangle 
-DPoint3d m_topOrigin; // origin of Top rectangle 
-DVec3d m_vectorX; // X vector of base plane 
-DVec3d m_vectorY; // Y vector of base plane 
-double m_baseX; // x size at base 
-double m_baseY; // y size at base 
-double m_topX; // X size at top 
-double m_topY; // y size at top 
-bool m_capped; // true if end cap is enabled 
+DPoint3d m_baseOrigin; // origin of base rectangle
+DPoint3d m_topOrigin; // origin of Top rectangle
+DVec3d m_vectorX; // X vector of base plane
+DVec3d m_vectorY; // Y vector of base plane
+double m_baseX; // x size at base
+double m_baseY; // y size at base
+double m_topX; // X size at top
+double m_topY; // y size at top
+bool m_capped; // true if end cap is enabled
 
 //! Detail constructor with complete field list as parameters ...
 //! @param [in] baseOrigin origin of base rectangle
@@ -724,7 +724,7 @@ GEOMDLLIMPEXP bool ClosestPoint
     DPoint3dCR spacePoint,
     SolidLocationDetail &pickDetail
     ) const;
-    
+
 //! convert u,v fraction on specified face to xyz and derivatives.
 //! @param [in] faceIndices face selection indices
 //! @param [in] uFraction fractional coordinate in u direction.
@@ -798,8 +798,8 @@ GEOMDLLIMPEXP bool IsBlock (DPoint3dR origin, RotMatrixR unitAxes, DVec3dR local
 struct DgnSphereDetail : ZeroInit<DgnSphereDetail>
 {
 Transform m_localToWorld;   // origin is sphere center.  columns x,y to equator at 0 and 90 degrees latitude.  column z is to north pole.
-double m_startLatitude; // latitude for truncation plane parallel to the equator 
-double m_latitudeSweep; // latitude difference from start truncation plane to end truncation plane 
+double m_startLatitude; // latitude for truncation plane parallel to the equator
+double m_latitudeSweep; // latitude difference from start truncation plane to end truncation plane
 bool m_capped;  // cap surface present (e.g. for partial latitude sweep)
 //! Detail consructor with complete field list as parameters ...
 //! @param [in] center Sphere center
@@ -810,7 +810,7 @@ bool m_capped;  // cap surface present (e.g. for partial latitude sweep)
 //! @param [in] startLatitude latitude for truncation plane parallel to the equator
 //! @param [in] latitudeSweep latitude difference from start truncation plane to end truncation plane
 //! @param [in] capped cap flag, applicable for partial latitude range
-GEOMDLLIMPEXP DgnSphereDetail 
+GEOMDLLIMPEXP DgnSphereDetail
     (
     DPoint3dCR      center,
     DVec3dCR        vectorX,
@@ -826,7 +826,7 @@ GEOMDLLIMPEXP DgnSphereDetail
 //! @param [in] center Sphere center
 //! @param [in] axes x,y,z axes
 //! @param [in] radius radius
-GEOMDLLIMPEXP DgnSphereDetail 
+GEOMDLLIMPEXP DgnSphereDetail
     (
     DPoint3dCR      center,
     RotMatrixCR     axes,
@@ -935,7 +935,7 @@ GEOMDLLIMPEXP void AddRayIntersections
     int parentId,
     double minParameter
     ) const;
-    
+
 //! Compute intersections with curves and add to the data array.
 //! @param [in] curves
 //! @param [in,out] curvePoints growing array of curve points.
@@ -970,7 +970,7 @@ GEOMDLLIMPEXP bool ClosestPoint
     DPoint3dCR spacePoint,
     SolidLocationDetail &pickDetail
     ) const;
-    
+
 //! convert u,v fraction on specified face to xyz and derivatives.
 //! @param [in] faceIndices face selection indices
 //! @param [in] uFraction fractional coordinate in u direction.
@@ -1043,7 +1043,7 @@ bool boundedZ           //!< [in] if true, skip intersections outside the latitu
 ) const;
 
 
-//! set point, uv coordinates, and uv derivatives vectors 
+//! set point, uv coordinates, and uv derivatives vectors
 static GEOMDLLIMPEXP void SetDetailUVFromUnitSphereCoordinates
 (
 SolidLocationDetail &detail,//!< [in,out] detail to update
@@ -1058,9 +1058,9 @@ double sweepLatitude        //!< [in] latitude sweep for partial sphere.
 //! A DgnExtrusionDetail is a linear sweep of a base CurveVector.  All points on the base are swept by the same vector.
 struct DgnExtrusionDetail : ZeroInit<DgnExtrusionDetail>
 {
-CurveVectorPtr m_baseCurve; // Curve to be swept. 
-DVec3d m_extrusionVector; // Vector from base to target curve 
-bool m_capped; // true if end cap is enabled 
+CurveVectorPtr m_baseCurve; // Curve to be swept.
+DVec3d m_extrusionVector; // Vector from base to target curve
+bool m_capped; // true if end cap is enabled
 
 //! Detail consructor with complete field list as parameters ...
 //! @param [in] baseCurve Curve to be swept. This pointer is captured (not cloned) into the extrusion.
@@ -1150,7 +1150,7 @@ GEOMDLLIMPEXP bool ClosestPoint
     DPoint3dCR spacePoint,
     SolidLocationDetail &pickDetail
     ) const;
-    
+
 //! convert u,v fraction on specified face to xyz and derivatives.
 //! @param [in] faceIndices face selection indices
 //! @param [in] uFraction fractional coordinate in u direction.
@@ -1212,7 +1212,7 @@ GEOMDLLIMPEXP bool ComputeSecondMomentAreaProducts (TransformR localToWorld, DMa
 //! @param [out] localProducts integrated [xx xy xz x; xy yy yz y; xz yz zz z; x y z 1] dA
 //! @return false if unable to compute.
 GEOMDLLIMPEXP bool ComputeSecondMomentVolumeProducts (TransformR localToWorld, DMatrix4dR localProducts) const;
-                              
+
 //! Return curves which are silhoutte curves OTHER than hard edges
 //! @return return false if not implemented.   return true if implemented -- but curves may still be empty.
 GEOMDLLIMPEXP bool SilhouetteCurves(DPoint4dCR eyePoint, CurveVectorPtr &curves) const;
@@ -1223,10 +1223,10 @@ GEOMDLLIMPEXP bool SilhouetteCurves(DPoint4dCR eyePoint, CurveVectorPtr &curves)
 //! A DgnExtrusionDetail is a rotational sweep of a base CurveVector.
 struct DgnRotationalSweepDetail : ZeroInit<DgnRotationalSweepDetail>
 {
-CurveVectorPtr m_baseCurve; // Curve to be swept. 
+CurveVectorPtr m_baseCurve; // Curve to be swept.
 DRay3d  m_axisOfRotation;
-double m_sweepAngle; // major circle sweep angle 
-bool m_capped; // true if end cap is enabled 
+double m_sweepAngle; // major circle sweep angle
+bool m_capped; // true if end cap is enabled
 size_t m_numVRules; // Number of v rules (radial around) to display in wireframe.
 
 //! Detail consructor with complete field list as parameters ...
@@ -1340,7 +1340,7 @@ GEOMDLLIMPEXP bool ClosestPoint
     DPoint3dCR spacePoint,
     SolidLocationDetail &pickDetail
     ) const;
-    
+
 //! convert u,v fraction on specified face to xyz and derivatives.
 //! @param [in] faceIndices face selection indices
 //! @param [in] uFraction fractional coordinate in u direction.
@@ -1414,27 +1414,27 @@ GEOMDLLIMPEXP size_t GetVRuleCount () const;
 
 //! Compute v rule count for a given sweep angle and desired number of v rules for a full sweep.
 static GEOMDLLIMPEXP size_t ComputeVRuleCount (double sweepRadians, size_t numVRulesFullSweep = 4);
-                          
+
 enum class RadiusType
 {
-Minimum,                // Radius at closest point on profile   
+Minimum,                // Radius at closest point on profile
 Maximum,                 // Radius at farthest point on profile
 Centroidal              // Radius at centroid (area centroid if closed,  wire centroid if open).
 };
 
 
 //! Return the radius
-//! @param [out] radius 
+//! @param [out] radius
 //! @param [in] type of radius.
 GEOMDLLIMPEXP bool   GetRadius (double& radius, RadiusType type) const;
 
 //! Set the radius (by translating the profile).
 
-//! @param [in] radius 
+//! @param [in] radius
 //! @param [in] type of radius.
 GEOMDLLIMPEXP bool   SetRadius (double radius, RadiusType type);
 
- 
+
 }; // DgnRotationalSweepDetail
 
 
@@ -1442,8 +1442,8 @@ GEOMDLLIMPEXP bool   SetRadius (double radius, RadiusType type);
 //! A DgnRuledSweepDetail is a ruled surface between corresponding points of CurveVectors.
 struct DgnRuledSweepDetail  : ZeroInit<DgnRuledSweepDetail>
 {
-bvector<CurveVectorPtr> m_sectionCurves; // Successive section curves 
-bool m_capped; // true if end cap is enabled 
+bvector<CurveVectorPtr> m_sectionCurves; // Successive section curves
+bool m_capped; // true if end cap is enabled
 
 //! Detail consructor with complete field list as parameters ...
 //! @param [in] sectionCurves Successive section curves
@@ -1545,7 +1545,7 @@ GEOMDLLIMPEXP bool ClosestPoint
     DPoint3dCR spacePoint,
     SolidLocationDetail &pickDetail
     ) const;
-    
+
 //! convert u,v fraction on specified face to xyz and derivatives.
 //! @param [in] faceIndices face selection indices
 //! @param [in] uFraction fractional coordinate in u direction.
@@ -1671,7 +1671,7 @@ protected:
 
 
     GEOMAPI_VIRTUAL bool _ClosestPoint (DPoint3dCR spacePoint, SolidLocationDetail &pickDetail) const = 0;
-    
+
     GEOMAPI_VIRTUAL bool _TryGetDgnTorusPipeDetail (DgnTorusPipeDetailR data) const;
     GEOMAPI_VIRTUAL bool _TrySetDgnTorusPipeDetail (DgnTorusPipeDetailCR data);
 
@@ -1699,7 +1699,7 @@ protected:
     GEOMAPI_VIRTUAL bool _TransformInPlace (TransformCR transform) = 0;
     GEOMAPI_VIRTUAL bool _ComputeSecondMomentAreaProducts (TransformR localToWorld, DMatrix4dR localProducts) const = 0;
     GEOMAPI_VIRTUAL bool _ComputeSecondMomentVolumeProducts (TransformR localToWorld, DMatrix4dR localProducts) const = 0;
-    
+
     GEOMAPI_VIRTUAL bool _SilhouetteCurves(DPoint4dCR eyePoint, CurveVectorPtr &curves) const = 0;
     GEOMAPI_VIRTUAL bool _IsValidGeometry(GeometryValidatorPtr &) const = 0;
 

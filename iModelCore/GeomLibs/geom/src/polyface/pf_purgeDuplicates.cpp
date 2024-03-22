@@ -101,7 +101,7 @@ void PolyfaceHeader::IdentifyDuplicates
                     duplicatedFacetAdditionalReadIndex->push_back (allFacets[i].m_readIndex);
                     if (baseIndexForAdditionalReadIndex != nullptr)
                         baseIndexForAdditionalReadIndex->push_back (allFacets[i0].m_readIndex);
-                        
+
                     }
                 }
             }
@@ -230,8 +230,8 @@ PolyfaceHeaderPtr PolyfaceHeader::CloneWithFacetsInRandomOrder() const
 PolyfaceHeaderPtr PolyfaceHeader::CloneWithConsistentlyOrientedFacets(DVec3dCP surfaceNormal) const
     {
     auto newMesh = PolyfaceHeader::CreateVariableSizeIndexed();
-    
-    // use tight tolerances: we assume the input mesh already shares vertices 
+
+    // use tight tolerances: we assume the input mesh already shares vertices
     MTGFacets* facets = jmdlMTGFacets_grab();
     bvector<MTGNodeId> meshVertexToNodeId;  // needed to preserve visible edges!
     if (PolyfaceToMTG(facets, &meshVertexToNodeId, nullptr, *this, true, Angle::SmallAngle(), Angle::SmallAngle(), 1))

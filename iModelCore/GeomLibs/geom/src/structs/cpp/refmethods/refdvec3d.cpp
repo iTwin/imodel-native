@@ -344,7 +344,7 @@ DVec3d DVec3d::FromCCWPerpendicularXY (DVec3d source)
     vector.x = -source.y;
     vector.y = source.x;
     vector.z = source.z;
-    return vector;    
+    return vector;
     }
 
 DVec3d DVec3d::FromRotate90Towards (DVec3dCR source, DVec3dCR target)
@@ -427,7 +427,7 @@ DVec3d DVec3d::FromMatrixColumn
 (
 TransformCR transform,
 int i
-) 
+)
     {
     DVec3d result;
     i = Angle::Cyclic3dAxis (i);
@@ -733,9 +733,9 @@ double DVec3d::DotProduct (DPoint3dCR other) const
 +--------------------------------------------------------------------------------------*/
 bool DVec3d::GetPerpendicularParts
 (
-DVec3dCR hypotenuse, 
-double &fraction, 
-DVec3dR parallelPart, 
+DVec3dCR hypotenuse,
+double &fraction,
+DVec3dR parallelPart,
 DVec3dR perpendicularPart
 ) const
     {
@@ -1364,7 +1364,7 @@ DVec3dCR upVector
         }
 
     dot = cross01.DotProduct (upVector);
-   
+
     if (dot > 0.0)
         return  vector0.TripleProduct (*this, cross01) > 0.0
             &&  this->TripleProduct (vector1, cross01) > 0.0;
@@ -1386,7 +1386,7 @@ DVec3dCR vector1
 ) const
     {
     double cross = vector0.CrossProductXY (vector1);
-    
+
     if (cross == 0.0)
         {
         double dot   = vector0.DotProductXY (vector1);
@@ -2757,10 +2757,10 @@ double                  tolerance
     {
     bool result;
 
-    result =     fabs (this->x - vector2.x) <= tolerance 
-              && fabs (this->y - vector2.y) <= tolerance 
+    result =     fabs (this->x - vector2.x) <= tolerance
+              && fabs (this->y - vector2.y) <= tolerance
               && fabs (this->z - vector2.z) <= tolerance;
-    
+
     return  result;
     }
 
@@ -2969,10 +2969,10 @@ double &radians
         )
         {
         radians = 0.0;
-        axis.Init (0,0,0);        
+        axis.Init (0,0,0);
         return false;
         }
-            
+
     DVec3d crossProduct;
     double cosine = unitStartVector.DotProduct (unitEndVector);
     crossProduct.CrossProduct (unitStartVector, unitEndVector);
@@ -3014,14 +3014,14 @@ bool DVec3d::ProjectToVector (DVec3dCR vectorU, double &fraction) const
 bool DVec3d::ProjectToPlane (DVec3dCR vectorU, DVec3dCR vectorV, DPoint2dR uv) const
     {
     double dotUU = vectorU.MagnitudeSquared ();
-    double dotVV = vectorV.MagnitudeSquared ();    
+    double dotVV = vectorV.MagnitudeSquared ();
     double dotUV = vectorU.DotProduct (vectorV);
     double dotUQ = DotProduct (vectorU);
     double dotVQ = DotProduct (vectorV);
 
     if (bsiSVD_solve2x2 (&uv.x, &uv.y, dotUU, dotUV, dotUV, dotVV, dotUQ, dotVQ))
         return true;
-        
+
     // The vectors are parallel.  Project to the longer one.
     // (If that fails, the SafeDivide 0 default makes the uv return stay at 00.)
     uv.Zero ();

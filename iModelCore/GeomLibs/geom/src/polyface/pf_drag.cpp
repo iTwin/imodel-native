@@ -175,7 +175,7 @@ PolyfaceHeaderPtr CloneWithSidePanels (PolyfaceHeaderR source, bvector<size_t> &
                 pfmap.AddVisitorFace (*visitor);
             }
         }
-    
+
 
     // Add the other facets ...
     for (size_t readIndex : otherFacets)
@@ -186,7 +186,7 @@ PolyfaceHeaderPtr CloneWithSidePanels (PolyfaceHeaderR source, bvector<size_t> &
             }
         }
     meshA->Triangulate (100);
-	
+
 	//bullseye
 	//it will make all edge of mesh facets hide and which is not allowed when using mesh drag tool
     //meshA->MarkTopologicalBoundariesVisible (false);

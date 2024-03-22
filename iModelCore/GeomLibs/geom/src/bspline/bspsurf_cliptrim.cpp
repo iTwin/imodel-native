@@ -25,8 +25,8 @@ struct RGElmDescrContext
     // Needed so back-projection to akima element will correctly.
     Transform worldToPlane;
     Transform planeToWorld;
-    
-    RGElmDescrContext (bool _mergeFaces, double distanceTolerance)    
+
+    RGElmDescrContext (bool _mergeFaces, double distanceTolerance)
         {
         pRG = jmdlRG_new ();
         pCurves = jmdlRIMSBS_newContext ();
@@ -174,7 +174,7 @@ BoundaryBuilder &bb
 
     EmbeddedIntArray *pLoopArray = jmdlEmbeddedIntArray_grab ();
     jmdlRG_collectOuterAndInnerFaces (pContext->pRG, pLoopArray, &pContext->activeFaces, true, true);
-    
+
     for (int ib = 0; jmdlEmbeddedIntArray_getInt (pLoopArray, &seedNodeId, ib); ib++)
         {
         if (seedNodeId == MTG_NULL_NODEID)
@@ -260,7 +260,7 @@ int              numPolygonPoints
 
     if (NULL != ppNewBoundaries)
         *ppNewBoundaries = NULL;
-    
+
     if (NULL != pNumNewBoundaries)
         *pNumNewBoundaries = 0;
 

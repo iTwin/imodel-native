@@ -151,7 +151,7 @@ void DRange1d::Extend (double valueA)
         if (valueA < low)
             low = valueA;
         if (valueA > high)
-            high = valueA; 
+            high = valueA;
         }
     }
 //! @description Extend to include 2 values.
@@ -324,7 +324,7 @@ double DRange1d::MaxAbs (double defaultValueForNullRange) const
     return a > b ? a : b;
     }
 
-//! @description Test if equal intervals in point set sense. 
+//! @description Test if equal intervals in point set sense.
 //! Any pair of empty intervals (even if different low and high) are equal.
 bool DRange1d::IsEqualInterval (DRange1dCR other) const
     {
@@ -355,7 +355,7 @@ void DRange1d::ExtendBySignedShift (double tol)
         high += tol;
         low  -= tol;
         }
-        
+
     }
 
 

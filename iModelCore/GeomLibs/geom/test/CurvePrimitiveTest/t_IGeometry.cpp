@@ -1126,7 +1126,7 @@ TEST(FlatBuffer, MSBsplineSurface)
     }
     template <typename GeometryTypePtr>
     void TestSpecialReader(GeometryTypePtr &validGeometry, GeometryTypePtr &invalidGeometry,
-                           GeometryTypePtr (*bytesToGeometry)(Byte const *bytes, size_t const bufferSize, bool applyValidation))
+    GeometryTypePtr (*bytesToGeometry)(Byte const *bytes, size_t const bufferSize, bool applyValidation))
     {
     // suppress validation of write !!!
     auto nullValidator = GeometryValidatorPtr();

@@ -55,8 +55,8 @@ void RecordError (char const*s)
     {
     m_numErrors++;
     }
-    
-    
+
+
 void RecurseToLoops (MSBsplineSurfaceR surface, CurveVectorCR source, TransformCR sourceToParameter)
     {
     if (source.IsClosedPath ())
@@ -87,14 +87,14 @@ void ConvertSingleRegionToSurface (CurveVectorCR source)
             localToWorld, worldToLocal, localRange);
     double dx = localRange.XLength ();
     double dy = localRange.YLength ();
-    double sx, sy; 
+    double sx, sy;
     if (!DoubleOps::SafeDivideParameter (sx, 1.0, dx, 1.0)
         || !DoubleOps::SafeDivideParameter (sy, 1.0, dy, 1.0))
         {
         RecordError ("CurveVector to trimmed surface -- zero area trim region");
         return;
         }
-        
+
     Transform localToParameter = Transform::FromRowValues (
         sx, 0, 0, 0,
         0, sy, 0, 0,
@@ -116,13 +116,13 @@ void ConvertSingleRegionToSurface (CurveVectorCR source)
         RecurseToLoops (*surface, *localCurves, localToParameter);
         AddIfNonTrivial (surface);
         }
-    }    
-    
+    }
+
 void AddDisk (DEllipse3dCR disk)
     {
     AddIfNonTrivial (MSBsplineSurface::CreateTrimmedDisk (disk));
     }
-    
+
 void AddBilinear (DPoint3dCP points, int i00, int i10, int i01, int i11)
     {
     DPoint3d poles[4];
@@ -134,7 +134,7 @@ void AddBilinear (DPoint3dCP points, int i00, int i10, int i01, int i11)
     surface->InitFromPointsAndOrder (2, 2, 2, 2, poles);
     m_surfaces.push_back (surface);
     }
-    
+
 void Add (DgnConeDetailCR detail)
     {
     ICurvePrimitivePtr baseCurve = detail.GetConstantVSection (SolidLocationDetail::FaceIndices (0,0, 0), 0.0);
@@ -212,7 +212,7 @@ void Add (DgnTorusPipeDetailCR detail)
             {
             AddDisk (cap0);
             AddDisk (cap1);
-            }        
+            }
         }
     MSBsplineCurve sweepCurve;
     sweepCurve.InitFromDEllipse3d (cap0);
@@ -237,14 +237,14 @@ void AddRuled (bvector<ICurvePrimitivePtr> const &primiitves);
 void AddRuled (bvector<CurveVectorPtr> const &profiles)
     {
     bvector<ICurvePrimitivePtr> children;
-    
+
     size_t numProfile = profiles.size ();
     if (numProfile < 2)
         {
         RecordError ("need 2 or more profiles for ruled surface");
         return;
         }
-        
+
     CurveVector::BoundaryType btype = profiles[0]->GetBoundaryType ();
     size_t numPrimitive = profiles[0]->size ();
     for (size_t i = 1; i < numProfile; i++)
@@ -260,7 +260,7 @@ void AddRuled (bvector<CurveVectorPtr> const &profiles)
             return;
             }
         }
-    
+
     bvector<ICurvePrimitivePtr> primitives;
     for (size_t primitiveIndex = 0; primitiveIndex < numPrimitive; primitiveIndex++)
         {
@@ -308,8 +308,8 @@ void TrimLoopBuilder::AddRuled (bvector<ICurvePrimitivePtr> const &primitives)
     size_t numPrimitive = primitives.size ();
     if (numPrimitive < 2)
         return;
-        
-    
+
+
     bvector<MSBsplineCurve> curves;
     bvector<CurveVectorPtr> children;
     curves.reserve (numPrimitive);
@@ -329,7 +329,7 @@ void TrimLoopBuilder::AddRuled (bvector<ICurvePrimitivePtr> const &primitives)
         else
             RecordError ("Child must be vector or curve-convertible");
         }
-        
+
     if (curves.size () == numPrimitive)
         {
         MSBsplineCurveP curveP = &curves[0];
@@ -407,7 +407,7 @@ IFacetOptionsP options
         options = myOptions.get ();
         }
     TrimLoopBuilder builder (surfaces, *options);
-    
+
     if (primitive.TryGetDgnConeDetail (cone))
         builder.Add (cone);
     else if (primitive.TryGetDgnSphereDetail (sphere))
@@ -494,7 +494,7 @@ bool MSBsplineSurface::CreateLinearSweep (bvector<MSBsplineSurfacePtr> &surfaces
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 MSBsplineSurfacePtr MSBsplineSurface::CreateRotationalSweep (MSBsplineCurveCR baseCurve,
-DPoint3dCR center, 
+DPoint3dCR center,
 DVec3dCR axis,
 double sweepRadians)
     {
@@ -508,7 +508,7 @@ double sweepRadians)
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MSBsplineSurface::CreateRotationalSweep (bvector<MSBsplineSurfacePtr> &surfaces, CurveVectorCR baseCurves,
-DPoint3dCR center, 
+DPoint3dCR center,
 DVec3dCR axis,
 double sweepRadians
 )
@@ -532,7 +532,7 @@ double sweepRadians
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 MSBsplineSurfacePtr MSBsplineSurface::CreateRotationalSweep (ICurvePrimitiveCR primitive,
-DPoint3dCR center, 
+DPoint3dCR center,
 DVec3dCR axis,
 double sweepRadians
 )

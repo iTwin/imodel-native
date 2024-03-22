@@ -555,7 +555,7 @@ double   &intParam,
 DPlane3dCR plane
 ) const
     {
-    DRay3d ray; 
+    DRay3d ray;
     ray.InitFrom (*this);
     return ray.Intersect (intPoint, intParam, plane);
     }
@@ -987,7 +987,7 @@ bool extend1
     else if (closeParam < 0.0 && !extend0)
         {
         closeParam = 0.0;
-        closePoint4d = segment4d.point[0];            
+        closePoint4d = segment4d.point[0];
         }
     FractionParameterToPoint (closePoint, closeParam);
     return spacePoint4d.RealDistanceXY (distanceXY, closePoint4d);
@@ -1094,7 +1094,7 @@ double &fractionB
         else if (delta > 0.0)
             fractionB = 1.0;
         else
-            fractionB = 0.0;            
+            fractionB = 0.0;
         }
     else if (fractionB0onA <= 1.0)
         {

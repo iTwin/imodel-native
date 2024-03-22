@@ -34,7 +34,7 @@ void Evaluate (double u, double v, DPoint4dR X, DPoint4dR dXdu, DPoint4dR dXdv)
     dXdu.DifferenceOf (xyzAB[1], xyzAB[0]);
     dXdv.Interpolate (dxyzAB[0], v, dxyzAB[1]);
     }
-        
+
 bool ClosestPointFunction (DPoint3dCR spacePoint, double u, double v, double &f0, double &f1)
     {
     DPoint4d X[2], dXdu[2];
@@ -106,7 +106,7 @@ int order
     bsiBezier_univariateProduct (product10, 0, 1, (double*)coffP, order, 1, 2, (double*)coffQ, order, 0, 2);
     int resultantOrder = 2 * order - 1;
     bsiBezier_subtractPoles (resultant, product01, product10, resultantOrder, 1);
-    
+
     int numRoots;
     if (!bsiBezier_univariateRoots (roots, &numRoots, resultant, resultantOrder))
         return false;
@@ -182,7 +182,7 @@ int order
     double Qy   [2 * MAX_BEZIER_CURVE_ORDER];
     double PxQy [3 * MAX_BEZIER_CURVE_ORDER];
     double PyQx [3 * MAX_BEZIER_CURVE_ORDER];
-    
+
     double resultant [4 * MAX_BEZIER_CURVE_ORDER];
 
     bsiBezier_univariateProduct (AxBw, 0, 1, (double*)coffA, order, 0, 4, (double*)coffB, order, 3, 4);
@@ -205,7 +205,7 @@ int order
     int orderR = order + orderQ - 1;
 
     bsiBezier_subtractPoles (resultant, PxQy, PyQx, orderR, 1);
-    
+
     int numRoots;
     double roots[4 * MAX_BEZIER_CURVE_ORDER];
     if (!bsiBezier_univariateRoots (roots, &numRoots, resultant, orderR))
@@ -409,7 +409,7 @@ DVec3dR dXdv
     dXdv.DifferenceOf (xyzB, xyzA);
     dXdu.Interpolate (tangentA, v, tangentB);
     }
-    
+
 struct ClosestPointSearcher
 {
 DPoint3d m_spacePoint;
@@ -454,7 +454,7 @@ void UpdateByProjectionOnLine (DPoint4dCR pointA, DPoint4dCR pointB, double u)
     if (segment.ProjectPointBounded (xyz, v, m_spacePoint))
         Update (xyz, u, v);
     }
-    
+
 void UpdateByProjectionOnLine (DPoint3dCR pointA, DPoint3dCR pointB, double u)
     {
     DPoint3d xyz;
@@ -462,7 +462,7 @@ void UpdateByProjectionOnLine (DPoint3dCR pointA, DPoint3dCR pointB, double u)
     DSegment3d segment = DSegment3d::From (pointA, pointB);
     if (segment.ProjectPointBounded (xyz, v, m_spacePoint))
         Update (xyz, u, v);
-    }    
+    }
 
 bool TransferToDetail (SolidLocationDetailR detail)
     {
@@ -502,7 +502,7 @@ int order
         double v = searcher.m_v;
         // hm.. This iteration can run outside 01 easily -- bezier evaluation extends.
         if (newton.RunApproximateNewton (u, v, evaluator, s_maxDelta, s_maxDelta))
-            {            
+            {
             u = DoubleOps::ClampFraction (u);
             v = DoubleOps::ClampFraction (v);
             DPoint4d X;
@@ -536,7 +536,7 @@ void Evaluate (double u, double v, DPoint3dR X, DPoint3dR dXdu, DPoint3dR dXdv)
     dXdv.DifferenceOf (xyzAB[1], xyzAB[0]);
     dXdu.Interpolate (dAB[0], v, dAB[1]);
     }
-        
+
 bool ClosestPointFunction (DPoint3dCR spacePoint, double u, double v, double &f0, double &f1)
     {
     DPoint3d X;
@@ -582,7 +582,7 @@ DEllipse3dCR ellipseB
     int numEdge = (int) ceil (maxSweep / s_sweepAngleStep);     // NEEDSWORK: Is this (int) correct? VS2012 complains without it.
     if (numEdge < 3) numEdge = 3;
     double du = 1.0 / numEdge;
-    
+
     for (int i = 0; i <= numEdge; i++)
         {
         double u = i * du;
@@ -598,7 +598,7 @@ DEllipse3dCR ellipseB
         double v = searcher.m_v;
         // hm.. This iteration can run outside 01 easily -- bezier evaluation extends.
         if (newton.RunApproximateNewton (u, v, evaluator, s_maxDelta, s_maxDelta))
-            {            
+            {
             u = DoubleOps::ClampFraction (u);
             v = DoubleOps::ClampFraction (v);
             DPoint3d X;
@@ -609,9 +609,9 @@ DEllipse3dCR ellipseB
         }
 
     return searcher.TransferToDetail (pickData);
-    }    
+    }
 
-#ifdef EXPERIMENT_DETERMINANT_RAY_PATCH    
+#ifdef EXPERIMENT_DETERMINANT_RAY_PATCH
 // Indices for 6 products A[i]*B[j]*(C[k]*D[l]-C[l]*D[k])
 // These are added to from determinant -- the ordering of k and l provides sign effects.
 struct Determinant4Indices
@@ -620,7 +620,7 @@ struct Determinant4Indices
     int j;
     int k;
     int l;
-    };    
+    };
 Public bool bsiBezier_addRuledPatchRayIntersections
 (
 bvector <SolidLocationDetail> &pickData,
@@ -649,18 +649,18 @@ int orderB
         {0,1,2,3},
         {0,2,3,1},
         {0,3,1,2},
-        
+
         {1,2,0,3},
         {1,3,2,0},
         {1,0,3,2},
-        
+
         {2,3,0,1},
         {2,0,1,3},
         {2,1,3,0},
-        
+
         {3,0,2,1},
         {3,2,1,0},
-        {3,1,0,2},        
+        {3,1,0,2},
         };
     double *pE = &pointE.x;     // So it acts like an array of 0,1,2,3...
     double *pW = &pointE.x;
@@ -683,5 +683,5 @@ int orderB
         }
     return true;
     }
-#endif    
+#endif
 END_BENTLEY_GEOMETRY_NAMESPACE

@@ -270,7 +270,7 @@ bool MSBsplineCurve::SetPole (size_t i, DPoint3dCR value)
         }
     return false;
     }
-    
+
 bool MSBsplineCurve::SetPole (int i, DPoint3dCR value)
     {
     if (poles != NULL && ValidateIndex (i, this))
@@ -334,7 +334,7 @@ void MSBsplineCurve::SetPolygonDisplay (bool value) {display.polygonDisplay = va
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-double MSBsplineCurve::GetKnot (size_t i) const 
+double MSBsplineCurve::GetKnot (size_t i) const
     {
     if (i >= (size_t) params.NumberAllocatedKnots ())
         return 0.0;

@@ -26,12 +26,12 @@ CCompPDBName    = GeomLibsCheckers
 dirToSearch     = $(baseDir)src/
 %include cincapnd.mki
 
-$(o)SampleGeometry$(oext)   : $(testDir)src/SampleGeometry.cpp 
+$(o)SampleGeometry$(oext)   : $(testDir)src/SampleGeometry.cpp
 
-$(o)checkers$(oext)         : $(testDir)src/checkers.cpp 
+$(o)checkers$(oext)         : $(testDir)src/checkers.cpp
 
-$(o)FileOps$(oext)         : $(testDir)src/FileOps.cpp 
+$(o)FileOps$(oext)         : $(testDir)src/FileOps.cpp
 
-# Deliver 
+# Deliver
 $(BuildContext)Delivery/UnitTests/Objects/Checkers : ${o}
     $(LinkFirstDepToFirstTargetAsDirectory)

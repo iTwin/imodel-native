@@ -251,7 +251,7 @@ double          abstol
             }
         }
     }
-    
+
 
 /*-----------------------------------------------------------------*//**
 * Add numAdd points to a caller-allocated point buffer.  Caller is
@@ -314,7 +314,7 @@ double          absDelta,
 double          relDelta,
 size_t          numOnLongEdge,
 VuMask          interiorMask,
-VuMask          exteriorMask 
+VuMask          exteriorMask
 )
     {
     bvector<DPoint3d> buffer;
@@ -482,7 +482,7 @@ Options_vu_createTrianglated const &optionsIn
         {
         options.meshYLength = dy / s_maxEdge;
         }
-    
+
     DPoint3d origin = range.low;
     double ax0, ay0, ax1, ay1;
     DoubleOps::SafeDivide (ax0, range.low.x - origin.x, options.meshXLength, 0.0);

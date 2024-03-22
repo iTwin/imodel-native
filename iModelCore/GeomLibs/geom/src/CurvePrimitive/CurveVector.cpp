@@ -84,7 +84,7 @@ bool CurveVector::ClosestPointBounded (DPoint3dCR spacePoint, CurveLocationDetai
     {
     bool stat = false;
     location = CurveLocationDetail ();
-    location.SetMaxDistance ();    
+    location.SetMaxDistance ();
     for (size_t i = 0, n = size (); i < n; i++)
         {
         CurveLocationDetail candidate;
@@ -677,7 +677,7 @@ void CurveVector::AddStrokePoints (bvector<DPoint3dDoubleUVCurveArrays> &points,
                 {
                 child->AddStrokePoints (points, options.get ());
                 }
-            else 
+            else
                 {
                 points.push_back (DPoint3dDoubleUVCurveArrays ());
                 at(i)->AddStrokes (points.back (), *options, 0.0, 1.0);
@@ -917,7 +917,7 @@ BentleyStatus   CurveVector::ToBsplineCurve (MSBsplineCurveR curve) const
                 continue;
 
             MSBsplineCurve  segment;
-            
+
             if (!curvePrimitive->GetMSBsplineCurve (segment))
                 {
                 curve.ReleaseMem ();
@@ -982,7 +982,7 @@ void Recurse (CurveVectorCR parent)
             {
             double startFraction = 0.0, currentCurveLength;
             CurveLocationDetail location;
-        
+
             if (!parent[i]->Length (currentCurveLength))
                 continue;
             double distanceAtEndOfCurve = m_accumulatedDistance + currentCurveLength;
@@ -1150,7 +1150,7 @@ size_t CurveVector::CyclicIndex (int index) const
     }
 
 
- 
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

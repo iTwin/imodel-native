@@ -54,7 +54,7 @@ TEST(XYHatch,Linear)
             DPoint3d::From (0,0)},
         CurveVector::BOUNDARY_TYPE_Outer
         );
-    // a hole loop, input counterclockwise 
+    // a hole loop, input counterclockwise
     auto holeA = CurveVector::CreateLinear (bvector<DPoint3d> {
             DPoint3d::From (2,2),
             DPoint3d::From (6,2),
@@ -63,7 +63,7 @@ TEST(XYHatch,Linear)
             DPoint3d::From (2,2)},
         CurveVector::BOUNDARY_TYPE_Inner
         );
-    // a hole loop, defined clockwise 
+    // a hole loop, defined clockwise
     auto holeB = CurveVector::CreateLinear (bvector<DPoint3d> {
             DPoint3d::From (12,2),
             DPoint3d::From (12,5),

@@ -957,7 +957,7 @@ double                  tolerance
 ) const
     {
     bool result;
-    
+
     result = fabs (x - vector2.x) <= tolerance &&
              fabs (y - vector2.y) <= tolerance &&
              fabs (z - vector2.z) <= tolerance;
@@ -2871,7 +2871,7 @@ bool DPoint3d::AlmostEqual (bvector<DPoint3d> const &left, bvector<DPoint3d> con
             if (!left[i].AlmostEqual (right[i], tolerance))
                 return false;
         }
-    
+
     return true;
     }
 
@@ -2896,7 +2896,7 @@ bool DPoint3d::AlmostEqualXY (bvector<DPoint3d> const &left, bvector<DPoint3d> c
             if (!left[i].AlmostEqualXY (right[i], tolerance))
                 return false;
         }
-    
+
     return true;
     }
 
@@ -2915,7 +2915,7 @@ double fractionB        //!< [in] fractional position for perpenedicular to seco
     DVec3d U = targetA - basePoint;
     DVec3d V = targetB - basePoint;
     double dx, dy;
-    
+
     if (bsiSVD_solve2x2 (&dx, &dy,
             U.x, U.y,
             V.x, V.y,
