@@ -562,6 +562,8 @@ bool ICurvePrimitive::TryAddLineStringPoint (DPoint3dCR xyz)
 +--------------------------------------------------------------------------------------*/
 bool ICurvePrimitive::TryGetSegmentInLineString (DSegment3dR segment, size_t index0) const
     {
+    if (index0 < 0)
+        return false;
     size_t index1 = index0 + 1;
     bvector<DPoint3d> const*linestring = _GetLineStringCP ();
     if (NULL != linestring

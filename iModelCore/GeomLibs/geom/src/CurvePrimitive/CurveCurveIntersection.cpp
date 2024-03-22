@@ -212,7 +212,7 @@ bool validEdgeFractionWithinLinestring (double f, size_t edgeIndex, size_t numPo
         else if (edgeIndex == numPoint - 2)
             return f >= 0.0;
         }
-    
+
     return false;
     }
 
@@ -270,7 +270,7 @@ void ProcessLineLine(
             validatedBonA = DSegment1d (0,1).DirectedOverlap (DSegment1d (a1, a0));
             validatedBonA.Value ().ReverseInPlace ();
             }
-            
+
         if (validatedBonA.IsValid ())
             {
             DSegment1d intervalBonA = validatedBonA;
@@ -358,7 +358,7 @@ void ProcessLinestringLinestring(
     {
     DSegment3d segmentA, segmentB;
     size_t nXYZA = linestringA.size ();
-    size_t nXYZB = linestringB.size ();    
+    size_t nXYZB = linestringB.size ();
     for (size_t iA = 1; iA < nXYZA; iA++)
         {
         segmentA.Init (linestringA[iA-1],linestringA[iA]);
@@ -455,7 +455,7 @@ DConic4d Flatten (DConic4dCR conic)
     return result;
     }
 // fast test for identical basis.
-// 
+//
 bool SameBasisXY (DConic4dCR conicAxyz, DConic4dCR conicBxyz)
     {
     DConic4d conicA = Flatten (conicAxyz);
@@ -642,7 +642,7 @@ CurveVectorR intersectionB
 // Since use of this is within assert, we must guard the allocation of 'e' the same way to avoid unused variable warnings.
 #if !defined (NDEBUG)
     size_t numB = intersectionB.size ();
-#endif 
+#endif
 
     double fA, fB;
     DPoint3d pointA, pointB;
@@ -702,7 +702,7 @@ void CurveCurve::IntersectionsXY
 (
 CurveVectorR intersectionA,
 CurveVectorR intersectionB,
-CurveVectorR chainA, 
+CurveVectorR chainA,
 CurveVectorR chainB,
 DMatrix4dCP    pWorldToLocal
 )
@@ -718,7 +718,7 @@ DMatrix4dCP    pWorldToLocal
         for (size_t iB = 0, nB = chainB.size (); iB < nB; iB++)
             {
             if (rangeA[iA].IntersectsWith (rangeB[iB], 2))
-                processor.Process (chainA[iA].get (), chainB[iB].get ());                        
+                processor.Process (chainA[iA].get (), chainB[iB].get ());
             }
     PurgeRedundantIntersections (intersectionA, intersectionB);
     }
@@ -730,7 +730,7 @@ void CurveCurve::SelfIntersectionsXY
 (
 CurveVectorR intersectionA,
 CurveVectorR intersectionB,
-CurveVectorR chain, 
+CurveVectorR chain,
 DMatrix4dCP    pWorldToLocal
 )
     {
@@ -775,7 +775,7 @@ void CurveCurve::IntersectionsXY
 (
 CurveVectorR intersectionA,
 CurveVectorR intersectionB,
-ICurvePrimitiveR curveA, 
+ICurvePrimitiveR curveA,
 CurveVectorR chainB,
 DMatrix4dCP    pWorldToLocal
 )
@@ -783,10 +783,10 @@ DMatrix4dCP    pWorldToLocal
     double tol = 0.0;
     CCIProcessor processor (intersectionA, intersectionB, pWorldToLocal, tol);
     for(ICurvePrimitivePtr &curveB : chainB)
-        processor.Process (&curveA, curveB.get ());                        
+        processor.Process (&curveA, curveB.get ());
     PurgeRedundantIntersections (intersectionA, intersectionB);
     }
-	
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -794,7 +794,7 @@ void CurveCurve::IntersectionsXY
 (
 CurveVectorR intersectionA,
 CurveVectorR intersectionB,
-ICurvePrimitiveP curveA, 
+ICurvePrimitiveP curveA,
 ICurvePrimitiveP curveB,
 DMatrix4dCP    pWorldToLocal,
 bool           extend
@@ -864,7 +864,7 @@ void AnnounceResult
     (
     CurveVectorR dest,
     ICurvePrimitiveCR primitive,
-    double fractionA, 
+    double fractionA,
     double fractionB
     )
     {
@@ -979,7 +979,7 @@ void CurveVector::AppendSplitCurvesByRegion (CurveVectorCR region, CurveVectorP 
             else if (c == CurveVector::INOUT_On)
                 {
                 if (NULL != onCollector)
-                    onCollector->push_back (curve);                
+                    onCollector->push_back (curve);
                 }
             }
         }
@@ -1111,7 +1111,7 @@ void CurveVector::AppendSplitCurvesByPlane (DPlane3dCR plane, CurveVectorP below
     {
     SplitCurvesByPlaneCollector collector (plane, belowCollector, aboveCollector, onCollector,
             ResolveTolerance (0.0));
-    collector.Process (*this);    
+    collector.Process (*this);
     }
 
 
@@ -1168,7 +1168,7 @@ DPoint3dR pointB
         return false;
     fractionA = detailA.fraction0;
     fractionB = detailB.fraction0;
-    
+
     return detailA.parentCurve->FractionToPoint (fractionA, pointA)
             && detailB.parentCurve->FractionToPoint (fractionB, pointB);
     }
@@ -1229,11 +1229,11 @@ CurveLocationDetailR detailB
         return false;
     double fractionA = partialCurveDetailA.fraction0;
     double fractionB = partialCurveDetailB.fraction0;
-    
+
     return partialCurveDetailA.parentCurve->FractionToPoint (fractionA, detailA)
             && partialCurveDetailB.parentCurve->FractionToPoint (fractionB, detailB);
     }
-	
+
 bool FractionsContained (PartialCurveDetailCR detailA, PartialCurveDetailCR detailB)
   {
   double a0 = detailA.fraction0;

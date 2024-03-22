@@ -18,7 +18,7 @@ TEST(CurvePrimitiveId, Hello)
         })
         {
         auto idA = CurvePrimitiveId::Create (type,CurveTopologyId (CurveTopologyId::Type::CutFill, 0));
-    
+
         Check::True (type == idA->GetType (), "Id type");
         auto idB = CurvePrimitiveId::Create (*idA);
         auto idC = idA->Clone ();
@@ -26,19 +26,19 @@ TEST(CurvePrimitiveId, Hello)
         bvector<BoolTypeForVector>   bytes;
         idA->Store(bytes);
         auto idD = CurvePrimitiveId::Create(bytes.data(), bytes.size());
-        
+
         Check::Int (0, idA->GetGeometryStreamIndex ());
         Check::Int (0, idA->GetPartGeometryStreamIndex ());
         Check::False(0 == idA->GetIdSize ());
-        Check::True(*idA == *idB);  
-        Check::True(*idA == *idC);  
-        Check::True(*idA == *idD);  
+        Check::True(*idA == *idB);
+        Check::True(*idA == *idC);
+        Check::True(*idA == *idD);
         auto s = idA->GetDebugString ();
         GEOMAPI_PRINTF (" Debug String %s\n", s.c_str ());
         }
 
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -51,7 +51,7 @@ void testTopologyId(CurveTopologyIdCR idA)
     idA.Pack(bytes);
     auto    idC = CurveTopologyId(bytes.data(), bytes.size());
 
-    Check::True(idA == idB);  
+    Check::True(idA == idB);
     Check::True(idA == idC);
     auto s = idA.GetDebugString ();
     GEOMAPI_PRINTF (" Debug String %s\n", s.c_str ());
@@ -85,6 +85,6 @@ TEST(CurveTopologyId, Hello)
     testTopologyId (CurveTopologyId::FromVisEdgesIntersection());
     testTopologyId (CurveTopologyId::FromCurveVector());
     }
-    
-    
-    
+
+
+

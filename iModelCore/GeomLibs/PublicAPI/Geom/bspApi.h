@@ -27,7 +27,7 @@ typedef struct ssiPt
     DPoint2d    uv0;
     DPoint2d    uv1;
     } SsiPt;
-    
+
 struct intLink
     {
     IntLink             *next;

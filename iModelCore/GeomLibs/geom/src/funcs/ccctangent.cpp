@@ -32,7 +32,7 @@ double    tangencyRadius
     {
     tangencyRadius = fabs (tangencyRadius);
     circleRadius = fabs (circleRadius);
-    // Tangency point between the circles is one of the two intersections of the circle and the line between the two centers. 
+    // Tangency point between the circles is one of the two intersections of the circle and the line between the two centers.
     DVec3d centerVector, direction;
     centerVector.DifferenceOf (circleCenter, spacePoint);
     centerVector.z = 0.0;
@@ -248,7 +248,7 @@ int      *pExternalToInternal
         f[i] = pCenterArrayIn[i].Distance (pCenterArrayIn[next[i]])
              + pCenterArrayIn[i].Distance (pCenterArrayIn[pred[i]]);
         }
-    
+
     for (int i = 0; i < 3; i++)
         {
         for (int j = i+1; j < 3; j++)
@@ -268,7 +268,7 @@ int      *pExternalToInternal
         pCenterArrayOut[i] = pCenterArrayIn[id[i]];
         pExternalToInternal[id[i]] = i;
         }
-    
+
     }
 /*---------------------------------------------------------------------------------**//**
 * @description compute the centers of circles which are tangent to 3 given circles, under previously
@@ -401,7 +401,7 @@ double   *pRadiusArrayIn
     {
     static double sDetTol = 1.0e-8;
 //#define RECORD_INPUTS
-#ifdef RECORD_INPUTS 
+#ifdef RECORD_INPUTS
     static double sRadiusIn[3] = {0, 0, 0};
     static DPoint3d sCenterIn[3] = {{0,0}, {0,0}, {0,0}};
     static int sPrintTransitions = 0;
@@ -585,7 +585,7 @@ double      radiusC
     cIn[0] = centerA;
     cIn[1] = centerB;
     cIn[2] = centerC;
-    
+
     shuffleCenters (cSort, rSort, cIn, rIn, externalToInternal);
     bsiGeom_circleTTTCircleConstruction_thisOrder (pCenterArrayOut, pRadiusArrayOut,
                         tangentSort[0], tangentSort[1], tangentSort[2],
@@ -824,7 +824,7 @@ M,N are line normals.
 Need to consider 4 combinations of signs: (+++) (++-) (-++) (-+-) The other 4 are negations.
 Write the linear part as
 [M N]^ * X = [M.A N.B]^ + r Ei       where Ei is one of E0=[1 1]^   or  E1=[1 -1]^
-Mutliply by inverse of matrix 
+Mutliply by inverse of matrix
    X = F + r G
 The quadratic part is
 (F + rG).(F + rG) = (a +- r)^2
@@ -1248,7 +1248,7 @@ double     radiusC
                     }
                 }
             }
-        }       
+        }
     }
 
 END_BENTLEY_GEOMETRY_NAMESPACE

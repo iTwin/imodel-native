@@ -1100,7 +1100,7 @@ double                  tolerance
 
     result = fabs (x - vector2.x) <= tolerance &&
              fabs (y - vector2.y) <= tolerance;
-    
+
     return result;
     }
 

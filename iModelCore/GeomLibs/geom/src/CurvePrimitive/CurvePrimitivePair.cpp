@@ -52,7 +52,7 @@ ICurvePrimitiveCR curveB
             DEllipse3d ellipseC = ellipseA;    // get the angles
             ellipseC.center   = DPoint3d::FromInterpolate (ellipseA.center, fraction, ellipseB1.center);
             ellipseC.vector0  = DVec3d::FromInterpolate (ellipseA.vector0,  fraction, ellipseB1.vector0);
-            ellipseC.vector90 = DVec3d::FromInterpolate (ellipseA.vector90, fraction, ellipseB1.vector90);                
+            ellipseC.vector90 = DVec3d::FromInterpolate (ellipseA.vector90, fraction, ellipseB1.vector90);
             return ICurvePrimitive::CreateArc (ellipseC);
             }
         }
@@ -63,7 +63,7 @@ ICurvePrimitiveCR curveB
         {
         MSBsplineCurvePtr curveC = MSBsplineCurve::CreateInterpolationBetweenCurves (*bcurveA, fraction, *bcurveB);
         if (curveC.IsValid ())
-            {    
+            {
             return ICurvePrimitive::CreateBsplineCurve (*curveC);
             }
         }
@@ -97,7 +97,7 @@ DVec3dR dXdv
         xyz.Interpolate (xyz0, vFraction, xyz1);
         dXdu.Interpolate (dX0du, vFraction, dX1du);
         dXdv.DifferenceOf (xyz1, xyz0);
-        return true;        
+        return true;
         }
     return false;
     }
@@ -314,7 +314,7 @@ ptrdiff_t  index2
             detail.SetXYZ (hitXYZ[hit]);
             detail.SetUV (patchU0 + patchUStep * hitUV[hit].x, hitUV[hit].y, dXdu, dXdv);
             detail.SetFaceIndices (0, 0, index2);
-            pickData.push_back (detail);                
+            pickData.push_back (detail);
             }
         }
     }
@@ -403,7 +403,7 @@ bool ICurvePrimitive::AddRuledSurfaceRayIntersections
                 double splineFraction = pickData[i].GetU ();
                 double v = pickData[i].GetV ();
                 bcurveA.FractionToPoint (xyzA0, splineFraction);
-                bcurveB.FractionToPoint (xyzB0, splineFraction); 
+                bcurveB.FractionToPoint (xyzB0, splineFraction);
                 curveA.ClosestPointBounded (xyzA0, uA1, xyzA1);
                 curveB.ClosestPointBounded (xyzB0, uB1, xyzB1);
                 curveA.FractionToPoint (uA1, tangentA1);

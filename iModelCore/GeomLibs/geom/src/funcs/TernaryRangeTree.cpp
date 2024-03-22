@@ -346,7 +346,7 @@ TernaryRangeTreeNode ()
     m_union.Init ();
     m_intersection.Init ();
     m_intersection.Extend (0,0,0);
-    m_intersection.Extend (s_universeSize);   // product of zero sets is the universe !? This is important for 
+    m_intersection.Extend (s_universeSize);   // product of zero sets is the universe !? This is important for
     }
 
 // set head as the head of the primary list. (NO CHECK FOR VALIDITY -- caller responsible for coordinating with previous content)
@@ -355,7 +355,7 @@ void UpdatePrimaryList (size_t head, DRange3dCR unionUpdate, DRange3dCR intersec
     {
     m_intersection.IntersectIndependentComponentsOf (m_intersection, intersectionUpdate);
     m_union.Extend (unionUpdate);
-    m_primaryListHead = head;    
+    m_primaryListHead = head;
     }
 
 bool IsAxisBlocked (int axisSelect)
@@ -521,7 +521,7 @@ TernaryRangeTree ()
 bool IsValidRangeIndex (size_t value) {return value < m_ranges.size ();}
 bool IsValidTreeIndex (size_t value) {return value < m_ranges.size ();}
 
-// Insert a (list of ranges!) to the primary list of 
+// Insert a (list of ranges!) to the primary list of
 void InsertListPrimary (size_t parentNodeIndex, size_t newListHead)
     {
     size_t oldHead = m_nodes[parentNodeIndex].m_primaryListHead;

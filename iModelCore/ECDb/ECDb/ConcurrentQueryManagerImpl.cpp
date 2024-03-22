@@ -108,18 +108,19 @@ QueryJsonAdaptor& CachedQueryAdaptor::GetJsonAdaptor() {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void CachedConnection::Execute(std::function<void(QueryAdaptorCache&,RunnableRequestBase&)> cb, std::unique_ptr<RunnableRequestBase> request) {
-    recursive_guard_t lock(m_mutexReq);
-    if (!m_isChangeSummaryCacheAttached) {
-        BeFileName primaryChangeCacheFile;
-        if (GetPrimaryDb().TryGetChangeCacheFileName(primaryChangeCacheFile)) {
-            if (!m_db.IsChangeCacheAttached()) {
-                if (BE_SQLITE_OK == m_db.AttachChangeCache(primaryChangeCacheFile)) {
-                    m_isChangeSummaryCacheAttached = true;
+    if (true) {
+        recursive_guard_t lock(m_mutexReq);
+        if (!m_isChangeSummaryCacheAttached) {
+            BeFileName primaryChangeCacheFile;
+            if (GetPrimaryDb().TryGetChangeCacheFileName(primaryChangeCacheFile)) {
+                if (!m_db.IsChangeCacheAttached()) {
+                    if (BE_SQLITE_OK == m_db.AttachChangeCache(primaryChangeCacheFile)) {
+                        m_isChangeSummaryCacheAttached = true;
+                    }
                 }
             }
         }
     }
-
     SetRequest(std::move(request));
     cb(m_adaptorCache, *m_request);
     ClearRequest();
@@ -924,6 +925,7 @@ QueryProperty::List QueryHelper::GetMetaInfo(CachedQueryAdaptor& adp, bool class
 void QueryProperty::ToJs(BeJsValue& val) const {
     val.toObject();
     val[JClass]=m_className;
+    val[JAccessString]=m_accessString;
     val[JGenerated]=m_isGenerated;
     val[JIndex]=m_index;
     val[JJsonName]=m_jsonName;
@@ -945,8 +947,8 @@ void QueryProperty::List::ToJs(BeJsValue& val) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void QueryProperty::List::append(std::string className, std::string jsonName, std::string name, std::string typeName, bool generated, std::string extendedType, int index) {
-    emplace_back(QueryProperty(className, jsonName,name, typeName, generated, extendedType, index));
+void QueryProperty::List::append(std::string className, std::string accessString, std::string jsonName, std::string name, std::string typeName, bool generated, std::string extendedType, int index) {
+    emplace_back(QueryProperty(className, accessString, jsonName, name, typeName, generated, extendedType, index));
 }
 
 //---------------------------------------------------------------------------------------
@@ -1109,7 +1111,7 @@ void QueryHelper::ReadBlob(ECDbCR conn, RunnableRequestBase& runnableRequest) {
 //---------------------------------------------------------------------------------------
 void QueryHelper::ExecutePing(Json::Value const& pingJson, RunnableRequestBase& runnableRequest) {
     QueryProperty::List props;
-    props.append("", "id", "id", "long", false, "", 0);
+    props.append("", "", "id", "id", "long", false, "", 0);
 
     const auto maxMem = (int64_t)ConcurrentQueryMgr::GetConfig(runnableRequest.GetQueue().GetECDb()).GetQuota().MaxMemoryAllowed();
     auto pingResultSize = pingJson["ping"]["resultSize"].asInt64();

@@ -313,6 +313,15 @@ TEST_F(SchemaSyncTestFixture, PushSchemaWithoutInitializingSchemaChannel)
     SchemaSyncDb schemaSyncDb("sync-db");
     auto b1 = hub.CreateBriefcase();
 
+    Utf8String schemaHash;
+    Utf8String mapHash;
+    Utf8String dbSchemaHash;
+    schemaSyncDb.WithReadOnly([&](ECDbR syncDb) {
+        schemaHash = GetSchemaHash(syncDb);
+        mapHash = GetMapHash(syncDb);
+        dbSchemaHash = GetDbSchemaHash(syncDb);
+        });
+
     Test(
         "Create and import schema to schemaSyncDb without initializing schemaSyncDb",
         [&]()
@@ -321,7 +330,7 @@ TEST_F(SchemaSyncTestFixture, PushSchemaWithoutInitializingSchemaChannel)
             ASSERT_EQ(BE_SQLITE_OK, b1->AbandonChanges());
             CheckHashes(*b1);
             //use specific hash below, because schema sync db is not using a seed but creating the db with the latest profile.
-            schemaSyncDb.WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, "33d2f1178209ea2138adac30b372bdddb427363914da1c182d59a3da809ba49a", "17adf1cdba0c3c9970ec26d61bf5d8fa91808c3a98ce02f78ba0359e4eda11ee", "c4ca1cdd07de041e71f3e8d4b1942d29da89653c85276025d786688b6f576443"); });
+            schemaSyncDb.WithReadOnly([&](ECDbR syncDb) { CheckHashes(syncDb, schemaHash.c_str(), mapHash.c_str(), dbSchemaHash.c_str()); });
             }
     );
     }
@@ -22689,17 +22698,23 @@ TEST_F(SchemaSyncTestFixture, DisallowMajorSchemaUpgrade)
                     </ECEntityClass>
                 </ECSchema>)xml";
 
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "eea4d406b801b29d20ee53f7bf931d4fb4d2620ef47611aed3ff713c2f943afe";
+            const auto SCHEMA_HASH_ECDB_MAP = "358afdf1d6bcfd8af6bc408fa9a1c11eb29907169db6d58e0ab7231d3dbb8e7a";
+            const auto SCHEMA_HASH_SQLITE_SCHEMA = "6dd9dcc7cf66b8bef870ce37f21e666964fd9cc93e16945aba81e5d684bf4b67";
+
             EXPECT_EQ(
-                SchemaImportResult::ERROR,
-                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None, {"", "", ""})
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
             ) << "Unique index on existing property must fail because adding a ECDbMap CA on existing class is not allowed.";
             EXPECT_EQ(
-                SchemaImportResult::ERROR,
-                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {"", "", ""})
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
             ) << "Unique index on existing property must fail because adding a ECDbMap CA on existing class is not allowed.";
+
+            const auto SCHEMA2_HASH_ECDB_SCHEMA = "6b3f5b182b9b64f546090083ce65cf0706451481717f073a69ec4d66d7be7bcc";
             EXPECT_EQ(
-                SchemaImportResult::ERROR,
-                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None, {"", "", ""})
+                SchemaImportResult::OK,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None, {SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
             ) << "Unique index on existing property must fail because adding a ECDbMap CA on existing class is not allowed.";
             EXPECT_EQ(
                 SchemaImportResult::ERROR,
@@ -22744,17 +22759,23 @@ TEST_F(SchemaSyncTestFixture, DisallowMajorSchemaUpgrade)
                     </ECEntityClass>
                 </ECSchema>)xml";
 
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "6c0a59a3349d67cd61bed05f1b61c14ec042504154db7a2c1c45a914cfe5469b";
+            const auto SCHEMA_HASH_ECDB_MAP = "bdaba10f700ff097382ecc4edb11711b1f59dc5c0dbe3a7e0598ec1b4564dc0b";
+            const auto SCHEMA_HASH_SQLITE_SCHEMA = "3d2258a5a3872f482a7fd354eec23fac9e2f16333121d98d1ce834220a006079";
+
             EXPECT_EQ(
-                SchemaImportResult::ERROR,
-                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None, {"", "", ""})
+                SchemaImportResult::OK ,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
             ) << "Unique index on new property in existing class must fail because adding a ECDbMap CA on existing class is not allowed.";
             EXPECT_EQ(
-                SchemaImportResult::ERROR,
-                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {"", "", ""})
+                SchemaImportResult::OK,
+                assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade, {SCHEMA_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
             ) << "Unique index on new property in existing class must fail because adding a ECDbMap CA on existing class is not allowed.";
+
+            const auto SCHEMA2_HASH_ECDB_SCHEMA = "67fa399deab85627083b1b2457199c24d10de901e639211e1010af6c55bb1f16";
             EXPECT_EQ(
-                SchemaImportResult::ERROR,
-                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None, {"", "", ""})
+                SchemaImportResult::OK,
+                assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None, {SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA_HASH_ECDB_MAP, SCHEMA_HASH_SQLITE_SCHEMA})
             ) << "Unique index on new property in existing class must fail because adding a ECDbMap CA on existing class is not allowed.";
             EXPECT_EQ(
                 SchemaImportResult::ERROR,

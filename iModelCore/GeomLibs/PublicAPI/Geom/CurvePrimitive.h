@@ -19,9 +19,9 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 An ICurvePrimitive is a refcounted structure.  At point of creation, an instance is addressed via a ICurvePrimitivePtr.   Inputs to methods can be passed as simple references and pointers.
 
 <h3> Primitive type and queries</h3>
- 
+
  Each curve vector is marked with an enumerated value indicating how its contents are to be interpretted.  The enumerated type can be accessed via cv.GetCurvePrimitiveType ().
- 
+
 <TABLE BORDER="1">
  <TR><TD>enum name                                 </TD> <TD> represents   </TD> <TD> Remarks </TD> </TR>
  <TR><TD> CURVE_PRIMITIVE_TYPE_Invalid             </TD> <TD> error type.  Exists only at point of construction </TD> <TD> </TD> </TR>
@@ -40,7 +40,7 @@ An ICurvePrimitive is a refcounted structure.  At point of creation, an instance
  <h3> Fractional position along a primitive</h3>
 
  Every primitive (except CURVE_PRIMITIVE_TYPE_CurveVector and CURVE_PRIMITIVE_TYPE_PointString) supports a "fractional" parametric form.
- 
+
  <ul>
  <li>The fractional coordinate 0.0 is always the start point.
  <li>The fractional coordinate 1.0 is always the end point.
@@ -50,7 +50,7 @@ An ICurvePrimitive is a refcounted structure.  At point of creation, an instance
  <li>the mapping from fraction to point is determined by the equations of the curve.
      <ul>
      <li>fraction changes are not required to be proportional to distance change.
-     <li>fractional changes ARE proportional to distance change for a limited subset of curve primtivies.  Specifically, these types are 
+     <li>fractional changes ARE proportional to distance change for a limited subset of curve primtivies.  Specifically, these types are
          <ul>
          <li>line segment
          <li>circular arcs
@@ -99,7 +99,7 @@ private:
     ICurvePrimitiveInfoPtr              m_info;
     mutable CurvePrimitiveIdPtr         m_id;
     int64_t                             m_tag;
-    
+
 
 public:
 //! Enumeration of possible curve primitive types.
@@ -385,7 +385,7 @@ GEOMDLLIMPEXP bool  TryGetPartialCurveData (double &fractionA, double &fractionB
 
 //flex!! Geometric Construction
 
-//flex || Create a line segment || outPrim = CurvePrimitive::CreateLine (DSegment3dCR inSegment) || outPrim = CurvePrimitive::CreateLine (DPoint3dCR point0, DPoint3dCR point1) 
+//flex || Create a line segment || outPrim = CurvePrimitive::CreateLine (DSegment3dCR inSegment) || outPrim = CurvePrimitive::CreateLine (DPoint3dCR point0, DPoint3dCR point1)
 //flex || Create an elliptic arc || outPrim = CurvePrimtiive::CreateArc (DEllipse3DCR inArc) ||
 //flex || Create a polyline || outPrim = CurvePrimitive::CreateLineString (bvector<DPoint3d> &points) ||
 //flex ||  || outPrim = CurvePrimitive::CreateLineString (DPoint3dCP points, int n) ||
@@ -646,7 +646,7 @@ GEOMDLLIMPEXP static ICurvePrimitivePtr CreateSpiralBearingCurvatureLengthCurvat
 //!<li>turn towards pointC, reachnig maximum curvature near pointB.
 //!<li>flatten out to tangency with the line pointB..pointC.
 //!</ul>
-//! 
+//!
 GEOMDLLIMPEXP static bool CreateSpiralsStartShoulderTarget
 (
 int transitionType,     //!< [in] transition type
@@ -695,7 +695,7 @@ double endFraction          //!< [in] active interval end fraction
 
 // Create a spiral of one of the "cubic" approximations.
 // This uses an iterative search for spiral parameters and start/end fractions so that the spiral follows the "cubic" path
-// but has the true radius and length characteristics.  (Recall that the cubic spirals have nominal radius and length in their equations, but 
+// but has the true radius and length characteristics.  (Recall that the cubic spirals have nominal radius and length in their equations, but
 // actual radius and length are slightly different)
 GEOMDLLIMPEXP static ICurvePrimitivePtr CreatePseudolSpiralWithTrueRadiusLengthRadius (
       int transitionType,
@@ -723,7 +723,7 @@ GEOMDLLIMPEXP static ICurvePrimitivePtr CreateAustralianRailCorpBearingRadiusLen
 * * The available implementations are:
 *    * any value not listed below is the default, which may be changed over time.
 *    * (1) is the original implementation in which
-*       * the CurvePrimitive is derived from the primitive for a  bspline curve 
+*       * the CurvePrimitive is derived from the primitive for a  bspline curve
 *       * many computations (e.g. length) use the bspline curve.
 *    * (2) is an implementation which has
 *        * an internal proxy bspline curve.
@@ -902,7 +902,7 @@ GEOMDLLIMPEXP bool FractionToFrenetFrame (double f, TransformR frame) const;
 //! @param [in] f evaluation fraction.
 //! @param [out] frame Coordinate frame with origin on curve, x direction along curve, y direction in curvature plane, z direction perpendicular.
 //! @param [out] curvature curvature (in the xy plane of the frenet frame)
-//! @param [out] torsion 
+//! @param [out] torsion
 GEOMDLLIMPEXP bool FractionToFrenetFrame (double f, TransformR frame, double &curvature, double &torsion) const;
 
 
@@ -917,7 +917,7 @@ GEOMDLLIMPEXP ValidatedTransform FractionToFrenetFrame (double f) const;
 //flex|| Compute range cube   || bool curvePrim.GetRange (out range) ||
 //flex|| Compute range cube after transform || bool curvePrim.GetRange (range, transform) ||
 //flex|| range of projection in parameter space of a ray. || range1d = curvePrim.ProjectedParameterRange (ray, fraction0, fraction1) ||
-//flex|| Quick estimate of largest coordinate present || a = curvePrim.FastMaxAbs () || 
+//flex|| Quick estimate of largest coordinate present || a = curvePrim.FastMaxAbs () ||
 //flex|| Compute centroid of the curve as a wire || bool curvePrim. WireCentroid (outLength, outPoint fraction0, fraction1)||
 
 //! Compute curve length.
@@ -1148,7 +1148,7 @@ GEOMDLLIMPEXP bool IsFractionSpace () const;
 GEOMDLLIMPEXP bool IsPeriodicFractionSpace(double &period) const;
 
 //flex !! Inplace modification
-//flex 
+//flex
 //flex || description || ||
 //flex || apply transform || curvePrim.TransformInPlace (transform) ||
 
@@ -1160,14 +1160,14 @@ GEOMDLLIMPEXP bool ReverseCurvesInPlace ();
 
 
 //flex !! Intersections, Containment
-//flex 
+//flex
 //flex || Intersection with plane.   return can indicate both a) single point contact and ( b)    "on plane" sections. || cp.AppendCurvePlaneIntersections (plane, bvector<SEE(CurveLocationDetailPair)> & outIntersections, double tolerance) ||
 
 
 //! Return vector of intersections with a plane.
 //! Single point intersection appears as a CurveLocationDetailPair with identical locations for both parts of the pair (SameCurveAndFraction)
 //! Curve-on-plane appears as CurveLocationDetailPair with curve,fraction data for start and end of on-plane sections.
-//! @param [in] plane 
+//! @param [in] plane
 //! @param [out] intersections intersection details
 //! @param [in] tolerance for on-plane decisions.  If 0, a tolerance is computed based on the coordinates in the curve.
 GEOMDLLIMPEXP void AppendCurvePlaneIntersections (DPlane3dCR plane, bvector<CurveLocationDetailPair> &intersections, double tolerance = 0.0) const;
@@ -1176,14 +1176,14 @@ GEOMDLLIMPEXP void AppendCurvePlaneIntersections (DPlane3dCR plane, bvector<Curv
 GEOMDLLIMPEXP void  AppendCurveRangeIntersections
 (
 LocalRangeCR range,                          //!< [in] range box
-bvector<PartialCurveDetail> &intersections   //!< [out] intersections 
+bvector<PartialCurveDetail> &intersections   //!< [out] intersections
 ) const;
 
 //! Return intesections of curve primitive with a bilinear patch
 GEOMDLLIMPEXP void  AppendCurveBilinearPatchIntersections
 (
 DBilinearPatch3dCR patch,                      //!< [in] patch to intersect
-bvector<CurveAndSolidLocationDetail> &intersections   //!< [out] intersections 
+bvector<CurveAndSolidLocationDetail> &intersections   //!< [out] intersections
 ) const;
 
 //! Return intesections of curve primitive with (the plane of) a triangle.
@@ -1191,7 +1191,7 @@ GEOMDLLIMPEXP void  AppendCurvePlaneIntersections
 (
 DPoint3dDVec3dDVec3dCR plane,  //!< [in] plane to intersect
 UVBoundarySelect   bounded,         //!< [in] selects Unbounded, Triangle, or Parallelogram boundaries.
-bvector<CurveAndSolidLocationDetail> &intersections   //!< [out] intersections 
+bvector<CurveAndSolidLocationDetail> &intersections   //!< [out] intersections
 ) const;
 
 //! Return the centroid of (a portion of) the curve.
@@ -1203,7 +1203,7 @@ GEOMDLLIMPEXP bool WireCentroid (double &length, DPoint3dR centroid, double frac
 
 
 //flex !! Stroking
-//flex 
+//flex
 //flex || Add stroked approximation to a bvector. || curvePrim.AddStrokes (bvector<DPoint3d> &points, SEE(IFacetOptions) facetOptions, bool includeStart, fraction0, fraction1) ||
 //flex || Ask how many strokes sill be needed || n = curvePrim.GetStrokeCount (SEE(IFacetOptions) facetOptions, fraction0, fraction1) ||
 

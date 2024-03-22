@@ -9,7 +9,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 //!
 //! Initialize a ray from start and target points
 //!
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void            bsiDRay3d_initFromDPoint3dStartEnd
 (
@@ -21,7 +21,7 @@ DPoint3dCP pPoint1
 //!
 //! Initialize a ray from a segment.
 //!
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void            bsiDRay3d_initFromDSegment3d
 (
@@ -32,7 +32,7 @@ DSegment3dCP pSegment
 //!
 //! Initialize a ray from 2d endpoints
 //!
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void            bsiDRay3d_initFromDPoint2dStartEnd
 (
@@ -44,7 +44,7 @@ DPoint2dCP pPoint1
 //!
 //! Initialize a ray from origin and direction.
 //!
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void            bsiDRay3d_initFromDPoint3dTangent
 (
@@ -56,7 +56,7 @@ DVec3dCP pTangent
 //!
 //! Evaluate the segment at a parametric coordinate.
 //!
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void            bsiDRay3d_evaluateDPoint3d
 (
@@ -68,7 +68,7 @@ double            param
 //!
 //! Return the origin and target of the ray.
 //!
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void            bsiDRay3d_evaluateEndPoints
 (
@@ -80,7 +80,7 @@ DPoint3dP pPoint1
 //!
 //! Return the (unnormalized) tangent vector along the segment.
 //!
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void            bsiDRay3d_evaluateTangent
 (
@@ -91,14 +91,14 @@ DVec3dP pTangent
 //!
 //! @return squared length of the ray's direction vector.
 //!
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP double          bsiDRay3d_lengthSquared (DRay3dCP pInstance);
 
 //!
 //! Project a point onto the extended ray in 3D.
 //!
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool            bsiDRay3d_projectPoint
 (
@@ -112,7 +112,7 @@ DPoint3dCP pPoint
 //! Project a point onto the bounded line in 3D.  If nearest point of extended line
 //! is outside the 0..1 parameter range, returned values are for nearest endpoint.
 //!
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool            bsiDRay3d_projectPointBounded
 (
@@ -127,7 +127,7 @@ DPoint3dCP pPoint
 //! Apply a transformation to the source ray.
 //! @param pTransform IN      transformation to apply.
 //! @param pSource IN      source ray
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool    bsiDRay3d_transform
 (

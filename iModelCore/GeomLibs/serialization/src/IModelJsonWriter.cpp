@@ -780,8 +780,19 @@ void CurveVectorToJson(BeJsValue in, CurveVectorCR cv) {
     if (nullptr == name)
         return;
 
+    CurveVectorPtr flattened;
+    CurveVectorCP pCurves = &cv;
+    if (cv.HasNestedUnionRegion())
+        {
+        // requirement for PowerPlatform and iModel
+        flattened = cv.Clone();
+        flattened->FlattenNestedUnionRegions();
+        if (flattened.IsValid())
+            pCurves = flattened.get();
+        }
+
     auto head = in[name];
-    for (auto& cp : cv)
+    for (auto& cp : *pCurves)
         CurvePrimitiveToJson(head.appendValue(), *cp);
 }
 

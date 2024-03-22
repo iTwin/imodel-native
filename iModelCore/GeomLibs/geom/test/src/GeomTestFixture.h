@@ -30,5 +30,5 @@ class GeomFixture :public testing::Test
         void TearDown()
             {
             Check::TearDown();
-            }       
+            }
     };

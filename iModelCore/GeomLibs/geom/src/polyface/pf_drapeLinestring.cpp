@@ -102,7 +102,7 @@ bool AnyPointsInLocalXY (bvector<DPoint3d> &worldPoints)
         DPoint3d uvw;
         m_worldToLocal.Multiply(uvw, worldPoints[i]);
         if (m_localRange.Contains (uvw.x, uvw.y))
-            return true;        
+            return true;
         }
     return false;
     }
@@ -146,7 +146,7 @@ LocalizedIndexRange (
     TransformCR worldToLocal,
     DRange2d localRange) :
     m_pointIndex0 (pointIndex0),
-    m_sortIndex0 (sortIndex0), 
+    m_sortIndex0 (sortIndex0),
     m_numPoint (numPoint),
     m_viewRange (viewRange),
     TransformedRange (worldToLocal, localRange)
@@ -207,7 +207,7 @@ size_t &i1Out
         return false;
     i0Out = m_pointIndex0 + (sortIndexA - m_sortIndex0);
     i1Out = m_pointIndex0 + (sortIndexB - m_sortIndex0);
-    return true;    
+    return true;
     }
 };
 
@@ -291,7 +291,7 @@ size_t n
     compositeViewRange.Init ();
     localRanges.clear ();
     localBreakCoordinates.clear ();
-        
+
     DPoint3d xyz0, xyz1;
     Evaluator_DPoint3dArrayIndexToLocalX evaluator (points, n, worldToView);
     for (size_t pointIndex0 = 0; pointIndex0 + 1 < n;)
@@ -327,7 +327,7 @@ size_t n
         double dy = localRange.high.y - localRange.low.y;
         static double s_rangeFraction = 1.0e-8;
         // The local range might be a straight line  -- spread it a little so range intersectors don't think there's no intersection with anything.
-        double ey = s_rangeFraction * dx; 
+        double ey = s_rangeFraction * dx;
         if (dy < ey)
             {
             localRange.high.y += ey;
@@ -628,7 +628,7 @@ PolyfaceQueryCR mesh
 )
     {
     TransformPair viewTransforms;
-    
+
     size_t numLinestringPoints = linestringPoints.size ();
     if (numLinestringPoints < 2)
         return;
@@ -637,14 +637,14 @@ PolyfaceQueryCR mesh
     RotMatrix matrix;
     matrix.InitFrom1Vector (sweepDirection, 2, true);
     pointA = linestringPoints[0];
-    
+
     viewTransforms.viewToWorld.InitFrom (matrix, pointA);
     viewTransforms.worldToView.InverseOf(*(&viewTransforms.viewToWorld));
 
     LocalSearchTable rangeFilter (viewTransforms.worldToView);
     rangeFilter.LoadLineString (&linestringPoints[0], numLinestringPoints);
 
-    
+
     bvector<GraphicsPoint> sortArray;
     bvector <AnnotatedSegment> sweptSegments;
     bvector<TransformPair> triangleTansforms;
@@ -675,7 +675,7 @@ PolyfaceQueryCR mesh
         for (size_t i2 = 2; i2 < (size_t)numThisFace; i2++)
             if (BuildTriangleTransforms (data.viewToWorld, data.worldToView, points[0], points[i2-1], points[i2], sweepDirection))
                 triangleTansforms.push_back (data);
-        bsiPolygon_polygonNormalAndArea (&facetNormal, NULL, &points[0], (int)numThisFace);            
+        bsiPolygon_polygonNormalAndArea (&facetNormal, NULL, &points[0], (int)numThisFace);
         DSegment3d sourceSegment;
         for (size_t pairIndex = 0; pairIndex < indexPairs.size (); pairIndex += 2)
             {
@@ -793,14 +793,14 @@ SweepResultsCollector (bvector<DPoint3d> &xyz, bvector<int>&indexA, bvector <int
     m_indexA.clear ();
     m_indexB.clear ();
     }
- 
+
  void Add (DPoint3dCR xyz, size_t indexA, size_t indexB)
     {
     m_xyz.push_back (xyz);
     m_indexA.push_back ((int)indexA);
     m_indexB.push_back ((int)indexB);
     }
- 
+
 void FixupTail (size_t indexA, size_t indexB)
     {
     if (m_xyz.size () > 0)

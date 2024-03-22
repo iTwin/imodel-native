@@ -365,7 +365,7 @@ bool IntersectRay  (double &param0, double &param1, DPoint2dR point0, DPoint2dR 
 //! @description Test if two ranges are exactly equal.
 //! @param [in] range1  second range
 //! @return true if ranges are identical in all components.
-//! 
+//!
 //!
 bool IsEqual (DRange2dCR range1) const;
 
@@ -374,7 +374,7 @@ bool IsEqual (DRange2dCR range1) const;
 //! @param [in] range1  second range
 //! @param [in] tolerance  toleranc to be applied to each component
 //! @return true if ranges are within tolerance in all components.
-//! 
+//!
 //!
 bool IsEqual  (DRange2dCR range1, double tolerance) const;
 

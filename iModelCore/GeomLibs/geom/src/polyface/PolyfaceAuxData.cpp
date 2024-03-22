@@ -62,7 +62,7 @@ void PolyfaceAuxData::AdvanceVisitorToNextFace(PolyfaceAuxData const& parent, ui
 void PolyfaceAuxData::Transform(TransformCR transform)
     {
     RotMatrix   rMatrix = RotMatrix::From(transform), inverseRMatrix;
-    double      determinant = rMatrix.Determinant ();    
+    double      determinant = rMatrix.Determinant ();
 
     inverseRMatrix.InverseOf(rMatrix);
     for (auto& channel : m_channels)

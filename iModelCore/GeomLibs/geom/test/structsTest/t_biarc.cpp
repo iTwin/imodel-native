@@ -19,7 +19,7 @@ void testBiarc (DPoint3dCR pointA, DPoint3dCR pointB, Angle tangentAToChord, Ang
         {
         auto cpA = ICurvePrimitive::CreateArc (ellipseA);
         auto cpB = ICurvePrimitive::CreateArc (ellipseB);
-        
+
         DPoint3d pointA0, pointA1, pointB0, pointB1;
         DVec3d   tangentA0, tangentA1, tangentB0, tangentB1;
         DVec3d   kurvA, kurvB;
@@ -216,7 +216,7 @@ TEST(Biarc,LoopBack)
                 bvector<Angle> {q1,q1,q1}
                 );
     Check::SaveTransformed (*curve1);
-// reverse by radius negation 
+// reverse by radius negation
     Angle q2 = Angle::FromRadians ((Angle::TwoPi () - refRadians) / 3.0);
     auto curve2 = CurveCurve::ConstructTangentArcChain (
                 startPoint, startTangent, DVec3d::UnitZ (),

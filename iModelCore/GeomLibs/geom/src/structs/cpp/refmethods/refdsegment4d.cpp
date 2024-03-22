@@ -115,7 +115,7 @@ double  w1
 )
     {
     point[0].Init (x0, y0, z0, w0);
-    point[1].Init (x1, y1, z1, w1);    
+    point[1].Init (x1, y1, z1, w1);
     }
 
 
@@ -175,10 +175,10 @@ DPoint4dCR spacePoint
 
     double dot0, dot1;
     bool    result;
-    
+
     vectorU.DifferenceOf (point[1], point[0]);
-    
-    
+
+
     vectorUBar.WeightedDifferenceOf (point[1], point[0]);
 
     diffPA.WeightedDifferenceOf (spacePoint, point[0]);
@@ -197,9 +197,9 @@ DPoint4dCR spacePoint
 *
 +---------------+---------------+---------------+---------------+---------------+------*/
 
-DSegment4d DSegment4d::From 
+DSegment4d DSegment4d::From
 (
-DPoint4dCR pointA, 
+DPoint4dCR pointA,
 DPoint4dCR pointB
 )
     {
@@ -210,7 +210,7 @@ DPoint4dCR pointB
 
 DSegment4d DSegment4d::From
 (
-DPoint3dCR pointA, 
+DPoint3dCR pointA,
 DPoint3dCR pointB
 )
     {
@@ -241,7 +241,7 @@ DSegment4d DSegment4d::From (DSegment3dCR segment)
     DSegment4d      segment4;
 
     segment.GetEndPoints(point0, point1);
-    
+
     segment4.Init(point0, point1);
     return segment4;
     }
@@ -255,8 +255,8 @@ DSegment4d DSegment4d::From (DSegment3dCR segment)
 //
 //    return segment;
 //     }
-     
-     
+
+
 
 bool DSegment4d::GetEndPoints (DPoint3dR point0, DPoint3dR point1) const
     {
@@ -281,27 +281,27 @@ void DSegment4d::InitProduct (DMatrix4dCR mat, DSegment4dCR source)
     {
     mat.Multiply (this->point, source.point, 2);
     }
-    
+
 void DSegment4d::GetStartPoint (DPoint3dR xyz) const
     {
     point[0].GetProjectedXYZ (xyz);
     }
-    
+
 void DSegment4d::GetEndPoint (DPoint3dR xyz) const
     {
     point[1].GetProjectedXYZ (xyz);
     }
-    
+
 DSegment4d DSegment4d::FromFractionInterval (DSegment4d parent, double startFraction, double endFraction)
     {
       if (DoubleOps::IsExact01 (startFraction, endFraction))
-        return parent; 
+        return parent;
       point[0].Interpolate(parent.point[0], startFraction, parent.point[1]);
       point[1].Interpolate(parent.point[0], endFraction, parent.point[1]);
       DSegment4d segment = DSegment4d::From (point[0], point[1]);
       return segment;
     }
-    
+
 DPoint4d DSegment4d::FractionParameterToPoint(double fraction) const
     {
     DPoint4d pnt;
@@ -319,7 +319,7 @@ bool DSegment4d::FractionParameterToPoint(DPoint3d &pnt, double fraction) const
 bool DSegment4d::PointToFractionParameter (double &fraction, DPoint3d spacePoint) const
     {
     DPoint4d directionU, direction0, direction1;
-    
+
     directionU.WeightedDifferenceOf (point[1], point[0]);
     direction0.WeightedDifferenceOf (point[0], spacePoint, 1.0);
     direction1.WeightedDifferenceOf (point[1], spacePoint, 1.0);
@@ -327,7 +327,7 @@ bool DSegment4d::PointToFractionParameter (double &fraction, DPoint3d spacePoint
     double dot1 = direction1.DotProduct (directionU);
     return DoubleOps::SafeDivideParameter (fraction, -dot0, dot1 - dot0, 0.0);
     }
-   
+
 bool DSegment4d::FractionParameterToTangent (DPoint3d &spacepoint, DVec3dR tangent, double param) const
     {
     DPoint4d point4d = DPoint4d::From (spacepoint, 1);
@@ -338,15 +338,15 @@ bool DSegment4d::FractionParameterToTangent (DPoint3d &spacepoint, DVec3dR tange
 
     return true;
     }
-    
+
 DPoint4d DSegment4d::FractionParameterToTangent  (DPoint4d spacepoint, DPoint4d &tangent, double param) const
     {
     spacepoint.Interpolate (this->point[0], param, this->point[1]);
     tangent.DifferenceOf (this->point[1], this->point[0]);
-    
+
     return spacepoint;
     }
-    
+
 bool DSegment4d::FractionToLength (double &arcLength, double fraction0, double fraction1) const
     {
     DPoint4d pnt0;
@@ -355,11 +355,11 @@ bool DSegment4d::FractionToLength (double &arcLength, double fraction0, double f
     pnt1.Interpolate (this->point[0], fraction1, this->point[1]);
     arcLength = pnt1.RealDistance (pnt0);
     return true;
-    
+
     /*DPoint4d pnt0 = this->FractionParameterToPoint (fraction0);
     DPoint4d pnt1 = this->FractionParameterToPoint (fraction1);*/
     }
-    
+
 bool DSegment4d::LengthToFraction (double &fraction1, double fraction0, double arcStep) const
     {
     DPoint4d vectorU;
@@ -370,34 +370,34 @@ bool DSegment4d::LengthToFraction (double &fraction1, double fraction0, double a
     DPoint3d A;
     this->FractionParameterToPoint (A, fraction0);
     DPoint4d A4d = DPoint4d::From (A, 1);
-    
+
     w1.WeightedDifferenceOf (P0, A4d);
-    w2.WeightedDifferenceOf (vectorU, A4d); 
-    
+    w2.WeightedDifferenceOf (vectorU, A4d);
+
     double w1sq = w1.DotProduct (w1);
     double w2sq = w2.DotProduct (w2);
     double w1w2 = w1.DotProduct (w2);
     double arcLsq = arcStep * arcStep;
     double deltaw = this->point[1].w - this->point[0].w;
-    
+
     double a = w2sq - arcLsq*deltaw*deltaw;
     double b = 2.0 * (w1w2 - arcLsq*(P0.w)*(deltaw));
     double c = w1sq - arcLsq*P0.w*P0.w;
-    
+
     double signterm = b*b - 4*a*c;
-    
+
     if (signterm<0)
         {
         return false;
         }
-    
+
     double quadnump = -b + sqrt(signterm);
     //varunused double quadnumn = -b - sqrt(signterm);
     double quadden = 2*a;
     bool result = DoubleOps::SafeDivide (f1, quadnump, quadden, 0.0);
     fraction1 = f1;
     return result;
-    }    
+    }
 
 bool DSegment4d::ClosestPointBoundedXY (DPoint3d &closePoint, double &closeParam, double &distanceXY, DPoint3d spacePoint, DMatrix4dCP worldToLocal, bool extend0, bool extend1) const
     {
@@ -410,7 +410,7 @@ bool DSegment4d::ClosestPointBoundedXY (DPoint3d &closePoint, double &closeParam
         worldToLocal->Multiply (xySegment.point, xySegment.point, 2);
         worldToLocal->Multiply (spacePoint4d, spacePoint4d);
         }
-        
+
     if (xySegment.ProjectDPoint4dCartesianXYW (closePoint4d, closeParam, spacePoint4d))
         {
         if (closeParam > 1.0 && !extend1)
@@ -421,7 +421,7 @@ bool DSegment4d::ClosestPointBoundedXY (DPoint3d &closePoint, double &closeParam
         else if (closeParam < 0.0 && !extend0)
             {
             closeParam = 0.0;
-            closePoint4d = this->point[0];            
+            closePoint4d = this->point[0];
             }
         FractionParameterToPoint (closePoint, closeParam);
         double testDistance;
@@ -429,7 +429,7 @@ bool DSegment4d::ClosestPointBoundedXY (DPoint3d &closePoint, double &closeParam
         if (spacePoint4d.RealDistanceXY (distanceXY, closePoint4d))
             return true;
         }
-        
+
     closeParam = 0.0;
     point[0].GetProjectedXYZ (closePoint);
     return false;
@@ -439,7 +439,7 @@ bool DSegment4d::ClosestPointBoundedXY (DPoint3d &closePoint, double &closeParam
     {
     return ClosestPointBoundedXY (closePoint, closeParam, distanceXY, spacePoint, worldToLocal, false, false);
     }
-    
+
 bool DSegment4d::ProjectPoint (DPoint3d &closestPoint, double &f, DPoint3d spacePoint) const
     {
     bool proj = this->PointToFractionParameter (f, spacePoint);

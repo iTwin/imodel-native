@@ -12,18 +12,6 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 //=======================================================================================
-// For case-insensitive UTF-8 string comparisons in STL collections that only use ASCII
-// strings
-// @bsistruct
-//+===============+===============+===============+===============+===============+======
-struct CompareIUtf8Ascii
-    {
-    bool operator()(Utf8CP s1, Utf8CP s2) const { return BeStringUtilities::StricmpAscii(s1, s2) < 0; }
-    bool operator()(Utf8StringCR s1, Utf8StringCR s2) const { return BeStringUtilities::StricmpAscii(s1.c_str(), s2.c_str()) < 0; }
-    bool operator()(Utf8StringCP s1, Utf8StringCP s2) const { BeAssert(s1 != nullptr && s2 != nullptr); return BeStringUtilities::StricmpAscii(s1->c_str(), s2->c_str()) < 0; }
-    };
-
-//=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct SchemaProxy final

@@ -48,7 +48,7 @@ bvector<DSegment1d> &startEndFractionA,
 bvector<DSegment1d> &startEndFractionB
 )
     {
-    startRadiansB = Angle::AdjustToSweep (startRadiansB, startRadiansA, sweepRadiansA);    
+    startRadiansB = Angle::AdjustToSweep (startRadiansB, startRadiansA, sweepRadiansA);
     DSegment1d intervalB (startRadiansB, startRadiansB + sweepRadiansB);
     double a = Angle::TwoPi ();
     DSegment1d intervalA[3];
@@ -67,7 +67,7 @@ bvector<DSegment1d> &startEndFractionB
             startEndFractionB.push_back (fractionB);
             }
         }
-    }            
+    }
 
 
 bool Angle::InExactSweep (double theta, double thetaStart, double sweep)
@@ -365,7 +365,7 @@ void Angle::TrigCombinationRange
     {
     if (sinCoff == 0.0 && cosCoff == 0.0)
         {
-        // degenerate constant function. 
+        // degenerate constant function.
         fMin = fMax = constCoff;
         thetaMin = thetaMax = 0.0;
         }

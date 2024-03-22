@@ -58,7 +58,7 @@ void EnforceLoopOrientationAndType(double s)
             loop->ReverseCurvesInPlace ();
             m_area = - m_area;
             }
-        loop->SetBoundaryType (s > 0.0 ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Inner);            
+        loop->SetBoundaryType (s > 0.0 ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Inner);
         }
     }
 
@@ -110,7 +110,7 @@ bool FixupParityStructure(CurveVectorR allLoops)
         }
     // RULES:
     // A region contained in an ODD number of regions is a child of the smallest containing region.
-    size_t numGlobalParent = 0;            
+    size_t numGlobalParent = 0;
     size_t numRegions = regionData.size ();
     ptrdiff_t lastParentIndex = 0;
     for (size_t childIndex = 0; childIndex < numRegions; childIndex++)
@@ -252,6 +252,54 @@ bool CurveVector::FixupXYOuterInner (bool fullGeometryCheck)
                 return false;
                 }
             }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CurveVector::HasNestedUnionRegion() const
+    {
+    bool isUnionParent = IsUnionRegion();
+    for (auto const& curve : *this)
+        {
+        if (auto child = curve->GetChildCurveVectorCP())
+            {
+            if (isUnionParent && child->IsUnionRegion())
+                return true;
+            if (child->HasNestedUnionRegion())
+                return true;
+            }
+        }
+    return false;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+void CurveVector::FlattenNestedUnionRegions()
+    {
+    // A union region parent with union region child:
+    // * is technically legal in geomlibs
+    // * is poorly supported outside geomlibs
+    // * cannot currently be converted to a DGN AssocRegion element
+    // * cannot currently be converted to an iTwin UnionRegion object
+    bool isUnionParent = IsUnionRegion();
+    for (size_t i = 0; i < size(); ) // compute size each time; we may have appended children to process
+        {
+        auto child = at(i)->GetChildCurveVectorP();
+        if (child.IsValid())
+            {
+            if (isUnionParent && child->IsUnionRegion())
+                {
+                if (!child->empty())
+                    insert(begin() + i + 1, child->begin(), child->end());
+                erase(begin() + i);
+                continue;   // reuse i to process children we just promoted
+                }
+            child->FlattenNestedUnionRegions();
+            }
+        ++i;
         }
     }
 

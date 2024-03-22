@@ -6,7 +6,7 @@
 # Specify the exact name of each schema that is delivered.  This allows makefiles to use this information instead of hardcoding in a version number
 
 EditorCustomAttributesSchemaName = EditorCustomAttributes.01.03.ecschema.xml
-StandardCustomAttributesSchemaName = Bentley_Standard_CustomAttributes.01.13.ecschema.xml
+StandardCustomAttributesSchemaName = Bentley_Standard_CustomAttributes.01.14.ecschema.xml
 StandardClassesSchemaName = Bentley_Standard_Classes.01.01.ecschema.xml
 ECSchemaMapSchemaName = Bentley_ECSchemaMap.01.00.ecschema.xml
 CommonClassesSchemaName = Bentley_Common_Classes.01.01.ecschema.xml

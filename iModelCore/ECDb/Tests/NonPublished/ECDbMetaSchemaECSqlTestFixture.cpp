@@ -48,7 +48,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertSchemaDefs()
     {
     ECSqlStatement schemaStatement;
     ASSERT_EQ(ECSqlStatus::Success, schemaStatement.Prepare(m_ecdb, "SELECT Name,* FROM meta.ECSchemaDef"));
-    
+
     int actualSchemaCount = 0;
     while (BE_SQLITE_ROW == schemaStatement.Step())
         {
@@ -169,7 +169,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertClassDef(ECClassCR expectedClass, ECS
     const ECClassType classType = expectedClass.GetClassType();
     ECCustomAttributeClassCP expectedCAClass = expectedClass.GetCustomAttributeClassCP();
     ECRelationshipClassCP expectedRelClass = expectedClass.GetRelationshipClassCP();
-    
+
     ECClassId schemaOwnsClassesRelClassId = m_ecdb.Schemas().GetClassId("ECDbMeta", "SchemaOwnsClasses");
     ASSERT_TRUE(schemaOwnsClassesRelClassId.IsValid());
 
@@ -449,7 +449,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertEnumerationDef(ECEnumerationCR expect
             }
         }
     }
-    
+
 //---------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -953,7 +953,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertUnitDef(ECUnitCR expected, ECSqlState
                 ASSERT_TRUE(val.IsNull()) << "UnitDef.Definition of " << expected.GetFullName();
             else
                 ASSERT_STREQ(expected.GetDefinition().c_str(), val.GetText()) << "UnitDef.Definition of " << expected.GetFullName();
-            
+
             continue;
             }
 
@@ -1360,7 +1360,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp
             ASSERT_STREQ("Id", colInfo.GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str()) << "ECPropertyDef.ECInstanceId for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
             continue;
             }
-        
+
         if (colName.EqualsI("ECClassId"))
             {
             ASSERT_EQ(m_ecdb.Schemas().GetClass("ECDbMeta", "ECPropertyDef")->GetId(), val.GetId<ECClassId>()) << "ECPropertyDef.ECClassId";
@@ -1655,7 +1655,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp
             continue;
             }
 
-        
+
         if (colName.EqualsI("ArrayMinOccurs"))
             {
             ArrayECPropertyCP arrayProp = nullptr;
@@ -1743,7 +1743,7 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, ECClassId)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * from meta.ECSchemaDef WHERE ECClassId IS NOT NULL"));
     }
- 
+
 /*---------------------------------------------------------------------------------------
 <summary>Creates a class chain and add properties and then verifies if they
 come in the expected sequence.</summary>
@@ -1836,12 +1836,12 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, PropertyOverrides)
             ASSERT_EQ(ECSqlStatus::Success, propertyStatement.BindId(1, prop->GetClass().GetId())) << ecClass->GetFullName() << "." << prop->GetName().c_str();
             ASSERT_EQ(ECSqlStatus::Success, propertyStatement.BindText(2, prop->GetName().c_str(), IECSqlBinder::MakeCopy::No)) << ecClass->GetFullName() << "." << prop->GetName().c_str();
             ASSERT_EQ(BE_SQLITE_ROW, propertyStatement.Step()) << ecClass->GetFullName() << "." << prop->GetName().c_str();
-            
+
             ASSERT_EQ(prop->GetId().GetValue(), propertyStatement.GetValueId<ECPropertyId>(0).GetValue()) << ecClass->GetFullName() << "." << prop->GetName().c_str();
             ASSERT_TRUE(prop->GetIsPrimitive()) << ecClass->GetFullName() << "." << prop->GetName().c_str();
             ASSERT_EQ(PRIMITIVETYPE_Double, prop->GetAsPrimitiveProperty()->GetType()) << ecClass->GetFullName() << "." << prop->GetName().c_str();
             ASSERT_EQ(prop->GetId().GetValue(), propertyStatement.GetValueId<ECPropertyId>(0).GetValue()) << ecClass->GetFullName() << "." << prop->GetName().c_str();
-            
+
             ASSERT_EQ(BE_SQLITE_DONE, propertyStatement.Step()) << ecClass->GetFullName() << "." << prop->GetName().c_str();
             propertyStatement.Reset();
             propertyStatement.ClearBindings();
@@ -1851,7 +1851,7 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, PropertyOverrides)
     // compare local copy properties with ECSql-retrieved properties
     verifyPropertyOverride(m_ecdb, m_ecdb.Schemas().GetClass("TestSchema", "MN"));
 
-    // add some duplicate properties to MN, overriding those from the base classes 
+    // add some duplicate properties to MN, overriding those from the base classes
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -1999,5 +1999,353 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, PropertyOverrides)
                 </ECSchema>)xml")));
     verifyPropertyOverride(m_ecdb, m_ecdb.Schemas().GetClass("TestSchema", "MN"));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbMetaSchemaECSqlTestFixture, CustomAttributes) {
+    ASSERT_EQ(SUCCESS, SetupECDb("metaschema_customattributes.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECCustomAttributeClass typeName="CAClass" modifier="Sealed" appliesTo="EntityClass">
+            <ECProperty propertyName="CAProp" typeName="string" />
+        </ECCustomAttributeClass>
+        <ECEntityClass typeName="Foo">
+            <ECCustomAttributes>
+                <CAClass>
+                    <CAProp>Test</CAProp>
+                </CAClass>
+           </ECCustomAttributes>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT [Instance] FROM meta.CustomAttribute WHERE [Class].[Id] IS (TestSchema.CAClass) LIMIT 1"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ(stmt.GetValueText(0), "<CAClass xmlns=\"TestSchema.01.00\">\n    <CAProp>Test</CAProp>\n</CAClass>\n");
+    }
+
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Count(*) FROM meta.CustomAttribute ca JOIN meta.ECClassDef c USING meta.CustomAttributeClassHasInstance WHERE c.ECInstanceId IS (TestSchema.CAClass)"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_EQ(stmt.GetValueInt(0), 1);
+    }
+
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT XmlCAToJson(ca.Class.Id, ca.Instance) FROM meta.CustomAttribute ca JOIN meta.ECClassDef c ON ca.Class.Id=c.ECInstanceId WHERE c.Name = 'CAClass'"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ(stmt.GetValueText(0), "{\"CAClass\":{\"CAProp\":\"Test\"},\"ecClass\":\"CAClass\",\"ecSchema\":\"TestSchema.01.00\"}");
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbMetaSchemaECSqlTestFixture, PropertyCustomAttributes) {
+    ASSERT_EQ(SUCCESS, SetupECDbForCurrentTest(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECCustomAttributeClass typeName="CAClass" modifier="Sealed" appliesTo="PrimitiveProperty">
+            <ECProperty propertyName="CAProp" typeName="string" />
+        </ECCustomAttributeClass>
+        <ECEntityClass typeName="Foo">
+            <ECProperty propertyName="Bar" typeName="string">
+                <ECCustomAttributes>
+                    <CAClass>
+                        <CAProp>Test</CAProp>
+                    </CAClass>
+                </ECCustomAttributes>
+          </ECProperty>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT COUNT(*)
+             FROM meta.PropertyCustomAttribute ca
+                JOIN meta.ECClassDef cDef ON ca.CustomAttributeClass.Id = cDef.ECInstanceId
+             WHERE cDef.Name='CAClass'
+            )stmt"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_EQ(1, stmt.GetValueInt(0));
+    }
+
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT ca.ECInstanceId, pDef.Name
+             FROM meta.PropertyCustomAttribute ca
+                JOIN meta.ECPropertyDef pDef ON ca.Property.Id = pDef.ECInstanceId
+                JOIN meta.ECClassDef cDef ON ca.CustomAttributeClass.Id = cDef.ECInstanceId
+             WHERE cDef.Name='CAClass'
+            )stmt"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ("Bar", stmt.GetValueText(1));
+    }
+
+   {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT ca.ECInstanceId, pDef.Name
+             FROM meta.PropertyCustomAttribute ca
+                JOIN meta.ECPropertyDef pDef USING meta.PropertyHasCustomAttribute
+                JOIN meta.ECClassDef cDef USING meta.CustomAttributeClassHasInstanceOnProperty
+             WHERE cDef.Name='CAClass'
+            )stmt"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ("Bar", stmt.GetValueText(1));
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbMetaSchemaECSqlTestFixture, ClassCustomAttributes) {
+    ASSERT_EQ(SUCCESS, SetupECDbForCurrentTest(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECCustomAttributeClass typeName="CAClass" modifier="Sealed" appliesTo="EntityClass">
+            <ECProperty propertyName="CAProp" typeName="string" />
+        </ECCustomAttributeClass>
+        <ECEntityClass typeName="Foo">
+            <ECCustomAttributes>
+                <CAClass>
+                    <CAProp>Test</CAProp>
+                </CAClass>
+            </ECCustomAttributes>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT COUNT(*)
+             FROM meta.ClassCustomAttribute ca
+                JOIN meta.ECClassDef cDef ON ca.CustomAttributeClass.Id = cDef.ECInstanceId
+             WHERE cDef.Name='CAClass'
+            )stmt"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_EQ(1, stmt.GetValueInt(0));
+    }
+
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT ca.ECInstanceId, c.Name
+             FROM meta.ClassCustomAttribute ca
+                JOIN meta.ECClassDef c ON ca.Class.Id = c.ECInstanceId
+                JOIN meta.ECClassDef cDef ON ca.CustomAttributeClass.Id = cDef.ECInstanceId
+             WHERE cDef.Name='CAClass'
+            )stmt"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ("Foo", stmt.GetValueText(1));
+    }
+
+   {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT ca.ECInstanceId, c.Name
+            FROM meta.ClassCustomAttribute ca
+                JOIN meta.ECClassDef c USING meta.ClassHasCustomAttribute
+                JOIN meta.ECClassDef cDef USING meta.CustomAttributeClassHasInstanceOnClass
+            WHERE cDef.Name='CAClass'
+            )stmt"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ("Foo", stmt.GetValueText(1));
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbMetaSchemaECSqlTestFixture, SchemaCustomAttributes) {
+    ASSERT_EQ(SUCCESS, SetupECDbForCurrentTest(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECCustomAttributes>
+            <CAClass>
+                <CAProp>Test</CAProp>
+            </CAClass>
+        </ECCustomAttributes>
+        <ECCustomAttributeClass typeName="CAClass" modifier="Sealed" appliesTo="Schema">
+            <ECProperty propertyName="CAProp" typeName="string" />
+        </ECCustomAttributeClass>
+    </ECSchema>)xml")));
+
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT COUNT(*)
+             FROM meta.SchemaCustomAttribute ca
+                JOIN meta.ECClassDef cDef ON ca.CustomAttributeClass.Id = cDef.ECInstanceId
+             WHERE cDef.Name='CAClass'
+            )stmt"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_EQ(1, stmt.GetValueInt(0));
+    }
+
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT ca.ECInstanceId, s.Name
+             FROM meta.SchemaCustomAttribute ca
+                JOIN meta.ECSchemaDef s ON ca.Schema.Id = s.ECInstanceId
+                JOIN meta.ECClassDef cDef ON ca.CustomAttributeClass.Id = cDef.ECInstanceId
+             WHERE cDef.Name='CAClass'
+            )stmt"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ("TestSchema", stmt.GetValueText(1));
+    }
+
+   {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT ca.ECInstanceId, s.Name
+             FROM meta.SchemaCustomAttribute ca
+                JOIN meta.ECSchemaDef s USING meta.SchemaHasCustomAttribute
+                JOIN meta.ECClassDef cDef USING meta.CustomAttributeClassHasInstanceOnSchema
+             WHERE cDef.Name='CAClass'
+            )stmt"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ("TestSchema", stmt.GetValueText(1));
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECDbMetaSchemaECSqlTestFixture, JsonCustomAttributeSubQuery) {
+    ASSERT_EQ(SUCCESS, SetupECDbForCurrentTest(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECCustomAttributeClass typeName="ClassAlias" modifier="Sealed" appliesTo="EntityClass">
+            <ECProperty propertyName="Alias" typeName="string" />
+        </ECCustomAttributeClass>
+        <ECEntityClass typeName="Foo">
+            <ECCustomAttributes>
+                <ClassAlias>
+                    <Alias>F</Alias>
+                </ClassAlias>
+            </ECCustomAttributes>
+        </ECEntityClass>
+        <ECEntityClass typeName="Bar">
+            <ECCustomAttributes>
+                <ClassAlias>
+                    <Alias>B</Alias>
+                </ClassAlias>
+            </ECCustomAttributes>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    // Get Class Id for CA
+    auto* schema = m_ecdb.Schemas().GetSchema("TestSchema");
+    auto classAliasId = schema->GetClassCP("ClassAlias")->GetId();
+
+    //Get the full name for the entity with alias F using bind for id
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT e.Name
+             FROM meta.ClassCustomAttribute ca
+             JOIN meta.ECClassDef e ON ca.Class.Id = e.ECInstanceId
+             WHERE ca.CustomAttributeClass.Id=? AND json_extract(ca.Instance, '$.ClassAlias.Alias')='F'
+            )stmt"));
+        stmt.BindId(1, classAliasId);
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ("Foo", stmt.GetValueText(0));
+    }
+
+    //Same as before but using polymorphic IS match for caClass
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT e.Name
+             FROM meta.ClassCustomAttribute ca
+             JOIN meta.ECClassDef e ON ca.Class.Id = e.ECInstanceId
+             WHERE ca.CustomAttributeClass.Id IS (TestSchema.ClassAlias) AND json_extract(ca.Instance, '$.ClassAlias.Alias')='F'
+            )stmt"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ("Foo", stmt.GetValueText(0));
+    }
+
+    //Same as before but using IS ONLY match for caClass
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT e.Name
+             FROM meta.ClassCustomAttribute ca
+             JOIN meta.ECClassDef e ON ca.Class.Id = e.ECInstanceId
+             WHERE ca.CustomAttributeClass.Id IS (ONLY TestSchema.ClassAlias) AND json_extract(ca.Instance, '$.ClassAlias.Alias')='F'
+            )stmt"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ("Foo", stmt.GetValueText(0));
+    }
+
+    //Same but using ec_classid instead of bind
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT e.Name
+             FROM meta.ClassCustomAttribute ca
+             JOIN meta.ECClassDef e ON ca.Class.Id = e.ECInstanceId
+             WHERE ca.CustomAttributeClass.Id=ec_classid('TestSchema','ClassAlias') AND json_extract(ca.Instance, '$.ClassAlias.Alias')='F'
+            )stmt"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ("Foo", stmt.GetValueText(0));
+    }
+
+    //Same but using joins for class id instead of bind
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT e.Name
+             FROM meta.ClassCustomAttribute ca
+             JOIN meta.ECClassDef e ON ca.Class.Id = e.ECInstanceId
+             JOIN meta.ECClassDef cDef ON ca.CustomAttributeClass.Id = cDef.ECInstanceId
+             JOIN meta.ECSchemaDef sDef ON cDef.Schema.Id = sDef.ECInstanceId
+             WHERE sDef.Name='TestSchema' AND cDef.Name='ClassAlias' AND json_extract(ca.Instance, '$.ClassAlias.Alias')='F'
+            )stmt"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ("Foo", stmt.GetValueText(0));
+    }
+
+    auto fooId = schema->GetClassCP("Foo")->GetId();
+    //Get the Alias for class Foo
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT json_extract(ca.Instance, '$.ClassAlias.Alias')
+             FROM meta.ClassCustomAttribute ca
+                WHERE ca.Class.Id=? AND ca.CustomAttributeClass.Id=?
+            )stmt"));
+        ASSERT_EQ(stmt.BindId(1, fooId), ECSqlStatus::Success);
+        ASSERT_EQ(stmt.BindId(2, classAliasId), ECSqlStatus::Success);
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ("F", stmt.GetValueText(0));
+    }
+
+    //Same as above but using ec_classid
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT json_extract(ca.Instance, '$.ClassAlias.Alias')
+             FROM meta.ClassCustomAttribute ca
+                WHERE ca.Class.Id=ec_classid('TestSchema','Foo') AND ca.CustomAttributeClass.Id=ec_classid('TestSchema','ClassAlias')
+            )stmt"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ("F", stmt.GetValueText(0));
+    }
+
+    //Same as above but using IS syntax
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"stmt(
+            SELECT json_extract(ca.Instance, '$.ClassAlias.Alias')
+             FROM meta.ClassCustomAttribute ca
+                WHERE ca.Class.Id IS (TestSchema.Foo) AND ca.CustomAttributeClass.Id IS (TestSchema.ClassAlias)
+            )stmt"));
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+        ASSERT_STREQ("F", stmt.GetValueText(0));
+    }
+}
 
 END_ECDBUNITTESTS_NAMESPACE

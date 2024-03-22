@@ -58,7 +58,7 @@ struct MSBsplineCurve
     public:
 //#else
 //    private:
-//#endif    
+//#endif
     /// <summary>array of poles, already multiplied by corresponding weights</summary>
     DPoint3d            *poles;
     /// <summary>Full knot array (all clamping and wrap contents expanded)</summary>
@@ -140,7 +140,7 @@ public:
     GEOMDLLIMPEXP MSBsplineCurvePtr CreateCopyBezier () const;
     /// <summary>Copy with offset in XY plane.</summary>
     GEOMDLLIMPEXP MSBsplineCurvePtr CreateCopyOffsetXY (double offset0, double offset1, CurveOffsetOptionsCR options) const;
-    
+
 //! <summary>Create a spline curve with Lim's fit conditions or related.
 //!<ul>
 //!<li>Pole count matches point count.
@@ -153,7 +153,7 @@ bvector<DPoint3d>const &xyz,    //!< [in] xyz interpolation points
 size_t order,                   //!< [in] order bspline order.
 int selector = 0                //!< [in] selector -- see description.
 );
-    
+
 //! <summary>Create a spline curve that approximates a CurvePrimitive.
 //!<ul>
 //!<li>Knots are constructed with uniform or Chebyshev points accordinat to knotSelector.
@@ -175,7 +175,7 @@ bool normalizeKnots,
 int knotSelector = 0       // 0==> uniform, 1==>Chebyshev
 );
 
-//! Create a spline with given 
+//! Create a spline with given
 //! <summary>
 //!<ul>
 //!<li>Returns nullptr if count conditions are not met.
@@ -213,7 +213,7 @@ int order                                   //! curve order
 
     //flex !! Predicates
 
-    //flex || bool MSBsplineCurve::AreCompatible (curveA, curveB) ||Test if counts and knot spaces are matched || 
+    //flex || bool MSBsplineCurve::AreCompatible (curveA, curveB) ||Test if counts and knot spaces are matched ||
     //flex || bool IsPhysicallyClosed()     || direct comparison of endpoint coordinates ||
     //flex || bool IsClosed ()  || inspects the params.closed flag. ||
 
@@ -257,12 +257,12 @@ bool          openAll                /* => forces opening */
 );
 
 
-    //! Check whether the B-spline curve is physically closed. A B-spline curve may be non-periodic, but still return 
-    //! true if its first and last poles coincide. 
+    //! Check whether the B-spline curve is physically closed. A B-spline curve may be non-periodic, but still return
+    //! true if its first and last poles coincide.
     GEOMDLLIMPEXP bool    IsPhysicallyClosed (double tolerance) const;
     //! Check whether the B-spline curve is periodic.
     GEOMDLLIMPEXP bool    IsClosed () const;
-    
+
     //! Check if the B-spline curve is a single quadratic that is a parabola.
     //! The conditions for a parabola are (a) order 3, (b) only 3 poles, (c) weights all 1.
     //! <remarks>This does NOT detect the "weighted" parabola -- a varying-weight order 3 but with weights that are never zero</remarks>
@@ -294,13 +294,13 @@ bool          openAll                /* => forces opening */
     ///!   This does NOT free memory from prior contents.
     ///! </summary>
     GEOMDLLIMPEXP void Zero ();
-    
+
     //! Exchange all bits with other.   Usually used to transfer poles etc and leave zeros behind.
     GEOMDLLIMPEXP void SwapContents (MSBsplineCurveR other);
 
     //! Allocate memory arrays to match the current counts.
     GEOMDLLIMPEXP MSBsplineStatus Allocate   ();
-    //! Free memory allocated for the poles, weights and knot vector of a B-spline curve. 
+    //! Free memory allocated for the poles, weights and knot vector of a B-spline curve.
     GEOMDLLIMPEXP void            ReleaseMem ();
 
     //! Zero all, copy counts to params, allocate:
@@ -325,7 +325,7 @@ public:
     //flex || Full copy (new heap allocations) from existing curve || curve.CopyFrom (source) ||
     //! Allocate memory for the B-spline curve and copies all data from the input B-spline curve.
     GEOMDLLIMPEXP MSBsplineStatus CopyFrom (MSBsplineCurveCR source);
-    
+
 
     //! Compute uniformly spaced knots.
     //! This uses counts from params.
@@ -354,13 +354,13 @@ public:
     //! Evaluate a series of points at given parametrs.
     GEOMDLLIMPEXP void FractionToPoints (bvector<DPoint3d>& points, bvector<double>& fractions);
 
-    //! Calculate the Frenet frame, radius of curvature, and torsion of the B-spline curve at a particular fractional parameter value. 
+    //! Calculate the Frenet frame, radius of curvature, and torsion of the B-spline curve at a particular fractional parameter value.
     GEOMDLLIMPEXP MSBsplineStatus GetFrenetFrame (DVec3dP frame, DPoint3dR point, double& curvature, double& torsion, double u) const;
 
-    //! Calculate the Frenet frame, radius of curvature, and torsion of the B-spline curve at a particular fractional parameter value. 
+    //! Calculate the Frenet frame, radius of curvature, and torsion of the B-spline curve at a particular fractional parameter value.
     GEOMDLLIMPEXP MSBsplineStatus GetFrenetFrame (TransformR frame, double u) const;
 
-    
+
     //! Calculate the number of derivatives specified by numDervs of the B-spline curve at a particular fraction.
     GEOMDLLIMPEXP MSBsplineStatus ComputeDerivatives (DVec3dP dervs, int numDervs, double fractionParameter) const;
 
@@ -398,7 +398,7 @@ public:
     GEOMDLLIMPEXP void   GetKnotRange (double &knotA, double &knotB, int &indexA, int &indexB, double &knotTolerance) const;
     //! return knot by index. returns 0 if out of range.  (Use NumberAllocatedKnots to determine index range).
     GEOMDLLIMPEXP double GetKnot (size_t index) const;
-    
+
     //! Compute blending functions at KNOT value (unnormalized)
     //! knotIndex is the index of the knot to the right of u. (i.e. the leftmost knot of the upper limits of active windows)
     GEOMDLLIMPEXP void KnotToBlendFunctions (double *blend, double *blendDerivative, size_t &knotIndex, double u) const;
@@ -484,7 +484,7 @@ public:
     GEOMDLLIMPEXP void UnWeightPoles ();
     //! if the curve is rational, multiply (wx,wy,wz) style poles by the weights
     GEOMDLLIMPEXP void WeightPoles ();
-    
+
 
     //! return pole by index. returns 0 point if out of range. (Use NumberAllocatedPoles to determine index range).
     //! @DotNetMethodExclude
@@ -521,7 +521,7 @@ public:
             size_t &highActiveIndex
             );
 
-    
+
     //! Copy all poles out into caller array.
     GEOMDLLIMPEXP void GetPoles4d (bvector<DPoint4d> &outData) const;
 
@@ -568,15 +568,15 @@ public:
 //flex !!!! Knot modifications
     //! rewrite knot values in a..b.  Return true if a,b and current start,end define a valid scale factor
     GEOMDLLIMPEXP bool MapKnots (double a, double b);
-    //! Add a given knot value to the B-spline curve. that newMultiplicity is the desired final multiplicity of a knot 
-    //! that may already exist. 
+    //! Add a given knot value to the B-spline curve. that newMultiplicity is the desired final multiplicity of a knot
+    //! that may already exist.
     GEOMDLLIMPEXP MSBsplineStatus AddKnot (double unnormalizedKnotValue, int newMultiplicity);
     //! Normalize knots to 01
     GEOMDLLIMPEXP void NormalizeKnots ();
     GEOMDLLIMPEXP void ComputeGrevilleAbscissa (bvector<double> &averageKnots)  const;
     // Compute the Greville knots (moving average of (order-1) consecutive knots) in a uniform knot sequence from 0 to 1
     static GEOMDLLIMPEXP void ComputeUniformKnotGrevilleAbscissa (bvector<double> &averageKnots, size_t numInterval, int order);
-    
+
 //flex !!!! Modifications as copy operations
 
 //flex These work in the C-style -- the instance is assumed uninitialized on call.   (1) Declare an uninitialized MSBsplineCurve on the stack (2) call a function that makes its instance the target.
@@ -627,7 +627,7 @@ public:
     //! @param [in] bezierSelect index of bezier to extract.
     //! @DotNetMethodExclude
     GEOMDLLIMPEXP bool GetSupport (bvector<DPoint4d>&outPoles, bvector<double>&outKnots, size_t bezierSelect) const;
-    
+
     //! Extract the {order} poles and {2*(order-1)} knots that support a single bezier interval ...
     //! @param [out] segment extracted data.
     //! @param [in] bezierSelect index of bezier to extract.
@@ -714,7 +714,7 @@ public:
 //flex || a = curve.Length ()   || Measure length.   This is near-machine precision.   Expensive. ||
 //flex || a = curve.LengthBetweenFractions (startFraction, endFraction) || Length between fraction positions ||
 //flex || bool curve.FractionAtSignedDistance (startFraction, signedDistance, outEndFraction, outDistanceMoved) || May be incomplete due to end of curve ||
-//flex 
+//flex
     //! compute the length of the B-spline curve.
     GEOMDLLIMPEXP double Length () const;
 
@@ -733,7 +733,7 @@ public:
     //! compute the length of the B-spline curve at a given fraction interval [startFraction, endFraction].
     GEOMDLLIMPEXP double LengthBetweenFractions (RotMatrixCP worldTolocal, double startFraction, double endFraction) const;
 
-    
+
     //! Move by (up to !!) signedDistance along the curve.  Stop at endpoint if encountered before the distance.
     //! return true if full movement.
     //! @param [in] startParam starting position (in 0..1 parameter space)
@@ -750,14 +750,14 @@ public:
     //! @param [out] endParam parameter where movement stopped.
     //! @param [out] actualSignedDistance distance to actual stopping place.
     GEOMDLLIMPEXP bool FractionAtSignedDistance (RotMatrixCP worldToLocal, double startParam, double signedDistance, double &endParam, double &actualSignedDistance) const;
-    
-    
+
+
     //! Calculate the parameters and location of the all inflection points of a B-spline curve.
     GEOMDLLIMPEXP MSBsplineStatus ComputeInflectionPoints (bvector<DPoint3d>& points, bvector<double>& params);
 
     //! Calculate the parameters and location of the all inflection points of a B-spline curve.
     GEOMDLLIMPEXP MSBsplineStatus ComputeInflectionPointsXY (bvector<DPoint3d>& points, bvector<double>& params, RotMatrixCP transform);
-    
+
     //! Compute intersections with plane.
     //! @param [out] points optional array to receive points.
     //! @param [out] fractionParameters optional array to receive fractional params
@@ -916,7 +916,7 @@ public:
     GEOMDLLIMPEXP MSBsplineStatus MakeReversed ();
     //! Make an equivalent rational B-spline curve.
     GEOMDLLIMPEXP MSBsplineStatus MakeRational ();
-    
+
     //! Exteact the curve from the B-spline curve at the interval [unnormalizedKnotA, unnormalizedKnotB].
     GEOMDLLIMPEXP MSBsplineStatus ExtractSegmentBetweenKnots (MSBsplineCurveR target, double unnormalizedKnotA, double unnormalizedKnotB);
     //! Extract the start or end point of the B-spline curve.
@@ -1018,7 +1018,7 @@ public:
     //! @param [in] biasPoint bias point.
     //! @param [in] matrix optional transformation into viewing space.
     GEOMDLLIMPEXP bool ClosestTangentXY (DPoint3dR curvePoint, double &curveFraction, DPoint3dCR spacePoint, DPoint3dCR biasPoint, DMatrix4dCP matrix) const;
-    
+
      //! For space point Q (spacePoint), find a curve point X where line XQ is tangent to the curve. Point X is close to biasPoint.
     //! @param [out] curvePoint tangential point.
     //! @param [out] curveFraction fraction parameter of tangential point.
@@ -1109,7 +1109,7 @@ public:
     GEOMDLLIMPEXP MSBsplineStatus TransformCurve (TransformCR transform);
     //! Transform the B-spline curve using a 4d transformation.
     GEOMDLLIMPEXP MSBsplineStatus TransformCurve4d (DMatrix4dCR transform4d);
-    
+
     //! convert to a weighted curve whose normalized points fall on a focal plane
     GEOMDLLIMPEXP void ProjectToZFocalPlane (double focalLength);
     //! Remove all removable knots with the tolerance and end condition constraints.
@@ -1120,13 +1120,13 @@ public:
 
     //! Clean all unnecessary knots.
     GEOMDLLIMPEXP MSBsplineStatus CleanKnots ();
-    
+
     //! @DotNetMethodExclude
     static void SetAllocationFunctions (
             int  (*AllocateCurve)(MSBsplineCurve *),
             void (*FreeCurve)(MSBsplineCurve *)
             );
-    
+
     //! Create the B-spline curve by appending two input curves with continuity and reparameterization constraints.
     GEOMDLLIMPEXP MSBsplineStatus AppendCurves (MSBsplineCurveCR inCurve1, MSBsplineCurveCR inCurve2, bool forceContinuity, bool reparam);
 
@@ -1185,7 +1185,7 @@ public:
     //! @param [in]  reqDegree Required degree of output curve
     //! @param [in]  singleKnot Use single interior knots
     //! @param [in]  tolerance Fitting tolerance
-    GEOMDLLIMPEXP MSBsplineStatus InitFromLeastSquaresFit (DPoint3dCP points, int numPoints, bool endControl, DVec3dCP sTangent, DVec3dCP eTangent, 
+    GEOMDLLIMPEXP MSBsplineStatus InitFromLeastSquaresFit (DPoint3dCP points, int numPoints, bool endControl, DVec3dCP sTangent, DVec3dCP eTangent,
                                         bool keepTanMag, int iterDegree, int reqDegree, bool singleKnot, double tolerance);
 
     //! This routine computes a B-spline curve with given numPoles and order approximated the give points set.
@@ -1221,7 +1221,7 @@ public:
     //! @param [in]  par Flag: 2: chordlength parameterization wanted, 3: centripetal parameterization wanted
     //! @param [in]  Eg Geometric error tolerance. The perpendicular distance from curve to corresponding point isn't greater than Eg.
     //! @param [in]  ptol Point coincidence tolerance.  Two points are considered to be equal if the  distance between them is less than or equal to ptol.  ptol < Eg  should hold
-    GEOMDLLIMPEXP static MSBsplineStatus SampleG1CurveByPoints (bvector<DPoint3d>& P, bvector<double>& up, 
+    GEOMDLLIMPEXP static MSBsplineStatus SampleG1CurveByPoints (bvector<DPoint3d>& P, bvector<double>& up,
                                         bvector<double>& uq, MSBsplineCurveCP pCurve, int par, double Eg, double ptol);
 
     //! This routine computes a least square B-spline curve to the sample points.
@@ -1310,13 +1310,13 @@ public:
     //! @param [in] ray ray to intersect
     GEOMDLLIMPEXP static bool AddRuleSurfaceRayIntersections (
             bvector<struct SolidLocationDetail> &pickData, MSBsplineCurveCR curveA, MSBsplineCurveCR curveB, DRay3dCR ray);
-    
+
     //! Compute the closest point on the ruled surface between two curves.
     //! @return false if curves are not compatible.
     //! @param [out] pickData accumulating intersection data.
     //! @param [in] curveA base curve of ruled surface.
     //! @param [in] curveB top curve of ruled surface.
-    //! @param [in] spacePoint 
+    //! @param [in] spacePoint
     GEOMDLLIMPEXP static bool RuledSurfaceClosestPoint (
             SolidLocationDetail &pickData,
             MSBsplineCurveCR curveA,

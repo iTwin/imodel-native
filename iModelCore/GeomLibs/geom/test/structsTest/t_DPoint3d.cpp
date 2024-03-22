@@ -28,7 +28,7 @@ TEST(DPoint3d, CrossProductToPointsXY)
     DVec3d vec0 = DVec3d::From (2.0, 3.0, 4.0);
     double cross = point0.CrossProductToPointsXY (point1, point2);
     double dot0 = point0.DotProductToPoints (point1, point2);
-    double dot1 = point0.DotProductToPointsXY (point1, point2); 
+    double dot1 = point0.DotProductToPointsXY (point1, point2);
     double dot2 = point2.DotDifference (point0, vec0);
     double triple = point0.TripleProductToPoints (point1, point2, point3);
     Check::Near (1.0, cross);
@@ -411,7 +411,7 @@ TEST(DPoint3d, WeightedDifferenceOf)
     DPoint3d point3 = DPoint3d::From (6.0, -18.0, -9.0);
     DPoint4d point4 = DPoint4d::From (3.0, 5.0, 1.0, 2.0);
     //DPoint3d point6 = DPoint3d::From (6.0, -18.0, -9.0);
-    DPoint3d point8 = DPoint3d::From (-11.0, -23.0, -1.0);    
+    DPoint3d point8 = DPoint3d::From (-11.0, -23.0, -1.0);
     DPoint3d point9 = DPoint3d::From (-8.0, -8.0, 2.0);
     point0.WeightedDifferenceOf (point1, point2);
     point5.WeightedDifferenceCrossProduct (point4, point1, point2);
@@ -650,7 +650,7 @@ void TestSums (double ax, double ay, double az)
     VectorType yVec;
     VectorType zVec;
 
-    
+
     Create (origin, 1,2,3, 1);
 
     Create (xVec, 4,7,8, 1.1);
@@ -712,7 +712,7 @@ TEST(DPoint3d,AppendInterpolated)
     DPoint3d pointA = DPoint3d::From (1,0,0);
     DPoint3d pointB = DPoint3d::From (2,0,0);
     DPoint3d pointC = DPoint3d::From (3,3,1);
-    
+
     size_t n = 4;
     DPoint3dOps::AppendInterpolated (points, pointA, pointB, 4, true);
     Check::Size (n, points.size (), "First AppendInterpolated");
@@ -721,9 +721,9 @@ TEST(DPoint3d,AppendInterpolated)
     DPoint3dOps::AppendInterpolated (points, pointB, pointC, 4, false);
     Check::Size (2 * n - 1, points.size (), "Second AppendInterpolated");
     Check::Near (pointC, points.back (), "back");
-    
+
     }
-    
+
 
 /// @param [IN] planeOrigin 00 point of the plane
 /// @param [IN] planeXPoint (s=1,t=0) point of the plane -- target along nominal X direction.
@@ -750,7 +750,7 @@ double planeYFraction
 /// @param [IN] planeOrigin 00 point of the plane
 /// @param [IN] planeXPoint (s=1,t=0) point of the plane -- target along nominal X direction.
 /// @parma [IN] planeYPoint (s=0,t=1) point of the plane -- target along nominal Y direction.
-/// @param [OUT] rayFraction fractional position (possibly negative or larger than 1) along the ray.    
+/// @param [OUT] rayFraction fractional position (possibly negative or larger than 1) along the ray.
 /// @param [OUT] planeXFraction fractional position along the plane X direction
 /// @param [OUT] planeYFraction fractional postion along the plane Y direction
 bool RayBy2PointsIntersectPlaneBy3Points
@@ -796,10 +796,10 @@ TEST(DPoint3d,RayPlaneExample)
     DPoint3d planePoint = PlaneFractionsToPoint (planeOrigin, planeXTarget, planeYTarget, planeXFraction, planeYFraction);
     DPoint3d rayPoint   = DPoint3d::FromInterpolate (rayOrigin, rayFraction, rayTarget);
 
-    Check::Near (rayPoint, planePoint, "rayPlane intersection resolved");    
-    
+    Check::Near (rayPoint, planePoint, "rayPlane intersection resolved");
+
     }
-    
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -976,7 +976,7 @@ void testCrossProduct (DPoint4dCR a, DPoint4dCR b, DPoint4dCR c, DPoint4dCR d, d
   DPoint4d unitZ = DPoint4d::From (0,0,1,0);
   DPoint4d unitW = DPoint4d::From (0,0,0,1);
 
-// The sign of the result seems to be such that the 
+// The sign of the result seems to be such that the
 // determinant [result a b c] is positive.
 // hence determinant [a b c result] which is 3 swaps away is negative.
   testCrossProduct (unitX, unitY, unitZ, unitW, -1.0);
@@ -1187,7 +1187,7 @@ struct MConvexPolygon2d
 private:
 // hull points in CCW order, WITHOUT final duplicate . ..
 bvector<DPoint2d> m_hullPoints;
-public: 
+public:
 // Create the hull.
 MConvexPolygon2d (bvector<DPoint2d> &points)
     {
@@ -1264,7 +1264,7 @@ MRay2d const &ray             //!< [in] ray to clip.  Both negative and positive
     {
     double distanceA = -DBL_MAX;
     double distanceB = DBL_MAX;
-    
+
     if (m_hullPoints.size () < 3)
         return MRange1d ();
     DPoint2d xy0 = m_hullPoints.back ();
@@ -1336,7 +1336,7 @@ static bool ComputeConvexHull(bvector<DPoint2d> const &xy, bvector<DPoint2d> &hu
     std::sort(xy1.begin(), xy1.end(), DPoint2d__LexicalXYLessThan);
     hull.push_back(xy1[0]);    // This is sure to stay
     hull.push_back(xy1[1]);    // This one can be removed in the loop.
-                               // first sweep creates upper hull . .. 
+                               // first sweep creates upper hull . ..
 
     for (size_t i = 2; i < n; i++)
         {
@@ -1409,7 +1409,7 @@ TEST(DPoint3d, SetToZero)
 TEST(DPoint3d, MinAbs)
     {
     DPoint3d point;
-    point = DPoint3d::From(-2.334, 1.234, 4.43);    
+    point = DPoint3d::From(-2.334, 1.234, 4.43);
     Check::ExactDouble(1.234, point.MinAbs());
     }
 //---------------------------------------------------------------------------------------
@@ -1418,9 +1418,9 @@ TEST(DPoint3d, MinAbs)
 TEST(DPoint3d, MaxAbsIndex)
     {
     DPoint3d point;
-    point = DPoint3d::From(-2.334, 1.234, 4.43);    
+    point = DPoint3d::From(-2.334, 1.234, 4.43);
     Check::ExactDouble(2, point.MaxAbsIndex());
-    point = DPoint3d::From(-2.334, -1.234, -4.43);    
+    point = DPoint3d::From(-2.334, -1.234, -4.43);
     Check::ExactDouble(2, point.MaxAbsIndex());
     }
 //---------------------------------------------------------------------------------------
@@ -1431,12 +1431,12 @@ TEST(DPoint3d, FromRotationAngle)
     DPoint3d pnt3d[] = { DPoint3d::FromProduct(DPoint3d::From(3, 3, 5),
                                            RotMatrix::FromAxisAndRotationAngle(0, Angle::FromDegrees(60).Radians()),
                                            DVec3d::From(4, 4, 4)) };
-    
+
     DPoint3d::AddToArray(pnt3d, 1, DPoint3d::From(2, 2, 3));
 
     DPoint3d expectedPnt = DPoint3d::From(9, 3.536, 13.464);
     Check::True(expectedPnt.AlmostEqualXY(pnt3d[0], 0.0005));
-    
+
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -1493,7 +1493,7 @@ TEST(DPoint3d, OperatorOverload)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(DPoint3d, CopyArrayOf3dPoints) 
+TEST(DPoint3d, CopyArrayOf3dPoints)
     {
     bvector<DPoint3d> source = { DPoint3d::From(3,2,2),
                                  DPoint3d::From(3,0,1),
@@ -1522,7 +1522,7 @@ TEST(DPoint3d, LengthOfPolyline)
                                        DPoint3d::From(4,0,0),
                                        DPoint3d::From(4,4,0),
                                        DPoint3d::From(0,4,0)}; //box
-    
+
     length = PolylineOps::Length(sourceClosed, true);
     printf("%f\n", length);
     Check::ExactDouble(length, 16);

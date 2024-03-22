@@ -283,5 +283,5 @@ double          relativeTol         /* => relative tolerance for integration
                                                 relativeTol * s_minimumArcLength,
                                                 relativeTol);
     }
-    
+
 END_BENTLEY_GEOMETRY_NAMESPACE

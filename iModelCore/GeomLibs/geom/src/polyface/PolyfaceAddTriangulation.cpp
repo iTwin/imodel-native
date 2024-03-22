@@ -66,7 +66,7 @@ bool IPolyfaceConstruction::AddTriangulation (bvector <DPoint3d> const &original
         return false;
 
     SynchOptions ();
-    Transform worldToLocal, localToWorld;    
+    Transform worldToLocal, localToWorld;
     if (!PolygonOps::CoordinateFrame(points.data(), points.size (), localToWorld, worldToLocal, LOCAL_COORDINATE_SCALE_UnitAxesAtLowerLeft))
         return false;
 
@@ -80,10 +80,10 @@ bool IPolyfaceConstruction::AddTriangulation (bvector <DPoint3d> const &original
     size_t numFacet = 0;
     int maxPerFace = 3;                     // should be GetFacetOptionsR ().GetMaxPerFace (); convexifier problems
     bool buildSimpleIndices = false;
-   
+
     if (destMaxPerFace >= numPoints  && DPoint3dOps::CountDisconnects (points) == 0)
         buildSimpleIndices = true;
-        
+
     if (buildSimpleIndices && convexRequired && !bsiGeom_testPolygonConvex(points.data(), (int)points.size ()))
         buildSimpleIndices = false;
 
@@ -92,7 +92,7 @@ bool IPolyfaceConstruction::AddTriangulation (bvector <DPoint3d> const &original
         buildSimpleIndices = false;
 
     bvector<DPoint3d> outPoints;        // Possibly augmented by intersections
-    outPoints.reserve(numPoints + 1);   // preallocate enough for simple case 
+    outPoints.reserve(numPoints + 1);   // preallocate enough for simple case
 
     if (maxEdgeLength > 0)
         {
@@ -105,7 +105,7 @@ bool IPolyfaceConstruction::AddTriangulation (bvector <DPoint3d> const &original
                     maxEdgeLength, maxEdgeLength, maxEdgeLength, smoothTriangulation, s_radiansForRemovingQuadDiagonals, &xyPoints[0]))
             return false;
         localToWorld.Multiply (outPoints, outPoints);
-        }            
+        }
     else if (buildSimpleIndices)
         {
         // build a single loop over all points (one-based indices with 0 terminator)
@@ -113,7 +113,7 @@ bool IPolyfaceConstruction::AddTriangulation (bvector <DPoint3d> const &original
         outPoints.push_back (points[0]);
         for (size_t ii = 1; ii < points.size(); ii++)
             {
-            // adjacent/wraparound duplicates have already been removed from points 
+            // adjacent/wraparound duplicates have already been removed from points
             outPoints.push_back (points[ii]);
             loopIndex.push_back ((int)(ii + 1));
             }
@@ -210,7 +210,7 @@ bool IPolyfaceConstruction::AddTriangulation (bvector <DPoint3d> const &original
                 size_t  k1 = abs (loopIndex[i0+1]) - 1;
                 size_t  k2 = abs (loopIndex[i0+2]) - 1;
                 size_t  k3 = abs (loopIndex[i0+3]) - 1;
-                
+
                 bool    visible0 = loopIndex[i0] > 0;
                 bool    visible1 = loopIndex[i0+1] > 0;
                 bool    visible2 = loopIndex[i0+2] > 0;
@@ -361,7 +361,7 @@ static void AddExpandedRangeEdges (VuSetP graph, DRange3d range, double fraction
 
     size_t numX, numY;
     GetSplitCounts (range, numPoints, numX, numY);
-    DPoint3d xyz[5] = 
+    DPoint3d xyz[5] =
         {
         {x0, y0, z},
         {x1, y0, z},
@@ -400,9 +400,9 @@ static int FindOrAddPoint (VuSetP graph, VuP node, bvector<DPoint3d> &points)
             }
         END_VU_VERTEX_LOOP (sector, node)
         }
-    return index;        
+    return index;
     }
-// Use UserDataPAsInt for vertex numbering.    
+// Use UserDataPAsInt for vertex numbering.
 PolyfaceHeaderPtr vu_toPolyface (VuSetP graph, VuMask faceExclusionMask)
     {
     PolyfaceHeaderPtr polyface = PolyfaceHeader::CreateVariableSizeIndexed ();
@@ -415,9 +415,9 @@ PolyfaceHeaderPtr vu_toPolyface (VuSetP graph, VuMask faceExclusionMask)
         vu_clrMask (node, visitMask);
         }
     END_VU_SET_LOOP (node, graph)
-    
+
     VuMask skipMask = faceExclusionMask | visitMask;
-    
+
     VU_SET_LOOP (faceSeed, graph)
         {
         if (!vu_getMask (faceSeed, skipMask))
@@ -435,11 +435,11 @@ PolyfaceHeaderPtr vu_toPolyface (VuSetP graph, VuMask faceExclusionMask)
                 }
             }
         }
-    END_VU_SET_LOOP (faceSeed, graph)    
-    
+    END_VU_SET_LOOP (faceSeed, graph)
+
     vu_returnMask (graph, visitMask);
     return polyface;
-    }    
+    }
 static double   s_graphAbsTol = 0.0;
 static double   s_graphRelTol = 1.0e-9;
 
@@ -456,7 +456,7 @@ PolyfaceHeaderPtr PolyfaceHeader::CreateXYTriangulation (bvector <DPoint3d> cons
     if (points.size () < 3)
         return NULL;
     double s_relTol = 1.0e-9;
-    
+
     if (fringeExpansionFactor < 0.01)
         fringeExpansionFactor = 0.01;
     size_t numPoint = points.size ();
@@ -471,7 +471,7 @@ PolyfaceHeaderPtr PolyfaceHeader::CreateXYTriangulation (bvector <DPoint3d> cons
         localPointA.push_back (uvw);
         }
 
-    double tolerance = s_relTol * worldRange.low.DistanceXY (worldRange.high);    
+    double tolerance = s_relTol * worldRange.low.DistanceXY (worldRange.high);
 
     bvector<int>clusterIndices;
     bsiDPoint3dArray_findClusters (&localPointA[0], localPointA.size (), clusterIndices, &localPointB, tolerance, false, false);
@@ -480,10 +480,10 @@ PolyfaceHeaderPtr PolyfaceHeader::CreateXYTriangulation (bvector <DPoint3d> cons
         return NULL;
 
 
-        
+
     VuSetP graph = vu_newVuSet (0);
     vu_setTol (graph, s_graphAbsTol, s_graphRelTol);
-    
+
     static double s_expansionFraction = 0.10;
     DRange3d localRange = worldRange;
     localRange.low.Subtract (localOrigin);
@@ -496,7 +496,7 @@ PolyfaceHeaderPtr PolyfaceHeader::CreateXYTriangulation (bvector <DPoint3d> cons
             AddEdge (graph, hullPoints[i], hullPoints[(i+1) % hullPoints.size ()], VU_RULE_EDGE);
             }
         }
-    
+
     AddExpandedRangeEdges (graph, localRange, s_expansionFraction, numPoint);
     vu_mergeOrUnionLoops (graph, VUUNION_UNION);
     vu_regularizeGraph (graph);     // It's just a rectangle -- should do nothing?
@@ -505,7 +505,7 @@ PolyfaceHeaderPtr PolyfaceHeader::CreateXYTriangulation (bvector <DPoint3d> cons
 
     vu_flipTrianglesToImproveQuadraticAspectRatio (graph);
     vu_insertAndRetriangulate (graph, &localPointB[0], (int)localPointB.size (), false);
-    
+
     if (!retainFringeTriangles)
         vu_spreadExteriorMasksToAdjacentFaces (graph, true, VU_EXTERIOR_EDGE, VU_EXTERIOR_EDGE);
 
@@ -525,17 +525,17 @@ PolyfaceHeaderPtr PolyfaceHeader::CreateConstrainedTriangulation
 (
 bvector<bvector <DPoint3d>> const &loops,
 bvector<bvector< DPoint3d>> const *paths,
-bvector<DPoint3d> const *isolatedPoints  
+bvector<DPoint3d> const *isolatedPoints
 )
     {
-       
+
     VuSetP graph = vu_newVuSet (0);
     vu_setTol (graph, s_graphAbsTol, s_graphRelTol);
     DRange3d worldRange = DRange3d::From (loops);
     double localAbsTol = 1.0e-8;
     auto localRange = DRange3d::From (-1,-1,-1,1,1,1);
     BentleyApi::Transform localToWorld, worldToLocal;
-    
+
     if (!Transform::TryUniformScaleXYRangeFit (worldRange, localRange, worldToLocal, localToWorld))
         return nullptr;
 
@@ -549,7 +549,7 @@ bvector<DPoint3d> const *isolatedPoints
     vu_parityFloodFromNegativeAreaFaces (graph, VU_BOUNDARY_EDGE, VU_EXTERIOR_EDGE);
     vu_splitMonotoneFacesToEdgeLimit (graph, 3);
     vu_flipTrianglesToImproveQuadraticAspectRatio (graph);
-    
+
     if (nullptr != isolatedPoints)
         {
         bvector<DPoint3d> localPoints;
@@ -585,7 +585,7 @@ IFacetOptionsP strokeOptions
 
 
 //! Create a triangulation of points.
-//! 
+//!
 static VuSetP CreateDelauney
 (
 bvector<DPoint3d> const points
@@ -625,7 +625,7 @@ bvector<DPoint3d> const points
     vu_splitMonotoneFacesToEdgeLimit (graph, 3);
     // final flip for true delauney condition . . .
     vu_flipTrianglesForIncircle (graph);
-    
+
     vu_insertAndRetriangulate (graph, &localPoints[0], (int)localPoints.size (), false);
     // this should not be needed ... but retriangulate seems wrong..
     vu_flipTrianglesForIncircle (graph);
@@ -988,7 +988,7 @@ static void AddZeroBasedQuadIndices(PolyfaceHeaderPtr &mesh, int zeroBasedIndice
         }
     }
 //! Create a triangulation of points.
-//! 
+//!
 PolyfaceHeaderPtr PolyfaceHeader::CreateDRange3dFaces
 (
 DRange3dCR range,

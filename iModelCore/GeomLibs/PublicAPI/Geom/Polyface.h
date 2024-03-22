@@ -987,7 +987,7 @@ BlockedVectorInt::IndexAction normalIndexAction = BlockedVectorInt::None
 //! Reverse mesh face loop orientations so that inferred normals point outward (if mesh is volumetric) or into same half-space as surfaceNormal (if mesh is non-volumetric).
 //! @remarks Input mesh facets are assumed to be consistently oriented.
 //! @see CloneWithConsistentlyOrientedFacets, IsFacetOrientationConsistent
-//! @param [in] surfaceNormal optional direction for orienting the facets of a non-volumetric mesh. If not supplied and mesh is non-volumetric, return false.  
+//! @param [in] surfaceNormal optional direction for orienting the facets of a non-volumetric mesh. If not supplied and mesh is non-volumetric, return false.
 //! @return whether the mesh was reversed
 GEOMDLLIMPEXP bool ReverseIndicesWithTest(DVec3dCP surfaceNormal = nullptr);
 
@@ -1125,7 +1125,7 @@ bvector <DPoint3d> const &linestringPoints,
 );
 
 //! @description Output processor for ClipToPlaneSetIntersection and ClipToRange.
-//! Note that if the target polyface is neither clipped by nor wholly inside the clipper, no callback is invoked, as there is nothing to process. 
+//! Note that if the target polyface is neither clipped by nor wholly inside the clipper, no callback is invoked, as there is nothing to process.
 struct IClipToPlaneSetOutput
 {
 //! @description Called if the target polyface is wholly inside the clipper.
@@ -1832,7 +1832,7 @@ struct IndexedParameterMap
     Transform localToWorld;
 
     //! Find any 3 non-colinear points and construct world-to-barycentric map.
-    //! Return false (with identity transforms) if no independent triple found.   
+    //! Return false (with identity transforms) if no independent triple found.
     bool ConstructMapping(bvector<DPoint3d> const &points);
     // map xyz to barycentric.  Apply these in the data
     DPoint2d MapPoint2d(DPoint3dCR xyz, bvector<DPoint2d> const &params) const;
@@ -2105,7 +2105,7 @@ DVec3dCR viewDirection                     //! view direction, e.g. (0,0,1) for 
 //! </ul>
 GEOMDLLIMPEXP static PolyfaceHeaderPtr CloneSubdivided(PolyfaceQueryCR source,
 int subdivisionMethod,
-uint32_t depth = 1, 
+uint32_t depth = 1,
 double maxChange = 0.0,  //!< [in] If positive, stop when change is less than this amount.
 int boundaryAction = 1   //!< [in] 0 holds boundaries unchanged, 1 lets them shrink along with the rest of the facets.
 );
@@ -2331,7 +2331,7 @@ GEOMDLLIMPEXP bool ExcavateFacetsWithLongBoundaryEdges (double maxEdgeLength = 0
 //! <li> Find the maximum edge length of each facet.
 //! <li> Split into two sets of facets with that criteria.
 //! <li> Note that removal can happen anywhere in the mesh.
-//! <li> use ExcavateFacetsWithBoundaryEdges to remove only edges reachable by crossing long edges 
+//! <li> use ExcavateFacetsWithBoundaryEdges to remove only edges reachable by crossing long edges
 //!          from a long starting edge on the boundary.
 //! </ul>
 GEOMDLLIMPEXP bool SplitByMaxEdgeLength(double splitLength, bvector<PolyfaceHeaderPtr> &splits);

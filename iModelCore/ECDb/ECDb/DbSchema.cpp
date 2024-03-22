@@ -387,7 +387,33 @@ BentleyStatus DbSchema::InsertColumn(DbColumn const& column, int columnOrdinal, 
 //---------------------------------------------------------------------------------------
 BentleyStatus DbSchema::UpdateColumn(DbColumn const& column, int columnOrdinal, int primaryKeyOrdinal) const
     {
-    CachedStatementPtr stmt = GetCachedStatement("UPDATE main." TABLE_Column " SET Name=?, Type=?, IsVirtual=?, Ordinal=?, NotNullConstraint=?, UniqueConstraint=?, CheckConstraint=?, DefaultConstraint=?, CollationConstraint=?, OrdinalInPrimaryKey=?, ColumnKind=? WHERE Id=?");
+    CachedStatementPtr stmt = GetCachedStatement(R"(
+        UPDATE main.ec_Column
+            SET Name=?1,
+                Type=?2,
+                IsVirtual=?3,
+                Ordinal=?4,
+                NotNullConstraint=?5,
+                UniqueConstraint=?6,
+                CheckConstraint=?7,
+                DefaultConstraint=?8,
+                CollationConstraint=?9,
+                OrdinalInPrimaryKey=?10,
+                ColumnKind=?11
+        WHERE
+            Id=?12 AND (
+                Name IS NOT ?1 OR
+                Type IS NOT ?2 OR
+                IsVirtual IS NOT ?3 OR
+                Ordinal IS NOT ?4 OR
+                NotNullConstraint IS NOT ?5 OR
+                UniqueConstraint IS NOT ?6 OR
+                CheckConstraint IS NOT ?7 OR
+                DefaultConstraint IS NOT ?8 OR
+                CollationConstraint IS NOT ?9 OR
+                OrdinalInPrimaryKey IS NOT ?10 OR
+                ColumnKind IS NOT ?11))");
+
     if (stmt == nullptr)
         return ERROR;
 
@@ -1736,6 +1762,7 @@ std::unique_ptr<PrimaryKeyDbConstraint> PrimaryKeyDbConstraint::Create(DbTable c
 
         pkConstraint->m_columns.push_back(col);
         col->SetIsPrimaryKeyColumn(*pkConstraint);
+        uniqueColNames.insert(col->GetName().c_str());
         }
 
     return pkConstraint;

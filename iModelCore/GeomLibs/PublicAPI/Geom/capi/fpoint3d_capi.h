@@ -8,8 +8,8 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 //!
 //! Initialize with given float values.
-//! 
-//! 
+//!
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFPoint3d_setXYZFloat
 (
@@ -21,7 +21,7 @@ float fz
 
 //!
 //! Initialize with given double values.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFPoint3d_initFromDoubleArrayXYZ
 (
@@ -31,7 +31,7 @@ double      *pXYZ
 
 //!
 //! Initialize with given float values.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFPoint3d_initFromFloatArrayXYZ
 (
@@ -41,8 +41,8 @@ float       *pXYZ
 
 //!
 //! Initialize with given double values.
-//! 
-//! 
+//!
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFPoint3d_setXYZ
 (
@@ -54,7 +54,7 @@ double z
 
 //!
 //! Initialize from a double point.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFPoint3d_initFromDPoint3d
 (
@@ -64,7 +64,7 @@ DPoint3dCP pSource
 
 //!
 //! Initialize from an xy point.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFPoint3d_initFromFPoint2d
 (
@@ -74,7 +74,7 @@ FPoint2dCP pSource
 
 //!
 //! Initialize from a double point.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFPoint3d_initFromDPoint2d
 (
@@ -88,7 +88,7 @@ DPoint2dCP pSource
 //! @param pInstance IN      first point
 //! @param pPoint IN      second point
 //! @return distance to second point.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP double bsiFPoint3d_distance
 (
@@ -101,7 +101,7 @@ FPoint3dCP pPoint
 //!
 //! @param pInstance IN      vector whose squared length is computed
 //! @return squared magnitude of the vector.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP double bsiFPoint3d_magnitudeSquared (FPoint3dCP pInstance);
 
@@ -111,7 +111,7 @@ Public GEOMDLLIMPEXP double bsiFPoint3d_magnitudeSquared (FPoint3dCP pInstance);
 //! @param pInstance IN      base point
 //! @param pPoint IN      target point
 //! @return squared distance between the points.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP double bsiFPoint3d_distanceSquared
 (
@@ -127,7 +127,7 @@ FPoint3dCP pPoint
 //! @param pPoint IN      target point.
 //! @return squared distance between the XY projections ofhte two points.
 //!               (i.e. any z difference is ignored)
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP double bsiFPoint3d_distanceSquaredXY
 (
@@ -140,7 +140,7 @@ FPoint3dCP pPoint
 //!
 //! @param pInstance IN      vector
 //! @return length of the vector
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP double bsiFPoint3d_magnitude (FPoint3dCP pInstance);
 
@@ -149,7 +149,7 @@ Public GEOMDLLIMPEXP double bsiFPoint3d_magnitude (FPoint3dCP pInstance);
 //!
 //! @param pInstance IN      vector
 //! @return largest absoluted value among point coordinates.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP double bsiFPoint3d_maxAbs (FPoint3dCP pInstance);
 
@@ -159,7 +159,7 @@ Public GEOMDLLIMPEXP double bsiFPoint3d_maxAbs (FPoint3dCP pInstance);
 //! @param pInstance IN      first point
 //! @param pVec2 IN      second vector
 //! @return true if the points are identical.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool    bsiFPoint3d_pointEqual
 (
@@ -177,7 +177,7 @@ FPoint3dCP pVec2
 //! @param pVec2 IN      vector
 //! @param tolerance IN      tolerance
 //! @return true if all components are within given tolerance of each other.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool    bsiFPoint3d_pointEqualTolerance
 (

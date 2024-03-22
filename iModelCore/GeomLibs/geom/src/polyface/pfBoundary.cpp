@@ -27,10 +27,10 @@ ExtractBoundaryContext (PolyfaceHeaderR mesh1)
     readIndexLabel = -1;
     allBoundaries = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
     }
-    
+
 ~ExtractBoundaryContext ()
     {
-    jmdlMTGFacets_free (facets);    
+    jmdlMTGFacets_free (facets);
     }
 
 bool IsVisibleEdge (MTGNodeId node)
@@ -38,7 +38,7 @@ bool IsVisibleEdge (MTGNodeId node)
     return (graph->GetMaskAt (node, MTG_PRIMARY_EDGE_MASK) || graph->GetMaskAt (graph->EdgeMate (node), MTG_PRIMARY_EDGE_MASK))
         && !graph->GetMaskAt (node, MTG_EXTERIOR_MASK);
     }
-    
+
 MTGNodeId GetVisibleSuccessor (MTGNodeId nodeA)
     {
     if (IsVisibleEdge (nodeA))
@@ -50,19 +50,19 @@ MTGNodeId GetVisibleSuccessor (MTGNodeId nodeA)
             {
             if (IsVisibleEdge (nodeB))
                 return nodeB;
-            nodeB = graph->VPred (nodeB);                                
+            nodeB = graph->VPred (nodeB);
             }
         }
     return MTG_NULL_NODEID;
     }
- 
+
 void EmitAndMark (MTGNodeId node, MTGMask visitMask)
     {
     graph->SetMaskAt (node, visitMask);
     DPoint3d xyz;
     jmdlMTGFacets_getNodeCoordinates (facets, &xyz, node);
     points.push_back (xyz);
-    } 
+    }
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/

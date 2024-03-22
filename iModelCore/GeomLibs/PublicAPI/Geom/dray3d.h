@@ -71,7 +71,7 @@ double  param
 double DirectionDotVectorToTarget (DPoint3dCR target) const;
 
 //! @param [in] vector
-//! @return dot product of (unnormalized) ray vector with input vector. 
+//! @return dot product of (unnormalized) ray vector with input vector.
 double DirectionDotVector (DVec3d vector) const;
 
 //! Project a point onto the bounded line in 3D.  If nearest point of extended line
@@ -229,7 +229,7 @@ double          w11
 
 //! Return the transverse intersection of the (unbounded) ray with the plane of an ellipse.
 //! @param [in] ellipse center, vector0, vector90 define the plane.
-//! @param [out] intersectionPoint intersection in world coordinates. 
+//! @param [out] intersectionPoint intersection in world coordinates.
 //! @param [out] rayFraction fraction along ray
 //! @param [out] ellipsePlaneCoordinates intersection coordinates as multiples of vector0 and vector90.
 //! @return false if the ray and ellipse vectors are not independent.

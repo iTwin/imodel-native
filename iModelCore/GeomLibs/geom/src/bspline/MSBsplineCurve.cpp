@@ -50,8 +50,8 @@ void MSBsplineCurve::FractionToPoints (bvector<DPoint3d>& points, size_t numPoin
     {
     double knotA, knotB, h;
     GetKnotRange (knotA, knotB);
-    
-    
+
+
     points.resize (numPoints);
     if (numPoints == 1)
         FractionToPoint (points[0], knotA);
@@ -521,10 +521,10 @@ void MSBsplineCurve::GetC1DiscontinuousFractions (bvector<double>& fractions) co
         segment.FractionToPoint (xyzA, tangentA, 1.0, false);
         numSegment++;
         }
-        
+
     if (fractions.size () > 0)
         fractions.push_back (uA);
-    double knotA, knotB;        
+    double knotA, knotB;
     GetKnotRange (knotA, knotB);
     double knotFactor;
     DoubleOps::SafeDivide (knotFactor, 1.0, knotB - knotA, 1.0);
@@ -757,7 +757,7 @@ double &xSquaredCoefficient
     if (!DoubleOps::SafeDivide (vertexFraction, -a01, a12 - a01, 0.0))
         return false;
     double u0 = 1.0 - vertexFraction;
-    double u1 = vertexFraction;        
+    double u1 = vertexFraction;
     DPoint3d origin = DPoint3d::FromSumOf (point0, u0 * u0, point1, 2.0 * u0 * u1, point2, u1 * u1);
     DVec3d   tangent = DVec3d::FromSumOf (delta01, u0, delta12, u1);
     // The coordinate system at the vertex has x in the tangent direction.
@@ -770,7 +770,7 @@ double &xSquaredCoefficient
     worldToLocal.Multiply (localEnd, point2);
     if (fabs (localStart.x) > fabs (localEnd.x))
         return DoubleOps::SafeDivide (xSquaredCoefficient, localStart.y, localStart.x * localStart.x, 0.0);
-    else 
+    else
         return DoubleOps::SafeDivide (xSquaredCoefficient, localEnd.y, localEnd.x * localEnd.x, 0.0);
     }
 

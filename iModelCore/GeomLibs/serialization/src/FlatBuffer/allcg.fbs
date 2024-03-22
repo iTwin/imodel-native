@@ -92,16 +92,16 @@ struct DgnBoxDetail
     {
     baseOriginX: double;
     baseOriginY: double;
-    baseOriginZ: double;    
+    baseOriginZ: double;
 
     topOriginX: double;
     topOriginY: double;
-    topOriginZ: double;    
+    topOriginZ: double;
 
     vectorXX:    double;
     vectorXY:    double;
     vectorXZ:    double;
-    
+
     vectorYX:    double;
     vectorYY:    double;
     vectorYZ:    double;
@@ -112,7 +112,7 @@ struct DgnBoxDetail
     topY:       double;
     capped:     bool;
     }
-    
+
 struct DgnSphereDetail
     {
     localToWorld:           DTransform3d;
@@ -120,44 +120,44 @@ struct DgnSphereDetail
     latitudeSweepRadians:   double;
     capped:                 bool;
     }
-          
+
 struct DgnConeDetail
     {
     centerAX: double;
     centerAY: double;
-    centerAZ: double;    
+    centerAZ: double;
 
     centerBX: double;
     centerBY: double;
-    centerBZ: double;    
+    centerBZ: double;
 
     vector0X:    double;
     vector0Y:    double;
     vector0Z:    double;
-    
+
     vector90X:    double;
     vector90Y:    double;
-    vector90Z:    double;    
+    vector90Z:    double;
 
     radiusA: double;
     radiusB: double;
     capped:  bool;
     }
-        
+
 struct DgnTorusPipeDetail
     {
     centerX: double;
     centerY: double;
-    centerZ: double;    
+    centerZ: double;
 
     vectorXX:    double;
     vectorXY:    double;
     vectorXZ:    double;
-    
+
     vectorYX:    double;
     vectorYY:    double;
-    vectorYZ:    double;      
-    
+    vectorYZ:    double;
+
     majorRadius: double;
     minorRadius: double;
     sweepRadians: double;
@@ -234,7 +234,7 @@ table CatenaryCurve
 
 table PartialCurve
     {
-    fraction0: double; 
+    fraction0: double;
     fraction1: double;
     target:VariantGeometry;  // well, of course it can only be a single curve primitive.
     }
@@ -283,8 +283,8 @@ table BsplineSurface
 table DgnBox        {detail:DgnBoxDetail;}
 table DgnSphere     {detail:DgnSphereDetail;}
 table DgnCone       {detail:DgnConeDetail;}
-table DgnTorusPipe  {detail:DgnTorusPipeDetail;}        
-        
+table DgnTorusPipe  {detail:DgnTorusPipeDetail;}
+
 
 table DgnExtrusion
     {
@@ -292,7 +292,7 @@ table DgnExtrusion
     extrusionVector:    DVector3d;
     capped:             bool;
     }
-        
+
 table DgnRotationalSweep
     {
     baseCurve:          CurveVector;
@@ -301,14 +301,14 @@ table DgnRotationalSweep
     numVRules:          int;
     capped:             bool;
     }
-        
+
 table DgnRuledSweep
     {
     curves:     [CurveVector];
     capped:     bool;
     }
-    
-    
+
+
 table PolyfaceAuxChannelData
     {
 	input       	:   double;
@@ -354,27 +354,27 @@ table Polyface
     twoSided    : bool;
     faceIndex   : [int];
     faceData    : [double];
-	auxData     : PolyfaceAuxData; 
+	auxData     : PolyfaceAuxData;
     expectedClosure     : int;      // 0=unknown, 1=sheet, 2=solid
     taggedNumericData  : TaggedNumericData;
-    }    
+    }
 
 struct TransitionSpiralDetail
-    {    
+    {
     // local coodinates and interval within spiral.
     transform:DTransform3d;
     fractionA:double;
     fractionB:double;
-    
+
     // 2d spiral description
     bearing0Radians:double;
     bearing1Radians:double;
     curvature0:double;
     curvature1:double;
-    
+
     spiralType:int;
     constructionHint:int;
-    }    
+    }
 // data for "direct" spirals.
 // Semantics will vary with spiral type.
 // EDL April 26 2021
@@ -387,7 +387,7 @@ struct TransitionSpiralDetail
 //  * SOOO ... it is an unused struct that seems unnecessary.
 //  * But can it be removed after appearing (as new, optional) in typescript compilation?
 //  * I'll assume not and leave it as a never-used structure.
-// 
+//
 struct DirectSpiralDetail
     {
     nominalLength: double;      // expected to be the important length in the spiral definition.
@@ -401,7 +401,7 @@ struct DirectSpiralDetail
 table TransitionSpiral
     {
     detail:TransitionSpiralDetail;
-    extraData:[double];    
+    extraData:[double];
     // In a true transition spiral, the combined bearing and curvature values at start and
     //  end completely determine length.
     // But in the murky world of direct spirals, that equational coupling is not present,
@@ -433,12 +433,11 @@ union VariantGeometryUnion
     AkimaCurve = 19,
     CatenaryCurve = 20,
     PartialCurve = 21
-    }    
-    
-    
+    }
+
+
 table VariantGeometry
     {
     geometry:VariantGeometryUnion;
     tag:CurvePrimitiveId;
     }
-    

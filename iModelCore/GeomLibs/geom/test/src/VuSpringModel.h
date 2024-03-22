@@ -62,7 +62,7 @@ void DoShift ()
 
 // BCSSpringModel
 // "Building ConceptStation Spring Model"
-// 
+//
 // A floorplan is defined by lines for the walls.
 // A station is a point with an approximate size (single number) for its expected "radius"
 // The spring model will:
@@ -88,7 +88,7 @@ struct VuSpringModel : public _VuSet
     {
 
     VuSetP Graph () { return this; }
-    
+
     // Internal struct for station data -- current xyz, original xyz, target radius.
     struct StationData
         {
@@ -672,7 +672,7 @@ struct VuSpringModel : public _VuSet
                             {
                             nodeA->SetMask (skipableEdge.Mask ());
                             nodeD->SetMask (skipableEdge.Mask ());
-                            }                            
+                            }
                         }
                     }
                 END_VU_SET_LOOP (nodeA, this)
@@ -707,7 +707,7 @@ struct VuSpringModel : public _VuSet
                             continue;
                             }
                         areas.push_back ({ elementId, spaceNewPoints[0] });*/
-                        
+
                         areas.push_back (StationPolygon (elementId));
                         VU_VERTEX_LOOP (node0, vertexSeedNode)
                             {
@@ -806,7 +806,7 @@ PolyfaceHeaderPtr CreateVoronoi ()
                         exteriorVectorA = ValidatedDVec3d (xyzB - xyzA, true);
                     else if (exteriorMate)
                         exteriorVectorB = ValidatedDVec3d (xyzB - xyzA, true);
-                        
+
                     double r = 0.5 * xyzA.DistanceXY (xyzB);
 
                     auto plane  = DPlane3d::VoronoiSplitPlane (xyzA, r, xyzB, r, 0);
@@ -896,7 +896,7 @@ PolyfaceHeaderPtr CreateStationVoronoi ()
             ValidatedDVec3d exteriorVectorA;
             ValidatedDVec3d exteriorVectorB;
             // The extended polygon is the area of all indcident triangles, PLUS
-            // additional triangles "just beyond" any far edge that is incident to another IsStationNode 
+            // additional triangles "just beyond" any far edge that is incident to another IsStationNode
             // This is clipped to the (convex but maybe unbounded) region with planes at the midpoints of edges connecting to neighbors with IsStationNode (neighbor)
             extendedPolygon.clear ();
             VU_VERTEX_LOOP (outboundEdge, vertexSeed)
@@ -1138,7 +1138,7 @@ double SpaceIdToArea (int id)
         }
     return area;
     }
-    
+
 };
 
 // Helper class to do flood searches in a GriddedSpaceManager
@@ -1206,7 +1206,7 @@ bool ExpandSingleSpaceIdToTargetArea (int id, double targetArea)
             break;
         if (!m_heap.RemoveMin (entry, distance))
             break;
-        // The facet may have been absorbed from another direction . . . 
+        // The facet may have been absorbed from another direction . . .
         if (!m_manager.IsOccupied (entry.m_node))
             {
             space->second.m_currentArea += vu_area (entry.m_node);

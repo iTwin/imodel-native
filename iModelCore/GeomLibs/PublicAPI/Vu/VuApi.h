@@ -474,7 +474,7 @@ struct VuPositionDetail
     GEOMDLLIMPEXP bool IsVertex () const;
     //! @return true if typology type is null
     GEOMDLLIMPEXP bool IsUnclassified () const;
-    
+
 
     //! @return node id
     GEOMDLLIMPEXP VuP GetNode () const;
@@ -694,7 +694,7 @@ struct VuNode {
     GEOMDLLIMPEXP VuP FPred () const;
     GEOMDLLIMPEXP VuP VPred () const;
     GEOMDLLIMPEXP VuP EdgeMate () const;
-    
+
     };
 
 typedef struct

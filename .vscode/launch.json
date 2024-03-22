@@ -21,6 +21,19 @@
             "environment": [],
         },
         {
+            "name": "Debug specific iModelEvolutionTest",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}Winx64/Product/IModelEvolutionGTest/IModelEvolutionTests.exe",
+            "args": [
+                "--gtest_break_on_failure",
+                "--gtest_filter=ECDbCompatibilityTestFixture.*:IModelCompatibilityTestFixture.*"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+        },
+        {
             "name": "Debug specific BentleyDll Test",
             "type": "cppvsdbg",
             "request": "launch",

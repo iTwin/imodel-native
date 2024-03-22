@@ -119,7 +119,7 @@ bvector<ptrdiff_t> *sideFacetReadIndex     //!< [out] optional array of read ind
             // Add mirrored face on bottom.
             if (bottomFacetReadIndex != nullptr)
                 bottomFacetReadIndex->push_back (builderPointIndex.size ());
-            
+
             for (size_t i1 = numEdge; i1-- > 0;)
                 builder->AddPointIndex (bottomIndex[i1], true);
             builder->AddPointIndexTerminator ();

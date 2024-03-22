@@ -264,7 +264,7 @@ bool PolylineOps::ClosestPoint
                 }
             }
         }
-        
+
     return true;
     }
 
@@ -277,7 +277,7 @@ bool PolylineOps::IsSelfIntersectingXY (bvector<DPoint3d> const &xyz, bool addCl
 //! return true if there are any intersections within the linestring.
 bool PolylineOps::IsSelfIntersectingXY (DPoint3d *points, size_t n, bool addClosure)
     {
-    return n > 2 
+    return n > 2
         && bsiDPoint3dArray_isSelfIntersectingXY (points, (int)n, addClosure);
     }
 
@@ -308,7 +308,7 @@ bool requireClosurePoint
     {
     localToWorld.InitIdentity ();
     worldToLocal.InitIdentity ();
-    
+
     if (requireClosurePoint && n != 5)
         return false;
     if (!requireClosurePoint)
@@ -819,7 +819,7 @@ double fraction1
 
 double PolylineOps::SignedDistanceBetweenFractions
 (
-RotMatrixCP worldToLocal, 
+RotMatrixCP worldToLocal,
 bvector <DPoint3d> const &points,
 double fraction0,
 double fraction1
@@ -852,7 +852,7 @@ double fraction1
 
 static bool PolylineFractionAtSignedDistanceFromFraction
 (
-RotMatrixCP worldToLocal, 
+RotMatrixCP worldToLocal,
 bvector<DPoint3d> const &xyz,
 double startFraction,
 double signedDistance,
@@ -968,7 +968,7 @@ TransformR frame
 
     if (numPoints < 2)
         return false;
-    
+
     if (!PolylineFractionToSegmentData (numPoints, f, segmentStartIndex, numSegment, segmentFraction, isExtrapolated))
         return false;
 
@@ -1026,7 +1026,7 @@ double fraction1
 )
     {
     size_t n = points.size ();
-    length = 0.0;    
+    length = 0.0;
     centroid.Zero ();
     if (n == 0)
         return false;
@@ -1114,7 +1114,7 @@ double fraction1
 
 void PolylineOps::AddContinuationStartPoint (bvector<DPoint3d>&points, DPoint3dCR xyz, bool forceIncludeStartPoint)
     {
-    
+
     if (   forceIncludeStartPoint
         || points.size () == 0
         || !DPoint3dOps::AlmostEqual (xyz, points.back ())
@@ -1128,7 +1128,7 @@ void PolylineOps::AddContinuationStartPoint (bvector<DPoint3d>&points, DPoint3dC
 bool PolylineOps::AddStrokes
 (
 DEllipse3dCR arc,
-bvector <DPoint3d> & strokes, 
+bvector <DPoint3d> & strokes,
 IFacetOptionsCR options,
 bool includeStartPoint,
 double startFraction,
@@ -1160,7 +1160,7 @@ double endFraction
 bool PolylineOps::AddStrokes
 (
 bvector <DPoint3d> const &points,
-bvector <DPoint3d> & strokes, 
+bvector <DPoint3d> & strokes,
 IFacetOptionsCR options,
 bool includeStartPoint,
 double startFraction,
@@ -1222,7 +1222,7 @@ double endFraction
 bool PolylineOps::AddStrokes
 (
 bvector <DPoint3d> const &points,
-DPoint3dDoubleUVCurveArrays & strokes, 
+DPoint3dDoubleUVCurveArrays & strokes,
 IFacetOptionsCR options,
 double startFraction,
 double endFraction,
@@ -1412,7 +1412,7 @@ static bool IsColinearPointToEliminate (DPoint3dCR origin, DPoint3dCR pointA, DP
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
-+--------------------------------------------------------------------------------------*/    
++--------------------------------------------------------------------------------------*/
 void PolylineOps::CompressColinearPoints
 (
 bvector <DPoint3d> &points,
@@ -1422,7 +1422,7 @@ bool wrap,
 bool xyOnly
 )
     {
-        
+
     size_t n = points.size ();
     if (n < 2)
         return;
@@ -1452,10 +1452,10 @@ bool xyOnly
             }
         j = k;
         }
- 
+
     // The lastAcceptedPoint is NOT the last point.
     // The last point has NOT been accepted ...
-    
+
     if (   wrap)
         {
         double d0 = points[n - 1].DistanceSquared(points[0]);
@@ -1566,7 +1566,7 @@ bool xyOnly
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
-+--------------------------------------------------------------------------------------*/    
++--------------------------------------------------------------------------------------*/
 void PolylineOps::AppendToChains (bvector<bvector<DPoint3d>> &chains, DSegment3dCR segment)
     {
     if (chains.empty ()     // really first call.
@@ -1611,7 +1611,7 @@ static void CompleteComponentDetails (bvector<CurveLocationDetailPair> &data, si
         pair.detailB.fraction = fB * (pair.detailB.componentIndex + pair.detailB.componentFraction);
         pair.detailB.numComponent = numComponentB;
         }
-    }    
+    }
 void AppendPair (bvector<CurveLocationDetailPair> &pairs, CurveLocationDetail const &detailA, CurveLocationDetail const &detailB, bool reverse, bool skipIfAlmostEqual)
     {
     if (reverse)
@@ -1832,7 +1832,7 @@ int id
 // @param [in] first a valid triangle
 // @param [in] other a triangle that maybe invalid
 // @return first triangle with possibly reduced aspect ratio
-// 
+//
 static TestTriangle MergeAspectRatio (TestTriangle const &first, TestTriangle const &other)
     {
     TestTriangle result = first;
@@ -1877,9 +1877,9 @@ bvector<int> *oneBasedIndexAB,
 size_t maxAdd = SIZE_MAX
 )
     {
-    if (limitA > linestringA.size ()) 
+    if (limitA > linestringA.size ())
         limitA = linestringA.size ();
-    if (limitB > linestringB.size ()) 
+    if (limitB > linestringB.size ())
         limitB = linestringB.size ();
     size_t count0 = triangles.size ();
     while (baseA + 1 < limitA && baseB + 1 < limitB && (triangles.size () - count0) < maxAdd)
@@ -2117,7 +2117,7 @@ Angle planarContinuationAngle
                     triangles,
                     oneBasedIndexAB);
             }
-        else 
+        else
             {
 #ifdef PrintGreedyTriangles
                 GEOMAPI_PRINTF ("SINGLE    (A %d)      (B %d)\n",  (int)baseA,  (int)baseB);

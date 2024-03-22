@@ -186,7 +186,7 @@ public:
 //!    @param [in] curvature0  start curvature
 //!    @param [in] length  arc length
 //!    @param [in] curvature1  end curvature
-//!    
+//!
 
     bool SetBearingCurvatureLengthCurvature
     (
@@ -218,19 +218,19 @@ public:
     double FractionToDistance (double fraction) const;
     //!
 //!    @description BSIVectorIntegrand query function.
-//!    
+//!
 
     int  GetVectorIntegrandCount () override;
     //!
 //!    @description BSIVectorIntegrand query function.
 //!    @param [in] distance  distance parameter
 //!    @param [out] pF  array of two doubles x,y for integration.
-//!    
+//!
 
     void EvaluateVectorIntegrand (double distance, double *pF) override;
 
     double DistanceToGlobalAngle (double distance) const;
-    
+
     // Apply a scale factor (e.g. change of units) in place.
     // return true if the scale is nonzero.
     bool ScaleInPlace (double s);
@@ -344,7 +344,7 @@ double maxStrokeLength = DEFAULT_SPIRAL_MAX_STROKE_LENGTH
 
 
 //! Return an interval count for stroking or integration.
-//! Except for degenerate single interval cases, the interval count is always even.  That is the possible values are 
+//! Except for degenerate single interval cases, the interval count is always even.  That is the possible values are
 //! @param [in] spiral spiral being queried.
 //! @param [in] startFraction start of interval to stroke.
 //! @param [in] endFraction end of interval to stroke.
@@ -504,7 +504,7 @@ struct ASLSACollector
 //!    @param [in] arcToSpiralB  tangency point from arc A to spiral
 //!    @param [in] spiralB  spiral from arc B to line.
 //!    @param [in] spiralToLineB  tangency point from spiral B to line.
-//!    
+//!
 
     GEOMAPI_VIRTUAL void Collect
         (
@@ -642,7 +642,7 @@ public:
     );
 
     DECLARE_DSPIRAL2DBASE_OVERRIDES
-    //! Return the extra data array for the parameters of a viennese spiral 
+    //! Return the extra data array for the parameters of a viennese spiral
     static void FillExtraDataArray(bvector<double> &extraData, double cant, double h, double e);
 };
 
@@ -676,7 +676,7 @@ public:
     );
 
     DECLARE_DSPIRAL2DBASE_OVERRIDES
-    //! Return the extra data array for the parameters of a weighted viennese spiral 
+    //! Return the extra data array for the parameters of a weighted viennese spiral
     static void FillExtraDataArray(bvector<double> &extraData, double cant, double h, double e, double weight0, double weight1);
     };
 
@@ -825,7 +825,7 @@ struct GEOMDLLIMPEXP DSpiral2dPolish : DSpiral2dDirectEvaluation
         static bool EvaluateAtFractionOfAxisLengthInStandardOrientation
         (
             double fraction,           //!< [in] fraction to be applied to the nominal length-along-curve (which his larger than xLength)
-            double &Lx,      //! [out] x axis length. 
+            double &Lx,      //! [out] x axis length.
             double Ls,      //! [in] strictly nonzero nominal length
             double radius1,  //! [in] strictly nonzero exit radius
             bool mapDerivativesWRTSeriesDistance, //< [in] if true, map derivatives wrt power series distance.  If false wrt axis distance.   true is unusual
@@ -836,7 +836,7 @@ struct GEOMDLLIMPEXP DSpiral2dPolish : DSpiral2dDirectEvaluation
         );
     //! Return poles for preferred representation as a bezier curve
     //! These are in the local coordinates of the standard orientation
-    //! 
+    //!
     bool GetBezierPoles (
         bvector<DPoint3d> &poles,   //!< [out] poles
         double startFraction, //!< [in] start fraction for active intervale
@@ -1105,7 +1105,7 @@ double GlobalFractionToActiveFraction (double globalFraction) const;
 
 //! return xyz first, second, third derivatives as columns.
 RotMatrix FractionToDerivatives (double fraction) const;
-//! return xyz first, second, third derivatives as columns, scaled for active interval. 
+//! return xyz first, second, third derivatives as columns, scaled for active interval.
 RotMatrix ActiveFractionToDerivatives (double fraction) const;
 
 
@@ -1168,7 +1168,7 @@ Solve for roots of alpha + beta*x + gamma * cosh(x) = 0
 </ul>
 */
 GEOMDLLIMPEXP static bool CoshIntersectLine (double alpha, double beta, double gamma, bvector<double> &roots);
- 
+
 /**
 Solve for simultaneous roots of
 <ul>

@@ -54,12 +54,12 @@ GEOMDLLIMPEXP bool DgnConeDetail::TryUVFractionToXYZ
     if (selector.IsCap0 ())
         {
         FractionToSection (0.0, ellipse0);
-        UVFractionToXYZ (uFraction, vFraction, ellipse0, xyz, dXdu, dXdv);        
+        UVFractionToXYZ (uFraction, vFraction, ellipse0, xyz, dXdu, dXdv);
         }
     else if (selector.IsCap1 ())
         {
         FractionToSection (1.0, ellipse1);
-        UVFractionToXYZ (uFraction, vFraction, ellipse1, xyz, dXdu, dXdv);        
+        UVFractionToXYZ (uFraction, vFraction, ellipse1, xyz, dXdu, dXdv);
         }
     else if (IsValidPrimarySelector (selector, 1, 1))
         {
@@ -98,13 +98,13 @@ GEOMDLLIMPEXP bool DgnTorusPipeDetail::TryUVFractionToXYZ
         {
         minorEllipse = VFractionToUSectionDEllipse3d (0.0);
         ISolidPrimitive::ReverseFractionOrientation (uFraction, vFraction);
-        UVFractionToXYZ (uFraction, vFraction, minorEllipse, xyz, dXdu, dXdv);        
+        UVFractionToXYZ (uFraction, vFraction, minorEllipse, xyz, dXdu, dXdv);
         ISolidPrimitive::ReverseFractionOrientation (dXdu, dXdv);
         }
     else if (selector.IsCap1 ())
         {
         minorEllipse = VFractionToUSectionDEllipse3d (1.0);
-        UVFractionToXYZ (uFraction, vFraction, minorEllipse, xyz, dXdu, dXdv);        
+        UVFractionToXYZ (uFraction, vFraction, minorEllipse, xyz, dXdu, dXdv);
         }
     else if (IsValidPrimarySelector (selector, 1, 1))
         {
@@ -136,12 +136,12 @@ GEOMDLLIMPEXP bool DgnSphereDetail::TryUVFractionToXYZ
     if (selector.IsCap0 ())
         {
         uEllipse = VFractionToUSectionDEllipse3d (0.0);
-        UVFractionToXYZ (uFraction, vFraction, uEllipse, xyz, dXdu, dXdv);        
+        UVFractionToXYZ (uFraction, vFraction, uEllipse, xyz, dXdu, dXdv);
         }
     else if (selector.IsCap1 ())
         {
         uEllipse = VFractionToUSectionDEllipse3d (1.0);
-        UVFractionToXYZ (uFraction, vFraction, uEllipse, xyz, dXdu, dXdv);        
+        UVFractionToXYZ (uFraction, vFraction, uEllipse, xyz, dXdu, dXdv);
         }
     else if (IsValidPrimarySelector (selector, 1, 1))
         {
