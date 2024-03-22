@@ -3,7 +3,7 @@ AC_PREREQ([2.63])
 
 m4_define([MAJOR_VERSION], 2)
 m4_define([MINOR_VERSION], 11)
-m4_define([MICRO_VERSION], 1)
+m4_define([MICRO_VERSION], 7)
 
 AC_INIT([libxml2],[MAJOR_VERSION.MINOR_VERSION.MICRO_VERSION])
 AC_CONFIG_SRCDIR([entities.c])
@@ -767,8 +767,11 @@ dnl
 PYTHON_LDFLAGS=
 if test "${PYTHON}" != ""; then
     case "$host" in
-        *-*-cygwin* | *-*-mingw* | *-*-msys* )
+        *-*-mingw* )
             PYTHON_LDFLAGS="-no-undefined -shrext .pyd"
+            ;;
+        *-*-cygwin* |*-*-msys* )
+            PYTHON_LDFLAGS="-no-undefined"
             ;;
     esac
 fi
@@ -1036,28 +1039,37 @@ else
     if test "$with_iconv" != "yes" && test "$with_iconv" != "" ; then
 	ICONV_DIR=$with_iconv
 	CPPFLAGS="$CPPFLAGS -I$ICONV_DIR/include"
-        LIBS="$LIBS -L$ICONV_DIR/libs"
-	# Export this since our headers include iconv.h
-	XML_INCLUDEDIR="$XML_INCLUDEDIR -I$ICONV_DIR/include"
+	LIBS="$LIBS -L$ICONV_DIR/lib"
     fi
-    AC_CHECK_HEADER(iconv.h, [
-        AC_SEARCH_LIBS([iconv], [iconv], [
+    AC_MSG_CHECKING([for libiconv])
+    AC_LINK_IFELSE([
+        AC_LANG_PROGRAM([#include <iconv.h>], [iconv_open(0,0);])
+    ], [
+        WITH_ICONV=1
+        AC_MSG_RESULT([none required])
+    ], [
+        LIBS="$LIBS -liconv"
+        AC_LINK_IFELSE([
+            AC_LANG_PROGRAM([#include <iconv.h>], [iconv_open(0,0);])
+        ], [
             WITH_ICONV=1
-            if test "$ac_cv_search_iconv" != "none required"; then
-                ICONV_LIBS=$ac_cv_search_iconv
-            fi], [
-            dnl GNU libiconv prefixes symbols with "lib"
-            AC_CHECK_LIB([iconv], [libiconv], [
-                WITH_ICONV=1
-                ICONV_LIBS="-liconv"])])])
+            ICONV_LIBS="-liconv"
+            AC_MSG_RESULT([yes])
+        ], [
+            AC_MSG_RESULT([no])
+        ])
+    ])
     if test "$WITH_ICONV" = "1" && test "$ICONV_DIR" != ""; then
         ICONV_CFLAGS="-I$ICONV_DIR/include"
-        ICONV_LIBS="-L$ICONV_DIR/libs $ICONV_LIBS"
+        ICONV_LIBS="-L$ICONV_DIR/lib $ICONV_LIBS"
+	# Export this since our headers include iconv.h
+	XML_INCLUDEDIR="$XML_INCLUDEDIR -I$ICONV_DIR/include"
     fi
     CPPFLAGS=$_cppflags
     LIBS=$_libs
 fi
 AC_SUBST(WITH_ICONV)
+AC_SUBST(ICONV_CFLAGS)
 
 dnl
 dnl Checks for ICU library.
@@ -1095,12 +1107,12 @@ else
             fi
 
             AC_CHECK_HEADER(unicode/ucnv.h, [
-                AC_CHECK_LIB([icucore], [uconv_open], [
+                AC_CHECK_LIB([icucore], [ucnv_open], [
                     WITH_ICU=1
                     ICU_LIBS=-licucore
                     if test "$ICU_DIR" != ""; then
                         ICU_CFLAGS="-I$ICU_DIR/include"
-                        ICU_LIBS="-L$ICU_DIR/libs $ICU_LIBS"
+                        ICU_LIBS="-L$ICU_DIR/lib $ICU_LIBS"
                     fi])])
             CPPFLAGS=$_cppflags
             LIBS=$_libs
