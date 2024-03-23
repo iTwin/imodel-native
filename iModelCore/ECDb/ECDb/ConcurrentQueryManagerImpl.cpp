@@ -145,10 +145,10 @@ void CachedConnection::SetRequest(std::unique_ptr<RunnableRequestBase> request) 
 void CachedConnection::InterruptIf(std::function<bool(RunnableRequestBase const&)> cb, bool cancel) {
     recursive_guard_t lock(m_mutexReq);
     if (m_request != nullptr) {
-        if (cancel) {
-            m_request->Cancel();
-        }
         if (cb(*m_request)) {
+            if (cancel) {
+                m_request->Cancel();
+            }
             Interrupt();
         }
     }
