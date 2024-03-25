@@ -180,10 +180,18 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData(IECInstanceR instanc
 
     if (prop->GetIsStruct())
         {
-        if (SUCCESS != SetStructElement(ecVal, prop->GetAsStructProperty()->GetType(), value))
+        if (value.IsNull())
             {
-            LOG.debugv("ECInstanceECSqlSelectAdapter::SetPropertyData - failed to set struct property %s", accessString.c_str());
-            return ERROR;
+            return SUCCESS;
+            }
+
+        for (IECSqlValue const& memberVal : value.GetStructIterable())
+            {
+            if (SUCCESS != SetPropertyData(instance, accessString.c_str(), memberVal))
+                {
+                LOG.debugv("ECInstanceECSqlSelectAdapter::SetPropertyData - failed to set struct property %s", accessString.c_str());
+                return ERROR;
+                }
             }
 
         return SUCCESS;
@@ -201,7 +209,7 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData(IECInstanceR instanc
             {
             if (prop->GetIsStructArray())
                 {
-                if (SUCCESS != SetStructElement(ecVal, prop->GetAsStructArrayProperty()->GetStructElementType(), arrayElementValue))
+                if (SUCCESS != SetStructArrayElement(ecVal, prop->GetAsStructArrayProperty()->GetStructElementType(), arrayElementValue))
                     {
                     LOG.debugv("ECInstanceECSqlSelectAdapter::SetPropertyData - failed to set struct array element (%d) on property %s", arrayIndex, accessString.c_str());
                     return ERROR;
@@ -317,7 +325,7 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPrimitiveValue(ECValueR val, ECN:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECInstanceECSqlSelectAdapter::SetStructElement(ECValueR val, ECClassCR structType, IECSqlValue const& value) const
+BentleyStatus ECInstanceECSqlSelectAdapter::SetStructArrayElement(ECValueR val, ECClassCR structType, IECSqlValue const& value) const
     {
     val.Clear();
     if (value.IsNull())

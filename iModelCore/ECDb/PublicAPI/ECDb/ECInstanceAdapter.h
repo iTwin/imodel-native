@@ -43,7 +43,7 @@ private:
     BentleyStatus SetRelationshipSource(ECN::IECInstanceR instance, IECSqlValue const& value) const;
     BentleyStatus SetRelationshipTarget(ECN::IECInstanceR instance, IECSqlValue const& value) const;
 
-    BentleyStatus SetStructElement(ECN::ECValueR val, ECN::ECClassCR structType, IECSqlValue const& value) const;
+    BentleyStatus SetStructArrayElement(ECN::ECValueR val, ECN::ECClassCR structType, IECSqlValue const& value) const;
     BentleyStatus SetPrimitiveValue(ECN::ECValueR val, ECN::PrimitiveType primitiveType, IECSqlValue const& value) const;
     BentleyStatus SetNavigationValue(ECN::IECInstanceR instance, IECSqlValue const& value) const;
     ECN::IECInstancePtr FindRelationshipEndpoint(ECInstanceId endpointInstanceId, ECN::ECClassId endpointClassId, ECN::StandaloneECRelationshipInstance*, bool isSource) const;
