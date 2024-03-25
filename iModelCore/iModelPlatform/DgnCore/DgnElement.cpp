@@ -1296,28 +1296,21 @@ void DgnElement::ToBaseJson(BeJsValue val) const {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::_ToJson(BeJsValue val, BeJsConst opts) const {
+    CachedECSqlStatementPtr stmt = this->GetDgnDb().GetPreparedECSqlStatement("SELECT $ FROM Bis.Element WHERE ECInstanceId=?");
+    if (!stmt.IsValid())
+        {
+        BeAssert(false);
+        return;
+        }
+    stmt->BindId(1, m_elementId);
 
-    // all the base properties
-    ToBaseJson(val);
+    if (BE_SQLITE_ROW != stmt->Step())
+        {
+        BeAssert(false);
+        return;
+        }
 
-    // if auto-handled properties are already in memory
-    if (nullptr != m_ecPropertyData) {
-        ElementAutoHandledPropertiesECInstanceAdapterPtr autoHandledAdapter = ElementAutoHandledPropertiesECInstanceAdapter::Create(*this, true);
-        if (autoHandledAdapter.IsNull())
-            return;
-
-        std::function<bool(Utf8CP)> shouldWriteProperty = [this](Utf8CP propName) {
-            if (ECJsonSystemNames::IsTopLevelSystemMember(propName))
-                return false;
-
-            ElementECPropertyAccessor const accessor(*this, propName);
-            return accessor.IsValid() && accessor.IsAutoHandled();
-        };
-        JsonEcInstanceWriter::WritePartialInstanceToJson(val, *autoHandledAdapter, JsonEcInstanceWriter::MemberNameCasing::LowerFirstChar, shouldWriteProperty, &GetDgnDb().GetClassLocater());
-    } else if (GetElementId().IsValid()) {
-        // element must be persistent to use ECSql to load properties
-        autoHandlePropertiesToJsonFromECSql(val, *this); // auto-handled properties were not loaded, query for them
-    }
+    val = stmt->GetValueText(0);
 }
 
 /*---------------------------------------------------------------------------------**//**
