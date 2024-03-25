@@ -689,7 +689,7 @@ BeSQLite::EC::DropSchemaResult DgnDomains::DoDropSchema(Utf8StringCR name, bool 
     }
 
     if (dgndb.IsBriefcase()) {
-        if (dgndb.Txns().HasLocalChanges()) {
+        if (dgndb.Txns().HasChanges()) {
             LOG.error("Cannot drop schema when there are local changes. Commit any outstanding changes, then create and finish/abandon a revision to flush the TxnTable");
             return BeSQLite::EC::DropSchemaResult(DropSchemaResult::ErrorDbHasLocalChanges);
         }
