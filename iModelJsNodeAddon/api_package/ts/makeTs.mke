@@ -9,13 +9,17 @@
 
 srcDir = $(_MakeFilePath)
 outDir = $(_MakeFilePath)lib/
-
+jsTestsDir = $(OutputRootDir)build/jsTests
 always:
     ~chdir $(srcDir)
+    ~mkdir $(jsTestsDir)
 %if defined(BMAKE_DELETE_ALL_TARGETS)
     npm run clean
-%endif
+%else
+    ~linkdir "$(outDir)=$(jsTestsDir)"
     npm run buildAndLint
+%endif
+    
 
-$(BuildContext)Delivery/lib : $(outDir)
+$(BuildContext)Delivery/lib : $(jsTestsDir)
     $(LinkFirstDepToFirstTargetAsDirectory)
