@@ -73,7 +73,7 @@ int          nIndex
 //! @param n          IN      number of points
 //! @param value      IN      unused
 //! @return Index of disconnect point, or n if no disconnects.
-//! 
+//!
 //! @group "DPoint3d Queries"
 //!
 Public GEOMDLLIMPEXP int  bsiDPoint3d_findDisconnectIndex
@@ -236,7 +236,7 @@ int         numPoint
 //! @param pInArray IN      points in real space
 //! @param numPoint IN      number of points
 //! @param fraction IN      perspective effects parameter.
-//! 
+//!
 //! @group "DPoint3d Modification"
 //!
 Public GEOMDLLIMPEXP void bsiGeom_applyPerspective
@@ -395,7 +395,7 @@ int             numPoint
 //! @param pInArray IN      points in perspective space
 //! @param numPoint IN      number of points
 //! @param fraction IN      perspective effects parameter
-//! 
+//!
 //! @group "DPoint3d Modification"
 //!
 Public GEOMDLLIMPEXP void bsiGeom_invertPerspective

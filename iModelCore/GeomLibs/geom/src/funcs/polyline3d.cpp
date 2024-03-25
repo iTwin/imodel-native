@@ -71,7 +71,7 @@ double           param
                 if (iBase == n - 1)
                     iBase = n - 2;
                 }
-            
+
             localParam = (param - delta * iBase) / delta;
             point0 = pPointArray [iBase];
             point1 = pPointArray[iBase+1];

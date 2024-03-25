@@ -1,0 +1,9 @@
+{"transitionSpiral":
+ {"origin":[0,0,0],
+  "type":"clothoid",
+  "startRadius":0,
+  "endRadius":1000,
+  "startBearing":0,
+  "endBearing":2.864788975654116
+ }
+}

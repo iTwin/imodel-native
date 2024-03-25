@@ -18,7 +18,7 @@ nameToDefine = _VARIADIC_MAX=10
 geomExportLib = $(baseGeom_lib)BentleyGeom.lib
 geomFlatBufferExportLib = $(baseGeom_lib)BentleyGeomFlatBuffer.lib
 %ifdef USE_GEOM_STATIC
-libsUsed = $(BuildContext)Delivery\geom_static.lib $(BuildContext)SubParts/Libs/Bentley.lib 
+libsUsed = $(BuildContext)Delivery\geom_static.lib $(BuildContext)SubParts/Libs/Bentley.lib
 
 nameToDefine=jmdlgeom_static=1
 %include cdefapnd.mki

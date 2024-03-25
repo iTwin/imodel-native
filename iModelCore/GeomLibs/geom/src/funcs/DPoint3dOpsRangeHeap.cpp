@@ -151,7 +151,7 @@ bool NeedProcessing (DRange3dCR rangeA, size_t iA0, size_t iA1,
     return b;
     };
 
-void Process (size_t iA, size_t iB) override 
+void Process (size_t iA, size_t iB) override
     {
     m_leafProcess++;
     DSegment3d segmentA = DSegment3d::From (m_xyzA[iA], m_xyzA[iA + 1]);
@@ -223,7 +223,7 @@ void Search ()
         }
     m_heapA.Build (1, &m_rangeServerA, 0, m_xyzA.size () - 2);
     m_heapB.Build (1, &m_rangeServerB, 0, m_xyzB.size () - 2);
-    IndexedRangeHeap::Search (m_heapA, m_heapB, *this);    
+    IndexedRangeHeap::Search (m_heapA, m_heapB, *this);
     }
 
 };
@@ -398,7 +398,7 @@ CurveLocationDetailR locationB
         if (searcher.GetFinalLocations (locationA, locationB))
             return true;
         }
-    return false;    
+    return false;
     }
 
 END_BENTLEY_GEOMETRY_NAMESPACE

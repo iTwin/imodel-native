@@ -52,7 +52,7 @@ void SetBaseRange (DRange3dCR range)
     m_baseRange = m_currentRange = range;
     }
 void SetCurrentRangeFromExpandedBaseRange (double expansion)
-    {    
+    {
     m_currentRange = m_baseRange;
     m_currentRange.low.x -= expansion;         m_currentRange.high.x += expansion;
     m_currentRange.low.y -= expansion;         m_currentRange.high.y += expansion;
@@ -63,7 +63,7 @@ void ClearHits (){m_hits.clear ();}
 void AddHit (size_t hit){m_hits.push_back (hit);}
 void CopyHits (bvector<size_t> &hits){hits = m_hits;}
 
-bool ShouldRecurseIntoSubtree (XYZRangeTreeRootP pRoot, XYZRangeTreeInteriorP pInterior) override 
+bool ShouldRecurseIntoSubtree (XYZRangeTreeRootP pRoot, XYZRangeTreeInteriorP pInterior) override
     {
     DRange3d nodeRange = pInterior->Range ();
     if (m_currentRange.IntersectsWith (nodeRange))
@@ -80,13 +80,13 @@ bool ShouldRecurseIntoSubtree (XYZRangeTreeRootP pRoot, XYZRangeTreeInteriorP pI
 
 bool ShouldContinueAfterSubtree      (XYZRangeTreeRootP pRoot, XYZRangeTreeInteriorP pInterior)    override {return true;}
 
-bool ShouldContinueAfterLeaf         (XYZRangeTreeRootP pRoot, XYZRangeTreeInteriorP pInterior, XYZRangeTreeLeafP pLeaf) override 
+bool ShouldContinueAfterLeaf         (XYZRangeTreeRootP pRoot, XYZRangeTreeInteriorP pInterior, XYZRangeTreeLeafP pLeaf) override
     {
     size_t leafIndex = (size_t)pLeaf->GetData ();
     DRange3d nodeRange = pLeaf->Range ();
     if (m_currentRange.IntersectsWith (nodeRange))
         {
-        AddHit (leafIndex); 
+        AddHit (leafIndex);
         m_leafHit++;
         }
     else
@@ -129,7 +129,7 @@ size_t PolyfaceRangeTree::LoadPolyface (PolyfaceQueryCR source)
         numFacet++;
         }
     return numFacet;
-    }    
+    }
 
 PolyfaceRangeTreePtr PolyfaceRangeTree::CreateForPolyface (PolyfaceQueryCR source)
     {
@@ -180,7 +180,7 @@ void XYZRangeTreeMultiSearch::RunSearch(XYZRangeTreeRootP treeA, XYZRangeTreeRoo
     XYZRangeTreeQueryP leftChild, rightChild;
     // Each tree is a combination of interior and leaf nodes.
     // Each interior node can have any combination of children.
-    //    (Well, actually maybe not "any combination" -- one interior node's children are probably uniformly 
+    //    (Well, actually maybe not "any combination" -- one interior node's children are probably uniformly
     //    leaf or uniformly interior.  But we don't count on that.)
     // The top stack frame points to a interior node in each tree, and has an integer index showing progress through that
     //    node.
@@ -246,7 +246,7 @@ void XYZRangeTreeMultiSearch::RunSearch(XYZRangeTreeRootP treeA, XYZRangeTreeRoo
 
 // Collect indices of intersecting facets.
 //
-// 
+//
 struct FacetClashCollector : DRange3dPairRecursionHandler
 {
 PolyfaceVisitorPtr m_visitorA;
@@ -291,13 +291,13 @@ size_t maxHits
     if (m_rangeExpansion < proximity)
         m_rangeExpansion = proximity;
     }
-    
+
 bool TestOverlap (DRange3dCR rangeA, DRange3dCR rangeB)
     {
     return rangeA.IntersectsWith (rangeB, m_rangeExpansion, 3);
     }
 
-bool TestInteriorInteriorPair (DRange3dCR rangeA, DRange3dCR rangeB) override 
+bool TestInteriorInteriorPair (DRange3dCR rangeA, DRange3dCR rangeB) override
   {
   return m_II.Count (TestOverlap (rangeA, rangeB));
   }
@@ -339,7 +339,7 @@ void TestLeafLeafPair (DRange3dCR rangeA, size_t indexA, DRange3dCR rangeB, size
                 {
                 if (pointA.DistanceSquared (pointB) < m_proximity * m_proximity)
             m_hits.push_back (std::pair <size_t, size_t> (indexA, indexB));
-                }            
+                }
             }
         }
     }
@@ -348,8 +348,8 @@ bool StillSearching () override
     {
     return m_hits.size () < m_maxHits;
     }
-};    
-    
+};
+
 // Search for clashing pairs.
 //
 GEOMDLLIMPEXP void PolyfaceRangeTree::CollectClashPairs (
@@ -357,7 +357,7 @@ PolyfaceQueryR polyfaceA,           //!< first polyface
 PolyfaceRangeTree &treeA,           //!< range tree for polyfaceA
 PolyfaceQueryR polyfaceB,           //!< second polyface
 PolyfaceRangeTree &treeB,           //!< range tree for polyfaceB
-double proximity,                   
+double proximity,
 bvector<std::pair<size_t, size_t>> &hits,   //!< read indices of clashing pairs
 size_t maxHits,                      //! maximum number of hits to collect.
 XYZRangeTreeMutltiSearchR searcher    //! (to be reused over multiple calls)

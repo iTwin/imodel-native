@@ -103,7 +103,7 @@ bool IsReversedMateOf(HalfEdge &other)
 +--------------------------------------------------------------------------------------*/
 bool IsIdenticalMateOf (HalfEdge &other)
     {
-    return 
+    return
         abs((int)m_vertex0) == abs((int)other.m_vertex0)
         && abs((int)m_vertex1) == abs((int)other.m_vertex1);
     }
@@ -177,7 +177,7 @@ void Add(size_t position, size_t faceSuccessorPosition, ptrdiff_t indexA, ptrdif
 // return a Size2 with:
 // * m_dataA = lowest half edge with same vertex indices
 // * m_dataB = one more than highest half edge with same vertex indices
-//         
+//
 Size2 MateRange (size_t index)
     {
     Size2 range (index);
@@ -348,7 +348,7 @@ void CollectSegments (bvector<DSegment3d> &segments) const
             {
             numMatch++;
             }
-        
+
         DSegment3d segment;
         if (GetSegment (i0, segment))
             segments.push_back (segment);
@@ -366,8 +366,8 @@ void IncrementSignCounts (int &numPositive, int &numNegative, int &numZero, doub
     }
 //! Assume array is sorted.   Assume normals are available from the mesh.
 //! ASSUME mesh arg is writable refernece to same PolyfaceQuery
-//! Examine normal angles on each side of paired edges.   Mark visible if variation is large, invisible if small.  
-bool MarkVisibility 
+//! Examine normal angles on each side of paired edges.   Mark visible if variation is large, invisible if small.
+bool MarkVisibility
 (
 double smoothAngle,
 PolyfaceHeaderR mesh,
@@ -438,7 +438,7 @@ DVec3dCP silhouetteVector
                     IncrementSignCounts (numPositive, numNegative, numZero, dotA);
                     IncrementSignCounts (numPositive, numNegative, numZero, dotB);
                     }
-                int numTotal = numPositive + numNegative + numZero;                    
+                int numTotal = numPositive + numNegative + numZero;
                 if (numPositive == numTotal || numNegative == numTotal)
                     {
                     }
@@ -446,7 +446,7 @@ DVec3dCP silhouetteVector
                     smooth = false;
                 }
             }
- 
+
         for (size_t i = i0; i < i0 + numMatch; i++)
             {
             HalfEdge he = at (i);
@@ -460,7 +460,7 @@ DVec3dCP silhouetteVector
                 numNegativeIndex++;
             pointIndices[readIndex] = (int) signedVertexIndex;
             }
-            
+
         }
     return true;
     }
@@ -493,7 +493,7 @@ bool MarkTopologicalBoundariesVisible (PolyfaceHeaderR mesh, bool preservePriorV
             else
                 visible = false;
             }
-            
+
         for (size_t i = i0; i < i0 + numMatch; i++)
             {
             HalfEdge he = at (i);
@@ -505,7 +505,7 @@ bool MarkTopologicalBoundariesVisible (PolyfaceHeaderR mesh, bool preservePriorV
             if (pointIndices[readIndex] != signedVertexIndex)
                 numChanged++;
             pointIndices[readIndex] = (int) signedVertexIndex;
-            }            
+            }
         }
     return numChanged > 0;
     }
@@ -571,7 +571,7 @@ void ApplySignedVertex (MTGFacetsP facets, MTGNodeId nodeId, ptrdiff_t signedId,
     if (markPrimary)
         graph->SetMaskAt (nodeId, MTG_PRIMARY_EDGE_MASK);
     }
-    
+
 // @param [in] i half edge index
 // @param [in] readIndexToHalfEdgePos reverse index
 // @param [out] next index of half edge reached through m_faceSuccessorReadIndex
@@ -591,7 +591,7 @@ bool TryGetFSuccPos (bvector<size_t> &readIndexToHalfEdgePos, size_t i, size_t &
     next = SIZE_MAX;
     return false;
     }
-    
+
 // Search within [i0..i1) for an index iC other than iA or iB that has opposite vertex indices from iA.
 bool TryFindDistinctPartner (size_t iA, size_t iB, size_t i0, size_t i1, size_t &iC)
     {
@@ -602,7 +602,7 @@ bool TryFindDistinctPartner (size_t iA, size_t iB, size_t i0, size_t i1, size_t 
             {
             iC = i;
             return true;
-            }            
+            }
         }
     iC = SIZE_MAX;
     return false;
@@ -618,10 +618,10 @@ bool CreateEdgeForHalfEdgePair (MTGFacetsP facets, int readIndexLabelOffset, bve
     ApplySignedVertex (facets, rightNodeId, at(i1).m_vertex0, at(i1).m_visible);
     at(i1).m_nodeId = rightNodeId;
     graph->TrySetLabel (leftNodeId, readIndexLabelOffset, (int)at(i0).m_readIndex);
-    graph->TrySetLabel (rightNodeId, readIndexLabelOffset, (int)at(i1).m_readIndex);    
+    graph->TrySetLabel (rightNodeId, readIndexLabelOffset, (int)at(i1).m_readIndex);
     return true;
     }
-    
+
 // Within a block of 4 contiguous half edges, look for a pair that are inside a degenerate triangle.
 // if found, make the couplings
 bool Couple4ThroughDegenerateTriangle (MTGFacetsP facets, int readIndexLabelOffset, bvector<size_t> &readIndexToHalfEdgePos, size_t i0)
@@ -652,7 +652,7 @@ bool Couple4ThroughDegenerateTriangle (MTGFacetsP facets, int readIndexLabelOffs
         }
     return false;
     }
-    
+
 
 // on input, halfEdgeArray has readIndex information from polyface.
 bool BuildGraph (PolyfaceQueryCR polyface, MTGFacetsP facets)
@@ -666,14 +666,14 @@ bool BuildGraph (PolyfaceQueryCR polyface, MTGFacetsP facets)
         readIndexLabelOffset = graph->DefineLabel (MTG_LABEL_TAG_POLYFACE_READINDEX, MTG_LabelMask_SectorProperty, -1);
 
 
-    
+
     DPoint3dCP polyfaceXYZ = polyface.GetPointCP ();
     size_t n = polyface.GetPointCount ();
     for (size_t i = 0; i < n; i++)
         jmdlMTGFacets_addVertex (facets, &polyfaceXYZ[i], NULL);
-    
+
     SortForEdgeMatching ();
-    
+
     // For matched pairs, share a single mtg edge
     // For all others, make each edge the inside of an mtg edge.
     //    Mark both sides BOUNDARY.  Mark other side EXTERIOR.
@@ -697,7 +697,7 @@ bool BuildGraph (PolyfaceQueryCR polyface, MTGFacetsP facets)
         readPosToHalfEdgePos.push_back (SIZE_MAX);
     for (size_t i = 0; i < numHalfEdge; i++)
         readPosToHalfEdgePos[at(i).m_readIndex] = i;
-    
+
     for (size_t i0 = 0, numMatch = 0; i0 < numHalfEdge; i0 += numMatch)
         {
         numMatch = 1;

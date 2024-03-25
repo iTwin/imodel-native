@@ -318,7 +318,7 @@ RotMatrixCR matrix2
 
     result = (this->MaxDiff (matrix2)
                     <= tol * this->MaxAbs () );
-    
+
     return result;
     }
 
@@ -344,7 +344,7 @@ double      tolerance
 
     result = (this->MaxDiff (matrix2)
                     <= tolerance * this->MaxAbs () );
-    
+
     return result;
     }
 
@@ -516,10 +516,10 @@ double RotMatrix::SumOffDiagonalSquares
 bool RotMatrix::IsNearRigidScale (RotMatrixR dest, int primaryAxis, double reltol) const
     {
     dest = *this;
-    
+
     if (IsNearSignedPermutation (dest, reltol))
         return true;
-        
+
     RotMatrix candidate;
     candidate.SquareAndNormalizeColumns (*this, primaryAxis, primaryAxis + 1);
     if (reltol < Angle::SmallAngle ())

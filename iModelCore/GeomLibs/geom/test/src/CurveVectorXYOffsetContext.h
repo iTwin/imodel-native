@@ -44,7 +44,7 @@ struct CurveVectorXYOffsetContext
 //     |        |
 //     0--------1
 //
-//    The (6 sided) convex hll around two such rectangles consists of 
+//    The (6 sided) convex hll around two such rectangles consists of
 //    * 3 cyclically consectutive indices from the rectangle 0 (here on left) and 3 consecutives from the upper.
 //    * as placed here, those are (A3,A0,A1) and (B1,B2,B3)
 //    * In general position, as rectangle B moves to other quadrants with respect to rectangle A, the indices advance;
@@ -206,7 +206,7 @@ static bool ChooseBoxCenter(CurveVectorCR originalRegion, CurveVectorCR offsetRe
                     packedXYZ.push_back(disconnect);
                     }
                 }
-            
+
             if (packedXYZ.size () > 2)
                 {
                 if (SUCCESS == vu_anyInteriorPointInPolygon(&xyzOut, &packedXYZ[0], (int)packedXYZ.size ()))
@@ -216,7 +216,7 @@ static bool ChooseBoxCenter(CurveVectorCR originalRegion, CurveVectorCR offsetRe
         }
 
     if(effort > 0)
-        { 
+        {
         DPoint3d centroid;
         double area;
         if (offsetRegion.CentroidAreaXY (centroid, area))

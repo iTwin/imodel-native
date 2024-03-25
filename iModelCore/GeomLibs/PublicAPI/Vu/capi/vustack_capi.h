@@ -137,7 +137,7 @@ VuSetP          graphP
 @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Public GEOMDLLIMPEXP VuP vu_extractNodeList (VuSetP graphP);
- 
+
 /*---------------------------------------------------------------------------------**//**
 @description Reactivate nodes previously obtained from vu_extractNodeList.
 @param graphP IN OUT graph header

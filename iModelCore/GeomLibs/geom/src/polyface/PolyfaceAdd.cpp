@@ -79,7 +79,7 @@ void PolyfaceConstruction::_EndFace ()
 
     (*m_coordinateMapPtr).SetCurrentParamZ ((double)_IncrementFaceIndex ());                    // So subsequent face parameters get their own param indices pointing to param values that can be
                                                                                                 // remapped independent of parameters of other faces.
-            
+
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -584,7 +584,7 @@ bool PolyfaceConstruction::_AddPolyface (PolyfaceQueryCR source, size_t drawMeth
     int     destMaxPerFace = GetFacetOptionsR ().GetMaxPerFace ();
     size_t  minPerFace, maxPerFace;
 
-    source.CollectPerFaceCounts (minPerFace, maxPerFace);  
+    source.CollectPerFaceCounts (minPerFace, maxPerFace);
     bool triangulate = destMaxPerFace != 0 && destMaxPerFace < (int)maxPerFace;
 
     if (!triangulate && !addNormals && !addParams && !addEdgeChains && !addFaceData)
@@ -611,7 +611,7 @@ bool PolyfaceConstruction::_AddPolyface (PolyfaceQueryCR source, size_t drawMeth
 
     if (addFaceData)
         workingSource->BuildPerFaceFaceData ();
-        
+
     if (!source.HasConvexFacets() && GetFacetOptionsR().GetConvexFacetsRequired())
         workingSource->Triangulate (3);
     else if (triangulate)
@@ -638,13 +638,13 @@ bool PolyfaceConstruction::AddPolyface_matched (PolyfaceQueryCR source)
         int numPerFaceDest = m_polyfacePtr->GetNumPerFace ();
         int numPerFaceSource = source.GetNumPerFace ();
         size_t numDestPoint        = m_polyfacePtr->GetPointCount ();
-        size_t numDestPointIndex   = m_polyfacePtr->GetPointIndexCount (); 
+        size_t numDestPointIndex   = m_polyfacePtr->GetPointIndexCount ();
         if (numPerFaceDest != numPerFaceSource
             && numDestPoint == 0
             && numDestPointIndex == 0)
             {
             m_polyfacePtr->SetNumPerFace (numPerFaceSource);
-            
+
             }
         else
             return false;
@@ -656,7 +656,7 @@ bool PolyfaceConstruction::AddPolyface_matched (PolyfaceQueryCR source)
         m_polyfacePtr->SetTwoSided (source.GetTwoSided ());
         m_polyfacePtr->SetExpectedClosure (source.GetExpectedClosure());
         }
-    else 
+    else
         {
         // On later added mesh, demote to least specific of source and local ...
         m_polyfacePtr->SetTwoSided (m_polyfacePtr->GetTwoSided () || source.GetTwoSided ());
@@ -695,11 +695,11 @@ bool PolyfaceConstruction::AddPolyface_matched (PolyfaceQueryCR source)
     if (!m_polyfacePtr->ColorIndex ().Active ())
         colorIndex = NULL;
 
-    if (normalIndex == NULL && 
+    if (normalIndex == NULL &&
         source.GetPointCount() == source.GetNormalCount())
         normalIndex = pointIndex;
 
-    if (paramIndex == NULL && 
+    if (paramIndex == NULL &&
         source.GetPointCount() == source.GetParamCount())
         paramIndex = pointIndex;
 
@@ -779,4 +779,4 @@ bool PolyfaceConstruction::AddPolyface_matched (PolyfaceQueryCR source)
 
 
 
-END_BENTLEY_GEOMETRY_NAMESPACE                                  
+END_BENTLEY_GEOMETRY_NAMESPACE

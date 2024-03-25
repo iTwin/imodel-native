@@ -23,7 +23,7 @@ Useful typedefs for DRange1d
  If you look closely at "names" for special intervals, there are several tricky distinctions:
  <ul>
  <li>{high > low} The "usual" interval with a strictly positive length.  You can test for this with {IsPositiveLength ()}
- <li>{high == low} A single point interval.  This has something int it (one point!) and is NOT empty.   You can test for this with {IsSinglePoint()} 
+ <li>{high == low} A single point interval.  This has something int it (one point!) and is NOT empty.   You can test for this with {IsSinglePoint()}
  <li>{high < low} The set of points x with {low < x < high} is empty. You can test for this with {IsEmpty()}
  <li>The initialization value NullInterval -- this is a unique value. You can test for this with {IsNull()}   The NullInterval is empty, but not all empty intervals are
         equal to the NullInterval if you compare the low and high values!!
@@ -43,7 +43,7 @@ double low;
 double high;
 
 #ifdef __cplusplus
-    
+
 public:
 //! @description constructor for a NULL range.
 GEOMDLLIMPEXP DRange1d ();
@@ -178,7 +178,7 @@ bool GEOMDLLIMPEXP IsContainedIn (DRange1dCR other) const;
 //! @description return the largest coordinate (absolute value) in the range.
 double GEOMDLLIMPEXP MaxAbs (double defaultValeForNullRange = 0.0) const;
 
-//! @description Test if equal intervals in point set sense. 
+//! @description Test if equal intervals in point set sense.
 //! Any pair of empty intervals (even if different low and high) are equal.
 bool GEOMDLLIMPEXP IsEqualInterval (DRange1dCR other) const;
 
@@ -187,7 +187,7 @@ bool GEOMDLLIMPEXP IsEqualLowHigh (DRange1dCR other) const;
 
 //! @description test for toleranced equality of (min max of) low and high.
 bool GEOMDLLIMPEXP IsSameMinMax (DRange1dCR other, double absTol) const;
-//! @description test for toleranced equality of low to low and high to high 
+//! @description test for toleranced equality of low to low and high to high
 //  (i.e. two ranges with reversed low and high return false here, true for {IsSameMinMax}
 bool GEOMDLLIMPEXP IsSameLowHigh (DRange1dCR other, double relTol) const;
 

@@ -7,13 +7,13 @@
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
-// Context for finding shortest path from a seed to all vertices. 
+// Context for finding shortest path from a seed to all vertices.
 // Search progress is controlled by queries to a caller supplied MTGraphSearchFunctions object
 // (or something derived from that)
 // The context knows it is walking and marking an MTGGraph.  It does not know particulars
 // of what provides path length on each edge -- the MTGGraphSearchFunctions object provides
 // that on request of the context.
-// 
+//
 //<ul>
 //<li>A pointer to the graph is carried as private data.
 //<li>A mask is borrowed (for the lifetime of the context)
@@ -334,7 +334,7 @@ struct MTGShortestPathContext
                 m_vertexData.push_back (VertexData(node, distance, MTG_NULL_NODEID));
                 SetVertexIndexAroundVertexLoop (node, index);
                 }
-            
+
             if ((size_t)index < m_vertexData.size ())
                 {
                 m_vertexData[(size_t)index].m_a = distance;
@@ -464,7 +464,7 @@ struct MTGShortestPathContext
         // Run a search from multiple seeds edges defined as "zero distance"
         // Search terminates when entire graph is reached or functions->ContinueSearch () returns false.
         // <ul>
-        // <li>loopMask denotes nodes that are "seeds" 
+        // <li>loopMask denotes nodes that are "seeds"
         // <li>loopMask is assumed to have proper parity around all vertices.
         // <li>All nodes are assigned as singletons in the union-find structure.
         // <li>seedMask nodes and the VSucc neighbors "within sector" are declared "visited" at zero distance in the same cluster.
@@ -472,7 +472,7 @@ struct MTGShortestPathContext
         // <li>Dijkstra search determined shortest paths away from the visited nodes.
         // <li>When shortest path reaches a node with a diff
         // </ul>
- 
+
         void MarkShortestPathBetweenLoops (MTGMask loopMask, MTGMask pathMask, MTGGraphSearchFunctions *functions)
             {
             m_functions = functions;
@@ -494,8 +494,8 @@ struct MTGShortestPathContext
             bvector<MTGNodeId> farToBoundary;
             for (size_t i = 0; i < numNode; i++)
                 nodeToCluster.push_back (NodeAssignment (SIZE_MAX, DBL_MAX));
-            
-         
+
+
 
             // Make each loop edge into its own cluster and 0 distance
             MTGARRAY_SET_LOOP (baseNode, m_graph)
@@ -507,7 +507,7 @@ struct MTGShortestPathContext
                     }
                 }
             MTGARRAY_END_SET_LOOP (baseNode, m_graph)
- 
+
 
             // Gather outbound edges "around the sector" into the cluster.
             // Merge the bounding outbound edges.
@@ -527,7 +527,7 @@ struct MTGShortestPathContext
                         // make this outbound node part of the base cluster at known distance
                         nodeToCluster[rightEdge] = NodeAssignment (baseCluster, baseDistance);
 
-                        // make the far end available with known distance 
+                        // make the far end available with known distance
                         double edgeLength = functions->EdgeLength (rightEdge);
                         m_heap.Insert (rightEdge, baseDistance + edgeLength);
                         }
@@ -549,7 +549,7 @@ struct MTGShortestPathContext
                 BeAssert (baseCluster != SIZE_MAX);
                 size_t farCluster = nodeToCluster[farNode].m_clusterIndex;
                 functions->Announce (" Search along edge (base,far)", baseNode, farNode);
- 
+
                 if (farCluster == SIZE_MAX)
                     {
                     // baseNode is on the shortest path to the far vertex.
@@ -613,7 +613,7 @@ struct MTGShortestPathContext
         //      clear the path mask (only on the side traversed)
         //      clear the edgeClearMask on both sides.
         //      move to face successor (i.e. another vertex)
-        // 
+        //
         void TraceAndUnmarkEdges (MTGNodeId seedNode, MTGMask pathMask, MTGMask edgeClearMask, bvector<MTGNodeId> &reversePath, bvector<MTGNodeId> &growingForwardPath, bool pushMate = true)
             {
             reversePath.clear ();

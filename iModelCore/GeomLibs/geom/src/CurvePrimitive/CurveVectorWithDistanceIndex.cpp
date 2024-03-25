@@ -462,7 +462,7 @@ PathLocationDetail &data
         return false;
         }
     double maxTargetDistance = flatten == nullptr ? TotalPathLength () : TotalPathLengthXY ();
-    
+
     if (DoubleOps::AlmostEqual(targetDistance, 0.0))
         {
         data = AtStart();
@@ -530,7 +530,7 @@ PathLocationDetail &data
             }
         return true;
         }
-    // PointAtSignedDistance failed.  This should not happen ... just take the memberB data 
+    // PointAtSignedDistance failed.  This should not happen ... just take the memberB data
     data = *memberB;
     return false;
     }
@@ -662,7 +662,7 @@ bool CurveVectorWithDistanceIndex::DistanceXYFromPathStart (PathLocationDetail c
         return false;
     if (m_locations[index].m_curveDetail.curve != pathDetail.m_curveDetail.curve)
         return false;
-    // m_locations[i] is the end of the curve fragment . . 
+    // m_locations[i] is the end of the curve fragment . .
     double backupDistance;
     if (!pathDetail.m_curveDetail.curve->SignedDistanceBetweenFractions (
             &m_flattenToView,
@@ -688,7 +688,7 @@ PathLocationDetail &data
     }
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
-+--------------------------------------------------------------------------------------*/    
++--------------------------------------------------------------------------------------*/
 bool CurveVectorWithDistanceIndex::SearchByDistanceFromPathStartXY
 (
 double targetDistance,
@@ -806,7 +806,7 @@ bool CurveVectorWithDistanceIndex::PathEntry::RangeIntersectsXY (CurveVectorWith
     {
     return m_range.IntersectsWith (other.m_range, 2);
     }
-    
+
 void CurveVectorWithDistanceIndex::GetBreakPoints (bvector<PathLocationDetail> &locations, bool replicateEndStart)
     {
     locations.clear ();
@@ -1167,7 +1167,7 @@ PathLocationDetail &data
         }
     double distanceA = m_locations.front ().GetDistance (true);
     double distanceB = m_locations.back ().GetDistance (true);
-    
+
     if (DoubleOps::AlmostEqual(targetDistance, distanceA))
         {
         data = AtStart();
@@ -1196,7 +1196,7 @@ PathLocationDetail &data
             key,
             PathEntry::IsLessThan_ByPathDistanceXY
             );
-            
+
     if (memberB == m_locations.begin())
         {
         data = AtStart ();

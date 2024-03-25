@@ -31,7 +31,7 @@ struct IPointComparator
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance, double minCompressionRatio, bool doNormals) const
     {
-    bmap<Point3d, size_t, IPointComparator> pointMap; 
+    bmap<Point3d, size_t, IPointComparator> pointMap;
     DPoint3dCP                      points = GetPointCP();
     DVec3dCP                        normals = GetNormalCP();
     DPoint2dCP                      params = GetParamCP();
@@ -52,12 +52,12 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance, do
         size_t              m_outputNormalIndex;
         size_t              m_outputAuxIndex;
         DVec3d              m_outputNormal;
- 
+
         void Add (int32_t pointIndex, int32_t normalIndex, int32_t paramIndex, int32_t auxIndex)
             {
             m_pointIndices.push_back(pointIndex);
             if (normalIndex >= 0)
-                m_normalIndices.push_back(normalIndex);                                                          
+                m_normalIndices.push_back(normalIndex);
 
             if (paramIndex >= 0)
                 m_paramIndices.push_back(paramIndex);
@@ -80,7 +80,7 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance, do
             {
             int32_t     inputPointIndex  = visitor->GetClientPointIndexCP()[i];
             int32_t     inputNormalIndex = doNormals ? visitor->GetClientNormalIndexCP()[i] : -1;
-            int32_t     inputParamIndex  = doParams  ? visitor->GetClientParamIndexCP()[i] : -1; 
+            int32_t     inputParamIndex  = doParams  ? visitor->GetClientParamIndexCP()[i] : -1;
             int32_t     inputAuxIndex    = doAux     ? visitor->GetClientAuxIndexCP()[i] : -1;
 
             if (doParams)
@@ -92,7 +92,7 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance, do
                     }
                 else
                     {
-                    if (!foundParam->second.IsEqual(param, 1.0E-5)) 
+                    if (!foundParam->second.IsEqual(param, 1.0E-5))
                         return nullptr;         // Non-Continous parameters - this indicates an atlased texture - avoid decimation completely (turbine FBX) as clustering across atlas boundaries will cause artifacts.
                     }
                 }
@@ -159,7 +159,7 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance, do
 
         for (auto& pointIndex : cluster->m_pointIndices)
             point.Add(points[pointIndex]);
-        
+
         point.Scale(scale);
         cluster->m_outputPointIndex = coordinateMap->FindOrAddPoint(point);
 
@@ -169,7 +169,7 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance, do
 
             for (auto& normalIndex : cluster->m_normalIndices)
                 cluster->m_outputNormal.Add(normals[normalIndex]);
-        
+
             cluster->m_outputNormal.Normalize();
             }
         if (doParams)
@@ -178,7 +178,7 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance, do
 
             for (auto& paramIndex : cluster->m_paramIndices)
                 param.Add(params[paramIndex]);
-        
+
             param.Scale(scale);
             cluster->m_outputParamIndex = coordinateMap->FindOrAddParam(param);
             }
@@ -199,7 +199,7 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance, do
 
                         for (auto& auxIndex : cluster->m_auxIndices)
                             value += inValues[auxIndex * blockSize + k];
-                        
+
                         value *= scale;
                         outputChannel.GetData().at(iData)->AddValue(value);
                         }

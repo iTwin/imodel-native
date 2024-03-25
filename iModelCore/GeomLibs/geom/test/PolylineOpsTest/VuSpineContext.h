@@ -18,7 +18,7 @@ static double sSpineGraphRelTol = 1.0e-10;
 //
 // Usage pattern:
 //    VuSpineContext sc();
-//    // Data setup .... 
+//    // Data setup ....
 //    foreach polygon or polyline
 //        {
 //        sc.InsertEdges (pXYZ, n, bClosed)
@@ -160,7 +160,7 @@ double DiagonalKeyFunc (VuP pDiagonalNode, int diagonalAngleSelector, VuMask dia
             double thetaBC = vectorBC_DA.SmallerUnorientedAngleTo (vectorBC);
             double thetaCD = vectorAB_CD.SmallerUnorientedAngleTo (vectorCD);
             double thetaDA = vectorBC_DA.SmallerUnorientedAngleTo (vectorDA);
-        
+
             double alpha = thetaAB < thetaCD ? thetaAB : thetaCD;
             double beta  = thetaBC < thetaDA ? thetaBC : thetaDA;
             return alpha < beta ? alpha : beta;
@@ -329,7 +329,7 @@ int SetSortedDiagonalMasks (double minA, int diagonalAngleSelector)
     END_VU_SET_LOOP (pA, mpGraph)
 
     std::sort (candidates.begin (), candidates.end ());
-  
+
     while (!candidates.empty ())
         {
         VuSortKey key = candidates.back ();
@@ -482,7 +482,7 @@ bool bIncludeCornerSpokes  // true to include the two adjacent edges to boundary
             }
         else
             {
-            // Block sits as exterior corner. 
+            // Block sits as exterior corner.
             // CLAIM:  The 2 successive interior edges are at indices 01, 12, 23, or 03
             // We don't care whether we look at the diagonal from exterior shared point to interior point or vice versa
             // Get k at one end; [k+2] cyclically is the other.  But we set k to either 0 or 1, and simple k+2 is ok.
@@ -526,7 +526,7 @@ DVec2dR U
     if (f > f1)
         f1 = f;
     }
-    
+
 // On unbounded line that bisects A0A1 and B0B1, return segment
 // within projects of A0,A1,B0,B1,C
 bool GetBisector
@@ -596,7 +596,7 @@ bvector<bvector<DPoint3d>> & xyzOut
     pNode[1] = pNode[5] = vu_fsucc (pNode[0]);
     pNode[2] = pNode[6] = vu_fsucc (pNode[1]);
     pNode[3] = pNode[7] = vu_fsucc (pNode[2]);
-    
+
     for (int i = 0; i < 4; i++)
         {
         vu_getDPoint3d (&xyz[i], pNode[i]);
@@ -608,7 +608,7 @@ bvector<bvector<DPoint3d>> & xyzOut
     // opposite side bisectors
     for (int i = 0; i < 2; i++)
         GetBisector (xyzOut, xyz[i], xyz[i+1], xyz[i+3], xyz[i+2], xyz[i]);
-        
+
     return true;
     }
 
@@ -665,7 +665,7 @@ bool bIncludeFinal
 
     if (numBoundary == 0)
         {
-        // Interior branch 
+        // Interior branch
         DPoint3d xyzInterior;
         SelectTriangleInteriorPoint (xyz, xyzInterior);
         if (bIncludeInterior)
@@ -678,7 +678,7 @@ bool bIncludeFinal
     else if (numBoundary == 1)
         {
         if (bIncludeInterior)
-            AddEdge (xyzOut, xyzMidpoint[lastBoundary+1], xyzMidpoint[lastBoundary+2]);        
+            AddEdge (xyzOut, xyzMidpoint[lastBoundary+1], xyzMidpoint[lastBoundary+2]);
         }
     else if (numBoundary == 2)
         {
@@ -1010,7 +1010,7 @@ static bool IsLongQuad(bvector<DPoint3d> const &loop, size_t indexB, size_t peri
     }
 // Find symmetry axes of the first loop.  (It should be the outer loop!!!)
 // Make a copy of the loops.
-// In the copy, split edges where they cross any symmetry axis, unless suppressed by IsLongQuad test that looks for "cantilever ends" 
+// In the copy, split edges where they cross any symmetry axis, unless suppressed by IsLongQuad test that looks for "cantilever ends"
 static void SplitLoopsOnSymmetryAxes(bvector<bvector<DPoint3d>> const &originalLoops, bvector<bvector<DPoint3d>> &split, bvector<DRay3d> &axes, double cantileverAspectRatio = 2.0)
     {
     split.clear();

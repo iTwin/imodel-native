@@ -74,7 +74,7 @@ typedef union bezierInfo
         double          *knots;
         RotMatrix       *matrix;
         } off;
-#endif        
+#endif
 #define COMPILE_OLD_DVector_silhouette
 #ifdef COMPILE_OLD_DVector_silhouette
     struct

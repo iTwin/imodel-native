@@ -121,7 +121,7 @@ MSBsplineSurfaceCP   in
 )
     {
     bspsurf_freeBoundaries (out);
-    out->numBounds = 0;    
+    out->numBounds = 0;
     out->holeOrigin = in->holeOrigin;
     return bspsurf_appendCopyBoundaries (out, in, NULL);
     }
@@ -697,8 +697,8 @@ MSBsplineSurfaceCP  surfP
             dVBPtr = dVBlend;
             dVVBPtr = dVVBlend;
             vBEnd = vBlend + surfP->vParams.order;
-            
-            PUSH_STATIC_ANALYSIS_WARNING(28199); // *** NEEDS WORK STATIC ANALYSIS requires investigation - Using possibly uninitialized memory '*dVVBPtr':  The variable has had its address taken but no assignment to it has been discovered. 
+
+            PUSH_STATIC_ANALYSIS_WARNING(28199); // *** NEEDS WORK STATIC ANALYSIS requires investigation - Using possibly uninitialized memory '*dVVBPtr':  The variable has had its address taken but no assignment to it has been discovered.
             for (; vBPtr<vBEnd;  vSpan++, vBPtr++, dVBPtr++, dVVBPtr++)
                 {
                 vSpan %= vNumPoles;
@@ -2488,10 +2488,10 @@ double              tolerance           /* => stroke tolerance for bounds */
             bsputil_unWeightPoles (curveP->poles, curveP->poles,
                                    curveP->weights,
                                    curveP->params.numPoles);
-        
+
         minBox[i].x = minBox[i].y =   1.0E20;
         maxBox[i].x = maxBox[i].y = - 1.0E20;
-        
+
         if (i == 0)
             {
             /* Extract the xVector from the first curve segment */
@@ -2515,7 +2515,7 @@ double              tolerance           /* => stroke tolerance for bounds */
                 }
             }
         rotMatrix.Multiply (curveP->poles, curveP->poles, curveP->params.numPoles);
-        
+
         // Get linestring range directly before reweighting. defect #13915
         if (curveP->params.order == 2)
             {
@@ -2558,14 +2558,14 @@ double              tolerance           /* => stroke tolerance for bounds */
         if ((maxBox[i].x - minBox[i].x) < 1.0) maxBox[i].x = minBox[i].x + 1.0;
         if ((maxBox[i].y - minBox[i].y) < 1.0) maxBox[i].y = minBox[i].y + 1.0;
         }
-        
+
     if ((max.x - min.x) < 1.0) max.x = min.x + 1.0;
     if ((max.y - min.y) < 1.0) max.y = min.y + 1.0;
-    
+
     for (i=0; i<nCurves; i++)
         {
-        if (fabs(maxBox[i].x - max.x) + fabs(maxBox[i].y - max.y) + fabs(minBox[i].x - min.x) 
-                        + fabs(minBox[i].y - min.y) < 1E-8 && 
+        if (fabs(maxBox[i].x - max.x) + fabs(maxBox[i].y - max.y) + fabs(minBox[i].x - min.x)
+                        + fabs(minBox[i].y - min.y) < 1E-8 &&
                         tmpCurves[i].params.order == 2 &&
                         tmpCurves[i].params.numPoles == 4 &&
                         tmpCurves[i].params.closed &&
@@ -2575,7 +2575,7 @@ double              tolerance           /* => stroke tolerance for bounds */
     BSIBaseGeom::Free (samplePts);
     BSIBaseGeom::Free (minBox);
     BSIBaseGeom::Free (maxBox);
-    
+
     memset (surfP, 0, sizeof(*surfP));
     surfP->uParams.numPoles = surfP->vParams.numPoles = 2;
     surfP->uParams.order    = surfP->vParams.order    = 2;
@@ -2623,7 +2623,7 @@ double              tolerance           /* => stroke tolerance for bounds */
             surfP->poles[i].z = planePoint.z;
             rotMatrix.MultiplyTranspose (*(&surfP->poles[i]));
             }
-            
+
         if (k > -1)
             {
             surfP->poles[0] = tmpCurves[k].poles[0];
@@ -2632,7 +2632,7 @@ double              tolerance           /* => stroke tolerance for bounds */
             surfP->poles[3] = tmpCurves[k].poles[2];
             rotMatrix.MultiplyTranspose (surfP->poles, surfP->poles, 4);
             }
-            
+
         surfP->boundaries = (BsurfBoundary*)BSIBaseGeom::Calloc (nCurves, sizeof(BsurfBoundary));
         if (tolerance <= 0.0)
             tolerance = (delta.x > delta.y ? delta.x : delta.y)/100.0;
@@ -2691,16 +2691,16 @@ double              tolerance           /* => stroke tolerance for bounds */
                     0, sy, 0,  -sy * min.y,
                     0,  0, 0,   0
                     );
-            
+
             DPoint3d            *points;
             DPoint2d            *pnt2dP;
             int                 numPts, nSegCurves;
             MSBsplineCurve      *segCurves, *comCurve;
-            
+
             for (i=0; i<nCurves; i++)
                 {
                 BsurfBoundary *boundP = &surfP->boundaries[i];
-                
+
                 nSegCurves = 0;
                 points = NULL;
                 segCurves = NULL;
@@ -2862,7 +2862,7 @@ double              tolerance
         bspcurv_freeCurve (&curve);
         }
 
-    
+
     size_t nParams = allParams.size ();
     if (nParams > 0)
         {
@@ -2873,7 +2873,7 @@ double              tolerance
             if (i==0 || (allParams[i] - allParams[numAccept]) > KNOT_TOLERANCE_BASIS)
                 allParams[numAccept++] = allParams[i];
         allParams.resize (numAccept);
-        
+
         *nParamsP = (int)numAccept;
         if (paramPP != NULL)
             BSIBaseGeom::MallocAndCopy (paramPP, allParams);

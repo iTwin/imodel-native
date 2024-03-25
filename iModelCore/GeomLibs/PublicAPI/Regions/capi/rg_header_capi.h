@@ -771,7 +771,7 @@ RG_Header           *pRG
 );
 
 /*---------------------------------------------------------------------------------**//**
-* Update the session's maxRelTol, this is used by jmdlRG_updateTolerance to compute the 
+* Update the session's maxRelTol, this is used by jmdlRG_updateTolerance to compute the
 * maxTol (using maxTol = s_maxRelTol * maxCoordinate).
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

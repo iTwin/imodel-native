@@ -15,8 +15,8 @@ DWORD_PTR getStackBase
     DWORD_PTR stackBase;
 
 #if defined (_WIN64)
-    PNT_TIB64 pTib = reinterpret_cast<PNT_TIB64>(NtCurrentTeb()); 
-    stackBase = (DWORD_PTR)pTib->StackBase; 
+    PNT_TIB64 pTib = reinterpret_cast<PNT_TIB64>(NtCurrentTeb());
+    stackBase = (DWORD_PTR)pTib->StackBase;
 #else
     _asm    {
             mov EAX,FS:[4]
@@ -34,7 +34,7 @@ void getCurrentThreadStackInfo
 (
 DWORD_PTR * pBase,   // <= base (highest) address value
 DWORD64 *   pSize,   // <= max size of stack
-DWORD64 *   pPeak    // <= peak usage of stack 
+DWORD64 *   pPeak    // <= peak usage of stack
 )
     {
     DWORD_PTR stackBase = getStackBase();
@@ -77,9 +77,9 @@ void reclaimUnusedStackPages
         // 32K safety margin so we don't decommit any stack pages near the current SP and we leave room for guard page
         VirtualFree (mbi.AllocationBase, unusedStack - 32768,  MEM_DECOMMIT);
 
-        // Make the 2 pages beyond the current stack guard pages (we only need one, but since we are using the address of a 
+        // Make the 2 pages beyond the current stack guard pages (we only need one, but since we are using the address of a
         // local in this proc to get the approximate SP, we make 2 guard pages in case the locals straddle a page boundary)
-        DWORD dwOldProtect;       
+        DWORD dwOldProtect;
         VirtualProtect ( (LPBYTE)((DWORD_PTR)&mbi - si.dwPageSize),   1, PAGE_GUARD | PAGE_READWRITE, &dwOldProtect);
         VirtualProtect ( (LPBYTE)((DWORD_PTR)&mbi - 2*si.dwPageSize), 1, PAGE_GUARD | PAGE_READWRITE, &dwOldProtect);
         }

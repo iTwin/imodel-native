@@ -155,7 +155,7 @@ bool CurvePrimitiveArc::_Length(double &length) const
     length = m_ellipse.ArcLength ();
     return true;
     }
-    
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -309,7 +309,7 @@ bool CurvePrimitiveArc::_AddStrokes(bvector <DPoint3d> &points, IFacetOptionsCR 
         size_t count = options.EllipseStrokeCount (ellipse);
         DPoint3d startPoint, endPoint;
         ellipse.EvaluateEndPoints (startPoint, endPoint);
-        
+
         PolylineOps::AddContinuationStartPoint (points, startPoint, includeStartPoint);
         if (count > 1)
             {
@@ -333,7 +333,7 @@ bool CurvePrimitiveArc::_AddStrokes(bvector <DPoint3d> &points, IFacetOptionsCR 
 bool CurvePrimitiveArc::_AddStrokes(bvector <PathLocationDetail> &points, IFacetOptionsCR options,
                 double startFraction,
                 double endFraction
-                ) const 
+                ) const
         {
         DEllipse3d localEllipse = DEllipse3d::FromFractionInterval (m_ellipse, startFraction, endFraction);
         bool isCircular = m_ellipse.IsCircular ();
@@ -414,7 +414,7 @@ bool CurvePrimitiveArc::_PointAtSignedDistanceFromFraction(double startFraction,
         workEllipse.start = - workEllipse.start;
         }
     workEllipse.sweep = msGeomConst_2pi;
-    
+
     double radiansStep = workEllipse.InverseArcLength (fabs (signedDistance));
     if (signedDistance < 0.0)
         radiansStep = - radiansStep;
@@ -428,7 +428,7 @@ bool CurvePrimitiveArc::_PointAtSignedDistanceFromFraction(double startFraction,
     return true;
     }
 
-bool CurvePrimitiveArc::_PointAtSignedDistanceFromFraction(RotMatrixCP worldToLocal, double startFraction, double signedDistance, bool allowExtension, CurveLocationDetailR location) const 
+bool CurvePrimitiveArc::_PointAtSignedDistanceFromFraction(RotMatrixCP worldToLocal, double startFraction, double signedDistance, bool allowExtension, CurveLocationDetailR location) const
     {
     location = CurveLocationDetail (this, 1);
     DEllipse3d workEllipse = m_ellipse;
@@ -442,7 +442,7 @@ bool CurvePrimitiveArc::_PointAtSignedDistanceFromFraction(RotMatrixCP worldToLo
         workEllipse.start = - workEllipse.start;
         }
     workEllipse.sweep = msGeomConst_2pi;
-    
+
     double radiansStep = workEllipse.InverseArcLength (fabs (signedDistance));
     if (signedDistance < 0.0)
         radiansStep = - radiansStep;
@@ -455,7 +455,7 @@ bool CurvePrimitiveArc::_PointAtSignedDistanceFromFraction(RotMatrixCP worldToLo
 
     return true;
     }
-    
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/

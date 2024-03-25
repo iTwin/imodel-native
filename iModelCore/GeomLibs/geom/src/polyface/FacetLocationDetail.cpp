@@ -75,9 +75,9 @@ bool PolyfaceVisitor::LoadVertexData (FacetLocationDetailR detail, size_t index)
     detail.numSourceIndex = 1;
     detail.sourceIndex[0] = index;
     detail.sourceFraction[0] = 1.0;
-    detail.intColor[0] = 
+    detail.intColor[0] =
             index < m_intColor.size () ? m_intColor[index] : -1;
-    detail.colorIndex[0] = 
+    detail.colorIndex[0] =
             index < m_colorIndex.size () ? m_colorIndex[index] : -1;
     return true;
     }

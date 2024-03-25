@@ -9,13 +9,13 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 size_t                  PolyfaceVectors::_GetPointCount       ()     const  {return m_point.size ();}
 size_t                  PolyfaceVectors::_GetNormalCount      ()     const  {return m_normal.size ();}
 size_t                  PolyfaceVectors::_GetParamCount       ()     const  {return m_param.size ();}
-size_t                  PolyfaceVectors::_GetColorCount       ()     const  
+size_t                  PolyfaceVectors::_GetColorCount       ()     const
     {
     if (m_intColor.Active ())
         return m_intColor.size ();
     return 0;
     }
-size_t                  PolyfaceVectors::_GetFaceCount        ()     const  {return m_faceData.size(); } 
+size_t                  PolyfaceVectors::_GetFaceCount        ()     const  {return m_faceData.size(); }
 size_t                  PolyfaceVectors::_GetPointIndexCount  ()     const  {return m_pointIndex.size ();}
 size_t                  PolyfaceVectors::_GetFaceIndexCount  ()      const  {return m_faceIndex.size ();}
 size_t                  PolyfaceVectors::_GetEdgeChainCount  ()      const  {return m_edgeChain.size ();}

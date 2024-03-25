@@ -28,7 +28,7 @@ void ApplyLinearFactor (bvector <double> &product, double root, double slope)
         product.clear ();
         for (int i = 0; i < inputOrder + 1; i++)
             product.push_back (newProduct[i]);
-        }    
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -88,7 +88,7 @@ TEST(UnivariateRoots, RegularRoots)
             }
         }
     }
-// Evaluate a hermite cubic at the midpoint of its interval . . 
+// Evaluate a hermite cubic at the midpoint of its interval . .
 double HermiteMidpoint
 (
 double f0,
@@ -390,7 +390,7 @@ double Evaluate (double u) const
         return coffs[0];
         }
     return 0.0;
-    
+
     }
 void SubdivideRight (double u)
     {
@@ -465,7 +465,7 @@ bool CautiousNewton (bool fromRight, double &u)
         for (size_t i = 0; i < order; i++)
             b[i] = coffs[i];
         u0 = 1.0;
-        u1 = 0.0;        
+        u1 = 0.0;
         }
      else
         {
@@ -494,7 +494,7 @@ bool CautiousNewton (bool fromRight, double &u)
         if (!FindFirstCrossing (b, order, s))
             return false;
         SubdivideRight (a, b, order, s);
-                
+
         }
     return false;
     }
@@ -553,7 +553,7 @@ bool ValidateHull ()
     for (size_t i = 0; i < order; i++)
         {
         ok |= upperHull.ValidatePointBelow ((double)i, coffs[i]);
-        ok |= lowerHull.ValidatePointAbove ((double)i, coffs[i]); 
+        ok |= lowerHull.ValidatePointAbove ((double)i, coffs[i]);
         }
     return ok;
     }
@@ -624,7 +624,7 @@ void Solve (BezHull const &functionIn, bvector<double> &roots, char * name)
         double denominator = (double) (function.order - 1);
         f0 /= denominator;
         f1 /= denominator;
-        double v0 = u0 + f0 * (u1 - u0); 
+        double v0 = u0 + f0 * (u1 - u0);
         double v1 = u0 + f1 * (u1 - u0);
         if (f1 <= f0 || v1 <= v0)
             {

@@ -8,8 +8,8 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 //!
 //! Initialize with given float values.
-//! 
-//! 
+//!
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFPoint2d_setXYFloat
 (
@@ -20,8 +20,8 @@ float fy
 
 //!
 //! Initialize with given double values.
-//! 
-//! 
+//!
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFPoint2d_setXY
 (
@@ -32,7 +32,7 @@ double y
 
 //!
 //! Initialize from a double point.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFPoint2d_initFromDPoint3d
 (
@@ -42,7 +42,7 @@ DPoint3dCP pDPoint
 
 //!
 //! Initialize from a double point.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFPoint2d_initFromFPoint3d
 (
@@ -52,7 +52,7 @@ FPoint3dCP pDPoint
 
 //!
 //! Initialize from a double point.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFPoint2d_initFromDPoint2d
 (
@@ -66,7 +66,7 @@ DPoint2dCP pDPoint
 //! @param pInstance IN      first point
 //! @param pPoint IN      second point
 //! @return distance to second point.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP double bsiFPoint2d_distance
 (
@@ -79,7 +79,7 @@ FPoint2dCP pPoint
 //!
 //! @param pInstance IN      vector whose squared length is computed
 //! @return squared magnitude of the vector.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP double bsiFPoint2d_magnitudeSquared (FPoint2dCP pInstance);
 
@@ -89,7 +89,7 @@ Public GEOMDLLIMPEXP double bsiFPoint2d_magnitudeSquared (FPoint2dCP pInstance);
 //! @param pInstance IN      base point
 //! @param pPoint IN      target point
 //! @return squared distance between the points.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP double bsiFPoint2d_distanceSquared
 (
@@ -102,7 +102,7 @@ FPoint2dCP pPoint
 //!
 //! @param pInstance IN      vector
 //! @return length of the vector
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP double bsiFPoint2d_magnitude (FPoint2dCP pInstance);
 
@@ -111,7 +111,7 @@ Public GEOMDLLIMPEXP double bsiFPoint2d_magnitude (FPoint2dCP pInstance);
 //!
 //! @param pInstance IN      vector
 //! @return largest absoluted value among point coordinates.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP double bsiFPoint2d_maxAbs (FPoint2dCP pInstance);
 
@@ -121,7 +121,7 @@ Public GEOMDLLIMPEXP double bsiFPoint2d_maxAbs (FPoint2dCP pInstance);
 //! @param pInstance IN      first point
 //! @param pVec2 IN      second vector
 //! @return true if the points are identical.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool    bsiFPoint2d_pointEqual
 (
@@ -139,7 +139,7 @@ FPoint2dCP pVec2
 //! @param pVec2 IN      vector
 //! @param tolerance IN      tolerance
 //! @return true if all components are within given tolerance of each other.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool    bsiFPoint2d_pointEqualTolerance
 (

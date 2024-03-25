@@ -100,7 +100,7 @@ TEST (Construction,HelloLines)
                     DPoint3d::From (8,8)
                     },
                 nullptr, nullptr, 3, false, true));
-                
+
     double a = 10.0;
     auto hPoint0 = CurveConstraint::CreateThroughPoint (point0);
     auto hPoint1 = CurveConstraint::CreateThroughPoint (point1);
@@ -142,7 +142,7 @@ TEST (Construction,PointPerpendicularNear)
                                 0,8,0,
                                 Angle::DegreesToRadians (-20),
                                 Angle::DegreesToRadians (235)));
-                
+
     double a = 10.0;
     auto hPoint0 = CurveConstraint::CreateThroughPoint (point0);
 
@@ -231,7 +231,7 @@ TEST (Construction,TangentCircles1)
 
     DPoint3d point0 = DPoint3d::From (0.1, 0.1);
     DPoint3d point1 = DPoint3d::From (-1,2);
-                
+
     double a = 40.0;
 
     for (double x0 : bvector<double> {0.0, 10.0, -6.0})
@@ -311,7 +311,7 @@ TEST (Construction,TangentCircles2)
     }
 
 // Pass g or a clip of g to Check.
-// 
+//
 void SaveClipped (ICurvePrimitivePtr &g, CurveVectorCR clipper, DRange3dCR clipperRange)
     {
     DRange3d range;

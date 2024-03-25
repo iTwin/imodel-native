@@ -22,7 +22,7 @@ void ExercisePointsAlong (CurveVectorCR cv, size_t numPoints)
         // confirm "a" coordinates ..
         for (size_t i = 0; i < points.size (); i++)
             Check::Near (distances[i], points[i].a, "Distance along in computed location");
-        // When consecutives are on same curve, confirm fraction advance and distance between 
+        // When consecutives are on same curve, confirm fraction advance and distance between
         for (size_t i = 0; i + 1 < points.size (); i++)
             {
             CurveLocationDetail &detail0 = points.at(i);
@@ -30,7 +30,7 @@ void ExercisePointsAlong (CurveVectorCR cv, size_t numPoints)
             if (detail0.curve == detail1.curve)
                 {
                 double distanceBetween;
-                if (Check::True (detail0.curve->SignedDistanceBetweenFractions (detail0.fraction, detail1.fraction, distanceBetween)))   
+                if (Check::True (detail0.curve->SignedDistanceBetweenFractions (detail0.fraction, detail1.fraction, distanceBetween)))
                     Check::Near (distanceBetween, detail1.a - detail0.a, "Actual distance between");
                 }
             }
@@ -160,7 +160,7 @@ TEST(CurveVectorA, CloneLocalL)
     CheckMappedCorner (a1, b0, localToWorld, worldToLocal);
     CheckMappedCorner (a1, b1, localToWorld, worldToLocal);
     CheckMappedCorner (a0, b1, localToWorld, worldToLocal);
-    
+
     }
 
 double MaxMidPointError (DEllipse3dCR ellipse, bvector<DPoint3d> &strokePoints)
@@ -197,25 +197,25 @@ void TestEllipseStroke (double r0, double r90, double chordTol)
         }
     }
 
-class MomentIntegrandWithExtraXPower : BSIVectorIntegrandXY 
-{ 
-public: 
-double ax, ay, ux, uy, vx, vy; 
-virtual int GetVectorIntegrandCount() {return 10;} 
-virtual void EvaluateVectorIntegrand (double s, double t, double *pF) 
-{ 
-double x = ax + ux * s + vx * t; 
-double y = ay + uy * s + vy * t; 
-int k = 0; 
-for (int i = 0; i <= 3; i++) 
-{ 
-for (int j = 0; i + j <= 3; j++) 
-{ 
-pF[k++] = pow (x, j) * pow(y,i); 
-} 
-} 
-} 
-}; 
+class MomentIntegrandWithExtraXPower : BSIVectorIntegrandXY
+{
+public:
+double ax, ay, ux, uy, vx, vy;
+virtual int GetVectorIntegrandCount() {return 10;}
+virtual void EvaluateVectorIntegrand (double s, double t, double *pF)
+{
+double x = ax + ux * s + vx * t;
+double y = ay + uy * s + vy * t;
+int k = 0;
+for (int i = 0; i <= 3; i++)
+{
+for (int j = 0; i + j <= 3; j++)
+{
+pF[k++] = pow (x, j) * pow(y,i);
+}
+}
+}
+};
 
 
 
@@ -236,9 +236,9 @@ TEST (CurveVectorA, StrokeEllipse)
 void CheckPlanarity (CurveVectorR curves, DPoint3dCR point0, DPoint3dCR point1, double angle)
     {
     DRange3d range2, range1;
-    
+
     bool isLine = curves.size () == 1 && curves[0]->GetCurvePrimitiveType () == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line;
-    
+
     Transform spinner = Transform::FromLineAndRotationAngle (point0, point1, angle);
     CurveVectorPtr curves2 = curves.Clone ();
     curves2->TransformInPlace (spinner);
@@ -250,7 +250,7 @@ void CheckPlanarity (CurveVectorR curves, DPoint3dCR point0, DPoint3dCR point1, 
             {
             Check::True (range1.IsAlmostZeroY (), "local y range of line almost zero");
             }
-        
+
         }
     else if (Check::True (curves.IsPlanar (localToWorld1, worldToLocal1, range1), "IsPlanar"))
         {
@@ -299,11 +299,11 @@ TEST (CurveVectorA, LocalRange)
     MSBsplineCurvePtr curve = MSBsplineCurve::CreateFromPolesAndOrder (poles, NULL, NULL, 3, false, false);
     curves->push_back (ICurvePrimitive::CreateBsplineCurve (*curve));
     DRange3d range0;
-    
+
     if (Check::True (curves->GetRange (range0), "Simple range"))
         {
         double dz = range0.high.z - range0.low.z;
-        
+
         Check::True (DoubleOps::AlmostEqual (dz, 0.0), "Original curve range is flat");
         CheckPlanarity (*curves, DPoint3d::From (0,0,0), DPoint3d::From (0,1,0), 0.1);
         CheckPlanarity (*curves, DPoint3d::From (0,0,0), DPoint3d::From (0,0,1), 0.1);
@@ -352,7 +352,7 @@ TEST (CurveVectorA, DefaultPlaneNormal)
     curves->push_back (ICurvePrimitive::CreateLine (DSegment3d::From (pointA, pointB)));
     DRange3d range0, range1;
     Transform worldToLocal, localToWorld;
-    
+
     Check::True (curves->IsPlanarWithDefaultNormal (localToWorld, worldToLocal, range0, NULL),
                 "Planarity for single line, default normal");
     DVec3d normal1 = DVec3d::From (1,2,4);
@@ -362,7 +362,7 @@ TEST (CurveVectorA, DefaultPlaneNormal)
 
 
 
-// Construct a line segment between specified fractions of given segment. 
+// Construct a line segment between specified fractions of given segment.
 // Expand it so that the intersection points are at fB0 and fB1.
 // Confirm that the computed intersection matches.
 // optionalB = caller supplied exact data for segmentB (to debug tolerance issues)
@@ -373,7 +373,7 @@ static bool VerifySegmentOverlap (DSegment3dCR segmentA, double fB0, double fB1,
     // Create B with specified limits ...
     DSegment1d fractionsBonA (fB0, fB1);
     DSegment1d fractions01 (0,1);
-    
+
     double a0B, a1B;
     fractionsBonA.PointToFraction (0.0, a0B);
     fractionsBonA.PointToFraction (1.0, a1B);
@@ -381,7 +381,7 @@ static bool VerifySegmentOverlap (DSegment3dCR segmentA, double fB0, double fB1,
 
     auto intersectionFractionsOnA = fractionsBonA.DirectedOverlap (fractions01);
     auto intersectionFractionsOnB = fractionsAonB.DirectedOverlap (fractions01);
-    
+
     int numIntersection =  (intersectionFractionsOnA.IsValid () && intersectionFractionsOnB.IsValid ())
                         ? 1 : 0;
     if (fB0 > fB1)
@@ -447,7 +447,7 @@ TEST (CurveVectorA, SegmentOverlap)
     VerifySegmentOverlap (segmentA, 0.40, 0.20, &segmentB);
     VerifySegmentOverlap (segmentB, 2.0, -3.0, &segmentA);
     VerifySegmentOverlap (DSegment3d::From (0,0,0, 100,0,0), 0.25, 0.50);
-    
+
 
     }
 
@@ -478,14 +478,14 @@ void ComparePrincipalMoments
         }
     Check::EndScope ();
     }
-        
+
 
 
 void ExerciseRegion (CurveVectorCR region)
     {
     IFacetOptionsPtr options = IFacetOptions::Create ();
-    
-    // Get a nontrivial rigid tranformation 
+
+    // Get a nontrivial rigid tranformation
     DPoint3d origin1 = DPoint3d::From (1,2,3);
     RotMatrix axes1 = RotMatrix::FromVectorAndRotationAngle (DVec3d::From( 0,2,3), 1.5);
     Transform transform1 = Transform::From (axes1, origin1);
@@ -495,15 +495,15 @@ void ExerciseRegion (CurveVectorCR region)
     IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
     builder->AddRegion (region);
     PolyfaceHeaderPtr facets = builder->GetClientMeshPtr ();
-    
+
     // get an xy form of the curvevector ......
     Transform localToWorld, worldToLocal;
     DRange3d localRange;
     CurveVectorPtr xyRegion = region.CloneInLocalCoordinates (LOCAL_COORDINATE_SCALE_UnitAxesAtLowerLeft, localToWorld, worldToLocal, localRange);
     CurveVectorPtr region1 = xyRegion->Clone ();
     // push the xy form to a back out into space ....
-    region1->TransformInPlace (transform1);    
-    
+    region1->TransformInPlace (transform1);
+
     if (Check::True (xyRegion.IsValid (), "CloneInLocalCoordinates"))
         {
         PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*facets);
@@ -532,7 +532,7 @@ void ExerciseRegion (CurveVectorCR region)
                 CurveVector::InOutClassification inout2 = region1->RayPierceInOnOut (ray2, detail2);
                 Check::Int ((int)inout1, (int)inout2, "ray pierce");
                 Check::Near (xyz1, detail2.GetXYZ ());
-                
+
                 DPoint3d spacePoint3 = ray2.FractionParameterToPoint (5.5);
                 DPoint3d closePoint3;
                 Check::True (CurveVector::INOUT_In == region1->ClosestCurveOrRegionPoint (spacePoint3, closePoint3), "ClosestPoint IN");
@@ -541,7 +541,7 @@ void ExerciseRegion (CurveVectorCR region)
             }
         bvector<MSBsplineSurfacePtr> bsurfs;
         MSBsplineSurface::CreateTrimmedSurfaces (bsurfs, region);
-        
+
         }
     }
 /*---------------------------------------------------------------------------------**//**
@@ -560,7 +560,7 @@ TEST (CurveVectorA, Centroid)
     DVec3d normal;
     double area;
     Transform rot;
-    rot.InitFromRowValues 
+    rot.InitFromRowValues
     (
     cs, -sn, 0, 0,
     sn, cs,  0, 0,
@@ -581,7 +581,7 @@ TEST (CurveVectorA, Centroid)
                 );
     CurveVectorPtr rotrec = rectangle1->Clone ();
     rotrec->TransformInPlace (rot);
- 
+
     if (Check::True (rectangle->CentroidNormalArea (centroid, normal, area)))
         {
         Check::Near (DPoint3d::From (a * 0.5, b * 0.5, z0), centroid, "Rectangle centroid");
@@ -592,10 +592,10 @@ TEST (CurveVectorA, Centroid)
         {
         ComparePrincipalMoments (product0, product1);
         }
-        
+
     CheckWireMoments (*rectangle);
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -606,19 +606,19 @@ TEST (CurveVectorA, AreaMomentsEllipse1)
     double theta = 30*div180*Angle::Pi();
     double cs = cos(theta);
     double sn = sin(theta);
-    
+
     int siz = 6;
     double devi[6];
-    
+
     Transform rot;
-    rot.InitFromRowValues 
+    rot.InitFromRowValues
         (
         cs, -sn, 0, 0,
         sn, cs,  0, 0,
         0,  0,   1, 0
         );
     Transform scale;
-    scale.InitFromRowValues 
+    scale.InitFromRowValues
         (
         scaleFactor, 0,   0, 0,
         0, scaleFactor,   0, 0,
@@ -630,16 +630,16 @@ TEST (CurveVectorA, AreaMomentsEllipse1)
     DPoint3d point90 = DPoint3d::From (0, 1, 0);
 
     DEllipse3d ellipseData = DEllipse3d::FromPoints (center, point0, point90, 0.0, Angle::TwoPi());
-    
+
     CurveVectorPtr ellipse = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
-    ellipse->push_back (ICurvePrimitive::CreateArc  (ellipseData));           
-        
+    ellipse->push_back (ICurvePrimitive::CreateArc  (ellipseData));
+
     CurveVectorPtr rotellip = ellipse->Clone ();
     rotellip->TransformInPlace (rot);
-    
+
     CurveVectorPtr sclellip = ellipse->Clone ();
     sclellip->TransformInPlace (scale);
-    
+
     IFacetOptionsPtr options = IFacetOptions::CreateForCurves ();
     DMatrix4d product0 = DMatrix4d::FromZero(), product1 = DMatrix4d::FromZero();
     for(int i = 0; i< siz; i++)
@@ -653,20 +653,20 @@ TEST (CurveVectorA, AreaMomentsEllipse1)
             {
             devi[i] = fabs(product0.coff[0][0] - product1.coff[0][0]);
             //printf ("xx delta = %22.5f numstrokes = %i\n", devi[i], numStroke);
-            }   
+            }
         }
     if (Check::True (ellipse->ComputeSecondMomentAreaProducts (product0)
                     && rotellip->ComputeSecondMomentAreaProducts (product1)))
         {
         ComparePrincipalMoments (product0, product1);
-        }   
-    
+        }
+
     if (Check::True (   ellipse->ComputeSecondMomentAreaProducts (product0)
                      && sclellip->ComputeSecondMomentAreaProducts (product1)))
         {
         ComparePrincipalMoments (product0, product1, scaleFactor, 2);
         }
-        
+
     CurveVectorPtr spline = ellipse->CloneAsBsplines ();
     if (Check::True (ellipse->ComputeSecondMomentAreaProducts (product0)
                     && spline->ComputeSecondMomentAreaProducts (product1)))
@@ -712,7 +712,7 @@ TEST (CurveVectorA, AreaMomentsEllipse1)
         }
 #endif
     }
-    
+
 #ifdef abc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -741,12 +741,12 @@ TEST (CurveVectorA, AreaMomentsEllipse1)
     pwr[2] = 5;
     pwr[3] = 8;
     double res[80];
-    
+
     for (int i = 2; i < 20; i++)
         {
         fib[i] = fib[i-1] + fib[i-2];
         }
-        
+
     for (int i = 0; i < 20; i++)
         {
         res[4*i] = pow(fib[i], pwr[0]);
@@ -766,19 +766,19 @@ TEST (CurveVectorA, AreaMomentsEllipse1)
     fib[1] = 1;
     double pwr = 1.0 / 3.0;
     double res[80];
-    
+
     for (int i = 2; i < 20; i++)
         {
         fib[i] = fib[i-1] + fib[i-2];
         }
-        
+
     for (int i = 0; i < 20; i++)
         {
         res[i] = pow(fib[i]*fib[i]*fib[i], pwr);
         printf ("%22.5f  %22.5f %22.15f\n", fib[i], pwr, res[i]);
         }
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -789,12 +789,12 @@ TEST (CurveVectorA, fib3)
     fib[1] = 1;
     double pwr = 1.0 / 3.0;
     double res[80];
-    
+
     for (int i = 2; i < 20; i++)
         {
         fib[i] = fib[i-1] + fib[i-2];
         }
-        
+
     for (int i = 0; i < 20; i++)
         {
         res[i] = pow(fib[i], pwr)*pow(fib[i], pwr)*pow(fib[i], pwr);
@@ -822,19 +822,19 @@ TEST (CurveVectorA, elliperror)
     double b = 1.0;
     double tn0 = tan(t0);
     double tn1 = tan(t1);
-    
+
     /*double cs0 = cos(t0);
     double sn0 = sin(t0);
     double cs1 = cos(t1);
     double sn1 = sin(t1);*/
-    
+
     double x0 = a*b / sqrt(b*b + a*a*tn0*tn0);
     double x1 = a*b / sqrt(b*b + a*a*tn1*tn1);
     double x02 = x0 * x0;
     double x12 = x1 * x1;
-    
+
     double perc = 1 - diva2 * sqrt(a2*(x12 + x02) - 2*x12*x02) / (fabs(asin(x1*diva) - asin(x0*diva)) + div2 * fabs((x1*sqrt(1 - x12*diva2) - x0*sqrt(1 - x02*diva2))));
-    
+
     printf ("percent error: %22.5f\n sweep angle: %lf\n", 100*perc, sweepdeg);
     }
 #endif
@@ -863,7 +863,7 @@ TEST (CurveVectorA, Holes)
     DMatrix4d products;
     Check::True (parityRegion->ComputeSecondMomentAreaProducts (products), "ComputedMoments");
     Check::Near (area, products.coff[3][3], "computed area");
-    
+
     ExerciseRegion (*parityRegion);
     ExercisePointsAlong (*parityRegion, 25);
     }
@@ -914,7 +914,7 @@ TEST (CurveVector, MeshHolesAndLinearFeatures)
                     DPoint3d::From (10,2)},
                 CurveVector::BOUNDARY_TYPE_Inner));
 
-    // Create a polyface builder . . . 
+    // Create a polyface builder . . .
     IFacetOptionsPtr options = IFacetOptions::Create ();
     // facet the original region
     options->SetMaxPerFace (3);
@@ -963,13 +963,13 @@ TEST (CurveVectorA, Consolidate)
     pathA->push_back (ICurvePrimitive::CreateLine (DSegment3d::From (pointA, pointB)));
     // Exact match ...
     pathA->push_back (ICurvePrimitive::CreateLine (DSegment3d::From (pointB, pointC)));
-    // Gap ... 
+    // Gap ...
     pathA->push_back (ICurvePrimitive::CreateLine (DSegment3d::From (pointD, pointE)));
     CurveVectorPtr pathB = pathA->Clone ();
     pathB->ConsolidateAdjacentPrimitives ();
         ExercisePointsAlong (*pathB, 25);
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -981,7 +981,7 @@ TEST(MSBsplineSurface, Disk)
             1,0,0,
             0,1,0,
             0.0, Angle::TwoPi ());
-            
+
     MSBsplineSurfacePtr diskSurface = MSBsplineSurface::CreateTrimmedDisk (disk);
     DPoint2d uv;
     uv.Init (0.55, 0.52);
@@ -989,13 +989,13 @@ TEST(MSBsplineSurface, Disk)
     Check::True (bsputil_pointOnSurface (&uv, diskSurface.get ()),"_pointOnSurface");
     uv.Init (0.91, 0.93);
     Check::False (bsputil_pointInBounds (&uv, diskSurface->boundaries, diskSurface->numBounds, diskSurface->holeOrigin != 0), "(out)");
-    
+
     bvector<double> fractions;
     bspsurf_intersectBoundariesWithUVLine (&fractions, 0.51, diskSurface.get (), true);
     Check::Size (2, fractions.size (), "Horizontal Cut");
     Check::EndScope ();
     }
-    
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -1024,7 +1024,7 @@ TEST(MSBsplineSurface, LinearBoundaries)
     Check::True (bsputil_pointOnSurface (&uv, bsurf.get ()),"_pointOnSurface");
     uv.Init (0.91, 0.93);
     Check::False (bsputil_pointInBounds (&uv, bsurf->boundaries, bsurf->numBounds, bsurf->holeOrigin != 0), "(out)");
-    
+
     bvector<double> fractions;
     bspsurf_intersectBoundariesWithUVLine (&fractions, 0.51, bsurf.get (), true);
     Check::Size (2, fractions.size (), "Horizontal Cut");
@@ -1068,7 +1068,7 @@ TEST(MSBsplineSurface,PCurveStroke)
         Check::True (curvePoints.size () > minPts, "Curve points");
 
         DPoint3d pt, closestPt;
-        DPoint2d closestUV; 
+        DPoint2d closestUV;
         double distToCurve, closestParam;
         for (size_t i = 0; i < curvePoints.size(); ++i)
             {
@@ -1082,7 +1082,7 @@ TEST(MSBsplineSurface,PCurveStroke)
                 pt.Interpolate(curvePoints[i-1], 0.5, pt);
                 distToCurve = DBL_MAX;
                 curve->ClosestPointXY(closestPt, closestParam, distToCurve, pt, nullptr);
-                Check::True(distToCurve < curveTol, "trim curve strokes are within tolerance of trim curve"); 
+                Check::True(distToCurve < curveTol, "trim curve strokes are within tolerance of trim curve");
                 }
             }
 
@@ -1099,12 +1099,12 @@ TEST(MSBsplineSurface,PCurveStroke)
                 closestUV.InitDisconnect();
                 surfaces[0]->ClosestPoint(closestPt, closestUV, pt);
                 if (Check::False(closestUV.IsDisconnect()))
-                    Check::True(closestPt.Distance(pt) < surfaceTol, "trimmed surface boundary strokes are within tolerance of surface"); 
+                    Check::True(closestPt.Distance(pt) < surfaceTol, "trimmed surface boundary strokes are within tolerance of surface");
                 }
             }
         }
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1128,7 +1128,7 @@ TEST(CurvePrimitive,CCI0)
     ICurvePrimitivePtr akima0 = ICurvePrimitive::CreateAkimaCurve (akimaPoints, 7);
     CurveVectorPtr curvesA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
     CurveVectorPtr curvesC = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
-    
+
     curvesC->push_back (line0);
     curvesC->push_back (arc1);
     curvesA->push_back (ICurvePrimitive::CreateChildCurveVector (curvesC));
@@ -1141,26 +1141,26 @@ TEST(CurvePrimitive,CCI0)
     CurveVectorPtr intersectionsB1 = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
 
     CurveCurve::IntersectionsXY (*intersectionsA0, *intersectionsB0, *curvesA, *curvesB, NULL);
-    
+
     CurveCurve::IntersectionsXY (*intersectionsB1, *intersectionsA1, *curvesB, *curvesA, NULL);
     size_t expectedIntersections = 2;
     Check::Size (expectedIntersections, intersectionsA0->size (), "AB intersection count");
     Check::Size (expectedIntersections, intersectionsA1->size (), "BA intersection count");
     }
-    
-    
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PointString, ClosestPointBounded0)
     {
     Check::StartScope ("Point String");
-    
+
     bvector<DPoint3d> points;
     points.push_back (DPoint3d::From (0,0,0));
     points.push_back (DPoint3d::From (10,0,0));
     points.push_back (DPoint3d::From (5,1,0));
-    
+
     ICurvePrimitivePtr cp = ICurvePrimitive::CreatePointString (points);
     // This point is exactly on the midpoint of the (nonexistent) first segment.  The closest
     // pointstring xyz is the last point  ...
@@ -1178,7 +1178,7 @@ TEST(PointString, ClosestPointBounded0)
 
     Check::EndScope ();
     }
-    
+
 void ConfirmClosestPointBounded (ICurvePrimitiveCR curve, DPoint3dCR spacePoint, CurveLocationDetailCR detail)
     {
     double a = spacePoint.Distance (detail.point);
@@ -1198,7 +1198,7 @@ void ConfirmClosestPointBounded (ICurvePrimitiveCR curve, DPoint3dCR spacePoint,
             numFail++;
             }
         }
-    Check::Size (0, numFail, "ClosestPointBounded sample");        
+    Check::Size (0, numFail, "ClosestPointBounded sample");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1208,7 +1208,7 @@ TEST(ClosestPointBounded, EllipseCenter)
     {
     Check::StartScope ("ClosestPointBounded_EllipseCenter");
     CurveLocationDetail detail;
-    DPoint3d center = DPoint3d::From (0,0,0);    
+    DPoint3d center = DPoint3d::From (0,0,0);
     DEllipse3d ellipse12 = DEllipse3d::FromVectors (
                 center,
                 DVec3d::From (1,0,0),
@@ -1216,7 +1216,7 @@ TEST(ClosestPointBounded, EllipseCenter)
                 -Angle::Pi () * 0.25,
                 Angle::Pi ()
                 );
-                
+
     DEllipse3d ellipse11 = DEllipse3d::FromVectors (
                 center,
                 DVec3d::From (1,0,0),
@@ -1232,7 +1232,7 @@ TEST(ClosestPointBounded, EllipseCenter)
                 -Angle::Pi () * 0.25,
                 Angle::Pi ()
                 );
-    
+
     ICurvePrimitivePtr cp12 = ICurvePrimitive::CreateArc (ellipse12);
     ICurvePrimitivePtr cp11 = ICurvePrimitive::CreateArc (ellipse11);
     ICurvePrimitivePtr cp12Skew = ICurvePrimitive::CreateArc (ellipse12Skew);
@@ -1243,7 +1243,7 @@ TEST(ClosestPointBounded, EllipseCenter)
     ConfirmClosestPointBounded (*cp11, center, detail);
     Check::True (cp12Skew->ClosestPointBounded (ellipse12Skew.center, detail), "ellipse12Skew center");
     ConfirmClosestPointBounded (*cp12Skew, center, detail);
-    
+
     Check::EndScope ();
     }
 
@@ -1296,14 +1296,14 @@ void CheckPrimitive_go (ICurvePrimitiveCR primitive)
             {
             }
         }
-        
+
     Check::True (primitive.Length (trueLength), "True Length");
     Check::True (primitive.FastLength (fastLength), "Fast Length");
     // Hmmm.. don't know how close to expect.
     static double s_lengthRelTol = 2.0;
     Check::True (fabs (trueLength - fastLength) < s_lengthRelTol * trueLength, "reasonable fast length error");
 
-    }    
+    }
 void CheckPrimitive (ICurvePrimitiveCR primitive, bool doPartial = false)
     {
     CheckPrimitive_go (primitive);
@@ -1314,7 +1314,7 @@ void CheckPrimitive (ICurvePrimitiveCR primitive, bool doPartial = false)
         auto child = ICurvePrimitive::CreatePartialCurve (const_cast<ICurvePrimitiveP>(&primitive), a, b);
         CheckPrimitive_go (*child);
         }
-    }    
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1336,7 +1336,7 @@ TEST(CurvePrimitive,TrivialPrimitives)
     points.push_back (DPoint3d::From (5,1,0));
     points.push_back (DPoint3d::From (5,1,1));
     points.push_back (DPoint3d::From (5,10,1));
-    
+
     ICurvePrimitivePtr linestring = ICurvePrimitive::CreateLineString (points);
     CheckPrimitive (*linestring, s_doPartials);
     // circular arc
@@ -1386,7 +1386,7 @@ TEST(CurvePrimitive,TrivialPrimitives)
 
     auto cp0 = ICurvePrimitive::CreateCatenary(10, dTri3d, 2, 20);
     CheckPrimitive(*cp0, false);
-    }    
+    }
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -1395,7 +1395,7 @@ TEST(CurvePrimitive,TrivialPrimitives)
 TEST(CurvePrimitive,SizeSampler)
     {
     bvector<IGeometryPtr> curves;
-    SampleGeometryCreator::AddSizeSampler (curves);  
+    SampleGeometryCreator::AddSizeSampler (curves);
     auto identity = DPoint3dDVec3dDVec3d::FromXYPlane ();
     ICurvePrimitivePtr catenary = ICurvePrimitive::CreateCatenary (1.0, identity, 0, 2);
     curves.push_back (IGeometry::Create (catenary));
@@ -1416,17 +1416,17 @@ TEST(CurvePrimitive,GarbageDataFrenetFrame)
     {
     ICurvePrimitivePtr line0 = ICurvePrimitive::CreateLine (DSegment3d::From (1,2,3, 4,2,9));
     ICurvePrimitivePtr line1 = ICurvePrimitive::CreateLine (DSegment3d::From (4,3,2, 5,2,2));
-    
+
     CurveVectorPtr collection = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
     collection->push_back (line0);
     collection->push_back (line1);
-    
+
     Transform frame;
     if (Check::True (collection->GetAnyFrenetFrame (frame), "Frenet frame accessed from BOUNDARY_TYPE_None"))
         {
-        }    
-    }    
-    
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1434,16 +1434,16 @@ TEST(CurvePrimitive,ParallelLinesFrenetFrame)
     {
     ICurvePrimitivePtr line0 = ICurvePrimitive::CreateLine (DSegment3d::From (0,0,0, 1,0,0));
     ICurvePrimitivePtr line1 = ICurvePrimitive::CreateLine (DSegment3d::From (0,0,1, 1,0,1));
-    
+
     CurveVectorPtr collection = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
     collection->push_back (line0);
     collection->push_back (line1);
-    
+
     Transform frame;
     if (Check::True (collection->GetAnyFrenetFrame (frame), "Frenet frame on parallel lines."))
         {
-        }    
-    }    
+        }
+    }
 
 static void testLineStringFrenetFrame(bvector<DPoint3d> const& pts, TransformCR expectedFrame, const char* pDescription = nullptr)
     {
@@ -1519,7 +1519,7 @@ TEST(CurvePrimitive,PointsAlongMatthieu)
         }
     }
 
-/// <summary>Find the curve point closest to spacePoint.  Return it as the CurveLocationDetail, and 
+/// <summary>Find the curve point closest to spacePoint.  Return it as the CurveLocationDetail, and
 ///    also compute the distance (along curve) from the path start to the close point.
 ///</summary>
 bool ClosestPointAndDistanceAlong (CurveVectorCR path, DPoint3dCR spacePoint, CurveLocationDetailR location, double &distanceAlong)
@@ -1540,7 +1540,7 @@ bool ClosestPointAndDistanceAlong (CurveVectorCR path, DPoint3dCR spacePoint, Cu
         }
     return false;
     }
-    
+
 void TestProjectedDistanceAlong (ICurvePrimitivePtr &primitive0)
     {
     // make sure it's a true leaf ..
@@ -1562,7 +1562,7 @@ void TestProjectedDistanceAlong (ICurvePrimitivePtr &primitive0)
         0,0,0,0
         );
     RotMatrix dropVectors = RotMatrix::From (drop);
-            
+
     ICurvePrimitivePtr primitive1 = primitive0->Clone ();
     primitive1->TransformInPlace(lift);
     ICurvePrimitivePtr primitive2 = primitive0->Clone ();
@@ -1597,7 +1597,7 @@ void TestProjectedDistanceAlong (ICurvePrimitivePtr &primitive0)
                   f0, length1axy, false, location));
     Check::Near (f1, location.fraction);
     }
-    
+
 void TestProjectedDistanceAlong (CurveVectorPtr &source)
     {
     for (ICurvePrimitivePtr & primitive : *source)
@@ -1681,14 +1681,14 @@ TEST(ClosestPointAndDistance,Test0)
 
             }
         cp->Length (dA1);
-        sumdA += dA1; 
+        sumdA += dA1;
         }
 
-    } 
-    
+    }
 
 
-    
+
+
 
 #if defined (_WIN32) && !defined(BENTLEY_WINRT)
 
@@ -1716,7 +1716,7 @@ TEST(Intersection,AllanB00)
 
     CurveVectorPtr polygon = CurveVector::CreateLinear (polygonPoints, CurveVector::BOUNDARY_TYPE_Outer);
     static int s_noisySplitter = 0;
-    // make extensions of each edge to confirm "on" behavior . . 
+    // make extensions of each edge to confirm "on" behavior . .
     for (size_t i0 = 0; i0 + 1 < polygonPoints.size (); i0++)
         {
         DPoint3d pointA = DPoint3d::FromInterpolate (polygonPoints[i0], -2.5, polygonPoints[i0+1]);
@@ -1864,7 +1864,7 @@ bool CheckSame (bvector<DPoint3d> const &xyzA, bvector<DPoint3d> const &xyzB)
 
 bool CheckSame
 (
-bvector<bvector<DPoint3d>> const &xyzA, 
+bvector<bvector<DPoint3d>> const &xyzA,
 bvector<bvector<DPoint3d>> const &xyzB
 )
     {
@@ -1882,7 +1882,7 @@ bvector<bvector<DPoint3d>> const &xyzB
 
 bool CheckSame
 (
-bvector<bvector<bvector<DPoint3d>>> const &xyzA, 
+bvector<bvector<bvector<DPoint3d>>> const &xyzA,
 bvector<bvector<bvector<DPoint3d>>> const &xyzB,
 char const *name
 )
@@ -1929,10 +1929,10 @@ TEST(CurveVector,RecursiveCollectPoints)
     double dab = pointA.Distance (pointB);
     auto unitNormal = DVec3d::FromCrossProduct (vectorAB, vectorBC).ValidatedNormalize ();
     if (!unitNormal.IsValid ())
-        return ValidatedDEllipse3d ();  // That will be invalid 
+        return ValidatedDEllipse3d ();  // That will be invalid
     auto unitPerp   = DVec3d::FromCrossProduct (unitNormal, vectorAB).ValidatedNormalize ();
     if (!unitPerp.IsValid ())
-        return ValidatedDEllipse3d ();  // That will be invalid 
+        return ValidatedDEllipse3d ();  // That will be invalid
 
     double beta = vectorAB.AngleTo (vectorBC);      // positive angle as viewed from cross product upwards.
     double alpha = 0.5 * beta;
@@ -2047,8 +2047,8 @@ TEST(CurveVector,RegularPolygonConstructor)
         Check::Print (*diamond, "Diamond from RegularPolygonXY");
         }
     }
-	
-	
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2217,7 +2217,7 @@ TEST(CPLineString,TwoSidedDerivative)
         Check::Near (point, point2);
         Check::EndScope ();
         }
-    }	
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -2231,7 +2231,7 @@ TEST(CurvePrimitive,ZeroDerivativeFrenetFrames)
             );
     // zero radius arc should fail ..
     Check::False (cp->FractionToFrenetFrame (0.0, frame), "Expected Frenet Frame Failure on zero-radius circle.");
-    
+
     // line should succeed with arbitrary spin ...
     DPoint3d pointA0 = DPoint3d::From (1,2,3);
     DPoint3d pointA1 = DPoint3d::From (3,2,9);
@@ -2285,7 +2285,7 @@ TEST (CurvePrimitive, CloneTransformed)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(CPLineString, ReverseCurve) 
+TEST(CPLineString, ReverseCurve)
     {
     bvector<DPoint3d> points {
         DPoint3d::From(0,0,0),
@@ -2377,7 +2377,7 @@ void swapCurvePrimitives(CurveVector::BoundaryType cvBT)
         DPoint3d::From (2,1,0),
         DPoint3d::From (1,2,0));
     DSegment3d seg = DSegment3d::From(DPoint3d::From(0, -1, 0), DPoint3d::From(1, 0, 0));
-    
+
     curve->push_back(ICurvePrimitive::CreateLine(seg));
     curve->push_back(ICurvePrimitive::CreateArc( ellip));
 
@@ -2411,11 +2411,11 @@ TEST(CurveVector, SwapIndices)
 
 void checkChildBoundaryTypes(CurveVectorPtr parent,
                              bvector<CurveVector::BoundaryType> boundaryTypeChild,
-                             bvector<CurveVectorPtr> curveChild) 
+                             bvector<CurveVectorPtr> curveChild)
     {
-    for (size_t i = 1; i <= curveChild.size(); i++) 
+    for (size_t i = 1; i <= curveChild.size(); i++)
         {
-        
+
         parent->push_back(ICurvePrimitive::CreateChildCurveVector(curveChild[i-1]));
         Check::True(parent->SetChildBoundaryType(i, boundaryTypeChild[i - 1]));
         CurveVector::BoundaryType cvB;
@@ -2435,24 +2435,24 @@ TEST(CurveVector, ChildVectorType)
                                                             CurveVector::BOUNDARY_TYPE_Outer,
                                                             CurveVector::BOUNDARY_TYPE_None };
 
-    
+
     DRange2d outer = DRange2d::From(0, 0, 20, 10);
     bvector<CurveVectorPtr> curveChild = { CurveVector::CreateRectangle(outer.low.x + 2, outer.low.y + 2, outer.high.x - 2, outer.high.y - 2, 0),
                                            CurveVector::CreateRectangle(outer.low.x + 4, outer.low.y + 4, outer.high.x - 4, outer.high.y - 4, 0),
                                            CurveVector::CreateRectangle(outer.low.x + 4, outer.low.y + 4, outer.high.x - 4, outer.high.y - 4, 0) };
 
-    
+
     CurveVectorPtr parent = CurveVector::CreateRectangle(outer.low.x, outer.low.y, outer.high.x, outer.high.y, 0,
                                                               CurveVector::BOUNDARY_TYPE_Outer);
     checkChildBoundaryTypes(parent, boundaryTypeChild, curveChild);
-    
-    
+
+
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(CurveVector, ReverseLeafCurves) 
+TEST(CurveVector, ReverseLeafCurves)
     {
     bvector<CurveVector::BoundaryType> cvType = { CurveVector::BOUNDARY_TYPE_Inner,
                                                   CurveVector::BOUNDARY_TYPE_Outer,
@@ -2483,7 +2483,7 @@ TEST(CurveVector, ReverseLeafCurves)
     bvector<CurveVector::BoundaryType> cvTypeN = { CurveVector::BOUNDARY_TYPE_UnionRegion,
                                                   CurveVector::BOUNDARY_TYPE_ParityRegion,
                                                   CurveVector::BOUNDARY_TYPE_None };
-    
+
     for (int i = 0; i < cvTypeN.size(); i++)
         {
 
@@ -2507,13 +2507,13 @@ TEST(CurveVector, ReverseLeafCurves)
         curvePrim = curveN->GetCyclic(2);
         Check::True(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString == curvePrim->GetCurvePrimitiveType());
         }
-    
+
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(CurveVector, LengthOfPrimitives) 
+TEST(CurveVector, LengthOfPrimitives)
     {
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Inner);
     bvector<DPoint3d> pointsLineStringN = { DPoint3d::From(0,0,0), DPoint3d::From(4,5,2), DPoint3d::From(9,8,10) };
@@ -2535,7 +2535,7 @@ TEST(CurveVector, LengthOfPrimitives)
 
     // length post rotation
     double prior = curve->Length();
-    
+
     //double posterior;
     //linePrim->Length(posterior);
     RotMatrix rot[] = { RotMatrix::FromAxisAndRotationAngle(2, Angle::FromDegrees(45).Cos()) };
@@ -2545,7 +2545,7 @@ TEST(CurveVector, LengthOfPrimitives)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(CurveVector, CloneBetweenFractions) 
+TEST(CurveVector, CloneBetweenFractions)
     {
     DPoint3d points[5] = { DPoint3d::From(1,0,0),
                            DPoint3d::From(2,2,0),
@@ -2555,7 +2555,7 @@ TEST(CurveVector, CloneBetweenFractions)
     auto cShapeLineString = ICurvePrimitive::CreateLineString(points, 5);
     CurveVectorPtr cVec = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
     cVec->push_back(cShapeLineString);
-    
+
 
     CurveVectorPtr curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
     bvector<DPoint3d> pointsLineStringN = { DPoint3d::From(0,0,0), DPoint3d::From(4,5,2), DPoint3d::From(9,8,10) };
@@ -2636,7 +2636,7 @@ TEST(CurveVector, CloneOffsetCurvesXY)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(CurveVector, GeometricConstructions) 
+TEST(CurveVector, GeometricConstructions)
     {// Arc
     DEllipse3d ellipN = DEllipse3d::FromPointsOnArc(DPoint3d::From(0, 0, 0),
                                                     DPoint3d::From(2, 1, 0),
@@ -2685,7 +2685,7 @@ TEST(CurveVector, GeometricConstructions)
     Check::SaveTransformed(*akima0);
     Check::Shift(10, 0, 0);
 
-    //point string 
+    //point string
     bvector<DPoint3d> points;
     points.push_back (DPoint3d::From (0,0,0));
     points.push_back (DPoint3d::From (10,0,0));
@@ -2959,7 +2959,7 @@ TEST(CurveVector, FlattenNestedUnionRegions)
             c = CurveVector::Create(boundaryType);
             c->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*unionChild.Clone()));
             flattenAndVerify(*c); // only child
-            
+
             c = CurveVector::Create(boundaryType);
             c->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*unionChild.Clone()));
             c->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*loop0->Clone()));
@@ -2978,7 +2978,7 @@ TEST(CurveVector, FlattenNestedUnionRegions)
             }
         }
     }
-    
+
 TEST(CurveVector, TunnelProfileShadowIntersectionsXY)
     {
     BeFileName dataFullPathName;

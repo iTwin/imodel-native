@@ -7,6 +7,16 @@
 #include <Bentley/BeTest.h>
 #include <Bentley/BeFile.h>
 
+bool GTestFileOps::ReadAsBytes(BeFileName &filename, bvector<Byte> &bytes)
+    {
+    bytes.clear();
+    BeFile file;
+    if (BeFileStatus::Success == file.Open(filename, BeFileAccess::Read))
+        if (BeFileStatus::Success == file.ReadEntireFile(bytes))
+            return true;
+    return false;
+    }
+
 bool GTestFileOps::ReadAsString (BeFileName &filename, Utf8String &string)
     {
     string.clear ();
