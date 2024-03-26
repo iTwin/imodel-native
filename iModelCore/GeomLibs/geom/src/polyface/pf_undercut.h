@@ -54,7 +54,7 @@ TaggedPolygonVectorR surfaceBbelowA
         if (CutAndFillSplitter::GetNonVerticalPolygonPlane (sourceA[iA], plane, range))
             {
             range.low.z = -DBL_MAX;     // catch intersections with all below
-            allRangeA.push_back (ValidatedDRange3d (range, 
+            allRangeA.push_back (ValidatedDRange3d (range,
                     range.IntersectsWith (totalRangeB)
                     ));
             activeIndexA.push_back (iA);
@@ -294,7 +294,7 @@ bool ShardHealer::SwapExteriorMasksToNullFaces (VuMask exteriorMask)
                 {
                 VuP nodeA2 = vu_fsucc (nodeA1);
                 VuP nodeB2 = vu_fsucc (nodeB1);
-                vu_vertexTwist (m_graph, nodeB, nodeA1); // yank far end of A 
+                vu_vertexTwist (m_graph, nodeB, nodeA1); // yank far end of A
                 vu_vertexTwist (m_graph, nodeA, nodeA2); // yank A
                 vu_vertexTwist (m_graph, nodeA, nodeB1);    // reinsert on the other side
                 vu_vertexTwist (m_graph, nodeA1, nodeB2);    // reinsert on the other side
@@ -480,13 +480,13 @@ bool ShardHealer::HealShards (BVectorCache<DPoint3d> &shards, bvector<DPoint3d> 
             vu_setUserDataPAsInt (nodeB, (int)m_loopIndex[iB]);
             if (area > 0)
                 {
-                vu_setMask (nodeA, VU_BOUNDARY_EDGE); 
+                vu_setMask (nodeA, VU_BOUNDARY_EDGE);
                 vu_setMask (nodeB, VU_BOUNDARY_EDGE | VU_EXTERIOR_EDGE);
                 }
             else
                 {
                 vu_setMask (nodeA, VU_BOUNDARY_EDGE | VU_EXTERIOR_EDGE);
-                vu_setMask (nodeB, VU_BOUNDARY_EDGE); 
+                vu_setMask (nodeB, VU_BOUNDARY_EDGE);
                 }
             }
         }
@@ -536,7 +536,7 @@ struct ClipperData
 {
 size_t m_parentIndex;
 DRange3d m_range;
-ConvexClipPlaneSet m_convexClip; 
+ConvexClipPlaneSet m_convexClip;
 ClipPlaneSet m_clipChain;       //  non convex !!!
 ClipperData (){}
 
@@ -768,7 +768,7 @@ TaggedPolygonVector* debugPolygons
             }
 
         size_t numInside = insideShards.size ();       // These were already compressed
-            
+
         if (numOutside > 0 && outsidePolygons != nullptr)
             {
             if (shards[shard0].size () >= s_minOutside)
@@ -814,8 +814,8 @@ TaggedPolygonVector* debugPolygons
 #define PrintTimes_not
 #ifdef PrintTimes
     GEOMAPI_PRINTF (" (Punch (total %g) (load %g) (clip %g))\n",
-        (double)totalTime.GetElapsedSeconds(),        
-        (double)loadTime.GetElapsedSeconds(),        
+        (double)totalTime.GetElapsedSeconds(),
+        (double)loadTime.GetElapsedSeconds(),
         (double)clipTime.GetElapsedSeconds()
         );
 #endif

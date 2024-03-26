@@ -1180,7 +1180,7 @@ double      u
         for (int i = 1, j = derivativeOrder - 2; i < derivativeOrder - 1; i++, un *= u, j--)
             f += un * vn[j] * pPascal [i] * (pPoles[i+1] - pPoles[i]);
         f += un * (pPoles[derivativeOrder] - pPoles[derivativeOrder - 1]);
-        *pD = derivativeOrder * f;        
+        *pD = derivativeOrder * f;
         }
 
     return true;
@@ -1604,7 +1604,7 @@ int         numComponentB
         else if (orderB == 2)
             {
             pAB[componentAB] = pA[componentA] * pB[componentB];
-            pAB[componentAB + numComponentAB] = 
+            pAB[componentAB + numComponentAB] =
                     0.5 * (  pA[componentA] * pB[componentB + numComponentB]
                           +  pA[componentA + numComponentA] * pB[componentB]);
             pAB[componentAB + 2* numComponentAB] = pA[componentA + numComponentA] * pB[componentB + numComponentB];
@@ -1622,7 +1622,7 @@ int         numComponentB
             pAB[componentAB + 2 * numComponentAB] = (a1 * b1 + a0 * b2) * div3;
             pAB[componentAB + 3 * numComponentAB] = a1 * b2;
             return true;
-            }            
+            }
         else if (orderB == 4)
             {
             double a0 = pA[componentA];
@@ -1637,7 +1637,7 @@ int         numComponentB
             pAB[componentAB + 3 * numComponentAB] = (a0 * b3 + a1 * b2) * div4;
             pAB[componentAB + 4 * numComponentAB] = a1 * b3;
             return true;
-            }            
+            }
 
         }
     else if (orderA == 3)
@@ -1889,7 +1889,7 @@ int         numComponentB
         sNum3++;
     else
         sNumX++;
-    
+
     /* The product of a Bezier curve of degree d with poles a_i
        and a Bezier curve of degree e with poles b_j is a Bezier
        curve of degree d+e with poles c_k given by the below sum

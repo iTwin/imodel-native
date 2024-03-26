@@ -49,7 +49,7 @@ double theta1
             0,0,1,0,
             0,0,0,1
             );
-            
+
     for (int i = 0; i < 3; i++)
         basisTranspose[i].TransposeOf (basis[i]);
 
@@ -86,7 +86,7 @@ double theta1
     double ICS = trigIntegrals.form3d[0][1];
     double ISS = trigIntegrals.form3d[1][1];
     double IC  = trigIntegrals.form3d[0][2];
-    double IS  = trigIntegrals.form3d[1][2]; 
+    double IS  = trigIntegrals.form3d[1][2];
     double I1  = trigIntegrals.form3d[2][2];
 // [c -s][a b][ c s] = [ca-sb  cb-sd][ c s]
 // [s  c][b d][-s c]   [sa+cb  sb+cd][-s c]
@@ -99,7 +99,7 @@ double theta1
     result.coff[0][0] = ICC *a -2.0 * ICS * b +ISS*d;
     result.coff[0][1] = result.coff[1][0] = ICS*a + (ICC-ISS) * b - ICS*d;
     result.coff[1][1] = ISS*a + 2.0*ICS*b + ICC*d;
-    
+
     for (int j = 2; j < 4; j++)
         {
         result.coff[0][j] = result.coff[j][0]
@@ -153,22 +153,22 @@ static bool coneMoments (double rA, double rB, double zB, DMatrix4dR integrals)
     double rB4 = rB3*rB;
     double rA2 = rA*rA;
     double rA3 = rA2*rA;
-    double rA4 = rA3*rA; 
+    double rA4 = rA3*rA;
     double zB2 = zB*zB;
     double zB3 = zB2*zB;
     double zB4 = zB3*zB;
     double zB5 = zB4*zB;
     double m2  = m * m;
     double b2  = b * b;
-    integrals = DMatrix4d::FromZero (); 
-    
+    integrals = DMatrix4d::FromZero ();
+
     //For zA zero
     integrals.coff[0][0] = pi*div20*zB*(rB4 + rB3*rA + rB2*rA2 + rB*rA3 + rA4);
     integrals.coff[1][1] = integrals.coff[0][0];
     integrals.coff[2][2] = pi*(div5*zB5*m2 + div2*zB4*m*b + div3*zB3*b2);
     integrals.coff[3][2] = integrals.coff[2][3] = pi*(div4*zB4*m2 + div23*zB3*m*b + div2*zB2*b2);
     integrals.coff[3][3] = pi*div3*zB*(rB2 + rB*rA + rA2);
-    
+
     //For nonzero zA
     /*integrals.coff[0][0] = pi*div20*(zB - zA)*(pow(rB,4) + pow(rB,3)*pow(rA,1) + pow(rB,2)*pow(rA,2) + pow(rB,1)*pow(rA,3) + pow(rA,4));
     integrals.coff[1][1] = integrals.coff[0][0];
@@ -202,8 +202,8 @@ static bool ComputeProducts (double R, double a, double sweepangle, DMatrix4dR p
     double term1 = pi*R3*a2 + 3*pi*div4*R*a4;
     double term2 = pi*R2*a2 + pi*div4*a4;
     double theta = sweepangle;
-    products = DMatrix4d::FromZero (); 
-  
+    products = DMatrix4d::FromZero ();
+
         products.coff[0][0] = term1 * (div2*theta + div4*sin(2*theta));
         products.coff[0][1] = products.coff[1][0] = term1*div2*sin(theta)*sin(theta);
         products.coff[0][3] = products.coff[3][0] = term2*sin(theta);
@@ -211,7 +211,7 @@ static bool ComputeProducts (double R, double a, double sweepangle, DMatrix4dR p
         products.coff[1][3] = products.coff[3][1] = term2 * (1 - cos(theta));
         products.coff[2][2] = pi*div4*R*a4*theta;
         products.coff[3][3] = pi*R*a2*theta;
-    
+
     return true;
     }
 
@@ -237,8 +237,8 @@ static bool boxMoments (double ax, double ay, double bx, double by, double zb, D
     double ax3 = ax2 * ax;
     double ay2 = ay * ay;
     double ay3 = ay2 * ay;
-    integrals = DMatrix4d::FromZero (); 
-    
+    integrals = DMatrix4d::FromZero ();
+
         integrals.coff[0][0] = div3*(div5*z5*mx3*my + div4*z4*(3*mx2*my*ax + mx3*ay) + div3*z3*(3*mx*my*ax2 + 3*mx2*ax*ay) + div2*z2*(ax3*my + 3*mx*ax2*ay) + zb*ax3*ay);
         integrals.coff[0][1] = integrals.coff[1][0] = div4 * (div5*z5*mx2*my2 + div4*z4*(2*mx2*my*ay + 2*my2*mx*ax) + div3*z3*(mx2*ay2 + my2*ax2 + 4*mx*my*ax*ay) + div2*z2*(2*mx*ax*ay2 + 2*my*ay*ax2) + zb*ax2*ay2);
         integrals.coff[0][2] = integrals.coff[2][0] = div2*(div5*z5*mx2*my + div4*z4*(mx2*ay + 2*mx*my*ax) + div3*z3*(2*mx*ax*ay + ax2*my) + div2*z2*ax2*ay);
@@ -249,7 +249,7 @@ static bool boxMoments (double ax, double ay, double bx, double by, double zb, D
         integrals.coff[2][2] = div5*z5*mx*my + div4*z4*(mx*ay + my*ax) + div3*z3*ax*ay;
         integrals.coff[2][3] = integrals.coff[3][2] = div4*z4*mx*my + div3*z3*(mx*ay + my*ax) + div2*z2*ax*ay;
         integrals.coff[3][3] = div3*z3*mx*my + div2*z2*(mx*ay + my*ax) + zb*ax*ay;
-        
+
     return true;
     }
 
@@ -264,7 +264,7 @@ void sweepRotationalMoments (DMatrix4dCR P, double sweepAngle, DMatrix4dR integr
     double cstrm = div2*sin(t)*sin(t);
     double ctrm = sin(t);
     double strm = (1 - cos(t));
-    
+
     double xx = P.coff[0][0];
     double xy = P.coff[0][1];
     double xz = P.coff[0][2];
@@ -275,7 +275,7 @@ void sweepRotationalMoments (DMatrix4dCR P, double sweepAngle, DMatrix4dR integr
     double zz = P.coff[2][2];
     double z = P.coff[2][3];
     double v = P.coff[3][3];
-    
+
         integrals.coff[0][0] = xx*csqtrm - 2*xy*cstrm + yy*ssqtrm;
         integrals.coff[1][0] = xy*csqtrm + (xx - yy)*cstrm - xy*ssqtrm;
         integrals.coff[2][0] = xz*ctrm - yz*strm;
@@ -361,7 +361,7 @@ bool DgnExtrusionDetail::ComputeSecondMomentVolumeProducts (TransformR localToWo
     localToWorld = Transform::FromIdentity ();
     return false;
     }
-    
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -422,7 +422,7 @@ bool ISolidPrimitive::ComputePrincipalMoments
             volume, centroid, axes, momentxyz))
         return true;
     InitNullMoments (volume, centroid, axes, momentxyz);
-    return false;    
+    return false;
     }
 
 //! Return the various integrated products for moment calculations.  The primitive is treated as a volume

@@ -6,10 +6,10 @@ struct ICGFactory
 {
 
 public:
-    // scream.   IGeoemtryPtr cannot handle trees.   
+    // scream.   IGeoemtryPtr cannot handle trees.
     // ad hoc selected parse implementations can stash their deep members here ...
     bvector<IGeometryPtr> m_groupMembers;
-    
+
 
 
 

@@ -634,7 +634,7 @@ double          scaleFactor
         {
         for (int j = 0; j < 4; j++)
             {
-            AB.coff[i][j] = 
+            AB.coff[i][j] =
                   transform.form3d[i][0] * momentMatrix.coff[0][j]
                 + transform.form3d[i][1] * momentMatrix.coff[1][j]
                 + transform.form3d[i][2] * momentMatrix.coff[2][j]
@@ -650,9 +650,9 @@ double          scaleFactor
         for (int j = 0; j < 3; j++)
             {
             ABC.coff[i][j] = scaleFactor * (
-                  AB.coff[i][0] * transform.form3d[j][0] 
-                + AB.coff[i][1] * transform.form3d[j][1] 
-                + AB.coff[i][2] * transform.form3d[j][2] 
+                  AB.coff[i][0] * transform.form3d[j][0]
+                + AB.coff[i][1] * transform.form3d[j][1]
+                + AB.coff[i][2] * transform.form3d[j][2]
                 + AB.coff[i][3] * transform.form3d[j][3]);
             }
         ABC.coff[i][3] = scaleFactor * AB.coff[i][3];
@@ -1675,10 +1675,10 @@ DPoint4dR vec,
 /*-----------------------------------------------------------------*//**
 * Copy data from a matrix rows to DPoint4d structures.
 *
-* @param [out] row0 row 0 data. 
-* @param [out] row1 row 1 data. 
-* @param [out] row2 row 2 data. 
-* @param [out] row3 row 3 data. 
+* @param [out] row0 row 0 data.
+* @param [out] row1 row 1 data.
+* @param [out] row2 row 2 data.
+* @param [out] row3 row 3 data.
 * @bsimethod
 +----------------------------------------------------------------------*/
 void DMatrix4d::GetRows
@@ -1698,10 +1698,10 @@ DPoint4dR row3
 /*-----------------------------------------------------------------*//**
 * Copy data from a matrix columns to DPoint4d structures.
 *
-* @param [out] column0 column 0 data. 
-* @param [out] column1 column 1 data. 
-* @param [out] column2 column 2 data. 
-* @param [out] column3 column 3 data. 
+* @param [out] column0 column 0 data.
+* @param [out] column1 column 1 data.
+* @param [out] column2 column 2 data.
+* @param [out] column3 column 3 data.
 * @bsimethod
 +----------------------------------------------------------------------*/
 void DMatrix4d::GetColumns
@@ -2825,7 +2825,7 @@ DVec3dR momentTensorDiagonal
         }
     return stat;
     }
- 
+
 bool DMatrix4d::ConvertInertiaProductsToPrincipalAreaMoments
 (
 TransformCR localToWorld,
@@ -2841,7 +2841,7 @@ DVec3dR momentTensorDiagonal
     localToWorld.GetTranslation (translation);
     Transform T1 = Transform::From (Q);
     double scale;
-    
+
     if (!Q.IsRigidScale (Q0, scale))    // area integrals do not map commute with nonuniform scaling!!!
         return false;
     // Do the eigenvalue step in after ONLY the rotate/scale parts.
@@ -2869,7 +2869,7 @@ DVec3dR momentTensorDiagonal
     localToWorld.GetTranslation (translation);
     Transform T1 = Transform::From (Q);
     double scale;
-    
+
     if (!Q.IsRigidScale (Q0, scale))    // wire integrals do not map commute with nonuniform scaling!!!
         return false;
     // Do the eigenvalue step in after ONLY the rotate/scale parts.
@@ -2902,7 +2902,7 @@ double scale
     coff[2][0] += xyz.z * xyz.x * scale;
     coff[2][1] += xyz.z * xyz.y * scale;
     coff[2][2] += xyz.z * xyz.z * scale;
-    
+
     coff[0][3] += xyz.x * scale;
     coff[1][3] += xyz.y * scale;
     coff[2][3] += xyz.z * scale;
@@ -2930,7 +2930,7 @@ double scale
             coff[i][j] += scale * (pu[i] * pv[j] + pv[i] * pu[j]);
             }
         }
-    
+
     }
 
 void DMatrix4d::AddSymmetricScaledOuterProduct
@@ -2946,7 +2946,7 @@ double scale
             {
             coff[i][j] += scale * (pu[i] * pu[j]);
             }
-        }    
+        }
     }
 
 void DMatrix4d::CopyUpperTriangleToLower ()
@@ -2966,7 +2966,7 @@ DMatrix4d DMatrix4d::SweepMomentProducts (DMatrix4dCR baseProducts, DVec3d sweep
     {
     DPoint4d moment1;
     DMatrix4d products = DMatrix4d::FromZero ();
-    DPoint4d U = DPoint4d::From (sweepVector, 0.0);    
+    DPoint4d U = DPoint4d::From (sweepVector, 0.0);
     baseProducts.GetColumn (moment1, 3);
     double mass0 = baseProducts.coff[3][3];
     double a = sweepVector.Magnitude ();

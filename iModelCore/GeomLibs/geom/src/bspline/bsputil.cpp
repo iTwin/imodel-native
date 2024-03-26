@@ -445,7 +445,7 @@ bool MSBsplineCurve::AlmostEqual (MSBsplineCurveCR other, double tolerance) cons
         {
         if (tolerance <= 0.0)
             tolerance = 0.5 * (Resolution() + other.Resolution());
-            
+
         if (this->HasWeights())
             {
             for (int i=0; i<this->GetNumPoles(); i++)

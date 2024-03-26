@@ -212,7 +212,7 @@ DPoint3dCP pXYZ1
 //! @param [in] pPointArray polygon vertices
 //! @param [in] numPoint number of vertices. Trailing duplicates of point 0 are ignored.
 //! @return true if convex
-//! 
+//!
 Public GEOMDLLIMPEXP bool bsiGeom_testPolygonConvex
 (
 DPoint3dCP pPointArray,

@@ -185,11 +185,11 @@ bool DgnRotationalSweepDetail::TransformInPlace (TransformCR transform)
     {
     transform.Multiply (m_axisOfRotation, m_axisOfRotation);
     m_baseCurve->TransformInPlace (transform);
-    
+
     if (transform.Determinant() < 0.0)
         m_sweepAngle = -m_sweepAngle;
 
-    return true;    
+    return true;
     }
 
 

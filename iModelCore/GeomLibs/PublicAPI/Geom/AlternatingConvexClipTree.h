@@ -19,7 +19,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 //!     at adjacent levels flip between being positive areas and holes.
 //! <li>Use an AlternatingConvexClipTreeNodeBuilder to construct the tree from a polygon.
 //! <li>It is possible for the root clip plane set to be empty.  An empty clip plane set returns "true"
-//!       for all point tests, so the meaning is just that holes are to be subtracted from the rest 
+//!       for all point tests, so the meaning is just that holes are to be subtracted from the rest
 //!       of space.
 //! <li>Althogh the interpretation of in/out alternates with tree levels, the ConvexClipPlaneSets
 //      at each level are all "enclosing" planes in the usual way.

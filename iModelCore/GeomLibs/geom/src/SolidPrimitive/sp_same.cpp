@@ -53,7 +53,7 @@ bool DgnExtrusionDetail::IsSameStructure (ISolidPrimitiveCR other) const
     return m_capped == otherDetail.m_capped
         && m_baseCurve->IsSameStructure (*otherDetail.m_baseCurve);
     }
-    
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -76,7 +76,7 @@ bool DgnRuledSweepDetail::IsSameStructure (ISolidPrimitiveCR other) const
     if (!other.TryGetDgnRuledSweepDetail (otherDetail))
         return false;
     if (m_capped != otherDetail.m_capped)
-        return false;        
+        return false;
     if (m_sectionCurves.size () != otherDetail.m_sectionCurves.size ())
         return false;
     for (size_t i = 0, n = m_sectionCurves.size (); i < n; i++)
@@ -98,22 +98,22 @@ bool DgnConeDetail::IsSameStructureAndGeometry (ISolidPrimitiveCR other, double 
         return false;
     if (m_capped != otherDetail.m_capped)
         return false;
-        
+
     if (!DPoint3dOps::AlmostEqual (m_centerA, otherDetail.m_centerA, tolerance))
-        return false;        
+        return false;
     if (!DPoint3dOps::AlmostEqual (m_centerB, otherDetail.m_centerB, tolerance))
-        return false;        
+        return false;
 
     if (!DVec3dOps::AlmostEqual (m_vector0, otherDetail.m_vector0, tolerance))
         return false;
     if (!DVec3dOps::AlmostEqual (m_vector90, otherDetail.m_vector90, tolerance))
-        return false;        
+        return false;
 
     if (!DoubleOps::AlmostEqual (m_radiusA, otherDetail.m_radiusA, tolerance))
-        return false;        
+        return false;
     if (!DoubleOps::AlmostEqual (m_radiusB, otherDetail.m_radiusB, tolerance))
-        return false;       
-         
+        return false;
+
     return true;
     }
 
@@ -129,18 +129,18 @@ bool DgnTorusPipeDetail::IsSameStructureAndGeometry (ISolidPrimitiveCR other, do
         return false;
 
     if (!DPoint3dOps::AlmostEqual (m_center, otherDetail.m_center, tolerance))
-        return false;        
+        return false;
 
     if (!DVec3dOps::AlmostEqual (m_vectorX, otherDetail.m_vectorX, tolerance))
         return false;
     if (!DVec3dOps::AlmostEqual (m_vectorY, otherDetail.m_vectorY, tolerance))
-        return false;        
+        return false;
 
     if (!DoubleOps::AlmostEqual (m_majorRadius, otherDetail.m_majorRadius, tolerance))
-        return false;        
+        return false;
     if (!DoubleOps::AlmostEqual (m_minorRadius, otherDetail.m_minorRadius, tolerance))
-        return false;       
-    
+        return false;
+
     if (!Angle::NearlyEqualAllowPeriodShift (m_sweepAngle, otherDetail.m_sweepAngle))
         return false;
     return true;
@@ -160,12 +160,12 @@ bool DgnSphereDetail::IsSameStructureAndGeometry (ISolidPrimitiveCR other, doubl
 
     // The sphere radii (real distances) are built into the transform columns, so the distance tolerance applies to both matrix and origin parts.
     if (!m_localToWorld.IsEqual (otherDetail.m_localToWorld, tolerance, tolerance))
-        return false;        
-    
+        return false;
+
     if (!Angle::NearlyEqualAllowPeriodShift (m_startLatitude, otherDetail.m_startLatitude))
         return false;
     if (!Angle::NearlyEqualAllowPeriodShift (m_latitudeSweep, otherDetail.m_latitudeSweep))
-        return false;        
+        return false;
     return true;
     }
 
@@ -183,23 +183,23 @@ bool DgnBoxDetail::IsSameStructureAndGeometry (ISolidPrimitiveCR other, double t
     if (!DPoint3dOps::AlmostEqual (m_baseOrigin, otherDetail.m_baseOrigin, tolerance))
         return false;
     if (!DPoint3dOps::AlmostEqual (m_topOrigin, otherDetail.m_topOrigin, tolerance))
-        return false;                  
+        return false;
 
     if (!DVec3dOps::AlmostEqual (m_vectorX, otherDetail.m_vectorX, tolerance))
         return false;
     if (!DVec3dOps::AlmostEqual (m_vectorY, otherDetail.m_vectorY, tolerance))
-        return false;        
+        return false;
 
     if (!DoubleOps::AlmostEqual (m_baseX, otherDetail.m_baseX, tolerance))
-        return false;        
+        return false;
     if (!DoubleOps::AlmostEqual (m_baseY, otherDetail.m_baseY, tolerance))
-        return false;       
+        return false;
 
     if (!DoubleOps::AlmostEqual (m_topX, otherDetail.m_topX, tolerance))
-        return false;        
+        return false;
     if (!DoubleOps::AlmostEqual (m_topY, otherDetail.m_topY, tolerance))
-        return false;        
- 
+        return false;
+
     return true;
     }
 
@@ -213,15 +213,15 @@ bool DgnExtrusionDetail::IsSameStructureAndGeometry (ISolidPrimitiveCR other, do
         return false;
     if (m_capped != otherDetail.m_capped)
         return false;
-        
+
     if (!DVec3dOps::AlmostEqual (m_extrusionVector, otherDetail.m_extrusionVector, tolerance))
         return false;
-                            
+
     if (!m_baseCurve->IsSameStructureAndGeometry (*otherDetail.m_baseCurve, tolerance))
         return false;
     return true;
     }
-    
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -233,7 +233,7 @@ bool DgnRotationalSweepDetail::IsSameStructureAndGeometry (ISolidPrimitiveCR oth
         return false;
     if (m_capped != otherDetail.m_capped)
         return false;
-        
+
 
     if (!m_axisOfRotation.direction.IsParallelTo (otherDetail.m_axisOfRotation.direction))
         return false;
@@ -246,7 +246,7 @@ bool DgnRotationalSweepDetail::IsSameStructureAndGeometry (ISolidPrimitiveCR oth
         }
     if (!m_baseCurve->IsSameStructureAndGeometry (*otherDetail.m_baseCurve, tolerance))
         return false;
-    return true;        
+    return true;
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -258,7 +258,7 @@ bool DgnRuledSweepDetail::IsSameStructureAndGeometry (ISolidPrimitiveCR other, d
     if (!other.TryGetDgnRuledSweepDetail (otherDetail))
         return false;
     if (m_capped != otherDetail.m_capped)
-        return false;        
+        return false;
     if (m_sectionCurves.size () != otherDetail.m_sectionCurves.size ())
         return false;
     for (size_t i = 0, n = m_sectionCurves.size (); i < n; i++)

@@ -15,7 +15,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 //! @param a      IN      floating point label value
 //! @param mask   IN      mask value
 //! @param userData IN      user data labal
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void    bsiGraphicsPoint_initFromDPoint4d
 (
@@ -34,7 +34,7 @@ int             userData
 //! @param a      IN      floating point label value
 //! @param mask   IN      mask value
 //! @param userData IN      user data labal
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void    bsiGraphicsPoint_initFromDPoint3d
 (
@@ -54,7 +54,7 @@ int             userData
 //! @param a      IN      floating point label value
 //! @param mask   IN      mask value
 //! @param userData IN      user data labal
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void    bsiGraphicsPoint_init
 (
@@ -73,7 +73,7 @@ int             userData
 //! @param pInstance OUT     normalized graphics point
 //! @param pPoint IN      source point
 //! @return true if the weight is nonzero
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool        bsiGraphicsPoint_normalizeWeight (GraphicsPointP pInstance);
 
@@ -85,7 +85,7 @@ Public GEOMDLLIMPEXP bool        bsiGraphicsPoint_normalizeWeight (GraphicsPoint
 //! @param pInPoint IN      source array
 //! @param n IN      number of points
 //! @return number of copied
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP int bsiGraphicsPoint_copyArray
 (
@@ -105,7 +105,7 @@ int           n
 //! @param pSource IN      source array
 //! @param pIndex IN      array of indices into source array
 //! @param nIndex IN      number of points
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void bsiGraphicsPoint_copyIndexedArray
 (

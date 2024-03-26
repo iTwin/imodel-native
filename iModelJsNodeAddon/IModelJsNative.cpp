@@ -75,8 +75,8 @@ struct FileProps {
     FileProps(Utf8StringCR name, Utf8StringCR fileExt,Utf8StringCR localFileName): m_name(name), m_fileExt(fileExt), m_localFileName(localFileName) {}
 };
 
-struct SQLiteOps {
-    virtual Db* _GetMyDb() = 0;
+template<typename T_Db> struct SQLiteOps {
+    virtual T_Db* _GetMyDb() = 0;
 
     static FileProps getEmbedFileProps(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, optObj);
@@ -105,11 +105,22 @@ struct SQLiteOps {
         return props;
     }
 
-    Db& GetOpenedDb(NapiInfoCR info) {
-        RequireDbIsOpen(info);
-        return *_GetMyDb();
+    T_Db& GetOpenedDb(NapiInfoCR info) {
+        auto* db = _GetMyDb();
+        if (db == nullptr || !db->IsDbOpen())
+            BeNapi::ThrowJsException(info.Env(), "db is not open");
+            
+        return *db;
     }
 
+    T_Db& GetWritableDb(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        if (db.IsReadonly())
+            BeNapi::ThrowJsException(info.Env(), "db is not open for write");
+
+        return db;
+    }
+            
     void EmbedFile(NapiInfoCR info) {
         Db& db = GetOpenedDb(info);
         auto props = getEmbedFileArg(info);
@@ -300,16 +311,6 @@ struct SQLiteOps {
         BeNapi::ThrowJsException(info.Env(), "unable to embed font");
     }
 
-    void RequireDbIsOpen(NapiInfoCR info) {
-        const auto* db = _GetMyDb();
-        if (db == nullptr || !db->IsDbOpen())
-            BeNapi::ThrowJsException(info.Env(), "db is not open");
-    }
-    void RequireDbIsWritable(NapiInfoCR info) {
-        if (GetOpenedDb(info).IsReadonly())
-            BeNapi::ThrowJsException(info.Env(), "db is not open for write");
-    }
-
     Napi::Value IsOpen(NapiInfoCR info) {
         auto db = _GetMyDb();
         return Napi::Boolean::New(info.Env(), nullptr != db && db->IsDbOpen());
@@ -377,7 +378,7 @@ struct SQLiteOps {
 // Projects the ECDb class into JS
 //! @bsiclass
 //=======================================================================================
-struct NativeECDb : BeObjectWrap<NativeECDb>, SQLiteOps {
+struct NativeECDb : BeObjectWrap<NativeECDb>, SQLiteOps<ECDb> {
 private:
     DEFINE_CONSTRUCTOR
     ECDb m_ecdb;
@@ -386,7 +387,7 @@ public:
     NativeECDb(NapiInfoCR info) : BeObjectWrap<NativeECDb>(info) {}
     ~NativeECDb() { SetInDestructor(); CloseDbIfOpen(); }
     ECDbR GetECDb() { return m_ecdb; }
-    Db* _GetMyDb() override { return &m_ecdb; }
+    ECDb* _GetMyDb() override { return &m_ecdb; }
 
     // Check if val is really a NativeECDb peer object
     static bool InstanceOf(Napi::Value val) {
@@ -631,7 +632,7 @@ static void addContainerParams(Napi::Object db, Utf8StringR dbName, Db::OpenPara
 // Projects the BeSQLite::Db class into JS
 //! @bsiclass
 //=======================================================================================
-struct SQLiteDb : Napi::ObjectWrap<SQLiteDb>, SQLiteOps {
+struct SQLiteDb : Napi::ObjectWrap<SQLiteDb>, SQLiteOps<Db> {
 private:
     DEFINE_CONSTRUCTOR
     Db m_db;
@@ -709,17 +710,17 @@ public:
     void Dispose(NapiInfoCR info) { CloseDbIfOpen(false);}
 
     void SaveChanges(NapiInfoCR info) {
-        RequireDbIsOpen(info);
-        DbResult status = m_db.SaveChanges();
+        auto& db = GetOpenedDb(info);
+        DbResult status = db.SaveChanges();
         if (status != BE_SQLITE_OK)
-            JsInterop::throwSqlResult("error in saveChanges", m_db.GetDbFileName(), status);
+            JsInterop::throwSqlResult("error in saveChanges", db.GetDbFileName(), status);
     }
 
     void AbandonChanges(NapiInfoCR info) {
-        RequireDbIsOpen(info);
-        DbResult status = m_db.AbandonChanges();
+        auto& db = GetOpenedDb(info);
+        DbResult status = db.AbandonChanges();
         if (status != BE_SQLITE_OK)
-            JsInterop::throwSqlResult("error in abandonChanges", m_db.GetDbFileName(), status);
+            JsInterop::throwSqlResult("error in abandonChanges", db.GetDbFileName(), status);
     }
 
     static void Init(Napi::Env env, Napi::Object exports) {
@@ -949,13 +950,16 @@ public:
 // Projects the DgnDb class into JS
 //! @bsiclass
 //=======================================================================================
-struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
+struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     {
     static constexpr int ERROR_UsageTrackingFailed = -100;
 
     DEFINE_CONSTRUCTOR;
 
-    Db* _GetMyDb() override { return m_dgndb.get(); }
+    DgnDb* _GetMyDb() override { return m_dgndb.get(); }
+
+    // Access this only in contexts where we are manipulating the pointer or directly, or have verified it is non-null.
+    // Most methods should use GetOpenedDb or GetWritableDb.
     Dgn::DgnDbPtr m_dgndb;
     // Cancellation token associated with the currently-open DgnDb.
     // The 'cancelled' flag is set on the main thread when the DgnDb is being closed.
@@ -978,8 +982,16 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         return val.As<Napi::Object>().InstanceOf(Constructor().Value());
         }
 
-    DgnDbR GetDgnDb() {return *m_dgndb;}
+    // Throws a C++ exception if m_dgndb is null.
+    // Most methods should use GetOpenedDb or GetWritableDb.
+    // Use this only in rare contexts where you have previously verified that m_dgndb is non-null, e.g., via GetOpenedDb().
+    DgnDbR GetDgnDb() {
+        if (m_dgndb.IsNull())
+            throw std::runtime_error("DgnDb is null");
 
+        return *m_dgndb;
+    }
+        
     template<typename STATUSTYPE>
     Napi::Object CreateBentleyReturnErrorObject(STATUSTYPE errCode, Utf8CP msg = nullptr) {return IModelJsNative::CreateBentleyReturnErrorObject(errCode, msg, Env());}
 
@@ -993,7 +1005,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
     Napi::Value IsDgnDbOpen(NapiInfoCR info) { return Napi::Boolean::New(Env(), IsOpen()); }
 
-    Napi::Value IsReadonly(NapiInfoCR info) { return Napi::Boolean::New(Env(), m_dgndb->IsReadonly()); }
+    // Napi::Value IsReadonly(NapiInfoCR info) { return Napi::Boolean::New(Env(), m_dgndb->IsReadonly()); }
 
     void SetIModelDb(NapiInfoCR info) {
         Napi::Value obj = info[0];
@@ -1072,7 +1084,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
     void SetBusyTimeout(NapiInfoCR info) {
         REQUIRE_ARGUMENT_INTEGER(0, ms);
-        if (BE_SQLITE_OK != m_dgndb->SetBusyTimeout(ms))
+        if (!m_dgndb.IsValid() || BE_SQLITE_OK != m_dgndb->SetBusyTimeout(ms))
             JsInterop::ThrowJsException("unable to set busyTimeout");
     }
 
@@ -1126,8 +1138,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
     }
 
     void RestartDefaultTxn(NapiInfoCR info) {
-        RequireDbIsOpen(info);
-        auto& db = GetDgnDb();
+        auto& db = GetOpenedDb(info);
         auto& txns = db.Txns();
         auto last = txns.GetLastTxnId(); // save this before we restart
         db.RestartDefaultTxn();
@@ -1145,7 +1156,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         REQUIRE_ARGUMENT_STRING(0, s);
         REQUIRE_ARGUMENT_STRING(1, c);
         BeJsNapiObject metaData(Env());
-        auto status = JsInterop::GetECClassMetaData(metaData, GetDgnDb(), s.c_str(), c.c_str());
+        auto status = JsInterop::GetECClassMetaData(metaData, GetOpenedDb(info), s.c_str(), c.c_str());
         return CreateBentleyReturnObject(status, NapiValueRef::Stringify(metaData));
         }
 
@@ -1154,34 +1165,35 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         REQUIRE_ARGUMENT_STRING(0, schemaName);
         REQUIRE_ARGUMENT_STRING(1, itemName);
         BeJsNapiObject metaData(Env());
-        auto status = JsInterop::GetSchemaItem(metaData, GetDgnDb(), schemaName.c_str(), itemName.c_str());
+        auto status = JsInterop::GetSchemaItem(metaData, GetOpenedDb(info), schemaName.c_str(), itemName.c_str());
         return CreateBentleyReturnObject(status, NapiValueRef::Stringify(metaData));
         }
 
     Napi::Value GetSchemaProps(NapiInfoCR info)  {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING(0, schemaName);
-        auto schema = m_dgndb->Schemas().GetSchema(schemaName, true);
+        auto schema = db.Schemas().GetSchema(schemaName, true);
         if (nullptr == schema)
             BeNapi::ThrowJsException(info.Env(), "schema not found", (int) DgnDbStatus::NotFound);
 
         BeJsNapiObject props(info.Env());
         if (!schema->WriteToJsonValue(props))
             BeNapi::ThrowJsException(info.Env(), "unable to serialize schema");
+            
         return props;
     }
 
     Napi::Value GetSchemaPropsAsync(NapiInfoCR info) {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING(0, schemaName);
-        DgnDbWorkerPtr worker = new ECSchemaSerializationAsyncWorker(*m_dgndb, info.Env(), schemaName);
+        DgnDbWorkerPtr worker = new ECSchemaSerializationAsyncWorker(db, info.Env(), schemaName);
         return worker->Queue();  // Schema serialization happens in another thread
     }
 
     Napi::Value GetElement(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, opts);
         BeJsNapiObject jsValue(Env());
-        auto status = JsInterop::GetElement(jsValue, GetDgnDb(), opts);
+        auto status = JsInterop::GetElement(jsValue, GetOpenedDb(info), opts);
         if (DgnDbStatus::Success != status)
             BeNapi::ThrowJsException(Env(), "error reading element", (int)status);
         return jsValue;
@@ -1190,23 +1202,23 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
     Napi::Value GetModel(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, opts);
         BeJsNapiObject modelJson(Env());
-        DgnDbStatus status = JsInterop::GetModel(modelJson, GetDgnDb(), opts);
+        DgnDbStatus status = JsInterop::GetModel(modelJson, GetOpenedDb(info), opts);
         if (DgnDbStatus::Success != status)
             BeNapi::ThrowJsException(Env(), "error reading model", (int)status);
         return modelJson;
     }
 
     Napi::Value GetTempFileBaseName(NapiInfoCR info) {
-        RequireDbIsOpen(info);
-        return toJsString(Env(), GetDgnDb().GetTempFileBaseName());
+        auto& db = GetOpenedDb(info);
+        return toJsString(Env(), db.GetTempFileBaseName());
     }
 
     Napi::Value SetGeometricModelTrackingEnabled(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_BOOL(0, enable);
 
-        auto& modelChanges = GetDgnDb().Txns().m_modelChanges;
+        auto& modelChanges = db.Txns().m_modelChanges;
         if (enable != modelChanges.IsTrackingGeometry())
             {
             auto mode = modelChanges.SetTrackingGeometry(enable);
@@ -1225,23 +1237,22 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         }
 
     Napi::Value IsGeometricModelTrackingSupported(NapiInfoCR info)
-
         {
-        RequireDbIsOpen(info);
-        return Napi::Boolean::New(Env(), TxnManager::ModelChanges::Mode::Full == GetDgnDb().Txns().m_modelChanges.DetermineMode());
+        auto& db = GetOpenedDb(info);
+        return Napi::Boolean::New(Env(), TxnManager::ModelChanges::Mode::Full == db.Txns().m_modelChanges.DetermineMode());
         }
 
     Napi::Value QueryModelExtents(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_ANY_OBJ(0, options);
         BeJsNapiObject extentsJson(Env());
-        JsInterop::QueryModelExtents(extentsJson, GetDgnDb(), options);
+        JsInterop::QueryModelExtents(extentsJson, db, options);
         return extentsJson;
         }
 
     Napi::Value QueryModelExtentsAsync(NapiInfoCR info) {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray()) {
             THROW_JS_TYPE_EXCEPTION("Argument 0 must be an array of model Ids")
         }
@@ -1257,22 +1268,22 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         modelIds.push_back(modelId);
       }
 
-      DgnDbWorkerPtr worker = new QueryModelExtentsWorker(*m_dgndb, info.Env(), std::move(modelIds));
+      DgnDbWorkerPtr worker = new QueryModelExtentsWorker(db, info.Env(), std::move(modelIds));
       return worker->Queue();
     }
 
     Napi::Value DumpChangeSet(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_ANY_OBJ(0, changeSet);
 
-        ChangesetStatus status = JsInterop::DumpChangeSet(*m_dgndb, changeSet);
+        ChangesetStatus status = JsInterop::DumpChangeSet(db, changeSet);
         return Napi::Number::New(Env(), (int)status);
         }
 
     Napi::Value ExtractChangedInstanceIdsFromChangeSets(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         if (ARGUMENT_IS_NOT_PRESENT(0) || !info[0].IsArray()) {
             THROW_JS_TYPE_EXCEPTION("Argument 0 must be an array of strings")
         }
@@ -1286,98 +1297,99 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
         Napi::Object napiResult = Napi::Object::New(info.Env());
         BeJsValue json{napiResult};
-        DgnDbStatus status = JsInterop::ExtractChangedInstanceIdsFromChangeSets(json, *m_dgndb, changeSetFiles);
+        DgnDbStatus status = JsInterop::ExtractChangedInstanceIdsFromChangeSets(json, db, changeSetFiles);
         return CreateBentleyReturnObject(status, napiResult);
         }
 
     static TxnManager::TxnId TxnIdFromString(Utf8StringCR str) {
         return TxnManager::TxnId(BeInt64Id::FromString(str.c_str()).GetValueUnchecked());
     }
+        
     static Utf8String TxnIdToString(TxnManager::TxnId txnId) {return BeInt64Id(txnId.GetValue()).ToHexStr();}
 
     Napi::Value GetCurrentTxnId(NapiInfoCR info)
         {
-        return toJsString(Env(), TxnIdToString(m_dgndb->Txns().GetCurrentTxnId()));
+        return toJsString(Env(), TxnIdToString(GetOpenedDb(info).Txns().GetCurrentTxnId()));
         }
 
     Napi::Value QueryFirstTxnId(NapiInfoCR info) {
         OPTIONAL_ARGUMENT_BOOL(0, allowCrossSessions, true); // default to true for backwards compatibility
-        auto& txns = m_dgndb->Txns();
+        auto& txns = GetOpenedDb(info).Txns();
         TxnManager::TxnId startTxnId = allowCrossSessions ? txns.QueryNextTxnId(TxnManager::TxnId(0)) : txns.GetSessionStartId();
         return toJsString(Env(), TxnIdToString(startTxnId));
     }
 
     Napi::Value QueryNextTxnId(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, txnIdHexStr);
-        auto next = m_dgndb->Txns().QueryNextTxnId(TxnIdFromString(txnIdHexStr));
+        auto next = GetOpenedDb(info).Txns().QueryNextTxnId(TxnIdFromString(txnIdHexStr));
         return toJsString(Env(), TxnIdToString(next));
     }
     Napi::Value QueryPreviousTxnId(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, txnIdHexStr);
-        auto next = m_dgndb->Txns().QueryPreviousTxnId(TxnIdFromString(txnIdHexStr));
+        auto next = GetOpenedDb(info).Txns().QueryPreviousTxnId(TxnIdFromString(txnIdHexStr));
         return toJsString(Env(), TxnIdToString(next));
     }
     Napi::Value GetTxnDescription(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, txnIdHexStr);
-        return toJsString(Env(), m_dgndb->Txns().GetTxnDescription(TxnIdFromString(txnIdHexStr)));
+        return toJsString(Env(), GetOpenedDb(info).Txns().GetTxnDescription(TxnIdFromString(txnIdHexStr)));
     }
     Napi::Value IsTxnIdValid(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, txnIdHexStr);
         return Napi::Boolean::New(Env(), TxnIdFromString(txnIdHexStr).IsValid());
     }
-    Napi::Value HasFatalTxnError(NapiInfoCR info) { return Napi::Boolean::New(Env(), m_dgndb->Txns().HasFatalError()); }
+    Napi::Value HasFatalTxnError(NapiInfoCR info) { return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().HasFatalError()); }
     void LogTxnError(NapiInfoCR info) {
         REQUIRE_ARGUMENT_BOOL(0, fatal);
-        m_dgndb->Txns().LogError(fatal);
+        GetOpenedDb(info).Txns().LogError(fatal);
     }
     void EnableTxnTesting(NapiInfoCR info) {
-        m_dgndb->Txns().EnableTracking(true);
-        m_dgndb->Txns().InitializeTableHandlers();
+        GetOpenedDb(info).Txns().EnableTracking(true);
+        GetOpenedDb(info).Txns().InitializeTableHandlers();
     }
-    Napi::Value BeginMultiTxnOperation(NapiInfoCR info) {return Napi::Number::New(Env(),  (int) m_dgndb->Txns().BeginMultiTxnOperation());}
-    Napi::Value EndMultiTxnOperation(NapiInfoCR info) {return Napi::Number::New(Env(),  (int) m_dgndb->Txns().EndMultiTxnOperation());}
-    Napi::Value GetMultiTxnOperationDepth(NapiInfoCR info) {return Napi::Number::New(Env(),  (int) m_dgndb->Txns().GetMultiTxnOperationDepth());}
+    Napi::Value BeginMultiTxnOperation(NapiInfoCR info) {return Napi::Number::New(Env(),  (int) GetOpenedDb(info).Txns().BeginMultiTxnOperation());}
+    Napi::Value EndMultiTxnOperation(NapiInfoCR info) {return Napi::Number::New(Env(),  (int) GetOpenedDb(info).Txns().EndMultiTxnOperation());}
+    Napi::Value GetMultiTxnOperationDepth(NapiInfoCR info) {return Napi::Number::New(Env(),  (int) GetOpenedDb(info).Txns().GetMultiTxnOperationDepth());}
     Napi::Value GetUndoString(NapiInfoCR info) {
-        return toJsString(Env(), m_dgndb->Txns().GetUndoString());
+        return toJsString(Env(), GetOpenedDb(info).Txns().GetUndoString());
     }
-    Napi::Value GetRedoString(NapiInfoCR info) {return toJsString(Env(), m_dgndb->Txns().GetRedoString());}
-    Napi::Value HasUnsavedChanges(NapiInfoCR info) {return Napi::Boolean::New(Env(), m_dgndb->Txns().HasChanges());}
-    Napi::Value HasPendingTxns(NapiInfoCR info) {return Napi::Boolean::New(Env(), m_dgndb->Txns().HasPendingTxns());}
-    Napi::Value IsIndirectChanges(NapiInfoCR info) {return Napi::Boolean::New(Env(), m_dgndb->Txns().IsIndirectChanges());}
-    Napi::Value IsRedoPossible(NapiInfoCR info) {return Napi::Boolean::New(Env(), m_dgndb->Txns().IsRedoPossible());}
+    Napi::Value GetRedoString(NapiInfoCR info) {return toJsString(Env(), GetOpenedDb(info).Txns().GetRedoString());}
+    Napi::Value HasUnsavedChanges(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().HasChanges());}
+    Napi::Value HasPendingTxns(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().HasPendingTxns());}
+    Napi::Value IsIndirectChanges(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().IsIndirectChanges());}
+    Napi::Value IsRedoPossible(NapiInfoCR info) {return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().IsRedoPossible());}
     Napi::Value IsUndoPossible(NapiInfoCR info) {
-        return Napi::Boolean::New(Env(), m_dgndb->Txns().IsUndoPossible());
+        return Napi::Boolean::New(Env(), GetOpenedDb(info).Txns().IsUndoPossible());
     }
-    void RestartTxnSession(NapiInfoCR info) {m_dgndb->Txns().Initialize();}
-    Napi::Value ReinstateTxn(NapiInfoCR info) {return Napi::Number::New(Env(), (int) m_dgndb->Txns().ReinstateTxn());}
-    Napi::Value ReverseAll(NapiInfoCR info) {return Napi::Number::New(Env(), (int) m_dgndb->Txns().ReverseAll());}
+    void RestartTxnSession(NapiInfoCR info) {GetOpenedDb(info).Txns().Initialize();}
+    Napi::Value ReinstateTxn(NapiInfoCR info) {return Napi::Number::New(Env(), (int) GetOpenedDb(info).Txns().ReinstateTxn());}
+    Napi::Value ReverseAll(NapiInfoCR info) {return Napi::Number::New(Env(), (int) GetOpenedDb(info).Txns().ReverseAll());}
     Napi::Value ReverseTo(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, txnIdHexStr);
-        return Napi::Number::New(Env(), (int) m_dgndb->Txns().ReverseTo(TxnIdFromString(txnIdHexStr)));
+        return Napi::Number::New(Env(), (int) GetOpenedDb(info).Txns().ReverseTo(TxnIdFromString(txnIdHexStr)));
     }
     Napi::Value CancelTo(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, txnIdHexStr);
-        return Napi::Number::New(Env(), (int) m_dgndb->Txns().CancelTo(TxnIdFromString(txnIdHexStr)));
+        return Napi::Number::New(Env(), (int) GetOpenedDb(info).Txns().CancelTo(TxnIdFromString(txnIdHexStr)));
     }
     Napi::Value ReverseTxns(NapiInfoCR info) {
         REQUIRE_ARGUMENT_NUMBER(0, numTxns );
-        return Napi::Number::New(Env(), (int) m_dgndb->Txns().ReverseTxns(numTxns));
+        return Napi::Number::New(Env(), (int) GetOpenedDb(info).Txns().ReverseTxns(numTxns));
     }
     Napi::Value ClassNameToId(NapiInfoCR info) {
-        auto classId = ECJsonUtilities::GetClassIdFromClassNameJson(info[0], m_dgndb->GetClassLocater());
+        auto classId = ECJsonUtilities::GetClassIdFromClassNameJson(info[0], GetOpenedDb(info).GetClassLocater());
         return toJsString(Env(), classId);
     }
     Napi::Value ClassIdToName(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, idString);
         DgnClassId classId;
         DgnClassId::FromString(classId, idString.c_str());
-        auto ecClass = m_dgndb->Schemas().GetClass(classId);
+        auto ecClass = GetOpenedDb(info).Schemas().GetClass(classId);
         return (nullptr == ecClass) ? Env().Undefined() : toJsString(Env(), ecClass->GetFullName());
     }
 
     Napi::Value StartCreateChangeset(NapiInfoCR info) {
-        RequireDbIsWritable(info);
-        TxnManagerR txns = m_dgndb->Txns();
+        auto& db = GetWritableDb(info);
+        TxnManagerR txns = db.Txns();
         txns.StopCreateChangeset(false); // if there's one in progress, just abandon it.
         ChangesetPropsPtr changeset = txns.StartCreateChangeset();
         if (!changeset.IsValid())
@@ -1388,36 +1400,35 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         changesetInfo[JsInterop::json_index()] = 0;
         changesetInfo[JsInterop::json_parentId()] = changeset->GetParentId().c_str();
         changesetInfo[JsInterop::json_pathname()] = Utf8String(changeset->GetFileName()).c_str();
-        changesetInfo[JsInterop::json_changesType()] = (int)(changeset->ContainsSchemaChanges(*m_dgndb) ? 1 : 0);
+        changesetInfo[JsInterop::json_changesType()] = (int)(changeset->ContainsSchemaChanges(db) ? 1 : 0);
         return changesetInfo;
     }
 
     void CompleteCreateChangeset(NapiInfoCR info) {
-        RequireDbIsWritable(info);
+        auto& db = GetWritableDb(info);
         REQUIRE_ARGUMENT_ANY_OBJ(0, optObj);
         BeJsConst opts(optObj);
         if (!opts.isNumericMember(JsInterop::json_index()))
             BeNapi::ThrowJsException(Env(), "changeset index must be supplied");
         int32_t index = opts[JsInterop::json_index()].GetInt();
 
-        m_dgndb->Txns().FinishCreateChangeset(index);
+        db.Txns().FinishCreateChangeset(index);
     }
 
     void AbandonCreateChangeset(NapiInfoCR info) {
-        RequireDbIsWritable(info);
-        m_dgndb->Txns().StopCreateChangeset(false);
+        GetWritableDb(info).Txns().StopCreateChangeset(false);
     }
 
     Napi::Value AddChildPropagatesChangesToParentRelationship(NapiInfoCR info)     {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING(0, schemaName);
         REQUIRE_ARGUMENT_STRING(1, className);
-        auto status = m_dgndb->Txns().AddChildPropagatesChangesToParentRelationship(schemaName, className);
+        auto status = db.Txns().AddChildPropagatesChangesToParentRelationship(schemaName, className);
         return Napi::Number::New(Env(), (int) status);
     }
 
     Napi::Value AddNewFont(NapiInfoCR info) {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_ANY_OBJ(0, fontPropObj);
         BeJsConst fontProps(fontPropObj);
         int fontTypeVal = fontProps[JsInterop::json_type()].asInt(1);
@@ -1425,44 +1436,44 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         Utf8String name = fontProps[JsInterop::json_name()].asString();
         if (name.empty())
             BeNapi::ThrowJsException(Env(), "Font name is invalid");
-        auto id = m_dgndb->Fonts().GetId(fontType, name.c_str());
+        auto id = db.Fonts().GetId(fontType, name.c_str());
         return Napi::Number::New(Env(), (int) id.GetValue());
     }
 
     Napi::Value WriteFullElementDependencyGraphToFile(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING(0, dotFileName);
-        JsInterop::WriteFullElementDependencyGraphToFile(*m_dgndb, dotFileName);
+        JsInterop::WriteFullElementDependencyGraphToFile(db, dotFileName);
         return Napi::Number::New(Env(), 0);
         }
 
     Napi::Value WriteAffectedElementDependencyGraphToFile(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING(0, dotFileName);
         REQUIRE_ARGUMENT_STRING_ARRAY(1, id64Array);
-        JsInterop::WriteAffectedElementDependencyGraphToFile(*m_dgndb, dotFileName, id64Array);
+        JsInterop::WriteAffectedElementDependencyGraphToFile(db, dotFileName, id64Array);
         return Napi::Number::New(Env(), 0);
         }
 
     Napi::Value GetMassProperties(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_ANY_OBJ(0, request);
-        DgnDbWorkerPtr worker = new MassPropertiesAsyncWorker(*m_dgndb, request); // freed in caller of OnOK and OnError see AsyncWorker::OnWorkComplete
+        DgnDbWorkerPtr worker = new MassPropertiesAsyncWorker(GetOpenedDb(info), request); // freed in caller of OnOK and OnError see AsyncWorker::OnWorkComplete
         return worker->Queue();  // Measure happens in another thread
         }
 
     Napi::Value UpdateElementGeometryCache(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_ANY_OBJ(0, request);
-        DgnDbWorkerPtr worker = new ElementGeometryCacheAsyncWorker(*m_dgndb, request); // freed in caller of OnOK and OnError see AsyncWorker::OnWorkComplete
+        DgnDbWorkerPtr worker = new ElementGeometryCacheAsyncWorker(GetOpenedDb(info), request); // freed in caller of OnOK and OnError see AsyncWorker::OnWorkComplete
         return worker->Queue();  // Happens in another thread
         }
 
     Napi::Value ElementGeometryCacheOperation(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_ANY_OBJ(0, requestProps);
 
         Napi::Value elementIdVal = requestProps.Get("id");
@@ -1471,7 +1482,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
         try
             {
-            return Napi::Number::New(Env(), (int) ElementGeometryCache::Operation(GetDgnDb(), requestProps, Env()));
+            return Napi::Number::New(Env(), (int) ElementGeometryCache::Operation(db, requestProps, Env()));
             }
         catch (std::exception const& e)
             {
@@ -1481,7 +1492,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
     Napi::Value GetGeometryContainment(NapiInfoCR info)        {
         REQUIRE_ARGUMENT_ANY_OBJ(0, request);
-        DgnDbWorkerPtr worker = new FenceAsyncWorker(*m_dgndb, request); // freed in caller of OnOK and OnError see AsyncWorker::OnWorkComplete
+        DgnDbWorkerPtr worker = new FenceAsyncWorker(GetOpenedDb(info), request); // freed in caller of OnOK and OnError see AsyncWorker::OnWorkComplete
         return worker->Queue();  // Containment check happens in another thread
     }
 
@@ -1491,11 +1502,12 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         auto results = Napi::Array::New(Env());
         int i = 0;
 
-        GetDgnDb().Txns().ForEachLocalChange(
+        auto& db = GetOpenedDb(info);
+        db.Txns().ForEachLocalChange(
             [&](ECInstanceKey const& key, DbOpcode changeType) {
                 auto result = Napi::Object::New(Env());
                 result["id"] = Napi::String::New(Env(), key.GetInstanceId().ToHexStr());
-                result["classFullName"] = Napi::String::New(Env(), GetDgnDb().Schemas().GetClass(key.GetClassId())->GetFullName());
+                result["classFullName"] = Napi::String::New(Env(), db.Schemas().GetClass(key.GetClassId())->GetFullName());
                 result["changeType"] = Napi::String::New(Env(), (changeType == DbOpcode::Delete ? "deleted" : (changeType == DbOpcode::Insert ? "inserted" : "updated")));
                 results[i++] = result;
             }, rootClassFilter, includeInMemChanges);
@@ -1505,26 +1517,26 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
     Napi::Value GetIModelCoordsFromGeoCoords(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, geoCoordProps);
         BeJsNapiObject results(Env());
-        JsInterop::GetIModelCoordsFromGeoCoords(results, GetDgnDb(), geoCoordProps);
+        JsInterop::GetIModelCoordsFromGeoCoords(results, GetOpenedDb(info), geoCoordProps);
         return results;
     }
 
     Napi::Value GetGeoCoordsFromIModelCoords(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, iModelCoordProps);
         BeJsNapiObject results(Env());
-        JsInterop::GetGeoCoordsFromIModelCoords(results, GetDgnDb(), iModelCoordProps);
+        JsInterop::GetGeoCoordsFromIModelCoords(results, GetOpenedDb(info), iModelCoordProps);
         return results;
     }
 
     Napi::Value GetIModelProps(NapiInfoCR info) {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         BeJsNapiObject props(Env());
-        JsInterop::GetIModelProps(props, *m_dgndb);
+        JsInterop::GetIModelProps(props, db);
         return props;
     }
 
     Napi::Value InsertElement(NapiInfoCR info) {
-        RequireDbIsOpen(info);;
+        auto& db = GetOpenedDb(info);;
         REQUIRE_ARGUMENT_ANY_OBJ(0, elemProps);
         Napi::Value insertOptions;
         if (ARGUMENT_IS_PRESENT(1)) {\
@@ -1532,57 +1544,57 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         } else {
             insertOptions = Env().Undefined();
         }
-        return JsInterop::InsertElement(GetDgnDb(), elemProps, insertOptions);
+        return JsInterop::InsertElement(db, elemProps, insertOptions);
     }
 
     void UpdateElement(NapiInfoCR info) {
-        RequireDbIsOpen(info);;
+        auto& db = GetOpenedDb(info);;
         REQUIRE_ARGUMENT_ANY_OBJ(0, elemProps);
-        JsInterop::UpdateElement(GetDgnDb(), elemProps);
+        JsInterop::UpdateElement(db, elemProps);
     }
 
     void DeleteElement(NapiInfoCR info) {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING(0, elemIdStr);
-        JsInterop::DeleteElement(GetDgnDb(), elemIdStr);
+        JsInterop::DeleteElement(db, elemIdStr);
     }
 
     Napi::Value QueryDefinitionElementUsage(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, hexStringIds);
         Napi::Object usageInfoObj = Napi::Object::New(Env());
         BeJsValue usageInfo = BeJsValue(usageInfoObj);
-        DgnDbStatus status = JsInterop::QueryDefinitionElementUsage(usageInfo, GetDgnDb(), hexStringIds);
+        DgnDbStatus status = JsInterop::QueryDefinitionElementUsage(usageInfo, db, hexStringIds);
         return DgnDbStatus::Success == status ? usageInfoObj : Env().Undefined();
         }
 
     Napi::Value BeginPurgeOperation(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
-        GetDgnDb().BeginPurgeOperation();
+        auto& db = GetOpenedDb(info);
+        db.BeginPurgeOperation();
         return Napi::Number::New(Env(), (int)DgnDbStatus::Success);
         }
 
     Napi::Value EndPurgeOperation(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
-        GetDgnDb().EndPurgeOperation();
+        auto& db = GetOpenedDb(info);
+        db.EndPurgeOperation();
         return Napi::Number::New(Env(), (int)DgnDbStatus::Success);
         }
 
     Napi::Value SimplifyElementGeometry(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_ANY_OBJ(0, simplifyArgs);
-        auto status = JsInterop::SimplifyElementGeometry(GetDgnDb(), simplifyArgs);
+        auto status = JsInterop::SimplifyElementGeometry(db, simplifyArgs);
         return Napi::Number::New(Env(), (int)status);
         }
 
     Napi::Value InlineGeometryPartReferences(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
-        auto result = JsInterop::InlineGeometryParts(GetDgnDb());
+        auto& db = GetOpenedDb(info);
+        auto result = JsInterop::InlineGeometryParts(db);
 
         auto ret = Napi::Object::New(Env());
         ret.Set(Napi::String::New(Env(), "numCandidateParts"), Napi::Number::New(Env(), result.m_numCandidateParts));
@@ -1593,26 +1605,23 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         }
 
     Napi::Value InsertElementAspect(NapiInfoCR info) {
-        RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_ANY_OBJ(0, aspectProps);
-        return JsInterop::InsertElementAspect(GetDgnDb(), aspectProps);
+        return JsInterop::InsertElementAspect(GetOpenedDb(info), aspectProps);
     }
 
     void UpdateElementAspect(NapiInfoCR info)     {
-        RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_ANY_OBJ(0, aspectProps);
-        JsInterop::UpdateElementAspect(GetDgnDb(), aspectProps);
+        JsInterop::UpdateElementAspect(GetOpenedDb(info), aspectProps);
     }
 
     void DeleteElementAspect(NapiInfoCR info) {
-        RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING(0, aspectIdStr);
-        JsInterop::DeleteElementAspect(GetDgnDb(), aspectIdStr);
+        JsInterop::DeleteElementAspect(GetOpenedDb(info), aspectIdStr);
     }
 
     Napi::Value ExportGraphics(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_ANY_OBJ(0, exportProps);
 
         Napi::Value onGraphicsVal = exportProps.Get("onGraphics");
@@ -1623,13 +1632,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         if (!elementIdArrayVal.IsArray())
             THROW_JS_TYPE_EXCEPTION("elementIdArray must be an array");
 
-        DgnDbStatus status = JsInterop::ExportGraphics(GetDgnDb(), exportProps);
+        DgnDbStatus status = JsInterop::ExportGraphics(db, exportProps);
         return Napi::Number::New(Env(), (int)status);
         }
 
     Napi::Value ExportPartGraphics(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_ANY_OBJ(0, exportProps);
 
         Napi::Value onPartGraphicsVal = exportProps.Get("onPartGraphics");
@@ -1644,13 +1653,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         if (!elementIdVal.IsString())
             THROW_JS_TYPE_EXCEPTION("elementId must be a string");
 
-        DgnDbStatus status = JsInterop::ExportPartGraphics(GetDgnDb(), exportProps);
+        DgnDbStatus status = JsInterop::ExportPartGraphics(db, exportProps);
         return Napi::Number::New(Env(), (int)status);
         }
 
     Napi::Value ProcessGeometryStream(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_ANY_OBJ(0, requestProps);
 
         Napi::Value onGeometryVal = requestProps.Get("onGeometry");
@@ -1663,7 +1672,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
         try
             {
-            return Napi::Number::New(Env(), (int) GeometryStreamIO::ProcessGeometryStream(GetDgnDb(), requestProps, Env()));
+            return Napi::Number::New(Env(), (int) GeometryStreamIO::ProcessGeometryStream(db, requestProps, Env()));
             }
         catch (std::exception const& e)
             {
@@ -1673,7 +1682,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
     Napi::Value CreateBRepGeometry(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_ANY_OBJ(0, createProps);
 
         Napi::Number operationVal = createProps.Get("operation").As<Napi::Number>();
@@ -1690,7 +1699,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
         try
             {
-            return Napi::Number::New(Env(), (int) GeometryStreamIO::CreateBRepGeometry(GetDgnDb(), createProps, Env()));
+            return Napi::Number::New(Env(), (int) GeometryStreamIO::CreateBRepGeometry(db, createProps, Env()));
             }
         catch (std::exception const& e)
             {
@@ -1703,7 +1712,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         REQUIRE_ARGUMENT_STRING(0, idStr);
         REQUIRE_ARGUMENT_FUNCTION(1, responseCallback);
 
-        JsInterop::GetTileTree(m_cancellationToken.get(), GetDgnDb(), idStr, responseCallback);
+        JsInterop::GetTileTree(m_cancellationToken.get(), GetOpenedDb(info), idStr, responseCallback);
         }
 
     void GetTileContent(NapiInfoCR info)
@@ -1712,7 +1721,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         REQUIRE_ARGUMENT_STRING(1, tileIdStr);
         REQUIRE_ARGUMENT_FUNCTION(2, responseCallback);
 
-        JsInterop::GetTileContent(m_cancellationToken.get(), GetDgnDb(), treeIdStr, tileIdStr, responseCallback);
+        JsInterop::GetTileContent(m_cancellationToken.get(), GetOpenedDb(info), treeIdStr, tileIdStr, responseCallback);
         }
 
     void PurgeTileTrees(NapiInfoCR info)
@@ -1739,16 +1748,16 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
                 THROW_JS_TYPE_EXCEPTION("Argument 0 must be a non-empty array of valid Id64Strings");
             }
 
-        T_HOST.Visualization().PurgeTileTrees(GetDgnDb(), modelIds.empty() ? nullptr : &modelIds);
+        T_HOST.Visualization().PurgeTileTrees(GetOpenedDb(info), modelIds.empty() ? nullptr : &modelIds);
         }
 
     Napi::Value PollTileContent(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING(0, treeIdStr);
         REQUIRE_ARGUMENT_STRING(1, tileIdStr);
 
-        auto result = T_HOST.Visualization().PollTileContent(m_cancellationToken.get(), GetDgnDb(), treeIdStr, tileIdStr);
+        auto result = T_HOST.Visualization().PollTileContent(m_cancellationToken.get(), db, treeIdStr, tileIdStr);
 #ifdef BENTLEY_HAVE_VARIANT
         if (std::holds_alternative<Dgn::Visualization::PollState>(result))
           return CreateBentleyReturnSuccessObject(Napi::Number::New(Env(), static_cast<int>(std::get<Dgn::Visualization::PollState>(result))));
@@ -1788,7 +1797,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         REQUIRE_ARGUMENT_STRING_ARRAY(1, tileIds);
 
         if (!tileIds.empty())
-            T_HOST.Visualization().CancelContentRequests(GetDgnDb(), treeId, tileIds);
+            T_HOST.Visualization().CancelContentRequests(GetOpenedDb(info), treeId, tileIds);
         }
 
     void CancelElementGraphicsRequests(NapiInfoCR info)
@@ -1803,27 +1812,25 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
     Napi::Value GenerateElementGraphics(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
+        GetOpenedDb(info);
         REQUIRE_ARGUMENT_ANY_OBJ(0, requestProps);
         return ObtainTileGraphicsRequests().Enqueue(requestProps, info.Env());
         }
 
     Napi::Value GenerateElementMeshes(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);;
         REQUIRE_ARGUMENT_ANY_OBJ(0, requestProps);
-        return JsInterop::GenerateElementMeshes(GetDgnDb(), requestProps);
+        return JsInterop::GenerateElementMeshes(GetOpenedDb(info), requestProps);
         }
 
     Napi::Value IsLinkTableRelationship(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);;
         REQUIRE_ARGUMENT_STRING(0, qualifiedClassName);
         Utf8String alias, className;
         if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, className, qualifiedClassName.c_str()))
             return Env().Undefined();
 
-        ClassMapStrategy strategy = GetDgnDb().Schemas().GetClassMapStrategy(alias, className, SchemaLookupMode::AutoDetect);
+        ClassMapStrategy strategy = GetOpenedDb(info).Schemas().GetClassMapStrategy(alias, className, SchemaLookupMode::AutoDetect);
         if (strategy.IsEmpty())
             return Env().Undefined();
 
@@ -1831,90 +1838,80 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         }
 
     Napi::Value InsertLinkTableRelationship(NapiInfoCR info) {
-        RequireDbIsOpen(info);;
         REQUIRE_ARGUMENT_ANY_OBJ(0, props);
-        return JsInterop::InsertLinkTableRelationship(GetDgnDb(), props);
+        return JsInterop::InsertLinkTableRelationship(GetOpenedDb(info), props);
     }
 
     void UpdateLinkTableRelationship(NapiInfoCR info) {
-        RequireDbIsOpen(info);;
         REQUIRE_ARGUMENT_ANY_OBJ(0, props);
-        JsInterop::UpdateLinkTableRelationship(GetDgnDb(), props);
+        JsInterop::UpdateLinkTableRelationship(GetOpenedDb(info), props);
     }
 
     void DeleteLinkTableRelationship(NapiInfoCR info) {
-        RequireDbIsOpen(info);;
         REQUIRE_ARGUMENT_ANY_OBJ(0, props);
-        JsInterop::DeleteLinkTableRelationship(GetDgnDb(), props);
+        JsInterop::DeleteLinkTableRelationship(GetOpenedDb(info), props);
     }
 
     Napi::Value InsertCodeSpec(NapiInfoCR info) {
-        RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING(0, name);
         REQUIRE_ARGUMENT_ANY_OBJ(1, jsonProperties);
-        return JsInterop::InsertCodeSpec(GetDgnDb(), name, jsonProperties);
+        return JsInterop::InsertCodeSpec(GetOpenedDb(info), name, jsonProperties);
     }
 
     Napi::Value InsertModel(NapiInfoCR info) {
-        RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_ANY_OBJ(0, modelProps);
-        return JsInterop::InsertModel(GetDgnDb(), modelProps);
+        return JsInterop::InsertModel(GetOpenedDb(info), modelProps);
         }
 
     void UpdateModel(NapiInfoCR info) {
-        RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_ANY_OBJ(0, modelProps);
-        JsInterop::UpdateModel(GetDgnDb(), modelProps);
+        JsInterop::UpdateModel(GetOpenedDb(info), modelProps);
     }
 
     Napi::Value UpdateModelGeometryGuid(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);;
         REQUIRE_ARGUMENT_STRING(0, modelIdStr);
         DgnModelId modelId(BeInt64Id::FromString(modelIdStr.c_str()).GetValueUnchecked());
-        auto status = JsInterop::UpdateModelGeometryGuid(GetDgnDb(), modelId);
+        auto status = JsInterop::UpdateModelGeometryGuid(GetOpenedDb(info), modelId);
         return Napi::Number::New(Env(), static_cast<int>(status));
         }
 
     void DeleteModel(NapiInfoCR info) {
-        RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING(0, elemIdStr);
-        JsInterop::DeleteModel(GetDgnDb(), elemIdStr);
+        JsInterop::DeleteModel(GetOpenedDb(info), elemIdStr);
     }
 
     Napi::Value SaveChanges(NapiInfoCR info)
         {
         OPTIONAL_ARGUMENT_STRING(0, description);
-        RequireDbIsOpen(info);
-        auto stat = GetDgnDb().SaveChanges(description);
+        auto stat = GetOpenedDb(info).SaveChanges(description);
         return Napi::Number::New(Env(), (int)stat);
         }
 
     Napi::Value AbandonChanges(NapiInfoCR info)
         {
-        DbResult status = GetDgnDb().AbandonChanges();
+        DbResult status = GetOpenedDb(info).AbandonChanges();
         return Napi::Number::New(Env(), (int) status);
         }
 
     Napi::Value ImportFunctionalSchema(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
-        DbResult result = JsInterop::ImportFunctionalSchema(GetDgnDb());
+        DbResult result = JsInterop::ImportFunctionalSchema(GetOpenedDb(info));
         return Napi::Number::New(Env(), (int)result);
         }
+        
     void DropSchema(NapiInfoCR info) {
-        RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING(0, schemaName);
-        auto rc = GetDgnDb().DropSchema(schemaName);
+        auto rc = GetOpenedDb(info).DropSchema(schemaName);
         if (rc.GetStatus() != DropSchemaResult::Success) {
             THROW_JS_EXCEPTION(rc.GetStatusAsString());
         }
     }
     void SchemaSyncSetDefaultUri(NapiInfoCR info) {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
-        LastErrorListener lastError(GetDgnDb());
-        auto rc = GetDgnDb().Schemas().GetSchemaSync().SetDefaultSyncDbUri(schemaSyncDbUriStr.c_str());
+        LastErrorListener lastError(db);
+        auto rc = db.Schemas().GetSchemaSync().SetDefaultSyncDbUri(schemaSyncDbUriStr.c_str());
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
                 THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
@@ -1924,19 +1921,17 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         }
     }
     Napi::Value SchemaSyncGetDefaultUri(NapiInfoCR info) {
-        RequireDbIsOpen(info);
-        auto& syncDbUri = GetDgnDb().Schemas().GetSchemaSync().GetDefaultSyncDbUri();
+        auto& syncDbUri = GetOpenedDb(info).Schemas().GetSchemaSync().GetDefaultSyncDbUri();
         if (syncDbUri.IsEmpty())
             return Env().Undefined();
 
         return Napi::String::New(Env(), syncDbUri.GetUri().c_str());
         }
     void SchemaSyncInit(NapiInfoCR info) {
-        RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
         auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
-        LastErrorListener lastError(GetDgnDb());
-        auto rc = GetDgnDb().Schemas().GetSchemaSync().Init(syncDbUri);
+        LastErrorListener lastError(GetOpenedDb(info));
+        auto rc = GetOpenedDb(info).Schemas().GetSchemaSync().Init(syncDbUri);
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
                 THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
@@ -1947,24 +1942,23 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
     }
 
     Napi::Value SchemaSyncEnabled(NapiInfoCR info) {
-        RequireDbIsOpen(info);
-        const auto isEnabled = !GetDgnDb().Schemas().GetSchemaSync().GetInfo().IsEmpty();
+        const auto isEnabled = !GetOpenedDb(info).Schemas().GetSchemaSync().GetInfo().IsEmpty();
         return Napi::Boolean::New(Env(), isEnabled);
     }
 
     Napi::Value SchemaSyncGetLocalDbInfo(NapiInfoCR info) {
-        RequireDbIsOpen(info);
-        auto localDbInfo = GetDgnDb().Schemas().GetSchemaSync().GetInfo();
+        auto localDbInfo = GetOpenedDb(info).Schemas().GetSchemaSync().GetInfo();
         if (localDbInfo.IsEmpty()) {
             return Env().Undefined();
         }
+            
         BeJsNapiObject obj(Env());
         localDbInfo.To(obj);
         return obj;
     }
 
     Napi::Value SchemaSyncGetSyncDbInfo(NapiInfoCR info) {
-        RequireDbIsOpen(info);
+        GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
          auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
          auto syncDbInfo = syncDbUri.GetInfo();
@@ -1977,11 +1971,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
     }
 
     void SchemaSyncPull(NapiInfoCR info) {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         OPTIONAL_ARGUMENT_STRING(0, schemaSyncDbUriStr);
         auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
-        LastErrorListener lastError(GetDgnDb());
-        auto rc = GetDgnDb().PullSchemaChanges(syncDbUri);
+        LastErrorListener lastError(GetOpenedDb(info));
+        auto rc = db.PullSchemaChanges(syncDbUri);
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
                 THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
@@ -1992,7 +1986,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
     }
     Napi::Value ImportSchemas(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
         OPTIONAL_ARGUMENT_ANY_OBJ(1, jsOpts, Napi::Object::New(Env()));
         ECSchemaReadContextPtr customContext = nullptr;
@@ -2010,14 +2004,14 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             options.m_customSchemaContext = NativeECSchemaXmlContext::Unwrap(maybeEcSchemaContextVal.As<Napi::Object>())->GetContext();
             }
 
-        DbResult result = JsInterop::ImportSchemas(GetDgnDb(), schemaFileNames, SchemaSourceType::File, options);
+        DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::File, options);
 
         return Napi::Number::New(Env(), (int)result);
         }
 
     Napi::Value ImportXmlSchemas(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
         OPTIONAL_ARGUMENT_ANY_OBJ(1, jsOpts, Napi::Object::New(Env()));
         JsInterop::SchemaImportOptions options;
@@ -2025,17 +2019,18 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         auto jsSyncDbUri = jsOpts.Get(JsInterop::json_schemaSyncDbUri());
         if (jsSyncDbUri.IsString())
             options.m_schemaSyncDbUri = jsSyncDbUri.ToString().Utf8Value();
-        DbResult result = JsInterop::ImportSchemas(GetDgnDb(), schemaFileNames, SchemaSourceType::XmlString, options);
+            
+        DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::XmlString, options);
         return Napi::Number::New(Env(), (int)result);
         }
 
     Napi::Value FindGeometryPartReferences(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, partIds);
         REQUIRE_ARGUMENT_BOOL(1, is2d);
 
-        auto elemIds = JsInterop::FindGeometryPartReferences(partIds, is2d, GetDgnDb());
+        auto elemIds = JsInterop::FindGeometryPartReferences(partIds, is2d, db);
         uint32_t index = 0;
         auto ret = Napi::Array::New(Env(), elemIds.size());
         for (auto elemId : elemIds)
@@ -2050,7 +2045,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         REQUIRE_ARGUMENT_STRING(1, exportDirectory);
         OPTIONAL_ARGUMENT_STRING(2, maybeOutFileName);
 
-        ECSchemaCP schema = GetDgnDb().Schemas().GetSchema(schemaName);
+        ECSchemaCP schema = GetOpenedDb(info).Schemas().GetSchema(schemaName);
         if (nullptr == schema)
             BeNapi::ThrowJsException(info.Env(), "specified schema was not found");
 
@@ -2075,7 +2070,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
     Napi::Value ExportSchemas(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_STRING(0, exportDirectory);
-        bvector<ECN::ECSchemaCP> schemas = GetDgnDb().Schemas().GetSchemas();
+        bvector<ECN::ECSchemaCP> schemas = GetOpenedDb(info).Schemas().GetSchemas();
         for (ECSchemaCP schema : schemas)
             {
             BeFileName schemaFileName(exportDirectory);
@@ -2095,7 +2090,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         {
         REQUIRE_ARGUMENT_STRING(0, schemaName);
         OPTIONAL_ARGUMENT_UINTEGER(1, version, (uint32_t)ECVersion::Latest);
-        auto schema = GetDgnDb().Schemas().GetSchema(schemaName, true);
+        auto schema = GetOpenedDb(info).Schemas().GetSchema(schemaName, true);
         if (nullptr == schema)
             return info.Env().Undefined();
 
@@ -2115,55 +2110,51 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
     void CloseFile(NapiInfoCR info) { CloseDgnDb(false); }
 
     Napi::Value CreateClassViewsInDb(NapiInfoCR info) {
-        RequireDbIsOpen(info);
-        BentleyStatus status = GetDgnDb().Schemas().CreateClassViewsInDb();
+        BentleyStatus status = GetOpenedDb(info).Schemas().CreateClassViewsInDb();
         return Napi::Number::New(Env(), (int)status);
     }
 
     Napi::Value CreateChangeCache(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_OBJ(0, NativeECDb, changeCacheECDb);
         REQUIRE_ARGUMENT_STRING(1, changeCachePathStr);
         BeFileName changeCachePath(changeCachePathStr.c_str(), true);
-        DbResult stat = GetDgnDb().CreateChangeCache(changeCacheECDb->GetECDb(), changeCachePath);
+        DbResult stat = GetOpenedDb(info).CreateChangeCache(changeCacheECDb->GetECDb(), changeCachePath);
         return Napi::Number::New(Env(), (int) stat);
         }
 
     Napi::Value AttachChangeCache(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING(0, changeCachePathStr);
         BeFileName changeCachePath(changeCachePathStr.c_str(), true);
-        DbResult stat = GetDgnDb().AttachChangeCache(changeCachePath);
+        DbResult stat = GetOpenedDb(info).AttachChangeCache(changeCachePath);
         return Napi::Number::New(Env(), (int) stat);
         }
 
     Napi::Value DetachChangeCache(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
-        DbResult stat = GetDgnDb().DetachChangeCache();
+        DbResult stat = GetOpenedDb(info).DetachChangeCache();
         return Napi::Number::New(Env(), (int) stat);
         }
 
     Napi::Value IsChangeCacheAttached(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
-        bool isAttached = GetDgnDb().IsChangeCacheAttached();
+        bool isAttached = GetOpenedDb(info).IsChangeCacheAttached();
         return Napi::Boolean::New(Env(), isAttached);
         }
 
     Napi::Value ExtractChangeSummary(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_OBJ(0, NativeECDb, changeCacheECDb);
         REQUIRE_ARGUMENT_STRING(1, changesetFilePathStr);
         BeFileName changesetFilePath(changesetFilePathStr.c_str(), true);
-        ChangesetFileReader changeStream(changesetFilePath, GetDgnDb());
+        ChangesetFileReader changeStream(changesetFilePath, db);
         PERFLOG_START("iModelJsNative", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
         ECInstanceKey changeSummaryKey;
-        if (SUCCESS != ECDb::ExtractChangeSummary(changeSummaryKey, changeCacheECDb->GetECDb(), GetDgnDb(), ChangeSetArg(changeStream)))
+        if (SUCCESS != ECDb::ExtractChangeSummary(changeSummaryKey, changeCacheECDb->GetECDb(), GetOpenedDb(info), ChangeSetArg(changeStream)))
             return CreateBentleyReturnErrorObject(BE_SQLITE_ERROR, Utf8PrintfString("Failed to extract ChangeSummary for ChangeSet file '%s'.", changesetFilePathStr.c_str()).c_str());
+            
         PERFLOG_FINISH("iModelJsNative", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
 
         return CreateBentleyReturnSuccessObject(toJsString(Env(), changeSummaryKey.GetInstanceId()));
@@ -2172,66 +2163,61 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
     Napi::Value GetBriefcaseId(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
-        return Napi::Number::New(Env(), m_dgndb->GetBriefcaseId().GetValue());
+        return Napi::Number::New(Env(), GetOpenedDb(info).GetBriefcaseId().GetValue());
         }
 
     Napi::Value GetCurrentChangeset(NapiInfoCR info) {
-        RequireDbIsOpen(info);
         int32_t index;
         Utf8String id;
-        m_dgndb->Txns().GetParentChangesetIndex(index, id);
+        GetOpenedDb(info).Txns().GetParentChangesetIndex(index, id);
         BeJsNapiObject retVal(Env());
         retVal[JsInterop::json_id()] = id;
         if (index >= 0)
             retVal[JsInterop::json_index()] = index;
+            
         return retVal;
     }
 
     Napi::Value GetIModelId(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
-        BeGuid beGuid = m_dgndb->GetDbGuid();
+        BeGuid beGuid = GetOpenedDb(info).GetDbGuid();
         return toJsString(Env(), beGuid.ToString());
         }
 
     Napi::Value SetIModelId(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING(0, guidStr);
         BeGuid guid;
         guid.FromString(guidStr.c_str());
-        m_dgndb->ChangeDbGuid(guid);
+        GetOpenedDb(info).ChangeDbGuid(guid);
         return Napi::Number::New(Env(), (int)BE_SQLITE_OK);
         }
 
     Napi::Value SetITwinId(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING(0, guidStr);
         BeGuid guid;
         guid.FromString(guidStr.c_str());
-        m_dgndb->SaveProjectGuid(guid);
+        GetOpenedDb(info).SaveProjectGuid(guid);
         return Napi::Number::New(Env(), (int)BE_SQLITE_OK);
         }
 
     Napi::Value GetITwinId(NapiInfoCR info) {
-        RequireDbIsOpen(info);
-        BeGuid beGuid = m_dgndb->QueryProjectGuid();
+        BeGuid beGuid = GetOpenedDb(info).QueryProjectGuid();
         return toJsString(Env(), beGuid.ToString());
     }
 
     void ResetBriefcaseId(NapiInfoCR info) {
-        RequireDbIsOpen(info);
+        auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_INTEGER(0, newId);
         DbResult stat;
         try {
-            stat = m_dgndb->ResetBriefcaseId(BeSQLite::BeBriefcaseId(newId));
+            stat = db.ResetBriefcaseId(BeSQLite::BeBriefcaseId(newId));
         } catch(std::runtime_error e) {
             THROW_JS_EXCEPTION(e.what());
         }
         if (stat != BE_SQLITE_OK)
-            JsInterop::throwSqlResult("Cannot reset briefcaseId for", m_dgndb->GetDbFileName(), stat);
+            JsInterop::throwSqlResult("Cannot reset briefcaseId for", db.GetDbFileName(), stat);
     }
 
     static Napi::Value GetAssetDir(NapiInfoCR info)
@@ -2250,11 +2236,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
     void UpdateProjectExtents(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_STRING(0, newExtentsJson)
-        JsInterop::UpdateProjectExtents(GetDgnDb(), BeJsDocument(newExtentsJson));
+        JsInterop::UpdateProjectExtents(GetOpenedDb(info), BeJsDocument(newExtentsJson));
         }
 
     Napi::Value GetCodeValueBehavior(NapiInfoCR info) {
-        switch (GetDgnDb().m_codeValueBehavior) {
+        switch (GetOpenedDb(info).m_codeValueBehavior) {
             case DgnCodeValue::Behavior::Exact: return Napi::String::New(info.Env(), "exact");
             case DgnCodeValue::Behavior::TrimUnicodeWhitespace: return Napi::String::New(info.Env(), "trim-unicode-whitespace");
             default: THROW_JS_EXCEPTION("Behavior was invalid. This is a bug.");
@@ -2270,7 +2256,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             newBehavior = DgnCodeValue::Behavior::TrimUnicodeWhitespace;
         else
             THROW_JS_EXCEPTION("Unsupported argument, should be one of the strings 'exact' or 'trim-unicode-whitespace'");
-        GetDgnDb().m_codeValueBehavior = newBehavior;
+        GetOpenedDb(info).m_codeValueBehavior = newBehavior;
     }
 
     Napi::Value ComputeProjectExtents(NapiInfoCR info)
@@ -2280,7 +2266,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
         DRange3d fullExtents;
         bvector<BeInt64Id> outliers;
-        auto extents = GetDgnDb().GeoLocation().ComputeProjectExtents(wantFullExtents ? &fullExtents : nullptr, wantOutliers ? &outliers : nullptr);
+        auto extents = GetOpenedDb(info).GeoLocation().ComputeProjectExtents(wantFullExtents ? &fullExtents : nullptr, wantOutliers ? &outliers : nullptr);
 
         BeJsNapiObject result(info.Env());
         BeJsGeomUtils::DRange3dToJson(result["extents"], extents);
@@ -2302,11 +2288,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
     void UpdateIModelProps(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, props)
-        JsInterop::UpdateIModelProps(GetDgnDb(), BeJsConst(props));
+        JsInterop::UpdateIModelProps(GetOpenedDb(info), BeJsConst(props));
     }
 
     Napi::Value ReadFontMap(NapiInfoCR info) {
-        auto const& fontMap = GetDgnDb().Fonts().FontMap();
+        auto const& fontMap = GetOpenedDb(info).Fonts().FontMap();
         BeJsNapiObject fonts(Env());
         auto fontList = fonts[JsInterop::json_fonts()];
         fontList.toArray();
@@ -2323,7 +2309,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
     Napi::Value QueryLocalValue(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, name)
         Utf8String val;
-        auto stat = GetDgnDb().QueryBriefcaseLocalValue(val, name.c_str());
+        auto stat = GetOpenedDb(info).QueryBriefcaseLocalValue(val, name.c_str());
         return (stat != BE_SQLITE_ROW) ? Env().Undefined() : toJsString(Env(), val);
     }
 
@@ -2334,7 +2320,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
             return DeleteLocalValue(info);
 
         REQUIRE_ARGUMENT_STRING(1, val)
-        auto stat = GetDgnDb().SaveBriefcaseLocalValue(name.c_str(), val);
+        auto stat = GetOpenedDb(info).SaveBriefcaseLocalValue(name.c_str(), val);
         if (stat != BE_SQLITE_DONE)
             JsInterop::throwSqlResult("error saving local value", name.c_str(), stat);
     }
@@ -2342,21 +2328,20 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
     // delete a value from the be_local table.
     void DeleteLocalValue(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, name)
-        auto stat = GetDgnDb().DeleteBriefcaseLocalValue(name.c_str());
+        auto stat = GetOpenedDb(info).DeleteBriefcaseLocalValue(name.c_str());
         if (stat != BE_SQLITE_DONE)
             JsInterop::throwSqlResult("error deleting local value", name.c_str(), stat);
     }
 
     // delete all local Txns. THIS IS VERY DANGEROUS! Don't use it unless you know what you're doing!
     void DeleteAllTxns(NapiInfoCR info) {
-        GetDgnDb().Txns().DeleteAllTxns();
+        GetOpenedDb(info).Txns().DeleteAllTxns();
     }
 
     // get a texture image as a TextureData blob from the db. possibly downsample it to fit the client's maximum texture size, if specified.
     Napi::Value QueryTextureData(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);;
-        auto worker = DgnDbWorker::CreateTextureImageWorker(GetDgnDb(), info);
+        auto worker = DgnDbWorker::CreateTextureImageWorker(GetOpenedDb(info), info);
         return worker->Queue();
         }
 
@@ -2365,51 +2350,50 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
         BeAssert(IsOpen());
         if (!m_elemGraphicsRequests)
             {
-            m_elemGraphicsRequests = T_HOST.Visualization().CreateElementGraphicsRequests(*m_dgndb);
+            m_elemGraphicsRequests = T_HOST.Visualization().CreateElementGraphicsRequests(GetDgnDb());
             BeAssert(nullptr != m_elemGraphicsRequests);
             }
 
         return *m_elemGraphicsRequests;
         }
+        
     Napi::Value GetChangesetSize(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);;
-        auto changesetSize = GetDgnDb().Txns().GetChangesetSize();
+        auto changesetSize = GetOpenedDb(info).Txns().GetChangesetSize();
         return Napi::Number::New(Env(), changesetSize);
         }
+        
     Napi::Value EnableChangesetSizeStats(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);;
         REQUIRE_ARGUMENT_BOOL(0, enabled);
-        auto rc = GetDgnDb().Txns().EnableChangesetSizeStats(enabled);
+        auto rc = GetOpenedDb(info).Txns().EnableChangesetSizeStats(enabled);
         return Napi::Number::New(Env(), rc);
         }
+        
     Napi::Value GetChangeTrackingMemoryUsed(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);;
-        auto memoryUsed = GetDgnDb().Txns().GetMemoryUsed();
+        auto memoryUsed = GetOpenedDb(info).Txns().GetMemoryUsed();
         return Napi::Number::New(Env(), memoryUsed);
         }
 
     Napi::Value StartProfiler(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);;
+        auto& db = GetOpenedDb(info);;
         OPTIONAL_ARGUMENT_STRING(0, scopeName);
         OPTIONAL_ARGUMENT_STRING(1, scenarioName);
         OPTIONAL_ARGUMENT_BOOL(2, overrideFlag, false);
         OPTIONAL_ARGUMENT_BOOL(4, computeExecutionPlan, true);
 
-        auto rc = BeSQLite::Profiler::InitScope(GetDgnDb(), scopeName.c_str(), scenarioName.c_str(), BeSQLite::Profiler::Params(overrideFlag, computeExecutionPlan));
+        auto rc = BeSQLite::Profiler::InitScope(db, scopeName.c_str(), scenarioName.c_str(), BeSQLite::Profiler::Params(overrideFlag, computeExecutionPlan));
         if (rc == BE_SQLITE_OK)
-            rc = BeSQLite::Profiler::GetScope(GetDgnDb())->Start();
+            rc = BeSQLite::Profiler::GetScope(db)->Start();
 
         return Napi::Number::New(Env(), rc);
         }
 
     Napi::Value StopProfiler(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);;
-        auto scope = BeSQLite::Profiler::GetScope(GetDgnDb());
+        auto scope = BeSQLite::Profiler::GetScope(GetOpenedDb(info));
         DbResult rc;
         if (scope == nullptr)
             rc = BE_SQLITE_ERROR;
@@ -2428,8 +2412,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
     Napi::Value PauseProfiler(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);;
-        auto scope = BeSQLite::Profiler::GetScope(GetDgnDb());
+        auto scope = BeSQLite::Profiler::GetScope(GetOpenedDb(info));
         DbResult rc;
         if (scope == nullptr)
             rc = BE_SQLITE_ERROR;
@@ -2441,8 +2424,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
     Napi::Value ResumeProfiler(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);;
-        auto scope = BeSQLite::Profiler::GetScope(GetDgnDb());
+        auto scope = BeSQLite::Profiler::GetScope(GetOpenedDb(info));
         DbResult rc;
         if (scope == nullptr)
             rc = BE_SQLITE_ERROR;
@@ -2454,8 +2436,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
     Napi::Value IsProfilerRunning(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);;
-        auto scope = BeSQLite::Profiler::GetScope(GetDgnDb());
+        auto scope = BeSQLite::Profiler::GetScope(GetOpenedDb(info));
         if (scope == nullptr)
             return Napi::Boolean::New(Env(), false);;
 
@@ -2465,8 +2446,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
 
     Napi::Value IsProfilerPaused(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);;
-        auto scope = BeSQLite::Profiler::GetScope(GetDgnDb());
+        auto scope = BeSQLite::Profiler::GetScope(GetOpenedDb(info));
         if (scope == nullptr)
             return Napi::Boolean::New(Env(), false);;
 
@@ -2475,10 +2455,9 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
     }
 
     void ApplyChangeset(NapiInfoCR info) {
-        RequireDbIsWritable(info);;
+        auto& db = GetWritableDb(info);
         REQUIRE_ARGUMENT_ANY_OBJ(0, changeset);
 
-        auto& db = GetDgnDb();
         auto revision = JsInterop::GetChangesetProps(db.GetDbGuid().ToString(), changeset);
 
         auto currentId = db.Txns().GetParentChangesetId();
@@ -2492,34 +2471,31 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps
     }
 
     void ConcurrentQueryExecute(NapiInfoCR info) {
-        RequireDbIsOpen(info);;
         REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
         REQUIRE_ARGUMENT_FUNCTION(1, callback);
-        JsInterop::ConcurrentQueryExecute(GetDgnDb(), requestObj, callback);
+        JsInterop::ConcurrentQueryExecute(GetOpenedDb(info), requestObj, callback);
     }
 
     Napi::Value ConcurrentQueryResetConfig(NapiInfoCR info) {
-        RequireDbIsOpen(info);;
+        auto& db = GetOpenedDb(info);;
         if (info.Length() > 0 && info[0].IsObject()) {
             Napi::Object inConf = info[0].As<Napi::Object>();
-            return JsInterop::ConcurrentQueryResetConfig(Env(), GetDgnDb(), inConf);
+            return JsInterop::ConcurrentQueryResetConfig(Env(), db, inConf);
         }
-        return JsInterop::ConcurrentQueryResetConfig(Env(), GetDgnDb());
+        return JsInterop::ConcurrentQueryResetConfig(Env(), db);
     }
 
     void ConcurrentQueryShutdown(NapiInfoCR info) {
-        RequireDbIsOpen(info);;
-        ConcurrentQueryMgr::Shutdown(GetDgnDb());
+        ConcurrentQueryMgr::Shutdown(GetOpenedDb(info));
     }
     // ========================================================================================
     // Test method handler
     // ========================================================================================
     Napi::Value ExecuteTest(NapiInfoCR info)
         {
-        RequireDbIsOpen(info);
         REQUIRE_ARGUMENT_STRING(0, testName);
         REQUIRE_ARGUMENT_STRING(1, params);
-        return toJsString(Env(), JsInterop::ExecuteTest(GetDgnDb(), testName, params).ToString());
+        return toJsString(Env(), JsInterop::ExecuteTest(GetOpenedDb(info), testName, params).ToString());
         }
 
     //  Create projections

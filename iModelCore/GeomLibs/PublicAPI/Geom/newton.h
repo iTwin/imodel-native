@@ -350,7 +350,7 @@ DECLARE_VIRTUALS_FunctionRToRR (, override)
 // <li> s = distance along clothoid
 // <li> x = distance along x axis (starting at the inflection)
 // <li> gamma = a constant, typically something like 1/(2 R L)^2.
-// <li> The true series is 
+// <li> The true series is
 // <li> x = s - (1/5)(1/2) A s^5 + (1/9) (1/24) A^2 s^9 +  . . .
 // <li> As a (very good) approximation,     x = s - (1/5)(1/2) A s^5
 // <li> If x is known, this class is the iterative function with to solve for s with gamma = -1/(40 R^2 L^2)
@@ -366,7 +366,7 @@ double m_targetValue;
 double m_gamma;
 //! Publicly available counter of iterative calls.  This is cleared by methods that trigger newton calls.
 static size_t s_evaluationCount;
-//! 
+//!
 //! <ul>
 //! <li>Instantiate the clothoid cosine approximation function with caller-supplied coefficient of u^5 term.
 //! <li>This is a low level constructor -- the caller is responsible for incorporating typical R, L and sign into gamma.
@@ -430,11 +430,11 @@ struct GEOMDLLIMPEXP PolishDistanceApproximation: FunctionRToRD
     double m_length1;
     double m_x4TermCoefficient;
     double m_cubicYCoefficient;
-    
+
     void SetTargetDistance (double distance);
     //! Publicly available counter of iterative calls.  This is cleared by methods that trigger newton calls.
     static size_t s_evaluationCount;
-    //! 
+    //!
     //! <ul>
     //! <li>Instantiate the clothoid cosine approximation function with caller-supplied length1 and radius1
     //! <li>Precompute useful coefficients

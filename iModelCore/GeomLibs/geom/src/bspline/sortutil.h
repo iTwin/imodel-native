@@ -10,11 +10,11 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 
 int util_tagSort
-(    
+(
 int    	*tags,
 double	*values,
 int    	numValues
-);    
+);
 
 
 END_BENTLEY_GEOMETRY_NAMESPACE

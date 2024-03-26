@@ -296,7 +296,7 @@ bool IsAnyVertexAroundFaceMarkedOtherThanThisExtendedEdge (VuP edgeNode)
     if (numAroundFace <= 2)
         return false;
     size_t numIncluded = 2;
-    
+
     VuP nodeA = edgeNode;
     VuP nodeB = vu_fsucc (edgeNode);
     // Advance B end forward to nontrivial vertex ...
@@ -340,7 +340,7 @@ void Reset ()
 };
 /*---------------------------------------------------------------------------------**//**
 @description
- For each face 
+ For each face
     recursively search to neightbors without crossing any edge with barrier mask.
     (This visits a connected component bounded by the specified mask.)
     Delete the edges crossed in the search.

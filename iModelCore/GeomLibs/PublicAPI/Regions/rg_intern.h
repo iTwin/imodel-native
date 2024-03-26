@@ -208,7 +208,7 @@ struct _RG_IntersectionList
             }
         return false;
         }
-    
+
     bool GetNodeIdAt (size_t index, MTGNodeId &nodeId) const
         {
         if (index < m_intersections.size ())

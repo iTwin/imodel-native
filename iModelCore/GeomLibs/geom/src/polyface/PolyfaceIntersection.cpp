@@ -45,7 +45,7 @@ PolyfaceIndexedHeapRangeTreeR treeB,
 bvector<DSegment3dSizeSize> &segments,
 double absTol
 )
-    : 
+    :
     m_treeA (treeA),
     m_treeB (treeB),
     m_segments (segments),
@@ -69,10 +69,10 @@ double absTol
             return m_numNeedProcessing.Count (
                 //rangeA.IntersectsWith (rangeB, m_minDistanceFound, 3));
                 rangeA.IntersectsWith (rangeB));
-            } 
+            }
 
     // EDL -- this was virtual.  Does it need to be?
-    void AppendAllEdges (bvector<DPoint3d> &points, DSegment3dOnFacets::HistoryBit bit, size_t readIndexA, size_t readIndexB) 
+    void AppendAllEdges (bvector<DPoint3d> &points, DSegment3dOnFacets::HistoryBit bit, size_t readIndexA, size_t readIndexB)
         {
         // ASSUME -- last point not doubled !!!
         DPoint3d xyzA = points.back ();
@@ -84,7 +84,7 @@ double absTol
             }
         }
 
-    void Process (size_t iA, size_t iB) override 
+    void Process (size_t iA, size_t iB) override
             {
             size_t readIndexA, readIndexB;
             m_numProcess++;
@@ -127,7 +127,7 @@ double absTol
                     }
                 }
             }
-            
+
     bool IsLive () const override
         {
         return m_looking;
@@ -257,7 +257,7 @@ void ProcessCurrentSegments ()
             vu_regularizeGraph (m_graph);
             vu_markAlternatingExteriorBoundaries(m_graph,true);
             vu_splitMonotoneFacesToEdgeLimit (m_graph, m_maxPerFace);
-            
+
             VuMask visitMask = vu_grabMask (m_graph);
             vu_clearMaskInSet (m_graph, visitMask);
             VU_SET_LOOP (faceSeed, m_graph)
@@ -474,7 +474,7 @@ bvector<PolyfaceHeaderPtr> &allVolumes
         {
         // Consolidate segments from this mesh's intersections . . .
         collectedSegments.clear ();
-        // Walk ACROSS the row to the diagonal -- ReadIndices for this mesh are the TagA value 
+        // Walk ACROSS the row to the diagonal -- ReadIndices for this mesh are the TagA value
         for (size_t j = 0; j < i; j++)
             {
             for (DSegment3dSizeSize &segment : segments[i][j])
@@ -482,7 +482,7 @@ bvector<PolyfaceHeaderPtr> &allVolumes
                 collectedSegments.push_back (DSegment3dSizeSize (segment.Get (), segment.GetTagA (), segment.GetTagA ()));
                 }
             }
-          // Walk DOWN the colum below the diagonal -- ReadIndices for this mesh are the TagB value 
+          // Walk DOWN the colum below the diagonal -- ReadIndices for this mesh are the TagB value
         for (size_t k = i + 1; k < numMesh; k++)
             {
             for (DSegment3dSizeSize &segment : segments[k][i])

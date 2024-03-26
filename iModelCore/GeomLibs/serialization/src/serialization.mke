@@ -54,7 +54,7 @@ CPchOpts   = $(UsePrecompiledHeaderOptions)
 # below compilands. The entire set of compilands must be content with
 # uniform treatment for multi-compilation to work.
 #----------------------------------------------------------------------
-MultiCompileDepends=$(_MakeFileSpec) 
+MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
 nameToDefine = BuildCGJsonValueBuilder

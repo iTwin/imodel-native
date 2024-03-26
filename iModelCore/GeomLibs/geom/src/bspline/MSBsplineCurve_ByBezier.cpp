@@ -189,7 +189,7 @@ struct          ClosestPointResults
     double      aMin;
     double      bestKnot;
     DPoint4d    bestXYZW;
-    BCurveSegment segment;  // Very expensive to construct! 
+    BCurveSegment segment;  // Very expensive to construct!
     ClosestPointResults () : aMin(DBL_MAX) {;}
 
     static ClosestPointResults Combine (ClosestPointResults const& r1, ClosestPointResults const& r2)
@@ -214,7 +214,7 @@ inline size_t getBezierCount_only_for_open_curves (MSBsplineCurve const& curve)
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MSBsplineCurve::ClosestPoint (DPoint3dR curvePoint, double &fraction, DPoint3dCR spacePoint) const
-    {    
+    {
     Concurrency::combinable<ClosestPointResults> results;
     // *** NEEDS WORK: Not correct for closed curves.
     size_t spanCount = getBezierCount_only_for_open_curves (*this);
@@ -223,7 +223,7 @@ void MSBsplineCurve::ClosestPoint (DPoint3dR curvePoint, double &fraction, DPoin
     // NB: Do not declare BCurveSegment outside the loop and then use it in the lambda. Each task/thread must have its own copy! That is why BCurveSegment is in combinable<ClosestPointResults>.
     Concurrency::parallel_for_each
 #else
-    std::for_each 
+    std::for_each
 #endif
         (counter.begin(), counter.end(), [this,&spacePoint,&results](size_t spanIndex)
         {
@@ -247,7 +247,7 @@ void MSBsplineCurve::ClosestPoint (DPoint3dR curvePoint, double &fraction, DPoin
         }
         );
 
-    ClosestPointResults best = results.combine (ClosestPointResults::Combine);      
+    ClosestPointResults best = results.combine (ClosestPointResults::Combine);
 
     fraction = KnotToFraction(best.bestKnot);
     best.bestXYZW.GetProjectedXYZ (curvePoint);
@@ -257,7 +257,7 @@ void MSBsplineCurve::ClosestPoint (DPoint3dR curvePoint, double &fraction, DPoin
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MSBsplineCurve::ClosestPoint (DPoint3dR curvePoint, double &fraction, DPoint3dCR spacePoint) const
-    {    
+    {
     BCurveSegment segment;
     double currFraction;
     double bestKnot = 0.0;
@@ -302,7 +302,7 @@ bvector<DPoint3d>* outputPoints,
 bvector<double> *outputFractions,
 DPoint4dCR planeCoffs
 ) const
-    {    
+    {
     BCurveSegment segment;
     DPoint4d intersectionPoints[MAX_ORDER];
     double  intersectionFractions[MAX_ORDER];
@@ -343,7 +343,7 @@ DEllipse3dCR ellipse,
 bool extendConic,
 DMatrix4dCP matrix
 ) const
-    {    
+    {
     BCurveSegment segment;
     BCurveSegment segmentXY;
     double  conicAngles[2 * MAX_ORDER];
@@ -360,7 +360,7 @@ DMatrix4dCP matrix
             {
             if (matrix)
                 segmentXY.CopyFrom (segment, matrix);
-            bsiBezierDPoint4d_intersectDConic4dXYExt (NULL, bezierFractions, 
+            bsiBezierDPoint4d_intersectDConic4dXYExt (NULL, bezierFractions,
                     NULL, conicAngles, &numIntersection, MAX_ORDER,
                     matrix == NULL ? segment.GetPoleP () : segmentXY.GetPoleP (),
                     params.order,
@@ -513,7 +513,7 @@ DMatrix4dCP matrix
         DRange3d rangeB = DPoint3dOps::Range (&strokeB);
         DRange3d rangeAB;
         rangeAB.UnionOf (rangeA, rangeB);
-        
+
         double approachFilterTol = s_approachRelTol * rangeAB.low.Distance (rangeAB.high);
         double approachTol = s_approachRelTol2 * approachFilterTol;
         bvector <CurveLocationDetail> locationA, locationB;
@@ -690,7 +690,7 @@ DMatrix4dCP matrix
             segmentBH.Init (segmentB.point[0], segmentB.point[1]);
             if (NULL != matrix)
                 segmentBH.InitProduct (*matrix, segmentBH);
-                
+
             bsiBezierDPoint4d_intersectDSegment4dXY (
                     pointA, fractionA, NULL, fractionB,
                     numIntersection, MAX_BEZIER_CURVE_ORDER,
@@ -731,7 +731,7 @@ DMatrix4dCP matrix
 
 
 void MSBsplineCurve::ClosestPointXY (DPoint3dR curvePoint, double &fraction, double &xyDistance, DPoint3dCR spacePoint, DMatrix4dCP worldToView) const
-    {    
+    {
     BCurveSegment segment;
     double currFraction;
     double bestKnot = 0.0;
@@ -1160,7 +1160,7 @@ double &actualSignedDistance
     {
     DRange1d knotRange = DRange1d::From (FractionToKnot (fractionA));
     BCurveSegment segment;
-    static double s_bezierFractionTol = 1.0e-10;    
+    static double s_bezierFractionTol = 1.0e-10;
     double segmentLength;
     double lengthError;
     double remainingLength = fabs (requestedSignedDistance);
@@ -1205,7 +1205,7 @@ double &actualSignedDistance
                     fractionB = segment.UMax ();
                     return false;
                     }
-                }         
+                }
             }
         // ran off end of curve ....
         fractionB = 1.0;
@@ -1252,10 +1252,10 @@ double &actualSignedDistance
                     fractionB = segment.UMax ();
                     return false;
                     }
-                }         
+                }
             }
         fractionB = 0.0;
-        return fabs (remainingLength) <= lengthTol;    
+        return fabs (remainingLength) <= lengthTol;
         }
     // requested zero ...
     fractionB = fractionA;
@@ -1420,7 +1420,7 @@ void MSBsplineCurve::AddStrokes (
     // TODO: Optimize as a single sweep through the beziers
     DPoint3d xyz;
     DVec3d dxyz;
-    
+
     for (size_t i = iStart; i < numPoints; i++)
         {
         double f = i * df;
@@ -1472,7 +1472,7 @@ size_t MSBsplineCurve::GetStrokeCount (double chordTol, double angleTol, double 
     return count;
     }
 
-void MSBsplineCurve::AllTangentsXY (bvector<DPoint3d>& points, bvector<double>& fractions, 
+void MSBsplineCurve::AllTangentsXY (bvector<DPoint3d>& points, bvector<double>& fractions,
                                 DPoint3dCR spacePoint, DMatrix4dCP matrix) const
     {
     BCurveSegment segment, segmentXY;
@@ -1504,7 +1504,7 @@ void MSBsplineCurve::AllTangentsXY (bvector<DPoint3d>& points, bvector<double>& 
                 double knot = segment.FractionToKnot (tangentParam[i]);
                 double fraction = KnotToFraction (knot);
                 fractions.push_back (fraction);
-                
+
                 DPoint3d xyz;
                 segment.FractionToPoint (xyz, tangentParam[i]);
                 points.push_back (xyz);
@@ -1539,7 +1539,7 @@ void MSBsplineCurve::AllTangents (bvector<DPoint3d>& points, bvector<double>& fr
                 double knot = segment.FractionToKnot (tangentParam[i]);
                 double fraction = KnotToFraction (knot);
                 fractions.push_back (fraction);
-                
+
                 DPoint3d xyz;
                 segment.FractionToPoint (xyz, tangentParam[i]);
                 points.push_back (xyz);
@@ -1548,13 +1548,13 @@ void MSBsplineCurve::AllTangents (bvector<DPoint3d>& points, bvector<double>& fr
         }
     }
 
-bool MSBsplineCurve::ClosestTangentXY (DPoint3dR curvePoint, double &curveFraction, 
+bool MSBsplineCurve::ClosestTangentXY (DPoint3dR curvePoint, double &curveFraction,
                                     DPoint3dCR spacePoint, DPoint3dCR biasPoint, DMatrix4dCP matrix) const
     {
     bvector<DPoint3d> points;
     bvector<double> fractions;
     AllTangentsXY (points, fractions, spacePoint, matrix);
-    
+
     if (fractions.size () > 0)
         {
         size_t i;
@@ -1638,7 +1638,7 @@ void MSBsplineCurve::AllParallellTangentsXY (bvector<DPoint3d>& points, bvector<
                 double knot = segment.FractionToKnot (tangentParam[i]);
                 double fraction = KnotToFraction (knot);
                 fractions.push_back (fraction);
-                
+
                 DPoint3d xyz;
                 segment.FractionToPoint (xyz, tangentParam[i]);
                 points.push_back (xyz);
@@ -1701,13 +1701,13 @@ void MSBsplineCurve::AddCuspsXY (bvector<DPoint3d> *points, bvector<double> *fra
             derivA.Normalize ();
             int numInBezier;
             bsiBezierDPoint4d_allNearCusps (values, cusps, &numInBezier, (int)segment.GetOrder (),
-                    matrix != NULL ? segmentXY.GetPoleP () : segment.GetPoleP (), 
+                    matrix != NULL ? segmentXY.GetPoleP () : segment.GetPoleP (),
                     (int)segment.GetOrder (), 2, sCuspRelTol);
 
             for (size_t j = 0; j < (size_t)numInBezier; j++)
                 {
                 double param = segment.FractionToKnot (values[j]);
-                
+
                 if (j==0 && DoubleOps::AlmostEqual (param, lastParam))
                     continue;
 
@@ -1718,7 +1718,7 @@ void MSBsplineCurve::AddCuspsXY (bvector<DPoint3d> *points, bvector<double> *fra
                     segment.FractionToPoint (point, values[j]);
                     points->push_back (point);
                     }
-                
+
                 lastParam = param;
                 }
             }
@@ -1768,7 +1768,7 @@ void MSBsplineCurve::AddCusps (bvector<DPoint3d> *points, bvector<double> *fract
             for (size_t j = 0; j < (size_t)numInBezier; j++)
                 {
                 double param = FractionToKnot (values[j]);
-                
+
                 if (j==0 && DoubleOps::AlmostEqual (param, lastParam))
                     continue;
 
@@ -1779,7 +1779,7 @@ void MSBsplineCurve::AddCusps (bvector<DPoint3d> *points, bvector<double> *fract
                     segment.FractionToPoint (point, values[j]);
                     points->push_back (point);
                     }
-                
+
                 lastParam = param;
                 }
             }
@@ -1824,7 +1824,7 @@ void MSBsplineCurve::AddLineIntersectionsXY (bvector<DPoint3d> *curvePoints, bve
         {
         DSegment4d segmentXYZW;
         segmentXYZW.Init (segment.point[0], segment.point[1]);
-        matrix->Multiply (segmentXYZW.point, segmentXYZW.point, 2);        
+        matrix->Multiply (segmentXYZW.point, segmentXYZW.point, 2);
         // Perspective time.
         // We want planeCoffs such that:
         // 1) xyzwPlaneCoffs DOT segmentXYZW.point[0] = 0 --- segment start is on plane.
@@ -1884,7 +1884,7 @@ DRange1d MSBsplineCurve::GetRangeOfProjectionOnRay (DRay3dCR ray, double fractio
     DPoint4d planeCoffs;
     planeCoffs.PlaneFromOriginAndNormal (ray.origin, ray.direction);
     planeCoffs.Scale (1.0/ray.direction.Magnitude());
-    
+
     DRange1d range = DRange1d ();
     BCurveSegment1d segment;
     double roots[MAX_ORDER], ders[MAX_ORDER-1];
@@ -1912,7 +1912,7 @@ DRange1d MSBsplineCurve::GetRangeOfProjectionOnRay (DRay3dCR ray, double fractio
                 for (size_t j = 0; j < (size_t)numRoot; j++)
                     range.Extend (segment.FractionToValue (roots[j]));
                 }
-                
+
             }
         }
 
@@ -1932,7 +1932,7 @@ MSBsplineStatus MSBsplineCurve::ComputeInflectionPoints (bvector<DPoint3d>& poin
         {
         double u0 = 0.0;    /* Put in variable form so we can pass an address */
         double u1 = 1.0;
-        
+
         if (!segment.IsNullU ())
             {
             numRealSpan++;
@@ -1999,7 +1999,7 @@ MSBsplineStatus MSBsplineCurve::ComputeInflectionPointsXY (bvector<DPoint3d>& po
         {
         double u0 = 0.0;    /* Put in variable form so we can pass an address */
         double u1 = 1.0;
-        
+
         if (!segment.IsNullU ())
             {
             if (transform)
@@ -2065,7 +2065,7 @@ DRange3d MSBsplineCurve::GetRange () const
             range.Extend (curveRange);
             }
         }
-    
+
     return range;
     }
 
@@ -2150,7 +2150,7 @@ size_t bezierSelect
             {
             basePole += numPoles;
             basePole -= order / 2;
-            }        
+            }
         while (basePole >= numPoles)
             basePole -= numPoles;
         }
@@ -2223,7 +2223,7 @@ EqualChordsByLengthContext (MSBsplineCurve *curveP, double chordLength)
     {
     mpCurve = curveP;
     mChordLength = chordLength;
-    
+
     mParamOld = 0.0;
     mpCurve->FractionToPoint (mXYZOld, mParamOld);
     m_pointArray.push_back (mXYZOld);

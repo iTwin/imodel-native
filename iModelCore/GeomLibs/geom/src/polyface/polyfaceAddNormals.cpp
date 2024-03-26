@@ -26,12 +26,12 @@ ApproximateVertexNormalContext (PolyfaceHeaderR mesh1)
     visitMask       = graph->GrabMask ();
     readIndexLabel = -1;
     }
-    
+
 ~ApproximateVertexNormalContext ()
     {
     graph->DropMask (barrierEdgeMask);
     graph->DropMask (visitMask);
-    jmdlMTGFacets_free (oldFacets);    
+    jmdlMTGFacets_free (oldFacets);
     }
 
 bool TryGetNormal (MTGNodeId nodeId, DVec3dR normal)
@@ -79,7 +79,7 @@ bool ComputeFaceNormals (double maxSingleEdgeAngle, double maxAccumulatedAngle, 
     // (but 0 remains zero -- these are one-based indices)
     for (size_t i = 0, n = newNormalIndex.size (); i < n; i++)
         newNormalIndex[i] = - abs (newNormalIndex[i]);
-        
+
     bvector<MTGNodeId> baseNodes;
     graph->ClearMask (barrierEdgeMask);
 
@@ -131,8 +131,8 @@ bool ComputeFaceNormals (double maxSingleEdgeAngle, double maxAccumulatedAngle, 
             }
         }
     MTGARRAY_END_SET_LOOP (nodeA, graph)
-        
-    
+
+
     DVec3d accumulatedNormal;
     bvector<DVec3d> extendedSectorNormal;
     bvector<MTGNodeId> extendedSectorNode;
@@ -151,9 +151,9 @@ bool ComputeFaceNormals (double maxSingleEdgeAngle, double maxAccumulatedAngle, 
             extendedSectorNode.push_back (nodeId);
             nodeId = graph->VSucc (nodeId);
             } while (nodeId != nodeId0 && !graph->GetMaskAt (nodeId, barrierEdgeMask));
-            
-            
-            
+
+
+
         size_t numSector = extendedSectorNode.size ();
         for (size_t k0 = 0; k0 < numSector; )
             {
@@ -171,11 +171,11 @@ bool ComputeFaceNormals (double maxSingleEdgeAngle, double maxAccumulatedAngle, 
             // [k0..k1-1] is a sequence of {k1-k0) sectors that share a normal.
             // crate the new normal, index back to it, and mark the graph edge as a transition.
             DVec3d averageNormalA, averageNormalB;
-            averageNormalA.Normalize (accumulatedNormal);    // don't have to divide by count -- normalize 
+            averageNormalA.Normalize (accumulatedNormal);    // don't have to divide by count -- normalize
             averageNormalB.Scale (accumulatedNormal, 1.0 / (double)numSector);
             double dot = averageNormalA.DotProduct (averageNormalB);
             static double s_averageNormalDot = 0.92;
-            if (dot > s_averageNormalDot && accumulatedAngle < maxAccumulatedAngle) // QV cutoff for 
+            if (dot > s_averageNormalDot && accumulatedAngle < maxAccumulatedAngle) // QV cutoff for
                 {
                 newNormal.push_back (averageNormalA);
                 graph->SetMaskAt (extendedSectorNode [k0], barrierEdgeMask);
@@ -223,7 +223,7 @@ bool ComputeFaceNormals (double maxSingleEdgeAngle, double maxAccumulatedAngle, 
     // Ah !!! time to install ...
     bvector<DVec3d> &meshNormal = mesh.Normal ();
     bvector<int> &meshNormalIndex = mesh.NormalIndex ();
-    
+
     meshNormal.clear ();
     // normals are "new"  --- probably smaller.  clear and copy.
     for (size_t i = 0, n = newNormal.size (); i < n; i++)
@@ -232,7 +232,7 @@ bool ComputeFaceNormals (double maxSingleEdgeAngle, double maxAccumulatedAngle, 
     assert (newNormalIndex.size () == meshNormalIndex.size ());
     for (size_t i = 0, n = newNormalIndex.size (); i < n; i++)
         meshNormalIndex[i] = newNormalIndex[i];
-    
+
     if (markTransitionsVisible)
         {
         bvector<int> &pointIndex = mesh.PointIndex ();
@@ -396,7 +396,7 @@ ValidatedDVec3d SolveOffset (DVec3dCR normal0, double distance0, DVec3dCR normal
     return ValidatedDVec3d (normal0, false);
     }
 
-// Add copies 
+// Add copies
 // find contiguous entries with the same normal index.
 // within the cluster, assign the base node back to first.
 // Return index of of the first cluster start.
@@ -418,7 +418,7 @@ size_t WrapAndAssignBaseNodes (bvector<SectorData> &data, size_t numReference)
     data.reserve (breakIndex + numReference);
     for (size_t i = 0; i < numReference; i++)
         data.push_back (data[i]);
-        
+
     return breakIndex;
     }
 // ASSUME nodeToOffset is sized (and initialized) for all nodeId's
@@ -448,8 +448,8 @@ ValidatedDVec3d CorrectedOffset (DVec3dCR baseOffset, DVec3dCR computedOffset, D
     {
     double a1 = baseOffset.Magnitude ();
     DVec3d shift1 = DVec3d::FromStartEnd (baseOffset, computedOffset);
-    if (    edgeVector0 != nullptr 
-        &&  edgeVector1 != nullptr 
+    if (    edgeVector0 != nullptr
+        &&  edgeVector1 != nullptr
         &&  shift1.DotProduct (*edgeVector0) >= 0.0
         &&  shift1.DotProduct (*edgeVector1) >= 0.0
         )
@@ -470,7 +470,7 @@ DVec3d GetEdgeVector (MTGNodeId node)
     return DVec3d::FromStartEnd (xyz0, xyz1);
     }
 
-// On input: The graph has been marked up with shared meshNormalIndex    
+// On input: The graph has been marked up with shared meshNormalIndex
 void ComputeOffsetVectors
 (
 double distance,
@@ -791,7 +791,7 @@ bvector<SectorData> &offsetVectorsB
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 bool go (double maxSingleEdgeAngle, double maxAccumulatedAngle, bool markAllTransitionsVisible)
-    {    
+    {
     static double s_pathContinuationRadians = 0.0;
 
     if (!mesh.BuildPerFaceNormals ())
@@ -811,7 +811,7 @@ PolyfaceHeaderPtr goOffset
 (
 double maxSingleEdgeAngle,
 double maxAccumulatedAngle,
-bool markAllTransitionsVisible, 
+bool markAllTransitionsVisible,
 ValidatedDouble positiveOrientationOffset,
 ValidatedDouble negativeOrientationOffset,
 Angle maxChamaferAngle,
@@ -882,7 +882,7 @@ bool PolyfaceHeader::BuildApproximateNormals (double maxSingleEdgeAngle, double 
     ApproximateVertexNormalContext context (*this);
     return context.go (maxSingleEdgeAngle, maxAccumulatedAngle, markAllTransitionsVisible);
     }
-    
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -905,7 +905,7 @@ bool outputSideFacets       //!< [in] true to output side facets where boundary 
         outputOffset1, outputOffset2, outputSideFacets
         );
     }
-    
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -916,13 +916,13 @@ bool PolyfaceHeader::BuildPerFaceParameters (LocalCoordinateSelect selector)
     // We don't know how to do this for non-indexed ...
     if (m_pointIndex.size () == 0)
         return false;
-        
+
     PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*this, true);
     BentleyApi::Transform worldToLocal, localToWorld;
     visitor->SetNumWrap (0);
     bvector <size_t> &indexPosition = visitor->IndexPosition ();
     bvector <DPoint3d> &visitorPoint = visitor->Point ();
-    
+
     // We will have distinct params on every corner of every face.  Don't know how many ...
     ClearParameters (true);
     // There has to be a param for each point index ..
@@ -932,7 +932,7 @@ bool PolyfaceHeader::BuildPerFaceParameters (LocalCoordinateSelect selector)
 
     for (size_t i = 0; i < m_faceData.size (); i++)
         m_faceData[i].m_paramRange = DRange2d::NullRange ();
-        
+
     for (visitor->Reset (); visitor->AdvanceToNextFace (); )
         {
         bool frameOK = visitor->TryGetLocalFrame (localToWorld, worldToLocal, selector);
@@ -962,9 +962,9 @@ bool PolyfaceHeader::BuildPerFaceParameters (LocalCoordinateSelect selector)
                 }
             }
         }
-    
+
     return true;
-    }  
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -976,7 +976,7 @@ void PolyfaceHeader::ClearNormals (bool active)
     Normal ().SetActive (active);
     NormalIndex ().SetActive (active);
     }
-    
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -1024,14 +1024,14 @@ bool PolyfaceHeader::BuildPerFaceNormals ()
     // We don't know how to do this for non-indexed ...
     if (m_pointIndex.size () == 0)
         return false;
-        
+
     PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*this, true);
     BentleyApi::Transform worldToLocal, localToWorld;
     visitor->SetNumWrap (0);
     bvector <size_t> &indexPosition = visitor->IndexPosition ();
-    
+
     ClearNormals (true);
-    
+
     // There has to be a param for each point index ..
     m_normalIndex.reserve (numIndex);
     for (size_t i = 0; i < numIndex; i++)
@@ -1053,11 +1053,11 @@ bool PolyfaceHeader::BuildPerFaceNormals ()
                 m_normalIndex[readPos] = static_cast <int>(newNormalIndex + 1);   // ONE BASED !!!!
             }
         }
-    
+
     return true;
     }
- 
- 
+
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -1145,7 +1145,7 @@ bool PolyfaceHeader::BuildParametersFromTransformedPoints (TransformCR worldToLo
 
     return true;
     }
-   
+
 END_BENTLEY_GEOMETRY_NAMESPACE
 
 

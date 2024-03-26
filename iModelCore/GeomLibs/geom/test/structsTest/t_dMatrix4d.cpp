@@ -179,9 +179,9 @@ TEST(DMatrix4d, Swaps)
 //---------------------------------------------------------------------------------------
 TEST(DMatrix4d, AffineTransformation)
     {
-    DMatrix4d mat0 = DMatrix4d::FromColumns(DPoint4d::From(0.4, 1, 0.1, 0), 
-                                            DPoint4d::From(2, 1, 0.1, 0), 
-                                            DPoint4d::From(1.5, 8, 2, 0), 
+    DMatrix4d mat0 = DMatrix4d::FromColumns(DPoint4d::From(0.4, 1, 0.1, 0),
+                                            DPoint4d::From(2, 1, 0.1, 0),
+                                            DPoint4d::From(1.5, 8, 2, 0),
                                             DPoint4d::From(9, 9, 0.1, 1));
     Check::True(mat0.IsAffine());
     RotMatrix rotMat = RotMatrix::FromIdentity();
@@ -237,7 +237,7 @@ TEST(DMatrix4d, MultiplyAffine)
     mat0 = CopyAffine(mat0);
     mat0.MultiplyAffine(ptsHomogeneous, pointsArr, 4);
     mat0.Multiply(ptsNonHom, pointsArr, 4);
-    
+
     Check::Near(ptsNonHom[0], ptsHomogeneous[0], "Homogeneous coordinates differ");
     Check::Near(ptsNonHom[1], ptsHomogeneous[1], "Homogeneous coordinates differ");
     Check::Near(ptsNonHom[2], ptsHomogeneous[2], "Homogeneous coordinates differ");

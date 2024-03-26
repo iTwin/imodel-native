@@ -456,7 +456,7 @@ static void SnapBarycentricToEdge(DPoint3dR vector, double tolerance = 1.0e-12)
     uu[1] = vector.y;
     uu[2] = vector.z;
     double s = 0.0;
-    
+
     for (uint32_t i = 0; i < 3; i++)
         {
         s += uu[i];

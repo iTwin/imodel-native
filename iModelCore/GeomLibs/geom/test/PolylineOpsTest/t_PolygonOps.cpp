@@ -203,7 +203,7 @@ TEST(PolygonOps,InOutXYTriangle)
             {
             DPoint3d xyz = triangle.Evaluate (uv.x, uv.y);
             if (DTriangle3d::IsBarycentricInteriorUV (uv.x, uv.y)
-                != PolygonOps::IsPointInOrOnXYTriangle (xyz, 
+                != PolygonOps::IsPointInOrOnXYTriangle (xyz,
                             triangle.point[0], triangle.point[1], triangle.point[2]))
                 numError ++;
             }

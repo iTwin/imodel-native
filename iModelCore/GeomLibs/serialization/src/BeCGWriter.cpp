@@ -87,7 +87,7 @@ void BeCGWriter::WriteArrayElementEnd(Utf8CP longName, Utf8CP shortName)
     m_depth--;
     }
 
-void BeCGWriter::WriteNamedSetStart (Utf8CP name) 
+void BeCGWriter::WriteNamedSetStart (Utf8CP name)
     {
     if (m_depth == 0)
         m_dest.WriteNamedSetStart(name, s_namespace);
@@ -302,7 +302,7 @@ void BeCGWriter::WriteSegment (DSegment3dCR data)
         {
         WriteSetElementStart("LineSegment");
         WriteXYZ ("startPoint", data.point[0]);
-        WriteXYZ ("endPoint", data.point[1]);    
+        WriteXYZ ("endPoint", data.point[1]);
         WriteSetElementEnd ("LineSegment");
         }
     }
@@ -574,7 +574,7 @@ void BeCGWriter::WriteCoordinate (DPoint3dCR point)
     {
     WriteSetElementStart("Coordinate");
     WriteXYZ ("xyz", point);
-    WriteSetElementEnd ("Coordinate");    
+    WriteSetElementEnd ("Coordinate");
     }
 
 void BeCGWriter::WritePointString (bvector<DPoint3d> const &points, bool preferMostCompactPrimitives)
@@ -688,7 +688,7 @@ void BeCGWriter::Write (CurveVectorCR curveVector)
         WriteCGCurveVector (curveVector, m_preferMostCompactPrimitivesInCGCurveVectors);
     else
         WriteNativeCurveVector (curveVector);
-        
+
     }
 
 void BeCGWriter::WriteNativeCurveVector (CurveVectorCR curveVector)
@@ -1116,7 +1116,7 @@ void BeCGWriter::WriteDgnSphereDetail (DgnSphereDetail data)
         WriteDouble ("latitudeSweep", Angle::RadiansToDegrees (data.m_latitudeSweep));
         WriteBool ("capped", data.m_capped);
         WriteSetElementEnd ("DgnSphere");
-        }        
+        }
     }
 
 void BeCGWriter::WriteDgnExtrusionDetail (DgnExtrusionDetail data)
@@ -1198,7 +1198,7 @@ static DEllipse3d BuildSweepArc
 
 void BeCGWriter::WriteDgnRotationalSweepDetail (DgnRotationalSweepDetail data)
     {
-    Transform localToWorld, worldToLocal;    
+    Transform localToWorld, worldToLocal;
     if (PreferCGSweeps () && data.GetTransforms (localToWorld, worldToLocal))
         {
         WriteSetElementStart(data.m_capped ? "SolidBySweptSurface" : "SurfaceBySweptCurve");

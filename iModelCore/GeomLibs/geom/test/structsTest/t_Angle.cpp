@@ -37,7 +37,7 @@ void TestSweeps (double thetaStart, double sweep)
 
     Check::Near (f1,
             Angle::NormalizeToSweep (theta1, thetaStart, sweep, false, true), "expect short extension from 1");
-        
+
 
     double theta0 = thetaStart + f0 * sweep;    // much closer to 0 end than 1 end.
     Check::Near (0.0,
@@ -163,7 +163,7 @@ static int aecAlg_computeCzechTangentFromLength( double R, double Lp, double Xo,
     x[ 2 ] = Lp;
     xo[ 2 ] = x[ 2 ] + pow( gamma, 2 ) * pow( x[ 2 ], 5 ) / ( 40.0 * pow( R, 2 ) * pow( Lp, 2 ) );
     dif[ 2 ] = xo[ 2 ] - Xo;
-    
+
     while( ( fabs( xo[ 0 ] - xo[ 2 ] ) > LENGTH_TOLERANCE ) && ( ++cycles < 100 ) )
     {
         x[ 1 ] = .5 * ( x[ 0 ] + x[ 2 ] );
@@ -460,7 +460,7 @@ TEST(CzechSpiral,NewtonStep)
             auto xyFlag = xy.back () + DVec3d::FromXYAngleAndMagnitude (select * Angle::DegreesToRadians (15), flagHeight);
             xy.push_back (xyFlag);
             Check::SaveTransformed (xy);
-    
+
             Check::SaveTransformed (DSegment3d::From (0,yShift,0, last.x, yShift,0));
 #ifdef saveArc
         auto arc = DEllipse3d::From (
@@ -1177,23 +1177,23 @@ GEOMAPI_PRINTF (" (matrixDrift :max %.4lg :mean %.4lg :sdv %.4lg)\n",
         matrixDiffs.Mean (),
         matrixDiffs.StandardDeviation ());
 GEOMAPI_PRINTF (" (trigDrift :max %.4lg :mean %.4lg :sdv %.4lg)\n",
-        trigDiffs.m_max,  
+        trigDiffs.m_max,
         trigDiffs.Mean (),
         trigDiffs.StandardDeviation ());
 GEOMAPI_PRINTF (" (stableTrig :max %.4lg :mean %.4lg :sdv %.4lg :n %g)\n",
-        stableTrig.m_max,  
+        stableTrig.m_max,
         stableTrig.Mean (),
         stableTrig.StandardDeviation (),
         stableTrig.Count ()
         );
 GEOMAPI_PRINTF (" (stableTrigCount :max %.4lg :mean %.4lg :sdv %.4lg :n %g)\n",
-        stableTrigLogCount.m_max,  
+        stableTrigLogCount.m_max,
         stableTrigLogCount.Mean (),
         stableTrigLogCount.StandardDeviation (),
         stableTrigLogCount.Count ()
         );
 GEOMAPI_PRINTF (" (divergedTrig :max %.4lg :mean %.4lg :sdv %.4lg :n %g)\n",
-        failedTrig.m_max,  
+        failedTrig.m_max,
         failedTrig.Mean (),
         failedTrig.StandardDeviation (),
         failedTrig.Count ()
@@ -1263,7 +1263,7 @@ TEST(YPR,DriftSuspectsSingleAxis)
     static size_t numRoundTrip = 200;
     UsageSums num1, num2, num3;
     UsageSums angleDrift1, angleDrift2, angleDrift3;
-    
+
     for (size_t i = 0; i <= numTheta; i++)
         {
         double f = i / (double)numTheta;
@@ -1319,7 +1319,7 @@ UsageSums startAngles;
 
 // explicit list of angles that take more than easyTrig.size () iterations
 bvector<DPoint3d>hardTrig;
-// record in hard trig for more than 
+// record in hard trig for more than
 size_t m_recordAsHard;
 size_t m_maxIterations;
 
@@ -1506,18 +1506,18 @@ TEST(AngleInDegrees,HelloWorld)
 TEST(OBM,PolygonIndexing)
     {
     // verify LEAP code triangle indexing for 5-point polygon:
-    
+
     int npts = 5;
     int nOffset = 0;
     GEOMAPI_PRINTF(" TriangleIndexing, !hasVoid\n");
 	for (int i=1; i<npts-1; i++)
 		GEOMAPI_PRINTF("  %d %d %d\n",  nOffset + 0, nOffset + i, nOffset + i+1);
-		
+
     GEOMAPI_PRINTF(" TriangleIndexing, hasVoid true\n");
     for (int i=0; i<npts-2; i++)
 		GEOMAPI_PRINTF("  %d %d %d\n",  nOffset + i+1, nOffset + i+2, nOffset + i);
-    
-    }    
+
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -1531,7 +1531,7 @@ TEST(stdvector, binarySearchBehavior)
   v.push_back (20);
   v.push_back (30);
   v.push_back (40);
-  
+
   std::vector<double>::iterator low,up;
     if (doPrint)
         {
@@ -1689,7 +1689,7 @@ TEST(Angle,OverlappableIntervals_CrudeCounts)
                 }
             }
         }
-    } 
+    }
 
 bool CheckDSegment (DSegment1dCR segment, double a0, double a1)
     {
@@ -1748,7 +1748,7 @@ TEST(Angle,OverlappableIntervalsFixedFractions)
                         double sweepB01 = (fB1-fB0) * sweepA;
                         double sweepB =
                             sweepB01 > 0
-                                ? 360 - sweepB01 
+                                ? 360 - sweepB01
                                 : -360 - sweepB01;
                         Angle::OverlapWrapableIntervals (
                                     Angle::DegreesToRadians (startA),
@@ -1774,7 +1774,7 @@ TEST(Angle,OverlappableIntervalsFixedFractions)
                 }
             }
         }
-    } 
+    }
 
 
 
@@ -1924,16 +1924,16 @@ TEST(Angle, YawPitchRoll)
     }
 static bvector<uint32_t> windowsResult
 {
-  0,   3,   5,   8,  10,  13,  15,  18,  20,  23, 
- 26,  28,  31,  33,  36,  38,  41,  43,  46,  48, 
- 51,  54,  56,  59,  61,  64,  66,  69,  71,  74, 
- 77,  79,  82,  84,  87,  89,  92,  94,  97,  99, 
-102, 105, 107, 110, 112, 115, 117, 120, 122, 125, 
-128, 130, 133, 135, 138, 140, 143, 145, 148, 150, 
-153, 156, 158, 161, 163, 166, 168, 171, 173, 176, 
-179, 181, 184, 186, 189, 191, 194, 196, 199, 201, 
-204, 207, 209, 212, 214, 217, 219, 222, 224, 227, 
-230, 232, 235, 237, 240, 242, 245, 247, 250, 252, 
+  0,   3,   5,   8,  10,  13,  15,  18,  20,  23,
+ 26,  28,  31,  33,  36,  38,  41,  43,  46,  48,
+ 51,  54,  56,  59,  61,  64,  66,  69,  71,  74,
+ 77,  79,  82,  84,  87,  89,  92,  94,  97,  99,
+102, 105, 107, 110, 112, 115, 117, 120, 122, 125,
+128, 130, 133, 135, 138, 140, 143, 145, 148, 150,
+153, 156, 158, 161, 163, 166, 168, 171, 173, 176,
+179, 181, 184, 186, 189, 191, 194, 196, 199, 201,
+204, 207, 209, 212, 214, 217, 219, 222, 224, 227,
+230, 232, 235, 237, 240, 242, 245, 247, 250, 252,
 255
 };
 

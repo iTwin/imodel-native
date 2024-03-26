@@ -46,7 +46,7 @@ void ExerciseSearcher (CurveVectorWithDistanceIndex &searcher, int numTest = 5, 
         Check::Near (targetDistance, locationB.DistanceFromPathStart ());
 
         // If we are clearly away from the end (by more than circleRadius)
-        // compute intersection (in respective directions) with circle . . 
+        // compute intersection (in respective directions) with circle . .
         if (locationA.DistanceToPoint (location0) > circleRadius)
             {
             PathLocationDetail circleIntersection;
@@ -302,7 +302,7 @@ TEST(PathSearchStrokes,Arc)
 
 
 
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -325,7 +325,7 @@ TEST(PathSearch,ExtendedPath)
     searcher->SetExtendedPath (path,
               2.0,
               boundedStart, boundedEnd,
-              true, 
+              true,
               5.0);
     ExerciseSearcher (*searcher, 4, false);
     bvector<DPoint3d> lsAxyz;
@@ -337,7 +337,7 @@ TEST(PathSearch,ExtendedPath)
     searcher->SetExtendedPath (path,
               2.0,
               boundedStart, boundedEnd,
-              true, 
+              true,
               5.0);
     ExerciseSearcher (*searcher, 4, false);
 
@@ -362,7 +362,7 @@ void ExerciseSearcherProjections (CurveVectorCR curves, DVec3dCR upVector, int n
     CurveVectorPtr cv2 = cv1->Clone ();
     // both are sitting in xy plane.  Push cv2 away and rotate both back into space
     cv2->TransformInPlace (Transform::From (skewAbovePlane));
-    // and then back to the space plane . . 
+    // and then back to the space plane . .
     cv1->TransformInPlace (Transform::From (planeToWorld));
     cv2->TransformInPlace (Transform::From (planeToWorld));
     // tell the searcher the off-plane path and transform to on-plane ...
@@ -559,7 +559,7 @@ TEST(ConceptStationTests, RoadSegmentsProblem5)
     DPoint2d point1 = DPoint2d::From(303709.33260204399, 259404.39056316979);
     DPoint2d point2 = DPoint2d::From(303873.85362371965, 259455.44791809033);
     DPoint2d point3 = DPoint2d::From(304090.95735110756, 259170.24341271288);
-    
+
     bvector<DPoint2d> points = {point0, point1, point2, point3};
     TestTrim (points, 370.69818483297342, 729.13316963958653);
     TestTrim (points, 100.0, 200.3);
@@ -577,7 +577,7 @@ TEST(ConceptStationTests, NullTangent)
     DPoint3d point1 = DPoint3d::From(303709.33260204399, 259404.39056316979);
     DPoint3d point2 = DPoint3d::From(303873.85362371965, 259455.44791809033);
     DPoint3d point3 = DPoint3d::From(304090.95735110756, 259170.24341271288);
-    
+
     bvector<DPoint3d> points = {point0, point1, point2, point2, point3};
     Check::Print (points, "Points with duplicate");
     bvector<double> fractions = {0,0.2, 0.25, 0.45, 0.5, 0.55, 0.70, 0.75, 0.8};
@@ -950,7 +950,7 @@ TEST(CurveVectorWithXIndex,ClonePartialWithToleranceIssue)
                             (int)detailA.Value().PathIndex(), detailA.Value().CurveFraction(),
                             (int)detailB.Value().PathIndex(), detailB.Value().CurveFraction(),
                             false, true); // false: allowExtrapolation, true: usePartialCurves
-                // verify no crash in GetRange 
+                // verify no crash in GetRange
                 DRange3d range;
                 result->GetRange (range);
 
@@ -966,7 +966,7 @@ TEST(CurveVectorWithXIndex,ClonePartialWithToleranceIssue)
                 Check::Print (range.low, "range.low");
                 Check::Print (range.high, "range.high");
                 Check::Print (*result, "Partial Elevation");
-                }        
+                }
             }
         }
 

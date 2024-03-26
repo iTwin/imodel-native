@@ -89,7 +89,7 @@ static GEOMDLLIMPEXP VuP MakeChainFromArray
 @param rightmask IN mask for right side of edge
 @return pointer to VuNode at start
 */
-static GEOMDLLIMPEXP VuP MakeEdge 
+static GEOMDLLIMPEXP VuP MakeEdge
 (
 VuSetP          graphP,
 DPoint3dCR      xyzA,
@@ -98,7 +98,7 @@ VuMask          leftMask,
 VuMask          rightMask
 );
 //! unconditional construction with coordinates and masks.
-static GEOMDLLIMPEXP void MakeEdge 
+static GEOMDLLIMPEXP void MakeEdge
 (
 VuSetP          graphP,
 VuP             &nodeA,

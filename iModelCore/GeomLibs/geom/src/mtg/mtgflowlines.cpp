@@ -323,10 +323,10 @@ void FollowFlowFromNodeAndPoint (MTGPositionDetailCR seedPos, bvector<DPoint3d> 
     path.clear ();
     path.push_back (seedPos.XYZ ());
     MTGPositionDetail currPos = seedPos;
- 
+
     for (;;)
         {
-        MTGPositionDetail nextPos = ChooseFlowTarget (currPos);        
+        MTGPositionDetail nextPos = ChooseFlowTarget (currPos);
         if (!nextPos.HasNodeId ())
             return;
         if (nextPos.Z () >= currPos.Z ())

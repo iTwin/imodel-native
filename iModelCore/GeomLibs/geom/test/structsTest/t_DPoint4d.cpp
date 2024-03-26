@@ -287,7 +287,7 @@ TEST_F(DPoint4d_F, AlmostEqual)
     bvector< DPoint4d> dataA = { DPoint4d::From(0.3,0.5,-0.3,0),
                                  DPoint4d::From(2, 1, 4, 1),
                                  DPoint4d::From(8, 1, 2, 3), };
-    
+
     bvector< DPoint4d> dataB = { DPoint4d::From(0.354,0.5,-0.3,0.0040),
                                  DPoint4d::From(2, 1.052, 4, 1.099),
                                  DPoint4d::From(8.00000002, 1, 2, 3.01133), };

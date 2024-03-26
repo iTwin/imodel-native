@@ -51,7 +51,7 @@ IGeometryPtr Create (CGGroupDetail &detail) override
         if (member.IsValid ())
             {
             CurveVectorPtr cvMember = member->GetAsCurveVector ();
-            if (cvMember.IsValid ())            
+            if (cvMember.IsValid ())
                 curves->Add (cvMember);
 
             ICurvePrimitivePtr cpMember = member->GetAsICurvePrimitive ();
@@ -134,7 +134,7 @@ IGeometryPtr Create (CGSkewedConeDetail &detail) override
     DPoint3d centerA;
     detail.placement.GetFrame (centerA, axes);
     DgnConeDetail coneDetail (centerA, detail.centerB,
-                axes, 
+                axes,
                 detail.radiusA, detail.radiusB,
                 detail.bSolidFlag);
     ISolidPrimitivePtr sp = ISolidPrimitive::CreateDgnCone (coneDetail);
@@ -154,7 +154,7 @@ IGeometryPtr Create (CGCircularConeDetail &detail) override
     axes.GetColumn (vectorZ, 2);
     DPoint3d centerB = DPoint3d::FromSumOf (centerA, vectorZ, detail.height);
     DgnConeDetail coneDetail (centerA, centerB,
-                axes, 
+                axes,
                 detail.radiusA, detail.radiusB,
                 detail.bSolidFlag);
     ISolidPrimitivePtr sp = ISolidPrimitive::CreateDgnCone (coneDetail);
@@ -174,7 +174,7 @@ IGeometryPtr Create(CGCircularCylinderDetail &detail) override
     axes.GetColumn (vectorZ, 2);
     DPoint3d centerB = DPoint3d::FromSumOf (centerA, vectorZ, detail.height);
     DgnConeDetail coneDetail (centerA, centerB,
-                axes, 
+                axes,
                 detail.radius, detail.radius,
                 detail.bSolidFlag);
     ISolidPrimitivePtr sp = ISolidPrimitive::CreateDgnCone (coneDetail);
@@ -234,7 +234,7 @@ IGeometryPtr Create (CGTorusPipeDetail &detail) override
         vector90.SumOf (vectorX, -s, vectorY, c);
         }
     DgnTorusPipeDetail dgnDetail (center,
-                vector0, vector90, 
+                vector0, vector90,
                 detail.radiusA, detail.radiusB,
                 sweepRadians,
                 detail.bSolidFlag);
@@ -608,7 +608,7 @@ IGeometryPtr Create (CGPointChainDetail &detail) override
         if (cp.IsValid () && cp->GetStartPoint (xyz))
             points.push_back (xyz);
         }
-    
+
     return IGeometry::Create (ICurvePrimitive::CreatePointString (points));
     }
 

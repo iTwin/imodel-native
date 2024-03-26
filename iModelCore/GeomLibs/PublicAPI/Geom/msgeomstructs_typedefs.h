@@ -93,7 +93,7 @@
 
   #define GEOMDLLIMPEXP
   #define GEOMDLLVIRTUAL
-    
+
 #endif
 
 DEFINE_GEOM_STRUCT1 (ClipPlane)

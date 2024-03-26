@@ -22,7 +22,7 @@ double DCatenaryXY::dYdXAtX (double x) const
     auto u = DoubleOps::ValidatedDivide (x, m_a);
     if (u.IsValid ())
         return sinh (u);
-    return 0.0; 
+    return 0.0;
     }
 
 double DCatenaryXY::d2YdX2AtX (double x) const
@@ -107,7 +107,7 @@ void DCatenaryXY::DerivativesAtLength (double s, DPoint2dR uv, DVec2dR duv, DVec
     double divr5 = divr3 * divr2;
     duv = DVec2d::From (m_a * divr, s * divr);
 
-    dduv = DVec2d::From (- s * m_a * divr3, a2 * divr3); 
+    dduv = DVec2d::From (- s * m_a * divr3, a2 * divr3);
     ddduv = DVec2d::From (-m_a * divr3 + 3.0 * s2 * divr5, -3.0 * s * a2 * divr5 );
     }
 
@@ -187,7 +187,7 @@ Transform DCatenary3dPlacement::FractionToPointAndDerivatives (double f) const
     DVec2d duv, dduv, ddduv;
     m_xyCatenary.DerivativesAtLength (distanceAlong, uv, duv, dduv, ddduv);
     double delta = m_distanceLimits.Delta ();
-    return Transform::FromOriginAndVectors 
+    return Transform::FromOriginAndVectors
         (
         m_basis.Evaluate (uv),
         delta * m_basis.EvaluateVectorOnly (duv),
@@ -319,7 +319,7 @@ bool DCatenaryXY::CoshIntersectLine (double alpha, double beta, double gamma, bv
     CoshIntersectLineFunction F (alpha, beta, gamma);
     // f(x) = alpha + beta*x + gamma * cosh(x)
     // f'(x) = beta + gamma * sinh (x)
-    // Find x where alpha + beta*x is parallel to cosh (x) . . 
+    // Find x where alpha + beta*x is parallel to cosh (x) . .
     double xA = asinh (-beta/gamma);
     double yA = F.EvaluateLinePart (xA);
     double yB = F.EvaluateCoshPart (xA);

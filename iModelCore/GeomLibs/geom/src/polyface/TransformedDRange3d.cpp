@@ -133,7 +133,7 @@ InOutStates TransformedDRange3d::Classify(ClipPlaneSetCR clipper) const
     double tolerance = DoubleOps::SmallMetricDistance ();
     InOutStates compositeState;
     // Successively test corners, edges, and faces of the range.
-    // At each step, if definite in and definite out points have appeared exit immediately with 
+    // At each step, if definite in and definite out points have appeared exit immediately with
     //  the mixed state.
     // After falling through that, each and every one of the convex clippers has avoided any face contact.
     // Hence single point tests for each clipper can imply state of the entire clipper.
@@ -249,7 +249,7 @@ bool TransformedDRange3d::IsAnyPointInsideClipper(ClipPlaneSetCR clipper) const
     {
     double tolerance = DoubleOps::SmallMetricDistance();
     // Successively test corners, edges, and faces of the range.
-    // At each step, if definite in and definite out points have appeared exit immediately with 
+    // At each step, if definite in and definite out points have appeared exit immediately with
     //  the mixed state.
     // After falling through that, each and every one of the convex clippers has avoided any face contact.
     // Hence single point tests for each clipper can imply state of the entire clipper.

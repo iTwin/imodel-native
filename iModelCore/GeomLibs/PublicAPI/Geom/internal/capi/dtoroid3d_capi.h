@@ -12,7 +12,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 //! @param pCenter IN      toroid center.
 //! @param radius  IN      radius of toroid.
 //! @param pParameterRange IN      parameter range. If NULL, default is applied.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void               bsiDToroid3d_setCenterRadii
 (
@@ -29,7 +29,7 @@ DRange2dCP pParameterRange
 //! @param minorRadiusRatio   IN      radius of minor circles in the local coordinate system
 //!                               where major radius is 1.
 //! @param pRange             IN      parameter range.  If NULL, default is applied.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void               bsiDToroid3d_set
 (
@@ -42,7 +42,7 @@ DRange2dCP pParameterRange
 //!
 //! Set the reference frame of the toroid.
 //! @param pFrame IN      coordinate frame.  null indicates an identity transformation.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void               bsiDToroid3d_setFrame
 (
@@ -53,7 +53,7 @@ TransformCP pFrame
 //!
 //! Set the parameter range of the toroid.
 //! @param pParameterRange IN      limits of longitude and latitude.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void               bsiDToroid3d_setNaturalParameterRange
 (
@@ -67,7 +67,7 @@ DRange2dCP pParameterRange
 //! @param pPhi       OUT     z coordinate in spherical coordinates
 //! @param pR         OUT     radius from major circle, as a multiple of the minor circle radius.
 //! @return false if the local point is on the z axis or the major circle.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool       bsiDToroid3d_localToToroidal
 (
@@ -80,7 +80,7 @@ DPoint3dCP pPoint
 
 //!
 //! test if a longitude angle is in the ellipsoid's parameter range.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool        bsiDToroid3d_longitudeInRange
 (
@@ -90,7 +90,7 @@ double      longitude
 
 //!
 //! test if a latitude is in the ellipsoid's parameter range.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool        bsiDToroid3d_latitudeInRange
 (
@@ -108,7 +108,7 @@ double          latitude
 //! @param pLineParameter OUT     array of 0, 1, or 2 parameters with respect to the line.
 //! @param DRay3d         IN      ray to intersect.
 //! @return number of intersections.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP int                bsiDToroid3d_intersectDSegment3d
 (
@@ -129,7 +129,7 @@ DSegment3dCP pSegment
 //!                       unit sphere).  May be NULL.
 //! @param pLineParameter OUT     array of 0 to 4 (!!!) parameters with respect to the line.
 //! @return number of intersections.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP int                bsiDToroid3d_intersectDRay3d
 (
@@ -146,7 +146,7 @@ DRay3dCP pRay
 //! matrix are applied.
 //! @param pTransform IN      transformation to apply.
 //! @param pSource IN      source ellipse.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiDToroid_applyAffineDMatrix4d
 (
@@ -160,7 +160,7 @@ DToroid3dCP pSource
 //! @param pEllipse OUT     full ellipse at specified longitude.   0-degree vector is on
 //!           is on the equator.  90 degree vector is to the north pole.
 //! @param longitude IN      longitude angle (radians)
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiDToroid3d_getMeridian
 (
@@ -174,7 +174,7 @@ double      longitude
 //! @param pEllipse <= full ellipse at specified longitude.   0-degree vector is on
 //!           is on the equator.  90 degree vector is to the north pole.
 //! @param longitude => longitude angle (radians)
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiDToroid3d_getMeridianLocal
 (
@@ -191,7 +191,7 @@ double      longitude
 //!           is on the equator.  90 degree vector is to the north pole.
 //! @param x "cosine like" coordinate in small circle plane.
 //! @param y "sine like" coordinate in small circle plane
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiDToroid3d_getParallelFromSmallCircleCoordinates
 (
@@ -206,7 +206,7 @@ double      y
 //! @param pEllipse OUT     full ellipse at specified latitude.  0 and 90 degree vectors
 //!           are 0 and 90 degrees latitude.
 //! @param latitude IN      latitude angle (radians)
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiDToroid3d_getParallel
 (
@@ -217,7 +217,7 @@ double      latitude
 
 //!
 //! Convert from parametric to cartesian, with the parametric coordinate given as trig values.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void    bsiDToroid3d_trigParameterToPoint
 (
@@ -233,7 +233,7 @@ double      sinPhi
 //! @param pPoint OUT     evaluated point
 //! @param thetaFraction IN      angular position, as a fraction of the patch longitude range.
 //! @param phiFraction IN      axial position, as a fraction of the patch latitude range.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool     bsiDToroid3d_fractionParameterToDPoint3d
 (
@@ -247,7 +247,7 @@ double    phiFraction
 //! @param thetaFraction  OUT     longitude, as a fraction of the patch longitude range
 //! @param phiFraction    OUT     latitude, as a fraction of the latitude range
 //! @param pPoint         IN      evaluated point
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool    bsiDToroid3d_dPoint3dToFractionParameter
 (
@@ -262,7 +262,7 @@ DPoint3dCP pPoint
 //! @param pPhi   IN      latitude
 //! @param thetaFraction IN      longitude, as a fraction of the patch longitude range.
 //! @param phiFraction IN      latitude, as a fraction of the patch latitude range.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiDToroid3d_fractionParameterToNaturalParameter
 (
@@ -278,7 +278,7 @@ double    phiFraction
 //! @param pPhi IN      latitude
 //! @param theta  IN      longitude
 //! @param phi    IN      latitude
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiDToroid3d_naturalParameterToFractionParameter
 (
@@ -292,21 +292,21 @@ double    phi
 //!
 //! Test if the ellipsoid range is the full parameter space.
 //!
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool               bsiDToroid3d_isComplete (DToroid3dCP pInstance);
 
 //!
 //! @return true if the 1st natural parameter covers the complete range of the underlying
 //!           analytic surface.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool     bsiDToroid3d_isParam1Complete (DToroid3dCP pToroid);
 
 //!
 //! @return true if the 2nd natural parameter covers the complete range of the underlying
 //!           analytic surface.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool     bsiDToroid3d_isParam2Complete (DToroid3dCP pToroid);
 
@@ -316,7 +316,7 @@ Public GEOMDLLIMPEXP bool     bsiDToroid3d_isParam2Complete (DToroid3dCP pToroid
 //!                       is the out-of-plane vector, (1,0,0) and (0,1,0) at 0 and 90 degrees longitude
 //!                       on the major circle.
 //!
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void               bsiDToroid3d_getFrame
 (
@@ -329,7 +329,7 @@ TransformP pFrame
 //! a the system where the base is a unit xy circle.
 //! @param pInverseFrame OUT     inverse frame.
 //! @return true if the inverse is was computed.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool               bsiDToroid3d_getInverseFrame
 (
@@ -342,7 +342,7 @@ TransformP pInverseFrame
 //! @param pWorld OUT     world coordinates
 //! @param pLocal IN      coordinates in local frame of toroid.
 //! @return true if the local to world transformation was invertible.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void    bsiDToroid3d_localToWorld
 (
@@ -355,7 +355,7 @@ DPoint3dCP pLocal
 //! Convert a local cartesian point to the world coordinate system.
 //! @param pLocal OUT     coordinates in local frame
 //! @param pWorld IN      world coordinates
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool        bsiDToroid3d_worldToLocal
 (
@@ -367,7 +367,7 @@ DPoint3dCP pWorld
 //!
 //! Evaluate the implicit function for the ellipsoid.
 //! @param pPoint IN      point where the implicit function is evaluated.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP double bsiDToroid3d_implicitFunctionValue
 (
@@ -379,7 +379,7 @@ DPoint3dCP pPoint
 //!
 //! Evaluate the implicit function for the ellipsoid.
 //! @param pPoint => point where the implicit function is evaluated, already in local coordinates
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP double bsiDToroid3d_implicitFunctionValueLocal
 (
@@ -391,7 +391,7 @@ DPoint3dCP pLocalPoint
 //! @param pPoint OUT     evaluated point
 //! @param theta  IN      longitude
 //! @param phi    IN      latitude
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool        bsiDToroid3d_naturalParameterToDPoint3d
 (
@@ -409,7 +409,7 @@ double  phi
 //! @param pParam1 OUT     natural parameter
 //! @param pParam2 OUT     natural parameter
 //! @param pPoint  IN      xyz coordinates
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool         bsiDToroid3d_dPoint3dToNaturalParameter
 (
@@ -425,7 +425,7 @@ DPoint3dCP pPoint
 //! @param pParam1End   IN      end value of natural parameter.
 //! @param pParam2Start IN      start value of natural parameter.
 //! @param pParam2End   IN      end value of natural parameter.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiDToroid3d_getScalarNaturalParameterRange
 (
@@ -439,7 +439,7 @@ double    *pParam2End
 //!
 //! Get the parameter range of the ellipsoid.
 //!
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void               bsiDToroid3d_getNaturalParameterRange
 (
@@ -449,7 +449,7 @@ DRange2dP pParameterRange
 
 //!
 //! Get the parameter range as start/sweep pairs.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void    bsiDToroid3d_getScalarNaturalParameterSweep
 (
@@ -466,7 +466,7 @@ double          *pPhiSweep
 //! @param pParam1End   IN      end value of natural parameter.
 //! @param pParam2Start IN      start value of natural parameter.
 //! @param pParam2End   IN      end value of natural parameter.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiDToroid3d_getCompleteNaturalParameterRange
 (

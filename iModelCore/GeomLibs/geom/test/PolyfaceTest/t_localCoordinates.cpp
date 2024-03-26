@@ -63,7 +63,7 @@ void TestLCS (bvector<DPoint3d> const &points, LocalCoordinateSelect select)
             Check::Near (0.0, localRange.low.y, "localOrigin y0");
             }
         }
-        
+
     DPoint3d interiorPoint;
     if (Check::Int (SUCCESS, vu_anyInteriorPointInPolygon (&interiorPoint, &points[0], (int)points.size ()), "Find interior point"))
         {
@@ -84,7 +84,7 @@ void TestSimplePolygonTriangulation (bvector<DPoint3d> &points)
                     0.0, 3, true), "triangulation");
     int numResultTriangle = (int)indices.size () / 4;
     Check::Int (numInputVertex - 2, numResultTriangle, "Simple triangulation count");
-    
+
     }
 
 void AddPolygonA (bvector<DPoint3d> &points, double ax, double ay, bool addClosure = false)
@@ -257,7 +257,7 @@ TEST(SlabSystem,Test0)
         }
     // The principal axes for a slab are parallel to edges.
     // But their order and sense have multiple possibilities
-    // This construction 
+    // This construction
     auto xEdge = DVec3d::FromStartEnd (gistPoints[1], gistPoints[0]).ValidatedNormalize ();
     auto yEdge = DVec3d::FromStartEnd (gistPoints[3], gistPoints[0]).ValidatedNormalize ();
     auto zEdge = DVec3d::FromStartEnd (gistPoints[0], gistPoints[4]).ValidatedNormalize ();

@@ -74,7 +74,7 @@ int                    stitchSelect
     jmdlMTGFacets_empty (pFacets);
     jmdlMTGFacets_setNormalMode (pFacets, MTG_Facets_SeparateNormals, (int)numVertex, (int)numVertex);
     int thruOffset = jmdlMTGFacets_defineLabel (pFacets, MTG_NODE_PARTNER_TAG, MTG_LabelMask_SectorProperty, -1);
-    
+
     // Copy coordinates into facets ..
     DPoint3dOps::Copy (&pFacets->vertexArrayHdr, polyfacePoints, numPoint);
 
@@ -158,7 +158,7 @@ int                    stitchSelect
         if (!jmdlMTGFacets_stitchFacets (pFacets, tolerance, 0.0))
             return false;
         }
-    else  // default to modernized stich  . . . 
+    else  // default to modernized stich  . . .
         {
         if (!jmdlMTGFacets_stitchFacetsForMultiVolume (pFacets, tolerance, 0.0))
             return false;
@@ -215,7 +215,7 @@ MTGMask                     visibleEdgeMask
     jmdlMTGGraph_clearMaskInSet (pGraph, visitMask);
     bvector<DPoint3d>&point = polyface.Point ();
     bvector<int>&pointIndex = polyface.PointIndex ();
-    int vertexLabelOffset = pFacets->vertexLabelOffset;    
+    int vertexLabelOffset = pFacets->vertexLabelOffset;
     size_t baseVertexId = point.size ();
     size_t facetCount = 0;
     int maxMTGVertexIndex = -1;
@@ -252,7 +252,7 @@ MTGMask                     visibleEdgeMask
 
     for (ptrdiff_t i = 0; i <= (ptrdiff_t)maxMTGVertexIndex; i++)
         {
-        point.push_back (pFacets->vertexArrayHdr[i]);        
+        point.push_back (pFacets->vertexArrayHdr[i]);
         }
     return facetCount;
     }
@@ -318,7 +318,7 @@ bvector<MTGNodeId> const &  nodes
                     maxMTGVertexIndex = mtgVertexId;
                 size_t oldZeroBasedPointIndex = (size_t)mtgVertexId;
                 size_t newZeroBasedPointIndex = MapZeroBasedPointIndex (oldZeroBasedPointIndex, oldPointIndexToNewPointIndex, pFacets->vertexArrayHdr, point);
-                    
+
                 int signedPointIndex = static_cast <int> (newZeroBasedPointIndex + 1);
                 if (visibleEdgeMask != MTG_NULL_MASK && !pGraph->GetMaskAt(faceNodeId, visibleEdgeMask))
                     signedPointIndex *= -1;

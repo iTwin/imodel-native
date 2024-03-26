@@ -410,7 +410,7 @@ void AddConvexClip (ConvexClipPlaneSetP clipPlanes)
         // The clip steps reduce the size but preserve order and convexity.
         // SO... the exterior masking should be right.
         }
-    
+
     vu_stackPop (m_graph);
     }
 
@@ -687,7 +687,7 @@ void AnalyzeCutPlaneLoops(size_t numComplexFaces)
         if (m_globalEdgeData.AnalyzeCutPlane (beginIndex, endIndex, startIndices, endIndices))
             {
             m_globalEdgeData.SetFlag (beginIndex, endIndex, false);
-            // Pull out obvious 
+            // Pull out obvious
             for (size_t index = beginIndex; index < endIndex; index++)
                 {
                 if (m_globalEdgeData.GetFlag (index))
@@ -740,7 +740,7 @@ void AnalyzeCutPlaneLoops(size_t numComplexFaces)
                             // Join 2 chains as single face ....
                             m_globalEdgeData.ExtendChain (beginIndex, endIndex, startIndices[0], chainIndices, true);
                             m_globalEdgeData.ExtendChain (beginIndex, endIndex, startIndices[1], chainIndices, true);
-                            //EmitLoop (chainIndices, reverseLoops);                            
+                            //EmitLoop (chainIndices, reverseLoops);
                             AssembleLoop (chainIndices, insideLoops, outsideLoops);
                             }
                         }

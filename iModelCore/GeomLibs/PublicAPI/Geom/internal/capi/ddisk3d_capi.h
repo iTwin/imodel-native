@@ -13,7 +13,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 //!                   center, 0-degree vector, 90-degree vector, and off-plane direction.
 //!                   if <code>null</code>, an identity is used.
 //! @param pRange     IN      parameter range in <code>(r, theta)</code> coordinates.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void    bsiDDisk3d_set
 (
@@ -29,7 +29,7 @@ DRange2dCP pRange
 //!                   to a circle of this radius in the xy plane.  The out-of-plane
 //!                   direction is construted with the same z axis length.
 //! @param pRange IN      parameter range.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void    bsiDDisk3d_setCenterRadii
 (
@@ -42,7 +42,7 @@ DRange2dCP pRange
 //!
 //! Set the reference frame of the disk.
 //! @param pTransform IN      coordinate frame.  If NULL, default is applied.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void               bsiDDisk3d_setFrame
 (
@@ -53,7 +53,7 @@ TransformCP pFrame
 //!
 //! Set the parameter range of the disk.
 //!
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void               bsiDDisk3d_setParameterRange
 (
@@ -65,7 +65,7 @@ DRange2dCP pParameterRange
 //! @param pFrame     OUT     coordinate frame.   The z axis is the disk axis.  The disk
 //!                       parameterization (polar coordinates) is in the xy plane.
 //! @param pRange     OUT     the conic parameter range.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void    bsiDDisk3d_get
 (
@@ -76,7 +76,7 @@ DRange2dP pRange
 
 //!
 //! test if an angle is in the disk's parameter range.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool        bsiDDisk3d_angleInRange
 (
@@ -86,7 +86,7 @@ double          longitude
 
 //!
 //! test if a radius in the disk's parameter range.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool        bsiDDisk3d_radiusInRange
 (
@@ -98,7 +98,7 @@ double          altitude
 //! Convert a world cartesian point to the local cartesian system.
 //! @param pWorld OUT     world coordinates
 //! @param pLocal IN      coordinates in local frame of disk.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void    bsiDDisk3d_localToWorld
 (
@@ -112,7 +112,7 @@ DPoint3dCP pLocal
 //! @param pLocal OUT     coordinates in local frame
 //! @param pWorld IN      world coordinates
 //! @return true if the coordinate frame is invertible.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool        bsiDDisk3d_worldToLocal
 (
@@ -131,7 +131,7 @@ DPoint3dCP pWorld
 //! @param pZ         OUT     z coordinate in cylindrical coordinates
 //! @param pR         OUT     radius in cylindrical coordinates
 //! @return false if the local point is on the disk/cylinder axis.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool       bsiDDisk3d_localToPolar
 (
@@ -150,7 +150,7 @@ DPoint3dCP pPoint
 //!                   differ if cosine and sine values are scaled rather than true trig values.)
 //! @param cosTheta IN      cosine of angle.
 //! @param sinTheta IN      sine of angle.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void    bsiDDisk3d_trigParameterToPoint
 (
@@ -171,7 +171,7 @@ double  sinTheta
 //! @param pLineParameter OUT     array of 0, 1, or 2 parameters with respect to the line.
 //! @param DRay3d         IN      ray to intersect.
 //! @return number of intersections.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP int                bsiDDisk3d_intersectDSegment3d
 (
@@ -189,7 +189,7 @@ DSegment3dCP pSegment
 //!                       localToPolar to convert to (r,theta, z)).
 //! @param pLineParameter OUT     parameter on line.
 //! @return number of intersections.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool       bsiDDisk3d_intersectDRay3d
 (
@@ -206,7 +206,7 @@ DRay3dCP pRay
 //! @param pSegment  OUT     ruling segment.
 //! @param theta IN      longitude angle (radians)
 //! @return true if theta is within the parameter range for the disk.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool     bsiDDisk3d_getRuleLine
 (
@@ -221,7 +221,7 @@ double          theta
 //!           are 0 and 90 degrees latitude.
 //! @param z      IN      altitude parameter
 //! @return true if the radius value is within the disk parameter range.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool     bsiDDisk3d_getCrossSection
 (
@@ -234,7 +234,7 @@ double          r
 //! @param pPoint OUT     evaluated point
 //! @param radiusFraction IN      radial position, as a fraction of the patch radial range.
 //! @param angleFraction IN      angular position, as a fraction of the patch angle range.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool     bsiDDisk3d_fractionParameterToDPoint3d
 (
@@ -248,7 +248,7 @@ double    angleFraction
 //! @param pRadiusFraction OUT     radial position, as a fraction of the patch radial range.
 //! @param pAngleFraction  OUT     angular position, as a fraction of the patch angle range.
 //! @param pPoint         IN      evaluated point
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool    bsiDDisk3d_dPoint3dToFractionParameter
 (
@@ -263,7 +263,7 @@ DPoint3dCP pPoint
 //! @param pAngle IN      angle around cross sectional circle
 //! @param radiusFraction IN      radial position, as a fraction of patch radius range.
 //! @param angleFraction IN      angular position, as a fraction of the patch angle range.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiDDisk3d_fractionParameterToNaturalParameter
 (
@@ -279,7 +279,7 @@ double    angleFraction
 //! @param pAngleFraction IN      natural angle parameter as fraction of the patch.
 //! @param radius IN      radius, in local coordinate frame.
 //! @param angle  IN      angular position
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiDDisk3d_naturalParameterToFractionParameter
 (
@@ -293,26 +293,26 @@ double    angle
 //!
 //! Test if the disk range is the full parameter space.
 //!
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool               bsiDDisk3d_isComplete (DDisk3dCP pInstance);
 
 //!
 //! @return true if the disk angle parameter covers the complete circular range of the cross sections.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool     bsiDDisk3d_isParam2Complete (DDisk3dCP pDisk);
 
 //!
 //! @return true if the radius range covers the nominal 0..1 complete range.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool     bsiDDisk3d_isParam1Complete (DDisk3dCP pDisk);
 
 //!
 //! Get the reference frame of the disk.
 //!
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void               bsiDDisk3d_getFrame
 (
@@ -325,7 +325,7 @@ TransformP pFrame
 //! a the system where the disk's circular rulings are circles around the origin.
 //! @param pInverseFrame OUT     inverse frame.
 //! @return true if the inverse is was computed.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool               bsiDDisk3d_getInverseFrame
 (
@@ -336,7 +336,7 @@ TransformP pInverseFrame
 //!
 //! Evaluate the implicit function for the disk.
 //! @param pPoint IN      point where the implicit function is evaluated.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP double bsiDDisk3d_implicitFunctionValue
 (
@@ -348,7 +348,7 @@ DPoint3dCP pPoint
 //! @param pPoint OUT     evaluated point
 //! @param theta IN      angle around disk
 //! @param z     IN      fraction of z axis.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool     bsiDDisk3d_naturalParameterToDPoint3d
 (
@@ -365,7 +365,7 @@ double  angle
 //! @param pRadius OUT     radial parameter
 //! @param pAngle OUT     angular parameter
 //! @param pPoint  IN      xyz coordinates
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool         bsiDDisk3d_dPoint3dToNaturalParameter
 (
@@ -381,7 +381,7 @@ DPoint3dCP pPoint
 //! @param pRadius1 IN      end value of natural parameter.
 //! @param pAngle0  IN      start value of natural parameter.
 //! @param pAngle1  IN      end value of natural parameter.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiDDisk3d_getScalarNaturalParameterRange
 (
@@ -395,7 +395,7 @@ double    *pAngle1
 //!
 //! Get the parameter range of the disk.
 //!
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void               bsiDDisk3d_getNaturalParameterRange
 (
@@ -405,7 +405,7 @@ DRange2dP pParameterRange
 
 //!
 //! Get the parameter range as start/sweep pairs.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void    bsiDDisk3d_getScalarNaturalParameterSweep
 (
@@ -422,7 +422,7 @@ double          *pAngleSweep
 //! @param pRadius1 IN      end value of natural parameter.
 //! @param pAngle0  IN      start value of natural parameter.
 //! @param pAngle1  IN      end value of natural parameter.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiDDisk3d_getCompleteNaturalParameterRange
 (

@@ -98,7 +98,7 @@ bool VuPositionDetail::IsEdge () const {return m_topology == Topo_Edge;}
 bool VuPositionDetail::IsVertex () const {return m_topology == Topo_Vertex;}
 //! @return true if typology type is null
 bool VuPositionDetail::IsUnclassified () const {return m_topology == Topo_None;}
-    
+
 
 //! @return node id
 VuP VuPositionDetail::GetNode () const { return m_node;}
@@ -178,7 +178,7 @@ VuPositionDetailCR candidate
         }
     return false;
     }
-    
+
 //! Move pointer to mate on other side of edge.
 //! All other member data unchanged !!
 void VuPositionDetail::MoveToEdgeMate () {m_node = vu_edgeMate (m_node);}

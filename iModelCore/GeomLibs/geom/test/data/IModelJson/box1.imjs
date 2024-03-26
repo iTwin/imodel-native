@@ -1,0 +1,8 @@
+{"box":
+ {"baseOrigin":[1,2,3],
+  "baseX":3,
+  "baseY":2,
+  "capped":true,
+  "topOrigin":[1,2,8]
+ }
+}

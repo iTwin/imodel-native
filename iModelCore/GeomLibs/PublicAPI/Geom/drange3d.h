@@ -154,7 +154,7 @@ double          z
 
 
 //!
-//!                                                                                                
+//!
 //! @description Extends the coordinates of the range cube points in pRange so as
 //! to include the single additional point at x,y,z.
 //! @param [in] x extended range coordinate
@@ -449,21 +449,21 @@ const   double  *pWeight,
 int             n
 );
 
-//! 
+//!
 //! Return a range of points with optional weights.
 //! @param [in] points new points to be included in minmax ranges
 //! @param [in] weights correspnding weights.
 //!
 static DRange3d From (bvector<DPoint3d> const &points, bvector<double> const *weights);
 
-//! 
+//!
 //! Initialize a range to include points with optional weights.
 //! @param [in] points new points to be included in minmax ranges
 //! @param [in] weights correspnding weights.
 //!
 void InitFrom (bvector<DPoint3d> const &points, bvector<double> const *weights);
 
-//! 
+//!
 //! Expand a range to include points with optional weights.
 //! @param [in] points new points to be included in minmax ranges
 //! @param [in] weights correspnding weights.
@@ -554,7 +554,7 @@ static DRange3d From (bvector<DPoint2d> const &points, double zValue);
 //! @param [in] zValue z coordinate for all points.
 static DRange3d From (bvector<bvector<DPoint2d> > const &points, double zValue);
 
-//! 
+//!
 //! Initialize a range to include points with fixed z.
 //! @param [in] points new points to be included in minmax ranges
 //! @param [in] zValue z coordinate for all points.
@@ -562,7 +562,7 @@ static DRange3d From (bvector<bvector<DPoint2d> > const &points, double zValue);
 void InitFrom (bvector<DPoint2d> const &points, double zValue);
 
 
-//! 
+//!
 //! Expand a range to include points with fixed z.
 //! @param [in] points new points to be included in minmax ranges
 //! @param [in] zValue z coordinate for all points.
@@ -587,7 +587,7 @@ void ExtendBySweep (DVec3dCR vector);
 void Extend (DRange3dCR range1);
 
 //! extends the coordinates of the range cube points to include an ellipse
-//! @param [in] ellipse 
+//! @param [in] ellipse
 void Extend (DEllipse3dCR ellipse);
 
 

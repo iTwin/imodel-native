@@ -394,7 +394,7 @@ void AppendFractions (double a0, double a1, bvector<double> const &aBreaks)
         {
         double da = a1 - a0;
         double dsda;
-        
+
         if (DoubleOps::SafeDivide (dsda, 1.0, da, 0.0))
             {
             for (double a : aBreaks)
@@ -431,7 +431,7 @@ void AnalyzeSegment (DPoint3dCR xyz0, DPoint3dCR xyz1)
     m_xyz0 = xyz0;
     m_xyz1 = xyz1;
 
-    // clamp x and y to (possibly non-normalized!) u- and v-knot ranges 
+    // clamp x and y to (possibly non-normalized!) u- and v-knot ranges
     DRange1d uKnotRange, vKnotRange;
     m_uKnotData.GetActiveKnotRange(uKnotRange.low, uKnotRange.high);
     m_vKnotData.GetActiveKnotRange(vKnotRange.low, vKnotRange.high);
@@ -456,7 +456,7 @@ void AnalyzeSegment (DPoint3dCR xyz0, DPoint3dCR xyz1)
             m_segmentFractions[numAccept++] = a = m_segmentFractions[i];
             }
         }
-    // um .. push aside a final fraction "just before 1.0" 
+    // um .. push aside a final fraction "just before 1.0"
     m_segmentFractions.resize (numAccept);
     if (m_segmentFractions.back () < 1.0)
         m_segmentFractions.back () = 1.0;
@@ -507,7 +507,7 @@ SurfaceBreakContext &breakContext
         int numSeg = pCurve->params.numPoles - 1;
         if (pCurve->params.closed)
             numSeg++;
-         
+
         for (int i0 = 0; SUCCESS == status && i0 < numSeg; i0++)
             {
             int i1 = (i0 + 1) % pCurve->params.numPoles;
@@ -547,7 +547,7 @@ double param1                           // => end parameter on curve
     {
     SurfaceBreakContext breakContext;
     breakContext.AnnounceSurface (*pSurface);
-    
+
     return bspsurf_appendPCurveStrokes (*pCurvePoints, *pSurfacePoints, curveTol, surfaceTol, minPoints,
                 pCurve, pSurface, param0, param1, breakContext);
     }
@@ -1801,7 +1801,7 @@ void MSBsplineSurface::SetTrim (CurveVectorR curves)
                 TrimCurve *trimLoop = NULL;
                 CurveVectorCR loop = *loops[i];
                 for (size_t j = 0; j <  loop.size (); j++)
-                    {            
+                    {
                     MSBsplineCurve edgeCurve;
                     if (loop[j]->GetMSBsplineCurve (edgeCurve, 0.0, 1.0))
                         {
@@ -1830,14 +1830,14 @@ size_t MSBsplineSurface::GetNumPointsInBoundary (size_t boundaryIndex) const
         return boundaries[boundaryIndex].numPoints;
     return false;
     }
-    
+
 int MSBsplineSurface::GetIntNumPointsInBoundary (int boundaryIndex) const
     {
     if (boundaryIndex >= 0 && boundaryIndex < numBounds)
         return boundaries[boundaryIndex].numPoints;
     return false;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
