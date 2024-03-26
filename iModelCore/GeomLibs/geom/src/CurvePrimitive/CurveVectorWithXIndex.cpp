@@ -94,7 +94,7 @@ ValidatedPathLocationDetail CurveVectorWithXIndex::XToPathLocationDetail (double
             key,
             PathLocationDetail::IsLessThan_ByPathDistance
             );
-            
+
     if (memberB == m_locations.begin())
         {
         return AtStart (true);

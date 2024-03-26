@@ -16,7 +16,7 @@ void CheckQuadratic (double root0, double root1, double c, bool safeDivide)
         double ss[2];
         if (safeDivide)
             Check::Int (2, q.RealRootsWithSafeDivideCheck (ss));
-        else 
+        else
             Check::Int (2, q.RealRoots (ss));
         double midRoot = 0.5 * (root0 + root1);
         Check::True (ss[0] < ss[1], "sorted roots");
@@ -27,7 +27,7 @@ void CheckQuadratic (double root0, double root1, double c, bool safeDivide)
         Check::Near (0.0, q.Evaluate (root0), "root0");
         Check::Near (0.0, q.Evaluate (root1), "root1");
         Check::Near (midRoot, x0, "vertex x");
-        
+
         }
     }
 /*---------------------------------------------------------------------------------**//**
@@ -42,7 +42,7 @@ TEST(PolynomialPowerDegree2, Test0)
         CheckQuadratic (-20, 40, 0.23423, pass != 0);
         }
     }
-    
+
 void CheckLinear (double root, double slope, bool safeDivide)
     {
     // y = c * (x-root0) * (x-root1)
@@ -52,12 +52,12 @@ void CheckLinear (double root, double slope, bool safeDivide)
         double ss[2];
         if (safeDivide)
             Check::Int (1, q.RealRootsWithSafeDivideCheck (ss));
-        else 
+        else
             Check::Int (1, q.RealRoots (ss));
         Check::Near (ss[0], root, "Linear case root");
         }
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -69,8 +69,8 @@ TEST(PolynomialPowerDegree2, Test1)
         CheckLinear (1, 5, pass != 0);
         CheckLinear (-20, 0.23423, pass != 0);
         }
-    }    
-    
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -112,7 +112,7 @@ TEST (PolynomialPowerDegree2, BigRoots)
                     }
                 }
             Check::EndScope ();
-            }        
+            }
         }
     }
 

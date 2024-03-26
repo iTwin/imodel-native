@@ -1673,7 +1673,7 @@ bool                rigidSweep
 #endif
     info.tube.closedTrace = trace->params.closed != 0;
 
-    if (SUCCESS != (status =  bspproc_processBspline (&info, 
+    if (SUCCESS != (status =  bspproc_processBspline (&info,
           const_cast <MSBsplineCurveP> (trace), NULLFUNC, NULLFUNC, bspsurf_tubeProcess, bspsurf_tubeAssemble, NULLFUNC)))
         return status;
 

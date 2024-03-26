@@ -239,7 +239,7 @@ static void addRectangle (
     }
 
 /*-----------------------------------------------------------------*//**
-* @description Return a graph whose interior points are at least (ax,bx) distance from 
+* @description Return a graph whose interior points are at least (ax,bx) distance from
 *     loop interior points to the left and right, and (ay, by) below and above.
 * @param loops > array of loops.  In these loops, inside is defined by parity.
 * @param ax => rightward offset from an edge on the left side.
@@ -253,7 +253,7 @@ Public GEOMDLLIMPEXP void vu_createXYOffsetLoops
 (
 bvector<bvector<DPoint3d>> &loops,
 double ax,
-double bx, 
+double bx,
 double ay,
 double by,
 bvector<bvector<DPoint3d>> &interiorLoops
@@ -264,7 +264,7 @@ bvector<bvector<DPoint3d>> &interiorLoops
     VuSetP      graph = vu_newVuSet (0);
     bvector<DPoint3d> workPoints;
     VuArrayP    faceArrayP;
-   
+
     for (size_t loopIndex = 0; loopIndex < loops.size (); loopIndex++)
         {
         if (loops[loopIndex].size () > 0)

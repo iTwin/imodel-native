@@ -144,7 +144,7 @@ bvector<CurveLocationDetail> const &dataB
 // return points on original curves, with local coordinates theta in "a" part of each curve location detail.
 static void AppendRSquaredZIntersections
 (
-TransformCR worldToLocal, 
+TransformCR worldToLocal,
 PartialCurveBezier &curveA,
 PartialCurveBezier &curveB,
 bvector<CurveLocationDetail> &detailA,
@@ -228,7 +228,7 @@ void Add (PartialCurveDetailCR parent, DEllipse3d arc)
         push_back (PartialCurveBezier (PartialCurveDetail (parent, f0, f1)));
         back ().SetBezier (qPoles  + 2 * i, 3);
         back ().SetAuxBezier (stPoles + 2 * i, 3, DSegment1d (stAngle[i], stAngle[i+1]));
-        }        
+        }
     }
 
 void Multiply (TransformCR transform)

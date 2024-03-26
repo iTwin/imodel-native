@@ -21,8 +21,8 @@ void exerciseBspline1d (bvector<double> &yValues, bool noisy = false)
         }
 
     for (int order = 2; order <= 4; order++)
-        {        
-        double du = 1.0 / (double)(yValues.size () - (order - 1) );        
+        {
+        double du = 1.0 / (double)(yValues.size () - (order - 1) );
         size_t lastIndex = yValues.size () - 1;
         if (noisy)
             {
@@ -51,7 +51,7 @@ void exerciseBspline1d (bvector<double> &yValues, bool noisy = false)
             Check::Near (dt, dxyz1.x);
             }
         }
-    }  
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -131,7 +131,7 @@ TEST(Bspline1d, ProfileCurve0)
 TEST(Bspline1d, ProfileCurve1)
   {
   // y=1+x through first section, length 4
-  // then transition to parabola 
+  // then transition to parabola
   bvector<double> altitude
     {
     1,
@@ -217,7 +217,7 @@ bool FindMaximalBasisFunctionKnots (bvector<double> const&knots, size_t order, b
                     break;
                 }
             }
-        } 
+        }
     }
 #else
 void FindMaximalBasisFunctionKnots (bvector<double> const &knots, size_t order, bvector<double> &criticalKnots)
@@ -260,7 +260,7 @@ void FindMaximalBasisFunctionKnots (bvector<double> const &knots, size_t order, 
             knotValue = x;
             }
         criticalKnots.push_back (knotValue);
-        } 
+        }
     }
 #endif
 static size_t s_dump = 1;
@@ -333,7 +333,7 @@ bvector<DPoint3d> &poleXYZ      //!< @param [out] computed poles
     Check::Print (condition, "condition");
 #endif
     poleXYZ.clear ();
-    for (size_t i = 0; i < numPoles; i++)        
+    for (size_t i = 0; i < numPoles; i++)
         poleXYZ.push_back (DPoint3d::From (B.At (i,0), B.At (i,1), B.At (i,2)));
 
     // RowMajorBandedMatrix matrix (poles.size (), (size_t)order - 1);
@@ -592,7 +592,7 @@ double GrevilleKnot (size_t i, size_t k)
     for (size_t kk = k + 1; kk < i + k; kk++)
         s += m_knots[kk];
     return s / (double)(k - 1);
-    }    
+    }
 };
 
 /*---------------------------------------------------------------------------------**//**

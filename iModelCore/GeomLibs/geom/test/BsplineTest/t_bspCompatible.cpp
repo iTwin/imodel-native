@@ -464,7 +464,7 @@ TEST(MSBsplineSurface, BilinearPatchBlend)
         double factor = 8.0;
         for (int i = 0; i < 1; i++)
             tolerances.push_back (tolerances.back () / factor);
-        
+
         for (double chordTolerance : tolerances)
             {
             Check::Shift (0, numY, 0);

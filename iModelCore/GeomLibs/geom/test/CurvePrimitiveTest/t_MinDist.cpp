@@ -24,13 +24,13 @@ static void testBsplineCircleProximity (double curveEvaluationFraction, double c
     poles.push_back (DPoint3d::From (0,  0, 0));
     poles.push_back (DPoint3d::From (1, 10, 0));
     poles.push_back (DPoint3d::From (3, 20, 0));
-    
+
     MSBsplineCurvePtr curve = MSBsplineCurve::CreateFromPolesAndOrder (poles, NULL, NULL, 3, false, false);
     Transform frenetFrame;
     curve->GetFrenetFrame (frenetFrame, curveEvaluationFraction);
     DVec3d xVec, yVec, zVec;
     DPoint3d center0;
-    
+
     frenetFrame.GetOriginAndVectors (center0, xVec, yVec, zVec);
     double radius = 5.0;
     // put a circle around the frenet origin
@@ -39,21 +39,21 @@ static void testBsplineCircleProximity (double curveEvaluationFraction, double c
             yVec, zVec,
             radius, radius,
             0.0, Angle::TwoPi ());
-                
-    DPoint3d arcPoint;                
+
+    DPoint3d arcPoint;
     arc.FractionParameterToPoint (arcPoint, circleEvaluationFraction);
-    
+
     DPoint3d center1 = DPoint3d::FromInterpolate (center0, -radiusFraction, arcPoint);
     arc.center = center1;
     ICurvePrimitivePtr primitiveA = ICurvePrimitive::CreateBsplineCurve (*curve);
     ICurvePrimitivePtr primitiveB = ICurvePrimitive::CreateArc (arc);
     CurveLocationDetail detailA, detailB;
-    
+
     CurveCurve::ClosestApproach (detailA, detailB, primitiveA.get (), primitiveB.get ());
     Check::Near (center0, detailA.point, "MinDist point on curve");
-   
+
     }
-//static int s_noisy = 0;       
+//static int s_noisy = 0;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -61,13 +61,13 @@ TEST(CurveCurve, MinDistBsplineToCircle)
     {
 
     Check::StartScope ("MinDistBsplineToCircle");
-    
+
     testBsplineCircleProximity (0.5, 0.5, 0.9);
     testBsplineCircleProximity (0.5, 0.5, 0.1);
     testBsplineCircleProximity (0.5, 0.5, 0.0);     // hard case -- curve at dead center of circle.
     Check::EndScope ();
     }
-    
+
 //!<ul>
 //!<li> Test if two curve vectors have matching structure and are geometrically related by relationship of their local transforms.
 //!<li> This relies on the behavior of LOCAL_COORDINATE_SCALE_UnitAxesAtStart:

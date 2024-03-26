@@ -160,7 +160,7 @@ double          maxDiagBoxFraction
 )
     {
     bvector<DPoint3d> xyz0, xyz1;
-    
+
     EmbeddedIntArray *pBlockIndexArray = jmdlEmbeddedIntArray_grab ();
     EmbeddedIntArray *pEdgeCandidateArray = jmdlEmbeddedIntArray_grab ();
     EmbeddedDPoint3dArray *pSegmentXYZArray = jmdlEmbeddedDPoint3dArray_grab ();

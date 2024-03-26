@@ -24,7 +24,7 @@ class TGenericNewtonSolver;
 
 
 
-// range, tolerance, and step size controls for one variable in the multivariate 
+// range, tolerance, and step size controls for one variable in the multivariate
 //  Newton iterator.
 class TDofControls
 {
@@ -32,7 +32,7 @@ friend TGenericNewtonSolver;
 protected:
 // convergence tolerance;
 double mTolerance;
-// absolute minimum value allowed 
+// absolute minimum value allowed
 double mMinValue;
 // absolute maximum value allowed
 double mMaxValue;
@@ -129,7 +129,7 @@ void SetF (INDEX_TYPE i, double value);
 void SetDerivative (INDEX_TYPE i, INDEX_TYPE j, double value);
 
 
-// 
+//
 void SetMaxIterations (INDEX_TYPE maxIterations) {mMaxIterations = maxIterations;}
 void SetSuccessiveConvergencesRequried (INDEX_TYPE successiveConvergencesRequired) {mSuccessiveConvegencesRequired = successiveConvergencesRequired;}
 

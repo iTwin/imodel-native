@@ -419,7 +419,7 @@ EmbeddedIntArray    *pNodeIdToVertexIdArray
     MTGMask vertexMask = jmdlMTGGraph_grabMask (pGraph);
     MTGMask visitMask = jmdlMTGGraph_grabMask (pGraph);
     MTGMask allMasks = vertexMask | visitMask;
-    MTG_MarkSet activeFaceNodes (pGraph, MTG_ScopeNode);  // These 'should' be within a face, but the 
+    MTG_MarkSet activeFaceNodes (pGraph, MTG_ScopeNode);  // These 'should' be within a face, but the
                                                            // point of the fixup is to revise face structures, so we
                                                            // can't trust face loop logic within the markset.
     jmdlMTGGraph_clearMaskInSet (pGraph, allMasks);

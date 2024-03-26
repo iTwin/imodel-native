@@ -406,7 +406,7 @@ double areaLossFactor = 0.0     // This fraction of the spreadArea is lost.
     bvector<DPoint3d> path;
     DPoint3d xyz0;
     xyz0.Zero ();
-    
+
     double additionalArea = 0.0;
     double relaxationFactor = 1.0;
     SaveAndRestoreCheckTransform shifter (4.0, 0,0);
@@ -606,7 +606,7 @@ double Lij (double ri, double rj)
     double a = ri * ri + rj * rj + m_wetnessFactor * ri * rj;
     return a >= 0.0 ? sqrt (a) : 0.0;
     }
-// Return force vector between two bubble centers 
+// Return force vector between two bubble centers
 DVec3d Fij (DPoint3dCR Xi, DPoint3dCR Xj, double ri, double rj) override
     {
     DVec3d delta = Xi - Xj;
@@ -824,7 +824,7 @@ size_t numConvergedRequired = 2
             if (!m_A.BlockElimination (pivot, m_F))
                 return false;
             }
-        
+
         m_A.BackSubstitute (m_F);   // Can't fail -- elimination left 1 on diagonal
 
         size_t iMax, iX, iY;
@@ -1096,7 +1096,7 @@ TEST(Vu,CreateDelauneyPointsOnLine)
                 DPoint3d::From (xCoordinate, 0.00000000000000000, 0.00000000000000000)
                 };
             bvector<double> radii { 0.95050000000000001, 0.92822500000000008, 0.91820125000000008};
-         
+
             PolyfaceHeaderPtr delauney, voronoi;
             bvector<NeighborIndices> cellData;
             if (Check::True (PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (points, radii, distanceSelect, delauney, voronoi, &cellData)))
@@ -1158,10 +1158,10 @@ TEST(Vu,IncircleFlipProblem)
     {
     bvector<DPoint3d> points
         {
-        DPoint3d::From (-78.00884047, 35.92836283), 
+        DPoint3d::From (-78.00884047, 35.92836283),
         DPoint3d::From (-84.52519939, 36.95442326),
         DPoint3d::From (-84.52519939, 31.04557674),
-        DPoint3d::From (-81.43532935, 30.00000000) 
+        DPoint3d::From (-81.43532935, 30.00000000)
         };
     PolyfaceHeaderPtr delauney, voronoi;
     if (Check::True (PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (points, delauney, voronoi)))
@@ -1170,7 +1170,7 @@ TEST(Vu,IncircleFlipProblem)
         Check::SaveTransformed (*voronoi);
         }
     Check::ClearGeometry ("Vu.IncircleFlipProblem");
-    
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1180,7 +1180,7 @@ TEST(Vu,TwoPoints)
     {
     bvector<DPoint3d> points
         {
-        DPoint3d::From (1,4), 
+        DPoint3d::From (1,4),
         DPoint3d::From (3,1)
         };
     bvector<double> radii {2,3};
@@ -1282,7 +1282,7 @@ bvector<DPoint3d> const &stationPoints, //!< [in] nominal room centers
 bvector<DPoint3d> const &wallPoints,    //!< [in] (single) wall polygon
 PolyfaceHeaderPtr &delauney,            //!<  [out] delauney triangulation of room centers
 PolyfaceHeaderPtr &voronoi,             //!< [out] voronoi regions
-PolyfaceHeaderPtr &voronoiInsideWalls   //!< [out] voronoi regions clipped to wall 
+PolyfaceHeaderPtr &voronoiInsideWalls   //!< [out] voronoi regions clipped to wall
 )
     {
     auto clipper = PolyfaceHeader::CreateVariableSizeIndexed ();
@@ -1454,10 +1454,10 @@ TEST(ClipPlaneSet,ConvexPolygonClipCircleGon)
     bvector<DPoint3d> polygonPoints {
     DPoint3d::From (0,0,0),
     DPoint3d::From (2,-6,0),
-    DPoint3d::From (10,0,0), 
-    DPoint3d::From (10,1,0), 
-    DPoint3d::From (5,3,0), 
-    DPoint3d::From (0,2,0), 
+    DPoint3d::From (10,0,0),
+    DPoint3d::From (10,1,0),
+    DPoint3d::From (5,3,0),
+    DPoint3d::From (0,2,0),
     DPoint3d::From (0,0,0)
     };
 #ifdef inlineClip
@@ -1498,14 +1498,14 @@ TEST(ClipPlaneSet,ConvexPolygonClipCircleGon)
     }
 
 
-// Construct voronoi for 
+// Construct voronoi for
 void DoWallAndRadiusClips
 (
 bvector<DPoint3d> &stations,    // station coordinates
 bvector<double> &weightRadii,   // weight to be used in voroni
 bvector<double> &clipRadii,     // radius to be used for post-voronoi clip
 bvector<DPoint3d> &wallPoints   // (closed) area for wall clip.
-)    
+)
     {
     static int s_numPerCircle = 32;
     PolyfaceHeaderPtr voronoi;
@@ -1580,14 +1580,14 @@ TEST(Vu, WallAndRadiusClips)
 
     }
 
-// Construct voronoi for 
+// Construct voronoi for
 void DoDirectWallAndRadiusClips
 (
 bvector<DPoint3d> &stations,    // station coordinates
 bvector<double> &weightRadii,   // weight to be used in voroni
 bvector<double> &clipRadii,     // radius to be used for post-voronoi clip
 bvector<DPoint3d> &wallPoints   // (closed) area for wall clip.
-)    
+)
     {
     static int s_numPerCircle = 32;
     PolyfaceHeaderPtr voronoi;

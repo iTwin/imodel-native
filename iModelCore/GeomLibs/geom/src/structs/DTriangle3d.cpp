@@ -133,7 +133,7 @@ DPoint3dCR spacePoint,
 DPoint2d &uv
 ) const
     {
-    DVec3d vectorU, vectorV;     
+    DVec3d vectorU, vectorV;
     GetVectorsFromOrigin (vectorU, vectorV);
     DVec3d vectorQ = DVec3d::FromStartEnd (point[0], spacePoint);
     bool stat = vectorQ.ProjectToPlane (vectorU, vectorV, uv);
@@ -150,7 +150,7 @@ DPoint2d &uv,
 DPoint3d &xyz
 ) const
     {
-    DVec3d vectorU, vectorV;     
+    DVec3d vectorU, vectorV;
     GetVectorsFromOrigin (vectorU, vectorV);
     DVec3d vectorQ = DVec3d::FromStartEnd (point[0], spacePoint);
     bool stat = vectorQ.ProjectToPlane (vectorU, vectorV, uv);
@@ -185,7 +185,7 @@ DRay3d DTriangle3d::GetCCWEdgeDRay3d (int i) const
 +--------------------------------------------------------------------------------------*/
 double DTriangle3d::AspectRatio () const
     {
-    DVec3d vectorU, vectorV;     
+    DVec3d vectorU, vectorV;
     GetVectorsFromOrigin (vectorU, vectorV);
     DVec3d cross = DVec3d::FromCrossProduct (vectorU, vectorV);
     double a = cross.Magnitude ();
@@ -263,14 +263,14 @@ double vx, double vy, double vz
 DPoint3dDVec3dDVec3d::DPoint3dDVec3dDVec3d (DEllipse3dCR ellipse)
     : origin (ellipse.center), vectorU(ellipse.vector0), vectorV (ellipse.vector90)
     {
-    }	
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 DPoint3dDVec3dDVec3d::DPoint3dDVec3dDVec3d ()
     : origin (DPoint3d::From (0,0,0)), vectorU(DVec3d::From (1,0,0)), vectorV (DVec3d::From (0,1,0))
     {
-    }    
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -316,7 +316,7 @@ DPoint3dDVec3dDVec3d DPoint3dDVec3dDVec3d::EvaluateTangents (double u, double v)
     {
     return DPoint3dDVec3dDVec3d (DPoint3d::FromSumOf (origin, vectorU, u, vectorV, v), vectorU, vectorV);
     }
-	
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -464,11 +464,11 @@ ValidatedTransform DPoint3dDVec3dDVec3d::LocalToWorldTransform () const
     auto unitNormal = DVec3d::FromCrossProduct (vectorU, vectorV).ValidatedNormalize ();
     if(unitNormal.IsValid ())
         return ValidatedTransform (Transform::FromOriginAndVectors (origin, vectorU, vectorV, unitNormal), true);
-    // Maybe one of the vectors is 0.  Maybe they are nonzero but parallel....get a non-canceling sum 
+    // Maybe one of the vectors is 0.  Maybe they are nonzero but parallel....get a non-canceling sum
     double a = vectorU.DotProduct (vectorV) > 0.0 ? 1.0 : -1.0;
     DVec3d vector = DVec3d::FromSumOf (vectorU, vectorV, a);
     DVec3d xAxis, yAxis, zAxis;
-    vector.GetNormalizedTriad (yAxis, zAxis, xAxis); // that puts zAxis along the vector . . 
+    vector.GetNormalizedTriad (yAxis, zAxis, xAxis); // that puts zAxis along the vector . .
     return ValidatedTransform (Transform::FromOriginAndVectors (origin, vectorU, vectorV, zAxis), false);
     }
 

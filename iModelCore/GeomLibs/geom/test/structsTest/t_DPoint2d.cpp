@@ -336,14 +336,14 @@ TEST(DPoint2d, BaryCentric)
     }
 
 double signOf (double a) { return a < 0.0 ? -1.0 : 1.0;}
-    
+
 template <typename PrimaryType, typename VectorType>
 bool test_interpolate (PrimaryType const &pointA, PrimaryType const &pointB)
     {
     int errors = 0;
     VectorType vectorAB = VectorType::FromStartEnd (pointA, pointB);
     double dotUU = vectorAB.DotProduct (vectorAB);
-    double dAB = pointA.Distance (pointB);            
+    double dAB = pointA.Distance (pointB);
 
     for (double f = -0.75; f < 1.8; f += 0.25)
         {
@@ -355,7 +355,7 @@ bool test_interpolate (PrimaryType const &pointA, PrimaryType const &pointB)
             errors++;
         double dAC = pointA.Distance (pointC);
         double dBC = pointB.Distance (pointC);
-        double e = signOf (f) * dAC + signOf (1.0 - f) * dBC;        
+        double e = signOf (f) * dAC + signOf (1.0 - f) * dBC;
         if (!DoubleOps::AlmostEqual (e, dAB))
             errors++;
         PrimaryType pointD;
@@ -363,7 +363,7 @@ bool test_interpolate (PrimaryType const &pointA, PrimaryType const &pointB)
         if (!pointC.AlmostEqual (pointD))
             errors ++;
         }
-    
+
     return errors == 0;
     }
 
@@ -374,7 +374,7 @@ TEST(DPoint2d, Interpolate)
     {
     Check::True (test_interpolate <DPoint2d, DVec2d> (DPoint2d::From (1,3), DPoint2d::From (5,11)), "DPoint2d interpolations");
     Check::True (test_interpolate <DPoint3d, DVec3d> (DPoint3d::From (1,3,-7), DPoint3d::From (5,11,13)), "DPoint3d interpolations");
-    }    
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------

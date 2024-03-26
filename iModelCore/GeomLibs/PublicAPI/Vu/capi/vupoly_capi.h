@@ -296,14 +296,14 @@ int                     opCode
 
 
 /*-----------------------------------------------------------------*//**
-* Triangulate an xy polygon (optionally with DISCONNECT-deliminted hole loops), 
+* Triangulate an xy polygon (optionally with DISCONNECT-deliminted hole loops),
 * with interior points added on a grid as needed.
 * @param [out] pIndices signed, one-based indices for interior polygons
 * @param [out] pXYZOut  output points.
 * @param [in] pointP  array of polygon points.
 * @param [in] numPoint  number of polygon points.
 * @param [in] maxEdgeLength  length for edge subdivision. (Zero to ignore.)
-* @param [in] meshXLength  grid size in x direction. 
+* @param [in] meshXLength  grid size in x direction.
 * @param [in] meshYLength  grid size in y direction.
 * @param [in] smoothTriangulation true to adjust mesh vertices to get smooth flow lines in the triangulation.
 * @param [in] radiansTolForRemovingQuadDiagonals tolerance for removing edges to form quads.
@@ -327,7 +327,7 @@ double              radiansTolForRemovingQuadDiagonals,
 DPoint3d            *meshOrigin
 );
 /*-----------------------------------------------------------------*//**
-* Triangulate an xy polygon (optionally with DISCONNECT-deliminted hole loops), 
+* Triangulate an xy polygon (optionally with DISCONNECT-deliminted hole loops),
 * with interior points added on a grid as needed.
 * @param [out] pIndices signed, one-based indices for interior polygons
 * @param [out] pXYZOut  output points.
@@ -335,7 +335,7 @@ DPoint3d            *meshOrigin
 * @param [in] pEdgeVisible optional array of per-edge visibity indicators.
 * @param [in] numPoint  number of polygon points.
 * @param [in] maxEdgeLength  length for edge subdivision. (Zero to ignore.)
-* @param [in] meshXLength  grid size in x direction. 
+* @param [in] meshXLength  grid size in x direction.
 * @param [in] meshYLength  grid size in y direction.
 * @param [in] smoothTriangulation TRUE to adjust mesh vertices to get smooth flow lines in the triangulation.
 * @param [in] radiansTolForRemovingQuadDiagonals tolerance for removing edges to form quads.

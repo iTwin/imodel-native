@@ -250,7 +250,7 @@ static bool FixedDegreeSolver (double roots [], int &numRoots, int maxRoots, dou
             roots[i] = allRoots[i];
         return true;
         }
-    return false;    
+    return false;
     }
 
 bool Bezier::Order5::Solve (double roots[], int &numRoots, int maxRoots) const
@@ -284,7 +284,7 @@ Power::Degree2 Power::Degree2::FromRootsAndC2 (double root0, double root1, doubl
 Power::Degree2::Degree2 (double c0, double c1, double c2)
     {
     coffs[0] = c0;
-    coffs[1] = c1; 
+    coffs[1] = c1;
     coffs[2] = c2;
     }
 
@@ -479,7 +479,7 @@ DPoint3d Implicit::Torus::EvaluateThetaPhi (double theta, double phi) const
     return DPoint3d::From (c * x0, s * x0, z0);
     }
 
-GEOMDLLIMPEXP void Implicit::Torus::EvaluateDerivativesThetaPhi (double theta, double phi, DVec3dR dXdTheta, DVec3dR dXdPhi) const    
+GEOMDLLIMPEXP void Implicit::Torus::EvaluateDerivativesThetaPhi (double theta, double phi, DVec3dR dXdTheta, DVec3dR dXdPhi) const
     {
     double cTheta = cos (theta);
     double sTheta = sin (theta);
@@ -526,9 +526,9 @@ bool Implicit::Torus::XYZToThetaPhiDistance (DPoint3dCR xyz, double &theta, doub
     return safeMajor && safePhi;
     }
 
-    
+
 double  Implicit::Torus::OrientPhiCoordinate (double z) const {return m_reversePhi ? -z : z;}
-    
+
 DEllipse3d Implicit::Torus::MinorCircle (double theta) const
     {
     double c = cos (theta);
@@ -580,7 +580,7 @@ GEOMDLLIMPEXP double Implicit::Sphere::EvaluateImplicitFunction (DPoint3d xyz) c
     {
     return xyz.x * xyz.x + xyz.y * xyz.y + xyz.z * xyz.z - m_r * m_r;
     }
-    
+
 //! Evaluate the implicit function at weighted space point (wx/w, wy/w, wz/w)
 //! @param [in] wx (preweighted) x coordinate
 //! @param [in] wy (preweighted) y coordinate

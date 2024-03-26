@@ -35,7 +35,7 @@ nameToDefine = MinimalRefMethods
 %endif
 
 %ifdef GEOMLIBS_ENABLE_ITERATOR_WARNINGS
-CCompOpts + -we4238 
+CCompOpts + -we4238
 %endif
 
 #--------------------------------------------------------------------------------

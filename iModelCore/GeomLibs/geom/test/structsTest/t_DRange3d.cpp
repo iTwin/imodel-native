@@ -92,7 +92,7 @@ void CheckRange ()
         RangeType rangeA1 = rangeA;
         rangeA1.Extend (e);
         Check::True (rangeA1.IsEqual (rangeA, 2.0 * e), "range equality with tol");
-        Check::False (rangeA1.IsEqual (rangeA, 0.5 * e), "range equality with tol");        
+        Check::False (rangeA1.IsEqual (rangeA, 0.5 * e), "range equality with tol");
         }
     }
 /*---------------------------------------------------------------------------------**//**
@@ -103,7 +103,7 @@ TEST(DRange3d, Init)
     CheckRange <DRange3d, DPoint3d> ();
     CheckRange <DRange2d, DPoint2d> ();
     }
-    
+
 struct Cosine
     {
     double m_a0;
@@ -115,7 +115,7 @@ struct Cosine
         m_a1 = a1;
         m_a2 = a2;
         }
-        
+
     double Evaluate (int i)
         {
         double x = i;
@@ -133,12 +133,12 @@ TEST(DRange3d, Arrays)
     bvector <DPoint3d> data_wX;
     bvector <double>   data_w;
     bvector <DPoint2d> data_xy;
-    
+
     Cosine fx (2,4,0.3);
     Cosine fy (1,4,-0.2);
     Cosine fz (0.2, 5.0, 2.3);
     Cosine fw (1.0, 0.4, 3.4234);  // Always positive !!!
-    
+
     DPoint3d disconnect;
     disconnect.InitDisconnect ();
     int numPoints = 20;
@@ -169,8 +169,8 @@ TEST(DRange3d, Arrays)
     DRange3d range_X, range_wXw, range_wX_w, range_xy_z, range_TX;
     range_X.InitFrom (data_X);
     Check::Near (DRange3d::From (data_X), range_X, "<DPoint3d>");
-    
-    
+
+
     Check::Near (range_X.low.x, xRange.Low (), "x0");
     Check::Near (range_X.low.y, yRange.Low (), "y0");
     Check::Near (range_X.low.z, zRange.Low (), "z0");
@@ -182,17 +182,17 @@ TEST(DRange3d, Arrays)
 
     range_wX_w.InitFrom (data_wX, &data_w);
     Check::Near (DRange3d::From (data_wX, &data_w), range_wX_w, "<DPoint3d>, <double>");
-    
+
     range_wXw.InitFrom (data_wXw);
     Check::Near (DRange3d::From (data_wXw), range_wXw, "<DPoint3d>, <double>");
-    
+
     Check::Near (range_X, range_wX_w, "xyz:: (wxywywz,w)");
     Check::Near (range_X, range_wXw, "xyz:: (wxywywzw)");
-    
+
     double fixedZ = 1.0523232;
     range_xy_z.InitFrom (data_xy, fixedZ);
     Check::Near (DRange3d::From (data_xy, fixedZ), range_xy_z, "<DPoint2d>, z");
-    
+
     double ax = 2.0, bx = 3.2;
     double ay = 1.2, by = 0.2;
     double az = 4.2, bz = 2.3;  // positive scales commute to range points!!!
@@ -288,7 +288,7 @@ TEST(DRange3d, StrictlyContained)
     Check::False(range1.IsStrictlyContainedXY(range0));
     }
 
-void squareDistanceOfRanges(DRange3d range0, DRange3d range1) 
+void squareDistanceOfRanges(DRange3d range0, DRange3d range1)
     {
     double squaredDist = range0.DistanceSquaredTo(range1);
     if (range0.IntersectsWith(range1))
@@ -317,13 +317,13 @@ TEST(DRange3d, SquaredDistance)
                            DRange3d::From(DPoint3d::From(2, 4, 2.3), DPoint3d::From(5.5, 6, 7.1)));
     }
 
-void checkParallelPerpPlanes(DPoint3d pntlow, DPoint3d pnthigh) 
+void checkParallelPerpPlanes(DPoint3d pntlow, DPoint3d pnthigh)
     {
     DRange3d range3d = DRange3d::From(pntlow, pnthigh);
     DPoint3d originArray[6], normalArray[6];
     range3d.Get6Planes(originArray, normalArray);
     int j = 0;
-    for (int i = 0; i < 6; i++) 
+    for (int i = 0; i < 6; i++)
         {
         if (abs(i-j) == 3 || abs(i-j) == 0)
             Check::Parallel(DVec3d::From(normalArray[j]), DVec3d::From(normalArray[i]), "Planes are not Parallel");
@@ -374,7 +374,7 @@ TEST(DRange3d, RangeScaling)
     Check::True(vol1 > vol0);
     }
 
-void checkIntersection(DRange3d range0, DRange3d range1) 
+void checkIntersection(DRange3d range0, DRange3d range1)
     {
     DRange3d rangeIntersected;
     rangeIntersected.IntersectionOf(range0, range1);
@@ -428,15 +428,15 @@ TEST(DRange3d, IndependentIntersection)
     Transform transf = Transform::From(RotMatrix::FromAxisAndRotationAngle(2, Angle::FromDegrees(90).Radians()));
     DPoint3d points[2] = { DPoint3d::From(6, 6, 6), DPoint3d::From(9, 9, 9) };
     double weihgts[2] = { 1, 1 };
-    
+
     DRange3d range0 = DRange3d::From(transf, points, weihgts, 2);
-    
+
     DPoint3d points2[2] = { DPoint3d::From(-9, 6, 6), DPoint3d::From(-6, 9, 9) };
     DRange3d range1 = DRange3d::From(points2, weihgts, 2);
     Check::Near(range1.low.x, range0.low.x);
     Check::Near(range1.low.y, range0.low.y);
     Check::Near(range1.low.z, range0.low.z);
-    Check::Near(range1.high.x, range0.high.x);  
+    Check::Near(range1.high.x, range0.high.x);
     Check::Near(range1.high.y, range0.high.y);
     Check::Near(range1.high.z, range0.high.z);
     }

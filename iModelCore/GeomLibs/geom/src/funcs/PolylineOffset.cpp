@@ -120,7 +120,7 @@ bool RemoveAnyInteriorVertexBy3PointNeighborhood (bvector<DPoint3d> &points)
     double rrMin = DBL_MAX;
     double fraction;
     double sweptAngle;
-    static double s_maximumSweptAngle = 1.0;    
+    static double s_maximumSweptAngle = 1.0;
     for (size_t i = 1; i + 1 < numPoints; i++)
         {
         DVec3d unitBisector;
@@ -205,7 +205,7 @@ bool RemoveAnyInteriorVertex (bvector<DPoint3d> &points)
             )
             {
             double distanceToIntersection = pointA.DotDifference (points[i], perpAB);
-            if (//distanceToIntersection > fabs (m_offsetDistance) && 
+            if (//distanceToIntersection > fabs (m_offsetDistance) &&
                 distanceToIntersection < minDistance)
                 {
                 minDistance = distanceToIntersection;
@@ -347,7 +347,7 @@ double  &sweptAngle
     }
 #define MAX_MITER_COUNT 24
 // return number of steps and reference vector for angle sweeping...
-// assume perp0, perp1 are unit vectors 
+// assume perp0, perp1 are unit vectors
 // dTheta is the "half" angle step for first and last.  Internal steps are 2*dTheta
 int AnalyzeMiterSteps (DVec3dCR perpX, DVec3dCR perp1, DVec3dR perpY, double &dTheta)
     {

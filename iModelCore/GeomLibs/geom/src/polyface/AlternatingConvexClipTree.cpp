@@ -374,7 +374,7 @@ void Recurse (AlternatingConvexClipTreeNode const &node)
 public:
 void AppendSinglePrimitiveClip (
 AlternatingConvexClipTreeNode const &root,
-ICurvePrimitiveCR curve, 
+ICurvePrimitiveCR curve,
 bvector<CurveLocationDetailPair> *insideIntervals,
 bvector<CurveLocationDetailPair> *outsideIntervals
 )
@@ -398,7 +398,7 @@ bvector<CurveLocationDetailPair> *outsideIntervals
                 CurveLocationDetailPair (
                     CurveLocationDetail (&curve, f0, xyz0),
                     CurveLocationDetail (&curve, f1, xyz1)
-                    )); 
+                    ));
             }
         }
     PopSegmentFrame ();

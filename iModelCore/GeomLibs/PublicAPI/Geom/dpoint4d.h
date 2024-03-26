@@ -783,7 +783,7 @@ static DPoint4d FromCrossProduct (DPoint4dCR pointA, DPoint4dCR pointB, DPoint4d
 static ValidatedDPoint3dDVec3dDVec3d TryNormalizePointAndDerivatives
 (
 DPoint4dCR homogeneousPoint,        //!< [in] weighted point
-DPoint4dCR homogeneousDerivative1,  //!< [in] weighted first derivative 
+DPoint4dCR homogeneousDerivative1,  //!< [in] weighted first derivative
 DPoint4dCR homogeneousDerivative2   //!< [in] weighted second derivative
 );
 //! Initialize as coefficient of a plane with origin and 2 in-plane vectors.

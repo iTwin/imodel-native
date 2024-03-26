@@ -75,7 +75,7 @@ bvector<DSegment3d> &segments           // output segments.
         size_t i1 = i + 1;
         if (i1 >= numEdge)
             i1 -= numEdge;
-        if (localPoints[i1].z != 0.0 
+        if (localPoints[i1].z != 0.0
           && localPoints[i].z * localPoints[i1].z <= 0.0)
             {
             double f = (-localPoints[i].z) / (localPoints[i1].z - localPoints[i].z);   // fraction along the edge that crosses
@@ -123,7 +123,7 @@ bvector<DVec3d> m_perpVector;
 bvector<SegmentFrame> m_segmentFrame;
 Transform m_worldToViewPlane;
 
-Transform m_worldToPrincipalBox; 
+Transform m_worldToPrincipalBox;
 DRange3d m_principalBoxRange;   // range of the linestring in the principal orientation.
 
 bvector<DPoint3d> m_localPolygonPoints;
@@ -178,7 +178,7 @@ void ProcessPolygon (bvector<DPoint3d> const &polygonPoints, bvector <DSegment3d
     DRange3d viewedPolygonRange;
     viewedPolygonRange.Init ();
     viewedPolygonRange.Extend (m_viewedPoints);
-    // Quick exit for complete misses 
+    // Quick exit for complete misses
     if (viewedPolygonRange.IntersectsWith (m_principalBoxRange, 0.0, 2))
         {
         for (size_t i = 0; i < m_segmentFrame.size (); i++)
@@ -209,7 +209,7 @@ MTGNodeId FindOrSetPriorNodeAtVertex (size_t vertexIndex, MTGNodeId nodeId)
     {
     size_t numRegistered = m_anyNodeAtVertex.size ();
     assert (vertexIndex <= numRegistered + 1);  // we expect the map lookup to generate new vertex indices sequentially,
-                                                // and they will 
+                                                // and they will
     while (numRegistered <= vertexIndex)
         {
         m_anyNodeAtVertex.push_back (MTG_NULL_NODEID);
@@ -226,7 +226,7 @@ MTGNodeId FindOrSetPriorNodeAtVertex (size_t vertexIndex, MTGNodeId nodeId)
 MTGNodeId FindPriorNodeAtVertex (size_t vertexIndex)
     {
     size_t numRegistered = m_anyNodeAtVertex.size ();
-    
+
     return vertexIndex < numRegistered ? m_anyNodeAtVertex[vertexIndex] : MTG_NULL_NODEID;
     }
 
@@ -249,10 +249,10 @@ void JoinEdges ()
             MTGNodeId nodeB = FindOrSetPriorNodeAtVertex (vertexIndex, nodeA);
             m_allVertexData[index].m_vertexIndex = vertexIndex;
             if (m_graph.IsValidNodeId (nodeB))
-                m_graph.VertexTwist (nodeA, nodeB);            
+                m_graph.VertexTwist (nodeA, nodeB);
             }
         }
-    MTGARRAY_END_SET_LOOP (nodeA, &m_graph)    
+    MTGARRAY_END_SET_LOOP (nodeA, &m_graph)
     }
 
 SectionGraph (PolyfaceCoordinateMapPtr coordinateMap) : m_coordinateMap (coordinateMap)
@@ -267,7 +267,7 @@ size_t AddVertexData (VertexData const & data)
     m_allVertexData.push_back (data);
     return index;
     }
-    
+
 void AddEdge (VertexData const &vertexA, VertexData const &vertexB)
     {
     MTGNodeId nodeA, nodeB;
@@ -288,7 +288,7 @@ void AddEdge (size_t readIndex, DPoint3dCR xyzA, DPoint3dCR xyzB)
 
 size_t PurgeDuplicates ()
     {
-    // 
+    //
     MTGMask deleteMask = m_graph.GrabMask ();
     MTGMask edgeVisitedMask = m_graph.GrabMask ();
     m_graph.ClearMask (deleteMask);
@@ -400,7 +400,7 @@ void CutVisitorPolygonWithSinglePlane (PolyfaceVisitorR visitor, ClipPlaneR plan
                 }
             }
         }
-    
+
     size_t numSimpleCrossings = m_simpleCrossings.size ();
     size_t numEdges = m_edges.size ();
     if (numSimpleCrossings > 0 || numEdges > 0)
@@ -488,13 +488,13 @@ void AppendOutputVertex (MTGNodeId nodeId)
         m_chainLocation.push_back (FacetEdgeLocationDetail (m_allVertexData[index].m_readIndex, m_allVertexData[index].m_edgeFraction));
         }
     }
-    
+
 void ClearChain ()
     {
     m_chainLocation.clear ();
     m_chainXYZ.clear ();
     }
-    
+
 ICurvePrimitivePtr ChainToCurvePrimitive (size_t minimumSize, bool markEdgeFractions)
     {
     if (m_chainXYZ.size () < minimumSize)
@@ -509,7 +509,7 @@ ICurvePrimitivePtr ChainToCurvePrimitive (size_t minimumSize, bool markEdgeFract
         }
     return linestring;
     }
-    
+
 // Collect a linestring with all edges reachable from startNode forward.
 // Apply barrier mask to both sides of each edge.
 // Stop on hitting vertexBarrierMask or edgeVisitedMask
@@ -536,7 +536,7 @@ static void Check (size_t value, char const* name)
     {
     }
 
-    
+
 CurveVectorPtr CollectChains (bool formRegions, bool markEdgeFractions)
     {
     bvector<MTGNodeId> vertexSeed;
@@ -553,7 +553,7 @@ CurveVectorPtr CollectChains (bool formRegions, bool markEdgeFractions)
     // Indices [totalVerts-interiorVerts..totalVerts-1] are confirmed "interior"
     // Indices [otherVerts..totalVerts-interiorVerts-1] are untested.
     // Index [otherVerts] is being tested
-    // Indices 
+    // Indices
     while (otherVerts + interiorVerts < totalVerts)
         {
         MTGNodeId seed = vertexSeed[otherVerts];
@@ -569,7 +569,7 @@ CurveVectorPtr CollectChains (bool formRegions, bool markEdgeFractions)
             otherVerts++;
             }
         }
-        
+
     MTGMask edgeVisitedMask = m_graph.GrabMask ();
     m_graph.ClearMask (edgeVisitedMask);
     bvector<DPoint3d> chainXYZ;
@@ -586,14 +586,14 @@ CurveVectorPtr CollectChains (bool formRegions, bool markEdgeFractions)
         topType = CurveVector::BOUNDARY_TYPE_None;
         minSize = 2;
         }
-    
+
     size_t numFace = m_graph.CountFaceLoops ();
     size_t numVertex = m_graph.CountVertexLoops ();
     Check (numFace, "faces");
     Check (numVertex, "vertices");
     ICurvePrimitivePtr thisLoop = NULL;
     CurveVectorPtr allLoops = CurveVector::Create (topType);
-    
+
     bvector<ICurvePrimitivePtr> linestrings;
     for (size_t i = 0, n = vertexSeed.size (); i < n; i++)
         {

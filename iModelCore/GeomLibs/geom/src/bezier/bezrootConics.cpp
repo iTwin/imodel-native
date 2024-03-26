@@ -165,12 +165,12 @@ RotMatrixCP  pA
             numAccept++;
             }
         }
-    
+
     if (numAccept > 4)
         numAccept = 4;          // really should not happen but guard against funny numerics
     if (pNumAngle)
         *pNumAngle = numAccept;
-    
+
     for (int i = 0; i < numAccept; i++)
         {
         if (pCosArray)

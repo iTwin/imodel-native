@@ -21,7 +21,7 @@ StackInfo :: StackInfo (DWORD64 sz, DWORD64 peak, std::string const& name)
 std::string StackInfo :: ToString ()
     {
     std::stringstream s;
-    s << "peak: " <<m_peak << ", " << m_testName.c_str(); 
+    s << "peak: " <<m_peak << ", " << m_testName.c_str();
     return std::string (s.str().c_str());
     }
 
@@ -35,7 +35,7 @@ StackExaminer :: StackExaminer()
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void StackExaminer :: OnTestStart (const ::testing::TestInfo& /* test_info */) 
+void StackExaminer :: OnTestStart (const ::testing::TestInfo& /* test_info */)
     {
     reclaimUnusedStackPages ();
     }
@@ -43,7 +43,7 @@ void StackExaminer :: OnTestStart (const ::testing::TestInfo& /* test_info */)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void StackExaminer :: OnTestEnd (const ::testing::TestInfo& test_info) 
+void StackExaminer :: OnTestEnd (const ::testing::TestInfo& test_info)
     {
     DWORD_PTR   pBase = NULL;
     DWORD64       size;

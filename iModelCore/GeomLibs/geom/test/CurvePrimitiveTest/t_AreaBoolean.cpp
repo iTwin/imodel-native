@@ -226,7 +226,7 @@ void display (WStringR string)
     {
     bvector<int>tagsAtDepth;
     tagsAtDepth.push_back (0);
-    int state = 0;    
+    int state = 0;
     for (size_t i = 0; i < string.size (); i++)
         {
         if (string[i] == L'<')
@@ -268,9 +268,9 @@ void Print (char const *parentTagName,
     CurveVectorPtr geometryC)
     {
     printf ("<%s>\n", parentTagName);
-    Check::Print (geometryA, nameA); 
-    Check::Print (geometryB, nameB); 
-    Check::Print (geometryC, nameC); 
+    Check::Print (geometryA, nameA);
+    Check::Print (geometryB, nameB);
+    Check::Print (geometryC, nameC);
     printf ("</%s>\n", parentTagName);
     }
 
@@ -330,7 +330,7 @@ bool CheckArea (char const* title, CurveVectorPtr region, double expectedArea)
         }
     if (!stat)
         Check::Print (region, title);
-        
+
     CheckReverse (title, region);
     return stat;
     }
@@ -450,7 +450,7 @@ TEST(AreaBoolean, ABC0)
     CurveVectorPtr pathA = CurveVector::CreateRectangle (x0, y0, x0 + dx0, y0 + dy0, 0.0, CurveVector::BOUNDARY_TYPE_Outer);
     CurveVectorPtr pathB = CurveVector::CreateRectangle (x2, y2, x2 + dx2, y2 + dy2, 0.0, CurveVector::BOUNDARY_TYPE_Outer);
     CurveVectorPtr pathC = CurveVector::CreateRectangle (x4, y4, x4 + dx4, y4 + dy4, 0.0, CurveVector::BOUNDARY_TYPE_Outer);
-    
+
     double areaA = dx0 * dy0;
     double areaB = dx2 * dy2;
     double areaAB = (x0 + dx0 - x2) * (x0 + dy0 - y2 + dy2);
@@ -707,8 +707,8 @@ TEST(Area, WindingNumber1)
     // Now not at all....
     CurveVectorPtr cvParity = CurveVector::AreaAnalysis (*region, AreaSelect_Parity, BoolSelect_Union, false);
     cvParity->CentroidAreaXY (centroid, area2);
-    
-    
+
+
     CurveVectorPtr cvOuter = CurveVector::AreaAnalysis (*region, AreaSelect_CCWPositiveWindingNumber, BoolSelect_Union, false);
     Check::Print (cvOuter, "PositiveWinding");
     cvOuter->CentroidAreaXY (centroid, area1);
@@ -716,7 +716,7 @@ TEST(Area, WindingNumber1)
     Check::Near (41.0, area0, "Area with double counted winding");
     Check::Near (40.0, area1, "Area with corrected winding");
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -732,7 +732,7 @@ TEST(Area, WindingNumber2)
     parent->push_back (ICurvePrimitive::CreateChildCurveVector (rectangleA));
     parent->push_back (ICurvePrimitive::CreateChildCurveVector (rectangleB));
 
-    
+
     DPoint3d centroid;
     double area0, area1, area2;
     // this will see the inner square twice --
@@ -1023,8 +1023,8 @@ TEST(Moments, Test2)
     SweptPolylineMoments (unitSquare[3], unitSquare, 5, TriangleProducts, F);
     Check::Near (E0, E, "square from lower left");
     Check::Near (E0, F, "square from lower left");
-                
-    
+
+
     }
 
 
@@ -1073,7 +1073,7 @@ TEST(SplitCurves, Test1)
     double radius = 100.0 * sqrt (2.0);
     CurveVectorPtr disk = CurveVector::CreateDisk (
                     DEllipse3d::From (0,0,0,   radius, 0,0,   0,radius,0,  0.0, Angle::TwoPi ()));
-                    
+
     CurveVectorPtr insideCurves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
     CurveVectorPtr onCurves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
     CurveVectorPtr outsideCurves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
@@ -1083,7 +1083,7 @@ TEST(SplitCurves, Test1)
     Check::Print (insideCurves, "inside");
     Check::Print (outsideCurves, "outside");
     Check::Print (onCurves, "on");
-    
+
     }
 
 bool CheckAreaXY (CurveVectorCR curves, double expectedArea, char *name)
@@ -1093,7 +1093,7 @@ bool CheckAreaXY (CurveVectorCR curves, double expectedArea, char *name)
     return
         Check::True (curves.CentroidAreaXY (centroid, area), name)
         && Check::Near (expectedArea, area, name);
-    }    
+    }
 #ifdef abc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -1115,17 +1115,17 @@ TEST(ParityFixup, Test1)
     Transform mirrorX = Transform::FromRowValues (
             -1,  0,0, 0,
             0,   1,0, 0,
-            0,  0, 1, 0);   
+            0,  0, 1, 0);
     CurveVectorPtr rectangle2 = rectangle1->Clone ();
     rectangle2->TransformInPlace (mirrorX);
     CheckAreaXY (*rectangle2, -expectedArea, "CW rectangle area");
-    
+
     CurveVectorPtr rectangle3 = CurveVector::AreaWindingFixup (*rectangle2);
     CheckAreaXY (*rectangle3, 0.0, "CW after winding fixup");
     }
  #endif
- 
- 
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1137,7 +1137,7 @@ TEST(FixupXY,DisjointShapes)
     unionRegion->Add (shape1);
     unionRegion->Add (shape2);
     unionRegion->FixupXYOuterInner (false);
-    
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1146,11 +1146,11 @@ TEST(FixupXY,DisjointShapes)
 TEST(FixupXY,FullCircle)
     {
     CurveVectorPtr disk = CurveVector::CreateDisk (DEllipse3d::From (0,0,0,   1,0,0,   0,1,0, 0.0, Angle::TwoPi ()));
-    Check::Print (disk, "original disk"); 
+    Check::Print (disk, "original disk");
     disk->FixupXYOuterInner (true);
-    Check::Print (disk, "After area fixup"); 
+    Check::Print (disk, "After area fixup");
     disk->ConsolidateAdjacentPrimitives ();
-    Check::Print (disk, "After area ConsolidateAdjacentPrimitives"); 
+    Check::Print (disk, "After area ConsolidateAdjacentPrimitives");
     }
 
 
@@ -1175,11 +1175,11 @@ TEST(FixupXY,BowTie)
     CurveVectorPtr cv0 = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
     cv0->Add (cp0);
 
-   Check::Print (cv0, "original disk"); 
+   Check::Print (cv0, "original disk");
     cv0->FixupXYOuterInner (true);
-    Check::Print (cv0, "After area fixup"); 
+    Check::Print (cv0, "After area fixup");
     cv0->ConsolidateAdjacentPrimitives ();
-    Check::Print (cv0, "After area ConsolidateAdjacentPrimitives"); 
+    Check::Print (cv0, "After area ConsolidateAdjacentPrimitives");
 
 
     }
@@ -1377,7 +1377,7 @@ TEST(Polyface,BoundaryFromCompressedFacets)
                 }
             else
                 {
-                // an interior edge was made visible (but only on one side?)  
+                // an interior edge was made visible (but only on one side?)
                 Check::True (numOpen + numClosed <= 2, "Expected limit on boundary paths?");
                 double l1 = b1->Length ();
                 Check::True (l1 > outerLength && l1 <= outerLength + 2.0, "Expect one or two additional visible edges in interior");
@@ -1762,7 +1762,7 @@ TEST(CurveVector,ReduceToCCWAreas)
             DPoint3d::From (0,0)},
         CurveVector::BOUNDARY_TYPE_Outer
         );
-    // a hole loop, input counterclockwise 
+    // a hole loop, input counterclockwise
     auto holeA = CurveVector::CreateLinear (bvector<DPoint3d> {
             DPoint3d::From (2,2),
             DPoint3d::From (6,2),
@@ -1771,7 +1771,7 @@ TEST(CurveVector,ReduceToCCWAreas)
             DPoint3d::From (2,2)},
         CurveVector::BOUNDARY_TYPE_Inner
         );
-    // a hole loop, defined clockwise 
+    // a hole loop, defined clockwise
     auto holeB = CurveVector::CreateLinear (bvector<DPoint3d> {
             DPoint3d::From (12,2),
             DPoint3d::From (12,5),
@@ -1864,7 +1864,7 @@ void ShowOrientation (CurveVectorCR curves, double arrowLength = 0.5, double zSh
         curves.GetStartEnd (pointA, pointB, unitA, unitB);
         DPoint3d pointC = pointA; pointC.z += zShift;
         DPoint3d pointD = pointC + arrowLength * unitA;
-        bvector<DPoint3d> arrow = btype == CurveVector::BOUNDARY_TYPE_Outer 
+        bvector<DPoint3d> arrow = btype == CurveVector::BOUNDARY_TYPE_Outer
             ? BuildSymbol (pointC, pointD,outerArrow)
             : BuildSymbol (pointC, pointD,innerArrow);
         Check::SaveTransformed (arrow);
@@ -1894,7 +1894,7 @@ void testFixup (bvector<CurveVectorPtr> &loops)
     for (size_t i = 0; i < loops.size (); i++)
         {
         ShowOrientation (*loops[i], a);
-        Check::SaveTransformed (*loops[i]);    
+        Check::SaveTransformed (*loops[i]);
         }
     for (size_t i0 = 0; i0 < loops.size (); i0++)
         {

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------------------------+
-  
+
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
@@ -32,7 +32,7 @@ struct  OrderedIndexPair
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-OrderedIndexPair (size_t index0, size_t index1) 
+OrderedIndexPair (size_t index0, size_t index1)
     {
     // Ignore signs; we just want to pair manifold edges
     if (index0 < index1)
@@ -70,7 +70,7 @@ bool operator < (OrderedIndexPair const& rhs) const
     {
     if (m_index0 == rhs.m_index0)
         return m_index1 < rhs.m_index1;
-    else 
+    else
         return m_index0 < rhs.m_index0;
     }
 };  //  OrderedIndexPair
@@ -132,8 +132,8 @@ struct  OutputChainEdge
     DRay3d                      m_ray;
     T_OrderedIndexPairs         m_clippedIndices;
 
-    OutputChainEdge (DRay3dR ray) : m_ray (ray) { } 
-    
+    OutputChainEdge (DRay3dR ray) : m_ray (ray) { }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -143,7 +143,7 @@ void GetClippedEdgeIndices (T_EdgeIndices& indices, PolyfaceQueryR facets)
 
     for (T_OrderedIndexPairs::iterator curr = m_clippedIndices.begin(); curr != m_clippedIndices.end(); curr++)
         clippedSegments.insert (ClippedSegment (*curr, m_ray, facets));
-    
+
     // Needs work.  Coalesce.
     for (T_ClippedSegments::iterator curr = clippedSegments.begin(); curr != clippedSegments.end(); curr++)
         {
@@ -196,7 +196,7 @@ OutputChain (PolyfaceEdgeChain const& edgeChain, T_EdgeIndexMap& indexMap, Polyf
         DRay3d              ray;
 
         if (indices[i] <= 0 || indices[i+1] <= 0)
-            continue;                            // This indicates a break.  
+            continue;                            // This indicates a break.
 
         ray.origin = facets.GetPointCP()[indices[i]-1];
         ray.direction.NormalizedDifference (facets.GetPointCP()[indices[i+1]-1], ray.origin);
@@ -241,7 +241,7 @@ void    AddClippedEdges (PolyfaceHeaderR polyface)
             edgeChain = PolyfaceEdgeChain (CurveTopologyId (m_id, ++chainIndex));
             continue;
             }
-                                             
+
         edgeChain.AddIndex ((int32_t) *curr);
         }
     }
@@ -315,7 +315,7 @@ struct  ClipRangeAxis
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClipStatus     TestPoints(bvector<DPoint3d> const& points) const                  
+ClipStatus     TestPoints(bvector<DPoint3d> const& points) const
     {
     bool            allInside = true, anyInside = false;
 
@@ -363,7 +363,7 @@ struct PolyfaceClipFacet
     bvector <OutputChainEdge*>          m_chainEdges;
     PolyfaceAuxData::Channels           m_auxChannels;
     mutable  size_t                     m_index;
-                                
+
 PolyfaceClipFacet (size_t index) : m_index (index) { }
 
 /*---------------------------------------------------------------------------------**//**
@@ -406,7 +406,7 @@ PolyfaceClipFacet (PolyfaceClipFacet const& unclipped, ClipPlaneCR plane, bool h
 *
 *  Constructor for a facet clipped to a range axis from unclipped facet and axis
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceClipFacet (PolyfaceClipFacet const& unclipped, ClipRangeAxis const& rangeAxis) 
+PolyfaceClipFacet (PolyfaceClipFacet const& unclipped, ClipRangeAxis const& rangeAxis)
     {
     size_t          nPoints = unclipped.m_points.size();
     DPoint3dCP      points  = &unclipped.m_points.front();
@@ -450,7 +450,7 @@ void    AddPoint (PolyfaceClipFacet const& unclipped, size_t i, bool visibility,
 
     if (!unclipped.m_params.empty())
         m_params.push_back (unclipped.m_params[i]);
-    
+
     if (!unclipped.m_auxChannels.empty())
         m_auxChannels.AppendDataByIndex(unclipped.m_auxChannels, i);
     }
@@ -494,7 +494,7 @@ void    Init (PolyfaceVisitorR visitor, OutputChainMap& outputChainMap)
     m_points.resize (count);
     m_visibility.resize (count);
     m_chainEdges.resize (count);
-    
+
     memcpy (&m_points[0], visitor.GetPointCP(), count * sizeof (DPoint3d));
     for (size_t i=0; i<count; i++)
         m_visibility[i] = visitor.Visible()[i];
@@ -534,17 +534,17 @@ void   AddToPolyface  (LightweightPolyfaceBuilder& builder, OutputChainMap& outp
     bvector<size_t>     pointIndices(count);
     for (size_t i=0; i<count; i++)
         {
-        builder.AddPointIndex (pointIndices[i] = builder.FindOrAddPoint (m_points[i]), m_visibility[i]);                                          
+        builder.AddPointIndex (pointIndices[i] = builder.FindOrAddPoint (m_points[i]), m_visibility[i]);
         if (!m_normals.empty())
             builder.AddNormalIndex (builder.FindOrAddNormal (m_normals[i]));
-            
+
         if (!m_params.empty())
             builder.AddParamIndex (builder.FindOrAddParam (m_params[i]));
 
         if (!m_auxChannels.empty())
             builder.AddAuxDataByIndex (m_auxChannels, i);
         }
-         
+
 #ifdef DO_EDGE_CHAINS
     // We'll need these for visible edge processing - but for now, omit for tile generation they are not used and just overhead...
     for (size_t i=0; i<count; i++)
@@ -571,12 +571,12 @@ struct PolyfaceClipToPlaneSetContext
     OutputChainMap&                     m_outputChainMap;
     T_ClipPlaneSets const&              m_planeSets;
 
-    PolyfaceClipToPlaneSetContext (T_ClipPlaneSets const& planeSets, LightweightPolyfaceBuilder& output, OutputChainMap& chainMap, double tolerance, bool triangulate) : 
+    PolyfaceClipToPlaneSetContext (T_ClipPlaneSets const& planeSets, LightweightPolyfaceBuilder& output, OutputChainMap& chainMap, double tolerance, bool triangulate) :
                         m_planeSets(planeSets),
-                        m_builder (output), 
-                        m_outputChainMap (chainMap), 
-                        m_tolerance (tolerance), 
-                        m_areaTolerance (tolerance * tolerance), 
+                        m_builder (output),
+                        m_outputChainMap (chainMap),
+                        m_tolerance (tolerance),
+                        m_areaTolerance (tolerance * tolerance),
                         m_triangulate (triangulate) { }
 
 /*---------------------------------------------------------------------------------**//**
@@ -591,7 +591,7 @@ double                      tolerance
 )
     {
     bool                    anyTested = false;
-    
+
     for (ConvexClipPlaneSetCR convexSet: clipSet)
         {
         bool            allOutsideSinglePlane = false, anyOutside = false;;
@@ -655,7 +655,7 @@ double          planeDistance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void  ClipPolyfaceFacetToPlanes (PolyfaceClipFacet const& facet, ClipPlaneCP plane, ClipPlaneCP planeEndP) 
+void  ClipPolyfaceFacetToPlanes (PolyfaceClipFacet const& facet, ClipPlaneCP plane, ClipPlaneCP planeEndP)
     {
     if (facet.m_points.empty())
         return;
@@ -702,7 +702,7 @@ void   ClipPolyfaceFacet (PolyfaceClipFacet const& facet)
         }
 
     ClipPlaneSetCR   planeSet = m_planeSets[facet.m_index];
-    
+
     if (facet.m_index++ < m_planeSets.size())
         for (ConvexClipPlaneSetCR convexSet: planeSet)
             ClipPolyfaceFacetToPlanes (facet, &convexSet.front(), &convexSet.front() + convexSet.size());
@@ -721,7 +721,7 @@ StatusInt   finishClipping (LightweightPolyfaceBuilder& outputBuilder,  OutputCh
     if (0 == clippedMesh.GetPointIndexCount())
         return SUCCESS;
 
-    BeAssert (clippedMesh.GetPointCount() >= 3);		
+    BeAssert (clippedMesh.GetPointCount() >= 3);
 
     outputChainMap.AddClippedEdgeChains (clippedMesh);
 
@@ -745,9 +745,9 @@ StatusInt   PolyfaceQuery::ClipToPlaneSetIntersection (T_ClipPlaneSets const& pl
         {
         DRange3d range;
         range.InitFrom (GetPointCP(), (int) GetPointCount());
-        distanceTolerance = s_relativeTolerance * range.low.Distance (range.high); 
+        distanceTolerance = s_relativeTolerance * range.low.Distance (range.high);
         }
-    
+
     for (index = 0; index < planeSets.size() && !doClip; index++)
         {
         switch  (PolyfaceClipToPlaneSetContext::PointSetSingleClipStatus (GetPointCP(), GetPointCount(), planeSets[index], distanceTolerance))
@@ -773,7 +773,7 @@ StatusInt   PolyfaceQuery::ClipToPlaneSetIntersection (T_ClipPlaneSets const& pl
     PolyfaceClipToPlaneSetContext       clipContext (planeSets, *outputBuilder, outputChainMap, distanceTolerance, triangulateOutput);
     size_t                              currentFaceIndex = 0, thisFaceIndex;
     FacetFaceData                       faceData;
-                                                                       
+
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::AttachWithWrap (*this, true, 1); visitor->AdvanceToNextFace(); )
         {
         if (TryGetFacetFaceDataAtReadIndex (visitor->GetReadIndex(), faceData, thisFaceIndex))
@@ -810,8 +810,8 @@ struct PolyfaceClipToRangeContext
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceClipToRangeContext (DRange3dCR range, LightweightPolyfaceBuilder& output, OutputChainMap& chainMap, double tolerance, bool triangulate) : 
-    m_range(range), m_builder (output), m_outputChainMap (chainMap), m_areaTolerance (tolerance * tolerance), m_triangulate (triangulate) 
+PolyfaceClipToRangeContext (DRange3dCR range, LightweightPolyfaceBuilder& output, OutputChainMap& chainMap, double tolerance, bool triangulate) :
+    m_range(range), m_builder (output), m_outputChainMap (chainMap), m_areaTolerance (tolerance * tolerance), m_triangulate (triangulate)
     {
     m_axes[0] = ClipRangeAxis(0, true,  range.low.x);
     m_axes[1] = ClipRangeAxis(0, false, range.high.x);
@@ -865,14 +865,14 @@ StatusInt   PolyfaceQuery::ClipToRange (DRange3dCR clipRange, PolyfaceQuery::ICl
     DRange3d                range;
     static double           s_relativeTolerance = 1.0E-6;
 
-    range.InitFrom (GetPointCP(), (int) GetPointCount());    // initialized to null if no points 
+    range.InitFrom (GetPointCP(), (int) GetPointCount());    // initialized to null if no points
     if (!range.IntersectsWith(clipRange))
         return SUCCESS;     // no intersection, or null clipRange, or empty mesh
 
     if (range.IsContained(clipRange))
         return output._ProcessUnclippedPolyface (*this);
-         
-    double                      distanceTolerance = s_relativeTolerance * range.low.Distance (range.high); 
+
+    double                      distanceTolerance = s_relativeTolerance * range.low.Distance (range.high);
     IFacetOptionsPtr            facetOptions = IFacetOptions::New();
 
     facetOptions->SetNormalsRequired (0 != GetNormalCount());
@@ -886,7 +886,7 @@ StatusInt   PolyfaceQuery::ClipToRange (DRange3dCR clipRange, PolyfaceQuery::ICl
     PolyfaceClipToRangeContext          clipContext(clipRange, *outputBuilder, outputChainMap, distanceTolerance, triangulateOutput);
     size_t                              currentFaceIndex = 0, thisFaceIndex;
     FacetFaceData                       faceData;
-                                                                       
+
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::AttachWithWrap (*this, true, 1); visitor->AdvanceToNextFace(); )
         {
         if (TryGetFacetFaceDataAtReadIndex (visitor->GetReadIndex(), faceData, thisFaceIndex))

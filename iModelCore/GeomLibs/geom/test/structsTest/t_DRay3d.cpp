@@ -87,7 +87,7 @@ void testRayCircleIntersectionXY (double cx, double cy, double r, double theta0,
     DPoint3d center = DPoint3d::From (cx, cy);
     Check::StartScope ("testRayCircleIntersectionXY");
     Check::StartScope ("r", r);
-    Check::StartScope ("center", center);    
+    Check::StartScope ("center", center);
     DPoint2d xy0C = DPoint2d::From (cx + cos (theta0) * r, cy + sin (theta0) * r);
     DPoint2d xy1C = DPoint2d::From (cx + cos (theta1) * r, cy + sin (theta1) * r);
     DRay3d ray = DRay3d::FromOriginAndTarget (xy0C, xy1C);
@@ -130,7 +130,7 @@ TEST (DRay3d, IntersectPlanes)
             Check::Near (0.0, planeB.Evaluate (point), "point on plane B");
             }
         }
-    
+
     }
 
 void TestTransverseIntersection (DTriangle3dCR triangle, DRay3dCR ray)
@@ -212,7 +212,7 @@ int Intersect (DRay3dCR ray, DPoint3d* points, double *rayParams, DPoint2d *patc
         );
     }
 };
-        
+
 bool Find (double value, double *data, int n, double tol = 1.0e-10)
     {
     for (int i = 0; i < n; i++)
@@ -271,7 +271,7 @@ TEST(DRay3d, Evaluate)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DRay3d, DotVector)
     {
-    DRay3d ray0 = DRay3d::FromOriginAndTarget(DPoint3d::From(2, 2, 2), DPoint3d::From(9, 9, 9)); 
+    DRay3d ray0 = DRay3d::FromOriginAndTarget(DPoint3d::From(2, 2, 2), DPoint3d::From(9, 9, 9));
     DVec3d vec = DVec3d::From(DPoint3d::From(8, 8, 8));
     double dotProduct = ray0.DirectionDotVector(vec);
     double dotProductExpected = ray0.direction.DotProduct(vec);
@@ -325,14 +325,14 @@ TEST(DRay3d, IntersectTriangle)
         rotationMatrix.Multiply(rotatedTrianglePoints[0], trianglePoints[0]);
         rotationMatrix.Multiply(rotatedTrianglePoints[1], trianglePoints[1]);
         rotationMatrix.Multiply(rotatedTrianglePoints[2], trianglePoints[2]);
-        
+
         if (bsiDRay3d_intersectTriangleFast(&rotatedRay, &rotatedIntersectionPoint, rotatedTrianglePoints))
             {
             rotationMatrix.Multiply(rotatedOriginalIntersectionPoint, intersection);
             // rotating original intersection points gives rotated intersection points
             Check::Near(
-                rotatedIntersectionPoint, 
-                rotatedOriginalIntersectionPoint, 
+                rotatedIntersectionPoint,
+                rotatedOriginalIntersectionPoint,
                 "rotating original intersection points gives rotated intersection points."
             );
             }
@@ -358,7 +358,7 @@ TEST(DRay3d, IntersectTriangle)
         rotationMatrix.Multiply(rotatedTrianglePoints[0], trianglePoints[0]);
         rotationMatrix.Multiply(rotatedTrianglePoints[1], trianglePoints[1]);
         rotationMatrix.Multiply(rotatedTrianglePoints[2], trianglePoints[2]);
-        
+
         if (bsiDRay3d_intersectTriangleFast(&rotatedRay, &rotatedIntersectionPoint, rotatedTrianglePoints))
             {
             rotationMatrix.Multiply(rotatedOriginalIntersectionPoint, intersection);
@@ -388,13 +388,13 @@ TEST(DRay3d, IntersectTriangle)
         Check::Near(intersection, expectedIntersection, "ray intersects triangle at a triangle edge.");
         rotationMatrix.Multiply(rotatedDirection, direction);
         rotatedRay = DRay3d::FromOriginAndVector(origin, rotatedDirection);
-        
+
         if (bsiDRay3d_intersectTriangleFast(&rotatedRay, &rotatedIntersectionPoint, rotatedTrianglePoints))
             {
             rotationMatrix.Multiply(rotatedOriginalIntersectionPoint, intersection);
             // rotating original intersection points gives rotated intersection points
             Check::Near(
-                rotatedIntersectionPoint, 
+                rotatedIntersectionPoint,
                 rotatedOriginalIntersectionPoint,
                 "rotating original intersection points gives rotated intersection points."
             );
@@ -530,8 +530,8 @@ TEST(DRay3d, IntersectTriangleAccuracyAndPerformance)
             timeByFastFunction = timeByFastFunction + std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start).count();
             // if ray hits the triangle via bsiDRay3d_intersectTriangle
             if (slowRet && rayParameter > 0
-                && barycentric.x >= -Angle::TinyAngle() && barycentric.x <= 1 + Angle::TinyAngle() 
-                && barycentric.y >= -Angle::TinyAngle() && barycentric.y <= 1 + Angle::TinyAngle() 
+                && barycentric.x >= -Angle::TinyAngle() && barycentric.x <= 1 + Angle::TinyAngle()
+                && barycentric.y >= -Angle::TinyAngle() && barycentric.y <= 1 + Angle::TinyAngle()
                 && barycentric.z >= -Angle::TinyAngle() && barycentric.z <= 1 + Angle::TinyAngle())
                 {
                 if (fastRet) // if ray hits the triangle via bsiDRay3d_intersectTriangleFast
@@ -567,7 +567,7 @@ TEST(DRay3d, IntersectTriangleAccuracyAndPerformance)
                     {
                     Check::Fail("slow function reported ray intersection while fast function did not.");
                     exitTheTest = true;
-                    }   
+                    }
                 }
             else
                 if (fastRet)

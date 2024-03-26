@@ -68,7 +68,7 @@ private:
         m_nextGroupId = i;
         jmdlRIMSBS_setCurrGroupId (m_rimsbsCurves, i);
         }
-        
+
     int GetNextGroupId (){return m_nextGroupId;}
     void IncrementNextGroupId ()
         {
@@ -336,7 +336,7 @@ MTGNodeId     nodeId
             myStat = true;
 	          }
         }
-    return myStat;    
+    return myStat;
     }
 
 
@@ -528,7 +528,7 @@ CurveVectorPtr &result
             if (!TryAssembleLoop (sequenceArray, sequencerReadIndex, nodeIdToDepthArray, loops))
                 return false;
             numLoop++;
-            if (  !result.IsValid () 
+            if (  !result.IsValid ()
                 && TryGetInt (sequenceArray, nextNodeId, sequencerReadIndex)
                 && nextNodeId == MTG_MARKER_END_COMPONENT
                 )
@@ -629,17 +629,17 @@ const char * name = "op"
 )
     {
     AreaBooleanContext context (newCurveToOldCurve);
-    
+
     CurveVectorPtr result;
     bvector<int> faceNodeIdArray;
     MTGGraph * pGraph = context.GetGraph ();
 
     context.SetNextGroupId (0);
     context.Load (regionA);
-    
+
     if (s_debug)
         jmdlMTGGraph_printFaceLoops (pGraph);
-            
+
     int numGroupA = context.GetNextGroupId ();
     context.Load (regionB);
     context.Merge (true);
@@ -676,7 +676,7 @@ const char * name = "op"
 )
     {
     AreaBooleanContext context (newCurveToOldCurve);
-    
+
     CurveVectorPtr result;
     bvector<int> faceNodeIdArray;
     context.SetNextGroupId (0);
@@ -719,7 +719,7 @@ const char * name = "op"
 )
     {
     AreaBooleanContext context (newCurveToOldCurve);
-    
+
     CurveVectorPtr result;
     bvector<int> faceNodeIdArray;
     context.SetNextGroupId (0);
@@ -740,7 +740,7 @@ const char * name = "op"
     jmdlRG_buildFaceRangeTree (context.m_rgContext, 0.0, 0.0);
     jmdlRG_buildFaceHoleArray (context.m_rgContext);
     //jmdlMTGGraph_printFaceLoops (pGraph);
-  
+
 
     if (jmdlRG_collectAnalysisFaces (context.m_rgContext, groupOp, finalBoolOp, &faceSet, reverseSense))
         {

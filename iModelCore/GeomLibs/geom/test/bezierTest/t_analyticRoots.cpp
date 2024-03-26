@@ -22,7 +22,7 @@ TEST(PreciseSum, Test1)
         double s1 = DoubleOps::PreciseSum (&data[0], i);
         Check::Near (s0, s1, "partial sum");
         }
-    
+
     }
 double MatchRoots (bvector<double> &target, bvector<double> &actual)
     {
@@ -160,7 +160,7 @@ TEST(AnalyticRoots, Cubic3)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(AnalyticRoots, Cubic3X)
     {
-    // root e = small positive -- e.g. in range 01 for sure,like the one interesting root for a cubic bezier 
+    // root e = small positive -- e.g. in range 01 for sure,like the one interesting root for a cubic bezier
     // x0, x0+1 = two roots "somewhere else" -- not interesting in bezier case.
     for (double e = 1.0; e > 1.0e-10; e *= 0.1)
       for (double x0 = 0.0; x0 < 1100; x0 = 10.0 * (x0 + 1.0))
@@ -270,7 +270,7 @@ TEST(AnalyticRoots, Quartic4)
     double b = 1000.0;
     double e = 1.0;
     double looseTol = 1.0e-5;
-    
+
     // We'd prefer the last factor to be 100, but it fails on optimized iOSArm64.
     for (auto factor : bvector<double>{1, 0.1, 3, 6, 10})
         {

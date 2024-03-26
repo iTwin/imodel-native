@@ -7,7 +7,7 @@
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void areaUnionIntersection(DRange2d range0, DRange2d range1) 
+void areaUnionIntersection(DRange2d range0, DRange2d range1)
     {
     DRange2d unionRange, intersectRange;
     if (range0.IntersectsWith(range1))
@@ -76,7 +76,7 @@ TEST(DRange2d, FractionalPointMapping)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST(DRange2d, SquaredIntersectionofRanges) 
+TEST(DRange2d, SquaredIntersectionofRanges)
     {
     DRange2d range1 = DRange2d::From(DPoint2d::From(2, 3), DPoint2d::From(5, 5));
     DRange2d range2 = DRange2d::From(DPoint2d::From(3, 4), DPoint2d::From(6, 5));
@@ -89,7 +89,7 @@ TEST(DRange2d, SquaredIntersectionofRanges)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST(DRange2d, RestrictRange) 
+TEST(DRange2d, RestrictRange)
     {
     DRange2d range1 = DRange2d::From(DPoint2d::From(2, 2), DPoint2d::From(5, 5));
     DRange2d rangeLimit = DRange2d::From(DPoint2d::From(3, 3), DPoint2d::From(4, 4));
@@ -157,7 +157,7 @@ TEST(DRange2d, RangeProjection3d)
     Check::Near(range.YLength(), range3d.YLength());
     }
 
-void arcSweepCheck(double degree, double sweep) 
+void arcSweepCheck(double degree, double sweep)
     {
     DRange2d range = DRange2d::FromUnitArcSweep(Angle::FromDegrees(degree).Radians(), Angle::FromDegrees(sweep).Radians());
         if (::fabs(sweep) >= 360)
@@ -202,7 +202,7 @@ TEST(DRange2d, MaximalAxis)
 TEST(DRange2d, CornersAndPlanes)
     {
     DRange2d range = DRange2d::From(3, 3, 8, 9);
-    //Get4Lines  (DPoint2dP originArray, DPoint2dP normalArray) 
+    //Get4Lines  (DPoint2dP originArray, DPoint2dP normalArray)
     DPoint2d corners[4];
 
     range.Get4Corners(corners);
