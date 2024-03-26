@@ -260,7 +260,7 @@ GEOMAPI_VIRTUAL bool AddClipper (DPoint3d *pXYZArray, bool *pMarkBits, int numXY
 //! Merge all the clippers together and subtract from the base polygon.
 GEOMAPI_VIRTUAL void FinishClip (FaceMode faceMode = FaceMode_Default) = 0;
 
-//! Setup to iterate over all faces, applying an in/out test on 
+//! Setup to iterate over all faces, applying an in/out test on
 //! @param [in] primarySelect true (resp false) to collect faces that are INSIDE (resp OUTSIDE) the primary polygon
 //! @param [in] clipperSelect true (resp false) to collect faces t are INSIDE (resp OUTSIDE) the secondary polygon
 GEOMAPI_VIRTUAL void SetupForLoopOverFaces (bool primarySelect, bool clipperSelect) = 0;

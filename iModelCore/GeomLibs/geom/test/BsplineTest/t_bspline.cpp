@@ -234,7 +234,7 @@ TEST(Bspline, ArcLengthMappings)
     double k0 = 2.0;
     double k1 = 6.0;
     MSBsplineCurvePtr curve1 = CreateXSqaured (k0, k1);
-    
+
     int numAdd = 6;
     static double s_extraFraction[] = {0.25, 0.4,0.1, 0.78, 0.397, 0.667, 0.94, 0.5};
     for (int i = 0; i < numAdd; i++)
@@ -250,10 +250,10 @@ TEST(Bspline, ArcLengthMappings)
             double trueLength = Integrate_ArcLength_xSquaredOver2 (x);
             double fractionalLength = curve1->LengthBetweenFractions (0.0, f);
             double knotLength = curve1->LengthBetweenKnots (curve1->FractionToKnot (0.0), curve1->FractionToKnot (f));
-                            
+
             Check::Near (trueLength, fractionalLength, "LengthBetweenFractions");
             Check::Near (trueLength, knotLength, "LengthBetweenKnots");
-            
+
             if (f > 0.1 && f < 0.9)
                 {
                 double f0 = 0.5 * f;
@@ -262,7 +262,7 @@ TEST(Bspline, ArcLengthMappings)
                                 - Integrate_ArcLength_xSquaredOver2 (f);
                 double trueDelta1 = Integrate_ArcLength_xSquaredOver2 (f1)
                                 - Integrate_ArcLength_xSquaredOver2 (f);
-                                
+
                 double g0, g1;
                 double delta0, delta1;
                 Check::True(curve1->FractionAtSignedDistance (f, trueDelta0, g0, delta0));
@@ -274,9 +274,9 @@ TEST(Bspline, ArcLengthMappings)
         curve1->AddKnot (curve1->FractionToKnot (s_extraFraction[i]), 1);
         }
     }
-    
-    
-    
+
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -309,7 +309,7 @@ TEST(Bspline, AdvanceAndRetreat)
                 advanceSize += segment.UMax () - segment.UMin ();
                 numAdvance++;
                 }
-                
+
             for (size_t select = curve1->GetTailBezierSelect (); curve1->RetreatToBezierInKnotInterval (segment, select, knotRange);)
                 {
                 retreatSize += segment.UMax () - segment.UMin ();
@@ -351,7 +351,7 @@ DEllipse3d const &ellipse1
     if (dv > maxVectorDiff)
         maxVectorDiff = dv;
     }
-    
+
 /*--------------------------------------------------------------------------------**//**
 // Convert msbsplineCurve to major/minor DEllipse3d.
 // @return false if any fussy detail is different from the usual way an ellipse is converted to bspline curve.
@@ -479,7 +479,7 @@ TEST(Bspline, EllipseRoundTrip)
             }
         }
     }
-    
+
 void checkCurve (char const *title, MSBsplineCurveCR curve, MSBsplineSurfaceCR surface,
     double u0, double v0, double u1, double v1, int n)
     {
@@ -502,7 +502,7 @@ void checkCurve (char const *title, MSBsplineCurveCR curve, MSBsplineSurfaceCR s
             break;
         }
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -528,20 +528,20 @@ TEST(BsplineSurface, Extract)
         poles, NULL,
         NULL, uOrder, numI, false,
         NULL, vOrder, numJ, false,
-        true                
+        true
         );
     int numTest = 20;
     MSBsplineCurvePtr uEdge0 = surface->GetPolygonRowAsCurve     (0);
     MSBsplineCurvePtr uEdge1 = surface->GetPolygonRowAsCurve    (-1);
-    
+
     MSBsplineCurvePtr vEdge0 = surface->GetPolygonColumnAsCurve (0);
     MSBsplineCurvePtr vEdge1 = surface->GetPolygonColumnAsCurve (-1);
-    
+
     checkCurve ("uEdge0", *uEdge0, *surface, 0,0, 1,0, numTest);
     checkCurve ("uEdge1", *uEdge1, *surface, 0,1, 1,1, numTest);
     checkCurve ("vEdge0", *vEdge0, *surface, 0,0, 0,1, numTest);
     checkCurve ("vEdge1", *vEdge1, *surface, 1,0, 1,1, numTest);
-    
+
     double delta = 0.125;
     for (double q = 0.0; q <= 1.0; q += delta)
         {
@@ -551,7 +551,7 @@ TEST(BsplineSurface, Extract)
         checkCurve ("vEdge", *vEdge, *surface, q, 0, q, 1, numTest);
         }
     }
-    
+
 
 
 
@@ -703,7 +703,7 @@ double  ClosestPointBlanketTime
 (
 MSBsplineSurfaceCR surface,
 double normalDist,
-size_t numUVTest, 
+size_t numUVTest,
 size_t numCalls,
 double tolerance
 )
@@ -804,8 +804,8 @@ TEST(BsplineSurface, BilinearPatch2)
     CheckPatch (*surface, 4);
     }
 
-    
-static int s_printBeziers = 0;    
+
+static int s_printBeziers = 0;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -845,11 +845,11 @@ TEST(BsplineSurface, MakeBezier)
                     printf ("</bspline>");
                     }
                 }
-            bezierCurve.ReleaseMem ();                
+            bezierCurve.ReleaseMem ();
             }
         }
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -877,7 +877,7 @@ TEST(BsplineCurve,KnotSearch)
             }
         }
     }
-    
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

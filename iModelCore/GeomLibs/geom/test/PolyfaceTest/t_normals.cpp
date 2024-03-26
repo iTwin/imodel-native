@@ -63,7 +63,7 @@ ValidatedDouble GetVolume (PolyfaceHeaderPtr &mesh)
             {
             return ValidatedDouble (volume2, true);
             }
-            
+
         }
     return ValidatedDouble (0, false);
     }
@@ -122,7 +122,7 @@ void ExerciseSingleSheetCutFill (PolyfaceHeaderPtr dtm, PolyfaceHeaderPtr road, 
                 cutVolume2 += v;
             }
         }
-    
+
     if (s_noisy > 100)
         {
         printf ("\n\n **** %s\n", message);
@@ -329,7 +329,7 @@ TEST(FastCutFill,ManyVerticals)
     // We need a mesh with multiple vertical breaks.
     // Stroke a curve ..
         auto bcurve = MSBsplineCurve::CreateFromPolesAndOrder (
-        bvector<DPoint3d> {            
+        bvector<DPoint3d> {
             DPoint3d::From (1,1.1,1),
             DPoint3d::From (2,1.1,2),
             DPoint3d::From (3,2,1),

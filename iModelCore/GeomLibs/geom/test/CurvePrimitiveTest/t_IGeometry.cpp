@@ -55,10 +55,10 @@ bool CheckUpCastMatch (IGeometryPtr g)
 
     if (g->GetGeometryType () == IGeometry::GeometryType::Polyface)
         stat = g->GetAsPolyfaceHeader ().IsValid ();
-    
+
     return stat;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -66,8 +66,8 @@ TEST(IGeoemtry,HelloWorld)
     {
     ICurvePrimitivePtr line = ICurvePrimitive::CreateLine (DSegment3d::From (1,2,3, 4,2,9));
     CheckUpCastMatch (IGeometry::Create(line));
-    
-    }    
+
+    }
 
 // serializer=0 for flatbuffer, 2 for dgnjs string, 1 for imjs string
 void DoRoundTrip (IGeometryPtr g0, bool emitGeometry, int serializerSelect)
@@ -112,23 +112,21 @@ void DoRoundTrip (IGeometryPtr g0, bool emitGeometry, int serializerSelect)
     PolyfaceHeaderPtr polyface = g0->GetAsPolyfaceHeader ();
     if (checkPolyfaceQueryCarrier && polyface.IsValid () && buffer0.size () > 8)
         {
-
-        PolyfaceQueryCarrier carrier0 (0, false, 0, 0, nullptr, nullptr);        
-        Check::True (BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier (&buffer0[0], carrier0));
+        PolyfaceQueryCarrier carrier0 (0, false, 0, 0, nullptr, nullptr);
+        Check::True(BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(&buffer0[0], buffer0.size(), carrier0));
 
         bvector<Byte> buffer1;
         BentleyGeometryFlatBuffer::GeometryToBytes (*polyface, buffer1);
 
-        PolyfaceQueryCarrier carrier1 (0, false, 0, 0, nullptr, nullptr);        
-        Check::True (BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier (&buffer1[0], carrier1));
+        PolyfaceQueryCarrier carrier1 (0, false, 0, 0, nullptr, nullptr);
+        Check::True(BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(&buffer1[0], buffer0.size(), carrier1));
         }
 
-    if (Check::True (g1.IsValid (), 
-            serializerSelect == 1 ? "JsonString RoundTrip" :"FlatBuffer Roundtrip"))
+    if (Check::True (g1.IsValid (), serializerSelect == 1 ? "JsonString RoundTrip" :"FlatBuffer Roundtrip"))
         {
         Check::True (g0->IsSameStructureAndGeometry (*g1), "BGFB IsSameStructureAndGeoemtry");
         }
-    
+
     }
 
 void DoRoundTrip (IGeometryPtr g0, bool emitGeometry)
@@ -158,7 +156,7 @@ void DoRoundTripMeshedSolid (IGeometryPtr g0, bool emitGeometry)
             }
         }
     }
-  
+
 #if defined (_WIN32) && !defined(BENTLEY_WINRT)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -182,7 +180,7 @@ TEST(BGFB,HelloWorld)
         cp2->TryAddLineStringPoint (DPoint3d::From (x,0,2 * x));
     IGeometryPtr g2 = IGeometry::Create (cp2);
     DoRoundTrip (g2, s_emitGeometry);
-    
+
     DEllipse3d arc;
     arc.InitFromXYMajorMinor (1,2,3, 1,4, Angle::DegreesToRadians (45),
             Angle::DegreesToRadians (10.0), Angle::DegreesToRadians (270.0));
@@ -208,7 +206,7 @@ TEST(BGFB,HelloWorld)
     ISolidPrimitivePtr cone = ISolidPrimitive::CreateDgnCone (coneDetail);
     DoRoundTrip (IGeometry::Create (cone), s_emitGeometry);
     DoRoundTripMeshedSolid (IGeometry::Create (cone), s_emitGeometry);
-    
+
     DgnBoxDetail boxDetail = DgnBoxDetail::InitFromCenterAndSize (DPoint3d::From (2,2,2), DPoint3d::From (3,4,5), false);
     ISolidPrimitivePtr Box = ISolidPrimitive::CreateDgnBox (boxDetail);
     DoRoundTrip (IGeometry::Create (Box), s_emitGeometry);
@@ -218,7 +216,7 @@ TEST(BGFB,HelloWorld)
     ISolidPrimitivePtr sphere = ISolidPrimitive::CreateDgnSphere (sphereDetail);
     DoRoundTrip (IGeometry::Create (sphere), s_emitGeometry);
     DoRoundTripMeshedSolid (IGeometry::Create (sphere), s_emitGeometry);
-    
+
     DgnTorusPipeDetail torusPipeDetail (
                 DPoint3d::From (2,2,2),
                 DVec3d::From (1,0,0),
@@ -266,8 +264,8 @@ TEST(BGFB,HelloWorld)
     mesh->PointIndex ().push_back (3);
     mesh->PointIndex ().push_back (4);
     mesh->PointIndex ().push_back (0);
-    
-    DoRoundTrip (IGeometry::Create (mesh), s_emitGeometry);    
+
+    DoRoundTrip (IGeometry::Create (mesh), s_emitGeometry);
 
     if (s_testPartialCurve)
     {
@@ -314,8 +312,8 @@ TEST(Flatbuffer, InterpolationCurve)
     ICurvePrimitivePtr ic0 = ICurvePrimitive::CreateInterpolationCurveSwapFromSource (curve);
     DoRoundTrip (IGeometry::Create(ic0), s_emitGeometry);
 
-    }    
- 
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -331,12 +329,12 @@ TEST(Flatbuffer, TransitionSpiral)
         DSpiral2dBase::TransitionType_Clothoid,
         0.2, 0.0,
         0.4, 0.01,
-        frame, 
+        frame,
         0.2, 0.9
         );
     DoRoundTrip (IGeometry::Create(ic0), s_emitGeometry);
 
-    }    
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -1126,35 +1124,36 @@ TEST(FlatBuffer, MSBsplineSurface)
         Check::True(validator->IsValidGeometry(surfacePtr1));
         }
     }
-template<typename GeometryTypePtr>
-void TestSpecialReader(GeometryTypePtr &validGeometry, GeometryTypePtr &invalidGeometry,
-    GeometryTypePtr(*bytesToGeometry) (Byte const *bytes, bool applyValidation))
+    template <typename GeometryTypePtr>
+    void TestSpecialReader(GeometryTypePtr &validGeometry, GeometryTypePtr &invalidGeometry,
+    GeometryTypePtr (*bytesToGeometry)(Byte const *bytes, size_t const bufferSize, bool applyValidation))
     {
     // suppress validation of write !!!
     auto nullValidator = GeometryValidatorPtr();
     auto savedValidator = BentleyGeometryFlatBuffer__SetFBWriteValidation(nullValidator);
     bvector<Byte> buffer;
     BentleyGeometryFlatBuffer::GeometryToBytes(*validGeometry, buffer);
-    if (Check::True(buffer.size() > 0))
+    size_t const bufferSize = buffer.size();
+    if (Check::True(bufferSize > 0))
         {
         // read with and without default checking.
-        auto cpA1 = bytesToGeometry (buffer.data(), true);
+        auto cpA1 = bytesToGeometry(buffer.data(), bufferSize, true);
         Check::True(cpA1.IsValid());   // Ptr test
         Check::True(cpA1->IsValidGeometry(savedValidator));    // Geometry Test
 
-        auto cpA2 = bytesToGeometry(buffer.data(), false);
+        auto cpA2 = bytesToGeometry(buffer.data(), bufferSize, false);
         Check::True(cpA2.IsValid());   // Ptr test
         Check::True(cpA2->IsValidGeometry(savedValidator));    // Geometry Test
         }
 
     BentleyGeometryFlatBuffer::GeometryToBytes(*invalidGeometry, buffer);
-    if (Check::True(buffer.size() > 0))
+    if (Check::True(bufferSize > 0))
         {
         // read with and without default checking.
-        auto cpA1 = bytesToGeometry(buffer.data(), true);
+        auto cpA1 = bytesToGeometry(buffer.data(), bufferSize, true);
         Check::False(cpA1.IsValid());   // Ptr test
 
-        auto cpA2 = bytesToGeometry(buffer.data(), false);
+        auto cpA2 = bytesToGeometry(buffer.data(), bufferSize, false);
         Check::True(cpA2.IsValid());   // Ptr test
         Check::False(cpA2->IsValidGeometry(savedValidator));    // Geometry Test
 
@@ -1216,10 +1215,10 @@ TEST(FlatBuffer, SpecializedReaders)
     bvector<Byte> buffer;
     BentleyGeometryFlatBuffer::GeometryToBytes(*polyfaceA, buffer);
     PolyfaceQueryCarrier carrierA(0, false, 0, 0, nullptr, nullptr);
-    Check::True (BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier (buffer.data (), carrierA, true));
+    Check::True(BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(buffer.data(), buffer.size(), carrierA, true));
     BentleyGeometryFlatBuffer::GeometryToBytes(*polyfaceZ, buffer);
     PolyfaceQueryCarrier carrierZ(0, false, 0, 0, nullptr, nullptr);
-    Check::True(BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(buffer.data(), carrierZ, false));
-    Check::False(BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(buffer.data(), carrierZ, true));
+    Check::True(BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(buffer.data(), buffer.size(), carrierZ, false));
+    Check::False(BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(buffer.data(), buffer.size(), carrierZ, true));
     BentleyGeometryFlatBuffer__SetFBWriteValidation(savedValidator);
     }

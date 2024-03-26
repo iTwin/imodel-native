@@ -67,7 +67,7 @@ TEST(FRange3d, RangeDistance)
     auto range23F = FRange3d::From(point2F, point3F);
     auto range23D = DRange3d::From(range23F);
     Check::ExactDouble(range01D.DistanceSquaredTo(range23D), range01F.DistanceSquaredTo(range23F));
-    
+
     Check::False(range01F.IntersectsWith(range23F, false));
     Check::ExactRange(DRange3d::FromIntersection(range01D, range23D), DRange3d::From(FRange3d::FromIntersection(range01F, range23F)));
     FPoint3d pntExtF0, pntExtF1;
@@ -82,7 +82,7 @@ TEST(FRange3d, RangeDistance)
     unionRange.Extend(range23D.low);
     unionRange.Extend(range23D.high);
     Check::ExactRange(unionRange, DRange3d::From(FRange3d::FromUnion(range01F, range23F)));
-    } 
+    }
 
 //static FRange3d From (DRange3dCR dRange);
 //From (DPoint3dCR pointA, DPoint3dCR pointB);

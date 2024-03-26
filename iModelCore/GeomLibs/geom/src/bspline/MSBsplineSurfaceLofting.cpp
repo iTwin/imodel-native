@@ -285,7 +285,7 @@ int             derivative      /* => Highest derivatives maintained. Ignored wh
                 {
                 for (int iTemp=0; iTemp<out[ll]->NumberAllocatedPoles (); iTemp++)
                     Pw[iTemp] = out[ll]->GetPoleDPoint4d (iTemp);
-    
+
                 i  = first;
                 j  = last;
                 ii = 1;

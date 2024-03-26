@@ -13,10 +13,10 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 Public StatusInt bspcurv_interpolatedOffsetXY
 (
-MSBsplineCurveR offsetCurve, 
-MSBsplineCurveCR sourceCurve, 
-double offset0, 
-double offset1, 
+MSBsplineCurveR offsetCurve,
+MSBsplineCurveCR sourceCurve,
+double offset0,
+double offset1,
 int numPoints
 )
     {
@@ -25,7 +25,7 @@ int numPoints
     DPoint3d point;
     DVec3d   frame[3], xVec, normal0, normal1, tangent;
     bvector<DPoint3d> points;
-    
+
     mdlBspline_getParameterRange (&minKnot, &maxKnot, &sourceCurve);
     d = (maxKnot - minKnot)/(numPoints - 1);
     dOffset = (offset1 - offset0)/(maxKnot - minKnot);
@@ -45,7 +45,7 @@ int numPoints
             radiansA = xVec.AngleToXY (tangent);
             radiusA = 1.0/curvature + offset0;
             }
-        
+
         //reverse normal if it flips to the opposite direction at an inflection point.
         normal1 = frame[1];
         if (normal0.DotProduct (normal1) < 0)
@@ -73,9 +73,9 @@ int numPoints
 +---------------+---------------+---------------+---------------+---------------+------*/
 Public StatusInt GEOMDLLIMPEXP bspcurv_approximateOffsetXY
 (
-MSBsplineCurveR offsetCurve, 
-MSBsplineCurveCR sourceCurve, 
-double offset0, 
+MSBsplineCurveR offsetCurve,
+MSBsplineCurveCR sourceCurve,
+double offset0,
 double offset1,
 int numPoles,
 double geomTol
@@ -85,14 +85,14 @@ double geomTol
     bvector<double> up, uq;
     if (SUCCESS != MSBsplineCurve::SampleG1CurveByPoints (P, up, uq, &sourceCurve, 2, geomTol, 0.01*geomTol))
         return ERROR;
-    
+
     int    status;
     size_t numPoints = P.size ();
     double dOffset, curvature, torsion;
     DPoint3d point;
     DVec3d   frame[3], normal0, normal1, sTangent, eTangent;
     bvector<DPoint3d> points;
-    
+
     dOffset = (offset1 - offset0)/(up[numPoints-1] - up[0]);
 
     for (size_t i=0; i<numPoints; i++)
@@ -107,7 +107,7 @@ double geomTol
             normal0 = frame[1];
             sTangent.SumOf (sTangent, normal0, -dOffset);
             }
-        
+
         //reverse normal if it flips to the opposite direction at an inflection point.
         normal1 = frame[1];
         if (normal0.DotProduct (normal1) < 0)
@@ -133,9 +133,9 @@ double geomTol
 +---------------+---------------+---------------+---------------+---------------+------*/
 Public StatusInt GEOMDLLIMPEXP bspcurv_offsetEllipseXY
 (
-MSBsplineCurveR offsetCurve, 
-DEllipse3dCR ellipse, 
-double offset0, 
+MSBsplineCurveR offsetCurve,
+DEllipse3dCR ellipse,
+double offset0,
 double offset1,
 int numPoints
 )
@@ -145,7 +145,7 @@ int numPoints
     DPoint3d point;
     DVec3d dX, ddX, normal, xVec, tmpVec;
     bvector<DPoint3d> points;
-    
+
     xVec.Init ( 1.0, 0.0, 0.0);
 
     for (i=0; i<numPoints; i++)
@@ -162,7 +162,7 @@ int numPoints
         //dX.scale (1.0 / ellipse.sweep);
         //ddX.scale (1.0 / (ellipse.sweep * ellipse.sweep));
 #endif
-        
+
         normal.UnitPerpendicularXY (dX);
 
         if (i == 0)
@@ -192,8 +192,8 @@ int numPoints
 
 static StatusInt getOffSetXYFractions
 (
-bvector<double>& params, 
-MSBsplineCurveCR curve, 
+bvector<double>& params,
+MSBsplineCurveCR curve,
 int numPerKnotSpan
 )
     {
@@ -231,10 +231,10 @@ int numPerKnotSpan
 +---------------+---------------+---------------+---------------+---------------+------*/
 Public StatusInt GEOMDLLIMPEXP bspcuv_interpolatedOffSetXYSubdivide
 (
-MSBsplineCurveR offsetCurve, 
-MSBsplineCurveCR sourceCurve, 
-double offset0, 
-double offset1, 
+MSBsplineCurveR offsetCurve,
+MSBsplineCurveCR sourceCurve,
+double offset0,
+double offset1,
 int numPerKnotSpan
 )
     {
@@ -266,7 +266,7 @@ int numPerKnotSpan
             radiansA = xVec.AngleToXY (tangent);
             radiusA = 1.0/curvature + offset0;
             }
-        
+
         //reverse normal if it flips to the opposite direction at an inflection point.
         normal1 = frame[1];
         if (normal0.DotProduct (normal1) < 0)
@@ -319,8 +319,8 @@ size_t OffsetStrokeCount (MSBsplineCurveCR curve, double angleRadians)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Public MSBsplineCurvePtr GEOMDLLIMPEXP bspcuv_interpolatedOffSetXYGreville
 (
-MSBsplineCurveCR sourceCurve, 
-double offset0, 
+MSBsplineCurveCR sourceCurve,
+double offset0,
 double offset1
 )
     {
@@ -347,7 +347,7 @@ double offset1
     double u0 = 0.0;
     grevilleDistanceFraction.push_back (0.0);
     double baseLength = sourceCurve.Length ();
-  
+
     // Get points on the true curve at true arc lengths controlled by the greville fractions.
     // These will be the points for offset and interpolation.
     for (size_t i = 0; i + 2 < grevilleKnots.size (); i++)
@@ -483,7 +483,7 @@ RotMatrix       *rotMatrix             /* => of view, or NULL */
         offset->poles[0] = curve->poles[0];
         offset->poles[3] = curve->poles[last];
         }
-    
+
     if (delV0.Magnitude () < bsiTrig_smallAngle () * bspcurv_polygonLength (curve))
         bspcurv_evaluateCurvePoint (&tmp1, &delV0, curve, fc_epsilon);
     if (delVn.Magnitude () < bsiTrig_smallAngle () * bspcurv_polygonLength (curve))
@@ -979,7 +979,7 @@ RotMatrix       *rotMatrix
     DPoint3d        poles[3];
     BezierInfo      info;
     MSBsplineCurve  offset, gap;
-    
+
     if (outCurve != inCurve)
         memset (outCurve, 0, sizeof (*outCurve));
 

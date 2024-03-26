@@ -56,7 +56,7 @@ CurveVectorPtr _GetChildCurveVectorP() override {return m_childCurveVector.get (
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-void _Process(ICurvePrimitiveProcessor &processor, DSegment1dCP interval) const override 
+void _Process(ICurvePrimitiveProcessor &processor, DSegment1dCP interval) const override
     {processor._ProcessChildCurveVector (*this, *m_childCurveVector, interval);}
 
 // We do not implement parameterized curve functions EXCEPT for dispatching ClosetPoint with detail output.
@@ -104,7 +104,7 @@ bool allowExtrapolation
     return NULL;
     }
 
-public: 
+public:
 
 
 /*--------------------------------------------------------------------------------**//**
@@ -144,7 +144,7 @@ bool _Length(double &length) const override
     length = m_childCurveVector->Length ();
     return true;
     }
-	
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -182,13 +182,13 @@ double _FastMaxAbs() const override
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
-+--------------------------------------------------------------------------------------*/    
++--------------------------------------------------------------------------------------*/
 bool _IsSameStructureAndGeometry (ICurvePrimitiveCR other, double tolerance) const override
     {
     CurveVectorCP otherChild = other.GetChildCurveVectorCP ();
     return NULL != otherChild
         && m_childCurveVector->IsSameStructureAndGeometry (*otherChild);
-    }    
+    }
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -246,7 +246,7 @@ bool _ReverseCurvesInPlace () override
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-void _AppendCurvePlaneIntersections(DPlane3dCR plane, bvector<CurveLocationDetailPair> &intersections, double tol) const override 
+void _AppendCurvePlaneIntersections(DPlane3dCR plane, bvector<CurveLocationDetailPair> &intersections, double tol) const override
     {
     AppendTolerancedPlaneIntersections (plane, this, *m_childCurveVector.get (), intersections, tol);
     }
@@ -256,7 +256,7 @@ void _AppendCurvePlaneIntersections(DPlane3dCR plane, bvector<CurveLocationDetai
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool _WireCentroid(double &length, DPoint3dR centroid, double fraction0, double fraction1) const override 
+bool _WireCentroid(double &length, DPoint3dR centroid, double fraction0, double fraction1) const override
     {
     if (DoubleOps::IsExact01 (fraction0, fraction1))
         {

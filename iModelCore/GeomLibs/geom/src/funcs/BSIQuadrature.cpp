@@ -450,7 +450,7 @@ void PopFrame ()
 @param [in t0 start of interval.
 @param [in] t1 end of interval.
 @params [in] numInterval number of intervals to use within t0..t1.
-@params [out] totalErrorBound 
+@params [out] totalErrorBound
 @return false if function.AnnounceIntermediateIntergral () returned false.
  @bsimethod
 +---------------+---------------+---------------+---------------+------*/
@@ -590,7 +590,7 @@ void BSITriangleQuadraturePoints::Init ()
     {
     mNumEval = 0;
     }
-    
+
 int BSITriangleQuadraturePoints::GetNumEval () const
     {
     return mNumEval;
@@ -680,7 +680,7 @@ static double s_strang7XY[][2] = {
     {0.47014206410511505,  0.05971587178976981},
     {0.47014206410511505,  0.47014206410511505}
     };
-    
+
 static double s_strang8W[] = {
     0.205950504760887,
     0.205950504760887,
@@ -704,7 +704,7 @@ static double s_strang8XY[][2] = {
     {0.037477420750088,  0.165409927389841}
 
     };
-    
+
 static double s_strang9W[] = {
     0.050844906370207,
     0.050844906370207,
@@ -733,7 +733,7 @@ static double s_strang9XY[][2] = {
     {0.053145049844816,  0.636502499121399},
     {0.053145049844816,  0.310352451033785}
     };
-    
+
 static double s_strang10W[] = {
     -0.149570044467670,
     0.175615257433204,
@@ -785,7 +785,7 @@ int BSITriangleQuadraturePoints::InitStrang (int selector)
         AddEval (a, 0.0, 0.5 * w);
         AddEval (a, a, 0.5 * w);
         AddEval (0.0, a, 0.5 * w);
-        mConvergencePower = 2.0;   
+        mConvergencePower = 2.0;
         }
     else if (selector == 3)
         {
@@ -835,7 +835,7 @@ int BSITriangleQuadraturePoints::InitStrang (int selector)
         for (int i = 0; i < 12; i++)
             AddEval (s_strang9XY[i][0], s_strang9XY[i][1], 0.5 * s_strang9W[i]);
         mConvergencePower = 2.0;
-        }    
+        }
      else if (selector == 10)
         {
         for (int i = 0; i < 13; i++)
@@ -861,10 +861,10 @@ void BSITriangleQuadraturePoints::AccumulateWeightedSums(BSIVectorIntegrandXY &f
             pSums[k] +=  mWi[i] * pF[k];
         }
     }
-    
+
 void BSITriangleQuadraturePoints::AccumulateWeightedSumsMapped
     (
-    BSIVectorIntegrandXY &function, double *pSums, 
+    BSIVectorIntegrandXY &function, double *pSums,
     double ax, double ay,
     double bx, double by,
     double cx, double cy

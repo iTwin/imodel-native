@@ -119,7 +119,7 @@ TrimCurve               **trimLoopPP
 
 MSBsplineSurfacePtr MSBsplineSurface::CreateTrimmedDisk (DEllipse3dCR ellipse)
     {
-    TrimCurve           *trimLoopP = NULL;    
+    TrimCurve           *trimLoopP = NULL;
     double c = 0.5;
     double r = 0.5;
     DEllipse3d unitCircle = DEllipse3d::From (
@@ -131,7 +131,7 @@ MSBsplineSurfacePtr MSBsplineSurface::CreateTrimmedDisk (DEllipse3dCR ellipse)
     MSBsplineCurve bcurve;
     bcurve.InitFromDEllipse3d (unitCircle);
     bspTrimCurve_allocateAndInsertCyclic (&trimLoopP, &bcurve);
-    
+
     DPoint3d poles[4];
     poles[0].SumOf (ellipse.center, ellipse.vector0, -1.0, ellipse.vector90, -1.0);
     poles[1].SumOf (ellipse.center, ellipse.vector0,  1.0, ellipse.vector90, -1.0);
@@ -144,7 +144,7 @@ MSBsplineSurfacePtr MSBsplineSurface::CreateTrimmedDisk (DEllipse3dCR ellipse)
     surface->holeOrigin = true;
     return surface;
     }
-    
+
 #ifdef Support_bsprsurf_blendSurface
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -680,7 +680,7 @@ double*             tolerance
         }
     return ERROR;
     }
-   
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -712,7 +712,7 @@ double              *tolerance
             *numPts = 0;
         return ERROR;
         }
-    
+
     if (NULL != numPts)
         *numPts = (int)numAccept;
 
@@ -724,7 +724,7 @@ double              *tolerance
 
     return SUCCESS;
     }
-    
+
 Public GEOMDLLIMPEXP int      bsprsurf_lineXSurface
 (
 DPoint3d            **intPts,       /* <= all intersection points on surface */
@@ -751,7 +751,7 @@ MSBsplineSurface    *surfaceP       /* => surface */
             *numPts = 0;
         return ERROR;
         }
-    
+
     if (NULL != numPts)
         *numPts = (int)numAccept;
 
@@ -761,7 +761,7 @@ MSBsplineSurface    *surfaceP       /* => surface */
     if (NULL != param)
         *param = DPoint2dOps::MallocAndCopy (intersectionUV);
 
-    return SUCCESS;    
+    return SUCCESS;
     }
 #endif
 /*---------------------------------------------------------------------------------**//**

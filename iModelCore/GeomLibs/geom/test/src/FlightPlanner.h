@@ -13,7 +13,7 @@
 // ON RETURN:
 // Each vertex has one entry in paths.
 // Each node has its vertex index as node->GetUserDataAsInt ()
-// 
+//
 struct ShortestPathContext
     {
     //! Array entry for recording distance to vertices.
@@ -248,7 +248,7 @@ struct ShortestPathContext
                 m_vertexData.push_back (VertexData (node, DBL_MAX, nullptr));
                 node->SetUserDataAsIntAroundVertex (index);
                 }
-            
+
             if ((size_t)index < m_vertexData.size ())
                 {
                 m_vertexData[(size_t)index].m_a = distance;
@@ -319,11 +319,11 @@ struct ShortestPathContext
         //      clear the path mask (only on the side traversed)
         //      clear the edgeClearMask on both sides.
         //      move to face successor (i.e. another vertex)
-        // 
+        //
         void TraceAndUnmarkEdges (VuP seedNode, VuMask pathMask, VuMask edgeClearMask, bvector<VuP> &reversePath, bvector<VuP> &growingForwardPath, bool pushMate = true)
             {
             reversePath.clear ();
-            
+
             for (VuP nodeAlongPath = seedNode; nodeAlongPath != nullptr;)
                 {
                 nodeAlongPath = nodeAlongPath->FindMaskAroundVertex (pathMask);

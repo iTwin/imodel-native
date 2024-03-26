@@ -68,16 +68,16 @@ void CheckRuledPierce (DPoint3dCP coffA, DPoint3dCP coffB, int order)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RuledBezier,Bilinear0)
     {
-    DPoint3d coffA[] = 
+    DPoint3d coffA[] =
         {
         {1,2},
-        {3,2}, 
+        {3,2},
         };
 
-    DPoint3d coffB[] = 
+    DPoint3d coffB[] =
         {
         {1,4},
-        {3,4}, 
+        {3,4},
         };
 
     CheckBilinear (coffA, coffB);
@@ -89,16 +89,16 @@ TEST(RuledBezier,Bilinear0)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RuledBezier,Bilinear1)
     {
-    DPoint3d coffA[] = 
+    DPoint3d coffA[] =
         {
         {1,2},
-        {3,-1}, 
+        {3,-1},
         };
 
-    DPoint3d coffB[] = 
+    DPoint3d coffB[] =
         {
         {1,5},
-        {4,4}, 
+        {4,4},
         };
 
     CheckBilinear (coffA, coffB);
@@ -110,14 +110,14 @@ TEST(RuledBezier,Bilinear1)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RuledBezier,Quad0)
     {
-    DPoint3d coffA[] = 
+    DPoint3d coffA[] =
         {
         {1,2},
-        {3,-1}, 
+        {3,-1},
         {5, -1}
         };
 
-    DPoint3d coffB[] = 
+    DPoint3d coffB[] =
         {
         {1,5},
         {4,4},
@@ -154,7 +154,7 @@ ValidatedDPoint3d ComputeMidEdgeBezierPoint (DPoint3dCR pointA, DVec3dCR _normal
     double aa;
     DVec3d vectorU = DVec3d::FromStartEnd (pointA, pointB);
     DVec3d vectorW = DVec3d::FromCrossProduct (_normalA, _normalB);
-        
+
     if (normalA.TryNormalize (_normalA, aa) && normalB.TryNormalize (_normalB, aa) && vectorW.TryNormalize (vectorW, aa))
         {
         // error if there is an inflection !!!
@@ -280,7 +280,7 @@ TEST(BezierTriangle,CreateQuadraticSurfaceFromNormals)
 #endif
 
 //! Given the normal at one end of an edge, compute a cubbic bezier point.
-//! The point is 
+//! The point is
 //! 1) In the plane of the edge and surface normal
 //! 2) located 1/3 the edge length along that direction.
 //
@@ -300,7 +300,7 @@ DPoint3d CubicBezierTargetPoint(DPoint3dCR pointA, DVec3dCR normalA, DPoint3dCR 
     }
 
 //! Given the normal at one end of an edge, compute a cubbic bezier point.
-//! The point is 
+//! The point is
 //! 1) In the plane of the edge and surface normal
 //! 2) located 1/3 the edge length along that direction.
 //! returns 10 points of triangle, starting with 4 points along AB edge.

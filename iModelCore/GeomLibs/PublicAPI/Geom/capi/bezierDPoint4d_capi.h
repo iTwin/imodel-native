@@ -1245,7 +1245,7 @@ bool saturateRight = true
 //! @param [in,out] pKnot knot array.
 //! @param [in] numPoint number of poles.
 //! @param [in] order spline order (one more than degree)
-//! @param [in] numLeadingKnot In customary storage (with extraneous leading knot), equal to {order}.  
+//! @param [in] numLeadingKnot In customary storage (with extraneous leading knot), equal to {order}.
 //! @param [in] leftPoleIndex index of leftmost pole of the {order} poles that apply.
 //! @param [in] leftKnotIndex index of the left end of the knot interval.  {order-1}
 //!                knots ENDING here are referenced as "left" of the interval. {order-1}

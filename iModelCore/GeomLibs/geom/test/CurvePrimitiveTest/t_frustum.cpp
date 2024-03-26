@@ -25,7 +25,7 @@ TEST(FrustumClip, Test1)
     double b1 = 2.0;
     rangeB.low = DPoint3d::From (b0, b0, b0);
     rangeB.high = DPoint3d::From (b1, b1, b1);
-    
+
     DPoint3d intersections[12][9];
     int intersectionCounts[12];
     int numIntersectionFace;
@@ -84,7 +84,7 @@ void testEllipticIntegralIteration_xLTy_div4 (double x, double y, double z, int 
         q = EllipticAngle (x, y, z);
         GEOMAPI_PRINTF ("%3d (xyz %.17g, %.17g, %.17g) (delta %.2le, %.2le, %.2le) (q %.17g) (dq %.2le)\n", i, x, y, z, x - x0, y - y0, z - z0, q, q - q0);
         }
-    }    
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -301,7 +301,7 @@ static bool testPushBackWithRealloc(bvector<DPoint3d>& v)
     if (v.size() != v.capacity())
         return false;   // no realloc, don't care
 
-    // push_back will reallocate. Does it safely access v[0] before it is freed? VS2010 did not! 
+    // push_back will reallocate. Does it safely access v[0] before it is freed? VS2010 did not!
     v.push_back(v[0]);
     Check::Exact(v.front(), v.back(), "push_back of first element with reallocate");
     return true;

@@ -63,7 +63,7 @@ struct BezierTriangle
 {
 unsigned int degree;
 static const int MaxDegree = 4;
-static const int MaxcontrolPoints = 15;   
+static const int MaxcontrolPoints = 15;
 DPoint3d m_controlPoints[MaxcontrolPoints];
 
 void SetLinear (DPoint3d *controlPoints);
@@ -168,8 +168,8 @@ void ComputeBasisFunctions (double u, double v, double* values);
 void ComputeBasisFunctions (double u, double v, double* values, double* ddu, double* ddv);
 public:
 BezierTriangle2 (
-DPoint3dCR xyz00, 
-DPoint3dCR xyz10, 
+DPoint3dCR xyz00,
+DPoint3dCR xyz10,
 DPoint3dCR xyz20,
 DPoint3dCR xyz01,
 DPoint3dCR xyz11,
@@ -182,12 +182,12 @@ BezierTriangle2 (DPoint3d *points);
 
 //! Degree 3 bezier triangle.
 //! 10 points.
-//!                  xyz03						
-//!    				  /\				
-//!  			     /  \						
-//!   			    /	 \ 						
+//!                  xyz03
+//!    				  /\
+//!  			     /  \
+//!   			    /	 \
 //!              xyz02  xyz12
-//!     	      /		   \				
+//!     	      /		   \
 //! 			 /	        \
 //!           xyz01 xyz11 xyz21
 //!            /              \
@@ -208,8 +208,8 @@ void ComputeBasisFunctions (double u, double v, double* values);
 void ComputeBasisFunctions (double u, double v, double* values, double* ddu, double* ddv);
 public:
 BezierTriangle3 (
-DPoint3dCR xyz00, 
-DPoint3dCR xyz10, 
+DPoint3dCR xyz00,
+DPoint3dCR xyz10,
 DPoint3dCR xyz20,
 DPoint3dCR xyz30,
 DPoint3dCR xyz01,

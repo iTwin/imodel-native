@@ -364,7 +364,7 @@ size_t IFacetOptions::EllipseStrokeCount (DEllipse3dCR ellipse) const
         }
     else
         chordCount = (int) ceil (fraction * numFullEllipseChord);
-    
+
     return chordCount;
     }
 
@@ -425,9 +425,9 @@ struct FacetOptions : public IFacetOptions
     double m_normalAngleTolerance;
 
     int m_maxPerBezier;
-    
+
     int m_minPerBezier;
-    
+
     int m_maxPerFace;
 
     bool m_edgeHiding;
@@ -467,7 +467,7 @@ struct FacetOptions : public IFacetOptions
     double m_paramDistanceScale;
 
     double m_toleranceDistanceScale;
-    
+
     bool m_smoothTriangleFlowRequired;
     bool m_bSurfSmoothTriangleFlowRequired;
     bool m_doSpatialLaplaceSmoothing;
@@ -577,7 +577,7 @@ struct FacetOptions : public IFacetOptions
             {return m_silhouetteOrigin;}
    void _SetSilhouetteOrigin (DPoint3d silhouetteOrigin) override
             {m_silhouetteOrigin = silhouetteOrigin;}
-                                                                                         
+
     // Get/Set pair for SilhouetteType.  Simple access to m_silhouetteType
    int _GetSilhouetteType () const override
             {return m_silhouetteType;}
@@ -710,7 +710,7 @@ void _SetDefaults () override
     m_omitBRepEdgeChainIds = false;
     // false is always faster, see Parasolid IR 8415939, but default to true so that current
     // behavior is maintained and disabling concurrent facetting can be feature gated
-    m_bRepConcurrentFacetting = true; 
+    m_bRepConcurrentFacetting = true;
     m_ignoredBRepFeatureSize = 0.0;
     m_maxPerFullEllipse = s_maxPerFullEllipse;
     }

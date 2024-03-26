@@ -34,11 +34,11 @@ void Dump (DPoint2d const &xy0, DPoint2d const &xy1)
 // std\:\ : vector = bvector
 // \ICrossProductToTargets\I = CrossProductToPoints
 // \INormalizeInPlace\I = Normalize
-// 
+//
 // \ICWPerpendicularVector\I = Rotate90CW
 // \ICCWPerpendicularVector\I = Rotate90CCW
 // \IMDistance\:\ : SafeDivideDistance = DoubleOps::ValidatedDivideDistance
-// 
+//
 // issues
 // 1) MVec2d (startPoint, endPoint) == > DVec2d::FromStartEnd (startPoint, endPoint)
 // ** not safe in gema -- can't distinguish from MVec2d (x,y)
@@ -336,7 +336,7 @@ struct DConvexPolygon2d
             std::sort (xy1.begin (), xy1.end (), DPoint2d::LexicalXYLessThan);
             hull.push_back (xy1[0]);    // This is sure to stay
             hull.push_back (xy1[1]);    // This one can be removed in the loop.
-                                        // first sweep creates upper hull . .. 
+                                        // first sweep creates upper hull . ..
 
             for (size_t i = 2; i < n; i++)
                 {
@@ -372,7 +372,7 @@ struct DConvexPolygon2d
 
 // For each hullPoints[i], form chord to hullPoints[i+step].
 // Compute points fractionally on the chord.
-// Evaluate 
+// Evaluate
 static bool CheckHullChords (DConvexPolygon2d hull, size_t step)
     {
     auto hullPoints = hull.Points ();

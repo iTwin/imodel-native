@@ -251,7 +251,7 @@ IGeometryPtr ArrayECSqlField::JsonECSqlValue::_GetGeometry() const
     int blobSize = -1;
     void const* fbBlob = _GetBlob(&blobSize);
 
-    return BentleyGeometryFlatBuffer::BytesToGeometry((Byte const*) fbBlob);
+    return BentleyGeometryFlatBuffer::BytesToGeometry((Byte const *)fbBlob, blobSize, true);
     }
 
 //---------------------------------------------------------------------------------------
@@ -522,7 +522,7 @@ IECSqlValue const& ArrayECSqlField::JsonECSqlValue::ArrayIteratorState::_GetCurr
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ArrayECSqlField::JsonECSqlValue::StructIteratorState::StructIteratorState(JsonECSqlValue const& val, ECN::ECPropertyIterableCR structMemberPropertyIterable) 
+ArrayECSqlField::JsonECSqlValue::StructIteratorState::StructIteratorState(JsonECSqlValue const& val, ECN::ECPropertyIterableCR structMemberPropertyIterable)
     : IIteratorState(), m_value(val), m_memberPropIterator(structMemberPropertyIterable.begin()), m_memberPropEndIterator(structMemberPropertyIterable.end())
     {}
 
@@ -534,7 +534,7 @@ void ArrayECSqlField::JsonECSqlValue::StructIteratorState::_MoveToNext(bool onIn
     //iterator is already initialized at construction, so don't increment it here
     if (!onInitializingIterator)
         ++m_memberPropIterator;
- 
+
     if (_IsAtEnd())
         return;
 

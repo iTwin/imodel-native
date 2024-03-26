@@ -1,0 +1,20 @@
+{"parityRegion":[
+ {"loop":[
+  {"arc":
+   {"center":[-5,0,0],
+    "vectorX":[2,0,0],
+    "vectorY":[0,2,0],
+    "sweepStartEnd":[0,360]
+   }
+  }]
+ },
+ {"loop":[
+  {"arc":
+   {"center":[-5,0,0],
+    "vectorX":[1,0,0],
+    "vectorY":[0,1,0],
+    "sweepStartEnd":[0,360]
+   }
+  }]
+ }]
+}

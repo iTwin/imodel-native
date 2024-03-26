@@ -126,14 +126,14 @@ void BuildNewFacets (double &maxChange)
         oldSectorToNewInteriorFace.push_back (MTG_NULL_NODEID);
         }
     MTGARRAY_END_SET_LOOP(nodeA, oldGraph)
-    // Step 2: make each new face 
+    // Step 2: make each new face
     MTGARRAY_SET_LOOP (oldFaceSeed, oldGraph)
         {
         if (!visitMask.IsSetAt (oldFaceSeed)
             && !oldGraph->HasMaskAt(oldFaceSeed, MTG_EXTERIOR_MASK))
             {
             visitMask.SetAroundFace (oldFaceSeed);
-            MTGNodeId newFaceSeed = MTG_NULL_NODEID;    // 
+            MTGNodeId newFaceSeed = MTG_NULL_NODEID;    //
             MTGARRAY_FACE_LOOP(oldNodeB, oldGraph, oldFaceSeed)
                 {
                 DPoint3d xyz = NewXYZInSector (oldFacets, oldNodeB);
@@ -393,7 +393,7 @@ GEOMDLLIMPEXP PolyfaceHeaderPtr MTGFacets_CloneCatmullClarkSubdivision(MTGFacets
             else if (edgePointIndex >= 0)
                 {
                 DPoint3d xyzOldMidEdge = meshBPoint[(uint32_t)edgePointIndex];
-                // For an exterior edge, act as if the outside has a sliver 
+                // For an exterior edge, act as if the outside has a sliver
                 // quad whose centroid is mid-edge
                 xyzA.SumOf(
                     ConditionalXYZ(meshBPoint, oldNodeToPointInFace[nodeA], -1, xyzOldMidEdge), 0.5,
@@ -721,7 +721,7 @@ struct SubdivisionData
             return out;
             }
         return nullptr;
-        }   
+        }
 };
 
 

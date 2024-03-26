@@ -62,7 +62,7 @@ void TestTrackingCurveOffset (char const *message, ICurvePrimitiveR curve0, doub
             Check::True (strokeLength1A < length1, "strokeLength < length");
             }
         }
-    
+
     Check::EndScope ();
 
     }
@@ -99,11 +99,11 @@ TEST(CurvePrimitive, Tracking)
                 );
     auto refDist = 1.0;
     TestTrackingCurveOffset ("Spiral right", *curve2, dr, 0.0, true, refDist);
-    
+
     }
 #ifdef TestClothoidSeres
 // EDL June 5, 2020 This works, but is not applied anywhere.
-// series- based clothoid rocks.    
+// series- based clothoid rocks.
    // reltolR = relative tolerance for fraction of R.
 void EvaluateClothoidTerms(double s, double L, double R, bvector<double> &terms, uint32_t minTerm, uint32_t maxTerm, double relTolR)
     {
@@ -205,7 +205,7 @@ TEST(ClothoidSeries, BareTerms)
                 // On imodel tree with CurvePrimitiveSpiralCurve1 implementation, the curve evaluations
                 //   used to be just as good.
                 // But on production code on connect, length is computed from the bspline and is less precise, so ignore it.
-                printf (" (%.14lg) (%d)  (x %.14g    %8.1le %8.1le)      (y %.14g    %8.1le  %8.1le)\n", 
+                printf (" (%.14lg) (%d)  (x %.14g    %8.1le %8.1le)      (y %.14g    %8.1le  %8.1le)\n",
                         f, (int) terms.size (),
                         x, dx, ex, y, dy, ey);
                 Check::LessThanOrEqual(ex, relTol);
@@ -246,7 +246,7 @@ TEST(Spiral, CommonPartsWithReversal)
             pathB->SetPath(newCV);
             bvector<PathLocationDetailPair> intervalsA, intervalsB;
             CurveVectorWithDistanceIndex::FindCommonSubPaths(*pathA, *pathB, intervalsA, intervalsB, true, false);
-            
+
             auto oldNoisy = Check::SetMaxVolume(s_maxVolume);
             size_t count = 0;
             for (size_t i = 0; i < intervalsA.size(); i++)

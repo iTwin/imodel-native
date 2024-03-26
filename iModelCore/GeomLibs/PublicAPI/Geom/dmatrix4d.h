@@ -589,10 +589,10 @@ int             i
 //!
 //! Copy data from a matrix rows to DPoint4d structures.
 //!
-//! @param [out] row0 row 0 data. 
-//! @param [out] row1 row 1 data. 
-//! @param [out] row2 row 2 data. 
-//! @param [out] row3 row 3 data. 
+//! @param [out] row0 row 0 data.
+//! @param [out] row1 row 1 data.
+//! @param [out] row2 row 2 data.
+//! @param [out] row3 row 3 data.
 //!
 void GetRows
 (
@@ -605,10 +605,10 @@ DPoint4dR       row3
 //!
 //! Copy data from a matrix columns to DPoint4d structures.
 //!
-//! @param [out] column0 column 0 data. 
-//! @param [out] column1 column 1 data. 
-//! @param [out] column2 column 2 data. 
-//! @param [out] column3 column 3 data. 
+//! @param [out] column0 column 0 data.
+//! @param [out] column1 column 1 data.
+//! @param [out] column2 column 2 data.
+//! @param [out] column3 column 3 data.
 //!
 void GetColumns
 (

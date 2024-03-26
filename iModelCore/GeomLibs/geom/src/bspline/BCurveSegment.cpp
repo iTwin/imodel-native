@@ -63,7 +63,7 @@ void BCurveSegment::CopyFrom (BCurveSegmentCR source, TransformCR matrix)
     matrix.Multiply (m_poles, source.m_poles, (int)m_order);
     }
 
-void BCurveSegment::SaturateKnots ()    
+void BCurveSegment::SaturateKnots ()
     {
     bsiBezier_saturateKnotsInInterval ((double*)m_poles, 4, m_knots, (int)m_order, m_isNullU);
     }

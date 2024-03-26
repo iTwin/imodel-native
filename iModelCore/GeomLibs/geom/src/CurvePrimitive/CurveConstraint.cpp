@@ -81,7 +81,7 @@ CurveConstraint CurveConstraint::CreatePerpendicularNear (ICurvePrimitiveCP curv
     curve->FractionToPoint (fraction, xyz);
     return CurveConstraint (Type::PerpendicularNear, CurveLocationDetail (curve, fraction, xyz));
     }
-    
+
 CurveConstraint CurveConstraint::CreateTangent (ICurvePrimitiveCP curve, double fraction)
     {
     DPoint3d xyz;
@@ -214,7 +214,7 @@ ConstructionContext (bvector<CurveConstraint> &constraints) : m_constraints(cons
 
 CurveConstraintCP Deref (size_t index) const { return index < m_constraints.size () ? &m_constraints[index] : nullptr;}
 
-bool BuildConstraintMatchTable (ConstraintMatchTable &matchTable, bool ordered = false) const   
+bool BuildConstraintMatchTable (ConstraintMatchTable &matchTable, bool ordered = false) const
     {
     matchTable.Clear ();
     uint32_t nextK0 = 0;
@@ -671,7 +671,7 @@ TransformCR localToWorld
     DPoint3d centerOut[MaxOut];
     double   radiusOut[MaxOut];
     int numOut;
-    
+
     if (numCircle == 3)
         {
         bsiGeom_circleTTTCircleConstruction
@@ -818,7 +818,7 @@ bvector<ConstructionContext::ITryConstructionPtr>
     new CircleConstructions::FromTangentTangentTangent (),
     new CircleConstructions::FromCenterPointFrame (),
     new CircleConstructions::FromCenterRadiusFrame ()
-    
+
     };
 
 void ConstrainedConstruction::ConstructLines (bvector<CurveConstraint> &constraints, bvector<ICurvePrimitivePtr> &result)

@@ -146,9 +146,9 @@ ValidatedDSegment1d DSegment1d::NonZeroDirectedOverlap (DSegment1dCR other) cons
     ValidatedDSegment1d result = DirectedOverlap (other);
     if (result.IsValid () && result.Value ().Length () <= 0.0)
         result.SetIsValid (false);
-    return result;  
+    return result;
     }
-    
+
 bool DSegment1d::NonZeroFractionalDirectedOverlap (DSegment1dCR segmentA, DSegment1dCR segmentB, DSegment1dR fractionA, DSegment1dR fractionB)
     {
     auto overlap0 = segmentA.DirectedOverlap (segmentB);
@@ -164,5 +164,5 @@ bool DSegment1d::NonZeroFractionalDirectedOverlap (DSegment1dCR segmentA, DSegme
     fractionB = DSegment1d (0,0);
     return false;
     }
-    
+
 END_BENTLEY_GEOMETRY_NAMESPACE

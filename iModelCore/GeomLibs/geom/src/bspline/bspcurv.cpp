@@ -1421,7 +1421,7 @@ int             closed
             tangent->z = (tangent->z - point->z * dWeightDu)/h;
             }
         }
-    
+
     POP_STATIC_ANALYSIS_WARNING
     }
 
@@ -1899,7 +1899,7 @@ double          uFinal
 |   Curve Routines - acting on multiple curves                          |
 +----------------------------------------------------------------------*/
 //--------------------------------------------------------------------------------------
-//   contiguous determines how the pole arrays are combined 
+//   contiguous determines how the pole arrays are combined
 //
 //   CONTINUITY_NONE:  all poles of curve1, all poles of curve2.
 //   In all other cases, outCurve has one less pole than the two inputs
@@ -2724,7 +2724,7 @@ MSBsplineCurve  *in
     for (i = 0; i < numRemove; i++)
         {
         size = numKnots - knotIndexP[i] - removeMultsP[i];
-        if(size==0) 
+        if(size==0)
             break;
         memcpy (out->knots+knotIndexP[i], out->knots+knotIndexP[i]+removeMultsP[i], size*sizeof(double));
 

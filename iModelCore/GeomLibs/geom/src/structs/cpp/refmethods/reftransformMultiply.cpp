@@ -18,7 +18,7 @@ static bool ResizeDestination (bvector<Tr> &dest, bvector<Ts> const &source)
         dest.clear ();
         return false;
         }
-   else 
+   else
         {
         dest.resize (n);
         }
@@ -26,7 +26,7 @@ static bool ResizeDestination (bvector<Tr> &dest, bvector<Ts> const &source)
     }
 
 /*-----------------------------------------------------------------*//**
-* @description Return (just) the X component of transform*point, 
+* @description Return (just) the X component of transform*point,
 * @bsimethod
 +----------------------------------------------------------------------*/
 double Transform::MultiplyX (DPoint3dCR point) const
@@ -38,7 +38,7 @@ double Transform::MultiplyX (DPoint3dCR point) const
     }
 
 /*-----------------------------------------------------------------*//**
-* @description Return (just) the Y component of transform*point, 
+* @description Return (just) the Y component of transform*point,
 * @bsimethod
 +----------------------------------------------------------------------*/
 double Transform::MultiplyY (DPoint3dCR point) const
@@ -50,7 +50,7 @@ double Transform::MultiplyY (DPoint3dCR point) const
     }
 
 /*-----------------------------------------------------------------*//**
-* @description Return (just) the Z component of transform*point, 
+* @description Return (just) the Z component of transform*point,
 * @bsimethod
 +----------------------------------------------------------------------*/
 double Transform::MultiplyZ (DPoint3dCR point) const
@@ -142,7 +142,7 @@ DPoint2dCR point
         result = point;
         return;
         }
-    
+
     DPoint3d  inPoint;
     inPoint.x = point.x;
     inPoint.y = point.y;
@@ -395,7 +395,7 @@ DPoint3dR point
     {
     if (point.IsDisconnect ())
         return;
-    
+
     DPoint3d  inPoint;
 
     inPoint = point;
@@ -555,7 +555,7 @@ DPoint3dCR point
         outPoint.InitDisconnect ();
         return;
         }
-    
+
     DPoint3d inPoint;
     inPoint = point;
     outPoint.x =    form3d[0][0] * inPoint.x
@@ -662,7 +662,7 @@ DPoint3dCR point
 ) const
     {
     if (point.IsDisconnect ())
-        outPoint.InitDisconnect ();    
+        outPoint.InitDisconnect ();
     DPoint3d  inPoint;
     inPoint = point;
     outPoint.x =    form3d[0][0] * inPoint.x
@@ -879,19 +879,19 @@ void Transform::Multiply (bvector<DPoint2d> & out, bvector<DPoint2d> const &in) 
         for (size_t i = 0, n = in.size (); i < n; i++)
             Multiply (out[i], in[i]);
     }
-    
+
 void Transform::Multiply (bvector<DPoint3d> & out, bvector<DPoint2d> const &in) const
     {
     if (ResizeDestination (out, in))
         for (size_t i = 0, n = in.size (); i < n; i++)
             Multiply (out[i], in[i]);
-    }    
+    }
 void Transform::Multiply (bvector<DPoint2d> & out, bvector<DPoint3d> const &in) const
     {
     if (ResizeDestination (out, in))
         for (size_t i = 0, n = in.size (); i < n; i++)
             Multiply (out[i], in[i]);
-    }    
+    }
 /*-----------------------------------------------------------------*//**
 * Multiplies this instance times each column vector in inPoint and places the
 * resulting points in outPoint.
@@ -1153,12 +1153,12 @@ bool Transform::SolveArray (bvector<DPoint3d> &out, bvector<DPoint3d> const &in)
         return SolveArray (&out[0], &in[0], (int) in.size ());
     return false;
     }
-    
+
 bool RotMatrix::SolveArray (bvector<DPoint3d> &out, bvector<DPoint3d> const &in) const
     {
     if (ResizeDestination (out, in))
         return SolveArray (&out[0], &in[0], (int) in.size ());
-    return false;    
+    return false;
     }
 
 // Remark:  put RotMatrix array mutlipliers here to consolidate size handling.
@@ -1171,7 +1171,7 @@ void RotMatrix::Multiply (bvector<DPoint3d> &out, bvector<DPoint3d> const &in) c
         for (size_t i = 0, n = in.size (); i < n; i++)
             Multiply (out[i], in[i]);
     }
-    
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -1207,7 +1207,7 @@ void Transform::Multiply (DEllipse3dR ellipse) const
     MultiplyMatrixOnly (ellipse.vector0);
     MultiplyMatrixOnly (ellipse.vector90);
     }
-    
+
 void Transform::Multiply (DEllipse3dR dest, DEllipse3dCR source) const
     {
     Multiply (dest.center, source.center);
@@ -1241,7 +1241,7 @@ void Transform::Multiply (DSegment3dR segment) const
     Multiply (segment.point[0]);
     Multiply (segment.point[1]);
     }
-    
+
 void Transform::Multiply (DSegment3dR dest, DSegment3dCR source) const
     {
     Multiply (dest.point[0], source.point[0]);
@@ -1253,7 +1253,7 @@ void Transform::Multiply (DRay3dR ray) const
     Multiply (ray.origin);
     MultiplyMatrixOnly (ray.direction);
     }
-    
+
 void Transform::Multiply (DRay3dR dest, DRay3dCR source) const
     {
     Multiply (dest.origin, source.origin);
