@@ -9,7 +9,7 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
-// @bsiclass
+// @bsimethod
 //=======================================================================================
 RelatedInstanceFinder::Results RelatedInstanceFinder::FindAll(ECInstanceKey thisInstanceKey, DirectionFilter direction, BentleyStatus* result) const {
     BeMutexHolder lock(m_mutex);
@@ -55,8 +55,9 @@ RelatedInstanceFinder::Results RelatedInstanceFinder::FindAll(ECInstanceKey this
     }
     return results;
 }
+
 //=======================================================================================
-// @bsiclass
+// @bsimethod
 //=======================================================================================
 BentleyStatus RelatedInstanceFinder::InitializeRelationshipCache() const {
     BeMutexHolder lock(m_mutex);
@@ -105,7 +106,7 @@ BentleyStatus RelatedInstanceFinder::InitializeRelationshipCache() const {
 }
 
 //=======================================================================================
-// @bsiclass
+// @bsimethod
 //=======================================================================================
 BentleyStatus RelatedInstanceFinder::FindRelevantRelationshipInfo(ECN::ECClassId classId, std::vector<std::tuple<ECSqlStatement*,ECRelatedInstanceDirection>>& results) const {
     if (m_relCache == nullptr) {
@@ -142,4 +143,154 @@ BentleyStatus RelatedInstanceFinder::FindRelevantRelationshipInfo(ECN::ECClassId
     return SUCCESS;
 }
 
+//=======================================================================================
+// @bsimethod
+//=======================================================================================
+RelatedInstanceFinder::StandaloneIterator RelatedInstanceFinder::StandaloneIterator::Make(RelatedInstanceFinder const& finder, ECN::ECClassId classId){
+    BeMutexHolder lock(finder.m_mutex);
+    std::vector<std::tuple<ECSqlStatement*, ECN::ECRelatedInstanceDirection>> relationships;
+    if (SUCCESS != finder.FindRelevantRelationshipInfo(classId, relationships)){
+        return StandaloneIterator();
+    }
+
+    StandaloneIterator it;
+    it.m_state = std::make_unique<InternalState>();
+    for (auto& relationship : relationships) {
+        const auto stmt = std::get<0>(relationship);
+        const auto relDir = std::get<1>(relationship);
+        auto stmtCopy = std::make_unique<ECSqlStatement>();
+        if (ECSqlStatus::Success != stmtCopy->Prepare(finder.m_ecdb, stmt->GetECSql())){
+            return StandaloneIterator();
+        }
+        it.m_state->m_relationships.push_back(std::make_tuple(std::move(stmtCopy), relDir));
+    }
+    it.m_state->m_classId = classId;
+    it.m_state->m_init = false;
+    return it;
+}
+
+//=======================================================================================
+// @bsimethod
+//=======================================================================================
+bool RelatedInstanceFinder::StandaloneIterator::Find(ECInstanceId id, DirectionFilter direction) {
+    if (m_state == nullptr){
+        return false;
+    }
+    Reset();
+    m_state->m_argDirection = direction;
+    m_state->m_argId = id;
+    return true;
+}
+
+//=======================================================================================
+// @bsimethod
+//=======================================================================================
+RelatedInstanceFinder::StandaloneIterator::StandaloneIterator(StandaloneIterator&& rhs): m_state(std::move(rhs.m_state)) {}
+
+//=======================================================================================
+// @bsimethod
+//=======================================================================================
+RelatedInstanceFinder::StandaloneIterator& RelatedInstanceFinder::StandaloneIterator::operator = (StandaloneIterator&& rhs){
+    if (this != &rhs)
+        m_state = std::move(rhs.m_state);
+    return *this;
+}
+
+//=======================================================================================
+// @bsimethod
+//=======================================================================================
+bool RelatedInstanceFinder::StandaloneIterator::Eof() const {
+    if (m_state == nullptr){
+        return false;
+    }
+    if(!m_state->m_init)
+        return false;
+
+    return m_state->m_cur == m_state->m_relationships.end();
+}
+
+//=======================================================================================
+// @bsimethod
+//=======================================================================================
+bool RelatedInstanceFinder::StandaloneIterator::PrepareNextRelationship(){
+    if (m_state == nullptr){
+        return false;
+    }
+
+    if (!m_state->m_init) {
+        m_state->m_init = true;
+        m_state->m_cur = m_state->m_relationships.begin();
+    } else {
+        ++m_state->m_cur;
+    }
+
+    if (m_state->m_cur == m_state->m_relationships.end()) {
+        return false;
+    }
+
+    auto stmt = std::get<0>(*m_state->m_cur).get();
+    auto relDir = std::get<1>(*m_state->m_cur);
+
+    const auto resolveDir = (int)relDir & (int)m_state->m_argDirection;
+    if (!resolveDir)
+        return PrepareNextRelationship();
+
+    stmt->Reset();
+    stmt->ClearBindings();
+
+    const auto isForward = (resolveDir & (int)ECRelatedInstanceDirection::Forward) > 0;
+    const auto isBackward = (resolveDir & (int)ECRelatedInstanceDirection::Backward) > 0;
+
+    stmt->BindInt(1, isForward);
+    stmt->BindId(2, m_state->m_argId);
+    stmt->BindInt(3, isBackward);
+    stmt->BindId(4, m_state->m_argId);
+    return true;
+}
+
+//=======================================================================================
+// @bsimethod
+//=======================================================================================
+RelatedInstanceFinder::Result RelatedInstanceFinder::Result::Empty() {
+    static auto s_empty = Result(ECInstanceKey(ECClassId(0ULL), ECInstanceId(0ULL)) , ECClassId(0ULL), ECRelatedInstanceDirection::Forward);
+    return s_empty;
+}
+
+//=======================================================================================
+// @bsimethod
+//=======================================================================================
+bool RelatedInstanceFinder::StandaloneIterator::Step(){
+    if (m_state == nullptr){
+        return false;
+    }
+    m_state->m_result = Result::Empty();
+    if (!m_state->m_init) {
+        PrepareNextRelationship();
+    }
+    if (m_state->m_cur == m_state->m_relationships.end())
+        return false;
+
+    auto stmt = std::get<0>(*m_state->m_cur).get();
+    if(stmt->Step() == BE_SQLITE_ROW) {
+        const auto direction = (ECRelatedInstanceDirection)stmt->GetValueInt(0);
+        const auto relationshipId = stmt->GetValueId<ECClassId>(1);
+        const auto otherEnd = ECInstanceKey(stmt->GetValueId<ECClassId>(3), stmt->GetValueId<ECInstanceId>(2));
+        m_state->m_result = Result(otherEnd, relationshipId, direction);
+        return true;
+    } else {
+        if (PrepareNextRelationship())
+            return Step();
+    }
+    return false;
+}
+
+//=======================================================================================
+// @bsimethod
+//=======================================================================================
+void RelatedInstanceFinder::StandaloneIterator::Reset(){
+    if (m_state == nullptr){
+        return;
+    }
+    m_state->m_init = false;
+}
 END_BENTLEY_SQLITE_EC_NAMESPACE

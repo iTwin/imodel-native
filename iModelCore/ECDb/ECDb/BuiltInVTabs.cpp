@@ -154,13 +154,14 @@ DbResult ClassPropsModule::Connect(DbVirtualTable*& out, Config& conf, int argc,
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-bool RelatedInstanceModule::RelatedInstanceTable::RelatedInstanceCursor::Eof() { return m_iRowid < 1 || m_iRowid > (int64_t)m_results.size() ; }
+bool RelatedInstanceModule::RelatedInstanceTable::RelatedInstanceCursor::Eof() { return m_resultIt.Eof(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult RelatedInstanceModule::RelatedInstanceTable::RelatedInstanceCursor::Next() {
     ++m_iRowid;
+    m_resultIt.Step();
     return BE_SQLITE_OK;
 }
 
@@ -171,16 +172,16 @@ DbResult RelatedInstanceModule::RelatedInstanceTable::RelatedInstanceCursor::Get
 
     switch( (Columns)i ) {
         case Columns::ecInstanceId:
-            ctx.SetResultInt64(m_results[m_iRowid - 1].GetRelatedKey().GetInstanceId().GetValueUnchecked());
+            ctx.SetResultInt64(m_resultIt.GetResult().GetRelatedKey().GetInstanceId().GetValueUnchecked());
             return BE_SQLITE_OK;
         case Columns::ecClassId:
-            ctx.SetResultInt64(m_results[m_iRowid - 1].GetRelatedKey().GetClassId().GetValueUnchecked());
+            ctx.SetResultInt64(m_resultIt.GetResult().GetRelatedKey().GetClassId().GetValueUnchecked());
             return BE_SQLITE_OK;
         case Columns::relClassId:
-            ctx.SetResultInt64(m_results[m_iRowid - 1].GetRelationshipClassId().GetValueUnchecked());
+            ctx.SetResultInt64(m_resultIt.GetResult().GetRelationshipClassId().GetValueUnchecked());
             return BE_SQLITE_OK;
         case Columns::direction:
-            ctx.SetResultInt((int)m_results[m_iRowid - 1].GetDirection());
+            ctx.SetResultInt((int)m_resultIt.GetResult().GetDirection());
             return BE_SQLITE_OK;
     }
     return BE_SQLITE_ERROR;
@@ -223,7 +224,11 @@ DbResult RelatedInstanceModule::RelatedInstanceTable::RelatedInstanceCursor::Fil
         m_dirFilter = RelatedInstanceFinder::DirectionFilter::Both;
     }
     auto&  finder = reinterpret_cast<ECDbCR>(GetTable().GetModule().GetDb()).GetRelatedInstanceFinder();
-    m_results = finder.FindAll(ECInstanceKey(m_classId, m_id), m_dirFilter);
+    if (!m_resultIt.GetClassId().IsValid())
+        m_resultIt = RelatedInstanceFinder::StandaloneIterator::Make(finder, m_classId);
+        
+    m_resultIt.Find(m_id, m_dirFilter);
+    m_resultIt.Step();
     m_iRowid = 1;
     return BE_SQLITE_OK;
 }

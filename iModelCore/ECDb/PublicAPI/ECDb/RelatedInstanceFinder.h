@@ -10,6 +10,7 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct RelatedInstanceFinder final {
+    friend struct StandaloneIterator;
     enum class DirectionFilter {
         Forward = ECN::ECRelatedInstanceDirection::Forward,
         Backward = ECN::ECRelatedInstanceDirection::Backward,
@@ -21,13 +22,52 @@ struct RelatedInstanceFinder final {
             ECInstanceKey m_key;
             ECN::ECClassId m_relationshipClassId;
             ECN::ECRelatedInstanceDirection m_direction;
+
+
         public:
             Result(ECInstanceKey const& key, ECN::ECClassId relationshipClassId, ECN::ECRelatedInstanceDirection direction)
                 :m_key(key), m_relationshipClassId(relationshipClassId), m_direction(direction){}
+            Result() { *this = Empty(); }
             ECInstanceKey const& GetRelatedKey() const { return m_key; }
             ECN::ECClassId GetRelationshipClassId() const { return m_relationshipClassId; }
             ECN::ECRelatedInstanceDirection GetDirection() const { return m_direction; }
+            bool IsValid() const { return m_key.IsValid() && m_relationshipClassId.IsValid(); }
+            static Result Empty();
     };
+    struct StandaloneIterator {
+        private:
+            using RelationshipVector = std::vector<std::tuple<std::unique_ptr<ECSqlStatement>, ECN::ECRelatedInstanceDirection>>;
+            struct InternalState {
+                public:
+                InternalState(){}
+                RelationshipVector m_relationships;
+                RelationshipVector::const_iterator m_cur;
+                ECN::ECClassId m_classId;
+                ECInstanceId m_argId;
+                DirectionFilter m_argDirection;
+                Result m_result;
+                bool m_init;
+            };
+            std::unique_ptr<InternalState> m_state;
+
+            bool PrepareNextRelationship();
+
+        public:
+            StandaloneIterator(){}
+            StandaloneIterator(StandaloneIterator const&) = delete;
+            StandaloneIterator& operator=(StandaloneIterator const&) = delete;
+            ECDB_EXPORT StandaloneIterator(StandaloneIterator&&);
+            ECDB_EXPORT StandaloneIterator& operator=(StandaloneIterator&&);
+            ECDB_EXPORT bool Find(ECInstanceId id, DirectionFilter direction);
+            ECDB_EXPORT void Reset();
+            ECDB_EXPORT bool Step();
+            ECDB_EXPORT bool Eof() const;
+            ECN::ECClassId GetClassId() const { return m_state != nullptr ? m_state->m_classId : ECN::ECClassId(0ull); };
+            Result GetResult() const { return m_state != nullptr ? m_state->m_result : Result::Empty(); };
+
+            ECDB_EXPORT static StandaloneIterator Make(RelatedInstanceFinder const& finder, ECN::ECClassId id);
+    };
+
     using Results = std::vector<Result>;
 
 private:

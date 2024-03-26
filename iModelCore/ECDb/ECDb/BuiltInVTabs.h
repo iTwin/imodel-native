@@ -65,7 +65,7 @@ struct RelatedInstanceModule : ECDbModule {
                 ECClassId m_classId;
                 RelatedInstanceFinder::DirectionFilter m_dirFilter;
                 Utf8String m_delimiter;
-                RelatedInstanceFinder::Results m_results;
+                RelatedInstanceFinder::StandaloneIterator m_resultIt;
 
             public:
                 RelatedInstanceCursor(RelatedInstanceTable& vt): ECDbCursor(vt){}
