@@ -577,13 +577,13 @@ InstanceFinder::SearchResults InstanceFinder::FindInstances(ECDbCR ecdb, BeIdSet
     bset<ECInstanceKey> recordedEntities;
 
     Statement baseClassStmt;
-    const auto classIdsVir = IdSet<BeInt64Id>(std::move(classIds));
+    const auto classIdsVir = std::make_shared<IdSet<BeInt64Id>>(std::move(classIds));
     baseClassStmt.Prepare(ecdb, "SELECT ClassId FROM ec_cache_ClassHierarchy WHERE BaseClassId=? AND InVirtualSet(?,ClassId)");
     auto filterByBaseClasses = [&](ECN::ECClassId baseClassId) {
         baseClassStmt.Reset();
         baseClassStmt.ClearBindings();
         baseClassStmt.BindId(1, baseClassId);
-        baseClassStmt.BindVirtualSet(2, classIdsVir);
+        baseClassStmt.BindVirtualSet(2, *classIdsVir);
         BeIdSet filteredIds;
         while(baseClassStmt.Step() == BE_SQLITE_ROW){
             filteredIds.insert(baseClassStmt.GetValueId<BeInt64Id>(0));
@@ -596,40 +596,46 @@ InstanceFinder::SearchResults InstanceFinder::FindInstances(ECDbCR ecdb, BeIdSet
     //3. fk with nav property classid in listed classes
     for (auto entityClass : rootClasses) {
         auto searchClasses = filterByBaseClasses(entityClass->GetId());
-        if (searchClasses->empty()){
-            continue;
-        }
-        const std::string entitySql = "SELECT ECClassId, ECInstanceId FROM " + std::string(entityClass->GetFullName()) + " WHERE InVirtualSet(?, ECClassId)";
-        auto entityStmt = stmtCache.GetPreparedStatement(ecdb, entitySql.c_str());
-        auto& entityKeys = entityKeyMap[entityClass->GetId()];
-        entityStmt->BindVirtualSet(1, searchClasses);
-        while (entityStmt->Step() == BE_SQLITE_ROW) {
-            entityKeys.emplace_back(ECInstanceKey(entityStmt->GetValueId<ECClassId>(0), entityStmt->GetValueId<ECInstanceId>(1)));
-            recordedEntities.insert(entityKeys.back());
-        }
-        if (entityKeys.empty()) {
-            entityKeyMap.erase(entityClass->GetId());
-        }
-
-        if (entityClass->IsRelationshipClass()) {
-            auto& relationKeys = linkTableKeyMap[entityClass->GetId()];
-            const std::string linkTableSql = "SELECT ECClassId, ECInstanceId, SourceECClassId, SourceECInstanceId, TargetECClassId, TargetECInstanceId FROM " + std::string(entityClass->GetFullName()) + " WHERE InVirtualSet(:idset, SourceECClassId) OR InVirtualSet(:idset, TargetECClassId)";
-            auto linkTableStmt = stmtCache.GetPreparedStatement(ecdb, linkTableSql.c_str());
-            linkTableStmt->BindVirtualSet(1, searchClasses);
-            while (linkTableStmt->Step() == BE_SQLITE_ROW) {
-                auto relationKey = ECInstanceKey(linkTableStmt->GetValueId<ECClassId>(0), linkTableStmt->GetValueId<ECInstanceId>(1));
-                if (recordedEntities.find(relationKey) != recordedEntities.end())
-                    continue;
-
-                recordedEntities.insert(relationKey);
-                relationKeys.emplace_back(
-                    LinkTableRelation(
-                        std::move(relationKey),
-                        ECInstanceKey(linkTableStmt->GetValueId<ECClassId>(2), linkTableStmt->GetValueId<ECInstanceId>(3)),
-                        ECInstanceKey(linkTableStmt->GetValueId<ECClassId>(4), linkTableStmt->GetValueId<ECInstanceId>(5))));
+        if (!searchClasses->empty()){
+            const std::string entitySql = "SELECT ECClassId, ECInstanceId FROM " + std::string(entityClass->GetFullName()) + " WHERE InVirtualSet(?, ECClassId)";
+            auto entityStmt = stmtCache.GetPreparedStatement(ecdb, entitySql.c_str());
+            auto& entityKeys = entityKeyMap[entityClass->GetId()];
+            entityStmt->BindVirtualSet(1, searchClasses);
+            while (entityStmt->Step() == BE_SQLITE_ROW) {
+                entityKeys.emplace_back(ECInstanceKey(entityStmt->GetValueId<ECClassId>(0), entityStmt->GetValueId<ECInstanceId>(1)));
+                recordedEntities.insert(entityKeys.back());
             }
-            if (relationKeys.empty()) {
-                linkTableKeyMap.erase(entityClass->GetId());
+            if (entityKeys.empty()) {
+                entityKeyMap.erase(entityClass->GetId());
+            }
+        }
+        if (entityClass->IsRelationshipClass()) {
+            auto linkTableRel = entityClass->GetRelationshipClassCP();
+            if (!filterByBaseClasses(linkTableRel->GetSource().GetConstraintClasses().front()->GetId())->empty() ||
+                !filterByBaseClasses(linkTableRel->GetTarget().GetConstraintClasses().front()->GetId())->empty()) {
+                auto& relationKeys = linkTableKeyMap[entityClass->GetId()];
+                const std::string linkTableSql =
+                        "SELECT ECClassId, ECInstanceId, SourceECClassId, SourceECInstanceId, TargetECClassId, TargetECInstanceId FROM "
+                    +   std::string(entityClass->GetFullName())
+                    +   " WHERE InVirtualSet(:idset, SourceECClassId) OR InVirtualSet(:idset, TargetECClassId)";
+
+                auto linkTableStmt = stmtCache.GetPreparedStatement(ecdb, linkTableSql.c_str());
+                linkTableStmt->BindVirtualSet(1, classIdsVir);
+                while (linkTableStmt->Step() == BE_SQLITE_ROW) {
+                    auto relationKey = ECInstanceKey(linkTableStmt->GetValueId<ECClassId>(0), linkTableStmt->GetValueId<ECInstanceId>(1));
+                    if (recordedEntities.find(relationKey) != recordedEntities.end())
+                        continue;
+
+                    recordedEntities.insert(relationKey);
+                    relationKeys.emplace_back(
+                        LinkTableRelation(
+                            std::move(relationKey),
+                            ECInstanceKey(linkTableStmt->GetValueId<ECClassId>(2), linkTableStmt->GetValueId<ECInstanceId>(3)),
+                            ECInstanceKey(linkTableStmt->GetValueId<ECClassId>(4), linkTableStmt->GetValueId<ECInstanceId>(5))));
+                }
+                if (relationKeys.empty()) {
+                    linkTableKeyMap.erase(entityClass->GetId());
+                }
             }
         }
     }

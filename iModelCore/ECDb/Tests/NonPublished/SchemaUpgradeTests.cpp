@@ -587,6 +587,40 @@ TEST_F(SchemaUpgradeTestFixture, DeleteSchema) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+// TEST_F(SchemaUpgradeTestFixture, DropSchemaPerformance) {
+//     ECDb db;
+//     db.OpenBeSQLiteDb("D:/temp/TRU.bim", Db::OpenParams(Db::OpenMode::ReadWrite));
+//     auto getDynamicSchemas = [&]() {
+//         std::vector<std::string> list;
+//         Statement stmt;
+//         stmt.Prepare(db, R"(
+//         SELECT
+//             [ss].[Name]
+//         FROM   [ec_Schema] [ss]
+//             JOIN [ec_CustomAttribute] [ca] ON [ca].[ContainerId] = [ss].[Id]
+//             JOIN [ec_Class] [cc] ON [cc].[Id] = [ca].[ClassId]
+//             JOIN [ec_Schema] [sa] ON [sa].[Id] = [cc].[SchemaId]
+//         WHERE  [cc].[Name] = 'DynamicSchema'
+//                 AND [sa].[Name] = 'CoreCustomAttributes'
+//                 AND [ca].[ContainerType] = 1
+//         ORDER  BY [ss].Id DESC)");
+//         while (stmt.Step() == BE_SQLITE_ROW)
+//             list.push_back(stmt.GetValueText(0));
+//         return list;
+//     };
+//     auto schemas = getDynamicSchemas();
+//     StopWatch w1(true);
+//     for (int i = 0; i< schemas.size(); ++i) {
+//         StopWatch w2(true);
+//         printf("[%d/%d] Dropping schemas: %s ", i, (int)schemas.size(), schemas[i].c_str());
+//         db.Schemas().DropSchema(schemas[i]);
+//         printf("(%0.2f sec) total: %0.2f sec\n", w2.GetCurrentSeconds(), w1.GetCurrentSeconds());
+//     }
+//     db.AbandonChanges();
+// }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, DeleteSchema_InstanceFinder) {
     Utf8CP schemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
