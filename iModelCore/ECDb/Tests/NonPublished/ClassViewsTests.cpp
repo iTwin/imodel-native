@@ -1832,15 +1832,15 @@ TEST_F(ClassViewsFixture, ViewRequiresClassIdAndInstanceId) {
 
     auto classId = stmt.GetValueId<ECClassId>(1);
     auto cidColInfo = stmt.GetColumnInfo(1);
-    //ASSERT_EQ(true, cidColInfo.IsSystemProperty()); Does not work yet! Returns false.
+    ASSERT_EQ(true, cidColInfo.IsSystemProperty());
     ASSERT_TRUE(classId.IsValid());
     ASSERT_EQ(fruitViewClassId, classId);
 
     ASSERT_STREQ("Banana", stmt.GetValueText(2));
     auto nameColInfo = stmt.GetColumnInfo(2);
-    //ASSERT_EQ(false, nameColInfo.IsGeneratedProperty()); These also do not work yet for views!
-    //ASSERT_STREQ(nameColInfo.GetRootClass().GetClass().GetName().c_str(), "FruitView");
-    //ASSERT_STREQ(nameColInfo.GetProperty()->GetClass().GetName().c_str(), "FruitView");
+    ASSERT_EQ(false, nameColInfo.IsGeneratedProperty());
+    ASSERT_STREQ(nameColInfo.GetRootClass().GetClass().GetName().c_str(), "FruitView");
+    ASSERT_STREQ(nameColInfo.GetProperty()->GetClass().GetName().c_str(), "FruitView");
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
