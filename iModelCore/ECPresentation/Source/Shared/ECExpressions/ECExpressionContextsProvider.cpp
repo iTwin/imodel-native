@@ -845,7 +845,7 @@ struct ECDbSymbolsProvider : IECSymbolProvider
     struct Context : ProviderContext
         {
         ECDbExpressionSymbolProvider m_provider;
-        Context(IConnectionCR connection) : m_provider(connection.GetECDb(), connection.GetStatementCache()) {}
+        Context(IConnectionCR connection) : m_provider(connection.GetECDb().Schemas(), connection.GetDb(), connection.GetStatementCache()) {}
         };
 
 private:
