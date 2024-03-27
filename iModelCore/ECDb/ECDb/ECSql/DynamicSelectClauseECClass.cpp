@@ -115,7 +115,7 @@ ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECProper
         if (first.GetExpression()->GetType() == Exp::Type::PropertyName)
             {
             const PropertyNameExp& firstExp = first.GetExpression()->GetAs<PropertyNameExp>();
-            const PropertyPath& internalPropPath = firstExp.GetPropertyPath();
+            const PropertyPath& internalPropPath = firstExp.GetResolvedPropertyPath();
             const ECPropertyCP leafProp = internalPropPath[internalPropPath.Size() - 1].GetProperty();
             const bool isSystem = leafProp != nullptr
                 && ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*leafProp).IsSystemProperty();

@@ -91,12 +91,12 @@ Utf8String DerivedPropertyExp::GetName() const {
 
     if (GetExpression()->GetType() == Exp::Type::PropertyName) {
         PropertyNameExp const& propertyNameExp = GetExpression()->GetAs<PropertyNameExp>();
-        return propertyNameExp.GetPropertyPath().ToString();
+        return propertyNameExp.GetResolvedPropertyPath().ToString();
     }
 
     if (GetExpression()->GetType() == Exp::Type::NavValueCreationFunc) {
         NavValueCreationFuncExp const& navValueCreationFuncExp = GetExpression()->GetAs<NavValueCreationFuncExp>();
-        return navValueCreationFuncExp.GetPropertyNameExp()->GetPropertyPath().ToString();
+        return navValueCreationFuncExp.GetPropertyNameExp()->GetResolvedPropertyPath().ToString();
     }
 
     return GetExpression()->ToECSql();
@@ -131,7 +131,7 @@ Utf8StringCR DerivedPropertyExp::GetColumnAlias() const
         {
         PropertyNameExp const& propertyNameExp = GetExpression()->GetAs<PropertyNameExp>();
         if (propertyNameExp.IsPropertyRef())
-            m_subQueryAlias =  propertyNameExp.GetPropertyPath().ToString();
+            m_subQueryAlias =  propertyNameExp.GetResolvedPropertyPath().ToString();
         }
 
     return m_columnAlias;
@@ -732,7 +732,7 @@ BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions(ECSqlParseContext cons
 
         //WIP_ECSQL: Why is the alias the first entry in the prop path? The alias should be the root class, but not an entry in the prop path
         //WIP_ECSQL: What about SELECT structProp.* from FOO?
-        PropertyPath const& propertyPath = innerExp.GetPropertyPath();
+        PropertyPath const& propertyPath = innerExp.GetResolvedPropertyPath();
         //case: SELECT a.* from FOO a
         if (propertyPath.Size() > 1 && Exp::IsAsteriskToken(propertyPath[1].GetName()))
             {
@@ -893,13 +893,13 @@ PropertyMatchResult SingleSelectStatementExp::_FindProperty(ECSqlParseContext& c
                     GetAs<NavValueCreationFuncExp>().GetPropertyNameExp() : nullptr;
             // Match alias or indirect
             const auto matchUserAlias = !derivedPropertyExp.GetColumnAlias().empty() && derivedPropertyExp.GetColumnAlias().EqualsIAscii(effectivePath.First().GetName());
-            const auto matchIndirect = derivedPropertyExp.GetColumnAlias().empty() && propertyNameExp != nullptr &&  propertyNameExp->GetPropertyPath().ToString().EqualsIAscii(effectivePath.First().GetName());
+            const auto matchIndirect = derivedPropertyExp.GetColumnAlias().empty() && propertyNameExp != nullptr &&  propertyNameExp->GetResolvedPropertyPath().ToString().EqualsIAscii(effectivePath.First().GetName());
 
             if (matchUserAlias || matchIndirect) {
                 if (effectivePath.Size() == 1) {
                     const auto isMatchIndirect = !matchUserAlias && matchIndirect;
                     if (isMatchIndirect && propertyNameExp->HasUserDefinedAlias()) {
-                        derivedPropertyExp.OverrideAlias(propertyNameExp->GetPropertyPath().ToString().c_str());
+                        derivedPropertyExp.OverrideAlias(propertyNameExp->GetResolvedPropertyPath().ToString().c_str());
                     }
                     return PropertyMatchResult(options, propertyPath, effectivePath, derivedPropertyExp, isMatchIndirect ? -1 : 0);
                 } else if (propertyNameExp != nullptr && propertyNameExp->GetClassRefExp() != nullptr) {
@@ -913,7 +913,7 @@ PropertyMatchResult SingleSelectStatementExp::_FindProperty(ECSqlParseContext& c
                 }
             }
             if (propertyNameExp != nullptr && propertyNameExp->GetClassRefExp() != nullptr) {
-                if (propertyNameExp->GetPropertyPath().First().GetName().EqualsIAscii(effectivePath.First().GetName())) {
+                if (propertyNameExp->GetResolvedPropertyPath().First().GetName().EqualsIAscii(effectivePath.First().GetName())) {
                     if (effectivePath.Size() == 1) {
                         return PropertyMatchResult(options, propertyPath, effectivePath, derivedPropertyExp, 0);
                     } else if (!propertyNameExp->IsPropertyFromCommonTableBlock() && propertyNameExp->GetPropertyMap() != nullptr) {
@@ -925,7 +925,7 @@ PropertyMatchResult SingleSelectStatementExp::_FindProperty(ECSqlParseContext& c
                             }
                         }
                     }
-                    if (propertyNameExp->GetPropertyPath().ToString().EqualsIAscii(effectivePath.ToString().c_str())) {
+                    if (propertyNameExp->GetResolvedPropertyPath().ToString().EqualsIAscii(effectivePath.ToString().c_str())) {
                         return PropertyMatchResult(options, propertyPath, effectivePath, derivedPropertyExp, -4);
                     }
                 }

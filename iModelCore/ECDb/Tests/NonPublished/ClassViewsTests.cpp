@@ -1913,5 +1913,203 @@ TEST_F(ClassViewsFixture, ViewRequiresClassIdAndInstanceId) {
     }
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassViewsFixture, ViewColumnInfoTests) {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+      <ECSchema schemaName="TestSchema" alias="ts" version="1.0.%d" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
+          <ECEntityClass typeName="Entity">
+              <ECProperty propertyName="Name" typeName="string" />
+          </ECEntityClass>
+          <ECEntityClass typeName="DirectView" modifier="Abstract">
+              <ECCustomAttributes>
+                  <View xmlns="ECDbMap.02.00.03"><Query>
+                      SELECT e.ECInstanceId, ec_classid('TestSchema', 'DirectView') as [ECClassId], e.Name [MyName] FROM ts.Entity e
+                  </Query></View>
+              </ECCustomAttributes>
+              <ECProperty propertyName="MyName" typeName="string" />
+          </ECEntityClass>
+          <ECEntityClass typeName="StaticDataView" modifier="Abstract">
+              <ECCustomAttributes>
+                  <View xmlns="ECDbMap.02.00.03"><Query>
+                      SELECT 1 as [ECInstanceId], ec_classid('TestSchema', 'StaticDataView') as [ECClassId], 'Bar' as [MyName]
+                  </Query></View>
+              </ECCustomAttributes>
+              <ECProperty propertyName="MyName" typeName="string" />
+          </ECEntityClass>
+          <ECEntityClass typeName="NestedView" modifier="Abstract">
+              <ECCustomAttributes>
+                  <View xmlns="ECDbMap.02.00.03"><Query>
+                      SELECT sdv.*, sdv.MyName as [MyName2] from ts.StaticDataView sdv
+                  </Query></View>
+              </ECCustomAttributes>
+              <ECProperty propertyName="MyName" typeName="string" />
+              <ECProperty propertyName="MyName2" typeName="string" />
+          </ECEntityClass>
+      </ECSchema>)xml";
+
+    SchemaItem testSchema(schemaXml);
+
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDbForCurrentTest());
+    ASSERT_EQ(SUCCESS, ImportSchema(testSchema));
+
+    { //insert test data
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Entity(Name) VALUES(?)"));
+    stmt.BindText(1, "Foo", IECSqlBinder::MakeCopy::No);
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    auto verifyColumnInfo = [](
+      ECSqlColumnInfoCR colInfo,
+      bool expectedIsGeneratedProperty,
+      bool expectedIsDynamic,
+      bool expectedIsSystemProperty,
+      PrimitiveType expectedPrimitiveType,
+      ValueKind expectedTypeKind,
+      Utf8CP expectedPropertyName,
+      Utf8CP expectedClassName,
+      Utf8CP expectedOriginName,
+      Utf8CP expectedOriginClassName,
+      Utf8CP expectedPropertyPath,
+      Utf8CP expectedRootClassName)
+    {
+      ASSERT_EQ(expectedIsGeneratedProperty, colInfo.IsGeneratedProperty());
+      ASSERT_EQ(expectedIsDynamic, colInfo.IsDynamic());
+      ASSERT_EQ(expectedIsSystemProperty, colInfo.IsSystemProperty());
+      auto& typeInfo = colInfo.GetDataType();
+      ASSERT_EQ(expectedPrimitiveType, typeInfo.GetPrimitiveType());
+      ASSERT_EQ(expectedTypeKind, typeInfo.GetTypeKind());
+      ECPropertyCP property = colInfo.GetProperty();
+      ASSERT_STREQ(expectedPropertyName, property->GetName().c_str());
+      ASSERT_STREQ(expectedClassName, property->GetClass().GetName().c_str());
+
+      ECPropertyCP originProperty = colInfo.GetOriginProperty();
+      if (expectedOriginClassName != nullptr || expectedOriginName != nullptr) {
+        ASSERT_TRUE(originProperty != nullptr);
+        ASSERT_STREQ(expectedOriginName, originProperty->GetName().c_str());
+        ASSERT_STREQ(expectedOriginClassName, originProperty->GetClass().GetName().c_str());
+      }
+
+      ECSqlPropertyPathCR path = colInfo.GetPropertyPath();
+      Utf8String pathStr = path.ToString();
+      ASSERT_STREQ(expectedPropertyPath, pathStr.c_str());
+
+      ECSqlColumnInfo::RootClass const& rootClass = colInfo.GetRootClass();
+      ASSERT_STREQ(expectedRootClassName, rootClass.GetClass().GetName().c_str());
+    };
+    
+    { //Direct query from DirectView
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, MyName FROM ts.DirectView"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    
+    verifyColumnInfo(stmt.GetColumnInfo(0),
+        false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "ECInstanceId", "ClassECSqlSystemProperties", //Property
+        "ECInstanceId", "ClassECSqlSystemProperties", //OriginProperty
+        "ECInstanceId", "DirectView"); //PropertyPath, RootClass
+
+    verifyColumnInfo(stmt.GetColumnInfo(1),
+        false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "ECClassId", "ClassECSqlSystemProperties", //Property
+        "ECClassId", "ClassECSqlSystemProperties", //OriginProperty
+        "ECClassId", "DirectView"); //PropertyPath, RootClass
+    
+    verifyColumnInfo(stmt.GetColumnInfo(2),
+        false, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
+        "MyName", "DirectView", //Property
+        "MyName", "DirectView", //OriginProperty
+        "MyName", "DirectView"); //PropertyPath, RootClass
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    { //Alias on DirectView
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT MyName as TheName FROM ts.DirectView"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    
+    verifyColumnInfo(stmt.GetColumnInfo(0),
+        true, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
+        "TheName", "DynamicECSqlSelectClause", //Property
+        "MyName", "DirectView", //OriginProperty
+        "TheName", "DirectView"); //PropertyPath, RootClass
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+  
+    { //Direct query from StaticDataView
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, MyName FROM ts.StaticDataView"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    
+    verifyColumnInfo(stmt.GetColumnInfo(0),
+        false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "ECInstanceId", "ClassECSqlSystemProperties", //Property
+        "ECInstanceId", "ClassECSqlSystemProperties", //OriginProperty
+        "ECInstanceId", "StaticDataView"); //PropertyPath, RootClass
+
+    verifyColumnInfo(stmt.GetColumnInfo(1),
+        false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "ECClassId", "ClassECSqlSystemProperties", //Property
+        "ECClassId", "ClassECSqlSystemProperties", //OriginProperty
+        "ECClassId", "StaticDataView"); //PropertyPath, RootClass
+
+    verifyColumnInfo(stmt.GetColumnInfo(2),
+        false, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
+        "MyName", "StaticDataView", //Property
+        "MyName", "StaticDataView", //OriginProperty
+        "MyName", "StaticDataView"); //PropertyPath, RootClass
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    { //Direct query from NestedView
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, MyName, MyName2 FROM ts.NestedView"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    verifyColumnInfo(stmt.GetColumnInfo(0),
+        false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "ECInstanceId", "ClassECSqlSystemProperties", //Property
+        "ECInstanceId", "ClassECSqlSystemProperties", //OriginProperty
+        "ECInstanceId", "NestedView"); //PropertyPath, RootClass
+
+    verifyColumnInfo(stmt.GetColumnInfo(1),
+        false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "ECClassId", "ClassECSqlSystemProperties", //Property
+        "ECClassId", "ClassECSqlSystemProperties", //OriginProperty
+        "ECClassId", "NestedView"); //PropertyPath, RootClass
+
+    verifyColumnInfo(stmt.GetColumnInfo(2),
+        false, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
+        "MyName", "NestedView", //Property
+        "MyName", "NestedView", //OriginProperty
+        "MyName", "NestedView"); //PropertyPath, RootClass
+
+    verifyColumnInfo(stmt.GetColumnInfo(3),
+        false, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
+        "MyName2", "NestedView", //Property
+        "MyName2", "NestedView", //OriginProperty
+        "MyName2", "NestedView"); //PropertyPath, RootClass
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+}
+
 
 END_ECDBUNITTESTS_NAMESPACE
