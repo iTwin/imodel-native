@@ -21,7 +21,6 @@ private:
     ECPresentationManager* m_presentationManager;
     ECDb* m_db;
     ECPresentation::Tests::IssueReporter m_issueReporter;
-    JsonLocalState m_localState;
 
     //! Compare a node we read from the BIM file with the corresponding node in the JSON expected output file
     //! The last 3 arguments are used to recursively call the function on the node's children
