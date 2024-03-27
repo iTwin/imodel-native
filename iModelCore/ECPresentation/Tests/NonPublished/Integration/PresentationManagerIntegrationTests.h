@@ -61,12 +61,12 @@ struct PresentationManagerIntegrationTests : ECPresentationTest
     ECPresentationManager* m_manager;
     std::shared_ptr<IConnectionManager> m_connectionManager;
     DelayLoadingRuleSetLocaterPtr m_locater;
-    JsonLocalState m_localState;
+    std::shared_ptr<JsonLocalState> m_localState;
 
     static void SetUpTestCase();
     static void TearDownTestCase();
 
-    PresentationManagerIntegrationTests() : m_manager(nullptr), m_localState(std::make_shared<RuntimeLocalState>()) {}
+    PresentationManagerIntegrationTests() : m_manager(nullptr), m_localState(std::make_shared<JsonLocalState>(std::make_shared<RuntimeLocalState>())) {}
     virtual std::unique_ptr<IConnectionManager> _CreateConnectionManager();
     virtual void _ConfigureManagerParams(ECPresentationManager::Params&);
     virtual ECDbR _GetProject();

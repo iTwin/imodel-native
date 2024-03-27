@@ -637,7 +637,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Calc
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
     spec->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom", "", 1000, false, nullptr, PropertyCategoryIdentifier::CreateForRoot()));
-    spec->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom"))); 
+    spec->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom")));
     contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
@@ -5244,7 +5244,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_Re
     ContentModifierP categoriesModifier = new ContentModifier(GetSchema()->GetName(), classB->GetName());
     categoriesModifier->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom"));
     rules->AddPresentationRule(*categoriesModifier);
-    
+
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
@@ -5301,7 +5301,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_Re
         new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward)
         }), {new PropertySpecification("*", 1000, "", PropertyCategoryIdentifier::CreateForId("custom"))}, RelationshipMeaning::SameInstance));
     rules->AddPresentationRule(*modifier);
-    
+
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
@@ -5979,12 +5979,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CategorizesCalculatedProper
 //=======================================================================================
 struct RulesDrivenECPresentationManagerContentWithCustomCategorySupplierTests : RulesDrivenECPresentationManagerContentTests
     {
-    TestCategorySupplier m_categorySupplier = TestCategorySupplier(ContentDescriptor::Category("CustomName", "Custom label", "Custom description", 0));
+    std::shared_ptr<TestCategorySupplier> m_categorySupplier = std::make_shared<TestCategorySupplier>(ContentDescriptor::Category("CustomName", "Custom label", "Custom description", 0));
 
     virtual void _ConfigureManagerParams(ECPresentationManager::Params& params) override
         {
         RulesDrivenECPresentationManagerContentTests::_ConfigureManagerParams(params);
-        params.SetCategorySupplier(&m_categorySupplier);
+        params.SetCategorySupplier(m_categorySupplier);
         }
     };
 
