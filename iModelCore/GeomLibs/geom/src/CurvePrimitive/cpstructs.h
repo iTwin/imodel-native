@@ -214,7 +214,7 @@ struct CurvePrimitivePointString : public CurvePrimitiveLineString
 protected:
 
 
-explicit CurvePrimitivePointString(DPoint3dCP points, size_t nPoints); 
+explicit CurvePrimitivePointString(DPoint3dCP points, size_t nPoints);
 explicit CurvePrimitivePointString(bvector<DPoint3d> points);
 
 

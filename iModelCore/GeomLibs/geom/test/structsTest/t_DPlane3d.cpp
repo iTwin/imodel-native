@@ -17,7 +17,7 @@ TEST(DPlane3d, InitFromArray_FirstPointFarthest)
     points.push_back (DPoint3d::From (2,3,0));
     points.push_back (DPoint3d::From (5,-1,0));
     points.push_back (DPoint3d::From (2,1,0));
-    
+
     DPlane3d planeA, planeB, planeC;
     Check::True (planeA.InitFromArray (&points[0], (int)points.size ()));
 
@@ -55,7 +55,7 @@ bvector<double> &splitFractions
     double da = a1 - a0;
     if (fabs (da) < 1.0e-8)
         return;
-        
+
     // f0,f1 are start and end "a" coordinates corrected for direction.
     if (a0 >= a1)
         {
@@ -66,13 +66,13 @@ bvector<double> &splitFractions
         {
         f0 = u0;
         f1 = u1;
-        } 
+        }
     for (int i = 0; i < numU01; i++)
         {
         df = (f1 - f0) / (numU01 - 1);
         double a = f0 + i * df;
         if ((a - a0) * (a - a1) <= 0.0)
-            splitFractions.push_back ((a-a0) / da);    
+            splitFractions.push_back ((a-a0) / da);
         }
     }
 
@@ -104,7 +104,7 @@ TEST(BuildFractions, Test1)
         CheckFractions (5,15,0,10, n, fraction1, fraction2);
         CheckFractions (-5,8,0,10, n, fraction1, fraction2);
         }
-    }    
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -211,7 +211,7 @@ TEST(DPlane3d, ParallelPerpendicular)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST(DPlane3d, PointVector_NormalPerpendicular) 
+TEST(DPlane3d, PointVector_NormalPerpendicular)
     {
     DPlane3d plane1;
     double pnt1[]  = { 6, 3, 1 };
@@ -256,13 +256,13 @@ TEST(DPlane3d, DistanceFromOrigin)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST(DPlane3d, PlaneFrom3Points) 
+TEST(DPlane3d, PlaneFrom3Points)
     {
     DPoint3d origin = DPoint3d::From(1, 2, 3);
     DPoint3d point1 = DPoint3d::From(12, 11, 9);
     DPoint3d point2 = DPoint3d::From(4, 6, 9);
     DPlane3d plane1 = DPlane3d::From3Points(origin, point1, point2);
-    
+
     DVec3d vecA = DVec3d::FromStartEnd(origin, point1);
     DVec3d vecB = DVec3d::FromStartEnd(origin, point2);
     DVec3d normal = DVec3d::FromCrossProduct(vecA, vecB);
@@ -322,7 +322,7 @@ TEST(DPlane3d, VectorProjectionOnNormal)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST(DPlane3d, TrueDistance) 
+TEST(DPlane3d, TrueDistance)
     {
     DVec3d planeNormal = DVec3d::From(1, 0, 0);
     DPlane3d plane = DPlane3d::FromNormalAndDistance(planeNormal, 5);
@@ -379,7 +379,7 @@ TEST(DPlane3d, Plane3Points)
     {
     DPlane3d plane0 = DPlane3d::From3Points(DPoint3d::From(1, 1, 1), DPoint3d::From(-1, 1, 0), DPoint3d::From(2, 0, 3));
     DPlane3d plane1 = DPlane3d::FromOriginAndNormal(DPoint3d::From(1, 1, 1), DVec3d::From(-1, 3, 2));
-    
+
     Check::Near(plane0.normal, plane1.normal);
     Check::Near(plane0.origin, plane1.origin);
     }

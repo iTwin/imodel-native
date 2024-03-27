@@ -732,7 +732,7 @@ void Scale (DVec3dCR vector, double scale);
 void Scale (double scale);
 
 
- 
+
 //flex|| divide by scale ||       || vector.SafeDivide (vectorA, denominator) ||
 //! @description Try to divide each component of a vector by a scalar.  If the denominator
 //! near zero compared to any numerator component, return the original
@@ -810,25 +810,25 @@ double DotProduct (DPoint3dCR point2) const;
 
 
 //! Returns the (scalar) dot product of this vector and a row of a matrix.
-//! @param [in] matrix 
+//! @param [in] matrix
 //! @param [in] index row index.
 //! @return The dot product of the two vectors
 double DotProductRow (RotMatrixCR matrix, int index) const;
 
 //! @description Returns the (scalar) dot product of this vector and a column of a matrix.
-//! @param [in] matrix 
+//! @param [in] matrix
 //! @param [in] index column index.
 //! @return The dot product of the two vectors
 double DotProductColumn (RotMatrixCR matrix, int index) const;
 
 //! Returns the (scalar) dot product of this vector and a row of the matrix part of the transform.
-//! @param [in] matrix 
+//! @param [in] matrix
 //! @param [in] index row index.
 //! @return The dot product of the two vectors
 double DotProductMatrixRow (TransformCR matrix, int index) const;
 
 //! Returns the (scalar) dot product of this vector and a column of the matrix part of the transform.
-//! @param [in] matrix 
+//! @param [in] matrix
 //! @param [in] index column index.
 //! @return The dot product of the two vectors
 double DotProductMatrixColumn (TransformCR matrix, int index) const;
@@ -1012,7 +1012,7 @@ bool ProjectToVector (DVec3dCR targetVector, double &fraction) const;
 //! @param [in] vectorU u-direction vector of the plane.
 //! @param [in] vectorV v-direction vector of the plane.
 //! @param [out] uv fractional coordinates on vectors.
-//! @return false if plane vectors are not independent.  In this case the method attempts to project to the 
+//! @return false if plane vectors are not independent.  In this case the method attempts to project to the
 //!             longer plane vector, and sets the other fraction to 0.   If that fails uv is 00.
 bool ProjectToPlane (DVec3dCR vectorU, DVec3dCR vectorV, DPoint2dR uv) const;
 
@@ -1138,7 +1138,7 @@ bool IsVectorInSmallerSector  (DVec3dCR vector0, DVec3dCR vector1) const;
 //!
 //! @param [in] vector0 The boundary vector.
 //! @param [in] vector1 The boundary vector.
-//! @param [in] upVector The out of plane vector. 
+//! @param [in] upVector The out of plane vector.
 //! @return true if test vector is within the angle.
 //!
 bool IsVectorInCCWSector  (DVec3dCR vector0, DVec3dCR vector1, DVec3dCR upVector) const;

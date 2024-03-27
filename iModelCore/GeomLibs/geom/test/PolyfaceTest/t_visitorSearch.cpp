@@ -9,7 +9,7 @@
 void checkStrokeSearch
 (
 PolyfaceHeaderPtr &mesh,
-double x0, 
+double x0,
 double y0,
 double x1,
 double y1,
@@ -204,7 +204,7 @@ bool IsPointInOrOnPolyface (PolyfaceVisitorR visitor, DPoint3d xyz)
                 }
             }
         }
-    // lots of attempts all hit edges.   
+    // lots of attempts all hit edges.
     return false;
     }
 
@@ -227,7 +227,7 @@ TEST(Polyface,RayInclusion)
 
     auto rayData1 = rayData;
     auto rayData2 = rayData;
-    
+
     Check::True (rayData1.TryFindRayWithInteriorPoints (*visitor));
     if (rayData1.NumInterval () > 0)
         {
@@ -261,7 +261,7 @@ TEST(PolyfaceVisitor,StrokeSearch_scaledSheet)
     PolyfacePolygonPicker picker (*mesh, worldToLocal);
 
 
-    // 
+    //
     bvector<size_t> strokePicks;
     bvector<PolyfacePolygonPicker::StrokePick> detailPicks;
     picker.AppendHitsByStroke (
@@ -331,7 +331,7 @@ TEST(PolyfaceVisitor,StrokeSearch_Closed)
     PolyfacePolygonPicker picker (*mesh, worldToLocal);
 
 
-    // 
+    //
     bvector<size_t> strokePicks;
     bvector<PolyfacePolygonPicker::StrokePick> detailPicks;
     picker.AppendHitsByStroke (
@@ -437,7 +437,7 @@ TEST(PolyfaceVisitor,StrokeSearch_PartiallyVisible)
     picker.Reset ();
 
 
-    // 
+    //
     bvector<size_t> strokePicks;
     bvector<PolyfacePolygonPicker::StrokePick> detailPicks;
     picker.AppendHitsByStroke (

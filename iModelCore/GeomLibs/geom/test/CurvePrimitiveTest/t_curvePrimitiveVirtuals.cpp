@@ -87,7 +87,7 @@ void ExerciseVirtualsA (ICurvePrimitivePtr &curve, double splitFractionA, double
             Check::Near (tangent0, tangent1);
             }
         }
-    
+
     double fastMaxAbs = curve->FastMaxAbs ();
     double rangeMaxAbs = range01.MaxAbs ();
     Check::LessThanOrEqual (pointA0.MaxAbs (), fastMaxAbs);
@@ -311,4 +311,4 @@ TEST(CurvePrimitive, ExerciseVirtuals)
         ExerciseAllVirtuals (c3, 0.25, 0.75);
         }
     }
-    
+

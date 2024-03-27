@@ -33,7 +33,7 @@ void StartNewDebug ()
     {
     s_debugDetails.push_back (bvector<CurveLocationDetailPair> ());
     }
-#endif	
+#endif
 // Newton iteration function for "closest approach between smooth curves".
 struct CurveCurveApproachIterate : FunctionRRToRRD
 {
@@ -85,7 +85,7 @@ double &dgdv
             CurveLocationDetailPair pair (m_curveA, uA, pointA, uB, pointB);
             s_debugDetails.back().push_back(pair);
             }
-#endif			
+#endif
         DVec3d chord = DVec3d::FromStartEnd (pointA, pointB);
         f = d1A.DotProduct (chord);
         dfdu = d2A.DotProduct (chord) - d1A.DotProduct (d1A);
@@ -188,7 +188,7 @@ void ProcessPrimitivePrimitive(ICurvePrimitiveP curveA, ICurvePrimitiveP curveB,
     m_strokeA.clear ();
     m_strokeB.clear ();
     m_locationA.clear ();
-    m_locationB.clear ();    
+    m_locationB.clear ();
     curveA->AddStrokes (m_strokeA, *GetStrokeOptions ());
     curveB->AddStrokes (m_strokeB, *GetStrokeOptions ());
     bool needNewton = !IsLinear (curveA) || !IsLinear (curveB);
@@ -224,7 +224,7 @@ DPoint3dCR pointB
     if (d < location.detailA.a)
         {
         location.Set (fractionA, pointA, d, fractionB, pointB, d);
-        }        
+        }
     }
 
 
@@ -356,7 +356,7 @@ void ProcessLineArc(
             double fractionSegment;
             segmentA.ProjectPointBounded(closePointSegment, fractionSegment, closePointArc, false, false);
             CollectApproach(
-                curveA, curveB, 
+                curveA, curveB,
                 fractionSegment, fractionArc,
                 closePointSegment, closePointArc,
                 bReverseOrder);
@@ -376,7 +376,7 @@ void CurveCurve::CloseApproach
 (
 CurveVectorR pointsOnA,
 CurveVectorR pointsOnB,
-ICurvePrimitiveP curveA, 
+ICurvePrimitiveP curveA,
 ICurvePrimitiveP curveB,
 double maxDist
 )
@@ -394,7 +394,7 @@ void CurveCurve::CloseApproach
 (
 CurveVectorR pointsOnA,
 CurveVectorR pointsOnB,
-CurveVectorCR chainA, 
+CurveVectorCR chainA,
 CurveVectorCR chainB,
 double maxDist
 )
@@ -403,7 +403,7 @@ double maxDist
     CCAXYZProcessor processor (pointsOnA, pointsOnB, tol, true, maxDist);
     for(ICurvePrimitivePtr curveA : chainA)
         for(ICurvePrimitivePtr curveB : chainB)
-            processor.Process (curveA.get (), curveB.get ());                        
+            processor.Process (curveA.get (), curveB.get ());
     }
 
 
@@ -432,7 +432,7 @@ bvector<DPoint3d> m_strokeB;
 // INSTALL curve pointers.
 // REJECT if fractions outside 01
 // EVALUATE (at current fraction)
-// 
+//
 void EvaluateAndTestMin (ICurvePrimitiveP curveA, ICurvePrimitiveP curveB, bool bReverse,
       CurveLocationDetailR locationA, CurveLocationDetailR locationB)
       {
@@ -552,9 +552,9 @@ CurveVectorCR    chainB
     CCAMinXYZProcessor searcher;
     for(ICurvePrimitivePtr curveA : chainA)
         for(ICurvePrimitivePtr curveB : chainB)
-            searcher.Process (curveA.get (), curveB.get ()); 
+            searcher.Process (curveA.get (), curveB.get ());
     double d;
-    return searcher.GetResult (d, detailA, detailB);    
+    return searcher.GetResult (d, detailA, detailB);
     }
 
 //! Search for locations where there is a local min or max in the Z distance between

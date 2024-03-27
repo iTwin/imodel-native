@@ -7,7 +7,7 @@
 
 struct SampleGeometryCreator
 {
-template <typename T> 
+template <typename T>
 static void StrokeUnitCircle (bvector<T> &points, size_t numPoints, double radius = 1.0)
     {
     double dTheta;
@@ -25,7 +25,7 @@ static void StrokeUnitCircle (bvector<T> &points, size_t numPoints, double radiu
 static void AddArcs (bvector<IGeometryPtr> &data)
     {
     data.push_back (IGeometry::Create (
-            ICurvePrimitive::CreateArc (DEllipse3d::From 
+            ICurvePrimitive::CreateArc (DEllipse3d::From
                 (
                 0,0,0,
                 1,0,0,
@@ -33,7 +33,7 @@ static void AddArcs (bvector<IGeometryPtr> &data)
                 0.0, Angle::TwoPi ()
                 ))));
     data.push_back (IGeometry::Create (
-            ICurvePrimitive::CreateArc (DEllipse3d::From 
+            ICurvePrimitive::CreateArc (DEllipse3d::From
                 (
                 0,0,0,
                 2,0,0,
@@ -41,7 +41,7 @@ static void AddArcs (bvector<IGeometryPtr> &data)
                 0.0, Angle::TwoPi ()
                 ))));
     data.push_back (IGeometry::Create (
-            ICurvePrimitive::CreateArc (DEllipse3d::From 
+            ICurvePrimitive::CreateArc (DEllipse3d::From
                 (
                 0,0,0,
                 2,0,0,
@@ -53,10 +53,10 @@ static void AddArcs (bvector<IGeometryPtr> &data)
 static void AddLines (bvector<IGeometryPtr> &data)
     {
     data.push_back (IGeometry::Create (
-            ICurvePrimitive::CreateLine (DSegment3d::From 
+            ICurvePrimitive::CreateLine (DSegment3d::From
                 (0,0,0, 1,0,0))));
     data.push_back (IGeometry::Create (
-            ICurvePrimitive::CreateLine (DSegment3d::From 
+            ICurvePrimitive::CreateLine (DSegment3d::From
                 (1,2,3, 5,2,1))));
     }
 
@@ -211,8 +211,8 @@ static void AddSimplestSolidPrimitives (bvector<IGeometryPtr> &data, bool capped
                     if (++numThisType > maxPerType)
                         break;
                     DgnSphereDetail sphere (
-                        DPoint3d::From (0,0,0), 
-                        DVec3d::From (sX,0,0), 
+                        DPoint3d::From (0,0,0),
+                        DVec3d::From (sX,0,0),
                         DVec3d::From (0,0,sZ),
                         6.0, 6.0, 0.0, sweep, s_allowCapped && capped);
                     data.push_back (IGeometry::Create (ISolidPrimitive::CreateDgnSphere (sphere)));
@@ -456,7 +456,7 @@ static void GetContours (bvector<CurveVectorPtr> &contours, double z = 0.0)
     contours.push_back (CurveVector::CreateRectangle (0,0, 4,3, z));
     contours.push_back (CurveVector::CreateDisk (DEllipse3d::From (2,0,z,   2,0,0,   0,1,0,  0.0, Angle::TwoPi ())));
     CurveVectorPtr bcurve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
-    bcurve->push_back (ICurvePrimitive::CreateBsplineCurve 
+    bcurve->push_back (ICurvePrimitive::CreateBsplineCurve
             (MSBsplineCurve::CreateFromPolesAndOrder (points, nullptr, nullptr, 4, false, true)));
     contours.push_back (bcurve);
     }
@@ -602,9 +602,9 @@ static void AddRuledSweep (bvector<IGeometryPtr> &data, size_t numSection = 2, s
     DEllipse3d ellipseA = DEllipse3d::From (1,1,1,    1,0,0,   0,b,0,   0.0, sweep);
     DEllipse3d ellipseB = DEllipse3d::FromVectors (
             DPoint3d::From (1,1,2),
-            DVec3d::FromScale (ellipseA.vector0, scale), 
+            DVec3d::FromScale (ellipseA.vector0, scale),
             DVec3d::FromScale (ellipseA.vector90, scale),
-            0.0, sweep); 
+            0.0, sweep);
 
     CurveVectorPtr pathA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
     pathA->push_back (ICurvePrimitive::CreateArc (ellipseA));
@@ -653,8 +653,8 @@ static void AddTorusPipe (bvector<IGeometryPtr> &data)
 // Arc in XZ plane.
 // rotate around Z axis
 static void AddRotatedArc(bvector<IGeometryPtr> &data,
-double cx, double cy, 
-double r, 
+double cx, double cy,
+double r,
 Angle arcStart, Angle arcEnd,
 Angle surfaceSweep)
     {
@@ -837,7 +837,7 @@ static void AddSpirals (bvector<IGeometryPtr> &pathGeometry)
             (
             DSpiral2dBase::TransitionType_Clothoid,
             0.0,
-            0.0, 
+            0.0,
             200.0,
             100.0,
             placement,
@@ -866,7 +866,7 @@ static void AddMultiPrimitiveXYOpenPaths (bvector<CurveVectorPtr> &pathVectors, 
         DPoint3d::From (0,0,0),
         DPoint3d::From (1,0,0),
         DPoint3d::From (2,2,0)
-        }; 
+        };
     auto linestring = ICurvePrimitive::CreateLineString (stringPoints);
     auto cv0 = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open, linestring);
     pathVectors.push_back (cv0);
@@ -875,7 +875,7 @@ static void AddMultiPrimitiveXYOpenPaths (bvector<CurveVectorPtr> &pathVectors, 
     cv0->GetStartEnd (pointA, pointB);
     auto arc = ICurvePrimitive::CreateArc (DEllipse3d::FromPointsOnArc (pointB, pointB + DVec3d::From (1,0,0), pointB + DVec3d::From(2,1,0)));
 
-    auto cv1 = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open, 
+    auto cv1 = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open,
         {linestring->Clone (), arc->Clone ()}
         );
     pathVectors.push_back (cv1);
@@ -977,7 +977,7 @@ static CurveVectorPtr CreatePathWithManySectors (DEllipse3d baseArc, uint32_t nu
         }
     return carrier;
     }
-// 
+//
 // Create one or two disks with each split into many arcs.
 // If two, bundle in parity region
 static CurveVectorPtr CreateAnnulusWithManyArcSectors (uint32_t numOuter, uint32_t numInner)
@@ -1006,7 +1006,7 @@ static CurveVectorPtr CreateAnnulusWithManyArcSectors (uint32_t numOuter, uint32
     return parityRegion;
     }
 
-// 
+//
 // Create a bcurve, in xy plane, start and endponits given, with a mild S shape between.
 static ICurvePrimitivePtr CreateSwoosh (double x0, double y0, double x1, double y1)
     {
@@ -1032,7 +1032,7 @@ static void CreateXYRegions (bvector<CurveVectorPtr> &regions)
     regions.push_back (
             CurveVector::CreateDisk (DEllipse3d::FromCenterRadiusXY (DPoint3d::From (1,1,0), 1.0)));
     regions.push_back (CreateAnnulusWithManyArcSectors (2, 1));
-    
+
     bvector<DPoint3d> points {
         DPoint3d::From (0,0,0),
         DPoint3d::From (1,0,0),
@@ -1040,7 +1040,7 @@ static void CreateXYRegions (bvector<CurveVectorPtr> &regions)
         DPoint3d::From (2,3,0),
         DPoint3d::From (1,1,0)
         };
-    // bcurve and line -- easiest and hardest 
+    // bcurve and line -- easiest and hardest
     auto r = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
     r->Add (ICurvePrimitive::CreateLine (DSegment3d::From (points.back (), points.front ())));
     r->Add ( ICurvePrimitive::CreateBsplineCurve (
@@ -1115,7 +1115,7 @@ size_t numI, size_t numJ,
 double q0I, double aI,
 double q0J, double aJ,
 bool triangulated = true,
-bool params = false 
+bool params = false
 );
 
 // Return a bspline surface whose control points are evaluated on a hyperbolic patch.
@@ -1129,7 +1129,7 @@ bool params = false
 // @param [in] z11 z coordinate of patch 11 point.
 // @param [in] u1 upper u to evaluate grid
 // @param [in] v1 upper v to evaluate grid.
-MSBsplineSurfacePtr HyperbolicGridSurface (size_t uOrder, size_t vOrder, size_t numI, size_t numJ, 
+MSBsplineSurfacePtr HyperbolicGridSurface (size_t uOrder, size_t vOrder, size_t numI, size_t numJ,
 double x11, double y11, double z11, double u1, double v1);
 
 // Return a 2x2 linear bspline surface with control points (000)(100)(010)(u1 v1 w1)

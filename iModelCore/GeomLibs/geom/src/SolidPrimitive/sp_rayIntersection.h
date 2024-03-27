@@ -191,7 +191,7 @@ double minParameter
                 localToWorld.MultiplyMatrixOnly (uDirection);
                 localToWorld.MultiplyMatrixOnly (vDirection);
                 pickData.back ().SetUV (uFraction, vFraction, uDirection, vDirection);
-                pickData.back ().SetCapSelector (1); 
+                pickData.back ().SetCapSelector (1);
                 }
             }
         }
@@ -200,17 +200,17 @@ double minParameter
     }
 
 
-//! set point, uv coordinates, and uv derivatives vectors 
+//! set point, uv coordinates, and uv derivatives vectors
 void DgnSphereDetail::SetDetailUVFromUnitSphereCoordinates
 (
 SolidLocationDetail &detail,//!< [in,out] detail to update
-DPoint3dCR  uvw,       //!< [in] coordinates in local unit sphere space 
+DPoint3dCR  uvw,       //!< [in] coordinates in local unit sphere space
 TransformCR localToWorld,    //! [in] transform to world coordinates
 double startLatitude,
 double latitudeSweep
 )
     {
-    double theta, phi, r;   
+    double theta, phi, r;
     Polynomial::Implicit::Sphere sphere (1.0);
     DVec3d dXdTheta, dXdPhi, dXdu, dXdv;
     sphere.XYZToThetaPhiR (uvw, theta, phi, r);
@@ -272,7 +272,7 @@ double minParameter
             GetSweepLimits (lat0, lat1, z[0], z[1], false);
             for (int i = 0; i < 2; i++)
                 {
-                if (fabs (z[i]) < 1.0) // z[i]==1 is a pole -- no cap surface 
+                if (fabs (z[i]) < 1.0) // z[i]==1 is a pole -- no cap surface
                     {
                     double r = sqrt (1.0 - z[i] * z[i]);
                     // r is radius of cap circle.
@@ -402,11 +402,11 @@ bool activeB
             );
 
     if (localCurve.IsValid ())
-        {        
+        {
         localToWorld[1] = Transform::FromProduct (baseToTarget, localToWorld[0]);
         double rayFraction;
         DPoint3d uvw;
-        
+
         for (int i = 0; i < 2; i++)
             {
             if (active[i]
@@ -433,7 +433,7 @@ bool activeB
                     else
                         indices.SetCap1 ();
                     pickData.back ().SetFaceIndices (indices);
-                    }     
+                    }
                 }
             }
         }
@@ -577,7 +577,7 @@ double minParameter
     {
     if (m_sectionCurves.size () == 0)
         return;
-    
+
     size_t baseSize = pickData.size ();
     for (size_t i = 0, n = m_sectionCurves.size (); i +1 < n; i++)
         {
@@ -591,7 +591,7 @@ double minParameter
 
     if (m_capped)
         {
-        Transform identity = Transform::FromIdentity ();        
+        Transform identity = Transform::FromIdentity ();
         AddAreaHits (m_sectionCurves.front (),
                 pickData, ray, parentId, minParameter,
                 identity, true, false);
@@ -838,7 +838,7 @@ bool SetupQuadraticForm(DRay3dCR worldRay)
     // (for coordinates in the quadric's local frame, which has z=0 at closest approach !!!)
     // (Subtract rayApproachPoint.z from z coordinate of curves!!!)
     // If (x,y,z,w) are parametric degree d, expand into the quadric, intersections are
-    //     parametric degree 2*d. 
+    //     parametric degree 2*d.
     // If ray passes through axis, m_r0 is zero and it is a cone.
     // If ray is parallel to axis, m_alphaPerp is zero and it is a cylinder
     //    (Closest approach gave us an appropriate z point for this.)
@@ -874,7 +874,7 @@ void ProcessMappedLine
 (
 ICurvePrimitiveCR curve,
 DSegment3dCR segment,
-size_t componentIndex, 
+size_t componentIndex,
 size_t numComponent,
 DSegment1dCP interval,
 DSegment1dCR mappingInterval    // remap local fraction to this parent.
@@ -916,7 +916,7 @@ DSegment1dCR mappingInterval    // remap local fraction to this parent.
                 rayDetail.componentIndex = GetLeafCounter ();
                 m_rayDetail.push_back (rayDetail);
                 }
-            } 
+            }
         }
 
     }
@@ -987,7 +987,7 @@ void _ProcessBsplineCurve (ICurvePrimitiveCR curve, MSBsplineCurveCR bcurve, DSe
                     m_rayDetail.push_back (rayDetail);
                     }
                 }
-            }        
+            }
         }
     }
 
@@ -1026,7 +1026,7 @@ override
         }
     FinishLeaf ();
     }
-    
+
 void _ProcessLineString (ICurvePrimitiveCR curve, bvector<DPoint3d> const &points, DSegment1dCP interval) override
     {
     StartLeaf ();
@@ -1044,7 +1044,7 @@ void _ProcessLineString (ICurvePrimitiveCR curve, bvector<DPoint3d> const &point
         }
     FinishLeaf ();
     }
-    
+
 };
 
 // Find intersections of geometry primitives with the rotation of a line around an axis
@@ -1117,13 +1117,13 @@ double minRayParameter
         else if (!planeIntersection.detailA.TryComponentFractionToPoint (worldCurvePoint, worldCurveTangent))
             {
             }
-        else 
+        else
             {
             DPoint3d worldXYZOnCurve = planeIntersections[k].detailA.point;
             DPoint3d localXYZOnCurve;
             m_worldToLocal.Multiply (localXYZOnCurve, worldXYZOnCurve);
             double rSquared = localXYZOnCurve.MagnitudeSquaredXY ();
-            // As the curve point rotates around it stays at rSquared from the 
+            // As the curve point rotates around it stays at rSquared from the
             // axis.  Find the ray fractions where the ray is the same squared distance
             // from the axis.
             Polynomial::Power::Degree2 quadratic;

@@ -41,7 +41,7 @@ static T *getPtr (bvector<T> *pArray, int index)
     if (index < 0)
         return &pArray->at(n - 1);
     if ((size_t)index >= n)
-        return NULL;    
+        return NULL;
     return &pArray->at((size_t)index);
     }
 
@@ -56,7 +56,7 @@ static T const *getConstPtr (bvector<T> const *pArray, int index)
     if (index < 0)
         return &pArray->at(n - 1);
     if ((size_t)index >= n)
-        return NULL;    
+        return NULL;
     return &pArray->at((size_t)index);
     }
 
@@ -241,7 +241,7 @@ T *  value// <= buffer containing one item
         return false;
     *value = pHeader->at(n - 1);
     pHeader->resize (n-1);
-    
+
     return  true;
     }
 
@@ -357,7 +357,7 @@ static StatusInt moveItem
     if (SUCCESS == get (pSource, &value, sourceIndex)
         && SUCCESS == set (pDest, &value, destIndex))
         return SUCCESS;
-    return ERROR;        
+    return ERROR;
     }
 };
 

@@ -29,11 +29,11 @@ LocalRange::LocalRange ()
     {
     InitNullRange ();
     }
-    
+
 bool LocalRange::InitFromPrincipalAxesOfPoints (bvector<DPoint3d> const &xyz)
     {
     InitNullRange ();
-    DVec3d centroid, moments; 
+    DVec3d centroid, moments;
     RotMatrix axes;
     if (!DPoint3dOps::PrincipalAxes (xyz, centroid, axes, moments))
         return false;
@@ -47,7 +47,7 @@ bool LocalRange::InitFromPrincipalAxesOfPoints (bvector<DPoint3d> const &xyz)
 bool LocalRange::InitFromPrincipalAxesOfPoints (bvector<DPoint4d> const &xyzw)
     {
     InitNullRange ();
-    DVec3d centroid, moments; 
+    DVec3d centroid, moments;
     RotMatrix axes;
     if (!DPoint3dOps::PrincipalAxes (xyzw, centroid, axes, moments))
         return false;
@@ -70,7 +70,7 @@ DPoint3d LocalRange::RangeFractionToLocal (double x, double y, double z) const
     {
     return m_localRange.LocalToGlobal (x, y, z);
     }
-    
+
 DPoint3d LocalRange::RangeFractionToWorld (double x, double y, double z) const
     {
     return m_localToWorld * m_localRange.LocalToGlobal (x, y, z);
@@ -82,7 +82,7 @@ TaggedLocalRange::TaggedLocalRange (size_t indexA, size_t indexB, double a)
     : LocalRange (), m_indexA (indexA), m_indexB (indexB), m_a (a)
     {
     }
-    
+
 
 
 
@@ -102,6 +102,6 @@ void TaggedLocalRange::SetDistanceOutside (DPoint3dCR spacePoint)
     m_a = DistanceOutside (spacePoint);
     }
 
-    
-    
-END_BENTLEY_GEOMETRY_NAMESPACE    
+
+
+END_BENTLEY_GEOMETRY_NAMESPACE

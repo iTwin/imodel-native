@@ -40,7 +40,7 @@ TEST(Polyface,PunchOneSidedDTM)
 
     Check::Shift (0,40,0);
     Check::SaveTransformed (*outside);
-    
+
     Check::ClearGeometry ("Polyface.PunchOneSidedDTM");
     }
 #ifdef BuildThickMesh
@@ -125,7 +125,7 @@ TEST(Polyface,PunchThickSurface)
 
     Check::SaveTransformed (*healedOutside);
     }
-    
+
     Check::ClearGeometry ("Polyface.PunchThickSurface");
     }
 

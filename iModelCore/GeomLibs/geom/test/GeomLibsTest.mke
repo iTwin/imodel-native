@@ -20,7 +20,7 @@ BEGTEST_OUTPUT=$(OutputRootDir)build/geomlibs/
 %include compileUnitTests.mki
 
 #----------------------------------------------------------------------
-#       Compile the main and testfixture 
+#       Compile the main and testfixture
 #----------------------------------------------------------------------
 # Let all stand-alone tests share the same gtestmain and TestFixture objects.
 o = $(PartBuildDir)
@@ -47,7 +47,7 @@ GTEST_MAIN_IS_SUPPLIED = 1
 
 %include $(BuildContext)SubParts/google_gtest_mki/gtestobj.mki
 
-LOCAL_GUNITTEST_OBJS + $(o)gtestmain.obj 
+LOCAL_GUNITTEST_OBJS + $(o)gtestmain.obj
 LOCAL_GUNITTEST_OBJS + $[@wildcard $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/*.obj]
 LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/*.lib]
 

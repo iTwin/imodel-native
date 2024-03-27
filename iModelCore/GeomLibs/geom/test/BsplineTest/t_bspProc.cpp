@@ -39,7 +39,7 @@ TEST(MSBspline,RecursiveOffset)
         {
         Check::SaveTransformed (*cpCurve);
         for (double offsetDistance = 1.0; fabs (offsetDistance) < 8.0;
-                    offsetDistance = 
+                    offsetDistance =
                         offsetDistance > 0 ? -offsetDistance : -offsetDistance + 1.0
                         )
             {
@@ -134,7 +134,7 @@ TEST(BsplineCurve,InflectionsXYZ)
         for (double z : { 0, 1,3,-2})
             {
             for (auto & spacePoint : bvector<DPoint3d> {
-                    DPoint3d::From (3,4,z), 
+                    DPoint3d::From (3,4,z),
                     DPoint3d::From (5,0.2, z),
                     DPoint3d::From (-3,1, z)
                     })
@@ -151,7 +151,7 @@ TEST(BsplineCurve,InflectionsXYZ)
         for (double z : { 0, 1,3,-2})
             {
             for (auto & spacePoint : bvector<DPoint3d> {
-                    DPoint3d::From (3,4,z), 
+                    DPoint3d::From (3,4,z),
                     DPoint3d::From (5,0.2, z),
                     DPoint3d::From (-3,1, z)
                     })
@@ -169,7 +169,7 @@ TEST(BsplineCurve,InflectionsXYZ)
         for (double z : { 0, 1,3,-2})
             {
             for (auto & spacePoint : bvector<DPoint3d> {
-                    DPoint3d::From (3,1,z), 
+                    DPoint3d::From (3,1,z),
                     DPoint3d::From (6,0.4, z),
                     DPoint3d::From (-3,1, z)
                     })
@@ -187,7 +187,7 @@ TEST(BsplineCurve,InflectionsXYZ)
         for (double z : { 0, 1,3,-2})
             {
             for (auto & spacePoint : bvector<DPoint3d> {
-                    DPoint3d::From (3,1,z), 
+                    DPoint3d::From (3,1,z),
                     DPoint3d::From (6,0.4, z),
                     DPoint3d::From (-3,1, z)
                     })
@@ -337,9 +337,9 @@ TEST(BsplineCurve,InflectionsXYZ)
         derivatives.clear ();
         fractions.clear ();
         curve->AddStrokes (n,
-            points, 
-            &derivatives, 
-            &fractions, true, 
+            points,
+            &derivatives,
+            &fractions, true,
             CURVE_PARAMETER_MAPPING_CurveFraction);
         Check::SaveTransformed (points);
         double a = 0.5 / n;
@@ -406,7 +406,7 @@ TEST(BsplineCurve,MakeBezier)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineCurve,Cusps)
     {
-    // with zero z, the full and projected curves both have cusps. 
+    // with zero z, the full and projected curves both have cusps.
     for (double zTwist : {0.0, 1.1})
         {
         SaveAndRestoreCheckTransform shifter (20, 0, 0);
@@ -478,7 +478,7 @@ void ShowWithStartEnd (double dy, MSBsplineCurvePtr const &curve)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineCurve,Closed)
     {
-    // with zero z, the full and projected curves both have cusps. 
+    // with zero z, the full and projected curves both have cusps.
     for (double zTwist : {0.0, 1.1})
         {
         SaveAndRestoreCheckTransform shifter (5, 0, 0);
@@ -529,7 +529,7 @@ double fraction
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineCurve,DConic4d)
     {
-    // with zero z, the full and projected curves both have cusps. 
+    // with zero z, the full and projected curves both have cusps.
     for (double w0 : {0.0, 0.1, 0.3, 0.7})
         {
         SaveAndRestoreCheckTransform shifter1 (5, 0, 0);
@@ -609,7 +609,7 @@ TEST(BsplineCurve,Copy)
                 0.2, 1, 0,
                 0,  0,  1
                 ),
-            DPoint3d::From (5,0,0)); 
+            DPoint3d::From (5,0,0));
     ShowWithStartEnd (2, curve->CreateCopyTransformed(transform));
     Check::ClearGeometry ("BsplineCurve.Copy");
     }

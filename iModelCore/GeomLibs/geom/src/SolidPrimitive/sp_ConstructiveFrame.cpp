@@ -40,7 +40,7 @@ bool DgnConeDetail::TryGetConstructiveFrame (TransformR localToWorld, TransformR
         worldToLocal.InvertRigidBodyTransformation (localToWorld);
         return true;
         }
-    
+
     localToWorld.InitIdentity ();
     worldToLocal.InitIdentity ();
     return false;
@@ -109,7 +109,7 @@ static bool FlipYZForZPreference (TransformCR frame, DVec3dCR zVector, Transform
         }
     return false;
     }
-    
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/

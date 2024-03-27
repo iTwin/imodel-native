@@ -85,7 +85,7 @@ bool validEdgeFractionWithinLinestring (double f, size_t edgeIndex, size_t numPo
         else if (edgeIndex == numPoint - 2)
             return f >= 0.0;
         }
-    
+
     return false;
     }
 

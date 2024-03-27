@@ -9,7 +9,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 //! Compute a replacement mesh if indicted by the numeric tags.
 PolyfaceHeaderPtr  PolyfaceQuery::ComputeAlternatePolyface
 (
-PolyfaceQueryCR source, 
+PolyfaceQueryCR source,
 IFacetOptionsR options
 )
     {

@@ -124,54 +124,14 @@ rapidjson::Document IECPresentationSerializer::AsJson(ContextR ctx, ContentDescr
     {
     rapidjson::Document json(allocator);
     _TypeDescriptionAsJson(ctx, typeDescription, json);
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document IECPresentationSerializer::AsJson(ContextR ctx, ContentDescriptor::Field::PrimitiveTypeDescription const& primitiveTypeDescription,
-    rapidjson::Document::AllocatorType* allocator) const
-    {
-    rapidjson::Document json(allocator);
-    _TypeDescriptionAsJson(ctx, primitiveTypeDescription, json);
-    _AsJson(ctx, primitiveTypeDescription, json);
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document IECPresentationSerializer::AsJson(ContextR ctx, ContentDescriptor::Field::ArrayTypeDescription const& arrayTypeDescription,
-    rapidjson::Document::AllocatorType* allocator) const
-    {
-    rapidjson::Document json(allocator);
-    _TypeDescriptionAsJson(ctx, arrayTypeDescription, json);
-    _AsJson(ctx, arrayTypeDescription, json);
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document IECPresentationSerializer::AsJson(ContextR ctx, ContentDescriptor::Field::StructTypeDescription const& structTypeDescription,
-    rapidjson::Document::AllocatorType* allocator) const
-    {
-    rapidjson::Document json(allocator);
-    _TypeDescriptionAsJson(ctx, structTypeDescription, json);
-    _AsJson(ctx, structTypeDescription, json);
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document IECPresentationSerializer::AsJson(ContextR ctx, ContentDescriptor::Field::NestedContentTypeDescription const& nestedContentTypeDescription,
-    rapidjson::Document::AllocatorType* allocator) const
-    {
-    rapidjson::Document json(allocator);
-    _TypeDescriptionAsJson(ctx, nestedContentTypeDescription, json);
-    _AsJson(ctx, nestedContentTypeDescription, json);
+    if (auto primitiveTypeDescription = typeDescription.AsPrimitive())
+        _AsJson(ctx, *primitiveTypeDescription, json);
+    else if (auto arrayTypeDescription = typeDescription.AsArray())
+        _AsJson(ctx, *arrayTypeDescription, json);
+    else if (auto structTypeDescription = typeDescription.AsStruct())
+        _AsJson(ctx, *structTypeDescription, json);
+    else if (auto nestedContentTypeDescription = typeDescription.AsNestedContent())
+        _AsJson(ctx, *nestedContentTypeDescription, json);
     return json;
     }
 

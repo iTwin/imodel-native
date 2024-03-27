@@ -55,19 +55,19 @@ DPoint3dCR  point
     result.x = matrix->coff[0][0] * point.x
              + matrix->coff[0][1] * point.y
              + matrix->coff[0][2] * point.z
-             + matrix->coff[0][3]; 
+             + matrix->coff[0][3];
     result.y = matrix->coff[1][0] * point.x
              + matrix->coff[1][1] * point.y
              + matrix->coff[1][2] * point.z
-             + matrix->coff[1][3]; 
+             + matrix->coff[1][3];
     result.z = matrix->coff[2][0] * point.x
              + matrix->coff[2][1] * point.y
              + matrix->coff[2][2] * point.z
-             + matrix->coff[2][3]; 
+             + matrix->coff[2][3];
     result.w = matrix->coff[3][0] * point.x
              + matrix->coff[3][1] * point.y
              + matrix->coff[3][2] * point.z
-             + matrix->coff[3][3]; 
+             + matrix->coff[3][3];
     return result;
     }
 
@@ -92,15 +92,15 @@ DPoint4dCR  point
     result.y = matrix->coff[1][0] * point.x
              + matrix->coff[1][1] * point.y
              + matrix->coff[1][2] * point.z
-             + matrix->coff[1][3] * point.w; 
+             + matrix->coff[1][3] * point.w;
     result.z = matrix->coff[2][0] * point.x
              + matrix->coff[2][1] * point.y
              + matrix->coff[2][2] * point.z
-             + matrix->coff[2][3] * point.w; 
+             + matrix->coff[2][3] * point.w;
     result.w = matrix->coff[3][0] * point.x
              + matrix->coff[3][1] * point.y
              + matrix->coff[3][2] * point.z
-             + matrix->coff[3][3] * point.w; 
+             + matrix->coff[3][3] * point.w;
     return result;
     }
 
@@ -1580,7 +1580,7 @@ static double DPoint4d__DeterminantOf3Components (DPoint4dCR pointA, DPoint4dCR 
 +----------------------------------------------------------------------*/
 DPoint4d DPoint4d::FromCrossProduct (DPoint4dCR pointA, DPoint4dCR pointB, DPoint4dCR pointC)
     {
-    return DPoint4d::From 
+    return DPoint4d::From
         (
         DPoint4d__DeterminantOf3Components (pointA, pointB, pointC, 1, 2, 3),
         -DPoint4d__DeterminantOf3Components (pointA, pointB, pointC, 2, 3, 0),

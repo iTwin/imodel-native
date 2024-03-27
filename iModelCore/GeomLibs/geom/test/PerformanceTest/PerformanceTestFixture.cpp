@@ -18,7 +18,7 @@ BEGIN_GEOMLIBS_TESTS_NAMESPACE
 #if defined(BENTLEY_WIN32)
     void GetVersionInfoAsString(Utf8String& version)
     {
-    TCHAR szVersionFile[MAX_PATH]; 
+    TCHAR szVersionFile[MAX_PATH];
     GetModuleFileName(NULL, szVersionFile, MAX_PATH );
 
     DWORD  verHandle = NULL;
@@ -77,7 +77,7 @@ void PerformanceTestFixture::LogResultsToFile(bmap<Utf8String, double> results)
 
     bool existingFile = dir.DoesPathExist();
 
-    logFile = fopen(dir.GetNameUtf8().c_str(), "a+"); 
+    logFile = fopen(dir.GetNameUtf8().c_str(), "a+");
     PERFORMANCELOG.infov (L"CSV Results filename: %ls\n", dir.GetName());
 
     if (!existingFile)

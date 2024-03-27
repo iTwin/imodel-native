@@ -43,7 +43,7 @@ struct ClipPlaneSetPolygonClipContext
         double area0 = normal0.Magnitude();
         static double s_areaTol = 1.0e-10;
         double areaTolerance = area0 * s_areaTol;
-        // m_candidates contains polygon content not yet found to be IN a clip set . . 
+        // m_candidates contains polygon content not yet found to be IN a clip set . .
         for (auto convexSet : clipset)
             {
             while (m_currentCandidates.SwapBackPop(m_currentCandidate))

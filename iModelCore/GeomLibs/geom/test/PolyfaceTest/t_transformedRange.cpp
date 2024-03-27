@@ -227,7 +227,7 @@ TEST(TransformedRange, ClipSet)
                             SaveEdges(testRange, xShift, 2 * yShift, 0, 1.5);
 
                         SaveEdges (testRange, xShift,
-                                    (classifyAny ? shiftB1 : shiftB0) * yShift, 
+                                    (classifyAny ? shiftB1 : shiftB0) * yShift,
                                     0, 1.0);
                         Check::Bool(classifyAny, !classify.IsAllOutside());
                         }

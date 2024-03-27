@@ -12,7 +12,7 @@ static void InitClosestPoint (SolidLocationDetailR pickData)
     pickData.SetPickParameter (DBL_MAX);
     }
 
-static void UpdatePick 
+static void UpdatePick
 (
 SolidLocationDetailR pickData,
 DPoint3dCR spacePoint,
@@ -40,7 +40,7 @@ static void UpdatePick (SolidLocationDetailR pickData, SolidLocationDetailCR can
     if (candidate.GetPickParameter () < pickData.GetPickParameter ())
         pickData = candidate;
     }
-    
+
 static void UpdatePatchPick
 (
 SolidLocationDetailR pickData,
@@ -71,7 +71,7 @@ static bool HasRealPoint (SolidLocationDetailR pickData)
     {
     return pickData.GetPickParameter () < DBL_MAX;
     }
-   
+
 // Update pick data with closest point on body of region bounded by transformed curves.Intersect a ray with a (possibly transformed) region bounded by a curve.
 void UpdateByAreaPick
 (
@@ -96,8 +96,8 @@ int numTransform
             regionToWorld, worldToRegion,
             localRange
             );
-            
-        
+
+
     for (int i = 0; i < numTransform; i++)
         {
         Transform inverseTransform;
@@ -120,9 +120,9 @@ int numTransform
                 regionToWorld.Multiply (xyzB, xyzA);
                 curveTransforms[i].Multiply (xyzC, xyzB);
                 UpdatePick (pickData, spacePoint, xyzC, regionRetract.x, regionRetract.y,
-                            SolidLocationDetail::PrimaryIdCap, i, 0);                
+                            SolidLocationDetail::PrimaryIdCap, i, 0);
                 }
-            }        
+            }
         }
     }
 
@@ -149,7 +149,7 @@ int index1
             regionToWorld, worldToRegion,
             localRange
             );
-            
+
     DPoint3d worldRetract, regionRetract;
     worldRetract = spacePoint;
     worldToRegion.Multiply (regionRetract, worldRetract);
@@ -165,9 +165,9 @@ int index1
             xyzA.z = 0.0;
             regionToWorld.Multiply (xyzB, xyzA);
             UpdatePick (pickData, spacePoint, xyzB, regionRetract.x, regionRetract.y,
-                        SolidLocationDetail::PrimaryIdCap, index1, 0);                
+                        SolidLocationDetail::PrimaryIdCap, index1, 0);
             }
-        }        
+        }
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -223,7 +223,7 @@ SolidLocationDetailR pickData
                     (localPointB.x * mu, localPointB.y * mu, zPick);
             FractionalizeInCircle (localPointC.x, localPointC.y, rCircle, u, v);
             localToWorld.Multiply (pointC, localPointC);
-            UpdatePick (pickData, pointA, pointC, u, v, 
+            UpdatePick (pickData, pointA, pointC, u, v,
                         SolidLocationDetail::PrimaryIdCap, capIndex, 0);
             }
         }
@@ -305,7 +305,7 @@ SolidLocationDetailR pickData
     Transform localToWorld;
     Transform worldToLocal;
     InitClosestPoint (pickData);
-    Polynomial::Implicit::Sphere sphere (1.0);    
+    Polynomial::Implicit::Sphere sphere (1.0);
     double theta, phi, r, u, v;
     // It's a true unit sphere in local coordinates ....
     if (GetNonUniformTransforms (localToWorld, worldToLocal))
@@ -322,7 +322,7 @@ SolidLocationDetailR pickData
         if (phi < lat[0])
             phi = lat[0];
         sphereLocal = sphere.EvaluateThetaPhi (theta, phi);
-        localToWorld.Multiply (sphereWorld, sphereLocal);        
+        localToWorld.Multiply (sphereWorld, sphereLocal);
         u = LongitudeToUFraction (theta);
         v = LatitudeToVFraction (phi);
         UpdatePick (pickData, spacePoint, sphereWorld, u, v, 0, 0, 0);
@@ -332,7 +332,7 @@ SolidLocationDetailR pickData
             GetSweepLimits (lat[0], lat[1], z[0], z[1], false);
             for (int capIndex = 0; capIndex < 2; capIndex++)
                 {
-                if (fabs (z[capIndex]) < 1.0) // z[i]==1 is a pole -- no cap surface 
+                if (fabs (z[capIndex]) < 1.0) // z[i]==1 is a pole -- no cap surface
                     {
                     double rLocal = cos (lat[capIndex]);
                     if (spaceLocal.MagnitudeXY () <= rLocal)
@@ -348,7 +348,7 @@ SolidLocationDetailR pickData
                 }
             }
         }
-    return HasRealPoint (pickData);        
+    return HasRealPoint (pickData);
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -400,7 +400,7 @@ SolidLocationDetailR pickData
             UpdatePick (pickData, spacePoint, xyz, uv.x, uv.y, id0, id1, 0);
             }
         }
-    return HasRealPoint (pickData);        
+    return HasRealPoint (pickData);
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -456,7 +456,7 @@ SolidLocationDetailR pickData
                 }
             }
         }
-        
+
     if (m_capped)
         {
         Transform capShift[2];
@@ -466,7 +466,7 @@ SolidLocationDetailR pickData
         if (pickData.GetFaceIndices().IsCap0())
             ISolidPrimitive::ReverseFractionOrientation(pickData);
         }
-    return HasRealPoint (pickData);   
+    return HasRealPoint (pickData);
     }
 
 /*--------------------------------------------------------------------------------**//**

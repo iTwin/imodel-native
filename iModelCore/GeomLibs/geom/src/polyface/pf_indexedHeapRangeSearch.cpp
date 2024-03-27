@@ -445,7 +445,7 @@ void SetBaseRange (DRange3dCR range)
     m_baseRange = m_currentRange = range;
     }
 void SetCurrentRangeFromExpandedBaseRange (double expansion)
-    {    
+    {
     m_currentRange = m_baseRange;
     m_currentRange.low.x -= expansion;         m_currentRange.high.x += expansion;
     m_currentRange.low.y -= expansion;         m_currentRange.high.y += expansion;
@@ -457,7 +457,7 @@ void AddHit (size_t hit){m_hits.push_back (hit);}
 
 bool NeedProcessing (
             DRange3dCR range, size_t iA0, size_t iA1
-            ) override 
+            ) override
     {
     if (m_currentRange.IntersectsWith (range))
         {
@@ -478,7 +478,7 @@ void Process (size_t facetIndex) override
     size_t readIndex;
     if (m_tree->TryGetReadIndex (facetIndex, readIndex))
         {
-        AddHit (readIndex); 
+        AddHit (readIndex);
         m_leafHit++;
         }
     else

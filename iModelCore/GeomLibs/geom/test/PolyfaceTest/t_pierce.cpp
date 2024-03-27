@@ -374,7 +374,7 @@ void TestNGon (size_t numEdge, size_t startShift, bool repeatFirstPoint, DPoint2
     TEST(UVPierce, SquareWave)
         {
         bvector<DPoint2d> polygon;
-        //    FillSquareWavePolygon (polygon, 
+        //    FillSquareWavePolygon (polygon,
         }
 
 // Approximate area of a bsurf patch via gauss quadrature . . .
@@ -439,19 +439,19 @@ void CheckMoments(MSBsplineSurface &surface)
         Check::LessThanOrEqual(sums.m_min, s_areaRelTol * simpleArea, "BSurf simple area versus meshed area");
     if (Check::PrintDeepStructs ())
         {
-        for (int i = 0; i < numTolerance; i++) 
-            { 
-            printf ("%.15lg %.15lg %.15lg %.15lg %.15lg\n", area[i][0], area[i][1], area[i][2], area[i][3], area[i][4]); 
-            } 
-        printf ("\n"); 
+        for (int i = 0; i < numTolerance; i++)
+            {
+            printf ("%.15lg %.15lg %.15lg %.15lg %.15lg\n", area[i][0], area[i][1], area[i][2], area[i][3], area[i][4]);
+            }
+        printf ("\n");
 
-        for (int i = 0; i < numTolerance; i++) 
-            { 
-            printf ("%7d %7d %7d %7d %7d\n", count[i][0], count[i][1], count[i][2], count[i][3], count[i][4]); 
-            } 
-        printf ("\n"); 
+        for (int i = 0; i < numTolerance; i++)
+            {
+            printf ("%7d %7d %7d %7d %7d\n", count[i][0], count[i][1], count[i][2], count[i][3], count[i][4]);
+            }
+        printf ("\n");
         double refArea = area[2][4];
-        for (int i = 0; i < numTolerance; i++) 
+        for (int i = 0; i < numTolerance; i++)
             {
             printf ("%8.2lg %8.2lg %8.2lg %8.2lg %8.2lg\n",
                 fabs(area[i][0] - refArea),
@@ -460,7 +460,7 @@ void CheckMoments(MSBsplineSurface &surface)
                 fabs(area[i][3] - refArea),
                 fabs(area[i][4] - refArea)
                 );
-            } 
+            }
         printf ("\n");
         }
     }
@@ -519,7 +519,7 @@ TEST(BSplineSurfaceMoments, BsplineSurface3)
 
     DMatrix4d products;
     surface->ComputeSecondMomentAreaProducts (products);
-    
+
     CheckMoments (*surface);
     double r = 0.1;
     double cx = 0.2;
@@ -534,4 +534,4 @@ TEST(BSplineSurfaceMoments, BsplineSurface3)
     surface->AddTrimBoundary (trim);
     CheckMoments (*surface);
     }
-    
+

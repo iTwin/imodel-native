@@ -599,4 +599,16 @@ public:
     BENTLEYDLL_EXPORT static bool IsInvalidUtf8Sequence(Utf8CP);
 };
 
+//=======================================================================================
+// For case-insensitive UTF-8 string comparisons in STL collections that only use ASCII
+// strings
+// @bsistruct
+//+===============+===============+===============+===============+===============+======
+struct CompareIUtf8Ascii
+    {
+    BENTLEYDLL_EXPORT bool operator()(Utf8CP s1, Utf8CP s2) const;
+    BENTLEYDLL_EXPORT bool operator()(Utf8StringCR s1, Utf8StringCR s2) const;
+    BENTLEYDLL_EXPORT bool operator()(Utf8StringCP s1, Utf8StringCP s2) const;
+    };
+
 END_BENTLEY_NAMESPACE

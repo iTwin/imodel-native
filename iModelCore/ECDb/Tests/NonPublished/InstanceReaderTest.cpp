@@ -57,8 +57,6 @@ struct InstancePropPerfTest {
     constexpr static auto JTestQueryInstanceWithNoFilter = "test-query-instance-with-no-filter";
     constexpr static auto JTestQueryInstanceProperties = "test-query-instance-properties";
     using TestFunc = std::function<void(BeJsValue, std::function<void(BeJsValue)>, std::function<void(BeJsValue)>)>;
-    struct CompareIUtf8Ascii {
-        bool operator()(Utf8StringCR s1, Utf8StringCR s2) const { return BeStringUtilities::StricmpAscii(s1.c_str(), s2.c_str()) < 0; } };
     private:
         ECDb m_conn;
         std::default_random_engine m_randEngine;

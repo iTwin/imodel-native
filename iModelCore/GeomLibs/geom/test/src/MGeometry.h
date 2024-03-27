@@ -496,7 +496,7 @@ struct MConvexPolygon2d
 private:
 // hull points in CCW order, WITHOUT final duplicate . ..
 std::vector<MPoint2d> m_hullPoints;
-public: 
+public:
 // Create the hull.
 MConvexPolygon2d (std::vector<MPoint2d> &points)
     {
@@ -613,7 +613,7 @@ MRay2d const &ray             //!< [in] ray to clip.  Both negative and positive
     {
     double distanceA = -DBL_MAX;
     double distanceB = DBL_MAX;
-    
+
     if (m_hullPoints.size () < 3)
         return MRange1d ();
     MPoint2d xy0 = m_hullPoints.back ();
@@ -685,7 +685,7 @@ static bool ComputeConvexHull(std::vector<MPoint2d> const &xy, std::vector<MPoin
     std::sort(xy1.begin(), xy1.end(), MPoint2d::LexicalXYLessThan);
     hull.push_back(xy1[0]);    // This is sure to stay
     hull.push_back(xy1[1]);    // This one can be removed in the loop.
-                               // first sweep creates upper hull . .. 
+                               // first sweep creates upper hull . ..
 
     for (size_t i = 2; i < n; i++)
         {
@@ -1018,7 +1018,7 @@ void BuildAlongPolyline (std::vector<MPoint2d> const &targetXY)
                 {
                 AddStepsOnLine (xyA, xyB, offsetVector,
                         typeA,
-                        MPathPoint2d::Type::MidEdge, 
+                        MPathPoint2d::Type::MidEdge,
                         MPathPoint2d::Type::ExteriorSwingStart);
                 AddExteriorSwing (xyB, offsetVector, angleB);
                 typeA = MPathPoint2d::Type::ExteriorSwingEnd;
@@ -1031,7 +1031,7 @@ void BuildAlongPolyline (std::vector<MPoint2d> const &targetXY)
                 auto xySetback = xyB - setbackDistance * unitAB;
                 AddStepsOnLine (xyA, xySetback, offsetVector,
                         typeA,
-                        MPathPoint2d::Type::MidEdge, 
+                        MPathPoint2d::Type::MidEdge,
                         MPathPoint2d::Type::InteriorSwingStart);
                 AddInteriorSwing (xySetback, offsetVector, angleB);
                 xyA = xyB + setbackDistance * unitBC;

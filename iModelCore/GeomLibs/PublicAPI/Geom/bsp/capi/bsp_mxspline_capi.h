@@ -208,10 +208,10 @@ double maxStrokeLength = 10.0
 //! @remakr offset distnace varies proportional to parameter.
 Public StatusInt GEOMDLLIMPEXP bspcurv_interpolatedOffsetXY
 (
-MSBsplineCurveR offsetCurve, 
-MSBsplineCurveCR sourceCurve, 
-double offset0, 
-double offset1, 
+MSBsplineCurveR offsetCurve,
+MSBsplineCurveCR sourceCurve,
+double offset0,
+double offset1,
 int numPoints
 );
 
@@ -223,9 +223,9 @@ int numPoints
 //! @remakr offset distnace varies proportional to parameter.
 Public StatusInt GEOMDLLIMPEXP bspcurv_approximateOffsetXY
 (
-MSBsplineCurveR offsetCurve, 
-MSBsplineCurveCR sourceCurve, 
-double offset0, 
+MSBsplineCurveR offsetCurve,
+MSBsplineCurveCR sourceCurve,
+double offset0,
 double offset1,
 int numPoles,
 double geomTol
@@ -239,9 +239,9 @@ double geomTol
 //! @remakr offset distnace varies proportional to parameter.
 Public StatusInt GEOMDLLIMPEXP bspcurv_offsetEllipseXY
 (
-MSBsplineCurveR offsetCurve, 
-DEllipse3dCR ellipse, 
-double offset0, 
+MSBsplineCurveR offsetCurve,
+DEllipse3dCR ellipse,
+double offset0,
 double offset1,
 int numPoints
 );
@@ -252,10 +252,10 @@ int numPoints
 //! @param [in] numPerKnotSpan Number of parameter to be inserted in each knot interval.
 Public StatusInt GEOMDLLIMPEXP bspcuv_interpolatedOffSetXYSubdivide
 (
-MSBsplineCurveR offsetCurve, 
-MSBsplineCurveCR sourceCurve, 
-double offset0, 
-double offset1, 
+MSBsplineCurveR offsetCurve,
+MSBsplineCurveCR sourceCurve,
+double offset0,
+double offset1,
 int numPerKnotSpan
 );
 

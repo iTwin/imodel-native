@@ -25,7 +25,7 @@ void PolygonVectorOps::AddPolygon (TaggedPolygonVectorR dest, bvector <DPoint3d>
         for (auto xyz : points)
             printf ("  %.17g %.17g\n", xyz.x, xyz.y);
         }
-#endif  
+#endif
     dest.push_back (TaggedPolygon (bvector<DPoint3d> (), indexA, indexB, a));
     dest.back ().GetPointsR () = points;
     }
@@ -43,7 +43,7 @@ void PolygonVectorOps::AddPolygonCapture (TaggedPolygonVectorR dest, bvector <DP
         for (auto xyz : points)
             printf ("  %.17g %.17g\n", xyz.x, xyz.y);
         }
-#endif  
+#endif
     dest.push_back (TaggedPolygon (bvector<DPoint3d> (), indexA, indexB, a));
     dest.back ().GetPointsR ().swap (points);
     }
@@ -62,7 +62,7 @@ void PolygonVectorOps::AddTransformedPolygon (TaggedPolygonVectorR dest, bvector
         for (auto xyz : points)
             printf ("  %.17g %.17g\n", xyz.x, xyz.y);
         }
-#endif  
+#endif
     dest.push_back (TaggedPolygon (bvector<DPoint3d> (), indexA, indexB, a));
     for (auto xyz : points)
         dest.back().GetPointsR ().push_back (xyz + shift);

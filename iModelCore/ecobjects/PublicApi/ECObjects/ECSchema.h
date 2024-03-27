@@ -2466,6 +2466,7 @@ struct SchemaKeyLessThan
 };
 
 typedef bmap<SchemaKey , ECSchemaPtr> SchemaMap;
+typedef std::function<bool(SchemaKeyCR)> SchemaKeyMatchCallback;
 
 //=======================================================================================
 // @bsistruct
@@ -2877,8 +2878,18 @@ public:
     //! Get the requested schema from this cache.
     //! @param[in] key  The SchemaKey fully describing the schema to be retrieved
     //! @param[in] matchType    The SchemaMatchType defining how exact of a match for the located schema is tolerated
-    //! @returns The ECSchema if it is contained in the cache; otherise nullptr.
+    //! @returns The ECSchema if it is contained in the cache; otherwise nullptr.
     ECOBJECTS_EXPORT ECSchemaP GetSchema(SchemaKeyCR key, SchemaMatchType matchType) const;
+
+    //! Get a requested schema from this cache.
+    //! @param[in] predicate    Custom schema matching predicate against cached schemas.
+    //! @returns The first matching ECSchema if it is contained in the cache; otherwise nullptr.
+    ECOBJECTS_EXPORT ECSchemaP FindSchema(const SchemaKeyMatchCallback& predicate) const;
+
+    //! Get a requested schema from this cache by case-insensitive name.
+    //! @param[in] schemaName    Schema name to match against cached schemas.
+    //! @returns The first matching ECSchema if it is contained in the cache; otherwise nullptr.
+    ECOBJECTS_EXPORT ECSchemaP FindSchemaByNameI(Utf8CP schemaName) const;
 
     virtual ~ECSchemaCache() {m_schemas.clear();} //!< Destructor
     static ECSchemaCachePtr Create() {return new ECSchemaCache;}; //!< Creates an ECSchemaCachePtr
@@ -4122,10 +4133,10 @@ public:
     ECOBJECTS_EXPORT static bool IsStandardSchema(Utf8StringCR schemaName);
 
     //! Sorts schemas in a vector by their dependency order (starting at leaf nodes with no dependencies).
-    //! Also adds missing referenced schemas from the dependency tree to the vector.
     //! Internally uses a reversed topological sort (https://en.wikipedia.org/wiki/Topological_sorting)
-    //! @param[in]  schemas  vector that will be modified
-    ECOBJECTS_EXPORT static void SortSchemasInDependencyOrder(bvector<ECN::ECSchemaCP>& schemas);
+    //! @param[in]  schemas                  Vector that will be modified
+    //! @param[in]  ignoreReferencedSchemas  If true then referenced schemas missing from the dependency tree are not added to the vector. Defaults to false.
+    ECOBJECTS_EXPORT static void SortSchemasInDependencyOrder(bvector<ECN::ECSchemaCP>& schemas, bool ignoreReferencedSchemas=false);
 
     //! Find all ECSchemas in the schema graph, avoiding duplicates and any cycles.
     //! @param[out]   allSchemas            Vector of schemas including rootSchema.

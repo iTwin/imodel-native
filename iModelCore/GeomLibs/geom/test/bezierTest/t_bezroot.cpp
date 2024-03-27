@@ -194,8 +194,8 @@ TEST(LogSeries, Test)
         printf ("\n");
         }
     }
-    
-    
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -204,7 +204,7 @@ TEST(Bezier,DerivativeBasis)
     double basis0[MAX_BEZIER_ORDER];
     double basis1[MAX_BEZIER_ORDER];
     double coff[MAX_BEZIER_ORDER];
-    
+
     double dtheta = 0.9;
     double theta0 = 0.2;
     double f0, f1;
@@ -269,7 +269,7 @@ TEST(Bezier,DerivativeBasis)
 // Bezier Derivative max error (order 22) (e0 0.00e+000 / 3.87e-001) (e1 1.11e-015  / 1.45e+001)
 // Bezier Derivative max error (order 23) (e0 0.00e+000 / 3.44e-001) (e1 4.44e-016  / 1.52e+001)
 // Bezier Derivative max error (order 24) (e0 0.00e+000 / 1.99e-001) (e1 1.78e-015  / 1.59e+001)
- 
+
  // No significant error growth with order.   Largest errors have proportionally large function values.
     }
 
@@ -284,10 +284,10 @@ TEST(TensorProduct, FastEvaluatorDPoint3d)
     // z == ??
     controlPoints.push_back (DPoint3d::From (0,0,5));
     controlPoints.push_back (DPoint3d::From (1,0,2));
-    
+
     controlPoints.push_back (DPoint3d::From (0,0,3));
     controlPoints.push_back (DPoint3d::From (1,0,5));
-    
+
     controlPoints.push_back (DPoint3d::From (0,1,7));
     controlPoints.push_back (DPoint3d::From (1,1,13));
 
@@ -298,8 +298,8 @@ TEST(TensorProduct, FastEvaluatorDPoint3d)
     bvector<double>vGrid, vBasis;
     bvector<double>uGrid, uBasis;
     TensorProducts::EvaluateBezierBasisFunctionGrid1D (uGrid, uBasis, uOrder, 0.0, 1.0, numUOut);
-    TensorProducts::EvaluateBezierBasisFunctionGrid1D (vGrid, vBasis, vOrder, 0.0, 1.0, numVOut);    
-    
+    TensorProducts::EvaluateBezierBasisFunctionGrid1D (vGrid, vBasis, vOrder, 0.0, 1.0, numVOut);
+
     bvector<DPoint3d> sumDirect;
     bvector<DPoint3d> sumFast;
     Check::True (TensorProducts::EvaluateGrid2D_Direct (sumDirect, uBasis, vBasis, controlPoints, uOrder, vOrder));
@@ -315,8 +315,8 @@ TEST(TensorProduct, FastEvaluatorDPoint3d)
             }
         }
     }
-    
-    
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -350,7 +350,7 @@ TEST(TensorProduct, FastEvaluatorDouble)
         TensorProducts::EvaluateGrid2D   (sumFast, uBasis, vBasis, controlPoints, uOrder, vOrder),
         "Evaluate factorable 2D grid"
         );
-        
+
     size_t numExpected = uGrid.size () * vGrid.size ();
     if (   Check::Size (numExpected, sumFast.size (), "Evaluation counts"))
         {
@@ -490,7 +490,7 @@ void CheckBezierCircleAngleDoubling (bvector<double> c, bvector<double> s, bvect
                 GEOMAPI_PRINTF (" %23.17g   %23.17g   %23.17g    %23.17g\n", cc[i], ss[i], cs[i], ww[i]);
                 }
             }
-        
+
         c.clear ();
         s.clear ();
         w.clear ();

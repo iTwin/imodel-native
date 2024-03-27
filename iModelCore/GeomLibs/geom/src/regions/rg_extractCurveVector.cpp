@@ -86,7 +86,7 @@ bool            GetCurveAndParent (MTGNodeId nodeId, RegionCurveRef& curveRef)
             curveRef.m_parentCurveId = parentCurveId;
             curveRef.m_startParam    = startParam;
             curveRef.m_endParam      = endParam;
-            }         
+            }
         else
             {
             curveRef.m_parentCurveId = curveId;
@@ -254,12 +254,12 @@ DPoint3dCR          refPoint
 
         savedSequencer.Copy (lookaheadSequencer);
 
-        while (lookaheadSequencer.Advance (i) && 
+        while (lookaheadSequencer.Advance (i) &&
                jmdlEmbeddedIntArray_getInt (pSequenceArray, &currNodeId, i) &&
-               jmdlMTGGraph_isValidNodeId (jmdlRG_getGraph (m_pRG), currNodeId) && 
-               jmdlRG_getCurveData (m_pRG, &currCurveId, &currCurveIsReversed, &point[0], &point[1], currNodeId) && 
-               RG_NULL_CURVEID != currCurveId && 
-               jmdlRIMSBS_getDEllipse3d (m_pCurves, &currEllipse, currCurveId, currCurveIsReversed) && 
+               jmdlMTGGraph_isValidNodeId (jmdlRG_getGraph (m_pRG), currNodeId) &&
+               jmdlRG_getCurveData (m_pRG, &currCurveId, &currCurveIsReversed, &point[0], &point[1], currNodeId) &&
+               RG_NULL_CURVEID != currCurveId &&
+               jmdlRIMSBS_getDEllipse3d (m_pCurves, &currEllipse, currCurveId, currCurveIsReversed) &&
                AlignEllipses (baseEllipse, currEllipse, 1.0e-12, &currSweep))
             {
             jmdlRG_getEdgeSweepProperties (m_pRG, &currArea, NULL, const_cast<DPoint3dP>(&refPoint), currNodeId);
@@ -308,11 +308,11 @@ DPoint3dCR              refPoint
     lookaheadSequencer.Copy (sequencer);
     lookaheadSequencer.Backup ();
 
-    if (lookaheadSequencer.Advance (i) && 
+    if (lookaheadSequencer.Advance (i) &&
         jmdlEmbeddedIntArray_getInt (pSequenceArray, &currNodeId, i) &&
         jmdlMTGGraph_isValidNodeId (jmdlRG_getGraph (m_pRG), currNodeId) &&
-        jmdlRG_getCurveData (m_pRG, &currCurveId, &currCurveIsReversed, &point[0], &point[1], currNodeId) && 
-        RG_NULL_CURVEID != currCurveId && 
+        jmdlRG_getCurveData (m_pRG, &currCurveId, &currCurveIsReversed, &point[0], &point[1], currNodeId) &&
+        RG_NULL_CURVEID != currCurveId &&
         jmdlRIMSBS_getCurveInterval (m_pCurves, &currParentId, &currStartFraction, &currEndFraction, currCurveId, currCurveIsReversed))
         {
         jmdlRG_getEdgeSweepProperties (m_pRG, &areaToCurve, NULL, const_cast<DPoint3dP>(&refPoint), currNodeId);
@@ -329,7 +329,7 @@ DPoint3dCR              refPoint
                jmdlEmbeddedIntArray_getInt (pSequenceArray, &currNodeId, i) &&
                jmdlMTGGraph_isValidNodeId (jmdlRG_getGraph (m_pRG), currNodeId) &&
                jmdlRG_getCurveData (m_pRG, &currCurveId, &currCurveIsReversed, &point[0], &point[1], currNodeId) &&
-               RG_NULL_CURVEID != currCurveId && 
+               RG_NULL_CURVEID != currCurveId &&
                jmdlRIMSBS_getCurveInterval (m_pCurves, &currParentId, &currStartFraction, &currEndFraction, currCurveId, currCurveIsReversed) &&
                currParentId == sectorSequence.m_parentCurveId &&
                /* Require that the fractions pick up right where the previous one left off.
@@ -574,7 +574,7 @@ ICurvePrimitivePtr ExpandCurve (MTGNodeId seedNodeId)
         curve = ICurvePrimitive::CreateBsplineCurve (bcurve);
         bcurve.ReleaseMem ();
         return curve;
-        }    
+        }
     if (curve.IsValid ())
         curve->SetTag (seedNodeId);
     return NULL;
@@ -646,7 +646,7 @@ MTG_MarkSet         *pMarkSet
     {
     ExtendedFaceParser parser (pRG, pCurves);
     if (parser.Load (pMarkSet))
-        return parser.ExpandAllComponents ();    
+        return parser.ExpandAllComponents ();
     return NULL;
     }
 

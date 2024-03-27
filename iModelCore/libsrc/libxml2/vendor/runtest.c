@@ -63,11 +63,6 @@
 #ifdef LIBXML_HTML_ENABLED
 #include <libxml/HTMLparser.h>
 #include <libxml/HTMLtree.h>
-
-/*
- * pseudo flag for the unification of HTML and XML tests
- */
-#define XML_PARSE_HTML 1 << 24
 #endif
 
 #if defined(LIBXML_THREAD_ENABLED) && defined(LIBXML_CATALOG_ENABLED)
@@ -77,6 +72,11 @@
 #include <libxml/catalog.h>
 #include <string.h>
 #endif
+
+/*
+ * pseudo flag for the unification of HTML and XML tests
+ */
+#define XML_PARSE_HTML 1 << 24
 
 /*
  * O_BINARY is just for Windows compatibility - if it isn't defined
@@ -4383,6 +4383,10 @@ thread_specific_data(void *private_data)
     xmlThreadParams *params = (xmlThreadParams *) private_data;
     const char *filename = params->filename;
     int okay = 1;
+
+#ifdef LIBXML_THREAD_ALLOC_ENABLED
+    xmlMemSetup(xmlMemFree, xmlMemMalloc, xmlMemRealloc, xmlMemoryStrdup);
+#endif
 
     if (!strcmp(filename, "test/threads/invalid.xml")) {
         xmlDoValidityCheckingDefaultValue = 0;

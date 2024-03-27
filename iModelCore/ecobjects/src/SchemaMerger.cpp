@@ -47,6 +47,31 @@ ECSchemaCP SchemaMerger::FindSchemaByName(bvector<ECSchemaCP> const& schemas, Ut
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
+//---------------------------------------------------------------------------------------
+BentleyStatus SchemaMerger::ValidateUniqueSchemaNames(bvector<ECSchemaCP> const& schemas, SchemaMergeResult& result, Utf8CP schemaListName)
+    {
+    bset<Utf8CP, CompareIUtf8Ascii> schemaNames;
+    bset<Utf8CP, CompareIUtf8Ascii> duplicateNames;
+
+    for(auto schema : schemas)
+        {
+        if(schema == nullptr)
+            continue;
+
+        auto name = schema->GetName().c_str();
+        // Checks if the entry exists in schemaNames but not in duplicateNames.
+        if(!schemaNames.insert(name).second && duplicateNames.insert(name).second) 
+            {
+            result.Issues().ReportV(IssueSeverity::Fatal, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0060,
+                "The schema name entry %s is non-unique in the %s schema list. The schemas names are case-insensitive.", name, schemaListName);
+            }
+        }
+    
+    return duplicateNames.empty() ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
 template <typename T, typename TSetter, typename TParent> //TSetter may differ from T, being the const or reference version of T
 BentleyStatus SchemaMerger::MergePrimitive(PrimitiveChange<T>& change, TParent* parent, ECObjectsStatus(TParent::*setPrimitive)(TSetter), Utf8CP parentKey, SchemaMergeResult& result, SchemaMergeOptions const& options, bool preferLeftValue)
@@ -206,8 +231,7 @@ bool SchemaMergeResult::ContainsSchema(Utf8CP schemaName) const
 //---------------+---------------+---------------+---------------+---------------+-------
 ECSchemaP SchemaMergeResult::GetSchema(Utf8CP schemaName) const
     {
-    SchemaKey schemaKey(schemaName, 1, 0, 0);
-    return m_schemaCache.GetSchema(schemaKey, SchemaMatchType::Latest);
+    return m_schemaCache.FindSchemaByNameI(schemaName);
     }
 
 //---------------------------------------------------------------------------------------
@@ -218,8 +242,17 @@ BentleyStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSc
     //Make a copy of the input vectors so we don't modify the original (given to us as const anyways)
     bvector<ECSchemaCP> left(rawLeft);
     bvector<ECSchemaCP> right(rawRight);
-    ECSchema::SortSchemasInDependencyOrder(left);
-    ECSchema::SortSchemasInDependencyOrder(right);
+    auto doNotMergeReferences = options.DoNotMergeReferences();
+    ECSchema::SortSchemasInDependencyOrder(left, doNotMergeReferences);
+    ECSchema::SortSchemasInDependencyOrder(right, doNotMergeReferences);
+    if(doNotMergeReferences)
+        {
+        auto leftValidationStatus = SchemaMerger::ValidateUniqueSchemaNames(left, result, "left") == BentleyStatus::SUCCESS;
+        auto rightValidationStatus = SchemaMerger::ValidateUniqueSchemaNames(right, result, "right") == BentleyStatus::SUCCESS;
+        if(!leftValidationStatus || !rightValidationStatus)
+            return BentleyStatus::ERROR;
+        }
+
     bool dumpSchemas = false;
     auto dumpLocation = options.GetDumpSchemaLocation();
 
@@ -238,7 +271,7 @@ BentleyStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSc
             if(!result.ContainsSchema(schema->GetName().c_str()))
                 {
                 ECSchemaPtr copiedSchema;
-                if(schema->CopySchema(copiedSchema, &result.GetSchemaCache()) != ECObjectsStatus::Success)
+                if(schema->CopySchema(copiedSchema, !doNotMergeReferences ? &result.GetSchemaCache() : nullptr) != ECObjectsStatus::Success)
                     {
                     result.Issues().ReportV(IssueSeverity::Fatal, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0025,
                         "Schema '%s' from %s side failed to be copied.", schema->GetFullSchemaName().c_str(), side);
@@ -343,6 +376,13 @@ BentleyStatus SchemaMerger::MergeItems(SchemaMergeResult& result, ECSchemaP left
         if (opCode == ECChange::OpCode::New)
             { //This may actually work
             auto newSchemaItem = (right->*getItemCP)(itemName);
+            if (newSchemaItem == nullptr)
+                {
+                result.Issues().ReportV(IssueSeverity::Fatal, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0059,
+                    "Failed to find item with name %s in right schema %s. This usually indicates a dirty schema graph where multiple memory references of the same schema with different contents are provided.", itemName, right->GetFullSchemaName().c_str());
+                return BentleyStatus::ERROR;
+                }
+
             if ( left->NamedElementExists(itemName) && 
                 ((left->*getItemP)(itemName) == nullptr))
                 { // An item of another type exists with the same name
@@ -385,13 +425,14 @@ BentleyStatus SchemaMerger::MergeSchema(SchemaMergeResult& result, ECSchemaP lef
         return BentleyStatus::ERROR;
 
     if(schemaChange->VersionRead().IsChanged() || schemaChange->VersionWrite().IsChanged() || schemaChange->VersionMinor().IsChanged())
-        { //we are not merging versions like other properties. The highest version always wins and is applied to left
-          if(!options.GetKeepVersion() && left->GetSchemaKey().LessThan(right->GetSchemaKey(), SchemaMatchType::Exact))
-              {
-              left->SetVersionRead(right->GetVersionRead());
-              left->SetVersionWrite(right->GetVersionWrite());
-              left->SetVersionMinor(right->GetVersionMinor());
-              }
+        {
+        // We are not merging versions like other properties. The highest version always wins and is applied to left
+        if(!options.GetKeepVersion() && left->GetSchemaKey().CompareByVersion(right->GetSchemaKey()) < 0)
+            {
+            left->SetVersionRead(right->GetVersionRead());
+            left->SetVersionWrite(right->GetVersionWrite());
+            left->SetVersionMinor(right->GetVersionMinor());
+            }
         }
 
     if(schemaChange->OriginalECXmlVersionMajor().IsChanged() || schemaChange->OriginalECXmlVersionMinor().IsChanged())

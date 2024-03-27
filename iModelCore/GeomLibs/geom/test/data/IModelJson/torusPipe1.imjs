@@ -1,0 +1,8 @@
+{"torusPipe":
+ {"center":[0,0,0],
+  "majorRadius":5,
+  "minorRadius":0.8,
+  "xyVectors":[[1,0,0],
+  [0,1,0]]
+ }
+}

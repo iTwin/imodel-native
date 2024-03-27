@@ -81,10 +81,13 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, Cont
     rapidjson::Document json(allocator);
     json.SetObject();
     json.AddMember("name", rapidjson::Value(editor.GetName().c_str(), json.GetAllocator()), json.GetAllocator());
-    rapidjson::Value paramsJson(rapidjson::kObjectType);
-    for (ContentFieldEditor::Params const* params : editor.GetParams())
-        paramsJson.AddMember(rapidjson::Value(params->GetName(), json.GetAllocator()), params->AsJson(ctx, &json.GetAllocator()), json.GetAllocator());
-    json.AddMember("params", paramsJson, json.GetAllocator());
+    if (!editor.GetParams().empty())
+        {
+        rapidjson::Value paramsJson(rapidjson::kObjectType);
+        for (ContentFieldEditor::Params const* params : editor.GetParams())
+            paramsJson.AddMember(rapidjson::Value(params->GetName(), json.GetAllocator()), params->AsJson(ctx, &json.GetAllocator()), json.GetAllocator());
+        json.AddMember("params", paramsJson, json.GetAllocator());
+        }
     return json;
     }
 
@@ -225,7 +228,6 @@ void IModelJsECPresentationSerializer::_AsJson(ContextR ctx, ContentDescriptor::
     // However, we're only serializing stuff from ECProperty ant not the other stuff, so need this to avoid
     // serializing the same property multiple times.
     bset<ECPropertyCP> serializedProperties;
-
     rapidjson::Value propertiesJson(rapidjson::kArrayType);
     for (ContentDescriptor::Property const& prop : ecPropertiesField.GetProperties())
         {
@@ -236,6 +238,19 @@ void IModelJsECPresentationSerializer::_AsJson(ContextR ctx, ContentDescriptor::
         serializedProperties.insert(&prop.GetProperty());
         }
     fieldBaseJson.AddMember("properties", propertiesJson, fieldBaseJson.GetAllocator());
+
+    if (auto arrayField = ecPropertiesField.AsArrayPropertiesField())
+        {
+        auto const& arrayItemsField = arrayField->GetItemsField();
+        fieldBaseJson.AddMember("itemsField", AsJson(ctx, arrayItemsField, &fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
+        }
+    if (auto structField = ecPropertiesField.AsStructPropertiesField())
+        {
+        rapidjson::Value structMembersJson(rapidjson::kArrayType);
+        for (auto const& structMember : structField->GetMembers())
+            structMembersJson.PushBack(AsJson(ctx, *structMember, &fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
+        fieldBaseJson.AddMember("memberFields", structMembersJson, fieldBaseJson.GetAllocator());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

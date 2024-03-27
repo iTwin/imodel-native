@@ -69,7 +69,7 @@ static int  IndexOrderState (EmbeddedIntArrayP indices, int k0, int numIndices, 
                     numExteriorForward++;
                 else if (indexI0 == (indexJ0 + 1) % numSourcePoints)
                     numExteriorReversed++;
-                else 
+                else
                     numOther++;
                 }
             }
@@ -245,7 +245,7 @@ bool IsVerticalPanelVectorPair (DVec3d &unitNormal)
 // On false return all nodes and coordinates are unspecified.
 // To confirm ...
 //   A0, A1 distant in XY
-//   chain A0...B0 all have zero distanceXY 
+//   chain A0...B0 all have zero distanceXY
 //   B0, B1 distant
 // A0A1 and B0B1 in opposing directions.
 
@@ -480,7 +480,7 @@ DVec3dR    rightVector
     jmdlMTGFacets_getNodeCoordinates (facets, &xyzRight, rightNodeId);
     leftVector.DifferenceOf (xyzLeft, xyzSeed);
     rightVector.DifferenceOf (xyzRight, xyzSeed);
-    }    
+    }
 
 static void EvaluatePinchedSectorCandidate (MTGFacets *facets, MTGGraph *graph, MTGNodeId seedNodeId, double angleTol, bvector<MTGNodeId> &candidates)
     {
@@ -679,7 +679,7 @@ static size_t FillHolesBySpaceTriangulation (MTGFacets* facets)
             && ! jmdlMTGGraph_getMask (graph, seedNodeId, visitMask))
             {
             jmdlMTGGraph_setMaskAroundFace (graph, seedNodeId, visitMask);
-            
+
             jmdlEmbeddedDPoint3dArray_empty (pFringeXYZArray);
             fringeVertexId.clear ();
             MTGARRAY_FACE_LOOP (currNodeId, graph, seedNodeId)
@@ -707,7 +707,7 @@ static size_t FillHolesBySpaceTriangulation (MTGFacets* facets)
                 {
 // Force all edges visible -- have to confirm planarity before allowing hidden edges....
                 int numTriangleIndices = jmdlEmbeddedIntArray_getCount (fringeIndexArray);
-                int *pFringeIndex = jmdlEmbeddedIntArray_getPtr (fringeIndexArray, 0);                
+                int *pFringeIndex = jmdlEmbeddedIntArray_getPtr (fringeIndexArray, 0);
 
                 int k;
                 DEBUG_CODE(printf ("Triangulation %d indices\n  ", numTriangleIndices);)
@@ -860,7 +860,7 @@ SegmentMatchContext (double tolerance)
     m_tolerance = tolerance;
     vu_setUserDataPIsEdgeProperty (m_graph, true);
     }
-~SegmentMatchContext () 
+~SegmentMatchContext ()
     {
     vu_freeVuSet (m_graph);
     }
@@ -914,7 +914,7 @@ void CorrectZCoordinates (bvector<FacetEdgeDetail> const &segments, bvector<Curv
                 DPoint3d xyz1;
                 double fraction1;
                 segment.ProjectPointXY (xyz1, fraction1, xyz);
-                xyz.z = xyz1.z;     // but leave the x and y parts alone to honor the merge tolerance decisions 
+                xyz.z = xyz1.z;     // but leave the x and y parts alone to honor the merge tolerance decisions
                 addedPoints.push_back (
                     CurveLocationDetail (nullptr, fraction1, xyz, (size_t)index, 0, 0.0, 0.0));
                 }
