@@ -144,7 +144,7 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetInstanceData(IECInstanceR instanc
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData(IECInstanceR instance, Utf8CP parentPropertyAccessString, IECSqlValue const& value) const
+BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData(IECInstanceR instance, Utf8CP parentPropertyAccessString, IECSqlValue const& value, bool isDeepNull) const
     {
     ECSqlColumnInfo const& columnInfo = value.GetColumnInfo();
     ECPropertyCP prop = columnInfo.GetProperty();
@@ -166,7 +166,7 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData(IECInstanceR instanc
     if (prop->GetIsPrimitive())
         {
         auto primitiveProp = prop->GetAsPrimitiveProperty();
-        SetPrimitiveValue(ecVal, primitiveProp->GetType(), value);
+        SetPrimitiveValue(ecVal, primitiveProp->GetType(), value, isDeepNull);
         ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), ecVal);
         if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
             {
@@ -180,9 +180,10 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData(IECInstanceR instanc
 
     if (prop->GetIsStruct())
         {
+        auto structIsNull = value.IsNull() || isDeepNull;
         for (IECSqlValue const& memberVal : value.GetStructIterable())
             {
-            if (SUCCESS != SetPropertyData(instance, accessString.c_str(), memberVal))
+            if (SUCCESS != SetPropertyData(instance, accessString.c_str(), memberVal, structIsNull))
                 {
                 LOG.debugv("ECInstanceECSqlSelectAdapter::SetPropertyData - failed to set struct property %s", accessString.c_str());
                 return ERROR;
@@ -195,8 +196,18 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData(IECInstanceR instanc
     if (prop->GetIsArray())
         {
         const int arrayLength = value.GetArrayLength();
-        if (arrayLength <= 0)
+        if (arrayLength <= 0 || isDeepNull)
+            {
+            ECObjectsStatus ecStatus = instance.ClearArray(accessString.c_str());
+            if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
+                {
+                BeAssert(false);
+                LOG.debugv("ECInstanceECSqlSelectAdapter::SetPropertyData - failed to clear array for property %s.  Error (%d)", accessString.c_str(), ecStatus);
+                return ERROR;
+                }
+        
             return SUCCESS;
+            }
 
         instance.AddArrayElements(accessString.c_str(), arrayLength);
         int arrayIndex = 0;
@@ -239,9 +250,9 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData(IECInstanceR instanc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECInstanceECSqlSelectAdapter::SetPrimitiveValue(ECValueR val, ECN::PrimitiveType primitiveType, IECSqlValue const& value) const
+BentleyStatus ECInstanceECSqlSelectAdapter::SetPrimitiveValue(ECValueR val, ECN::PrimitiveType primitiveType, IECSqlValue const& value, bool isDeepNull) const
     {
-    if (value.IsNull())
+    if (value.IsNull() || isDeepNull)
         {
         val.SetToNull();
         return SUCCESS;

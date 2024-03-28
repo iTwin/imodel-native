@@ -38,13 +38,14 @@ private:
 
     BentleyStatus SetInstanceId(ECN::IECInstanceR instance, IECSqlValue const& value) const;
     BentleyStatus SetInstanceData(ECN::IECInstanceR instance, bool usesClassIdFilter) const;
-    BentleyStatus SetPropertyData(ECN::IECInstanceR instance, Utf8CP parentPropertyAccessString, IECSqlValue const& value) const;
-    BentleyStatus SetPropertyData(ECN::IECInstanceR instance, IECSqlValue const& value) const { return SetPropertyData(instance, nullptr, value); }
+    BentleyStatus SetPropertyData(ECN::IECInstanceR instance, Utf8CP parentPropertyAccessString, IECSqlValue const& value, bool isDeepNull = false) const;
+    BentleyStatus SetPropertyData(ECN::IECInstanceR instance, IECSqlValue const& value, bool isDeepNull) const { return SetPropertyData(instance, nullptr, value, isDeepNull); }
+    BentleyStatus SetPropertyData(ECN::IECInstanceR instance, IECSqlValue const& value) const { return SetPropertyData(instance, nullptr, value, false); }
     BentleyStatus SetRelationshipSource(ECN::IECInstanceR instance, IECSqlValue const& value) const;
     BentleyStatus SetRelationshipTarget(ECN::IECInstanceR instance, IECSqlValue const& value) const;
 
     BentleyStatus SetStructArrayElement(ECN::ECValueR val, ECN::ECClassCR structType, IECSqlValue const& value) const;
-    BentleyStatus SetPrimitiveValue(ECN::ECValueR val, ECN::PrimitiveType primitiveType, IECSqlValue const& value) const;
+    BentleyStatus SetPrimitiveValue(ECN::ECValueR val, ECN::PrimitiveType primitiveType, IECSqlValue const& value, bool isDeepNull = false) const;
     BentleyStatus SetNavigationValue(ECN::IECInstanceR instance, IECSqlValue const& value) const;
     ECN::IECInstancePtr FindRelationshipEndpoint(ECInstanceId endpointInstanceId, ECN::ECClassId endpointClassId, ECN::StandaloneECRelationshipInstance*, bool isSource) const;
     BentleyStatus CreateColumnHandlers();
