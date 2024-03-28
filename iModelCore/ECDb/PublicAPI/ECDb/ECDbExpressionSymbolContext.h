@@ -56,19 +56,20 @@ struct ECDbExpressionSymbolProvider final : ECN::IECSymbolProvider
 private:
     ECDbExpressionEvaluationContext* m_context;
 
-    static ECN::ExpressionStatus GetRelatedInstanceQueryFormatOld(Utf8StringR, ECN::ECEntityClassCP&, ECDbCR, ECN::ECInstanceListCR, ECN::EvaluationResult const&);
+    static ECN::ExpressionStatus GetRelatedInstanceQueryFormatOld(Utf8StringR, ECN::ECEntityClassCP&, ECDbExpressionEvaluationContext const&, ECN::ECInstanceListCR, ECN::EvaluationResult const&);
     static ECN::ExpressionStatus HasRelatedInstance(ECN::EvaluationResult& evalResult, void* context, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
     static ECN::ExpressionStatus GetRelatedInstancesCount(ECN::EvaluationResult& evalResult, void* context, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
     static ECN::ExpressionStatus GetRelatedInstance(ECN::EvaluationResult& evalResult, void* context, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
     static ECN::ExpressionStatus GetRelatedValue(ECN::EvaluationResult& evalResult, void* context, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
     static ECN::ExpressionStatus GetClassId(ECN::EvaluationResult& evalResult, void* context, ECN::EvaluationResultVector& args);
-    static BentleyStatus FindRelationshipAndClassInfo(ECDbCR, ECN::ECRelationshipClassCP&, Utf8CP relationshipName, ECN::ECEntityClassCP&, Utf8CP className);
+    static BentleyStatus FindRelationshipAndClassInfo(ECDbExpressionEvaluationContext const&, ECN::ECRelationshipClassCP&, Utf8CP relationshipName, ECN::ECEntityClassCP&, Utf8CP className);
 
     Utf8CP _GetName() const override {return "ECDbExpressionSymbolProvider";}
     void _PublishSymbols(ECN::SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const override;
 
 public:
-    ECDB_EXPORT ECDbExpressionSymbolProvider(ECDbCR db, ECSqlStatementCache const& statementCache);
+    ECDB_EXPORT ECDbExpressionSymbolProvider(ECDbCR, ECSqlStatementCache const&);
+    ECDB_EXPORT ECDbExpressionSymbolProvider(SchemaManagerCR, BeSQLite::DbCR, ECSqlStatementCache const&);
     ECDB_EXPORT ~ECDbExpressionSymbolProvider();
 };
 
