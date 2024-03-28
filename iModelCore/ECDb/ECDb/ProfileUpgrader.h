@@ -80,7 +80,13 @@ protected:
 
 public:
     virtual ~ProfileUpgrader() {}
-    DbResult Upgrade(ECDbCR ecdb) const { return _Upgrade(ecdb); }
+    DbResult Upgrade(ECDbCR ecdb) const
+        {
+        ecdb.Schemas().GetSchemaSync().DisableSchemaSync();
+        const auto returnValue = _Upgrade(ecdb);
+        ecdb.Schemas().GetSchemaSync().ReEnableSchemaSync();
+        return returnValue;
+        }
     };
 
 //=======================================================================================

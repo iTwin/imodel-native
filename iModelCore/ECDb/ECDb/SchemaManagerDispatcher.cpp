@@ -1187,51 +1187,53 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         }
 
     auto& schemaSync = m_ecdb.Schemas().GetSchemaSync();
+    const auto isSchemaSyncDisabled = schemaSync.IsSchemaSyncDisabled();
     auto resolvedSyncDbUri = syncDbUri.IsEmpty() ? schemaSync.GetDefaultSyncDbUri() : syncDbUri;
     const auto localDbInfo = schemaSync.GetInfo();
 
-    if (localDbInfo.IsEmpty() && !resolvedSyncDbUri.IsEmpty())
+    if (!isSchemaSyncDisabled)
         {
-        m_ecdb.GetImpl().Issues().ReportV(
-            IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0585,
-            "Failed to import ECSchemas. Cannot import schemas into a file which is not setup to use schema sync but sync db uri was provided. Sync-Id: {%s}, uri: {%s}.",
-
-            localDbInfo.GetSyncId().ToString().c_str(),
-            resolvedSyncDbUri.GetUri().c_str()
-        );
-        return SchemaImportResult::ERROR;
-        }
-
-    if (!localDbInfo.IsEmpty())
-        {
-        if (resolvedSyncDbUri.IsEmpty())
+        if (localDbInfo.IsEmpty() && !resolvedSyncDbUri.IsEmpty())
             {
             m_ecdb.GetImpl().Issues().ReportV(
-                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0586,
-                "Failed to import ECSchemas. Cannot import schemas into a file which is setup to use schema sync but sync db uri was not provided. Sync-Id: {%s}.",
-
-                localDbInfo.GetSyncId().ToString().c_str()
-            );
-            return SchemaImportResult::ERROR;
-            }
-
-        if (schemaSync.Pull(resolvedSyncDbUri, schemaImportToken) != SchemaSync::Status::OK)
-            {
-            m_ecdb.GetImpl().Issues().ReportV(
-                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0587,
-                "Failed to import ECSchemas. Unable to pull changes from Sync-Id: {%s}, uri: {%s}.",
+                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0585,
+                "Failed to import ECSchemas. Cannot import schemas into a file which is not setup to use schema sync but sync db uri was provided. Sync-Id: {%s}, uri: {%s}.",
                 localDbInfo.GetSyncId().ToString().c_str(),
                 resolvedSyncDbUri.GetUri().c_str()
             );
             return SchemaImportResult::ERROR;
             }
-        if (!GetECDb().GetImpl().GetIdFactory().Reset())
-            {
-            LOG.error("Failed to import ECSchemas: Failed to create id factory.");
-            return SchemaImportResult::ERROR;
-            }
-        }
 
+        if (!localDbInfo.IsEmpty())
+            {
+            if (resolvedSyncDbUri.IsEmpty())
+                {
+                m_ecdb.GetImpl().Issues().ReportV(
+                    IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0586,
+                    "Failed to import ECSchemas. Cannot import schemas into a file which is setup to use schema sync but sync db uri was not provided. Sync-Id: {%s}.",
+
+                    localDbInfo.GetSyncId().ToString().c_str()
+                );
+                return SchemaImportResult::ERROR;
+                }
+
+            if (schemaSync.Pull(resolvedSyncDbUri, schemaImportToken) != SchemaSync::Status::OK)
+                {
+                m_ecdb.GetImpl().Issues().ReportV(
+                    IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0587,
+                    "Failed to import ECSchemas. Unable to pull changes from Sync-Id: {%s}, uri: {%s}.",
+                    localDbInfo.GetSyncId().ToString().c_str(),
+                    resolvedSyncDbUri.GetUri().c_str()
+                );
+                return SchemaImportResult::ERROR;
+                }
+            if (!GetECDb().GetImpl().GetIdFactory().Reset())
+                {
+                LOG.error("Failed to import ECSchemas: Failed to create id factory.");
+                return SchemaImportResult::ERROR;
+                }
+            }   
+        }
     for (auto schema: schemas) {
         if (ECSchemaOwnershipClaimAppData::HasOwnershipClaim(*schema) && !ECSchemaOwnershipClaimAppData::IsOwnedBy(GetECDb(), *schema)) {
             m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0283, "Failed to import ECSchemas. Cannot import schema owned by another ECDb connection");
@@ -1288,7 +1290,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         return rc;
         }
 
-    if (!localDbInfo.IsEmpty() && rc.IsOk())
+    if (!isSchemaSyncDisabled && !localDbInfo.IsEmpty() && rc.IsOk())
         {
         if (schemaSync.Push(resolvedSyncDbUri) != SchemaSync::Status::OK)
             {
