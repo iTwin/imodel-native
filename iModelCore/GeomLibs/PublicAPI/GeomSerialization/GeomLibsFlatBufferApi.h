@@ -31,7 +31,7 @@ static BGFBIMPEXP bool IsFlatBufferFormat(bvector<Byte> &buffer);
 static BGFBIMPEXP bool IsFlatBufferFormat(Byte const *buffer);
 
 // Convert flatbuffer bytes to geometry instance. If bytes represent an array of geometries, return nullptr.
-static BGFBIMPEXP IGeometryPtr BytesToGeometry(bvector<Byte> &buffer, bool applyValidation = true);
+static BGFBIMPEXP IGeometryPtr BytesToGeometry(bvector<Byte> const &buffer, bool applyValidation = true);
 // Convert flatbuffer bytes to geometry instance. If bytes represent an array of geometries, return nullptr.
 static BGFBIMPEXP IGeometryPtr BytesToGeometrySafe(Byte const *buffer, size_t bufferSize, bool applyValidation = true);
 

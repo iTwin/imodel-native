@@ -2067,7 +2067,7 @@ IGeometryPtr BentleyGeometryFlatBuffer::BytesToGeometrySafe(Byte const *buffer, 
     return BytesToXXXSafe<IGeometryPtr>(buffer, bufferSize, applyValidation, FBReader::ReadGeometry);
     }
 
-IGeometryPtr BentleyGeometryFlatBuffer::BytesToGeometry(bvector<Byte> &buffer, bool applyValidation)
+IGeometryPtr BentleyGeometryFlatBuffer::BytesToGeometry(bvector<Byte> const&buffer, bool applyValidation)
     {
     return BytesToGeometrySafe(buffer.data(), buffer.size(), applyValidation);
     }

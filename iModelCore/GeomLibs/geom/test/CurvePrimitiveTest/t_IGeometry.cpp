@@ -119,7 +119,7 @@ void DoRoundTrip (IGeometryPtr g0, bool emitGeometry, int serializerSelect)
         BentleyGeometryFlatBuffer::GeometryToBytes (*polyface, buffer1);
 
         PolyfaceQueryCarrier carrier1 (0, false, 0, 0, nullptr, nullptr);
-        Check::True(BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrierSafe(&buffer1[0], buffer0.size(), carrier1));
+        Check::True(BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrierSafe(&buffer1[0], buffer1.size(), carrier1));
         }
 
     if (Check::True (g1.IsValid (), serializerSelect == 1 ? "JsonString RoundTrip" :"FlatBuffer Roundtrip"))
@@ -1126,7 +1126,7 @@ TEST(FlatBuffer, MSBsplineSurface)
     }
     template <typename GeometryTypePtr>
     void TestSpecialReader(GeometryTypePtr &validGeometry, GeometryTypePtr &invalidGeometry,
-    GeometryTypePtr (*bytesToGeometrySafe)(Byte const *bytes, size_t const bufferSize, bool applyValidation))
+    GeometryTypePtr (*bytesToGeometrySafe)(Byte const *bytes, size_t bufferSize, bool applyValidation))
     {
     // suppress validation of write !!!
     auto nullValidator = GeometryValidatorPtr();
