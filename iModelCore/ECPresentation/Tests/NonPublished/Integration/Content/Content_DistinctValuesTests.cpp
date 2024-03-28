@@ -1352,14 +1352,14 @@ DEFINE_SCHEMA(GetDistinctPrimitiveValuesFromMergedFieldWhenFormatterFormatsThemD
 TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctPrimitiveValuesFromMergedFieldWhenFormatterFormatsThemDifferently)
     {
     // set up manager with a custom formatter
-    TestPropertyFormatter formatter;
-    formatter.SetValueFormatter([](Utf8StringR result, ECPropertyCR prop, ECValueCR value, ECPresentation::UnitSystem)
+    auto formatter = std::make_shared<TestPropertyFormatter>();
+    formatter->SetValueFormatter([](Utf8StringR result, ECPropertyCR prop, ECValueCR value, ECPresentation::UnitSystem)
         {
         result = Utf8PrintfString("%s-%s", prop.GetClass().GetName().c_str(), value.ToString().c_str());
         return SUCCESS;
         });
     ECPresentationManager::Params managerParams = CreateManagerParams();
-    managerParams.SetECPropertyFormatter(&formatter);
+    managerParams.SetECPropertyFormatter(formatter);
     ReCreatePresentationManager(managerParams);
 
     // set up dataset
