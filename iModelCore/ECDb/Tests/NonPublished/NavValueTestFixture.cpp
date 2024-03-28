@@ -109,7 +109,7 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue)
         ASSERT_EQ(ECInstanceId(UINT64_C(1)), instId);
         auto& colInfo = stmt.GetColumnInfo(0);
         ASSERT_TRUE(colInfo.IsValid());
-        ASSERT_FALSE(colInfo.IsGeneratedProperty());
+        ASSERT_TRUE(colInfo.IsGeneratedProperty());
         ASSERT_TRUE(colInfo.GetDataType().IsNavigation());
 
         auto* property = colInfo.GetProperty();
@@ -130,7 +130,7 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue)
         ASSERT_EQ(ECInstanceId(UINT64_C(1)), instId);
         auto& colInfo = stmt.GetColumnInfo(0);
         ASSERT_TRUE(colInfo.IsValid());
-        ASSERT_FALSE(colInfo.IsGeneratedProperty());
+        ASSERT_TRUE(colInfo.IsGeneratedProperty());
         ASSERT_TRUE(colInfo.GetDataType().IsNavigation());
 
         auto* property = colInfo.GetProperty();
@@ -153,7 +153,7 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue)
         ASSERT_EQ(m_personInstanceKey.GetInstanceId(), instId);
         auto& colInfo = stmt.GetColumnInfo(0);
         ASSERT_TRUE(colInfo.IsValid());
-        ASSERT_FALSE(colInfo.IsGeneratedProperty());
+        ASSERT_TRUE(colInfo.IsGeneratedProperty());
         ASSERT_TRUE(colInfo.GetDataType().IsNavigation());
 
         auto* property = colInfo.GetProperty();
@@ -174,7 +174,7 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue)
         ASSERT_EQ(m_personInstanceKey.GetInstanceId(), instId);
         auto& colInfo = stmt.GetColumnInfo(0);
         ASSERT_TRUE(colInfo.IsValid());
-        ASSERT_FALSE(colInfo.IsGeneratedProperty());
+        ASSERT_TRUE(colInfo.IsGeneratedProperty());
         ASSERT_TRUE(colInfo.GetDataType().IsNavigation());
 
         auto* property = colInfo.GetProperty();
@@ -195,7 +195,7 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue)
         ASSERT_EQ(ECInstanceId(UINT64_C(1)), instId);
         auto& firstColInfo = stmt.GetColumnInfo(0);
         ASSERT_TRUE(firstColInfo.IsValid());
-        ASSERT_FALSE(firstColInfo.IsGeneratedProperty());
+        ASSERT_TRUE(firstColInfo.IsGeneratedProperty());
         ASSERT_TRUE(firstColInfo.GetDataType().IsNavigation());
 
         auto* property = firstColInfo.GetProperty();
@@ -208,7 +208,7 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue)
         ASSERT_EQ(ECInstanceId(UINT64_C(3)), instId);
         auto& secondColInfo = stmt.GetColumnInfo(1);
         ASSERT_TRUE(secondColInfo.IsValid());
-        ASSERT_FALSE(secondColInfo.IsGeneratedProperty());
+        ASSERT_TRUE(secondColInfo.IsGeneratedProperty());
         ASSERT_TRUE(secondColInfo.GetDataType().IsNavigation());
 
         property = secondColInfo.GetProperty();
@@ -237,7 +237,7 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue)
         ASSERT_EQ(stmt.GetValueId<ECInstanceId>(1), instId);
         auto& thirdColInfo = stmt.GetColumnInfo(2);
         ASSERT_TRUE(thirdColInfo.IsValid());
-        ASSERT_FALSE(thirdColInfo.IsGeneratedProperty());
+        ASSERT_TRUE(thirdColInfo.IsGeneratedProperty());
         ASSERT_TRUE(thirdColInfo.GetDataType().IsNavigation());
 
         instId = stmt.GetValueNavigation<ECInstanceId>(4, &relClassId);
@@ -245,7 +245,7 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue)
         ASSERT_EQ(stmt.GetValueId<ECInstanceId>(1), instId);
         auto& fifthColInfo = stmt.GetColumnInfo(4);
         ASSERT_TRUE(fifthColInfo.IsValid());
-        ASSERT_FALSE(fifthColInfo.IsGeneratedProperty());
+        ASSERT_TRUE(fifthColInfo.IsGeneratedProperty());
         ASSERT_TRUE(fifthColInfo.GetDataType().IsNavigation());
 
         auto* property = firstColInfo.GetProperty();
@@ -294,7 +294,7 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue)
         ASSERT_EQ(ECInstanceId(UINT64_C(1)), instId);
         auto& firstColInfo = stmt.GetColumnInfo(0);
         ASSERT_TRUE(firstColInfo.IsValid());
-        ASSERT_FALSE(firstColInfo.IsGeneratedProperty());
+        ASSERT_TRUE(firstColInfo.IsGeneratedProperty());
         ASSERT_TRUE(firstColInfo.GetDataType().IsNavigation());
 
         auto* property = firstColInfo.GetProperty();
@@ -306,7 +306,7 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue)
         ASSERT_EQ(ECInstanceId(UINT64_C(1)), instId);
         auto& secondColInfo = stmt.GetColumnInfo(1);
         ASSERT_TRUE(secondColInfo.IsValid());
-        ASSERT_FALSE(secondColInfo.IsGeneratedProperty());
+        ASSERT_TRUE(secondColInfo.IsGeneratedProperty());
         ASSERT_TRUE(secondColInfo.GetDataType().IsPrimitive());
 
         property = secondColInfo.GetProperty();
@@ -318,7 +318,7 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue)
         ASSERT_EQ(ECInstanceId(UINT64_C(2)), instId);
         auto& thirdColInfo = stmt.GetColumnInfo(2);
         ASSERT_TRUE(thirdColInfo.IsValid());
-        ASSERT_FALSE(thirdColInfo.IsGeneratedProperty());
+        ASSERT_TRUE(thirdColInfo.IsGeneratedProperty());
         ASSERT_TRUE(thirdColInfo.GetDataType().IsPrimitive());
 
         property = thirdColInfo.GetProperty();
@@ -339,7 +339,7 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue)
         ASSERT_EQ(ECInstanceId(UINT64_C(1)), instId);
         auto& colInfo = stmt.GetColumnInfo(0);
         ASSERT_TRUE(colInfo.IsValid());
-        ASSERT_FALSE(colInfo.IsGeneratedProperty());
+        ASSERT_TRUE(colInfo.IsGeneratedProperty());
         ASSERT_TRUE(colInfo.GetDataType().IsNavigation());
 
         auto* property = colInfo.GetProperty();

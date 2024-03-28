@@ -152,6 +152,8 @@ ECSqlStatus ECSqlFieldFactory::CreateFieldForView(ECSqlPrepareContext& ctx, Prop
     PropertyPath const& propertyPath  = propNameExp.GetResolvedPropertyPath();
     ECPropertyCP ecProperty = propertyPath.First().GetProperty();
     Utf8StringCR propertyName = propertyPath.First().GetName();
+    Utf8String columnName = derivedProperty.GetName();
+    Utf8StringCR columnAlias = derivedProperty.GetColumnAlias();
 
     ClassMap const* classMap = propertyPath.GetClassMap();
     ECClassCP rootECClass = ctx.GetECDb().Schemas().GetClass(viewClassNameExp.GetSchemaName(), viewClassNameExp.GetClassName());
@@ -183,16 +185,27 @@ ECSqlStatus ECSqlFieldFactory::CreateFieldForView(ECSqlPrepareContext& ctx, Prop
     ECSqlColumnInfo::RootClass rootClass(rootECClass != nullptr ? *rootECClass : ecProperty->GetClass(), nullptr);
 
     ECSqlSelectPreparedStatement& selectPreparedStatement = GetPreparedStatement(ctx);
-    if(derivedProperty.HasAlias())
+    bool isDuplicate = false;
+    auto dupStat = selectPreparedStatement.GetDynamicSelectClauseECClassR().CheckForDuplicateName(columnName, columnAlias, isDuplicate, ctx);
+    if(dupStat != ECSqlStatus::Success)
+        return dupStat;
+    
+    if(derivedProperty.HasAlias() || propertyPath.Size() > 1 || isDuplicate)
         {
         ECPropertyCP generatedProperty;
         ECSqlStatus stat = selectPreparedStatement.GetDynamicSelectClauseECClassR().GeneratePropertyIfRequired(generatedProperty, ctx, derivedProperty, &propNameExp, isDynamic);
         if (!stat.IsSuccess())
             return stat;
 
-        BeAssert(generatedProperty != nullptr && "Error in program logic. Generated property must not be null.");
-        isGeneratedProperty = true;
-        ecProperty = generatedProperty;
+        if(generatedProperty != nullptr)
+            {
+            isGeneratedProperty = true;
+            ecProperty = generatedProperty;
+            }
+        }
+        else
+        {
+            selectPreparedStatement.GetDynamicSelectClauseECClassR().RegisterSelectClauseItem(columnName, derivedProperty);
         }
 
     ECSqlPropertyPath resultPropertyPath;
