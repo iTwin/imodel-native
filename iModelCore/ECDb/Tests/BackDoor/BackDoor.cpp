@@ -38,9 +38,9 @@ bool ECDbBackDoor::ECObjects::ECValue::AllowsPointersIntoInstanceMemory (ECN::EC
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-IGeometryPtr ECDbBackDoor::BentleyGeometryFlatBuffer::BytesToGeometry(Byte const* buffer, size_t const bufferSize)
+IGeometryPtr ECDbBackDoor::BentleyGeometryFlatBuffer::BytesToGeometrySafe(Byte const* buffer, size_t bufferSize)
     {
-    return BentleyApi::BentleyGeometryFlatBuffer::BytesToGeometry(buffer, bufferSize, true);
+    return BentleyApi::BentleyGeometryFlatBuffer::BytesToGeometrySafe(buffer, bufferSize, true);
     }
 
 //---------------------------------------------------------------------------------------
