@@ -49,8 +49,8 @@ struct PropertyNameExp final : ValueExp
         };
     private:
         ECN::ECPropertyCP m_property;
-        PropertyPath m_propertyPath;
-        PropertyPath m_ecsqlPropertyPath;
+        PropertyPath m_resolvedPropertyPath;
+        PropertyPath m_originalPropertyPath;
         std::unique_ptr<PropertyRef> m_propertyRef;
         SourceType m_sourceType;
         Utf8String m_className;
@@ -73,12 +73,14 @@ struct PropertyNameExp final : ValueExp
         PropertyNameExp(PropertyPath const& propPath, RangeClassRefExp const& classRefExp, ECN::ECPropertyCR property);
         PropertyNameExp(ECSqlParseContext const&, Utf8StringCR propertyName, RangeClassRefExp const& classRefExp, ClassMap const& classMap);
         PropertyNameExp(ECSqlParseContext const&, RangeClassRefExp const& classRefExp, DerivedPropertyExp const& derivedPropExp);
-        Utf8StringCR GetPropertyName() const { return m_propertyPath[0].GetName(); }
+        Utf8StringCR GetPropertyName() const { return m_resolvedPropertyPath[0].GetName(); }
         bool HasUserDefinedAlias() const;
         ECN::ECPropertyCP GetVirtualProperty() const;
         bool IsVirtualProperty(bool recursively = true) const { return recursively ? GetVirtualProperty() != nullptr: m_property != nullptr ; }
-        PropertyPath const& GetECSqlPropertyPath() const { return m_ecsqlPropertyPath; }
-        PropertyPath const& GetPropertyPath() const { return m_propertyPath; }
+        //The original property path as it occurs in the ECSql statement
+        PropertyPath const& GetOriginalPropertyPath() const { return m_originalPropertyPath; }
+        //The resolved property path e.g. with resolved aliases and property pointers
+        PropertyPath const& GetResolvedPropertyPath() const { return m_resolvedPropertyPath; }
         PropertyMap const* GetPropertyMap() const;
         SourceType const GetSourceType() const { return m_sourceType; }
         Utf8CP GetClassName() const { return m_className.c_str(); }

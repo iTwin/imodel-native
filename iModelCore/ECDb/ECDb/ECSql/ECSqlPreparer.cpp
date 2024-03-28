@@ -2614,7 +2614,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareNavValueCreationFuncExp(NativeSqlBuilder::L
         .GetClass(
             exp.GetClassNameExp()->GetSchemaName(),
             exp.GetClassNameExp()->GetClassName()
-        )->GetPropertyP(exp.GetPropertyNameExp()->GetPropertyPath()[0].GetName());
+        )->GetPropertyP(exp.GetPropertyNameExp()->GetResolvedPropertyPath()[0].GetName());
 
     if (!property->GetIsNavigation())
         {

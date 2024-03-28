@@ -19,6 +19,7 @@ struct ECSqlFieldFactory final
         ECSqlFieldFactory() = delete;
         ~ECSqlFieldFactory() = delete;
 
+        static ECSqlStatus CreateField(ECSqlPrepareContext&, ECSqlSelectPreparedStatement&, int sqlColumnIndex, ECSqlColumnInfo const&, ValueExp const&);
         static ECSqlStatus CreateNullField(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, ECSqlColumnInfo const&);
         static ECSqlStatus CreatePrimitiveField(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, ECSqlColumnInfo const&, ECN::PrimitiveType);
         static ECSqlStatus CreateStructField(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, ECSqlColumnInfo const&, ECN::ECStructClassCR);
@@ -32,6 +33,7 @@ struct ECSqlFieldFactory final
         static ECN::ECTypeDescriptor DetermineDataType(DateTime::Info&, ECN::ECStructClassCP&, IssueDataSource const&, ECN::ECPropertyCR);
 
         static ECSqlSelectPreparedStatement& GetPreparedStatement(ECSqlPrepareContext&);
+        static ECSqlStatus CreateFieldForView(ECSqlPrepareContext& ctx, PropertyNameExp const& propNameExp, ClassNameExp const& viewClassNameExp, DerivedPropertyExp const& derivedProperty, int startColumnIndex, bool isDynamic);
 
     public:
         static ECSqlStatus CreateField(ECSqlPrepareContext&, DerivedPropertyExp const* derivedProperty, int startColumnIndex);

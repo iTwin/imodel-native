@@ -570,6 +570,7 @@
                 <Query>
                     SELECT
                         [ca].[ECInstanceId],
+                        ec_classid('ECDbMeta', 'PropertyCustomAttribute') [ECClassId],
                         NAVIGATION_VALUE(meta.PropertyCustomAttribute.Property, [ca].[ContainerId]),
                         NAVIGATION_VALUE(meta.PropertyCustomAttribute.CustomAttributeClass, [ca].[Class].[Id]),
                         XmlCAToJson([ca].[Class].[Id], [ca].[Instance]) [Instance]
@@ -612,6 +613,7 @@
                 <Query>
                     SELECT
                         [ca].[ECInstanceId],
+                        ec_classid('ECDbMeta', 'ClassCustomAttribute') [ECClassId],
                         NAVIGATION_VALUE(meta.ClassCustomAttribute.Class, [ca].[ContainerId]),
                         NAVIGATION_VALUE(meta.ClassCustomAttribute.CustomAttributeClass, [ca].[Class].[Id]),
                         XmlCAToJson([ca].[Class].[Id], [ca].[Instance]) [Instance]
@@ -654,6 +656,7 @@
                 <Query>
                     SELECT
                         [ca].[ECInstanceId],
+                        ec_classid('ECDbMeta', 'SchemaCustomAttribute') [ECClassId],
                         NAVIGATION_VALUE(meta.SchemaCustomAttribute.Schema, [ca].[ContainerId]),
                         NAVIGATION_VALUE(meta.SchemaCustomAttribute.CustomAttributeClass, [ca].[Class].[Id]),
                         XmlCAToJson([ca].[Class].[Id], [ca].[Instance]) [Instance]

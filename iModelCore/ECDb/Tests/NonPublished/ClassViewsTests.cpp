@@ -3,6 +3,7 @@
 * See COPYRIGHT.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include <regex>
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -361,7 +362,7 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
             <ECEntityClass typeName="P_View" description="" displayLabel="" modifier="Abstract">
                 <ECCustomAttributes>
                     <View xmlns="ECDbMap.02.00.03">
-                        <Query>SELECT intProp, longProp FROM ts.P</Query>
+                        <Query>SELECT intProp, longProp, ECInstanceId, ECClassId FROM ts.P</Query>
                     </View>
                 </ECCustomAttributes>
                 <ECProperty propertyName="intProp" typeName="int"/>
@@ -392,7 +393,7 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
             <ECEntityClass typeName="P_View" description="" displayLabel="" modifier="Abstract">
                 <ECCustomAttributes>
                     <View xmlns="ECDbMap.02.00.03">
-                        <Query>SELECT intProp, longProp, doubleProp FROM ts.P</Query>
+                        <Query>SELECT intProp, longProp, doubleProp, ECInstanceId, ECClassId FROM ts.P</Query>
                     </View>
                 </ECCustomAttributes>
                 <ECProperty propertyName="intProp" typeName="int"/>
@@ -424,7 +425,7 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
             <ECEntityClass typeName="P_View" description="" displayLabel="" modifier="Abstract">
                 <ECCustomAttributes>
                     <View xmlns="ECDbMap.02.00.03">
-                        <Query>SELECT intProp, longProp, doubleProp FROM ts.P</Query>
+                        <Query>SELECT intProp, longProp, doubleProp, ECInstanceId, ECClassId FROM ts.P</Query>
                     </View>
                 </ECCustomAttributes>
                 <ECProperty propertyName="intProp" typeName="int"/>
@@ -435,11 +436,11 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
         listener.Reset();
         ASSERT_EQ(ERROR, ImportSchema(testSchema));
         ASSERT_STREQ("Total of 4 view classes were checked and 1 were found to be invalid.", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid view class 'test_schema:P_View'. View query return property 'doubleProp' which not defined in view class or is a invalid system property.", listener.PopLastError().c_str());
+        ASSERT_STREQ("Invalid view class 'test_schema:P_View'. View query returns property 'doubleProp' which not defined in view class or is a invalid system property.", listener.PopLastError().c_str());
         listener.Dump("listener");
         m_ecdb.AbandonChanges();
     }
-    if ("system properties can be returned by view query for entity class") {
+    if ("system properties must be returned by view query for entity class") {
         auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema
                 schemaName="test_schema"
@@ -471,44 +472,6 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
         ASSERT_EQ(stmt.GetColumnCount(), 2);
         m_ecdb.AbandonChanges();
     }
-    if ("if system property is not selected view query, the select query will fail") {
-        auto testSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-        <ECSchema
-                schemaName="test_schema"
-                alias="ts"
-                version="1.0.0"
-                xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
-            <ECEntityClass typeName="P" modifier="Sealed">
-                <ECProperty propertyName="intProp" typeName="int"/>
-                <ECProperty propertyName="longProp" typeName="long"/>
-                <ECProperty propertyName="doubleProp" typeName="double"/>
-            </ECEntityClass>
-            <ECEntityClass typeName="P_View" description="" displayLabel="" modifier="Abstract">
-                <ECCustomAttributes>
-                    <View xmlns="ECDbMap.02.00.03">
-                        <Query>SELECT intProp, longProp, doubleProp FROM ts.P</Query>
-                    </View>
-                </ECCustomAttributes>
-                <ECProperty propertyName="intProp" typeName="int"/>
-                <ECProperty propertyName="longProp" typeName="long"/>
-                <ECProperty propertyName="doubleProp" typeName="double"/>
-            </ECEntityClass>
-        </ECSchema>)xml");
-
-        listener.Reset();
-        ASSERT_EQ(SUCCESS, ImportSchema(testSchema));
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT intProp, longProp, doubleProp FROM ts.P_View"));
-        stmt.Finalize();
-        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId FROM ts.P_View"));
-        stmt.Finalize();
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.P_View"));
-        ASSERT_EQ(stmt.GetColumnCount(), 3) << "system prop is not returned as its not selected ";
-        stmt.Finalize();
-        m_ecdb.AbandonChanges();
-    }
-
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1538,6 +1501,7 @@ TEST_F(ClassViewsFixture, demo_usecase_pipes) {
                     <Query>
                         SELECT
                             jo.ECInstanceId,
+                            jo.ECClassId,
                             CAST(json_extract(jo.json, '$.diameter') AS INTEGER) [Diameter],
                             CAST(json_extract(jo.json, '$.length') AS INTEGER) [Length],
                             json_extract(jo.json, '$.material') [Material]
@@ -1601,6 +1565,7 @@ TEST_F(ClassViewsFixture, ExistingViewsWithNoAdditionalRootEntityClasses)  {
                     <Query>
                         SELECT
                             sc.ECInstanceId,
+                            sc.ECClassId,
                             sc.Name
                         FROM meta.ECSchemaDef sc
                     </Query>
@@ -1635,6 +1600,7 @@ TEST_F(ClassViewsFixture, ExistingViewsWithNoAdditionalRootEntityClasses)  {
                     <Query>
                         SELECT
                             sc.ECInstanceId,
+                            sc.ECClassId,
                             sc.Name
                         FROM meta.ECSchemaDef sc
                     </Query>
@@ -1680,7 +1646,8 @@ TEST_F(ClassViewsFixture, update_views_in_dynamic_schema) {
           <ECCustomAttributes>
               <View xmlns="ECDbMap.02.00.03">
                   <Query>
-                  SELECT * FROM(SELECT 'dog' as Name UNION SELECT 'cat' as NAME)
+                  SELECT *, ec_classid('TestSchema', 'Animals') as ECClassId FROM(SELECT 1 as ECInstanceId, 'dog' as Name 
+                  UNION SELECT 2 as ECInstanceId, 'cat' as NAME)
                   </Query>
               </View>
           </ECCustomAttributes>
@@ -1711,7 +1678,9 @@ TEST_F(ClassViewsFixture, update_views_in_dynamic_schema) {
           <ECCustomAttributes>
               <View xmlns="ECDbMap.02.00.03">
                   <Query>
-                  SELECT * FROM(SELECT 'dog' as Name UNION SELECT 'cat' as NAME UNION SELECT 'elephant' as NAME)
+                  SELECT *, ec_classid('TestSchema', 'Animals') as ECClassId FROM(SELECT 1 as ECInstanceId, 'dog' as Name 
+                  UNION SELECT 2 as ECInstanceId, 'cat' as NAME 
+                  UNION SELECT 3 as ECInstanceId, 'elephant' as NAME)
                   </Query>
               </View>
           </ECCustomAttributes>
@@ -1749,8 +1718,8 @@ TEST_F(ClassViewsFixture, update_views_in_dynamic_schema_cte) {
           <ECCustomAttributes>
               <View xmlns="ECDbMap.02.00.03">
                   <Query>
-                  WITH cte(col) AS (SELECT 'dog' UNION SELECT 'cat')
-                  SELECT col as [Name] FROM cte
+                  WITH cte(id,col) AS (SELECT 1, 'dog' UNION SELECT 2, 'cat')
+                  SELECT id as [ECInstanceId], ec_classid('TestSchema', 'Animals') as [ECClassId], col as [Name] FROM cte
                   </Query>
               </View>
           </ECCustomAttributes>
@@ -1781,8 +1750,8 @@ TEST_F(ClassViewsFixture, update_views_in_dynamic_schema_cte) {
           <ECCustomAttributes>
               <View xmlns="ECDbMap.02.00.03">
                   <Query>
-                  WITH cte(col) AS (SELECT 'dog' UNION SELECT 'cat' UNION SELECT 'elephant')
-                  SELECT col as [Name] FROM cte
+                  WITH cte(id,col) AS (SELECT 1, 'dog' UNION SELECT 2, 'cat' UNION SELECT 3, 'elephant')
+                  SELECT id as [ECInstanceId], ec_classid('TestSchema', 'Animals') as [ECClassId], col as [Name] FROM cte
                   </Query>
               </View>
           </ECCustomAttributes>
@@ -1800,5 +1769,347 @@ TEST_F(ClassViewsFixture, update_views_in_dynamic_schema_cte) {
   //ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
   }
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassViewsFixture, ViewRequiresClassIdAndInstanceId) {
+    std::vector<Utf8String> values = {
+          "Apple",
+          "Banana",
+          "Cherry"
+    };
+
+    Utf8CP schemaTemplate = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+      <ECSchema schemaName="TestSchema" alias="ts" version="1.0.%d" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
+          <ECEntityClass typeName="Fruit">
+              <ECProperty propertyName="Name" typeName="string" />
+          </ECEntityClass>
+          <ECEntityClass typeName="FruitView" modifier="Abstract">
+              <ECCustomAttributes>
+                  <View xmlns="ECDbMap.02.00.03">
+                      <Query>
+                          %s
+                      </Query>
+                  </View>
+            </ECCustomAttributes>
+              <ECProperty propertyName="MyName" typeName="string" />
+          </ECEntityClass>
+      </ECSchema>)xml";
+
+    Utf8PrintfString initialSchemaXml(schemaTemplate, 0, "SELECT f.ECInstanceId, ec_classid('TestSchema', 'FruitView') as [ECClassId], f.Name [MyName] FROM ts.Fruit f");
+    SchemaItem testSchema(initialSchemaXml);
+
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDbForCurrentTest());
+    ASSERT_EQ(SUCCESS, ImportSchema(testSchema));
+
+    { //insert test data
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Fruit(Name) VALUES(?)"));
+    for (const auto& v : values)
+        {
+        stmt.BindText(1, v.c_str(), IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        stmt.ClearBindings();
+        stmt.Reset();
+        }
+    }
+
+    auto fruitClassId = m_ecdb.Schemas().GetClassId("TestSchema", "Fruit");
+    ASSERT_TRUE(fruitClassId.IsValid());
+    auto fruitViewClassId = m_ecdb.Schemas().GetClassId("TestSchema", "FruitView");
+    ASSERT_TRUE(fruitViewClassId.IsValid());
+
+    { //Verify data
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, MyName FROM ts.FruitView WHERE MyName = 'Banana'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    auto instanceId = stmt.GetValueId<ECInstanceId>(0);
+    ASSERT_TRUE(instanceId.IsValid());
+    auto idColInfo = stmt.GetColumnInfo(0);
+    ASSERT_EQ(true, idColInfo.IsSystemProperty());
+
+    auto classId = stmt.GetValueId<ECClassId>(1);
+    auto cidColInfo = stmt.GetColumnInfo(1);
+    ASSERT_EQ(true, cidColInfo.IsSystemProperty());
+    ASSERT_TRUE(classId.IsValid());
+    ASSERT_EQ(fruitViewClassId, classId);
+
+    ASSERT_STREQ("Banana", stmt.GetValueText(2));
+    auto nameColInfo = stmt.GetColumnInfo(2);
+    ASSERT_EQ(false, nameColInfo.IsGeneratedProperty());
+    ASSERT_STREQ(nameColInfo.GetRootClass().GetClass().GetName().c_str(), "FruitView");
+    ASSERT_STREQ(nameColInfo.GetProperty()->GetClass().GetName().c_str(), "FruitView");
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    Utf8PrintfString updatedSchemaXml(schemaTemplate, 1, "SELECT f.ECInstanceId, f.ECClassId, f.Name [MyName] FROM ts.Fruit f");
+    SchemaItem testSchema2(updatedSchemaXml);
+    ASSERT_EQ(SUCCESS, ImportSchema(testSchema2));
+
+    { //Select from View
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, MyName FROM ts.FruitView WHERE MyName = 'Banana'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    auto instanceId = stmt.GetValueId<ECInstanceId>(0);
+    ASSERT_TRUE(instanceId.IsValid());
+    auto idColInfo = stmt.GetColumnInfo(0);
+    ASSERT_EQ(true, idColInfo.IsSystemProperty());
+
+    auto classId = stmt.GetValueId<ECClassId>(1);
+    auto cidColInfo = stmt.GetColumnInfo(1);
+    ASSERT_EQ(true, cidColInfo.IsSystemProperty());
+    ASSERT_TRUE(classId.IsValid());
+    ASSERT_EQ(fruitClassId, classId);
+
+    ASSERT_STREQ("Banana", stmt.GetValueText(2));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    TestIssueListener listener;
+    m_ecdb.AddIssueListener(listener);
+    listener.Reset();
+
+    std::string pattern = "Total of \\d+ view classes were checked and 1 were found to be invalid.";
+    std::regex firstErrorRegex(pattern);
+
+    { //no ECInstanceId
+    Utf8PrintfString xml(schemaTemplate, 2, "SELECT f.ECClassId, f.Name [MyName] FROM ts.Fruit f");
+    SchemaItem invalidItem(xml);
+    ASSERT_EQ(ERROR, ImportSchema(invalidItem));
+    ASSERT_TRUE(std::regex_match(listener.PopLastError().c_str(), firstErrorRegex));
+    ASSERT_STREQ("Invalid view class 'TestSchema:FruitView'. View query must return ECInstanceId.", listener.PopLastError().c_str());
+    }
+
+    listener.Reset();
+
+    { //no ECClassId
+    Utf8PrintfString xml(schemaTemplate, 3, "SELECT f.ECInstanceId, f.Name [MyName] FROM ts.Fruit f");
+    SchemaItem invalidItem(xml);
+    ASSERT_EQ(ERROR, ImportSchema(invalidItem));
+    ASSERT_TRUE(std::regex_match(listener.PopLastError().c_str(), firstErrorRegex));
+    ASSERT_STREQ("Invalid view class 'TestSchema:FruitView'. View query must return ECClassId.", listener.PopLastError().c_str());
+    }
+
+    listener.Reset();
+
+    { //string as classId
+    Utf8PrintfString xml(schemaTemplate, 4, "SELECT 'FruitView' as ECClassId, f.ECInstanceId, f.Name [MyName] FROM ts.Fruit f");
+    SchemaItem invalidItem(xml);
+    ASSERT_EQ(ERROR, ImportSchema(invalidItem));
+    ASSERT_TRUE(std::regex_match(listener.PopLastError().c_str(), firstErrorRegex));
+    ASSERT_STREQ("Invalid view class 'TestSchema:FruitView'. ECClassId must be a primitive integer or long.", listener.PopLastError().c_str());
+    }
+
+    listener.Reset();
+
+    { //string as instanceId
+    Utf8PrintfString xml(schemaTemplate, 5, "SELECT f.ECClassId, 'FruitView' as ECInstanceId, f.Name [MyName] FROM ts.Fruit f");
+    SchemaItem invalidItem(xml);
+    ASSERT_EQ(ERROR, ImportSchema(invalidItem));
+    ASSERT_TRUE(std::regex_match(listener.PopLastError().c_str(), firstErrorRegex));
+    ASSERT_STREQ("Invalid view class 'TestSchema:FruitView'. ECInstanceId must be a primitive integer or long.", listener.PopLastError().c_str());
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassViewsFixture, ViewColumnInfoTests) {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+      <ECSchema schemaName="TestSchema" alias="ts" version="1.0.%d" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
+          <ECEntityClass typeName="Entity">
+              <ECProperty propertyName="Name" typeName="string" />
+          </ECEntityClass>
+          <ECEntityClass typeName="DirectView" modifier="Abstract">
+              <ECCustomAttributes>
+                  <View xmlns="ECDbMap.02.00.03"><Query>
+                      SELECT e.ECInstanceId, ec_classid('TestSchema', 'DirectView') as [ECClassId], e.Name [MyName] FROM ts.Entity e
+                  </Query></View>
+              </ECCustomAttributes>
+              <ECProperty propertyName="MyName" typeName="string" />
+          </ECEntityClass>
+          <ECEntityClass typeName="StaticDataView" modifier="Abstract">
+              <ECCustomAttributes>
+                  <View xmlns="ECDbMap.02.00.03"><Query>
+                      SELECT 1 as [ECInstanceId], ec_classid('TestSchema', 'StaticDataView') as [ECClassId], 'Bar' as [MyName]
+                  </Query></View>
+              </ECCustomAttributes>
+              <ECProperty propertyName="MyName" typeName="string" />
+          </ECEntityClass>
+          <ECEntityClass typeName="NestedView" modifier="Abstract">
+              <ECCustomAttributes>
+                  <View xmlns="ECDbMap.02.00.03"><Query>
+                      SELECT sdv.*, sdv.MyName as [MyName2] from ts.StaticDataView sdv
+                  </Query></View>
+              </ECCustomAttributes>
+              <ECProperty propertyName="MyName" typeName="string" />
+              <ECProperty propertyName="MyName2" typeName="string" />
+          </ECEntityClass>
+      </ECSchema>)xml";
+
+    SchemaItem testSchema(schemaXml);
+
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDbForCurrentTest());
+    ASSERT_EQ(SUCCESS, ImportSchema(testSchema));
+
+    { //insert test data
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Entity(Name) VALUES(?)"));
+    stmt.BindText(1, "Foo", IECSqlBinder::MakeCopy::No);
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    auto verifyColumnInfo = [](
+      ECSqlColumnInfoCR colInfo,
+      bool expectedIsGeneratedProperty,
+      bool expectedIsDynamic,
+      bool expectedIsSystemProperty,
+      PrimitiveType expectedPrimitiveType,
+      ValueKind expectedTypeKind,
+      Utf8CP expectedPropertyName,
+      Utf8CP expectedClassName,
+      Utf8CP expectedOriginName,
+      Utf8CP expectedOriginClassName,
+      Utf8CP expectedPropertyPath,
+      Utf8CP expectedRootClassName)
+    {
+      ASSERT_EQ(expectedIsGeneratedProperty, colInfo.IsGeneratedProperty());
+      ASSERT_EQ(expectedIsDynamic, colInfo.IsDynamic());
+      ASSERT_EQ(expectedIsSystemProperty, colInfo.IsSystemProperty());
+      auto& typeInfo = colInfo.GetDataType();
+      ASSERT_EQ(expectedPrimitiveType, typeInfo.GetPrimitiveType());
+      ASSERT_EQ(expectedTypeKind, typeInfo.GetTypeKind());
+      ECPropertyCP property = colInfo.GetProperty();
+      ASSERT_STREQ(expectedPropertyName, property->GetName().c_str());
+      ASSERT_STREQ(expectedClassName, property->GetClass().GetName().c_str());
+
+      ECPropertyCP originProperty = colInfo.GetOriginProperty();
+      if (expectedOriginClassName != nullptr || expectedOriginName != nullptr) {
+        ASSERT_TRUE(originProperty != nullptr);
+        ASSERT_STREQ(expectedOriginName, originProperty->GetName().c_str());
+        ASSERT_STREQ(expectedOriginClassName, originProperty->GetClass().GetName().c_str());
+      }
+
+      ECSqlPropertyPathCR path = colInfo.GetPropertyPath();
+      Utf8String pathStr = path.ToString();
+      ASSERT_STREQ(expectedPropertyPath, pathStr.c_str());
+
+      ECSqlColumnInfo::RootClass const& rootClass = colInfo.GetRootClass();
+      ASSERT_STREQ(expectedRootClassName, rootClass.GetClass().GetName().c_str());
+    };
+    
+    { //Direct query from DirectView
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, MyName FROM ts.DirectView"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    
+    verifyColumnInfo(stmt.GetColumnInfo(0),
+        false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "ECInstanceId", "ClassECSqlSystemProperties", //Property
+        "ECInstanceId", "ClassECSqlSystemProperties", //OriginProperty
+        "ECInstanceId", "DirectView"); //PropertyPath, RootClass
+
+    verifyColumnInfo(stmt.GetColumnInfo(1),
+        false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "ECClassId", "ClassECSqlSystemProperties", //Property
+        "ECClassId", "ClassECSqlSystemProperties", //OriginProperty
+        "ECClassId", "DirectView"); //PropertyPath, RootClass
+    
+    verifyColumnInfo(stmt.GetColumnInfo(2),
+        false, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
+        "MyName", "DirectView", //Property
+        "MyName", "DirectView", //OriginProperty
+        "MyName", "DirectView"); //PropertyPath, RootClass
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    { //Alias on DirectView
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT MyName as TheName FROM ts.DirectView"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    
+    verifyColumnInfo(stmt.GetColumnInfo(0),
+        true, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
+        "TheName", "DynamicECSqlSelectClause", //Property
+        "MyName", "DirectView", //OriginProperty
+        "TheName", "DirectView"); //PropertyPath, RootClass
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+  
+    { //Direct query from StaticDataView
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, MyName FROM ts.StaticDataView"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    
+    verifyColumnInfo(stmt.GetColumnInfo(0),
+        false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "ECInstanceId", "ClassECSqlSystemProperties", //Property
+        "ECInstanceId", "ClassECSqlSystemProperties", //OriginProperty
+        "ECInstanceId", "StaticDataView"); //PropertyPath, RootClass
+
+    verifyColumnInfo(stmt.GetColumnInfo(1),
+        false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "ECClassId", "ClassECSqlSystemProperties", //Property
+        "ECClassId", "ClassECSqlSystemProperties", //OriginProperty
+        "ECClassId", "StaticDataView"); //PropertyPath, RootClass
+
+    verifyColumnInfo(stmt.GetColumnInfo(2),
+        false, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
+        "MyName", "StaticDataView", //Property
+        "MyName", "StaticDataView", //OriginProperty
+        "MyName", "StaticDataView"); //PropertyPath, RootClass
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    { //Direct query from NestedView
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, MyName, MyName2 FROM ts.NestedView"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    verifyColumnInfo(stmt.GetColumnInfo(0),
+        false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "ECInstanceId", "ClassECSqlSystemProperties", //Property
+        "ECInstanceId", "ClassECSqlSystemProperties", //OriginProperty
+        "ECInstanceId", "NestedView"); //PropertyPath, RootClass
+
+    verifyColumnInfo(stmt.GetColumnInfo(1),
+        false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
+        "ECClassId", "ClassECSqlSystemProperties", //Property
+        "ECClassId", "ClassECSqlSystemProperties", //OriginProperty
+        "ECClassId", "NestedView"); //PropertyPath, RootClass
+
+    verifyColumnInfo(stmt.GetColumnInfo(2),
+        false, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
+        "MyName", "NestedView", //Property
+        "MyName", "NestedView", //OriginProperty
+        "MyName", "NestedView"); //PropertyPath, RootClass
+
+    verifyColumnInfo(stmt.GetColumnInfo(3),
+        false, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
+        PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
+        "MyName2", "NestedView", //Property
+        "MyName2", "NestedView", //OriginProperty
+        "MyName2", "NestedView"); //PropertyPath, RootClass
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+}
+
 
 END_ECDBUNITTESTS_NAMESPACE
