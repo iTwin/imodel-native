@@ -180,11 +180,6 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData(IECInstanceR instanc
 
     if (prop->GetIsStruct())
         {
-        if (value.IsNull())
-            {
-            return SUCCESS;
-            }
-
         for (IECSqlValue const& memberVal : value.GetStructIterable())
             {
             if (SUCCESS != SetPropertyData(instance, accessString.c_str(), memberVal))
