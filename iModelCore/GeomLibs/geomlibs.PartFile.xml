@@ -149,6 +149,7 @@
         <!-- *** TRICKY: Must depend on a part in begtest repository, in order to use a productdirectorylist from there. -->
         <SubPart PartFile="iModelCore/BeGTest/BeGTest" PartName="Base" />
         <SubPart PartName="Tests"/>
+        <SubPart PartName="comparedgnjs" />
         <Directories DirectoryListName="CollectionProduct" PartFile="iModelCore/BeGTest/BeGTest"/>
     </Product>
 
@@ -167,7 +168,6 @@
     </Product>
 
     <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="$(BuildContext)/SubParts/BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=GeomLibs-Gtest -dGTEST_NAME=GeomLibsTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
-        <SubPart PartName="comparedgnjs" />
         <SubProduct ProductName="GeomLibs-Gtest" />
         <SubPart PartName="Gtest-Tools" PartFile="iModelCore/BeGTest/BeGTest"/>
         <Bindings>
@@ -183,7 +183,8 @@
 
 
     <Part Name="comparedgnjs" BentleyBuildMakeFile="comparedgnjs/comparedgnjs.mke" OnlyPlatforms="x64">
-        <SubProduct ProductName="GeomLibs-Gtest" />
+        <SubPart PartName="GeomDlls" />
+        <SubPart PartName="GeomlibsSerialization" />
     </Part>
 
     <!-- ********************** -->

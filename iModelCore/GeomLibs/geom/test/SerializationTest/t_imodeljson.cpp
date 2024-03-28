@@ -66,7 +66,7 @@ WCharCP flatbufferUInt8Extension = nullptr   // optionally write flatbuffer to s
     bool stat = false;
     Check::StartScope ("ReadIModelJson");
     Utf8String string;
-    printf (" ReadIModelJson file %ls\n", dataPath.c_str ());
+    // printf("ReadIModelJson file %ls\n", dataPath.c_str()); // keep for debug purposes
 
     if (Check::True (GTestFileOps::ReadAsString (dataPath, string), "Read file to string"))
         {
@@ -93,7 +93,7 @@ bool ReadIModelBytes(bvector<Byte> &buffer, BeFileName dataPath)
     buffer.clear ();
     bool stat = false;
     Check::StartScope ("ReadICrashFiles");
-    printf ("ReadICrashFiles file %ls\n", dataPath.c_str ());
+    // printf ("ReadICrashFiles file %ls\n", dataPath.c_str ()); // keep for debug purposes
     if (Check::True(GTestFileOps::ReadAsBytes(dataPath, buffer), "Read file to byte array"))
         stat = true;
     Check::EndScope();
@@ -117,11 +117,11 @@ TEST(IModelJson,BytesToXXX)
         if (Check::True(ReadIModelBytes(buffer, filePath)))
             {
             IGeometryPtr geometry;
-            geometry = BentleyGeometryFlatBuffer::BytesToGeometry(buffer.data(), buffer.size());
+            geometry = BentleyGeometryFlatBuffer::BytesToGeometrySafe(buffer.data(), buffer.size());
             if (geometry != nullptr)
                 {
                 writeGeometryToFile(geometry, L"IModelJson.BytesToXXX", L"geometryVector", nullptr, L"imjs");
-                Check::Fail("expect BytesToGeometry to return nullptr for invalid bytes");
+                Check::Fail("expect BytesToGeometrySafe to return nullptr for invalid bytes");
                 }
             bool ret;
             bvector<IGeometryPtr> geometryVector;
@@ -132,9 +132,9 @@ TEST(IModelJson,BytesToXXX)
                 Check::Fail("expect BytesToVectorOfGeometry to return false for invalid bytes");
                 }
             PolyfaceQueryCarrier carrier(0, false, 0, 0, nullptr, nullptr);
-            ret = BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(buffer.data(), buffer.size(), carrier);
+            ret = BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrierSafe(buffer.data(), buffer.size(), carrier);
             if (ret)
-                Check::Fail("expect BytesToPolyfaceQueryCarrier to return false for invalid bytes");
+                Check::Fail("expect BytesToPolyfaceQueryCarrierSafe to return false for invalid bytes");
             }
         }
     }
@@ -201,7 +201,7 @@ TEST(IModelJson,GeometryToBytes)
     Check::True(arcSingle->IsSameStructureAndGeometry((*geometryArray2[0]->GetAsICurvePrimitive()), 0));
 
     IGeometryPtr geometrySingle2 = BentleyGeometryFlatBuffer::BytesToGeometry(bytesArray);
-    Check::isNull(geometrySingle2.get());
+    Check::IsNull(geometrySingle2.get());
     }
 
 static  bvector<Byte>  jsSegmentBytes {
@@ -459,7 +459,7 @@ PolyfaceHeaderPtr RoundTripMeshQueryCarrier(PolyfaceHeaderPtr & meshA)
     BentleyGeometryFlatBuffer::GeometryToBytes(*IGeometry::Create(meshA), bytes);
     bvector<IGeometryPtr> geometryC;
     PolyfaceQueryCarrier carrier(0, false, 0, 0, nullptr, nullptr);
-    if (Check::True (BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(bytes.data(), bytes.size(),carrier, false), "Bytes to QueryCarrier"))
+    if (Check::True (BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrierSafe(bytes.data(), bytes.size(),carrier, false), "Bytes to QueryCarrier"))
         {
         auto meshC = carrier.CloneAsVariableSizeIndexed (carrier);
         if (Check::True (meshC.IsValid ()))

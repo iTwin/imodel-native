@@ -5,7 +5,6 @@
 #include "checkers.h"
 #include <GeomSerialization/GeomSerializationApi.h>
 #include <Bentley/BeTest.h>
-#include <BeJsonCpp/BeJsonUtilities.h>
 static double s_simpleZeroTol = 1.0e-12;
 
 struct ScopedPrintState
@@ -227,7 +226,7 @@ bool Check::True (bool a, char const*pString)
     return false;
     }
 
-bool Check::isNull (void* object, char const*pString)
+bool Check::IsNull(void* object, char const*pString)
     {
     return Check::True(object == nullptr, pString);
     }

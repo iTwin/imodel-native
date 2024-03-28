@@ -7,7 +7,6 @@
 #include <Bentley\BeFileName.h>
 #include <Bentley\BeFile.h>
 #include <GeomSerialization\GeomSerializationApi.h>
-#include <BeJsonCpp/BeJsonUtilities.h>
 #include <Bentley\BeDirectoryIterator.h>
 #include <json/writer.h>
 #include "compareJson.h"

@@ -3,7 +3,6 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
-#include <BeJsonCpp/BeJsonUtilities.h>
 #include <PlacementOnEarth/Placement.h>
 
 BEGIN_UNNAMED_NAMESPACE

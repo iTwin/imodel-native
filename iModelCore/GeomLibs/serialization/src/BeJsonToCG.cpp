@@ -4,7 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 
 #include "serializationPCH.h"
-#include <BeJsonCpp/BeJsonUtilities.h>
 
 // need mutex for std::call_once
 #include <mutex>
