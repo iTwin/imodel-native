@@ -57,7 +57,6 @@ struct PresentationManagerStressTests : ECPresentationTest
     std::shared_ptr<TestECInstanceChangeEventsSource> m_eventsSource = std::make_shared<TestECInstanceChangeEventsSource>();
     std::shared_ptr<TestUpdateRecordsHandler> m_updateRecordsHandler = std::make_shared<TestUpdateRecordsHandler>();
     std::shared_ptr<TestHierarchyChangeRecordsHandler> m_changeRecordsHandler = std::make_shared<TestHierarchyChangeRecordsHandler>();
-    ECPresentation::JsonLocalState m_localState;
 
     // Data
     bvector<ECClassInstanceKey> m_project1GeometricElementKeys;
@@ -65,7 +64,7 @@ struct PresentationManagerStressTests : ECPresentationTest
     bvector<NavNodeCPtr> m_nodesPath1Items;
     bvector<NavNodeCPtr> m_nodesPath2Items;
 
-    PresentationManagerStressTests() : m_localState(std::make_shared<RuntimeLocalState>()) {}
+    PresentationManagerStressTests() {}
 
     void SetUp() override
         {
@@ -82,7 +81,7 @@ struct PresentationManagerStressTests : ECPresentationTest
         params.SetCachingParams(cachingParams);
         params.SetECInstanceChangeEventSources({ m_eventsSource });
         params.SetUpdateRecordsHandlers({ m_updateRecordsHandler });
-        params.SetLocalState(&m_localState);
+        params.SetLocalState(std::make_shared<ECPresentation::JsonLocalState>(std::make_shared<RuntimeLocalState>()));
         m_manager = new ECPresentationManager(params);
 
         // set up presentation manager
