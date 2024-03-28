@@ -2226,3 +2226,29 @@ TEST(BsplineCurve, roundTripClosure)
             }
         }
     }
+
+TEST(MSBsplineSurface, ClosestPoint2)
+    {
+    BeFileName filename = BeFileName(L"bsurf-bilinear-nearly-planar.imjs");     // in meters
+    BeFileName fullPathName;
+    BeTest::GetHost().GetDocumentsRoot(fullPathName);
+    fullPathName.AppendToPath(L"GeomLibsTestData").AppendToPath(L"BSpline").AppendToPath(filename);
+    bvector<IGeometryPtr> inputs;
+    if (Check::True(GTestFileOps::JsonFileToGeometry(fullPathName, inputs), "Parse inputs") &&
+        Check::Size(inputs.size(), 1, "Have one input"))
+        {
+        auto bsurf = inputs[0]->GetAsMSBsplineSurface();
+        if (Check::True(bsurf.IsValid(), "input is valid"))
+            {
+            DPoint3d testPt = DPoint3d::From(147.63417202181378, 14.099097417056168, 47.76);    // in meters
+            DPoint3d closestPt;
+            DPoint2d uv;
+            bsurf->ClosestPoint(closestPt, uv, testPt);
+            Check::PushTolerance (ToleranceSelect::ToleranceSelect_Loose);
+            if (!Check::Near(testPt, closestPt, "found expected closest point", DoubleOps::MaxAbs(testPt.x, testPt.y, testPt.z, closestPt.x, closestPt.y, closestPt.z)))
+                Check::SaveTransformed(DSegment3d::From(testPt, closestPt));
+            Check::PopTolerance();
+            }
+        }
+    Check::ClearGeometry("MSBsplineSurface.ClosestPoint2");
+    }
