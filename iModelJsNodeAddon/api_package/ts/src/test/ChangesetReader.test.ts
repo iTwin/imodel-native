@@ -52,6 +52,38 @@ describe("Native changeset reader", () => {
     expect(changes.filter((x) => x.primaryKeys[0] === "0xd4000000052f").map((x) => x.op)[0]).eq("inserted");
     expect(changes.filter((x) => x.primaryKeys[0] === "0xcd00000002f5").map((x) => x.op)[0]).eq("updated");
   });
+  it("getColumnValueXXXX() methods", () => {
+    const reader = new iModelJsNative.ChangesetReader();
+    const testCsFile = path.join(getAssetsDir(), "test.cs");
+    reader.openFile(testCsFile, false);
+
+    expect(reader.step()).is.true;
+    expect(reader.getTableName()).equals("bis_Element");
+    expect(reader.getOpCode()).equals(DbOpcode.Insert);
+    expect(reader.getColumnCount()).equals(12);
+    expect(reader.getColumnValueType(0, IModelJsNative.DbChangeStage.Old)).is.undefined;
+    expect(reader.getColumnValueType(100000, IModelJsNative.DbChangeStage.New)).is.undefined;
+
+    expect(reader.getColumnValueType(0, IModelJsNative.DbChangeStage.New)).equals(IModelJsNative.DbValueType.IntegerVal);
+    expect(reader.getColumnValueType(1, IModelJsNative.DbChangeStage.New)).equals(IModelJsNative.DbValueType.IntegerVal);
+    expect(reader.getColumnValueType(2, IModelJsNative.DbChangeStage.New)).equals(IModelJsNative.DbValueType.IntegerVal);
+    expect(reader.getColumnValueType(3, IModelJsNative.DbChangeStage.New)).equals(IModelJsNative.DbValueType.FloatVal);
+    expect(reader.getColumnValueType(4, IModelJsNative.DbChangeStage.New)).equals(IModelJsNative.DbValueType.IntegerVal);
+    expect(reader.getColumnValueType(5, IModelJsNative.DbChangeStage.New)).equals(IModelJsNative.DbValueType.IntegerVal);
+    expect(reader.getColumnValueType(6, IModelJsNative.DbChangeStage.New)).equals(IModelJsNative.DbValueType.NullVal);
+    expect(reader.getColumnValueType(7, IModelJsNative.DbChangeStage.New)).equals(IModelJsNative.DbValueType.NullVal);
+    expect(reader.getColumnValueType(8, IModelJsNative.DbChangeStage.New)).equals(IModelJsNative.DbValueType.NullVal);
+    expect(reader.getColumnValueType(9, IModelJsNative.DbChangeStage.New)).equals(IModelJsNative.DbValueType.NullVal);
+    expect(reader.getColumnValueType(10, IModelJsNative.DbChangeStage.New)).equals(IModelJsNative.DbValueType.BlobVal);
+    expect(reader.getColumnValueType(11, IModelJsNative.DbChangeStage.New)).equals(IModelJsNative.DbValueType.NullVal);
+
+    expect(reader.getColumnValueInteger(0, IModelJsNative.DbChangeStage.New)).equals(233096465089837);
+    expect(reader.getColumnValueId(0, IModelJsNative.DbChangeStage.New)).equals("0xd4000000052d");
+    expect(reader.getColumnValueText(0, IModelJsNative.DbChangeStage.New)).equals("233096465089837");
+    expect(reader.getColumnValueDouble(0, IModelJsNative.DbChangeStage.New)).equals(233096465089837);
+    expect(reader.getColumnValueBinary(0, IModelJsNative.DbChangeStage.New)).deep.equals(new Uint8Array([50, 51, 51, 48, 57, 54, 52, 54, 53, 48, 56, 57, 56, 51, 55]));
+    expect(reader.isColumnValueNull(0, IModelJsNative.DbChangeStage.New)).is.false;
+  });
 
   it("check exceptions", () => {
     const reader = new iModelJsNative.ChangesetReader();

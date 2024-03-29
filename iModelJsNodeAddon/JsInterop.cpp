@@ -1310,23 +1310,183 @@ Napi::Value NativeChangeset::GetHasRow(Napi::Env env) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::GetColumnValueType(Napi::Env env, int col, int target) {
-    if (HasRow()) {
-        // old value can be called by updated and deleted row.
-        if (target == 0 && m_opcode == DbOpcode::Insert)
-            return env.Undefined();
-
-        // new value can be called by updated and inserted row.
-        if (target != 0 && m_opcode == DbOpcode::Delete)
-            return env.Undefined();
-
-        auto val = target == 0 ? m_currentChange.GetOldValue(col) : m_currentChange.GetNewValue(col);
-        if (!val.IsValid()) {
-            return env.Undefined();
-        }
-        return Napi::Number::New(env, (int)val.GetValueType());
+Napi::Value NativeChangeset::GetColumnValueInteger(Napi::Env env, int col, int target){
+    if (!HasRow() || !(col >= 0 && col < m_columnCount) || (target != 0 && target != 1)) {
+        return env.Undefined();
     }
-    return env.Undefined();
+
+    // old value can be called by updated and deleted row.
+    if (target == 0 && m_opcode == DbOpcode::Insert)
+        return env.Undefined();
+
+    // new value can be called by updated and inserted row.
+    if (target != 0 && m_opcode == DbOpcode::Delete)
+        return env.Undefined();
+
+    auto val = target == 0 ? m_currentChange.GetOldValue(col) : m_currentChange.GetNewValue(col);
+    if (!val.IsValid()) {
+        return env.Undefined();
+    }
+
+    if (val.IsNull()) {
+        return env.Null();
+    }
+
+    return Napi::Number::New(env, static_cast<double>(val.GetValueInt64()));
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Napi::Value NativeChangeset::GetColumnValueId(Napi::Env env, int col, int target){
+    if (!HasRow() || !(col >= 0 && col < m_columnCount) || (target != 0 && target != 1)) {
+        return env.Undefined();
+    }
+
+    // old value can be called by updated and deleted row.
+    if (target == 0 && m_opcode == DbOpcode::Insert)
+        return env.Undefined();
+
+    // new value can be called by updated and inserted row.
+    if (target != 0 && m_opcode == DbOpcode::Delete)
+        return env.Undefined();
+
+    auto val = target == 0 ? m_currentChange.GetOldValue(col) : m_currentChange.GetNewValue(col);
+    if (!val.IsValid()) {
+        return env.Undefined();
+    }
+
+    if (val.IsNull()) {
+        return env.Null();
+    }
+
+    return Napi::String::New(env, BeInt64Id(val.GetValueUInt64()).ToHexStr());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Napi::Value NativeChangeset::GetColumnValueDouble(Napi::Env env, int col, int target){
+    if (!HasRow() || !(col >= 0 && col < m_columnCount) || (target != 0 && target != 1)) {
+        return env.Undefined();
+    }
+
+    // old value can be called by updated and deleted row.
+    if (target == 0 && m_opcode == DbOpcode::Insert)
+        return env.Undefined();
+
+    // new value can be called by updated and inserted row.
+    if (target != 0 && m_opcode == DbOpcode::Delete)
+        return env.Undefined();
+
+    auto val = target == 0 ? m_currentChange.GetOldValue(col) : m_currentChange.GetNewValue(col);
+    if (!val.IsValid()) {
+        return env.Undefined();
+    }
+
+    if (val.IsNull()) {
+        return env.Null();
+    }
+
+    return Napi::Number::New(env, val.GetValueDouble());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Napi::Value NativeChangeset::GetColumnValueText(Napi::Env env, int col, int target) {
+    if (!HasRow() || !(col >= 0 && col < m_columnCount) || (target != 0 && target != 1)) {
+        return env.Undefined();
+    }
+
+    // old value can be called by updated and deleted row.
+    if (target == 0 && m_opcode == DbOpcode::Insert)
+        return env.Undefined();
+
+    // new value can be called by updated and inserted row.
+    if (target != 0 && m_opcode == DbOpcode::Delete)
+        return env.Undefined();
+
+    auto val = target == 0 ? m_currentChange.GetOldValue(col) : m_currentChange.GetNewValue(col);
+    if (!val.IsValid()) {
+        return env.Undefined();
+    }
+
+    if (val.IsNull()) {
+        return env.Null();
+    }
+    return Napi::String::New(env, val.GetValueText());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Napi::Value NativeChangeset::GetColumnValueBinary(Napi::Env env, int col, int target) {
+    if (!HasRow() || !(col >= 0 && col < m_columnCount) || (target != 0 && target != 1)) {
+        return env.Undefined();
+    }
+
+    // old value can be called by updated and deleted row.
+    if (target == 0 && m_opcode == DbOpcode::Insert)
+        return env.Undefined();
+
+    // new value can be called by updated and inserted row.
+    if (target != 0 && m_opcode == DbOpcode::Delete)
+        return env.Undefined();
+
+    auto val = target == 0 ? m_currentChange.GetOldValue(col) : m_currentChange.GetNewValue(col);
+    if (!val.IsValid()) {
+        return env.Undefined();
+    }
+    auto nBytes = val.GetValueBytes();
+    auto blob = Napi::Uint8Array::New(env, nBytes);
+    memcpy(blob.Data(), val.GetValueBlob(), nBytes);
+    return blob;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Napi::Value NativeChangeset::IsColumnValueNull(Napi::Env env, int col, int target) {
+    if (!HasRow() || !(col >= 0 && col < m_columnCount) || (target != 0 && target != 1)) {
+        return env.Undefined();
+    }
+
+    // old value can be called by updated and deleted row.
+    if (target == 0 && m_opcode == DbOpcode::Insert)
+        return env.Undefined();
+
+    // new value can be called by updated and inserted row.
+    if (target != 0 && m_opcode == DbOpcode::Delete)
+        return env.Undefined();
+
+    auto val = target == 0 ? m_currentChange.GetOldValue(col) : m_currentChange.GetNewValue(col);
+    if (!val.IsValid()) {
+        return env.Undefined();
+    }
+    return Napi::Boolean::New(env, val.IsNull());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Napi::Value NativeChangeset::GetColumnValueType(Napi::Env env, int col, int target) {
+    if (!HasRow() || !(col >= 0 && col < m_columnCount) || (target != 0 && target != 1)) {
+        return env.Undefined();
+    }
+    // old value can be called by updated and deleted row.
+    if (target == 0 && m_opcode == DbOpcode::Insert)
+        return env.Undefined();
+
+    // new value can be called by updated and inserted row.
+    if (target != 0 && m_opcode == DbOpcode::Delete)
+        return env.Undefined();
+
+    auto val = target == 0 ? m_currentChange.GetOldValue(col) : m_currentChange.GetNewValue(col);
+    if (!val.IsValid()) {
+        return env.Undefined();
+    }
+    return Napi::Number::New(env, (int)val.GetValueType());
 }
 
 //---------------------------------------------------------------------------------------
@@ -1347,22 +1507,23 @@ Napi::Value NativeChangeset::GetDdlChanges(Napi::Env env) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::GetColumnValue(Napi::Env env, int col, int target) {
-    if (HasRow()) {
-        // old value can be called by updated and deleted row.
-        if (target == 0 && m_opcode == DbOpcode::Insert)
-            return env.Undefined();
-
-        // new value can be called by updated and inserted row.
-        if (target != 0 && m_opcode == DbOpcode::Delete)
-            return env.Undefined();
-
-        auto val = target == 0 ? m_currentChange.GetOldValue(col) : m_currentChange.GetNewValue(col);
-        if (!val.IsValid()) {
-            return env.Undefined();
-        }
-        return SerializeValue(env, val);
+    if (!HasRow() || !(col >= 0 && col < m_columnCount) || (target != 0 && target != 1)) {
+        return env.Undefined();
     }
-    return env.Undefined();
+
+    // old value can be called by updated and deleted row.
+    if (target == 0 && m_opcode == DbOpcode::Insert)
+        return env.Undefined();
+
+    // new value can be called by updated and inserted row.
+    if (target != 0 && m_opcode == DbOpcode::Delete)
+        return env.Undefined();
+
+    auto val = target == 0 ? m_currentChange.GetOldValue(col) : m_currentChange.GetNewValue(col);
+    if (!val.IsValid()) {
+        return env.Undefined();
+    }
+    return SerializeValue(env, val);
 }
 
 //---------------------------------------------------------------------------------------

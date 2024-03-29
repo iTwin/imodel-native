@@ -1363,19 +1363,25 @@ export declare namespace IModelJsNative {
     public close(): void;
     public getColumnCount(): number;
     public getColumnValue(col: number, stage: DbChangeStage): ChangeValueType;
+    public getColumnValueBinary(col: number, stage: DbChangeStage): Uint8Array | undefined;
+    public getColumnValueDouble(col: number, stage: DbChangeStage): number | undefined;
+    public getColumnValueId(col: number, stage: DbChangeStage): string | undefined;
+    public getColumnValueInteger(col: number, stage: DbChangeStage): number | undefined;
+    public getColumnValueText(col: number, stage: DbChangeStage): string | undefined;
     public getColumnValueType(col: number, stage: DbChangeStage): DbValueType | undefined;
     public getDdlChanges(): string | undefined;
     public getOpCode(): DbOpcode;
     public getPrimaryKeys(): ChangeValueType[];
     public getRow(stage: DbChangeStage): ChangeValueType[];
     public getTableName(): string;
+    public hasRow(): boolean;
+    public isColumnValueNull(col: number, stage: DbChangeStage): boolean | undefined;
     public isIndirectChange(): boolean;
     public isPrimaryKeyColumn(col: number): boolean;
     public openFile(fileName: string, invert: boolean): void;
     public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean): void;
     public reset(): void;
     public step(): boolean;
-    public hasRow(): boolean;
   }
 
   class DisableNativeAssertions implements IDisposable {
