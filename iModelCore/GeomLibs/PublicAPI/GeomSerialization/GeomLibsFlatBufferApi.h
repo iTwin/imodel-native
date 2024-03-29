@@ -31,20 +31,20 @@ static BGFBIMPEXP bool IsFlatBufferFormat(bvector<Byte> &buffer);
 static BGFBIMPEXP bool IsFlatBufferFormat(Byte const *buffer);
 
 // Convert flatbuffer bytes to geometry instance. If bytes represent an array of geometries, return nullptr.
-static BGFBIMPEXP IGeometryPtr BytesToGeometry(bvector<Byte> &buffer, bool applyValidation = true);
+static BGFBIMPEXP IGeometryPtr BytesToGeometry(bvector<Byte> const &buffer, bool applyValidation = true);
 // Convert flatbuffer bytes to geometry instance. If bytes represent an array of geometries, return nullptr.
-static BGFBIMPEXP IGeometryPtr BytesToGeometry(Byte const *buffer, size_t const bufferSize, bool applyValidation = true);
+static BGFBIMPEXP IGeometryPtr BytesToGeometrySafe(Byte const *buffer, size_t bufferSize, bool applyValidation = true);
 
-static BGFBIMPEXP ISolidPrimitivePtr BytesToSolidPrimitive(Byte const *buffer, size_t const bufferSize, bool applyValidation = true);
-static BGFBIMPEXP ICurvePrimitivePtr BytesToCurvePrimitive(Byte const *buffer, size_t const bufferSize, bool applyValidation = true);
-static BGFBIMPEXP CurveVectorPtr BytesToCurveVector(Byte const *buffer, size_t const bufferSize, bool applyValidation = true);
-static BGFBIMPEXP PolyfaceHeaderPtr BytesToPolyfaceHeader(Byte const *buffer, size_t const bufferSize, bool applyValidation = true);
-static BGFBIMPEXP MSBsplineSurfacePtr BytesToMSBsplineSurface(Byte const *buffer, size_t const bufferSize, bool applyValidation = true);
+static BGFBIMPEXP ISolidPrimitivePtr BytesToSolidPrimitiveSafe(Byte const *buffer, size_t bufferSize, bool applyValidation = true);
+static BGFBIMPEXP ICurvePrimitivePtr BytesToCurvePrimitiveSafe(Byte const *buffer, size_t bufferSize, bool applyValidation = true);
+static BGFBIMPEXP CurveVectorPtr BytesToCurveVectorSafe(Byte const *buffer, size_t bufferSize, bool applyValidation = true);
+static BGFBIMPEXP PolyfaceHeaderPtr BytesToPolyfaceHeaderSafe(Byte const *buffer, size_t bufferSize, bool applyValidation = true);
+static BGFBIMPEXP MSBsplineSurfacePtr BytesToMSBsplineSurfaceSafe(Byte const *buffer, size_t bufferSize, bool applyValidation = true);
 
-static BGFBIMPEXP bool BytesToPolyfaceQueryCarrier
+static BGFBIMPEXP bool BytesToPolyfaceQueryCarrierSafe
 (
     Byte const *buffer,
-    size_t const bufferSize,
+    size_t bufferSize,
     PolyfaceQueryCarrier &carrier,
     bool applyValidation = true
 );
