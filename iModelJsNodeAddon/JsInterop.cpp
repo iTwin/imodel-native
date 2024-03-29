@@ -1277,21 +1277,6 @@ Napi::Value NativeChangeset::IsIndirectChange(Napi::Env env) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::IsPrimaryKeyColumn(Napi::Env env, int col) {
-    if (!HasRow()) {
-        BeNapi::ThrowJsException(env, "isPrimaryKeyColumn(): there is no current row.", (int) BE_SQLITE_ERROR);
-    }
-
-    if (!IsValidPrimaryKeyColumnIndex(col)) {
-        BeNapi::ThrowJsException(env, "isPrimaryKeyColumn(): invalid column index for primary key", (int) BE_SQLITE_ERROR);
-    }
-
-    return Napi::Boolean::New(env, m_primaryKeyColumns[col] == 1);
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::GetColumnCount(Napi::Env env) {
     if (!HasRow()) {
         BeNapi::ThrowJsException(env, "getColumnCount(): there is no current row.", (int) BE_SQLITE_ERROR);

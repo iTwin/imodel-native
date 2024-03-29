@@ -6,15 +6,28 @@
 import { DbOpcode } from "@itwin/core-bentley";
 import * as path from "path";
 import { getAssetsDir, iModelJsNative } from "./utils";
-import { IModelJsNative } from "../NativeLibrary";
 import { expect } from "chai";
 
+enum DbChangeStage {
+  Old = 0,
+  New = 1,
+}
+
+enum DbValueType {
+  IntegerVal = 1,
+  FloatVal = 2,
+  TextVal = 3,
+  BlobVal = 4,
+  NullVal = 5,
+}
+
+type ChangeValueType = Uint8Array | number | string | null | undefined;
 interface IChange {
   tableName: string;
-  primaryKeys: IModelJsNative.ChangeValueType[];
+  primaryKeys: ChangeValueType[];
   op: "updated" | "inserted" | "deleted";
-  before: IModelJsNative.ChangeValueType[];
-  after: IModelJsNative.ChangeValueType[] ;
+  before: ChangeValueType[];
+  after: ChangeValueType[] ;
   isIndirect: boolean;
 }
 describe("Native changeset reader", () => {
@@ -29,8 +42,8 @@ describe("Native changeset reader", () => {
         tableName: reader.getTableName(),
         primaryKeys : reader.getPrimaryKeys(),
         op: reader.getOpCode() === DbOpcode.Delete ? "deleted" : (reader.getOpCode() === DbOpcode.Update ? "updated" : "inserted"),
-        before: reader.getRow(IModelJsNative.DbChangeStage.Old),
-        after: reader.getRow(IModelJsNative.DbChangeStage.New),
+        before: reader.getRow(DbChangeStage.Old),
+        after: reader.getRow(DbChangeStage.New),
         isIndirect: reader.isIndirectChange(),
       });
     }
@@ -61,28 +74,28 @@ describe("Native changeset reader", () => {
     expect(reader.getTableName()).equals("bis_Element");
     expect(reader.getOpCode()).equals(DbOpcode.Insert);
     expect(reader.getColumnCount()).equals(12);
-    expect(reader.getColumnValueType(0, IModelJsNative.DbChangeStage.Old)).is.undefined;
-    expect(reader.getColumnValueType(100000, IModelJsNative.DbChangeStage.New)).is.undefined;
+    expect(reader.getColumnValueType(0, DbChangeStage.Old)).is.undefined;
+    expect(reader.getColumnValueType(100000, DbChangeStage.New)).is.undefined;
 
-    expect(reader.getColumnValueType(0, IModelJsNative.DbChangeStage.New)).equals(IModelJsNative.DbValueType.IntegerVal);
-    expect(reader.getColumnValueType(1, IModelJsNative.DbChangeStage.New)).equals(IModelJsNative.DbValueType.IntegerVal);
-    expect(reader.getColumnValueType(2, IModelJsNative.DbChangeStage.New)).equals(IModelJsNative.DbValueType.IntegerVal);
-    expect(reader.getColumnValueType(3, IModelJsNative.DbChangeStage.New)).equals(IModelJsNative.DbValueType.FloatVal);
-    expect(reader.getColumnValueType(4, IModelJsNative.DbChangeStage.New)).equals(IModelJsNative.DbValueType.IntegerVal);
-    expect(reader.getColumnValueType(5, IModelJsNative.DbChangeStage.New)).equals(IModelJsNative.DbValueType.IntegerVal);
-    expect(reader.getColumnValueType(6, IModelJsNative.DbChangeStage.New)).equals(IModelJsNative.DbValueType.NullVal);
-    expect(reader.getColumnValueType(7, IModelJsNative.DbChangeStage.New)).equals(IModelJsNative.DbValueType.NullVal);
-    expect(reader.getColumnValueType(8, IModelJsNative.DbChangeStage.New)).equals(IModelJsNative.DbValueType.NullVal);
-    expect(reader.getColumnValueType(9, IModelJsNative.DbChangeStage.New)).equals(IModelJsNative.DbValueType.NullVal);
-    expect(reader.getColumnValueType(10, IModelJsNative.DbChangeStage.New)).equals(IModelJsNative.DbValueType.BlobVal);
-    expect(reader.getColumnValueType(11, IModelJsNative.DbChangeStage.New)).equals(IModelJsNative.DbValueType.NullVal);
+    expect(reader.getColumnValueType(0, DbChangeStage.New)).equals(DbValueType.IntegerVal);
+    expect(reader.getColumnValueType(1, DbChangeStage.New)).equals(DbValueType.IntegerVal);
+    expect(reader.getColumnValueType(2, DbChangeStage.New)).equals(DbValueType.IntegerVal);
+    expect(reader.getColumnValueType(3, DbChangeStage.New)).equals(DbValueType.FloatVal);
+    expect(reader.getColumnValueType(4, DbChangeStage.New)).equals(DbValueType.IntegerVal);
+    expect(reader.getColumnValueType(5, DbChangeStage.New)).equals(DbValueType.IntegerVal);
+    expect(reader.getColumnValueType(6, DbChangeStage.New)).equals(DbValueType.NullVal);
+    expect(reader.getColumnValueType(7, DbChangeStage.New)).equals(DbValueType.NullVal);
+    expect(reader.getColumnValueType(8, DbChangeStage.New)).equals(DbValueType.NullVal);
+    expect(reader.getColumnValueType(9, DbChangeStage.New)).equals(DbValueType.NullVal);
+    expect(reader.getColumnValueType(10, DbChangeStage.New)).equals(DbValueType.BlobVal);
+    expect(reader.getColumnValueType(11, DbChangeStage.New)).equals(DbValueType.NullVal);
 
-    expect(reader.getColumnValueInteger(0, IModelJsNative.DbChangeStage.New)).equals(233096465089837);
-    expect(reader.getColumnValueId(0, IModelJsNative.DbChangeStage.New)).equals("0xd4000000052d");
-    expect(reader.getColumnValueText(0, IModelJsNative.DbChangeStage.New)).equals("233096465089837");
-    expect(reader.getColumnValueDouble(0, IModelJsNative.DbChangeStage.New)).equals(233096465089837);
-    expect(reader.getColumnValueBinary(0, IModelJsNative.DbChangeStage.New)).deep.equals(new Uint8Array([50, 51, 51, 48, 57, 54, 52, 54, 53, 48, 56, 57, 56, 51, 55]));
-    expect(reader.isColumnValueNull(0, IModelJsNative.DbChangeStage.New)).is.false;
+    expect(reader.getColumnValueInteger(0, DbChangeStage.New)).equals(233096465089837);
+    expect(reader.getColumnValueId(0, DbChangeStage.New)).equals("0xd4000000052d");
+    expect(reader.getColumnValueText(0, DbChangeStage.New)).equals("233096465089837");
+    expect(reader.getColumnValueDouble(0, DbChangeStage.New)).equals(233096465089837);
+    expect(reader.getColumnValueBinary(0, DbChangeStage.New)).deep.equals(new Uint8Array([50, 51, 51, 48, 57, 54, 52, 54, 53, 48, 56, 57, 56, 51, 55]));
+    expect(reader.isColumnValueNull(0, DbChangeStage.New)).is.false;
   });
 
   it("check exceptions", () => {
@@ -92,12 +105,12 @@ describe("Native changeset reader", () => {
     expect(() => reader.getDdlChanges()).throw("getDdlChanges(): no changeset opened.");
     expect(() => reader.getOpCode()).throw("getOpCode(): there is no current row.");
     expect(() => reader.getPrimaryKeys()).throw("getPrimaryKeys(): there is no current row.");
-    expect(() => reader.getRow(IModelJsNative.DbChangeStage.Old)).throw("getRow(): there is no current row.");
-    expect(() => reader.getRow(IModelJsNative.DbChangeStage.New)).throw("getRow(): there is no current row.");
+    expect(() => reader.getRow(DbChangeStage.Old)).throw("getRow(): there is no current row.");
+    expect(() => reader.getRow(DbChangeStage.New)).throw("getRow(): there is no current row.");
     expect(() => reader.getTableName()).throw("getTableName(): there is no current row.");
-    expect(() => reader.getColumnValue(0, IModelJsNative.DbChangeStage.Old)).not.throw;
-    expect(() => reader.getColumnValue(0, IModelJsNative.DbChangeStage.New)).not.throw;
-    expect(() => reader.getColumnValueType(0, IModelJsNative.DbChangeStage.Old)).not.throw;
-    expect(() => reader.getColumnValueType(0, IModelJsNative.DbChangeStage.New)).not.throw;
+    expect(() => reader.getColumnValue(0, DbChangeStage.Old)).not.throw;
+    expect(() => reader.getColumnValue(0, DbChangeStage.New)).not.throw;
+    expect(() => reader.getColumnValueType(0, DbChangeStage.Old)).not.throw;
+    expect(() => reader.getColumnValueType(0, DbChangeStage.New)).not.throw;
   });
 });

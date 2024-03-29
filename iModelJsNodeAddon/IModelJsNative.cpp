@@ -4164,7 +4164,7 @@ public:
           InstanceMethod("hasRow", &NativeChangesetReader::HasRow),
           InstanceMethod("isColumnValueNull", &NativeChangesetReader::IsColumnValueNull),
           InstanceMethod("isIndirectChange", &NativeChangesetReader::IsIndirectChange),
-          InstanceMethod("isPrimaryKeyColumn", &NativeChangesetReader::IsPrimaryKeyColumn),
+          InstanceMethod("getPrimaryKeyColumnIndexes", &NativeChangesetReader::GetPrimaryKeyColumnIndexes),
           InstanceMethod("openFile", &NativeChangesetReader::OpenFile),
           InstanceMethod("openLocalChanges", &NativeChangesetReader::OpenLocalChanges),
           InstanceMethod("reset", &NativeChangesetReader::Reset),
@@ -4173,6 +4173,10 @@ public:
 
         exports.Set("ChangesetReader", t);
         SET_CONSTRUCTOR(t);
+        }
+    Napi::Value GetPrimaryKeyColumnIndexes(NapiInfoCR info)
+        {
+        return m_changeset.GetPrimaryKeyColumnIndexes(Env());
         }
     Napi::Value IsColumnValueNull(NapiInfoCR info)
         {
@@ -4230,11 +4234,6 @@ public:
         REQUIRE_ARGUMENT_INTEGER(0, columnIndex);
         REQUIRE_ARGUMENT_INTEGER(1, valueKind);
         return m_changeset.GetColumnValueType(Env(), columnIndex, valueKind);
-        }
-    Napi::Value IsPrimaryKeyColumn(NapiInfoCR info)
-        {
-        REQUIRE_ARGUMENT_INTEGER(0, columnIndex);
-        return m_changeset.IsPrimaryKeyColumn(Env(), columnIndex);
         }
     Napi::Value IsIndirectChange(NapiInfoCR info)
         {
