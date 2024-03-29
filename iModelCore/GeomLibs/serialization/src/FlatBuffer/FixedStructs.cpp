@@ -2033,7 +2033,7 @@ bool BentleyGeometryFlatBuffer::IsFlatBufferFormat(Byte const *buffer)
     }
 
 template <typename PtrType, typename ReaderMethodType>
-PtrType BytesToXXX(Byte const *buffer, size_t const bufferSize, bool applyValidation, ReaderMethodType readerMethod)
+PtrType BytesToXXXSafe(Byte const *buffer, size_t bufferSize, bool applyValidation, ReaderMethodType readerMethod)
     {
     if (nullptr == buffer)
         return nullptr;
@@ -2062,69 +2062,39 @@ PtrType BytesToXXX(Byte const *buffer, size_t const bufferSize, bool applyValida
     return nullptr;
     }
 
-IGeometryPtr BentleyGeometryFlatBuffer::BytesToGeometry(Byte const *buffer, size_t const bufferSize, bool applyValidation)
+IGeometryPtr BentleyGeometryFlatBuffer::BytesToGeometrySafe(Byte const *buffer, size_t bufferSize, bool applyValidation)
     {
-    return BytesToXXX<IGeometryPtr>(buffer, bufferSize, applyValidation, FBReader::ReadGeometry);
+    return BytesToXXXSafe<IGeometryPtr>(buffer, bufferSize, applyValidation, FBReader::ReadGeometry);
     }
 
-IGeometryPtr BytesToGeometrySafe(Byte const *buffer, size_t const bufferSize, bool applyValidation)
+IGeometryPtr BentleyGeometryFlatBuffer::BytesToGeometry(bvector<Byte> const&buffer, bool applyValidation)
     {
-    return BentleyGeometryFlatBuffer::BytesToGeometry(buffer, bufferSize, applyValidation);
+    return BytesToGeometrySafe(buffer.data(), buffer.size(), applyValidation);
     }
 
-IGeometryPtr BentleyGeometryFlatBuffer::BytesToGeometry (bvector<Byte> &buffer, bool applyValidation)
+ISolidPrimitivePtr BentleyGeometryFlatBuffer::BytesToSolidPrimitiveSafe(Byte const *buffer, size_t bufferSize, bool applyValidation)
     {
-    return BytesToGeometry(buffer.data(), buffer.size(), applyValidation);
+    return BytesToXXXSafe<ISolidPrimitivePtr>(buffer, bufferSize, applyValidation, FBReader::ReadSolidPrimitive);
     }
 
-ISolidPrimitivePtr BentleyGeometryFlatBuffer::BytesToSolidPrimitive(Byte const *buffer, size_t const bufferSize, bool applyValidation)
+ICurvePrimitivePtr BentleyGeometryFlatBuffer::BytesToCurvePrimitiveSafe(Byte const *buffer, size_t bufferSize, bool applyValidation)
     {
-    return BytesToXXX<ISolidPrimitivePtr>(buffer, bufferSize, applyValidation, FBReader::ReadSolidPrimitive);
+    return BytesToXXXSafe<ICurvePrimitivePtr>(buffer, bufferSize, applyValidation, FBReader::ReadCurvePrimitive);
     }
 
-ISolidPrimitivePtr BytesToSolidPrimitiveSafe(Byte const *buffer, size_t const bufferSize, bool applyValidation)
+CurveVectorPtr BentleyGeometryFlatBuffer::BytesToCurveVectorSafe(Byte const *buffer, size_t bufferSize, bool applyValidation)
     {
-    return BentleyGeometryFlatBuffer::BytesToSolidPrimitive(buffer, bufferSize, applyValidation);
+    return BytesToXXXSafe<CurveVectorPtr>(buffer, bufferSize, applyValidation, FBReader::ReadCurveVector);
     }
 
-ICurvePrimitivePtr BentleyGeometryFlatBuffer::BytesToCurvePrimitive(Byte const *buffer, size_t const bufferSize, bool applyValidation)
+PolyfaceHeaderPtr BentleyGeometryFlatBuffer::BytesToPolyfaceHeaderSafe(Byte const *buffer, size_t bufferSize, bool applyValidation)
     {
-    return BytesToXXX<ICurvePrimitivePtr>(buffer, bufferSize, applyValidation, FBReader::ReadCurvePrimitive);
+    return BytesToXXXSafe<PolyfaceHeaderPtr>(buffer, bufferSize, applyValidation, FBReader::ReadPolyfaceHeader);
     }
 
-ICurvePrimitivePtr BytesToCurvePrimitiveSafe(Byte const *buffer, size_t const bufferSize, bool applyValidation)
+MSBsplineSurfacePtr BentleyGeometryFlatBuffer::BytesToMSBsplineSurfaceSafe(Byte const *buffer, size_t bufferSize, bool applyValidation)
     {
-    return BentleyGeometryFlatBuffer::BytesToCurvePrimitive(buffer, bufferSize, applyValidation);
-    }
-
-CurveVectorPtr BentleyGeometryFlatBuffer::BytesToCurveVector(Byte const *buffer, size_t const bufferSize, bool applyValidation)
-    {
-    return BytesToXXX<CurveVectorPtr>(buffer, bufferSize, applyValidation, FBReader::ReadCurveVector);
-    }
-
-CurveVectorPtr BytesToCurveVectorSafe(Byte const *buffer, size_t const bufferSize, bool applyValidation)
-    {
-    return BentleyGeometryFlatBuffer::BytesToCurveVector(buffer, bufferSize, applyValidation);
-    }
-
-PolyfaceHeaderPtr BentleyGeometryFlatBuffer::BytesToPolyfaceHeader(Byte const *buffer, size_t const bufferSize, bool applyValidation)
-    {
-    return BytesToXXX<PolyfaceHeaderPtr>(buffer, bufferSize, applyValidation, FBReader::ReadPolyfaceHeader);
-    }
-
-PolyfaceHeaderPtr BytesToPolyfaceHeaderSafe(Byte const *buffer, size_t const bufferSize, bool applyValidation)
-    {
-    return BentleyGeometryFlatBuffer::BytesToPolyfaceHeader(buffer, bufferSize, applyValidation);
-    }
-
-MSBsplineSurfacePtr BentleyGeometryFlatBuffer::BytesToMSBsplineSurface(Byte const *buffer, size_t const bufferSize, bool applyValidation)
-    {
-    return BytesToXXX<MSBsplineSurfacePtr>(buffer, bufferSize, applyValidation, FBReader::ReadMSBsplineSurface);
-    }
-
-MSBsplineSurfacePtr BytesToMSBsplineSurfaceSafe(Byte const *buffer, size_t const bufferSize, bool applyValidation)
-    {
-    return BentleyGeometryFlatBuffer::BytesToMSBsplineSurface(buffer, bufferSize, applyValidation);
+    return BytesToXXXSafe<MSBsplineSurfacePtr>(buffer, bufferSize, applyValidation, FBReader::ReadMSBsplineSurface);
     }
 
 bool BentleyGeometryFlatBuffer::BytesToVectorOfGeometry
@@ -2159,10 +2129,10 @@ bool BentleyGeometryFlatBuffer::BytesToVectorOfGeometry
     return false;
     }
 
-bool BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier
+bool BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrierSafe
 (
     Byte const *buffer,
-    size_t const bufferSize,
+    size_t bufferSize,
     PolyfaceQueryCarrier &carrier,
     bool applyValidation
 )
@@ -2189,17 +2159,6 @@ bool BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier
             return true;
         }
     return false;
-    }
-
-bool BytesToPolyfaceQueryCarrierSafe
-(
-    Byte const *buffer,
-    size_t const bufferSize,
-    PolyfaceQueryCarrier &carrier,
-    bool applyValidation
-)
-    {
-    return BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(buffer, bufferSize,carrier, applyValidation);
     }
 
 END_BENTLEY_GEOMETRY_NAMESPACE

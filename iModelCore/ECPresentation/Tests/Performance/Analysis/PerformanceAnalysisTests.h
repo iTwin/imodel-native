@@ -78,7 +78,6 @@ struct SingleManagerRulesEnginePerformanceAnalysisTests : RulesEnginePerformance
 protected:
     RulesEnginePerformanceAnalysisTestsConfig m_config;
     ECPresentationManager* m_manager = nullptr;
-    JsonLocalState m_localState;
     TestRuleSetLocaterPtr m_locater;
 
 protected:
@@ -89,7 +88,7 @@ protected:
     void ForEachDatasetAndRuleset(std::function<void(Reporter&, ECDbR, Utf8StringCR)> testCaseRunner);
 
 public:
-    SingleManagerRulesEnginePerformanceAnalysisTests() : m_localState(std::make_shared<RuntimeLocalState>()) {}
+    SingleManagerRulesEnginePerformanceAnalysisTests() {}
 };
 
 END_ECPRESENTATIONTESTS_NAMESPACE
