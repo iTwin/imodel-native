@@ -164,7 +164,7 @@ void SingleManagerRulesEnginePerformanceAnalysisTests::Reset(ECDb* project)
 
     ECPresentationManager::Params params(ECPresentationManager::Paths(assetsDirectory, temporaryDirectory));
     params.SetMultiThreadingParams(threadAllocations);
-    params.SetLocalState(&m_localState);
+    params.SetLocalState(std::make_shared<JsonLocalState>(std::make_shared<RuntimeLocalState>()));
     ECPresentationManager::Params::CachingParams cachingParams;
     cachingParams.SetCacheDirectoryPath(temporaryDirectory);
     params.SetCachingParams(cachingParams);

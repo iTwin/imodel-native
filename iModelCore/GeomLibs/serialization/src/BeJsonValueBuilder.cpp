@@ -4,7 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 
 #include "serializationPCH.h"
-#include <BeJsonCpp/BeJsonUtilities.h>
 #include "BeCGWriter.h"
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
