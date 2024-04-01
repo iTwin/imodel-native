@@ -53,7 +53,7 @@ export const NativeLoggerCategory = {
 /** @internal */
 export interface NativeLogger {
   readonly minLevel: LogLevel | undefined;
-  readonly categoryFilter: {[categoryName: string]: LogLevel};
+  readonly categoryFilter: { [categoryName: string]: LogLevel };
   logTrace: (category: string, message: string) => void;
   logInfo: (category: string, message: string) => void;
   logWarning: (category: string, message: string) => void;
@@ -645,7 +645,7 @@ export declare namespace IModelJsNative {
     public startCreateChangeset(): ChangesetFileProps;
     public startProfiler(scopeName?: string, scenarioName?: string, overrideFile?: boolean, computeExecutionPlan?: boolean): DbResult;
     public stopProfiler(): { rc: DbResult, elapsedTime?: number, scopeId?: number, fileName?: string };
-    public updateElement(elemProps: ElementProps): void;
+    public updateElement(elemProps: Partial<ElementProps>): void;
     public updateElementAspect(aspectProps: ElementAspectProps): void;
     public updateElementGeometryCache(props: object): Promise<any>;
     public updateIModelProps(props: IModelProps): void;
