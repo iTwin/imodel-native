@@ -2115,13 +2115,10 @@ TEST_F(ClassViewsFixture, ViewColumnInfoTests) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ClassViewsFixture, NestedViewSelect) {
-    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
-    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
-    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
+TEST_F(ClassViewsFixture, PrepareViewQueries) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDbForCurrentTest());
 
-    { //Prepare a part of a generated query from presentation
+    { //Prepare a part of a generated query from presentation which failed before a fix
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"(
       SELECT 
