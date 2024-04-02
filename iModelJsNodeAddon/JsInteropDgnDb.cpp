@@ -324,11 +324,7 @@ DgnDbStatus JsInterop::GetElement(BeJsValue elementJson, DgnDbR dgndb, Napi::Obj
     if (!elem.IsValid())
         return DgnDbStatus::NotFound;
 
-    // if they only want base properties, don't bother calling virtual function
-    if (inOpts[json_onlyBaseProperties()].asBool())
-        elem->ToBaseJson(elementJson);
-    else
-        elem->ToJson(elementJson, inOpts);
+    elem->ToJson(elementJson, inOpts);
     return DgnDbStatus::Success;
 }
 

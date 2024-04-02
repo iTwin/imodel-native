@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECDb/ECSqlStatement.h>
+#include <ECDb/ConcurrentQueryManager.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -32,13 +33,13 @@ private:
     BentleyStatus RenderStructArrayProperty(BeJsValue out, IECSqlValue const& in) const;
 
 public:
-    QueryJsonAdaptor(ECDbCR ecdb):m_ecdb(ecdb), m_abbreviateBlobs(true), m_classIdToClassNames(false), m_useJsName(false){}
-    QueryJsonAdaptor& SetAbbreviateBlobs(bool v) { m_abbreviateBlobs = v; return *this;}
-    QueryJsonAdaptor& SetConvertClassIdsToClassNames(bool v) { m_classIdToClassNames = v; return *this; }
-    QueryJsonAdaptor& UseJsNames(bool v) { m_useJsName = v; return *this; }
-    BentleyStatus RenderRow(BeJsValue rowJson, IECSqlRow const& stmt, bool asArray = true) const;
-    BentleyStatus RenderValue(BeJsValue valJson, IECSqlValue const& val) { return RenderRootProperty(valJson, val); }
-    void GetMetaData(QueryProperty::List& list, ECSqlStatement const& stmt) const;
+    ECDB_EXPORT QueryJsonAdaptor(ECDbCR ecdb) : m_ecdb(ecdb), m_abbreviateBlobs(true), m_classIdToClassNames(false), m_useJsName(false) {}
+    ECDB_EXPORT QueryJsonAdaptor& SetAbbreviateBlobs(bool v) { m_abbreviateBlobs = v; return *this; }
+    ECDB_EXPORT QueryJsonAdaptor& SetConvertClassIdsToClassNames(bool v) { m_classIdToClassNames = v; return *this; }
+    ECDB_EXPORT QueryJsonAdaptor& UseJsNames(bool v) { m_useJsName = v; return *this; }
+    ECDB_EXPORT BentleyStatus RenderRow(BeJsValue rowJson, IECSqlRow const& stmt, bool asArray = true) const;
+    ECDB_EXPORT BentleyStatus RenderValue(BeJsValue valJson, IECSqlValue const& val) { return RenderRootProperty(valJson, val); }
+    ECDB_EXPORT void GetMetaData(QueryProperty::List& list, ECSqlStatement const& stmt) const;
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
