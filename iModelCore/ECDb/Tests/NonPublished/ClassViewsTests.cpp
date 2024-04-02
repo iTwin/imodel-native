@@ -2139,6 +2139,38 @@ TEST_F(ClassViewsFixture, PrepareViewQueries) {
                 [/IsClassPolymorphic/])
       )"));
     }
+
+    { //Prepare full generated query from presentation which failed before a fix
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"(
+      SELECT NULL AS [NodeIdentifier]
+      FROM   (SELECT *
+        FROM   (SELECT 
+                        *, 
+                        [/ECClassId/], COUNT (1) AS [/DisplayLabel/], 
+                        COUNT (1) AS [/GroupedInstancesCount/]
+                FROM   (SELECT 
+                                1 AS [/ContractId/], 
+                                '8d9264940cc956fe67aa84eb699bbea8' AS [/SpecificationIdentifier/], 
+                                [this].[ECClassId] AS [/ECClassId/], 
+                                FALSE AS [/IsClassPolymorphic/]
+                        FROM   [meta].[PropertyCustomAttribute] [this]
+                        UNION ALL
+                        SELECT 
+                                1 AS [/ContractId/], 
+                                '8d9264940cc956fe67aa84eb699bbea8' AS [/SpecificationIdentifier/], 
+                                [this].[ECClassId] AS [/ECClassId/], 
+                                FALSE AS [/IsClassPolymorphic/]
+                        FROM   [meta].[SchemaCustomAttribute] [this])
+                GROUP  BY
+                          [/ContractId/], 
+                          [/SpecificationIdentifier/], 
+                          [/ECClassId/], 
+                          [/IsClassPolymorphic/])
+        ORDER  BY
+                  [/DisplayLabel/])
+      )"));
+    }
 }
 
 END_ECDBUNITTESTS_NAMESPACE
