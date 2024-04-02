@@ -61,9 +61,9 @@ void ECDbExpressionSymbolContext::LeaveContext()
 struct ECDbExpressionContext final : ECN::SymbolExpressionContext
 {
 private:
-    ECDbCR m_db;
+    BeSQLite::DbCR m_db;
 
-    explicit ECDbExpressionContext(ECDbCR db) : SymbolExpressionContext(nullptr), m_db(db)
+    explicit ECDbExpressionContext(BeSQLite::DbCR db) : SymbolExpressionContext(nullptr), m_db(db)
         {
         AddSymbol(*PropertySymbol::Create<ECDbExpressionContext, Utf8CP>("Path", *this, &ECDbExpressionContext::GetPath));
         AddSymbol(*PropertySymbol::Create<ECDbExpressionContext, ECValue>("Name", *this, &ECDbExpressionContext::GetName));
@@ -73,7 +73,7 @@ private:
     ECN::ECValue GetName() const {return ECN::ECValue(BeFileName(m_db.GetDbFileName()).GetFileNameWithoutExtension().c_str());}
 
 public:
-    static RefCountedPtr<ECDbExpressionContext> Create(ECDbCR db) {return new ECDbExpressionContext(db);}
+    static RefCountedPtr<ECDbExpressionContext> Create(BeSQLite::DbCR db) {return new ECDbExpressionContext(db);}
 };
 
 //=======================================================================================
@@ -82,21 +82,30 @@ public:
 struct ECDbExpressionSymbolProvider::ECDbExpressionEvaluationContext
 {
 private:
-    ECDbCR m_db;
+    SchemaManagerCR m_schemas;
+    BeSQLite::DbCR m_db;
     ECSqlStatementCache const& m_statementCache;
 public:
-    ECDbExpressionEvaluationContext(ECDbCR db, ECSqlStatementCache const& statementCache)
-        : m_db(db), m_statementCache(statementCache)
+    ECDbExpressionEvaluationContext(SchemaManagerCR schemas, BeSQLite::DbCR db, ECSqlStatementCache const& statementCache)
+        : m_schemas(schemas), m_db(db), m_statementCache(statementCache)
         {}
-    ECDbCR GetECDb() const { return m_db; }
-    ECSqlStatementCache const& GetStatementCache() const { return m_statementCache; }
+    SchemaManagerCR GetSchemas() const {return m_schemas;}
+    BeSQLite::DbCR GetDb() const {return m_db;}
+    ECSqlStatementCache const& GetStatementCache() const {return m_statementCache;}
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDbExpressionSymbolProvider::ECDbExpressionSymbolProvider(ECDbCR db, ECSqlStatementCache const& statementCache)
-    : ECN::IECSymbolProvider(), m_context(new ECDbExpressionEvaluationContext(db, statementCache))
+    : ECN::IECSymbolProvider(), m_context(new ECDbExpressionEvaluationContext(db.Schemas(), db, statementCache))
+    {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECDbExpressionSymbolProvider::ECDbExpressionSymbolProvider(SchemaManagerCR schemas, BeSQLite::DbCR db, ECSqlStatementCache const& statementCache)
+    : ECN::IECSymbolProvider(), m_context(new ECDbExpressionEvaluationContext(schemas, db, statementCache))
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -112,7 +121,7 @@ ECDbExpressionSymbolProvider::~ECDbExpressionSymbolProvider()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECDbExpressionSymbolProvider::_PublishSymbols(SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const
     {
-    context.AddSymbol(*ContextSymbol::CreateContextSymbol("ECDb", *ECDbExpressionContext::Create(m_context->GetECDb())));
+    context.AddSymbol(*ContextSymbol::CreateContextSymbol("ECDb", *ECDbExpressionContext::Create(m_context->GetDb())));
     context.AddSymbol(*MethodSymbol::Create("GetECClassId", &GetClassId, nullptr, m_context));
     context.AddSymbol(*MethodSymbol::Create("GetRelatedInstancesCount", nullptr, &GetRelatedInstancesCount, m_context));
     context.AddSymbol(*MethodSymbol::Create("GetRelatedInstance", nullptr, &GetRelatedInstance, m_context));
@@ -142,7 +151,7 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetClassId(EvaluationResult& eval
 
     Utf8CP className = args[0].GetECValue()->GetUtf8CP();
     Utf8CP schemaName = args[1].GetECValue()->GetUtf8CP();
-    ECClassId classId = context.GetECDb().Schemas().GetClassId(schemaName, className);
+    ECClassId classId = context.GetSchemas().GetClassId(schemaName, className);
     evalResult.InitECValue().SetLong(classId.GetValueUnchecked());
     ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_TRACE, Utf8PrintfString("ECDbExpressionSymbolProvider::GetClassId: Result: %s", evalResult.ToString().c_str()).c_str());
     return ExpressionStatus::Success;
@@ -151,7 +160,7 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetClassId(EvaluationResult& eval
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatOld(Utf8StringR query, ECEntityClassCP& relatedClass, ECDbCR db, ECInstanceListCR instanceData, EvaluationResult const& arg)
+ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatOld(Utf8StringR query, ECEntityClassCP& relatedClass, ECDbExpressionEvaluationContext const& context, ECInstanceListCR instanceData, EvaluationResult const& arg)
     {
     if (!arg.IsECValue() || !arg.GetECValue()->IsUtf8())
         {
@@ -199,7 +208,7 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatOld(
 
     ECRelationshipClassCP relationshipClass = nullptr;
     relatedClass = nullptr;
-    if (SUCCESS != FindRelationshipAndClassInfo(db, relationshipClass, relationshipName, relatedClass, relatedName))
+    if (SUCCESS != FindRelationshipAndClassInfo(context, relationshipClass, relationshipName, relatedClass, relatedName))
         {
         ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatOld: UnknownError. Could not find relationship and class info (%s, %s)", relationshipName, relatedName).c_str());
         return ExpressionStatus::UnknownError;
@@ -359,7 +368,7 @@ ExpressionStatus ECDbExpressionSymbolProvider::HasRelatedInstance(EvaluationResu
         {
         Utf8PrintfString query(queryFormat.c_str(), ECDBSYS_PROP_ECInstanceId, instance->GetClass().GetECSqlName().c_str());
 
-        CachedECSqlStatementPtr stmt = context.GetStatementCache().GetPreparedStatement(context.GetECDb(), query.c_str());
+        CachedECSqlStatementPtr stmt = context.GetStatementCache().GetPreparedStatement(context.GetSchemas(), context.GetDb(), query.c_str());
         if (stmt.IsNull())
             {
             BeAssert(false);
@@ -403,7 +412,7 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstance(EvaluationResu
 
     Utf8String queryFormat;
     ECEntityClassCP relatedClass;
-    ExpressionStatus stat = GetRelatedInstanceQueryFormatOld(queryFormat, relatedClass, context.GetECDb(), instanceData, args[0]);
+    ExpressionStatus stat = GetRelatedInstanceQueryFormatOld(queryFormat, relatedClass, context, instanceData, args[0]);
     if (ExpressionStatus::Success != stat)
         return stat;
 
@@ -412,7 +421,7 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstance(EvaluationResu
         {
         Utf8PrintfString query(queryFormat.c_str(), "*", instance->GetClass().GetECSqlName().c_str());
 
-        CachedECSqlStatementPtr stmt = context.GetStatementCache().GetPreparedStatement(context.GetECDb(), query.c_str());
+        CachedECSqlStatementPtr stmt = context.GetStatementCache().GetPreparedStatement(context.GetSchemas(), context.GetDb(), query.c_str());
         if (stmt.IsNull())
             {
             BeAssert(false);
@@ -469,7 +478,7 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstancesCount(Evaluati
         Utf8PrintfString nestedQuery(queryFormat.c_str(), ECDBSYS_PROP_ECInstanceId, instance->GetClass().GetECSqlName().c_str());
         Utf8PrintfString query("SELECT COUNT(1) FROM (%s)", nestedQuery.c_str());
 
-        CachedECSqlStatementPtr stmt = context.GetStatementCache().GetPreparedStatement(context.GetECDb(), query.c_str());
+        CachedECSqlStatementPtr stmt = context.GetStatementCache().GetPreparedStatement(context.GetSchemas(), context.GetDb(), query.c_str());
         if (stmt.IsNull())
             {
             BeAssert(false);
@@ -553,7 +562,7 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedValue(EvaluationResult&
         {
         Utf8PrintfString query(queryFormat.c_str(), propertyNameArg.GetECValue()->GetUtf8CP(), instance->GetClass().GetECSqlName().c_str());
 
-        CachedECSqlStatementPtr stmt = context.GetStatementCache().GetPreparedStatement(context.GetECDb(), query.c_str());
+        CachedECSqlStatementPtr stmt = context.GetStatementCache().GetPreparedStatement(context.GetSchemas(), context.GetDb(), query.c_str());
         if (stmt.IsNull())
             {
             BeAssert(false);
@@ -603,7 +612,7 @@ static ECRelationshipClassCP GetRelationshipClassFromSameSchema(ECClassCR other,
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbExpressionSymbolProvider::FindRelationshipAndClassInfo(ECDbCR db, ECRelationshipClassCP& relationship, Utf8CP relationshipName, ECEntityClassCP& entityClass, Utf8CP className)
+BentleyStatus ECDbExpressionSymbolProvider::FindRelationshipAndClassInfo(ECDbExpressionEvaluationContext const& context, ECRelationshipClassCP& relationship, Utf8CP relationshipName, ECEntityClassCP& entityClass, Utf8CP className)
     {
     // already have both - immediate return
     if (nullptr != relationship && nullptr != entityClass)
@@ -617,19 +626,21 @@ BentleyStatus ECDbExpressionSymbolProvider::FindRelationshipAndClassInfo(ECDbCR 
     if (nullptr != entityClass && nullptr != (relationship = GetRelationshipClassFromSameSchema(*entityClass, relationshipName)))
         return SUCCESS;
 
-    Utf8String sql("SELECT Id FROM main.ec_Class WHERE Name=?");
-    CachedStatementPtr statement = db.GetImpl().GetCachedSqliteStatement(sql.c_str());
+    Utf8String sql("SELECT ECInstanceId FROM ECDbMeta.ECClassDef WHERE Name=?");
+    CachedECSqlStatementPtr statement = context.GetStatementCache().GetPreparedStatement(context.GetSchemas(), context.GetDb(), sql.c_str());
     BeAssert(statement.IsValid());
+
     if (nullptr == relationship)
         {
-        statement->BindText(1, relationshipName, BeSQLite::Statement::MakeCopy::No);
+        statement->BindText(1, relationshipName, IECSqlBinder::MakeCopy::No);
 
         if (BE_SQLITE_ROW != statement->Step())
             return ERROR;
 
-        ECClassCP candidateRelationshipClass = db.Schemas().GetClass(statement->GetValueId<ECClassId>(0));
+        ECClassCP candidateRelationshipClass = context.GetSchemas().GetClass(statement->GetValueId<ECClassId>(0));
         if (nullptr == candidateRelationshipClass)
             return ERROR;
+
         relationship = candidateRelationshipClass->GetRelationshipClassCP();
         }
 
@@ -637,15 +648,16 @@ BentleyStatus ECDbExpressionSymbolProvider::FindRelationshipAndClassInfo(ECDbCR 
         {
         statement->ClearBindings();
         statement->Reset();
-        statement->BindText(1, className, BeSQLite::Statement::MakeCopy::No);
+        statement->BindText(1, className, IECSqlBinder::MakeCopy::No);
         if (BE_SQLITE_ROW != statement->Step())
             return ERROR;
 
-        ECClassCP candidateEntityClass = db.Schemas().GetClass(statement->GetValueId<ECClassId>(0));
+        ECClassCP candidateEntityClass = context.GetSchemas().GetClass(statement->GetValueId<ECClassId>(0));
         if (nullptr == candidateEntityClass)
             return ERROR;
         entityClass = candidateEntityClass->GetEntityClassCP();
         }
+
     return SUCCESS;
     }
 
