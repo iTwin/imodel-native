@@ -115,7 +115,7 @@ struct ECPresentationUtils
     static ECPresentation::Diagnostics::Options CreateDiagnosticsOptions(RapidJsonValueCR);
     static ECPresentationResult CreateResultFromException(folly::exception_wrapper const&, std::unique_ptr<rapidjson::Document> diagnostics = nullptr);
 
-    static ECPresentationManager* CreatePresentationManager(Dgn::PlatformLib::Host::IKnownLocationsAdmin&, IJsonLocalState&,
+    static std::unique_ptr<ECPresentationManager> CreatePresentationManager(Dgn::PlatformLib::Host::IKnownLocationsAdmin&,
         std::shared_ptr<IUpdateRecordsHandler>, BeJsConst props);
 
     static ECPresentationResult SetupRulesetDirectories(ECPresentationManager&, bvector<Utf8String> const&);

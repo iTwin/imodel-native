@@ -5267,7 +5267,6 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
     std::unique_ptr<ECPresentationManager> m_presentationManager;
     RefCountedPtr<SimpleRuleSetLocater> m_supplementalRulesets;
     RefCountedPtr<SimpleRuleSetLocater> m_primaryRulesets;
-    ECPresentation::JsonLocalState m_localState;
     std::shared_ptr<IModelJsECPresentationUpdateRecordsHandler> m_updatesHandler;
     Napi::ThreadSafeFunction m_threadSafeFunc;
     Napi::ThreadSafeFunction m_updateCallback;
@@ -5352,7 +5351,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
         }
 
     NativeECPresentationManager(NapiInfoCR info)
-        : BeObjectWrap<NativeECPresentationManager>(info), m_localState(std::make_shared<RuntimeLocalState>())
+        : BeObjectWrap<NativeECPresentationManager>(info)
         {
         REQUIRE_ARGUMENT_ANY_OBJ(0, props);
         if (!props.Get("id").IsString())
@@ -5380,8 +5379,7 @@ struct NativeECPresentationManager : BeObjectWrap<NativeECPresentationManager>
                     delete updateInfoPtr;
                     });
                 });
-            m_presentationManager = std::unique_ptr<ECPresentationManager>(ECPresentationUtils::CreatePresentationManager(T_HOST.GetIKnownLocationsAdmin(),
-                m_localState, m_updatesHandler, props));
+            m_presentationManager = ECPresentationUtils::CreatePresentationManager(T_HOST.GetIKnownLocationsAdmin(), m_updatesHandler, props);
             m_supplementalRulesets = SimpleRuleSetLocater::Create();
             m_presentationManager->GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(*m_supplementalRulesets));
             m_primaryRulesets = SimpleRuleSetLocater::Create();

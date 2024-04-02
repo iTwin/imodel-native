@@ -22,7 +22,7 @@ private:
     static ExpressionStatus AllMatch(EvaluationResult& evalResult, void* context, IValueListResultCR valueList, EvaluationResultVector& args);
 
 public:
-    SystemSymbolProvider();
+    ECOBJECTS_EXPORT SystemSymbolProvider();
 
 public:
     // Helper routines for extracting arguments. Performs appropriate conversions e.g. int => double
