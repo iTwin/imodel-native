@@ -160,37 +160,28 @@ ECSqlStatus ECSqlFieldFactory::CreateFieldForView(ECSqlPrepareContext& ctx, Prop
     if (classMap != nullptr && rootECClass == nullptr) {
         rootECClass = &classMap->GetClass();
     }
-
-    if(rootECClass == nullptr) {
-        return ECSqlStatus::Error;
-    }
     
     if(ecProperty == nullptr || ecProperty->GetClass().GetId() != rootECClass->GetId() || !ecProperty->GetName().EqualsI(propertyName)) {
         if(propertyName.EqualsI(ECDBSYS_PROP_ECClassId)) {
             ecProperty = ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemProperty(ECSqlSystemPropertyInfo::ECClassId());
             } else if(propertyName.EqualsI(ECDBSYS_PROP_ECInstanceId)) {
             ecProperty = ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemProperty(ECSqlSystemPropertyInfo::ECInstanceId());
-            } else {
+            } else if(rootECClass != nullptr) {
             ecProperty = rootECClass->GetPropertyP(propertyName);
             }
-        }
-
-    if(ecProperty == nullptr) {
-        return ECSqlStatus::Error;
     }
 
     ECPropertyCP originalProperty = ecProperty;
-    bool isSystemProperty = ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*ecProperty).IsSystemProperty();
-    bool isGeneratedProperty = false;
-    ECSqlColumnInfo::RootClass rootClass(rootECClass != nullptr ? *rootECClass : ecProperty->GetClass(), nullptr);
-
     ECSqlSelectPreparedStatement& selectPreparedStatement = GetPreparedStatement(ctx);
     bool isDuplicate = false;
-    auto dupStat = selectPreparedStatement.GetDynamicSelectClauseECClassR().CheckForDuplicateName(columnName, columnAlias, isDuplicate, ctx);
-    if(dupStat != ECSqlStatus::Success)
-        return dupStat;
+    if(ecProperty != nullptr) {
+        auto dupStat = selectPreparedStatement.GetDynamicSelectClauseECClassR().CheckForDuplicateName(columnName, columnAlias, isDuplicate, ctx);
+        if(dupStat != ECSqlStatus::Success)
+            return dupStat;
+    }
     
-    if(derivedProperty.HasAlias() || propertyPath.Size() > 1 || isDuplicate)
+    bool isGeneratedProperty = false;
+    if(derivedProperty.HasAlias() || propertyPath.Size() > 1 || isDuplicate || ecProperty == nullptr)
         {
         ECPropertyCP generatedProperty;
         ECSqlStatus stat = selectPreparedStatement.GetDynamicSelectClauseECClassR().GeneratePropertyIfRequired(generatedProperty, ctx, derivedProperty, &propNameExp, isDynamic);
@@ -207,6 +198,17 @@ ECSqlStatus ECSqlFieldFactory::CreateFieldForView(ECSqlPrepareContext& ctx, Prop
         {
             selectPreparedStatement.GetDynamicSelectClauseECClassR().RegisterSelectClauseItem(columnName, derivedProperty);
         }
+
+    if(ecProperty == nullptr) {
+        return ECSqlStatus::Error;
+    }
+
+    ECSqlColumnInfo::RootClass rootClass(rootECClass != nullptr ? *rootECClass : ecProperty->GetClass(), nullptr);
+    bool isSystemProperty = false;
+    if(ecProperty != nullptr && ecProperty->HasId())
+        isSystemProperty = ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*ecProperty).IsSystemProperty();
+    if(!isSystemProperty && originalProperty != nullptr && originalProperty->HasId())
+        isSystemProperty = ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*originalProperty).IsSystemProperty();
 
     ECSqlPropertyPath resultPropertyPath;
     resultPropertyPath.AddEntry(*ecProperty);

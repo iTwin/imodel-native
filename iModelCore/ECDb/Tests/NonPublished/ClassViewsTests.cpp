@@ -2112,4 +2112,36 @@ TEST_F(ClassViewsFixture, ViewColumnInfoTests) {
 }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassViewsFixture, NestedViewSelect) {
+    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDbForCurrentTest());
+
+    { //Prepare a part of a generated query from presentation
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"(
+      SELECT 
+              *, 
+              [/ECClassId/], COUNT (1) AS [/DisplayLabel/], 
+              COUNT (1) AS [/GroupedInstancesCount/]
+      FROM   (
+              SELECT 
+                      1 AS [/ContractId/], 
+                      '8d9264940cc956fe67aa84eb699bbea8' AS [/SpecificationIdentifier/], 
+                      [this].[ECClassId] AS [/ECClassId/], 
+                      FALSE AS [/IsClassPolymorphic/]
+              FROM   [meta].[PropertyCustomAttribute] [this]
+      GROUP  BY
+                [/ContractId/], 
+                [/SpecificationIdentifier/], 
+                [/ECClassId/], 
+                [/IsClassPolymorphic/])
+      )"));
+    }
+}
+
 END_ECDBUNITTESTS_NAMESPACE
