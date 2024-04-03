@@ -652,8 +652,13 @@ struct NativeChangeset {
         Napi::Value GetRow(Napi::Env env, int target);
         Napi::Value GetTableName(Napi::Env env);
         Napi::Value IsIndirectChange(Napi::Env env);
-        Napi::Value IsPrimaryKeyColumn(Napi::Env env, int col);
         Napi::Value Step(Napi::Env env);
+        Napi::Value GetColumnValueId(Napi::Env env, int col, int target);
+        Napi::Value GetColumnValueInteger(Napi::Env env, int col, int target);
+        Napi::Value GetColumnValueDouble(Napi::Env env, int col, int target);
+        Napi::Value GetColumnValueText(Napi::Env env, int col, int target);
+        Napi::Value GetColumnValueBinary(Napi::Env env, int col, int target);
+        Napi::Value IsColumnValueNull(Napi::Env env, int col, int target);
 };
 
 //=======================================================================================
