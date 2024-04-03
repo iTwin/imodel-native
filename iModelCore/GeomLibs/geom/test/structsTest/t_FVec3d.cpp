@@ -34,7 +34,7 @@ TEST(FVec3d,HelloWorld)
 //  ** (a) has largest relative error for when the two vectors being dotted are close to 90 degrees apart.
 // BUT ... the (a) differences are (subjectively) less than I expected.
 //    I think the FVec3d::DotProduct values are "better" than FVec3d::FDotProduct.   But I can't say definitively it's catastrophic.
-// 
+//
 void breakPoint (){}  // a place to put a break.
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -147,7 +147,7 @@ TEST(FVec3d,ParallelAndPositiveParallel)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(FVec3d, DotCrossProduct) 
+TEST(FVec3d, DotCrossProduct)
     {
     double refValueShift = 1.0e6;   // to force loose tolerances.
     auto point0F = FPoint3d::From (2.0,3.0,5.0);

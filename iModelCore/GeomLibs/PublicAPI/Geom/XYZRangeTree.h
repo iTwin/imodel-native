@@ -252,7 +252,7 @@ void Init ()
 XYZRangeTreeCounter (){Init();}
 
 /// <summary>Record depth increase.</summary>
-bool ShouldRecurseIntoSubtree       (XYZRangeTreeRootP    , XYZRangeTreeInteriorP    ) override 
+bool ShouldRecurseIntoSubtree       (XYZRangeTreeRootP    , XYZRangeTreeInteriorP    ) override
         {
         mDepth++;
         mFringeLeafCount = 0;
@@ -263,7 +263,7 @@ bool ShouldRecurseIntoSubtree       (XYZRangeTreeRootP    , XYZRangeTreeInterior
 ///     Record depth decrease.
 ///     Update fringe and interior statistics. Decrease depth.
 /// </summary>
-bool ShouldContinueAfterSubtree      (XYZRangeTreeRootP    , XYZRangeTreeInteriorP pInterior) override 
+bool ShouldContinueAfterSubtree      (XYZRangeTreeRootP    , XYZRangeTreeInteriorP pInterior) override
         {
         if (pInterior->IsFringe ())
             {
@@ -283,7 +283,7 @@ bool ShouldContinueAfterSubtree      (XYZRangeTreeRootP    , XYZRangeTreeInterio
         }
 
 /// <summary>Update leaf statistics.</summary>
-bool ShouldContinueAfterLeaf         (XYZRangeTreeRootP    , XYZRangeTreeInteriorP    , XYZRangeTreeLeafP         ) override 
+bool ShouldContinueAfterLeaf         (XYZRangeTreeRootP    , XYZRangeTreeInteriorP    , XYZRangeTreeLeafP         ) override
         {
         mNumLeaf++;
         mFringeLeafCount++;
@@ -352,7 +352,7 @@ bool ShouldRecurseIntoSubtree
 (
 XYZRangeTreeRootP    ,
 XYZRangeTreeInteriorP pNode
-) override 
+) override
     {
     DRange3d nodeRange = pNode->Range ();
     if (!nodeRange.IntersectsWith (nodeRange))
@@ -371,7 +371,7 @@ bool ShouldContinueAfterSubtree
 /// <summary>Compute distance from target to pLeaf.
 /// Update mHitRange and distance as needed</summary>
 bool ShouldContinueAfterLeaf
-    (XYZRangeTreeRootP    , XYZRangeTreeInteriorP    , XYZRangeTreeLeafP pLeaf) override 
+    (XYZRangeTreeRootP    , XYZRangeTreeInteriorP    , XYZRangeTreeLeafP pLeaf) override
     {
     mLeaf++;
     DRange3d range = pLeaf->Range ();
@@ -426,11 +426,11 @@ GEOMAPI_VIRTUAL bool IsActive ()
     {
     return true;
     }
-    
+
 /// <summary> called to announce visit to a leaf.</summary>
 GEOMAPI_VIRTUAL void AnnounceLeaf (DRange3dCR range, size_t index)
     {
-    }    
+    }
 };
 
 
@@ -491,7 +491,7 @@ bvector <XYZRangeTreeRecursionState> m_stack;
 void Push (XYZRangeTreeInteriorP left, int leftIndex, XYZRangeTreeInteriorP right, int rightIndex);
 
 public:
-// Find all facets in specified search range 
+// Find all facets in specified search range
 GEOMDLLIMPEXP void RunSearch (XYZRangeTreeRootP treeA, XYZRangeTreeRootP treeB, DRange3dPairRecursionHandler &tester);
 };
 
@@ -538,7 +538,7 @@ struct IRangeTree3d : public RefCountedBase
 protected:
 IRangeTree3d ();
 
-protected: 
+protected:
 GEOMAPI_VIRTUAL void _Traverse (DRange3dRecursionHandler &handler) = 0;
 
 GEOMAPI_VIRTUAL bool _Add (DRange3dCR userRange, size_t userIndex) = 0;

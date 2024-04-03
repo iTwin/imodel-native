@@ -520,7 +520,7 @@ void RotMatrix::TransposeOf (RotMatrixCR matrix)
     RotMatrix matrix0 = matrix;
 
     /* EDL: Base MS version did not allow inplace transpose */
-    
+
 
     form3d[0][0] = matrix0.form3d[0][0];
     form3d[1][0] = matrix0.form3d[0][1];

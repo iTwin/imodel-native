@@ -4,7 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 
 #include "serializationPCH.h"
-#include <BeJsonCpp/BeJsonUtilities.h>
 #include "BeCGWriter.h"
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
@@ -242,7 +241,7 @@ private: bool tryValueToBVectorFaceData(BeJsConst value, bvector<FacetFaceData> 
         }
     return false;
     }
-         
+
  bool tryValueToBVectorDPoint3dAndWeight (BeJsConst value, bvector<DPoint3d> &data, bvector<double> &weights)
     {
     data.clear ();
@@ -1017,7 +1016,7 @@ PolyfaceHeaderPtr tryValueToPolyfaceHeader (BeJsConst parentValue)
         pf->Point().SetActive (true);
     if (tryValueToBVectorInt(value["pointIndex"], pf->PointIndex ()))
         pf->PointIndex().SetActive (true);
-        
+
     if (tryValueToBVectorUInt32 (value["color"], pf->IntColor ()))
         pf->IntColor().SetActive (true);
     if (tryValueToBVectorInt(value["colorIndex"], pf->ColorIndex ()))
@@ -1176,6 +1175,8 @@ CurveVector::BoundaryType boundaryType
                     }
                 }
             }
+
+        result->FlattenNestedUnionRegions();    // requirement for PowerPlatform and iModel
         return true;
         }
     return false;

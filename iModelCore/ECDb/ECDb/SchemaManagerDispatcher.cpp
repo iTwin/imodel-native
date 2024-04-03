@@ -554,6 +554,24 @@ ECDerivedClassesList const* SchemaManager::Dispatcher::GetDerivedClasses(ECN::EC
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+Nullable<ECN::ECDerivedClassesList> SchemaManager::Dispatcher::GetAllDerivedClasses(ECN::ECClassCR baseClass, Utf8CP tableSpace) const
+    {
+    Iterable iterable = GetIterable(tableSpace);
+    if (!iterable.IsValid())
+        return nullptr;
+
+    for (const TableSpaceSchemaManager* manager : iterable)
+        {
+        if (const auto subClasses = manager->GetAllDerivedClasses(baseClass); subClasses.IsValid())
+            return subClasses;
+        }
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 ECEnumerationCP SchemaManager::Dispatcher::GetEnumeration(Utf8StringCR schemaNameOrAlias, Utf8StringCR enumName, SchemaLookupMode mode, Utf8CP tableSpace) const
     {
     Iterable iterable = GetIterable(tableSpace);
@@ -842,6 +860,27 @@ ECDerivedClassesList const* TableSpaceSchemaManager::GetDerivedClasses(ECN::ECCl
         }
 
     return &baseClass.GetDerivedClasses();
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Nullable<ECDerivedClassesList> TableSpaceSchemaManager::GetAllDerivedClasses(ECN::ECClassCR baseClass) const
+    {
+    ECClassId id = m_reader.GetClassId(baseClass);
+    if (!id.IsValid())
+        {
+        LOG.errorv("SchemaManager::GetAllDerivedClasses failed for ECClass %s. The ECClass does not exist.", baseClass.GetFullName());
+        return nullptr;
+        }
+
+    if (SUCCESS != m_reader.EnsureDerivedClassesExist(id))
+        {
+        LOG.errorv("SchemaManager::GetAllDerivedClasses failed for ECClass %s. Its subclasses could not be loaded.", baseClass.GetFullName());
+        return nullptr;
+        }
+    
+    return Nullable<ECDerivedClassesList>(m_reader.GetAllDerivedClasses(id));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1148,51 +1187,53 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         }
 
     auto& schemaSync = m_ecdb.Schemas().GetSchemaSync();
+    const auto isSchemaSyncDisabled = schemaSync.IsSchemaSyncDisabled();
     auto resolvedSyncDbUri = syncDbUri.IsEmpty() ? schemaSync.GetDefaultSyncDbUri() : syncDbUri;
     const auto localDbInfo = schemaSync.GetInfo();
 
-    if (localDbInfo.IsEmpty() && !resolvedSyncDbUri.IsEmpty())
+    if (!isSchemaSyncDisabled)
         {
-        m_ecdb.GetImpl().Issues().ReportV(
-            IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0585,
-            "Failed to import ECSchemas. Cannot import schemas into a file which is not setup to use schema sync but sync db uri was provided. Sync-Id: {%s}, uri: {%s}.",
-
-            localDbInfo.GetSyncId().ToString().c_str(),
-            resolvedSyncDbUri.GetUri().c_str()
-        );
-        return SchemaImportResult::ERROR;
-        }
-
-    if (!localDbInfo.IsEmpty())
-        {
-        if (resolvedSyncDbUri.IsEmpty())
+        if (localDbInfo.IsEmpty() && !resolvedSyncDbUri.IsEmpty())
             {
             m_ecdb.GetImpl().Issues().ReportV(
-                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0586,
-                "Failed to import ECSchemas. Cannot import schemas into a file which is setup to use schema sync but sync db uri was not provided. Sync-Id: {%s}.",
-
-                localDbInfo.GetSyncId().ToString().c_str()
-            );
-            return SchemaImportResult::ERROR;
-            }
-
-        if (schemaSync.Pull(resolvedSyncDbUri, schemaImportToken) != SchemaSync::Status::OK)
-            {
-            m_ecdb.GetImpl().Issues().ReportV(
-                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0587,
-                "Failed to import ECSchemas. Unable to pull changes from Sync-Id: {%s}, uri: {%s}.",
+                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0585,
+                "Failed to import ECSchemas. Cannot import schemas into a file which is not setup to use schema sync but sync db uri was provided. Sync-Id: {%s}, uri: {%s}.",
                 localDbInfo.GetSyncId().ToString().c_str(),
                 resolvedSyncDbUri.GetUri().c_str()
             );
             return SchemaImportResult::ERROR;
             }
-        if (!GetECDb().GetImpl().GetIdFactory().Reset())
-            {
-            LOG.error("Failed to import ECSchemas: Failed to create id factory.");
-            return SchemaImportResult::ERROR;
-            }
-        }
 
+        if (!localDbInfo.IsEmpty())
+            {
+            if (resolvedSyncDbUri.IsEmpty())
+                {
+                m_ecdb.GetImpl().Issues().ReportV(
+                    IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0586,
+                    "Failed to import ECSchemas. Cannot import schemas into a file which is setup to use schema sync but sync db uri was not provided. Sync-Id: {%s}.",
+
+                    localDbInfo.GetSyncId().ToString().c_str()
+                );
+                return SchemaImportResult::ERROR;
+                }
+
+            if (schemaSync.Pull(resolvedSyncDbUri, schemaImportToken) != SchemaSync::Status::OK)
+                {
+                m_ecdb.GetImpl().Issues().ReportV(
+                    IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0587,
+                    "Failed to import ECSchemas. Unable to pull changes from Sync-Id: {%s}, uri: {%s}.",
+                    localDbInfo.GetSyncId().ToString().c_str(),
+                    resolvedSyncDbUri.GetUri().c_str()
+                );
+                return SchemaImportResult::ERROR;
+                }
+            if (!GetECDb().GetImpl().GetIdFactory().Reset())
+                {
+                LOG.error("Failed to import ECSchemas: Failed to create id factory.");
+                return SchemaImportResult::ERROR;
+                }
+            }   
+        }
     for (auto schema: schemas) {
         if (ECSchemaOwnershipClaimAppData::HasOwnershipClaim(*schema) && !ECSchemaOwnershipClaimAppData::IsOwnedBy(GetECDb(), *schema)) {
             m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0283, "Failed to import ECSchemas. Cannot import schema owned by another ECDb connection");
@@ -1249,7 +1290,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         return rc;
         }
 
-    if (!localDbInfo.IsEmpty() && rc.IsOk())
+    if (!isSchemaSyncDisabled && !localDbInfo.IsEmpty() && rc.IsOk())
         {
         if (schemaSync.Push(resolvedSyncDbUri) != SchemaSync::Status::OK)
             {
@@ -1574,7 +1615,7 @@ ClassMappingStatus MainSchemaManager::MapClass(SchemaImportContext& ctx, ClassMa
     if (status == ClassMappingStatus::BaseClassesNotMapped || status == ClassMappingStatus::Error)
         return status;
 
-    if (SUCCESS != DbMappingManager::Classes::MapUserDefinedIndexes(ctx, *classMapP))
+    if (SUCCESS != DbMappingManager::Classes::MapIndexes(ctx, *classMapP, false))
         return ClassMappingStatus::Error;
 
     return MapDerivedClasses(ctx, mappingInfo.GetClass());
@@ -1604,40 +1645,99 @@ ClassMappingStatus MainSchemaManager::MapDerivedClasses(SchemaImportContext& ctx
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus MainSchemaManager::CanCreateOrUpdateRequiredTables() const
+BentleyStatus MainSchemaManager::CheckForPerTableColumnLimit() const
     {
-    ECDB_PERF_LOG_SCOPE("Schema import> Can create or update tables");
-    const int maxColumns = m_ecdb.GetLimit(DbLimits::Column);
+    ECDB_PERF_LOG_SCOPE("Schema import> Check for per table column limit");
+    // Note: maxColumns should never be less than the limit defined by SQLITE_MAX_COLUMN; previous limit was 2000
+    const int maxColumns = 2000;
 
-    Utf8String ecsql;
-    ecsql.Sprintf(R"sql(
+    Utf8CP sql = R"(
         SELECT
-            [sc].[Name] [SchemaName],
-            [cl].[Name] [ClassName],
-            tb.name [Table],
+            [pm].[ClassId] [ClassId],
+            [tb].[Name] [TableName],
             COUNT (*) [PersistedColumns]
         FROM
             [ec_PropertyMap] [pm]
             JOIN [ec_Column] [co] ON [co].[Id] = [pm].[ColumnId]
             JOIN [ec_Table] [tb] ON [tb].[Id] = [co].[TableId]
             JOIN [ec_Class] [cl] ON [cl].[Id] = [pm].[ClassId]
-            JOIN [ec_Schema] [sc] ON [sc].[Id] = [cl].[SchemaId]
             JOIN [ec_ClassMap] [cm] ON [cm].[ClassId] = [cl].[id]
         WHERE
             [co].[IsVirtual] = 0
             AND [cm].[MapStrategy] <> 3
-        GROUP BY [cl].[Id], tb.Id
-        HAVING COUNT (*) >= %d;)sql", maxColumns);
+        GROUP BY [cl].[Id], [tb].[Id]
+        HAVING COUNT (*) > ?;)";
 
     Statement stmt;
-    stmt.Prepare(m_ecdb, ecsql.c_str());
-    if (stmt.Step() == BE_SQLITE_ROW)
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, sql))
         {
-        m_ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0286,
-            "Schema Import> Error importing %s:%s class. Could not create or update %s table as there are %d persisted columns, but a maximum of %d columns is allowed for a table.",
-            stmt.GetValueText(0), stmt.GetValueText(1), stmt.GetValueText(2), stmt.GetValueInt64(3), maxColumns);
+        BeAssert(false);
         return ERROR;
         }
+    stmt.BindInt(1, maxColumns);
+    if (BE_SQLITE_ROW == stmt.Step())
+        {
+        ECClassId classId = stmt.GetValueId<ECClassId>(0);
+        ECClassCP ecClass = m_ecdb.Schemas().GetClass(classId, nullptr);
+        m_ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0286,
+            "Schema Import> Error importing %s class. Could not create or update %s table as there are %d persisted columns, but a maximum of %d columns is allowed for a table.",
+            ecClass->GetFullName(), stmt.GetValueText(1), stmt.GetValueInt64(2), maxColumns);
+        return ERROR;
+        }
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus MainSchemaManager::CheckForSelectWildCardLimit() const
+    {
+    ECDB_PERF_LOG_SCOPE("Schema import> Check for select wild card limit");
+    const int selectWildCardLimit = GetECDb().GetLimit(DbLimits::Column);
+    Utf8CP sql = R"(
+        SELECT
+            [pm].[ClassId] [ClassId],
+            COUNT (*) + 2 [ColumnCount]
+        FROM
+            [ec_PropertyMap] [pm]
+            JOIN [ec_PropertyPath] [pp] ON [pp].[Id] = [pm].[PropertyPathId]
+        WHERE
+            [pp].[AccessString] NOT IN ('ECInstanceId', 'ECClassId')
+        GROUP BY [pm].[ClassId]
+        HAVING [ColumnCount] > ?;)";
+
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, sql))
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+    stmt.BindInt(1, selectWildCardLimit);
+    bool limitExceeded = false;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        limitExceeded = true;
+        ECClassId classId = stmt.GetValueId<ECClassId>(0);
+        const int mappedColumns = stmt.GetValueInt(1);
+        ECClassCP ecClass = m_ecdb.Schemas().GetClass(classId, nullptr);
+        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0680,
+            "Schema Import> Error importing %s class. The %s class has properties mapped to %d columns, which exceeds the current limit of %d defined by SQLITE_MAX_COLUMN.",
+            ecClass->GetFullName(), ecClass->GetFullName(), mappedColumns, selectWildCardLimit);
+        }
+    return limitExceeded ? ERROR : SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus MainSchemaManager::CanCreateOrUpdateRequiredTables() const
+    {
+    if (SUCCESS != CheckForPerTableColumnLimit())
+        return ERROR;
+
+    if (SUCCESS != CheckForSelectWildCardLimit())
+        return ERROR;
+
     return SUCCESS;
     }
 

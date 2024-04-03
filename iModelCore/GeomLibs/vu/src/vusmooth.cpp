@@ -154,7 +154,7 @@ int   *pNumSweep
                 vu_flipTrianglesToImproveMappedCoordinateAspectRatio (pGraph, pMappingFunction, maxFlipsPerEdgePerPass);
             else
                 vu_flipTrianglesToImproveQuadraticAspectRatio (pGraph);
-            vu_collectUnmaskedVertices (pGraph, candidates, visitMask, barrierMask);            
+            vu_collectUnmaskedVertices (pGraph, candidates, visitMask, barrierMask);
             }
         for (size_t i = 0; i < numCandidate; i++)
             {

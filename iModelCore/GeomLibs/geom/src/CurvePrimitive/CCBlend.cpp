@@ -29,7 +29,7 @@ void GrabBlend (bvector<BlendDetail> &blends)
     blends.clear ();
     blends.swap (m_blends);
     }
-    
+
 CurveLocationDetail FinalizedDetail (CurveLocationDetailCR detail0, double fraction, DPoint3dCR xyz)
     {
     CurveLocationDetail detail = detail0;
@@ -123,7 +123,7 @@ bool bReverseOrder
     DVec3d unitTangentA, unitTangentB;
     unitTangentA.Normalize (tangentA);
     unitTangentB.Normalize (tangentB);
-    
+
     DRay3d rayA = DRay3d::From (segmentA);
     DRay3d rayB = DRay3d::From (segmentB);
 
@@ -170,7 +170,7 @@ bool bReverseOrder
                    && validFraction (detailB0, projectionFractionB)
                    )
                    {
-                   GenerateBlendParabola (approachPointA, 
+                   GenerateBlendParabola (approachPointA,
                             FinalizedDetail (detailA0, projectionFractionA, projectionOnA),
                             FinalizedDetail (detailB0, projectionFractionB, projectionOnB),
                             bReverseOrder);
@@ -179,7 +179,7 @@ bool bReverseOrder
             }
         }
     }
-    
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -191,7 +191,7 @@ void ProcessLineLine(
     CurveLocationDetail detailA (curveA);
     CurveLocationDetail detailB (curveB);
     ProcessLineLine (detailA, segmentA, detailB, segmentB, bReverseOrder);
-    }    
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -248,7 +248,7 @@ void ProcessLinestringInternal(ICurvePrimitiveP curveA, bvector<DPoint3d> const 
     size_t numPointsA = linestringA.size ();
     CurveLocationDetail detailA (curveA, numPointsA - 1);
     CurveLocationDetail detailB (curveA, numPointsA - 1);
-    
+
     for (size_t i = 1; i < numPointsA; i++)
         {
         DSegment3d segmentA = DSegment3d::From (linestringA[i-1], linestringA[i]);
@@ -286,7 +286,7 @@ static ICurvePrimitivePtr WrappedAccess (CurveVectorCR curves, ICurvePrimitivePt
 +--------------------------------------------------------------------------------------*/
 void CurveCurve::CollectBlends
 (
-CurveVectorCR chainA, 
+CurveVectorCR chainA,
 CurveVectorCR chainB,
 BlendType blendType,
 double distanceA,
@@ -303,7 +303,7 @@ bvector<BlendDetail> &blendCurves
         for (size_t iA = 0, nA = chainA.size (); iA < nA; iA++)
             {
             for (size_t iB = 0, nB = chainB.size (); iB < nB; iB++)
-                processor.Process (chainA[iA].get (), chainB[iB].get ());                        
+                processor.Process (chainA[iA].get (), chainB[iB].get ());
             }
         }
     else
@@ -316,20 +316,20 @@ bvector<BlendDetail> &blendCurves
                 {
                 processor.ProcessLinestringInternal (chainA[iA].get (), *linestring);
                 }
-            // all interactions with successors 
+            // all interactions with successors
             for (size_t iB = iA + 1, nB = chainB.size (); iB < nB; iB++)
-                processor.Process (chainA[iA].get (), chainB[iB].get ());                        
+                processor.Process (chainA[iA].get (), chainB[iB].get ());
             }
         }
-    processor.GrabBlend (blendCurves);        
+    processor.GrabBlend (blendCurves);
     }
-    
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 void CurveCurve::CollectBlends
 (
-ICurvePrimitiveR curveA, 
+ICurvePrimitiveR curveA,
 ICurvePrimitiveR curveB,
 BlendType blendType,
 double distanceA,
@@ -499,7 +499,7 @@ bool reverse                  //!<  [in] true to do reverse blend (e.g in a righ
         auto xyz1 = xyz + currentTangent * endDistance;
         auto segment = DSegment3d::From (xyz, xyz1);
         curves->push_back (ICurvePrimitive::CreateLine (segment));
-        curves->back ()->FractionToPoint (1.0, xyz, currentTangent); 
+        curves->back ()->FractionToPoint (1.0, xyz, currentTangent);
         currentTangent = DVec3d::FromRotateVectorAroundVector (currentTangent, planeNormal, radiusSign * hardAngleAtEnd);
         }
 
@@ -734,7 +734,7 @@ double m_filletRadius;
 double m_setbackB;
 double m_taperB;
 
-CurveVectorPtr ConstructBlend (DPoint3dCR corner, DVec3dCR tangentA, DVec3dCR tangentB) override 
+CurveVectorPtr ConstructBlend (DPoint3dCR corner, DVec3dCR tangentA, DVec3dCR tangentB) override
     {
     return CurveCurve::ConstructTaperFilletTaper (corner, tangentA, tangentB, m_setbackA, m_taperA, m_filletRadius, m_setbackB, m_taperB, m_offsetA, m_offsetB);
     }
@@ -756,13 +756,13 @@ MultiRadiusBlendConstructionObject (Angle thetaA, double distanceA, bvector<doub
     m_distanceB (distanceB)
     {}
 
-CurveVectorPtr ConstructBlend (DPoint3dCR corner, DVec3dCR tangentA, DVec3dCR tangentB) override 
+CurveVectorPtr ConstructBlend (DPoint3dCR corner, DVec3dCR tangentA, DVec3dCR tangentB) override
     {
     return CurveCurve::ConstructMultiRadiusBlend (corner, tangentA, tangentB, m_thetaA, m_distanceA, m_radii, m_distanceB, m_thetaB, m_reverseBlend);
     }
 };
 
-struct ParameterToPointEvaluator 
+struct ParameterToPointEvaluator
 {
 struct IParameterToPointAndUnitTangent
 {
@@ -774,7 +774,7 @@ struct CurvePrimitiveEvaluator : public IParameterToPointAndUnitTangent
     ICurvePrimitiveCR m_curve;
     public:
     CurvePrimitiveEvaluator (ICurvePrimitiveCR curvePrimitive) : m_curve (curvePrimitive) {}
-    ValidatedDRay3d ParameterToPointAndUnitTangent (double u) const override 
+    ValidatedDRay3d ParameterToPointAndUnitTangent (double u) const override
         {
         return m_curve.FractionToPointAndUnitTangent (u);
         }
@@ -785,7 +785,7 @@ struct CurveVectorWithDistanceIndexEvaluator : public IParameterToPointAndUnitTa
     CurveVectorWithDistanceIndex const & m_curve;
     public:
     CurveVectorWithDistanceIndexEvaluator (CurveVectorWithDistanceIndex const & curve) : m_curve (curve) {}
-    ValidatedDRay3d ParameterToPointAndUnitTangent (double u) const override 
+    ValidatedDRay3d ParameterToPointAndUnitTangent (double u) const override
         {
         return m_curve.DistanceAlongToPointAndUnitTangent (u, true);
         }
@@ -897,7 +897,7 @@ double offsetB
     ParameterToPointEvaluator::CurvePrimitiveEvaluator curveAEval(curveA);
     ParameterToPointEvaluator::CurvePrimitiveEvaluator curveBEval(curveB);
     CompoundBlendFunction F(blendBuilder, curveAEval, curveBEval);
-    
+
     double fA = fractionA, fB = fractionB;
     double eA, eB;
     if (newton.RunApproximateNewton (fA, fB, F, maxStep, maxStep)
@@ -938,7 +938,7 @@ double offsetB
     ParameterToPointEvaluator::CurveVectorWithDistanceIndexEvaluator evaluatorA (curveA);
     ParameterToPointEvaluator::CurveVectorWithDistanceIndexEvaluator evaluatorB (curveB);
     CompoundBlendFunction F (blendBuilder, evaluatorA, evaluatorB);
-    
+
     double dA = distanceA, dB = distanceB;
     double eA, eB;
     if (newton.RunApproximateNewton (dA, dB, F, maxStep, maxStep)

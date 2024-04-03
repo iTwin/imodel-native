@@ -77,7 +77,7 @@ static DPoint2d FromOne();
 void Init (double x, double y);
 
 //! @description Returns a DPoint2d from DPoint3d
-//! @param [in] source 
+//! @param [in] source
 static DPoint2d From (DPoint3dCR source);
 
 //! @description Sets all components of a point or vector to zero.

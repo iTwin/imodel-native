@@ -65,7 +65,7 @@ bool select1
             PolygonVectorOps::AddPolygon (polygonsIn,
                 points, i, visitor->GetReadIndex ());
         }
-    
+
     bsiPolygon_clipByXYVisibility (polygonsIn, polygonsOut, select0, select1);
     dest = PolyfaceHeader::CreateFromTaggedPolygons (polygonsOut);
 
@@ -114,7 +114,7 @@ TEST(Clip,XYVisibilityA)
     {
     // EDL April 6 2017
     // This exercises all the (mysterious) select0,select1 combinations for bsiPolygon_clipByXYVisibility
-    // The observed behavior seems to be  . . 
+    // The observed behavior seems to be  . .
     // true,true -- generates the HIDDEN parts
     // true,false -- generates the VISIBLE parts
     // false,any -- not clear.   output has zinger polygons going down far below the bottom.
@@ -262,7 +262,7 @@ TEST(Polyface,PartitionReadIndicesByNormal)
             origin,
             origin - vector};
         Check::SaveTransformed (annotation);
-                
+
         bvector<bvector<ptrdiff_t>> readIndices;
         mesh->PartitionReadIndicesByNormal (vector, readIndices, Angle::DegreesToRadians (degrees));
         bvector<PolyfaceHeaderPtr> subMesh;

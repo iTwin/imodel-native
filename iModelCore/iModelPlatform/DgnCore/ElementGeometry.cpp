@@ -1876,7 +1876,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, ICurvePrimitivePtr& cu
     if (OpCode::CurvePrimitive != egOp.m_opCode)
         return false;
 
-    curve = BentleyGeometryFlatBuffer::BytesToCurvePrimitive(egOp.m_data, applyValidation);
+    curve = BentleyGeometryFlatBuffer::BytesToCurvePrimitiveSafe(egOp.m_data, egOp.m_dataSize, applyValidation);
 
     return curve.IsValid();
     }
@@ -1889,7 +1889,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, CurveVectorPtr& curves
     if (OpCode::CurveVector != egOp.m_opCode)
         return false;
 
-    curves = BentleyGeometryFlatBuffer::BytesToCurveVector(egOp.m_data, applyValidation);
+    curves = BentleyGeometryFlatBuffer::BytesToCurveVectorSafe(egOp.m_data, egOp.m_dataSize, applyValidation);
 
     return curves.IsValid();
     }
@@ -1969,7 +1969,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, PolyfaceQueryCarrier& 
     if (OpCode::Polyface != egOp.m_opCode)
         return false;
 
-    if (!BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrier(egOp.m_data, meshData, applyValidation))
+    if (!BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrierSafe(egOp.m_data, egOp.m_dataSize, meshData, applyValidation))
         return false;
 
     MeshAuditResult auditResult = auditMesh(meshData);
@@ -1987,7 +1987,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, ISolidPrimitivePtr& so
     if (OpCode::SolidPrimitive != egOp.m_opCode)
         return false;
 
-    solid = BentleyGeometryFlatBuffer::BytesToSolidPrimitive(egOp.m_data, applyValidation);
+    solid = BentleyGeometryFlatBuffer::BytesToSolidPrimitiveSafe(egOp.m_data, egOp.m_dataSize, applyValidation);
 
     return solid.IsValid();
     }
@@ -2000,7 +2000,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, MSBsplineSurfacePtr& s
     if (OpCode::BsplineSurface != egOp.m_opCode)
         return false;
 
-    surface = BentleyGeometryFlatBuffer::BytesToMSBsplineSurface(egOp.m_data, applyValidation);
+    surface = BentleyGeometryFlatBuffer::BytesToMSBsplineSurfaceSafe(egOp.m_data, egOp.m_dataSize, applyValidation);
 
     return surface.IsValid();
     }
@@ -3703,8 +3703,8 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
             case GeometryStreamIO::OpCode::Polyface:
                 {
 #if defined(DEBUG_POLYFACE_POINT_COUNTS)
-                PolyfaceHeaderPtr mesh = BentleyGeometryFlatBuffer::BytesToPolyfaceHeader(egOp.m_data);
-                output._DoOutputLine(Utf8PrintfString("OpCode::Polyface %u points\n", mesh.IsValid() ? static_cast<uint32_t>(mesh->GetPointCount()) : 0).c_str());
+                    PolyfaceHeaderPtr mesh = BentleyGeometryFlatBuffer::BytesToPolyfaceHeaderSafe(egOp.m_data, egOp.m_dataSize);
+                    output._DoOutputLine(Utf8PrintfString("OpCode::Polyface %u points\n", mesh.IsValid() ? static_cast<uint32_t>(mesh->GetPointCount()) : 0).c_str());
 #else
                 output._DoOutputLine("OpCode::Polyface\n");
 #endif
@@ -5534,7 +5534,7 @@ BentleyStatus GeometryBuilder::ClearGeometryStream(GeometrySourceR source)
             return ERROR;
 
         Placement3d placement3d = source3d->GetPlacement();
-        
+
         placement3d.GetElementBoxR() = ElementAlignedBox3d();
         source3d->SetPlacement(placement3d);
         }
@@ -5546,7 +5546,7 @@ BentleyStatus GeometryBuilder::ClearGeometryStream(GeometrySourceR source)
             return ERROR;
 
         Placement2d placement2d = source2d->GetPlacement();
-        
+
         placement2d.GetElementBoxR() = ElementAlignedBox2d();
         source2d->SetPlacement(placement2d);
         }

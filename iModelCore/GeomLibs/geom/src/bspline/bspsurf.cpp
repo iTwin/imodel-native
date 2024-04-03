@@ -121,7 +121,7 @@ MSBsplineSurfaceCP   in
 )
     {
     bspsurf_freeBoundaries (out);
-    out->numBounds = 0;    
+    out->numBounds = 0;
     out->holeOrigin = in->holeOrigin;
     return bspsurf_appendCopyBoundaries (out, in, NULL);
     }
@@ -697,8 +697,8 @@ MSBsplineSurfaceCP  surfP
             dVBPtr = dVBlend;
             dVVBPtr = dVVBlend;
             vBEnd = vBlend + surfP->vParams.order;
-            
-            PUSH_STATIC_ANALYSIS_WARNING(28199); // *** NEEDS WORK STATIC ANALYSIS requires investigation - Using possibly uninitialized memory '*dVVBPtr':  The variable has had its address taken but no assignment to it has been discovered. 
+
+            PUSH_STATIC_ANALYSIS_WARNING(28199); // *** NEEDS WORK STATIC ANALYSIS requires investigation - Using possibly uninitialized memory '*dVVBPtr':  The variable has had its address taken but no assignment to it has been discovered.
             for (; vBPtr<vBEnd;  vSpan++, vBPtr++, dVBPtr++, dVVBPtr++)
                 {
                 vSpan %= vNumPoles;
@@ -787,77 +787,70 @@ const MSBsplineSurface      *surfP
 )
     {
     int         uLeft, uSpan, vLeft, vSpan, index, uNumPoles, vNumPoles;
-    double      uBlend[MAX_BSORDER], vBlend[MAX_BSORDER], *weights,
-                dUBlend[MAX_BSORDER], dVBlend[MAX_BSORDER], *dUBLoc, *dVBLoc,
-                h, *uBPtr, *vBPtr, *dVBPtr, *dUBPtr, dHdU, dHdV,
-                product, weightFactor, *uBEnd, *vBEnd;
+    double      uBlend[MAX_BSORDER], vBlend[MAX_BSORDER],
+                dUBlend[MAX_BSORDER], dVBlend[MAX_BSORDER], product;
     DPoint3d    *pPtr, *poles, point;
 
     /* Compute The U Span and Blending Functions */
-    dUBLoc = dPdU ? dUBlend : NULL;
+    auto dUBLoc = dPdU ? dUBlend : NULL;
 
     bsputil_computeBlendingFunctions (uBlend, dUBLoc, &uLeft, surfP->uKnots, u, surfP->uParams.numPoles, surfP->uParams.order, surfP->uParams.closed);
 
     /* Compute The V Span and Blending Functions */
-    dVBLoc = dPdV ? dVBlend : NULL;
+    auto dVBLoc = dPdV ? dVBlend : NULL;
     bsputil_computeBlendingFunctions (vBlend, dVBLoc, &vLeft, surfP->vKnots, v, surfP->vParams.numPoles, surfP->vParams.order, surfP->vParams.closed);
 
-    point.x = point.y = point.z = h = dHdU = dHdV = 0.0;
+    point.x = point.y = point.z = 0.0;
     if (dPdU) dPdU->x = dPdU->y = dPdU->z = 0.0;
     if (dPdV) dPdV->x = dPdV->y = dPdV->z = 0.0;
 
     uSpan = uLeft - surfP->uParams.order;
     if (surfP->uParams.closed && uSpan < 0) uSpan += surfP->uParams.numPoles;
-    uBPtr = uBlend;
-    dUBPtr = dUBlend;
-    uBEnd = uBlend + surfP->uParams.order;
 
     uNumPoles = surfP->uParams.numPoles;
     vNumPoles = surfP->vParams.numPoles;
     poles = surfP->poles;
     if (surfP->rational)
         {
-        weights = surfP->weights;
-        for (; uBPtr < uBEnd; uSpan++, uBPtr++, dUBPtr++)
+        // The rational logic uses fewer pointers and calls SumOf to eliminate VS2022 compiler's fatal "optimization"
+        DPoint3d pole;
+        double* weights = surfP->weights;
+        double uB, vB, weight, h, dHdU, dHdV;
+        h = dHdU = dHdV = 0.0;
+        for (int32_t iUB = 0; iUB < surfP->uParams.order; ++iUB, ++uSpan)
             {
             uSpan %= uNumPoles;
 
             vSpan = vLeft - surfP->vParams.order;
             if (surfP->vParams.closed && vSpan < 0) vSpan += vNumPoles;
 
-            vBPtr = vBlend;
-            dVBPtr = dVBlend;
-            vBEnd = vBlend + surfP->vParams.order;
-            for (; vBPtr < vBEnd;  vSpan++, vBPtr++, dVBPtr++)
+            for (int32_t iVB = 0; iVB < surfP->vParams.order;  ++iVB, ++vSpan)
                 {
                 vSpan %= vNumPoles;
 
                 index = vSpan * uNumPoles + uSpan;
-                pPtr = poles + index;
-                weightFactor = *(weights+index);
+                pole = poles[index];
+                weight = weights[index];
 
-                product = *uBPtr * *vBPtr;
-                h += product * weightFactor;
+                uB = uBlend[iUB];
+                vB = vBlend[iVB];
+                product = uB * vB;
+                h += product * weight;
 
-                point.x += product * pPtr->x;
-                point.y += product * pPtr->y;
-                point.z += product * pPtr->z;
+                point.SumOf(point, pole, product);
 
                 if (dPdU)
                     {
-                    product = *dUBPtr * *vBPtr;
-                    dPdU->x += product * pPtr->x;
-                    dPdU->y += product * pPtr->y;
-                    dPdU->z += product * pPtr->z;
-                    dHdU += weightFactor * product;
+                    product = dUBlend[iUB] * vB;
+                    dPdU->SumOf(*dPdU, pole, product);
+                    dHdU += weight * product;
                     }
+
                 if (dPdV)
                     {
-                    product = *uBPtr * *dVBPtr;
-                    dPdV->x += product * pPtr->x;
-                    dPdV->y += product * pPtr->y;
-                    dPdV->z += product * pPtr->z;
-                    dHdV += weightFactor * product;
+                    product = uB * dVBlend[iVB];
+                    dPdV->SumOf(*dPdV, pole, product);
+                    dHdV += weight * product;
                     }
                 }
             }
@@ -870,19 +863,24 @@ const MSBsplineSurface      *surfP
 
         if (dPdU)
             {
-            dPdU->x = (dPdU->x - point.x * dHdU)/h;
-            dPdU->y = (dPdU->y - point.y * dHdU)/h;
-            dPdU->z = (dPdU->z - point.z * dHdU)/h;
+            dPdU->SumOf(*dPdU, point, -dHdU);
+            dPdU->x /= h;
+            dPdU->y /= h;
+            dPdU->z /= h;
             }
         if (dPdV)
             {
-            dPdV->x = (dPdV->x - point.x * dHdV)/h;
-            dPdV->y = (dPdV->y - point.y * dHdV)/h;
-            dPdV->z = (dPdV->z - point.z * dHdV)/h;
+            dPdV->SumOf(*dPdV, point, -dHdV);
+            dPdV->x /= h;
+            dPdV->y /= h;
+            dPdV->z /= h;
             }
         }
     else    /* non-rational */
         {
+        double *vBPtr, *uBPtr = uBlend;
+        double *dVBPtr, *dUBPtr = dUBlend;
+        double *vBEnd, *uBEnd = uBlend + surfP->uParams.order;
         for (; uBPtr<uBEnd;  uSpan++, uBPtr++, dUBPtr++)
             {
             uSpan %= uNumPoles;
@@ -2490,10 +2488,10 @@ double              tolerance           /* => stroke tolerance for bounds */
             bsputil_unWeightPoles (curveP->poles, curveP->poles,
                                    curveP->weights,
                                    curveP->params.numPoles);
-        
+
         minBox[i].x = minBox[i].y =   1.0E20;
         maxBox[i].x = maxBox[i].y = - 1.0E20;
-        
+
         if (i == 0)
             {
             /* Extract the xVector from the first curve segment */
@@ -2517,7 +2515,7 @@ double              tolerance           /* => stroke tolerance for bounds */
                 }
             }
         rotMatrix.Multiply (curveP->poles, curveP->poles, curveP->params.numPoles);
-        
+
         // Get linestring range directly before reweighting. defect #13915
         if (curveP->params.order == 2)
             {
@@ -2560,14 +2558,14 @@ double              tolerance           /* => stroke tolerance for bounds */
         if ((maxBox[i].x - minBox[i].x) < 1.0) maxBox[i].x = minBox[i].x + 1.0;
         if ((maxBox[i].y - minBox[i].y) < 1.0) maxBox[i].y = minBox[i].y + 1.0;
         }
-        
+
     if ((max.x - min.x) < 1.0) max.x = min.x + 1.0;
     if ((max.y - min.y) < 1.0) max.y = min.y + 1.0;
-    
+
     for (i=0; i<nCurves; i++)
         {
-        if (fabs(maxBox[i].x - max.x) + fabs(maxBox[i].y - max.y) + fabs(minBox[i].x - min.x) 
-                        + fabs(minBox[i].y - min.y) < 1E-8 && 
+        if (fabs(maxBox[i].x - max.x) + fabs(maxBox[i].y - max.y) + fabs(minBox[i].x - min.x)
+                        + fabs(minBox[i].y - min.y) < 1E-8 &&
                         tmpCurves[i].params.order == 2 &&
                         tmpCurves[i].params.numPoles == 4 &&
                         tmpCurves[i].params.closed &&
@@ -2577,7 +2575,7 @@ double              tolerance           /* => stroke tolerance for bounds */
     BSIBaseGeom::Free (samplePts);
     BSIBaseGeom::Free (minBox);
     BSIBaseGeom::Free (maxBox);
-    
+
     memset (surfP, 0, sizeof(*surfP));
     surfP->uParams.numPoles = surfP->vParams.numPoles = 2;
     surfP->uParams.order    = surfP->vParams.order    = 2;
@@ -2625,7 +2623,7 @@ double              tolerance           /* => stroke tolerance for bounds */
             surfP->poles[i].z = planePoint.z;
             rotMatrix.MultiplyTranspose (*(&surfP->poles[i]));
             }
-            
+
         if (k > -1)
             {
             surfP->poles[0] = tmpCurves[k].poles[0];
@@ -2634,7 +2632,7 @@ double              tolerance           /* => stroke tolerance for bounds */
             surfP->poles[3] = tmpCurves[k].poles[2];
             rotMatrix.MultiplyTranspose (surfP->poles, surfP->poles, 4);
             }
-            
+
         surfP->boundaries = (BsurfBoundary*)BSIBaseGeom::Calloc (nCurves, sizeof(BsurfBoundary));
         if (tolerance <= 0.0)
             tolerance = (delta.x > delta.y ? delta.x : delta.y)/100.0;
@@ -2693,16 +2691,16 @@ double              tolerance           /* => stroke tolerance for bounds */
                     0, sy, 0,  -sy * min.y,
                     0,  0, 0,   0
                     );
-            
+
             DPoint3d            *points;
             DPoint2d            *pnt2dP;
             int                 numPts, nSegCurves;
             MSBsplineCurve      *segCurves, *comCurve;
-            
+
             for (i=0; i<nCurves; i++)
                 {
                 BsurfBoundary *boundP = &surfP->boundaries[i];
-                
+
                 nSegCurves = 0;
                 points = NULL;
                 segCurves = NULL;
@@ -2864,7 +2862,7 @@ double              tolerance
         bspcurv_freeCurve (&curve);
         }
 
-    
+
     size_t nParams = allParams.size ();
     if (nParams > 0)
         {
@@ -2875,7 +2873,7 @@ double              tolerance
             if (i==0 || (allParams[i] - allParams[numAccept]) > KNOT_TOLERANCE_BASIS)
                 allParams[numAccept++] = allParams[i];
         allParams.resize (numAccept);
-        
+
         *nParamsP = (int)numAccept;
         if (paramPP != NULL)
             BSIBaseGeom::MallocAndCopy (paramPP, allParams);

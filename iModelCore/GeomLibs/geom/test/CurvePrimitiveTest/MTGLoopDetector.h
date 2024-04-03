@@ -25,7 +25,7 @@
 // 2) vertex indices are from a much larger set (say #V)
 // 3) The detector will be reused for many searchs -- related to #V.
 // The reinitialization between searches (with Clear()) should NOT require reallocation of anything in the MTG.
-//   However, it is not know if the bmap used to look up nodeIdAtVertexIndex will 
+//   However, it is not know if the bmap used to look up nodeIdAtVertexIndex will
 //       will reuse its map.   Hence there may be allocations at each use.  Correcting this will require
 //       a more specialized map<int,MTGNodeId>.  This will not be difficult code to write.
 //
@@ -92,14 +92,14 @@ private: int GetVertexIndex (MTGNodeId node)
 // In a "vertex to vertex" sense the graph has one loop.
 // In the "Fsucc" sense the graph has (!!!) exactly two loops.
 // Each touches every edge of the "vertexIndex" loop exactly once.
-// 
+//
 // Mark the face of nodeA with a mask (which is clear elsewhere)
 // Branches protruding on the nodeA side are double masked.
 // Branches protruding from the other side have no masks.
 //
 // Walk around the face from nodeA (with usual FSucc steps)
 // Record all mates that are not masked.
-// 
+//
 private: void CollectVertexIndicesInLoop (bvector<int> &indices, MTGNodeId nodeA, MTGNodeId nodeB)
     {
     MTGMask mask = MTG_CONSTU_MASK;

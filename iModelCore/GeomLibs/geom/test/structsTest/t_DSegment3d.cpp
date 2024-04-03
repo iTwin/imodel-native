@@ -51,7 +51,7 @@ TEST(DSegment3d, Init)
     Check::Near (point3, segment7.point[1]);
     Check::Near (segment8, segment7);
     Check::Near (segment9, segment10);
-    } 
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

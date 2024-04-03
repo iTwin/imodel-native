@@ -248,7 +248,7 @@ TEST (PseudoSpiral, SerializeB)
                 Check::Shift (strokeShiftX, strokeShiftY, 0);
                 if (errors == 0)
                     Check::SaveTransformed (strokes);
-                }               
+                }
             }
         char fileName[1024];
         Utf8String typeName;
@@ -375,7 +375,7 @@ TEST(PseudoSpiral,ExerciseDistances)
     }
 
 
-   
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -719,7 +719,7 @@ bool DerivativesToFrenetFrame(DPoint3dCR point, DVec3dCR deriv1, DVec3dCR deriv2
 TransformR frame, double &curvature, double &torsion)
     {
     curvature = torsion = 0.0;
-    
+
     RotMatrix rMatrix1, rMatrix2;
     rMatrix1.InitFrom2Vectors (deriv1, deriv2);
     rMatrix2.SquareAndNormalizeColumns (rMatrix1, 0, 1);
@@ -827,7 +827,7 @@ TEST(Spiral,DocCheck)
                         Transform::FromIdentity (),
                         0.0, 1.0
                         );
-            // QUIET skip ... 
+            // QUIET skip ...
             if (curve1 == nullptr)
                 continue;
             double stationStep = L / (double)radiusAndCount.stepCount;
@@ -1338,7 +1338,7 @@ void Claude_DoCubicParabolaSpiralCheck(int type, int ctorSelect, double startBea
     ICurvePrimitivePtr spiral  = nullptr;
     if (ctorSelect == 1)
         spiral = ICurvePrimitive::CreatePseudoSpiralPointBearingRadiusLengthRadius(type, startPoint, startBearing, startRadius, length, endRadius);
-    else 
+    else
         spiral = ICurvePrimitive::CreateSpiralBearingRadiusLengthRadius(type,
          startBearing, startRadius, length, endRadius, frameA, 0, 1);
     Utf8String typeName;
@@ -1466,7 +1466,7 @@ void Claude_DoCubicParabolaSpiralCheck(int type, int ctorSelect, double startBea
             DPoint3d center = frame * DPoint3d::From (0,1/curvature,0);
             Check::SaveTransformed (DSegment3d::From (origin, center));
             }
-        }    
+        }
     static double tolerance = 0.001;
     IFacetOptionsPtr opt = IFacetOptions::CreateForCurves();
     opt->SetChordTolerance(tolerance);
@@ -1480,7 +1480,7 @@ void Claude_DoCubicParabolaSpiralCheck(int type, int ctorSelect, double startBea
     double dy = 20;
     Check::Shift (0, -dy,0);
     Check::SaveTransformed(strokeA.m_xyz);
-    
+
     Check::Shift (200,dy,0);
     }
 
@@ -1564,7 +1564,7 @@ TEST(Spiral,PartialCubics)
     spiral->FractionToPoint (0.0, xyz0, tangent0);
     spiral->FractionToPoint (1.0, xyz1, tangent1);
     double radians01 = tangent0.AngleToXY (tangent1);
-    printf (" partial cubic (nominal length %.8g) (actual %.8g) (SS4 angle %.8g) (actual angle %.8g) (angleDelta %.8g)\n", 
+    printf (" partial cubic (nominal length %.8g) (actual %.8g) (SS4 angle %.8g) (actual angle %.8g) (angleDelta %.8g)\n",
                         length,
                         actualLength,
                         angleSS4,

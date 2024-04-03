@@ -1338,4 +1338,104 @@ TEST(BeStringUtilitiesTests, GetDecimalSeparator)
     EXPECT_STREQ(expected_decimal_str.c_str(), decimal_separator.c_str());
 #endif
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST(BeStringUtilitiesTests, ComputeNumLogicalChars)
+    {
+    //can be tested with other multibyte characters, depending upon the current codepage
+    WCharCP input = L"awesas+s a=d";
+    size_t receivedLogicalChars = BeStringUtilities::ComputeNumLogicalChars(input, 12);
+    size_t expectedLogicalChars = 12;
+    EXPECT_EQ(expectedLogicalChars, receivedLogicalChars);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST(BeStringUtilitiesTests, ComputeByteOffsetOfLogicalChar)
+    {
+    //can be tested with other multibyte characters, depending upon the current codepage
+    Utf8CP input = "assas+sas=d";
+    size_t receivedByteOffset = BeStringUtilities::ComputeByteOffsetOfLogicalChar(input, 8);
+    size_t expectedByteOffset = 8;
+    EXPECT_EQ(expectedByteOffset, receivedByteOffset);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST(CompareIUtf8AsciiTests, InsertingBSetUtf8CPElements)
+    {
+    bset<Utf8CP, CompareIUtf8Ascii> elements;
+    EXPECT_EQ(0, elements.size());
+    elements.insert("asd+ab"); // base element
+    EXPECT_EQ(1, elements.size());
+    elements.insert("asd+ab"); // same element, but different reference
+    EXPECT_EQ(1, elements.size());
+    elements.insert("ASD+AB"); // same element but in uppercase
+    EXPECT_EQ(1, elements.size());
+    elements.insert("ASD+ab"); // same element but in mixed case
+    EXPECT_EQ(1, elements.size());
+    elements.insert("asd+a"); // same beginning, but shorter
+    EXPECT_EQ(2, elements.size());
+    elements.insert("asd+abc"); // same beginning, but longer
+    EXPECT_EQ(3, elements.size());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST(CompareIUtf8AsciiTests, InsertingBSetUtf8StringCRElements)
+    {
+    bset<Utf8String, CompareIUtf8Ascii> elements;
+    EXPECT_EQ(0, elements.size());
+    Utf8StringCR elem1 = "asd+ab";
+    elements.insert(elem1); // base element
+    EXPECT_EQ(1, elements.size());
+    Utf8StringCR elem2 = "asd+ab";
+    elements.insert(elem2); // same element, but different reference
+    EXPECT_EQ(1, elements.size());
+    Utf8StringCR elem3 = "ASD+AB";
+    elements.insert(elem3); // same element but in uppercase
+    EXPECT_EQ(1, elements.size());
+    Utf8StringCR elem4 = "ASD+ab";
+    elements.insert(elem4); // same element but in mixed case
+    EXPECT_EQ(1, elements.size());
+    Utf8StringCR elem5 = "asd+a";
+    elements.insert(elem5); // same beginning, but shorter
+    EXPECT_EQ(2, elements.size());
+    Utf8StringCR elem6 = "asd+abc";
+    elements.insert(elem6); // same beginning, but longer
+    EXPECT_EQ(3, elements.size());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST(CompareIUtf8AsciiTests, InsertingBSetUtf8StringCPElements)
+    {
+    bset<Utf8StringCP, CompareIUtf8Ascii> elements;
+    EXPECT_EQ(0, elements.size());
+    Utf8String elem1 = "asd+ab";
+    elements.insert(&elem1); // base element
+    EXPECT_EQ(1, elements.size());
+    Utf8String elem2 = "asd+ab";
+    elements.insert(&elem2); // same element, but different reference
+    EXPECT_EQ(1, elements.size());
+    Utf8String elem3 = "ASD+AB";
+    elements.insert(&elem3); // same element but in uppercase
+    EXPECT_EQ(1, elements.size());
+    Utf8String elem4 = "ASD+ab";
+    elements.insert(&elem4); // same element but in mixed case
+    EXPECT_EQ(1, elements.size());
+    Utf8String elem5 = "asd+a";
+    elements.insert(&elem5); // same beginning, but shorter
+    EXPECT_EQ(2, elements.size());
+    Utf8String elem6 = "asd+abc";
+    elements.insert(&elem6); // same beginning, but longer
+    EXPECT_EQ(3, elements.size());
+    }
+
 POP_DISABLE_DEPRECATION_WARNINGS

@@ -1109,7 +1109,7 @@ bool ReadIIndexedMesh (IGeometryPtr &result)
                 continue;
             if (ReadListOfint ("ListOfColorIndex", "ColorIndex", detail.colorIndexArray))
                 continue;
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -1152,7 +1152,7 @@ bool ReadIAdjacentSurfacePatches (IGeometryPtr &result)
             {
             if (ReadListOfISurfacePatch ("ListOfPatch", "Patch", detail.patchArray))
                 continue;
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -1211,7 +1211,7 @@ bool ReadIBsplineCurve (IGeometryPtr &result)
                 continue;
             if (ReadListOfdouble ("ListOfKnot", "Knot", detail.knotArray))
                 continue;
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -1287,7 +1287,7 @@ bool ReadIBsplineSurface (IGeometryPtr &result)
                 continue;
             if (ReadListOfdouble ("ListOfKnotV", "KnotV", detail.knotVArray))
                 continue;
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -1330,7 +1330,7 @@ bool ReadICurveChain (IGeometryPtr &result)
             {
             if (ReadListOf_AnyICurvePrimitive ("ListOfCurve", "Curve", detail.curveArray))
                 continue;
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -1373,7 +1373,7 @@ bool ReadICurveGroup (IGeometryPtr &result)
             {
             if (ReadListOfICurve ("ListOfCurve", "Curve", detail.curveArray))
                 continue;
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -1418,7 +1418,7 @@ bool ReadICurveReference (IGeometryPtr &result)
             if (ReadTag_AnyCurve ("parentCurve", detail.parentCurve))
                 continue;
 
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -1461,7 +1461,7 @@ bool ReadIGroup (IGeometryPtr &result)
             {
             if (ReadListOfIGeometry ("ListOfMember", "Member", detail.memberArray))
                 continue;
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -1521,7 +1521,7 @@ bool ReadIInterpolatingCurve (IGeometryPtr &result)
                 continue;
             if (ReadListOfdouble ("ListOfKnot", "Knot", detail.KnotArray))
                 continue;
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -1564,7 +1564,7 @@ bool ReadILineString (IGeometryPtr &result)
             {
             if (ReadListOfDPoint3d ("ListOfPoint", "Point", detail.PointArray))
                 continue;
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -1610,7 +1610,7 @@ bool ReadIOperation (IGeometryPtr &result)
                 continue;
             if (ReadListOfIGeometry ("ListOfMember", "Member", detail.memberArray))
                 continue;
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -1660,7 +1660,7 @@ bool ReadIParametricSurfacePatch (IGeometryPtr &result)
 
             if (ReadListOfICurveChain ("ListOfCurveChain", "CurveChain", detail.loopArray))
                 continue;
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -1703,7 +1703,7 @@ bool ReadIPointChain (IGeometryPtr &result)
             {
             if (ReadListOfISinglePoint ("ListOfPoint", "Point", detail.PointArray))
                 continue;
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -1746,7 +1746,7 @@ bool ReadIPointGroup (IGeometryPtr &result)
             {
             if (ReadListOfIPoint ("ListOfMember", "Member", detail.memberArray))
                 continue;
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -1789,7 +1789,7 @@ bool ReadIPolygon (IGeometryPtr &result)
             {
             if (ReadListOfDPoint3d ("ListOfPoint", "Point", detail.pointArray))
                 continue;
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -1834,7 +1834,7 @@ bool ReadIPrimitiveCurveReference (IGeometryPtr &result)
             if (ReadTag_AnyICurvePrimitive ("parentCurve", detail.parentCurve))
                 continue;
 
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -1882,7 +1882,7 @@ bool ReadIPartialCurve (IGeometryPtr &result)
             if (ReadTag_AnyICurvePrimitive ("parentCurve", detail.parentCurve))
                 continue;
 
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -1927,7 +1927,7 @@ bool ReadISharedGroupDef (IGeometryPtr &result)
             if (ReadTag_AnyGeometry ("geometry", detail.geometry))
                 continue;
 
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -1971,7 +1971,7 @@ bool ReadISharedGroupInstance (IGeometryPtr &result)
                 continue;
             if (ReadTagTransform ("transform", detail.transform))
                 continue;
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -2013,7 +2013,7 @@ bool ReadIShelledSolid (IGeometryPtr &result)
             if (ReadTag_AnySurface ("BoundingSurface", detail.BoundingSurface))
                 continue;
 
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -2059,7 +2059,7 @@ bool ReadISolidBySweptSurface (IGeometryPtr &result)
             if (ReadTag_AnyCurve ("railCurve", detail.railCurve))
                 continue;
 
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -2102,7 +2102,7 @@ bool ReadISolidByRuledSweep (IGeometryPtr &result)
             {
             if (ReadListOf_AnyCurveVector ("ListOfSection", "Section", detail.SectionArray))
                 continue;
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -2145,7 +2145,7 @@ bool ReadISurfaceByRuledSweep (IGeometryPtr &result)
             {
             if (ReadListOf_AnyCurveVector ("ListOfSection", "Section", detail.SectionArray))
                 continue;
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -2188,7 +2188,7 @@ bool ReadISolidGroup (IGeometryPtr &result)
             {
             if (ReadListOfISolid ("ListOfSolid", "Solid", detail.solidArray))
                 continue;
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -2251,7 +2251,7 @@ bool ReadISpiral (IGeometryPtr &result)
             if (ReadTag_AnyGeometry ("geometry", detail.geometry))
                 continue;
 
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -2297,7 +2297,7 @@ bool ReadISurfaceBySweptCurve (IGeometryPtr &result)
             if (ReadTag_AnyCurve ("railCurve", detail.railCurve))
                 continue;
 
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -2340,7 +2340,7 @@ bool ReadISurfaceGroup (IGeometryPtr &result)
             {
             if (ReadListOfISurface ("ListOfSurface", "Surface", detail.surfaceArray))
                 continue;
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -2387,7 +2387,7 @@ bool ReadISurfacePatch (IGeometryPtr &result)
 
             if (ReadListOfICurveChain ("ListOfHoleLoop", "HoleLoop", detail.holeLoopArray))
                 continue;
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -2432,7 +2432,7 @@ bool ReadITransformedGeometry (IGeometryPtr &result)
             if (ReadTag_AnyGeometry ("geometry", detail.geometry))
                 continue;
 
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -2480,7 +2480,7 @@ bool ReadIDgnExtrusion (IGeometryPtr &result)
             if (ReadTag_AnyCurveVector ("baseGeometry", detail.baseGeometry))
                 continue;
 
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -2534,7 +2534,7 @@ bool ReadIDgnRotationalSweep (IGeometryPtr &result)
             if (ReadTag_AnyCurveVector ("baseGeometry", detail.baseGeometry))
                 continue;
 
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -2580,7 +2580,7 @@ bool ReadIDgnRuledSweep (IGeometryPtr &result)
                 continue;
             if (ReadListOf_AnyCurveVector ("ListOfContour", "Contour", detail.contourArray))
                 continue;
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -2646,7 +2646,7 @@ bool ReadITransitionSpiral (IGeometryPtr &result)
             if (ReadTag_AnyGeometry ("geometry", detail.geometry))
                 continue;
 
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }
@@ -2692,7 +2692,7 @@ bool ReadIDgnCurveVector (IGeometryPtr &result)
                 continue;
             if (ReadListOf_AnyICurvePrimitive ("ListOfMember", "Member", detail.memberArray))
                 continue;
-                
+
             if (!SkipUnexpectedTag ())
                 return false;
             }

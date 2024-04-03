@@ -78,7 +78,7 @@ bool UpdateIfGT (double value, size_t index)
         m_index = index;
         return true;
         }
-    return false;        
+    return false;
     }
 
 //! @description If input value is (strictly) less than the stored value, update both the stored value and index
@@ -187,9 +187,9 @@ BVRangeNode (size_t parentIndex)
 
 static const int s_maxLeafInNode = 50;
 static const int s_maxChildInNode = 50;
-    
+
 size_t GetParentIndex () const { return m_parentIndex;}
-void   SetParentIndex (size_t parentIndex) { m_parentIndex = parentIndex;}    
+void   SetParentIndex (size_t parentIndex) { m_parentIndex = parentIndex;}
 DRange3d GetDRange3d () const {return m_compositeRange;}
 
 // Clear leaf array.
@@ -264,7 +264,7 @@ BVRangeSplitCandidate (BVRange const &inRange)
     {
     groupNumber[0] = groupNumber[1] = groupNumber[2] = 0;
     min = max = 0.0;
-    }    
+    }
 static bool cb_compareForSeparator
 (
 const BVRangeSplitCandidate  &candidateA,
@@ -287,7 +287,7 @@ void SetMinMaxFromX ()
     min = range.low.x;
     max = range.high.x;
     }
-    
+
 void SetMinMaxFromY ()
     {
     min = range.low.y;
@@ -307,7 +307,7 @@ void SetMinMaxFromZ ()
 struct BVSplitCandidateArray
     {
     bvector<BVRangeSplitCandidate> m_candidates;
-    
+
 void Clear ()
     {
     m_candidates.clear ();
@@ -337,7 +337,7 @@ void ActivateAxis (size_t axis)
         }
     }
 
-    
+
 // Sort along specified axis.
 // look for good split point.
 // return numeric indicator of how good the split is.
@@ -455,7 +455,7 @@ bvector <BVRangeNode> m_nodes;
 BVSplitCandidateArray m_splitCandidates;
 size_t  m_rootIndex;
 
-    
+
 size_t AddEmptyNode ()
     {
     size_t index = m_nodes.size ();
@@ -468,9 +468,9 @@ size_t CreateNewRoot ()
     m_rootIndex = AddEmptyNode ();
     return m_rootIndex;
     }
-    
+
 size_t GetRootIndex (){return m_rootIndex;}
-    
+
 static const size_t s_invalidIndex = SIZE_MAX;
 
 bool IsRoot (size_t index){ return index == m_rootIndex;}
@@ -502,7 +502,7 @@ double ImmediateFitFunction (DRange3dCR range, size_t index)
         return m_nodes[index].FitFunc (range);
     return DBL_MAX;
     }
-    
+
 size_t FindChildWithBestImmediateFitFunc (DRange3dCR range, size_t parentIndex)
     {
     if (!IsValidTreeIndex (parentIndex))
@@ -520,7 +520,7 @@ size_t FindChildWithBestImmediateFitFunc (DRange3dCR range, size_t parentIndex)
             }
         }
     return bestIndex;
-    }    
+    }
 
 // Search downwards for a fringe node that is best fit for new range.
 size_t RecurseToBestFit (size_t startIndex, DRange3dCR range, size_t depth)
@@ -570,21 +570,21 @@ void SetParentInAllChildren (size_t parentIndex)
     for (size_t childIndex : m_nodes[parentIndex].m_children)
         m_nodes[childIndex].SetParentIndex (parentIndex);
     }
-    
+
 void RedistributeChildrenIfFull (size_t indexA)
     {
     if (!IsValidTreeIndex (indexA))
         return;
     if (!m_nodes[indexA].IsChildArrayFull ())
         return;
-        
+
     m_splitCandidates.Clear ();
     for (size_t childIndex : m_nodes[indexA].m_children)
         {
         assert (IsValidTreeIndex (childIndex));
         m_splitCandidates.Add (BVRange (m_nodes[childIndex].m_compositeRange, childIndex));
         }
-        
+
     // REMARK: The leaf data is now completely in the splitCandidates array -- indexA can be cleared in the Distribute step.
     size_t bestSplitAxis = m_splitCandidates.ChooseBestSeparationAxis ();
     size_t indexB = AddEmptyNode ();
@@ -631,9 +631,9 @@ void RedistributeLeavesIfFull (size_t indexA)
     size_t bestAxisIndex = m_splitCandidates.ChooseBestSeparationAxis ();
 
     size_t indexB = AddEmptyNode ();
-    
+
     m_splitCandidates.DistributeAsLeaves (m_nodes[indexA], m_nodes[indexB], bestAxisIndex);
-    
+
     if (IsRoot (indexA))
         {
         size_t newRoot = CreateNewRoot ();
@@ -696,12 +696,12 @@ struct PairSearchContext
     PairSearchContext (BVRangeTree &treeA, BVRangeTree &treeB, DRange3dPairRecursionHandler &handler)
         : m_treeA (treeA), m_treeB (treeB), m_handler (handler)
         {
-        
+
         }
     BVRangeTree &m_treeA;
     BVRangeTree &m_treeB;
     DRange3dPairRecursionHandler &m_handler;
-    
+
     void Recurse_LeafNode (BVRangeCR rangeA, size_t indexB)
         {
         if (!m_treeB.IsValidTreeIndex (indexB))
@@ -719,7 +719,7 @@ struct PairSearchContext
             if (!m_handler.StillSearching ())
                 return;
             Recurse_LeafNode (rangeA, childIndexB);
-            }            
+            }
         }
     void Recurse_NodeNode (size_t indexA, size_t indexB)
         {
@@ -740,12 +740,12 @@ struct PairSearchContext
             if (!m_handler.StillSearching ())
                 return;
             Recurse_NodeNode (childIndexA, indexB);
-            }            
+            }
         }
     void Recurse_FromRoots ()
         {
         Recurse_NodeNode (m_treeA.GetRootIndex (), m_treeB.GetRootIndex ());
-        }        
+        }
     };
 static void Traverse (BVRangeTree &treeA, BVRangeTree &treeB, DRange3dPairRecursionHandler &handler)
     {
@@ -812,7 +812,7 @@ void SetBaseRange (DRange3dCR range)
     m_baseRange = m_currentRange = range;
     }
 void SetCurrentRangeFromExpandedBaseRange (double expansion)
-    {    
+    {
     m_currentRange = m_baseRange;
     m_currentRange.low.x -= expansion;         m_currentRange.high.x += expansion;
     m_currentRange.low.y -= expansion;         m_currentRange.high.y += expansion;
@@ -823,7 +823,7 @@ void ClearHits (){m_hits.clear ();}
 void AddHit (size_t hit){m_hits.push_back (hit);}
 void CopyHits (bvector<size_t> &hits){hits = m_hits;}
 
-bool ShouldRecurseIntoSubtree (DRange3dCR range) override 
+bool ShouldRecurseIntoSubtree (DRange3dCR range) override
     {
     if (m_currentRange.IntersectsWith (range))
         {
@@ -839,11 +839,11 @@ bool ShouldRecurseIntoSubtree (DRange3dCR range) override
 
 bool IsActive ()  override {return true;}
 
-void AnnounceLeaf (DRange3dCR range, size_t index) override 
+void AnnounceLeaf (DRange3dCR range, size_t index) override
     {
     if (m_currentRange.IntersectsWith (range))
         {
-        AddHit (index); 
+        AddHit (index);
         m_leafHit++;
         }
     else
@@ -875,7 +875,7 @@ size_t PolyfaceRangeTree01::LoadPolyface (PolyfaceQueryCR source)
         numFacet++;
         }
     return numFacet;
-    }    
+    }
 
 PolyfaceRangeTree01Ptr PolyfaceRangeTree01::CreateForPolyface (PolyfaceQueryCR source)
     {
@@ -897,7 +897,7 @@ void PolyfaceRangeTree01::CollectInRange (bvector<size_t> &hits, DRange3dCR rang
 
 // Collect indices of intersecting facets.
 //
-// 
+//
 struct FacetClashCollector01 : DRange3dPairRecursionHandler
 {
 PolyfaceQueryR  m_polyfaceA;
@@ -934,13 +934,13 @@ size_t maxHits
     m_visitorA->Reset ();
     m_visitorB->Reset ();
     }
-    
+
 bool TestOverlap (DRange3dCR rangeA, DRange3dCR rangeB)
     {
     return rangeA.IntersectsWith (rangeB, m_rangeExpansion, 3);
     }
 
-bool TestInteriorInteriorPair (DRange3dCR rangeA, DRange3dCR rangeB) override 
+bool TestInteriorInteriorPair (DRange3dCR rangeA, DRange3dCR rangeB) override
   {
   return m_II.Count (TestOverlap (rangeA, rangeB));
   }
@@ -975,8 +975,8 @@ bool StillSearching () override
     {
     return m_hits.size () < m_maxHits;
     }
-};    
-    
+};
+
 // Search for clashing pairs.
 //
 GEOMDLLIMPEXP void PolyfaceRangeTree01::CollectClashPairs (
@@ -998,6 +998,5 @@ size_t maxHits                      //! maximum number of hits to collect.
         BVRangeTree::Traverse (*bvTreeA, *bvTreeB, collector);
     //searcher.RunSearch (treeA.GetXYZRangeTree (), treeB.GetXYZRangeTree (), collector);
     }
-    
+
 END_BENTLEY_GEOMETRY_NAMESPACE
-            

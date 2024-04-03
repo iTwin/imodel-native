@@ -53,7 +53,7 @@ private:
     // These are shuffled to achieve (1) buckets with y bands and (2) x sort withing bucket
     bvector<TaggedPoint> points;
     // Per row:
-    // i0,i1 = limit indices for row 
+    // i0,i1 = limit indices for row
     bvector<RowData>     rows;
     // if false, data has been added and the points array must be resorted.
     bool m_sorted;

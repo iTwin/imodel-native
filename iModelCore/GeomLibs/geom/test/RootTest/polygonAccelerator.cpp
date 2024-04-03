@@ -58,7 +58,7 @@ double f
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Bezier,PolygonAccelerator)
     {
-    double a1 = 0.5; 
+    double a1 = 0.5;
     int degree = 2;
     for (double a0 = -100.0; a0 < -0.001; a0 /= 2.0)
         {
@@ -106,4 +106,4 @@ TEST(Bezier,PolygonAccelerator)
             }
         }
     }
-#endif    
+#endif

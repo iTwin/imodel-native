@@ -680,7 +680,7 @@ bool BSurfPatch::MidpointDeviations (double &uFraction, double &vFraction, doubl
         {
         size_t i0 = j * uOrder;
         size_t i1 = (j + 1) * uOrder;
-        for (size_t i = 0; i + 2 < uOrder; i++)
+        for (size_t i = 0; i + 1 < uOrder; i++)
             {
             twistFraction = DoubleOps::Max (twistFraction,
                 TwistDeviation (

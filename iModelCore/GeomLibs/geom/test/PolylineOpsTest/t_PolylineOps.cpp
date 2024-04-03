@@ -145,7 +145,7 @@ TEST (Vu, PlanarSubdivision)
           DSegment3d::From ( -1,4,0, 10,5,0),
           DSegment3d::From ( 0,4,0,  9,5,0),
         };
-  
+
     // Create an empty graph ...
     VuSetP graph = vu_newVuSet (0);
     // Add each line .... VU_BOUNDARY_EDGE bit will be set so we can tell original lines from added lines, e.g. after trianglation
@@ -236,7 +236,7 @@ TEST(PolylineOps, ClosestPointClosure)
     Check::Near (globalFraction, (edgeIndex + edgeFraction) / numEdge);
     Check::Size (numEdge + 1, points.size ());
     Check::Size(edgeIndex, 1);
-    PolylineOps::ClosestPointXY(points, false, xyzB, 
+    PolylineOps::ClosestPointXY(points, false, xyzB,
         nullptr, globalFraction, xyzB1, edgeIndex, numEdge, edgeFraction, xyDistance);
     Check::Near(globalFraction, (edgeIndex + edgeFraction) / numEdge);
     Check::Size(numEdge + 1, points.size());
@@ -483,11 +483,11 @@ void vu_mergeAndCollectOuterBoundaries (bvector<bvector<DPoint3d>> const &polyli
     for (size_t i = 0; i < polylines.size (); i++)
         vu_makeEdgesFromArray3d (graph,
                 const_cast <DPoint3d*> (&polylines[i][0]), (int)polylines[i].size (), VU_BOUNDARY_EDGE, VU_BOUNDARY_EDGE, -1.0, -1.0);
-    // Find intersections among all pairs and sort edges around each vertex . . . 
+    // Find intersections among all pairs and sort edges around each vertex . . .
     vu_mergeOrUnionLoops (graph, VUUNION_UNION);
     // Add edges so that linework inside holes gets connected to the containing geometry ...
     vu_regularizeGraph (graph);
-    // mark the true outer edges.  
+    // mark the true outer edges.
     vu_floodFromMostNegativeAreaFaceToBarrier (graph, VU_BOUNDARY_EDGE, VU_EXTERIOR_EDGE);
     // Regularization edges can exist "on the outside of original geometry" (inlets, between components).   They are "double exterior".   Purge them.
     // Also purge anything (including originals that is entirely inside.
@@ -634,7 +634,7 @@ TEST(Vu,OuterBoundaryMerge)
     Check::Size (1, loops.size (), "large square after dangler");
     Check::Near (expectedLength, LengthXY (loops), "large sqaure after dangler");
 
-    }	
+    }
 void PrintCurveStrokes (DPoint3dDoubleUVCurveArrays &data, char const *name)
     {
     Check::PrintHeading ("Strokes", name);
@@ -659,7 +659,7 @@ TEST(Polyline,AddStrokesDEllipse3d)
     // accept default angle tolerance ..
     PolylineOps::AddStrokes (arc, stroke0, *options);
     PolylineOps::AddStrokes (arc, stroke1, *options, true, 0.0, 0.5);
-    // EXPECT (with inside knowledge) exactly half the stroke 
+    // EXPECT (with inside knowledge) exactly half the stroke
     Check::Near (PolylineOps::Length (stroke0), 2.0 * PolylineOps::Length (stroke1), "Strokes of full, half arc");
     }
 
@@ -951,7 +951,7 @@ TEST (Polyline, GreedyDegenerate)
                     }
 
                 bvector<DTriangle3d> triangleA;
-                bvector<int> indices;   
+                bvector<int> indices;
                 PolylineOps::GreedyTriangulationBetweenLinestrings (pathA, pathB, triangleA, &indices, tiltAngle);
                 Check::SaveTransformed (pathA);
                 Check::SaveTransformed (pathB);
@@ -1026,11 +1026,11 @@ TEST (Dpoint3dOps, CompressKeep)
         std::find_if (
             result.begin (),
             result.end (),
-            [&input] (DPoint3dCR a) 
+            [&input] (DPoint3dCR a)
                 {
-                return 
+                return
                     DVec3d::FromStartEnd (input[70], a)
-                    .MagnitudeSquared () 
+                    .MagnitudeSquared ()
                     < 1.0e-16;
                 }) != result.end ()
             );
@@ -1207,7 +1207,7 @@ TEST(PolylineOps, ProjectedParameterRange)
 
     double tol = 1.0e-14;
     DRay3d ray0 = DRay3d::FromOriginAndVector(
-        DPoint3d::From (1,0,0), 
+        DPoint3d::From (1,0,0),
         DVec3d::From (10,2,3));
     auto range1 = PolylineOps::ProjectedParameterRange (points, ray0, 0, 1);
     auto range2A = PolylineOps::ProjectedParameterRange(points, ray0, 0.45, 0.82);

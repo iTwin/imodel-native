@@ -5330,7 +5330,7 @@ TEST_F(SchemaMergerTests, CustomAttributesAddedLocalSchema)
     CompareResults(expectedSchemasXml, result);
     }
 
-  TEST_F(SchemaMergerTests, TestPreferRightSideDisplayLabelSchemaMergerFlag)
+TEST_F(SchemaMergerTests, TestPreferRightSideDisplayLabelSchemaMergerFlag)
     {
     // Initialize two sets of schemas
     bvector<Utf8CP> leftSchemaXml {
@@ -5504,55 +5504,488 @@ TEST_F(SchemaMergerTests, TestBaseClassAdditionAndRemoval)
   EXPECT_TRUE(issues.m_issues.empty());
   }
 
-/*---------------------------------------------------------------------------------**//**
+/*---------------------------------------------------------------------------------------
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-/*TEST_F(SchemaMergerTests, MergeSchemasFromLocalDirectories)
+TEST_F(SchemaMergerTests, DuplicateSchemaNamesMergeResultLeftNameCaps)
     {
-    BeFileName leftFolder(L"f:\\defects\\schemaDump_constraint\\Left\\");
-    BeFileName rightFolder(L"f:\\defects\\schemaDump_constraint\\Right\\");
-
-    NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
-    NativeLogging::LoggingConfig::SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
-    NativeLogging::LoggingConfig::SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
-
-    ECSchemaReadContextPtr leftContext = ECSchemaReadContext::CreateContext(false, true);
-    leftContext->AddSchemaPath(leftFolder);
-    {
-    bvector<BeFileName> schemaPaths;
-    BeDirectoryIterator::WalkDirsAndMatch(schemaPaths, leftFolder, L"*.ecschema.xml", false);
-    for (BeFileName const& schemaXmlFile : schemaPaths)
-        {
-        ECN::ECSchemaPtr ecSchema = nullptr;
-        ECN::ECSchema::ReadFromXmlFile(ecSchema, schemaXmlFile.GetName(), *leftContext);
-        }
-    }
-
-    ECSchemaReadContextPtr rightContext = ECSchemaReadContext::CreateContext(false, true);
-    rightContext->AddSchemaPath(rightFolder);
-    {
-    bvector<BeFileName> schemaPaths;
-    BeDirectoryIterator::WalkDirsAndMatch(schemaPaths, rightFolder, L"*.ecschema.xml", false);
-    for (BeFileName const& schemaXmlFile : schemaPaths)
-        {
-        ECN::ECSchemaPtr ecSchema = nullptr;
-        ECN::ECSchema::ReadFromXmlFile(ecSchema, schemaXmlFile.GetName(), *rightContext);
-        }
-    }
-
+    // Initialize two sets of schemas
+    bvector<Utf8CP> leftSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MYSCHEMA" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A">
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
     bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    bvector<Utf8CP> rightSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A">
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
     bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
-    
-    //merge the schemas
+
+    // Merge the schemas
+    SchemaMergeResult result;
+    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+
+    // Compare result
+    bvector<Utf8CP> expectedSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MYSCHEMA" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A"/>
+          <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+
+    CompareResults(expectedSchemasXml, result);
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, DuplicateSchemaNamesMergeRightNameCaps)
+    {
+    // Initialize two sets of schemas
+    bvector<Utf8CP> leftSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A">
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    bvector<Utf8CP> rightSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MYSCHEMA" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A">
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    // Merge the schemas
+    SchemaMergeResult result;
+    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+
+    // Compare result
+    bvector<Utf8CP> expectedSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A"/>
+          <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+
+    CompareResults(expectedSchemasXml, result);
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, DuplicateSchemaNamesLeftMergeNoReferences)
+    {
+    // Initialize two sets of schemas
+    bvector<Utf8CP> leftSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A">
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A">
+          </ECEntityClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MyOtherSchema" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A">
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MYOTHERSCHEMA" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A">
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+
+    };
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    bvector<Utf8CP> rightSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A">
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    // Merge the schemas
+    SchemaMergeOptions options;
+    options.SetDoNotMergeReferences(true);
+    SchemaMergeResult result;
+    MergerTestIssueListener issues;
+    result.AddIssueListener(issues);
+    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
+
+    // Compare issues
+    bvector<Utf8String> expectedIssues { "The schema name entry MyOtherSchema is non-unique in the left schema list. The schemas names are case-insensitive.",
+                                         "The schema name entry MySchema is non-unique in the left schema list. The schemas names are case-insensitive." };
+    CompareIssues(expectedIssues, issues.m_issues);
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, DuplicateSchemaNamesRightMergeNoReferences)
+    {
+    // Initialize two sets of schemas
+    bvector<Utf8CP> leftSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A">
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    bvector<Utf8CP> rightSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A">
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A">
+          </ECEntityClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MyOtherSchema" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A">
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MYOTHERSCHEMA" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A">
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    // Merge the schemas
+    SchemaMergeOptions options;
+    options.SetDoNotMergeReferences(true);
+    SchemaMergeResult result;
+    MergerTestIssueListener issues;
+    result.AddIssueListener(issues);
+    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
+
+    // Compare issues
+    bvector<Utf8String> expectedIssues { "The schema name entry MyOtherSchema is non-unique in the right schema list. The schemas names are case-insensitive.",
+                                         "The schema name entry MySchema is non-unique in the right schema list. The schemas names are case-insensitive." };
+    CompareIssues(expectedIssues, issues.m_issues);
+    }
+  
+/*---------------------------------------------------------------------------------------
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, DuplicateSchemaNamesLeftAndRightMergeNoReferences)
+    {
+    // Initialize two sets of schemas
+    bvector<Utf8CP> leftSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="MySchema1" alias="mys" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A">
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="myschema1" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A">
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+
+    };
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    bvector<Utf8CP> rightSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="myschema2" alias="mys" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A">
+          </ECEntityClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="myschema2" alias="mys" version="01.00.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="A">
+          </ECEntityClass>
+          <ECEntityClass typeName="B">
+            <BaseClass>A</BaseClass>
+          </ECEntityClass>
+          <ECEntityClass typeName="C">
+            <BaseClass>B</BaseClass>
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    // Merge the schemas
+    SchemaMergeOptions options;
+    options.SetDoNotMergeReferences(true);
+    SchemaMergeResult result;
+    MergerTestIssueListener issues;
+    result.AddIssueListener(issues);
+    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
+
+    // Compare issues
+    bvector<Utf8String> expectedIssues { "The schema name entry myschema1 is non-unique in the left schema list. The schemas names are case-insensitive.", 
+                                         "The schema name entry myschema2 is non-unique in the right schema list. The schemas names are case-insensitive." };
+    CompareIssues(expectedIssues, issues.m_issues);
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, UncleanSchemaGraphNoReferences)
+    {
+    bvector<Utf8CP> leftSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestReference" alias="tr" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="MyEntity">
+            <ECProperty propertyName="MyProperty" typeName="int" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="TestReference" version="01.00.00" alias="tr"/>
+        </ECSchema>
+        )schema"
+    };
+
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    // Simulate an unclean schema graph with two different in-memory references of the same schema on one side
+    bvector<Utf8CP> rightSchemas1Xml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestReference" alias="tr" version="01.00.07" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="MyEntity">
+            <ECProperty propertyName="MyProperty" typeName="int" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="TestReference" version="01.00.07" alias="tr"/>
+        </ECSchema>
+        )schema"
+    };
+
+    bvector<Utf8CP> rightSchemas2Xml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestReference" alias="tr" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <PropertyCategory typeName="MyCategory" priority="98"/>
+          <ECEntityClass typeName="MyEntity">
+            <ECProperty propertyName="MyProperty" typeName="int" category="MyCategory" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema2" alias="ts2" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="TestReference" version="01.00.00" alias="tr"/>
+          <ECEntityClass typeName="MyEntity">
+            <ECProperty propertyName="MyProperty" typeName="int" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemas1Xml);
+    ECSchemaReadContextPtr right2Context = InitializeReadContextWithAllSchemas(rightSchemas2Xml);
+
+    SchemaKey key1("TestSchema", 1, 0, 1);
+    SchemaKey key2("TestSchema2", 1, 0, 0);
+    ECSchemaPtr testSchema = rightContext->LocateSchema(key1, SchemaMatchType::Latest);
+    ECSchemaPtr testSchema2 = right2Context->LocateSchema(key2, SchemaMatchType::Latest);
+    EXPECT_TRUE(testSchema.IsValid());
+    EXPECT_TRUE(testSchema2.IsValid());
+    bvector<ECN::ECSchemaCP> rightSchemas;
+    rightSchemas.push_back(testSchema.get());
+    rightSchemas.push_back(testSchema2.get());
+
+    // Merge the schemas
+    SchemaMergeOptions options;
+    options.SetDoNotMergeReferences(true);
+    SchemaMergeResult result;
+    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
+
+    // Compare result
+    bvector<Utf8CP> expectedSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestReference" alias="tr" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="MyEntity">
+            <ECProperty propertyName="MyProperty" typeName="int"/>
+          </ECEntityClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="TestReference" version="01.00.00" alias="tr"/>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema2" alias="ts2" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="TestReference" version="01.00.00" alias="tr"/>
+          <ECEntityClass typeName="MyEntity">
+            <ECProperty propertyName="MyProperty" typeName="int"/>
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+
+    CompareResults(expectedSchemasXml, result);
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, UncleanSchemaGraphMergedWithReferences)
+    {
+    bvector<Utf8CP> leftSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestReference" alias="tr" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="MyEntity">
+            <ECProperty propertyName="MyProperty" typeName="int" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="TestReference" version="01.00.00" alias="tr"/>
+        </ECSchema>
+        )schema"
+    };
+
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    // Simulate an unclean schema graph with two different in-memory references of the same schema on one side
+    bvector<Utf8CP> rightSchemas1Xml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestReference" alias="tr" version="01.00.07" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECEntityClass typeName="MyEntity">
+            <ECProperty propertyName="MyProperty" typeName="int" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="TestReference" version="01.00.07" alias="tr"/>
+        </ECSchema>
+        )schema"
+    };
+
+    bvector<Utf8CP> rightSchemas2Xml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestReference" alias="tr" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <PropertyCategory typeName="MyCategory" priority="98"/>
+          <ECEntityClass typeName="MyEntity">
+            <ECProperty propertyName="MyProperty" typeName="int" category="MyCategory" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema",
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+        <ECSchema schemaName="TestSchema2" alias="ts2" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+          <ECSchemaReference name="TestReference" version="01.00.00" alias="tr"/>
+          <ECEntityClass typeName="MyEntity">
+            <ECProperty propertyName="MyProperty" typeName="int" />
+          </ECEntityClass>
+        </ECSchema>
+        )schema"
+    };
+
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemas1Xml);
+    ECSchemaReadContextPtr right2Context = InitializeReadContextWithAllSchemas(rightSchemas2Xml);
+
+    SchemaKey key1("TestSchema", 1, 0, 1);
+    SchemaKey key2("TestSchema2", 1, 0, 0);
+    ECSchemaPtr testSchema = rightContext->LocateSchema(key1, SchemaMatchType::Latest);
+    ECSchemaPtr testSchema2 = right2Context->LocateSchema(key2, SchemaMatchType::Latest);
+    EXPECT_TRUE(testSchema.IsValid());
+    EXPECT_TRUE(testSchema2.IsValid());
+    bvector<ECN::ECSchemaCP> rightSchemas;
+    rightSchemas.push_back(testSchema.get());
+    rightSchemas.push_back(testSchema2.get());
+
+    // Merge the schemas
     SchemaMergeResult result;
     MergerTestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
-    bvector<Utf8String> expectedIssues { "Failed to add property A to class MySchema:MyConflict because it conflicts with another property. RenamePropertyOnConflict flag is set to false." };
+    bvector<Utf8String> expectedIssues { "Failed to find item with name MyCategory in right schema TestReference.01.00.07. This usually indicates a dirty schema graph where multiple memory references of the same schema with different contents are provided." };
     CompareIssues(expectedIssues, issues.m_issues);
-    }*/
+    }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
 

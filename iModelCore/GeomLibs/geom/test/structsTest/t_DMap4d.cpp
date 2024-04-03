@@ -7,7 +7,7 @@
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void forwardReverseCheck(DMatrix4d tstMatrix, DMap4d map) 
+void forwardReverseCheck(DMatrix4d tstMatrix, DMap4d map)
     {
     DMatrix4d mat4d, mat4dExp;
     mat4d.InitProduct(tstMatrix, map.M0);
@@ -24,7 +24,7 @@ TEST(DMap4d, ForwardReverseTransformation)
                                                  DPoint4d::From(2, 1, 0.1, 3),
                                                  DPoint4d::From(1.5, 8, 2, 0),
                                                  DPoint4d::From(9, 9, 0.1, 1));
-    
+
     forwardReverseCheck(tstMatrix, DMap4d::FromTranslation(4, 3, 2));
     forwardReverseCheck(tstMatrix, DMap4d::FromTranslation(0.4, 0.3, 1.2));
     forwardReverseCheck(tstMatrix, DMap4d::FromScale(4, 3, 2));
@@ -57,13 +57,13 @@ TEST(DMap4d, IdentityMap)
     {
     DMap4d identityMap = DMap4d::FromIdentity();
     Check::Near(identityMap.M0, identityMap.M1);
-    
+
     DPoint3d point = DPoint3d::From(4, 1, 9);
     DPoint4d retPoint = identityMap.M0.Multiply(point, 1);
     Check::Near(retPoint, DPoint4d::From(point, 1), "Not an Identity Transform");
     }
 
-void isAffinePerspective(DMap4d mat) 
+void isAffinePerspective(DMap4d mat)
     {
     if (mat.M0.coff[3][3] == 1)
         Check::True(mat.IsAffine());
@@ -88,15 +88,15 @@ TEST(DMap4d, Identity)
     forwardMat.InitIdentity();
 
     DMatrix4d reverseMat;
-    reverseMat.InitIdentity(); 
+    reverseMat.InitIdentity();
     Check::True(reverseMat.IsIdentity());
     Check::True(forwardMat.IsIdentity());
-    DMap4d map = DMap4d::From(forwardMat, 
+    DMap4d map = DMap4d::From(forwardMat,
                               reverseMat);
     Check::True(map.IsIdentity());
     }
 
-void transformMap(DMap4d map, DPoint3d pnt) 
+void transformMap(DMap4d map, DPoint3d pnt)
     {
 
     DPoint4d res =  map.M0.Multiply(pnt, 1);

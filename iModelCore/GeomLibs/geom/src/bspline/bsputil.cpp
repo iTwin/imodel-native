@@ -445,7 +445,7 @@ bool MSBsplineCurve::AlmostEqual (MSBsplineCurveCR other, double tolerance) cons
         {
         if (tolerance <= 0.0)
             tolerance = 0.5 * (Resolution() + other.Resolution());
-            
+
         if (this->HasWeights())
             {
             for (int i=0; i<this->GetNumPoles(); i++)
@@ -469,6 +469,7 @@ bool MSBsplineCurve::AlmostEqual (MSBsplineCurveCR other, double tolerance) cons
     }
 
 /*--------------------------------------------------------------------*//**
+* @bsimethod
 +----------------------------------------------------------------------*/
 bool MSBsplineCurve::IsValidGeometry (GeometryValidatorPtr &validator) const
     {
@@ -501,6 +502,16 @@ bool MSBsplineCurve::IsValidGeometry (GeometryValidatorPtr &validator) const
             return false;
     return true;
     }
+
+/*--------------------------------------------------------------------*//**
+* @bsimethod
++----------------------------------------------------------------------*/
+bool MSBsplineCurve::IsValidGeometry() const
+    {
+    static GeometryValidatorPtr s_validator = GeometryValidator::Create();
+    return IsValidGeometry(s_validator);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -2512,7 +2512,7 @@ TEST_F(IndexTests, UserDefinedIndexWhenClassModifierIsUpgraded)
             </ECEntityClass>
         </ECSchema>)xml"))) << "Abstract class w/o index";
 
-            EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            EXPECT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                 <ECEntityClass typeName="Foo" modifier="Sealed">
@@ -4215,6 +4215,324 @@ TEST_F(IndexTests, ModifyingIndexFails)
         </ECSchema>)xml", *ctx));
 
     ASSERT_EQ(ERROR, m_ecdb.Schemas().ImportSchemas(ctx->GetCache().GetSchemas()));
+    }
+
+TEST_F(IndexTests, ExtendSystemIndexTPHClass)
+    {
+    const auto testSchema = R"xml(
+        <?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.%d" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="2.0.2" alias="ecdbmap"/>
+
+            <ECEntityClass typeName="SpecificElement" displayLabel="A specific Element">
+                <ECProperty propertyName="ElementId" typeName="int" />
+                <ECProperty propertyName="ElementName" typeName="string" />
+            </ECEntityClass>
+
+            <ECEntityClass typeName="ElementGroup" displayLabel="Group of Elements" >
+                <ECProperty propertyName="GroupId" typeName="int" />
+                <ECProperty propertyName="GroupName" typeName="string" />
+            </ECEntityClass>
+
+            <ECRelationshipClass typeName="GroupOfElements" strength="referencing" modifier="None" description="A relationship used to identify the SpecificElement that are members of a ElementGroup.">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.2.0.2">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                    %s
+                </ECCustomAttributes>
+                <Source multiplicity="(0..*)" roleLabel="groups" polymorphic="true">
+                    <Class class="ElementGroup"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="is grouped by" polymorphic="true">
+                    <Class class="SpecificElement"/>
+                </Target>
+                %s
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+    const auto newDbIndexCA = R"xml(
+        <DbIndexList xmlns="ECDbMap.02.00.00">
+            <Indexes>
+                <DbIndex>
+                    <Name>uix_ts_GroupOfElements_sourcetargetclassid</Name>
+                    <IsUnique>True</IsUnique>
+                    <Properties>
+                        <string>SourceECInstanceId</string>
+                        <string>TargetECInstanceId</string>
+                        <string>ECClassId</string>
+                        <string>AddToIndex</string>
+                    </Properties>
+                </DbIndex>
+            </Indexes>
+        </DbIndexList>)xml";
+
+    const auto extendedDbIndexCA = R"xml(
+        <DbIndexList xmlns="ECDbMap.02.00.00">
+            <Indexes>
+                <DbIndex>
+                    <Name>uix_ts_GroupOfElements_sourcetargetclassid</Name>
+                    <IsUnique>True</IsUnique>
+                    <Properties>
+                        <string>SourceECInstanceId</string>
+                        <string>TargetECInstanceId</string>
+                        <string>ECClassId</string>
+                        <string>AddToIndex</string>
+                        <string>NewProperty</string>
+                    </Properties>
+                </DbIndex>
+            </Indexes>
+        </DbIndexList>)xml";
+    const auto newProperties = R"xml(<ECProperty propertyName="AddToIndex" typeName="int" displayLabel="AddToIndex"/><ECProperty propertyName="NewProperty" typeName="int" displayLabel="TestProperty"/>)xml";
+
+    auto importSchemasTestAndReset = [&](const Utf8StringCR schemaXmlToSetup, const bvector<Utf8String> schemaXmlsToImport, const bool expectedToFailInsert, const int testCaseNumber)
+        {
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ExtendSystemIndexTPHClass.ecdb", SchemaItem(schemaXmlToSetup))) << "Failed to setup ecdb for test case " << testCaseNumber;
+        for (const auto& schemaToImport : schemaXmlsToImport)
+            ASSERT_EQ(BentleyStatus::SUCCESS, GetHelper().ImportSchema(SchemaItem(schemaToImport))) << "Failed to import schema for test case " << testCaseNumber;
+
+        ECSqlStatement statement;
+        statement.Prepare(m_ecdb, "INSERT INTO ts.SpecificElement(ElementId, ElementName) VALUES(1, 'FirstElement')");
+        ECInstanceKey firstElement;
+        ASSERT_EQ(statement.Step(firstElement), BE_SQLITE_DONE);
+
+        statement.Finalize();
+        statement.Prepare(m_ecdb, "INSERT INTO ts.ElementGroup(GroupId, GroupName) VALUES(1, 'FirstGroup')");
+        ECInstanceKey firstGroup;
+        ASSERT_EQ(statement.Step(firstGroup), BE_SQLITE_DONE);
+
+        // Insert duplicate entries where the only difference are the MemberPriority values.
+        // Out of these 4 entries, 2 are completely identical with MemberPriority set to Null.
+        // Sqlite considered Nulls as different values, so all 4 inserts should succeed.
+        bool secondInsert = false;
+        for (const auto& newIndexColumnValue : { 2, 0, 1, 0 })
+            {
+            // Create duplicate entries with the MemberPriority being the only difference
+            statement.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ts.GroupOfElements(SourceECClassId, SourceECInstanceId, TargetECClassId, TargetECInstanceId, AddToIndex, NewProperty) VALUES(?,?,?,?,?,?)"));
+            statement.BindId(1, firstGroup.GetClassId());
+            statement.BindId(2, firstGroup.GetInstanceId());
+            statement.BindId(3, firstElement.GetClassId());
+            statement.BindId(4, firstElement.GetInstanceId());
+            if (newIndexColumnValue == 0)
+                statement.BindNull(5);
+            else
+                statement.BindInt(5, newIndexColumnValue);
+            statement.BindInt(6, 10);
+
+            if (expectedToFailInsert && secondInsert)
+                {
+                ASSERT_EQ(statement.Step(), BE_SQLITE_CONSTRAINT_UNIQUE) << "Should fail as unique index is not present for test case " << testCaseNumber;
+                statement.Finalize();
+                m_ecdb.AbandonChanges();
+                return;
+                }
+
+            ASSERT_EQ(statement.Step(), BE_SQLITE_DONE) << "Should pass as unique index is present for test case " << testCaseNumber;
+            secondInsert = true;
+            }
+
+        statement.Finalize();
+        // Run a select statement to verify if the elements are grouped correctly
+        statement.Prepare(m_ecdb, "select SourceECClassId, SourceECInstanceId, TargetECClassId, TargetECInstanceId, AddToIndex, NewProperty from ts.GroupOfElements where SourceECInstanceId=? and SourceECClassId=? order by AddToIndex");
+        statement.BindId(1, firstGroup.GetInstanceId());
+        statement.BindId(2, firstGroup.GetClassId());
+
+        for (const auto& newIndexColumnValue: { 0, 0, 1, 2 })
+            {
+            ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+            EXPECT_EQ(statement.GetValueText(0), firstGroup.GetClassId().ToString());
+            EXPECT_EQ(statement.GetValueText(1), firstGroup.GetInstanceId().ToString());
+            EXPECT_EQ(statement.GetValueText(2), firstElement.GetClassId().ToString());
+            EXPECT_EQ(statement.GetValueText(3), firstElement.GetInstanceId().ToString());
+            EXPECT_EQ(statement.GetValueInt(4), newIndexColumnValue);
+            EXPECT_EQ(statement.GetValueInt(5), 10);
+            }
+        statement.Finalize();
+
+        // Try to insert a duplicate member priority value to make sure the new index works
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ts.GroupOfElements(SourceECClassId, SourceECInstanceId, TargetECClassId, TargetECInstanceId, AddToIndex, NewProperty) VALUES(?,?,?,?,?,?)"));
+        statement.BindId(1, firstGroup.GetClassId());
+        statement.BindId(2, firstGroup.GetInstanceId());
+        statement.BindId(3, firstElement.GetClassId());
+        statement.BindId(4, firstElement.GetInstanceId());
+        statement.BindInt(5, 2);
+        statement.BindInt(6, 10);
+        ASSERT_EQ(statement.Step(), BE_SQLITE_CONSTRAINT_UNIQUE) << "Should fail as unique index is present for test case " << testCaseNumber;
+
+        m_ecdb.AbandonChanges();
+        };
+
+    // Map Stragety set to TablePerHierarchy for the ECRelationshipClass GroupOfElements.
+        {
+        // Test Case 1:
+        // Setup schema with the new custom attribute from the start, thus not requiring schema upgrade.
+        // Result: Extended index should be setup and duplicate entries should be allowed
+        importSchemasTestAndReset(Utf8PrintfString(testSchema, 0, newDbIndexCA, newProperties), {}, false, 1);
+
+        // // Test Case 2:
+        // // Setup initial schema. Upgrade schema with the new custom attribute.
+        // // Result: Index should get updated and duplicate entries should be allowed.
+        importSchemasTestAndReset(Utf8PrintfString(testSchema, 0, "", ""), { Utf8PrintfString(testSchema, 1, newDbIndexCA, newProperties) }, false, 2);
+
+        // Test Case 3:
+        // Setup initial schema. Do a schema upgrade that adds a new property. Do another schema upgade that recreates the unique index with the new property included.
+        // Result: Index should get updated and duplicate entries should be allowed after the last schema upgrade.
+        importSchemasTestAndReset(Utf8PrintfString(testSchema, 0, "", ""), { Utf8PrintfString(testSchema, 1, "", newProperties), Utf8PrintfString(testSchema, 2, newDbIndexCA, newProperties) }, false, 3);
+
+        importSchemasTestAndReset(Utf8PrintfString(testSchema, 0, "", ""), { Utf8PrintfString(testSchema, 1, newDbIndexCA, newProperties), Utf8PrintfString(testSchema, 2, extendedDbIndexCA, newProperties) }, false, 4);
+
+        // Test Case 4:
+        // Setup schema without the new custom attribute.
+        // Result: Duplicate entries should NOT be allowed.
+        importSchemasTestAndReset(Utf8PrintfString(testSchema, 0, "", newProperties), {}, true, 5);
+
+        // Test Case 5:
+        // Setup initial schema. Upgrade schema with the new property but without the custom attribute.
+        // Result: Duplicate entries should NOT be allowed.
+        importSchemasTestAndReset(Utf8PrintfString(testSchema, 0, "", ""), { Utf8PrintfString(testSchema, 1, "", newProperties)} , true, 6);
+        }
+    }
+
+TEST_F(IndexTests, ExtendSystemIndexNonTPHRelationshipClass)
+    {
+    const auto testSchema = R"xml(
+        <?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.%d" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="2.0.2" alias="ecdbmap"/>
+
+            <ECEntityClass typeName="SpecificElement" displayLabel="A specific Element">
+                <ECProperty propertyName="ElementId" typeName="int" />
+                <ECProperty propertyName="ElementName" typeName="string" />
+            </ECEntityClass>
+
+            <ECEntityClass typeName="ElementGroup" displayLabel="Group of Elements" >
+                <ECProperty propertyName="GroupId" typeName="int" />
+                <ECProperty propertyName="GroupName" typeName="string" />
+            </ECEntityClass>
+
+            <ECRelationshipClass typeName="GroupOfElements" strength="referencing" modifier="Sealed">
+                <ECCustomAttributes>
+                    %s
+                </ECCustomAttributes>
+                <Source multiplicity="(1..1)" polymorphic="True" roleLabel="groups">
+                    <Class class="ElementGroup" />
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is grouped by">
+                    <Class class="SpecificElement" />
+                </Target>
+                %s
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+    const auto newDbIndexCA = R"xml(
+        <DbIndexList xmlns="ECDbMap.02.00.00">
+            <Indexes>
+                <DbIndex>
+                    <Name>uix_ts_GroupOfElements_sourcetarget</Name>
+                    <IsUnique>True</IsUnique>
+                    <Properties>
+                        <string>SourceECInstanceId</string>
+                        <string>TargetECInstanceId</string>
+                        <string>AddToIndex</string>
+                    </Properties>
+                </DbIndex>
+                <DbIndex>
+                    <Name>ix_ts_GroupOfElements_source</Name>
+                    <IsUnique>False</IsUnique>
+                    <Properties>
+                        <string>SourceECInstanceId</string>
+                        <string>AddToIndex</string>
+                    </Properties>
+                </DbIndex>
+            </Indexes>
+        </DbIndexList>)xml";
+
+    const auto newProperty = R"xml(<ECProperty propertyName="AddToIndex" typeName="int" displayLabel="AddToIndex"/>)xml";
+
+    // Map Stragety set to the default (OwnTable) for the ECRelationshipClass GroupOfElements.
+    // Since system indexes can only be modified on relationship classes with TPH map stragety, index shouldn't get extended and duplicate schema import should fail.
+        {
+        // Add new index and property when setting up the ecdb
+        ASSERT_EQ(BentleyStatus::ERROR, SetupECDb("ExtendSystemIndexNonTPHClass.ecdb", SchemaItem(Utf8PrintfString(testSchema, 0, newDbIndexCA, newProperty))));
+        }
+        {
+        // Add new index and property with a schema upgrade
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ExtendSystemIndexNonTPHClass.ecdb", SchemaItem(Utf8PrintfString(testSchema, 0, "", ""))));
+        ASSERT_EQ(BentleyStatus::ERROR, GetHelper().ImportSchema(SchemaItem(Utf8PrintfString(testSchema, 1, newDbIndexCA, newProperty))));
+        m_ecdb.AbandonChanges();
+        }
+        {
+        // Add new property with a schema upgrade, add the index with another schema upgrade
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ExtendSystemIndexNonTPHClass.ecdb", SchemaItem(Utf8PrintfString(testSchema, 0, "", ""))));
+        ASSERT_EQ(BentleyStatus::SUCCESS, GetHelper().ImportSchema(SchemaItem(Utf8PrintfString(testSchema, 1, "", newProperty))));
+        ASSERT_EQ(BentleyStatus::ERROR, GetHelper().ImportSchema(SchemaItem(Utf8PrintfString(testSchema, 2, newDbIndexCA, newProperty))));
+        m_ecdb.AbandonChanges();
+        }
+    }
+
+TEST_F(IndexTests, ExtendSystemIndexTPHEntityClass)
+    {
+    const auto testSchema = R"xml(
+        <?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.%d" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="ECDbMap" version="2.0.2" alias="ecdbmap"/>
+
+            <ECEntityClass typeName="TestClass" modifier="None">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.2.0.0">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <DbIndexList xmlns="ECDbMap.2.0.0">
+                            <Indexes>
+                                <DbIndex>
+                                    <Name>uix_TestClass_Prop1</Name>
+                                    <IsUnique>True</IsUnique>
+                                    <Properties>
+                                        <string>ECInstanceId</string>
+                                        <string>Prop1</string>
+                                    </Properties>
+                                </DbIndex>
+                                %s
+                            </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Prop1" typeName="string" />
+                    %s
+                </ECEntityClass>
+        </ECSchema>)xml";
+
+    const auto newDbIndexCA = R"xml(
+                <DbIndex>
+                    <Name>ix_ts_TestClass_ecclassid</Name>
+                    <Properties>
+                        <string>ECClassId</string>
+                        <string>Prop2</string>
+                    </Properties>
+                </DbIndex>)xml";
+
+    const auto newProperty = R"xml(<ECProperty propertyName="Prop2" typeName="int" />)xml";
+
+    // Map Stragety set to the default (OwnTable) for the ECRelationshipClass GroupOfElements.
+    // Since system indexes can only be modified on relationship classes with TPH map stragety, index shouldn't get extended and duplicate schema import should fail.
+        {
+        // Add new index and property when setting up the ecdb
+        ASSERT_EQ(BentleyStatus::ERROR, SetupECDb("ExtendSystemIndexTPHEntityClass.ecdb", SchemaItem(Utf8PrintfString(testSchema, 0, newDbIndexCA, newProperty))));
+        }
+        {
+        // Add new index and property with a schema upgrade
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ExtendSystemIndexTPHEntityClass.ecdb", SchemaItem(Utf8PrintfString(testSchema, 0, "", ""))));
+        ASSERT_EQ(BentleyStatus::ERROR, GetHelper().ImportSchema(SchemaItem(Utf8PrintfString(testSchema, 1, newDbIndexCA, newProperty))));
+        m_ecdb.AbandonChanges();
+        }
+        {
+        // Add new property with a schema upgrade, add the index with another schema upgrade
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ExtendSystemIndexTPHEntityClass.ecdb", SchemaItem(Utf8PrintfString(testSchema, 0, "", ""))));
+        ASSERT_EQ(BentleyStatus::SUCCESS, GetHelper().ImportSchema(SchemaItem(Utf8PrintfString(testSchema, 1, "", newProperty))));
+        ASSERT_EQ(BentleyStatus::ERROR, GetHelper().ImportSchema(SchemaItem(Utf8PrintfString(testSchema, 2, newDbIndexCA, newProperty))));
+        m_ecdb.AbandonChanges();
+        }
     }
 
 //---------------------------------------------------------------------------------------

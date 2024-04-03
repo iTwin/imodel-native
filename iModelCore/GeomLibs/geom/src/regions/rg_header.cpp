@@ -285,7 +285,7 @@ RGC_AbortFunction abortFunction
 * (b) as returned by a call to the saved abort function
 * BUT .. only call the abort function if the running count if
 * abort checks is a multiple of the period.
-* 
+*
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Public bool    jmdlRG_checkAbort
@@ -1721,7 +1721,7 @@ RG_Header           *pRG
 
 static double s_maxRelTol = 1.0e-7;
 /*---------------------------------------------------------------------------------**//**
-* Update the session's maxRelTol, this is used by jmdlRG_updateTolerance to compute the 
+* Update the session's maxRelTol, this is used by jmdlRG_updateTolerance to compute the
 * maxTol (using maxTol = s_maxRelTol * maxCoordinate).
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2722,7 +2722,7 @@ double                          highOffset
     MTGARRAY_SET_LOOP (nodeId, pRG->pGraph)
         {
         if (jmdlRG_checkAbort (pRG, s_checkStopPeriod))
-            return false;            
+            return false;
 
         if (   jmdlMTGGraph_getMask (pRG->pGraph, nodeId, MTG_DIRECTED_EDGE_MASK)
             && jmdlRG_getEdgeRange (pRG, &range, nodeId))
@@ -4086,7 +4086,7 @@ const char                      *pTitle
 	maskChars[numMask] = 0;
         jmdlRG_getGroupId (pRG, &groupId, nodeId);
 	GEOMAPI_PRINTF(" %4d %s %4d %4d %4d %12.8lg %12.8lg %12.6lg G%2d E%4d V%5d C%d\n",
-			    nodeId, 
+			    nodeId,
 			    maskChars,
 			    edgeData.vertexIndex[0],
 			    jmdlMTGGraph_getVSucc (pRG->pGraph, nodeId),

@@ -28,7 +28,7 @@ bool endPoint_defined;
 int NumUndefined ()
     {
     int numUndefined = 0;
-    
+
     if (!startPoint_defined)
         numUndefined++;
     if (!endPoint_defined)
@@ -66,7 +66,7 @@ bool sweepAngle_defined;
 int NumUndefined ()
     {
     int numUndefined = 0;
-    
+
     if (!placement_defined)
         numUndefined++;
     if (!radius_defined)
@@ -123,7 +123,7 @@ bool capped_defined;
 int NumUndefined ()
     {
     int numUndefined = 0;
-    
+
     if (!baseOrigin_defined)
         numUndefined++;
     if (!topOrigin_defined)
@@ -187,7 +187,7 @@ bool capped_defined;
 int NumUndefined ()
     {
     int numUndefined = 0;
-    
+
     if (!center_defined)
         numUndefined++;
     if (!vectorX_defined)
@@ -246,7 +246,7 @@ bool capped_defined;
 int NumUndefined ()
     {
     int numUndefined = 0;
-    
+
     if (!centerA_defined)
         numUndefined++;
     if (!centerB_defined)
@@ -303,7 +303,7 @@ bool capped_defined;
 int NumUndefined ()
     {
     int numUndefined = 0;
-    
+
     if (!center_defined)
         numUndefined++;
     if (!vectorX_defined)
@@ -351,7 +351,7 @@ bool bSolidFlag_defined;
 int NumUndefined ()
     {
     int numUndefined = 0;
-    
+
     if (!placement_defined)
         numUndefined++;
     if (!cornerA_defined)
@@ -396,7 +396,7 @@ bool bSolidFlag_defined;
 int NumUndefined ()
     {
     int numUndefined = 0;
-    
+
     if (!placement_defined)
         numUndefined++;
     if (!height_defined)
@@ -440,7 +440,7 @@ bool bSolidFlag_defined;
 int NumUndefined ()
     {
     int numUndefined = 0;
-    
+
     if (!placement_defined)
         numUndefined++;
     if (!height_defined)
@@ -476,7 +476,7 @@ bool radius_defined;
 int NumUndefined ()
     {
     int numUndefined = 0;
-    
+
     if (!placement_defined)
         numUndefined++;
     if (!radius_defined)
@@ -505,7 +505,7 @@ bool xyz_defined;
 int NumUndefined ()
     {
     int numUndefined = 0;
-    
+
     if (!xyz_defined)
         numUndefined++;
     return numUndefined;
@@ -544,7 +544,7 @@ bool sweepAngle_defined;
 int NumUndefined ()
     {
     int numUndefined = 0;
-    
+
     if (!placement_defined)
         numUndefined++;
     if (!radiusA_defined)
@@ -585,7 +585,7 @@ bool radiusB_defined;
 int NumUndefined ()
     {
     int numUndefined = 0;
-    
+
     if (!placement_defined)
         numUndefined++;
     if (!radiusA_defined)
@@ -631,7 +631,7 @@ bool justification_defined;
 int NumUndefined ()
     {
     int numUndefined = 0;
-    
+
     if (!placement_defined)
         numUndefined++;
     if (!textString_defined)
@@ -680,7 +680,7 @@ bool bSolidFlag_defined;
 int NumUndefined ()
     {
     int numUndefined = 0;
-    
+
     if (!placement_defined)
         numUndefined++;
     if (!centerB_defined)
@@ -718,7 +718,7 @@ bool radius_defined;
 int NumUndefined ()
     {
     int numUndefined = 0;
-    
+
     if (!placement_defined)
         numUndefined++;
     if (!radius_defined)
@@ -762,7 +762,7 @@ bool bSolidFlag_defined;
 int NumUndefined ()
     {
     int numUndefined = 0;
-    
+
     if (!placement_defined)
         numUndefined++;
     if (!radiusA_defined)
@@ -802,7 +802,7 @@ bool vector_defined;
 int NumUndefined ()
     {
     int numUndefined = 0;
-    
+
     if (!xyz_defined)
         numUndefined++;
     if (!vector_defined)
@@ -839,8 +839,8 @@ CGIndexedMeshFlags ()
     normalArray_defined = false;
     normalIndexArray_defined = false;
     colorArray_defined = false;
-    colorIndexArray_defined = false;    
-    
+    colorIndexArray_defined = false;
+
     }
 
 bool xyzArray_defined;
@@ -850,7 +850,7 @@ bool paramIndexArray_defined;
 bool normalArray_defined;
 bool normalIndexArray_defined;
 bool colorArray_defined;
-bool colorIndexArray_defined;    
+bool colorIndexArray_defined;
 
 int NumUndefined ()
     {
@@ -871,7 +871,7 @@ int NumUndefined ()
     if (!colorArray_defined)
         numUndefined++;
     if (!colorIndexArray_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -887,18 +887,18 @@ struct CGAdjacentSurfacePatchesFlags
 {
 CGAdjacentSurfacePatchesFlags ()
     {
-    patchArray_defined = false;    
-    
+    patchArray_defined = false;
+
     }
 
-bool patchArray_defined;    
+bool patchArray_defined;
 
 int NumUndefined ()
     {
     int numUndefined = 0;
 
     if (!patchArray_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -922,15 +922,15 @@ CGBsplineCurveFlags ()
     closed_defined = false;
     controlPointArray_defined = false;
     weightArray_defined = false;
-    knotArray_defined = false;    
-    
+    knotArray_defined = false;
+
     }
 
 bool order_defined;
 bool closed_defined;
 bool controlPointArray_defined;
 bool weightArray_defined;
-bool knotArray_defined;    
+bool knotArray_defined;
 
 int NumUndefined ()
     {
@@ -945,7 +945,7 @@ int NumUndefined ()
     if (!weightArray_defined)
         numUndefined++;
     if (!knotArray_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -979,8 +979,8 @@ CGBsplineSurfaceFlags ()
     controlPointArray_defined = false;
     weightArray_defined = false;
     knotUArray_defined = false;
-    knotVArray_defined = false;    
-    
+    knotVArray_defined = false;
+
     }
 
 bool orderU_defined;
@@ -992,7 +992,7 @@ bool numVControlPoint_defined;
 bool controlPointArray_defined;
 bool weightArray_defined;
 bool knotUArray_defined;
-bool knotVArray_defined;    
+bool knotVArray_defined;
 
 int NumUndefined ()
     {
@@ -1017,7 +1017,7 @@ int NumUndefined ()
     if (!knotUArray_defined)
         numUndefined++;
     if (!knotVArray_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1033,18 +1033,18 @@ struct CGCurveChainFlags
 {
 CGCurveChainFlags ()
     {
-    curveArray_defined = false;    
-    
+    curveArray_defined = false;
+
     }
 
-bool curveArray_defined;    
+bool curveArray_defined;
 
 int NumUndefined ()
     {
     int numUndefined = 0;
 
     if (!curveArray_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1060,18 +1060,18 @@ struct CGCurveGroupFlags
 {
 CGCurveGroupFlags ()
     {
-    curveArray_defined = false;    
-    
+    curveArray_defined = false;
+
     }
 
-bool curveArray_defined;    
+bool curveArray_defined;
 
 int NumUndefined ()
     {
     int numUndefined = 0;
 
     if (!curveArray_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1089,12 +1089,12 @@ struct CGCurveReferenceFlags
 CGCurveReferenceFlags ()
     {
     reversed_defined = false;
-    parentCurve_defined = false;    
-    
+    parentCurve_defined = false;
+
     }
 
 bool reversed_defined;
-bool parentCurve_defined;    
+bool parentCurve_defined;
 
 int NumUndefined ()
     {
@@ -1103,7 +1103,7 @@ int NumUndefined ()
     if (!reversed_defined)
         numUndefined++;
     if (!parentCurve_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1119,18 +1119,18 @@ struct CGGroupFlags
 {
 CGGroupFlags ()
     {
-    memberArray_defined = false;    
-    
+    memberArray_defined = false;
+
     }
 
-bool memberArray_defined;    
+bool memberArray_defined;
 
 int NumUndefined ()
     {
     int numUndefined = 0;
 
     if (!memberArray_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1156,8 +1156,8 @@ CGInterpolatingCurveFlags ()
     startVector_defined = false;
     endVector_defined = false;
     PointArray_defined = false;
-    KnotArray_defined = false;    
-    
+    KnotArray_defined = false;
+
     }
 
 bool endConditionCode_defined;
@@ -1165,7 +1165,7 @@ bool knotCode_defined;
 bool startVector_defined;
 bool endVector_defined;
 bool PointArray_defined;
-bool KnotArray_defined;    
+bool KnotArray_defined;
 
 int NumUndefined ()
     {
@@ -1182,7 +1182,7 @@ int NumUndefined ()
     if (!PointArray_defined)
         numUndefined++;
     if (!KnotArray_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1198,18 +1198,18 @@ struct CGLineStringFlags
 {
 CGLineStringFlags ()
     {
-    PointArray_defined = false;    
-    
+    PointArray_defined = false;
+
     }
 
-bool PointArray_defined;    
+bool PointArray_defined;
 
 int NumUndefined ()
     {
     int numUndefined = 0;
 
     if (!PointArray_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1227,12 +1227,12 @@ struct CGOperationFlags
 CGOperationFlags ()
     {
     name_defined = false;
-    memberArray_defined = false;    
-    
+    memberArray_defined = false;
+
     }
 
 bool name_defined;
-bool memberArray_defined;    
+bool memberArray_defined;
 
 int NumUndefined ()
     {
@@ -1241,7 +1241,7 @@ int NumUndefined ()
     if (!name_defined)
         numUndefined++;
     if (!memberArray_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1261,13 +1261,13 @@ CGParametricSurfacePatchFlags ()
     {
     loopType_defined = false;
     surface_defined = false;
-    loopArray_defined = false;    
-    
+    loopArray_defined = false;
+
     }
 
 bool loopType_defined;
 bool surface_defined;
-bool loopArray_defined;    
+bool loopArray_defined;
 
 int NumUndefined ()
     {
@@ -1278,7 +1278,7 @@ int NumUndefined ()
     if (!surface_defined)
         numUndefined++;
     if (!loopArray_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1294,18 +1294,18 @@ struct CGPointChainFlags
 {
 CGPointChainFlags ()
     {
-    PointArray_defined = false;    
-    
+    PointArray_defined = false;
+
     }
 
-bool PointArray_defined;    
+bool PointArray_defined;
 
 int NumUndefined ()
     {
     int numUndefined = 0;
 
     if (!PointArray_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1321,18 +1321,18 @@ struct CGPointGroupFlags
 {
 CGPointGroupFlags ()
     {
-    memberArray_defined = false;    
-    
+    memberArray_defined = false;
+
     }
 
-bool memberArray_defined;    
+bool memberArray_defined;
 
 int NumUndefined ()
     {
     int numUndefined = 0;
 
     if (!memberArray_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1348,18 +1348,18 @@ struct CGPolygonFlags
 {
 CGPolygonFlags ()
     {
-    pointArray_defined = false;    
-    
+    pointArray_defined = false;
+
     }
 
-bool pointArray_defined;    
+bool pointArray_defined;
 
 int NumUndefined ()
     {
     int numUndefined = 0;
 
     if (!pointArray_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1377,12 +1377,12 @@ struct CGPrimitiveCurveReferenceFlags
 CGPrimitiveCurveReferenceFlags ()
     {
     reversed_defined = false;
-    parentCurve_defined = false;    
-    
+    parentCurve_defined = false;
+
     }
 
 bool reversed_defined;
-bool parentCurve_defined;    
+bool parentCurve_defined;
 
 int NumUndefined ()
     {
@@ -1391,7 +1391,7 @@ int NumUndefined ()
     if (!reversed_defined)
         numUndefined++;
     if (!parentCurve_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1411,13 +1411,13 @@ CGPartialCurveFlags ()
     {
     fraction0_defined = false;
     fraction1_defined = false;
-    parentCurve_defined = false;    
-    
+    parentCurve_defined = false;
+
     }
 
 bool fraction0_defined;
 bool fraction1_defined;
-bool parentCurve_defined;    
+bool parentCurve_defined;
 
 int NumUndefined ()
     {
@@ -1428,7 +1428,7 @@ int NumUndefined ()
     if (!fraction1_defined)
         numUndefined++;
     if (!parentCurve_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1446,12 +1446,12 @@ struct CGSharedGroupDefFlags
 CGSharedGroupDefFlags ()
     {
     name_defined = false;
-    geometry_defined = false;    
-    
+    geometry_defined = false;
+
     }
 
 bool name_defined;
-bool geometry_defined;    
+bool geometry_defined;
 
 int NumUndefined ()
     {
@@ -1460,7 +1460,7 @@ int NumUndefined ()
     if (!name_defined)
         numUndefined++;
     if (!geometry_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1478,12 +1478,12 @@ struct CGSharedGroupInstanceFlags
 CGSharedGroupInstanceFlags ()
     {
     sharedGroupName_defined = false;
-    transform_defined = false;    
-    
+    transform_defined = false;
+
     }
 
 bool sharedGroupName_defined;
-bool transform_defined;    
+bool transform_defined;
 
 int NumUndefined ()
     {
@@ -1492,7 +1492,7 @@ int NumUndefined ()
     if (!sharedGroupName_defined)
         numUndefined++;
     if (!transform_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1508,18 +1508,18 @@ struct CGShelledSolidFlags
 {
 CGShelledSolidFlags ()
     {
-    BoundingSurface_defined = false;    
-    
+    BoundingSurface_defined = false;
+
     }
 
-bool BoundingSurface_defined;    
+bool BoundingSurface_defined;
 
 int NumUndefined ()
     {
     int numUndefined = 0;
 
     if (!BoundingSurface_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1537,12 +1537,12 @@ struct CGSolidBySweptSurfaceFlags
 CGSolidBySweptSurfaceFlags ()
     {
     baseGeometry_defined = false;
-    railCurve_defined = false;    
-    
+    railCurve_defined = false;
+
     }
 
 bool baseGeometry_defined;
-bool railCurve_defined;    
+bool railCurve_defined;
 
 int NumUndefined ()
     {
@@ -1551,7 +1551,7 @@ int NumUndefined ()
     if (!baseGeometry_defined)
         numUndefined++;
     if (!railCurve_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1567,18 +1567,18 @@ struct CGSolidByRuledSweepFlags
 {
 CGSolidByRuledSweepFlags ()
     {
-    SectionArray_defined = false;    
-    
+    SectionArray_defined = false;
+
     }
 
-bool SectionArray_defined;    
+bool SectionArray_defined;
 
 int NumUndefined ()
     {
     int numUndefined = 0;
 
     if (!SectionArray_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1594,18 +1594,18 @@ struct CGSurfaceByRuledSweepFlags
 {
 CGSurfaceByRuledSweepFlags ()
     {
-    SectionArray_defined = false;    
-    
+    SectionArray_defined = false;
+
     }
 
-bool SectionArray_defined;    
+bool SectionArray_defined;
 
 int NumUndefined ()
     {
     int numUndefined = 0;
 
     if (!SectionArray_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1621,18 +1621,18 @@ struct CGSolidGroupFlags
 {
 CGSolidGroupFlags ()
     {
-    solidArray_defined = false;    
-    
+    solidArray_defined = false;
+
     }
 
-bool solidArray_defined;    
+bool solidArray_defined;
 
 int NumUndefined ()
     {
     int numUndefined = 0;
 
     if (!solidArray_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1662,8 +1662,8 @@ CGSpiralFlags ()
     endPoint_defined = false;
     endBearing_defined = false;
     endCurvature_defined = false;
-    geometry_defined = false;    
-    
+    geometry_defined = false;
+
     }
 
 bool spiralType_defined;
@@ -1673,7 +1673,7 @@ bool startCurvature_defined;
 bool endPoint_defined;
 bool endBearing_defined;
 bool endCurvature_defined;
-bool geometry_defined;    
+bool geometry_defined;
 
 int NumUndefined ()
     {
@@ -1694,7 +1694,7 @@ int NumUndefined ()
     if (!endCurvature_defined)
         numUndefined++;
     if (!geometry_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1712,12 +1712,12 @@ struct CGSurfaceBySweptCurveFlags
 CGSurfaceBySweptCurveFlags ()
     {
     baseGeometry_defined = false;
-    railCurve_defined = false;    
-    
+    railCurve_defined = false;
+
     }
 
 bool baseGeometry_defined;
-bool railCurve_defined;    
+bool railCurve_defined;
 
 int NumUndefined ()
     {
@@ -1726,7 +1726,7 @@ int NumUndefined ()
     if (!baseGeometry_defined)
         numUndefined++;
     if (!railCurve_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1742,18 +1742,18 @@ struct CGSurfaceGroupFlags
 {
 CGSurfaceGroupFlags ()
     {
-    surfaceArray_defined = false;    
-    
+    surfaceArray_defined = false;
+
     }
 
-bool surfaceArray_defined;    
+bool surfaceArray_defined;
 
 int NumUndefined ()
     {
     int numUndefined = 0;
 
     if (!surfaceArray_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1771,12 +1771,12 @@ struct CGSurfacePatchFlags
 CGSurfacePatchFlags ()
     {
     exteriorLoop_defined = false;
-    holeLoopArray_defined = false;    
-    
+    holeLoopArray_defined = false;
+
     }
 
 bool exteriorLoop_defined;
-bool holeLoopArray_defined;    
+bool holeLoopArray_defined;
 
 int NumUndefined ()
     {
@@ -1785,7 +1785,7 @@ int NumUndefined ()
     if (!exteriorLoop_defined)
         numUndefined++;
     if (!holeLoopArray_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1803,12 +1803,12 @@ struct CGTransformedGeometryFlags
 CGTransformedGeometryFlags ()
     {
     transform_defined = false;
-    geometry_defined = false;    
-    
+    geometry_defined = false;
+
     }
 
 bool transform_defined;
-bool geometry_defined;    
+bool geometry_defined;
 
 int NumUndefined ()
     {
@@ -1817,7 +1817,7 @@ int NumUndefined ()
     if (!transform_defined)
         numUndefined++;
     if (!geometry_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1837,13 +1837,13 @@ CGDgnExtrusionFlags ()
     {
     extrusionVector_defined = false;
     capped_defined = false;
-    baseGeometry_defined = false;    
-    
+    baseGeometry_defined = false;
+
     }
 
 bool extrusionVector_defined;
 bool capped_defined;
-bool baseGeometry_defined;    
+bool baseGeometry_defined;
 
 int NumUndefined ()
     {
@@ -1854,7 +1854,7 @@ int NumUndefined ()
     if (!capped_defined)
         numUndefined++;
     if (!baseGeometry_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1878,15 +1878,15 @@ CGDgnRotationalSweepFlags ()
     axis_defined = false;
     sweepAngle_defined = false;
     capped_defined = false;
-    baseGeometry_defined = false;    
-    
+    baseGeometry_defined = false;
+
     }
 
 bool center_defined;
 bool axis_defined;
 bool sweepAngle_defined;
 bool capped_defined;
-bool baseGeometry_defined;    
+bool baseGeometry_defined;
 
 int NumUndefined ()
     {
@@ -1901,7 +1901,7 @@ int NumUndefined ()
     if (!capped_defined)
         numUndefined++;
     if (!baseGeometry_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1919,12 +1919,12 @@ struct CGDgnRuledSweepFlags
 CGDgnRuledSweepFlags ()
     {
     capped_defined = false;
-    contourArray_defined = false;    
-    
+    contourArray_defined = false;
+
     }
 
 bool capped_defined;
-bool contourArray_defined;    
+bool contourArray_defined;
 
 int NumUndefined ()
     {
@@ -1933,7 +1933,7 @@ int NumUndefined ()
     if (!capped_defined)
         numUndefined++;
     if (!contourArray_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -1967,8 +1967,8 @@ CGTransitionSpiralFlags ()
     length_defined = false;
     activeStartFraction_defined = false;
     activeEndFraction_defined = false;
-    geometry_defined = false;    
-    
+    geometry_defined = false;
+
     }
 
 bool spiralType_defined;
@@ -1980,7 +1980,7 @@ bool endRadius_defined;
 bool length_defined;
 bool activeStartFraction_defined;
 bool activeEndFraction_defined;
-bool geometry_defined;    
+bool geometry_defined;
 
 int NumUndefined ()
     {
@@ -2003,9 +2003,9 @@ int NumUndefined ()
     if (!activeEndFraction_defined)
         numUndefined++;
     if (!geometry_defined)
-        numUndefined++;  
+        numUndefined++;
     if (!length_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };
@@ -2023,12 +2023,12 @@ struct CGDgnCurveVectorFlags
 CGDgnCurveVectorFlags ()
     {
     boundaryType_defined = false;
-    memberArray_defined = false;    
-    
+    memberArray_defined = false;
+
     }
 
 bool boundaryType_defined;
-bool memberArray_defined;    
+bool memberArray_defined;
 
 int NumUndefined ()
     {
@@ -2037,7 +2037,7 @@ int NumUndefined ()
     if (!boundaryType_defined)
         numUndefined++;
     if (!memberArray_defined)
-        numUndefined++;  
+        numUndefined++;
     return numUndefined;
     }
 };

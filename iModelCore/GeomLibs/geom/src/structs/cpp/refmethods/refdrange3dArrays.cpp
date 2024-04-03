@@ -79,7 +79,7 @@ void DRange3d::Extend(TransformCR transform, bvector<DPoint3d> const &points)
         Extend (xyz);
         }
     }
-    
+
 void DRange3d::Extend(TransformCR transform, bvector<DPoint4d> const &points)
     {
     DPoint3d xyz;
@@ -139,7 +139,7 @@ void DRange3d::Extend (DPoint3dCP points, int n)
         Extend (points[i]);
     }
 
-    
+
 /*-----------------------------------------------------------------*//**
 * From/InitFrom/Extend --- bvector<DPoint3d>
 +----------------------------------------------------------------------*/

@@ -175,7 +175,7 @@ void BuildLoops (size_t firstIndexOnOtherSide, size_t numDistinctPoints, double 
                 {
                 DPoint3d xyz = m_clipperLoop[0];
                 m_clipperLoop.push_back (xyz);
-                m_clipper->AddClipper (&m_clipperLoop[0], NULL, (int)m_clipperLoop.size ());  
+                m_clipper->AddClipper (&m_clipperLoop[0], NULL, (int)m_clipperLoop.size ());
                 }
             i0 = i1;
             }
@@ -199,7 +199,7 @@ void ApplyClipper (bvector<DPoint3d> const &clipper,
     size_t numOn = 0;
     //size_t i = 0;
     size_t numClipperPoints = m_clipperPoints.size ();
-    
+
     for (size_t i = 0; i < numClipperPoints; i++)
         {
         DPoint3d xyz = m_clipperPoints[i];
@@ -246,7 +246,7 @@ void ApplyClipper (bvector<DPoint3d> const &clipper,
         }
     else if (selections.useAbove && selections.useBelow)
         {
-        m_clipper->AddClipper (&m_clipperPointsOnPlane[0], NULL, (int)m_clipperPointsOnPlane.size ());        
+        m_clipper->AddClipper (&m_clipperPointsOnPlane[0], NULL, (int)m_clipperPointsOnPlane.size ());
         }
     else if (selections.useAbove || selections.useBelow)
         {

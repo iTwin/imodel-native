@@ -94,7 +94,7 @@ struct MyMTGFacetsXYZDistanceSearchFunctions : MTGShortestPathContext::MTGFacets
 void BuildBridgeEdges (MTGFacets &facets, MTGMask boundaryMask)
     {
     MTGGraphP graph = facets.GetGraphP ();
-    
+
 #ifdef NoisyPlanarMerge
     jmdlMTGFacets_printFaceLoops (&facets);
 #endif
@@ -188,7 +188,7 @@ size_t CountMaskParityErrorAroundVertexLoops (MTGGraph & graph, MTGMask targetMa
             if (graph.IsValidNodeId (nodeIdA))
                 {
                 int state = 0;
-                // We want to know the partity state 
+                // We want to know the partity state
                 // "on each edge" and "in each sector".
                 // Call it 0 "on" the edge of nodeIdA.
                 // Increase when outbound edge has targetMask

@@ -259,7 +259,7 @@ size_t vOrder
     double dBasisU[MAX_BEZIER_ORDER];
     double basisV[MAX_BEZIER_ORDER];
     double dBasisV[MAX_BEZIER_ORDER];
-    
+
     size_t n = uv.size();
     f.resize (n);
     dfdu.resize (n);
@@ -300,7 +300,7 @@ size_t vOrder
     double dBasisU[MAX_BEZIER_ORDER];
     double basisV[MAX_BEZIER_ORDER];
     double dBasisV[MAX_BEZIER_ORDER];
-    
+
     bsiBezier_evaluateBasisFunctions (basisU, (int)uOrder, uv.x);
     bsiBezier_evaluateDerivativeBasisFunctions (dBasisU, (int)uOrder, uv.x);
 
@@ -330,7 +330,7 @@ size_t vOrder
         return false;
     double basisU[MAX_BEZIER_ORDER];
     double basisV[MAX_BEZIER_ORDER];
-    
+
     bsiBezier_evaluateBasisFunctions (basisU, (int)uOrder, uv.x);
 
     bsiBezier_evaluateBasisFunctions (basisV, (int)vOrder, uv.y);

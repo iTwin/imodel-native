@@ -17,6 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define SQLFUNC_ClassName "ec_classname"
 #define SQLFUNC_ClassId "ec_classid"
 #define SQLFUNC_InstanceOf "ec_instanceof"
+#define SQLFUNC_XmlCAToJson "XmlCAToJson"
 
 #define SQLFUNC_ExtractInst "extract_inst"
 #define SQLFUNC_ExtractProp "extract_prop"
@@ -206,5 +207,21 @@ struct ExtractPropFunc final : ScalarFunction {
         ~ExtractPropFunc() {}
          static std::unique_ptr<ExtractPropFunc> Create(ECDbCR);
 };
+
+//=======================================================================================
+//! S XmlCAToJson(S)
+// @bsiclass
+//=======================================================================================
+struct XmlCAToJson final : ScalarFunction
+    {
+    private:
+        SchemaManager const* m_schemaManager;
+        void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
+
+    public:
+        XmlCAToJson(SchemaManager const& schemaManager) : ScalarFunction(SQLFUNC_XmlCAToJson, 2, DbValueType::TextVal), m_schemaManager(&schemaManager) {}
+        ~XmlCAToJson() {}
+        static std::unique_ptr<XmlCAToJson> Create(SchemaManager const& schemaManager);
+    };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

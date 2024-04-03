@@ -28,7 +28,7 @@ static int s_cornerIndexCCW[6][4] =
 };
 
 /*----------------------------------------------------------------------------------*//**
-Get points around an indexed face of a lexical frustum. 
+Get points around an indexed face of a lexical frustum.
 If corner points are in the customary order (NPC_xxx) this works for both range cube corners
 and perspective view corners.
 * @bsimethod
@@ -52,7 +52,7 @@ Get a plane from a lexical frustum
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPlane3d GetLexicalFrustumFacePlane (DPoint3d* frustumCornerPoints, unsigned int faceIndex)
     {
-    faceIndex = faceIndex % 6;  // really shouldn't change it, but we'll be safe ..    
+    faceIndex = faceIndex % 6;  // really shouldn't change it, but we'll be safe ..
     DPlane3d plane;
     plane.origin = frustumCornerPoints[s_cornerIndexCCW[faceIndex][0]];
     plane.normal.CrossProductToPoints (
@@ -91,8 +91,8 @@ void ClipPolygonWithFrustum(DPoint3d* outPts, int* outCount, int maxOut, DPoint3
         DPlane3d plane = GetLexicalFrustumFacePlane (clipperCorners, ii);
 
         bsiPolygon_clipToPlane(clipPts, &nClip, &numLoop, maxOut, currPts, nCurr, &plane);
-        
-        //don't include disconnect points at end 
+
+        //don't include disconnect points at end
         while (nClip > 0 && clipPts[nClip-1].IsDisconnect ())
             nClip--;
 

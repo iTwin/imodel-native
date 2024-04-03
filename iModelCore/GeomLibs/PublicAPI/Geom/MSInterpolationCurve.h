@@ -49,7 +49,7 @@ struct MSInterpolationCurve
     //! @param [in]  colinearTangents true : ensure colinear computed end tangents (zero/NULL endTangent(s), geometrically closed spline).
     //! @param [in]  chordLenTangents true/false: scale endTangent by chordlen/bessel (nonzero endTangent, open spline).
     //! @param [in]  naturalTangents true/false: compute natural/bessel endTangent (zero/NULL endTangent, open spline).
-    GEOMDLLIMPEXP MSBsplineStatus InitFromPointsAndEndTangents (DPoint3d *inPts, int numPts, bool remvData, double remvTol, DPoint3d *endTangents, 
+    GEOMDLLIMPEXP MSBsplineStatus InitFromPointsAndEndTangents (DPoint3d *inPts, int numPts, bool remvData, double remvTol, DPoint3d *endTangents,
                                         bool closedCurve, bool colinearTangents, bool chordLenTangents, bool naturalTangents);
 
 
@@ -63,7 +63,7 @@ struct MSInterpolationCurve
     //! @param [in]  colinearTangents true : ensure colinear computed end tangents (zero/NULL endTangent(s), geometrically closed spline).
     //! @param [in]  chordLenTangents true/false: scale endTangent by chordlen/bessel (nonzero endTangent, open spline).
     //! @param [in]  naturalTangents true/false: compute natural/bessel endTangent (zero/NULL endTangent, open spline).
-    GEOMDLLIMPEXP MSBsplineStatus InitFromPointsAndEndTangents (bvector<DPoint3d> &inPoints, bool remvData, double remvTol, DPoint3d *endTangents, 
+    GEOMDLLIMPEXP MSBsplineStatus InitFromPointsAndEndTangents (bvector<DPoint3d> &inPoints, bool remvData, double remvTol, DPoint3d *endTangents,
                                         bool closedCurve, bool colinearTangents, bool chordLenTangents, bool naturalTangents);
 
     //! Init by direct copy to members.   This is intended for serialization where there is little checking of geometric validity.
@@ -76,10 +76,10 @@ struct MSInterpolationCurve
                             DPoint3dCP pFitPoints,
                             int numFitPoints,
                             double const *pKnots, int numKnots,
-                            DVec3dCP startTangent = nullptr, 
+                            DVec3dCP startTangent = nullptr,
                             DVec3dCP endTangent = nullptr
                             );
-                            
+
     GEOMDLLIMPEXP bool AlmostEqual (MSInterpolationCurveCR other, double tolerance) const;
     }; // MSInterpolationCurve
 

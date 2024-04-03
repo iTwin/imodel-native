@@ -86,7 +86,7 @@ bool RepeatableRelationshipStepSpecification::_ReadJson(BeJsConst json)
         m_count = 0;
     else
         m_count = json[RELATIONSHIP_STEP_SPECIFICATION_JSON_ATTRIBUTE_COUNT].asInt(1);
-      
+
     return true;
     }
 
@@ -174,7 +174,7 @@ bool RelationshipPathSpecification::_ReadJson(BeJsConst json)
         CommonToolsInternal::LoadFromJson(_GetJsonElementType(), nullptr, json, m_steps, CommonToolsInternal::LoadRuleFromJson<RelationshipStepSpecification>, this);
         if (m_steps.empty())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s`: `%s`. Expected %s.",
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Invalid value for `%s`: `%s`. Expected %s.",
                 _GetJsonElementType(), json.Stringify().c_str(), "at least one step specification"));
             return false;
             }
@@ -288,7 +288,7 @@ bool RepeatableRelationshipPathSpecification::_ReadJson(BeJsConst json)
         CommonToolsInternal::LoadFromJson(_GetJsonElementType(), nullptr, json, m_steps, CommonToolsInternal::LoadRuleFromJson<RepeatableRelationshipStepSpecification>, this);
         if (m_steps.empty())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_INFO, LOG_ERROR, Utf8PrintfString("Invalid value for `%s`: `%s`. Expected %s.",
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Rules, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Invalid value for `%s`: `%s`. Expected %s.",
                 _GetJsonElementType(), json.Stringify().c_str(), "at least one step specification"));
             return false;
             }

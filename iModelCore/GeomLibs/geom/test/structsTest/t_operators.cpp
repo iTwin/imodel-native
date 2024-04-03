@@ -80,7 +80,7 @@ void CheckOperators (TransformCR transform, DPoint3dCR A, DVec3d T)
     DPoint3d B1 = transform * DPoint3d::From (-1,0,0);
     Check::Near (B0, B1, "Transform * Point  (-1,0,0)");
     //Check::Near (U2, B2, "Transform * Vector (-1,0,0)");
-    
+
     DVec3d U_times2 = U;    // BUT NEXT LINE DOUBLES IT IN PLACE.
     U_times2 *= 2.0;
     Check::Near (U_times2, U + U);
@@ -326,6 +326,6 @@ TEST(Compiler,bvectorCapacity)
             Check::Print ((uint64_t)i, "insert count");
             Check::Print ((uint64_t)n1, "bvector capacity");
             }
-        n0 = n1;            
+        n0 = n1;
         }
     }

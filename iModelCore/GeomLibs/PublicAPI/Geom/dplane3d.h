@@ -30,7 +30,7 @@ DVec3d   normal;
 //! @param [in] ux x-coordinate of normal vector
 //! @param [in] uy y-coordinate of normal vector
 //! @param [in] uz z-coordinate of normal vector
-//! 
+//!
 //!
 static DPlane3d FromOriginAndNormal
 (
@@ -46,7 +46,7 @@ double          uz
 //! @description Store origin and unnormalized vector.
 //! @param [in] origin origin point
 //! @param [in] normal normal vector
-//! 
+//!
 //!
 static DPlane3d FromOriginAndNormal
 (
@@ -55,10 +55,10 @@ DVec3dCR        normal
 );
 
 //!
-//! @description 
+//! @description
 //! @param [in] normal normal vector.  The vector is normalized inside this method.
 //! @param [in] distance (signed) distance from origin to the plane.
-//! 
+//!
 //!
 static ValidatedDPlane3d FromNormalAndDistance
 (
@@ -71,7 +71,7 @@ double          distance
 //! @param [in] origin origin point
 //! @param [in] xPoint first point in plane (e.g., x-axis point)
 //! @param [in] yPoint second point in plane (e.g., y-axis point)
-//! 
+//!
 //!
 static DPlane3d From3Points
 (
@@ -92,7 +92,7 @@ DPoint3dCR      yPoint
 //! @param [in] ux x-coordinate of normal vector
 //! @param [in] uy y-coordinate of normal vector
 //! @param [in] uz z-coordinate of normal vector
-//! 
+//!
 //!
 void InitFromOriginAndNormal
 (
@@ -108,7 +108,7 @@ double          uz
 //! @description Store origin and unnormalized vector.
 //! @param [in] origin origin point
 //! @param [in] normal normal vector
-//! 
+//!
 //!
 void InitFromOriginAndNormal
 (
@@ -119,7 +119,7 @@ DVec3dCR        normal
 //!
 //! @description Normalize the plane vector.
 //! @return true if normal vector has nonzero length.
-//! 
+//!
 //!
 bool Normalize ();
 
@@ -129,7 +129,7 @@ bool Normalize ();
 //! @param [in] origin origin point
 //! @param [in] xPoint first point in plane (e.g., x-axis point)
 //! @param [in] yPoint second point in plane (e.g., y-axis point)
-//! 
+//!
 //!
 void InitFrom3Points
 (
@@ -142,16 +142,16 @@ DPoint3dCR      yPoint
 //! @description Extract origin and normal from 4D plane coefficients.
 //! @param [in] hPlane 4D plane coefficients
 //! @return true if plane has a nonzero normal
-//! 
-//! 
+//!
+//!
 //!
 bool Init (DPoint4dCR hPlane);
 
 //!
 //! @description Return the plane as a DPoint4d.
 //! @param [out] hPlane 4D plane coefficients
-//! 
-//! 
+//!
+//!
 //!
 void GetDPoint4d (DPoint4dR hPlane) const;
 
@@ -164,8 +164,8 @@ void GetDPoint4d (DPoint4dR hPlane) const;
 //! @param [in] c 4D plane z-coefficient
 //! @param [in] d 4D plane constant coefficient
 //! @return true if plane has a nonzero normal
-//! 
-//! 
+//!
+//!
 //!
 bool Init
 (
@@ -183,8 +183,8 @@ double          d
 //! @param [out] coffB 4D plane y-coefficient
 //! @param [out] coffC 4D plane z-coefficient
 //! @param [out] coffD 4D plane constant coefficient
-//! 
-//! 
+//!
+//!
 //!
 void GetCoefficients
 (
@@ -197,14 +197,14 @@ double          &coffD
 
 //!
 //! @description Fill the plane data with zeros.
-//! 
+//!
 //!
 void Zero ();
 
 //!
 //! @description Test if the numeric entries in the plane are all absolutely zero (no tolerances).
 //! @return true if the plane contains only zero coordinates.
-//! 
+//!
 //!
 bool IsZero () const;
 
@@ -213,7 +213,7 @@ bool IsZero () const;
 //! @param [out] projection projection of point onto the plane
 //! @param [in] point point to project to plane
 //! @return true if the plane has a well defined normal.
-//! 
+//!
 //!
 bool ProjectPoint
 (
@@ -227,7 +227,7 @@ DPoint3dCR      point
 //!       plane to the point.  If not, it is a scaled distance.
 //! @param [in] point point for evaluation
 //! @return dot product
-//! 
+//!
 //!
 double Evaluate (DPoint3dCR point) const;
 
@@ -237,7 +237,7 @@ double Evaluate (DPoint3dCR point) const;
 //!       If not, it is a scaled distance.
 //! @param [in] vector vector for evaluation
 //! @return dot product
-//! 
+//!
 //!
 double EvaluateVector (DVec3dCR vector) const;
 
@@ -285,7 +285,7 @@ bool InitFromArray (DPoint3dCP pointArray, int numPoint);
 //! @description Compute the origin and normal of some plane that is close to all the points.
 //!     The plane will be based on a search for 3 widely separated points.
 //!     This method does not try to decide if the maxAbsDistance is small enough so that
-//!      the plane can be considered close to all the points -- a true return does not 
+//!      the plane can be considered close to all the points -- a true return does not
 //!      mean the points are close to coplanar.
 //! @param [in] points array of points defining the plane
 //! @param [out] maxAbsDistance largest absolute distance from any point to the plane.
@@ -295,7 +295,7 @@ bool InitFromArray (bvector<DPoint3d> const &points, double &maxAbsDistance);
 //! @description Compute the origin and normal of some plane that is close to all the points.
 //!     The plane will be based on a search for 3 widely separated points.
 //!     This method does not try to decide if the maxAbsDistance is small enough so that
-//!      the plane can be considered close to all the points -- a true return does not 
+//!      the plane can be considered close to all the points -- a true return does not
 //!      mean the points are close to coplanar.
 //! @param [in] pointArray (pointer to) array of points defining the plane
 //! @param [in] numPoint number of points.
@@ -343,7 +343,7 @@ static ValidatedDPlane3d VoronoiSplitPlane
 DPoint3dCR xyzA,    //!< [in] start point
 double rA,          //!< [in] start weight (radius)
 DPoint3dCR xyzB,    //!< [in] end point
-double rB,          //!< [in] 
+double rB,          //!< [in]
 int voronoiMetric   //!< [in] method to place plane origin.  See list above.
 );
 #endif

@@ -178,7 +178,7 @@ TransformR worldToLocal
     vectorY.NormalizedCrossProduct (vectorZ, vectorX);
     localToWorld.InitFromOriginAndVectors (origin, vectorX, vectorY, vectorZ);
     // If vectors are degenerate, inverse will fail.
-    return worldToLocal.InverseOf (localToWorld);    
+    return worldToLocal.InverseOf (localToWorld);
     }
 
 // Generate orthogonal localToGlobal and inverse from origin, x vector, and y vector.
@@ -194,7 +194,7 @@ TransformR worldToLocal
     axis.GetNormalizedTriad (unitX, unitY, unitZ);
     localToWorld.InitFromOriginAndVectors (origin, unitX, unitY, unitZ);
     // If vectors are degenerate, inverse will fail.
-    return worldToLocal.InverseOf (localToWorld);    
+    return worldToLocal.InverseOf (localToWorld);
     }
 
 
@@ -390,7 +390,7 @@ static double Check (DPoint3dCR xyz0, DPoint3dCR xyz1)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-//! set point, uv coordinates, and uv derivatives vectors 
+//! set point, uv coordinates, and uv derivatives vectors
 void DgnTorusPipeDetail::SetDetailCoordinatesFromLocalPipeCoordinates
 (
 SolidLocationDetail &detail,//!< [in,out] detail to update
@@ -927,7 +927,7 @@ bool boundedConeZ
         worldToLocal.Multiply (localArc, arc);
         // local condition for being on the cone is x^2 + y^2 = ((1-z)rA + z rB))^2
         //              x^2 + y^2 = ((1-z)^2 rA^2 + 2 z (1-z) rA*rB + z^2 rB^2
-        //              x^2 + y^2 = rA2 - 2z rA2 + z^2 (rA2 + rB2) + 2z rA rB - 2 z^2 rA rB 
+        //              x^2 + y^2 = rA2 - 2z rA2 + z^2 (rA2 + rB2) + 2z rA rB - 2 z^2 rA rB
         //              x^2 + y^2 = rA2 + 2z rA (rB - rA) + z^2 (rA2 - 2 rA rB + rB2)
         // CONFUSING POINT HERE: xyz are in the local space of the normalized cone.
         //    Points on the ellipse are homogeneous, with a weight . ..
@@ -1124,7 +1124,7 @@ DgnBoxDetail DgnBoxDetail::InitFromCenters (DPoint3dCR baseCenter, DPoint3dCR to
 
     baseOrigin = DPoint3d::FromSumOf (baseCenter, vectorX, baseX * -0.5);
     baseOrigin = DPoint3d::FromSumOf (baseOrigin, vectorY, baseY * -0.5);
-          
+
     topOrigin = DPoint3d::FromSumOf (topCenter, vectorX, topX * -0.5);
     topOrigin = DPoint3d::FromSumOf (topOrigin, vectorY, topY * -0.5);
 
@@ -1203,7 +1203,7 @@ double &bx,
 double &by
 ) const
     {
-    localToWorld.InitFromOriginAndVectors (m_baseOrigin, m_vectorX, m_vectorY, 
+    localToWorld.InitFromOriginAndVectors (m_baseOrigin, m_vectorX, m_vectorY,
                 DVec3d::FromStartEnd (m_baseOrigin, m_topOrigin));
     ax = m_baseX;
     ay = m_baseY;
@@ -1297,7 +1297,7 @@ bool     capped)
     columnX.Scale (radiusXY);
     columnZ.Scale (radiusZ);
     columnY.SizedCrossProduct (columnZ, columnX, radiusXY);
-    m_localToWorld.InitFromOriginAndVectors (center, columnX, columnY, columnZ); 
+    m_localToWorld.InitFromOriginAndVectors (center, columnX, columnY, columnZ);
     m_startLatitude = startLatitude;
     m_latitudeSweep = latitudeSweep;
     m_capped = capped;
@@ -1329,7 +1329,7 @@ DgnSphereDetail::DgnSphereDetail (
     vectorZ.Scale (radius);
     if (vectorX.TripleProduct (vectorY, vectorZ) < 0.0)
         vectorY.Scale (-1.0);
-    m_localToWorld.InitFromOriginAndVectors (center, vectorX, vectorY, vectorZ);     
+    m_localToWorld.InitFromOriginAndVectors (center, vectorX, vectorY, vectorZ);
     m_startLatitude = -Angle::PiOver2 ();
     m_latitudeSweep = Angle::Pi ();
     m_capped = false;
@@ -1402,7 +1402,7 @@ double     &poleRadius
            unitX.IsPerpendicularTo (unitY)
         && unitY.IsPerpendicularTo (unitZ)
         && unitX.IsPerpendicularTo (unitZ)
-        && DoubleOps::AlmostEqual (rY, equatorRadius);    
+        && DoubleOps::AlmostEqual (rY, equatorRadius);
     }
 
 
@@ -1784,7 +1784,7 @@ size_t DgnRotationalSweepDetail::ComputeVRuleCount (double sweepRadians, size_t 
 
     if (numRules > (int) numVRulesFullSweep)
         return numVRulesFullSweep;
-        
+
     return numRules;
     }
 
@@ -1893,7 +1893,7 @@ bool   DgnRotationalSweepDetail::SetRadius (double radius, RadiusType type)
         translateDistance =  radius - ((RadiusType::Minimum == type) ? range.low : range.high);
         }
 
-    if (range.low + translateDistance < 0.0)        
+    if (range.low + translateDistance < 0.0)
         return false;
 
     return m_baseCurve->TransformInPlace (Transform::From (DVec3d::FromScale (ray.direction, translateDistance)));
@@ -2194,12 +2194,12 @@ GEOMDLLIMPEXP bool ISolidPrimitive::TryGetConstructiveFrame (TransformR localToW
 
 
 GEOMDLLIMPEXP IGeometryPtr ISolidPrimitive::GetFace (SolidLocationDetail::FaceIndices const &indices) const
-    { 
+    {
     return _GetFace (indices);
     }
 
 GEOMDLLIMPEXP void ISolidPrimitive::GetFaceIndices (bvector<SolidLocationDetail::FaceIndices> &indices) const
-    { 
+    {
     return _GetFaceIndices (indices);
     }
 
@@ -2460,7 +2460,7 @@ static bool isDgnRuledSweepDetailCone (DgnRuledSweepDetail& detail, ISolidPrimit
 
     baseRMatrix.GetColumn (baseZ, 2);
     topRMatrix.GetColumn (topZ, 2);
-        
+
     if (fabs (baseZ.DotProduct (topZ) - 1.0) > mgds_fc_epsilon)
         return false; // Profiles aren't parallel...
 
@@ -2552,7 +2552,7 @@ static bool isDgnRuledSweepDetailBlock (DgnRuledSweepDetail& detail, ISolidPrimi
 
     bvector<DPoint3d> const* basePoints = detail.m_sectionCurves.front ()->front ()->GetLineStringCP ();
     bvector<DPoint3d> const* topPoints  = detail.m_sectionCurves.back ()->back ()->GetLineStringCP ();
-    
+
     DVec3d      baseZ, topZ;
 
     if (!isBoxPoints (baseZ, basePoints) || !isBoxPoints (topZ, topPoints))
@@ -2614,7 +2614,7 @@ bool ISolidPrimitive::Simplify(ISolidPrimitivePtr& primitive)
         case SolidPrimitiveType_DgnRotationalSweep:
             {
             DgnRotationalSweepDetail detail;
-    
+
             if (!primitive->TryGetDgnRotationalSweepDetail(detail))
                 return false;
 
@@ -2630,7 +2630,7 @@ bool ISolidPrimitive::Simplify(ISolidPrimitivePtr& primitive)
         case SolidPrimitiveType_DgnExtrusion:
             {
             DgnExtrusionDetail detail;
-    
+
             if (!primitive->TryGetDgnExtrusionDetail(detail))
                 return false;
 
@@ -2646,7 +2646,7 @@ bool ISolidPrimitive::Simplify(ISolidPrimitivePtr& primitive)
         case SolidPrimitiveType_DgnRuledSweep:
             {
             DgnRuledSweepDetail detail;
-    
+
             if (!primitive->TryGetDgnRuledSweepDetail(detail))
                 return false;
 
@@ -2658,7 +2658,7 @@ bool ISolidPrimitive::Simplify(ISolidPrimitivePtr& primitive)
 
             if (isDgnRuledSweepDetailExtrusion(detail, primitive))
                 return true;
-            
+
             return false;
             }
 
@@ -2696,7 +2696,7 @@ bool ISolidPrimitive::HasCurvedFaceOrEdge () const
         case SolidPrimitiveType_DgnRuledSweep:
             {
             DgnRuledSweepDetail  detail;
-    
+
             if (!TryGetDgnRuledSweepDetail (detail))
                 return false;
 

@@ -564,6 +564,10 @@ void ECDb::Impl::RegisterBuiltinFunctions() const
     if (m_extractPropFunc != nullptr)
         m_ecdb.AddFunction(*m_extractPropFunc);
 
+    m_xmlCAToJsonFunc = XmlCAToJson::Create(m_ecdb.Schemas());
+    if (m_xmlCAToJsonFunc != nullptr)
+        m_ecdb.AddFunction(*m_xmlCAToJsonFunc);
+
     RegisterBuildInVTabs(m_ecdb);
    }
 
@@ -601,6 +605,10 @@ void ECDb::Impl::UnregisterBuiltinFunctions() const
     if (m_extractPropFunc != nullptr) {
         m_ecdb.RemoveFunction(*m_extractPropFunc);
         m_extractPropFunc = nullptr;
+    }
+    if (m_xmlCAToJsonFunc != nullptr) {
+        m_ecdb.RemoveFunction(*m_xmlCAToJsonFunc);
+        m_xmlCAToJsonFunc = nullptr;
     }
     }
 

@@ -88,7 +88,7 @@ bool FractionalizeInCircle(double x, double y, double r, double &u, double &v)
     bool vStat = DoubleOps::SafeDivide (v, y + r, a, 0.0);
     return uStat && vStat;
     }
-    
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsistruct
@@ -138,7 +138,7 @@ int SolveDiagonalQuadric (DPoint4d diagonals, double *angleArray, int maxOut)
                 if (numOut < maxOut)
                     angleArray[numOut++] = atan2 (xyzRoot[i].y, xyzRoot[i].x);
                 }
-            }        
+            }
         }
     return numOut;
     }
@@ -163,7 +163,7 @@ SolidLocationDetail const &dataB
 +--------------------------------------------------------------------------------------*/
 static void SortTail(bvector<SolidLocationDetail> &data, size_t i0)
     {
-    std::sort (data.begin () + i0, data.end (), 
+    std::sort (data.begin () + i0, data.end (),
             SolidLocationDetail::cb_compareLT_parameter);
     }
 

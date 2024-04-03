@@ -3,15 +3,12 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 
-import { use as chaiuse, expect } from "chai";
-import * as chaiAsPromised from "chai-as-promised";
+import { expect } from "chai";
 import * as fs from "fs";
 import { join } from "path";
 import { NativeCloudSqlite } from "../NativeCloudSqlite";
 import { IModelJsNative } from "../NativeLibrary";
 import { getOutputDir, iModelJsNative } from "./utils";
-
-chaiuse(chaiAsPromised);
 
 describe("cloud sqlite", () => {
   let cache: IModelJsNative.CloudCache;

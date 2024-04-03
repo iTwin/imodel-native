@@ -43,7 +43,7 @@ TEST(Bezier, ImplicitXYIntersection)
             SaveAndRestoreCheckTransform shifter2 (20, 0, 0);
             auto curveB = xCurveB;
             int orderB = (int)curveB.size ();
-            if (orderA + orderB > 8)        // experimentally, we observe this max order for the implicit solver ... 
+            if (orderA + orderB > 8)        // experimentally, we observe this max order for the implicit solver ...
                 continue;
             double paramB[2] {0.3, 0.62};
             DPoint3d xyzB[2];
@@ -84,5 +84,5 @@ TEST(Bezier, ImplicitXYIntersection)
             }
         }
     Check::ClearGeometry ("Bezier.ImplicitXYIntersection");
-    
+
     }
