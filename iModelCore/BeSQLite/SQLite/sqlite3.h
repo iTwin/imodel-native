@@ -146,9 +146,9 @@ extern "C" {
 ** [sqlite3_libversion_number()], [sqlite3_sourceid()],
 ** [sqlite_version()] and [sqlite_source_id()].
 */
-#define SQLITE_VERSION        "3.45.1"
-#define SQLITE_VERSION_NUMBER 3045001
-#define SQLITE_SOURCE_ID      "2024-01-30 16:01:20 23d3e0988aae182b6c98c8997922cff4606a79ce8b4fc2422001bacb4a91alt1"
+#define SQLITE_VERSION        "3.45.2"
+#define SQLITE_VERSION_NUMBER 3045002
+#define SQLITE_SOURCE_ID      "2024-04-02 21:55:45 3b3b5975e1837f6c68a53a049605b1789786ed2248a990485f8296aa16cdalt1"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -421,7 +421,7 @@ typedef int (*sqlite3_callback)(void*,int,char**, char**);
 ** <li> The application must not modify the SQL statement text passed into
 **      the 2nd parameter of sqlite3_exec() while sqlite3_exec() is running.
 ** <li> The application must not dereference the arrays or string pointers
-**       passed as the 3rd and 4th parameters after the callback returns.
+**       passed as the 3rd and 4th callback parameters after it returns.
 ** </ul>
 */
 SQLITE_API int sqlite3_exec(
