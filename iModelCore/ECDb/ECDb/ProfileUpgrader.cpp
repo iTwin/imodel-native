@@ -551,7 +551,11 @@ DbResult ProfileSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb, SchemaManager:
         }
 
     //import if already existing
-    if (SUCCESS != ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas(), opts, ecdb.GetImpl().GetSettingsManager().GetSchemaImportToken()))
+    ecdb.Schemas().GetSchemaSync().DisableSchemaSync();
+    const auto importStatus = ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas(), opts, ecdb.GetImpl().GetSettingsManager().GetSchemaImportToken());
+    ecdb.Schemas().GetSchemaSync().ReEnableSchemaSync();
+
+    if (SUCCESS != importStatus)
         {
         LOG.errorv("Creating / upgrading ECDb file failed because importing the ECDb standard ECSchemas into the file '%s' failed.", ecdb.GetDbFileName());
         return BE_SQLITE_ERROR;
