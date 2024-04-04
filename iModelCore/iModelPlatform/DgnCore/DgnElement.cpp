@@ -1246,7 +1246,7 @@ void DgnElement::RelatedElement::FromJson(DgnDbR db, BeJsConst val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::_ToJson(BeJsValue val, BeJsConst opts) const
     {
-    CachedECSqlStatementPtr stmt = this->GetDgnDb().GetPreparedECSqlStatement("SELECT $ FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE " BIS_ELEMENT_PROP_ECInstanceId "=?");
+    CachedECSqlStatementPtr stmt = this->GetDgnDb().GetPreparedECSqlStatement("SELECT $ FROM Bis.Element WHERE ECInstanceId=? OPTIONS USE_JS_PROP_NAMES");
     if (!stmt.IsValid())
         {
         BeAssert(false);
@@ -1260,11 +1260,7 @@ void DgnElement::_ToJson(BeJsValue val, BeJsConst opts) const
         return;
         }
 
-    QueryJsonAdaptor adaptor(this->GetDgnDb());
-    adaptor.UseJsNames(opts.getMemberBoolean("GetUseJsName", false));
-    adaptor.SetAbbreviateBlobs(opts.getMemberBoolean("GetAbbreviateBlobs", false));
-    adaptor.SetConvertClassIdsToClassNames(opts.getMemberBoolean("GetClassIdToClassNames", false));
-    adaptor.RenderRow(val, ECSqlStatementRow(*stmt), false);
+    val.From(BeJsDocument(stmt->GetValueText(0)));
     }
 
 /*---------------------------------------------------------------------------------**//**
