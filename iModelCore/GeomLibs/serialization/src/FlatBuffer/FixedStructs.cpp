@@ -2006,8 +2006,10 @@ static void ReadVariantGeometry(const BGFB::VariantGeometry * fbGeometry, bvecto
     if (fbGeometry == nullptr)
         return;
     if (fbGeometry->geometry_type() == BGFB::VariantGeometryUnion_VectorOfVariantGeometry)
+        {
         FBReader::ReadVectorOfVariantGeometryDirect(
-            reinterpret_cast <const BGFB::VectorOfVariantGeometry *> (fbGeometry->geometry()), dest);
+            reinterpret_cast <const BGFB::VectorOfVariantGeometry*>(fbGeometry->geometry()), dest);
+        }
     else
         {
         IGeometryPtr g = FBReader::ReadGeometry(fbGeometry);
