@@ -53,7 +53,7 @@ export const NativeLoggerCategory = {
 /** @internal */
 export interface NativeLogger {
   readonly minLevel: LogLevel | undefined;
-  readonly categoryFilter: {[categoryName: string]: LogLevel};
+  readonly categoryFilter: { [categoryName: string]: LogLevel };
   logTrace: (category: string, message: string) => void;
   logInfo: (category: string, message: string) => void;
   logWarning: (category: string, message: string) => void;
@@ -645,7 +645,7 @@ export declare namespace IModelJsNative {
     public startCreateChangeset(): ChangesetFileProps;
     public startProfiler(scopeName?: string, scenarioName?: string, overrideFile?: boolean, computeExecutionPlan?: boolean): DbResult;
     public stopProfiler(): { rc: DbResult, elapsedTime?: number, scopeId?: number, fileName?: string };
-    public updateElement(elemProps: ElementProps): void;
+    public updateElement(elemProps: Partial<ElementProps>): void;
     public updateElementAspect(aspectProps: ElementAspectProps): void;
     public updateElementGeometryCache(props: object): Promise<any>;
     public updateIModelProps(props: IModelProps): void;
@@ -1344,38 +1344,29 @@ export declare namespace IModelJsNative {
     featureUserData?: FeatureUserDataKeyValuePair[];
   }
 
-  const enum DbChangeStage {
-    Old = 0,
-    New = 1,
-  }
-
-  const enum DbValueType {
-    IntegerVal = 1,
-    FloatVal = 2,
-    TextVal = 3,
-    BlobVal = 4,
-    NullVal = 5,
-  }
-
-  type ChangeValueType = Uint8Array | number | string | null | undefined;
-
   class ChangesetReader {
     public close(): void;
     public getColumnCount(): number;
-    public getColumnValue(col: number, stage: DbChangeStage): ChangeValueType;
-    public getColumnValueType(col: number, stage: DbChangeStage): DbValueType | undefined;
+    public getColumnValue(col: number, stage: number): Uint8Array | number | string | null | undefined;
+    public getColumnValueBinary(col: number, stage: number): Uint8Array | undefined;
+    public getColumnValueDouble(col: number, stage: number): number | undefined;
+    public getColumnValueId(col: number, stage: number): string | undefined;
+    public getColumnValueInteger(col: number, stage: number): number | undefined;
+    public getColumnValueText(col: number, stage: number): string | undefined;
+    public getColumnValueType(col: number, stage: number): number | undefined;
     public getDdlChanges(): string | undefined;
     public getOpCode(): DbOpcode;
-    public getPrimaryKeys(): ChangeValueType[];
-    public getRow(stage: DbChangeStage): ChangeValueType[];
+    public getPrimaryKeys(): (Uint8Array | number | string | null | undefined)[];
+    public getRow(stage: number): (Uint8Array | number | string | null | undefined)[];
     public getTableName(): string;
+    public hasRow(): boolean;
+    public isColumnValueNull(col: number, stage: number): boolean | undefined;
     public isIndirectChange(): boolean;
-    public isPrimaryKeyColumn(col: number): boolean;
+    public getPrimaryKeyColumnIndexes(): number[];
     public openFile(fileName: string, invert: boolean): void;
     public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean): void;
     public reset(): void;
     public step(): boolean;
-    public hasRow(): boolean;
   }
 
   class DisableNativeAssertions implements IDisposable {
