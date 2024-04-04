@@ -396,8 +396,8 @@ Napi::String JsInterop::InsertElement(DgnDbR dgndb, Napi::Object obj, Napi::Valu
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void JsInterop::UpdateElement(DgnDbR dgndb, Napi::Object obj) {
-    BeJsConst inJson(obj);
-    DgnElementId eid = inJson[DgnElement::json_id()].GetId64<DgnElementId>();
+    BeJsValue elProps(obj);
+    DgnElementId eid = elProps[DgnElement::json_id()].GetId64<DgnElementId>();
     if (!eid.IsValid())
         throwInvalidId();
 
@@ -407,8 +407,14 @@ void JsInterop::UpdateElement(DgnDbR dgndb, Napi::Object obj) {
 
     try {
         auto el = elPersist->CopyForEdit();
+
+        // fill the required value for className and model. The values of these members cannot be changed by updating but may be used by “onUpdate” implementers.
+        // Note this will add or overwrite values supplied by the caller. That’s ok, they shouldn’t be trusted anyway.
+        elProps[DgnElement::json_classFullName()] = el->GetElementClass()->GetFullName();
+        elProps[DgnElement::json_model()] = el->GetModelId();
+
         callJsPreHandler(dgndb, el->GetElementClassId(), "onUpdate", obj);
-        el->FromJson(inJson);
+        el->FromJson(elProps);
 
         SetNapiObjOnElement _v(*el, &obj);
         DgnDbStatus status = el->Update();
