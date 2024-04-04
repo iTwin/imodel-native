@@ -107,11 +107,6 @@ Every BeSQLite database has a table named "be_EmbedFile" that holds copies of fi
 These files are stored as blobs, and are not directly accessible by external applications. Instead, BeSQLite provides
 methods to extract them into temporary locations.
 
-@section OVRBeSQLiteLanguageSupport 7. Support for language-specific collation and case-folding
-
-By default, BeSQLite does not support language-specific collation, and performs case-folding only for the ASCII
-character set. However, applications can extend BeSQLite by implementing the #BeSQLiteLib::ILanguageSupport interface.
-
 */
 
 #ifdef __BE_SQLITE_HOST_DLL__
@@ -631,44 +626,6 @@ enum class DbValueType : int
 struct BeSQLiteLib
 {
 public:
-    //=======================================================================================
-    //! This is an interface class that allows applications to provide custom language processing for SQL case and collation operations.
-    //! While a single static instance of this class is registered, collations are registered on a per-database basis. They are <i>not</i> expected to vary per database.
-    // @bsiclass
-    //=======================================================================================
-    struct ILanguageSupport
-    {
-        //! Signature of the callback method used to free collator objects provided by _InitCollation. Objects will be freed as each database is closed (since they are created for each database).
-        typedef void(*CollationUserDataFreeFunc)(void*);
-
-        //! Describes a custom collator to register.
-        //! @see _InitCollation.
-        struct CollationEntry
-        {
-            AString m_name;     //!< Name that query strings will use to use this collation.
-            void* m_collator;   //!< User data object provided in the collation callback. @see _Collate. @see CollationUserDataFreeFunc.
-        };
-
-        //! Converts source to lower-case into result according to localeName. result cannot be reallocated, and is typically over-allocated based on source.
-        //! This is called when the SQL scalar function LOWER is processed.
-        virtual void _Lower(Utf16CP source, int sourceLen, Utf16P result, int resultLen) = 0;
-
-        //! Converts source to upper-case into result according to localeName. result cannot be reallocated, and is typically over-allocated based on source.
-        //! This is called when the SQL scalar function UPPER is processed.
-        virtual void _Upper(Utf16CP source, int sourceLen, Utf16P result, int resultLen) = 0;
-
-        //! Registers a collection of collations with the database.
-        //! This is called when every database is opened, and collatorFreeFunc is called when the database is closed for each collator provided.
-        virtual void _InitCollation(bvector<CollationEntry>& collations, CollationUserDataFreeFunc& collatorFreeFunc) = 0;
-
-        //! Compares two strings for sorting purposes. collator is the m_collator object provided in the corresponding CollationEntry.
-        //! This is called when a custom collation is processed in a SQL query (e.g. in an ORDER BY clause).
-        virtual int _Collate(Utf16CP lhs, int lhsLen, Utf16CP rhs, int rhsLen, void* collator) = 0;
-
-        //! Maps the given UTF-32 character to its case folding equivalent (i.e. a normalized form used for comparison). This is primarily used in the LIKE operator.
-        //! If the character has no case folding equivalent, the character itself is returned.
-        virtual uint32_t _FoldCase(uint32_t) = 0;
-    };
 
     enum class LogErrors : bool {Yes=1, No=0};
 
@@ -696,13 +653,6 @@ public:
     static void FreeMem(void* p);
 
     BE_SQLITE_EXPORT static int CloseSqlDb(void* p);
-
-    //! Sets the static ILanguageSupport object for handling custom language processing.
-    //! This should be called once per session before opening any databases and applies to all future opened databases.
-    BE_SQLITE_EXPORT static void SetLanguageSupport(ILanguageSupport*);
-
-    //! Gets the current ILanguageSupport. Can return nullptr.
-    BE_SQLITE_EXPORT static ILanguageSupport* GetLanguageSupport();
 
     //! Get memory used by SQLite for current process
     BE_SQLITE_EXPORT static DbResult GetMemoryUsed(int64_t& current, int64_t& high, bool reset = false);

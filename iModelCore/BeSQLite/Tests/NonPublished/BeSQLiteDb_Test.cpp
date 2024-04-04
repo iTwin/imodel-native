@@ -1697,3 +1697,130 @@ TEST_F (BeSQLiteDbTests, Limits)
     ASSERT_EQ(0, m_db.GetLimit(DbLimits::WorkerThreads));
     m_db.AbandonChanges();
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F (BeSQLiteDbTests, UnicodeSupport)
+{
+    SetupDb (L"icu.db");
+    EXPECT_TRUE (m_db.IsDbOpen ());
+
+    const auto CASE_INSENSITIVE = "PRIMARY";
+    const auto CASE_SENSITIVE = "IDENTICAL";
+
+    auto icuLoadCollation = [&](Utf8CP sqliteName, Utf8CP icuLocale , Utf8CP icuStrength) {
+        auto stmt = m_db.GetCachedStatement("SELECT icu_load_collation(?,?,?)");
+        stmt->BindText(1, icuLocale, Statement::MakeCopy::No);
+        stmt->BindText(2, sqliteName, Statement::MakeCopy::No);
+        stmt->BindText(3, icuStrength, Statement::MakeCopy::No);
+
+        auto rc = stmt->Step();
+        EXPECT_EQ(rc, BE_SQLITE_ROW);
+        return rc == BE_SQLITE_ROW;
+    };
+    auto getCollations = [&]() {
+        auto stmt = m_db.GetCachedStatement("PRAGMA collation_list");
+        bset<Utf8String, CompareIUtf8Ascii> list;
+        while (BE_SQLITE_ROW == stmt->Step()){
+            list.insert(stmt->GetValueText(1));
+        }
+        return list;
+    };
+    auto toLower = [&](Utf8CP str) {
+        auto stmt = m_db.GetCachedStatement("SELECT LOWER(?)");
+        stmt->BindText(1, str, Statement::MakeCopy::Yes);
+        stmt->Step();
+        return Utf8String(stmt->GetValueText(0));
+    };
+    auto toUpper = [&](Utf8CP str) {
+        auto stmt = m_db.GetCachedStatement("SELECT UPPER(?)");
+        stmt->BindText(1, str, Statement::MakeCopy::Yes);
+        stmt->Step();
+        return Utf8String(stmt->GetValueText(0));
+    };
+    auto setupTable = [&](Utf8CP tableName, Utf8CP collation) {
+        ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteDdl(SqlPrintfString("CREATE TABLE [%s](str TEXT UNIQUE COLLATE %s)", tableName, collation)));
+    };
+
+    ASSERT_TRUE(icuLoadCollation("en_us_ci", "en_US", CASE_INSENSITIVE));
+    ASSERT_TRUE(icuLoadCollation("en_us_cs", "en_US", CASE_SENSITIVE));
+    ASSERT_TRUE(icuLoadCollation("ja_jp_ci", "ja_JP", CASE_INSENSITIVE));
+    ASSERT_TRUE(icuLoadCollation("ja_jp_cs", "ja_JP", CASE_SENSITIVE));
+
+    auto collations = getCollations();
+    ASSERT_TRUE(collations.find("RTRIM") != collations.end());
+    ASSERT_TRUE(collations.find("NOCASE") != collations.end());
+    ASSERT_TRUE(collations.find("BINARY") != collations.end());
+    ASSERT_TRUE(collations.find("en_us_ci") != collations.end());
+    ASSERT_TRUE(collations.find("en_us_cs") != collations.end());
+    ASSERT_TRUE(collations.find("ja_jp_ci") != collations.end());
+    ASSERT_TRUE(collations.find("ja_jp_cs") != collations.end());
+
+
+    auto insert = [&](Utf8CP tableName, Utf8CP str) {
+        auto stmt = m_db.GetCachedStatement(SqlPrintfString("INSERT INTO [%s](str) VALUES(?1)", tableName));
+        stmt->BindText(1, str, Statement::MakeCopy::Yes);
+        return stmt->Step();
+    };
+    auto getSortedList = [&](Utf8CP tableName, bool descending) {
+        auto stmt = m_db.GetCachedStatement(SqlPrintfString("SELECT str FROM %s ORDER BY str %s", tableName, descending?"DESC" : "ASC"));
+        bvector<Utf8String> list;
+        while(stmt->Step() == BE_SQLITE_ROW){
+            list.push_back(stmt->GetValueText(0));
+        }
+        return list;
+    };
+
+    ASSERT_STRCASEEQ("Gähnen", toLower("GÄHNEN").c_str());
+    ASSERT_STRCASEEQ("Löwe", toLower("LÖWE").c_str());
+    ASSERT_STRCASEEQ("Müde", toLower("MÜDE").c_str());
+
+    ASSERT_STRCASEEQ(toUpper("にじゅう").c_str(), toLower("にじゅう").c_str()); // ni-jū
+    ASSERT_STRCASEEQ(toUpper("にじゅう").c_str(), toLower("にじゅう").c_str()); // ni-jū
+
+    if ("en_US CI") {
+        setupTable("test1", "en_us_ci");
+        ASSERT_EQ(BE_SQLITE_DONE, insert("test1", "Gähnen"));
+        ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, insert("test1", "GÄHNEN"));
+    }
+    if ("en_US CS") {
+        setupTable("test2", "en_us_cs");
+        ASSERT_EQ(BE_SQLITE_DONE, insert("test2", "Gähnen"));
+        ASSERT_EQ(BE_SQLITE_DONE, insert("test2", "GÄHNEN"));
+    }
+    if ("ja_JP CS") {
+        setupTable("test3", "ja_JP_cs");
+        ASSERT_EQ(BE_SQLITE_DONE, insert("test3", "鉄の扉"));
+        ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, insert("test3", "鉄の扉"));
+    }
+
+    if ("ja_JP Ordering") {
+        setupTable("test4", "ja_JP_cs");
+        ASSERT_EQ(BE_SQLITE_DONE, insert("test4", "うし、牛"));
+        ASSERT_EQ(BE_SQLITE_DONE, insert("test4","ちり、地理"));
+        ASSERT_EQ(BE_SQLITE_DONE, insert("test4","せみ、蝉"));
+        ASSERT_EQ(BE_SQLITE_DONE, insert("test4","しめる、占める"));
+        ASSERT_EQ(BE_SQLITE_DONE, insert("test4","たべる、食べる"));
+        ASSERT_EQ(BE_SQLITE_DONE, insert("test4","きる、着る"));
+
+        auto list1 = getSortedList("test4", false);
+        ASSERT_STRCASEEQ(list1[0].c_str(), "うし、牛");
+        ASSERT_STRCASEEQ(list1[1].c_str(), "きる、着る");
+        ASSERT_STRCASEEQ(list1[2].c_str(), "しめる、占める");
+        ASSERT_STRCASEEQ(list1[3].c_str(), "せみ、蝉");
+        ASSERT_STRCASEEQ(list1[4].c_str(), "たべる、食べる");
+        ASSERT_STRCASEEQ(list1[5].c_str(), "ちり、地理");
+
+        auto list2 = getSortedList("test4", true);
+        ASSERT_STRCASEEQ(list2[5].c_str(), "うし、牛");
+        ASSERT_STRCASEEQ(list2[4].c_str(), "きる、着る");
+        ASSERT_STRCASEEQ(list2[3].c_str(), "しめる、占める");
+        ASSERT_STRCASEEQ(list2[2].c_str(), "せみ、蝉");
+        ASSERT_STRCASEEQ(list2[1].c_str(), "たべる、食べる");
+        ASSERT_STRCASEEQ(list2[0].c_str(), "ちり、地理");
+    }
+
+
+    m_db.SaveChanges();
+}

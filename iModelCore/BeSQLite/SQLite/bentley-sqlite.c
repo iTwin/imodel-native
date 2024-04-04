@@ -17,6 +17,7 @@
 #define SQLITE_OMIT_COMPLETE 1
 #define SQLITE_OMIT_PROGRESS_CALLBACK 1
 #define SQLITE_MAX_EXPR_DEPTH 2000
+#define SQLITE_ENABLE_ICU 1
 //Allocate around ~ 32 Mb
 #define SQLITE_DEFAULT_CACHE_SIZE 8000
 #define SQLITE_ENABLE_FTS5 1    // include support for full text search
