@@ -25,6 +25,9 @@
 #include <unordered_map>
 #include <list>
 #include <re2/re2.h>
+#include <unicode/ubrk.h>
+#include <unicode/ucol.h>
+#include <unicode/utf16.h>
 
 static NativeLogging::CategoryLogger LOG("BeSQLite");
 static NativeLogging::CategoryLogger NativeSqliteLog("SQLite");
@@ -945,7 +948,7 @@ static int besqliteBusyHandler(void* retry, int count) {return ((BusyRetry const
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode, std::optional<int> busyTimeout) : m_sqlDb(sqlDb), m_cachedProps(nullptr), m_blvCache(*this),
-            m_defaultTxn(*this, "default", defaultTxnMode), m_statements(10),
+            m_defaultTxn(*this, "default", defaultTxnMode), m_statements(10),m_noCaseCollation(NoCaseCollation::ASCII),
             m_regexFunc(RegExpFunc::Create()), m_regexExtractFunc(RegExpExtractFunc::Create()), m_base36Func(Base36Func::Create())
     {
     m_inCommit = false;
@@ -967,6 +970,73 @@ DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode, s
     AddFunction(*m_regexExtractFunc);
     AddFunction(*m_base36Func);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void nocaseCollatingFuncLatin1Del(void *pCtx){
+  UCollator *p = (UCollator *)pCtx;
+  ucol_close(p);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static int nocaseCollatingFuncASCII(void *, int nLeft, const void *zLeft, int nRight, const void *zRight){
+    int r = sqlite3_strnicmp((const char *)zLeft, (const char *)zRight, (nLeft<nRight)?nLeft:nRight);
+    if(0 == r){
+        r = nLeft-nRight;
+    }
+    return r;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static int nocaseCollatingFuncLatin1(void *pCtx, int nLeft, const void *zLeft, int nRight, const void *zRight){
+  UCollationResult res;
+  UCollator *p = (UCollator*)pCtx;
+  UErrorCode status;
+  res = ucol_strcollUTF8(p, (Utf8CP)zLeft, nLeft, (Utf8CP)zRight, nRight, &status);
+  switch( res ){
+    case UCOL_LESS: return -1;
+    case UCOL_GREATER: return +1;
+    case UCOL_EQUAL: return 0;
+  }
+  return U_SUCCESS(status) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DbFile::SetNoCaseCollation(NoCaseCollation col) const{
+    auto mutex = sqlite3_db_mutex(m_sqlDb);
+    sqlite3_mutex_enter(mutex);
+    const auto NOCASE = "NOCASE";
+    if (col == NoCaseCollation::ASCII) {
+        const auto rc = (DbResult)sqlite3_create_collation(m_sqlDb, NOCASE, SQLITE_UTF8, nullptr, nocaseCollatingFuncASCII);
+        if (rc == BE_SQLITE_OK){
+            m_noCaseCollation = col;
+        }
+        sqlite3_mutex_leave(mutex);
+        return rc;
+    }
+
+    UCollator *pUCollator;
+    UErrorCode status = U_ZERO_ERROR;
+    pUCollator = ucol_open("latin1", &status);
+    if( !U_SUCCESS(status) ){
+        sqlite3_mutex_leave(mutex);
+        return BE_SQLITE_ERROR;
+    }
+    ucol_setStrength(pUCollator, UCOL_PRIMARY);
+    const auto rc = sqlite3_create_collation_v2(m_sqlDb, NOCASE, SQLITE_UTF8, (void *)pUCollator, nocaseCollatingFuncLatin1, nocaseCollatingFuncLatin1Del);
+    if (rc == BE_SQLITE_OK){
+        m_noCaseCollation = col;
+    }
+    sqlite3_mutex_leave(mutex);
+    return (DbResult)rc;
+}
 
 BriefcaseLocalValueCache& DbFile::GetBLVCache() {return m_blvCache;}
 

@@ -342,6 +342,13 @@ struct BeServerIssuedId : BeInt64Id
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
+enum class NoCaseCollation {
+    ASCII,
+    Latin1 //! Latin-1 (ISO-8859-1: Western European) https://www.charset.org/charsets/iso-8859-1
+};
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
 enum DbConstants
 {
     DbUserVersion           = 10,  //!< the "user" version of SQLite databases created by this version of the BeSQLite library
@@ -2372,6 +2379,7 @@ protected:
     Savepoint m_defaultTxn;
     BeBriefcaseId m_briefcaseId;
     StatementCache m_statements;
+    mutable NoCaseCollation m_noCaseCollation;
     DbTxns m_txns;
     std::unique_ptr<ScalarFunction> m_regexFunc, m_regexExtractFunc, m_base36Func;
     explicit DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode, std::optional<int> busyTimeout);
@@ -2393,6 +2401,8 @@ protected:
     void SaveCachedProperties(bool isCommit);
     Utf8String GetLastError(DbResult* lastResult) const;
     void SaveCachedBlvs(bool isCommit);
+    DbResult SetNoCaseCollation(NoCaseCollation col) const;
+    NoCaseCollation GetNoCaseCollation() const { return m_noCaseCollation; }
     BE_SQLITE_EXPORT DbResult SaveProperty(PropertySpecCR spec, Utf8CP strData, void const* value, uint32_t propsize, uint64_t majorId=0, uint64_t subId=0);
     BE_SQLITE_EXPORT bool HasProperty(PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
     BE_SQLITE_EXPORT DbResult QueryPropertySize(uint32_t& propsize, PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
@@ -3272,6 +3282,8 @@ public:
     BE_SQLITE_EXPORT DbBuffer Serialize(const char *zSchema = nullptr) const;
 
     BE_SQLITE_EXPORT static DbResult Deserialize(DbBuffer& buffer, DbR db, DbDeserializeOptions opts = DbDeserializeOptions::FreeOnClose, const char *zSchema = nullptr, std::function<void(DbR)> beforeDefaultTxnStarts = nullptr);
+    BE_SQLITE_EXPORT DbResult SetNoCaseCollation(NoCaseCollation col) const { return m_dbFile->SetNoCaseCollation(col); }
+    BE_SQLITE_EXPORT NoCaseCollation GetNoCaseCollation() const { return m_dbFile->GetNoCaseCollation(); }
 };
 
 //=======================================================================================

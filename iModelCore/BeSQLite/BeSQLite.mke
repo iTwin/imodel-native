@@ -37,7 +37,7 @@ SubpartLibs = $(BuildContext)SubParts/Libs/
 o = $(PartBuildDir)
 
 
-dirToSearch = $(BuildContext)VendorAPI/icu4c/unicode
+dirToSearch = $(BuildContext)VendorAPI/icu4c
 %include cincapnd.mki
 
 dirToSearch = $(BuildContext)VendorAPI/
@@ -78,9 +78,6 @@ $(o)BeBriefcaseBasedIdSequence$(oext) : $(baseDir)BeBriefcaseBasedIdSequence.cpp
 objs +% $(MultiCompileObjectList)
 
 # Third-party section of this library.
-
-dirToSearch = $(BuildContext)VendorAPI/icu4c
-%include cincapnd.mki
 
 CCompFpOpts=precise
 %include $(sharedmki)PushThirdPartyIgnores.mki
