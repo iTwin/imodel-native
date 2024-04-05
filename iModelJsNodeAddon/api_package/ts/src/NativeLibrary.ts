@@ -492,7 +492,6 @@ export declare namespace IModelJsNative {
     justification: Range2dProps;
   }
 
-  enum BaselineShift { None, Subscript, Superscript }
   enum TextEmphasis { None = 0, Bold = 1, Italic = 2, BoldItalic = Bold | Italic }
 
   /** The native object for a Briefcase. */
@@ -522,7 +521,7 @@ export declare namespace IModelJsNative {
     public closeFile(): void;
     public completeCreateChangeset(arg: { index: number }): void;
     public computeProjectExtents(wantFullExtents: boolean, wantOutlierIds: boolean): { extents: Range3dProps, fullExtents?: Range3dProps, outliers?: Id64Array };
-    public computeRangesForText(chars: string, fontId: FontId, emphasis: TextEmphasis, shift: BaselineShift): TextLayoutRangesProps;
+    public computeRangesForText(chars: string, fontId: FontId, emphasis: TextEmphasis, widthFactor: number, height: number): TextLayoutRangesProps;
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
     public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
     public concurrentQueryShutdown(): void;
