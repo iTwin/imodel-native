@@ -401,7 +401,7 @@ TEST(Polyface, SubDivide)
                 }
             }
         }
-      
+
     Check::ClearGeometry("Polyface.Subdivide");
     }
 /*---------------------------------------------------------------------------------**//**

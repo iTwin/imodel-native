@@ -37,7 +37,7 @@ void TestStepGraph (int numSteps, int minDiagonal, int maxDiagonal)
         xyz0.Init (x0, y0);
         xyz1.Init (x0 + dx, y0);
         xyz2.Init (x0 + dx, y0 + dy);
-        
+
         bsiMTGFragmentSorter_addFragment (sorter, numFragment++, &xyz2, &xyz1);
         bsiMTGFragmentSorter_addFragment (sorter, numFragment++, &xyz0, &xyz1);
 
@@ -49,7 +49,7 @@ void TestStepGraph (int numSteps, int minDiagonal, int maxDiagonal)
             }
         }
     bvector<int> loops;
-    bvector<int> chains;        
+    bvector<int> chains;
     bsiMTGFragmentSorter_sortAndExtractSignedLoopsAndChains (sorter, &loops, &chains);
     if (Check::PrintDeepStructs ())
         {
@@ -57,7 +57,7 @@ void TestStepGraph (int numSteps, int minDiagonal, int maxDiagonal)
         Print ("Loops", loops);
         Print ("Chains", chains);
         }
-    bsiMTGFragmentSorter_free (sorter);        
+    bsiMTGFragmentSorter_free (sorter);
 
     }
 

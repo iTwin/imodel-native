@@ -34,7 +34,7 @@ bool operator < (DPoint3dIDI const &other) const
     // equal index, compare by fraction
     if (m_a <= other.m_a)
         return true;
-    return false;        
+    return false;
     }
 };
 
@@ -65,7 +65,7 @@ void Sort ()
 // return selecteeIndex = index of point with lowest (0,1,2) mask index.
 // (If multiple with same index, one is chosen arbitrarily)
 bool TryDelimitCluster (double toleranceXY, size_t startIndex, size_t &selecteeIndex, size_t &nextIndex)
-    {    
+    {
     size_t n = size ();
     nextIndex = startIndex;
     selecteeIndex = startIndex;
@@ -170,10 +170,10 @@ bool AlmostEqualXY (DPoint3d const &pointA, DPoint3d const &pointB)
     {
     return pointA.DistanceXY (pointB) <= m_toleranceXY;
     }
-    
+
 void LoadVertexBSnaps ()
     {
-    // Build up B1 as all the vertices of B snapped to nearest vertex or edge interior of A        
+    // Build up B1 as all the vertices of B snapped to nearest vertex or edge interior of A
     // For edge interiors, also add to m_sortA.
     DPoint3d pointA;
     double distanceA;
@@ -202,7 +202,7 @@ void LoadVertexBSnaps ()
             }
         m_xyzB1.push_back (xyzB);
         }
-    }        
+    }
 
 // Find edgeB1 interior points that are close to a vertex of A.  snap them to the A vertex.
 // resort and rebuild m_xyzB1.
@@ -274,7 +274,7 @@ void Go (bvector<DPoint3d> &xyzA1, bvector<DPoint3d> &xyzA2)
     LoadIntersections_A_B1 ();
     m_sortA.Sort ();
     m_sortA.ExtractPrioritizedClusters (xyzA1, m_toleranceXY);
-    m_sortB.Sort ();    
+    m_sortB.Sort ();
     m_sortB.ExtractPrioritizedClusters (xyzA2, m_toleranceXY);
     }
 
@@ -323,7 +323,7 @@ TEST(IrishPolygons, SimpleIntersection)
     bvector<DPoint3d> pointA, pointB, pointA1, pointB1;
     Add (pointA, 0,1,0);
     Add (pointA, 5,1,0);
-    
+
     Add (pointB, 2,0,1);
     Add (pointB, 2,4,1);
     double tolerance = 1.0e-8;
@@ -332,7 +332,7 @@ TEST(IrishPolygons, SimpleIntersection)
     Check::Size (pointB.size () + 1, pointB1.size (), "intersection point added");
 
     }
-    
+
 bool AlmostEqual (bvector<DPoint3d> const &pointA, bvector<DPoint3d> const &pointB, double dxy, double dz)
     {
     if (pointA.size () != pointB.size ())
@@ -346,7 +346,7 @@ bool AlmostEqual (bvector<DPoint3d> const &pointA, bvector<DPoint3d> const &poin
         }
     return true;
     }
-        
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -363,7 +363,7 @@ TEST(IrishPolygons, MoveVertexToVertex)
     Add (pointA, 0,1,1);
     Add (pointA, 2,1,1);
     Add (pointA, 5,1,1);
-    
+
     Add (pointB0, 2,10,2);
     Add (pointB0, 2,8,2);
     double tolerance = 0.1;
@@ -399,11 +399,11 @@ TEST(IrishPolygons, MoveVertexToEdge)
     Add (pointA, 0,1,1);
     Add (pointA, 2,1,1);
     Add (pointA, 5,1,1);
-    
+
     Add (pointB0, 1,10,2);
     Add (pointB0, 3,10,2);
     Add (pointB0, 5,10,2);
-    
+
     double tolerance = 0.1;
     double factor = 1.0e-3; // each vector becomes plainly less than tolerance when scaled by this.
 
@@ -425,7 +425,7 @@ TEST(IrishPolygons, MoveVertexToEdge)
                 Check::Size (pointB.size (), pointB1.size (), "B vertex moved to A edge");
                 Check::Near (pointA1[i+1], pointB1[j], "point added to A");
                 Check::True (pointB[j].Distance (edgePoint) < tolerance, "edge projection near original");
-                
+
                 // Vertex of B pulls edge of A
                 bvector<DPoint3d> pointA2, pointB2;
                 MovePolylineZ (pointB, pointA, pointB2, pointA2, tolerance);
@@ -438,7 +438,7 @@ TEST(IrishPolygons, MoveVertexToEdge)
                 }
             }
         }
-    }    
+    }
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -450,9 +450,9 @@ TEST(PrincipalAxes,Zero)
     DVec3d centroid, moments;
     RotMatrix axes;
     Check::False (DPoint3dOps::PrincipalAxes (points, centroid, axes, moments), "Empty points principal axes expected to fail");
-    
+
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -472,7 +472,7 @@ TEST(PrincipalAxes,XAXis)
     double M = u*u*2.0;
     Check::Near (DVec3d::From (M, M, 0), moments, "moments");
     Check::EndScope ();
-    }        
+    }
 
 
 // momentB[i] => momentA[indexBinA[i]] for smallest difference.
@@ -509,13 +509,13 @@ double MatchMoments (DVec3dCR momentA, RotMatrixCR axesA, DVec3dCR momentB, RotM
         }
     momentB1.Init (b1[0], b1[1], b1[2]);
     axesB1.InitFromColumnVectors (BB1[0], BB1[1], BB1[2]);
-    return dMax;    
+    return dMax;
     }
 void CheckTransformedMoments
 (
 TransformCR frame,              // must be orthogonal !!!
 bvector<DPoint3d> const &pointsA,
-double shiftMagnitude         // 
+double shiftMagnitude         //
 )
     {
     DVec3d centroidA, centroidB, centroidC;
@@ -532,7 +532,7 @@ double shiftMagnitude         //
     double momentRef = centroidB.Magnitude () + momentB.Magnitude ();
     double momentDiff = MatchMoments (momentA, axesC, momentB, axesB, indexBinA, momentB1, axesB1);
     if (s_printAll)
-        printf (" (centroidMagnitude %g) (momentDiff %g)\n", centroidB.Magnitude (), momentDiff); 
+        printf (" (centroidMagnitude %g) (momentDiff %g)\n", centroidB.Magnitude (), momentDiff);
     Check::Near (1.0, axesB.Determinant (), "det A");
     Check::Near (1.0, axesB1.Determinant (), "det B");
     Check::Near (1.0, axesA.Determinant (), "det B1");
@@ -563,7 +563,7 @@ TEST(PrincipalAxes,Slab)
     points.push_back (DPoint3d::From (-a, b,-c));
     points.push_back (DPoint3d::From ( a,-b,-c));
     points.push_back (DPoint3d::From (-a,-b,-c));
-    
+
     DVec3d centroid, moments;
     RotMatrix axes;
     DPoint3dOps::PrincipalAxes (points, centroid, axes, moments);
@@ -572,7 +572,7 @@ TEST(PrincipalAxes,Slab)
     double BC = 8.0 * (c*c + b*b);
     double AC = 8.0 * (a*a + c*c);
     Check::Near (DVec3d::From (AB, AC, BC), moments, "moments");
-    
+
     DVec3d shiftDirection = DVec3d::From (cos (3.0), sin(1.2), tan (1.2));
     DPoint3d basePoint = DPoint3d::From (1,2,3);
     double f = 1.0;
@@ -600,7 +600,7 @@ TEST(PrincipalAxes,Slab)
             Check::PopTolerance ();
         }
     Check::EndScope ();
-    }            
+    }
 
 void ShowXYZ(char const * name, DPoint3dCR xyz)
     {

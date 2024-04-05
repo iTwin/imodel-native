@@ -319,7 +319,7 @@ void initSortVector (DVec2dR data)  {data.x = 1.45; data.y = 0.13; data.Normaliz
 
 double computeSortCoordinate (DPoint3dCR target, DPoint3dCR origin, DVec3dCR vector)
     {
-    return 
+    return
           (target.x - origin.x) * vector.x
         + (target.y - origin.y) * vector.y
         + (target.z - origin.z) * vector.z
@@ -327,7 +327,7 @@ double computeSortCoordinate (DPoint3dCR target, DPoint3dCR origin, DVec3dCR vec
     }
 double computeSortCoordinate (DVec3dCR target, DVec3dCR origin, DVec3dCR vector)
     {
-    return 
+    return
           (target.x - origin.x) * vector.x
         + (target.y - origin.y) * vector.y
         + (target.z - origin.z) * vector.z
@@ -335,7 +335,7 @@ double computeSortCoordinate (DVec3dCR target, DVec3dCR origin, DVec3dCR vector)
     }
 double computeSortCoordinate (DPoint2dCR target, DPoint2dCR origin, DVec2dCR vector)
     {
-    return 
+    return
           (target.x - origin.x) * vector.x
         + (target.y - origin.y) * vector.y
         ;
@@ -390,8 +390,8 @@ double DPoint3dOps::LargestXYCoordinate (DPoint3dCP data, size_t n)
         }
     return aMax;
     }
-    
-    
+
+
 template <typename T>
 bool VectorOps<T>::AlmostEqual (T const *valueA, size_t numA, T const *valueB, size_t numB, double tolerance)
     {
@@ -406,7 +406,7 @@ bool VectorOps<T>::AlmostEqual (T const *valueA, size_t numA, T const *valueB, s
     }
 
 
-    
+
 template <typename T>
 size_t VectorOps<T>::MostDistantIndex (T const *data, size_t n, T const &baseValue)
     {
@@ -537,7 +537,7 @@ int nPoint              /* => number of points */
     iMin = 0;
     iMax = 0;
     if (nPoint <= 0)
-        return false;    
+        return false;
     yMin = yMax = pointP[0].y;
     currP = minP = maxP = pointP;
     for ( i = 1 , currP = pointP + 1 ; i < nPoint ; i++, currP++ )
@@ -1213,12 +1213,12 @@ void BeginCluster (size_t clusterIndex, size_t baseCandidate) override
     }
 //! Announce accepted candidate pair.
 //! numInCluster is inclusive of the base candidate and the pairedCandidates so far.
-void   AddToCluster (size_t clusterIndex, size_t clusterCount, size_t baseCandidate, size_t pairedCandidate) override 
+void   AddToCluster (size_t clusterIndex, size_t clusterCount, size_t baseCandidate, size_t pairedCandidate) override
     {
     m_oldIndexToPackedIndex[pairedCandidate] = clusterIndex;
     }
 //! Announce end of a cluster.
-void   EndCluster (size_t clusterIndex, size_t clusterCount, size_t baseCandidate) override 
+void   EndCluster (size_t clusterIndex, size_t clusterCount, size_t baseCandidate) override
     {
     }
 };
@@ -1368,7 +1368,7 @@ bool DPoint3dOps::PrincipalAxes (bvector<DPoint3d> const &points, TransformR loc
         }
     localToWorld.InitFrom (axes, centroid);
     worldToLocal.InvertRigidBodyTransformation (localToWorld);
-    return true;        
+    return true;
     }
 
 bool DPoint3dOps::PrincipalAxes (bvector<DPoint3d> const &pointsA, bvector<DPoint3d> const &pointsB, TransformR localToWorld, TransformR worldToLocal, DVec3dR moments)
@@ -1383,7 +1383,7 @@ bool DPoint3dOps::PrincipalAxes (bvector<DPoint3d> const &pointsA, bvector<DPoin
         }
     localToWorld.InitFrom (axes, centroid);
     worldToLocal.InvertRigidBodyTransformation (localToWorld);
-    return true;        
+    return true;
     }
 
 
@@ -1537,11 +1537,11 @@ DMatrix4d DPoint3dOps::MomentSums (DPoint3dCR origin, bvector<DPoint3d> const &p
     sums.coff[3][0] = sums.coff[0][3];
     sums.coff[3][1] = sums.coff[1][3];
     sums.coff[3][2] = sums.coff[2][3];
-    
+
     sums.coff[3][3] = (double)points.size ();
     return sums;
     }
-    
+
 bool DPoint3dOps::PrincipalAxes (bvector<DPoint3d> const &points, DVec3dR centroid, RotMatrixR axes, DVec3dR moments)
     {
     if (points.size () == 0)
@@ -1605,8 +1605,8 @@ bool DPoint3dOps::PrincipalAxes (bvector<DPoint3d> const &pointsA, bvector<DPoin
         centroid0.Add (delta);
         }
     centroid0.Scale (1.0 / (double) numPoints);
-    
-    
+
+
     DMatrix4d sums = MomentSums (centroid0, pointsA);
     DMatrix4d sumsB = MomentSums (centroid0, pointsB);
     sums.Add (sumsB);
@@ -1648,7 +1648,7 @@ bool DPoint3dOps::PrincipalAxes (bvector<DPoint4d> const &points, DVec3dR centro
         DPoint3d xyz;
         if (!points[i].GetProjectedXYZ (xyz))
             continue;
-            
+
         DVec3d uvw;
         uvw.DifferenceOf (xyz, centroid0);
         sums.coff[0][0] += uvw.x * uvw.x;
@@ -1669,7 +1669,7 @@ bool DPoint3dOps::PrincipalAxes (bvector<DPoint4d> const &points, DVec3dR centro
     sums.coff[3][0] = sums.coff[0][3];
     sums.coff[3][1] = sums.coff[1][3];
     sums.coff[3][2] = sums.coff[2][3];
-    
+
     sums.coff[3][3] = (double)points.size ();
     double volume;
     Transform localToWorld;
@@ -1738,7 +1738,7 @@ void DPoint3dOps::CompressByChordError (bvector<DPoint3d>& result, bvector<DPoin
     bool const isInitLoop = IsLoop (source);
 
     CompressByChordRec (result, source, chordTolerance);
-    
+
     //cleanup in case of loops
     if (isInitLoop && result.size () >= 2 && !result[0].AlmostEqual (result.back ()))
         result.push_back (result[0]);

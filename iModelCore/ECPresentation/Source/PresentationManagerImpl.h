@@ -228,22 +228,22 @@ struct RulesDrivenECPresentationManagerImpl : ECPresentationManager::Impl, ECIns
 
 private:
     std::shared_ptr<IConnectionManager> m_connections;
-    NavNodesFactory const* m_nodesFactory;
-    NodesProviderContextFactory const* m_nodesProviderContextFactory;
-    NodesProviderFactory const* m_nodesProviderFactory;
-    CustomFunctionsInjector* m_customFunctions;
+    std::unique_ptr<NavNodesFactory const> m_nodesFactory;
+    std::unique_ptr<NodesProviderContextFactory const> m_nodesProviderContextFactory;
+    std::unique_ptr<NodesProviderFactory const> m_nodesProviderFactory;
+    std::unique_ptr<CustomFunctionsInjector> m_customFunctions;
     std::unique_ptr<INodesCacheManager> m_nodesCachesManager;
-    ContentCache* m_contentCache;
-    ECDbCaches* m_ecdbCaches;
-    RulesetECExpressionsCache* m_rulesetECExpressionsCache;
-    UpdateHandler* m_updateHandler;
-    UsedClassesListener* m_usedClassesListener;
+    std::unique_ptr<ContentCache> m_contentCache;
+    std::unique_ptr<ECDbCaches> m_ecdbCaches;
+    std::unique_ptr<RulesetECExpressionsCache> m_rulesetECExpressionsCache;
+    std::unique_ptr<UpdateHandler> m_updateHandler;
+    std::unique_ptr<UsedClassesListener> m_usedClassesListener;
     bmap<Utf8String, bvector<RuleSetLocaterPtr>> m_embeddedRuleSetLocaters;
     std::shared_ptr<IRulesetLocaterManager> m_locaters;
     std::shared_ptr<IUserSettingsManager> m_userSettings;
-    IJsonLocalState* m_localState;
-    IECPropertyFormatter const* m_ecPropertyFormatter;
-    IPropertyCategorySupplier const* m_categorySupplier;
+    std::shared_ptr<IJsonLocalState> m_localState;
+    std::shared_ptr<IECPropertyFormatter const> m_ecPropertyFormatter;
+    std::shared_ptr<IPropertyCategorySupplier const> m_categorySupplier;
     bvector<std::shared_ptr<ECInstanceChangeEventSource>> m_ecInstanceChangeEventSources;
     mutable BeMutex m_mutex;
 
@@ -263,7 +263,7 @@ protected:
     IECPropertyFormatter const& _GetECPropertyFormatter() const override;
     IUserSettingsManager& _GetUserSettingsManager() const override {return *m_userSettings;}
     bvector<std::shared_ptr<ECInstanceChangeEventSource>> const& _GetECInstanceChangeEventSources() const override {return m_ecInstanceChangeEventSources;}
-    IJsonLocalState* _GetLocalState() const override {return m_localState;}
+    IJsonLocalState* _GetLocalState() const override {return m_localState.get();}
     IRulesetLocaterManager& _GetLocaters() const override {return *m_locaters;}
     IConnectionManagerR _GetConnections() override {return *m_connections;}
     ECPRESENTATION_EXPORT std::shared_ptr<INavNodesCache> _GetHierarchyCache(Utf8StringCR connectionId) const override;

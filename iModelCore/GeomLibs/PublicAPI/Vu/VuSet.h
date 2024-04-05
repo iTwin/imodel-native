@@ -167,7 +167,7 @@ public:
                                                 available nodes */
         int nvu;                        /* Number of vertex uses */
 
-        vuArray  mGraphStack;             /* Stack of partial graphs 
+        vuArray  mGraphStack;             /* Stack of partial graphs
                                           (Each partial graph is "identified" only by its linked list of nodes.)
                                         */
         bvector<void*> mNodePool;          /* Array of pointers to blocks of nodes.
@@ -204,7 +204,7 @@ GEOMDLLIMPEXP void ToggleMaskInSet(VuMask mask);
 GEOMDLLIMPEXP DRange3d Range () const;
 GEOMDLLIMPEXP void VertexTwist (VuP node0P, VuP node1P);
 
-struct TempMask 
+struct TempMask
 {
 private:
 VuMask m_mask;

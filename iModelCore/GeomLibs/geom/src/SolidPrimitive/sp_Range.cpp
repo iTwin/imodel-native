@@ -82,7 +82,7 @@ DEllipse3d DgnTorusPipeDetail::UFractionToVSectionDEllipse3d (double fraction) c
     double sR = sin (phi) * m_minorRadius * GetVector90Sign ();;
     DVec3d unitW, vectorU, vectorV;
     unitW.NormalizedCrossProduct (m_vectorX, m_vectorY);
-    
+
     vectorU.SumOf (m_vectorX, m_majorRadius, m_vectorX, cR);
     vectorV.SumOf (m_vectorY, m_majorRadius, m_vectorY, cR);
     DPoint3d center = DPoint3d::FromSumOf (m_center, unitW, sR);
@@ -153,17 +153,17 @@ bool DgnConeDetail::GetRange (DRange3dR range, TransformCR transform) const
     {
     range.Init ();
     DRange3d rangeA, rangeB;
-    
+
     DEllipse3d ellipseA = DEllipse3d::FromScaledVectors (m_centerA, m_vector0, m_vector90, m_radiusA, m_radiusA, 0.0, Angle::TwoPi ());
     transform.Multiply (ellipseA);
     ellipseA.GetRange (rangeA);
     range.Extend (rangeA);
-    
+
     DEllipse3d ellipseB = DEllipse3d::FromScaledVectors (m_centerB, m_vector0, m_vector90, m_radiusB, m_radiusB, 0.0, Angle::TwoPi ());
     transform.Multiply (ellipseB);
     ellipseB.GetRange (rangeB);
     range.Extend (rangeB);
-    
+
     return true;
     }
 
@@ -241,7 +241,7 @@ static void ExtendByRectangle(DRange3dR range, TransformCR transform, DPoint3dCR
     DPoint3d point00 = origin;
     transform.Multiply (point00);
     range.Extend (point00);
-    
+
     DPoint3d point10, point11, point01;
     point10.SumOf (origin, vectorX, sizeX);
     point11.SumOf (point10, vectorY, sizeY);
@@ -349,12 +349,12 @@ bool DgnRotationalSweepDetail::GetRange (DRange3dR range, TransformCR transform)
     static double s_angleTolerance = 0.1;
     static double s_sampleErrorFraction = 0.02;
     Transform localToWorld, worldToLocal;
-    
+
     // Compute points on the base curve.
     // For each point, compute the (exact) range of the elliptic curve it sweeps on the rotation surface.
     // Note that the point selection is only approximate -- the true range extremes may be
-    //    at some unsampled point.  Because sampling is only one one direction, 
-    //    
+    //    at some unsampled point.  Because sampling is only one one direction,
+    //
     DMatrix4d localConstEffects, localCosineEffects, localSineEffects;
     // decompose the "rotate around z" transform as
     // [c -1 0 0]     [0 0 0 0]     [1 0 0 0]     [0 -1 0 0]
@@ -425,7 +425,7 @@ bool DgnRotationalSweepDetail::GetRange (DRange3dR range, TransformCR transform)
             transform.Multiply (ellipse);
             range.Extend (ellipse);
             }
-        samplingError = s_sampleErrorFraction * range.low.Distance (range.high); 
+        samplingError = s_sampleErrorFraction * range.low.Distance (range.high);
         range.Extend (samplingError);
         }
     return !range.IsNull ();

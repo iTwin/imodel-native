@@ -55,7 +55,7 @@ GEOMDLLIMPEXP DPoint3d operator*( Transform const &transform, DPoint3d const &po
 
 
 //! operator overload for multiplication of a vector times the matrix part of a transform.
-//!<ul> 
+//!<ul>
 //!<li>The vector appears on the left as a row.
 //!<li>Compare to {transform*vector} which has the vector on the right as a column.
 //!<li>Only the matrix part of the transform participates.
@@ -67,7 +67,7 @@ GEOMDLLIMPEXP DVec3d operator*(DVec3d const &vector,Transform const &transform);
 
 
 //! operator overload for multiplication of a vector times a rotmatrix
-//!<ul> 
+//!<ul>
 //!<li>The vector appears on the left as a row.
 //!<li>Compare to {rotmatrix*vector} which has the vector on the right as a column.
 //!</ul>
@@ -77,7 +77,7 @@ GEOMDLLIMPEXP DVec3d operator*(DVec3d const &vector,Transform const &transform);
 GEOMDLLIMPEXP DVec3d operator*(DVec3d const &vector, RotMatrix const &rotmatrix);
 
 //! operator overload for multiplication of a matrix and a vector
-//!<ul> 
+//!<ul>
 //!<li>Compare to {vector*matrix} which has the vector on the left as a row.
 //!</ul>
 //! @param [in] matrix left operand (matrix)
@@ -267,7 +267,7 @@ GEOMDLLIMPEXP FPoint3d operator*( Transform const &transform, FPoint3d const &po
 
 
 //! operator overload for multiplication of a vector times the matrix part of a transform.
-//!<ul> 
+//!<ul>
 //!<li>The vector appears on the left as a row.
 //!<li>Compare to {transform*vector} which has the vector on the right as a column.
 //!<li>Only the matrix part of the transform participates.
@@ -279,7 +279,7 @@ GEOMDLLIMPEXP FVec3d operator*(FVec3d const &vector,Transform const &transform);
 
 
 //! operator overload for multiplication of a vector times a rotmatrix
-//!<ul> 
+//!<ul>
 //!<li>The vector appears on the left as a row.
 //!<li>Compare to {rotmatrix*vector} which has the vector on the right as a column.
 //!</ul>
@@ -289,7 +289,7 @@ GEOMDLLIMPEXP FVec3d operator*(FVec3d const &vector,Transform const &transform);
 GEOMDLLIMPEXP FVec3d operator*(FVec3d const &vector, RotMatrix const &rotmatrix);
 
 //! operator overload for multiplication of a matrix and a vector
-//!<ul> 
+//!<ul>
 //!<li>Compare to {vector*matrix} which has the vector on the left as a row.
 //!</ul>
 //! @param [in] matrix left operand (matrix)

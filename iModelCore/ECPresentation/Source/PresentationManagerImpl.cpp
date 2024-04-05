@@ -86,7 +86,7 @@ static PresentationRuleSetPtr FindRuleset(IRulesetLocaterManager const& locaters
     PresentationRuleSetPtr ruleset = RulesPreprocessor::GetPresentationRuleSet(locaters, connection, rulesetId);
     if (!ruleset.IsValid())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_INFO, LOG_ERROR, Utf8PrintfString("Ruleset with ID '%s' not found", rulesetId));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Default, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Ruleset with ID '%s' not found", rulesetId));
         return nullptr;
         }
     return ruleset;
@@ -707,7 +707,7 @@ protected:
         NavNodesProviderContextPtr context = NavNodesProviderContext::Create(*ruleset, TargetTree_MainTree, parentNode,
             std::move(rulesetVariables), ecexpressionsCache, relatedPathsCache, *m_manager.m_nodesFactory, cache,
             *m_manager.m_nodesProviderFactory, m_manager.GetLocalState());
-        context->SetQueryContext(*m_manager.m_connections, connection, m_manager.m_usedClassesListener);
+        context->SetQueryContext(*m_manager.m_connections, connection, m_manager.m_usedClassesListener.get());
 
         if (parentNode)
             context->SetChildNodeContext(nullptr, *parentNode);
@@ -742,25 +742,25 @@ RulesDrivenECPresentationManagerImpl::RulesDrivenECPresentationManagerImpl(Param
 
     m_userSettings = params.GetUserSettings() ? params.GetUserSettings() : std::make_shared<UserSettingsManager>(params.GetPaths().GetTemporaryDirectory());
     GetUserSettingsManager().SetChangesListener(this);
-    GetUserSettingsManager().SetLocalState(m_localState);
+    GetUserSettingsManager().SetLocalState(m_localState.get());
 
     m_ecInstanceChangeEventSources = params.GetECInstanceChangeEventSources(); // need to copy this list to keep the ref counts
     for (auto const& ecInstanceChangeEventSource : m_ecInstanceChangeEventSources)
         ecInstanceChangeEventSource->RegisterEventHandler(*this);
 
-    m_customFunctions = new CustomFunctionsInjector(*m_connections);
-    m_rulesetECExpressionsCache = new RulesetECExpressionsCache();
-    m_ecdbCaches = new ECDbCaches();
-    m_nodesProviderContextFactory = new NodesProviderContextFactory(*this);
-    m_nodesProviderFactory = new NodesProviderFactory();
-    m_usedClassesListener = new UsedClassesListener(*this);
-    m_nodesFactory = new NavNodesFactory();
+    m_customFunctions = std::make_unique<CustomFunctionsInjector>(*m_connections);
+    m_rulesetECExpressionsCache = std::make_unique<RulesetECExpressionsCache>();
+    m_ecdbCaches = std::make_unique<ECDbCaches>();
+    m_nodesProviderContextFactory = std::make_unique<NodesProviderContextFactory>(*this);
+    m_nodesProviderFactory = std::make_unique<NodesProviderFactory>();
+    m_usedClassesListener = std::make_unique<UsedClassesListener>(*this);
+    m_nodesFactory = std::make_unique<NavNodesFactory>();
 
     m_nodesCachesManager = CreateCacheManager(params.GetCachingParams().GetCacheDirectoryPath(), *m_nodesFactory, *m_nodesProviderContextFactory, *m_nodesProviderFactory,
         *m_connections, params.GetCachingParams().GetCacheMode(), params.GetCachingParams().GetDiskCacheFileSizeLimit(), params.GetCachingParams().GetDiskCacheMemoryCacheSize());
-    m_contentCache = new ContentCache(params.GetContentCachingParams().GetPrivateCacheSize());
+    m_contentCache = std::make_unique<ContentCache>(params.GetContentCachingParams().GetPrivateCacheSize());
 
-    m_updateHandler = new UpdateHandler(*m_nodesCachesManager, m_contentCache, *m_connections, *m_nodesProviderContextFactory,
+    m_updateHandler = std::make_unique<UpdateHandler>(*m_nodesCachesManager, m_contentCache.get(), *m_connections, *m_nodesProviderContextFactory,
         *m_nodesProviderFactory, *m_rulesetECExpressionsCache);
     m_updateHandler->SetRecordsHandler(std::make_unique<CompositeUpdateRecordsHandler>(params.GetUpdateRecordsHandlers()));
 
@@ -799,15 +799,6 @@ RulesDrivenECPresentationManagerImpl::~RulesDrivenECPresentationManagerImpl()
     auto scope = Diagnostics::Scope::Create("Destroy manager impl");
     m_connections->DropListener(*this);
     m_connections->CloseConnections();
-    DELETE_AND_CLEAR(m_updateHandler);
-    DELETE_AND_CLEAR(m_contentCache);
-    DELETE_AND_CLEAR(m_nodesFactory);
-    DELETE_AND_CLEAR(m_usedClassesListener);
-    DELETE_AND_CLEAR(m_nodesProviderFactory);
-    DELETE_AND_CLEAR(m_nodesProviderContextFactory);
-    DELETE_AND_CLEAR(m_ecdbCaches);
-    DELETE_AND_CLEAR(m_rulesetECExpressionsCache);
-    DELETE_AND_CLEAR(m_customFunctions);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1735,7 +1726,7 @@ PagingDataSourcePtr<DisplayValueGroupCPtr> RulesDrivenECPresentationManagerImpl:
     ContentDescriptor::Field const* field = params.GetContentDescriptor().FindField(params.GetDistinctFieldMatcher());
     if (field == nullptr)
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, "Descriptor doesn't contain requested field");
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, "Descriptor doesn't contain requested field");
         return nullptr;
         }
 

@@ -170,7 +170,7 @@ bool _TryGetTrackingCurveData (ICurvePrimitivePtr &parent, RotMatrixR matrix, in
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-void _Process(ICurvePrimitiveProcessor &processor, DSegment1dCP interval) const override 
+void _Process(ICurvePrimitiveProcessor &processor, DSegment1dCP interval) const override
     {
 #ifdef abc
     if (m_detail.m_parentCurve.IsValid ())
@@ -236,7 +236,7 @@ bool _FractionToPoint(double fraction, DPoint3dR point) const override
     {
     auto value = m_detail.FractionToPoint (fraction);
     point = value.Value ();
-    return value.IsValid (); 
+    return value.IsValid ();
     }
 
 
@@ -250,7 +250,7 @@ bool _FractionToPoint(double fraction, DPoint3dR point, DVec3dR tangent) const o
     tangent = ray.Value ().direction;
     return ray.IsValid ();
     }
-    
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -287,7 +287,7 @@ struct ArcLengthIntegrand : BSIVectorIntegrand
                  : ValidatedRotMatrix (RotMatrix::FromIdentity (), false);
         }
 
-    void EvaluateVectorIntegrand (double t, double *pF) override 
+    void EvaluateVectorIntegrand (double t, double *pF) override
         {
         DRay3d point = m_curve.m_detail.FractionToPointAndDerivative (t);
         if (m_matrix.IsValid ())
@@ -421,7 +421,7 @@ bool _GetBreakFraction(size_t breakFractionIndex, double &fraction) const overri
         else
             return false;
         }
-    
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -442,7 +442,7 @@ bool _AdjustFractionToBreakFraction(double fraction, Rounding::RoundingMode mode
         else
             return false;
         }
-#endif    
+#endif
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -530,7 +530,7 @@ bool PointAtSignedDistanceFromFraction_go (RotMatrixCP worldToLocal, double star
 #endif
         return false;
         }
-    
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -601,7 +601,7 @@ bool _ReverseCurvesInPlace () override
     }
 
 
-public: 
+public:
 
 static ICurvePrimitive* Create (ICurvePrimitiveP m_parentCurve, RotMatrixCR matrix, int64_t m_userData)
     {
@@ -612,7 +612,7 @@ static ICurvePrimitive* Create (ICurvePrimitiveP m_parentCurve, RotMatrixCR matr
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-void _AppendCurvePlaneIntersections(DPlane3dCR plane, bvector<CurveLocationDetailPair> &intersections, double tol) const override 
+void _AppendCurvePlaneIntersections(DPlane3dCR plane, bvector<CurveLocationDetailPair> &intersections, double tol) const override
     {
     //AppendTolerancedPlaneIntersections (plane, this, m_curve, intersections, tol);
     }

@@ -36,7 +36,7 @@ static int s_trinomial [5][5][5] =
         },
         {   // DEGREE 4
             {1,4,6,4,1},
-            {4,12,12,4,0},  
+            {4,12,12,4,0},
             {6,12,6,0,0},
             {4,4,0,0,0},
             {1,0,0,0,0},
@@ -53,7 +53,7 @@ DPoint3d AddScaled (DPoint3dCP points, double *scales, size_t n)
 		xyz.y += points[i].y * scales[i];
 		xyz.z += points[i].z * scales[i];
 		}
-	return xyz;	
+	return xyz;
 	}
 double BinomialCoefficientSafe (int n, int i)
 	{
@@ -238,7 +238,7 @@ void BezierCurveDPoint3d::ComputeBasisFunctions (double u, double *values) const
 		{
 		values[0] = v*v;
 		values[1] = 2*u*v;
-		values[2] = u*u; 
+		values[2] = u*u;
 		}
 	else if (m_order == 4)
 		{
@@ -281,7 +281,7 @@ void BezierCurveDPoint3d::ComputeBasisFunctions (double u, double *values, doubl
 		{
 		values[0] = v*v;
 		values[1] = 2*u*v;
-		values[2] = u*u; 
+		values[2] = u*u;
 
 		ddu[0] = -2*v;
 		ddu[1] = 2*v - 2*u;
@@ -337,7 +337,7 @@ DPoint3d BezierCurveDPoint3d::EvaluateDirectCompact (double u) const
 	else
 		{
 		return DPoint3d::From (0,0,0);
-		}	
+		}
 	}
 
 void BezierCurveDPoint3d::EvaluateDirectCompact (double u, DPoint3dR xyz, DVec3dR dXdu) const
@@ -357,7 +357,7 @@ void BezierCurveDPoint3d::EvaluateDirectCompact (double u, DPoint3dR xyz, DVec3d
 	}
 
 void BezierCurveDPoint3d::ComputeBasisFunctionsCompact (double u, double *values) const
-        { 
+        {
 		if (m_order>0)
 			{
 			double v = 1.0 - u;
@@ -366,7 +366,7 @@ void BezierCurveDPoint3d::ComputeBasisFunctionsCompact (double u, double *values
 
 			valPower[0][0] =
 				valPower[1][0] = 1;
-	
+
 			for (int p=0; p<n; p++)
 				{
 				valPower[0][p+1]= valPower[0][p]*u;
@@ -394,7 +394,7 @@ void BezierCurveDPoint3d::ComputeBasisFunctionsCompact (double u, double *values
 
 			valPower[0][0] =
 				valPower[1][0] = 1;
-	
+
 			for (int p=0; p<n; p++)
 				{
 				valPower[0][p+1]= valPower[0][p]*u;

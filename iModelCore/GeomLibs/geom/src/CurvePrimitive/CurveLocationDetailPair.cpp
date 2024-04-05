@@ -61,7 +61,7 @@ CurveLocationDetailPair::CurveLocationDetailPair(ICurvePrimitiveCP curve,
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 CurveLocationDetailPair::CurveLocationDetailPair(
-    ICurvePrimitiveCP curve0, double a0, 
+    ICurvePrimitiveCP curve0, double a0,
     ICurvePrimitiveCP curve1, double a1
     )
     : detailA (curve0), detailB (curve1)

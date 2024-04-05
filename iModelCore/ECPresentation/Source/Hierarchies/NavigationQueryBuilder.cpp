@@ -27,7 +27,7 @@ void UsedClassesHelper::NotifyListenerWithUsedClasses(IUsedClassesListener& list
         Utf8String schemaName, className;
         if (ECObjectsStatus::Success != ECClass::ParseClassName(schemaName, className, usedClassName))
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to parse ECClass name: '%s'", usedClassName.c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Failed to parse ECClass name: '%s'", usedClassName.c_str()));
             continue;
             }
         if (!schemaName.empty())
@@ -35,7 +35,7 @@ void UsedClassesHelper::NotifyListenerWithUsedClasses(IUsedClassesListener& list
             ECClassCP usedClass = schemaHelper.GetECClass(schemaName.c_str(), className.c_str());
             if (nullptr == usedClass)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested ECClass does not exist: '%s:%s'", schemaName.c_str(), className.c_str()));
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Requested ECClass does not exist: '%s:%s'", schemaName.c_str(), className.c_str()));
                 continue;
                 }
             listener._OnClassUsed(*usedClass, true);
@@ -69,7 +69,7 @@ void UsedClassesHelper::NotifyListenerWithRulesetClasses(IUsedClassesListener& l
         ECClassCP ruleClass = schemaHelper.GetECClass(rule->GetClassName().c_str());
         if (!ruleClass)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested ECClass does not exist: '%s'", rule->GetClassName().c_str()));
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Requested ECClass does not exist: '%s'", rule->GetClassName().c_str()));
             continue;
             }
         listener._OnClassUsed(*ruleClass, true);
@@ -421,7 +421,7 @@ protected:
             m_ruleClass = m_schemaHelper.GetECClass(m_rule.GetSchemaName().c_str(), m_rule.GetClassName().c_str());
             if (!m_ruleClass)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, Utf8PrintfString("Grouping rule target class not found: '%s:%s'",
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Grouping rule target class not found: '%s:%s'",
                     m_rule.GetSchemaName().c_str(), m_rule.GetClassName().c_str()));
                 }
             }
@@ -497,7 +497,7 @@ private:
             m_specClass = m_schemaHelper.GetECClass(m_specification.GetSchemaName().c_str(), m_specification.GetBaseClassName().c_str());
             if (!m_specClass)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, Utf8PrintfString("Base class grouping specification class not found: '%s:%s'",
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Base class grouping specification class not found: '%s:%s'",
                     m_specification.GetSchemaName().c_str(), m_specification.GetBaseClassName().c_str()));
                 }
             }
@@ -609,7 +609,7 @@ public:
             m_groupingProperty = ecClass->GetPropertyP(m_specification.GetPropertyName().c_str());
             if (nullptr == m_groupingProperty)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested property does not exist in class: '%s.%s'",
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Requested property does not exist in class: '%s.%s'",
                     ecClass->GetFullName(), m_specification.GetPropertyName().c_str()));
                 }
             }
@@ -2683,7 +2683,7 @@ static void AssignRelatedInstanceClasses(bvector<SelectQueryInfo>& infos, ChildN
         size_t joinsCount = CountRelatedInstanceJoins(relatedInstancePaths);
         if (RELATED_CLASS_PATH_ALIASES_THRESHOLD < joinsCount)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, Utf8PrintfString("Maximum amount of related instance specifications exceeded for class '%s'. "
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Maximum amount of related instance specifications exceeded for class '%s'. "
                 "Required JOINs: %" PRIu64 ", allowed JOINs: %d", info.GetSelectClass().GetClass().GetFullName(), (uint64_t)joinsCount, RELATED_CLASS_PATH_ALIASES_THRESHOLD));
             continue;
             }
@@ -2708,19 +2708,36 @@ static void AssignRelatedInstanceClasses(bvector<SelectQueryInfo>& infos, ChildN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+static bvector<ECClassCP> GetInstanceLabelOverrideClasses(ECSchemaHelper const& schemaHelper, bvector<InstanceLabelOverrideCP> const& overrides)
+    {
+    bvector<ECClassCP> uniqueClasses;
+    for (auto ovr : overrides)
+        {
+        auto ovrClass = schemaHelper.GetECClass(ovr->GetClassName().c_str());
+        if (!ovrClass || ContainerHelpers::Contains(uniqueClasses, ovrClass))
+            continue;
+
+        uniqueClasses.push_back(ovrClass);
+        }
+    return uniqueClasses;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TSpecification>
 static bvector<SelectQueryInfo> CreateSelectInfos(TSpecification const& spec, bvector<SelectClassWithExcludes<ECClass>> const& selectClasses, GroupingResolver const& resolver,
-    bmap<ECClassCP, bvector<InstanceLabelOverride const*>> const& instanceLabelOverrides, NavNodeCP parentNode,
+    bvector<InstanceLabelOverrideCP> const& instanceLabelOverrides, NavNodeCP parentNode,
     bvector<InstanceFilterDefinitionCP> const& instanceFilterDefinitions, QueryClauseAndBindings instanceFilterECSqlExpression,
     NavigationQueryBuilderParameters const& params, ECClassUseCounter& relationshipUseCounter)
     {
-    bvector<ECClassCP> instanceLabelOverrideClasses = ContainerHelpers::GetMapKeys(instanceLabelOverrides);
+    bvector<ECClassCP> instanceLabelOverrideClasses = GetInstanceLabelOverrideClasses(params.GetSchemaHelper(), instanceLabelOverrides);
     bvector<SelectClassWithExcludes<ECClass>> selects = ProcessSelectClassesBasedOnCustomizationRules(selectClasses, resolver,
         instanceLabelOverrideClasses, parentNode, params);
     bvector<SelectQueryInfo> selectInfos = ContainerHelpers::TransformContainer<bvector<SelectQueryInfo>>(selects, [&](auto const& sc)
         {
         SelectQueryInfo info(sc);
-        info.SetLabelOverrideValueSpecs(QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(instanceLabelOverrides, info.GetSelectClass().GetClass()));
+        info.SetLabelOverrideValueSpecs(QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(params.GetSchemaHelper(), instanceLabelOverrides, info.GetSelectClass().GetClass()));
         info.SetInstanceFilterDefinitions(instanceFilterDefinitions);
         info.SetInstanceFilterECSqlExpression(instanceFilterECSqlExpression);
         return info;
@@ -2733,10 +2750,10 @@ static bvector<SelectQueryInfo> CreateSelectInfos(TSpecification const& spec, bv
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bvector<SelectQueryInfo> CreateSelectInfos(RelatedInstanceNodesSpecification const& spec, bvector<RelatedClassPath> const& pathsFromParentToSelectClass, GroupingResolver const& resolver,
-    bmap<ECClassCP, bvector<InstanceLabelOverride const*>> const& instanceLabelOverrides, NavNodeCP parentNode, bvector<ECInstanceId> const& parentInstanceIds,
+    bvector<InstanceLabelOverrideCP> const& instanceLabelOverrides, NavNodeCP parentNode, bvector<ECInstanceId> const& parentInstanceIds,
     bvector<InstanceFilterDefinitionCP> const& instanceFilterDefinitions, NavigationQueryBuilderParameters const& params, ECClassUseCounter& relationshipUseCounter)
     {
-    bvector<ECClassCP> instanceLabelOverrideClasses = ContainerHelpers::GetMapKeys(instanceLabelOverrides);
+    bvector<ECClassCP> instanceLabelOverrideClasses = GetInstanceLabelOverrideClasses(params.GetSchemaHelper(), instanceLabelOverrides);
     bvector<RelatedClassPath> processedPathsFromParentToSelectClass = ProcessSelectPathsBasedOnCustomizationRules(pathsFromParentToSelectClass, resolver,
         instanceLabelOverrideClasses, parentNode, params);
     bvector<SelectQueryInfo> selectInfos = ContainerHelpers::TransformContainer<bvector<SelectQueryInfo>>(processedPathsFromParentToSelectClass, [&](RelatedClassPath const& path)
@@ -2744,7 +2761,7 @@ static bvector<SelectQueryInfo> CreateSelectInfos(RelatedInstanceNodesSpecificat
         SelectQueryInfo info(path.back().GetTargetClass());
         info.GetSelectClass().SetAlias("this");
         info.SetInstanceFilterDefinitions(instanceFilterDefinitions);
-        info.SetLabelOverrideValueSpecs(QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(instanceLabelOverrides, info.GetSelectClass().GetClass()));
+        info.SetLabelOverrideValueSpecs(QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(params.GetSchemaHelper(), instanceLabelOverrides, info.GetSelectClass().GetClass()));
         info.GetPathFromParentToSelectClass() = path;
         for (RelatedClass& rc : info.GetPathFromParentToSelectClass())
             rc.SetIsTargetOptional(false);
@@ -2854,8 +2871,7 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
         }
 
     // determine instance label overrides
-    bmap<ECClassCP, bvector<InstanceLabelOverride const*>> instanceLabelOverrides = QueryBuilderHelpers::GetLabelOverrideValuesMap(m_params.GetSchemaHelper(),
-        m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(IRulesPreprocessor::CustomizationRuleBySpecParameters(specification)));
+    bvector<InstanceLabelOverrideCP> instanceLabelOverrides = m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(IRulesPreprocessor::CustomizationRuleBySpecParameters(specification));
 
     // create select infos
     bvector<SelectQueryInfo> selectInfos = CreateSelectInfos(specification, selectClasses, groupingResolver,
@@ -2901,14 +2917,13 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
     // this specification can be used only if parent node is ECInstance node
     if (nullptr == groupingResolver.GetParentInstanceNode() || nullptr == groupingResolver.GetParentInstanceNode()->GetKey()->AsECInstanceNodeKey())
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, Utf8PrintfString("`%s` specification can only be used "
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_ERROR, Utf8PrintfString("`%s` specification can only be used "
             "if parent node or any of of its ancestor nodes is an ECInstance node - no query created.", specification.GetJsonElementType()));
         return bvector<PresentationQueryBuilderPtr>();
         }
 
     // determine instance label overrides
-    bmap<ECClassCP, bvector<InstanceLabelOverride const*>> instanceLabelOverrides = QueryBuilderHelpers::GetLabelOverrideValuesMap(m_params.GetSchemaHelper(),
-        m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(IRulesPreprocessor::CustomizationRuleBySpecParameters(specificationHash)));
+    bvector<InstanceLabelOverrideCP> instanceLabelOverrides = m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(IRulesPreprocessor::CustomizationRuleBySpecParameters(specification));
 
     // get the parent instance keys
     bvector<ECClassInstanceKey> const& parentInstanceKeys = groupingResolver.GetParentInstanceNode()->GetKey()->AsECInstanceNodeKey()->GetInstanceKeys();
@@ -3002,8 +3017,7 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
         }
 
     // determine instance label overrides
-    bmap<ECClassCP, bvector<InstanceLabelOverride const*>> instanceLabelOverrides = QueryBuilderHelpers::GetLabelOverrideValuesMap(m_params.GetSchemaHelper(),
-        m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(IRulesPreprocessor::CustomizationRuleBySpecParameters(specification)));
+    bvector<InstanceLabelOverrideCP> instanceLabelOverrides = m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(IRulesPreprocessor::CustomizationRuleBySpecParameters(specification));
 
     // preserve specification instance filter
     auto specificationInstanceFilter = std::make_unique<InstanceFilterDefinition>(specification.GetInstanceFilter());
@@ -3071,7 +3085,7 @@ protected:
 
         if (nullptr == m_parentNode || nullptr == m_parentNode->GetKey()->AsECInstanceNodeKey())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, "ECPropertyValueQuerySpecification can only be used when its parent "
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_ERROR, "ECPropertyValueQuerySpecification can only be used when its parent "
                 "or any of its ancestors is an ECInstance node - ignoring the specification.");
             return;
             }
@@ -3089,13 +3103,13 @@ protected:
             ECPropertyCP queryProperty = parentClass->GetPropertyP(spec.GetParentPropertyName().c_str());
             if (nullptr == queryProperty)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, Utf8PrintfString("The class `%s` doesn't contain requested ECProperty `%s`.",
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_ERROR, Utf8PrintfString("The class `%s` doesn't contain requested ECProperty `%s`.",
                     parentClass->GetFullName(), spec.GetParentPropertyName().c_str()));
                 continue;
                 }
             if (!queryProperty->GetIsPrimitive() || PRIMITIVETYPE_String != queryProperty->GetAsPrimitiveProperty()->GetType())
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, Utf8PrintfString("ECProperty `%s.%s` is not of string type. "
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_ERROR, Utf8PrintfString("ECProperty `%s.%s` is not of string type. "
                     "The specification requires a string property", parentClass->GetFullName(), queryProperty->GetName().c_str()));
                 continue;
                 }
@@ -3167,9 +3181,7 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
     ECClassUseCounter classesCounter;
     GroupingResolver groupingResolver(m_params, parentNode, specification.GetHash(), specification);
     RootQueryContext queryContext(groupingResolver);
-
-    bmap<ECClassCP, bvector<InstanceLabelOverride const*>> instanceLabelOverrides = QueryBuilderHelpers::GetLabelOverrideValuesMap(m_params.GetSchemaHelper(),
-        m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(IRulesPreprocessor::CustomizationRuleBySpecParameters(specification)));
+    bvector<InstanceLabelOverrideCP> instanceLabelOverrides = m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(IRulesPreprocessor::CustomizationRuleBySpecParameters(specification));
 
     // create a query for each class
     for (QuerySpecification* querySpecification : specification.GetQuerySpecifications())
@@ -3177,7 +3189,7 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
         ECClassCP queryClass = m_params.GetSchemaHelper().GetECClass(querySpecification->GetSchemaName().c_str(), querySpecification->GetClassName().c_str());
         if (nullptr == queryClass)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested search query class not found: '%s:%s'",
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Requested search query class not found: '%s:%s'",
                 querySpecification->GetSchemaName().c_str(), querySpecification->GetClassName().c_str()));
             continue;
             }
@@ -3198,7 +3210,7 @@ bvector<PresentationQueryBuilderPtr> NavigationQueryBuilder::GetQueries(NavNodeC
         Utf8String searchQuery = GetQuery(m_params.GetSchemaHelper(), *querySpecification, groupingResolver.GetParentInstanceNode(), m_params.GetUsedClassesListener());
         if (searchQuery.empty())
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_INFO, LOG_ERROR, "Failed to create a search query for given query specification");
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, LOG_ERROR, "Failed to create a search query for given query specification");
             continue;
             }
 

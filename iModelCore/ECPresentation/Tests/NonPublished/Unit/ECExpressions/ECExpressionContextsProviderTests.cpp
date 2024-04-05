@@ -943,3 +943,29 @@ TEST_F(ECExpressionContextsProviderTests, Common_GuidToStr_Null)
     ECValue value = EvaluateAndGetResult("GuidToStr(ParentNode.ECInstance.Guid)", *ctx);
     ASSERT_TRUE(value.IsNull());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionContextsProviderTests, CanUseECDbSymbolsAfterECDbExpressionSymbolContextIsDestroyed)
+    {
+    ECClassCP rel = GetSchema().GetClassCP("ClassAHasDerivedClasses");
+    ECClassCP classDerivedA = GetSchema().GetClassCP("DerivedA");
+    ECClassCP classA = GetSchema().GetClassCP("ClassA");
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance)
+        {
+        instance.SetValue("Guid", ECValue());
+        });
+    NavNodePtr navNode = TestNodesHelper::CreateInstanceNode(*s_connection, *instance);
+
+    auto ecdbContext = std::make_unique<ECDbExpressionSymbolContext>(s_project->GetECDb());
+
+    ExpressionContextPtr ctx = ECExpressionContextsProvider::GetNodeRulesContext(ECExpressionContextsProvider::NodeRulesContextParameters(navNode.get(), *s_connection,
+        m_rulesetVariables, nullptr));
+
+    ecdbContext = nullptr;
+
+    ECValue value = EvaluateAndGetResult(Utf8PrintfString("ParentNode.ECInstance.HasRelatedInstance(\"%s\", \"Forward\", \"%s\")", rel->GetFullName(), classDerivedA->GetFullName()).c_str(), *ctx);
+    ASSERT_TRUE(value.IsBoolean());
+    ASSERT_FALSE(value.GetBoolean());
+    }

@@ -1099,14 +1099,14 @@ static int bcvManifestNameToIndex(Manifest *p, const char *zDb){
 }
 
 /*
-** The first argument points to a NAMEBYTES byte buffer
+** The second argument points to a nName byte buffer
 ** containing a block-id. Format the block-id as text and write it to
-** buffer aBuf[], which must be at leat BCV_FILESYSTEM_BLOCKID_BYTES
+** buffer aBuf[], which must be at least BCV_FILESYSTEM_BLOCKID_BYTES
 ** in size.
 */
-void bcvBlockidToText(Manifest *p, const u8 *pBlk, char *aBuf){
-  hex_encode(pBlk, NAMEBYTES(p), aBuf, 1);
-  memcpy(&aBuf[NAMEBYTES(p)*2], ".bcv", 5);
+void bcvBlockidToText(int nName, const u8 *pBlk, char *aBuf){
+  hex_encode(pBlk, nName, aBuf, 1);
+  memcpy(&aBuf[nName*2], ".bcv", 5);
 }
 
 static sqlite3_bcv sqlite3_bcv_oom_handle = {
@@ -1330,7 +1330,7 @@ static void bcvUploadOneBlockRetry(BcvUploadJob *pJob, int *pbRetry){
       sqlite3_randomness(NAMEBYTES(pMan), aBlk);
     }
 
-    bcvBlockidToText(pMan, aBlk, aBuf);
+    bcvBlockidToText(NAMEBYTES(pMan), aBlk, aBuf);
     rc = bcvDispatchPut(
         pBcv->pDisp, pBcv->pCont, aBuf, 0, aSpace, pMan->szBlk, 
         pJob, bcvUploadOneBlockCb
@@ -1677,7 +1677,7 @@ static void bcvDownloadOneFile(BcvDownloadJob *pJob){
 
   if( pBcv->errCode==SQLITE_OK ){
     char aBuf[BCV_MAX_FSNAMEBYTES];
-    bcvBlockidToText(pMan, aBlk, aBuf);
+    bcvBlockidToText(NAMEBYTES(pMan), aBlk, aBuf);
     pJob->iBlk = iBlk;
     rc = bcvDispatchFetch(
         pBcv->pDisp, pBcv->pCont, aBuf, 0, pMd5, pJob, bcvDownloadOneFileCb
@@ -1875,7 +1875,7 @@ static void bcvExtraLogManifest(
       u8 *aEntry = &pMan->aDelBlk[i*GCENTRYBYTES(pMan)];
       i64 t;
       char aBuf[BCV_MAX_FSNAMEBYTES];
-      bcvBlockidToText(pMan, aEntry, aBuf);
+      bcvBlockidToText(NAMEBYTES(pMan), aEntry, aBuf);
       t = bcvGetU64(&aEntry[NAMEBYTES(pMan)]);
       bcvExtraLog(p, "    %s (t=%lld)", aBuf, t);
     }
@@ -1889,7 +1889,9 @@ static void bcvExtraLogManifest(
       bcvExtraLog(p, "Database %d block list: (%d blocks)", i,pDb->nBlkLocal);
       for(j=0; j<pDb->nBlkLocal; j++){
         char aBuf[BCV_MAX_FSNAMEBYTES];
-        bcvBlockidToText(pMan, &pDb->aBlkLocal[j*NAMEBYTES(pMan)], aBuf);
+        bcvBlockidToText(
+            NAMEBYTES(pMan), &pDb->aBlkLocal[j*NAMEBYTES(pMan)], aBuf
+        );
         bcvExtraLog(p, "    %s", aBuf);
       }
     }
@@ -1969,7 +1971,7 @@ static void bcvfsDeleteOneBlock(DeleteCtx *pCtx){
       /* Do some debug logging */
       if( pCtx->p->nLogLevel>=BCV_LOGLEVEL_DEBUG ){
         char zDebug[BCV_MAX_FSNAMEBYTES];
-        bcvBlockidToText(pCtx->pMan, &pCtx->aOld[iOff], zDebug);
+        bcvBlockidToText(NAMEBYTES(pCtx->pMan), &pCtx->aOld[iOff], zDebug);
         if( bDel==0 ){
           bcvExtraLog(pCtx->p, "cleanup: not deleting block %s "
               "(not eligible for another %lldms)", zDebug, iTime-pCtx->iDelTime
@@ -1981,7 +1983,7 @@ static void bcvfsDeleteOneBlock(DeleteCtx *pCtx){
 
       if( pCtx->iDelTime==0 || iTime<=pCtx->iDelTime ){
         char zFile[BCV_MAX_FSNAMEBYTES];
-        bcvBlockidToText(pCtx->pMan, &pCtx->aOld[iOff], zFile);
+        bcvBlockidToText(NAMEBYTES(pCtx->pMan), &pCtx->aOld[iOff], zFile);
         pCtx->p->errCode = bcvDispatchDelete(
             pCtx->pDisp, pCtx->pBcv, zFile, 0, (void*)pCtx, bcvfsDeleteBlockDone
         );

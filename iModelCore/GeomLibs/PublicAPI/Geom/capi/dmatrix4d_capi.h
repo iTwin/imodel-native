@@ -71,7 +71,7 @@ DMatrix4dCP pB
 //! @param pOutPoint OUT     Array of homogeneous products A*pInPoint[i]
 //! @param pInPoint IN      Array of homogeneous points
 //! @param n IN      number of points
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void bsiDMatrix4d_multiply4dPoints
 (

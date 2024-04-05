@@ -206,7 +206,7 @@ double m_s01;
 // We know m_s01 = distance between, along the spiral
 // We do not know s0 = distance from inflection to start.
 //
-// for an estimated s1 -- the total length of spiral form inflection to smallest radius -- 
+// for an estimated s1 -- the total length of spiral form inflection to smallest radius --
 // the NSW (aka AustralianRailCorp) spiral pings the final radius and length.
 //
 // But in the usual construction the distance from the larger radius back the inflection is unknown.
@@ -216,7 +216,7 @@ double m_s01;
 // For suggested m_s0, set up the entire spiral (from inflection to m_s0+m_s01) and compute the local radius
 //  of curvature at distance m_s0.
 //
-// This is done using the RailCorp standard formula for R0 at distance m_s0.   This bypasses calculating the 
+// This is done using the RailCorp standard formula for R0 at distance m_s0.   This bypasses calculating the
 // various derivatives of the formulas for x and y, but seems very accurate.
 //
 // So the target function is    f(m_s0) = targetR0 - computedR0.

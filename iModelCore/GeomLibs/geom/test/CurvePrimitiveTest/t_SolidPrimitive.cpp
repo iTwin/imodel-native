@@ -233,7 +233,7 @@ void CheckSphere (ISolidPrimitivePtr primitive)
 
         expectedHits.clear ();
         Transform localToWorld, worldToLocal;
-        
+
         DPoint3d pointA, pointB;
         double a = 0.1;
         sphere.GetTransforms (localToWorld, worldToLocal);
@@ -254,7 +254,7 @@ DPoint3d Evaluate (double u, double v)
             DPoint3d::FromInterpolate (xyz[0], u, xyz[1]),
             v,
             DPoint3d::FromInterpolate (xyz[2], u, xyz[3]));
-    
+
     }
 };
 struct DPoint3dTrilinear
@@ -307,7 +307,7 @@ void CheckRotation (ISolidPrimitivePtr primitive)
         // hmmm... Don't really know how many hits.
         CheckPick (primitive, ray, 0, NULL);
 
-        
+
         DPoint3d middleLow = range.low;
         DPoint3d middleHigh = range.high;
         middleLow.z = middleHigh.z = 0.5 * (middleLow.z + middleHigh.z);
@@ -451,7 +451,7 @@ void CheckAllFaces (ISolidPrimitivePtr primitive, char const* typeName)
             Check::True (vSection->Length (vLength), "get length");
             Check::True (vLength <= s_rangeToleranceFactor * uvSize.x, "v Section within face size");
             }
-        else        
+        else
             printf (" %s (%" PRIu64 ",%" PRIu64 ") no vSection\n",
                     typeName, (uint64_t)faces[i].Index0 (), (uint64_t)faces[i].Index1 ());
         }
@@ -475,7 +475,7 @@ bool CheckVolumeMomentMatch_go (ISolidPrimitivePtr prim0, char const* descriptio
     Check::StartScope ("Compare moments");
     Check::StartScope (description0);
     Check::StartScope (description1);
-    bool stat = 
+    bool stat =
            Check::True (prim1->ComputePrincipalMoments (volume0, centroid0, axes0, moment0), "Compute primt1")
         && Check::True (prim1->ComputePrincipalMoments (volume1, centroid1, axes1, moment1),"Compute prim2")
         && Check::Near (volume0, volume1, "volume")
@@ -488,7 +488,7 @@ bool CheckVolumeMomentMatch_go (ISolidPrimitivePtr prim0, char const* descriptio
     return stat;
     }
 
-    
+
 bool CheckAreaMomentMatch_go (ISolidPrimitivePtr prim0, char const* description0, ISolidPrimitivePtr prim1, char const*description1)
     {
     double area0 = 0.0, area1 = 0.0;
@@ -585,7 +585,7 @@ void CheckMoments (ISolidPrimitivePtr primitive)
         }
     Check::EndScope ();
     }
-    
+
 void CheckAreaMoments (ISolidPrimitivePtr primitive)
     {
     static bool s_checkResults = true;
@@ -627,9 +627,9 @@ void CheckAreaMoments (ISolidPrimitivePtr primitive)
         }
     Check::EndScope ();
     }
-    
-    
-    
+
+
+
 void CheckPolyfaceToMTG (ISolidPrimitivePtr primitive, PolyfaceHeaderPtr polyface)
     {
     Check::StartScope ("PolyfaceToMTG");
@@ -650,7 +650,7 @@ void CheckPolyfaceToMTG (ISolidPrimitivePtr primitive, PolyfaceHeaderPtr polyfac
     jmdlMTGFacets_free (mtgFacets);
     Check::EndScope ();
     }
-    
+
 void CheckFacets (ISolidPrimitivePtr primitive,
 bool expectExactMeshFaceCountMatch  // true to enforce exact match of mesh and SolidPrimitive "faces". (e.g. set false for bsplines that might get interior visible edges)
 )
@@ -660,7 +660,7 @@ bool expectExactMeshFaceCountMatch  // true to enforce exact match of mesh and S
     IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
     if (!Check::True (builder->AddSolidPrimitive (*primitive), "Builder.AddSolidPrimitive"))
         return;
-        
+
 
     DRange3d range;
     Check::True (primitive->GetRange (range));
@@ -668,12 +668,12 @@ bool expectExactMeshFaceCountMatch  // true to enforce exact match of mesh and S
     //double rangeVolume = diagonal.x * diagonal.y * diagonal.z;
     double rangeArea = 2.0 * (diagonal.x * diagonal.y + diagonal.y * diagonal.z + diagonal.z * diagonal.x);
     PolyfaceHeaderPtr header = builder->GetClientMeshPtr ();
-    
+
     double facetArea = header->SumFacetAreas ();
     DRange3d facetRange = header->PointRange ();
     static double s_areaFraction = 0.1;
     static double s_rangeFraction = 0.8;
-    
+
     Check::StartScope ("CheckPrimitiveFacets");
     if (Check::Contains (FractionalRange (rangeArea, s_areaFraction),
                     facetArea, "Minimal facet area"))
@@ -697,8 +697,8 @@ bool expectExactMeshFaceCountMatch  // true to enforce exact match of mesh and S
         }
 #ifdef considerExactMeshFaceCounts
      if (expectExactMeshFaceCountMatch)
-        Check::Size (faces.size (), numBlocks, "Solid Primitive face count per visibility");            
-    else 
+        Check::Size (faces.size (), numBlocks, "Solid Primitive face count per visibility");
+    else
 #endif
     Check::True (faces.size () <= numBlocks, "Mesh must have at least as many faces as solid primitive");
     }
@@ -710,7 +710,7 @@ void CheckPrimitiveAsTrimmedSurfaces (ISolidPrimitivePtr primitive)
     MSBsplineSurface::CreateTrimmedSurfaces (surfaces, *primitive);
     Check::EndScope ();
     }
-    
+
 void CheckPrimitiveA (ISolidPrimitivePtr primitive, SolidPrimitiveType primitiveType, DSegment3dCP segment = NULL, int numHits = 0)
     {
     Check::Int (primitiveType, primitive.get ()->GetSolidPrimitiveType ());
@@ -811,7 +811,7 @@ void CheckPrimitiveB (ISolidPrimitivePtr primitive, char const*typeName, bool ex
 
     CheckAllFaces (primitive, typeName);
     CheckFacets (primitive, expectExactMeshFaceCountMatch);
-    
+
     CheckConstructiveFrame (*primitive, typeName);
     if (primitive->GetCapped ())
         {
@@ -822,7 +822,7 @@ void CheckPrimitiveB (ISolidPrimitivePtr primitive, char const*typeName, bool ex
         primitive->SetCapped (true);
         Check::EndScope ();
         }
-    
+
     }
 
 void CheckPrimitiveSimplify (ISolidPrimitivePtr primitiveA)
@@ -875,7 +875,7 @@ void CheckPrimitive (ISolidPrimitivePtr primitive, SolidPrimitiveType primitiveT
 
     CheckMoments (primitive);
     CheckAreaMoments (primitive);
-    
+
     CheckPrimitiveAsTrimmedSurfaces (primitive);
     CheckPrimitiveSimplify (primitive);
 
@@ -896,11 +896,11 @@ TEST(SolidPrimitive, DgnExtrusion)
     double z1 = z0 + dz;
     CurveVectorPtr pathA = CurveVector::CreateRectangle (ax, ay, bx, by, z0, CurveVector::BOUNDARY_TYPE_Outer);
     CurveVectorPtr pathB = CurveVector::CreateRectangle (ax, ay, bx, by, z1, CurveVector::BOUNDARY_TYPE_Outer);
-    
+
     Transform localToWorld, worldToLocal;
     Check::True (pathA->IsRectangle (localToWorld, worldToLocal));
- 
-    
+
+
     bvector<CurveVectorPtr> sections;
     sections.push_back (pathA);
     sections.push_back (pathB);
@@ -922,7 +922,7 @@ TEST(SolidPrimitive, DgnExtrusion)
     extrusion->SetCapped (true);
     ruled->SetCapped (true);
     CheckPrimitive (extrusion, SolidPrimitiveType_DgnExtrusion);
-    
+
     DgnBoxDetail boxData (
         DPoint3d::From (ax, ay, z0),
         DPoint3d::From (ax, ay, z1),
@@ -936,7 +936,7 @@ TEST(SolidPrimitive, DgnExtrusion)
     CheckMomentMatch (extrusion, "extruded rectangle", box, "box");
 
     CheckMomentMatch (extrusion, "ExtrudedBox", ruled, "RuledBox", false, true);
-    
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1030,7 +1030,7 @@ TEST(SolidPrimitive, CreateCone)
         CheckPrimitive (cone, SolidPrimitiveType_DgnCone);
         Check::EndScope ();
         }
-        
+
     double dz = 3.0;
     double radius = 1.5;
     DgnConeDetail cylinderDetail (DPoint3d::From (0,0,0), DPoint3d::From (0,0,dz), radius, radius, true);
@@ -1038,11 +1038,11 @@ TEST(SolidPrimitive, CreateCone)
                     DEllipse3d::From (0,0,0,   radius, 0,0,   0, radius,0,   0.0, Angle::TwoPi ()));
     Transform localToWorld, worldToLocal;
     Check::False (ellipse->IsRectangle (localToWorld, worldToLocal));
-                    
+
     DgnExtrusionDetail extrusionDetail (ellipse, DVec3d::From (0,0,dz), true);
     ISolidPrimitivePtr cylinder = ISolidPrimitive::CreateDgnCone (cylinderDetail);
     ISolidPrimitivePtr extrusion = ISolidPrimitive::CreateDgnExtrusion (extrusionDetail);
-    
+
     CheckMomentMatch (cylinder, "cylinder", extrusion, "extrudedCircle");
 
     }
@@ -1105,7 +1105,7 @@ TEST (SolidPrimitive, ConeAreaMoments)
         DgnRuledSweepDetail ruledDetail (sections, false);
         ISolidPrimitivePtr cone = ISolidPrimitive::CreateDgnCone (cylinderDetail);
         ISolidPrimitivePtr ruled = ISolidPrimitive::CreateDgnRuledSweep (ruledDetail);
-        
+
         CheckMomentMatch (cone, "cone", ruled, "ruled", false, true);
         }
     }
@@ -1178,14 +1178,14 @@ TEST(IsRectangle,Test0)
     points[2].x = 3.0;
     Check::False(PolylineOps::IsRectangle (points, A, B, false));
     points = savedPoints;
-    
+
     points.push_back (savedPoints[0]);
     Check::True (PolylineOps::IsRectangle (points, A, B, true));
 
     points[2].x = 3.0;
     Check::False(PolylineOps::IsRectangle (points, A, B, true));
     points = savedPoints;
-    points.push_back (savedPoints[0]);    
+    points.push_back (savedPoints[0]);
     points[4].x += 1.0;
     Check::False(PolylineOps::IsRectangle (points, A, B, true));
     }
@@ -1207,7 +1207,7 @@ TEST(SolidPrimitive, CreateExtrusion)
     ICurvePrimitivePtr lineB = ICurvePrimitive::CreateLine (
                     DSegment3d::From (DPoint3d::From (1,1,1), DPoint3d::From (2,1,1)));
     pathB->push_back (lineB);
-    
+
     DgnExtrusionDetail extrusionData (
             pathA,
             DVec3d::From (0,0,2),
@@ -1272,9 +1272,9 @@ void CheckRuledArcs (double b, double scale)
     DEllipse3d ellipseA = DEllipse3d::From (1,1,1,    1,0,0,   0,b,0,   0.0, sweep);
     DEllipse3d ellipseB = DEllipse3d::FromVectors (
             DPoint3d::From (1,1,2),
-            DVec3d::FromScale (ellipseA.vector0, scale), 
+            DVec3d::FromScale (ellipseA.vector0, scale),
             DVec3d::FromScale (ellipseA.vector90, scale),
-            0.0, sweep); 
+            0.0, sweep);
     // NEEDS WORK -- ray pick does not work when skewed.
     //DEllipse3d ellipseB = DEllipse3d::From (1,1,4,    1.3,0,0,   0,1.8,0,   0.0, sweep);
 
@@ -1315,9 +1315,9 @@ TEST(SolidPrimitive, Rotation)
     CurveVectorPtr pathA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
 
     //    3               E
-    //    |            
-    //    |            
-    //    2       C>>>D       F   
+    //    |
+    //    |
+    //    2       C>>>D       F
     //    |      /
     //    |     /
     //    1   B
@@ -1427,7 +1427,7 @@ TEST(TorusSurf,RayPierce)
 
             Check::Int (num0, 1);
             Check::Int (num1, 1);
-            
+
             }
         }
     }
@@ -1438,13 +1438,13 @@ double CheckRotate90 (DVec3dCR vector)
     {
     RotMatrix matrix0 = RotMatrix::FromVectorAndRotationAngle (vector, Angle::PiOver2 ());
     RotMatrix matrix1 = RotMatrix::FromRotate90 (vector);
-    Check::Near (matrix0, matrix1, "rotate90"); 
+    Check::Near (matrix0, matrix1, "rotate90");
     return matrix0.MaxDiff (matrix1);
     }
 
 void CheckRotationDerivative (DVec3dCR axis, double angle)
     {
-    RotMatrix derivative0;    
+    RotMatrix derivative0;
     RotMatrix matrix0 = RotMatrix::FromVectorAndRotationAngle (axis, angle, derivative0);
     DVec3d vector[3];
     axis.GetNormalizedTriad (vector[0], vector[1], vector[2]);
@@ -1545,7 +1545,7 @@ TEST (DMatrix4d, RotateMoments)
     Check::Near (solid1, solid2, "Rotated Moments");
 
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1562,7 +1562,7 @@ TEST (SolidPrimitive,RotationalSolidMoments)
     CurveVectorPtr triangle = CurveVector::CreateLinear (trianglePoints, CurveVector::BOUNDARY_TYPE_Outer, false);
     DRay3d rotationAxis;
     rotationAxis.InitFromOriginAndVector (DPoint3d::From (0,0,0), DVec3d::From (0,0,1));
-                        
+
     // Create chiseled frustum.  Its xx,xz,zz,x,z products should match
     // The chisel plane is x=y
     PolyfaceHeaderPtr facets = PolyfaceHeader::CreateVariableSizeIndexed ();
@@ -1578,7 +1578,7 @@ TEST (SolidPrimitive,RotationalSolidMoments)
         6,5,4,0,
         1,3,6,4,0,
         5,6,3,2,0,
-        5,2,1,4,0, 
+        5,2,1,4,0,
         10000
         };
     for (int i = 0; abs (index[i]) <= (int)facets->Point ().size (); i++)
@@ -1595,7 +1595,7 @@ TEST (SolidPrimitive,RotationalSolidMoments)
                 rotationAxis, rotationToWorld, differentialProducts),
                 "Compute differentials");
     worldToRotation.InverseOf (rotationToWorld);
-    
+
     facets->SumTetrahedralMomentProducts (worldToRotation, facetVolume, facetMoment, facetProducts);
     DgnRotationalSweepDetail rotationalSweepData (triangle, rotationAxis.origin, rotationAxis.direction, Angle::TwoPi (), true);
     ISolidPrimitivePtr rotationalSweep = ISolidPrimitive::CreateDgnRotationalSweep (rotationalSweepData);
@@ -1603,7 +1603,7 @@ TEST (SolidPrimitive,RotationalSolidMoments)
 
     Check::EndScope ();
     }
-    
+
 
 void CheckBilinearPatch (DBilinearPatch3dCR patch)
     {
@@ -1623,7 +1623,7 @@ void CheckBilinearPatch (DBilinearPatch3dCR patch)
                 Check::Near (u, uv[0].x, "u coordinate");
                 Check::Near (v, uv[0].y, "v coordinate");
                 }
-            }    
+            }
          }
     }
 
@@ -1647,8 +1647,8 @@ void CheckBilinearPatch (DBilinearPatch3dCR patch)
     CheckBilinearPatch (
         DBilinearPatch3d (xyz00, xyz10, DPoint3d::From (0,2,0), DPoint3d::From (1, 2, 0)));
     Check::EndScope ();
-    
-    
+
+
     Check::StartScope ("BilinearPatchParallelogram");
     CheckBilinearPatch (
         DBilinearPatch3d (xyz00, xyz10, DPoint3d::From (1,2,0), DPoint3d::From (2, 2, 0)));
@@ -1711,7 +1711,7 @@ TEST (SphereNormals, Test1)
                 Check::Print (xyz, "xyz");
                 Check::Print (normal, "normal");
                 }
-                
+
             DVec3d   radialVector = DVec3d::FromStartEnd (origin, xyz);
             double dot = radialVector.DotProduct (normal);
             double theta = radialVector.SmallerUnorientedAngleTo (normal);
@@ -1727,7 +1727,7 @@ TEST (SphereNormals, Test1)
 TEST(SolidPrimitive,LinestringFaces)
     {
     bvector<DPoint3d> points;
-    points.push_back (DPoint3d::From (0,2,0));    
+    points.push_back (DPoint3d::From (0,2,0));
     points.push_back (DPoint3d::From (0,0,0));
     points.push_back (DPoint3d::From (1,1,0));
     points.push_back (DPoint3d::From (0,2,0));
@@ -1742,9 +1742,9 @@ TEST(SolidPrimitive,LinestringFaces)
     Check::Size (2, pickData.size (), "Multiple hits within swept linestring");
     pickData.clear ();
     solid->AddRayIntersections (pickData, ray1, 0, -DBL_MAX);
-    Check::True (pickData.size () >= 1, "Edge pick hits at least once");         
-    }    
-    
+    Check::True (pickData.size () >= 1, "Edge pick hits at least once");
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -1766,12 +1766,12 @@ TEST(Polyface,SelecteBlockIndices)
         representativeIndices.push_back (base);
         }
 
-    // put some of the 
+    // put some of the
     bvector<ptrdiff_t> selectedIndices;
     size_t kStep = 2;
     for (size_t k = 0; k < numPartition; k += kStep)
         selectedIndices.push_back (representativeIndices[k]);
-    
+
     bvector<ptrdiff_t> blockA, blockB;
     PolyfaceHeader::SelectBlockedIndices (indices, selectedIndices, true, blockA);
     PolyfaceHeader::SelectBlockedIndices (indices, selectedIndices, false, blockB);
@@ -1787,8 +1787,8 @@ TEST(Polyface,SelecteBlockIndices)
     Check::Size (0, blockA2.size (), "Reselect false");
     Check::Size (0, blockB1.size (), "Reselect B true");
     Check::Size (blockB.size (), blockB2.size (), "Reselect B false");
-    
-    }    
+
+    }
 
 void testRotationalMoments (double cx, double cz, double ax, double az)
     {
@@ -1799,7 +1799,7 @@ void testRotationalMoments (double cx, double cz, double ax, double az)
     DMatrix4d localProducts;
     Transform localToWorld;
     Check::True (rotatedDetail.ComputeSecondMomentVolumeProducts (localToWorld, localProducts), "compute products");
-    DPoint3d expectedCentroid = DPoint3d::From (cx,0, az);   
+    DPoint3d expectedCentroid = DPoint3d::From (cx,0, az);
     DVec3d centroid;
     RotMatrix axes;
     DVec3d moments;
@@ -1825,7 +1825,7 @@ TEST(SolidPrimitive,RotateTorusCentroidInMoments)
     testRotationalMoments (1,0,    3,7);
     testRotationalMoments (1,0,    3,13);
 
-    }    
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -1846,7 +1846,7 @@ TEST(SolidPrimitive,DiskNormal)
     }
 
 #endif
-    
+
 
 static double s_oneThird = 1.0 / 3.0;
 
@@ -1854,7 +1854,7 @@ static double s_oneThird = 1.0 / 3.0;
 // If the projection plane is the same as the cut plane, these are the volumes between the fragments and the cut plane.
 // If the projection plane is perpendicular to the cut plane, the sum of all such fragmetary volumes from all triangles of a closed volume mesh
 //   are the portions of the mesh volume above and below the cut plane.
-//   It is important that the projection plane be perpendicular to the cut plane for this overall volume split to be correct. 
+//   It is important that the projection plane be perpendicular to the cut plane for this overall volume split to be correct.
 //    (Really?  The missing cut faces are on the projection plane -- they would have zero contribution to the sweeps.)
 struct CutVolumeContext
 {
@@ -1915,7 +1915,7 @@ public:
         double projectedArea = 0.5 * normal.DotProduct (m_projectionPlane.normal);
         double centroidAltitude = m_projectionPlane.Evaluate (centroid);
         return projectedArea * centroidAltitude;
-        }        
+        }
     // SPlit the triangle by the cut plane.
     // Compute the volume when the parts above and below are swept to the projection plane.
     void ComputeSplitTriangleProjectedVolumes (DPoint3dCR point0, DPoint3dCR point1, DPoint3dCR point2, double &volumeBelow, double &volumeAbove)
@@ -1963,7 +1963,7 @@ public:
             volumeAbove = ProjectedVolume (point0, point1, point2);
             volumeBelow = 0.0;
             }
-        }        
+        }
 
     void ComputeSplitPolygonProjectedVolumesWithWrapEdge (bvector<DPoint3d> const &points, double &volumeAbove, double &volumeBelow)
         {
@@ -1979,7 +1979,7 @@ public:
         }
 
 };
-    
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -2005,7 +2005,7 @@ TEST(Polyface,SplitTriangle)
             perpendicularContext.ComputeSplitTriangleProjectedVolumes (points[0], points[1], points[2], vBelow, vAbove);
             Check::Near (0.0, vBelow);
             Check::Near (0.0, vAbove);
-            
+
             parallelContext.ComputeSplitTriangleProjectedVolumes (points[0], points[1], points[2], vBelow, vAbove);
             if (z < splitZ)
                 {
@@ -2040,7 +2040,7 @@ TEST(Polyface,SplitTriangle)
             Check::Near (slabVolume, sum[i] - sum[i-1]);
             }
         }
-    }    
+    }
 
 
 void ComputeSplitVolumes (PolyfaceQueryCR polyface, bvector<DPlane3d> &splitPlanes, bvector<DPoint2d> &volumes)
@@ -2315,7 +2315,7 @@ void CreateAllSolidsAroundOrigin (bvector<ISolidPrimitivePtr> &solids, bool doVa
                 );
 
     auto extrusion = ISolidPrimitive::CreateDgnExtrusion (extrusionData);
-    solids.push_back (extrusion); 
+    solids.push_back (extrusion);
 
 
     solids.push_back(
@@ -2341,7 +2341,7 @@ void CreateAllSolidsAroundOrigin (bvector<ISolidPrimitivePtr> &solids, bool doVa
                 DPoint3d::From (0,0,zB),
                 0.0, rB, true)));
         }
-    
+
     solids.push_back (ISolidPrimitive::CreateDgnSphere (DgnSphereDetail (DPoint3d::From (0,0,0), rA)));
 
     auto lineA = ICurvePrimitive::CreateLine (DSegment3d::From (1,0,-2,    1,0,2));
@@ -2362,7 +2362,7 @@ void CreateAllSolidsAroundOrigin (bvector<ISolidPrimitivePtr> &solids, bool doVa
             DPoint3d::From (2,2,3),
             false
             )));
-   
+
 
     }
 
@@ -2405,7 +2405,7 @@ TEST(SolidPrimitive, LineSegmentIntersection)
     // What's right?  Enforce "one or the other"
         Check::True ((messages.GetTotalFail () > 0) != (curvePoints.size () > 0), "AppendCurveIntersections");
         }
-    }    
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -2458,7 +2458,7 @@ TEST(SolidPrimitive, ArcIntersection)
             Check::True ((messages.GetTotalFail () > 0) != (curvePoints.size () > 0), "AppendCurveIntersections");
             }
         }
-    }    
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -2490,7 +2490,7 @@ TEST(SolidPrimitive, BCurveIntersection)
     // What's right?  Enforce "one or the other"
         Check::True ((messages.GetTotalFail () > 0) != (curvePoints.size () > 0), "AppendCurveIntersections");
         }
-    }    
+    }
 #endif
 
 /*---------------------------------------------------------------------------------**//**
@@ -2514,7 +2514,7 @@ TEST(SolidPrimitive,CurveVectorIntersection)
         // What's right?  Enforce "one or the other"
         Check::True ((messages.GetTotalFail () > 0) != (curvePoints.size () > 0), "AppendCurveIntersections");
         }
-    }    
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -2676,7 +2676,7 @@ void ShowFacets (bvector<IGeometryPtr> &geometry)
             IFacetOptionsPtr options = IFacetOptions::Create ();
             IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
             builder->AddSolidPrimitive (*primitive);
-            Check::SaveTransformed (*primitive);            
+            Check::SaveTransformed (*primitive);
             Check::Shift (1.5 * range.XLength (), 0,0);
             Check::SaveTransformed (*builder->GetClientMeshPtr ());
             }
@@ -2705,7 +2705,7 @@ void ShowEdgeChains (bvector<IGeometryPtr> &geometry)
             options->SetEdgeChainsRequired (true);
             IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
             builder->AddSolidPrimitive (*primitive);
-            Check::SaveTransformed (*primitive);            
+            Check::SaveTransformed (*primitive);
             Check::Shift (1.5 * DoubleOps::Max (range.XLength (), shift), 0,0);
             auto facets = builder->GetClientMeshPtr ();
             Check::SaveTransformed (*facets);
@@ -2737,7 +2737,7 @@ void AnnounceAllSolids (void (*function)(bvector<IGeometryPtr> &))
         SampleGeometryCreator::AddExtrusions (geometry, capped);
         function (geometry);
         geometry.clear ();
- 
+
         SampleGeometryCreator::AddRotations (geometry, capped);
         function (geometry);
         geometry.clear ();
@@ -2980,7 +2980,7 @@ DVec3d MoveVectorToPlane (DVec3dCR vectorR, DVec3dCR vectorV, DVec3dCR planeNorm
 
 // Create Chiseled pipe surfaces for a string of centerlines.
 // At each end of each pipe, the pipe is cut by the plane that bisects the angle between successive pipe centerlines.
-// 
+//
 void CreateChiseledPipes (
 bvector<DPoint3d> &centerline,  //!< [in] points on pipe centerlines.
 double radius,                      //!< [in] pipe radius.
@@ -3062,7 +3062,7 @@ TEST(RuledSurface,ChiseledPipes)
     Check::SaveTransformed (centerline);
     for (auto &arc : sectionArcs)
         Check::SaveTransformed (arc);
-        
+
     Check::Shift (0,10,0);
     Check::SaveTransformed (pipes);
 
@@ -3118,7 +3118,7 @@ DVec3dCR   vectorB90        // 90 degree vector (e.g. minor axis
     DVec3d candidateVector = vectorB0 * cos (theta) + vectorB90 * sin (theta);
     if (candidateVector.DotProduct (vectorA) < 0.0)
         candidateVector = candidateVector * -1.0;
-    return candidateVector;  
+    return candidateVector;
     }
 
 // When a cone (or cylinder) is cut but unrelated planes at two ends, the "Major and minor axis" points commonly

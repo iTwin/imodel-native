@@ -99,7 +99,7 @@ double TestSineShifted (size_t n, double a, double q0, double dq0, double q1, do
         d1 = DoubleOps::MaxAbsDiff (b1, b1Q);   // This error is on the b side.
         d = DoubleOps::MaxAbsDiff (x0, b0);
         }
-    
+
     d /= DoubleOps::MaxAbs (x0);
     return d;
     }

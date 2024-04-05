@@ -119,7 +119,7 @@ TEST(GaussKronrod,SimplePowers)
         }
     }
 
-// f(x,i) = elliptic arc length differential at theta, for axis lengths (1,b) 
+// f(x,i) = elliptic arc length differential at theta, for axis lengths (1,b)
 // where b is 1, factor, factor^2 etc
 class EllipticArcQuadrantIntegrand : public BSIVectorIntegrand
 {
@@ -128,7 +128,7 @@ int m_maxFactor;
 double m_factor;
 EllipticArcQuadrantIntegrand (int maxDivide, double factor) : m_maxFactor (maxDivide), m_factor(factor)
     {
-    
+
     }
 
 virtual void EvaluateVectorIntegrand (double theta, double *pF) override
@@ -249,9 +249,9 @@ TEST(GaussKronrod,EllipticArcLength)
         {
         return (m_maxDegree + 1) * (m_maxDegree + 2) / 2;
         }
-    };    
-    
-    
+    };
+
+
      // f(x,i) = x^i
     class ExponentialFunctionIntegrandXY : public BSIVectorIntegrandXY
     {
@@ -271,7 +271,7 @@ TEST(GaussKronrod,EllipticArcLength)
         {
         return 3;
         }
-    };    
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -286,40 +286,40 @@ TEST (GaussKronrod, Strang1)
     double pSums4 [10];
     double pSums5 [10];
     double pSums6 [10];
-    
+
     double one = 1.0 / 2.0;
     double xANDy = 1.0 / 6.0;
     double x2ANDy2 = 1.0 / 12.0;
     double xy = 1.0 / 24.0;
     double x3ANDy3 = 1.0 / 20.0;
     double xy2ANDx2y = 1.0 / 60.0;
-    
+
     for (int i = 0; i < 10; i++)
         {
         pSums1[i] = pSums2[i] = pSums3[i] = pSums4[i] = pSums5[i] = pSums6[i] =  0;
         }
-        
+
     PolynomialPowersIntegrandXY f = PolynomialPowersIntegrandXY (power);
     BSITriangleQuadraturePoints test;
-    
+
     test.InitStrang(selector);
     test.AccumulateWeightedSums (f, pSums1);
     selector++;
     test.InitStrang(selector);
-    test.AccumulateWeightedSums (f, pSums2); 
+    test.AccumulateWeightedSums (f, pSums2);
     selector++;
     test.InitStrang(selector);
     test.AccumulateWeightedSums (f, pSums3);
-    selector++;   
+    selector++;
     test.InitStrang(selector);
     test.AccumulateWeightedSums (f, pSums4);
     selector++;
     test.InitStrang(selector);
-    test.AccumulateWeightedSums (f, pSums5); 
+    test.AccumulateWeightedSums (f, pSums5);
     selector++;
     test.InitStrang(selector);
-    test.AccumulateWeightedSums (f, pSums6);     
-     
+    test.AccumulateWeightedSums (f, pSums6);
+
      if (s_noisy)
         {
         printf ("\n");
@@ -335,7 +335,7 @@ TEST (GaussKronrod, Strang1)
         printf ("f(x,y) = x2  :  %22.5f %22.5f %22.5f %22.5f\n", pSums1[7], pSums2[7], pSums3[7], x2ANDy2);
         printf ("f(x,y) = x2y :  %22.5f %22.5f %22.5f %22.5f\n", pSums1[8], pSums2[8], pSums3[8], xy2ANDx2y);
         printf ("f(x,y) = x3  :  %22.5f %22.5f %22.5f %22.5f\n", pSums1[9], pSums2[9], pSums3[9], x3ANDy3);
-    
+
         printf ("\n");
         printf ("Function                                  Approximate Integral (4, 5, 6)                        Exact Integral\n");
         printf ("\n");
@@ -351,7 +351,7 @@ TEST (GaussKronrod, Strang1)
         printf ("f(x,y) = x3  :  %22.5f %22.5f %22.5f %22.5f\n", pSums4[9], pSums5[9], pSums6[9], x3ANDy3);
         }
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -362,7 +362,7 @@ TEST (GaussKronrod, Strang2)
     double pSums4 [100];
     double pSums5 [100];
     double pSums6 [100];
-    
+
     double x4ANDy4 = 1.0 / 30.0;
     double x5ANDy5 = 1.0 / 42.0;
     double xy3 = 1.0 / 120.0;
@@ -372,23 +372,23 @@ TEST (GaussKronrod, Strang2)
     double x3y = xy3;
     double x3y2 = x2y3;
     double x4y = 1 / 30.0;
-    
+
     for (int i = 0; i < 100; i++)
         {
         pSums4[i] = pSums5[i] = pSums6[i] =  0;
         }
-        
+
     PolynomialPowersIntegrandXY f = PolynomialPowersIntegrandXY (power);
     BSITriangleQuadraturePoints test;
-    
+
     test.InitStrang(selector);
     test.AccumulateWeightedSums (f, pSums4);
     selector++;
     test.InitStrang(selector);
-    test.AccumulateWeightedSums (f, pSums5); 
+    test.AccumulateWeightedSums (f, pSums5);
     selector++;
     test.InitStrang(selector);
-    test.AccumulateWeightedSums (f, pSums6);     
+    test.AccumulateWeightedSums (f, pSums6);
 
      if (s_noisy)
         {
@@ -408,7 +408,7 @@ TEST (GaussKronrod, Strang2)
         printf ("f(x,y) = x5   :  %22.5f %22.5f %22.5f %22.5f\n", pSums4[20], pSums5[20], pSums6[20], x5ANDy5);
         }
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -420,7 +420,7 @@ TEST (GaussKronrod, Strang3)
     double pSums8 [100];
     double pSums9 [100];
     double pSums10 [100];
-    
+
     double x5 = 1.0 / 42.0;
     double y5 = x5;
     double x6 = 1.0 / 56.0;
@@ -433,26 +433,26 @@ TEST (GaussKronrod, Strang3)
     double xy5 = 1.0 / 336.0;
     double xy6 = 1.0 / 504.0;
     double xy7 = 1.0 / 720.0;
-    
+
     for (int i = 0; i < 100; i++)
         {
         pSums7[i] = pSums8[i] = pSums9[i] = pSums10[i] =  0;
         }
-        
+
     PolynomialPowersIntegrandXY f = PolynomialPowersIntegrandXY (power);
     BSITriangleQuadraturePoints test;
-    
+
     test.InitStrang(selector);
     test.AccumulateWeightedSums (f, pSums7);
     selector++;
     test.InitStrang(selector);
-    test.AccumulateWeightedSums (f, pSums8); 
+    test.AccumulateWeightedSums (f, pSums8);
     selector++;
     test.InitStrang(selector);
-    test.AccumulateWeightedSums (f, pSums9);  
+    test.AccumulateWeightedSums (f, pSums9);
     selector++;
     test.InitStrang(selector);
-    test.AccumulateWeightedSums (f, pSums10);   
+    test.AccumulateWeightedSums (f, pSums10);
 
          if (s_noisy)
         {
@@ -484,26 +484,26 @@ TEST (GaussKronrod, Strang4)
     double pSums8 [3];
     double pSums9 [3];
     double pSums10 [3];
-    
+
     for (int i = 0; i < 3; i++)
         {
         pSums7[i] = pSums8[i] = pSums9[i] = pSums10[i] =  0;
         }
-        
+
     ExponentialFunctionIntegrandXY f = ExponentialFunctionIntegrandXY ();
     BSITriangleQuadraturePoints test;
-    
+
     test.InitStrang(selector);
     test.AccumulateWeightedSums (f, pSums7);
     selector++;
     test.InitStrang(selector);
-    test.AccumulateWeightedSums (f, pSums8); 
+    test.AccumulateWeightedSums (f, pSums8);
     selector++;
     test.InitStrang(selector);
-    test.AccumulateWeightedSums (f, pSums9);  
+    test.AccumulateWeightedSums (f, pSums9);
     selector++;
     test.InitStrang(selector);
-    test.AccumulateWeightedSums (f, pSums10);   
+    test.AccumulateWeightedSums (f, pSums10);
     if (s_noisy)
         {
         printf ("\n");
@@ -527,28 +527,28 @@ TEST (GaussKronrod, MappedStrangConsistency)
     double pSumsv3 [100];
     double pSumsv4 [100];
      double pSumsv5 [100];
-    
+
     double ax = 1.0;
     double ay = 1.0;
     double bx = 11.0 / 10.0;
     double by = 1.0;
     double cx = 1.0;
     double cy = 11.0 / 10.0;
-    
+
     for (int i = 0; i < 100; i++)
         {
         pSumsv1[i] = pSumsv2[i] = pSumsv3[i] = pSumsv4[i] = pSumsv5[i] = 0;
         }
-        
+
     PolynomialPowersIntegrandXY f = PolynomialPowersIntegrandXY (power);
     BSITriangleQuadraturePoints test;
-    
+
     test.InitStrang(selector);
     test.AccumulateWeightedSumsMapped (f, pSumsv1, ax, ay, bx, by, cx, cy);
-    test.AccumulateWeightedSumsMapped (f, pSumsv2, bx, by, ax, ay, cx, cy); 
-    test.AccumulateWeightedSumsMapped (f, pSumsv3, cx, cy, ax, ay, bx, by);  
+    test.AccumulateWeightedSumsMapped (f, pSumsv2, bx, by, ax, ay, cx, cy);
+    test.AccumulateWeightedSumsMapped (f, pSumsv3, cx, cy, ax, ay, bx, by);
     test.AccumulateWeightedSumsMapped (f, pSumsv4, bx, by, cx, cy, ax, ay);
-    test.AccumulateWeightedSumsMapped (f, pSumsv5, cx, cy, bx, by, ax, ay);   
+    test.AccumulateWeightedSumsMapped (f, pSumsv5, cx, cy, bx, by, ax, ay);
      if (s_noisy)
         {
         printf ("\n");
@@ -563,7 +563,7 @@ TEST (GaussKronrod, MappedStrangConsistency)
         printf ("f(x,y) = xy3 :  %22.5f %22.5f %22.5f %22.5f %22.5f\n", pSumsv1[12], pSumsv2[12], pSumsv3[12], pSumsv4[12], pSumsv5[12]);
         }
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -575,7 +575,7 @@ TEST (GaussKronrod, MappedStrang1)
     double pSums8 [100];
     double pSums9 [100];
     double pSums10 [100];
-    
+
     double ax = 1.0;
     double ax5 = pow(ax, 5);
     double ax6 = ax5 * ax;
@@ -596,9 +596,9 @@ TEST (GaussKronrod, MappedStrang1)
     double cy8 = cy7 * cy;
     double a2x = bx;
     double a2y = cy;
-    
+
     double xpar = (1.0 / 2.0) * (bx*bx - ax*ax);
-    
+
     double y5 = (1.0 / 6.0) * (bx - ax) * (cy6 - ay6);
     double y6 = (1.0 / 7.0) * (bx - ax) * (cy6*cy - ay6*ay);
     double y7 = (1.0 / 8.0) * (bx - ax) * (cy6*cy*cy - ay6*ay*ay);
@@ -611,30 +611,30 @@ TEST (GaussKronrod, MappedStrang1)
     double xy5 = xpar * (1.0 / 6.0) * (cy6 - ay6);
     double xy6 = xpar * (1.0 / 7.0) * (cy7 - ay7);
     double xy7 = xpar * (1.0 / 8.0) * (cy8 - ay8);
-    
+
     for (int i = 0; i < 100; i++)
         {
         pSums7[i] = pSums8[i] = pSums9[i] = pSums10[i] =  0;
         }
-        
+
     PolynomialPowersIntegrandXY f = PolynomialPowersIntegrandXY (power);
     BSITriangleQuadraturePoints test;
-    
+
     test.InitStrang(selector);
     test.AccumulateWeightedSumsMapped (f, pSums7, ax, ay, bx, by, cx, cy);
     test.AccumulateWeightedSumsMapped (f, pSums7, a2x, a2y, cx, cy, bx, by);
     selector++;
     test.InitStrang(selector);
-    test.AccumulateWeightedSumsMapped (f, pSums8, ax, ay, bx, by, cx, cy); 
+    test.AccumulateWeightedSumsMapped (f, pSums8, ax, ay, bx, by, cx, cy);
     test.AccumulateWeightedSumsMapped (f, pSums8, a2x, a2y, cx, cy, bx, by);
     selector++;
     test.InitStrang(selector);
-    test.AccumulateWeightedSumsMapped (f, pSums9, ax, ay, bx, by, cx, cy); 
-    test.AccumulateWeightedSumsMapped (f, pSums9, a2x, a2y, cx, cy, bx, by); 
+    test.AccumulateWeightedSumsMapped (f, pSums9, ax, ay, bx, by, cx, cy);
+    test.AccumulateWeightedSumsMapped (f, pSums9, a2x, a2y, cx, cy, bx, by);
     selector++;
     test.InitStrang(selector);
-    test.AccumulateWeightedSumsMapped (f, pSums10, ax, ay, bx, by, cx, cy);  
-    test.AccumulateWeightedSumsMapped (f, pSums10, a2x, a2y, cx, cy, bx, by); 
+    test.AccumulateWeightedSumsMapped (f, pSums10, ax, ay, bx, by, cx, cy);
+    test.AccumulateWeightedSumsMapped (f, pSums10, a2x, a2y, cx, cy, bx, by);
 
      if (s_noisy)
         {
@@ -657,7 +657,7 @@ TEST (GaussKronrod, MappedStrang1)
         printf ("f(x,y) = x8  :  %22.5f %22.5f %22.5f %22.5f %22.5f\n", pSums7[44], pSums8[44], pSums9[44], pSums10[44], x8);
         }
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -666,27 +666,27 @@ TEST (GaussKronrod, MappedStrang2)
     int power  = 2;
     double pSums7 [10];
     double pSums8 [10];
-    
+
     for (int i = 0; i < 5; i++)
     {
     int selector = 7;
-    
+
      for (int j = 0; j < 10; j++)
       {
       pSums7[j] = pSums8[j] =  0;
-      }   
+      }
     double ax = 5.0 + i;
     double ay = 7.0 + i;
     double bx = 12.0 + i;
     double by = 13.0 + i;
     double cx = 4.0 + i;
     double cy = 11.0 + i;
-    
+
     double Ux = bx - ax;
     double Uy = by - ay;
     double Vx = cx - ax;
     double Vy = cy - ay;
-    
+
     double ar = 0.5 * (Ux * Vy - Uy * Vx);
     double minxm = ay * ar;
     double minxmm = ay * minxm;
@@ -696,16 +696,16 @@ TEST (GaussKronrod, MappedStrang2)
     double minymm = cx * minym;
     double maxym = bx * ar;
     double maxymm = bx * maxym;
-    
+
     PolynomialPowersIntegrandXY f = PolynomialPowersIntegrandXY (power);
     BSITriangleQuadraturePoints test;
-    
+
     test.InitStrang(selector);
     test.AccumulateWeightedSumsMapped (f, pSums7, ax, ay, bx, by, cx, cy);
     selector++;
     test.InitStrang(selector);
-    test.AccumulateWeightedSumsMapped (f, pSums8, ax, ay, bx, by, cx, cy); 
-    
+    test.AccumulateWeightedSumsMapped (f, pSums8, ax, ay, bx, by, cx, cy);
+
      if (s_noisy)
         {
         printf ("\n");
@@ -717,12 +717,12 @@ TEST (GaussKronrod, MappedStrang2)
         printf ("f(x,y) = x2 :  %22.5f %22.5f %22.5f %22.5f\n", pSums7[5], pSums8[5], minxmm, maxxmm);
         }
 
-    Check::True (pSums7[1] <= maxym && minym <= pSums7[1], "checking between"); 
-    Check::True (pSums7[2] <= maxymm && minymm <= pSums7[2], "checking between"); 
-    Check::True (pSums7[3] <= maxxm && minxm <= pSums7[3], "checking between"); 
-    Check::True (pSums7[5] <= maxxmm && minxmm <= pSums7[5], "checking between"); 
+    Check::True (pSums7[1] <= maxym && minym <= pSums7[1], "checking between");
+    Check::True (pSums7[2] <= maxymm && minymm <= pSums7[2], "checking between");
+    Check::True (pSums7[3] <= maxxm && minxm <= pSums7[3], "checking between");
+    Check::True (pSums7[5] <= maxxmm && minxmm <= pSums7[5], "checking between");
     }
-    
+
     }
 #ifdef TestlambdaFunctions
 /*---------------------------------------------------------------------------------**//**

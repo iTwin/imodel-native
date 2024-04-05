@@ -2384,7 +2384,7 @@ bvector<DPoint3d>&points,
 bvector<double> *params,
 bvector<DVec3d> *derivatives,
 double param,
-double derivativeScale, // (order - 1) / paramStep 
+double derivativeScale, // (order - 1) / paramStep
 DPoint4dCR point,   // Stroke point
 DPoint4dCR pointA,
 DPoint4dCR pointB
@@ -2405,7 +2405,7 @@ DPoint4dCR pointB
         else
             {
             DPoint4d dX, ddX;
-            
+
             dX.DifferenceOf (pointB, pointA);
             dX.Scale (derivativeScale);
             ddX.Zero ();
@@ -3099,7 +3099,7 @@ Insert a knot in arrays of poles and knots.  Both arrays are extended.
 @param [in,out] pKnot knot array.
 @param [in] numPoint number of poles.
 @param [in] order spline order (one more than degree)
-@param [in] numLeadingKnot In customary storage (with extraneous leading knot), equal to {order}.  
+@param [in] numLeadingKnot In customary storage (with extraneous leading knot), equal to {order}.
 @param [in] leftPoleIndex index of leftmost pole of the {order} poles that apply.
 @param [in] leftKnotIndex index of the left end of the knot interval.  {order-1}
                 knots ENDING here are referenced as "left" of the interval. {order-1}

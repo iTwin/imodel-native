@@ -85,7 +85,7 @@ struct VertexData
     // When used for crossing:
     // m_intData = sign (m_intData) from prior nonzero point. (-1==> upcross, +1===>downcross)
     // m_edgeFraction = fraction along edge.
-    // m_XYZ = interpolation fraction.        
+    // m_XYZ = interpolation fraction.
     static VertexData FromInterpolatedCrossing (VertexData const &dataA, double a, VertexData const &dataB)
         {
         VertexData dataC;
@@ -101,11 +101,11 @@ struct VertexData
             dataC.m_edgeFraction = (a - dataA.m_altitude) / dA;
             dataC.mXYZ.Interpolate (dataA.mXYZ, dataC.m_edgeFraction, dataB.mXYZ);
             dataC.m_intData = dA > 0.0 ? 1 : -1;
-            dataC.m_intData = 0;            
+            dataC.m_intData = 0;
             }
         return dataC;
         }
- 
+
     static VertexData FromExactCrossing (VertexData const &dataA, int i)
         {
         VertexData dataC = dataA;   // m_XYZ copies !!!
@@ -124,7 +124,7 @@ struct VertexData
         return range;
         };
     void AssignComponentAltitude (int componentIndex) {m_altitude = mXYZ.GetComponent (componentIndex);}
-    
+
     static bool cb_CompareAltitude (VertexData const &dataA, VertexData const &dataB)
         {
         return dataA.m_altitude < dataB.m_altitude;
@@ -176,7 +176,7 @@ static bool SortAndSimplifyCrossings (bvector<VertexData> &crossings, bvector <V
         crossings[i].AssignComponentAltitude (sortDirection);
     for (size_t i = 0; i < numON; i++)
         edges[i].AssignComponentAltitudeAndReorient (sortDirection);
-        
+
     std::sort (crossings.begin (), crossings.end (), VertexData::cb_CompareAltitude);
     if (numON > 0)
         std::sort (edges.begin (), edges.end (), VertexDataPair::cb_CompareAltitudeA);
@@ -383,7 +383,7 @@ void EmitLoop(PolyfaceHeaderR dest, bvector<size_t> chainIndices, bool reverse =
     else
         for (size_t i = 0; i < n; i++)
             dest.PointIndex ().push_back ((int) (chainIndices[i]));
-        
+
     dest.PointIndex ().push_back (0);
     }
 
@@ -409,7 +409,7 @@ void AnalyzeCutPlaneLoops()
         if (m_globalEdgeData.AnalyzeCutPlane (beginIndex, endIndex, startIndices, endIndices))
             {
             m_globalEdgeData.SetFlag (beginIndex, endIndex, false);
-            // Pull out obvious 
+            // Pull out obvious
             for (size_t index = beginIndex; index < endIndex; index++)
                 {
                 if (m_globalEdgeData.GetFlag (index))
@@ -484,7 +484,7 @@ void ClipVisitorFaceToSinglePlane (size_t i0, size_t n0, ClipPlaneR plane, size_
 
     bmap <ClipPlaneP, int>::iterator        found = m_planeToIdMap.find (&plane);
     int                                     planeId = (found == m_planeToIdMap.end()) ? -1 : found->second;
-    
+
 
     for (size_t k = 1; k <= n0; k++, vertexA = vertexB)
         {
@@ -691,7 +691,7 @@ bool                    formNewFacesOnClipPlanes
     PolyfaceClipContext context (visitor, insideDest, outsideDest);
     // Fix up (blast!) plane indices..
     int planeCounter = 0;
-    
+
     for (ConvexClipPlaneSet& convexSet: *clipPlanes)
         {
         for (ClipPlane& clipPlane: convexSet)
@@ -711,7 +711,7 @@ bool                    formNewFacesOnClipPlanes
 
 
 //! Visit each face of source. Clip to chain and capture the clipped residual.
-GEOMDLLIMPEXP void PolyfaceCoordinateMap::AddClippedPolyfaceA 
+GEOMDLLIMPEXP void PolyfaceCoordinateMap::AddClippedPolyfaceA
 (
 PolyfaceQueryR          source,
 PolyfaceCoordinateMapP  insideDest,

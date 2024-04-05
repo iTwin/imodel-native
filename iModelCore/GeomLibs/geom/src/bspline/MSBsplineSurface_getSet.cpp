@@ -22,7 +22,7 @@ static inline bool ValidateIndex (size_t i, MSBsplineSurfaceCP surf)
 
 static inline bool ValidateIndex (size_t i, size_t j, MSBsplineSurfaceCP surf, size_t &index)
     {
-    if (surf->poles != NULL 
+    if (surf->poles != NULL
         && i < (size_t)surf->uParams.numPoles
         && j < (size_t)surf->vParams.numPoles)
         {
@@ -251,7 +251,7 @@ bool MSBsplineSurface::SetPole (size_t i, DPoint3dCR value)
         }
     return false;
     }
-    
+
 bool MSBsplineSurface::SetPole (int i, DPoint3dCR value)
     {
     if (poles != NULL && ValidateIndex (i, this))
@@ -399,7 +399,7 @@ void MSBsplineSurface::GetUnWeightedPoles (bvector<DPoint3d> &data) const
             {
             DPoint3d xyz = poles[i];
             xyz.Scale (1.0 / weights[i]);
-            data.push_back (xyz);            
+            data.push_back (xyz);
             }
         }
     else
@@ -454,7 +454,7 @@ bool MSBsplineSurface::TryGetUnWeightedPole (size_t i, size_t j, DPoint3dR xyz) 
         double a;
         if (DoubleOps::SafeDivide (a, 1.0, w, 0.0))
             xyz.Scale (a);
-        return true;        
+        return true;
         }
     xyz.Zero ();
     return false;
@@ -475,7 +475,7 @@ bool MSBsplineSurface::TryGetUnWeightedPole (size_t i, DPoint3dR xyz) const
         double a;
         if (DoubleOps::SafeDivide (a, 1.0, w, 0.0))
             xyz.Scale (a);
-        return true;        
+        return true;
         }
     xyz.Zero ();
     return false;

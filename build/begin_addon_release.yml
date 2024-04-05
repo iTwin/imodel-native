@@ -1,0 +1,73 @@
+name: Begin-Addon-Release-$(Date:yyyy.MM.dd)$(Rev:.r)
+
+trigger:
+  branches:
+    include:
+    - main
+
+  paths:
+    exclude:
+    - iModelJsNodeAddon/package_version.txt
+    - build/*
+
+pr: none
+
+variables:
+- group: imodel-native secret variables
+
+stages:
+- stage: queue_bump_version
+  displayName: Queue bump-version.yml
+  jobs:
+  - job: read_pr_and_queue_bump
+    displayName: Get Build Num then Queue
+    pool:
+      vmImage: ubuntu-latest
+
+    steps:
+      - checkout: self
+        persistCredentials: true
+      - task: NodeTool@0
+        inputs:
+          versionSpec: '18.x'
+
+      - bash: az devops configure --defaults organization=$(System.TeamFoundationCollectionUri) project=$(System.TeamProject)
+        displayName: Setup Azure CLI
+
+      - bash: |
+            commitMsg="$(Build.SourceVersionMessage)"
+
+            # Use grep to parse commit message for PR number attached to end of the commit
+            # grep -o is for return only the matched pattern, -E is for expanded regex syntax for [0-9]+
+            nativePrNum=$(echo "$commitMsg" | grep -oE '\(#([0-9]+)\)$' | grep -o '[0-9]\+')
+            echo "Native PR Num: $nativePrNum"
+
+            # Store PR description in txt file because vars behave strangely with multi line comments
+            gh pr view $nativePrNum --json body  --repo iTwin/imodel-native -q '.body' >> body.txt
+
+            # parse body.txt seraching for itwinjs-core pr URl and extract pull number from line. grep -o ensure the grep only returns the matching pattern instead of the entire line
+            itwinjsPR=$(grep -o '^itwinjs-core: https://github.com/iTwin/itwinjs-core/pull/[0-9]\+' body.txt | grep -o '[0-9]\+')
+            echo "itwinjs-core pr Num $itwinjsPR"
+
+            # Default itwinjs pr to 0. When this gets passed to bump_version.py it will check for the 0 and know not to include a PR number in the commit msg
+            if [[ -z "$itwinjsPR" ]]; then
+              itwinjsPR='0'
+              echo "No itwinjs-core PR found. Defaulting PR num to: $itwinjsPR"
+            fi
+
+            echo "##vso[task.setvariable variable=ITWINJS_PR_NUM;isoutput=true]$itwinjsPR"
+
+        env:
+          GITHUB_TOKEN: $(GH_TOKEN)
+        displayName: get itwinjs pr
+        name: getItwinjsPr
+
+      - bash: |
+          echo $(getItwinjsPr.ITWINJS_BRANCH)
+          az pipelines run \
+            --branch $(Build.SourceBranch) \
+            --id  8467 \
+            --parameters "BumpType=patch" "iTwinjsPrNum=$(getItwinjsPr.ITWINJS_PR_NUM)"
+        displayName: queue bump-version.yml
+        env:
+          AZURE_DEVOPS_EXT_PAT: $(System.AccessToken)

@@ -985,17 +985,17 @@ DbResult TrackedECDb::PullMergePush(Utf8CP comment) {
 #ifdef TRACE_CS
         PrintChangeSet::Print(*this, *changesetToApply);
 #endif
-        for (auto& ddl : changesetToApply->GetDDLs()) {
-            auto rc = TryExecuteSql(ddl.c_str());
-            if (rc != BE_SQLITE_OK && false) {
-                m_tracker->EnableTracking(true);
-                LOG.errorv("PullAndMergeChangesFrom(): %s", GetLastError().c_str());
-#ifdef TRACE_CS
-                cancelTrace();
-#endif
-                return rc;
-            }
-        }
+//         for (auto& ddl : changesetToApply->GetDDLs()) {
+//             auto rc = TryExecuteSql(ddl.c_str());
+//             if (rc != BE_SQLITE_OK && false) {
+//                 m_tracker->EnableTracking(true);
+//                 LOG.errorv("PullAndMergeChangesFrom(): %s", GetLastError().c_str());
+// #ifdef TRACE_CS
+//                 cancelTrace();
+// #endif
+//                 return rc;
+//             }
+//         }
         auto rc = changesetToApply->ApplyChanges(*this, nullptr, false, true);
         if (rc != BE_SQLITE_OK) {
             LOG.errorv("PullAndMergeChangesFrom(): %s", GetLastError().c_str());

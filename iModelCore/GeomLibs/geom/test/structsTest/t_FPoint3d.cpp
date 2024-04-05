@@ -122,7 +122,7 @@ TEST(FPoint3d, SumOf)
                  DPoint3d::From(2, 3, 4));
     Check::Exact(DPoint3d::From(FPoint3d::From(DPoint2d::From(2, 3), 4)),
                  DPoint3d::From(2, 3, 4));
-   
+
     Check::Exact(DPoint3d::From(FPoint3d::FromOne()),
                  DPoint3d::FromOne());
     Check::Exact(DPoint3d::From(FPoint3d::FromZero()),
@@ -155,7 +155,7 @@ TEST(FPoint3d, SumOf)
     Check::True(originF0.ComponentRange().low == originD0.ComponentRange().low);
     Check::True(originF0.ComponentRange().high == originD0.ComponentRange().high);
 
-    //Interpolation 
+    //Interpolation
     Check::Exact(DPoint3d::From(FPoint3d::FromInterpolate(originF0, scale0, originF1)),
                  DPoint3d::FromInterpolate(originD0, scale0, originD1));
     Check::Exact(DPoint3d::From(FPoint3d::FromInterpolateBilinear(originF0, originF1, originF2, fpoint, scale0, scale1)),
@@ -165,7 +165,7 @@ TEST(FPoint3d, SumOf)
     Check::Exact(DPoint3d::From(fpoint), dpoint);
 
     //Is Instance in sector
-    
+
     FPoint3d origin = FPoint3d::From (0.0, 0.0, 0.0);
     FPoint3d target0 = FPoint3d::From (1.0, 0.0, 0.0);
     FPoint3d target1 = FPoint3d::From (0.0, 1.0, 0.0);
@@ -178,7 +178,7 @@ TEST(FPoint3d, SumOf)
                 dtestpoint0.IsPointInCCWector(DPoint3d::From(origin), DPoint3d::From(target0), DPoint3d::From(target1), upVector));
     Check::True(testpoint1.IsPointInCCWector(origin, target0, target1, upVector) ==
                 dtestpoint1.IsPointInCCWector(DPoint3d::From(origin), DPoint3d::From(target0), DPoint3d::From(target1), upVector));
-    
+
     FPoint3d fptest0 = FPoint3d::From(2, 2, 0);
     DPoint3d dptest0 = DPoint3d::From(fptest0);
     Check::True(
@@ -242,7 +242,7 @@ TEST(FPoint3d, SumOf)
     originD0.XyzOf(pnt4d);
 
     Check::Exact(DPoint3d::From(originF0), originD0);
-    
+
 
     //init
     FPoint3d fpnt;
@@ -256,8 +256,8 @@ TEST(FPoint3d, SumOf)
     dpnt.Init(DVec3d::From( 2.0, 3.0, 4.0));
     Check::Exact(DPoint3d::From(fpnt), dpnt);
     }
-	
-	
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

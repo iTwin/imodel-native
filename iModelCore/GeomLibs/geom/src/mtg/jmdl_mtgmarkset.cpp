@@ -36,7 +36,7 @@ GEOMDLLIMPEXP void MTG_MarkSet::Attach (MTGGraphP _pGraph, MTGMarkScope   _scope
         }
     else
         mask = MTG_NULL_MASK;
-    nodes.clear ();    
+    nodes.clear ();
     }
 
 

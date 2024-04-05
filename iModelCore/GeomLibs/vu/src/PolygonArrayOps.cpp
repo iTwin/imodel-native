@@ -28,9 +28,9 @@ static bool LoopContainsLoop (TaggedPolygonR outerLoop, TaggedPolygonR innerLoop
     int edgeIndex;
     if (!innerLoop.TryGetPoint (0, testPoint))
         return false;
-    
+
     int pierce = bsiPolygon_piercePoint (&piercePoint, &fraction, &edgeIndex,
-            outerLoop.GetDataP (), (int)outerLoop.GetPointSize (), 
+            outerLoop.GetDataP (), (int)outerLoop.GetPointSize (),
                     (DPoint3dP)&direction,
                     &testPoint,
                     (DPoint3dP)&direction, 0.0);
@@ -130,7 +130,7 @@ void PolygonVectorOps::AppendWithParentIndices (TaggedPolygonVectorR dest, Tagge
             }
         }
     }
-    
+
 void PolygonVectorOps::ReverseForAreaXYSign (TaggedPolygonVector &polygons, double factor)
     {
     for (auto & p : polygons)
@@ -138,7 +138,7 @@ void PolygonVectorOps::ReverseForAreaXYSign (TaggedPolygonVector &polygons, doub
         if (PolygonOps::AreaXY (p.GetPointsR ()) * factor < 0.0)
             DPoint3dOps::Reverse (p.GetPointsR ());
         }
-    }    
+    }
 //! Search for polygons that are non-planar.
 //! Triangulate nonplanar polygons.
 //! When a polygon is triangulated, one triangle replaces it, others go at end.
@@ -148,7 +148,7 @@ void PolygonVectorOps::TriangulateNonPlanarPolygons (TaggedPolygonVectorR polygo
     bvector<int> indexArray;
     TaggedPolygon oldPolygon, newPolygon;
     bvector<DPoint3d> xyzArray;
-    
+
     DPoint3d centroid;
     DVec3d   normal;
     double area, perimeter, thickness;
@@ -205,8 +205,8 @@ void PolygonVectorOps::TriangulateNonPlanarPolygons (TaggedPolygonVectorR polygo
                         }
                     }
                 }
-            }        
+            }
         }
     }
-    
+
 END_BENTLEY_GEOMETRY_NAMESPACE

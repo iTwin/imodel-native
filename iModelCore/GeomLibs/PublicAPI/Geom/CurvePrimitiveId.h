@@ -16,7 +16,7 @@ typedef RefCountedPtr<struct CurvePrimitiveId> CurvePrimitiveIdPtr;
 /*=================================================================================**//**
 * CurvePrimitiveId is a class that identifies the source of a curve primitive.
 * It is stored as a packed structure with the "Type" indicating the format of the
-* contents. The most common form is a CurveTopologyId - containing the 
+* contents. The most common form is a CurveTopologyId - containing the
 * identification of the curve primitive from the wireframe representation of a
 * geometric primitive such as a B-Rep body or solid primitive. The CurvePrimitiveId
 * also contain information to identify the specific geometric primitive within
@@ -38,7 +38,7 @@ struct CurvePrimitiveId : RefCountedBase
         PolyfaceCut            = 9,        // CurveTopologyId.
         PolyfaceEdge           = 10,       // CurveTopologyId.
         UnspecifiedTopologyId  = 11,       // CurveTopologyId.
-        ConceptStationAlignmentIndex = 50, 
+        ConceptStationAlignmentIndex = 50,
         Max,
         CutGeometry            = 99        // Cut Associations.
     };
@@ -52,7 +52,7 @@ private:
     CurvePrimitiveId(Type edgeType, void const* edgeId, size_t edgeIdSize, uint16_t index = 0, uint16_t partIndex = 0);
     CurvePrimitiveId(Type edgeType, struct CurveTopologyId const& topologyId, uint16_t index = 0, uint16_t partIndex = 0);
     CurvePrimitiveId(void const* data, size_t size);
-    
+
 public:
     //! Allocate and fill with type and data.
     GEOMDLLIMPEXP static CurvePrimitiveIdPtr Create(Type type, void const* id, size_t size, uint16_t index = 0, uint16_t partIndex = 0);
@@ -92,7 +92,7 @@ public:
 
     //! Copy the id data into bytes.
     GEOMDLLIMPEXP void Store(bvector<uint8_t>& data) const;
-    //! Get debug string              
+    //! Get debug string
     GEOMDLLIMPEXP Utf8String GetDebugString() const;
 
 
