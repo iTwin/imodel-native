@@ -46,6 +46,7 @@ public:
     static Utf8CP constexpr ENABLE_EXPERIMENTAL_FEATURES = "ENABLE_EXPERIMENTAL_FEATURES";
     static Utf8CP constexpr USE_JS_PROP_NAMES = "USE_JS_PROP_NAMES";
     static Utf8CP constexpr DO_NOT_TRUNCATE_BLOB = "DO_NOT_TRUNCATE_BLOB";
+    static Utf8CP constexpr JSIFY_ELEMENTS = "JSIFY_ELEMENTS";
 
 private:
     OptionMap m_optionsByName;

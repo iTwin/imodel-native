@@ -14,7 +14,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlRow {
     public:
         //! Gets the number of ECSQL columns in the result set returned after calling Step on a SELECT statement.
         //! @return Number of ECSQL columns in the result set
-        ECDB_EXPORT virtual int GetColumnCount() const = 0;
+        virtual int GetColumnCount() const = 0;
 
                 //! Gets the value of the specified column.
         //! @remarks This is the generic way of getting the value of a specified column in the result set.
@@ -22,7 +22,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlRow {
         //! @return Value for the column
         //! @note Possible errors:
         //! - @p columnIndex is out of bounds
-        ECDB_EXPORT virtual IECSqlValue const& GetValue(int columnIndex) const =0;
+        virtual IECSqlValue const& GetValue(int columnIndex) const = 0;
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -684,11 +684,11 @@ struct ECSqlParseTreeFormatter final
 //=======================================================================================
 struct ECSqlStatementRow : public IECSqlRow {
     private:
-    ECSqlStatementCR m_stmt;
+        ECSqlStatementCR m_stmt;
     public:
-        ECDB_EXPORT ECSqlStatementRow(ECSqlStatement const& stmt) : m_stmt(stmt) {}
-        ECDB_EXPORT virtual int GetColumnCount() const override { return m_stmt.GetColumnCount(); }
-        ECDB_EXPORT virtual IECSqlValue const& GetValue(int columnIndex) const override { return m_stmt.GetValue(columnIndex);}
+        ECSqlStatementRow(ECSqlStatement const& stmt) : m_stmt(stmt) {}
+        virtual int GetColumnCount() const override { return m_stmt.GetColumnCount(); }
+        virtual IECSqlValue const& GetValue(int columnIndex) const override { return m_stmt.GetValue(columnIndex); }
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

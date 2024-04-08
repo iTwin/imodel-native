@@ -74,6 +74,7 @@ struct ECJsonSystemNames final
     public:
         static constexpr Utf8CP Id() { return "id"; }
         static constexpr Utf8CP ClassName() { return "className"; }
+        static constexpr Utf8CP ClassFullName() { return "classFullName"; }
 
         static constexpr Utf8CP SourceId() { return "sourceId"; }
         static constexpr Utf8CP SourceClassName() { return "sourceClassName"; }
