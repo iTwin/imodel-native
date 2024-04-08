@@ -14,6 +14,7 @@ always:
     ~chdir $(srcDir)
 %if defined(BMAKE_DELETE_ALL_TARGETS) || defined(PRG) || defined(TF_BUILD)
     npm run clean
+%endif
     npm run buildAndLint
 
 $(BuildContext)Delivery/lib : $(outDir)
