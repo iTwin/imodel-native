@@ -6,7 +6,6 @@ trigger:
     include:
       - main
       - release/*
-      - mike-pl-native
 pr:
   autoCancel: true
   drafts: false
@@ -14,6 +13,7 @@ pr:
     include:
       - main
       - release/*
+      - mike-pl-native
 
 parameters:
 - name: defaultNativeBranch
