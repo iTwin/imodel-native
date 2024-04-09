@@ -58,7 +58,7 @@ void NavValueTestFixture::SetUp()
             </ECRelationshipClass>
             <ECEntityClass typeName="CustomBook" modifier="abstract">
                 <ECCustomAttributes>
-                    <View>
+                    <QueryView>
                         <Query>
                             SELECT
                                 [ECInstanceId],
@@ -66,7 +66,7 @@ void NavValueTestFixture::SetUp()
                                 NAVIGATION_VALUE(ts.Book.Author, 1, 2)
                             FROM ts.Book
                         </Query>
-                    </View>
+                    </QueryView>
                 </ECCustomAttributes>
                 <ECNavigationProperty propertyName="Author" relationshipName="CustomBookHasAuthor" direction="Forward"/>
             </ECEntityClass>

@@ -134,14 +134,14 @@ bool ClassViews::IsValid(ECN::ECClassCR viewClass, ECDbCR conn){
         conn.GetImpl().Issues().ReportV(
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
-                IssueType::ECDbIssue, ECDbIssueId::ECDb_0702, "Invalid view class '%s'. 'View' customattribute must be applied to a 'Abstract' class.", viewClassName);
+                IssueType::ECDbIssue, ECDbIssueId::ECDb_0702, "Invalid view class '%s'. 'QueryView' customattribute must be applied to a 'Abstract' class.", viewClassName);
         return false;
     }
     if (viewClass.HasBaseClasses()) {
         conn.GetImpl().Issues().ReportV(
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
-                IssueType::ECDbIssue, ECDbIssueId::ECDb_0703, "Invalid view class '%s'. 'View' cannot be derived from another class", viewClassName);
+                IssueType::ECDbIssue, ECDbIssueId::ECDb_0703, "Invalid view class '%s'. 'QueryView' cannot be derived from another class", viewClassName);
         return false;
     }
     if (!conn.Schemas().GetDerivedClasses(viewClass).empty()) {
