@@ -6,6 +6,7 @@ trigger:
     include:
       - main
       - release/*
+      - mike-pl-native
 pr:
   autoCancel: true
   drafts: false
