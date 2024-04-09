@@ -31,6 +31,44 @@ describe("basic tests", () => {
     done();
   });
 
+  it("compress/decompress", () => {
+    const assertCompressAndThenDecompress = (sourceData: Uint8Array) => {
+      const compressData = iModelJsNative.DgnDb.zlibCompress(sourceData);
+      const decompressData = iModelJsNative.DgnDb.zlibDecompress(compressData, sourceData.length);
+      assert.deepEqual(sourceData, decompressData);
+    };
+    const randomData = (n: number) => {
+      return Uint8Array.from(Array.from({ length: n }, () => Math.floor(Math.random() * 10)));
+    };
+    assertCompressAndThenDecompress(randomData(1024 * 1));
+    assertCompressAndThenDecompress(randomData(1024 * 2));
+    assertCompressAndThenDecompress(randomData(1024 * 4));
+    assertCompressAndThenDecompress(randomData(1024 * 8));
+    assertCompressAndThenDecompress(randomData(1024 * 16));
+
+    const seedUri = path.join(getOutputDir(), "compress-decompress.bim");
+    if (fs.existsSync(seedUri)) {
+      fs.unlinkSync(seedUri);
+    }
+    const iModelDb = new iModelJsNative.DgnDb();
+    iModelDb.createIModel(seedUri, { rootSubject: { name: "test file" } });
+
+    const propData = randomData(1024 * 32);
+    iModelDb.saveFileProperty({ namespace: "test", name: "test" }, "hello", propData);
+    iModelDb.saveChanges();
+    const stmt = new iModelJsNative.SqliteStatement();
+    stmt.prepare(iModelDb, "SELECT [RawSize], [Data] FROM [be_Prop] WHERE [NameSpace] = 'test' AND [Name] = 'test'");
+    assert.equal(stmt.step(), DbResult.BE_SQLITE_ROW);
+    const rawSize = stmt.getValueInteger(0);
+    assert.notEqual(rawSize, 0);
+    const blob = stmt.getValueBlob(1);
+    stmt.dispose();
+    const propDecompressData = iModelJsNative.DgnDb.zlibDecompress(blob, rawSize);
+    assert.deepEqual(propData, propDecompressData);
+    iModelDb.saveChanges();
+    iModelDb.closeFile();
+  });
+
   it("schema synchronization", () => {
 
     const copyAndOverrideFile = (from: string, to: string) => {
