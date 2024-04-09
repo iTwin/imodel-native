@@ -19,7 +19,7 @@ parameters:
 - name: defaultNativeBranch
   displayName: Default Native Branch Used for PR Validation
   type: string
-  default: 'main' # Change to appropriate branch name when creating new release branch
+  default: 'mike-pl-native' # Change to appropriate branch name when creating new release branch
 - name: defaultCoreBranch
   displayName: Default itwinjs-core Branch Used for PR Validation
   type: string
