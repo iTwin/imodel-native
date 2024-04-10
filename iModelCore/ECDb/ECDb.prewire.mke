@@ -13,10 +13,10 @@ $(BuildContext)PublicAPI/ECDb : $(_MakeFilePath)PublicAPI/ECDb
 $(BuildContext)ECSchemas/ECDb/ECDbFileInfo.02.00.01.ecschema.xml : $(_MakeFilePath)ECDb/ECSchemas/ECDbFileInfo.02.00.01.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
-$(BuildContext)ECSchemas/ECDb/ECDbMap.02.00.03.ecschema.xml : $(_MakeFilePath)ECDb/ECSchemas/ECDbMap.02.00.03.ecschema.xml
+$(BuildContext)ECSchemas/ECDb/ECDbMap.02.00.04.ecschema.xml : $(_MakeFilePath)ECDb/ECSchemas/ECDbMap.02.00.04.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
-$(BuildContext)ECSchemas/ECDb/ECDbMeta.04.00.02.ecschema.xml : $(_MakeFilePath)ECDb/ECSchemas/ECDbMeta.04.00.02.ecschema.xml
+$(BuildContext)ECSchemas/ECDb/ECDbMeta.04.00.03.ecschema.xml : $(_MakeFilePath)ECDb/ECSchemas/ECDbMeta.04.00.03.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
 $(BuildContext)ECSchemas/ECDb/ECDbSchemaPolicies.01.00.01.ecschema.xml : $(_MakeFilePath)ECDb/ECSchemas/ECDbSchemaPolicies.01.00.01.ecschema.xml
