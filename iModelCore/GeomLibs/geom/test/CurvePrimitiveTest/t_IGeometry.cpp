@@ -347,8 +347,8 @@ TEST(Flatbuffer, GeometryGroup)
     array0.push_back (IGeometry::Create (cp0));
     array0.push_back (IGeometry::Create (cp1));
     bvector<Byte> buffer;
-    BentleyGeometryFlatBuffer::GeometryToBytes (array0, buffer);
-    BentleyGeometryFlatBuffer::BytesToVectorOfGeometry (buffer, array1);
+    BentleyGeometryFlatBuffer::GeometryToBytes(array0, buffer);
+    BentleyGeometryFlatBuffer::BytesToVectorOfGeometrySafe (buffer, array1);
     if (Check::Size (array0.size (), array1.size ()))
         {
         for (size_t i = 0; i < array0.size (); i++)
@@ -375,7 +375,7 @@ TEST(Flatbuffer, RoundTripHoleOrigin)
     array0.push_back(IGeometry::Create(bsurfB));
     bvector<Byte> buffer;
     BentleyGeometryFlatBuffer::GeometryToBytes(array0, buffer);
-    BentleyGeometryFlatBuffer::BytesToVectorOfGeometry(buffer, array1);
+    BentleyGeometryFlatBuffer::BytesToVectorOfGeometrySafe(buffer, array1);
     if (Check::Size(array0.size(), array1.size()))
         {
         for (size_t i = 0; i < array0.size(); i++)
@@ -906,7 +906,7 @@ TEST(FlatBuffer, IsNanValues)
             Check::True(g1.IsValid(), "Flat buffer access to bad geometry");
             Check::False (myValidator->IsValidGeometry (g1), "Validator should find errors");
             bvector<IGeometryPtr> g2;
-            BentleyGeometryFlatBuffer::BytesToVectorOfGeometry(buffer, g2);
+            BentleyGeometryFlatBuffer::BytesToVectorOfGeometrySafe(buffer, g2);
             Check::Size(0, g2.size (), "Flat buffer checked access");
             BentleyGeometryFlatBuffer__SetFBWriteValidation(oldWriteValidator);
             }
@@ -1020,10 +1020,10 @@ TEST(FlatBuffer, IsNanValues)
     bvector<IGeometryPtr> gVectorA {goodGCV, badGCV};
     bvector<IGeometryPtr> gVectorB, gVectorC, gVectorD;
     bvector<Byte> bufferAB;
-    BentleyGeometryFlatBuffer::GeometryToBytes (gVectorA, bufferAB, nullptr, &gVectorB);
-    Check::Size (1, gVectorB.size (), "should reject 1 of 2");
-    BentleyGeometryFlatBuffer::BytesToVectorOfGeometry(bufferAB, gVectorC, true, &gVectorD);
-    Check::Size (1, gVectorC.size (), "should round trip 1");
+    BentleyGeometryFlatBuffer::GeometryToBytes(gVectorA, bufferAB, nullptr, &gVectorB);
+    Check::Size (1, gVectorB.size(), "should reject 1 of 2");
+    BentleyGeometryFlatBuffer::BytesToVectorOfGeometrySafe(bufferAB, gVectorC, true, &gVectorD);
+    Check::Size (1, gVectorC.size(), "should round trip 1");
     }
 
 TEST(FlatBuffer, IsNanValuesPolyface)

@@ -1020,7 +1020,8 @@ void BentleyGeometryFlatBuffer::GeometryToBytes (CurveVectorCR source, bvector<B
     writer.FinishAndGetBuffer (g, buffer);
     }
 
-void BentleyGeometryFlatBuffer::GeometryToBytes (bvector<IGeometryPtr> &source,
+void BentleyGeometryFlatBuffer::GeometryToBytes(
+    bvector<IGeometryPtr> &source,
     bvector<Byte>& buffer,
     bvector<IGeometryPtr> *validGeometry,
     bvector<IGeometryPtr> *invalidGeometry)
@@ -2005,8 +2006,10 @@ static void ReadVariantGeometry(const BGFB::VariantGeometry * fbGeometry, bvecto
     if (fbGeometry == nullptr)
         return;
     if (fbGeometry->geometry_type() == BGFB::VariantGeometryUnion_VectorOfVariantGeometry)
-    FBReader::ReadVectorOfVariantGeometryDirect(
-        reinterpret_cast <const BGFB::VectorOfVariantGeometry *> (fbGeometry->geometry()), dest);
+        {
+        FBReader::ReadVectorOfVariantGeometryDirect(
+            reinterpret_cast <const BGFB::VectorOfVariantGeometry*>(fbGeometry->geometry()), dest);
+        }
     else
         {
         IGeometryPtr g = FBReader::ReadGeometry(fbGeometry);
@@ -2097,7 +2100,7 @@ MSBsplineSurfacePtr BentleyGeometryFlatBuffer::BytesToMSBsplineSurfaceSafe(Byte 
     return BytesToXXXSafe<MSBsplineSurfacePtr>(buffer, bufferSize, applyValidation, FBReader::ReadMSBsplineSurface);
     }
 
-bool BentleyGeometryFlatBuffer::BytesToVectorOfGeometry
+bool BentleyGeometryFlatBuffer::BytesToVectorOfGeometrySafe
 (
     bvector<Byte> &buffer,
     bvector<IGeometryPtr> &dest,

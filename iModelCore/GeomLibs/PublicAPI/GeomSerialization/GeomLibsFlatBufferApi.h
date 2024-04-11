@@ -59,7 +59,7 @@ static BGFBIMPEXP bool BytesToPolyfaceQueryCarrierSafe
 //!    </ul>
 //! </ul>
 //!
-static BGFBIMPEXP bool BytesToVectorOfGeometry
+static BGFBIMPEXP bool BytesToVectorOfGeometrySafe
 (
     bvector<Byte> &buffer,
     bvector<IGeometryPtr> &dest,
