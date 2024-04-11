@@ -383,7 +383,7 @@ static bool Size (size_t a, size_t b, char const*pName = NULL);
 static bool Ptrdiff (ptrdiff_t a, ptrdiff_t b, char const*pName = NULL);
 
 // Test if object is nullptr
-static bool isNull(void* object, char const *pString = nullptr);
+static bool IsNull(void* object, char const *pString = nullptr);
 
 template<typename T>
 static bool Near (bvector<T> &a, bvector<T> &b, char const*pName = NULL)

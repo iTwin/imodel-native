@@ -9977,7 +9977,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPrimitiveArrayProperty
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
     auto arrayField = descriptor->GetVisibleFields()[0]->AsPropertiesField()->AsArrayPropertiesField();
     ASSERT_TRUE(arrayField != nullptr);
-    
+
     rapidjson::Document expectedArrayFieldType;
     expectedArrayFieldType.Parse(Utf8PrintfString(R"({
         "ValueFormat": "Array",
@@ -12124,7 +12124,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructArrayPropertyVal
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["Values"]);
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -16033,14 +16033,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsCorrectContentWhenUs
 //=======================================================================================
 struct RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests : RulesDrivenECPresentationManagerContentTests
     {
-    StubPropertyFormatter m_propertyFormatter;
+    std::shared_ptr<StubPropertyFormatter> m_propertyFormatter;
     RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests()
-        : RulesDrivenECPresentationManagerContentTests(), m_propertyFormatter(true)
+        : RulesDrivenECPresentationManagerContentTests(), m_propertyFormatter(std::make_shared<StubPropertyFormatter>(true))
         {}
     virtual void _ConfigureManagerParams(ECPresentationManager::Params& params) override
         {
         RulesDrivenECPresentationManagerContentTests::_ConfigureManagerParams(params);
-        params.SetECPropertyFormatter(&m_propertyFormatter);
+        params.SetECPropertyFormatter(m_propertyFormatter);
         }
     };
 

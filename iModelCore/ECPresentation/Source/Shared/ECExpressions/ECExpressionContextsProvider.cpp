@@ -93,13 +93,17 @@ struct RulesEngineRootSymbolsContext : ExpressionContext
 {
 private:
     SymbolExpressionContextPtr m_internalContext;
+    std::unique_ptr<SystemSymbolProvider> m_systemSymbols;
     bvector<ProviderContext const*> m_contexts;
 
 private:
     RulesEngineRootSymbolsContext()
         : ExpressionContext(nullptr)
         {
-        m_internalContext = SymbolExpressionContext::Create(bvector<Utf8String>(), nullptr);
+        m_internalContext = SymbolExpressionContext::Create(nullptr);
+
+        m_systemSymbols = std::make_unique<SystemSymbolProvider>();
+        m_systemSymbols->PublishSymbols(*m_internalContext, bvector<Utf8String>());
 
         CommonRulesEngineSymbolsProvider commonSymbols;
         commonSymbols.PublishSymbols(*m_internalContext, bvector<Utf8String>());
@@ -841,7 +845,7 @@ struct ECDbSymbolsProvider : IECSymbolProvider
     struct Context : ProviderContext
         {
         ECDbExpressionSymbolProvider m_provider;
-        Context(IConnectionCR connection) : m_provider(connection.GetECDb(), connection.GetStatementCache()) {}
+        Context(IConnectionCR connection) : m_provider(connection.GetECDb().Schemas(), connection.GetDb(), connection.GetStatementCache()) {}
         };
 
 private:
