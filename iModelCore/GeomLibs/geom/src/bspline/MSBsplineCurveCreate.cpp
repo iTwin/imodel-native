@@ -499,7 +499,7 @@ bool closed,
 bool inputPointsHaveWeightsAppliedAlready
 )
     {
-    MSBsplineStatus status = MSB_ERROR;
+    MSBsplineStatus status = ERROR;
 
     if (order > 1
         && numPoints >= order
@@ -533,14 +533,18 @@ bool inputPointsHaveWeightsAppliedAlready
                 params.numKnots = BsplineParam::NumberInteriorKnots (numPoints, order, closed);
                 for (int i = 0; i < numKnots; i++)
                     knots[i] = pKnots[i];
-
-                // Bug #816037: ensure clamped knots for open curve so it draws correctly
-                if (!closed && !mdlBspline_curveHasClampedKnots(this))
-                    status = bspcurv_segmentCurve2(this, this, 0.0, 1.0, true);
                 }
             }
         }
-    return  status;
+
+    if (SUCCESS == status && !IsValidGeometry())
+        status = ERROR;
+    // Bug #816037: ensure clamped knots for open curve so it draws correctly
+    if (SUCCESS == status && !closed && !mdlBspline_curveHasClampedKnots(this))
+        status = bspcurv_segmentCurve2(this, this, 0.0, 1.0, true);
+    if (status != SUCCESS)
+        ReleaseMem();
+    return status;
     }
 
 MSBsplineCurvePtr MSBsplineCurve::CreateCapture ()

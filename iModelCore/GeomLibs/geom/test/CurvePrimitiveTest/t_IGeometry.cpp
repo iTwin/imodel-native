@@ -1125,8 +1125,12 @@ TEST(FlatBuffer, MSBsplineSurface)
         }
     }
     template <typename GeometryTypePtr>
-    void TestSpecialReader(GeometryTypePtr &validGeometry, GeometryTypePtr &invalidGeometry,
-    GeometryTypePtr (*bytesToGeometrySafe)(Byte const *bytes, size_t bufferSize, bool applyValidation))
+void TestSpecialReader(
+    GeometryTypePtr &validGeometry,
+    GeometryTypePtr &invalidGeometry,
+    GeometryTypePtr(*bytesToGeometrySafe) (Byte const *bytes, size_t bufferSize, bool applyValidation),
+    bool isMSBsplineSurfacePtr = false
+)
     {
     // suppress validation of write !!!
     auto nullValidator = GeometryValidatorPtr();
@@ -1138,25 +1142,29 @@ TEST(FlatBuffer, MSBsplineSurface)
         {
         // read with and without default checking.
         auto cpA1 = bytesToGeometrySafe(buffer.data(), bufferSize, true);
-        Check::True(cpA1.IsValid());   // Ptr test
-        Check::True(cpA1->IsValidGeometry(savedValidator));    // Geometry Test
+        Check::True(cpA1.IsValid(), "cpA1 is invalid"); // Ptr test
+        Check::True(cpA1->IsValidGeometry(savedValidator), "cpA1 is invalidated by savedValidator"); // Geometry Test
 
         auto cpA2 = bytesToGeometrySafe(buffer.data(), bufferSize, false);
-        Check::True(cpA2.IsValid());   // Ptr test
-        Check::True(cpA2->IsValidGeometry(savedValidator));    // Geometry Test
+        Check::True(cpA2.IsValid(), "cpA2 is invalid"); // Ptr test
+        Check::True(cpA2->IsValidGeometry(savedValidator), "cpA2 is invalidated by savedValidator"); // Geometry Test
         }
 
     BentleyGeometryFlatBuffer::GeometryToBytes(*invalidGeometry, buffer);
     if (Check::True(bufferSize > 0))
         {
-        // read with and without default checking.
-        auto cpA1 = bytesToGeometrySafe(buffer.data(), bufferSize, true);
-        Check::False(cpA1.IsValid());   // Ptr test
-
-        auto cpA2 = bytesToGeometrySafe(buffer.data(), bufferSize, false);
-        Check::True(cpA2.IsValid());   // Ptr test
-        Check::False(cpA2->IsValidGeometry(savedValidator));    // Geometry Test
-
+        auto cpB1 = bytesToGeometrySafe(buffer.data(), bufferSize, true);
+        Check::False(cpB1.IsValid(), "cpB1 is valid"); // Ptr test
+        auto cpB2 = bytesToGeometrySafe(buffer.data(), bufferSize, false);
+        if (isMSBsplineSurfacePtr)
+            {
+            Check::False(cpB2.IsValid(), "cpB2 is invalid"); // Ptr test
+            }
+        else
+            {
+            Check::True(cpB2.IsValid(), "cpB2 is invalid"); // Ptr test
+            Check::False(cpB2->IsValidGeometry(savedValidator), "cpB2 is invalidated by savedValidator"); // Geometry Test
+            }
         }
 
     BentleyGeometryFlatBuffer__SetFBWriteValidation(savedValidator);
@@ -1201,7 +1209,7 @@ TEST(FlatBuffer, SpecializedReaders)
     MSBsplineSurfacePtr bsurfA = SimpleBilinearPatch(1, 1, 0.5);
     MSBsplineSurfacePtr bsurfZ = SimpleBilinearPatch(1, 1, 0.5);
     bsurfZ->poles[2].x = myNan;
-    TestSpecialReader<MSBsplineSurfacePtr>(bsurfA, bsurfZ, BentleyGeometryFlatBuffer::BytesToMSBsplineSurfaceSafe);
+    TestSpecialReader<MSBsplineSurfacePtr>(bsurfA, bsurfZ, BentleyGeometryFlatBuffer::BytesToMSBsplineSurfaceSafe, true);
 
     auto polyfaceA = PolyfaceWithSinusoidalGrid(2, 3, 0.1, 0.2, 0.1, 3, false, true);
     auto polyfaceZ = PolyfaceWithSinusoidalGrid(2, 3, 0.1, 0.2, 0.1, 3, false, true);
