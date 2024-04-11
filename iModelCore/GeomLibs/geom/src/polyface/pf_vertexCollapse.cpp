@@ -34,7 +34,7 @@ static double ConstructTolerance (DRange3dCR range, double abstol, double rangeF
 size_t PolyfaceHeader::DecimateByEdgeCollapse (double abstol, double rangeFractionTol)
     {
     ConvertToVariableSizeSignedOneBasedIndexedFaceLoops ();
-    bvector<DPoint3d> newXYZ;  
+    bvector<DPoint3d> newXYZ;
     bvector<int> blockedIndex;
     bvector<size_t> oldToNew;
     size_t oldNumXYZ = m_point.size ();
@@ -103,7 +103,7 @@ size_t PolyfaceHeader::DecimateByEdgeCollapse (double abstol, double rangeFracti
                 index1 = s * (1 + (int)oldToNew[index0]);
                 }
             }
-        }    
+        }
     m_point.ClearAndAppend (newXYZ);
     return num0 - num1;
     }
@@ -187,7 +187,7 @@ void PackPoints (bvector<DPoint3d> &points)
             points.push_back (at(i).m_xyz);
             }
         }
-    
+
     for (size_t i = 0, n = size (); i < n; i++)
         {
         size_t j = at(i).m_parentClusterIndex;
@@ -265,10 +265,10 @@ ValidatedClusterData OriginalVertexData (MTGNodeId nodeId)
         {
         return ValidatedClusterData (ClusterData (xyz, nodeId, SIZE_MAX, 0.0),
                 true);
-        }        
+        }
     return ValidatedClusterData ();
     }
-// unconditional collapse -- to be called by policy-aware callers. . . 
+// unconditional collapse -- to be called by policy-aware callers. . .
 void CollapseCluster (size_t parentClusterIndex, size_t childClusterIndex, bool addEdgeCandidates)
     {
     if (parentClusterIndex < m_cluster.size () && childClusterIndex < m_cluster.size () && childClusterIndex != parentClusterIndex)
@@ -297,8 +297,8 @@ void GetClusterIndices (EdgeCandidate const &edge, size_t &clusterIndex0, size_t
         edgeBase0 = edge.m_nodeId;
         edgeBase1 = m_graph->FSucc (edge.m_nodeId);
         }
-    
-    clusterIndex0 = NodeToClusterIndex (edgeBase0);    
+
+    clusterIndex0 = NodeToClusterIndex (edgeBase0);
     clusterIndex1 = NodeToClusterIndex (edgeBase1);
     }
 
@@ -333,7 +333,7 @@ ValidatedDVec3d NewEdgeVector (MTGNodeId nodeId)
 double SumInteriorDihedralAngles (IndexVectorAndSingleton &edges)
     {
 // The neighbord data seeded at iC has these half edges:
-// 
+//
 //           iC | iB
 //     iD       |       iA
 //--------------+-----------------
@@ -373,7 +373,7 @@ void GetNodesAroundVertex (MTGNodeId nodeId, IndexVectorAndSingleton &data)
         MTGNodeId nodeIdB = nodeIdA;
         do
             {
-            nodeIdB = m_graph->VPred (nodeIdB); 
+            nodeIdB = m_graph->VPred (nodeIdB);
             data.indices.push_back (nodeIdB);
             } while (nodeIdB != nodeIdA && !m_graph->HasMaskAt (nodeIdB, MTG_BOUNDARY_MASK));
         }
@@ -491,7 +491,7 @@ size_t CollapseEdgesFromHeap (double collapseDistance, bool addEdgeCandidates)
             {
             // IGNORE edge between fixed vertices.
             }
-        else 
+        else
             {
             DPoint3d xyz0 = ClusterIndexToXYZ (pointIndex0);
             DPoint3d xyz1 = ClusterIndexToXYZ (pointIndex1);
@@ -563,7 +563,7 @@ bool BuildMeshAndClusterHeap ()
     m_graph->ClearMask (visitMask);
     size_t errors = 0;
     m_cluster.clear ();
-    // At each distinct vertex of the mesh .... 
+    // At each distinct vertex of the mesh ....
     MTGMask excludeMask = visitMask | MTG_EXTERIOR_MASK;
     MTGARRAY_SET_LOOP_TESTED (nodeId, m_graph, !m_graph->HasMaskAt (nodeId, excludeMask))
         {
@@ -620,7 +620,7 @@ size_t RunCollapse (double shortEdgeLength)
     static double s_fixedVertexPriority = -10.25;   // boundary vertex with angle 45 degrees or greater is fixed
     FreezeVerticesFromHeap (s_fixedVertexPriority, true); // Freeze boundary vertices with angle 45 degrees or greater.   Outbound edges go into the m_edgeCandidates heap.
     size_t numCollapse = 0;
-    do 
+    do
         {
         numCollapse += CollapseEdgesFromHeap (shortEdgeLength, true);
         RemoveAndFreezeTopCluster (true);
@@ -687,7 +687,7 @@ size_t PolyfaceHeader::RemoveCollapsedFacetsByPointIndexComparison ()
             }
         if (i1 < numIndex)
              i1++;   // i1 normally identifies the trailing zero.  Increment so copies include it and next step starts "after"
-            
+
         if (numDistinct < 3)
             {
             // this is a degenerate facet

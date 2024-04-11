@@ -21,13 +21,13 @@ DMatrix4d m_products;
 bvector<DPoint3d> m_strokePoints;   // availalable for use by _process methods.
 bvector<double> m_strokeParameters;   // availalable for use by _process methods.
 
-IFacetOptionsPtr m_bcurveStrokeOptions;    
+IFacetOptionsPtr m_bcurveStrokeOptions;
 IFacetOptionsPtr m_ellipseStrokeOptions;
 
 WireProductSums ()
     {
     m_products = DMatrix4d::FromZero ();
-    
+
     m_bcurveStrokeOptions = IFacetOptions::CreateForCurves ();
     m_bcurveStrokeOptions->SetParamsRequired (true);
     m_bcurveStrokeOptions->SetAngleTolerance (s_bsplineAngleTolerance);
@@ -141,13 +141,13 @@ void _ProcessBsplineCurve(ICurvePrimitiveCR curve, MSBsplineCurveCR bcurve, DSeg
     //    gaussRule.InitClenshawCurtis (s_numQuadraturePoint);
     else // default to gauss rules
         gaussRule.InitGauss (s_numQuadraturePoint);
-        
+
     int numQuadraturePoints = gaussRule.GetNumEval ();
     DMatrix4d products = DMatrix4d::FromZero ();
     for (size_t i = 0; bcurve.AdvanceToBezier  (segment, i, true);)
         {
         m_strokePoints.clear ();
-        m_strokeParameters.clear ();       
+        m_strokeParameters.clear ();
         segment.AddStrokes (m_strokePoints, NULL, &m_strokeParameters, *m_bcurveStrokeOptions, 0.0, 1.0, false, &bcurve);
         DPoint3d xyzCurve;
         double u, w;
@@ -271,7 +271,7 @@ DMatrix4d m_products;
 bvector<DPoint3d> m_strokePoints;   // availalable for use by _process methods.
 bvector<double> m_strokeParameters;   // availalable for use by _process methods.
 
-IFacetOptionsPtr m_bcurveStrokeOptions;    
+IFacetOptionsPtr m_bcurveStrokeOptions;
 IFacetOptionsPtr m_ellipseStrokeOptions;
 
 Transform m_worldToLocal;
@@ -283,7 +283,7 @@ DifferentialRotationWireProductSums (TransformCR worldToLocal)
     {
     m_worldToLocal = worldToLocal;
     m_products = DMatrix4d::FromZero ();
-    
+
     m_bcurveStrokeOptions = IFacetOptions::CreateForCurves ();
     m_bcurveStrokeOptions->SetParamsRequired (true);
     m_bcurveStrokeOptions->SetAngleTolerance (s_bsplineAngleTolerance);
@@ -405,13 +405,13 @@ void _ProcessBsplineCurve(ICurvePrimitiveCR curve, MSBsplineCurveCR bcurve, DSeg
     //    gaussRule.InitClenshawCurtis (s_numQuadraturePoint);
     else // default to gauss rules
         gaussRule.InitGauss (s_numQuadraturePoint);
-        
+
     int numQuadraturePoints = gaussRule.GetNumEval ();
     DMatrix4d products = DMatrix4d::FromZero ();
     for (size_t i = 0; bcurve.AdvanceToBezier  (segment, i, true);)
         {
         m_strokePoints.clear ();
-        m_strokeParameters.clear (); 
+        m_strokeParameters.clear ();
         segment.Multiply (m_worldToLocal);
         segment.AddStrokes (m_strokePoints, NULL, &m_strokeParameters, *m_bcurveStrokeOptions, 0.0, 1.0, false, &bcurve);
         DPoint3d xyzCurve;

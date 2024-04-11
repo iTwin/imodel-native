@@ -268,6 +268,7 @@ struct SchemaReader final
         ECN::FormatId GetFormatId(ECN::ECFormatCR) const;
 
         BentleyStatus EnsureDerivedClassesExist(ECN::ECClassId) const;
+        ECN::ECDerivedClassesList GetAllDerivedClasses(ECN::ECClassId) const;
 
         void ClearCache() const;
     };

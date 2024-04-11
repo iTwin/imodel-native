@@ -252,7 +252,7 @@ std::unique_ptr<SchemaPolicy> NoAdditionalRootEntityClassesPolicy::Create(ECDbCR
 //---------------------------------------------------------------------------------------
 BentleyStatus NoAdditionalRootEntityClassesPolicy::Evaluate(ECDbCR ecdb, ECN::ECEntityClassCR ecClass) const
     {
-    if (ecClass.HasBaseClasses() || ecClass.IsMixin() || IsException(ecClass))
+    if (ecClass.HasBaseClasses() || ecClass.IsMixin() || ClassViews::IsViewClass(ecClass) || IsException(ecClass))
         return SUCCESS;
 
     ecdb.GetImpl().Issues().ReportV(

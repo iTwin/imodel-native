@@ -1289,7 +1289,7 @@ int        clipType
 Public GEOMDLLIMPEXP int bsiDConic4d_solveTangentsPerpendicularToVector
 (
 DConic4dP pConic,
-double  *angles,   
+double  *angles,
 DVec3dR vector
 );
 
@@ -1297,7 +1297,7 @@ DVec3dR vector
 //! @remarks note that this inspects the data in the structure. The actual curve can have larger coordinates (to infinity if there is an asymptote)
 Public GEOMDLLIMPEXP double bsiDConic4d_maxAbsUnnormalizedXYZ (DConic4dCR conic);
 
-//! @return max weight part of center, vector0, vector90 
+//! @return max weight part of center, vector0, vector90
 Public GEOMDLLIMPEXP double bsiDConic4d_maxAbsWeight (DConic4dCR conic);
 
 //! @return max absolute difference between weights of center, vector0, and vector 90.

@@ -55,7 +55,7 @@ static BoxFaces::FaceDirections s_faceDirections[6] =
     {{1,2,0},{-1,1,-1}}
     };
 // edges organized by axis 012 and edge 0123
-static int s_axisEdgeVertex[3][4][2] = 
+static int s_axisEdgeVertex[3][4][2] =
 {
     {{0,1},{2,3},{4,5},{6,7}},
     {{0,2},{1,3},{4,6},{5,7}},
@@ -150,9 +150,9 @@ int BoxFaces::FaceIdToSecondarySelector (int faceId)
 BoxFaces::FaceDirections BoxFaces::GetFaceDirections (int faceId) const
     {
     faceId %= 6;
-    return s_faceDirections[faceId];    
+    return s_faceDirections[faceId];
     }
-    
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -242,7 +242,7 @@ void BoxFaces::GetSideWrappedFaceParameterMap (int faceIndex, DSegment1dR xMap, 
     // All faces are 0..1 Y.  Side X wraps.
     endFace = true;
     double distanceX, distanceY;
-    
+
     if (faceIndex == 0)
         {
         // Bottom.  X goes backwards
@@ -275,7 +275,7 @@ void BoxFaces::GetSideWrappedFaceParameterMap (int faceIndex, DSegment1dR xMap, 
     distanceRange.low.Init (0,0);
     distanceRange.high.Init (distanceX, distanceY);
     }
-    
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -290,7 +290,7 @@ DBilinearPatch3d BoxFaces::GetFace (int faceIndex) const
          m_corners[s_cornerIndexCCW[faceIndex][2]]
          );
     }
-    
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/

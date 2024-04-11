@@ -56,7 +56,7 @@ static bool CreateSortable
 (
 int vertexIndexA,
 MTGNodeId nodeA,
-int vertexIndexB, 
+int vertexIndexB,
 MTGNodeId nodeB,
 int vertexIndexC,
 MTGNodeId nodeC,
@@ -116,12 +116,12 @@ static int s_vertexIndexAtTetNode[12] =
     {
     VERTEX__A, VERTEX__B,
     VERTEX__B, VERTEX__C,
-    VERTEX__C, VERTEX__A, 
+    VERTEX__C, VERTEX__A,
     VERTEX__A, VERTEX__D,
     VERTEX__B, VERTEX__D,
     VERTEX__C, VERTEX__D,
     };
-    
+
 // The tet is created as floating edges.
 // These are twisted together in this order (to ensure genus==2!!!)
 static int s_twistOrder[8][2] =
@@ -154,7 +154,7 @@ static int s_nodeAtVertex [4] = {0, 1, 3, 7};
 //    VSucc walks around a vertex in the same direction.
 // Each MTG node is a "spot" sitting in the corner of the face.
 //
-// At the corresponding corner on the OTHER SIDE of the same face (i.e. a 
+// At the corresponding corner on the OTHER SIDE of the same face (i.e. a
 // neighboring tetrahedron) there is another MTG node. These two paired nodes
 // are "FaceMate" nodes.  The MultiCellularTopology object reports this with the
 // FaceMate method.
@@ -168,7 +168,7 @@ static int s_nodeAtVertex [4] = {0, 1, 3, 7};
 /       Note that the "arrow" from a node to its successor is to the left of its edge.
 //   Each node's VSucc ("VertexSuccessr") leads to the next node around its vertex.
 //
-// 
+//
 // The full construction sequence is:
 //    MTGMultiCellularTetrahedralTopology graph;
 //    for each tetrhedron
@@ -241,7 +241,7 @@ MTGNodeId &nodeD
     nodeD = FSucc (VSucc (nodeB));
     }
 // Return true if anyNodeOnSharedFace is the shared face of a interior tetrahedron.
-// 
+//
 // If fullTetrahedralTest is false, the only checking is for exterior mask and triangular shared face.
 // if fullTetrahedralTest is true, full 12-node closure tests are performed on both sides.
 bool GetAdjacentTetrahedraVertexIndices
@@ -357,7 +357,7 @@ MTGNodeId &nodeD
 
     for (int i = 0; i < 8; i++)
         VertexTwist (nodes[s_twistOrder[i][0]], nodes[s_twistOrder[i][1]]);
-        
+
     IndexTriangle newFaces[4];
     IndexTriangle::CreateSortable (vertexIndexA, nodes[0], vertexIndexB, nodes[2], vertexIndexC, nodes[4], newFaces[0]);
     IndexTriangle::CreateSortable (vertexIndexC, nodes[10], vertexIndexD, nodes[7], vertexIndexA, nodes[5], newFaces[1]);
@@ -387,7 +387,7 @@ MTGNodeId &nodeD
         }
     }
 
-// Add a tetrahedron.   This is a short arg list for callers that don't need to 
+// Add a tetrahedron.   This is a short arg list for callers that don't need to
 // know nodeId's returned.
 // Expected orientation: Triangle 012 is the CCW from inside. 3 is "above" this plane.
 void AddTetrahedron
@@ -520,7 +520,7 @@ void MarkVPredFaceMateChain (MTGNodeId seedNodeId, MTGMask visitMask, MTGNodeId 
 //  1) work by exterior EDGE rather than face.
 //  2) call a node "interiorBoundary" if it is part of the given (interior) complex
 //     but has no FaceMate.
-//  3) use the VSuccFaceMate chain to find 
+//  3) use the VSuccFaceMate chain to find
 // On output:
 //  1) Every node has a FaceMate
 //  2) True extrior nodes have MTG_EXTERIOR_MASK set.

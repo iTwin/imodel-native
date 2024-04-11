@@ -13,7 +13,7 @@ typedef struct CurveTopologyId const& CurveTopologyIdCR;
 
 /*=================================================================================**//**
 * The CurveTopologyId class identifies the source of a curve within a larger
-* wireframe entity such as a B-Rep body or SolidPrimitive. The "Type" enumeration 
+* wireframe entity such as a B-Rep body or SolidPrimitive. The "Type" enumeration
 * identifies the type of data stored.  The data itself is packed into a Byte array.
 * A CurveTopologyId is generally embedded with a CurvePrimitiveId. The CurvePrimitiveId
 * includes additional information to identify the curve within the GeometryStream.
@@ -44,7 +44,7 @@ enum class Type : uint8_t
     UnannouncedSectionWire      = 10,       // 2 Values -  Section Primitive(GPA) Index.
     VisEdgesAnalytic            = 11,       // Analytic Surface Curve Index.
     VisEdgesBoundedPlane        = 12,       // LoopIndex.
-    GeometryMap                 = 13,       // 
+    GeometryMap                 = 13,       //
     SweepProfile                = 14,       // Profile index, Curve Primitive Index
     SweepLateral                = 15,       // Lateral Index.
     CutWires                    = 16,
@@ -110,7 +110,7 @@ GEOMDLLIMPEXP bool operator==(CurveTopologyIdCR rhs) const;
 GEOMDLLIMPEXP bool operator<(CurveTopologyIdCR rhs) const;
 
 //! construct and return with FaceId and isolineIndex
-GEOMDLLIMPEXP static CurveTopologyId FromBRepIsoline(FaceId const& faceId, size_t isolineIndex);              
+GEOMDLLIMPEXP static CurveTopologyId FromBRepIsoline(FaceId const& faceId, size_t isolineIndex);
 //! Construct an return for brep edge with two faces.
 GEOMDLLIMPEXP static CurveTopologyId FromBRepSharedEdge(FaceId const& faceId0, FaceId const& faceId1);
 //! Construct and return for brep edge with one face.

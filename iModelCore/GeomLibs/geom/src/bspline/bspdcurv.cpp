@@ -663,7 +663,7 @@ int             dimension
     int         i, j, itmp, jtmp, ltmp, k, num, numProduct,
                 index, newIndex, status = SUCCESS;
     double      *prodP, *endP, *mP, factor, *dP0, *dP1;
-    
+
     k = order - 1;
     num = 2 * order - 1;
 
@@ -1348,13 +1348,13 @@ bool openAll                /* => forces opening */
     MSBsplineCurve  *cvP;
     size_t numCurves = inputCurves.size ();
     outputCurves.clear ();
-    if (numCurves == 1) 
+    if (numCurves == 1)
         outputCurves.push_back (inputCurves[0]->CreateCopy ());
     if (numCurves < 2)
         return true;
 
     if (numCurves > MAX_POLES)      return false;
-    
+
     numDistinct      = (int*)BSIBaseGeom::Malloc (numCurves * sizeof(int));
     knotMultiplicity = (int**)BSIBaseGeom::Malloc (numCurves * sizeof(int*));
     tags             = (int*)BSIBaseGeom::Malloc (numCurves * sizeof(int));
@@ -1590,7 +1590,7 @@ wrapup:
         if (distinctKnots[i])       msbspline_free (distinctKnots[i]);
         if (knotMultiplicity[i])    msbspline_free (knotMultiplicity[i]);
         }
-    
+
     BSIBaseGeom::Free (knotMultiplicity);
     BSIBaseGeom::Free (distinctKnots);
     BSIBaseGeom::Free (length);
@@ -1637,7 +1637,7 @@ int     dimension
     ScopedArray <double>dArray (dimension, diagonalP);
     double *b = bArray.GetData ();
     double *d = dArray.GetData ();
-    
+
     for (k = 1; k < dimension; k++)
         {
         if (fabs(d[k-1]) < 1.0e-14)

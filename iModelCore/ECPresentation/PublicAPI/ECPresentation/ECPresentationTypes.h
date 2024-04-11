@@ -589,6 +589,7 @@ protected:
     virtual void _SaveValue(Utf8CP nameSpace, Utf8CP key, BeJsConst value) = 0;
     virtual BeJsDocument _GetValue(Utf8CP nameSpace, Utf8CP key) const { return BeJsDocument(); };
 public:
+    virtual ~IJsonLocalState() {}
     void SaveValue(Utf8CP nameSpace, Utf8CP key, BeJsConst value) { _SaveValue(nameSpace, key, value); }
     BeJsDocument GetValue(Utf8CP nameSpace, Utf8CP key) const { return _GetValue(nameSpace, key); }
 };
@@ -603,7 +604,7 @@ private:
 
 protected:
     virtual void _SaveValue(Utf8CP nameSpace, Utf8CP key, BeJsConst value) override { m_storage->SaveValue(nameSpace, key, value.Stringify()); };
-    virtual BeJsDocument _GetValue(Utf8CP nameSpace, Utf8CP key) const override 
+    virtual BeJsDocument _GetValue(Utf8CP nameSpace, Utf8CP key) const override
         {
         BeJsDocument json(m_storage->GetValue(nameSpace, key));
         return json;

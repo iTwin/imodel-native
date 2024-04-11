@@ -145,8 +145,7 @@ int PresentationRulesetTester::CheckNode(NavNodeCR node, BeJsConst tree, int ind
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-PresentationRulesetTester::PresentationRulesetTester(BeTest::Host& host, BeFileNameCR rulesetsDir) 
-    : m_localState(std::make_shared<RuntimeLocalState>())
+PresentationRulesetTester::PresentationRulesetTester(BeTest::Host& host, BeFileNameCR rulesetsDir)
     {
     BeFileName assetsDirectory, temporaryDirectory;
     host.GetDgnPlatformAssetsDirectory(assetsDirectory);
@@ -154,7 +153,7 @@ PresentationRulesetTester::PresentationRulesetTester(BeTest::Host& host, BeFileN
     ECPresentationManager::Paths paths(assetsDirectory, temporaryDirectory);
 
     ECPresentationManager::Params params(paths);
-    params.SetLocalState(&m_localState);
+    params.SetLocalState(std::make_shared<JsonLocalState>(std::make_shared<RuntimeLocalState>()));
     m_presentationManager = new ECPresentationManager(params);
     m_presentationManager->GetLocaters().RegisterLocater(*DirectoryRuleSetLocater::Create(rulesetsDir.GetNameUtf8().c_str()));
     }

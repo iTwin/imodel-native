@@ -977,7 +977,7 @@ static DPoint3d FromSumOf (DPoint3dCR point0, double scale0, DPoint3dCR point1, 
 
 //! Return {point + matrix * (x,y,z)}
 //! @param [in] point base point
-//! @param [in] matrix 
+//! @param [in] matrix
 //! @param [in] x x component
 //! @param [in] y y component
 //! @param [in] z z component
@@ -985,7 +985,7 @@ static DPoint3d FromProduct (DPoint3dCR point, RotMatrixCR matrix, double x, dou
 
 //! Return {point + matrix * vector}
 //! @param [in] point base point
-//! @param [in] matrix 
+//! @param [in] matrix
 //! @param [in] vector vector part
 static DPoint3d FromProduct (DPoint3dCR point, RotMatrixCR matrix, DVec3dCR vector);
 

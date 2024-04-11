@@ -215,7 +215,7 @@ size_t IPolyfaceConstruction::AddColorIndexQuad (size_t index0, size_t index1, s
     {
     return _AddColorIndexQuad (index0, index1, index2, index3);
     }
-                     
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/

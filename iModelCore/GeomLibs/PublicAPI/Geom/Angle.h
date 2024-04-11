@@ -16,13 +16,13 @@ struct Angle
     friend GEOMDLLIMPEXP Angle operator +(Angle const&, Angle const&);
     friend GEOMDLLIMPEXP Angle operator -(Angle const&, Angle const&);
 
-private: 
+private:
     double m_radians;
 
     // this constructor is PRIVATE so that callers MUST say FromDegrees or FromRadians and cannot accidentally get degrees/radians mixed up.
     Angle(double radians){m_radians = radians;}
 
-public: 
+public:
     bool operator ==(Angle const& other) const {return m_radians == other.m_radians;}
     bool operator <(Angle const& other) const {return m_radians < other.m_radians;}
     bool operator >(Angle const& other) const {return m_radians > other.m_radians;}
@@ -76,7 +76,7 @@ public:
     GEOMDLLIMPEXP static bool IsNearZeroAllowPeriodShift(double radians);
 
 //! Test if {radians} is {radiansTol} or smaller.
-	GEOMDLLIMPEXP static bool IsNearZeroAllowPeriodShift(double radians, double radiansTol);	
+	GEOMDLLIMPEXP static bool IsNearZeroAllowPeriodShift(double radians, double radiansTol);
 
     //! Test if two angles are within {SmallAngle} (NOT allowing 2pi shift!!)
     GEOMDLLIMPEXP static bool NearlyEqual(double radiansA, double radiansB);
@@ -370,11 +370,11 @@ public:
     void AddYaw(AngleInDegrees const& a2) {m_yaw = m_yaw + a2;}
 
     //! constructor from all angles in radians
-    static YawPitchRollAngles FromRadians(double yawRadians, double pitchRadians, double rollRadians) 
+    static YawPitchRollAngles FromRadians(double yawRadians, double pitchRadians, double rollRadians)
         {return YawPitchRollAngles(AngleInDegrees::FromRadians(yawRadians), AngleInDegrees::FromRadians(pitchRadians), AngleInDegrees::FromRadians(rollRadians));}
 
     //! constructor from all angles in degrees
-    static YawPitchRollAngles FromDegrees(double yawDegrees, double pitchDegrees, double rollDegrees) 
+    static YawPitchRollAngles FromDegrees(double yawDegrees, double pitchDegrees, double rollDegrees)
         {return YawPitchRollAngles(AngleInDegrees::FromDegrees(yawDegrees), AngleInDegrees::FromDegrees(pitchDegrees), AngleInDegrees::FromDegrees(rollDegrees));}
 
     //! Try to extract angles from a RotMatrix

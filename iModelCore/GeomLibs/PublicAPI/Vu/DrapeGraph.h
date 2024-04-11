@@ -62,7 +62,7 @@ struct      DrapeGraph
 private:
     PlaneArray m_indexedPlanes;
     VuSetP m_pGraph;
-    size_t m_numVertical;    
+    size_t m_numVertical;
     size_t m_maxPlanes;
     double m_maxZFringe; // maximum amount that z coordinates can be moved outside the original range of each facet.
 

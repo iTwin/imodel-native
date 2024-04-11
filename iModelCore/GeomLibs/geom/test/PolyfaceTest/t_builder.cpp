@@ -46,7 +46,7 @@ TEST(PolyfaceBuilder,SingularRotation)
             builder->AddSolidPrimitive (*surface);
             Check::Shift (0,10,0);
             Check::SaveTransformed (*builder->GetClientMeshPtr ());
-            }   
+            }
         }
 
     Check::ClearGeometry ("PolyfaceBuilder.SingularRotation");

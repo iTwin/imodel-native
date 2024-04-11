@@ -947,7 +947,7 @@ static int main_manifest(int argc, char **argv){
     u8 *aEntry = &p->aDelBlk[i*GCENTRYBYTES(p)];
     i64 t;
     char aBuf[BCV_MAX_FSNAMEBYTES];
-    bcvBlockidToText(p, aEntry, aBuf);
+    bcvBlockidToText(NAMEBYTES(p), aEntry, aBuf);
     t = bcvGetU64(&aEntry[NAMEBYTES(p)]);
     printf("    %s (t=%lld)\n", aBuf, t);
   }
@@ -960,7 +960,7 @@ static int main_manifest(int argc, char **argv){
     printf("Database %d block list: (%d blocks)\n", i, pDb->nBlkLocal);
     for(j=0; j<pDb->nBlkLocal; j++){
       char aBuf[BCV_MAX_FSNAMEBYTES];
-      bcvBlockidToText(p, &pDb->aBlkLocal[j*NAMEBYTES(p)], aBuf);
+      bcvBlockidToText(NAMEBYTES(p), &pDb->aBlkLocal[j*NAMEBYTES(p)], aBuf);
       printf("    %s\n", aBuf);
     }
   }
@@ -1502,6 +1502,10 @@ static void bdDisconnectClient(
   bcv_close_socket(pClient->fd);
   pClient->fd = INVALID_SOCKET;
 
+  /* Free any message that was waiting for a reply */
+  sqlite3_free(pClient->pMsg);
+  pClient->pMsg = 0;
+
   if( pClient->apRef ){
     bdReleaseEntryRefs(pClient);
     sqlite3_free(pClient->apRef);
@@ -1989,7 +1993,7 @@ static void bdBlockDownloadCb(
   if( rc==SQLITE_OK ){
     if( p->cmd.mLog & BCV_LOG_EVENT ){
       char zName[BCV_MAX_FSNAMEBYTES];
-      bcvBlockidToText(pClient->pMan, pEntry->aName, zName);
+      bcvBlockidToText(pEntry->nName, pEntry->aName, zName);
       daemon_event_log(p, "writing %s to cache slot %d", zName, pEntry->iPos);
     }
     i64 iOff = (pEntry->iPos * p->c.szBlk);
@@ -2552,11 +2556,11 @@ static void bdHandleClientMessage(
   BcvMessage *pMsg = 0;
   int rc = SQLITE_OK;
 
-  assert( pClient->pMsg==0 );
   rc = bcvRecvMsg(pClient->fd, &pMsg);
   if( rc!=SQLITE_OK ){
     bdDisconnectClient(p, pClient, "client hangup");
   }else{
+    assert( pClient->pMsg==0 );
     bdLogRecvMsg(p, pClient, pMsg);
     switch( pMsg->eType ){
       case BCV_MESSAGE_ATTACH:

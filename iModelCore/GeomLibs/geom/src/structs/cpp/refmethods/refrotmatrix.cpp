@@ -704,11 +704,11 @@ double      tol = s_mediumRelTol
     double ratio;
     bool isOrtho = instance.IsOrthonormal(columns, axisScales, ratio, tol);
     bool isMirror = instance.Determinant() < 0.0;
-    
+
     double maxScale = axisScales.MaxAbs();
     double minScale = axisScales.MinAbs();
     scale = (allowMirror && isMirror) ? -maxScale : maxScale;
-    
+
     if (descaleColumns && scale != 0.0)
         {
         // overwrite unit columns with descaled columns
@@ -719,9 +719,9 @@ double      tol = s_mediumRelTol
     // Previous uniformity test was too tight for small scales: isUniformScale = minScale/maxScale > 1 - tol.
     // For example, scales = 0.0001+e, where |e| < 1.0e-14, were classified as nonuniform with default tol.
     // The current test adds an absolute tol to the previous test's relative tol to relax the test a bit:
-    //  minScale/maxScale > 1 - tol   =>   maxScale - minScale < maxScale * tol < (1 + maxScale) * tol 
+    //  minScale/maxScale > 1 - tol   =>   maxScale - minScale < maxScale * tol < (1 + maxScale) * tol
     bool isUniformScale = maxScale - minScale <= (1.0 + maxScale) * tol;
-    
+
     return isOrtho && isUniformScale && (allowMirror || !isMirror);
     }
 
@@ -901,7 +901,7 @@ int         preferredOrientation
 *
 * @param [out] pMatrix normalized matrix
 * @param [in] inMatrix The input matrix
-* @param [in] preferredOrientation 
+* @param [in] preferredOrientation
 * <pre>
 * <ul>
 * <li>1 for right handed system
@@ -1693,7 +1693,7 @@ RotMatrixR  rotation2
 
 //! @description Returns a (rotation) that is a right-handed signed permutation of axes.
 //!<ul>
-//!<li>The transform is described by directing the local u and v axes along positive or negative direction of any combination 
+//!<li>The transform is described by directing the local u and v axes along positive or negative direction of any combination
 //!     of global axes.
 //!<li>(0,1,0,1) creates an identity -- u along positive x, v along positive y.
 //!<li>)0,1,2,1) points u axis along x, v axis along negative z.  {w=u cross v} is positive y.

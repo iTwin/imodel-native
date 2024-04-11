@@ -188,7 +188,7 @@ bool GeometryValidator::IsValidGeometry(PolyfaceHeaderPtr const &geometry)
     GeometryValidatorPtr validator(this);
     return geometry->IsValidGeometry(validator);
     }
-// 
+//
 
 void GeometryValidator::RemoveInvalidGeometry(
     GeometryValidatorPtr &validator,

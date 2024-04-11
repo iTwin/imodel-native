@@ -17,7 +17,7 @@ struct VuMSBsplineSurfaceWeightFunction : public VuScalarFunction, VuCoordinateM
 MSBsplineSurfaceCR m_surface;
 double m_factor;
 double m_power;
-VuMSBsplineSurfaceWeightFunction (MSBsplineSurfaceCR surface, double hFactor, double hPower) 
+VuMSBsplineSurfaceWeightFunction (MSBsplineSurfaceCR surface, double hFactor, double hPower)
     : m_surface(surface)
     {
     m_factor = hFactor;
@@ -320,7 +320,7 @@ bool                laplacianSmoothing
         loop.reserve (boundaries[i].size ());
         for (size_t k = 0; k < boundaries[i].size (); k++)
             loop.push_back (DPoint3d::From (boundaries[i][k]));
-        vu_makeIndexedLoopFromArray (graph, 
+        vu_makeIndexedLoopFromArray (graph,
                 const_cast <DPoint3d*> (&loop[0]),
                 (int)loop.size (),
                 newNodeMask, newNodeMask, xyTolerance);
@@ -340,7 +340,7 @@ bool                laplacianSmoothing
         {
         meshYLength = dy / s_maxEdge;
         }
-    
+
     DPoint3d origin = range.low;
     double ax0, ay0, ax1, ay1;
     DoubleOps::SafeDivide (ax0, range.low.x - origin.x, meshXLength, 0.0);
@@ -561,10 +561,10 @@ void AddEvaluatedVuToPolyface (VuSetP graph, IPolyfaceConstructionR builder, MSB
         {
         // We triangulated.  So of course there are 3 nodes per face.
         // Really?  If the input polygon retraces itself, there will be
-        // sliver faces with only 2 edges.  
+        // sliver faces with only 2 edges.
         if (s_skipStrangeFaces != 0 && vu_faceLoopSize (faceP) > 4)
             continue;
-            
+
         VU_FACE_LOOP (currP, faceP)
             {
             int dataIndex = vu_getUserDataPAsInt (currP);
@@ -633,7 +633,7 @@ void SetParameterStep (
         numEdge = s_maxOnEdge;
     averageDistance = totalDistance / length.size ();
     }
- 
+
 // Extract the high multiplicity knots from knotData.
 static void CollectHighMultiplicityKnots
 (
@@ -713,8 +713,8 @@ void IPolyfaceConstruction::AddSmoothed (MSBsplineSurfaceCR surface)
         xSize *= hy / hx;
     else
         ySize *= hx / hy;
-    
-    VuSetP parametricMesh =  vu_createTriangulated (uvBoundaries, 
+
+    VuSetP parametricMesh =  vu_createTriangulated (uvBoundaries,
                 uBreaks, vBreaks,
                 xSize * s_edgeXSizeFactor, ySize * s_edgeYSizeFactor,
                 xSize * s_meshXSizeFactor, ySize * s_meshXSizeFactor,
@@ -751,12 +751,12 @@ void IPolyfaceConstruction::AddSmoothed (MSBsplineSurfaceCR surface)
               vu_smoothInteriorVertices (parametricMesh, &weightObject, &weightObject, s_smoothTol, s_maxSmoothPass,s_flipInterval, s_maxFlipsPerEdgePerPass, &shiftFraction, &numSweep);
               }
           else if (s_doParametricFlip)
-            vu_flipTrianglesToImproveScaledQuadraticAspectRatio (parametricMesh, 1.0/ xLength, 1.0/ yLength);  
+            vu_flipTrianglesToImproveScaledQuadraticAspectRatio (parametricMesh, 1.0/ xLength, 1.0/ yLength);
 
           if (numSplit == 0)
               break;
           }
-      }        
+      }
     AddEvaluatedVuToPolyface (parametricMesh, *this, surface);
     vu_freeVuSet (parametricMesh);
 

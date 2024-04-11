@@ -10,7 +10,7 @@ void getCurrentThreadStackInfo
 (
 DWORD_PTR * pBase,   // <= base (highest) address value
 DWORD64 *     pSize,   // <= max size of stack
-DWORD64 *     pPeak    // <= peak usage of stack 
+DWORD64 *     pPeak    // <= peak usage of stack
 );
 
 /*---------------------------------------------------------------------------------**//**

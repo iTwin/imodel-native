@@ -37,7 +37,7 @@ double sweep;       //!< Sweep angle in parameterization
 //! @param [in] theta0  start angle in parameter space
 //! @param [in] sweep  sweep angle
 //! @return DEllipse3d object.
-//! 
+//!
 //!
 static DEllipse3d From (double cx, double cy, double cz, double ux, double uy, double uz, double vx, double vy, double vz,
 double theta0 = 0.0,
@@ -76,7 +76,7 @@ double endFraction
 //! @param [in] theta0 start angle in parameter space
 //! @param [in] sweep sweep angle
 //! @return DEllipse3d object.
-//! 
+//!
 //!
 static DEllipse3d FromXYMajorMinor (double cx, double cy, double cz, double rx, double ry, double thetaX,
 double theta0 = 0.0,
@@ -91,7 +91,7 @@ double sweep = msGeomConst_2pi
 //! @param [in] theta0 start angle
 //! @param [in] sweep sweep angle
 //! @return DEllipse3d object.
-//! 
+//!
 //!
 static DEllipse3d FromPoints (DPoint3dCR center, DPoint3dCR point0, DPoint3dCR point90, double theta0, double sweep);
 
@@ -109,7 +109,7 @@ double sweepRadians         //!< [in] sweep angle.
 //! @param [in] start start point
 //! @param [in] middle mid point
 //! @param [in] end end point
-//! 
+//!
 //!
 static DEllipse3d FromPointsOnArc (DPoint3dCR start, DPoint3dCR middle, DPoint3dCR end);
 
@@ -274,7 +274,7 @@ static DEllipse3d FromRotatedAxes (DEllipse3dCR source, double newStart);
 //! independent of the plane normal.
 static ValidatedDEllipse3d FromEllipseSweptToPlane
 (
-DEllipse3dCR spaceEllipse,      //!< [in] known ellipse, in any position in space   
+DEllipse3dCR spaceEllipse,      //!< [in] known ellipse, in any position in space
 DPlane3dCR targetPlane,         //!< [in] target plane
 DVec3dCR sweepDirection         //!< [in] direction of sweep
 );
@@ -294,7 +294,7 @@ DVec3dCR sweepDirection         //!< [in] direction of sweep
 //! @param [in] vz  z part of 90 degree vector
 //! @param [in] theta0  start angle in parameter space
 //! @param [in] sweep  sweep angle
-//! 
+//!
 //!
 void Init
 (
@@ -323,7 +323,7 @@ double          sweep
 //! @param [in] thetaX angle from global x to local x
 //! @param [in] theta0 start angle in parameter space
 //! @param [in] sweep sweep angle
-//! 
+//!
 //!
 void InitFromXYMajorMinor
 (
@@ -345,7 +345,7 @@ double          sweep
 //! @param [in] point90 90 degree point
 //! @param [in] theta0 start angle
 //! @param [in] sweep sweep angle
-//! 
+//!
 //!
 void InitFromPoints
 (
@@ -363,7 +363,7 @@ double          sweep
 //! @param [in] middle mid point
 //! @param [in] end end point
 //! @return true if the three points are valid, false if colinear.
-//! 
+//!
 //!
 bool InitFromPointsOnArc
 (
@@ -385,7 +385,7 @@ DPoint3dCR      end
 //!                    is in the direction of the plane vector (rather than opposite).
 //! @return true if the arc length exceeds the chord length and the 2 points and plane vector
 //!                determine a clear plane.
-//! 
+//!
 //!
 bool InitArcFromPointPointArcLength
 (
@@ -402,7 +402,7 @@ DVec3dCR      planeVector
 //! @param [in] tangent start tangent
 //! @param [in] end end point
 //! @return true if circular arc computed.   false if start, end and tangent are colinear.
-//! 
+//!
 //!
 bool InitArcFromPointTangentPoint
 (
@@ -422,7 +422,7 @@ DPoint3dCR      end
 //! @param [in] startIN start point
 //! @param [in] end nominal end point
 //! @return false if the the three points are colinear.
-//! 
+//!
 //!
 bool InitFromArcCenterStartEnd
 (
@@ -439,7 +439,7 @@ DPoint3dCR      end
 //! @param [in] vector90IN 90 degree vector
 //! @param [in] theta0 start angle
 //! @param [in] sweepIN sweep angle
-//! 
+//!
 //!
 void InitFromVectors
 (
@@ -466,7 +466,7 @@ double          sweepIN
 //! @param [in] endPoint  new end point
 //! @param [in] ccw true to force counterclockwise direction, false for clockwise.
 //! @return true if the ellipse axes are independent.  false if the ellipse is degenerate.
-//! 
+//!
 //!
 bool SetStartEnd
 (
@@ -485,7 +485,7 @@ bool            ccw
 //! @param [in] r1 scale factor for column 1
 //! @param [in] theta0 start angle
 //! @param [in] sweepIN sweep angle
-//! 
+//!
 //!
 void InitFromScaledRotMatrix
 (
@@ -509,7 +509,7 @@ double          sweepIN
 //! @param [in] r1 scale factor for vector 90
 //! @param [in] theta0 start angle
 //! @param [in] sweepIN sweep angle
-//! 
+//!
 //!
 void InitFromScaledVectors
 (
@@ -540,7 +540,7 @@ DEllipse3dCR source
 //! @param [out] r1 scale factor for column 1
 //! @param [out] theta0 start angle
 //! @param [out] sweep sweep angle
-//! 
+//!
 //!
 void GetScaledRotMatrix
 (
@@ -562,7 +562,7 @@ double          &sweep
 //! @param [out] theta0 start angle
 //! @param [out] sweep sweep angle
 //! @param [out] worldToLocal inverse of localToWorld.
-//! 
+//!
 //!
 void GetScaledTransforms
 (
@@ -576,9 +576,9 @@ TransformR worldToLocal
 //!
 //! @description Initialize a circle from center, normal and radius.
 //! @param [in] centerIN circle center
-//! @param [in] normal plane normal 
+//! @param [in] normal plane normal
 //! @param [in] radius circle radius
-//! 
+//!
 //!
 void InitFromCenterNormalRadius
 (
@@ -590,7 +590,7 @@ double          radius
 //!
 //! @description Test whether the ellipse is complete (2pi range).
 //! @return true if the ellipse is complete
-//! 
+//!
 //!
 bool IsFullEllipse () const;
 
@@ -603,7 +603,7 @@ bool IsNearZeroRadius() const;
 bool IsAlmostEqual (DEllipse3dCR other, double tolerance) const;
 //! @return true if AlmostEqual center and projections of
 //!    0, 90, 180, and 270 degree points onto other.
-//! This is a test of touching the same points in space but not 
+//! This is a test of touching the same points in space but not
 //!    matching direction or parameterizations
 bool IsAlmostEqualFullEllipsePointSet(DEllipse3dCR other, double tolerance) const;
 
@@ -614,14 +614,14 @@ bool IsAlmostEqualByFractionMatch(DEllipse3dCR other, double tolerance) const;
 //!
 //! @description Set the ellipse sweep to a full 360 degrees (2pi radians), preserving direction of sweep.
 //! @remarks Start angle is left unchanged.
-//! 
+//!
 //!
 void MakeFullSweep ();
 
 //!
 //! @description Set the ellipse sweep to the complement of its current angular range.
 //! @remarks Full ellipse is left unchanged.
-//! 
+//!
 //!
 void ComplementSweep ();
 
@@ -635,7 +635,7 @@ void SelectSmallerSweep ();
 //! @description Compute the ellipse xyz point at a given parametric (angular) coordinate.
 //! @param [out] point evaluated point
 //! @param [in] theta angle
-//! 
+//!
 //!
 void Evaluate
 (
@@ -650,7 +650,7 @@ DPoint3d RadiansToPoint (double theta) const;
 //! @param [out] point evaluated point
 //! @param [in] xx local x coordinate: cos(theta)
 //! @param [in] yy local y coordinate: sin(theta)
-//! 
+//!
 //!
 void Evaluate
 (
@@ -663,7 +663,7 @@ double          yy
 //! @description Compute the ellipse xyz point at a given parametric (angular) coordinate.
 //! @param [out] point evaluated point (unit weight)
 //! @param [in] theta angle
-//! 
+//!
 //!
 void Evaluate
 (
@@ -675,7 +675,7 @@ double          theta
 //! @description Compute the ellipse start and end points.
 //! @param [out] startPoint start point of ellipse
 //! @param [out] endPoint end point of ellipse
-//! 
+//!
 //!
 void EvaluateEndPoints
 (
@@ -689,7 +689,7 @@ DPoint3dR       endPoint
 //! @param [out] dX first derivative vector
 //! @param [out] ddX second derivative vector
 //! @param [in] theta angle for evaluation
-//! 
+//!
 //!
 void Evaluate
 (
@@ -705,7 +705,7 @@ DPoint3d FractionToPoint (double fraction) const;
 //! @description Compute the ellipse xyz point at a given fraction of the angular parametric range.
 //! @param [out] point3dX point on ellipse
 //! @param [in] fraction fractional parameter for evaluation
-//! 
+//!
 //!
 void FractionParameterToPoint
 (
@@ -719,7 +719,7 @@ double          fraction
 //! @param [out] dX second derivative vector
 //! @param [out] ddX second derivative vector
 //! @param [in] fraction fractional parameter for evaluation
-//! 
+//!
 //!
 void FractionParameterToDerivatives
 (
@@ -734,7 +734,7 @@ double          fraction
 //! @param [out] point3dX Array of ellipse point, first derivative, etc.  Must contain room for numDerivatives+1 points.  point3dX[i] = i_th derivative.
 //! @param [in] numDerivative number of derivatives (0 to compute just the xyz point)
 //! @param [in] theta angle for evaluation
-//! 
+//!
 //!
 void Evaluate
 (
@@ -747,14 +747,14 @@ double          theta
 //! @description Convert a fractional parameter to ellipse parameterization angle.
 //! @param [in] fraction fraction of angular range
 //! @return angular parameter
-//! 
+//!
 //!
 double FractionToAngle (double fraction) const;
 
 //!
 //! @description Compute the determinant of the Jacobian matrix for the transformation from local coordinates (cosine, sine) to global xy-coordinates.
 //! @return determinant of Jacobian.
-//! 
+//!
 //!
 double DeterminantJXY () const;
 
@@ -770,7 +770,7 @@ DVec3d CrossProductOfBasisVectors () const;
 //! @param [out] frame transformation from (cosine, sine, z) coordinates to global xyz.
 //! @param [out] inverse inverse of frame.
 //! @return true if the requested frames were returned.
-//! 
+//!
 //!
 bool GetLocalFrame
 (
@@ -798,7 +798,7 @@ ValidatedTransform FractionToFrenetFrame (double fraction) const;
 //! @param [out] frame transformation from (cosine, sine, z) coordinates to global xyz.
 //! @param [out] inverse inverse of frame.
 //! @return true if the requested frames were returned.
-//! 
+//!
 //!
 bool GetXYLocalFrame
 (
@@ -817,7 +817,7 @@ TransformR   inverse
 //!                        Coordinate z is height of the initial point from the plane of the ellipse.
 //! @param [in] point point to convert to local coordinates
 //! @return true if ellipse axes are independent.
-//! 
+//!
 //!
 bool PointToXYLocal
 (
@@ -830,7 +830,7 @@ DPoint3dCR      point
 //! @remarks If the point is on the ellipse, this is the inverse of evaluating the ellipse at the angle.
 //! @param [in] point point to evaluate
 //! @return angle in ellipse parameterization
-//! 
+//!
 //!
 double PointToAngle (DPoint3dCR point) const;
 
@@ -842,7 +842,7 @@ double PointToAngle (DPoint3dCR point) const;
 //! @param [out] coff90 coefficient on vector towards 90 degree point
 //! @param [in] xYZ point to project onto plane
 //! @return true if the plane is well defined.
-//! 
+//!
 //!
 bool ProjectPointToPlane
 (
@@ -859,7 +859,7 @@ DPoint3dCR      xYZ
 //! @param [in] chordTol distance tolerance
 //! @param [in] angleTol turning angle tolerance
 //! @return number of strokes required on the full ellipse
-//! 
+//!
 //!
 int GetStrokeCount
 (
@@ -875,7 +875,7 @@ double          angleTol = 0.0
 //! @param [out] point array of cartesian points
 //! @param [in] trig array of local coords (e.g., (cos, sin)).
 //! @param [in] numPoint number of pairs
-//! 
+//!
 //!
 void EvaluateTrigPairs
 (
@@ -892,7 +892,7 @@ int             numPoint
 //! @param [in] trig array of local coords
 //! @param [in] numPoint number of pairs
 //! @return number of points found to be in the angular range of the ellipse.
-//! 
+//!
 //!
 int TestAndEvaluateTrigPairs
 (
@@ -905,7 +905,7 @@ int             numPoint
 //! @description Test if a specified angle is within the sweep of the ellipse.
 //! @param [in] angle angle (radians) to test
 //! @return true if angle is within the sweep angle of the elliptical arc.
-//! 
+//!
 //!
 bool IsAngleInSweep (double angle) const;
 
@@ -913,7 +913,7 @@ bool IsAngleInSweep (double angle) const;
 //! @description Convert an angular parameter to a fraction of bounded arc length.
 //! @param [in] angle angle (radians) to convert
 //! @return fractional parameter
-//! 
+//!
 //!
 double AngleToFraction (double angle) const;
 
@@ -921,7 +921,7 @@ double AngleToFraction (double angle) const;
 //! @description Get the start and end angles of the ellipse.
 //! @param [out] startAngle start angle
 //! @param [out] endAngle end angle
-//! 
+//!
 //!
 void GetLimits
 (
@@ -933,7 +933,7 @@ double          &endAngle
 //! @description Get the start and sweep angles of the ellipse.
 //! @param [out] startAngle start angle
 //! @param [out] sweepAngle sweep angle
-//! 
+//!
 //!
 void GetSweep
 (
@@ -945,7 +945,7 @@ double          &sweepAngle
 //! @description Set the start and end angles of the ellipse.
 //! @param [in] startAngle start angle
 //! @param [in] endAngle end angle
-//! 
+//!
 //!
 void SetLimits
 (
@@ -957,7 +957,7 @@ double          endAngle
 //! @description Set the start and sweep angles of the ellipse.
 //! @param [in] startAngle start angle
 //! @param [in] sweepIN sweep angle
-//! 
+//!
 //!
 void SetSweep
 (
@@ -970,7 +970,7 @@ double          sweepIN
 //! the revised ellipse has perpendicular axes in the conventional major/minor axis form.
 //! @remarks Inputs may be the same.
 //! @param [in] source ellipse with unconstrained axes
-//! 
+//!
 //!
 void InitWithPerpendicularAxes (DEllipse3dCR source);
 
@@ -986,7 +986,7 @@ void InitWithPerpendicularAxes (DEllipse3dCR source);
 //! @param [out] longSegment longer axis of local conic range box
 //! @param [out] shortSegment shorter axis of local conic range box
 //! @return size of the shorter dimension
-//! 
+//!
 //!
 double GetMajorMinorRangeMidlines
 (
@@ -998,7 +998,7 @@ DSegment3dR     shortSegment
 //! @description Make a copy of the source ellipse, reversing the start and end angles.
 //! @remarks Inputs may be the same.
 //! @param [in] source source ellipse
-//! 
+//!
 //!
 void InitReversed (DEllipse3dCR source);
 
@@ -1006,14 +1006,14 @@ void InitReversed (DEllipse3dCR source);
 //! @description Compute the magnitude of the tangent vector to the ellipse at the specified angle.
 //! @param [in] theta angular parameter
 //! @return tangent magnitude
-//! 
+//!
 //!
 double TangentMagnitude (double theta) const;
 
 //!
 //! @description Return arc length of ellipse.
 //! @return arc length of ellipse.
-//! 
+//!
 //!
 double ArcLength () const;
 
@@ -1022,7 +1022,7 @@ double ArcLength () const;
 //! @remarks Negative returned sweep angle corresponds to arclength traversed in the opposite direction of the ellipse sweep.
 //! @param [in] arcLength  arc length to invert
 //! @return sweep angle
-//! 
+//!
 //!
 double InverseArcLength (double arcLength) const;
 
@@ -1033,7 +1033,7 @@ double InverseArcLength (double arcLength) const;
 //! @param [in] fraction0 start fraction for interval to measure
 //! @param [in] fraction1 end fraction for interval to measure
 //! @return true if the arc length was computed.
-//! 
+//!
 //!
 bool FractionToLength
 (
@@ -1045,7 +1045,7 @@ double          fraction1
 //!
 //! @description Compute the xyz range limits of a 3D ellipse.
 //! @param [out] range computed range
-//! 
+//!
 //!
 void GetRange (DRange3dR range) const;
 
@@ -1053,7 +1053,7 @@ void GetRange (DRange3dR range) const;
 //! @description Compute the range of the ellipse in its own coordinate system.
 //! @remarks This depends on the start and sweep angles but not the center or axis coordinates.
 //! @param [out] range computed range
-//! 
+//!
 //!
 void GetLocalRange (DRange2dR range) const;
 
@@ -1075,7 +1075,7 @@ DRange1d ProjectedParameterRange (DRay3dCR ray) const;
 //! @param [out] trigPoints 2 points: cosine, sine, theta values of plane intersection
 //! @param [in] plane homogeneous plane equation
 //! @return The number of intersections, i.e. 0, 1, or 2
-//! 
+//!
 //!
 int IntersectPlane
 (
@@ -1093,10 +1093,10 @@ bool IntersectionOfStartAndEndTangents (DPoint3dR xyz) const;
 //! @param [out] angles 0,1, or 2 angles.   This is an array that must be allocated by the caller.
 //! @param [in] vector perpendicular vector.
 //! @return The number of solutions, i.e. 0, 1, or 2
-//! 
+//!
 int SolveTangentsPerpendicularToVector
 (
-double  *angles,   
+double  *angles,
 DVec3dR vector
 ) const;
 //!
@@ -1112,7 +1112,7 @@ DVec3dR vector
 //! @param [in] startPoint line start
 //! @param [in] endPoint line end
 //! @return the number of intersections.
-//! 
+//!
 //!
 int IntersectXYLine
 (
@@ -1126,7 +1126,7 @@ DPoint3dCR      endPoint
 
 //! @description Test if the ellipse is circular.
 //! @return true if circular
-//! 
+//!
 bool IsCircular () const;
 
 //! @description Test if the ellipse is circular.
@@ -1161,7 +1161,7 @@ bool IsCCWSweepXY () const;
 //!                            of the ellipse.
 //! @param [in] ellipse1 the other ellipse.
 //! @return the number of intersections.
-//! 
+//!
 //!
 int IntersectXYDEllipse3d
 (
@@ -1187,7 +1187,7 @@ DEllipse3dCR    ellipse1
 //! @param [out] pEllipse1Angle array of angles on the other ellipse
 //! @param [in] ellipse1 the other ellipse.
 //! @return the number of intersections.
-//! 
+//!
 //!
 int IntersectXYDEllipse3dBounded
 (
@@ -1218,7 +1218,7 @@ DEllipse3dCR    ellipse1
 //!                                of the ellipse.
 //! @param [in] ellipse1 the other ellipse.
 //! @return the number of intersections.
-//! 
+//!
 //!
 int IntersectSweptDEllipse3d
 (
@@ -1245,7 +1245,7 @@ DEllipse3dCR    ellipse1
 //! @param [out] pEllipse1Angle array of angles on the other ellipse.
 //! @param [in] ellipse1 the other ellipse.
 //! @return the number of intersections.
-//! 
+//!
 //!
 int IntersectSweptDEllipse3dBounded
 (
@@ -1272,7 +1272,7 @@ DEllipse3dCR    ellipse1
 //! @param [out] pLineParams array of parametric coordinates on the line.
 //! @param [in] segment the line segment
 //! @return the number of intersections.
-//!  
+//!
 //!
 int IntersectSweptDSegment3d
 (
@@ -1294,7 +1294,7 @@ DSegment3dCR    segment
 //! @param [out] pLineParams array of parametric coordinates on the line.
 //! @param [in] segment the line segment
 //! @return the number of intersections.
-//! 
+//!
 //!
 int IntersectSweptDSegment3dBounded
 (
@@ -1311,7 +1311,7 @@ DSegment3dCR    segment
 //! @param [out] pEllipseAngle  array (allocated by caller) of ellipse angles.
 //! @param [in]  point  space point
 //! @return the number of projection points
-//! 
+//!
 //!
 int ProjectPoint
 (
@@ -1327,7 +1327,7 @@ DPoint3dCR      point
 //! @param [out] pEllipseAngle  array (allocated by caller) of ellipse angles.
 //! @param [in] point  space point
 //! @return the number of projection points
-//! 
+//!
 //!
 int ProjectPointXY
 (
@@ -1343,7 +1343,7 @@ DPoint3dCR      point
 //! @param [out] pEllipseAngle  array (allocated by caller) of ellipse angles.
 //! @param [in] point  space point
 //! @return the number of projection points
-//! 
+//!
 //!
 int ProjectPointXYBounded
 (
@@ -1359,7 +1359,7 @@ DPoint3dCR      point
 //! @param [out] pEllipseAngle  array (allocated by caller) of ellipse angles.
 //! @param [in] point  space point
 //! @return the number of projection points
-//! 
+//!
 //!
 int ProjectPointBounded
 (
@@ -1376,7 +1376,7 @@ DPoint3dCR      point
 //! @param [out] minPoint  closest point
 //! @param [in] point  space point
 //! @return always true
-//! 
+//!
 //!
 bool ClosestPointXYBounded
 (
@@ -1394,7 +1394,7 @@ DPoint3dCR      point
 //! @param [out] minPoint  closest point
 //! @param [in] point  space point
 //! @return always true
-//! 
+//!
 //!
 bool ClosestPointBounded
 (
@@ -1416,7 +1416,7 @@ DPoint3dCR      point
 //! @param [in] startPoint line start
 //! @param [in] endPoint line end
 //! @return the number of intersections after applying ellipse and line parameter limits.
-//! 
+//!
 //!
 int IntersectXYLineBounded
 (
@@ -1434,7 +1434,7 @@ DPoint3dCR      endPoint
 //! @param [out] area  swept area
 //! @param [out] sweepOUT  swept angle (in radians)
 //! @param [in] point  base point for sweep line.
-//! 
+//!
 //!
 void XySweepProperties
 (
@@ -1461,7 +1461,7 @@ DPoint3dCR      point
 //!                two spans, and there may be zero weights.   For 7 or more poles
 //!                all weights can be positive.  The function may return fewer
 //!                poles.
-//! 
+//!
 //!
 void QuadricBezierPoles
 (
@@ -1494,7 +1494,7 @@ int             maxPole
 //! @param [in] point1 additional pass-through point.
 //! @return false if center, point0 and point1 are not independent, or if
 //!    point1 is too far away from center to allow ellipse constrution.
-//! 
+//!
 //!
 bool InitFromCenterMajorAxisPointAndThirdPoint
 (
@@ -1512,7 +1512,7 @@ DPoint3dCR      point1
 //! @param [out] rayPointBuffer  array (allocated by caller) to hold 4 ray points
 //! @param [in] ray  ray to search
 //! @return number of approach points computed.
-//! 
+//!
 //!
 int ClosestApproach
 (
@@ -1534,7 +1534,7 @@ DRay3dCR        ray
 //! @param [in] rY  scale factor (usually a true distance) for y direction.
 //! @param [in] startAngle start angle
 //! @param [in] sweepAngle sweep angle
-//! 
+//!
 //!
 void InitFromDGNFields3d
 (
@@ -1554,7 +1554,7 @@ double          sweepAngle
 //! @param [in] rY  scale factor (usually a true distance) for y direction.
 //! @param [in] startAngle start angle
 //! @param [in] sweepAngle sweep angle
-//! 
+//!
 //!
 void InitFromDGNFields3d
 (
@@ -1574,7 +1574,7 @@ double          sweepAngle
 //! @param [in] startAngle  start angle.
 //! @param [in] sweepAngle  sweep angle.
 //! @param [in] zDepth  z value for ellipse.
-//! 
+//!
 //!
 void InitFromDGNFields2d
 (
@@ -1597,7 +1597,7 @@ double          zDepth
 //! @param [in] startAngle  start angle.
 //! @param [in] sweepAngle  sweep angle.
 //! @param [in] zDepth  z value for ellipse.
-//! 
+//!
 //!
 void InitFromDGNFields2d
 (
@@ -1624,7 +1624,7 @@ double          zDepth
 //! @param [out] ry  scale factor (usually a true distance) for y direction.
 //! @param [out] startAngle  start angle.
 //! @param [out] sweepAngle  sweep angle.
-//! 
+//!
 //!
 void GetDGNFields3d
 (
@@ -1639,7 +1639,7 @@ double          &sweepAngle
 ) const;
 
 //!
-//! 
+//!
 //!
 void GetDGNFields2d
 (
@@ -1656,7 +1656,7 @@ double          &sweepAngle
 //! @param [out] localToGlobal  coordinate frame with origin at lower right of local range.
 //! @param [out] globalToLocal  transformation from world to local
 //! @param [out] range  ellipse range in the local coordinates.
-//! 
+//!
 //!
 bool AlignedRange
 (
@@ -1800,7 +1800,7 @@ double     tangentCircleRadius
 
 //! Search an array of ellipses for the one whose point at specified faction is closest to the searchPoint
 //! return (a copy of) the closest ellipse.
-//! 
+//!
 static ValidatedDEllipse3d ClosestEllipse
 (
 bvector<DEllipse3d> const &ellipses,        //!< [in] ellipses to search.
@@ -1826,8 +1826,8 @@ double centerToCenterDistance,  //!< [in] distance between centers
 double radiusA,                 //!< [in] radius of first circle.
 double radiusB,                 //!< [in] radius of second circle
 bool outerTangents,             //!< [in] true for tangents from outside to ouside, false for tangents that cross between centers
-DPoint2dR uvA,                  //!< [in] fractional coordinates of tangency point on circle A, for use in DPoint3d::FromInterpolateAndPerpendicularXY 
-DPoint2dR uvB                  //!< [in] fractional coordinates of tangency point on circle B, for use in DPoint3d::FromInterpolateAndPerpendicularXY 
+DPoint2dR uvA,                  //!< [in] fractional coordinates of tangency point on circle A, for use in DPoint3d::FromInterpolateAndPerpendicularXY
+DPoint2dR uvB                  //!< [in] fractional coordinates of tangency point on circle B, for use in DPoint3d::FromInterpolateAndPerpendicularXY
 );
 
 //! Construct an arc, line and arc to depart from pointA with directionA and radiusA, and arrive at pointB with directionB and radiusB

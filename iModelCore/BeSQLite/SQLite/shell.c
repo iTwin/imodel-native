@@ -580,6 +580,9 @@ zSkipValidUtf8(const char *z, int nAccept, long ccm);
 #ifndef HAVE_CONSOLE_IO_H
 # include "console_io.h"
 #endif
+#if defined(_MSC_VER)
+# pragma warning(disable : 4204)
+#endif
 
 #ifndef SQLITE_CIO_NO_TRANSLATE
 # if (defined(_WIN32) || defined(WIN32)) && !SQLITE_OS_WINRT
@@ -677,6 +680,10 @@ static short streamOfConsole(FILE *pf, /* out */ PerStreamTags *ppst){
   return ppst->reachesConsole;
 # endif
 }
+
+# ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+#  define ENABLE_VIRTUAL_TERMINAL_PROCESSING  (0x4)
+# endif
 
 # if CIO_WIN_WC_XLATE
 /* Define console modes for use with the Windows Console API. */
@@ -1227,6 +1234,10 @@ SQLITE_INTERNAL_LINKAGE char* fGetsUtf8(char *cBuf, int ncMax, FILE *pfIn){
 # endif
 }
 #endif /* !defined(SQLITE_CIO_NO_TRANSLATE) */
+
+#if defined(_MSC_VER)
+# pragma warning(default : 4204)
+#endif
 
 #undef SHELL_INVALID_FILE_PTR
 
@@ -5711,16 +5722,20 @@ SQLITE_EXTENSION_INIT1
 ** index is ix. The 0th member is given by smBase. The sequence members
 ** progress per ix increment by smStep.
 */
-static sqlite3_int64 genSeqMember(sqlite3_int64 smBase,
-                                  sqlite3_int64 smStep,
-                                  sqlite3_uint64 ix){
-  if( ix>=(sqlite3_uint64)LLONG_MAX ){
+static sqlite3_int64 genSeqMember(
+  sqlite3_int64 smBase,
+  sqlite3_int64 smStep,
+  sqlite3_uint64 ix
+){
+  static const sqlite3_uint64 mxI64 =
+      ((sqlite3_uint64)0x7fffffff)<<32 | 0xffffffff;
+  if( ix>=mxI64 ){
     /* Get ix into signed i64 range. */
-    ix -= (sqlite3_uint64)LLONG_MAX;
+    ix -= mxI64;
     /* With 2's complement ALU, this next can be 1 step, but is split into
      * 2 for UBSAN's satisfaction (and hypothetical 1's complement ALUs.) */
-    smBase += (LLONG_MAX/2) * smStep;
-    smBase += (LLONG_MAX - LLONG_MAX/2) * smStep;
+    smBase += (mxI64/2) * smStep;
+    smBase += (mxI64 - mxI64/2) * smStep;
   }
   /* Under UBSAN (or on 1's complement machines), must do this last term
    * in steps to avoid the dreaded (and harmless) signed multiply overlow. */
@@ -25230,7 +25245,8 @@ static int do_meta_command(char *zLine, ShellState *p){
       zSql = sqlite3_mprintf(
         "SELECT sql FROM sqlite_schema AS o "
         "WHERE (%s) AND sql NOT NULL"
-        "  AND type IN ('index','trigger','view')",
+        "  AND type IN ('index','trigger','view') "
+        "ORDER BY type COLLATE NOCASE DESC",
         zLike
       );
       run_table_dump_query(p, zSql);
@@ -28780,7 +28796,7 @@ static void usage(int showDetail){
   }else{
     eputz("Use the -help option for additional information\n");
   }
-  exit(1);
+  exit(0);
 }
 
 /*

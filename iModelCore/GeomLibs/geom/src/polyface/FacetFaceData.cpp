@@ -141,7 +141,7 @@ void FacetFaceData::SetParamDistanceRangeFromNewFaceData (PolyfaceHeaderR polyfa
             }
         } while (visitor->AdvanceToNextFace() && visitor->GetReadIndex() < endIndex);
 
-    
+
     if (0.0 != aveTotal)
         {
         DPoint2d            dS, standardDeviation;

@@ -13,7 +13,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 //! @param pCenter IN      ellipsoid center.
 //! @param radius  IN      radius of ellipsoid.
 //! @param pParameterRange IN      parameter range. If NULL, default is applied.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void               bsiDEllipsoid3d_setCenterRadius
 (
@@ -27,7 +27,7 @@ DRange2dCP pParameterRange
 //! Initialize an ellipsoid from full frame and range
 //! @param pTransform IN      coordinate frame.  If NULL, default is applied.
 //! @param pRange IN      parameter range.  If NULL, default is applied.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void               bsiDEllipsoid3d_set
 (
@@ -39,7 +39,7 @@ DRange2dCP pParameterRange
 //!
 //! Set the reference frame of the ellipsoid.
 //! @param pTransform IN      coordinate frame.  If NULL, default is applied.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void               bsiDEllipsoid3d_setFrame
 (
@@ -50,7 +50,7 @@ TransformCP pFrame
 //!
 //! Set the parameter range of the ellipsoid.
 //!
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void               bsiDEllipsoid3d_setNaturalParameterRange
 (
@@ -61,7 +61,7 @@ DRange2dCP pParameterRange
 //!
 //! Test if the ellipsoid range is the full parameter space.
 //!
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool               bsiDEllipsoid3d_isFull (DEllipsoid3dCP pInstance);
 
@@ -73,7 +73,7 @@ Public GEOMDLLIMPEXP bool               bsiDEllipsoid3d_isFull (DEllipsoid3dCP p
 //! @param pEllipse   OUT     silhouette ellipse.
 //! @param pMap       IN      additional transform to apply to the ellipsoid.
 //! @param pEyePoint  IN      eye point.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool               bsiDEllipsoid3d_getSilhouette
 (
@@ -93,7 +93,7 @@ DPoint4dCP pEyePoint
 //! @param pLineParameter OUT     array of 0, 1, or 2 parameters with respect to the line.
 //! @param DRay3d         IN      ray to intersect.
 //! @return number of intersections.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP int                bsiDEllipsoid3d_intersectDSegment3d
 (
@@ -113,7 +113,7 @@ DSegment3dCP pSegment
 //!                       unit sphere).  May be NULL.
 //! @param pLineParameter OUT     array of 0, 1, or 2 parameters with respect to the line.
 //! @return number of intersections.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP int                bsiDEllipsoid3d_intersectDRay3d
 (
@@ -130,7 +130,7 @@ DRay3dCP pRay
 //! matrix are applied.
 //! @param pTransform IN      transformation to apply.
 //! @param pSource IN      source ellipse.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiDEllipsoid_applyAffineDMatrix4d
 (
@@ -145,7 +145,7 @@ DEllipsoid3dCP pSource
 //! @param pPhi       OUT     z coordinate in spherical coordinates
 //! @param pR         OUT     radius in spherical coordinates
 //! @return false if the local point is at the origin.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool       bsiDEllipsoid3d_localToSpherical
 (
@@ -161,7 +161,7 @@ DPoint3dCP pPoint
 //! @param pWorld OUT     world coordinates
 //! @param pLocal IN      coordinates in local frame of ellipsoid.
 //! @return true if the local to world transformation was invertible.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void    bsiDEllipsoid3d_localToWorld
 (
@@ -174,7 +174,7 @@ DPoint3dCP pLocal
 //! Convert a local cartesian point to the world coordinate system.
 //! @param pLocal OUT     coordinates in local frame
 //! @param pWorld IN      world coordinates
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool        bsiDEllipsoid3d_worldToLocal
 (
@@ -185,7 +185,7 @@ DPoint3dCP pWorld
 
 //!
 //! Convert from parametric to cartesian, with the parametric coordinate given as trig values.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void    bsiDEllipsoid3d_trigParameterToPoint
 (
@@ -199,7 +199,7 @@ double      sinPhi
 
 //!
 //! test if a longitude angle is in the ellipsoid's parameter range.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool        bsiDEllipsoid3d_longitudeInRange
 (
@@ -209,7 +209,7 @@ double          longitude
 
 //!
 //! test if a latitude is in the ellipsoid's parameter range.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool        bsiDEllipsoid3d_latitudeInRange
 (
@@ -224,7 +224,7 @@ double          latitude
 //!           is on the equator.  90 degree vector is to the north pole.
 //! @param longitude IN      longitude angle (radians)
 //! @return true if the longitude is within the parameter range of the surface patch.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool     bsiDEllipsoid3d_getMeridian
 (
@@ -239,7 +239,7 @@ double      longitude
 //!           are 0 and 90 degrees latitude.
 //! @param latitude IN      latitude angle (radians)
 //! @return true if the latitude is within the parameter range of the surface.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool     bsiDEllipsoid3d_getParallel
 (
@@ -252,7 +252,7 @@ double      latitude
 //! @param pPoint OUT     evaluated point
 //! @param thetaFraction IN      angular position, as a fraction of the patch longitude range.
 //! @param phiFraction IN      axial position, as a fraction of the patch latitude range.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool     bsiDEllipsoid3d_fractionParameterToDPoint3d
 (
@@ -266,7 +266,7 @@ double    phiFraction
 //! @param thetaFraction  OUT     longitude, as a fraction of the patch longitude range
 //! @param phiFraction    OUT     latitude, as a fraction of the latitude range
 //! @param pPoint         IN      evaluated point
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool    bsiDEllipsoid3d_dPoint3dToFractionParameter
 (
@@ -281,7 +281,7 @@ DPoint3dCP pPoint
 //! @param pPhi   IN      latitude
 //! @param thetaFraction IN      longitude, as a fraction of the patch longitude range.
 //! @param phiFraction IN      latitude, as a fraction of the patch latitude range.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiDEllipsoid3d_fractionParameterToNaturalParameter
 (
@@ -297,7 +297,7 @@ double    phiFraction
 //! @param pPhi IN      latitude
 //! @param theta  IN      longitude
 //! @param phi    IN      latitude
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiDEllipsoid3d_naturalParameterToFractionParameter
 (
@@ -311,28 +311,28 @@ double    phi
 //!
 //! Test if the ellipsoid range is the full parameter space.
 //!
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool               bsiDEllipsoid3d_isComplete (DEllipsoid3dCP pInstance);
 
 //!
 //! @return true if the 1st natural parameter covers the complete range of the underlying
 //!           analytic surface.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool     bsiDEllipsoid3d_isParam1Complete (DEllipsoid3dCP pEllipsoid);
 
 //!
 //! @return true if the 2nd natural parameter covers the complete range of the underlying
 //!           analytic surface.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool     bsiDEllipsoid3d_isParam2Complete (DEllipsoid3dCP pEllipsoid);
 
 //!
 //! Get the reference frame of the ellipsoid.
 //!
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void               bsiDEllipsoid3d_getFrame
 (
@@ -345,7 +345,7 @@ TransformP pFrame
 //! a the system where the base is a unit xy circle.
 //! @param pInverseFrame OUT     inverse frame.
 //! @return true if the inverse is was computed.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool               bsiDEllipsoid3d_getInverseFrame
 (
@@ -356,7 +356,7 @@ TransformP pInverseFrame
 //!
 //! Evaluate the implicit function for the ellipsoid.
 //! @param pPoint IN      point where the implicit function is evaluated.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP double bsiDEllipsoid3d_implicitFunctionValue
 (
@@ -368,7 +368,7 @@ DPoint3dCP pPoint
 //! @param pPoint OUT     evaluated point
 //! @param theta  IN      longitude
 //! @param phi    IN      latitude
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool     bsiDEllipsoid3d_naturalParameterToDPoint3d
 (
@@ -386,7 +386,7 @@ double  phi
 //! @param pParam1 OUT     natural parameter
 //! @param pParam2 OUT     natural parameter
 //! @param pPoint  IN      xyz coordinates
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool         bsiDEllipsoid3d_dPoint3dToNaturalParameter
 (
@@ -402,7 +402,7 @@ DPoint3dCP pPoint
 //! @param pParam1End   IN      end value of natural parameter.
 //! @param pParam2Start IN      start value of natural parameter.
 //! @param pParam2End   IN      end value of natural parameter.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiDEllipsoid3d_getScalarNaturalParameterRange
 (
@@ -416,7 +416,7 @@ double    *pParam2End
 //!
 //! Get the parameter range of the ellipsoid.
 //!
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void               bsiDEllipsoid3d_getNaturalParameterRange
 (
@@ -426,7 +426,7 @@ DRange2dP pParameterRange
 
 //!
 //! Get the parameter range as start/sweep pairs.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void    bsiDEllipsoid3d_getScalarNaturalParameterSweep
 (
@@ -443,7 +443,7 @@ double          *pPhiSweep
 //! @param pParam1End   IN      end value of natural parameter.
 //! @param pParam2Start IN      start value of natural parameter.
 //! @param pParam2End   IN      end value of natural parameter.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiDEllipsoid3d_getCompleteNaturalParameterRange
 (

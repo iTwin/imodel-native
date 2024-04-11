@@ -368,6 +368,7 @@ void QueryJsonAdaptor::GetMetaData(QueryProperty::List& list, ECSqlStatement con
         std::string className = col.IsGeneratedProperty() || isSystem ? "" : prop->GetClass().GetFullName();
         std::string typeName = col.GetDataType().IsNavigation() ? "navigation" : prop->GetTypeFullName();
         std::string name = col.IsGeneratedProperty() ? prop->GetDisplayLabel() : prop->GetName();
+        std::string accessString = col.IsGeneratedProperty() ? prop->GetDisplayLabel() : col.GetPropertyPath().ToString();
 
         // Blobs are abbreviated as a Json string with info about the blob. See RenderBinaryProperty().
         if (m_abbreviateBlobs && typeName == "binary") {
@@ -430,7 +431,7 @@ void QueryJsonAdaptor::GetMetaData(QueryProperty::List& list, ECSqlStatement con
             suffix.Sprintf("_%d", uniqueJsMembers[jsName]);
             jsName.append(suffix);
         }
-        list.append(className, jsName, name, typeName, col.IsGeneratedProperty(), extendType, i);
+        list.append(className, accessString, jsName, name, typeName, col.IsGeneratedProperty(), extendType, i);
     }
 }
 

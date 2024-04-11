@@ -812,26 +812,42 @@ SchemaSync::Status SchemaSync::Pull(SyncDbUri const& syncDbUri, SchemaImportToke
 
 	BeMutexHolder holder(m_conn.GetImpl().GetMutex());
     auto& mainDisp = m_conn.Schemas().Main();
-    // Policy policy = PolicyManager::GetPolicy(SchemaImportPermissionPolicyAssertion(m_conn, schemaImportToken));
-    // if (!policy.IsSupported()) {
-    //     LOG.error("Failed to drop ECSchema: Caller has not provided a SchemaImportToken.");
-    //     return Status::ERROR;
-    // }
 
     mainDisp.OnBeforeSchemaChanges().RaiseEvent(m_conn, SchemaChangeType::SchemaImport);
-    SchemaImportContext ctx(m_conn, SchemaManager::SchemaImportOptions(), /* synchronizeSchemas = */true);
     m_conn.ClearECDbCache();
 
     const auto effectiveSyncDbUri = syncDbUri.IsEmpty() ? GetDefaultSyncDbUri() : syncDbUri;
-    const auto rc = PullInternal(effectiveSyncDbUri, {});
+    auto rc = PullInternal(effectiveSyncDbUri, {});
 	if (rc != Status::OK) {
         return rc;
     }
 
+    rc = UpdateDbSchema();
+	if (rc != Status::OK) {
+        return rc;
+	}
+
+    mainDisp.OnAfterSchemaChanges().RaiseEvent(m_conn, SchemaChangeType::SchemaImport);
+	STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaSync::Pull");
+    return rc;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaSync::Status SchemaSync::UpdateDbSchema() {
+    ECDB_PERF_LOG_SCOPE("Updating sqlite schema");
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaSync::UpdateDbSchema");
+
+	BeMutexHolder holder(m_conn.GetImpl().GetMutex());
+    SchemaImportContext ctx(m_conn, SchemaManager::SchemaImportOptions(), /* synchronizeSchemas = */true);
+    auto& mainDisp = m_conn.Schemas().Main();
+    m_conn.ClearECDbCache();
+
     if (SUCCESS != mainDisp.GetDbSchema().ForceReloadTableAndIndexesFromDisk()) {
         return Status::ERROR;
     }
-    // pull changes local schema
+
     if (SUCCESS != mainDisp.CreateOrUpdateRequiredTables()) {
         return Status::ERROR;
     }
@@ -849,10 +865,9 @@ SchemaSync::Status SchemaSync::Pull(SyncDbUri const& syncDbUri, SchemaImportToke
     }
 
     m_conn.ClearECDbCache();
-    mainDisp.OnAfterSchemaChanges().RaiseEvent(m_conn, SchemaChangeType::SchemaImport);
 
-	STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaSync::Pull");
-    return rc;
+	STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaSync::UpdateDbSchema");
+    return Status::OK;
 }
 
 //---------------------------------------------------------------------------------------

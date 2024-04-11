@@ -60,7 +60,7 @@ bool TestOverlap (DRange3dCR rangeA, DRange3dCR rangeB)
     return rangeA.IntersectsWith (rangeB, m_distance, 3);
     }
 
-virtual bool TestInteriorInteriorPair (DRange3dCR rangeA, DRange3dCR rangeB) override 
+virtual bool TestInteriorInteriorPair (DRange3dCR rangeA, DRange3dCR rangeB) override
   {
   return m_II.Count (TestOverlap (rangeA, rangeB));
   }
@@ -184,7 +184,7 @@ TEST(PFRangeTree,CollectClash)
     bvector<std::pair<size_t, size_t>> hits;
     XYZRangeTreeMultiSearch searcher;
     PolyfaceRangeTree::CollectClashPairs (*mesh1, *rangeTree1, *mesh2, *rangeTree2, 0.0, hits, 10000, searcher);
-    Check::Size (numX * numY, hits.size (), "hits");    
+    Check::Size (numX * numY, hits.size (), "hits");
     }
 #ifdef COMPILE_bvRangeTree
 
@@ -207,7 +207,7 @@ void TestPolyfaceRangeTree01 (size_t numX, size_t numY, size_t numZ)
     PolyfaceIndexedHeapRangeTreePtr rangeTree2 = PolyfaceIndexedHeapRangeTree::CreateForPolyface (*mesh1);
     bvector<size_t> hit0, hit1, hit2;
     DRange3d range = DRange3d::From (DPoint3d::From (1,1,1));
-    
+
     for (double expansion = 0.001; expansion < 3.0; expansion *= 50)
         {
         rangeTree0->CollectInRange (hit0, range, expansion);
@@ -244,7 +244,7 @@ TEST(PolyfaceRangeTree01,CollectInRange)
     TestPolyfaceRangeTree01 (3,2,8);
     TestPolyfaceRangeTree01 (13,21,82);
 
-    }    
+    }
 #endif
 #endif
 
@@ -381,7 +381,7 @@ TEST(PolyfaceOffset,OpenMesh2)
         {
         shifter.DoShift0 ();
         Check::SaveTransformed (*mesh3);
-        }    
+        }
     Check::ClearGeometry ("PolyfaceOffset.OpenMesh2");
     }
 
@@ -620,7 +620,7 @@ TEST(PolyfaceOffset,Torus)
             }
         }
     Check::ClearGeometry ("PolyfaceOffset.Torus");
-    
+
     }
 
 /*---------------------------------------------------------------------------------**//**

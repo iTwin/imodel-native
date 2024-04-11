@@ -131,7 +131,7 @@ struct  Array : bvector <BCurveSegmentSummary>,
     MSBsplineCurveCP m_curve;
     Transform m_worldToLocal;
     IFacetOptionsCR m_facetOptions;
-    
+
     Array (MSBsplineCurveCP curve, RotMatrixCP worldToLocal, IFacetOptionsCR options)
         : m_curve (curve), m_facetOptions (options)
         {
@@ -148,7 +148,7 @@ struct  Array : bvector <BCurveSegmentSummary>,
         {
         if (m_curve->GetBezier (bezier, bezierIndex))
             {
-            bezier.BuildWorkPoles (m_worldToLocal);        
+            bezier.BuildWorkPoles (m_worldToLocal);
             return true;
             }
         return false;
@@ -172,7 +172,7 @@ struct  Array : bvector <BCurveSegmentSummary>,
             return false;
         bvector<DPoint3d> &points = at(index).m_points;
         bvector<double> &params = at(index).m_params;
-        
+
         if (points.size () > 0)
             return true;
         BCurveSegment bezier;
@@ -255,7 +255,7 @@ struct  Array : bvector <BCurveSegmentSummary>,
                     segment.FractionToPoint(xyz1, upperFraction);
                     xyz1.z = 0.0;
                     range.InitFrom (xyz0, xyz1);
-                    push_back (BCurveSegmentSummary (segment.Index (), range, lowerFraction, upperFraction));                        
+                    push_back (BCurveSegmentSummary (segment.Index (), range, lowerFraction, upperFraction));
                     // If there are repeated, almost equal fractions, the lower-to-upper update
                     // only happens when the "real" next gets hit.
                     // Hmmm. should dups "near 1" be forced up to 1?

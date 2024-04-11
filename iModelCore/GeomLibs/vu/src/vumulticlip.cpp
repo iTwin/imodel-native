@@ -33,7 +33,7 @@ VuMultiClip ()
     {
     m_pGraph = vu_newVuSet (0);
     m_pFaceArray = vu_grabArray (m_pGraph);
-    vu_setTol (m_pGraph, 0.0, sRelTol); 
+    vu_setTol (m_pGraph, 0.0, sRelTol);
     m_debug = 0;
     }
 
@@ -100,7 +100,7 @@ bool AddClipper (DPoint3d *pXYZArray, bool *pMarkBit, int numXYZ) override
     vu_stackPush (m_pGraph);
     AddMarkedPolygon (pXYZArray, pMarkBit, numXYZ,
                         s_SECONDARY_BOUNDARY_MASK, s_CALLER_MARK_MASK);
-    
+
     vu_mergeLoops (m_pGraph);
     vu_regularizeGraph (m_pGraph);
 
@@ -159,7 +159,7 @@ void FinishClip (FaceMode faceMode) override
 
     if (m_debug > 0)
         vu_printFaceLabels (m_pGraph, "Final");
-        
+
     }
 
 void SetupForLoopOverFaces (bool primarySelect, bool clipperSelect) override

@@ -9,7 +9,7 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
 #define MSGEOM_SMALL_SET_SIZE  8
 
-    
+
 #include "polycoff.h"
 #include "rotconic.h"
 #include "capi/smallsetrange1d_capi.h"

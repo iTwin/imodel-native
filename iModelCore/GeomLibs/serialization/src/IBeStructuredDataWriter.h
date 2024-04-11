@@ -49,13 +49,13 @@ struct IBeStructuredDataWriter
         GEOMAPI_VIRTUAL BeJsonStatus _WriteNamedSetStart (Utf8CP name, Utf8CP namespaceURI)  = 0;
         GEOMAPI_VIRTUAL BeJsonStatus _WriteNamedSetEnd (Utf8CP name)  = 0;
 
-        //! Writes an element with plain string as content. 
+        //! Writes an element with plain string as content.
         GEOMAPI_VIRTUAL BeJsonStatus _WriteNamedText(Utf8CP name, Utf8CP text, bool nameOptional) = 0;
 
-        //! Writes an element with a bool as content. 
+        //! Writes an element with a bool as content.
         GEOMAPI_VIRTUAL BeJsonStatus _WriteNamedBool(Utf8CP name, bool value, bool nameOptional) = 0;
 
-        //! Writes an element with Int32 as content. 
+        //! Writes an element with Int32 as content.
         GEOMAPI_VIRTUAL BeJsonStatus _WriteNamedInt32 (Utf8CP name, int value, bool nameOptional) = 0;
 
         //! Writes an element with a double as content.
@@ -78,7 +78,7 @@ struct IBeStructuredDataWriter
 
         GEOMAPI_VIRTUAL BeJsonStatus _WriteContent(Utf8CP value) = 0;
 
-    public:  
+    public:
         //! Writes the start of an element node with the provided name, but possibly omit the name at discretion of the writer.
         //! Expected usage is that an xml writer will use the name, json writer will omit.
         //! Xml is noop for separator
@@ -105,13 +105,13 @@ struct IBeStructuredDataWriter
         BeJsonStatus WriteNamedSetStart (Utf8CP name, Utf8CP namespaceURI) { return _WriteNamedSetStart(name, namespaceURI); }
         BeJsonStatus WriteNamedSetEnd (Utf8CP name) { return _WriteNamedSetEnd(name); }
 
-        //! Writes an element with plain string as content. 
+        //! Writes an element with plain string as content.
         BeJsonStatus WriteNamedText(Utf8CP name, Utf8CP text, bool nameOptional) { return _WriteNamedText(name, text, nameOptional); }
 
-        //! Writes an element with a bool as content. 
+        //! Writes an element with a bool as content.
         BeJsonStatus WriteNamedBool(Utf8CP name, bool value, bool nameOptional) { return _WriteNamedBool(name, value, nameOptional); }
 
-        //! Writes an element with Int32 as content. 
+        //! Writes an element with Int32 as content.
         BeJsonStatus WriteNamedInt32 (Utf8CP name, int value, bool nameOptional) { return _WriteNamedInt32(name, value, nameOptional); }
 
         //! Writes an element with a double as content.
@@ -121,13 +121,13 @@ struct IBeStructuredDataWriter
         BeJsonStatus WriteBlockedDoubles (Utf8CP itemName, bool itemNameOptional, double const *data, size_t n) { return _WriteBlockedDoubles(itemName, itemNameOptional, data, n); }
 
         //! Writes multiple doubles.
-        BeJsonStatus WriteArrayOfBlockedDoubles (Utf8CP longName, Utf8CP shortName, Utf8CP itemName, bool itemNameOptional, double const *data, size_t numPerBlock, size_t numBlock) 
+        BeJsonStatus WriteArrayOfBlockedDoubles (Utf8CP longName, Utf8CP shortName, Utf8CP itemName, bool itemNameOptional, double const *data, size_t numPerBlock, size_t numBlock)
             {
             return _WriteArrayOfBlockedDoubles(longName, shortName, itemName, itemNameOptional, data, numPerBlock, numBlock);
             }
 
         //! Writes multiple doubles.
-        BeJsonStatus WriteDoubleArray (Utf8CP longName, Utf8CP shortName, Utf8CP itemName, bool itemNameOptional, double const *data, size_t n) 
+        BeJsonStatus WriteDoubleArray (Utf8CP longName, Utf8CP shortName, Utf8CP itemName, bool itemNameOptional, double const *data, size_t n)
             {
             return _WriteDoubleArray(longName, shortName, itemName, itemNameOptional, data, n);
             }

@@ -164,6 +164,7 @@
 
 #define EC_SCHEMAS_DIRECTORY                L"ECSchemas"
 #define EC_STANDARD_DIRECTORY               L"Standard"
+#define ECDB_SCHEMAS_DIRECTORY              L"ECDb"
 #define EC_V3CONVERSION_DIRECTORY           L"V3Conversion"
 
 // Class modifiers

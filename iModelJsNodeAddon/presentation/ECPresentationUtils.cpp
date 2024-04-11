@@ -302,7 +302,7 @@ NativeLogging::CategoryLogger ECPresentationUtils::GetLogger() {return NativeLog
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationManager* ECPresentationUtils::CreatePresentationManager(Dgn::PlatformLib::Host::IKnownLocationsAdmin& locations, IJsonLocalState& localState,
+std::unique_ptr<ECPresentationManager> ECPresentationUtils::CreatePresentationManager(Dgn::PlatformLib::Host::IKnownLocationsAdmin& locations,
     std::shared_ptr<IUpdateRecordsHandler> updateRecordsHandler, BeJsConst props)
     {
     BeFileName assetsDir = locations.GetDgnPlatformAssetsDirectory();
@@ -330,12 +330,12 @@ ECPresentationManager* ECPresentationUtils::CreatePresentationManager(Dgn::Platf
     params.SetConnections(CreateConfiguredConnectionManager(props));
     params.SetContentCachingParams(contentCacheParams);
     params.SetMultiThreadingParams(threadingParams);
-    params.SetECPropertyFormatter(new DefaultPropertyFormatter(CreateDefaultFormatsMap(props["defaultFormats"])));
+    params.SetECPropertyFormatter(std::make_shared<DefaultPropertyFormatter>(CreateDefaultFormatsMap(props["defaultFormats"])));
     params.SetCachingParams(CreateCachingParams(props["cacheConfig"]));
-    params.SetLocalState(&localState);
+    params.SetLocalState(std::make_shared<JsonLocalState>(std::make_unique<RuntimeLocalState>()));
     params.SetECInstanceChangeEventSources({std::make_shared<DgnDbECInstanceChangeEventSource>()});
     params.SetUpdateRecordsHandlers({ updateRecordsHandler });
-    return new ECPresentationManager(params);
+    return std::make_unique<ECPresentationManager>(params);
     }
 
 /*---------------------------------------------------------------------------------**//**
