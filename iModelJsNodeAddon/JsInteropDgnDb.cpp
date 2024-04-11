@@ -306,25 +306,32 @@ DgnDbStatus JsInterop::GetElement(BeJsValue elementJson, DgnDbR dgndb, Napi::Obj
     BeJsConst inOpts(obj);
     DgnElementCPtr elem;
     DgnElementId eid = inOpts[json_id()].GetId64<DgnElementId>();
+    BeJsConst fedJson = inOpts[json_federationGuid()];
+    BeJsConst codeJson = inOpts[json_code()];
 
-    if (!eid.IsValid()) {
-        auto fedJson = inOpts[json_federationGuid()];
-        if (fedJson.isString()) {
-            BeGuid federationGuid;
-            federationGuid.FromString(fedJson.asCString());
-            elem = dgndb.Elements().QueryElementByFederationGuid(federationGuid);
-        } else {
-            eid = dgndb.Elements().QueryElementIdByCode(DgnCode::FromJson(inOpts[json_code()], dgndb, false));
-        }
+    CachedECSqlStatementPtr stmt;
+    if (eid.IsValid()) {
+        stmt = dgndb.GetPreparedECSqlStatement("SELECT $ FROM Bis.Element WHERE ECInstanceId=? OPTIONS JSIFY_ELEMENTS");
+        stmt->BindId(1, eid);
+    } else if (fedJson.isString()) {
+        BeGuid federationGuid;
+        federationGuid.FromString(fedJson.asCString());
+        stmt = dgndb.GetPreparedECSqlStatement("SELECT $ FROM Bis.Element WHERE FederationGuid=? OPTIONS JSIFY_ELEMENTS");
+        stmt->BindGuid(1, federationGuid);
+    } else {
+        DgnCode code = DgnCode::FromJson(codeJson, dgndb, false);
+        stmt = dgndb.GetPreparedECSqlStatement("SELECT $ FROM Bis.Element WHERE CodeSpecId=? AND CodeScopeId=? AND CodeValue=? LIMIT 1 OPTIONS JSIFY_ELEMENTS");
+        stmt->BindId(1, code.GetCodeSpecId());
+        stmt->BindId(2, code.GetScopeElementId(dgndb));
+        stmt->BindText(3, code.GetValueUtf8CP(), IECSqlBinder::MakeCopy::No);
     }
 
-    if (!elem.IsValid())
-        elem = dgndb.Elements().GetElement(eid);
-
-    if (!elem.IsValid())
+    if (BE_SQLITE_ROW != stmt->Step())
+        {
         return DgnDbStatus::NotFound;
+        }
 
-    elem->ToJson(elementJson, inOpts);
+    elementJson.From(BeJsDocument(stmt->GetValueText(0)));
     return DgnDbStatus::Success;
 }
 

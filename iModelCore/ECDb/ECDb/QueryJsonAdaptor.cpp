@@ -43,6 +43,7 @@ BentleyStatus QueryJsonAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& st
             if (m_useJsName || m_jsifyElements) {
                 const auto prim = memberProp->GetAsPrimitiveProperty();
                 Utf8String memberName = memberProp->GetName();
+                auto isCodeObjectProperty = false;
                 if (prim && !prim->GetExtendedTypeName().empty()) {
                     const auto extendTypeId = ExtendedTypeHelper::GetExtendedType(prim->GetExtendedTypeName());
                     if (extendTypeId == ExtendedTypeHelper::ExtendedType::Id)
@@ -59,11 +60,27 @@ BentleyStatus QueryJsonAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& st
                         memberName = ECN::ECJsonSystemNames::TargetClassName();
                     else
                         ECN::ECJsonUtilities::LowerFirstChar(memberName);
-                } else {
+                } else if (m_jsifyElements) {
+                    if (memberName.Equals(ECDBSYS_PROP_CodeScope)) {
+                        memberName = ECN::ECJsonSystemNames::Code::Scope();
+                        isCodeObjectProperty = true;
+                    }
+                    else if (memberName.Equals(ECDBSYS_PROP_CodeSpec)) {
+                        memberName = ECN::ECJsonSystemNames::Code::Spec();
+                        isCodeObjectProperty = true;
+                    }
+                    else if (memberName.Equals(ECDBSYS_PROP_CodeValue)) {
+                        memberName = ECN::ECJsonSystemNames::Code::Value();
+                        isCodeObjectProperty = true;
+                    }
+                } else
                     ECN::ECJsonUtilities::LowerFirstChar(memberName);
-                }
 
-                if (SUCCESS != RenderRootProperty(rowJson[memberName], ecsqlValue))
+                if (isCodeObjectProperty) {
+                    if (SUCCESS != RenderRootProperty(rowJson[ECN::ECJsonSystemNames::Code()][memberName], ecsqlValue))
+                        return ERROR;
+                }
+                else if (SUCCESS != RenderRootProperty(rowJson[memberName], ecsqlValue))
                     return ERROR;
             } else {
                 if (SUCCESS != RenderRootProperty(rowJson[memberProp->GetName()], ecsqlValue))
@@ -175,7 +192,7 @@ BentleyStatus QueryJsonAdaptor::RenderLong(BeJsValue out, IECSqlValue const& in,
             if(m_classIdToClassNames || m_useJsName || m_jsifyElements) {
                 auto classCP = m_ecdb.Schemas().GetClass(id);
                 if (classCP != nullptr) {
-                    ECN::ECJsonUtilities::ClassNameToJson(out, *classCP);
+                    ECN::ECJsonUtilities::ClassNameToJson(out, *classCP, m_jsifyElements ? ':' : '.');
                     return SUCCESS;
                 }
             }
@@ -277,9 +294,19 @@ BentleyStatus QueryJsonAdaptor::RenderBinaryProperty(BeJsValue out, IECSqlValue 
 // @bsimethod
 //---------------------------------------------------------------------------------------
 BentleyStatus QueryJsonAdaptor::RenderNavigationProperty(BeJsValue out, IECSqlValue const& in) const {
+    if (m_jsifyElements)
+        {
+        auto const& navIdVal = in[ECDBSYS_PROP_NavPropId];
+        if (navIdVal.IsNull())
+            return SUCCESS;
+
+        out = navIdVal.GetId<ECInstanceId>().ToHexStr();
+        return SUCCESS;
+        }
+
     out.SetEmptyObject();
-    const auto jsId = m_useJsName || m_jsifyElements ? ECN::ECJsonSystemNames::Navigation::Id() : ECDBSYS_PROP_NavPropId;
-    const auto jsClassId = m_useJsName || m_jsifyElements ? ECN::ECJsonSystemNames::Navigation::RelClassName() : ECDBSYS_PROP_NavPropRelECClassId;
+    const auto jsId = m_useJsName ? ECN::ECJsonSystemNames::Navigation::Id() : ECDBSYS_PROP_NavPropId;
+    const auto jsClassId = m_useJsName ? ECN::ECJsonSystemNames::Navigation::RelClassName() : ECDBSYS_PROP_NavPropRelECClassId;
     auto const& navIdVal = in[ECDBSYS_PROP_NavPropId];
     if (navIdVal.IsNull())
         return SUCCESS;
@@ -287,7 +314,7 @@ BentleyStatus QueryJsonAdaptor::RenderNavigationProperty(BeJsValue out, IECSqlVa
     out[jsId] = navIdVal.GetId<ECInstanceId>().ToHexStr();
     auto const& relClassIdVal = in[ECDBSYS_PROP_NavPropRelECClassId];
     if (!relClassIdVal.IsNull()) {
-        if (m_classIdToClassNames || m_useJsName || m_jsifyElements) {
+        if (m_classIdToClassNames || m_useJsName) {
             const auto classId = relClassIdVal.GetId<ECN::ECClassId>();
             auto classCP = m_ecdb.Schemas().GetClass(classId);
             if (classCP != nullptr) {
@@ -393,7 +420,7 @@ void QueryJsonAdaptor::GetMetaData(QueryProperty::List& list, ECSqlStatement con
 
                 auto &leafEntry = accessStringV.back();
                 if (leafEntry == ECDBSYS_PROP_NavPropId)
-                    tmp += ECN::ECJsonSystemNames::Id();
+                    tmp += ECN::ECJsonSystemNames::Navigation::Id();
                 else if (leafEntry == ECDBSYS_PROP_NavPropRelECClassId)
                     tmp += ECN::ECJsonSystemNames::Navigation::RelClassName();
                 else if (leafEntry == ECDBSYS_PROP_PointX)

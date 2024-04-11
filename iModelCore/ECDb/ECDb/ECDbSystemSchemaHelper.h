@@ -30,7 +30,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define ECDBSYS_PROP_PointX "X"
 #define ECDBSYS_PROP_PointY "Y"
 #define ECDBSYS_PROP_PointZ "Z"
-
+#define ECDBSYS_PROP_CodeScope "CodeScope"
+#define ECDBSYS_PROP_CodeSpec "CodeSpec"
+#define ECDBSYS_PROP_CodeValue "CodeValue"
 
 //=======================================================================================
 // @bsiclass
