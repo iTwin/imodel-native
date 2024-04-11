@@ -72,7 +72,8 @@ BentleyStatus QueryJsonAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& st
                     else if (memberName.Equals(ECDBSYS_PROP_CodeValue)) {
                         memberName = ECN::ECJsonSystemNames::Code::Value();
                         isCodeObjectProperty = true;
-                    }
+                    } else 
+                        ECN::ECJsonUtilities::LowerFirstChar(memberName);
                 } else
                     ECN::ECJsonUtilities::LowerFirstChar(memberName);
 
