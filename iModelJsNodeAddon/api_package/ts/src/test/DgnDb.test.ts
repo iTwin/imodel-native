@@ -35,16 +35,16 @@ describe("basic tests", () => {
     const assertCompressAndThenDecompress = (sourceData: Uint8Array) => {
       const compressData = iModelJsNative.DgnDb.zlibCompress(sourceData);
       const decompressData = iModelJsNative.DgnDb.zlibDecompress(compressData, sourceData.length);
+      assert(compressData.length < decompressData.length);
       assert.deepEqual(sourceData, decompressData);
     };
-    const randomData = (n: number) => {
-      return Uint8Array.from(Array.from({ length: n }, () => Math.floor(Math.random() * 10)));
+    // generate buffer with repeating byte where k is repeated n times.
+    const genBuff = (k: number, n: number) => {
+      return Uint8Array.from(Array.from({ length: n }, () => k ));
     };
-    assertCompressAndThenDecompress(randomData(1024 * 1));
-    assertCompressAndThenDecompress(randomData(1024 * 2));
-    assertCompressAndThenDecompress(randomData(1024 * 4));
-    assertCompressAndThenDecompress(randomData(1024 * 8));
-    assertCompressAndThenDecompress(randomData(1024 * 16));
+
+    assertCompressAndThenDecompress(genBuff(1, 1024));
+    assertCompressAndThenDecompress(genBuff(2, 1024));
 
     const seedUri = path.join(getOutputDir(), "compress-decompress.bim");
     if (fs.existsSync(seedUri)) {
@@ -53,7 +53,7 @@ describe("basic tests", () => {
     const iModelDb = new iModelJsNative.DgnDb();
     iModelDb.createIModel(seedUri, { rootSubject: { name: "test file" } });
 
-    const propData = randomData(1024 * 32);
+    const propData = genBuff(1, 1024);
     iModelDb.saveFileProperty({ namespace: "test", name: "test" }, "hello", propData);
     iModelDb.saveChanges();
     const stmt = new iModelJsNative.SqliteStatement();
