@@ -234,6 +234,10 @@ bool inputPointsHaveWeightsAppliedAlready
                 }
             }
         }
+    if (SUCCESS == status && !IsValidGeometry())
+        status = ERROR;
+    if (status != SUCCESS)
+        ReleaseMem();
     return status;
     }
 
@@ -2462,4 +2466,10 @@ bool MSBsplineSurface::IsValidGeometry(GeometryValidatorPtr &validator) const
             return false;
 
     return true;
+    }
+
+bool MSBsplineSurface::IsValidGeometry() const
+    {
+    static GeometryValidatorPtr s_validator = GeometryValidator::Create();
+    return IsValidGeometry(s_validator);
     }
