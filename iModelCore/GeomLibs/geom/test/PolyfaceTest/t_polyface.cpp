@@ -4603,3 +4603,65 @@ TEST (PolyfaceQuery, FacetOrientation)
         }
     Check::ClearGeometry("PolyfaceQuery.FacetOrientation");
     }
+
+// lexicographical order, with slop for equality
+static bool lexicalXYZLessThanTol(double x0, double y0, double z0, double x1, double y1, double z1, double tol = DoubleOps::SmallMetricDistance())
+    {
+    if (DoubleOps::WithinTolerance(x0, x1, tol) && DoubleOps::WithinTolerance(y0, y1, tol) && DoubleOps::WithinTolerance(z0, z1, tol))
+        return false;
+    if (!DoubleOps::WithinTolerance(x0, x1, tol))
+        {
+        if (x0 < x1)
+            return true;
+        if (x0 > x1)
+            return false;
+        }
+    if (!DoubleOps::WithinTolerance(y0, y1, tol))
+        {
+        if (y0 < y1)
+            return true;
+        if (y0 > y1)
+            return false;
+        }
+    if (!DoubleOps::WithinTolerance(z0, z1, tol))
+        {
+        if (z0 < z1)
+            return true;
+        if (z0 > z1)
+            return false;
+        }
+    return false;
+    }
+
+struct ComparePoints
+    {
+    bool operator() (DPoint3dCR v0, DPoint3dCR v1) const
+        {
+        return lexicalXYZLessThanTol(v0.x, v0.y, v0.z, v1.x, v1.y, v1.z);
+        }
+    };
+
+TEST (Polyface, SphereMeshSanity)
+    {
+    auto center = DPoint3d::FromZero();
+    auto mesh = SphereMesh(center, 10);
+    Check::SaveTransformed(mesh);
+
+    // verify outward facing normals and unique facet centroids
+    bset<DPoint3d, ComparePoints> centroids;
+    auto visitor = PolyfaceVisitor::Attach(*mesh);
+    for (; visitor->AdvanceToNextFace(); )
+        {
+        DPoint3d centroid;
+        DVec3d normal;
+        double area;
+        if (Check::True(PolygonOps::CentroidNormalAndArea(visitor->Point(), centroid, normal, area)))
+            {
+            if (Check::False(centroids.end() != centroids.find(centroid), "facet centroid is unique"))
+                centroids.insert(centroid);
+            Check::True(center.DotDifference(centroid, normal) < 0.0, "facet computed normal points outward");
+            }
+        }
+
+    Check::ClearGeometry("Polyface.SphereMeshSanity");
+    }
