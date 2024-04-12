@@ -1129,7 +1129,7 @@ void TestSpecialReader(
     GeometryTypePtr &validGeometry,
     GeometryTypePtr &invalidGeometry,
     GeometryTypePtr(*bytesToGeometrySafe) (Byte const *bytes, size_t bufferSize, bool applyValidation),
-    bool isMSBsplineSurfacePtr = false
+    bool assumeLowLevelValidation = false
 )
     {
     // suppress validation of write !!!
@@ -1142,28 +1142,28 @@ void TestSpecialReader(
         {
         // read with and without default checking.
         auto cpA1 = bytesToGeometrySafe(buffer.data(), bufferSize, true);
-        Check::True(cpA1.IsValid(), "cpA1 is invalid"); // Ptr test
-        Check::True(cpA1->IsValidGeometry(savedValidator), "cpA1 is invalidated by savedValidator"); // Geometry Test
+        Check::True(cpA1.IsValid(), "cpA1 should be valid"); // Ptr test
+        Check::True(cpA1->IsValidGeometry(savedValidator), "cpA1 should be validated by savedValidator"); // Geometry Test
 
         auto cpA2 = bytesToGeometrySafe(buffer.data(), bufferSize, false);
-        Check::True(cpA2.IsValid(), "cpA2 is invalid"); // Ptr test
-        Check::True(cpA2->IsValidGeometry(savedValidator), "cpA2 is invalidated by savedValidator"); // Geometry Test
+        Check::True(cpA2.IsValid(), "cpA2 should be valid"); // Ptr test
+        Check::True(cpA2->IsValidGeometry(savedValidator), "cpA2 should be validated by savedValidator"); // Geometry Test
         }
 
     BentleyGeometryFlatBuffer::GeometryToBytes(*invalidGeometry, buffer);
     if (Check::True(bufferSize > 0))
         {
         auto cpB1 = bytesToGeometrySafe(buffer.data(), bufferSize, true);
-        Check::False(cpB1.IsValid(), "cpB1 is valid"); // Ptr test
+        Check::False(cpB1.IsValid(), "cpB1 should be invalid"); // Ptr test
         auto cpB2 = bytesToGeometrySafe(buffer.data(), bufferSize, false);
-        if (isMSBsplineSurfacePtr)
+        if (assumeLowLevelValidation)
             {
-            Check::False(cpB2.IsValid(), "cpB2 is invalid"); // Ptr test
+            Check::False(cpB2.IsValid(), "cpB2 should be invalid"); // Ptr test
             }
         else
             {
-            Check::True(cpB2.IsValid(), "cpB2 is invalid"); // Ptr test
-            Check::False(cpB2->IsValidGeometry(savedValidator), "cpB2 is invalidated by savedValidator"); // Geometry Test
+            Check::True(cpB2.IsValid(), "cpB2 should be valid"); // Ptr test
+            Check::False(cpB2->IsValidGeometry(savedValidator), "cpB2 should be invalidated by savedValidator"); // Geometry Test
             }
         }
 
