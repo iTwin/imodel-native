@@ -1517,6 +1517,37 @@ DbResult DbFile::SaveProperty(PropertySpecCR spec, Utf8CP stringData, void const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool BeSQLiteLib::ZlibCompress(bvector<Byte>& compressedBuffer, const bvector<Byte>& sourceBuffer) {
+    auto compressedSize = compressBound((uLong)sourceBuffer.size());
+    compressedBuffer.resize(compressedSize);
+    if (Z_OK != compress2((Byte*)compressedBuffer.data(), &compressedSize, (Byte const*) sourceBuffer.data(), (uLong)sourceBuffer.size(), DefaultCompressionLevel)){
+        compressedBuffer.clear();
+        return false;
+    }
+    compressedBuffer.resize(compressedSize);
+    return true;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BeSQLiteLib::ZlibDecompress(bvector<Byte>& uncompressedBuffer, const bvector<Byte>& compressedBuffer, unsigned long uncompressSize) {
+    unsigned long actuallyRead = uncompressSize;
+    uncompressedBuffer.resize(uncompressSize);
+    if (Z_OK != uncompress((Byte*)uncompressedBuffer.data(), &actuallyRead, (Byte const*) compressedBuffer.data(), (uLong)compressedBuffer.size())){
+        uncompressedBuffer.clear();
+        return false;
+    }
+    if (actuallyRead != uncompressSize) {
+        uncompressedBuffer.clear();
+        return false;
+    }
+    return true;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DbFile::QueryPropertySize(uint32_t& size, PropertySpecCR spec, uint64_t id, uint64_t subId) const
     {
     if (spec.IsCached())
