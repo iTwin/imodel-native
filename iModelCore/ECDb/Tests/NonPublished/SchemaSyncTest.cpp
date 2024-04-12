@@ -15497,7 +15497,7 @@ TEST_F(SchemaSyncTestFixture, AddKoQAndUpdatePropertiesWithKoQ)
             }
     );
 
-    const auto SCHEMA2_HASH_ECDB_SCHEMA = "bb8172839b677ede876645754fce67bd5a4121891fc94aed8063f08b169f0b02";
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "cf646ad0842f3c15c42793b2709558f87ef575df1ad4feadcf330d543698ad25";
     Test(
         "Add KoQ And Update Properties With KoQ",
         [&]()
@@ -15760,7 +15760,7 @@ TEST_F(SchemaSyncTestFixture, ModifyPropertyType_PrimitiveToStrictEnum)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithSamePersistenceUnit)
     {
-    const auto SCHEMA1_HASH_ECDB_SCHEMA = "05b7136885fe091623ca388485b7cdfdd722d1bfab619cac2f02900834101cba";
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "84a4915ddc3f84b16a0bc5e57dfba831479fe3b6a436b3d09e9b2a1eb55f159e";
     const auto SCHEMA1_HASH_ECDB_MAP = "5659388559d478844183f01f75b22a5832f850d1769a9ec5f13326079d7cbe2f";
     const auto SCHEMA1_HASH_SQLITE_SCHEMA = "092a472c7dc8e3e92377272c796d841e0c2f3a855eeb875f4df80f54637569bf";
     Test(
@@ -15785,7 +15785,7 @@ TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithSamePersistenceUnit)
             }
     );
 
-    const auto SCHEMA2_HASH_ECDB_SCHEMA = "54f3f9cedd983b6a5452672c36d4e9546c31cac1426478efb649f6480be1a83f";
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "24b24cf7a179af42a778321fbb1366f1343222773ba09cd6aba7f79890f16ec5";
     Test(
         "Changing the KindOfQuantity of an ECProperty to another KindOfQuantity with same persistence unit",
         [&]()
@@ -15859,7 +15859,7 @@ TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithSamePersistenceUnit)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithDifferentPersistenceUnit)
     {
-    const auto SCHEMA1_HASH_ECDB_SCHEMA = "62cf1c5cda1721e38167e06505d4527077a0517faa7035baf3b6ef578491ac8f";
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "10afbe843970e223986ee6d7bdb772b2998d936ef49a61c3aa27778df947cbce";
     const auto SCHEMA1_HASH_ECDB_MAP = "64731feb471a02cf819d681c8296594419dc8196361ad87a53ba52facc017bb9";
     const auto SCHEMA1_HASH_SQLITE_SCHEMA = "3ededf56f0dde0c1ee7a4396b6b2dc1b7828a62914d8b1f87b1ee65e53d8c800";
     Test(
@@ -16070,7 +16070,7 @@ TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithDifferentPersistenceUnit)
             }
     );
 
-    const auto SCHEMA2_HASH_ECDB_SCHEMA = "7335670e88a93b1ff1cc1312c8b07ecb018b4d16888d869072539b1112101f44";
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "5d0c7c83001f6de05dc9e2ec145f392623397aa27e71b0a32ee288ebdd8b72ce";
     const auto SCHEMA2_HASH_ECDB_MAP = "0f4879b8f4926961a823daa9c50418a8a7b145f6510182eb563042bf27708ccd";
     Test(
         "Changing the KindOfQuantity of an ECProperty to another KindOfQuantity with a different persistence unit is allowed by using the AllowUnitChange custom attribute on the property.",
@@ -16146,7 +16146,7 @@ TEST_F(SchemaSyncTestFixture, ReplaceKindOfQuantityWithDifferentPersistenceUnit)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaSyncTestFixture, DeleteKindOfQuantityFromECSchema)
     {
-    const auto SCHEMA1_HASH_ECDB_SCHEMA = "4ed085173d29f9ef8b0467c15437bb32fb63dd96d386be754b3417cc02f0b159";
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "a7fdc0514105b1917b8f2c3150cd51c95f60be23227b5fddbd5f1227a59f7c8a";
     const auto SCHEMA1_HASH_ECDB_MAP = "5659388559d478844183f01f75b22a5832f850d1769a9ec5f13326079d7cbe2f";
     const auto SCHEMA1_HASH_SQLITE_SCHEMA = "092a472c7dc8e3e92377272c796d841e0c2f3a855eeb875f4df80f54637569bf";
     Test(
@@ -16230,7 +16230,7 @@ TEST_F(SchemaSyncTestFixture, DeleteKindOfQuantityFromECSchema)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaSyncTestFixture, ModifyECArrayProperty_KOQToKOQ)
     {
-    const auto SCHEMA1_HASH_ECDB_SCHEMA = "269ab53beb3ede2fbee40ef61928dab01fc6979b4639e232513e1a51fbbd6439";
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "23efcbbed56d42123d6cf203f1ba46594bf3a4ca93501539a850a7cb0bed20fe";
     const auto SCHEMA1_HASH_ECDB_MAP = "f88b7eba7f064f04e0f4a014c5392235343e46aa2c3e6a219840f240a1a2cf2d";
     const auto SCHEMA1_HASH_SQLITE_SCHEMA = "1041d62154badc784bf9445ac7d1777ee7c9d591c17e76e694d2ac9426372c38";
     Test(
@@ -16260,7 +16260,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECArrayProperty_KOQToKOQ)
             }
     );
 
-    const auto SCHEMA2_HASH_ECDB_SCHEMA = "ddd4ff30feeeab606d686231bb9267fc91e67c17bf36a6d95ae50535a82fd128";
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "00c7cb45b234cac136b00d1afbb5609249ae84257756a37cb3f4c0a8f9206c85";
     Test(
         "Changing of KindOfQuantity of an ECArrayProperty to another KindOfQuantity with same persistence unit",
         [&]()
@@ -16385,7 +16385,7 @@ TEST_F(SchemaSyncTestFixture, ModifyECArrayProperty_KOQToKOQ)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECArrayProperty)
     {
-    const auto SCHEMA1_HASH_ECDB_SCHEMA = "99c072d184d3723418e9ad7b603ad4bda3c06fe50f2e6fd3405dfa9d503f41f3";
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "32315b7e934320e944e619f4fcb3b07387abf8165b4ba4c7b29c5210ec154f41";
     const auto SCHEMA1_HASH_ECDB_MAP = "584ace5177fd0550ec8555f921b95f4adfb6a0c984e0615ed50358146725f3fa";
     const auto SCHEMA1_HASH_SQLITE_SCHEMA = "3b86f6ab88c4041d828b67ca9989db90aa570a8561b99a2d6f7c564c072454aa";
     Test(
@@ -16484,7 +16484,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECArrayProperty)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECProperty)
     {
-    const auto SCHEMA1_HASH_ECDB_SCHEMA = "2d9ea90b3ce142c657f88507902146d47a0e1aeaf9df185e39140f90642e5c01";
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "932872beaa915827cda30051895c61b78dfb7b0022255d0185fa319a167f277d";
     const auto SCHEMA1_HASH_ECDB_MAP = "64731feb471a02cf819d681c8296594419dc8196361ad87a53ba52facc017bb9";
     const auto SCHEMA1_HASH_SQLITE_SCHEMA = "3ededf56f0dde0c1ee7a4396b6b2dc1b7828a62914d8b1f87b1ee65e53d8c800";
     Test(
@@ -16583,7 +16583,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECProperty)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECPropertyUsingCA)
     {
-    const auto SCHEMA1_HASH_ECDB_SCHEMA = "abe4d45d8308bca3b8d6825cbcd63970c0d24ed26a0a4c072bbaffcbc3b678c3";
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "3b2ecb21c52f30f1335f65852b6e2c037c6b9393d692ccfc328f5006d064a39c";
     const auto SCHEMA1_HASH_ECDB_MAP = "64731feb471a02cf819d681c8296594419dc8196361ad87a53ba52facc017bb9";
     const auto SCHEMA1_HASH_SQLITE_SCHEMA = "3ededf56f0dde0c1ee7a4396b6b2dc1b7828a62914d8b1f87b1ee65e53d8c800";
     Test(
@@ -16755,7 +16755,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECPropertyUsingCA)
             }
     );
 
-    const auto SCHEMA2_HASH_ECDB_SCHEMA = "a8e47a16bc83df289944fec9cb9ae648a030d0f10ed4a35d80bc332683726dd9";
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "61d0ccddfefaf5bfab2b38585592978ac56abba52b5ed45792f7733ca280a50b";
     const auto SCHEMA2_HASH_ECDB_MAP = "0f4879b8f4926961a823daa9c50418a8a7b145f6510182eb563042bf27708ccd";
     Test(
         "Removing KindOfQuantity from an ECProperty is supported by using custom attribute on property",
@@ -16834,7 +16834,7 @@ TEST_F(SchemaSyncTestFixture, RemoveKindOfQuantityFromECPropertyUsingCA)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaSyncTestFixture, KoQDeleteWithDoNotFailFlag)
     {
-    const auto SCHEMA1_HASH_ECDB_SCHEMA = "a31eb400ef3940ade2cd37b085073054b7523be6b4052390bc733c62dda14ab4";
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "0fa7141150b99931f7e415f83e503a421a7671a6d0afa4785e917e07fae76724";
     Test(
         "import initial schema",
         [&]()
@@ -16891,7 +16891,7 @@ TEST_F(SchemaSyncTestFixture, KoQModificationWithDoNotFailFlag)
         "import initial schema",
         [&]()
             {
-            const auto SCHEMA_HASH_ECDB_SCHEMA = "a31eb400ef3940ade2cd37b085073054b7523be6b4052390bc733c62dda14ab4";
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "0fa7141150b99931f7e415f83e503a421a7671a6d0afa4785e917e07fae76724";
             auto schema = SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -16910,7 +16910,7 @@ TEST_F(SchemaSyncTestFixture, KoQModificationWithDoNotFailFlag)
         "Illegal KoQ modification should not fail when DoNotFail flag is on",
         [&]()
             {
-            const auto SCHEMA_HASH_ECDB_SCHEMA = "8420b2d0c008ce2e25c57abdc1b2b52aaaa0cb657c495316b2dd8a8b3b589325";
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "fe9413369df73f4c5c64c5a7c668ee918e2d507de462dd500226ad4ddcc3a392";
             auto schema = SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -16943,7 +16943,7 @@ TEST_F(SchemaSyncTestFixture, KoQModificationWithDoNotFailFlag)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaSyncTestFixture, IllegalKoQModificationWithDoNotFailFlag)
     {
-    const auto SCHEMA1_HASH_ECDB_SCHEMA = "5f99a893290932cb3537193f6afe585b37f49cf4dc9b8bede66f5f0cc6e9ee9f";
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "4f75c9da0330e558d9300cebb058af28e7877ee0ffa5288cc43ab00a3e7e512b";
     Test(
         "import initial schema",
         [&]()
@@ -17029,7 +17029,7 @@ TEST_F(SchemaSyncTestFixture, KindOfQuantity)
         EXPECT_STRCASEEQ(presFormats, actualPresentationFormats.c_str()) << name;
         };
 
-    const auto SCHEMA1_HASH_ECDB_SCHEMA = "7c512d5897d77560dae8e27615916f4a2c2534f9a985a8bb0e123dcfc9dfc4d5";
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "6b2d60ef28fac95c956c0912a0c47387e98b76c36cf6904a3b2501c76f0da5da";
     Test(
         "import initial schema",
         [&]()
@@ -17122,7 +17122,7 @@ TEST_F(SchemaSyncTestFixture, KindOfQuantity)
             }
     );
 
-    const auto SCHEMA2_HASH_ECDB_SCHEMA = "cb8c7902333a00b01b1f90e0c8205824355e540452bd27628761fb2504f09123";
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "38b2e4906290c6a26680d7098106d3c60c5ffc1beec4d69e4fe0709356f812f0";
     Test(
         "Adding a KOQ is supported",
         [&]()
@@ -17161,7 +17161,7 @@ TEST_F(SchemaSyncTestFixture, KindOfQuantity)
             }
     );
 
-    const auto SCHEMA3_HASH_ECDB_SCHEMA = "271ef4872091520d16c0d8928700dd81c83786bcb3962e63597e9efe16846ae6";
+    const auto SCHEMA3_HASH_ECDB_SCHEMA = "fa76c1c50c4d220a3db693ab686a7de22d781e72e23452a77f74d1b54fe2b58f";
     Test(
         "Modifying a KOQ is supported",
         [&]()
@@ -21006,7 +21006,7 @@ TEST_F(SchemaSyncTestFixture, Formats)
         "Import initial schema",
         [&]()
             {
-            const auto SCHEMA_HASH_ECDB_SCHEMA = "c1ba33ebaaf6c5a4f42fc49efcc3dec582597cf6210fb2bdb7041856f51683de";
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "cd2dda9f6c1a53f61840d444920f85cdbde731a5dd94d56bbcbd81ee14890da4";
             auto schema = SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8" ?>
                 <ECSchema schemaName="Schema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -21046,7 +21046,7 @@ TEST_F(SchemaSyncTestFixture, Formats)
         "Modify DisplayLabel, Description, NumericSpec",
         [&]()
             {
-            const auto SCHEMA_HASH_ECDB_SCHEMA = "7821e469378ed6dee3396f5899459e9071422c4982868662712253aaddd349a3";
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "7c7ea8c1414f2134e81838883967d05060ffbdd25d38f328f0572ecdfb2eeda5";
             auto schema = SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8" ?>
                 <ECSchema schemaName="Schema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -21084,7 +21084,7 @@ TEST_F(SchemaSyncTestFixture, Formats)
     );
 
 
-    const auto SCHEMA1_HASH_ECDB_SCHEMA = "f0a697922495183d20cd2d6b1ce02ba014203c1fe4336863d2a268838e36d67c";
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "d5dff39b8b48d1be6f9a948cff9120662a2fcd4a0e7932eae004768b96a8937b";
     Test(
         "remove optional attributes from num spec",
         [&]()
@@ -21142,7 +21142,7 @@ TEST_F(SchemaSyncTestFixture, Formats)
         "start with format that already has a composite",
         [&]()
             {
-            const auto SCHEMA_HASH_ECDB_SCHEMA = "c31df30e1eca247565aff4f808fc47a0fd40344ee90ba97c4b751c35df19b611";
+            const auto SCHEMA_HASH_ECDB_SCHEMA = "8c7c078f21bc308c27938d87795802b5cfe37ca99c612b8e285f394fea5e0499";
             auto schema = SchemaItem(
                 R"xml(<?xml version="1.0" encoding="utf-8" ?>
                 <ECSchema schemaName="Schema" alias="ts" version="2.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -21173,7 +21173,7 @@ TEST_F(SchemaSyncTestFixture, Formats)
             }
     );
 
-    const auto SCHEMA2_HASH_ECDB_SCHEMA = "330e71056bbac2f1e382454baf95796d1f93e771cf1cf15fb3387b98b5943c6b";
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "8cd1f8af64f3ea785b6a24ee7edbbd9dac06c0f376e483daa61585115c61f1a9";
     Test(
         "Modify CompSpec except for units",
         [&]()
