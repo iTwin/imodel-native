@@ -421,7 +421,9 @@ TEST_F(SchemaSyncTestFixture, Verify_SyncInfo_BeProp_Entries)
     b1->PullMergePush("init");
     b1->SaveChanges();
 
-	const auto kSyncId = "id";
+    // 1. SyncDb must only have syncDbInfo with id and dataVer properties.
+    // 2. Briefcase must only have localDbInfo with id and dataVer properties.
+    const auto kSyncId = "id";
 	const auto kSyncDataVer = "dataVer";
 	const auto kNamespace = "ec_Db";
     const auto kSyncDbInfo = "syncDbInfo";
