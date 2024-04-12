@@ -500,13 +500,14 @@ bool inputPointsHaveWeightsAppliedAlready
 )
     {
     MSBsplineStatus status = ERROR;
+    Zero();
 
     if (order > 1
         && numPoints >= order
         && (numKnots == 0 || numKnots == BsplineParam::NumberAllocatedKnots(numPoints, order, closed))
+        && pPoints != nullptr
         )
         {
-        Zero ();
         params.order = order;
         params.numPoles = (int)numPoints;
         params.closed = closed;
