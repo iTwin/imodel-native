@@ -423,18 +423,19 @@ TEST_F(SchemaSyncTestFixture, Verify_SyncInfo_BeProp_Entries)
 
     // 1. SyncDb must only have syncDbInfo with id and dataVer properties.
     // 2. Briefcase must only have localDbInfo with id and dataVer properties.
+
     const auto kSyncId = "id";
-	const auto kSyncDataVer = "dataVer";
-	const auto kNamespace = "ec_Db";
+    const auto kSyncDataVer = "dataVer";
+    const auto kNamespace = "ec_Db";
     const auto kSyncDbInfo = "syncDbInfo";
-	const auto kLocalDbInfo = "localDbInfo";
+    const auto kLocalDbInfo = "localDbInfo";
     const auto localDbInfoProp = PropertySpec(kLocalDbInfo, kNamespace);
     const auto syncDbInfoProp = PropertySpec(kSyncDbInfo, kNamespace);
 
     auto syncDb = schemaSyncDb.OpenReadOnly();
 
     Utf8String strData0;
-	ASSERT_EQ(BE_SQLITE_ROW, syncDb->QueryProperty(strData0, syncDbInfoProp));
+    ASSERT_EQ(BE_SQLITE_ROW, syncDb->QueryProperty(strData0, syncDbInfoProp));
 
     BeJsDocument info0;
     info0.Parse(strData0);
@@ -447,15 +448,15 @@ TEST_F(SchemaSyncTestFixture, Verify_SyncInfo_BeProp_Entries)
     ASSERT_EQ(nProp0, 2);
 
     Utf8String strData1;
-	ASSERT_EQ(BE_SQLITE_ERROR, syncDb->QueryProperty(strData1, localDbInfoProp));
+    ASSERT_EQ(BE_SQLITE_ERROR, syncDb->QueryProperty(strData1, localDbInfoProp));
     ASSERT_TRUE(strData1.empty());
 
     Utf8String strData2;
-	ASSERT_EQ(BE_SQLITE_ERROR, b1->QueryProperty(strData2, syncDbInfoProp));
+    ASSERT_EQ(BE_SQLITE_ERROR, b1->QueryProperty(strData2, syncDbInfoProp));
     ASSERT_TRUE(strData2.empty());
 
     Utf8String strData3;
-	ASSERT_EQ(BE_SQLITE_ROW, b1->QueryProperty(strData3, localDbInfoProp));
+    ASSERT_EQ(BE_SQLITE_ROW, b1->QueryProperty(strData3, localDbInfoProp));
 
     BeJsDocument info3;
     info3.Parse(strData3);
@@ -467,6 +468,7 @@ TEST_F(SchemaSyncTestFixture, Verify_SyncInfo_BeProp_Entries)
     info3.ForEachProperty([&](Utf8CP name, BeJsConst){ ++nProp3 ; return false; });
     ASSERT_EQ(nProp3, 2);
     }
+
 // ---------------------------------------------------------------------------------------
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
