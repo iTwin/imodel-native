@@ -1090,6 +1090,28 @@ void JsInterop::QueryModelExtents(BeJsValue extentsJson, DgnDbR db, BeJsConst op
     extents.ToJson(extentsJson[json_modelExtents()]);
 }
 
+void JsInterop::ComputeRangeForText(BeJsValue result, DgnDbR db, Utf8StringCR text, FontId fontId, TextEmphasis emphasis, double widthFactor, double height) {
+    DRange2d layoutRange = DRange2d::From(0, 0, 0, height);
+    DRange2d justificationRange = layoutRange;
+    if (text.size() > 0) {
+        auto& font = db.Fonts().FindFont(fontId);
+        GlyphLayoutContext layoutContext;
+        layoutContext.m_string = text;
+        layoutContext.m_drawSize = DPoint2d::From(height, height * widthFactor);
+        layoutContext.m_isBold = TextEmphasis::None != (emphasis & TextEmphasis::Bold);
+        layoutContext.m_isItalic = TextEmphasis::None != (emphasis & TextEmphasis::Italic);
+        
+        GlyphLayoutResult layoutResult;
+        if (SUCCESS == font.LayoutGlyphs(layoutResult, layoutContext)) {
+            layoutRange = layoutResult.m_range;
+            justificationRange = layoutResult.m_justificationRange;
+        }
+    }
+
+    BeJsGeomUtils::DRange2dToJson(result["layout"], layoutRange);
+    BeJsGeomUtils::DRange2dToJson(result["justification"], justificationRange);
+}
+
 /*---------------------------------------------------------------------------------**//**
 * TEMPORARY FUNCTION #TODO
 * This method converts the stored vertical datum code to the effective vertical datum code.
