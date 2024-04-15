@@ -1966,3 +1966,52 @@ TEST(AreaBoolean, NearTangencyUnion716145)
             }
         }
     }
+
+TEST(AreaBoolean, Sentry5195782828)
+    {
+    BeFileName dataFullPathName;
+    BeTest::GetHost().GetDocumentsRoot(dataFullPathName);
+    dataFullPathName.AppendToPath(L"GeomLibsTestData").AppendToPath(L"CurveVector").AppendToPath(L"LoopClosure").AppendToPath(L"loop-almost-closed.imjs");
+
+    bvector<IGeometryPtr> geometry;
+    if (Check::True(GTestFileOps::JsonFileToGeometry(dataFullPathName, geometry), "Parse inputs"))
+        {
+        if (Check::False(geometry.empty(), "Have at least one input"))
+            {
+            auto loop = geometry.front()->GetAsCurveVector();
+            if (Check::True(loop.IsValid(), "Have a curve vector"))
+                {
+                if (Check::True(CurveVector::BOUNDARY_TYPE_Outer == loop->GetBoundaryType(), "Curve is a loop"))
+                    {
+                    Check::SaveTransformed(loop);
+                    Check::True(loop->MaxGapWithinPath() > 0.0, "Loop is not exactly closed");
+                    DMatrix4d products;
+                    if (Check::True(loop->ComputeSecondMomentAreaProducts(products), "Computed 2nd moment area products"))
+                        {
+                        // geometry is basically a rectangle (the B-splines are almost straight)
+                        if (Check::True(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line == loop->at(0)->GetCurvePrimitiveType(), "First primitive is a line segment") &&
+                            Check::True(ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line == loop->at(2)->GetCurvePrimitiveType(), "Third primitive is a line segment"))
+                            {
+                            bvector<DPoint3d> rectangle(5);
+                            loop->at(0)->GetStartEnd(rectangle[0], rectangle[1]);
+                            loop->at(2)->GetStartEnd(rectangle[2], rectangle[3]);
+                            rectangle[4] = rectangle[0];
+                            auto loop2 = CurveVector::CreateLinear(rectangle, CurveVector::BOUNDARY_TYPE_Outer);
+                            if (Check::True(loop2.IsValid(), "created rectangle for comparison"))
+                                {
+                                Check::SaveTransformed(loop2);
+                                DMatrix4d products2;
+                                if (Check::True(loop2->ComputeSecondMomentAreaProducts(products2), "Computed 2nd moment area products of rectangle"))
+                                    {
+                                    double maxAbs = 1000 * std::max(products.MaxAbs(), products2.MaxAbs());
+                                    Check::Near(products, products2, "2nd moment area products are close", maxAbs);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    Check::ClearGeometry("AreaBoolean.Sentry5195782828");
+    }
