@@ -1272,6 +1272,23 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
       return worker->Queue();
     }
 
+    Napi::Value ComputeRangeForText(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_STRING(0, text);
+        REQUIRE_ARGUMENT_UINTEGER(1, fontId);
+        REQUIRE_ARGUMENT_UINTEGER(2, iEmphasis);
+        REQUIRE_ARGUMENT_NUMBER(3, widthFactor);
+        REQUIRE_ARGUMENT_NUMBER(4, height);
+
+        if (iEmphasis > static_cast<uint32_t>(TextEmphasis::BoldItalic)) {
+            THROW_JS_TYPE_EXCEPTION("Argument 2 must be a TextEmphasis");
+        }
+        
+        BeJsNapiObject result(Env());
+        JsInterop::ComputeRangeForText(result, db, text, FontId(static_cast<uint64_t>(fontId)), static_cast<TextEmphasis>(iEmphasis), widthFactor, height);
+        return result;
+    }
+    
     Napi::Value DumpChangeSet(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);
@@ -2563,6 +2580,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("closeFile", &NativeDgnDb::CloseFile),
             InstanceMethod("completeCreateChangeset", &NativeDgnDb::CompleteCreateChangeset),
             InstanceMethod("computeProjectExtents", &NativeDgnDb::ComputeProjectExtents),
+            InstanceMethod("computeRangeForText", &NativeDgnDb::ComputeRangeForText),
             InstanceMethod("concurrentQueryExecute", &NativeDgnDb::ConcurrentQueryExecute),
             InstanceMethod("concurrentQueryResetConfig", &NativeDgnDb::ConcurrentQueryResetConfig),
             InstanceMethod("concurrentQueryShutdown", &NativeDgnDb::ConcurrentQueryShutdown),
