@@ -1983,7 +1983,6 @@ TEST(AreaBoolean, Sentry5195782828)
                 {
                 if (Check::True(CurveVector::BOUNDARY_TYPE_Outer == loop->GetBoundaryType(), "Curve is a loop"))
                     {
-                    Check::SaveTransformed(loop);
                     Check::True(loop->MaxGapWithinPath() > 0.0, "Loop is not exactly closed");
                     DMatrix4d products;
                     if (Check::True(loop->ComputeSecondMomentAreaProducts(products), "Computed 2nd moment area products"))
@@ -1999,7 +1998,6 @@ TEST(AreaBoolean, Sentry5195782828)
                             auto loop2 = CurveVector::CreateLinear(rectangle, CurveVector::BOUNDARY_TYPE_Outer);
                             if (Check::True(loop2.IsValid(), "created rectangle for comparison"))
                                 {
-                                Check::SaveTransformed(loop2);
                                 DMatrix4d products2;
                                 if (Check::True(loop2->ComputeSecondMomentAreaProducts(products2), "Computed 2nd moment area products of rectangle"))
                                     {
@@ -2013,5 +2011,4 @@ TEST(AreaBoolean, Sentry5195782828)
                 }
             }
         }
-    Check::ClearGeometry("AreaBoolean.Sentry5195782828");
     }
