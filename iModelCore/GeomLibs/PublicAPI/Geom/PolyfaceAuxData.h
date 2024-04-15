@@ -145,7 +145,8 @@ DEFINE_REF_COUNTED_PTR(PolyfaceAuxChannel);
 //! it is up to the caller to ensure that the Auxiliary data matches the polyface.
 //! i.e. same number of faces, vertices etc.
 //! Each PolyfaceAuxData contains a single index array that represents the indices for
-//! all channels.
+//! all channels. This index array must have the same length and structure as the Polyface
+//! vertex index array.
 //=======================================================================================
 struct PolyfaceAuxData : RefCountedBase
 {
