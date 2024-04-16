@@ -61,15 +61,16 @@ BentleyStatus QueryJsonAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& st
                     else
                         ECN::ECJsonUtilities::LowerFirstChar(memberName);
                 } else if (m_jsifyElements) {
-                    if (memberName.Equals(ECDBSYS_PROP_CodeScope)) {
+                    auto isBisCoreProperty = memberProp->GetClass().GetSchema().GetName().Equals("BisCore");
+                    if (isBisCoreProperty && memberName.Equals(ECDBSYS_PROP_CodeScope)) {
                         memberName = ECN::ECJsonSystemNames::Code::Scope();
                         isCodeObjectProperty = true;
                     }
-                    else if (memberName.Equals(ECDBSYS_PROP_CodeSpec)) {
+                    else if (isBisCoreProperty && memberName.Equals(ECDBSYS_PROP_CodeSpec)) {
                         memberName = ECN::ECJsonSystemNames::Code::Spec();
                         isCodeObjectProperty = true;
                     }
-                    else if (memberName.Equals(ECDBSYS_PROP_CodeValue)) {
+                    else if (isBisCoreProperty && memberName.Equals(ECDBSYS_PROP_CodeValue)) { 
                         memberName = ECN::ECJsonSystemNames::Code::Value();
                         isCodeObjectProperty = true;
                     } else 

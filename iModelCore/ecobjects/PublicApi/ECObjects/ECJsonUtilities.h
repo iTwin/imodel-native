@@ -196,7 +196,7 @@ public:
     //! @param[in] ecClass ECClass
     //! @param[in] separator Separator between schema name and class name. Default: .
     //! @return Fully qualified class name for the ECJSON format
-    static Utf8String FormatClassName(ECClassCR ecClass, char separator = '.') {return Utf8PrintfString("%s%c%s", ecClass.GetSchema().GetName().c_str(), separator, ecClass.GetName().c_str());}
+    static Utf8String FormatClassName(ECClassCR ecClass, Utf8Char separator = '.') {return Utf8PrintfString("%s%c%s", ecClass.GetSchema().GetName().c_str(), separator, ecClass.GetName().c_str());}
 
     //! Generates the fully qualified name of an PropertyCategory as used in the ECJSON format: &lt;schema name&gt;.&lt;PropertyCategory name&gt;
     //! @param[in] ecPropertyCategory PropertyCategory
@@ -226,7 +226,7 @@ public:
     //! @param[in] ecClass ECClass
     //! @param[in] separator Separator between schema name and class name. Default: .
     //! @return SUCCESS or ERROR
-    static void ClassNameToJson(BeJsValue json, ECClassCR ecClass, char separator = '.') { json = FormatClassName(ecClass, separator); }
+    static void ClassNameToJson(BeJsValue json, ECClassCR ecClass, Utf8Char separator = '.') { json = FormatClassName(ecClass, separator); }
 
     //! Returns a fully qualified name of any SchemaChild
     //! Type must have both GetName() and GetSchema() methods
