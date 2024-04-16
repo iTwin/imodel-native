@@ -487,10 +487,13 @@ export declare namespace IModelJsNative {
     status: IModelStatus;
   }
 
+  type NoCaseCollation = "ASCII" | "Latin1";
   /** The native object for a Briefcase. */
   class DgnDb implements IConcurrentQueryManager, SQLiteOps {
     constructor();
     public readonly cloudContainer?: CloudContainer;
+    public getNoCaseCollation(): NoCaseCollation;
+    public setNoCaseCollation(collation: NoCaseCollation): void;
     public schemaSyncSetDefaultUri(syncDbUri: string): void;
     public schemaSyncGetDefaultUri(): string;
     public schemaSyncInit(syncDbUri: string): void;

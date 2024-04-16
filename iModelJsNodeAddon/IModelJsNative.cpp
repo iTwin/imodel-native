@@ -1136,7 +1136,36 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         }
         OpenIModelDb(BeFileName(dbName), openParams);
     }
+    Napi::Value GetNoCaseCollation(NapiInfoCR info){
+        auto& db = GetOpenedDb(info);
+        if (db.GetNoCaseCollation() == NoCaseCollation::ASCII)
+            return Napi::String::New(Env(), "ASCII");
+        else if (db.GetNoCaseCollation() == NoCaseCollation::Latin1)
+            return Napi::String::New(Env(), "Latin1");
+        THROW_JS_TYPE_EXCEPTION("unknown collation");
+    }
 
+    void SetNoCaseCollation(NapiInfoCR info){
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_STRING(0, collationName);
+        if (collationName.EqualsIAscii("ASCII")) {
+            if(db.GetNoCaseCollation() != NoCaseCollation::ASCII){
+                auto rc = db.SetNoCaseCollation(NoCaseCollation::ASCII);
+                if (rc != BE_SQLITE_OK)
+                    THROW_JS_TYPE_EXCEPTION("failed to set case collation.");
+            }
+        } else  if (collationName.EqualsIAscii("Latin1")) {
+            if(db.GetNoCaseCollation() != NoCaseCollation::Latin1){
+                db.ClearECDbCache();
+                db.GetStatementCache().Empty();
+                auto rc = db.SetNoCaseCollation(NoCaseCollation::Latin1);
+                if (rc != BE_SQLITE_OK)
+                    THROW_JS_TYPE_EXCEPTION("failed to set case collation.");
+            }
+        } else {
+            THROW_JS_TYPE_EXCEPTION("unknown collation");
+        }
+    }
     void RestartDefaultTxn(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         auto& txns = db.Txns();
@@ -2669,6 +2698,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("performCheckpoint", &NativeDgnDb::PerformCheckpoint),
             InstanceMethod("setAutoCheckpointThreshold", &NativeDgnDb::SetAutoCheckpointThreshold),
             InstanceMethod("getLocalChanges", &NativeDgnDb::GetLocalChanges),
+            InstanceMethod("getNoCaseCollation", &NativeDgnDb::GetNoCaseCollation),
+            InstanceMethod("setNoCaseCollation", &NativeDgnDb::SetNoCaseCollation),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
         });
