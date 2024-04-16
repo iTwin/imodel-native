@@ -13,7 +13,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //======================================================================================
 struct ClassViews final {
     constexpr static char ViewSchemaName[] = "ECDbMap";
-    constexpr static char ViewClassName[] = "View";
+    constexpr static char ViewClassName[] = "QueryView";
     constexpr static char ViewClassQueryProp[] = "Query";
 
     static bool IsViewClass(ECN::ECClassCR viewClass);

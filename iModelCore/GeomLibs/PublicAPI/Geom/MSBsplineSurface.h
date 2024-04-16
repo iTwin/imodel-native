@@ -896,12 +896,10 @@ bvector<CurveAndSolidLocationDetail> &curvePoints     //!< [out] hit points on c
     bool IsSameStructure (MSBsplineSurfaceCR other) const;
     //! Compare all data.
     bool IsSameStructureAndGeometry (MSBsplineSurfaceCR other, double tolerance) const;
-    //! Dispatch to _IsValid(validator) virtual
-    //! <ul>
-    //! <li> Basic validation is "const".
-    //! <li> Future validators might do fixup, hence method is non-const.
-    //! </ul>
+    //! Confirm basic validity
     bool IsValidGeometry(GeometryValidatorPtr &validator) const;
+    //! Confirm basic validity using default validator
+    bool IsValidGeometry() const;
 
     }; //MSBsplineSurface
 
