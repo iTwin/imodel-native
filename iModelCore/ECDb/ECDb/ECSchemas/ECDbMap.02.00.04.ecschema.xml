@@ -3,7 +3,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 ========================================================================================== -->
-<ECSchema schemaName="ECDbMap" alias="ecdbmap" version="02.00.03" description="Custom attributes that customize ECDb's ECSchema to database mapping." displayLabel="ECDb DB Mapping" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+<ECSchema schemaName="ECDbMap" alias="ecdbmap" version="02.00.04" description="Custom attributes that customize ECDb's ECSchema to database mapping." displayLabel="ECDb DB Mapping" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
     <ECCustomAttributeClass typeName="SchemaMap" modifier="Sealed" appliesTo="Schema">
         <ECProperty propertyName="TablePrefix" typeName="string" description="Specifies a prefix for generated tables. If not specified, the alias of the ECSchema is used"/>
     </ECCustomAttributeClass>
@@ -60,20 +60,9 @@
         <ECProperty propertyName="ECSqlVersion" typeName="string" description="Optional. EC SQL profile version number e.g. 1.2.0.0." />
     </ECCustomAttributeClass>
 
-    <ECCustomAttributeClass typeName="View" modifier="Sealed" appliesTo="EntityClass" description="Flags a class as a view based on ECSQL.">
-        <ECCustomAttributes>
-            <UseRequiresVersion>
-                <ECDbRuntimeVersion>4.0.0.5</ECDbRuntimeVersion>
-            </UseRequiresVersion>
-        </ECCustomAttributes>
+    <ECCustomAttributeClass typeName="QueryView" modifier="Sealed" appliesTo="EntityClass" description="Flags a class as a view based on ECSQL.">
         <ECProperty propertyName="Query" typeName="string" description="ECSql query with only primitive types are allowed"/>
     </ECCustomAttributeClass>
 
-    <ECCustomAttributeClass typeName="ForeignKeyBasedView" modifier="Sealed" appliesTo="RelationshipClass" description="Flags a relationship to be an automatic view, based on navigation properties on the constraint classes.">
-        <ECCustomAttributes>
-            <UseRequiresVersion>
-                <ECDbRuntimeVersion>4.0.0.5</ECDbRuntimeVersion>
-            </UseRequiresVersion>
-        </ECCustomAttributes>
-    </ECCustomAttributeClass>
+    <ECCustomAttributeClass typeName="ForeignKeyView" modifier="Sealed" appliesTo="RelationshipClass" description="Flags a relationship to be an automatic view, based on navigation properties on the constraint classes." />
 </ECSchema>

@@ -27,6 +27,27 @@ ECSqlStatus DynamicSelectClauseECClass::Initialize()
     return ECSqlStatus::Success;
     }
 
+ECSqlStatus DynamicSelectClauseECClass::CheckForDuplicateName(Utf8StringCR propName, Utf8StringCR columnAlias, bool& isDuplicate, ECSqlPrepareContext& ctx) {
+    auto it = m_selectClauseNames.find(propName);
+    isDuplicate = false;
+    if (it != m_selectClauseNames.end())
+    {
+        DerivedPropertyExp const* otherSelectClauseItem = it->second;
+        if (!columnAlias.empty() || !otherSelectClauseItem->GetColumnAlias().empty())
+        {
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0463, "Alias '%s' used in the select clause is ambiguous.", propName.c_str());
+            return ECSqlStatus::InvalidECSql;
+        }
+
+        isDuplicate = true;
+    }
+    return ECSqlStatus::Success;
+}
+
+void DynamicSelectClauseECClass::RegisterSelectClauseItem(Utf8StringCR propName, DerivedPropertyExp const& selectClauseItemExp) {
+    m_selectClauseNames[propName] = &selectClauseItemExp;
+}
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -49,19 +70,10 @@ ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECProper
     //-if one of the items has an alias -> error as ECSQL author has to make sure that aliases are unambiguous
     Utf8String propName = selectClauseItemExp.GetName();
     Utf8StringCR columnAlias = selectClauseItemExp.GetColumnAlias();
-    auto it = m_selectClauseNames.find(propName);
     bool isDuplicateName = false;
-    if (it != m_selectClauseNames.end())
-        {
-        DerivedPropertyExp const* otherSelectClauseItem = it->second;
-        if (!columnAlias.empty() || !otherSelectClauseItem->GetColumnAlias().empty())
-            {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0463, "Alias '%s' used in the select clause is ambiguous.", propName.c_str());
-            return ECSqlStatus::InvalidECSql;
-            }
-
-        isDuplicateName = true;
-        }
+    auto dupStat = CheckForDuplicateName(propName, columnAlias, isDuplicateName, ctx);
+    if (!dupStat.IsSuccess())
+        return dupStat;
 
     //exp that are no prop name exps (e.g. constants or A+B, prop refs (ref to property in a nested select) or alias items always need generated prop
     const bool needsToGenerate = 
@@ -115,7 +127,7 @@ ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECProper
         if (first.GetExpression()->GetType() == Exp::Type::PropertyName)
             {
             const PropertyNameExp& firstExp = first.GetExpression()->GetAs<PropertyNameExp>();
-            const PropertyPath& internalPropPath = firstExp.GetPropertyPath();
+            const PropertyPath& internalPropPath = firstExp.GetResolvedPropertyPath();
             const ECPropertyCP leafProp = internalPropPath[internalPropPath.Size() - 1].GetProperty();
             const bool isSystem = leafProp != nullptr
                 && ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*leafProp).IsSystemProperty();
@@ -129,7 +141,7 @@ ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECProper
         }
 
     if (!isDuplicateName)
-        m_selectClauseNames[propName] = &selectClauseItemExp;
+        RegisterSelectClauseItem(propName, selectClauseItemExp);
 
     return ECSqlStatus::Success;
     }
