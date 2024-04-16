@@ -1367,13 +1367,13 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
     EXPECT_STREQ("ECDbMap", ecsqlStmt.GetValueText(0));
     EXPECT_EQ(2, ecsqlStmt.GetValueInt(1));
     EXPECT_EQ(0, ecsqlStmt.GetValueInt(2));
-    EXPECT_EQ(3, ecsqlStmt.GetValueInt(3));
+    EXPECT_EQ(4, ecsqlStmt.GetValueInt(3));
     ASSERT_EQ(BE_SQLITE_ROW, ecsqlStmt.Step());
 
     EXPECT_STREQ("ECDbMeta", ecsqlStmt.GetValueText(0));
     EXPECT_EQ(4, ecsqlStmt.GetValueInt(1));
     EXPECT_EQ(0, ecsqlStmt.GetValueInt(2));
-    EXPECT_EQ(2, ecsqlStmt.GetValueInt(3));
+    EXPECT_EQ(3, ecsqlStmt.GetValueInt(3));
     ASSERT_EQ(BE_SQLITE_ROW, ecsqlStmt.Step());
 
     EXPECT_STREQ("ECDbSystem", ecsqlStmt.GetValueText(0));

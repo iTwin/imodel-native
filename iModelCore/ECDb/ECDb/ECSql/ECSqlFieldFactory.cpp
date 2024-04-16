@@ -11,6 +11,50 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+template <typename TResult>
+TResult const* GetParentOfType(Exp const* exp, Exp::Type type)
+    {
+    if (exp == nullptr)
+        return nullptr;
+
+    auto* parent = exp->FindParent(type);
+    if(parent != nullptr)
+        return parent->GetAsCP<TResult>();
+
+    return nullptr;
+    }
+
+ClassNameExp const* TryGetOutmostView(PropertyNameExp const* propNameExp)
+    {
+    if (propNameExp == nullptr)
+        return nullptr;
+
+    auto* propRef = propNameExp->GetPropertyRef();
+    if (propRef == nullptr)
+        return nullptr;
+
+    auto& derivedProperty = propNameExp->GetPropertyRef()->GetEndPointDerivedProperty(); //This is the innermost property referenced by the propRef
+
+    //Now we navigate up and find the outmost view class which wraps this derivd property
+    ClassNameExp const* outmostViewClass = nullptr;
+    SubqueryRefExp const* subqueryRef = nullptr;
+    Exp const* currentExp = derivedProperty.GetParent();
+
+    do {
+        subqueryRef = GetParentOfType<SubqueryRefExp>(currentExp, Exp::Type::SubqueryRef);
+        if (subqueryRef != nullptr) {
+            auto* viewClass = subqueryRef->GetViewClass();
+            if (viewClass != nullptr) {
+                outmostViewClass = viewClass;
+            }
+
+            currentExp = subqueryRef->GetParent();
+        }
+    } while (subqueryRef != nullptr);
+
+    return outmostViewClass;
+    }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -19,49 +63,73 @@ ECSqlStatus ECSqlFieldFactory::CreateField(ECSqlPrepareContext& ctx, DerivedProp
     {
     BeAssert(derivedProperty != nullptr && derivedProperty->IsComplete());
 
-    ECSqlSelectPreparedStatement& selectPreparedStatement = GetPreparedStatement(ctx);
+    bool isDynamic = false;
+    ExtractPropertyValueExp const* extractPropExp = derivedProperty->TryGetExtractPropExp();
+    if (extractPropExp) {
+        // replace anchor for extract function with actual parameter.
+        auto& anchorName = extractPropExp->GetSqlAnchor([&](Utf8CP name) {
+            return ctx.GetAnchors().CreateAnchor(name);
+        });
+        ctx.GetAnchors().QueueReplacementForAnchor(anchorName, SqlPrintfString(",%s,%d", ctx.GetThisStmtPtrParamDecl(), startColumnIndex));
+        isDynamic = true;
+    }
 
     ValueExp const* valueExp = derivedProperty->GetExpression();
     PropertyNameExp const* propNameExp = nullptr;
-    if (valueExp->GetType() == Exp::Type::PropertyName)
+    if (valueExp->GetType() == Exp::Type::PropertyName && !isDynamic)
         propNameExp = valueExp->GetAsCP<PropertyNameExp>();
 
+    ClassNameExp const* viewClassNameExp = TryGetOutmostView(propNameExp); //If we are in a view we have to resolve the propNameExp to the actual property in the view
+    if (viewClassNameExp != nullptr && propNameExp != nullptr) {
+        return CreateFieldForView(ctx, *propNameExp, *viewClassNameExp, *derivedProperty, startColumnIndex, isDynamic);
+        }
+
     ECPropertyCP generatedProperty = nullptr;
-    ECSqlStatus stat = selectPreparedStatement.GetDynamicSelectClauseECClassR().GeneratePropertyIfRequired(generatedProperty, ctx, *derivedProperty, propNameExp);
+    ECSqlSelectPreparedStatement& selectPreparedStatement = GetPreparedStatement(ctx);
+    ECSqlStatus stat = selectPreparedStatement.GetDynamicSelectClauseECClassR().GeneratePropertyIfRequired(generatedProperty, ctx, *derivedProperty, propNameExp, isDynamic);
     if (!stat.IsSuccess())
         return stat;
 
     if(generatedProperty == nullptr && propNameExp == nullptr)
         return ECSqlStatus::Error;
 
-    ECSqlColumnInfo ecsqlColumnInfo = CreateColumnInfoForProperty(ctx, generatedProperty, propNameExp);
+    ECSqlColumnInfo ecsqlColumnInfo = CreateColumnInfoForProperty(ctx, generatedProperty, propNameExp, isDynamic);
 
-    ECSqlTypeInfo const& valueTypeInfo = valueExp->GetTypeInfo();
+    return CreateField(ctx, selectPreparedStatement, startColumnIndex, ecsqlColumnInfo, *valueExp);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+ECSqlStatus ECSqlFieldFactory::CreateField(ECSqlPrepareContext& ctx, ECSqlSelectPreparedStatement& preparedStatement, int sqlColumnIndex, ECSqlColumnInfo const& ecsqlColumnInfo, ValueExp const& valueExp)
+    {
+    ECSqlTypeInfo const& valueTypeInfo = valueExp.GetTypeInfo();
     BeAssert(valueTypeInfo.GetKind() != ECSqlTypeInfo::Kind::Unset);
 
     std::unique_ptr<ECSqlField> field = nullptr;
-    stat = ECSqlStatus::Success;
+    ECSqlStatus stat = ECSqlStatus::Success;
     switch (valueTypeInfo.GetKind())
         {
             case ECSqlTypeInfo::Kind::Null:
-                stat = CreateNullField(field, startColumnIndex, ctx, ecsqlColumnInfo);
+                stat = CreateNullField(field, sqlColumnIndex, ctx, ecsqlColumnInfo);
                 break;
 
             case ECSqlTypeInfo::Kind::Primitive:
-                stat = CreatePrimitiveField(field, startColumnIndex, ctx, ecsqlColumnInfo, valueTypeInfo.GetPrimitiveType());
+                stat = CreatePrimitiveField(field, sqlColumnIndex, ctx, ecsqlColumnInfo, valueTypeInfo.GetPrimitiveType());
                 break;
 
             case ECSqlTypeInfo::Kind::Struct:
-                stat = CreateStructField(field, startColumnIndex, ctx, ecsqlColumnInfo, valueTypeInfo.GetStructType());
+                stat = CreateStructField(field, sqlColumnIndex, ctx, ecsqlColumnInfo, valueTypeInfo.GetStructType());
                 break;
 
             case ECSqlTypeInfo::Kind::PrimitiveArray:
             case ECSqlTypeInfo::Kind::StructArray:
-                stat = CreateArrayField(field, startColumnIndex, ctx, ecsqlColumnInfo);
+                stat = CreateArrayField(field, sqlColumnIndex, ctx, ecsqlColumnInfo);
                 break;
 
             case ECSqlTypeInfo::Kind::Navigation:
-                stat = CreateNavigationPropertyField(field, startColumnIndex, ctx, ecsqlColumnInfo);
+                stat = CreateNavigationPropertyField(field, sqlColumnIndex, ctx, ecsqlColumnInfo);
                 break;
 
             default:
@@ -70,7 +138,7 @@ ECSqlStatus ECSqlFieldFactory::CreateField(ECSqlPrepareContext& ctx, DerivedProp
         }
 
     if (stat.IsSuccess())
-        selectPreparedStatement.AddField(std::move(field));
+        preparedStatement.AddField(std::move(field));
 
     return stat;
     }
@@ -79,7 +147,85 @@ ECSqlStatus ECSqlFieldFactory::CreateField(ECSqlPrepareContext& ctx, DerivedProp
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoForProperty(ECSqlPrepareContext const& ctx, ECPropertyCP generatedProperty, PropertyNameExp const* propertyNameExp)
+ECSqlStatus ECSqlFieldFactory::CreateFieldForView(ECSqlPrepareContext& ctx, PropertyNameExp const& propNameExp, ClassNameExp const& viewClassNameExp, DerivedPropertyExp const& derivedProperty, int startColumnIndex, bool isDynamic)
+    {
+    PropertyPath const& propertyPath  = propNameExp.GetResolvedPropertyPath();
+    ECPropertyCP ecProperty = propertyPath.First().GetProperty();
+    Utf8StringCR propertyName = propertyPath.First().GetName();
+    Utf8String columnName = derivedProperty.GetName();
+    Utf8StringCR columnAlias = derivedProperty.GetColumnAlias();
+
+    ClassMap const* classMap = propertyPath.GetClassMap();
+    ECClassCP rootECClass = ctx.GetECDb().Schemas().GetClass(viewClassNameExp.GetSchemaName(), viewClassNameExp.GetClassName());
+    if (classMap != nullptr && rootECClass == nullptr) {
+        rootECClass = &classMap->GetClass();
+    }
+    
+    if(ecProperty == nullptr || ecProperty->GetClass().GetId() != rootECClass->GetId() || !ecProperty->GetName().EqualsI(propertyName)) {
+        if(propertyName.EqualsI(ECDBSYS_PROP_ECClassId)) {
+            ecProperty = ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemProperty(ECSqlSystemPropertyInfo::ECClassId());
+            } else if(propertyName.EqualsI(ECDBSYS_PROP_ECInstanceId)) {
+            ecProperty = ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemProperty(ECSqlSystemPropertyInfo::ECInstanceId());
+            } else if(rootECClass != nullptr) {
+            ecProperty = rootECClass->GetPropertyP(propertyName);
+            }
+    }
+
+    ECPropertyCP originalProperty = ecProperty;
+    ECSqlSelectPreparedStatement& selectPreparedStatement = GetPreparedStatement(ctx);
+    bool isDuplicate = false;
+    if(ecProperty != nullptr) {
+        auto dupStat = selectPreparedStatement.GetDynamicSelectClauseECClassR().CheckForDuplicateName(columnName, columnAlias, isDuplicate, ctx);
+        if(dupStat != ECSqlStatus::Success)
+            return dupStat;
+    }
+    
+    bool isGeneratedProperty = false;
+    if(derivedProperty.HasAlias() || propertyPath.Size() > 1 || isDuplicate || ecProperty == nullptr)
+        {
+        ECPropertyCP generatedProperty;
+        ECSqlStatus stat = selectPreparedStatement.GetDynamicSelectClauseECClassR().GeneratePropertyIfRequired(generatedProperty, ctx, derivedProperty, &propNameExp, isDynamic);
+        if (!stat.IsSuccess())
+            return stat;
+
+        if(generatedProperty != nullptr)
+            {
+            isGeneratedProperty = true;
+            ecProperty = generatedProperty;
+            }
+        }
+        else
+        {
+            selectPreparedStatement.GetDynamicSelectClauseECClassR().RegisterSelectClauseItem(columnName, derivedProperty);
+        }
+
+    if(ecProperty == nullptr) {
+        return ECSqlStatus::Error;
+    }
+
+    ECSqlColumnInfo::RootClass rootClass(rootECClass != nullptr ? *rootECClass : ecProperty->GetClass(), nullptr);
+    bool isSystemProperty = false;
+    if(ecProperty != nullptr && ecProperty->HasId())
+        isSystemProperty = ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*ecProperty).IsSystemProperty();
+    if(!isSystemProperty && originalProperty != nullptr && originalProperty->HasId())
+        isSystemProperty = ctx.GetECDb().Schemas().Main().GetSystemSchemaHelper().GetSystemPropertyInfo(*originalProperty).IsSystemProperty();
+
+    ECSqlPropertyPath resultPropertyPath;
+    resultPropertyPath.AddEntry(*ecProperty);
+
+    DateTime::Info dateTimeInfo;
+    ECStructClassCP structType = nullptr;
+    ECTypeDescriptor typeDescriptor = DetermineDataType(dateTimeInfo, structType, ctx.Issues(), *ecProperty);
+    ECSqlColumnInfo ecsqlColumnInfo(typeDescriptor, dateTimeInfo, structType, ecProperty, originalProperty, isSystemProperty, isGeneratedProperty, resultPropertyPath, rootClass, isDynamic);
+    ValueExp const* valueExp = derivedProperty.GetExpression();
+    return CreateField(ctx, selectPreparedStatement, startColumnIndex, ecsqlColumnInfo, *valueExp);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoForProperty(ECSqlPrepareContext const& ctx, ECPropertyCP generatedProperty, PropertyNameExp const* propertyNameExp, bool isDynamic)
     {
     bool isGenerated = generatedProperty != nullptr;
     bool isSystem = false;
@@ -114,7 +260,7 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateColumnInfoForProperty(ECSqlPrepareConte
             }
         }
 
-    PropertyPath const& internalPropPath = resolvedPropertyName->GetPropertyPath();
+    PropertyPath const& internalPropPath = resolvedPropertyName->GetResolvedPropertyPath();
     size_t entryCount = internalPropPath.Size();
     ECSqlPropertyPath ecsqlPropPath;
     for (size_t i = 0; i < entryCount; i++)

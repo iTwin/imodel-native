@@ -839,7 +839,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
         };
 
     ECRelationshipClassCR relationshipClass = relationMap.GetRelationshipClass();
-    if (ECDbMapCustomAttributeHelper::IsForeignKeyBasedView(relationshipClass))
+    if (ECDbMapCustomAttributeHelper::IsForeignKeyView(relationshipClass))
         {
         if (!ClassViews::IsViewClass(*relationshipClass.GetSource().GetAbstractConstraint()) &&
             !ClassViews::IsViewClass(*relationshipClass.GetTarget().GetAbstractConstraint()))

@@ -823,8 +823,8 @@ BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLPa
 
     if (lhsExp->GetType() == Exp::Type::PropertyName) {
         auto lhsPropExp = lhsExp->GetAsCP<PropertyNameExp>();
-        if (InstanceValueExp::IsInstancePath(lhsPropExp->GetPropertyPath())) {
-            if (!InstanceValueExp::IsValidSourcePath(lhsPropExp->GetPropertyPath())) {
+        if (InstanceValueExp::IsInstancePath(lhsPropExp->GetResolvedPropertyPath())) {
+            if (!InstanceValueExp::IsValidSourcePath(lhsPropExp->GetResolvedPropertyPath())) {
                 Issues().Report(
                     IssueSeverity::Error, 
                     IssueCategory::BusinessProperties,
@@ -833,7 +833,7 @@ BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLPa
                 return ERROR;
             }
             if (!isExtractProp) {
-                exp = std::make_unique<ExtractInstanceValueExp>(lhsPropExp->GetPropertyPath());
+                exp = std::make_unique<ExtractInstanceValueExp>(lhsPropExp->GetResolvedPropertyPath());
                 return SUCCESS;
             } else {
                 std::unique_ptr<ValueExp> rhsExp;
@@ -850,8 +850,18 @@ BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLPa
                     return ERROR;
                 }
                 auto rhsPropExp = rhsExp->GetAsCP<PropertyNameExp>();
-                exp = std::make_unique<ExtractPropertyValueExp>(lhsPropExp->GetPropertyPath(), rhsPropExp->GetPropertyPath());
+                exp = std::make_unique<ExtractPropertyValueExp>(lhsPropExp->GetResolvedPropertyPath(), rhsPropExp->GetResolvedPropertyPath(), isOptionalProp);
                 return SUCCESS;
+            }
+        } else {
+            if (lhsPropExp->GetResolvedPropertyPath().Last().GetName().EndsWith("?")) {
+                Issues().Report(
+                    IssueSeverity::Error,
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECSQL,
+                    ECDbIssueId::ECDb_0612,
+                    "Invalid grammar. Property access string cannot end with '?'.");
+                return ERROR;
             }
         }
     }
@@ -3310,10 +3320,10 @@ BentleyStatus ECSqlParser::ParseNavValueCreationFuncExp(std::unique_ptr<NavValue
     if (derivedPropertyExp->GetExpression()->GetType() != Exp::Type::PropertyName) // NAVIGATION_VALUE function should accept only PropertyName
         return ERROR;
 
-    if (derivedPropertyExp->GetExpression()->GetAs<PropertyNameExp>().GetPropertyPath().Size() != 3)
+    if (derivedPropertyExp->GetExpression()->GetAs<PropertyNameExp>().GetResolvedPropertyPath().Size() != 3)
         return ERROR;
 
-    PropertyPath propPath = derivedPropertyExp->GetExpression()->GetAs<PropertyNameExp>().GetPropertyPath();
+    PropertyPath propPath = derivedPropertyExp->GetExpression()->GetAs<PropertyNameExp>().GetResolvedPropertyPath();
 
     ClassMap const* classMap = m_context->GetECDb().Schemas().GetDispatcher().GetClassMap(propPath[0].GetName(), propPath[1].GetName(), SchemaLookupMode::AutoDetect, nullptr);
 

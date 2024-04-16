@@ -35,7 +35,9 @@ struct DynamicSelectClauseECClass final
 
     public:
         DynamicSelectClauseECClass() {}
-        ECSqlStatus GeneratePropertyIfRequired(ECN::ECPropertyCP& generatedProperty, ECSqlPrepareContext&, DerivedPropertyExp const& selectClauseItemExp, PropertyNameExp const* selectClauseItemPropNameExp);
+        ECSqlStatus GeneratePropertyIfRequired(ECN::ECPropertyCP& generatedProperty, ECSqlPrepareContext&, DerivedPropertyExp const& selectClauseItemExp, PropertyNameExp const* selectClauseItemPropNameExp, bool isDynamic);
+        ECSqlStatus CheckForDuplicateName(Utf8StringCR propName, Utf8StringCR columnAlias, bool& isDuplicate, ECSqlPrepareContext& ctx); //Checks if a column of the given name is already selected
+        void RegisterSelectClauseItem(Utf8StringCR propName, DerivedPropertyExp const& selectClauseItemExp);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

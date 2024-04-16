@@ -19,7 +19,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
         return PrepareInSubqueryRef(nativeSqlSnippets, ctx, exp);
 
     if (exp.IsVirtualProperty()) {
-        BeAssert(exp.GetPropertyPath().Size() == 1);
+        BeAssert(exp.GetResolvedPropertyPath().Size() == 1);
         NativeSqlBuilder builder;
         if (ctx.GetCurrentScope().GetECSqlType() == ECSqlType::Select) {
             // we only append property scope only if its different from tablevalued class name and not empty
@@ -271,16 +271,16 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                         }
                     else
                         {
-                        Utf8String accessStringPrefix = exp.GetPropertyPath().ToString();
+                        Utf8String accessStringPrefix = exp.GetResolvedPropertyPath().ToString();
                         const bool thisPropertyIsAlias = propertyRef->ReferToAlias();
                         if (thisPropertyIsAlias)
                             {
-                            if (exp.GetPropertyPath().Size() == 1)
+                            if (exp.GetResolvedPropertyPath().Size() == 1)
                                 accessStringPrefix.clear();
                             else
                                 {
                                 // Alias qualified property
-                                accessStringPrefix = propertyMap.GetAccessString() + "." +  exp.GetPropertyPath().Skip(1).ToString();
+                                accessStringPrefix = propertyMap->GetAccessString() + "." +  exp.GetResolvedPropertyPath().Skip(1).ToString();
                                 }
                             }
 
@@ -341,16 +341,16 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                             }
                         else
                             {
-                            Utf8String accessStringPrefix = exp.GetPropertyPath().ToString();
+                            Utf8String accessStringPrefix = exp.GetResolvedPropertyPath().ToString();
                             const bool thisPropertyIsAlias = propertyRef->ReferToAlias();
                             if (thisPropertyIsAlias)
                                 {
-                                if (exp.GetPropertyPath().Size() == 1)
+                                if (exp.GetResolvedPropertyPath().Size() == 1)
                                     accessStringPrefix.clear();
                                 else
                                     {
                                     // Alias qualified property
-                                    accessStringPrefix = propertyMap->GetAccessString() + "." +  exp.GetPropertyPath().Skip(1).ToString();
+                                    accessStringPrefix = propertyMap->GetAccessString() + "." +  exp.GetResolvedPropertyPath().Skip(1).ToString();
                                     }
                                 }
 
@@ -398,7 +398,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                         sqlSnippet.Append(ctb.GetName());
                     }
                     sqlSnippet.AppendDot();
-                    sqlSnippet.Append(exp.GetPropertyPath().Last().GetName());
+                    sqlSnippet.Append(exp.GetResolvedPropertyPath().Last().GetName());
                     nativeSqlSnippets.push_back(sqlSnippet);
                 } else {
                     //Here we presume any primitive value expression which must have a alias.
