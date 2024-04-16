@@ -4,7 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECDb/ECSqlStatement.h>
-#include <ECDb/ConcurrentQueryManager.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 

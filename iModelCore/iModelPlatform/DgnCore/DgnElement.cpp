@@ -6,8 +6,6 @@
 #include "BisCoreNames.h"
 #include "ElementECInstanceAdapter.h"
 #include <ECObjects/ECJsonUtilities.h>
-#include <ECDb/ECSqlStatement.h>
-#include <ECDb/QueryJsonAdaptor.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
