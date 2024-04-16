@@ -1732,12 +1732,6 @@ TEST_F (BeSQLiteDbTests, nocase_latin1_ascii_support)
 {
     SetupDb (L"icu.db");
     EXPECT_TRUE (m_db.IsDbOpen ());
-    auto reOpenDb = [&]() {
-        m_db.SaveChanges();
-        auto fileName = m_db.GetDbFileName();
-        m_db.CloseDb();
-        m_db.OpenBeSQLiteDb(fileName, Db::OpenParams(Db::OpenMode::ReadWrite));
-    };
     auto setupTable = [&](Utf8CP tableName, Utf8CP collation) {
         ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteDdl(SqlPrintfString("CREATE TABLE [%s](str TEXT UNIQUE COLLATE %s)", tableName, collation)));
     };
