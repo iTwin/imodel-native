@@ -214,7 +214,8 @@ struct BeCGIModelJsonValueWriter
                 value["outerBoundaryActive"] = false;   // default/undefined is true (boundary forms a hole)
             }
         }
-#ifdef RawImjs
+
+/* RawImjs
 {"torusPipe":
  {"center":[1,50,3],
   "majorRadius":10,
@@ -224,10 +225,10 @@ struct BeCGIModelJsonValueWriter
   "sweepAngle":45,
   "capped":true
  }
-}]
+}
 // ** omit sweep if full circle.
 // ** omit cap if false
-#endif
+*/
 
 void TorusPipeToJson (BeJsValue in, ISolidPrimitiveCR sp)
     {
@@ -250,7 +251,7 @@ void TorusPipeToJson (BeJsValue in, ISolidPrimitiveCR sp)
         }
     }
 
-#ifdef RawImjs
+/* RawImjs
 {"box":
  {"baseOrigin":[1,2,3],
   "origin":[1,2,3],
@@ -265,8 +266,9 @@ void TorusPipeToJson (BeJsValue in, ISolidPrimitiveCR sp)
  },
  "xyVectors":[[0.984807753012208,0.17364817766693033,0],
  [-0.17364817766693033,0.984807753012208,0]]
-},
-#endif
+}
+*/
+
 void BoxToJson (BeJsValue in, ISolidPrimitiveCR sp)
     {
     auto value = in["box"];
@@ -293,7 +295,8 @@ void BoxToJson (BeJsValue in, ISolidPrimitiveCR sp)
             }
         }
     }
-#ifdef RawImjs
+
+/* RawImjs
 {"sphere":
  {"center":[1,2,3],
   "zxVectors":[[0,1,0],[0,0,1]],
@@ -301,8 +304,9 @@ void BoxToJson (BeJsValue in, ISolidPrimitiveCR sp)
   "radius":4,
   "latitudeStartEnd":[-45,45]
  }
-}]
-#endif
+}
+*/
+
 void SphereToJson (BeJsValue in, ISolidPrimitiveCR sp)
     {
     auto value = in["sphere"];
@@ -352,7 +356,7 @@ void SphereToJson (BeJsValue in, ISolidPrimitiveCR sp)
         }
     }
 
-#ifdef RawImjs
+/* RawImjs
 {"cylinder":
  {"capped":false,
   "start":[1,2,1],
@@ -369,8 +373,9 @@ void SphereToJson (BeJsValue in, ISolidPrimitiveCR sp)
   "endRadius":0.2,
   "xyVectors":[[1,0,0], [0,1,0]]
  }
-},
-#endif
+}
+*/
+
 void ConeToJson (BeJsValue in, ISolidPrimitiveCR sp)
     {
     static bool s_alwaysOutputConeXY = true;
@@ -425,7 +430,7 @@ void ConeToJson (BeJsValue in, ISolidPrimitiveCR sp)
         }
     }
 
-#ifdef RawImjs
+/* RawImjs
 {"ruledSweep":
  {"contour":[
   {"path":<pathContents>}
@@ -434,7 +439,8 @@ void ConeToJson (BeJsValue in, ISolidPrimitiveCR sp)
   "capped":false
  }
 }
-#endif
+*/
+
 void RuledSweepToJson (BeJsValue in, ISolidPrimitiveCR sp)
     {
     DgnRuledSweepDetail detail;
@@ -449,13 +455,15 @@ void RuledSweepToJson (BeJsValue in, ISolidPrimitiveCR sp)
         }
     }
 
-#ifdef RawImjs
+/* RawImjs
 {"linearSweep":{
  "contour":{<CurveVector>},
  "capped":false,
  "vector":[0,0,1.234]
- }}]
-#endif
+ }
+}
+*/
+
 void LinearSweepToJson (BeJsValue in, ISolidPrimitiveCR sp)
     {
     DgnExtrusionDetail detail;
@@ -468,7 +476,7 @@ void LinearSweepToJson (BeJsValue in, ISolidPrimitiveCR sp)
         }
     }
 
-#ifdef RawImjs
+/* RawImjs
 {"rotationalSweep":
  {"axis":[0,1,0],
   "contour":{<CurveVector>},
@@ -476,8 +484,9 @@ void LinearSweepToJson (BeJsValue in, ISolidPrimitiveCR sp)
   "center":[0,0,0],
   "sweepAngle":119.99999999999999
  }
-},
-#endif
+}
+*/
+
 void RotationalSweepToJson (BeJsValue in, ISolidPrimitiveCR sp)
     {
     DgnRotationalSweepDetail detail;
@@ -492,7 +501,7 @@ void RotationalSweepToJson (BeJsValue in, ISolidPrimitiveCR sp)
         }
     }
 
-#ifdef RawImjs
+/* RawImjs
 {"indexedMesh":
  {"color":[10,11,12,13,....,83,84,85,86,87,88,89],
   "colorIndex":[1,1,1,0,2,2,2,0,3,3,3,0,......80,80,80,0],
@@ -504,12 +513,12 @@ void RotationalSweepToJson (BeJsValue in, ISolidPrimitiveCR sp)
   "normal":[[1,0,0],[0,1,0],..],
  }
 }
-#endif
-// AUXDATA -- DO NOT MERGE TO CONNECT
+*/
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-static void ToJson(BeJsValue value, PolyfaceAuxChannel::DataCR in)
+void toJson(BeJsValue value, PolyfaceAuxChannel::DataCR in)
     {
     value["input"] = in.GetInput();
 
@@ -521,7 +530,7 @@ static void ToJson(BeJsValue value, PolyfaceAuxChannel::DataCR in)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-static void  ToJson(BeJsValue value, PolyfaceAuxChannelCR in)
+void toJson(BeJsValue value, PolyfaceAuxChannelCR in)
     {
     value["dataType"] = (int32_t) in.GetDataType();
     value["name"] = in.GetName();
@@ -529,30 +538,30 @@ static void  ToJson(BeJsValue value, PolyfaceAuxChannelCR in)
 
     auto dataArray = value["data"];
     for (auto data : in.GetData())
-        ToJson(dataArray.appendValue(), *data);
+        toJson(dataArray.appendValue(), *data);
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-static void ToJson(BeJsValue value, PolyfaceAuxData::ChannelsCR in)
+void toJson(BeJsValue value, PolyfaceAuxData::ChannelsCR in)
     {
     for (auto& channel : in)
-        ToJson(value.appendValue(), *channel);
+        toJson(value.appendValue(), *channel);
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-static void ToJson(BeJsValue value, PolyfaceAuxDataCR in)
+void toJson(BeJsValue value, PolyfaceAuxDataCR in)
     {
-    auto indices = value["indices"];
-    for (auto& index : in.GetIndices())
-        indices.appendValue() = index;
-
-    ToJson(value["channels"], in.GetChannels());
+    toJson(value["indices"], in.GetIndices().data(), in.GetIndices().size());
+    toJson(value["channels"], in.GetChannels());
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
 void IndexedPolyfaceToJson(BeJsValue in, PolyfaceHeaderCR mesh)
     {
     if (mesh.GetMeshStyle () != MESH_ELM_STYLE_INDEXED_FACE_LOOPS)
@@ -591,14 +600,12 @@ void IndexedPolyfaceToJson(BeJsValue in, PolyfaceHeaderCR mesh)
         FaceDataToJson (allData["faceData"], mesh.GetFaceDataCP (), mesh.GetFaceCount ());
     if (mesh.GetFaceIndexCount () > 0)  // There is a separate GetFaceIndexCount, but it has to match GetPointIndexCount.
         toJson (allData["faceIndex"], mesh.GetFaceIndexCP (), mesh.GetPointIndexCount ());
-    TaggedNumericData const *taggedData = mesh.GetNumericTagsCP();
-    if (taggedData != nullptr)
-        {
-        ToJson (allData["tags"], *taggedData);
-        }
+
+    if (auto taggedData = mesh.GetNumericTagsCP())
+        toJson(allData["tags"], *taggedData);
 
     if(mesh.GetAuxDataCP().IsValid())
-        ToJson(allData["auxData"], *mesh.GetAuxDataCP());
+        toJson(allData["auxData"], *mesh.GetAuxDataCP());
     }
 
 void CurvePrimitiveToJson(BeJsValue in, ICurvePrimitiveCR cp)
@@ -613,7 +620,7 @@ void CurvePrimitiveToJson(BeJsValue in, ICurvePrimitiveCR cp)
         toJson (value.appendValue(), segment.point[1], m_packIsolatedPoints);
         return;
         }
-    // RawIJMS
+    // RawIMJS
     // {"arc":
     // {"center":[0,0,0],
     //  "vectorX":[3,0,0],
@@ -742,21 +749,6 @@ void CurvePrimitiveToJson(BeJsValue in, ICurvePrimitiveCR cp)
             toJson(value["startTangent"], interpolationCurve->startTangent, m_packIsolatedPoints);
         if (interpolationCurve->endTangent.Magnitude() != 0)
             toJson(value["endTangent"], interpolationCurve->endTangent, m_packIsolatedPoints);
-
-/*
-        table InterpolationCurve
-            {
-            order:int;
-            closed:bool;
-            isChordLenKnots:int;
-            isColinearTangents:int;
-            isChordLenTangents:int;
-            isNaturalTangents:int;
-            startTangent:DPoint3d;
-            endTangent:DVector3d;
-            fitPoints:[double]; // xyz flattened
-            knots:[double];
-*/
         }
     }
 
@@ -849,7 +841,7 @@ void PolyfaceToJson (BeJsValue in, PolyfaceHeaderCR mesh)
             }
         }
     // insert a (single) TaggedNumericData in the json object.
-    void ToJson(BeJsValue obj, TaggedNumericData const &data)
+    void toJson(BeJsValue obj, TaggedNumericData const &data)
         {
         obj["tagA"] = data.m_tagA;
         obj["tagB"] = data.m_tagB;
@@ -873,7 +865,7 @@ void PolyfaceToJson (BeJsValue in, PolyfaceHeaderCR mesh)
         {
         for (auto const &d : data)
             {
-            ToJson (dest.appendValue (), d);
+            toJson (dest.appendValue (), d);
             }
         }
 
@@ -959,7 +951,7 @@ bvector<IGeometryPtr> *invalidGeometry
 void IModelJson::TaggedNumericDataToJson(BeJsValue obj, TaggedNumericData const &data)
     {
     BeCGIModelJsonValueWriter builder;
-    builder.ToJson (obj, data);
+    builder.toJson (obj, data);
     }
 
 END_BENTLEY_GEOMETRY_NAMESPACE

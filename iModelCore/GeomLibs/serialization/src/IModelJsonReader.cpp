@@ -890,7 +890,7 @@ bool tryValueToRuledSweep (BeJsConst value, ISolidPrimitivePtr &result)
         }
     return false;
     }
-// AUXDATA -- DO NOT PORT THIS TO CONNECT
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -965,9 +965,9 @@ PolyfaceAuxDataPtr  tryValueToPolyfaceAuxData(BeJsConst value)
         !tryValueToPolyfaceAuxDataChannels(channels, value["channels"]))
         return nullptr;
 
-    return new PolyfaceAuxData(
-std::move(indices), std::move(channels));
+    return new PolyfaceAuxData(std::move(indices), std::move(channels));
     }
+
 typedef ValidatedValue<int> ValidatedInt;
 
 // EDL 12/23/2020 using value.asInt() is unpredictable.
@@ -987,8 +987,8 @@ ValidatedInt AsInt(BeJsConst value, int defaultValue = 0)
         return ValidatedInt(defaultValue, false);
         }
     return ValidatedInt(defaultValue, false);
-
     }
+
 PolyfaceHeaderPtr tryValueToPolyfaceHeader (BeJsConst parentValue)
     {
     if (parentValue.isNull ())

@@ -720,7 +720,6 @@ flatbuffers::Offset<BGFB::PolyfaceAuxChannel> WriteAsFBPolyfaceAuxChannel(Polyfa
     return builder.Finish();
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -734,7 +733,7 @@ flatbuffers::Offset<BGFB::PolyfaceAuxData> WriteAsFBPolyfaceAuxData (PolyfaceAux
     for (auto const& channel : pAuxData->GetChannels())
         fbChannelVector.push_back(WriteAsFBPolyfaceAuxChannel(channel.get()));
 
-    auto    fbIndices = m_fbb.CreateVector(pAuxData->GetIndices());
+    auto    fbIndices = m_fbb.CreateVector(pAuxData->GetIndices());     // 1-based, 0-terminated/padded
     auto    fbChannels = m_fbb.CreateVector(fbChannelVector);
 
     BGFB::PolyfaceAuxDataBuilder builder (m_fbb);
@@ -743,6 +742,10 @@ flatbuffers::Offset<BGFB::PolyfaceAuxData> WriteAsFBPolyfaceAuxData (PolyfaceAux
 
     return builder.Finish();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 const flatbuffers::Offset<BGFB::TaggedNumericData> WriteFBTaggedNumericData(TaggedNumericData const &data)
     {
     const flatbuffers::Offset<flatbuffers::Vector<int32_t>> intDataOffset  = WriteOptionalVector<int, int, 1>(data.m_intData);
@@ -761,65 +764,7 @@ const flatbuffers::Offset<BGFB::TaggedNumericData> WriteFBTaggedNumericData(Tagg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyface (PolyfaceHeaderR parent)
-    {
-    int32_t numPerFace = parent.GetNumPerFace ();
-    int32_t numPerRow = parent.GetNumPerRow ();
-    int32_t meshStyle = parent.GetMeshStyle ();
-    bool    twoSided  = parent.GetTwoSided ();
-    uint32_t expectedClosure = parent.GetExpectedClosure ();
-
-    const flatbuffers::Offset<flatbuffers::Vector<double>> point = WriteOptionalVector<DPoint3d, double, 3>(parent.Point ());
-    const flatbuffers::Offset<flatbuffers::Vector<double>> param = WriteOptionalVector<DPoint2d, double, 2>(parent.Param ());
-    const flatbuffers::Offset<flatbuffers::Vector<double>> normal = WriteOptionalVector<DVec3d, double, 3>(parent.Normal ());
-    const flatbuffers::Offset<flatbuffers::Vector<double>> faceData = WriteOptionalVector<FacetFaceData, double, 8>(parent.FaceData ());
-    const flatbuffers::Offset<flatbuffers::Vector<int32_t>> pointIndex = WriteOptionalVector<int, int, 1>(parent.PointIndex ());
-    const flatbuffers::Offset<flatbuffers::Vector<int32_t>> paramIndex = WriteOptionalVector<int, int, 1>(parent.ParamIndex ());
-    const flatbuffers::Offset<flatbuffers::Vector<int32_t>> normalIndex = WriteOptionalVector<int, int, 1>(parent.NormalIndex ());
-    const flatbuffers::Offset<flatbuffers::Vector<int32_t>> colorIndex = WriteOptionalVector<int, int, 1>(parent.ColorIndex ());
-    const flatbuffers::Offset<flatbuffers::Vector<int32_t>> faceIndex = WriteOptionalVector<int, int, 1>(parent.FaceIndex ());
-    const flatbuffers::Offset<flatbuffers::Vector<int32_t>> intColor = WriteOptionalVector<uint32_t, int, 1>(parent.IntColor ());
-    const flatbuffers::Offset<BGFB::PolyfaceAuxData>        auxData = WriteAsFBPolyfaceAuxData(parent.GetAuxDataCP().get());
-
-    auto numericTags = parent.GetNumericTagsCP();
-    const flatbuffers::Offset<BGFB::TaggedNumericData>
-        taggedNumericData = numericTags == nullptr || numericTags->IsZero() ? 0 : WriteFBTaggedNumericData(*numericTags);
-
-    BGFB::PolyfaceBuilder builder (m_fbb);
-    builder.add_numPerFace (numPerFace);
-    builder.add_numPerRow (numPerRow);
-    builder.add_meshStyle (meshStyle);
-    builder.add_twoSided (twoSided);
-    builder.add_expectedClosure (expectedClosure);
-
-    if (IsWritten (point))
-        builder.add_point (point);
-    if (IsWritten (param))
-        builder.add_param (param);
-    if (IsWritten (normal))
-        builder.add_normal (normal);
-    if (IsWritten (pointIndex))
-        builder.add_pointIndex (pointIndex);
-    if (IsWritten (paramIndex))
-        builder.add_paramIndex (paramIndex);
-    if (IsWritten (normalIndex))
-        builder.add_normalIndex (normalIndex);
-    if (IsWritten (colorIndex))
-        builder.add_colorIndex (colorIndex);
-    if (IsWritten (intColor))
-        builder.add_intColor (intColor);
-    if (IsWritten (faceIndex))
-        builder.add_faceIndex (faceIndex);
-    if (IsWritten (faceData))
-        builder.add_faceData (faceData);
-    if (0 != auxData.o)
-        builder.add_auxData(auxData);
-    if (IsWritten (taggedNumericData))
-        builder.add_taggedNumericData(taggedNumericData);
-    return builder.Finish ();
-    }
-
-flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyface (PolyfaceQueryCR parent)
+flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyfaceDirect(PolyfaceQueryCR parent)
     {
     int32_t numPerFace = parent.GetNumPerFace ();
     int32_t numPerRow = parent.GetNumPerRow ();
@@ -827,6 +772,7 @@ flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyface (PolyfaceQueryCR parent)
     bool    twoSided  = parent.GetTwoSided ();
     uint32_t expectedClosure = parent.GetExpectedClosure();
 
+    // NOTE: both internal and FlatBuffer Polyface/AuxData index arrays are parallel, 1-based, 0-terminated/padded
     const flatbuffers::Offset<flatbuffers::Vector<double>> point = WriteOptionalVector<DPoint3d, double, 3>(parent.GetPointCP (), parent.GetPointCount ());
     const flatbuffers::Offset<flatbuffers::Vector<double>> param = WriteOptionalVector<DPoint2d, double, 2>(parent.GetParamCP (), parent.GetParamCount ());
     const flatbuffers::Offset<flatbuffers::Vector<double>> normal = WriteOptionalVector<DVec3d, double, 3>(parent.GetNormalCP (), parent.GetNormalCount ());
@@ -876,6 +822,16 @@ flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyface (PolyfaceQueryCR parent)
         builder.add_taggedNumericData(taggedNumericData);
 
     return builder.Finish ();
+    }
+
+flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyface (PolyfaceQueryCR parent)
+    {
+    return WriteAsFBPolyfaceDirect(parent);
+    }
+
+flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyface (PolyfaceHeaderR parent)
+    {
+    return WriteAsFBPolyfaceDirect(parent);
     }
 
 flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (PolyfaceQueryCR parent)
@@ -1103,23 +1059,155 @@ static CurveVectorPtr ReadCurveVectorDirect (const BGFB::CurveVector * fbCurveVe
     return cvPtr;
     }
 
+// Compute the number of logical entries in every flat data array in the AuxData
+static uint32_t ChannelDataLength(BGFB::PolyfaceAuxData const& fbAuxData)
+    {
+    if (!fbAuxData.channels() || !fbAuxData.channels()->size())
+        return 0;
+
+    auto fbChannel0 = fbAuxData.channels()->Get(0);
+    if (!fbChannel0)
+        return 0;
+
+    auto numChannel0Data = fbChannel0->data()->size();
+    if (!numChannel0Data)
+        return 0;
+
+    auto fbChannel0Data0 = fbChannel0->data()->Get(0);
+    if (!fbChannel0Data0)
+        return 0;
+
+    auto numChannelDataValues = fbChannel0Data0->values() ? fbChannel0Data0->values()->size() : 0;
+    if (!numChannelDataValues)
+        return 0;
+
+    return numChannelDataValues / (uint32_t) PolyfaceAuxChannel::GetBlockSize((PolyfaceAuxChannel::DataType) fbChannel0->dataType());
+    }
+
+// Examine int array for range and zero count
+static uint32_t CountZeroes(int32_t const* ints, uint32_t numInts, int32_t& min, int32_t& max)
+    {
+    min = std::numeric_limits<int32_t>::max();
+    max = std::numeric_limits<int32_t>::lowest();
+    uint32_t numZeroes = 0;
+    if (ints)
+        {
+        for (uint32_t i = 0; i < numInts; ++i)
+            {
+            auto val = ints[i];
+            if (min > val)
+                min = val;
+            if (max < val)
+                max = val;
+            if (0 == val)
+                ++numZeroes;
+            }
+        }
+    return numZeroes;
+    }
+
+// Examine int array for zero count
+static uint32_t CountZeroes(int32_t const* ints, uint32_t numInts)
+    {
+    uint32_t numZeroes = 0;
+    if (ints)
+        {
+        for (uint32_t i = 0; i < numInts; ++i)
+            {
+            auto val = ints[i];
+            if (0 == val)
+                ++numZeroes;
+            }
+        }
+    return numZeroes;
+    }
+
 /*---------------------------------------------------------------------------------**//**
+* Convert 0-based indices to 1-based indices with blocking specified by another index array.
+* @param destIndices 1-based output indices with same blocking as blockingIndices
+* @param sourceIndices 0-based source indices. This array is compressed (has no blocking)
+* @param blockingIndices 1-based source indices, with blocking specified by zeroes. Assumed to have length equal to its zero count plus `sourceIndices.length`.
+* @param announceIndex callback to receive a 1-based (positive) index
+* @param announceZero callback to receive a 0 terminator/pad
++---------------+---------------+---------------+---------------+---------------+------*/
+static void WriteOneBasedIndicesFromZeroBasedIndicesWithExternalBlocking(bvector<int32_t>& destIndices, int32_t const* sourceIndices, uint32_t numSourceIndices, int32_t const* blockingIndices, uint32_t numBlockingIndices)
+    {
+    if (!sourceIndices || !blockingIndices || !numSourceIndices || !numBlockingIndices)
+        return;
+    auto blockingZeroCount = CountZeroes(blockingIndices, numBlockingIndices);
+    if (numSourceIndices + blockingZeroCount != numBlockingIndices)
+      return; // invalid input
+    uint32_t iSource = 0;
+    for (uint32_t iBlocking = 0; iBlocking < numBlockingIndices && iSource < numSourceIndices; iBlocking++)
+        {
+        if (!blockingIndices[iBlocking])
+            destIndices.push_back(0);
+        else
+            destIndices.push_back(sourceIndices[iSource++] + 1);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Extract auxData for a mesh.
+* Native object format for Polyface/PolyfaceAuxData indices is 1-based, 0-terminated/padded.
+* FlatBuffer format for Polyface/PolyfaceAuxData indices is 1-based, 0-terminated/padded.
+* Typescript API previously wrote FlatBuffer PolyfaceAuxData indices as 0-based, unterminated;
+* heuristics are used herein to identify this legacy format so it can still be read.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static PolyfaceAuxDataPtr ReadPolyfaceAuxData(const BGFB::PolyfaceAuxData* fbPolyfaceAuxData)
+static PolyfaceAuxDataPtr ReadPolyfaceAuxData(const BGFB::Polyface* fbPolyface, const BGFB::PolyfaceAuxData* fbAuxData)
     {
-    if (!fbPolyfaceAuxData)
+    if (!fbPolyface || !fbAuxData)
         return nullptr;
-    auto fbIndices = fbPolyfaceAuxData->indices();
-    auto fbChannels = fbPolyfaceAuxData->channels();
-    if (!fbIndices || !fbChannels)
+
+    auto fbPointIndices = fbPolyface->pointIndex();
+    auto fbAuxIndices = fbAuxData->indices();
+    auto fbChannels = fbAuxData->channels();
+    auto numChannels = fbChannels ? fbChannels->size() : 0;
+    auto fbNumData = ChannelDataLength(*fbAuxData);
+    if (!fbPointIndices || !fbPointIndices->size() || !fbAuxIndices || !fbAuxIndices->size() || !numChannels || !fbNumData)
         return nullptr;
+
+    auto numPerFace = fbPolyface->numPerFace();
+
+    // HEURISTICS to identify legacy AuxData indices, mistakenly serialized by Typescript API as 0-based and unterminated
+    auto isLegacy = false;
+    auto pointIndicesPadCount = CountZeroes((int32_t*) fbPointIndices->GetStructFromOffset(0), fbPointIndices->size());
+    if (numPerFace > 1)
+        {
+        int32_t auxIndexMin, auxIndexMax;
+        auto auxIndexNumZeroes = CountZeroes((int32_t*) fbAuxIndices->GetStructFromOffset(0), fbAuxIndices->size(), auxIndexMin, auxIndexMax);
+        if (auxIndexMax > 0 && (uint32_t) auxIndexMax > fbNumData) // auxIndices invalid
+            return nullptr;
+        if (auxIndexMax == fbNumData) // auxIndices 1-based
+            isLegacy = false;
+        else if (auxIndexMax <= 0 || auxIndexMin < 0) // auxIndices 1-based (signed)
+            isLegacy = false;
+        else if (auxIndexMin == 0) // auxIndices likely legacy 0-based index, but could be modern with padding
+            isLegacy = pointIndicesPadCount != auxIndexNumZeroes;
+        else if (auxIndexMin > 0) // auxIndices likely modern without padding, but could be legacy if first datum not indexed
+            isLegacy = pointIndicesPadCount > 0;
+        }
+    else
+        {
+        isLegacy = (fbAuxIndices->size() < fbPointIndices->size()) && (fbAuxIndices->size() + pointIndicesPadCount == fbPointIndices->size());
+        }
+    if (!isLegacy && fbAuxIndices->size() != fbPointIndices->size())
+      return nullptr; // auxIndices invalid
+
+    bvector<int32_t> indices;
+    if (isLegacy)
+        WriteOneBasedIndicesFromZeroBasedIndicesWithExternalBlocking(indices, (int32_t*) fbAuxIndices->GetStructFromOffset(0), fbAuxIndices->size(), (int32_t*) fbPointIndices->GetStructFromOffset(0), fbPointIndices->size());
+    else
+        {
+        indices.resize(fbAuxIndices->size());
+        memcpy(indices.data(), fbAuxIndices->GetStructFromOffset(0), fbAuxIndices->size() * sizeof(int32_t));
+        }
+    if (indices.size() != fbPointIndices->size())
+        return nullptr;
+
     PolyfaceAuxData::Channels channels;
-    bvector<int32_t> indices(fbIndices->Length());
-
-    memcpy(indices.data(), fbIndices->GetStructFromOffset(0), fbIndices->Length()*sizeof(int32_t));
-
-    for (unsigned int i=0; i<fbChannels->Length(); i++)
+    for (unsigned int i = 0; i < numChannels; i++)
         {
         auto    fbChannel = fbChannels->Get(i);
         auto    fbChannelDataVector = fbChannel->data();
@@ -1139,6 +1227,7 @@ static PolyfaceAuxDataPtr ReadPolyfaceAuxData(const BGFB::PolyfaceAuxData* fbPol
 
     return new PolyfaceAuxData(std::move(indices), std::move(channels));
     }
+
 template <typename MemberType>
 static void ReadBVector(bvector<MemberType> &dest, const MemberType *source, size_t n)
     {
@@ -1315,7 +1404,7 @@ static PolyfaceHeaderPtr ReadPolyfaceHeaderDirect (const BGFB::Polyface *fbPolyf
         }
 
     if (fbPolyface->has_auxData())
-        polyface->AuxData() = ReadPolyfaceAuxData(fbPolyface->auxData());
+        polyface->AuxData() = ReadPolyfaceAuxData(fbPolyface, fbPolyface->auxData());
 
     if (fbPolyface->has_taggedNumericData())
         {
@@ -1464,7 +1553,7 @@ static bool ReadPolyfaceQueryCarrierDirect (const BGFB::Polyface *fbPolyface, Po
     carrier.SetFaceIndex (pFaceIndex);
     if (fbPolyface->has_auxData())
         {
-        PolyfaceAuxDataCPtr  auxData = ReadPolyfaceAuxData(fbPolyface->auxData());
+        PolyfaceAuxDataCPtr  auxData = ReadPolyfaceAuxData(fbPolyface, fbPolyface->auxData());
         carrier.SetAuxData(auxData);
         }
 

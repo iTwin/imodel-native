@@ -78,9 +78,9 @@ template <typename T_Data>  struct T_PolyfaceAuxChannel : RefCountedBase
     Utf8StringCR                GetName() const             { return m_name; }                                                                  //! Return the data name.
     Utf8StringCR                GetInputName() const        { return m_inputName; }                                                             //! Return the input name.
     bvector<DataPtr> const&     GetData() const             { return m_data; }                                                                  //! Return reference to the data.
-    bool                        IsScalar() const            { return DataType::Scalar == m_dataType || DataType::Distance == m_dataType; }      //! Return true if scalar data (1 value per vertex).
+    bool                        IsScalar() const            { return IsScalar(m_dataType); }                                                    //! Return true if scalar data (1 value per vertex).
     size_t                      GetValueCount() const       { return m_data.empty() ? 0 : m_data.front()->GetValueCount() / GetBlockSize(); }   //! Return the number of values.
-    size_t                      GetBlockSize() const        { return m_dataType < Vector ? 1 : 3; }                                             //! Return the number of values per vertex.
+    size_t                      GetBlockSize() const        { return GetBlockSize(m_dataType) ? 1 : 3; }                                        //! Return the number of values per vertex.
 
         //! Append data from channel input at index.
     void AppendDataByIndex(T_PolyfaceAuxChannel const& input, size_t index)
@@ -126,6 +126,18 @@ template <typename T_Data>  struct T_PolyfaceAuxChannel : RefCountedBase
                 range.Extend((double) value);
 
         return range;
+        }
+
+    //! True if the data type is 1-dimensional.
+    static bool IsScalar(DataType dataType)
+        {
+        return dataType == DataType::Scalar || dataType == DataType::Distance;
+        }
+
+    //! The dimension (1D or 3D) of each datum of a PolyfaceAuxChannel of the given type.
+    static size_t GetBlockSize(DataType dataType)
+        {
+        return IsScalar(dataType) ? 1 : 3;
         }
     };
 
