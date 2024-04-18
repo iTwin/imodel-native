@@ -2470,6 +2470,18 @@ ECObjectsStatus ECSchema::AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR 
             }
         }
 
+    Utf8CP schemaName = refSchemaKey.GetName().c_str();
+    auto iter = std::find_if(m_refSchemaList.begin(), m_refSchemaList.end(), [&schemaName](const bpair<SchemaKey, ECSchemaPtr>& schemaPair) 
+        {
+        return BeStringUtilities::Stricmp(schemaName, schemaPair.first.GetName().c_str()) == 0;
+        });
+
+    if (iter != m_refSchemaList.end())
+        {
+        LOG.warningv("Schema %s is adding a reference to %s while it already references %s. For compatibility this is currently permitted but probably indicates a problem.",
+            this->GetFullSchemaName().c_str(), refSchema.GetFullSchemaName().c_str(), iter->second->GetFullSchemaName().c_str());
+        }
+
     m_refSchemaList[refSchemaKey] = &refSchema;
     // Check for recursion
     if (AddingSchemaCausedCycles ())

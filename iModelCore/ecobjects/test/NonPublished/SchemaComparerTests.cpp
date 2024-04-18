@@ -11,6 +11,12 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
+struct DisableAssertions
+    {
+    DisableAssertions() { BeTest::SetFailOnAssert(false); }
+    ~DisableAssertions() { BeTest::SetFailOnAssert(true); }
+    };
+
 struct SchemaCompareTest : ECTestFixture 
     {
     ECSchemaPtr m_firstSchema;
@@ -1154,6 +1160,43 @@ TEST_F(SchemaCompareTest, CompareECSchemaClassPropertyDescriptionAgainstNull)
     auto& propertyChange = classChange.Properties()[0];
     ASSERT_TRUE(propertyChange.Description().IsChanged());
     ASSERT_TRUE(propertyChange.Description().GetOld().IsNull());
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+--------
+TEST_F(SchemaCompareTest, MultipleSchemaReferencesToSameSchema)
+    {
+    // To test written log messages and warnings, unfortunately, this is global and there is currently no way to intercept the messages
+    // NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
+    // NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_WARNING);
+    // log output reads:
+    // WARNING  ECObjectsNative      Schema TestSchema.01.00.00 is adding a reference to RefSchema.01.01.00 while it already references RefSchema.01.00.00. For compatibility this is currently permitted but probably indicates a problem.
+    // ERROR    ECObjectsNative      Schema Reference comparison failed (Comparing old schema TestSchema.01.00.00 against new schema TestSchema.01.00.00). Multiple schema references with the same name were found in the old schema (RefSchema.01.00.00 and RefSchema.01.01.00).
+  	// ERROR    ECObjectsNative      Schema Reference comparison failed (Comparing old schema TestSchema.01.00.00 against new schema TestSchema.01.00.00). Multiple schema references with the same name were found in the new schema (RefSchema.01.00.00 and RefSchema.01.01.00).
+    CreateFirstSchema();
+    CreateSecondSchema();
+    ECSchemaPtr referencedSchema1;
+    ECSchema::CreateSchema(referencedSchema1, "RefSchema", "ref", 1, 0, 0);
+    ECSchemaPtr referencedSchema2;
+    ECSchema::CreateSchema(referencedSchema2, "RefSchema", "ref", 1, 1, 0);
+
+    m_firstSchema->AddReferencedSchema(*referencedSchema1);
+    m_firstSchema->AddReferencedSchema(*referencedSchema2);
+
+    SchemaComparer comparer;
+    SchemaDiff changes;
+    bvector<ECSchemaCP> first;
+    bvector<ECSchemaCP> second;
+    first.push_back(m_firstSchema.get());
+    second.push_back(m_secondSchema.get());
+
+    DisableAssertions _notUsed; // The attempt produces an assertion which we need to ignore
+    //should fail since old schema has multiple references to RefSchema
+    ASSERT_EQ(BentleyStatus::ERROR, comparer.Compare(changes, first, second));
+
+    //swap the input schemas, so the new schema is now the invalid one
+    ASSERT_EQ(BentleyStatus::ERROR, comparer.Compare(changes, second, first));
     }
 
 //---------------------------------------------------------------------------------------
