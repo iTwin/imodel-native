@@ -1173,7 +1173,7 @@ TEST_F(SchemaCompareTest, MultipleSchemaReferencesToSameSchema)
     // log output reads:
     // WARNING  ECObjectsNative      Schema TestSchema.01.00.00 is adding a reference to RefSchema.01.01.00 while it already references RefSchema.01.00.00. For compatibility this is currently permitted but probably indicates a problem.
     // ERROR    ECObjectsNative      Schema Reference comparison failed (Comparing old schema TestSchema.01.00.00 against new schema TestSchema.01.00.00). Multiple schema references with the same name were found in the old schema (RefSchema.01.00.00 and RefSchema.01.01.00).
-  	// ERROR    ECObjectsNative      Schema Reference comparison failed (Comparing old schema TestSchema.01.00.00 against new schema TestSchema.01.00.00). Multiple schema references with the same name were found in the new schema (RefSchema.01.00.00 and RefSchema.01.01.00).
+    // ERROR    ECObjectsNative      Schema Reference comparison failed (Comparing old schema TestSchema.01.00.00 against new schema TestSchema.01.00.00). Multiple schema references with the same name were found in the new schema (RefSchema.01.00.00 and RefSchema.01.01.00).
     CreateFirstSchema();
     CreateSecondSchema();
     ECSchemaPtr referencedSchema1;
