@@ -30,9 +30,17 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define ECDBSYS_PROP_PointX "X"
 #define ECDBSYS_PROP_PointY "Y"
 #define ECDBSYS_PROP_PointZ "Z"
+
 #define ECDBSYS_PROP_CodeScope "CodeScope"
 #define ECDBSYS_PROP_CodeSpec "CodeSpec"
 #define ECDBSYS_PROP_CodeValue "CodeValue"
+
+#define ECDBSYS_PROP_ModelSelector "ModelSelector"
+#define ECDBSYS_PROP_CategorySelector "CategorySelector"
+#define ECDBSYS_PROP_DisplayStyle "DisplayStyle"
+
+#define ECDBSYS_PROP_Model "Model"
+#define ECDBSYS_PROP_Category "Category"
 
 //=======================================================================================
 // @bsiclass
@@ -172,14 +180,14 @@ struct ECDbSystemSchemaHelper final
 struct ExtendedTypeHelper final {
     enum ExtendedType {
         Unknown = 0x0,
-        Id=0x1,
-        ClassId=0x2,
+        Id = 0x1,
+        ClassId = 0x2,
         SourceId = 0x4,
         TargetId = 0x8,
-        SourceClassId =0x10,
+        SourceClassId = 0x10,
         TargetClassId = 0x20,
-        NavId =0x40,
-        NavRelClassId=0x80,
+        NavId = 0x40,
+        NavRelClassId = 0x80,
         // group for filtering
         ClassIds = ClassId | SourceClassId | TargetClassId | NavRelClassId,
         Ids = Id | SourceId | TargetId | NavId,

@@ -83,6 +83,10 @@ struct ECJsonSystemNames final
 
         static constexpr Utf8CP Code() { return "code"; }
 
+        static constexpr Utf8CP DisplayStyleId() { return "displayStyleId"; }
+        static constexpr Utf8CP CategorySelectorId() { return "categorySelectorId"; }
+        static constexpr Utf8CP ModelSelectorId() { return "modelSelectorId"; }
+
         //! System member names for the representation of BentleyApi::ECN::NavigationECProperty values
         //! in the ECJSON
         struct Navigation final

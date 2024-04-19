@@ -4,7 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECDb/ConcurrentQueryManager.h>
-#include <ECDb/QueryJsonAdaptor.h>
+#include "QueryJsonAdaptor.h"
 #include <queue>
 #include <map>
 #include <thread>

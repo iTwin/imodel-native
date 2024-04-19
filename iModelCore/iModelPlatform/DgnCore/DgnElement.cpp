@@ -1239,9 +1239,9 @@ void DgnElement::RelatedElement::FromJson(DgnDbR db, BeJsConst val)
         m_relClassId = ECJsonUtilities::GetClassIdFromClassNameJson(val[ECJsonUtilities::json_navRelClassName()], db.GetClassLocater());
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 void DgnElement::_ToJson(BeJsValue val, BeJsConst opts) const
     {
     CachedECSqlStatementPtr stmt = this->GetDgnDb().GetPreparedECSqlStatement("SELECT $ FROM Bis.Element WHERE ECInstanceId=? OPTIONS JSIFY_ELEMENTS");
