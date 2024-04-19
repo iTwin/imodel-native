@@ -665,6 +665,8 @@ export declare namespace IModelJsNative {
     public enableWalMode(yesNo?: boolean): void;
     public performCheckpoint(mode?: WalCheckpointMode): void;
     public setAutoCheckpointThreshold(frames: number): void;
+    public beginPullMerge(method: "Merge" | "Rebase"): void;
+    public endPullMerge(): void;
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
     public static zlibCompress(data: Uint8Array): Uint8Array;
@@ -1373,6 +1375,7 @@ export declare namespace IModelJsNative {
     public getPrimaryKeyColumnIndexes(): number[];
     public openFile(fileName: string, invert: boolean): void;
     public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean): void;
+    public openLocalChange(db: DgnDb, txnId: Id64String, invert: boolean): void;
     public reset(): void;
     public step(): boolean;
   }

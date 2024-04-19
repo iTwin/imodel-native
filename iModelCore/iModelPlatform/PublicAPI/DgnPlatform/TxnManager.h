@@ -416,6 +416,11 @@ public:
         SetandRestoreIndirectChanges(ChangeTracker& txn) : m_tracker(txn) { txn.SetMode(BeSQLite::ChangeTracker::Mode::Indirect); }
         ~SetandRestoreIndirectChanges() { m_tracker.SetMode(BeSQLite::ChangeTracker::Mode::Direct); }
     };
+    enum class ChangeIntegratingMethod {
+        Rebase, // Apply local change on top of incoming master
+        Merge,  // Apply incoming master changes on top of local changes.
+        Default = Merge,
+    };
 
 private:
     bvector<TxnRange> m_reversedTxn;
@@ -449,6 +454,7 @@ private:
     void OnRollback(BeSQLite::ChangeStreamCR);
 
     void OnValidateChanges(BeSQLite::ChangeStreamCR);
+    BeSQLite::DbResult UpdateTxn(BeSQLite::ChangeSetCR changeSet, TxnId id);
     BeSQLite::DbResult SaveTxn(BeSQLite::ChangeSetCR changeset, Utf8CP operation, TxnType);
     BeSQLite::DbResult SaveRebase(int64_t& id, BeSQLite::Rebase const& rebase);
 
@@ -480,7 +486,8 @@ private:
     TxnTable* FindTxnTable(Utf8CP tableName) const;
     bool IsMultiTxnMember(TxnId rowid) const;
     TxnType GetTxnType(TxnId rowid) const;
-
+    bool m_pullMergeInProgress;
+    ChangeIntegratingMethod m_pullMergeMethod;
     BentleyStatus PatchSlowDdlChanges(Utf8StringR patchedDDL, Utf8StringCR compoundSQL);
     void NotifyOnCommit();
     void ThrowIfChangesetInProgress();
@@ -498,9 +505,13 @@ public:
     DGNPLATFORM_EXPORT ChangesetStatus MergeChangeset(ChangesetPropsCR revision);
     DGNPLATFORM_EXPORT void ReverseChangeset(ChangesetPropsCR revision);
     DGNPLATFORM_EXPORT std::unique_ptr<BeSQLite::ChangeSet> CreateChangesetFromLocalChanges(bool includeInMemoryChanges);
+    DGNPLATFORM_EXPORT std::unique_ptr<BeSQLite::ChangeSet> OpenLocalTxn(TxnManager::TxnId id);
     DGNPLATFORM_EXPORT void ForEachLocalChange(std::function<void(BeSQLite::EC::ECInstanceKey const&, BeSQLite::DbOpcode)>, bvector<Utf8String> const&, bool includeInMemoryChanges = false);
     void SaveParentChangeset(Utf8StringCR revisionId, int32_t changesetIndex);
     ChangesetPropsPtr CreateChangesetProps(BeFileNameCR pathName);
+
+    DGNPLATFORM_EXPORT void BeginPullMerge(ChangeIntegratingMethod method);
+    DGNPLATFORM_EXPORT void EndPullMerge();
 
     //! Add a TxnMonitor. The monitor will be notified of all transaction events until it is dropped.
     DGNPLATFORM_EXPORT static void AddTxnMonitor(TxnMonitor& monitor);
@@ -1025,5 +1036,23 @@ public:
     void ClearLastErrorMessage() { m_lastErrorMessage.clear(); }
 };
 
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct LocalChangeSet : BeSQLite::ChangeSet {
+private:
+    BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause, BeSQLite::Changes::Change iter) override;
+    Utf8String m_lastErrorMessage;
+    DgnDbR m_dgndb;
+    TxnManager::TxnId m_id;
+    TxnType m_type;
+    Utf8String m_descr;
+
+public:
+       LocalChangeSet(DgnDbR db, TxnManager::TxnId id, TxnType type, Utf8StringCR description)
+            :m_dgndb(db), m_id(id), m_type(type), m_descr(description){}
+        Utf8StringCR GetLastErrorMessage() const { return m_lastErrorMessage; }
+    void ClearLastErrorMessage() { m_lastErrorMessage.clear(); }
+};
 
 END_BENTLEY_DGN_NAMESPACE

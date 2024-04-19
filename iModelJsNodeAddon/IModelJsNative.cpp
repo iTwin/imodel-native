@@ -1285,12 +1285,12 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         if (italic) {
             emphasis = emphasis | TextEmphasis::Italic;
         }
-        
+
         BeJsNapiObject result(Env());
         JsInterop::ComputeRangeForText(result, db, text, FontId(static_cast<uint64_t>(fontId)), emphasis, widthFactor, height);
         return result;
     }
-    
+
     Napi::Value DumpChangeSet(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);
@@ -2551,6 +2551,15 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         memcpy(blob.Data(), uncompressed.data(), uncompressed.size());
         return blob;
     }
+    void BeginPullMerge(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        REQUIRE_ARGUMENT_STRING(0, method);
+        db.Txns().BeginPullMerge(method.EqualsIAscii("Rebase") ? TxnManager::ChangeIntegratingMethod::Rebase : TxnManager::ChangeIntegratingMethod::Merge);
+    }
+    void EndPullMerge(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        db.Txns().EndPullMerge();
+    }
     // ========================================================================================
     // Test method handler
     // ========================================================================================
@@ -2733,6 +2742,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("performCheckpoint", &NativeDgnDb::PerformCheckpoint),
             InstanceMethod("setAutoCheckpointThreshold", &NativeDgnDb::SetAutoCheckpointThreshold),
             InstanceMethod("getLocalChanges", &NativeDgnDb::GetLocalChanges),
+            InstanceMethod("beginPullMerge", &NativeDgnDb::BeginPullMerge),
+            InstanceMethod("endPullMerge", &NativeDgnDb::EndPullMerge),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
             StaticMethod("zlibCompress", &NativeDgnDb::ZlibCompress),
@@ -4233,6 +4244,7 @@ public:
           InstanceMethod("getPrimaryKeyColumnIndexes", &NativeChangesetReader::GetPrimaryKeyColumnIndexes),
           InstanceMethod("openFile", &NativeChangesetReader::OpenFile),
           InstanceMethod("openLocalChanges", &NativeChangesetReader::OpenLocalChanges),
+          InstanceMethod("openLocalChange", &NativeChangesetReader::OpenLocalChange),
           InstanceMethod("reset", &NativeChangesetReader::Reset),
           InstanceMethod("step", &NativeChangesetReader::Step),
         });
@@ -4337,6 +4349,27 @@ public:
             BeNapi::ThrowJsException(Env(), "no local changes");
 
         m_changeset.OpenChangeStream(Env(), std::move(changeset), invert);
+        }
+    void OpenLocalChange(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
+        REQUIRE_ARGUMENT_STRING(1, idStr);
+        REQUIRE_ARGUMENT_BOOL(2, invert);
+        NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
+        if (!nativeDgnDb->IsOpen())
+            BeNapi::ThrowJsException(Env(), "provided db is not open");
+
+        BeInt64Id id;
+        if (SUCCESS != BeInt64Id::FromString(id, idStr.c_str())) {
+            BeNapi::ThrowJsException(Env(), "expect txnId to be a hex string");
+        }
+
+        auto changeset = nativeDgnDb->GetDgnDb().Txns().OpenLocalTxn(TxnManager::TxnId(id.GetValueUnchecked()));
+        if (changeset == nullptr)
+            BeNapi::ThrowJsException(Env(), SqlPrintfString("no local change with id: %s", idStr.c_str()).GetUtf8CP());
+
+        m_changeset.OpenChangeStream(Env(), std::move(changeset), invert);
+
         }
     Napi::Value Step(NapiInfoCR info)
         {
