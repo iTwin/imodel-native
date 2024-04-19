@@ -601,7 +601,8 @@ void IndexedPolyfaceToJson(BeJsValue in, PolyfaceHeaderCR mesh)
     if (mesh.GetFaceIndexCount () > 0)  // There is a separate GetFaceIndexCount, but it has to match GetPointIndexCount.
         toJson (allData["faceIndex"], mesh.GetFaceIndexCP (), mesh.GetPointIndexCount ());
 
-    if (auto taggedData = mesh.GetNumericTagsCP())
+    auto taggedData = mesh.GetNumericTagsCP();
+    if (taggedData && !taggedData->IsZero())
         toJson(allData["tags"], *taggedData);
 
     if(mesh.GetAuxDataCP().IsValid())

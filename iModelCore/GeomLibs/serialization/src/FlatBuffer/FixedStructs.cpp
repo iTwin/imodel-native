@@ -787,7 +787,7 @@ flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyfaceDirect(PolyfaceQueryCR pare
 
     auto numericTags = parent.GetNumericTagsCP ();
     const flatbuffers::Offset<BGFB::TaggedNumericData>
-        taggedNumericData = numericTags == nullptr || numericTags->IsZero () ? 0 : WriteFBTaggedNumericData(*numericTags);
+        taggedNumericData = (numericTags == nullptr || numericTags->IsZero()) ? 0 : WriteFBTaggedNumericData(*numericTags);
 
     BGFB::PolyfaceBuilder builder (m_fbb);
     builder.add_numPerFace (numPerFace);
