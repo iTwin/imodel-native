@@ -590,7 +590,7 @@ BentleyStatus SchemaComparer::CompareSchema(SchemaChange& change, ECSchemaCP old
         return ERROR;
         }
 
-    if (CompareReferences(change.References(), oldSchema.References(), newSchema.References()) != SUCCESS)
+    if (CompareReferences(change.References(), oldSchema.References(), newSchema.References(), oldVal, newVal) != SUCCESS)
         {
         LOG.errorv("Schema Reference comparison for schema %s failed", change.GetChangeName());
         return ERROR;
@@ -608,7 +608,7 @@ BentleyStatus SchemaComparer::CompareSchema(SchemaChange& change, ECSchemaCP old
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareReferences(SchemaReferenceChanges& changes, ECSchemaReferenceList const* oldVal, ECSchemaReferenceList const* newVal)
+BentleyStatus SchemaComparer::CompareReferences(SchemaReferenceChanges& changes, ECSchemaReferenceList const* oldVal, ECSchemaReferenceList const* newVal, ECSchemaCP oldSchema, ECSchemaCP newSchema)
     {
     bmap<Utf8String, Utf8String, CompareIUtf8Ascii> oldReferences, newReferences;
     bset<Utf8String, CompareIUtf8Ascii> allReferences;
@@ -620,7 +620,10 @@ BentleyStatus SchemaComparer::CompareReferences(SchemaReferenceChanges& changes,
             const Utf8String fullname = kvPair.second->GetFullSchemaName();
             if (!oldReferences.insert(make_bpair(name, fullname)).second)
                 {
-                LOG.errorv("Schema Reference comparison failed because multiple schema references for %s were found in the old schema.", name.c_str());
+                const auto oldIt = oldReferences.find(name);
+                Utf8String existingFullName = oldIt != oldReferences.end() ? oldIt->second : name;
+                LOG.errorv("Schema Reference comparison failed (Comparing old schema %s against new schema %s). Multiple schema references with the same name were found in the old schema (%s and %s).",
+                    oldSchema->GetFullSchemaName().c_str(), newSchema->GetFullSchemaName().c_str(), existingFullName.c_str(), fullname.c_str());
                 BeAssert(false && "Multiple version of same referenced schema is not supported");
                 return ERROR;
                 }
@@ -637,7 +640,10 @@ BentleyStatus SchemaComparer::CompareReferences(SchemaReferenceChanges& changes,
             const Utf8String fullname = kvPair.second->GetFullSchemaName();
             if (!newReferences.insert(make_bpair(name, fullname)).second)
                 {
-                LOG.errorv("Schema Reference comparison failed because multiple schema references for %s were found in the new schema.", name.c_str());
+                const auto newIt = newReferences.find(name);
+                Utf8String existingFullName = newIt != newReferences.end() ? newIt->second : name;
+                LOG.errorv("Schema Reference comparison failed (Comparing old schema %s against new schema %s). Multiple schema references with the same name were found in the new schema (%s and %s).",
+                    oldSchema->GetFullSchemaName().c_str(), newSchema->GetFullSchemaName().c_str(), existingFullName.c_str(), fullname.c_str());
                 BeAssert(false && "Multiple version of same referenced schema is not supported");
                 return ERROR;
                 }
