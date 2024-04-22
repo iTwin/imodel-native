@@ -338,8 +338,8 @@ TEST_F(BeFileTests, WriteAll)
     uint64_t fileSize = 0;
     fileName.GetFileSize(fileSize);
 
-    EXPECT_TRUE(status == BeFileStatus::Success)<<"Failed to write to file, File: "<<filePath;
-    EXPECT_GE(fileSize, chunkSize) <<"Failed to write bytes count specified, file size: "<< fileSize <<. File: "<< filePath;
+    EXPECT_TRUE(status == BeFileStatus::Success)<<"Failed to write to file, file: " << filePath;
+    EXPECT_GE(fileSize, chunkSize) <<"Failed to write bytes count specified, file size: "<< fileSize << ", file: "<< filePath;
     m_file.Close();    
     }
 
