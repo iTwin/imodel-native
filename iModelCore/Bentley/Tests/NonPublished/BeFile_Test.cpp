@@ -336,7 +336,7 @@ TEST_F(BeFileTests, WriteAll)
     //---Verification--------------
 
     uint64_t fileSize = 0;
-    fileName.GetFileSize(&fileSize);
+    fileName.GetFileSize(fileSize);
 
     EXPECT_TRUE(status == BeFileStatus::Success)<<"Failed to write to file, File: "<<filePath;
     EXPECT_GE(fileSize, chunkSize) <<"Failed to write bytes count specified. File: "<<filePath;
@@ -344,6 +344,7 @@ TEST_F(BeFileTests, WriteAll)
     if (fileName.BeDeleteFile() != BeFileNameStatus::Success) {
         throw std::runtime_error("unable to delete file");
         
+    }
     }
 
 //---------------------------------------------------------------------------------------
