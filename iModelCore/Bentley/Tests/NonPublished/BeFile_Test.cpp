@@ -315,36 +315,35 @@ TEST_F(BeFileTests, Write)
     }
 
 //---------------------------------------------------------------------------------------
-//Write to file without the 2GB limit on linux
+//Write a large data chunk to file without the 2GB limit on linux and the 4GB limit on windows
 //
 // @bsimethod
 //---------------------------------------------------------------------------------------
 TEST_F(BeFileTests, WriteAll)
     {
-    while(!m_testData.empty())
-        {
-        //------Preparations----------
-        BeFileName fileName;
-        CreatePathForTempFile(&fileName, L"Write", m_testData.back());
-        WCharCP filePath = fileName.GetName();
-        m_testData.pop_back();
-        CreateFile(&m_file, filePath, true);
+    //------Preparations----------
+    uint64_t chunkSize = 4500000000;
+    BeFileName fileName;
+    CreatePathForTempFile(&fileName, L"Write", L"bin");
+    WCharCP filePath = fileName.GetName();
+    m_testData.pop_back();
+    CreateFile(&m_file, filePath, true);
 
-        // Declare a > 4GB buffer
-        bvector<char> buf(5e+9);
-        BeFileStatus status = m_file.WriteAll(buf.data(), buf.size());
+    // Declare a > 4GB buffer
+    bvector<char> buf(chunkSize);
+    BeFileStatus status = m_file.WriteAll(buf.data(), buf.size());
 
-        //---Verification--------------
+    //---Verification--------------
 
-        uint64_t fileSize = 0;
-        fileName.GetFileSize(&fileSize);
+    uint64_t fileSize = 0;
+    fileName.GetFileSize(&fileSize);
 
-        EXPECT_TRUE(status == BeFileStatus::Success)<<"Failed to write to file, File: "<<filePath;
-        EXPECT_GE(fileSize, 5e+9) <<"Failed to write bytes count specified. File: "<<filePath;
-        m_file.Close();
-        if (fileName.BeDeleteFile() != BeFileNameStatus::Success) {
-            throw std::runtime_error("unable to delete file");
-        }
+    EXPECT_TRUE(status == BeFileStatus::Success)<<"Failed to write to file, File: "<<filePath;
+    EXPECT_GE(fileSize, chunkSize) <<"Failed to write bytes count specified. File: "<<filePath;
+    m_file.Close();
+    if (fileName.BeDeleteFile() != BeFileNameStatus::Success) {
+        throw std::runtime_error("unable to delete file");
+        
     }
 
 //---------------------------------------------------------------------------------------
