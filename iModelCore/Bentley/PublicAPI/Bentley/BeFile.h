@@ -123,9 +123,6 @@ public:
     //! Query the native file handle to the open disk file. This is only useful if you want to pass the handle to another
     //! portable function, such as StgOpenStorage.
     void* GetHandle() const {return (void*)(intptr_t)m_handle;}
-
-    //! Gets the status returned by the last operation that failed.
-    BeFileStatus GetLastError() const {return m_lastError;}
         
     BENTLEYDLL_EXPORT int GetErrorNumber() const;
 
