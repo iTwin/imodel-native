@@ -344,6 +344,39 @@ BeFileStatus BeFile::Write(uint32_t* bytesWritten, void const* buf, uint32_t num
 #endif
     }
 
+BeFileStatus BeFile::WriteAll(size_t* bytesWritten, void const* buf, size_t numBytes)
+    {
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
+
+    ULONG bytesWritten_;
+    if (::WriteFile(m_handle, buf, numBytes, bytesWritten? bytesWritten: &bytesWritten_, NULL))
+        return BeFileStatus::Success;
+
+    return SetLastError();
+
+#elif defined (BENTLEYCONFIG_OS_UNIX)
+
+    size_t bytesWritten_;
+    if (NULL == bytesWritten)
+        bytesWritten = &bytesWritten_;
+
+    *bytesWritten = 0;
+
+    while(*bytesWritten < numBytes) {
+      *bytesWritten += write(AS_FDES(m_handle), (const char*)buf + *bytesWritten, numBytes - *bytesWritten);
+
+      if(*bytesWritten == -1) {
+        return SetLastError();
+      }
+    }
+
+    return BeFileStatus::Success;
+
+#else
+#error unknown runtime
+#endif
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

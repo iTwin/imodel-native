@@ -315,6 +315,37 @@ TEST_F(BeFileTests, Write)
     }
 
 //---------------------------------------------------------------------------------------
+//Write to file without the 2GB limit on linux
+//
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeFileTests, WriteAll)
+    {
+    while(!m_testData.empty())
+        {
+        //------Preparations----------
+        BeFileName fileName;
+        CreatePathForTempFile(&fileName, L"Write", m_testData.back());
+        WCharCP filePath = fileName.GetName();
+        m_testData.pop_back();
+        CreateFile(&m_file, filePath, true);
+
+        // Declare > 2GB buffer
+        bvector<char> buf(3e+9);
+        //Write to file
+        size_t byteCountToCopy = buf.size();
+        size_t bytesWritten;
+        BeFileStatus status = m_file.WriteAll(&bytesWritten, buf.data(), byteCountToCopy);
+        //---Verification--------------
+        EXPECT_TRUE(status == BeFileStatus::Success)<<"Failed to write to file, File: "<<filePath;
+        EXPECT_EQ(bytesWritten, byteCountToCopy)<<"Failed to write bytes count specified. File: "<<filePath;
+        m_file.Close();
+        if (fileName.BeDeleteFile() != BeFileNameStatus::Success) {
+            throw std::runtime_error("unable to delete file");
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 //Test setting and getting pointers
 //
 // @bsimethod

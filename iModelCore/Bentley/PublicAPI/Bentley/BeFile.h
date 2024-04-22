@@ -155,6 +155,14 @@ public:
     //! @return BeFileStatus::Success if the operation was successful or non-zero if it failed.
     BENTLEYDLL_EXPORT BeFileStatus Write(uint32_t* bytesWritten, void const* buffer, uint32_t numBytes);
 
+    //! Writes bytes to the file at the current position. The file position is advanced by the number of bytes written.
+    //! Unlike function Write(), this function will attempt to write all the bytes requested, circumventing the 2GB limit on linux by writing multiple chunks.
+    //! @param[out] bytesWritten    If not NULL, the number of bytes actually written is returned here.
+    //! @param[in]  buffer          The data to be written.
+    //! @param[in]  numBytes        The number of bytes to be copied from \a buffer into the file.
+    //! @return BeFileStatus::Success if the operation was successful or non-zero if it failed.
+    BENTLEYDLL_EXPORT BeFileStatus WriteAll(size_t* bytesWritten, void const* buffer, size_t numBytes);
+
     //! Flushes all pending writes to the file
     //! @return BeFileStatus::Success if the operation was successful or non-zero if it failed.
     BENTLEYDLL_EXPORT BeFileStatus Flush();
