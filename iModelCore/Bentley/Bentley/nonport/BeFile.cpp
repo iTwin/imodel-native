@@ -129,6 +129,15 @@ static BeFileStatus translateErrnoToBeFileStatus(int e)
     }
 #endif
 
+int BeFile::GetErrorNumber() const
+    {
+#if defined (BENTLEYCONFIG_OS_UNIX)
+    return errno;
+#else
+    return -1;
+#endif
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
