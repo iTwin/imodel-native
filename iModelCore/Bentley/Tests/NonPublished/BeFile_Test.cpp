@@ -338,7 +338,7 @@ TEST_F(BeFileTests, WriteAllSmall)
     fileName.GetFileSize(fileSize);
 
     EXPECT_TRUE(status == BeFileStatus::Success) << "Failed to write to file, last error: " << static_cast<int>(status) << ", unix error: " << static_cast<int>(m_file.GetErrorNumber()) << ", file: " << filePath;
-    EXPECT_GE(fileSize, chunkSize) <<"Failed to write bytes count specified, file size: "<< fileSize << ", file: "<< filePath;
+    EXPECT_GE(fileSize, chunkSize) << "Failed to write bytes count specified, file size: " << fileSize << ", file: " << filePath;
     m_file.Close();    
     }
 
@@ -365,8 +365,8 @@ TEST_F(BeFileTests, WriteAllLarge)
     uint64_t fileSize = 0;
     fileName.GetFileSize(fileSize);
 
-    EXPECT_TRUE(status == BeFileStatus::Success) << "Failed to write to file, last error: " << static_cast<int>(status) << ", file: " << filePath;
-    EXPECT_GE(fileSize, chunkSize) <<"Failed to write bytes count specified, file size: "<< fileSize << ", file: "<< filePath;
+    EXPECT_TRUE(status == BeFileStatus::Success) << "Failed to write to file, last error: " << static_cast<int>(status) << ", unix error: " << static_cast<int>(m_file.GetErrorNumber()) << ", file: " << filePath;
+    EXPECT_GE(fileSize, chunkSize) << "Failed to write bytes count specified, file size: " << fileSize << ", file: " << filePath;
     m_file.Close();    
     }
 
