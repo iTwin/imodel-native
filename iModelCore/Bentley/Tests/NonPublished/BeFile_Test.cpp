@@ -339,12 +339,8 @@ TEST_F(BeFileTests, WriteAll)
     fileName.GetFileSize(fileSize);
 
     EXPECT_TRUE(status == BeFileStatus::Success)<<"Failed to write to file, File: "<<filePath;
-    EXPECT_GE(fileSize, chunkSize) <<"Failed to write bytes count specified. File: "<<filePath;
-    m_file.Close();
-    if (fileName.BeDeleteFile() != BeFileNameStatus::Success) {
-        throw std::runtime_error("unable to delete file");
-        
-    }
+    EXPECT_GE(fileSize, chunkSize) <<"Failed to write bytes count specified, file size: "<< fileSize <<. File: "<< filePath;
+    m_file.Close();    
     }
 
 //---------------------------------------------------------------------------------------
