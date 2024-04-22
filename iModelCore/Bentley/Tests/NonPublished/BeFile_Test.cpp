@@ -161,7 +161,6 @@ TEST_F(BeFileTests, CreateFile)
         }
     }
 
-#if !defined (__APPLE__) && !defined (ANDROID)
 //---------------------------------------------------------------------------------------
 // Gets size for the file with one set of data in it, and then adds more data and
 // compares new size to old one
@@ -195,7 +194,6 @@ TEST_F(BeFileTests, GetSize)
         EXPECT_EQ(size1*12, size2)<<"size1 should be 12 times smaller than size2. File tested: "<<filePath;
         }
     }
-#endif
 
 //---------------------------------------------------------------------------------------
 // Sets new size for the file
