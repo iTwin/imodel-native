@@ -362,12 +362,14 @@ BeFileStatus BeFile::WriteAll(size_t* bytesWritten, void const* buf, size_t numB
 
     *bytesWritten = 0;
 
+    size_t chunkBytesWritten = 0;
     while(*bytesWritten < numBytes) {
-      *bytesWritten += write(AS_FDES(m_handle), (const char*)buf + *bytesWritten, numBytes - *bytesWritten);
+      chunkBytesWritten += write(AS_FDES(m_handle), (const char*)buf + *bytesWritten, numBytes - *bytesWritten);
 
-      if(*bytesWritten == -1) {
+      if(chunkBytesWritten == -1) {
         return SetLastError();
       }
+      *bytesWritten += chunkBytesWritten;
     }
 
     return BeFileStatus::Success;
