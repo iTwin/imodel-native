@@ -374,8 +374,11 @@ BeFileStatus BeFile::WriteAll(void const* buf, size_t numBytes)
 #elif defined (BENTLEYCONFIG_OS_UNIX)
 
     size_t bytesWritten = 0;
+    size_t chunkSizeMax = 2147418112; 
     while(bytesWritten < numBytes) {
-      size_t chunkBytesWritten = write(AS_FDES(m_handle), (const char*)buf + bytesWritten, numBytes - bytesWritten);
+
+      size_t chunkBytesToWrite = (numBytes - bytesWritten) > chunkSizeMax ? chunkSizeMax : numBytes - bytesWritten;      
+      size_t chunkBytesWritten = write(AS_FDES(m_handle), static_cast<const char *>(buf) + bytesWritten, chunkBytesToWrite);
 
       if(chunkBytesWritten == -1) {
         return SetLastError();
