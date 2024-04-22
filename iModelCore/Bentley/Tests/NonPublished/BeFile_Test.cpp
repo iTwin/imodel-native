@@ -330,15 +330,17 @@ TEST_F(BeFileTests, WriteAll)
         m_testData.pop_back();
         CreateFile(&m_file, filePath, true);
 
-        // Declare > 2GB buffer
-        bvector<char> buf(3e+9);
-        //Write to file
-        size_t byteCountToCopy = buf.size();
-        size_t bytesWritten;
-        BeFileStatus status = m_file.WriteAll(&bytesWritten, buf.data(), byteCountToCopy);
+        // Declare a > 4GB buffer
+        bvector<char> buf(5e+9);
+        BeFileStatus status = m_file.WriteAll(buf.data(), buf.size());
+
         //---Verification--------------
+
+        uint64_t fileSize = 0;
+        fileName.GetFileSize(&fileSize);
+
         EXPECT_TRUE(status == BeFileStatus::Success)<<"Failed to write to file, File: "<<filePath;
-        EXPECT_EQ(bytesWritten, byteCountToCopy)<<"Failed to write bytes count specified. File: "<<filePath;
+        EXPECT_GE(fileSize, 5e+9) <<"Failed to write bytes count specified. File: "<<filePath;
         m_file.Close();
         if (fileName.BeDeleteFile() != BeFileNameStatus::Success) {
             throw std::runtime_error("unable to delete file");

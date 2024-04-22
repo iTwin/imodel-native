@@ -344,32 +344,34 @@ BeFileStatus BeFile::Write(uint32_t* bytesWritten, void const* buf, uint32_t num
 #endif
     }
 
-BeFileStatus BeFile::WriteAll(size_t* bytesWritten, void const* buf, size_t numBytes)
+BeFileStatus BeFile::WriteAll(void const* buf, size_t numBytes)
     {
 #if defined (BENTLEYCONFIG_OS_WINDOWS)
+  
+    size_t bytesWritten = 0;
+    ULONG chunkBytesWritten = 0;
 
-    ULONG bytesWritten_;
-    if (::WriteFile(m_handle, buf, numBytes, bytesWritten? bytesWritten: &bytesWritten_, NULL))
-        return BeFileStatus::Success;
+    while(bytesWritten < numBytes) {
+
+      ULONG chunkBytesToWrite = (numBytes - bytesWritten) > ULONG_MAX ? ULONG_MAX : static_cast<ULONG>(numBytes - bytesWritten);
+      if (!WriteFile(m_handle, static_cast<const char *>(buf) + bytesWritten, chunkBytesToWrite, &chunkBytesWritten, NULL))
+        return SetLastError();
+
+      bytesWritten += chunkBytesWritten;
+    }
 
     return SetLastError();
 
 #elif defined (BENTLEYCONFIG_OS_UNIX)
 
-    size_t bytesWritten_;
-    if (NULL == bytesWritten)
-        bytesWritten = &bytesWritten_;
-
-    *bytesWritten = 0;
-
-    size_t chunkBytesWritten = 0;
-    while(*bytesWritten < numBytes) {
-      chunkBytesWritten = write(AS_FDES(m_handle), (const char*)buf + *bytesWritten, numBytes - *bytesWritten);
+    size_t bytesWritten = 0;
+    while(bytesWritten < numBytes) {
+      size_t chunkBytesWritten = write(AS_FDES(m_handle), (const char*)buf + bytesWritten, numBytes - bytesWritten);
 
       if(chunkBytesWritten == -1) {
         return SetLastError();
       }
-      *bytesWritten += chunkBytesWritten;
+      bytesWritten += chunkBytesWritten;
     }
 
     return BeFileStatus::Success;
