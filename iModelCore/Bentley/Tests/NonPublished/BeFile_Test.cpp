@@ -315,7 +315,7 @@ TEST_F(BeFileTests, Write)
     }
 
 //---------------------------------------------------------------------------------------
-//Write a large data chunk to file without the 2GB limit on linux and the 4GB limit on windows
+//Write a small data chunk to file without the 2GB limit on linux and the 4GB limit on windows
 //
 // @bsimethod
 //---------------------------------------------------------------------------------------
