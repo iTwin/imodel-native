@@ -364,7 +364,7 @@ BeFileStatus BeFile::WriteAll(size_t* bytesWritten, void const* buf, size_t numB
 
     size_t chunkBytesWritten = 0;
     while(*bytesWritten < numBytes) {
-      chunkBytesWritten += write(AS_FDES(m_handle), (const char*)buf + *bytesWritten, numBytes - *bytesWritten);
+      chunkBytesWritten = write(AS_FDES(m_handle), (const char*)buf + *bytesWritten, numBytes - *bytesWritten);
 
       if(chunkBytesWritten == -1) {
         return SetLastError();
