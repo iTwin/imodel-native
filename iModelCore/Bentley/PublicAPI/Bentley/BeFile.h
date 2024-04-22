@@ -127,7 +127,7 @@ public:
     //! Gets the status returned by the last operation that failed.
     BeFileStatus GetLastError() const {return m_lastError;}
         
-    int GetErrorNumber() const;
+    BENTLEYDLL_EXPORT int GetErrorNumber() const;
 
     //! Moves the file read/write position.
     //! @param[in] position The new read/write position.
