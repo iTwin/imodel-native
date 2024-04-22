@@ -493,7 +493,7 @@ export declare namespace IModelJsNative {
   }
 
   enum TextEmphasis { None = 0, Bold = 1, Italic = 2, BoldItalic = Bold | Italic }
-  
+
   type NoCaseCollation = "ASCII" | "Latin1";
 
   /** The native object for a Briefcase. */
