@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #include "testHarness.h"
 #include <stdio.h>
+#include <GeomSerialization/GeomSerializationApi.h>
 
 static bool s_printHullSteps = false;
 static int s_noisy = false;
@@ -4664,4 +4665,62 @@ TEST (Polyface, SphereMeshSanity)
         }
 
     Check::ClearGeometry("Polyface.SphereMeshSanity");
+    }
+
+TEST(Polyface,AuxData)
+    {
+    BeFileName dataFullPathName;
+    BeTest::GetHost().GetDocumentsRoot(dataFullPathName);
+    dataFullPathName.AppendToPath(L"GeomLibsTestData").AppendToPath(L"IModelJson").AppendToPath(L"indexedMesh2.imjs");
+
+    bvector<IGeometryPtr> geometry;
+    if (GTestFileOps::JsonFileToGeometry(dataFullPathName, geometry))
+        {
+        auto mesh = geometry.front()->GetAsPolyfaceHeader();
+        if (mesh.IsValid())
+            {
+            PolyfaceAuxData::Channels channels;
+
+            bvector<double> latitude;
+            for (auto& pt : mesh->Point())
+                latitude.push_back(pt.z);
+            bvector<PolyfaceAuxChannel::DataPtr> latitudeData{ new PolyfaceAuxChannel::Data(0, std::move(latitude)) };
+            channels.push_back(new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Distance, "Latitude", "Time", std::move(latitudeData)));
+
+            bvector<double> octant;
+            for (auto& pt : mesh->Point())
+                {
+                octant.push_back(pt.x > 0 ? 1 : (pt.x < 0 ? -1 : 0));
+                octant.push_back(pt.y > 0 ? 1 : (pt.y < 0 ? -1 : 0));
+                octant.push_back(pt.z > 0 ? 1 : (pt.z < 0 ? -1 : 0));
+                }
+            bvector<PolyfaceAuxChannel::DataPtr> octantData{ new PolyfaceAuxChannel::Data(0, std::move(octant)) };
+            channels.push_back(new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Vector, "Octant", "Time", std::move(octantData)));
+
+            bvector<int32_t> auxIndex = mesh->PointIndex();
+            PolyfaceAuxDataPtr auxData(new PolyfaceAuxData(std::move(auxIndex), std::move(channels)));
+            mesh->SetAuxData(auxData);
+            mesh->Compress();
+
+            // sanity check flatbuffer file write
+            bvector<Byte> bytes, bytes2;
+            BentleyGeometryFlatBuffer::GeometryToBytes(*mesh, bytes);
+            if (Check::True(GTestFileOps::WriteToFile(bytes, nullptr, nullptr, L"indexedMesh2", L"fb"), "write fb file"))
+                {
+                BeFileName fbFileName;
+                BeTest::GetHost().GetOutputRoot(fbFileName);
+                fbFileName.AppendToPath(L"indexedMesh2");
+                fbFileName.AppendExtension(L"fb");
+                if (Check::True(GTestFileOps::ReadAsBytes(fbFileName, bytes2), "read fb file"))
+                    {
+                    Check::True(bytes == bytes2, "flatbuffer file roundtrip");
+                    auto geom = BentleyGeometryFlatBuffer::BytesToGeometry(bytes2);
+                    Check::True(geom.IsValid(), "deserialized mesh");
+                    auto mesh2 = geom->GetAsPolyfaceHeader();
+                    Check::True(mesh2.IsValid(), "mesh is valid");
+                    Check::True(mesh->IsSameStructureAndGeometry(*mesh2, 0.0), "roundtrip to same geometry");
+                    }
+                }
+            }
+        }
     }

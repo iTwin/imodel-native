@@ -56,6 +56,35 @@ bool GTestFileOps::JsonFileToGeometry (char const *filenameChar, bvector<IGeomet
     return JsonFileToGeometry(beFilename, geometry);
     }
 
+bool GTestFileOps::WriteToFile(bvector<Byte>& bytes, WCharCP directoryName, WCharCP nameB, WCharCP nameC, WCharCP extension)
+    {
+    BeFileName fileName;
+    BeTest::GetHost().GetOutputRoot(fileName);
+    if (directoryName)
+        {
+        fileName.AppendToPath(directoryName);
+        if (!BeFileName::IsDirectory(fileName.c_str()))
+            BeFileName::CreateNewDirectory(fileName.c_str());
+        }
+
+    if (nameB)
+        fileName.AppendToPath(nameB);
+    if (nameC)
+        fileName.AppendToPath(nameC);
+    if (extension)
+        fileName.AppendExtension(extension);
+
+    BeFile file;
+    if (BeFileStatus::Success == file.Create(fileName.c_str(), true))
+        {
+        uint32_t bytesWritten = 0;
+        file.Write(&bytesWritten, bytes.data(), (uint32_t)bytes.size());
+        file.Close();
+        return true;
+        }
+    return false;
+    }
+
 bool GTestFileOps::WriteToFile(Utf8String &string, WCharCP directoryName, WCharCP nameB, WCharCP nameC, WCharCP extension)
     {
     BeFileName fileName;
