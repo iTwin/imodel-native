@@ -376,7 +376,7 @@ BeFileStatus BeFile::WriteAll(void const* buf, size_t numBytes)
     // returning the number of bytes actually transferred.  (This is true on both 32-bit and 64-bit systems.)"
     // On MacOS we observe that attempting to write more than this maximum produced "incorrect parameters" error.
     // So write in chunks no larger than this limit.
-    size_t chunkSizeMax = 2147418112;
+    size_t chunkSizeMax = 0x7ffff000;
     size_t bytesWritten = 0;
 
     while(bytesWritten < numBytes) {
