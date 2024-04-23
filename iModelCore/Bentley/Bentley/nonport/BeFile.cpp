@@ -360,6 +360,10 @@ BeFileStatus BeFile::WriteAll(void const* buf, size_t numBytes)
         return SetLastError();
       }
 
+      if(chunkBytesWritten != chunkBytesToWrite) {
+        return SetLastError();
+      }
+
       bytesWritten += chunkBytesWritten;
     }
 
@@ -375,7 +379,7 @@ BeFileStatus BeFile::WriteAll(void const* buf, size_t numBytes)
       size_t chunkBytesToWrite = (numBytes - bytesWritten) > chunkSizeMax ? chunkSizeMax : numBytes - bytesWritten;      
       size_t chunkBytesWritten = write(AS_FDES(m_handle), static_cast<const char *>(buf) + bytesWritten, chunkBytesToWrite);
 
-      if(chunkBytesWritten == -1) {
+      if(chunkBytesWritten == -1 || chunkBytesWritten != chunkBytesToWrite) {
         return SetLastError();
       }
 
