@@ -192,13 +192,11 @@ DbResult TxnManager::UpdateTxn(ChangeSetCR changeSet, TxnId id) {
     }
 
     if (changeSet.GetSize() > MAX_REASONABLE_TXN_SIZE) {
-        //BeAssert(changeSet.GetSize() < MAX_REASONABLE_TXN_SIZE); // if you hit this, something is wrong in your application. You should call commit more frequently.
         LOG.warningv("changeset size %" PRIu64 " exceeds recommended limit. Please investigate.", changeSet.GetSize());
     }
 
     if (changeSet.GetSize() > MAX_TXN_SIZE) {
         LOG.fatalv("changeset size %" PRIu64 " exceeds maximum. Panic stop to avoid loss! You must now abandon this briefcase.", changeSet.GetSize());
-        // return error so besqlite StopSavepoint() can deal with it cleanly and throw exception.
         return BE_SQLITE_ERROR;
     }
 
@@ -215,10 +213,9 @@ DbResult TxnManager::UpdateTxn(ChangeSetCR changeSet, TxnId id) {
     const uint32_t zipSize = m_snappyTo.GetCompressedSize();
     DbResult rc = BE_SQLITE_OK;
     if (changeSet.GetSize() > MAX_REASONABLE_TXN_SIZE/2) {
-        LOG.infov("Saving large changeset. Size=%" PRIuPTR ", Compressed size=%" PRIu32, changeSet.GetSize(), m_snappyTo.GetCompressedSize());
+        LOG.infov("Updating large changeset. Size=%" PRIuPTR ", Compressed size=%" PRIu32, changeSet.GetSize(), m_snappyTo.GetCompressedSize());
     }
 
-    m_curr.Increment();
     if (1 == m_snappyTo.GetCurrChunk()) {
         return BE_SQLITE_OK;
     }
@@ -252,6 +249,7 @@ void TxnManager::BeginPullMerge(ChangeIntegratingMethod method){
     auto resolvedMethod = HasPendingTxns() ? method : ChangeIntegratingMethod::Merge;
     if (resolvedMethod == ChangeIntegratingMethod::Rebase){
         DeleteReversedTxns();
+        m_pullMergeTxnId = GetCurrentTxnId();
         auto rc = this->ReverseAll();
         if (rc != DgnDbStatus::Success && rc != DgnDbStatus::NothingToUndo ) {
             m_dgndb.ThrowException("unable to reverse all local changes", (int)rc);
@@ -289,7 +287,7 @@ void TxnManager::EndPullMerge() {
 
     // apply all reversed changeset one by one and also capture and update an
     TxnId startTxnId = QueryNextTxnId(TxnId(0));
-    TxnId endTxnId = GetCurrentTxnId();
+    TxnId endTxnId = m_pullMergeTxnId;
 
     enum class NotifyId {Begin, End};
     auto notifyJs = [&](NotifyId notifyId, TxnManager::TxnId id, Utf8StringCR descr, TxnType type) {
@@ -870,7 +868,7 @@ void TxnManager::OnRollback(ChangeStreamCR changeSet) {
         return;
     }
 
-    BeAssert(m_action == TxnAction::None);
+    // BeAssert(m_action == TxnAction::None); //its merge in case of applychangeset fails.
     AutoRestore<TxnAction> _v(&m_action, TxnAction::Abandon);
     OnChangeSetApplied(changeSet, true);
     NotifyModelChanges();

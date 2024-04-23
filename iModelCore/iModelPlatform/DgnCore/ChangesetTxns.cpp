@@ -33,7 +33,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //---------------------------------------------------------------------------------------
 ChangeSet::ConflictResolution LocalChangeSet::_OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) {
     const auto jsIModelDb = m_dgndb.GetJsIModelDb();
-    if (nullptr != jsIModelDb) {
+    if (nullptr == jsIModelDb) {
         return ChangeSet::ConflictResolution::Abort;
     }
 
@@ -55,7 +55,7 @@ ChangeSet::ConflictResolution LocalChangeSet::_OnConflict(ChangeSet::ConflictCau
     arg.Set("cause", Napi::Number::New(env, (int)cause));
     arg.Set("opcode", Napi::Number::New(env, (int)opcode));
     arg.Set("indirect", Napi::Boolean::New(env, indirect != 0));
-    arg.Set("tableName", Napi::String::New(env, tableName));
+    arg.Set("tableName", Napi::String::New(env, tableName ? tableName : ""));
     arg.Set("columnCount", Napi::Number::New(env, nCols));
 
     auto txn = Napi::Object::New(env);

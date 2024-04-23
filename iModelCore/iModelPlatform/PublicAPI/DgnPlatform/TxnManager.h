@@ -487,6 +487,7 @@ private:
     bool IsMultiTxnMember(TxnId rowid) const;
     TxnType GetTxnType(TxnId rowid) const;
     bool m_pullMergeInProgress;
+    TxnId m_pullMergeTxnId;
     ChangeIntegratingMethod m_pullMergeMethod;
     BentleyStatus PatchSlowDdlChanges(Utf8StringR patchedDDL, Utf8StringCR compoundSQL);
     void NotifyOnCommit();
