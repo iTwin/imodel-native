@@ -371,8 +371,13 @@ BeFileStatus BeFile::WriteAll(void const* buf, size_t numBytes)
 
 #elif defined (BENTLEYCONFIG_OS_UNIX)
 
-    size_t bytesWritten = 0;
+    // https://man7.org/linux/man-pages/man2/write.2.html#NOTES
+    // "On Linux, write() (and similar system calls) will transfer at most 0x7ffff000 (2,147,479,552) bytes,
+    // returning the number of bytes actually transferred.  (This is true on both 32-bit and 64-bit systems.)"
+    // On MacOS we observe that attempting to write more than this maximum produced "incorrect parameters" error.
+    // So write in chunks no larger than this limit.
     size_t chunkSizeMax = 2147418112;
+    size_t bytesWritten = 0;
 
     while(bytesWritten < numBytes) {
 
