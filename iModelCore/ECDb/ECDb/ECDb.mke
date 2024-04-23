@@ -390,7 +390,7 @@ $(o)ClassMapColumnFactory$(oext):                             $(baseDir)ClassMap
 
 $(o)ConcurrentQueryManagerImpl$(oext):                        $(baseDir)ConcurrentQueryManagerImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)QueryJsonAdaptor$(oext):                                  $(baseDir)QueryJsonAdaptor.cpp $(ECDbAllHeaders) ${} ${MultiCompileDepends}
+$(o)QueryJsonAdaptor$(oext):                                  $(baseDir)QueryJsonAdaptor.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)InstanceReaderImpl$(oext):                                $(baseDir)InstanceReaderImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
