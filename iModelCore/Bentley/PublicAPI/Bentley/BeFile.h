@@ -156,7 +156,7 @@ public:
     BENTLEYDLL_EXPORT BeFileStatus Write(uint32_t* bytesWritten, void const* buffer, uint32_t numBytes);
 
     //! Writes bytes to the file at the current position. The file position is advanced by the number of bytes written.
-    //! This function will all the bytes requested, circumventing the 2GB limit on linux and 4GB limit on windows.
+    //! This function will write all the bytes requested, circumventing the 2GB limit on unix and 4GB limit on windows.
     //! @param[in]  buffer          The data to be written.
     //! @param[in]  numBytes        The number of bytes to be copied from \a buffer into the file.
     //! @return BeFileStatus::Success if the operation was successful or non-zero if it failed.

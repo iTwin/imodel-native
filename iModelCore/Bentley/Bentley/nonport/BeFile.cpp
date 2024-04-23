@@ -348,24 +348,28 @@ BeFileStatus BeFile::WriteAll(void const* buf, size_t numBytes)
     {
 #if defined (BENTLEYCONFIG_OS_WINDOWS)
   
-    size_t bytesWritten = 0;
-    ULONG chunkBytesWritten = 0;
+    size_t bytesWritten = 0;  
+    ULONG chunkSizeMax = ULONG_MAX; 
 
     while(bytesWritten < numBytes) {
 
-      ULONG chunkBytesToWrite = (numBytes - bytesWritten) > ULONG_MAX ? ULONG_MAX : static_cast<ULONG>(numBytes - bytesWritten);
-      if (!WriteFile(m_handle, static_cast<const char *>(buf) + bytesWritten, chunkBytesToWrite, &chunkBytesWritten, NULL))
+      ULONG chunkBytesToWrite = (numBytes - bytesWritten) > chunkSizeMax ? chunkSizeMax : static_cast<ULONG>(numBytes - bytesWritten);      
+      ULONG chunkBytesWritten = 0;
+
+      if (!WriteFile(m_handle, static_cast<const char *>(buf) + bytesWritten, chunkBytesToWrite, &chunkBytesWritten, NULL)) {
         return SetLastError();
+      }
 
       bytesWritten += chunkBytesWritten;
     }
 
-    return SetLastError();
+    return BeFileStatus::Success;
 
 #elif defined (BENTLEYCONFIG_OS_UNIX)
 
     size_t bytesWritten = 0;
-    size_t chunkSizeMax = 2147418112; 
+    size_t chunkSizeMax = 2147418112;
+
     while(bytesWritten < numBytes) {
 
       size_t chunkBytesToWrite = (numBytes - bytesWritten) > chunkSizeMax ? chunkSizeMax : numBytes - bytesWritten;      
@@ -374,6 +378,7 @@ BeFileStatus BeFile::WriteAll(void const* buf, size_t numBytes)
       if(chunkBytesWritten == -1) {
         return SetLastError();
       }
+
       bytesWritten += chunkBytesWritten;
     }
 
