@@ -1009,7 +1009,7 @@ static int nocaseCollatingFuncLatin1(void *pCtx, int nLeft, const void *zLeft, i
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DbFile::SetNoCaseCollation(NoCaseCollation col) const{
+DbResult DbFile::SetNoCaseCollation(NoCaseCollation col) {
     auto mutex = sqlite3_db_mutex(m_sqlDb);
     sqlite3_mutex_enter(mutex);
     const auto NOCASE = "NOCASE";

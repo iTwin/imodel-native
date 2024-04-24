@@ -2403,7 +2403,7 @@ protected:
     void SaveCachedProperties(bool isCommit);
     Utf8String GetLastError(DbResult* lastResult) const;
     void SaveCachedBlvs(bool isCommit);
-    DbResult SetNoCaseCollation(NoCaseCollation col) const;
+    DbResult SetNoCaseCollation(NoCaseCollation col);
     NoCaseCollation GetNoCaseCollation() const { return m_noCaseCollation; }
     BE_SQLITE_EXPORT DbResult SaveProperty(PropertySpecCR spec, Utf8CP strData, void const* value, uint32_t propsize, uint64_t majorId=0, uint64_t subId=0);
     BE_SQLITE_EXPORT bool HasProperty(PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
@@ -3284,7 +3284,7 @@ public:
     BE_SQLITE_EXPORT DbBuffer Serialize(const char *zSchema = nullptr) const;
 
     BE_SQLITE_EXPORT static DbResult Deserialize(DbBuffer& buffer, DbR db, DbDeserializeOptions opts = DbDeserializeOptions::FreeOnClose, const char *zSchema = nullptr, std::function<void(DbR)> beforeDefaultTxnStarts = nullptr);
-    BE_SQLITE_EXPORT DbResult SetNoCaseCollation(NoCaseCollation col) const { return m_dbFile->SetNoCaseCollation(col); }
+    BE_SQLITE_EXPORT DbResult SetNoCaseCollation(NoCaseCollation col) { return m_dbFile->SetNoCaseCollation(col); }
     BE_SQLITE_EXPORT NoCaseCollation GetNoCaseCollation() const { return m_dbFile->GetNoCaseCollation(); }
 };
 
