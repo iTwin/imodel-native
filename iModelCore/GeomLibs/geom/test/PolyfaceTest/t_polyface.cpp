@@ -4603,3 +4603,38 @@ TEST (PolyfaceQuery, FacetOrientation)
         }
     Check::ClearGeometry("PolyfaceQuery.FacetOrientation");
     }
+
+TEST(Polyface, DegenerateTriangulation)
+    {
+    BeFileName dataPath;
+    BeTest::GetHost().GetDocumentsRoot(dataPath);
+    dataPath.AppendToPath(L"GeomLibsTestData");
+    dataPath.AppendToPath(L"Polyface");
+    dataPath.AppendToPath(L"DegenerateTriangles");
+    dataPath.AppendToPath(L"meshTriangulation3.imjs");
+    bvector<IGeometryPtr> geometry;
+    if (Check::True(GTestFileOps::JsonFileToGeometry(dataPath, geometry), "Import geometry from JSON"))
+        {
+        for (auto const& g : geometry)
+            {
+            auto mesh = g->GetAsPolyfaceHeader();
+            if (Check::True(mesh.IsValid(), "Geometry is a polyface"))
+                {
+                Check::SaveTransformed(mesh);
+                Check::True(SUCCESS == mesh->Triangulate(), "Triangulate");
+                Check::Shift(100,0,0);
+                Check::SaveTransformed(mesh);
+
+                uint32_t faceCounter = 0;
+                PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*mesh);
+                for (visitor->Reset(); visitor->AdvanceToNextFace(); faceCounter++)
+                    {
+                    char sFacetCounter[10];
+                    sprintf(sFacetCounter, "face is a triangle %d", faceCounter);
+                    Check::Size(3, visitor->NumEdgesThisFace(), sFacetCounter);
+                    }
+                }
+            }
+        }
+    Check::ClearGeometry("Polyface.DegenerateTriangulation");
+    }
