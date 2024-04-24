@@ -2381,7 +2381,7 @@ protected:
     Savepoint m_defaultTxn;
     BeBriefcaseId m_briefcaseId;
     StatementCache m_statements;
-    mutable NoCaseCollation m_noCaseCollation;
+    NoCaseCollation m_noCaseCollation;
     DbTxns m_txns;
     std::unique_ptr<ScalarFunction> m_regexFunc, m_regexExtractFunc, m_base36Func;
     explicit DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode, std::optional<int> busyTimeout);
