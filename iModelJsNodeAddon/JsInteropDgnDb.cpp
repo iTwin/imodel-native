@@ -327,9 +327,7 @@ DgnDbStatus JsInterop::GetElement(BeJsValue elementJson, DgnDbR dgndb, Napi::Obj
     }
 
     if (BE_SQLITE_ROW != stmt->Step())
-        {
         return DgnDbStatus::NotFound;
-        }
 
     elementJson.From(BeJsDocument(stmt->GetValueText(0)));
     return DgnDbStatus::Success;

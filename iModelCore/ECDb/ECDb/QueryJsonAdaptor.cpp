@@ -43,7 +43,6 @@ BentleyStatus QueryJsonAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& st
             if (m_useJsName) {
                 const auto prim = memberProp->GetAsPrimitiveProperty();
                 Utf8String memberName = memberProp->GetName();
-                auto isCodeObjectProperty = false;
                 if (prim && !prim->GetExtendedTypeName().empty()) {
                     const auto extendTypeId = ExtendedTypeHelper::GetExtendedType(prim->GetExtendedTypeName());
                     if (extendTypeId == ExtendedTypeHelper::ExtendedType::Id)
