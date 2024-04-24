@@ -315,6 +315,62 @@ TEST_F(BeFileTests, Write)
     }
 
 //---------------------------------------------------------------------------------------
+//Write a small data chunk to file without the 2GB limit on unix and the 4GB limit on windows
+//
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeFileTests, WriteAllSmall)
+    {
+    //------Preparations----------
+    uint64_t chunkSize = 100000000;
+    BeFileName fileName;
+    CreatePathForTempFile(&fileName, L"writesmall", L"txt");
+    WCharCP filePath = fileName.GetName();
+    CreateFile(&m_file, filePath, true);
+
+    // Declare a > 4GB buffer
+    bvector<char> buf(chunkSize);
+    BeFileStatus status = m_file.WriteAll(buf.data(), buf.size());
+
+    //---Verification--------------
+
+    uint64_t fileSize = 0;
+    fileName.GetFileSize(fileSize);
+
+    EXPECT_TRUE(status == BeFileStatus::Success) << "Failed to write to file, last error: " << static_cast<int>(status) << ", file: " << filePath;
+    EXPECT_GE(fileSize, chunkSize) << "Failed to write bytes count specified, file size: " << fileSize << ", file: " << filePath;
+    m_file.Close();    
+    }
+
+//---------------------------------------------------------------------------------------
+//Write a large data chunk to file without the 2GB limit on unix and the 4GB limit on windows
+//
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeFileTests, WriteAllLarge)
+    {
+    //------Preparations----------
+    uint64_t chunkSize = 4500000000;
+    BeFileName fileName;
+    CreatePathForTempFile(&fileName, L"writelarge", L"txt");
+    WCharCP filePath = fileName.GetName();
+    CreateFile(&m_file, filePath, true);
+
+    // Declare a > 4GB buffer
+    bvector<char> buf(chunkSize);
+    BeFileStatus status = m_file.WriteAll(buf.data(), buf.size());
+
+    //---Verification--------------
+
+    uint64_t fileSize = 0;
+    fileName.GetFileSize(fileSize);
+
+    EXPECT_TRUE(status == BeFileStatus::Success) << "Failed to write to file, last error: " << static_cast<int>(status) << ", file: " << filePath;
+    EXPECT_GE(fileSize, chunkSize) << "Failed to write bytes count specified, file size: " << fileSize << ", file: " << filePath;
+    m_file.Close();    
+    }
+
+//---------------------------------------------------------------------------------------
 //Test setting and getting pointers
 //
 // @bsimethod

@@ -28,7 +28,7 @@ public:
 
 // Test if the bytes have the signature for BentleyGeomFlatBuffer.
 static BGFBIMPEXP bool IsFlatBufferFormat(bvector<Byte> &buffer);
-static BGFBIMPEXP bool IsFlatBufferFormat(Byte const *buffer);
+static BGFBIMPEXP bool IsFlatBufferFormat(Byte const *buffer, size_t bufferSize);
 
 // Convert flatbuffer bytes to geometry instance. If bytes represent an array of geometries, return nullptr.
 static BGFBIMPEXP IGeometryPtr BytesToGeometry(bvector<Byte> const &buffer, bool applyValidation = true);
