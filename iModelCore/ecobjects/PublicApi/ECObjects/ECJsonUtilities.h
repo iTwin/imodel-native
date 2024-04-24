@@ -81,12 +81,6 @@ struct ECJsonSystemNames final
         static constexpr Utf8CP TargetId() { return "targetId"; }
         static constexpr Utf8CP TargetClassName() { return "targetClassName"; }
 
-        static constexpr Utf8CP Code() { return "code"; }
-
-        static constexpr Utf8CP DisplayStyleId() { return "displayStyleId"; }
-        static constexpr Utf8CP CategorySelectorId() { return "categorySelectorId"; }
-        static constexpr Utf8CP ModelSelectorId() { return "modelSelectorId"; }
-
         //! System member names for the representation of BentleyApi::ECN::NavigationECProperty values
         //! in the ECJSON
         struct Navigation final
@@ -118,23 +112,6 @@ struct ECJsonSystemNames final
 
             public:
                 static bool IsSystemMember(Utf8StringCR memberName) { return memberName.Equals(X()) || memberName.Equals(Y()) || memberName.Equals(Z()); }
-            };
-
-        //! System member names for the representation of Code property values in the ECJSON
-        struct Code final
-            {
-            public:
-
-                static constexpr Utf8CP Scope() { return "scope"; }
-                static constexpr Utf8CP Spec() { return "spec"; }
-                static constexpr Utf8CP Value() { return "value"; }
-
-            private:
-                Code() = delete;
-                ~Code() = delete;
-
-            public:
-                static bool IsSystemMember(Utf8StringCR memberName) { return memberName.Equals(Scope()) || memberName.Equals(Spec()) || memberName.Equals(Value()); }
             };
 
     private:

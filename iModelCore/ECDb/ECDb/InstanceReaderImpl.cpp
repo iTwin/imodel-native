@@ -184,7 +184,6 @@ BeJsValue RowRender::GetInstanceJsonObject(ECInstanceKeyCR instanceKey, IECSqlRo
     adaptor.UseJsNames(param.GetUseJsName());
     adaptor.SetAbbreviateBlobs(param.GetAbbreviateBlobs());
     adaptor.SetConvertClassIdsToClassNames(param.GetClassIdToClassNames());
-    adaptor.JsifyElements(param.GetJsifyElements());
     adaptor.RenderRow(row, ecsqlRow, false);
     m_instanceKey = instanceKey;
     m_jsonParam = param;
@@ -206,7 +205,6 @@ BeJsValue RowRender::GetPropertyJsonValue(ECInstanceKeyCR instanceKey, Utf8Strin
     adaptor.UseJsNames(param.GetUseJsName());
     adaptor.SetAbbreviateBlobs(param.GetAbbreviateBlobs());
     adaptor.SetConvertClassIdsToClassNames(param.GetClassIdToClassNames());
-    adaptor.JsifyElements(param.GetJsifyElements());
     adaptor.RenderValue(out, ecsqlValue);
     m_instanceKey = instanceKey;
     m_jsonParam = param;

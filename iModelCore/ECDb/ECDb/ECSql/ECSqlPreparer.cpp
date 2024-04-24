@@ -2321,11 +2321,9 @@ bool ECSqlExpPreparer::QueryOptionExperimentalFeaturesEnabled(ECDbCR db, ExpCR e
 //+---------------+---------------+---------------+---------------+---------------+------
 unsigned int ECSqlExpPreparer::QueryOptionsInstanceFlags(ExpCR exp)
     {
-    const auto jsifyElements = OptionsExp::FindLocalOrInheritedOption<bool>(exp, OptionsExp::JSIFY_ELEMENTS, [](OptionExp const& opt) { return opt.asBool(); }, []() { return false; });
     const auto useJsPropName = OptionsExp::FindLocalOrInheritedOption<bool>(exp, OptionsExp::USE_JS_PROP_NAMES, [](OptionExp const& opt) { return opt.asBool(); }, []() { return false; });
     const auto doNotTruncateBlob = OptionsExp::FindLocalOrInheritedOption<bool>(exp, OptionsExp::DO_NOT_TRUNCATE_BLOB, [](OptionExp const& opt) { return opt.asBool(); }, []() { return false; });
     unsigned int flags = 0;
-    if (jsifyElements) flags |= InstanceReader::FLAGS_JsifyElements;
     if (useJsPropName) flags |= InstanceReader::FLAGS_UseJsPropertyNames;
     if (doNotTruncateBlob) flags |= InstanceReader::FLAGS_DoNotTruncateBlobs;
     return flags;

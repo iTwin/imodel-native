@@ -1003,7 +1003,6 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
     adaptor.SetAbbreviateBlobs(abbreviateBlobs);
     adaptor.SetConvertClassIdsToClassNames(classIdToClassNames);
     adaptor.UseJsNames(request.GetValueFormat() == ECSqlRequest::ECSqlValueFormat::JsNames);
-    adaptor.JsifyElements(request.GetValueFormat() == ECSqlRequest::ECSqlValueFormat::JsifyElementsNames);
     uint32_t row_count = 0;
     std::string& result = cachedAdaptor.ClearAndGetCachedString();
     result.reserve(QUERY_WORKER_RESULT_RESERVE_BYTES);

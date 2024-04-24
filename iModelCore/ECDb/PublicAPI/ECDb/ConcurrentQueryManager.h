@@ -261,7 +261,6 @@ struct ECSqlRequest : public QueryRequest{
     enum class ECSqlValueFormat {
         ECSqlNames = 0,
         JsNames = 1,
-        JsifyElementsNames = 2,
     };
     private:
         static constexpr auto JQuery = "query";

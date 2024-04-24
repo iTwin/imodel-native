@@ -311,16 +311,16 @@ DgnDbStatus JsInterop::GetElement(BeJsValue elementJson, DgnDbR dgndb, Napi::Obj
 
     CachedECSqlStatementPtr stmt;
     if (eid.IsValid()) {
-        stmt = dgndb.GetPreparedECSqlStatement("SELECT $ FROM Bis.Element WHERE ECInstanceId=? OPTIONS JSIFY_ELEMENTS");
+        stmt = dgndb.GetPreparedECSqlStatement("SELECT $ FROM Bis.Element WHERE ECInstanceId=? OPTIONS USE_JS_PROP_NAMES");
         stmt->BindId(1, eid);
     } else if (fedJson.isString()) {
         BeGuid federationGuid;
         federationGuid.FromString(fedJson.asCString());
-        stmt = dgndb.GetPreparedECSqlStatement("SELECT $ FROM Bis.Element WHERE FederationGuid=? OPTIONS JSIFY_ELEMENTS");
+        stmt = dgndb.GetPreparedECSqlStatement("SELECT $ FROM Bis.Element WHERE FederationGuid=? OPTIONS USE_JS_PROP_NAMES");
         stmt->BindGuid(1, federationGuid);
     } else {
         DgnCode code = DgnCode::FromJson(codeJson, dgndb, false);
-        stmt = dgndb.GetPreparedECSqlStatement("SELECT $ FROM Bis.Element WHERE CodeSpecId=? AND CodeScopeId=? AND CodeValue=? LIMIT 1 OPTIONS JSIFY_ELEMENTS");
+        stmt = dgndb.GetPreparedECSqlStatement("SELECT $ FROM Bis.Element WHERE CodeSpecId=? AND CodeScopeId=? AND CodeValue=? LIMIT 1 OPTIONS USE_JS_PROP_NAMES");
         stmt->BindId(1, code.GetCodeSpecId());
         stmt->BindId(2, code.GetScopeElementId(dgndb));
         stmt->BindText(3, code.GetValueUtf8CP(), IECSqlBinder::MakeCopy::No);

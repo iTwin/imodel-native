@@ -1244,7 +1244,7 @@ void DgnElement::RelatedElement::FromJson(DgnDbR db, BeJsConst val)
 //---------------------------------------------------------------------------------------
 void DgnElement::_ToJson(BeJsValue val, BeJsConst opts) const
     {
-    CachedECSqlStatementPtr stmt = this->GetDgnDb().GetPreparedECSqlStatement("SELECT $ FROM Bis.Element WHERE ECInstanceId=? OPTIONS JSIFY_ELEMENTS");
+    CachedECSqlStatementPtr stmt = this->GetDgnDb().GetPreparedECSqlStatement("SELECT $ FROM Bis.Element WHERE ECInstanceId=? OPTIONS USE_JS_PROP_NAMES");
     if (!stmt.IsValid())
         {
         BeAssert(false);
