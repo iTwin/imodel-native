@@ -2554,7 +2554,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     void BeginPullMerge(NapiInfoCR info) {
         auto& db = GetWritableDb(info);
         REQUIRE_ARGUMENT_STRING(0, method);
-        db.Txns().BeginPullMerge(method.EqualsIAscii("Rebase") ? TxnManager::ChangeIntegratingMethod::Rebase : TxnManager::ChangeIntegratingMethod::Merge);
+        db.Txns().BeginPullMerge(method.EqualsIAscii("Rebase") ? TxnManager::PullMergeMethod::Rebase : TxnManager::PullMergeMethod::Merge);
     }
     void EndPullMerge(NapiInfoCR info) {
         auto& db = GetWritableDb(info);

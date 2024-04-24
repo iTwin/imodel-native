@@ -994,7 +994,7 @@ void TxnManager::FinishCreateChangeset(int32_t changesetIndex, bool keepFile) {
     m_changesetInProgress->SetChangesetIndex(changesetIndex);
 
     SaveParentChangeset(m_changesetInProgress->GetChangesetId(), changesetIndex);
-
+    m_dgndb.Txns().ClearMergeMethodIfNoPendingChanges();
     auto rc = m_dgndb.SaveChanges();
     if (BE_SQLITE_OK != rc)
         m_dgndb.ThrowException("cannot save changes to complete changeset", rc);

@@ -416,7 +416,7 @@ public:
         SetandRestoreIndirectChanges(ChangeTracker& txn) : m_tracker(txn) { txn.SetMode(BeSQLite::ChangeTracker::Mode::Indirect); }
         ~SetandRestoreIndirectChanges() { m_tracker.SetMode(BeSQLite::ChangeTracker::Mode::Direct); }
     };
-    enum class ChangeIntegratingMethod {
+    enum class PullMergeMethod {
         Rebase, // Apply local change on top of incoming master
         Merge,  // Apply incoming master changes on top of local changes.
         Default = Merge,
@@ -488,7 +488,7 @@ private:
     TxnType GetTxnType(TxnId rowid) const;
     bool m_pullMergeInProgress;
     TxnId m_pullMergeTxnId;
-    ChangeIntegratingMethod m_pullMergeMethod;
+    PullMergeMethod m_pullMergeMethod;
     BentleyStatus PatchSlowDdlChanges(Utf8StringR patchedDDL, Utf8StringCR compoundSQL);
     void NotifyOnCommit();
     void ThrowIfChangesetInProgress();
@@ -511,13 +511,14 @@ public:
     void SaveParentChangeset(Utf8StringCR revisionId, int32_t changesetIndex);
     ChangesetPropsPtr CreateChangesetProps(BeFileNameCR pathName);
 
-    DGNPLATFORM_EXPORT void BeginPullMerge(ChangeIntegratingMethod method);
+    DGNPLATFORM_EXPORT void BeginPullMerge(PullMergeMethod method);
     DGNPLATFORM_EXPORT void EndPullMerge();
 
     //! Add a TxnMonitor. The monitor will be notified of all transaction events until it is dropped.
     DGNPLATFORM_EXPORT static void AddTxnMonitor(TxnMonitor& monitor);
     DGNPLATFORM_EXPORT static void DropTxnMonitor(TxnMonitor& monitor);
     DGNPLATFORM_EXPORT void DeleteAllTxns();
+    void ClearMergeMethodIfNoPendingChanges();
     void DeleteFromStartTo(TxnId lastId);
     void DeleteRebases(int64_t lastRebaseId);
     void DeleteReversedTxns();
