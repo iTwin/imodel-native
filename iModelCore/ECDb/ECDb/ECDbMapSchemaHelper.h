@@ -81,14 +81,19 @@ struct ECDbMapCustomAttributeHelper final
         //! Tries to retrieve the ImportRequiresVersion custom attribute from the specified schema.
         //! @param[out] ca Retrieved CA
         //! @param[in] ecClass Class to retrieve the custom attribute from.
-        //! @return true if @p schema has the custom attribute.
+        //! @return true if @p ecClass has the custom attribute.
         static bool TryGetImportRequiresVersion(ImportRequiresVersionCustomAttribute& ca, ECN::ECSchemaCR schema);
 
         //! Tries to retrieve the UseRequiresVersion custom attribute from the specified schema.
         //! @param[out] ca Retrieved CA
         //! @param[in] ecClass Class to retrieve the custom attribute from.
-        //! @return true if @p schema has the custom attribute.
+        //! @return true if @p ecClass has the custom attribute.
         static bool TryGetUseRequiresVersion(UseRequiresVersionCustomAttribute& ca, ECN::ECClassCR ecClass);
+
+        //! Checks if the provided relationship class is flagged with the ForeignKeyView custom attribute
+        //! @param[in] ecClass Class to check the custom attribute on.
+        //! @return true if @p ecClass has the custom attribute.
+        static bool IsForeignKeyView(ECN::ECRelationshipClassCR ecClass);
     };
 
 //=======================================================================================    
@@ -253,6 +258,8 @@ struct DbIndexListCustomAttribute final
                 //! Gets the list of property names on which the index is to be defined.
                 //! @return Properties on which the index is defined.
                 std::vector<Utf8String> const& GetProperties() const { return m_properties; }
+
+                void SetIndexName(Utf8StringCR indexName) { m_name = indexName; }
             };
 
     private:

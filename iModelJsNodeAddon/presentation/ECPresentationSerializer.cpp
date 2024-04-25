@@ -81,10 +81,13 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, Cont
     rapidjson::Document json(allocator);
     json.SetObject();
     json.AddMember("name", rapidjson::Value(editor.GetName().c_str(), json.GetAllocator()), json.GetAllocator());
-    rapidjson::Value paramsJson(rapidjson::kObjectType);
-    for (ContentFieldEditor::Params const* params : editor.GetParams())
-        paramsJson.AddMember(rapidjson::Value(params->GetName(), json.GetAllocator()), params->AsJson(ctx, &json.GetAllocator()), json.GetAllocator());
-    json.AddMember("params", paramsJson, json.GetAllocator());
+    if (!editor.GetParams().empty())
+        {
+        rapidjson::Value paramsJson(rapidjson::kObjectType);
+        for (ContentFieldEditor::Params const* params : editor.GetParams())
+            paramsJson.AddMember(rapidjson::Value(params->GetName(), json.GetAllocator()), params->AsJson(ctx, &json.GetAllocator()), json.GetAllocator());
+        json.AddMember("params", paramsJson, json.GetAllocator());
+        }
     return json;
     }
 
@@ -225,7 +228,6 @@ void IModelJsECPresentationSerializer::_AsJson(ContextR ctx, ContentDescriptor::
     // However, we're only serializing stuff from ECProperty ant not the other stuff, so need this to avoid
     // serializing the same property multiple times.
     bset<ECPropertyCP> serializedProperties;
-
     rapidjson::Value propertiesJson(rapidjson::kArrayType);
     for (ContentDescriptor::Property const& prop : ecPropertiesField.GetProperties())
         {
@@ -236,6 +238,19 @@ void IModelJsECPresentationSerializer::_AsJson(ContextR ctx, ContentDescriptor::
         serializedProperties.insert(&prop.GetProperty());
         }
     fieldBaseJson.AddMember("properties", propertiesJson, fieldBaseJson.GetAllocator());
+
+    if (auto arrayField = ecPropertiesField.AsArrayPropertiesField())
+        {
+        auto const& arrayItemsField = arrayField->GetItemsField();
+        fieldBaseJson.AddMember("itemsField", AsJson(ctx, arrayItemsField, &fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
+        }
+    if (auto structField = ecPropertiesField.AsStructPropertiesField())
+        {
+        rapidjson::Value structMembersJson(rapidjson::kArrayType);
+        for (auto const& structMember : structField->GetMembers())
+            structMembersJson.PushBack(AsJson(ctx, *structMember, &fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
+        fieldBaseJson.AddMember("memberFields", structMembersJson, fieldBaseJson.GetAllocator());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -978,6 +993,9 @@ ECInstancesNodeKeyPtr IModelJsECPresentationSerializer::_GetECInstanceNodeKeyFro
         json["instanceKeys"].ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst instanceKeyJson)
             {
             ECClassCP ecClass = GetClassFromFullName(connection, instanceKeyJson["className"]);
+            if (!ecClass)
+                return false;
+
             ECInstanceId instanceId(instanceKeyJson["id"].GetUInt64());
             instanceKeys.push_back(ECClassInstanceKey(ecClass, instanceId));
             return false;
@@ -1002,6 +1020,9 @@ ECClassGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetECClassGroupingN
     {
     uint64_t groupedInstancesCount = json["groupedInstancesCount"].GetUInt64();
     ECClassCP ecClass = GetClassFromFullName(connection, json["className"]);
+    if (!ecClass)
+        return nullptr;
+
     ECClassGroupingNodeKeyPtr key = ECClassGroupingNodeKey::Create(*ecClass, false, "", ParseNodeKeyHashPath(json["pathFromRoot"]), groupedInstancesCount);
     key->SetInstanceKeysSelectQuery(GetPresentationQueryFromJson(json["instanceKeysSelectQuery"]));
     return key;
@@ -1030,6 +1051,9 @@ ECPropertyGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetECPropertyGro
     {
     uint64_t groupedInstancesCount = json["groupedInstancesCount"].GetUInt64();
     ECClassCP ecClass = GetClassFromFullName(connection, json["className"]);
+    if (!ecClass)
+        return nullptr;
+
     Utf8String propertyName = json["propertyName"].asString();
     rapidjson::Document groupingValues;
     if (json.isMember("groupingValues"))
@@ -1662,7 +1686,13 @@ KeySetPtr IModelJsECPresentationSerializer::GetKeySetFromJson(IConnectionCR conn
         {
         json["nodeKeys"].ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst nodeKeyJson)
             {
-            nodeKeys.insert(NavNodeKey::FromJson(connection, nodeKeyJson));
+            auto key = NavNodeKey::FromJson(connection, nodeKeyJson);
+            if (key.IsNull())
+                {
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Default, NativeLogging::LOG_INFO, NativeLogging::LOG_ERROR, Utf8PrintfString("Failed to parse NavNode key from given JSON: `%s`", nodeKeyJson.Stringify().c_str()));
+                return false;
+                }
+            nodeKeys.insert(key);
             return false;
             });
         }

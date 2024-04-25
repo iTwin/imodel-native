@@ -124,7 +124,7 @@ static bool GetXYEval (
     BSIQuadraturePoints const &yRule, int iy, double y0, double y1,
     double &x, double &y, double &w
     );
-    
+
 
 
 //!
@@ -170,7 +170,7 @@ int     numInterval
 @param [in t0 start of interval.
 @param [in] t1 end of interval.
 @params [in] numInterval number of intervals to use within t0..t1.
-@params [out] totalErrorBound 
+@params [out] totalErrorBound
 @return false if function.AnnounceIntermediateIntergral () returned false.
 @bsimethod
 +---------------+---------------+---------------+---------------+------*/
@@ -233,10 +233,10 @@ int InitStrang (int selector);
 //! @param [in] i  index of evaluation point.
 //! @param [out] u  evaluation coordinate.
 //! @param [out] v  evaluation coordinate.
-//! @param [out] w  weight.  
+//! @param [out] w  weight.
 //! @returns false if index is out of range.
 //!
-bool GetEval (int i, double &u, double &v, double &w) const;    
+bool GetEval (int i, double &u, double &v, double &w) const;
 
 //!
 //! @description Return the number of points in the quadrature rule.
@@ -251,7 +251,7 @@ double GetConvergencePower () const;
 
 //!
 //! constructor -- initialize to corner rule. (all weights 1/3, uv coordinates (00) (10) (01)
-//! Note all rules have weights that add to ONE -- 
+//! Note all rules have weights that add to ONE --
 //!
 BSITriangleQuadraturePoints ();
 
@@ -259,7 +259,7 @@ void AccumulateWeightedSums(BSIVectorIntegrandXY &function, double *pSums);
 
 void AccumulateWeightedSumsMapped
     (
-    BSIVectorIntegrandXY &function, double *pSums, 
+    BSIVectorIntegrandXY &function, double *pSums,
     double ax, double ay,
     double bx, double by,
     double cx, double cy

@@ -175,8 +175,8 @@ public:
     static void ApplyPagingOptions(RefCountedPtr<PresentationQueryBuilder>& query, PageOptionsCR opts);
     static void Aggregate(ContentDescriptorPtr& aggregateDescriptor, ContentDescriptorR inputDescriptor);
 
-    static bmap<ECClassCP, bvector<InstanceLabelOverride const*>> GetLabelOverrideValuesMap(ECSchemaHelper const& helper, bvector<InstanceLabelOverrideCP>);
-    static bvector<InstanceLabelOverrideValueSpecification const*> GetInstanceLabelOverrideSpecsForClass(bmap<ECClassCP, bvector<InstanceLabelOverride const*>> const& instanceLabelOverrides, ECClassCR ecClass);
+    // static bmap<ECClassCP, bvector<InstanceLabelOverride const*>> GetLabelOverrideValuesMap(ECSchemaHelper const& helper, bvector<InstanceLabelOverrideCP>);
+    static bvector<InstanceLabelOverrideValueSpecification const*> GetInstanceLabelOverrideSpecsForClass(ECSchemaHelper const& helper, bvector<InstanceLabelOverrideCP> const& instanceLabelOverrides, ECClassCR ecClass);
     ECPRESENTATION_EXPORT static PresentationQueryContractFieldPtr CreateDisplayLabelField(Utf8CP name, ECSchemaHelper const&, SelectClass<ECClass> const&,
         PresentationQueryContractFieldCPtr classIdField, PresentationQueryContractFieldCPtr instanceIdField, bvector<RelatedClassPath> const& relatedInstancePaths,
         bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs, bvector<ECInstanceKey> const& labelRequestsStack = {});

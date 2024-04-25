@@ -10,7 +10,7 @@
 USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
 
 
-// static int s_noisy = 0;    
+// static int s_noisy = 0;
 // Support data for fast search of curve vectors.
 // This has two levels:
 // 1) range tree with ranges of primitives.
@@ -44,14 +44,14 @@ virtual bool GetRange (size_t i0, size_t i1, DRange3d &range) const override
     range.Init ();
     if (m_leafPrimitives.size () < i1)
         i1 = m_leafPrimitives.size ();
-     
+
     for (size_t i = i0; i <= i1; i++)
         {
         DRange3d rangeI;
         if (m_leafPrimitives[i]->GetRange (rangeI))
             range.Extend (rangeI);
         }
-    return !range.IsNull ();        
+    return !range.IsNull ();
     }
 // Construct a range tree for this curve vector.
 bool Install (CurveVectorPtr &curveVector)
@@ -746,7 +746,7 @@ public:
 
 TEST (CurveOffset, RebarReduceCCW)
     {
-    std::function<CurveVectorPtr (CurveVectorPtr, CurveVector::BoundaryType)> changeType = 
+    std::function<CurveVectorPtr (CurveVectorPtr, CurveVector::BoundaryType)> changeType =
         [] (CurveVectorPtr curve, CurveVector::BoundaryType boundaryType)
         {
         curve->SetBoundaryType (boundaryType);
@@ -1004,7 +1004,7 @@ TEST(CloseApproach,Bsplines)
     }
 TEST(CloseApproach, BsplineWithInflection)
     {
-    double a = 0.425;  
+    double a = 0.425;
     bvector<DPoint3d> pointA{
         {-4.0, -a, 0},
         {-1.0,  a, 0},

@@ -91,7 +91,12 @@ Utf8String DerivedPropertyExp::GetName() const {
 
     if (GetExpression()->GetType() == Exp::Type::PropertyName) {
         PropertyNameExp const& propertyNameExp = GetExpression()->GetAs<PropertyNameExp>();
-        return propertyNameExp.GetPropertyPath().ToString();
+        return propertyNameExp.GetResolvedPropertyPath().ToString();
+    }
+
+    if (GetExpression()->GetType() == Exp::Type::NavValueCreationFunc) {
+        NavValueCreationFuncExp const& navValueCreationFuncExp = GetExpression()->GetAs<NavValueCreationFuncExp>();
+        return navValueCreationFuncExp.GetPropertyNameExp()->GetResolvedPropertyPath().ToString();
     }
 
     return GetExpression()->ToECSql();
@@ -126,7 +131,7 @@ Utf8StringCR DerivedPropertyExp::GetColumnAlias() const
         {
         PropertyNameExp const& propertyNameExp = GetExpression()->GetAs<PropertyNameExp>();
         if (propertyNameExp.IsPropertyRef())
-            m_subQueryAlias =  propertyNameExp.GetPropertyPath().ToString();
+            m_subQueryAlias =  propertyNameExp.GetResolvedPropertyPath().ToString();
         }
 
     return m_columnAlias;
@@ -727,7 +732,7 @@ BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions(ECSqlParseContext cons
 
         //WIP_ECSQL: Why is the alias the first entry in the prop path? The alias should be the root class, but not an entry in the prop path
         //WIP_ECSQL: What about SELECT structProp.* from FOO?
-        PropertyPath const& propertyPath = innerExp.GetPropertyPath();
+        PropertyPath const& propertyPath = innerExp.GetResolvedPropertyPath();
         //case: SELECT a.* from FOO a
         if (propertyPath.Size() > 1 && Exp::IsAsteriskToken(propertyPath[1].GetName()))
             {
@@ -883,15 +888,18 @@ PropertyMatchResult SingleSelectStatementExp::_FindProperty(ECSqlParseContext& c
             DerivedPropertyExp const& derivedPropertyExp = selectClauseExp->GetAs<DerivedPropertyExp>();
             PropertyNameExp const *propertyNameExp = derivedPropertyExp.GetExpression()->GetType() == Exp::Type::PropertyName ? derivedPropertyExp.GetExpression()->GetAsCP<PropertyNameExp>() : nullptr;
 
+            if (propertyNameExp == nullptr)
+                propertyNameExp = derivedPropertyExp.GetExpression()->GetType() == Exp::Type::NavValueCreationFunc ? derivedPropertyExp.GetExpression()->
+                    GetAs<NavValueCreationFuncExp>().GetPropertyNameExp() : nullptr;
             // Match alias or indirect
             const auto matchUserAlias = !derivedPropertyExp.GetColumnAlias().empty() && derivedPropertyExp.GetColumnAlias().EqualsIAscii(effectivePath.First().GetName());
-            const auto matchIndirect = derivedPropertyExp.GetColumnAlias().empty() && propertyNameExp != nullptr &&  propertyNameExp->GetPropertyPath().ToString().EqualsIAscii(effectivePath.First().GetName());
+            const auto matchIndirect = derivedPropertyExp.GetColumnAlias().empty() && propertyNameExp != nullptr &&  propertyNameExp->GetResolvedPropertyPath().ToString().EqualsIAscii(effectivePath.First().GetName());
 
             if (matchUserAlias || matchIndirect) {
                 if (effectivePath.Size() == 1) {
                     const auto isMatchIndirect = !matchUserAlias && matchIndirect;
                     if (isMatchIndirect && propertyNameExp->HasUserDefinedAlias()) {
-                        derivedPropertyExp.OverrideAlias(propertyNameExp->GetPropertyPath().ToString().c_str());
+                        derivedPropertyExp.OverrideAlias(propertyNameExp->GetResolvedPropertyPath().ToString().c_str());
                     }
                     return PropertyMatchResult(options, propertyPath, effectivePath, derivedPropertyExp, isMatchIndirect ? -1 : 0);
                 } else if (propertyNameExp != nullptr && propertyNameExp->GetClassRefExp() != nullptr) {
@@ -905,7 +913,7 @@ PropertyMatchResult SingleSelectStatementExp::_FindProperty(ECSqlParseContext& c
                 }
             }
             if (propertyNameExp != nullptr && propertyNameExp->GetClassRefExp() != nullptr) {
-                if (propertyNameExp->GetPropertyPath().First().GetName().EqualsIAscii(effectivePath.First().GetName())) {
+                if (propertyNameExp->GetResolvedPropertyPath().First().GetName().EqualsIAscii(effectivePath.First().GetName())) {
                     if (effectivePath.Size() == 1) {
                         return PropertyMatchResult(options, propertyPath, effectivePath, derivedPropertyExp, 0);
                     } else if (!propertyNameExp->IsPropertyFromCommonTableBlock() && propertyNameExp->GetPropertyMap() != nullptr) {
@@ -917,7 +925,7 @@ PropertyMatchResult SingleSelectStatementExp::_FindProperty(ECSqlParseContext& c
                             }
                         }
                     }
-                    if (propertyNameExp->GetPropertyPath().ToString().EqualsIAscii(effectivePath.ToString().c_str())) {
+                    if (propertyNameExp->GetResolvedPropertyPath().ToString().EqualsIAscii(effectivePath.ToString().c_str())) {
                         return PropertyMatchResult(options, propertyPath, effectivePath, derivedPropertyExp, -4);
                     }
                 }
@@ -1120,17 +1128,37 @@ void SubqueryExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
 void SubqueryExp::_ToECSql(ECSqlRenderContext& ctx) const { ctx.AppendToECSql(*GetQuery()); }
 
 //****************************** SubqueryRefExp *****************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+ClassNameExp const* SubqueryRefExp::GetViewClass() const {
+    if (GetChildrenCount() < 2) {
+        return nullptr;
+    }
+    return GetChild<ClassNameExp>(1);
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SubqueryRefExp::SubqueryRefExp(std::unique_ptr<SubqueryExp> subquery, Utf8CP alias, PolymorphicInfo polymorphic)
+ClassNameExp * SubqueryRefExp::GetViewClassP() {
+    if (GetChildrenCount() < 2) {
+        return nullptr;
+    }
+    return GetChildP<ClassNameExp>(1);
+}
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SubqueryRefExp::SubqueryRefExp(std::unique_ptr<SubqueryExp> subquery, Utf8CP alias, PolymorphicInfo polymorphic, std::unique_ptr<ClassNameExp> viewClass)
     : RangeClassRefExp(Type::SubqueryRef, polymorphic)
     {
     if (!Utf8String::IsNullOrEmpty(alias))
         SetAlias(alias);
 
     AddChild(std::move(subquery));
+    if (viewClass != nullptr)
+        AddChild(std::move(viewClass));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -1152,15 +1180,22 @@ void SubqueryRefExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPr
 void SubqueryRefExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
     //! ITWINJS_PARSE_TREE: SubqueryRefExp
     val.SetEmptyObject();
+    auto viewClass = GetViewClass();
+    if (viewClass == nullptr) {
     val["id"] = "SubqueryRefExp";
-    auto polymorphicInfo = GetPolymorphicInfo().ToECSql();
-    if (!polymorphicInfo.empty())
-        GetPolymorphicInfo().ToJson(val["polymorphicInfo"]);
+        if (!GetAlias().empty())
+            val["alias"] = GetAlias();
 
-    if (!GetAlias().empty())
-        val["alias"] = GetAlias();
+        GetSubquery()->ToJson(val["query"], fmt);
+        auto polymorphicInfo = GetPolymorphicInfo().ToECSql();
+        if (!polymorphicInfo.empty())
+            GetPolymorphicInfo().ToJson(val["polymorphicInfo"]);
 
-    GetSubquery()->ToJson(val["query"], fmt);
+        if(!GetAlias().empty())
+            val["alias"] = GetAlias();
+    } else {
+        viewClass->ToJson(val, fmt);
+    }
 }
 
 //-----------------------------------------------------------------------------------------

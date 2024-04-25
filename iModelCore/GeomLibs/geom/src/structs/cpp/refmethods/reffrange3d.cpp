@@ -289,7 +289,7 @@ bool FRange3d::IntersectsWith (FRange3dCR other, bool trueForExactTouch) const
             return false;
         if (other.low.y > high.y)
             return false;
-        
+
         if (low.z > other.high.z)
             return false;
         if (other.low.z > high.z)
@@ -306,7 +306,7 @@ bool FRange3d::IntersectsWith (FRange3dCR other, bool trueForExactTouch) const
             return false;
         if (other.low.y >= high.y)
             return false;
-        
+
         if (low.z >= other.high.z)
             return false;
         if (other.low.z >= high.z)
@@ -369,7 +369,7 @@ static double DistanceSquaredOutsideDirecteFRange1d (double x, double low, doubl
     {
     if (high <= low)
         return 0.0;
-    double d = 0.0;        
+    double d = 0.0;
     if (x < low)
         d = low-x;
     else if (x > high)
@@ -409,7 +409,7 @@ double FRange3d::DistanceOutside (DPoint3dCR xyz) const
     double d = DistanceSquaredOutsideDirecteFRange1d (xyz.x, low.x, high.x)
              + DistanceSquaredOutsideDirecteFRange1d (xyz.y, low.y, high.y)
              + DistanceSquaredOutsideDirecteFRange1d (xyz.z, low.z, high.z);
-    return sqrt (d);             
+    return sqrt (d);
     }
 
 /*--------------------------------------------------------------------------------**//**

@@ -28,9 +28,9 @@ double relTol = s_defaultRelTol
 )
     {
     double tol = absTol;
-    
+
     if (0.0 !=  relTol)
-        tol +=  relTol * 
+        tol +=  relTol *
             ( fabs (xA) + fabs (xB)
             + fabs (yA) + fabs (yB)
             + fabs (zA) + fabs (zB));
@@ -70,7 +70,7 @@ DPoint3dZYXTolerancedSortComparison::DPoint3dZYXTolerancedSortComparison (double
     : m_absTol (absTol), m_relTol (relTol)
     {
     }
-   
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -89,7 +89,7 @@ DVec3dZYXTolerancedSortComparison::DVec3dZYXTolerancedSortComparison (double abs
     : m_absTol (absTol), m_relTol (relTol)
     {
     }
-   
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -267,7 +267,7 @@ void PolyfaceCoordinateMap::ApplyParamOptionsToDistanceParams (IFacetOptionsR op
 PolyfaceCoordinateMapPtr PolyfaceCoordinateMap::New (PolyfaceHeaderR polyface)
     {
     PolyfaceCoordinateMapPtr header = new PolyfaceCoordinateMap (polyface);
-    return header;    
+    return header;
     }
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -275,7 +275,7 @@ PolyfaceCoordinateMapPtr PolyfaceCoordinateMap::New (PolyfaceHeaderR polyface)
 PolyfaceCoordinateMapPtr PolyfaceCoordinateMap::Create(PolyfaceHeaderR polyface)
     {
     PolyfaceCoordinateMapPtr header = new PolyfaceCoordinateMap (polyface);
-    return header;    
+    return header;
     }
 
 
@@ -481,7 +481,7 @@ PolyfaceVisitor &source,
 size_t i0,
 size_t n
 )
-    {    
+    {
     for (size_t i = 0; i < n; i++)
         {
         size_t readIndex = i0 + i;
@@ -503,7 +503,7 @@ size_t n
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 void PolyfaceCoordinateMap::AddVisitorFace (PolyfaceVisitor &source)
-    {    
+    {
     AddVisitorPartialFace (source, 0, source.NumEdgesThisFace ());
     }
 

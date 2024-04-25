@@ -9,8 +9,8 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CurvePrimitiveId::operator==(CurvePrimitiveIdCR rhs) const 
-    { 
+bool CurvePrimitiveId::operator==(CurvePrimitiveIdCR rhs) const
+    {
     return (m_type == rhs.m_type && m_idData == rhs.m_idData && m_geomStreamIndex == rhs.m_geomStreamIndex && m_partStreamIndex == rhs.m_partStreamIndex);
     }
 
@@ -31,7 +31,7 @@ bool CurvePrimitiveId::operator<(CurvePrimitiveIdCR rhs) const
 
     if (m_geomStreamIndex != rhs.m_geomStreamIndex)
         return m_geomStreamIndex < rhs.m_geomStreamIndex;
-    
+
     if (m_partStreamIndex != rhs.m_partStreamIndex)
         return m_partStreamIndex < rhs.m_partStreamIndex;
 
@@ -60,7 +60,7 @@ CurvePrimitiveId::CurvePrimitiveId (CurvePrimitiveId::Type type, CurveTopologyId
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CurvePrimitiveId::Store (bvector<uint8_t>& data) const 
+void CurvePrimitiveId::Store (bvector<uint8_t>& data) const
     {
     size_t hdrSize = (sizeof(m_type) + sizeof(m_geomStreamIndex) + sizeof(m_partStreamIndex));
 
@@ -96,7 +96,7 @@ CurvePrimitiveIdPtr CurvePrimitiveId::Clone() const {return new CurvePrimitiveId
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurvePrimitiveId::CurvePrimitiveId (void const* data, size_t dataSize)
-    { 
+    {
     size_t hdrSize = (sizeof(m_type) + sizeof(m_geomStreamIndex) + sizeof(m_partStreamIndex));
 
     if (nullptr == data || dataSize < hdrSize)
@@ -143,18 +143,18 @@ Utf8String CurvePrimitiveId::GetDebugString () const
                                      "Parasolid Body",       // 6
                                      "Solid Primitive",      // 7
                                      "CurveVector",          // 8
-                                     "Polyface Cut",         // 9   
+                                     "Polyface Cut",         // 9
                                      "Polyface Edge",        // 10
                                      "UnspecifiedTopologyId" // 11
-                                     }; 
-    
+                                     };
+
     Type        type = GetType();
     Utf8String  string = Utf8String ("Curve Primitive Id: ") + Utf8String (Type::CutGeometry == type || type >= Type::Max ? "Other" : s_typeStrings[(uint16_t)type]);
-    
+
     CurveTopologyId topologyId = GetCurveTopologyId ();
     if (!topologyId.IsEmpty())
         string += " Topology: " +  topologyId.GetDebugString();
-        
+
     string = string + Utf8PrintfString(" (%d-%d)\n", m_geomStreamIndex, m_partStreamIndex);
 
     return string;
@@ -182,7 +182,7 @@ BentleyStatus CurvePrimitiveId::GetLineStringAssociationIds (int& topologyType, 
         return ERROR;
 
     CurveTopologyId topologyId = GetCurveTopologyId();
-    
+
     if (topologyId.GetCount() != nTargetIds)
         return ERROR;
 
@@ -193,7 +193,7 @@ BentleyStatus CurvePrimitiveId::GetLineStringAssociationIds (int& topologyType, 
 
     topologyType = (int) topologyId.GetType();
 
-    return SUCCESS;                                                                                                                                                                                                                                                     
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**

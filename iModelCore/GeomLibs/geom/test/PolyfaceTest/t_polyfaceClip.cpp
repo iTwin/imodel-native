@@ -131,7 +131,7 @@ TEST (Polyface, ClipOnEdge)
                 {
                 SaveAndRestoreCheckTransform shifter3 (5,0,0);
                 PolyfaceHeaderPtr mesh = PolyfaceHeader::CreateVariableSizeIndexed ();
-        
+
                 bvector<DPoint3d> meshBase {
                         DPoint3d::From (0,0,0),
                         DPoint3d::From (1,0,0),
@@ -155,7 +155,7 @@ TEST (Polyface, ClipOnEdge)
                         DPoint3d::From (clipX,0.25,0),
                         DPoint3d::From (clipX + 1,0.25,0)
                         };
-                
+
                 Check::SaveTransformed (clipPoints);
                 convexClipper.AddSweptPolyline (clipPoints, DVec3d::From (0,0,1), Angle::FromDegrees (0));
                 if (clipPass == 2)
@@ -233,7 +233,7 @@ TEST (Polyface, ClipDiamond)
                 &insideClip, nullptr);
         if (insideClip.IsValid ())
             Check::SaveTransformed (*insideClip);
-   
+
         }
     Check::Size ((size_t)allocationCounter, (size_t)BSIBaseGeom::GetAllocationDifference ());
     Check::ClearGeometry ("Polyface.ClipDiamond");
@@ -393,7 +393,7 @@ TEST (Polyface, ClipPolygonPrism)
     //varunused double mySize = SetTransformToNewGridSpot (*builder, true);
 
 
-    for (auto points : 
+    for (auto points :
         {
         bvector<DPoint3d> {
             DPoint3d::From (1,1,0), DPoint3d::From (1,1,3), DPoint3d::From (1,2,3), DPoint3d::From (1,2,2)},
@@ -486,7 +486,7 @@ TEST (Polyface, PolygonFixRaggedTunnel)
         DgnExtrusionDetail (parityRegion, DVec3d::From (0,10,0), false));
 
     builder->AddSolidPrimitive (*solid);
-  
+
     auto raggedMesh = builder->GetClientMeshPtr ();
     Check::SaveTransformed (raggedMesh);
     Check::Size ((size_t)allocationCounter, (size_t)BSIBaseGeom::GetAllocationDifference ());
@@ -711,7 +711,7 @@ TEST(Range3d, isAnyRangeFaceInsideB)
             {
             auto range = DRange3d::From(DPoint3d::From(x0, y0, 1), DPoint3d::From(x0 + 1.9, y0 + 2.5, 2));
             Check::SaveTransformedEdges(range);
-   
+
             bvector<DPoint3d> clippedFace;
             if (clipper.IsAnyRangeFacePointInside(range, &clippedFace))
                 {
@@ -883,7 +883,7 @@ TEST(Polyface, StrayLinestringClip)
 
 
     ConvexClipPlaneSet convexClipper;
-    bvector<DPoint3d> points{ 
+    bvector<DPoint3d> points{
                 {0.947914, 1.15212, 0},
                 {4.561364, 1.15212, 0},
                 {4.561364, 8.936802, 0},
@@ -946,7 +946,7 @@ TEST(geomodeler, Clip)
     // Keep 1 and 5
     // 1 because it has a few tiny manifold glitches.
     // 5 because it's thick and has awkward sliver triangles that should be addressed someday.
-    for (auto filename: { 
+    for (auto filename: {
         // L"assembledMesh0.imjs",
         L"assembledMesh1.imjs",
         // L"assembledMesh2.imjs",

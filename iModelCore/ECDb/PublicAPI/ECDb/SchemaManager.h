@@ -49,25 +49,14 @@ struct SchemaSync final {
         private:
             DataVer m_dataVer;
             BeGuid m_syncId;
-            BeGuid m_projectId;
-            BeGuid m_fileId;
-            DateTime m_lastModUtc;
-            Utf8String m_changesetId;
-            int32_t m_changesetIndex;
-
         public:
-            SyncDbInfo():m_dataVer(0),m_changesetIndex(-1){}
+            SyncDbInfo():m_dataVer(0){}
             SyncDbInfo(SyncDbInfo&&)=default;
             SyncDbInfo(SyncDbInfo const&)=default;
             SyncDbInfo& operator=(SyncDbInfo&&)=default;
             SyncDbInfo& operator=(SyncDbInfo const&)=default;
             BeGuidCR GetSyncId() const { return m_syncId; }
-            BeGuidCR GetProjectId() const { return m_projectId; }
-            BeGuidCR GetFileId() const { return m_fileId; }
             DataVer GetDataVersion() const { return m_dataVer; }
-            DateTimeCR GetLastModUtc() const { return m_lastModUtc; }
-            Utf8StringCR GetChangeSetId() const { return m_changesetId; }
-            int32_t GetChangeSetIndex() const { return m_changesetIndex; }
             bool IsEmpty() const { return !m_syncId.IsValid(); }
             ECDB_EXPORT void To(BeJsValue) const;
             ECDB_EXPORT static SyncDbInfo From(BeJsConst);
@@ -81,7 +70,6 @@ struct SchemaSync final {
         private:
             DataVer m_dataVer;
             BeGuid m_syncId;
-            DateTime m_lastModUtc;
 
         public:
             LocalDbInfo():m_dataVer(0){}
@@ -91,7 +79,6 @@ struct SchemaSync final {
             LocalDbInfo& operator=(LocalDbInfo const&)=default;
             BeGuidCR GetSyncId() const { return m_syncId; }
             DataVer GetDataVersion() const { return m_dataVer; }
-            DateTimeCR GetLastModUtc() const { return m_lastModUtc; }
             bool IsEmpty() const { return !m_syncId.IsValid(); }
             ECDB_EXPORT void To(BeJsValue) const;
             ECDB_EXPORT static LocalDbInfo From(BeJsConst);
@@ -117,12 +104,11 @@ struct SchemaSync final {
 private:
     ECDbR m_conn;
     SyncDbUri m_defaultSyncDbUri;
+    bool m_disabledForProfileUpgrade;
 
     DbResult UpdateOrCreateSyncDbInfo(DbR syncDb);
     DbResult UpdateOrCreateSyncDbInfo(SyncDbUri syncDbUri);
     DbResult UpdateOrCreateLocalDbInfo(SyncDbInfo const& from);
-    Utf8String GetParentRevisionId() const;
-    void GetParentRevision(int32_t& index, Utf8StringR id) const;
     Status Init(SyncDbUri const&, TableList);
     Status PullInternal(SyncDbUri const&, TableList);
     Status PushInternal(SyncDbUri const&, TableList);
@@ -136,10 +122,14 @@ public:
     SchemaSync(SchemaSync const&)=delete;
     SchemaSync& operator=(SchemaSync&&)=delete;
     SchemaSync& operator=(SchemaSync const&)=delete;
-    explicit SchemaSync(ECDbR conn):m_conn(conn){}
+    explicit SchemaSync(ECDbR conn):m_conn(conn), m_disabledForProfileUpgrade(false) {}
     bool IsEnabled() const { return !GetInfo().IsEmpty(); }
     SyncDbUri const& GetDefaultSyncDbUri() const { return m_defaultSyncDbUri;  }
     Status SetDefaultSyncDbUri(Utf8CP syncDbUri) { return SetDefaultSyncDbUri(SyncDbUri(syncDbUri)); }
+    void DisableSchemaSync() { m_disabledForProfileUpgrade = true; }
+    void ReEnableSchemaSync() { m_disabledForProfileUpgrade = false; }
+    bool IsSchemaSyncDisabled() const { return m_disabledForProfileUpgrade; }
+    ECDB_EXPORT Status UpdateDbSchema();
     ECDB_EXPORT LocalDbInfo GetInfo() const;
     ECDB_EXPORT Status SetDefaultSyncDbUri(SyncDbUri syncDbUri);
     ECDB_EXPORT Status Init(SyncDbUri const&);
@@ -681,6 +671,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
 
         void ClearCache() const;
         ECN::ECDerivedClassesList const* GetDerivedClassesInternal(ECN::ECClassCR baseClass, Utf8CP tableSpace = nullptr) const;
+        Nullable<ECN::ECDerivedClassesList> GetAllDerivedClassesInternal(ECN::ECClassCR baseClass, Utf8CP tableSpace = nullptr) const;
         Dispatcher const& GetDispatcher() const;
         struct MainSchemaManager const& Main() const;
 #endif

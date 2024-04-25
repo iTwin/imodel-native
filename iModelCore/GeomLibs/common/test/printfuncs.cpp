@@ -28,7 +28,7 @@ static Tolerances sToleranceTable[NUM_TOLERANCE] =
         {5.0e-6,  1.0e-6},
         {5.0e-14,  1.0e-14},
         {5.0e-12,  1.0e-12},
-    }; 
+    };
 static Tolerances sTolerances = {5.0e-15, 1.0e-15};
 
 static int s_numOK = 0;
@@ -210,7 +210,7 @@ Public void endTag ()
 
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
     Print an OK message and increment the error count.
 ------------------------------------------------------------------------*/
 Public void startOK
@@ -227,7 +227,7 @@ const char *pDescr
 
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
     Print an error message and increment the error count.
 ------------------------------------------------------------------------*/
 Public void startERROR
@@ -243,7 +243,7 @@ const char *pDescr
     }
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
    Compare the error count to an expected value.
    If it matches, zero out the error count.
    This is to be called just after having made "check" calls which intentionally exercise the
@@ -271,7 +271,7 @@ int numExpectedError
 
 /*---------------------------------------------------------------------*//**
 
-@description 
+@description
 ------------------------------------------------------------------------*/
 Public void printDatum
 (
@@ -297,7 +297,7 @@ Tag *pParent
 
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print a double as a tag with optional name attribute
 ------------------------------------------------------------------------*/
 void printDouble
@@ -311,7 +311,7 @@ Tag *pParent
     }
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print an int as a tag with optional name attribute
 ------------------------------------------------------------------------*/
 Public void printInt
@@ -325,7 +325,7 @@ Tag *pParent
     }
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print a hex int as a tag with optional name attribute
 ------------------------------------------------------------------------*/
 Public void printHex
@@ -340,7 +340,7 @@ Tag *pParent
 
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print a bool    with prefix and suffix strings.
 ------------------------------------------------------------------------*/
 Public void printBool
@@ -354,7 +354,7 @@ Tag *pParent
     }
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print a DVec3d with prefix and suffix strings.
 ------------------------------------------------------------------------*/
 Public void printDVec3d
@@ -368,7 +368,7 @@ Tag *pParent
     }
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print a DVecd with prefix and suffix strings.
 ------------------------------------------------------------------------*/
 Public void printDVec2d
@@ -382,7 +382,7 @@ Tag *pParent
     }
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print a DVec3d with prefix and suffix strings.
 ------------------------------------------------------------------------*/
 Public void printDPoint3d
@@ -396,7 +396,7 @@ Tag *pParent
     }
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print a DVec3d with prefix and suffix strings.
 ------------------------------------------------------------------------*/
 Public void printDPoint4d
@@ -411,7 +411,7 @@ Tag *pParent
 
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare two DVec3d's which are expected to agree.
 Announce result via startOK or startERROR.
 ------------------------------------------------------------------------*/
@@ -441,7 +441,7 @@ const char *pDescr
     }
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare two DVec2d's which are expected to agree.
 Announce result via startOK or startERROR.
 ------------------------------------------------------------------------*/
@@ -472,7 +472,7 @@ const char *pDescr
 
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare two DPoint3d's which are expected to agree.
 Announce result via startOK or startERROR.
 ------------------------------------------------------------------------*/
@@ -502,7 +502,7 @@ const char *pDescr
     }
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare two DPoint2d's which are expected to agree.
 Announce result via startOK or startERROR.
 ------------------------------------------------------------------------*/
@@ -576,7 +576,7 @@ char *pDescr
     }
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare two DPlane3d's which are expected to agree.
 Announce result via startOK or startERROR.
 ------------------------------------------------------------------------*/
@@ -592,7 +592,7 @@ const char *pDescr
     }
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare DPoint3d, xyz points.
 Announce result via recordOK or recordERROR.
 ------------------------------------------------------------------------*/
@@ -611,7 +611,7 @@ const char *pDescr
     }
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare DVec3d, xyz points.
 Announce result via recordOK or recordERROR.
 ------------------------------------------------------------------------*/
@@ -630,7 +630,7 @@ const char *pDescr
     }
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print a RotMatrix with prefix and suffix strings.
 ------------------------------------------------------------------------*/
 Public void printRotMatrix
@@ -646,7 +646,7 @@ Tag *pParent
     }
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print GraphicsPoint content with prefix and suffix strings.
 ------------------------------------------------------------------------*/
 Public void printGraphicsPoint
@@ -666,7 +666,7 @@ Tag *pParent
     }
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print Ellipse content with prefix and suffix strings.
 ------------------------------------------------------------------------*/
 Public void printDEllipse3d
@@ -686,7 +686,7 @@ Tag *pParent
     }
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print Ellipse content with prefix and suffix strings.
 ------------------------------------------------------------------------*/
 Public void printDRange2d
@@ -706,7 +706,7 @@ Tag *pParent
     }
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print plane content with prefix and suffix strings.
 ------------------------------------------------------------------------*/
 Public void printDPlane3d
@@ -726,7 +726,7 @@ Tag *pParent
     }
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print DSegment3d content with prefix and suffix strings.
 ------------------------------------------------------------------------*/
 Public void printDSegment3d
@@ -746,7 +746,7 @@ Tag *pParent
     }
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare two DVec3d's which are expected to agree.
 Announce result via startOK or startERROR.
 ------------------------------------------------------------------------*/
@@ -776,7 +776,7 @@ const char *pDescr
     }
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare two doubles where it is expected that a0 < a1, with toleranced equality case
 Announce result via startOK or startERROR.
 ------------------------------------------------------------------------*/
@@ -813,7 +813,7 @@ double messageValue
     }
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare two doubles which are expected to agree.
 Announce result via startOK or startERROR.
 ------------------------------------------------------------------------*/
@@ -849,7 +849,7 @@ double messageValue
     }
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare two BoolInts which are expected to agree.
 Announce result via startOK or startERROR.
 ------------------------------------------------------------------------*/
@@ -879,7 +879,7 @@ const char *pDescr
 
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare two bools which are expected to agree.
 Announce result via startOK or startERROR.
 ------------------------------------------------------------------------*/
@@ -905,7 +905,7 @@ const char *pDescr
     }
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Test a bool    expected to be true.
 Announce result via recordOK or recordERROR.
 ------------------------------------------------------------------------*/
@@ -935,7 +935,7 @@ double messageValue
     }
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Test a bool    expected to be false
 Announce result via recordOK or recordERROR.
 ------------------------------------------------------------------------*/
@@ -966,7 +966,7 @@ double messageValue
 
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare two ints which are expected to agree.
 Announce result via startOK or startERROR.
 ------------------------------------------------------------------------*/
@@ -992,7 +992,7 @@ const char *pDescr
     }
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Test if an int is positive.
 Announce result via startOK or startERROR.
 ------------------------------------------------------------------------*/
@@ -1017,7 +1017,7 @@ const char *pDescr
 
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
     Output counts of OK, error messages.
     Zero counts.
 ------------------------------------------------------------------------*/
@@ -1028,7 +1028,7 @@ bool    bClear
     {
     checkInt (s_numERR, 0, "ErrorCount");
     if (bClear)
-    	s_numOK = s_numERR = 0;    
+    	s_numOK = s_numERR = 0;
     }
 
 

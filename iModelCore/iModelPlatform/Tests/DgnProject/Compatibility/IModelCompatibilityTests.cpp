@@ -324,6 +324,58 @@ void Assert_BuiltinSchemaVersions_2_0_0_6(TestIModel& testDb)
     EXPECT_LE(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("CoreCustomAttributes")) << testDb.GetDescription();
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void Assert_BuiltinSchemaVersions_2_0_0_7(TestIModel& testDb)
+    {
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("CoreCustomAttributes") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbMap") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbFileInfo") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbMeta") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbSystem") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("ECDbSchemaPolicies") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("Generic") != nullptr) << testDb.GetDescription();
+    EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCore") != nullptr) << testDb.GetDescription();
+
+    // BisCustomAttributes schema is added to the test files containing BisCore schema having reference schema BisCustomAttributes (e.g BisCore.1.0.16)
+    if (testDb.GetSchemaVersion("BisCore") >= SchemaVersion(1, 0, 16))
+        EXPECT_TRUE(testDb.GetDb().Schemas().GetSchema("BisCustomAttributes") != nullptr) << testDb.GetDescription();
+
+    //iModel built-in schema versions
+    // Note: don't assert on original ecxml version for schemas that don't get upgraded automatically. That is to error-prone to test
+    if (testDb.GetSchemaUpgradeOptions().AreDomainUpgradesAllowed())
+        {
+        EXPECT_LE(SchemaVersion(1, 0, 4), testDb.GetSchemaVersion("BisCore")) << testDb.GetDescription();
+        EXPECT_LE(SchemaVersion(1, 0, 1), testDb.GetSchemaVersion("Generic")) << testDb.GetDescription();
+        }
+
+    //ECDb built-in schema versions
+    EXPECT_EQ(SchemaVersion(2, 0, 1), testDb.GetSchemaVersion("ECDbFileInfo")) << testDb.GetDescription();
+    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbFileInfo")) << testDb.GetDescription();
+    EXPECT_EQ(JsonValue(R"js({"classcount":4, "enumcount": 1})js"), testDb.GetSchemaItemCounts("ECDbFileInfo")) << testDb.GetDescription();
+
+    EXPECT_LE(SchemaVersion(2, 0, 3), testDb.GetSchemaVersion("ECDbMap")) << testDb.GetDescription();
+    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMap")) << testDb.GetDescription();
+    EXPECT_LE(11, testDb.GetSchemaItemCounts("ECDbMap").Value()["classcount"].asInt()) << testDb.GetDescription();
+
+    EXPECT_LE(SchemaVersion(4, 0, 2), testDb.GetSchemaVersion("ECDbMeta")) << testDb.GetDescription();
+    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbMeta")) << testDb.GetDescription();
+    EXPECT_EQ(JsonValue(R"js({"classcount":49, "enumcount": 9})js"), testDb.GetSchemaItemCounts("ECDbMeta")) << testDb.GetDescription();
+
+    EXPECT_LE(SchemaVersion(5, 0, 2), testDb.GetSchemaVersion("ECDbSystem")) << testDb.GetDescription();
+    EXPECT_EQ(BeVersion(3, 2), testDb.GetOriginalECXmlVersion("ECDbSystem")) << testDb.GetDescription();
+    EXPECT_EQ(JsonValue(R"js({"classcount":4})js"), testDb.GetSchemaItemCounts("ECDbSystem")) << testDb.GetDescription();
+
+    EXPECT_LE(SchemaVersion(1, 0, 0), testDb.GetSchemaVersion("ECDbSchemaPolicies")) << testDb.GetDescription();
+    EXPECT_EQ(JsonValue(R"js({"classcount":3})js"), testDb.GetSchemaItemCounts("ECDbSchemaPolicies")) << testDb.GetDescription();
+
+    //Standard schema versions (can get upgraded without a profile change)
+    EXPECT_LE(SchemaVersion(1, 0, 3), testDb.GetSchemaVersion("CoreCustomAttributes")) << testDb.GetDescription();
+    EXPECT_LE(BeVersion(3, 1), testDb.GetOriginalECXmlVersion("CoreCustomAttributes")) << testDb.GetDescription();
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -384,14 +436,16 @@ TEST_F(IModelCompatibilityTestFixture, BuiltinSchemaVersions)
                         Assert_BuiltinSchemaVersions_2_0_0_4(testDb);
                     else if (testDb.GetDgnDbProfileVersion() == ProfileVersion(2, 0, 0, 5))
                         Assert_BuiltinSchemaVersions_2_0_0_5(testDb);
+                    else if (testDb.GetDgnDbProfileVersion() == ProfileVersion(2, 0, 0, 6))
+                        Assert_BuiltinSchemaVersions_2_0_0_6(testDb);
                     else
                         FAIL() << "*ERROR* case not handled | " << testDb.GetDescription();
                     break;
                     }
                 case ProfileState::Age::UpToDate:
                     {
-                    if (testDb.GetDgnDbProfileVersion() == ProfileVersion(2, 0, 0, 6))
-                        Assert_BuiltinSchemaVersions_2_0_0_6(testDb);
+                    if (testDb.GetDgnDbProfileVersion() == ProfileVersion(2, 0, 0, 7))
+                        Assert_BuiltinSchemaVersions_2_0_0_7(testDb);
                     else 
                         FAIL() << "*ERROR* case not handled | " << testDb.GetDescription();
                     break;
@@ -649,9 +703,9 @@ TEST_F(IModelCompatibilityTestFixture, EC32Enums)
                 continue;
                 }
 
-            // file was upgraded to 4.0.0.4
+            // file was upgraded to 4.0.0.5
             EXPECT_FALSE(testDb.GetDb().GetECDbProfileVersion().IsEmpty()) << "Profile version is expected to be set in the ECDb handle during open";
-            EXPECT_TRUE(testDb.GetTestFile().IsUpgraded() || testDb.IsUpgraded() || testDb.GetDb().GetECDbProfileVersion().CompareTo(ProfileVersion(4, 0, 0, 4)) == 0) << testDb.GetDescription();
+            EXPECT_TRUE(testDb.GetTestFile().IsUpgraded() || testDb.IsUpgraded() || testDb.GetDb().GetECDbProfileVersion().CompareTo(ECDb::CurrentECDbProfileVersion()) == 0) << testDb.GetDescription();
             testDb.AssertEnum("CoreCustomAttributes", "DateTimeKind", nullptr, nullptr, PRIMITIVETYPE_String, true,
                 {{"Unspecified", ECValue("Unspecified"), nullptr},
                 {"Utc", ECValue("Utc"), nullptr},
@@ -2551,6 +2605,121 @@ TEST_F(IModelCompatibilityTestFixture, MajorSchemaUpgradePropertyTypeChange)
                 }
 
             ASSERT_EQ(BE_SQLITE_OK, dgnDb.AbandonChanges());
+            }
+        }
+    }
+
+TEST_F(IModelCompatibilityTestFixture, TestBisCoreWithMemberPriorityChange)
+    {
+    for (TestFile const& testFile : DgnDbProfile::Get().GetAllVersionsOfTestFile(TESTIMODEL_EMPTY))
+        {
+        for (std::unique_ptr<TestIModel> testDbPtr : TestIModel::GetPermutationsFor(testFile))
+            {
+            auto& testDb = *testDbPtr;
+            const auto openStat = testDb.Open();
+            const auto& params = static_cast<const DgnDb::OpenParams&>(testDb.GetOpenParams());
+
+            if (params.IsReadonly())
+                continue;
+
+            ASSERT_EQ(BE_SQLITE_OK, openStat) << testDb.GetDescription();
+
+            DgnDbR dgnDb = testDb.GetDgnDb();
+
+            // Import the latest BisCore
+            const auto bisCoreSchema = dgnDb.Schemas().GetSchema("BisCore");
+            ASSERT_GE(bisCoreSchema->GetVersionRead(), 1U);
+            ASSERT_GE(bisCoreSchema->GetVersionWrite(), 0U);
+            if (bisCoreSchema->GetVersionMinor() < 17U)
+                {
+                ECSchemaPtr schema = nullptr;
+                auto context = ECSchemaReadContext::CreateContext();
+                context->AddSchemaLocater(dgnDb.GetSchemaLocater());
+                auto bisCoreSchemaPath = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+                bisCoreSchemaPath.AppendToPath(L"ECSchemas\\BisCoreDummy.01.00.17.ecschema.xml");
+                EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(schema, bisCoreSchemaPath.GetName(), *context));
+
+                if (testDb.GetDb().GetECDbProfileVersion() == BeVersion(4, 0, 0, 1)
+                    && (params.GetProfileUpgradeOptions() == Db::ProfileUpgradeOptions::None || !params.GetSchemaUpgradeOptions().AreDomainUpgradesAllowed()))  // imodel will not be upgraded and will remain 4.0.0.1
+                    {
+                    // ECDb profile version (4.0.0.1) only supports schemas with EC version < 3.2.
+                    // So we expect the import to fail
+                    ASSERT_EQ(SchemaStatus::SchemaImportFailed, dgnDb.ImportSchemas(context->GetCache().GetSchemas(), true));
+                    continue;
+                    }
+                ASSERT_EQ(SchemaStatus::Success, dgnDb.ImportSchemas(context->GetCache().GetSchemas(), true));
+                }
+ 
+            const auto categoryClass = dgnDb.Schemas().GetClass(BIS_ECSCHEMA_NAME, "CategorySelectorRefersToCategories");
+            ASSERT_NE(nullptr, categoryClass);
+            auto relationshipClass = categoryClass->GetRelationshipClassCP();
+            ASSERT_NE(nullptr, relationshipClass);
+
+            CategorySelectorPtr categorySelector = new CategorySelector(dgnDb.GetDictionaryModel(), "TestCategorySelector");
+            ASSERT_TRUE(categorySelector.IsValid());
+            ASSERT_TRUE(categorySelector->Insert().IsValid());
+
+            SpatialCategory category(dgnDb.GetDictionaryModel(), "TestCategory", DgnCategory::Rank::Application);
+            auto spatialCategory = category.Insert(DgnSubCategory::Appearance());
+            ASSERT_TRUE(spatialCategory.IsValid());
+
+            ECInstanceKey relationshipInstanceKeys[5];
+
+            auto relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relationshipClass);
+            ASSERT_NE(nullptr, relationshipEnabler);
+
+            auto index = 0;
+            
+            // Insert relationships which have the same source and target but different MemberPriority values (i.e. duplicates)
+            for (const auto& memberPriorityValue : { 1, 2, 3, 4, 5 })
+                {
+
+                // Check if newer imodels have BisCore.1.0.17
+                // Test for read and write compatability
+                const auto bisCoreSchema = dgnDb.Schemas().GetSchema("BisCore");
+                ASSERT_GE(bisCoreSchema->GetVersionRead(), 1U);
+                ASSERT_GE(bisCoreSchema->GetVersionWrite(), 0U);
+                if (bisCoreSchema->GetVersionMinor() < 17U)
+                    continue;
+
+                IECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance();
+                ASSERT_NE(nullptr, relationshipInstance);
+
+                ECValue value;
+                value.SetInteger(memberPriorityValue);
+                relationshipInstance->SetValue("MemberPriority", value);
+
+                EXPECT_EQ(BE_SQLITE_OK, dgnDb.InsertLinkTableRelationship(relationshipInstanceKeys[index], *relationshipClass, ECInstanceId(categorySelector->GetElementId().GetValue()), 
+                    ECInstanceId(spatialCategory->GetCategoryId().GetValue()), relationshipInstance.get())) << testDbPtr->GetDescription();
+                index++;
+                }
+          
+            // Check if the all duplicate relationships were inserted correctly
+            ECSqlStatement statement;
+            ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(testDb.GetDb(), "SELECT * FROM " BIS_SCHEMA("CategorySelectorRefersToCategories") " ORDER BY MemberPriority")) << testDbPtr->GetDescription();
+            auto rowCount = 0;
+            while (BE_SQLITE_ROW == statement.Step())
+                {
+                EXPECT_EQ(statement.GetValueId<ECInstanceId>(0), relationshipInstanceKeys[rowCount].GetInstanceId());
+                EXPECT_EQ(statement.GetValueId<ECClassId>(1), relationshipInstanceKeys[rowCount].GetClassId());
+                EXPECT_EQ(statement.GetValueInt(2), ++rowCount);
+                EXPECT_EQ(statement.GetValueId<DgnElementId>(3), categorySelector->GetElementId());
+                EXPECT_EQ(statement.GetValueId<DgnClassId>(4), categorySelector->GetElementClassId());
+                EXPECT_EQ(statement.GetValueId<DgnElementId>(5), spatialCategory->GetCategoryId());
+                EXPECT_EQ(statement.GetValueId<DgnElementId>(6), spatialCategory->GetElementClassId());
+                }
+            EXPECT_EQ(5, rowCount);
+
+            // Try to insert a duplicate member priority value to make sure the new index works
+            IECRelationshipInstancePtr anotherRelationshipInstance = relationshipEnabler->CreateRelationshipInstance();
+            ASSERT_NE(nullptr, anotherRelationshipInstance);
+
+            ECValue anotherValue;
+            anotherValue.SetInteger(5);
+            anotherRelationshipInstance->SetValue("MemberPriority", anotherValue);
+
+            EXPECT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, dgnDb.InsertLinkTableRelationship(relationshipInstanceKeys[index], *relationshipClass, ECInstanceId(categorySelector->GetElementId().GetValue()), 
+                ECInstanceId(spatialCategory->GetCategoryId().GetValue()), anotherRelationshipInstance.get())) << testDbPtr->GetDescription();
             }
         }
     }

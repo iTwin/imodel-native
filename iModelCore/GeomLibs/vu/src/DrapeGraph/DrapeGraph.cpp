@@ -84,7 +84,7 @@ bool stdvector_getDPoint3d (bvector<DPoint3d> *source, DPoint3d *value, int inde
     return false;
     }
 
-// name accessors to vu user data, always cast to int 
+// name accessors to vu user data, always cast to int
 int GetVertexIndex (VuP node)  { return (int)vu_getUserData1 (node);}
 int GetPlaneIndex (VuP node)  { return vu_getUserDataPAsInt (node);}
 
@@ -585,7 +585,7 @@ bvector<VuP> &bundleArray
                     vu_setMask (pMark, visitMask);
                     vu_setMask (pMate, visitMask);
 
-                    pMark = vu_vpred (pMark);                  
+                    pMark = vu_vpred (pMark);
                     }
                 bundleArray.push_back (NULL);
                 VuDebug::ShowVertex (pGraph, pNodeA0, "A0 AFTER PURGE");
@@ -931,7 +931,7 @@ bool DrapeGraph::AddPolygon(DPoint3dP xyz, int n, ptrdiff_t tag, VuMask outsideM
     polygonRange.Init ();
     polygonRange.Extend (xyz, n);
     ExpandZRange (polygonRange);
-    
+
     if (bsiPolygon_centroidAreaPerimeter (xyz, n, &centroid, &normal, &area, &perimeter, &thickness))
         {
         // Would you believe...
@@ -1140,7 +1140,7 @@ void DrapeGraph::MarkParityErrors ()
                     {
                     m_indexedPlanes.SetMask (index, PlaneData::DanglingEdge);
                     numError++;
-                    }                
+                    }
                 }
             }
         }
@@ -1180,7 +1180,7 @@ void DrapeGraph::SetZAroundFace (VuP pFaceSeed, bvector<int> &activePlaneIndex, 
             }
         xyz.z = z;
         vu_setDPoint3d (pCurr, &xyz);
-        
+
         }
     END_VU_FACE_LOOP (pCurr, pFaceSeed)
     }
@@ -1340,7 +1340,7 @@ void DrapeGraph::ApplyVisibleZInConnectedComponent (VuP pExteriorSeed, double mi
 
     SetZAroundFace (pExteriorSeed, activePlaneIndex, minZ, maxZ);
     PushFaceToSeedStack (visitMask, pExteriorSeed, seedStack);
-    
+
     if (s_debug > 1)
         {
         GEOMAPI_PRINTF ("\n (Euler %d)\n", vu_eulerCharacteristic (m_pGraph));
@@ -1404,7 +1404,7 @@ void DrapeGraph::MoveNodesToMaxVisibleZ (double maxZ)
     // First pass teated both primary and secondary panels as transitions.
     // Do exterior markup again for only primaries...
     vu_windingFloodFromNegativeAreaFaces (m_pGraph, DrapeGraph::s_PRIMARY_EDGE_MASK, VU_EXTERIOR_EDGE);
-    
+
 
     vu_returnMask (m_pGraph, entryMask);
     vu_returnMask (m_pGraph, visitMask);
@@ -1469,7 +1469,7 @@ static int AssignColor (VuP pFace, int singleNormalIndex, int mixedNormalIndex, 
                     numNormal++;
                     }
                 }
-            
+
             }
         else
             numSplit++;
@@ -1651,7 +1651,7 @@ VuMask      skipMask
     int nullIndex = 0;
     VuMask visitMask = vu_grabMask (pGraph);
     vu_clearMaskInSet (pGraph, visitMask);
-    VuMask allSkipMasks = skipMask | VU_EXTERIOR_EDGE;    
+    VuMask allSkipMasks = skipMask | VU_EXTERIOR_EDGE;
     size_t numFace = 0;
     size_t numIndex = 0;
     double area;
@@ -1939,7 +1939,7 @@ int selector    // 1 = spread from head, other = simple tail spread.
                     }
                 }
             }
-        END_VU_SET_LOOP (pTail, pGraph)        
+        END_VU_SET_LOOP (pTail, pGraph)
         }
     }
 
@@ -2110,7 +2110,7 @@ void DrapeGraph::ExtractIndexArrays
 (
 bvector<DPoint3d> &xyzArray,    //!< REQUIRED
 bvector<int>  &indexArray,      //!< REQUIRED
-bvector<int>  *colorIndexArray, //!< OPTIONAL 
+bvector<int>  *colorIndexArray, //!< OPTIONAL
 bool             triangulateFirst,
 uint32_t          color,
 uint32_t          weight,
@@ -2170,8 +2170,8 @@ bvector<bvector<DPoint3d>> *exteriorLoops
                 // Due to sudden altitude shifts, may need to output a vertical edge before each point .
                 vu_getDPoint3d(&xyzPrevious, vu_fsucc(loop.back ()));
                 for (size_t i = 0; i < loop.size (); i++)
-                    {    
-                    VuP node = loop[i];                    
+                    {
+                    VuP node = loop[i];
                     vu_getDPoint3d (&xyz, node);
                     if (!xyz.AlmostEqual (xyzPrevious))
                         exteriorLoops->back ().push_back (xyzPrevious);

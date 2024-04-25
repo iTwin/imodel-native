@@ -1,0 +1,13 @@
+{"linearSweep":
+ {"contour":
+  {"loop":[
+   {"lineString":[[0,0,0],
+    [2,0,0],
+    [2,3,0],
+    [0,3,0]]
+   }]
+  },
+  "capped":false,
+  "vector":[0,0,1.234]
+ }
+}

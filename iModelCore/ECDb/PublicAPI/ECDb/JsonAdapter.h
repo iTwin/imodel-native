@@ -362,11 +362,6 @@ struct JsonInserter final
                 ECN::ECPropertyCP GetProperty() const { return m_property; }
             };
 
-        struct CompareIUtf8Ascii
-            {
-            bool operator()(Utf8CP s1, Utf8CP s2) const { return BeStringUtilities::StricmpAscii(s1, s2) < 0; }
-            };
-
         ECDbCR m_ecdb;
         ECN::ECClassCR m_ecClass;
         Utf8String m_jsonClassName;
@@ -545,11 +540,6 @@ struct JsonUpdater final
 
                 uint32_t GetParameterIndex() const { return m_parameterIndex; }
                 ECN::ECPropertyCR GetProperty() const { BeAssert(m_property != nullptr); return *m_property; }
-            };
-
-        struct CompareIUtf8Ascii
-            {
-            bool operator()(Utf8CP s1, Utf8CP s2) const { return BeStringUtilities::StricmpAscii(s1, s2) < 0; }
             };
 
         ECDbCR m_ecdb;

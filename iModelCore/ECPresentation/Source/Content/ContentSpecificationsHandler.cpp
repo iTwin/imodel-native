@@ -150,7 +150,7 @@ static ECRelationshipConstraintClassList const* GetClassFromRelationship(ECSchem
     RelationshipPathSpecification const* pathSpec = spec.GetPropertiesSource();
     if (nullptr == pathSpec)
         {
-        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Related properties specification does not contain relationship path specification."));
+        DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Related properties specification does not contain relationship path specification."));
         return nullptr;
         }
     RelationshipStepSpecification const* relationshipStep = pathSpec->GetSteps().back();
@@ -164,7 +164,7 @@ static ECRelationshipConstraintClassList const* GetClassFromRelationship(ECSchem
             return &relationshipClass->GetTarget().GetConstraintClasses();
         }
 
-    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Failed to get relationship constraints from relationship step specification: %s. Direction: %s.",
+    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Failed to get relationship constraints from relationship step specification: %s. Direction: %s.",
         relationshipStep->GetRelationshipClassName().c_str(), CommonToolsInternal::FormatRequiredDirectionString(direction)));
     return nullptr;
     }
@@ -283,7 +283,7 @@ bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> FlattenedRelat
         ECClassCP modifierClass = helper.GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
         if (modifierClass == nullptr)
             {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Content modifier specifies non-existing class: %s.%s.",
+            DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Content modifier specifies non-existing class: %s.%s.",
                modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str()));
             continue;
             }
@@ -326,7 +326,7 @@ static bvector<std::unique_ptr<FlattenedRelatedPropertiesSpecification>> CreateF
             ECClassCP modifierClass = helper.GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
             if (nullptr == modifierClass)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Content modifier specifies non-existing class: %s.%s.",
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Content modifier specifies non-existing class: %s.%s.",
                     modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str()));
                 continue;
                 }
@@ -401,7 +401,9 @@ static void FilterFlatSpecsByExclusiveIncludePaths(bvector<std::unique_ptr<Flatt
         {
         for (auto const& relatedClassPath : *exclusiveIncludePaths)
             {
-            if (HasSamePath(relatedClassPath, spec->GetFlattened().GetPropertiesSource()->GetSteps(), helper))
+            // when the related properties spec is created using deprecated attributes, we have no properties source... so just
+            // always included those specs no matter if they match given include paths or not.
+            if (!spec->GetFlattened().GetPropertiesSource() || HasSamePath(relatedClassPath, spec->GetFlattened().GetPropertiesSource()->GetSteps(), helper))
                 {
                 std::unique_ptr<FlattenedRelatedPropertiesSpecification> dummy;
                 std::swap(spec, dummy);
@@ -473,7 +475,7 @@ ContentSpecificationsHandler::PropertyAppendResult ContentSpecificationsHandler:
             ECPropertyCP ecProperty = propertiesClass.GetPropertyP(propertySpec->GetPropertyName().c_str());
             if (nullptr == ecProperty)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("Requested property `%s` was not found - skipping.", propertySpec->GetPropertyName().c_str()));
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Requested property `%s` was not found - skipping.", propertySpec->GetPropertyName().c_str()));
                 continue;
                 }
             properties.push_back(ecProperty);
@@ -1012,7 +1014,7 @@ bvector<RuleApplicationInfo> const& ContentSpecificationsHandler::GetCustomizati
             ECClassCP ecClass = GetContext().GetSchemaHelper().GetECClass(modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str());
             if (nullptr == ecClass)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("ECClass '%s.%s' used in %s was not found",
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, Utf8PrintfString("ECClass '%s.%s' used in %s was not found",
                     modifier->GetSchemaName().c_str(), modifier->GetClassName().c_str(), DiagnosticsHelpers::CreateRuleIdentifier(*modifier).c_str()));
                 continue;
                 }
@@ -1023,7 +1025,7 @@ bvector<RuleApplicationInfo> const& ContentSpecificationsHandler::GetCustomizati
             ECClassCP ecClass = GetContext().GetSchemaHelper().GetECClass(labelOverride->GetClassName().c_str());
             if (nullptr == ecClass)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("ECClass '%s' used in %s was not found",
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, Utf8PrintfString("ECClass '%s' used in %s was not found",
                     labelOverride->GetClassName().c_str(), DiagnosticsHelpers::CreateRuleIdentifier(*labelOverride).c_str()));
                 continue;
                 }
@@ -1034,7 +1036,7 @@ bvector<RuleApplicationInfo> const& ContentSpecificationsHandler::GetCustomizati
             ECClassCP ecClass = GetContext().GetSchemaHelper().GetECClass(sortingRule->GetSchemaName().c_str(), sortingRule->GetClassName().c_str());
             if (nullptr == ecClass)
                 {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_INFO, LOG_ERROR, Utf8PrintfString("ECClass '%s.%s' used in %s was not found",
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, Utf8PrintfString("ECClass '%s.%s' used in %s was not found",
                     sortingRule->GetSchemaName().c_str(), sortingRule->GetClassName().c_str(), DiagnosticsHelpers::CreateRuleIdentifier(*sortingRule).c_str()));
                 continue;
                 }

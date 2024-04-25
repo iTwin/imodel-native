@@ -132,7 +132,7 @@ BentleyStatus TestIModelCreator::ImportSchemas(DgnDbR dgndb, std::vector<SchemaI
         }
 
     // Add non domain schemas
-    for (const auto& schemaName : std::vector<WCharCP>{L"ECSchemas/Standard/Bentley_Standard_CustomAttributes.01.13.ecschema.xml",
+    for (const auto& schemaName : std::vector<WCharCP>{L"ECSchemas/Standard/Bentley_Standard_CustomAttributes.01.14.ecschema.xml",
                                                        L"ECSchemas/Standard/SIUnitSystemDefaults.01.00.ecschema.xml",
                                                        L"ECSchemas/Standard/SchemaUpgradeCustomAttributes.01.00.00.ecschema.xml"})
         {

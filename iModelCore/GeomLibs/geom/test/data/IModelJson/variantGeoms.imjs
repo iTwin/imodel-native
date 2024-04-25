@@ -1,0 +1,34 @@
+[
+{"arc":
+ {"center":[0,0,0],
+  "vectorX":[3,0,0],
+  "vectorY":[0,3,0],
+  "sweepStartEnd":[0,90]
+ }
+},
+{"box":
+ {"baseOrigin":[1,2,3],
+  "baseX":3,
+  "baseY":2,
+  "capped":true,
+  "topOrigin":[1,2,8]
+ }
+},
+{"transitionSpiral":
+ {"origin":[0,0,0],
+  "type":"clothoid",
+  "startRadius":0,
+  "endRadius":1000,
+  "startBearing":0,
+  "endBearing":2.864788975654116
+ }
+},
+{"torusPipe":
+ {"center":[0,0,0],
+  "majorRadius":5,
+  "minorRadius":0.8,
+  "xyVectors":[[1,0,0],
+  [0,1,0]]
+ }
+}
+]

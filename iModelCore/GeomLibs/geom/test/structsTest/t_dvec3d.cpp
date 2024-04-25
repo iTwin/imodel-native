@@ -8,7 +8,7 @@
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DVec3d, DirectInitialization)
-    {    
+    {
     DVec3d vector0;
     vector0.Init (1,2,3);
     Check::Near (vector0.x, 1.0);
@@ -138,7 +138,7 @@ TEST (DVec3d, FromXY)
 TEST (DVec3d, FromXYAngleAndMagnitude)
     {
     DVec3d objInit;
-    double theta = PI; 
+    double theta = PI;
     double magnitude = 12;
 
     objInit.InitFromXYAngleAndMagnitude (theta, magnitude);
@@ -208,7 +208,7 @@ TEST (DVec3d, ConstructByMatrixAndTransformAccess)
             Check::Near (DVec3d::FromRow (matrix, i), DVec3d::FromMatrixRow (transform, k));
 
 
-            
+
             }
         }
 
@@ -463,11 +463,11 @@ void TestReadWrite (DVec3dCR vector0, DVec3dCR vector1, DVec3dCR vector2)
 
 
     DVec3d vector_0p1A, vector_0p1B, vector_0p1C;
-    
+
     vector_0p1A.SumOf (vector0, vector1);
     vector_0p1B = vector0;
     vector_0p1B.Add (vector1);
-    vector_0p1C.Multiply (matrix, 1.0, 1.0, 0.0);    
+    vector_0p1C.Multiply (matrix, 1.0, 1.0, 0.0);
     Check::Near (vector_0p1A , vector_0p1B);
     Check::Near (vector_0p1A, vector_0p1C);
 
@@ -556,13 +556,13 @@ void TestReadWrite (DVec3dCR vector0, DVec3dCR vector1, DVec3dCR vector2)
         Check::Near (vector0.MagnitudeXY (), rotatedA.MagnitudeXY ());
         Check::Near (alpha, vector0.AngleToXY (rotatedA));
         Check::Near (vector0.z, rotatedA.z);
-        
+
         DVec3d perpXY;
         perpXY.UnitPerpendicularXY (vector0);
         Check::Near (0.5 * Angle::Pi (), vector0.AngleToXY (perpXY));
         Check::Near (1.0, perpXY.MagnitudeXY());
         Check::Near (0.0, perpXY.z);
-        
+
         }
     }
 
@@ -595,7 +595,7 @@ void TestAngles_go (DVec3d vec0, DVec3d vec1)
     {
     Check::False (vec0.IsParallelTo (vec1));
     Check::True (vec0.IsParallelTo (vec0));
-  
+
     double positiveAngle = vec0.AngleTo (vec1);
     DVec3d perp1 = DVec3d::FromCrossProduct (vec0, vec1);
     DVec3d perp2 = DVec3d::FromCrossProduct (vec1, vec0);
@@ -628,7 +628,7 @@ void TestAngles_go (DVec3d vec0, DVec3d vec1)
     Check::True (sums[2].IsVectorInCCWSector (vec0, vec1, perp2));
     Check::True (sums[3].IsVectorInCCWSector (vec0, vec1, perp2));
 
-    
+
 
     if (acuteAngle)
         {
@@ -730,7 +730,7 @@ TEST(DVec3d, PerpendicularParts)
     TestPerpendicularParts (1,2,3,6,5,7);
     TestPerpendicularParts (1,2,3,1,2,3);
     }
-    
+
 // DSegment4d DSegment4d::From (double xA, double yA, double zA, double wA, double xB, double yB, double zB, double wB)
 // LINE 145
 /*---------------------------------------------------------------------------------**//**
@@ -742,7 +742,7 @@ TEST(DSegment4d, Test1)
     DSegment4d segmentB = DSegment4d::From(DPoint4d::From (1, 2, 3, 4), DPoint4d::From (5, 6, 7, 8));
     Check::Near (segmentA.point[0], segmentB.point[0], "start points");
     }
-    
+
 // DSegment4d DSegment4d::From (double xA, double yA, double zA, double xB, double yB, double zB)
 // LINE 153
 /*---------------------------------------------------------------------------------**//**
@@ -753,7 +753,7 @@ TEST(DSegment4d, Test2)
     DSegment4d segmentC = DSegment4d::From(1.3, 2.6, 3.7, 5.1, 6.8, 7.5);
     Check::Near (segmentC.point[0].w, 1, "weight value");
     }
-    
+
 // DSegment4d DSegment4d::From (DSegment3dCR segment)
 // LINE 160
 /*---------------------------------------------------------------------------------**//**
@@ -761,7 +761,7 @@ TEST(DSegment4d, Test2)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test3)
     {
-    DSegment3d segmentD = DSegment3d::From (1.1, 2.2, 3.3, 2.3, 3.4, 4.5); 
+    DSegment3d segmentD = DSegment3d::From (1.1, 2.2, 3.3, 2.3, 3.4, 4.5);
     DSegment4d segmentE = DSegment4d::From (segmentD);
     for(int i=0;i<2;i++)
     {
@@ -770,7 +770,7 @@ TEST(DSegment4d, Test3)
     Check::Near (segmentE.point[i].z, segmentD.point[i].z, "z value");
     }
     }
-    
+
 // DSegment4d DSegment4d::FromFractionInterval (DSegment4d parent, double startFraction, double endFraction)
 // LINE 172
 /*---------------------------------------------------------------------------------**//**
@@ -783,7 +783,7 @@ TEST(DSegment4d, Test4)
     segmentF.FromFractionInterval (parent, 0.3, 0.7);
     Check::Near (segmentF.point[0].x, parent.point[0].x + 0.3 * (parent.point[1].x - parent.point[0].x), "x value");
     }
-    
+
 // DSegment4d DSegment4d::From (DPoint3dCR pointA, DPoint3dCR pointB)
 // LINE 134
 /*---------------------------------------------------------------------------------**//**
@@ -791,13 +791,13 @@ TEST(DSegment4d, Test4)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test5)
     {
-    DSegment3d segmentX = DSegment3d::From (0.5, 1, 4, 3, 2, 1.5); 
-    DSegment3d segmentY = DSegment3d::From (5, 2, 2.3, 4.4, 1.7, 3.4); 
+    DSegment3d segmentX = DSegment3d::From (0.5, 1, 4, 3, 2, 1.5);
+    DSegment3d segmentY = DSegment3d::From (5, 2, 2.3, 4.4, 1.7, 3.4);
     DSegment4d segmentZ = DSegment4d::From (segmentX.point[0], segmentY.point[1]);
     Check::Near (segmentZ.point[0].x, segmentX.point[0].x, "x value");
     Check::Near (segmentZ.point[1].y, segmentY.point[1].y, "y value");
     }
-    
+
 // DSegment4d DSegment4d::From (DPoint4dCR pointA, DPoint4dCR pointB)
 // LINE 123
 /*---------------------------------------------------------------------------------**//**
@@ -805,13 +805,13 @@ TEST(DSegment4d, Test5)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test6)
     {
-    DSegment4d segmentP = DSegment4d::From (0.5, 1, 4, 2.4, 3, 2, 1.5, 2.2); 
-    DSegment4d segmentQ = DSegment4d::From (5, 2, 2.3, 1.8, 4.4, 1.7, 3.4, 5.9); 
+    DSegment4d segmentP = DSegment4d::From (0.5, 1, 4, 2.4, 3, 2, 1.5, 2.2);
+    DSegment4d segmentQ = DSegment4d::From (5, 2, 2.3, 1.8, 4.4, 1.7, 3.4, 5.9);
     DSegment4d segmentR = DSegment4d::From (segmentP.point[1], segmentQ.point[0]);
     Check::Near (segmentR.point[0].x, segmentP.point[1].x, "x value");
     Check::Near (segmentR.point[1].y, segmentQ.point[0].y, "y value");
     }
-    
+
 // bool DSegment4d::ProjectDPoint4dCartesianXYW (DPoint4dR closestPoint, double &closestParam, DPoint4dCR spacePoint) const
 //LINE 89
 /*---------------------------------------------------------------------------------**//**
@@ -821,7 +821,7 @@ TEST(DSegment4d, Test7)
     {
         DSegment4d segmentCAR = DSegment4d::From (1.4, 2.2, 5.6, 7.7, 2.5, 3.3, 8.8, 9.4);
         double closestParam = 1;
-        DPoint4d closestPoint = DPoint4d::From (2.7, 1.3, 8.4, 9.9);  
+        DPoint4d closestPoint = DPoint4d::From (2.7, 1.3, 8.4, 9.9);
         DPoint4d spacePoint = DPoint4d::From (2.1, 3.1, 6.3, 8.9);
         segmentCAR.ProjectDPoint4dCartesianXYW(closestPoint, closestParam, spacePoint);
         double shortx = (spacePoint.x - closestPoint.x)*(spacePoint.x - closestPoint.x);
@@ -836,19 +836,19 @@ TEST(DSegment4d, Test7)
         double longw = (spacePoint.w - closePoint.w)*(spacePoint.w - closePoint.w);
         double distlong = sqrt(longx + longy + longz + longw);
         Check::True ( distlong > distshort, "checking that closestPoint is the closest");
-        
-        
+
+
         /*DVec3d ortho, vec;
-        
+
         double segfracx = segmentCAR.point[0].x + closestParam*(segmentCAR.point[1].x - segmentCAR.point[0].x);
         double segfracy = segmentCAR.point[0].y + closestParam*(segmentCAR.point[1].y - segmentCAR.point[0].y);
         double segfracz = segmentCAR.point[0].z + closestParam*(segmentCAR.point[1].z - segmentCAR.point[0].z);
         double segfracw = segmentCAR.point[0].w + closestParam*(segmentCAR.point[1].w - segmentCAR.point[0].w);
         DPoint4d Xs = DPoint4d::From (segfracx, segfracy, segfracz, segfracw);
-        
+
         ortho.WeightedDifferenceOf (spacePoint, Xs);
         vec.WeightedDifferenceOf (segmentCAR.point[1], segmentCAR.point[0]);
-        
+
         Check::Perpendicular (ortho, vec, "checking orthogonality");*/
     }
 
@@ -864,9 +864,9 @@ TEST(DSegment4d, Test8)
     Check::Near (segmentA1.point[0].x, 1.1, "x value");
     Check::Near (segmentA1.point[1].y, 5.5, "y value");
     }
-  
-// void DSegment4d::Init (double x0, double y0, double z0, double w0, double x1, double y1, double z1, double w1)  
-// LINE 28 
+
+// void DSegment4d::Init (double x0, double y0, double z0, double w0, double x1, double y1, double z1, double w1)
+// LINE 28
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -877,8 +877,8 @@ TEST(DSegment4d, Test9)
     Check::Near (segmentB1.point[0].y, 2.2, "y value");
     Check::Near (segmentB1.point[1].w, 7.7, "w value");
     }
-    
-// void DSegment4d::Init (DSegment3dCR source)   
+
+// void DSegment4d::Init (DSegment3dCR source)
 // LINE 48
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -892,7 +892,7 @@ TEST(DSegment4d, Test10)
     Check::Near (segmentC1.point[1].w, 1, "w value");
     }
 
-// void DSegment4d::Init (DPoint3dCR point0, DPoint3dCR point1)   
+// void DSegment4d::Init (DPoint3dCR point0, DPoint3dCR point1)
 // LINE 58
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -907,7 +907,7 @@ TEST(DSegment4d, Test11)
     Check::Near (segmentE1.point[0].w, 1, "w value");
     }
 
-// void DSegment4d::Init (DPoint4dCR point0, DPoint4dCR point1)   
+// void DSegment4d::Init (DPoint4dCR point0, DPoint4dCR point1)
 // LINE 68
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -921,7 +921,7 @@ TEST(DSegment4d, Test12)
     Check::Near (segmentZ1.point[0].z, pointX1.z, "z value");
     Check::Near (segmentZ1.point[1].w, pointY1.w, "w value");
     }
-    
+
 // bool DSegment4d::FractionParameterToPoint (DPoint4dR outPoint, double fraction) const
 // LINE 79
 // ****What should I be testing here?****
@@ -934,7 +934,7 @@ TEST(DSegment4d, Test13)
     DPoint4d pointQ1 = DPoint4d::From (5, 4, 3, 2);
     segmentR1.FractionParameterToPoint(pointQ1, 0.5);
     }
-    
+
 // bool DSegment4d::GetEndPoints (DPoint3dR point0, DPoint3dR point1)
 // LINE 187
 /*---------------------------------------------------------------------------------**//**
@@ -949,7 +949,7 @@ TEST(DSegment4d, Test14)
     Check::Bool (condition, true, "boolean test");
     //Check::Near (segmentAA.point[1].z, pointAB.z, "z value");
     }
-    
+
 // void DSegment4d::InitProduct (TransformCR transform, DSegment4dCR source)
 // void DSegment4d::InitProduct (DMatrix4dCR mat, DSegment4dCR source)
 // LINE 200 + LINE 205
@@ -973,7 +973,7 @@ TEST(DSegment4d, Test15)
     Check::Near (segmentBB.point[1].y, segmentCC.point[1].y, "y value");
     Check::Near (segmentBB.point[1].w, segmentCC.point[1].w, "w value");
     }
-    
+
 
 //void DSegment4d::FromFractinInterval (DSegment4d parent, double startFraction, double endFraction)
 // LINE 219
@@ -982,7 +982,7 @@ TEST(DSegment4d, Test15)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DSegment4d, Test17)
     {
-    DSegment4d fract;   
+    DSegment4d fract;
     double testmag;
     double fractmag;
     double startFraction = 0.342;
@@ -998,10 +998,10 @@ TEST(DSegment4d, Test17)
     double pdz = parent.point[1].z - parent.point[0].z;
     double pdw = parent.point[1].w - parent.point[0].w;
     fractmag = sqrt((fdx*fdx) + (fdy*fdy) + (fdz*fdz) + (fdw*fdw));
-    testmag = sqrt((pdx*pdx) + (pdy*pdy) + (pdz*pdz) + (pdw*pdw)) * (endFraction - startFraction); 
+    testmag = sqrt((pdx*pdx) + (pdy*pdy) + (pdz*pdz) + (pdw*pdw)) * (endFraction - startFraction);
     Check::Near (fractmag, testmag, "comparing magnitudes");
     }
-    
+
 //bool DSegment4d::FractionParameterToPoint(double fraction)
 // LINE 231
 /*---------------------------------------------------------------------------------**//**
@@ -1041,11 +1041,11 @@ TEST(DSegment4d, Test19)
     double pdy = parent.point[1].y - parent.point[0].y;
     double pdz = parent.point[1].z - parent.point[0].z;
     double pdw = parent.point[1].w - parent.point[0].w;
-    testmag = sqrt((pdx*pdx) + (pdy*pdy) + (pdz*pdz) + (pdw*pdw)) * fraction; 
+    testmag = sqrt((pdx*pdx) + (pdy*pdy) + (pdz*pdz) + (pdw*pdw)) * fraction;
     fractmag = sqrt((fdx*fdx) + (fdy*fdy) + (fdz*fdz) + (fdw*fdw));
     Check::Near (fractmag, testmag, "comparing magnitudes");
     }
-#endif    
+#endif
 //double DSegment4d::PointToFractionParameter (double &param, DPoint3d pt) \
 //LINE 245
 /*---------------------------------------------------------------------------------**//**
@@ -1059,7 +1059,7 @@ TEST(DSegment4d, Test20)
     segment.PointToFractionParameter (param, pt);
     Check::Near (param, 0.3, "checking fraction of segment");
     }
-    
+
 //bool DSegment4d::FractionParameterToTangent (DPoint3d &spacepoint, DVec3d tangent, double param)
 //LINE 261
 /*---------------------------------------------------------------------------------**//**
@@ -1072,7 +1072,7 @@ TEST(DSegment4d, Test21)
     DVec3d tan = DVec3d::From (2.1, 3.2, 5.6);
     double param = 0.37;
     seg.FractionParameterToTangent (pnt, tan, param);
-    
+
     double mx = seg.point[1].x - seg.point[0].x;
     double my = seg.point[1].y - seg.point[0].y;
     double mz = seg.point[1].z - seg.point[0].z;
@@ -1098,7 +1098,7 @@ TEST(DSegment4d, Test22)
     DPoint4d tan = DPoint4d::From (3, 6, 7, 5);
     double param = 0.5;
     DPoint4d pnt = seg.FractionParameterToTangent (pt, tan, param);
-    
+
     double mx = seg.point[1].x - seg.point[0].x;
     double my = seg.point[1].y - seg.point[0].y;
     double mz = seg.point[1].z - seg.point[0].z;
@@ -1113,7 +1113,7 @@ TEST(DSegment4d, Test22)
     Check::Near (tan.x, seg.point[1].x - seg.point[0].x, "checking x value");
     Check::Near (tan.y, seg.point[1].y - seg.point[0].y, "checking y value");
     }
-    
+
 //bool DSegment4d::FractionToLength (double &arcLength, double fraction0, double fraction1)
 //LINE 285
 /*---------------------------------------------------------------------------------**//**
@@ -1151,8 +1151,8 @@ TEST(DSegment4d, Test24)
     seg.FractionToLength (arcLength, fraction0, frac);
     Check::Near (arcLength, arcStep, "checking for same lengths");
     }
-    
-////bool DSegment4d::ClosestPointBoundedXY (DPoint3d closePoint, double closeParam, double distanceXY, DPoint3d spacePoint, DMatrix4dCP worldToLocal, bool extend0, bool extend1) 
+
+////bool DSegment4d::ClosestPointBoundedXY (DPoint3d closePoint, double closeParam, double distanceXY, DPoint3d spacePoint, DMatrix4dCP worldToLocal, bool extend0, bool extend1)
 ////LINE 336
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -1172,14 +1172,14 @@ TEST(DSegment4d, Test24)
 //    DMatrix4dCP worldToLocal = DMatrix4d::FromRowValues (ent[0], ent[1], ent[2], ent[3], ent[4], ent[5], ent[6], ent[7], ent[8], ent[9], ent[10], ent[11], ent[12], ent[13], ent[14], ent[15]);
 //    bool extend0 = false;
 //    bool extend1 = false;
-//    zeroseg.ClosestPointBoundedXY (closePoint, closeParam, distanceXY, spacePoint, worldToLocal, extend0, extend1); 
+//    zeroseg.ClosestPointBoundedXY (closePoint, closeParam, distanceXY, spacePoint, worldToLocal, extend0, extend1);
 //    }
 
 ////bool DSegment4d::ClosestPointBoundedXY (DPoint3d closePoint, double closeParam, double distanceXY, DPoint3d spacePoint, DMatrix4dCP worldToLocal)
 ////LINE 372
 //TEST(DSegment4d, Test26)
 //    {
-//    
+//
 //    }
 
 
@@ -1190,7 +1190,7 @@ bool MaxCubicError (double x1, double f1, double x2, double f2, double &xm, doub
     UNUSED_VARIABLE(x4); //llvm-13 detect this as unused var
     bool x3c = false;
     double solution[2];
-    
+
     double x12 = x1 * x1;
     double x13 = x12 * x1;
     double x22 = x2 * x2;
@@ -1199,16 +1199,16 @@ bool MaxCubicError (double x1, double f1, double x2, double f2, double &xm, doub
     double al2 = x23 - x22;
     double bet1 = x12 - x1;
     double bet2 = x22 - x2;
-    
+
     b = f2 / (bet2 - bet1 * (al2 / al1));
     a = (f1 - bet1*b) / al1;
-    
+
     double A = 3 * a;
     double B = 2*b - 2*a;
     double C = -b;
-    
+
     double sqtrm = B*B - 4*A*C;
-    
+
     if (sqtrm >= 0)
         {
         double st = sqrt(sqtrm);
@@ -1225,15 +1225,15 @@ bool MaxCubicError (double x1, double f1, double x2, double f2, double &xm, doub
             if (solution[i] < 0 && solution[i] > 1)
                 {
                 x4 = solution[i];
-                }           
+                }
             }
-            return x3c;     
-        }        
-    else 
+            return x3c;
+        }
+    else
         {
         return false;
         }
-    
+
     }
 
 //bool DSegment4d::MaxCubicError (double x1, double f1, double x2, double f2, double &xm, double &fm, double &a, double &b)
@@ -1244,12 +1244,12 @@ bool MaxCubicError (double x1, double f1, double x2, double f2, double &xm, doub
 TEST (DSegment4d, Test27)
     {
     Check::StartScope ("MaxCubicError Tests");
-    
+
     double a, b, xm, fm, prt;
     double ac[100];
     double bc[100];
 
-    
+
     for (int i = 0; i < 20; i++)
         {
         ac[i] = -i - 1;
@@ -1260,27 +1260,27 @@ TEST (DSegment4d, Test27)
         Check::Near (a, ac[i]);
         Check::Near (b, bc[i]);
         }
-    
+
     bool condition1 =  MaxCubicError (-1, -1, 3, -1, xm, fm, a, b);
     Check::True (condition1, "null");
-  
+
     Check::EndScope ();
     }
 
 bool MaxQuadraticError (double x1, double f1, double &fm)
     {
     double x12 = x1 * x1;
-    
+
     if (x12 - x1 != 0 )
         {
         double al = f1 / (x12 - x1);
         double d2 = 0.5;
         double d4 = d2 * d2;
-    
+
         fm = (d4 - d2)*al;
         return true;
         }
-        
+
     else
         {
         return false;
@@ -1295,9 +1295,9 @@ bool MaxQuadraticError (double x1, double f1, double &fm)
 TEST (DSegment4d, Test28)
     {
     Check::StartScope ("MaxQuadraticError Tests");
-    
+
     double x1, fm, prt;
-  
+
     for (int i = 0; i < 20; i++)
         {
         x1 = -i - 1;
@@ -1356,9 +1356,9 @@ void TestVectorToVector (DVec3dCR U, DVec3dCR V)
         Check::True (rotation.IsOrthogonal ());
         }
     Check::EndScope ();
-        
-    }    
-    
+
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1501,7 +1501,7 @@ TEST(DVec3d, SmallerUnorientedAngle)
     DVec3d vector0 = DVec3d::From (2,1,-3);
     DVec3d vectorX, vectorY, vectorZ;
     vector0.GetNormalizedTriad (vectorX, vectorY, vectorZ);
-    auto factors = bvector<DPoint2d> 
+    auto factors = bvector<DPoint2d>
         {
         DPoint2d::From (1,1),
         DPoint2d::From (-1,1),
@@ -1521,7 +1521,7 @@ TEST(DVec3d, SmallerUnorientedAngle)
             auto r2 = vectorXZ.SmallerUnorientedAngleTo (vector0);
             //auto r3 = vector0.AngleTo (vectorXZ);
             //Check::Near (r3, r1);
-            Check::Near (r1,r2, "SmallerUnorientedAngle");            
+            Check::Near (r1,r2, "SmallerUnorientedAngle");
             }
         }
     }
@@ -1544,7 +1544,7 @@ TEST(DVec3d, CheckSector)
     Check::True(resultant.IsVectorInCCWXYSector(vecBoundary2, vecBoundary1));
     }
 
-void test_DVec3dRotate90TowardsVector(DVec3dCR target, DVec3dCR vector) 
+void test_DVec3dRotate90TowardsVector(DVec3dCR target, DVec3dCR vector)
     {
     DVec3d result = vector;
     double theta = target.AngleTo(vector);

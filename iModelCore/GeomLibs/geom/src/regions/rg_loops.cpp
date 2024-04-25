@@ -1153,7 +1153,7 @@ SimpleBooleanMarkupContext                *pUserData
     return boolstat;
     }
 
-struct SimpleBooleanMarkupContext 
+struct SimpleBooleanMarkupContext
     {
     RGBoolSelect selectorAB;
     RGBoolSelect selectorC;
@@ -1163,9 +1163,9 @@ struct SimpleBooleanMarkupContext
     int         highestGroupB;
     int         countA;
     int         countB;
-    int         countC;     
+    int         countC;
     bool        reverseSense;   // reverse the sense of the tests.
-    
+
     SimpleBooleanMarkupContext (
             RGBoolSelect _selectorAB,
             RGBoolSelect _selectorC,
@@ -1184,7 +1184,7 @@ struct SimpleBooleanMarkupContext
     ~SimpleBooleanMarkupContext ()
         {
         }
-        
+
     bool IsValidGroupId (int g)
         {
         return g >= 0 && g < (int)groupParityArray.size ();
@@ -1214,7 +1214,7 @@ struct SimpleBooleanMarkupContext
         for (ptrdiff_t i = 0; i < numGroup; i++)
             groupParityArray.push_back (0);
         }
-        
+
 
 /*------------------------------------------------------------------*//**
 * Callback to handle face entry and exit.
@@ -1581,7 +1581,7 @@ bool                reverseSense
     SimpleBooleanMarkupContext context (selectAB, selectC, pMarkSet, highestOperandA, highestOperandB, reverseSense);
     static bool    s_noisy = false;
     if (s_noisy)
-        jmdlRG_setNoisy (1000);  
+        jmdlRG_setNoisy (1000);
     bool    result = false;
 
     jmdlMTGMarkSet_empty (pMarkSet);
@@ -1604,10 +1604,10 @@ bool                reverseSense
     if (s_noisy)
         jmdlMTGGraph_printFaceLoopsExt (pRG->pGraph, (MTGNodeFunc)printNodeXY, pRG);
     if (s_noisy)
-        jmdlRG_setNoisy (0);          
+        jmdlRG_setNoisy (0);
     return result;
     }
-    
+
 Public bool     jmdlRG_collectBooleanFaces
 (
 RG_Header           *pRG,
@@ -1776,7 +1776,7 @@ bool    bIncludeMarkedSimpleLoops
 //! @param [inout] pMarkSet face set already accepted.   Flooding will not reenter these faces.  Flood faces are added to this set.
 //! @param [inout] addedNodes New nodes are added here.
 //! @param [in] seedNode
-void jmdlMTG_floodToBoundary (MTGGraph *graph, 
+void jmdlMTG_floodToBoundary (MTGGraph *graph,
 MTG_MarkSet &markset,
 MTGMask barrierMask,
 MTGNodeId seedNodeId

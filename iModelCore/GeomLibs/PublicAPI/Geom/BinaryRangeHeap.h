@@ -26,7 +26,7 @@ DRange3d &selectedUnion,
 DRange3d &selectedIntersection
 );
 //! Determine distribution of left, center, and right ranges to maximize {(1+numLeft)(1+numRight)(1+numCenter)}.
-//! 
+//!
 //! @param [out] numLeft number of ranges strictly to left of split.
 //! @param [out] numCenter number of ranges that have overlap.
 //! @param [out] numRight number of ranges that are strictly to right of split.
@@ -230,10 +230,10 @@ size_t GEOMDLLIMPEXP GetRootIndex () const;
 // Ask processor as needed whether range and index data needs to be processed.
 // Announce final leaf pairs to processor.
 static void GEOMDLLIMPEXP Search (IndexedRangeHeapCR heapA, IndexedRangeHeapCR heapB,
-    IndexedRangeHeap::PairProcessor &processor); 
+    IndexedRangeHeap::PairProcessor &processor);
 // sortMethod=1 chooses child pairs with small diagonal first.
 static void GEOMDLLIMPEXP Search (IndexedRangeHeapCR heapA, IndexedRangeHeapCR heapB,
-    IndexedRangeHeap::PairProcessor &processor, int sortMethod); 
+    IndexedRangeHeap::PairProcessor &processor, int sortMethod);
 
 
 // Recursively search subtrees a range heap.
@@ -248,7 +248,7 @@ void CollectInRange (DRange3dCR range, int numDimensions, bvector<size_t> &indic
 class RangeSortAlgorithms
 {
 private:
-    RangeSortAlgorithms ();  // no instances 
+    RangeSortAlgorithms ();  // no instances
 public:
 enum class SplitType
     {

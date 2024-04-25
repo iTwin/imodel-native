@@ -1488,15 +1488,16 @@ const Byte * ECValue::GetIGeometry(size_t& size) const
 BentleyStatus ECValue::SetIGeometry(const Byte * data, size_t size, bool holdADuplicate)
     {
     Clear();
-    if (0 == size)
-        return SUCCESS;
-
+    bool badBuffer = false;
     m_primitiveType = PRIMITIVETYPE_IGeometry;
-
-    if (!BentleyGeometryFlatBuffer::IsFlatBufferFormat(data))
-        return ERROR;
-
-    return SetBinaryInternal(data, size, holdADuplicate);
+    if (!BentleyGeometryFlatBuffer::IsFlatBufferFormat(data, size))
+        {
+        badBuffer = size != 0; // data has bytes but not in flatbuffer format
+        data = nullptr;
+        size = 0;
+        }
+    BentleyStatus status =  SetBinaryInternal(data, size, holdADuplicate);
+    return badBuffer ? ERROR : status;
     }
 
 /*---------------------------------------------------------------------------------**//**

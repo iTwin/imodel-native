@@ -14,7 +14,7 @@
 #include <functional>
 #include <chrono>
 #include <Bentley/Logging.h>
-
+#include <optional>
 /** @namespace BentleyApi::BeSQLite Classes used to access a SQLite database. */
 
 /****
@@ -724,6 +724,8 @@ public:
     static bool IsConstraintDbResult(DbResult val1) {return GetBaseDbResult(val1) == BE_SQLITE_CONSTRAINT;}
     BE_SQLITE_EXPORT static bool s_throwExceptionOnUnexpectedAutoCommit;
 
+    BE_SQLITE_EXPORT static bool ZlibCompress(bvector<Byte>& compressedBuffer, const bvector<Byte>& sourceBuffer);
+    BE_SQLITE_EXPORT static bool ZlibDecompress(bvector<Byte>& uncompressedBuffer, const bvector<Byte>& compressedBuffer, unsigned long uncompressSize);
 };
 
 //=======================================================================================
@@ -2424,8 +2426,10 @@ protected:
     StatementCache m_statements;
     DbTxns m_txns;
     std::unique_ptr<ScalarFunction> m_regexFunc, m_regexExtractFunc, m_base36Func;
-    explicit DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode);
+    explicit DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode, std::optional<int> busyTimeout);
     ~DbFile();
+
+    DbResult SetBusyTimeout(int ms);
     DbResult StartSavepoint(Savepoint&, BeSQLiteTxnMode);
     DbResult StopSavepoint(Savepoint&, bool isCommit, Utf8CP operation);
     void DeactivateSavepoint(Savepoint&);
@@ -2510,6 +2514,9 @@ public:
         mutable OpenMode m_openMode;
         DefaultTxn m_startDefaultTxn = DefaultTxn::Yes;
         ProfileUpgradeOptions m_profileUpgradeOptions = ProfileUpgradeOptions::None;
+
+        // if set take precedence over busy handler
+        std::optional<int> m_busyTimeout;
 
         // if true the database should be opened without checking for the BeSQLite properties table.
         bool m_rawSQLite = false;
@@ -3313,8 +3320,9 @@ public:
     //! DO NOT call this under normal circumstances. It is for obscure cases where you are opening an untrusted file (i.e. NOT from the hub).
     //! Opens the specified database, performs a sqlite integrity check, and closes it. Returns BE_SQLITE_OK if the check was successful, otherwise BE_SQLITE_CORRUPT or other chained errors if there was a failure.
     BE_SQLITE_EXPORT static DbResult CheckDbIntegrity(BeFileNameCR dbFileName);
-
+    BE_SQLITE_EXPORT DbResult SetBusyTimeout(int ms);
     BE_SQLITE_EXPORT DbBuffer Serialize(const char *zSchema = nullptr) const;
+
     BE_SQLITE_EXPORT static DbResult Deserialize(DbBuffer& buffer, DbR db, DbDeserializeOptions opts = DbDeserializeOptions::FreeOnClose, const char *zSchema = nullptr, std::function<void(DbR)> beforeDefaultTxnStarts = nullptr);
 };
 

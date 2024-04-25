@@ -960,7 +960,7 @@ DMatrix4dR nullVectors
 static bool GetConicIntersectionZAuxPlane
 (
 DConic4dCR conic,
-DPoint4dCR auxPoint, 
+DPoint4dCR auxPoint,
 DPoint4dCR perpPlane,
 DPoint4dR  auxPlane
 )
@@ -1042,7 +1042,7 @@ const DConic4d  *pConic,
         double   planeCurveIntersectionParameter[MAX_BEZIER_CURVE_ORDER];
         DPoint4d perpPlane, auxPlane;
         int numPlaneIntersection;
-        // The one DPoint4d in the 
+        // The one DPoint4d in the
         nullSpaceMatrix.GetColumn (perpPlane, 0);
         bsiBezierDPoint4d_allDPlane4dIntersections (planeCurveIntersectionParameter, planeCurveIntersectionPoint,
                 &numPlaneIntersection, MAX_BEZIER_CURVE_ORDER,

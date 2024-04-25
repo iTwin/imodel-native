@@ -5,7 +5,14 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.4` |
-| ECSQL   | `1.2.9.2` |
+| ECSQL   | `1.2.10.0` |
+
+## `1/10/2024`: Add support for navigation value creation function
+
+* Add support for navigation value creation function
+  * Example: `SELECT NAVIGATION_VALUE(bis.Element.Model, 10, 100)`.
+
+*ECSql version updated `1.2.9.1` -> `1.2.10.0`
 
 ## `10/27/2023`: Pragma integrity_check(check_nav_class_ids) performance improved
 

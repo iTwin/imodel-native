@@ -119,7 +119,7 @@ GeomPrintFuncs&     gs
     vu_getMask (currP, VU_BOUNDARY_EDGE) ? gs.EmitChar ('B') : gs.EmitChar (' ');
     vu_getMask (currP, VU_EXTERIOR_EDGE) ? gs.EmitChar ('X') : gs.EmitChar (' ');
     vu_getMask (currP, VU_NULL_FACE) ? gs.EmitChar ('N') : gs.EmitChar (' ');
-    
+
     gs.EmitChar (')');
     snprintf (str1, sizeof(str1), "(M%5d", VU_ID(mateP));
     gs.EmitString (str1);

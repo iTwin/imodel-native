@@ -63,7 +63,7 @@ LightweightPolyfaceBuilder::QPoint2d::QPoint2d(DPoint2dCR point, double tol)
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool LightweightPolyfaceBuilder::QPoint3d::operator < (struct QPoint3d const& rhs) const
-    {                                                                                                                                              
+    {
     if (m_x < rhs.m_x)
         return true;
     else if (m_x > rhs.m_x)
@@ -185,10 +185,10 @@ size_t  LightweightPolyfaceBuilder::FindOrAddParam(DPoint2dCR param)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LightweightPolyfaceBuilder::AddPointIndex(size_t zeroBasedIndex, bool visible) 
-    { 
-    int32_t index = (int32_t) zeroBasedIndex + 1; 
-    m_polyface->PointIndex().push_back(visible ? index : - index); 
+void LightweightPolyfaceBuilder::AddPointIndex(size_t zeroBasedIndex, bool visible)
+    {
+    int32_t index = (int32_t) zeroBasedIndex + 1;
+    m_polyface->PointIndex().push_back(visible ? index : - index);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -206,7 +206,7 @@ void LightweightPolyfaceBuilder::EndFace ()
 void LightweightPolyfaceBuilder::AddAuxDataByIndex (PolyfaceAuxData::ChannelsCR channels, size_t index)
     {
     PolyfaceAuxDataPtr        auxData;
-    
+
     if (m_polyface->GetAuxDataCP().IsValid())
         {
         auxData = const_cast <PolyfaceAuxDataP> (m_polyface->GetAuxDataCP().get());
@@ -218,7 +218,7 @@ void LightweightPolyfaceBuilder::AddAuxDataByIndex (PolyfaceAuxData::ChannelsCR 
         }
     auxData->AppendDataByIndex(channels, index);
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -234,7 +234,7 @@ void  LightweightPolyfaceBuilder::AddIndexTerminators()
     if (m_polyface->GetAuxDataCP().IsValid())
         (const_cast <PolyfaceAuxDataP> (m_polyface->GetAuxDataCP().get()))->AddIndexTerminator();
     }
-            
+
 
 void LightweightPolyfaceBuilder::AddNormalIndex(size_t zeroBasedIndex)  { m_polyface->NormalIndex().push_back((int32_t) zeroBasedIndex + 1); }
 void LightweightPolyfaceBuilder::AddParamIndex (size_t zeroBasedIndex)  { m_polyface->ParamIndex().push_back((int32_t) zeroBasedIndex + 1); }

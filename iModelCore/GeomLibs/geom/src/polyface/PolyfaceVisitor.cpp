@@ -270,7 +270,7 @@ void PolyfaceVisitor::ClearAllArrays()
     m_indexPosition.clear ();
     m_colorIndex.clear ();
     m_faceIndex.clear();
-    m_intColor.clear ();	
+    m_intColor.clear ();
     m_auxData = nullptr;
     m_numEdgesThisFace = 0;
     }

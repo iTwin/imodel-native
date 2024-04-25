@@ -2757,3 +2757,112 @@ TEST(ClipPlaneSet, ClipParityRegionSweep)
 
     Check::ClearGeometry("ClipPlaneSet.ClipParityRegionSweep");
     }
+
+TEST(ClipPlaneSet, ClipComplexPolygon)
+    {
+    struct TestCase
+        {
+        CurveVectorPtr m_target;
+        CurveVectorPtr m_tool;
+        bool m_invertClipper = false;
+        };
+    bvector<TestCase> testCases;
+
+    // a complicated ccw xy-polygon with near-self-intersections 100,000 times smaller than range diagonal length
+    BeFileName filename = BeFileName(L"complexPolygon.imjs");
+    BeFileName fullPathName;
+    BeTest::GetHost().GetDocumentsRoot(fullPathName);
+    fullPathName.AppendToPath(L"GeomLibsTestData").AppendToPath(L"CurveVector").AppendToPath(L"Clipping").AppendToPath(filename);
+    bvector<IGeometryPtr> geometry;
+    if (!Check::True(GTestFileOps::JsonFileToGeometry(fullPathName, geometry), "json file successfully imported"))
+        return;
+    auto complexPolygon = geometry.front()->GetAsCurveVector();
+    if (!Check::True(complexPolygon.IsValid(), "curve successfully converted from json"))
+        return;
+
+    auto lineSeg = CurveVector::CreateLinear(
+        {
+        DPoint3d::From(-11.537808924339712, 32.284192851841453),
+        DPoint3d::From(55.100943281424051,-30.059002215194703,0.0),
+        });
+
+    auto nonConvexClockwiseTool = CurveVector::CreateLinear(
+        {
+        DPoint3d::From(1.2040829653472902, 0.59634582575497519),
+        DPoint3d::From(1.2410038127629937, 23.376953412731581),
+        DPoint3d::From(29.418182340249885, 23.330222793950522),
+        DPoint3d::From(29.418324090271970, 19.042705215210706),
+        DPoint3d::From(30.308824224392758, 19.042884717869313),
+        DPoint3d::From(30.281497289968488, 1.2884693945995593),
+        DPoint3d::From(28.313618485993207, 1.2666347196882413),
+        DPoint3d::From(28.317036912549185, 0.54847449295875150),
+        }, CurveVector::BOUNDARY_TYPE_Outer);
+
+    DRange3d range;
+    nonConvexClockwiseTool->GetRange(range);
+    auto convexTool = CurveVector::CreateRectangle(range.low.x, range.low.y, range.high.x, range.high.y, 0.0);
+
+    // try some tests with reversed tool to flex ClipPlaneSet::FromSweptPolygon's insensitivity to input orientation!
+    testCases.push_back({ lineSeg, convexTool });
+    testCases.push_back({ lineSeg, convexTool->CloneReversed() });
+    testCases.push_back({ lineSeg, convexTool, true });
+    testCases.push_back({ lineSeg, nonConvexClockwiseTool });
+    testCases.push_back({ lineSeg, nonConvexClockwiseTool->CloneReversed() });
+    testCases.push_back({ complexPolygon, convexTool });
+    testCases.push_back({ complexPolygon->CloneReversed(), convexTool });
+    testCases.push_back({ complexPolygon, nonConvexClockwiseTool });
+
+    for (auto& testCase : testCases)
+        {
+        Check::SaveTransformed(testCase.m_target);
+        Check::SaveTransformed(testCase.m_tool);
+
+        auto toolPoints = testCase.m_tool->front()->GetLineStringCP();
+        bvector<bvector<DPoint3d>> toolShapes;
+        auto clipper = ClipPlaneSet::FromSweptPolygon(toolPoints->data(), toolPoints->size(), nullptr, &toolShapes);
+
+        // display the convex decomposition of the clipper
+        if (toolShapes.size() > 1)
+            {
+            for (auto& toolShape : toolShapes)
+                {
+                auto shape = CurveVector::CreateLinear(toolShape, CurveVector::BOUNDARY_TYPE_Outer);
+                Check::SaveTransformed(shape);
+                DPoint3d centroid;
+                DVec3d normal;
+                double area;
+                if (Check::True(PolygonOps::CentroidNormalAndArea(*toolPoints, centroid, normal, area)))
+                    Check::True(clipper.IsPointInside(centroid), "FromSweptPolygon constructs clipper with inward plane normals");
+                }
+            }
+
+        // test an inverted clipper that clips away its convex volume. Only makes sense when exactly 1 convexSet!
+        if (testCase.m_invertClipper && clipper.size() == 1)
+            {
+            ConvexClipPlaneSet convexSet = clipper.back();
+            clipper.pop_back();
+            for (auto& plane : convexSet)
+                {
+                auto reversedPlane = plane;
+                reversedPlane.Negate();
+                clipper.push_back(ConvexClipPlaneSet(&reversedPlane, 1));
+                }
+            }
+
+        auto saveTrans = Check::GetTransform();
+        Check::Shift(0, 60, 0);
+
+        bvector<CurveVectorPtr> output;
+        auto result = clipper.ClipCurveVector(*testCase.m_target, output);
+        if (Check::True(result, "ClipCurveVector returns true (valid input)"))
+            {
+            for (auto& curve : output)
+                Check::SaveTransformed(curve);
+            }
+
+        Check::SetTransform(saveTrans);
+        Check::Shift(60, 0, 0);
+        }
+
+    Check::ClearGeometry("ClipPlaneSet.ClipComplexPolygon");
+    }

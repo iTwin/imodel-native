@@ -34,7 +34,7 @@ TEST(GapCleanup, Test1)
         Check::Print (*sticks, "sticks");
         Check::Print (*fixed, "fixed");
         }
-    
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -79,7 +79,7 @@ TEST(GapCleanup, Test3)
     points.push_back (DPoint3d::From (0,0,0));
     points.push_back (DPoint3d::From (0,100,0));
     points.push_back (DPoint3d::From (100,100,0));
-    
+
     sticks->push_back (ICurvePrimitive::CreateLineString (points));
     double d0 = 93.0;
     sticks->push_back (
@@ -111,14 +111,14 @@ TEST(GapCleanup, Test4)
     DPoint3d pointB = DPoint3d::From (99,0,0);
     DPoint3d pointC = DPoint3d::From (100,1,0);
     DPoint3d pointD = DPoint3d::From (100,100,0);
-    
+
     sticks->push_back (
         ICurvePrimitive::CreateLine (DSegment3d::From (pointA, pointB)));
     sticks->push_back (
         ICurvePrimitive::CreateLine (DSegment3d::From (pointB, pointC)));
     sticks->push_back (
         ICurvePrimitive::CreateLine (DSegment3d::From (pointC, pointD)));
-        
+
     sticks->at(1)->SetMarkerBit (ICurvePrimitive::CURVE_PRIMITIVE_BIT_GapCurve, true);
     CurveGapOptions options (s_noGapTol, s_bigGapDirect, s_gapAlong);
     CurveVectorPtr fixed = sticks->CloneWithGapsClosed (options);
@@ -157,10 +157,10 @@ TEST(Chaining, Test0)
     DPoint3d pointA = DPoint3d::From (0,0,0);
     DPoint3d pointB = DPoint3d::From (100,0,0);
     DPoint3d pointC = DPoint3d::From (100,100,0);
-    
+
     DPoint3d pointD = DPoint3d::From (200,0,0);
     DPoint3d pointE = DPoint3d::From (300,0,0);
-    
+
     sticks->push_back (
         ICurvePrimitive::CreateLine (DSegment3d::From (pointA, pointB)));
     sticks->push_back (

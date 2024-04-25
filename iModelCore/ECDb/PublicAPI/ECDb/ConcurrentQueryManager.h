@@ -434,10 +434,11 @@ struct QueryProperty final: IJsSerializable {
             QueryProperty const& operator [](std::string const& name) const { return GetPropertyInfo(name);}
             QueryProperty const& operator [](int index) const { return at(index); }
             ECDB_EXPORT void ToJs(BeJsValue& val) const override;
-            ECDB_EXPORT void append(std::string className, std::string jsonName, std::string name, std::string typeName, bool generated, std::string extendedType, int index);
+            ECDB_EXPORT void append(std::string className, std::string accessString, std::string jsonName, std::string name, std::string typeName, bool generated, std::string extendedType, int index);
     };
     private:
         static constexpr auto JClass = "className";
+        static constexpr auto JAccessString = "accessString";
         static constexpr auto JGenerated = "generated";
         static constexpr auto JIndex = "index";
         static constexpr auto JJsonName = "jsonName";
@@ -445,6 +446,7 @@ struct QueryProperty final: IJsSerializable {
         static constexpr auto JExtendedType = "extendedType";
         static constexpr auto JType = "typeName";
         std::string m_className;
+        std::string m_accessString;
         std::string m_jsonName;
         std::string m_name;
         std::string m_typeName;
@@ -454,10 +456,11 @@ struct QueryProperty final: IJsSerializable {
 
     public:
         QueryProperty():m_index(-1), m_isGenerated(false){}
-        QueryProperty(std::string className, std::string jsonName, std::string name, std::string typeName, bool generated, std::string extendedType, int index)
-            :m_index(index), m_extendedType(extendedType),m_className(className), m_jsonName(jsonName),m_name(name), m_typeName(typeName), m_isGenerated(generated){}
+        QueryProperty(std::string className, std::string accessString, std::string jsonName, std::string name, std::string typeName, bool generated, std::string extendedType, int index)
+            :m_index(index), m_extendedType(extendedType), m_className(className), m_accessString(accessString), m_jsonName(jsonName), m_name(name), m_typeName(typeName), m_isGenerated(generated){}
         virtual ~QueryProperty(){}
         std::string const& GetClassName() const { return m_className;}
+        std::string const& GetAccessString() const { return m_accessString;}
         std::string const& GetJsonName() const { return m_jsonName;}
         std::string const& GetName() const { return m_name;}
         std::string const& GetTypeName() const { return m_typeName;}

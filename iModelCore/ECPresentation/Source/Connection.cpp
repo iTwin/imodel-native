@@ -135,7 +135,7 @@ struct ProxyConnection : IConnection
 private:
     IProxyConnectionsTracker* m_tracker;
     PrimaryConnection const& m_primaryConnection;
-    mutable BeSQLite::Db m_db;
+    mutable ECDb m_db;
     mutable BeAtomic<uint32_t> m_refCount;
     mutable BeAtomic<int> m_disableThreadVerification;
     uint64_t m_threadId;
@@ -159,7 +159,7 @@ private:
         if (BE_SQLITE_OK != openResult)
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Connections, Utf8PrintfString("Failed to open proxy SQLite connection with result `%s`", BeSQLite::Db::InterpretDbResult(openResult)));
 
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Connections, LOG_INFO, Utf8PrintfString("%p ProxyConnection[%s] created on thread " PRIu64, this, m_primaryConnection.GetId().c_str(), m_threadId));
+        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Connections, LOG_INFO, Utf8PrintfString("%p ProxyConnection[%s] created on thread %" PRIu64, this, m_primaryConnection.GetId().c_str(), m_threadId));
 
         uint64_t mmapSize = 0;
         if (primaryConnection.GetManager().GetProps().GetMmapFileSize().IsNull())

@@ -115,7 +115,7 @@ static void CountEdgesInFace (VuP seed, VuMask mask, int &numMasked, int &numTot
 //  From q: c is the vertex successor of q.
 //  From b: x is the reverse edge mate of b.
 // From the preferred start node, only zero or one of the two left steps can end up in another TwoSplitTriangle.  Likewise for right steps.
-// In order to continue moving "to the right" (relative to the picture) we must know whether the current node is at the 
+// In order to continue moving "to the right" (relative to the picture) we must know whether the current node is at the
 //  bottom or the top, and choose (edgeMate, vpred) or (reverseEdgeMate, vsucc) as the stepping options.
 // A vertex step leaves this unchanged.  An edge step reverses it.
 // Beware of the distinction between global left/right and local left/right.
@@ -142,8 +142,8 @@ bool TryAdvance (VuP candidate, bool reverse)
             m_steppingRight = !m_steppingRight;
         return true;
         }
-    return false;        
-    }    
+    return false;
+    }
 
 
 public:
@@ -176,7 +176,7 @@ void ClearCurrentNodeMask ()
     {
     vu_clrMask (m_currentNode, m_homeNodeMask);
     }
-        
+
 bool MoveToNeighbor ()
     {
     if (m_steppingRight)
@@ -211,10 +211,10 @@ int CountVertexNeighbors () const
         walker = VertexNeighbor ();
         if (walker == m_currentNode || !vu_getMask (walker, m_homeNodeMask))
             break;
-        } 
+        }
     return count;
     }
-    
+
 // Count the number of edge steps (in appropriate direction) that are preferred vertices.
 int CountEdgeNeighbors () const
     {
@@ -226,12 +226,12 @@ int CountEdgeNeighbors () const
         walker = EdgeNeighbor ();
         if (walker == m_currentNode || !vu_getMask (walker, m_homeNodeMask))
             break;
-        } 
+        }
     return count;
     }
 
 
-// Take multiple steps until reaching end of chain or return to start.    
+// Take multiple steps until reaching end of chain or return to start.
 int MoveToEndOfChain ()
     {
     VuP startNode = m_currentNode;
@@ -240,7 +240,7 @@ int MoveToEndOfChain ()
         {
         numStep++;
         }
-    return numStep;        
+    return numStep;
     }
 };
 
@@ -354,7 +354,7 @@ size_t SplitEdges13 ()
         }
     END_VU_SET_LOOP (nodeA, m_graph)
 
-    // revisit TwoSplit sequences ... 
+    // revisit TwoSplit sequences ...
     VU_SET_LOOP (nodeA, m_graph)
         {
         if (vu_getMask (nodeA, twoSplitMask))
@@ -465,7 +465,7 @@ size_t SplitEdges13 ()
             }
         }
     END_VU_SET_LOOP (nodeA, m_graph)
-    
+
 
     vu_markedEdgeSetFree (edgesToSplit);
     vu_returnMask (m_graph, twoSplitMask);

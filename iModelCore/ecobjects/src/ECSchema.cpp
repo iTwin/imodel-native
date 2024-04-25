@@ -2470,6 +2470,18 @@ ECObjectsStatus ECSchema::AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR 
             }
         }
 
+    Utf8CP schemaName = refSchemaKey.GetName().c_str();
+    auto iter = std::find_if(m_refSchemaList.begin(), m_refSchemaList.end(), [&schemaName](const bpair<SchemaKey, ECSchemaPtr>& schemaPair) 
+        {
+        return BeStringUtilities::Stricmp(schemaName, schemaPair.first.GetName().c_str()) == 0;
+        });
+
+    if (iter != m_refSchemaList.end())
+        {
+        LOG.warningv("Schema %s is adding a reference to %s while it already references %s. For compatibility this is currently permitted but probably indicates a problem.",
+            this->GetFullSchemaName().c_str(), refSchema.GetFullSchemaName().c_str(), iter->second->GetFullSchemaName().c_str());
+        }
+
     m_refSchemaList[refSchemaKey] = &refSchema;
     // Check for recursion
     if (AddingSchemaCausedCycles ())
@@ -3492,9 +3504,11 @@ static void InsertSchemaInDependencyOrderedList(bvector<ECSchemaCP>& schemas, EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void BuildDependencyOrderedSchemaList(bvector<ECSchemaCP>& schemas, ECSchemaCP insertSchema)
+static void BuildDependencyOrderedSchemaList(bvector<ECSchemaCP>& schemas, ECSchemaCP insertSchema, bool ignoreReferencedSchemas = false)
     {
     InsertSchemaInDependencyOrderedList(schemas, insertSchema);
+    if (ignoreReferencedSchemas) return;
+
     ECSchemaReferenceListCR referencedSchemas = insertSchema->GetReferencedSchemas();
     for (const auto& refedSchema : referencedSchemas)
         BuildDependencyOrderedSchemaList(schemas, refedSchema.second.get());
@@ -3503,11 +3517,11 @@ static void BuildDependencyOrderedSchemaList(bvector<ECSchemaCP>& schemas, ECSch
 /*----------------------------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+-------------------------*/
-void ECSchema::SortSchemasInDependencyOrder(bvector<ECSchemaCP>& schemas)
+void ECSchema::SortSchemasInDependencyOrder(bvector<ECSchemaCP>& schemas, bool ignoreReferencedSchemas)
     {
     bvector<ECSchemaCP> temp;
     for (const auto& schema : schemas)
-        BuildDependencyOrderedSchemaList(temp, schema);
+        BuildDependencyOrderedSchemaList(temp, schema, ignoreReferencedSchemas);
     std::reverse(temp.begin(), temp.end());
     schemas = temp;
     }
@@ -3922,6 +3936,33 @@ ECSchemaP ECSchemaCache::GetSchema(SchemaKeyCR key, SchemaMatchType matchType) c
         return nullptr;
 
     return iter->second.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaP ECSchemaCache::FindSchema(const SchemaKeyMatchCallback& predicate) const
+    {
+    SchemaMap::const_iterator iter = std::find_if(m_schemas.begin(), m_schemas.end(), [&predicate](const std::pair<SchemaKey, ECSchemaPtr>& schemaPair) 
+        {
+        return predicate(schemaPair.first);
+        });
+
+    if (iter == m_schemas.end())
+        return nullptr;
+
+    return iter->second.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaP ECSchemaCache::FindSchemaByNameI(Utf8CP schemaName) const
+    {
+    return this->FindSchema([&schemaName](SchemaKeyCR key) 
+        {
+        return BeStringUtilities::Stricmp(schemaName, key.GetName().c_str()) == 0;
+        });
     }
 
 //---------------------------------------------------------------------------------

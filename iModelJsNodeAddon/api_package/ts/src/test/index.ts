@@ -3,14 +3,16 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 
+import { use as chaiuse } from "chai";
+import * as chaiAsPromised from "chai-as-promised";
 import * as fs from "fs";
 import * as Mocha from "mocha";
 import * as path from "path";
 import { Logger, LogLevel, OpenMode } from "@itwin/core-bentley";
-import { iModelJsNative } from "./utils";
-import type { UpgradeOptions } from "@itwin/core-common";
 import { IModelJsNative } from "../NativeLibrary";
+import { iModelJsNative } from "./utils";
 
+import type { UpgradeOptions } from "@itwin/core-common";
 // Run mocha tests on all *.test.ts files
 function runMochaTests() {
   const mocha = new Mocha();
@@ -29,6 +31,8 @@ function runMochaTests() {
     process.exitCode = failures ? 1 : 0;  // exit with non-zero status if there were failures
   });
 }
+
+chaiuse(chaiAsPromised);
 
 Logger.initializeToConsole();
 Logger.setLevelDefault(LogLevel.Error);

@@ -25,7 +25,7 @@ DgnSolidCurveIntersectionProcessor (
     }
 
 // Called by default implementations --- useful place for debugger breaks during class development
-void _ProcessDefault (ICurvePrimitiveCR curve, DSegment1dCP interval) override 
+void _ProcessDefault (ICurvePrimitiveCR curve, DSegment1dCP interval) override
     {
         m_messages.Assert (false, "Unimplmented Curve*SolidPrimitive intersection type");
     }
@@ -33,7 +33,7 @@ void _ProcessDefault (ICurvePrimitiveCR curve, DSegment1dCP interval) override
 
 
 // @remark Default action: use AddRayIntersection for the line segment.
-void _ProcessLine (ICurvePrimitiveCR curve, DSegment3dCR segment, DSegment1dCP interval) override 
+void _ProcessLine (ICurvePrimitiveCR curve, DSegment3dCR segment, DSegment1dCP interval) override
     {
     size_t baseSize = m_solidPoints.size ();
     DRay3d ray = DRay3d::FromOriginAndTarget (segment.point[0], segment.point[1]);
@@ -48,7 +48,7 @@ void _ProcessLine (ICurvePrimitiveCR curve, DSegment3dCR segment, DSegment1dCP i
     }
 
 // @remark Default action: use AddRayIntersection for each line segment.
-void _ProcessLineString (ICurvePrimitiveCR curve, bvector<DPoint3d> const &points, DSegment1dCP interval) override 
+void _ProcessLineString (ICurvePrimitiveCR curve, bvector<DPoint3d> const &points, DSegment1dCP interval) override
     {
     size_t numPoints = points.size ();
     if (numPoints > 2)
@@ -102,14 +102,14 @@ void _ProcessLineString (ICurvePrimitiveCR curve, bvector<DPoint3d> const &point
 struct DgnTorusPipeCurveIntersectionProcessor : DgnSolidCurveIntersectionProcessor<DgnTorusPipeDetail>
 {
 DgnTorusPipeCurveIntersectionProcessor (
-    DgnTorusPipeDetailCR TorusPipe, 
+    DgnTorusPipeDetailCR TorusPipe,
     bvector<CurveLocationDetail> &curvePoints,
     bvector<SolidLocationDetail> &solidPoints,
     MeshAnnotationVector &messages)
     : DgnSolidCurveIntersectionProcessor (TorusPipe, curvePoints, solidPoints, messages)
     {
     }
-// 
+//
 void _ProcessDefault (ICurvePrimitiveCR curve, DSegment1dCP interval) override
     {
     Transform localToWorld, worldToLocal;
@@ -162,7 +162,7 @@ GEOMDLLIMPEXP void DgnTorusPipeDetail::AddCurveIntersections
 struct DgnBoxCurveIntersectionProcessor : DgnSolidCurveIntersectionProcessor<DgnBoxDetail>
 {
 DgnBoxCurveIntersectionProcessor (
-    DgnBoxDetailCR Box, 
+    DgnBoxDetailCR Box,
     bvector<CurveLocationDetail> &curvePoints,
     bvector<SolidLocationDetail> &solidPoints,
     MeshAnnotationVector &messages)
@@ -192,7 +192,7 @@ GEOMDLLIMPEXP void DgnBoxDetail::AddCurveIntersections
 struct DgnSphereCurveIntersectionProcessor : DgnSolidCurveIntersectionProcessor<DgnSphereDetail>
 {
 DgnSphereCurveIntersectionProcessor (
-    DgnSphereDetailCR Sphere, 
+    DgnSphereDetailCR Sphere,
     bvector<CurveLocationDetail> &curvePoints,
     bvector<SolidLocationDetail> &solidPoints,
     MeshAnnotationVector &messages)
@@ -200,7 +200,7 @@ DgnSphereCurveIntersectionProcessor (
     {
     }
 
-void _ProcessArc (ICurvePrimitiveCR curve, DEllipse3dCR arc, DSegment1dCP interval) override 
+void _ProcessArc (ICurvePrimitiveCR curve, DEllipse3dCR arc, DSegment1dCP interval) override
     {
     Transform localToWorld, worldToLocal;
     bvector<double> arcFractions;
@@ -244,7 +244,7 @@ GEOMDLLIMPEXP void DgnSphereDetail::AddCurveIntersections
 struct DgnConeCurveIntersectionProcessor : DgnSolidCurveIntersectionProcessor<DgnConeDetail>
 {
 DgnConeCurveIntersectionProcessor (
-    DgnConeDetailCR cone, 
+    DgnConeDetailCR cone,
     bvector<CurveLocationDetail> &curvePoints,
     bvector<SolidLocationDetail> &solidPoints,
     MeshAnnotationVector &messages)
@@ -339,7 +339,7 @@ GEOMDLLIMPEXP void DgnConeDetail::AddCurveIntersections
 struct DgnExtrusionCurveIntersectionProcessor : DgnSolidCurveIntersectionProcessor<DgnExtrusionDetail>
 {
 DgnExtrusionCurveIntersectionProcessor (
-    DgnExtrusionDetailCR Extrusion, 
+    DgnExtrusionDetailCR Extrusion,
     bvector<CurveLocationDetail> &curvePoints,
     bvector<SolidLocationDetail> &solidPoints,
     MeshAnnotationVector &messages)
@@ -453,7 +453,7 @@ GEOMDLLIMPEXP void DgnRotationalSweepDetail::AddCurveIntersections
                 rotate01.Multiply (dXdu1, dXdu0);
                 rotate01.Multiply (dXdv1, dXdv0);
 
-                // and get back to world 
+                // and get back to world
                 localToWorld.MultiplyMatrixOnly (dXdu2, dXdu1);
                 localToWorld.MultiplyMatrixOnly (dXdv2, dXdv1);
 
@@ -462,7 +462,7 @@ GEOMDLLIMPEXP void DgnRotationalSweepDetail::AddCurveIntersections
 
                 SolidLocationDetail solidDetailB (0, solidDetail.fraction, solidDetail.point);
                 solidDetailB.SetFaceIndices (0, leafIndex, solidDetail.componentIndex);
-                // UMMM.. does the U derivative have to be a scaled up by component fraction step?????? 
+                // UMMM.. does the U derivative have to be a scaled up by component fraction step??????
                 solidDetailB.SetUV (solidDetail.componentFraction, sweepFraction, dXdu2, dXdv2);
                 curvePoints.push_back (curveDetail);
                 solidPoints.push_back (solidDetailB);
@@ -476,7 +476,7 @@ GEOMDLLIMPEXP void DgnRotationalSweepDetail::AddCurveIntersections
 
                 SolidLocationDetail solidDetailB (0, solidDetail.fraction, solidDetail.point);
                 solidDetailB.SetFaceIndices (faceId);
-                // UMMM.. does the U derivative have to be a scaled up by component fraction step?????? 
+                // UMMM.. does the U derivative have to be a scaled up by component fraction step??????
                 solidDetailB.SetUV (solidDetail.componentFraction, sweepFraction, dAdu, dAdv);
                 solidDetailB.SetXYZ (xyzA);
                 curvePoints.push_back (curveDetail);
@@ -492,7 +492,7 @@ GEOMDLLIMPEXP void DgnRotationalSweepDetail::AddCurveIntersections
 struct DgnRuledSweepCurveIntersectionProcessor : DgnSolidCurveIntersectionProcessor<DgnRuledSweepDetail>
 {
 DgnRuledSweepCurveIntersectionProcessor (
-    DgnRuledSweepDetailCR RuledSweep, 
+    DgnRuledSweepDetailCR RuledSweep,
     bvector<CurveLocationDetail> &curvePoints,
     bvector<SolidLocationDetail> &solidPoints,
     MeshAnnotationVector &messages)

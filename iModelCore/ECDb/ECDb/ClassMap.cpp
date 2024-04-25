@@ -590,9 +590,6 @@ BentleyStatus ClassMap::CopyModifiedBasePropertyMaps(SchemaImportContext& ctx){
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
     {
-    if (SUCCESS != DbMappingManager::Classes::UpdateUserDefinedIndexes(ctx, *this))
-        return ERROR;
-
     if (CopyModifiedBasePropertyMaps(ctx) != SUCCESS){
         BeAssert(false && "Unable to copy modified base properties");
         return ERROR;
@@ -600,7 +597,7 @@ BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
 
     //Follow can change ECInstanceId, ECClassId by optionally adding
     if (m_failedToLoadProperties.empty())
-        return SUCCESS;
+        return DbMappingManager::Classes::MapIndexes(ctx, *this, true);
 
     BeAssert(m_state == ObjectState::Persisted);
     m_state = ObjectState::Modified;
@@ -642,7 +639,7 @@ BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
         }
 
     m_failedToLoadProperties.clear();
-    return SUCCESS;
+    return DbMappingManager::Classes::MapIndexes(ctx, *this, true);
     }
 
 //---------------------------------------------------------------------------------------

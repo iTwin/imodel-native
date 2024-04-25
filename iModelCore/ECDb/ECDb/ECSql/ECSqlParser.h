@@ -11,6 +11,8 @@
 #include "PragmaStatementExp.h"
 #include "CommonTableExp.h"
 #include "WindowFunctionExp.h"
+#include "ValueCreationFuncExp.h"
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
@@ -60,6 +62,18 @@ public:
             std::vector<SingleSelectStatementExp const*> const& GetUnionClauses() const { return m_arg; }
         };
 
+    struct ClassViewPrepareStack final {
+        private:
+            ECSqlParseContext& m_ctx;
+
+        public:
+            ClassViewPrepareStack(ECSqlParseContext& ctx, ECN::ECClassCR viewClass);
+            bool IsOnStack(ECN::ECClassCR viewClass) const;
+            ~ClassViewPrepareStack();
+            Utf8String GetStackAsString() const;
+    };
+    friend struct ClassViewPrepareStack;
+
 private:
     ECDbCR m_ecdb;
     IssueDataSource const& m_issues;
@@ -70,7 +84,7 @@ private:
     bvector<ParameterExp*> m_parameterExpList;
     bmap<Utf8CP, int, CompareIUtf8Ascii> m_ecsqlParameterNameToIndexMapping;
     int m_aliasCount = 0;
-
+    std::vector<ECN::ECClassCP> m_viewPrepareStack;
     std::vector<Utf8String> m_attachedTableSpaceCache;
     bool m_isAttachedTableSpaceCacheSetup = false;
 
@@ -94,7 +108,8 @@ public:
     ParseArg const* CurrentArg() const;
     void PopArg();
 
-    BentleyStatus TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classMetaInfo, Utf8CP tableSpace, Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ECSqlType, bool isPolymorphicExp);
+    BentleyStatus TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classMetaInfo, Utf8CP tableSpace, Utf8StringCR schemaNameOrAlias,
+        Utf8StringCR className, ECSqlType, bool isPolymorphicExp, connectivity::OSQLParseNode const& node);
     BentleyStatus GetSubclasses(ClassListById& classes, ECN::ECClassCR ecClass);
     BentleyStatus GetConstraintClasses(ClassListById& classes, ECN::ECRelationshipConstraintCR constraintEnd);
     Utf8String GenerateAlias();
@@ -123,16 +138,19 @@ private:
     private:
         ECSqlParser const& m_parser;
     public:
-        ScopedContext(ECSqlParser const& parser, ECDbCR ecdb, IssueDataSource const& issues) : m_parser(parser)
+        ScopedContext(ECSqlParser const& parser, ECDbCR ecdb, IssueDataSource const& issues, const ECSqlParser* parentParser) : m_parser(parser)
             {
-            m_parser.m_context = std::unique_ptr<ECSqlParseContext>(new ECSqlParseContext(ecdb, issues));
+            if (parentParser)
+                m_parser.m_context = parentParser->m_context;
+            else
+                m_parser.m_context = std::make_shared<ECSqlParseContext>(ecdb, issues);
             }
 
         ~ScopedContext() { m_parser.m_context = nullptr; }
         };
 
 
-    mutable std::unique_ptr<ECSqlParseContext> m_context;
+    mutable std::shared_ptr<ECSqlParseContext> m_context;
 
     //root nodes
     BentleyStatus ParseDeleteStatementSearched(std::unique_ptr<DeleteStatementExp>&, connectivity::OSQLParseNode const&) const;
@@ -265,6 +283,8 @@ private:
     BentleyStatus ParseWindowFrameBetween(std::unique_ptr<WindowFrameBetweenExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseFirstWindowFrameBound(std::unique_ptr<FirstWindowFrameBoundExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseSecondWindowFrameBound(std::unique_ptr<SecondWindowFrameBoundExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseValueCreationFuncExp(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const *) const;
+    BentleyStatus ParseNavValueCreationFuncExp(std::unique_ptr<NavValueCreationFuncExp>&, connectivity::OSQLParseNode const *) const;
 
     static BentleyStatus ParsePolymorphicConstraint(PolymorphicInfo& constraint, connectivity::OSQLParseNode const* parseNode);
     IssueDataSource const& Issues() const { BeAssert(m_context != nullptr); return m_context->Issues(); }
@@ -274,7 +294,7 @@ public:
     ECSqlParser() {}
     ~ECSqlParser() {}
 
-    std::unique_ptr<Exp> Parse(ECDbCR, Utf8CP ecsql, IssueDataSource const&) const;
+    std::unique_ptr<Exp> Parse(ECDbCR, Utf8CP ecsql, IssueDataSource const&, const ECSqlParser* parentParser = nullptr) const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

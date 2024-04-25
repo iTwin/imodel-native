@@ -106,11 +106,11 @@ MSBsplineStatus MSBsplineCurve::AppendCurves (MSBsplineCurveCR inCurve1, MSBspli
 static void weightSumDPoint4d
 (
 
-DPoint4d&       Cw, 
-double          alpha, 
-DPoint4d        Aw, 
-double          beta, 
-DPoint4d        Bw 
+DPoint4d&       Cw,
+double          alpha,
+DPoint4d        Aw,
+double          beta,
+DPoint4d        Bw
 )
     {
     Cw.x = alpha * Aw.x + beta * Bw.x;
@@ -124,11 +124,11 @@ DPoint4d        Bw
 +---------------+---------------+---------------+---------------+---------------+------*/
 static double distanceDPoint4d
 (
-DPoint4d    Pw, 
-DPoint4d    Qw 
+DPoint4d    Pw,
+DPoint4d    Qw
 )
     {
-    double  distance2; 
+    double  distance2;
 
     distance2  = (Pw.x - Qw.x)*(Pw.x - Qw.x) + (Pw.y - Qw.y)*(Pw.y - Qw.y);
     distance2 += (Pw.z - Qw.z)*(Pw.z - Qw.z);
@@ -142,8 +142,8 @@ DPoint4d    Qw
 +---------------+---------------+---------------+---------------+---------------+------*/
 double MSBsplineCurve::GetRemovalKnotBound
 (
-MSBsplineCurveCP    pCurve, 
-int                 index, 
+MSBsplineCurveCP    pCurve,
+int                 index,
 int                 mult
 )
     {
@@ -156,7 +156,7 @@ int                 mult
     double alf, oma, bet, omb, *knots = pCurve->knots;
     bvector<DPoint4d> tmpPoles (2*degree+1);
     bvector<DPoint4d> polesWeighted (numPoles);
-    
+
     for (int k=0; k<numPoles; k++)
         {
         if (pCurve->rational)
@@ -164,7 +164,7 @@ int                 mult
         else
             polesWeighted[k].InitFrom (*(&pCurve->poles[k]), 1.0);
         }
-    
+
     if (pCurve->rational)
         {
         tmpPoles[0].InitFrom (*(&pCurve->poles[index-degree-1]), pCurve->weights[index-degree-1]);
@@ -175,7 +175,7 @@ int                 mult
         tmpPoles[0].InitFrom (*(&pCurve->poles[index-degree-1]), 1.0);
         tmpPoles[degree-mult+2].InitFrom (*(&pCurve->poles[index-mult+1]), 1.0);
         }
-    
+
     while(j-i > 0)
         {
         alf = (knots[i+degree+1] - knots[i])/(knots[index] - knots[i]);
@@ -184,10 +184,10 @@ int                 mult
         omb = 1.0 - bet;
         weightSumDPoint4d(tmpPoles[ii], alf, polesWeighted[i], oma, tmpPoles[ii-1]);
         weightSumDPoint4d(tmpPoles[jj], bet, polesWeighted[j], omb, tmpPoles[jj+1]);
-        i ++;  j --;  
+        i ++;  j --;
         ii++;  jj--;
         }
-    
+
     if((j-i) < 0)
         {
         return distanceDPoint4d(tmpPoles[ii-1], tmpPoles[jj+1]);
@@ -206,7 +206,7 @@ int                 mult
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static MSBsplineStatus removeKnotsWithConstraints 
+static MSBsplineStatus removeKnotsWithConstraints
 (
 MSBsplineCurveP     pCurve,
 int                 num,  // Highest index in u
@@ -223,14 +223,14 @@ double              tol   // Tolerance to check removability
     n = pCurve->params.numPoles - 1;
     m = n + p +1;
     nu = num - 1;
-    
+
     bvector<DPoint4d> tmpPoles (2*p+1);
     bvector<DPoint4d> polesWeighted (n+1);
     bvector<double> br (m+1), er (m+1), te (m+1); // br, er and te is the error bound, error and total error for one removal step respectively.
     bvector<int> sr (m+1), nr (m+1); // sr is the index of knot try to remove; nr[i] = 1 means i-th knot cannot be removed.
     double *UQ = pCurve->knots;
     double b, alf, oma, bet, omb, lam, oml = 0.0, wi, wj, wmin, wmax;
-    
+
     if (pCurve->rational)
         {
         double wMin, pMax;
@@ -238,7 +238,7 @@ double              tol   // Tolerance to check removability
         tol *= wMin/(1.0+pMax);
         rat = true;
         }
-    
+
     for (k=0; k<n+1; k++)
         {
         if (pCurve->rational)
@@ -246,7 +246,7 @@ double              tol   // Tolerance to check removability
         else
             polesWeighted[k].InitFrom (*(&pCurve->poles[k]), 1.0);
         }
-    
+
     for( i=0; i<=m; i++ )
         {
         br[i] = fc_hugeVal;
@@ -254,7 +254,7 @@ double              tol   // Tolerance to check removability
         nr[i] = 0;
         er[i] = 0.0;
         }
-    
+
     r = p + 1;
     while( r <= n )
         {
@@ -264,8 +264,8 @@ double              tol   // Tolerance to check removability
         sr[r] = r-i+1;
         br[r] = MSBsplineCurve::GetRemovalKnotBound (pCurve, r, sr[r] );
         r++;
-        } 
-    
+        }
+
     while( true )
         {
         /* Find knot with smallest error */
@@ -275,45 +275,45 @@ double              tol   // Tolerance to check removability
         r = p+1;
         for( i=p+2; i<=m-p-1; i++ )
             {
-            if( br[i] < b )  
+            if( br[i] < b )
                 {
                 b = br[i];  s = sr[i];  r = i;  norem = nr[i];
                 }
             }
-        
+
         if( norem == 1 )  break;
-        
+
         lp = std::max(p  ,r-p-1  );
         rp = std::min(n+1,r+p-s+2);
         lt = std::max(p  ,r-p    );
         rt = std::min(n+1,r+p-s+1);
-        
+
         rem = true;
         for( i=0; i<=nu; i++ )
             {
-            if(cst[i] == 1 || cst[i] == 3)  
-                {   
+            if(cst[i] == 1 || cst[i] == 3)
+                {
                 left = lp;
                 right = rp;
                 }
-            if(cst[i] == 2) 
-                {  
-                left = lt;  
+            if(cst[i] == 2)
+                {
+                left = lt;
                 right = rt;
                 }
-            if( u[i] > UQ[left] && u[i] < UQ[right] )  
-                {  
-                rem = false;  
-                break;  
+            if( u[i] > UQ[left] && u[i] < UQ[right] )
+                {
+                rem = false;
+                break;
                 }
             }
-            
-        if( !rem )  
+
+        if( !rem )
             {
-            nr[r] = 1;  
-            continue;  
+            nr[r] = 1;
+            continue;
             }
-            
+
             /* Check error of removal */
         lam = 0.0;
         if( (p+s)%2 )
@@ -323,48 +323,48 @@ double              tol   // Tolerance to check removability
             alf = (UQ[r] - UQ[r-k  ])/(UQ[r-k+p+1] - UQ[r-k  ]);
             bet = (UQ[r] - UQ[r-k+1])/(UQ[r-k+p+2] - UQ[r-k+1]);
             lam = alf/(alf + bet);
-            oml = 1.0 - lam; 
+            oml = 1.0 - lam;
             }
         else
             {
             k = (p + s)/2;
             l = r - k + p;
             }
-        
+
         rmf = true;
         for( i=r-k; i<=l; i++ )
             {
-            if( fabs (UQ[i] - UQ[i+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE )  
-                { 
-                te[i] = er[i] + b; 
-                if(te[i] > tol )  
-                    {  
-                    rmf = false;  
-                    break;  
+            if( fabs (UQ[i] - UQ[i+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE )
+                {
+                te[i] = er[i] + b;
+                if(te[i] > tol )
+                    {
+                    rmf = false;
+                    break;
                     }
                 }
             }
-        
+
         if( rmf )
             {
-            for( i=r-k; i<=l; i++ )  
+            for( i=r-k; i<=l; i++ )
                 {
-                if( fabs (UQ[i] - UQ[i+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE )  
+                if( fabs (UQ[i] - UQ[i+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE )
                 er[i] = te[i];
                 }
 
-            fout  = (2*r-s-p)/2;    
-            first = r-p;    
+            fout  = (2*r-s-p)/2;
+            first = r-p;
             last  = r-s;
-            off   = first-1;        
-            i     = first;  
+            off   = first-1;
+            i     = first;
             j     = last;
             ii    = 1;
             jj    = last-off;
-          
+
             tmpPoles[0] = polesWeighted[off];
             tmpPoles[last+1-off] = polesWeighted[last+1];
-            
+
             /* Get new control points for one removal step */
 
             while( (j-i) > 0 )
@@ -375,7 +375,7 @@ double              tol   // Tolerance to check removability
                 omb = 1.0-bet;
                 weightSumDPoint4d(tmpPoles[ii], alf, polesWeighted[i], oma, tmpPoles[ii-1]);
                 weightSumDPoint4d(tmpPoles[jj], bet, polesWeighted[j], omb, tmpPoles[jj+1]);
-                i ++;  j --;  
+                i ++;  j --;
                 ii++;  jj--;
                 }
 
@@ -398,21 +398,21 @@ double              tol   // Tolerance to check removability
                     if( wj > wmax )  wmax = wj;
                     i++;  j--;
                     }
-                    
-                if( wmin < WMIN || wmax > WMAX )  
+
+                if( wmin < WMIN || wmax > WMAX )
                     {
-                    nr[r] = 1;  
-                    continue;  
+                    nr[r] = 1;
+                    continue;
                     }
                 }
-                
+
             /* Save new control points */
 
             if( (p+s)%2 )
                 {
                 weightSumDPoint4d(tmpPoles[jj+1], lam, tmpPoles[jj+1], oml, tmpPoles[ii-1]);
                 }
-            
+
             i = first;
             j = last;
             while( (j-i) > 0 )
@@ -421,7 +421,7 @@ double              tol   // Tolerance to check removability
                 polesWeighted[j] = tmpPoles[j-off];
                 i++;  j--;
                 }
-            
+
             /* Shift down some parameters */
 
             if( s == 1 )  er[r-1] = std::max(er[r-1], er[r]);
@@ -433,14 +433,14 @@ double              tol   // Tolerance to check removability
                 sr[i-1] = sr[i];
                 er[i-1] = er[i];
                 }
-            
+
             /* Shift down knots and control points */
 
             for( i=r+1;    i<=m; i++ )  UQ[i-1] = UQ[i];
             for( i=fout+1; i<=n; i++ )  polesWeighted[i-1] = polesWeighted[i];
 
-            n--;  m--; 
-            
+            n--;  m--;
+
             pCurve->params.numPoles = n+1;
             for (int cpi = 0; cpi < n+1; cpi++)
                 {
@@ -450,21 +450,21 @@ double              tol   // Tolerance to check removability
                 if (rat)
                     pCurve->weights[cpi] = polesWeighted[cpi].w;
                 }
-            
+
             /* If no more internal knots -> finished */
 
             if( n == p )  break;
-            
+
             k = std::max (r-p, p+1);
             l = std::min (n, r+p-s);
             for( i=k; i<=l; i++ )
                 {
-                if( fabs (UQ[i] - UQ[i+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE && nr[i] != 1 ) 
-                    { 
+                if( fabs (UQ[i] - UQ[i+1]) > RELATIVE_BSPLINE_KNOT_TOLERANCE && nr[i] != 1 )
+                    {
                     br[i] = MSBsplineCurve::GetRemovalKnotBound (pCurve, i, sr[i]);
                     }
                 }
-                
+
             }
         else
             {
@@ -472,14 +472,14 @@ double              tol   // Tolerance to check removability
             nr[r] = 1;
             }
         }
-        
+
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static MSBsplineStatus removeKnotsNoConstraints 
+static MSBsplineStatus removeKnotsNoConstraints
 (
 MSBsplineCurveP     pCurve,
 double              tol
@@ -492,14 +492,14 @@ double              tol
     p = pCurve->params.order - 1;
     n = pCurve->params.numPoles - 1;
     m = n + p +1;
-    
+
     bvector<DPoint4d> tmpPoles (2*p+1);
     bvector<DPoint4d> polesWeighted (n+1);
     bvector<double> br (m+1), er (m+1), te (m+1);// br, er and te is the error bound, error and total error for one removal step respectively.
     bvector<int> sr (m+1), nr (m+1); // sr is the index of knot try to remove; nr[i] = 1 means i-th knot cannot be removed.
     double *UQ = pCurve->knots;
     double b, alf, oma, bet, omb, lam = 0.0, oml = 0.0, wi, wj, wmin, wmax;
-    
+
     if (pCurve->rational)
         {
         double wMin, pMax;
@@ -507,7 +507,7 @@ double              tol
         tol *= wMin/(1.0+pMax);
         rat = true;
         }
-    
+
     for (k=0; k<n+1; k++)
         {
         if (pCurve->rational)
@@ -515,7 +515,7 @@ double              tol
         else
             polesWeighted[k].InitFrom (*(&pCurve->poles[k]), 1.0);
         }
-    
+
     for( i=0; i<=m; i++ )
         {
         br[i] = fc_hugeVal;
@@ -523,7 +523,7 @@ double              tol
         nr[i] = 0;
         er[i] = 0.0;
         }
-    
+
     r = p + 1;
     while( r <= n )
         {
@@ -533,23 +533,23 @@ double              tol
         sr[r] = r-i+1;
         br[r] = MSBsplineCurve::GetRemovalKnotBound (pCurve, r, sr[r] );
         r++;
-        } 
-    
+        }
+
     while( true )
         {
         /* Find knot with smallest error */
-        b = br[p+1]; 
+        b = br[p+1];
         norem = nr[p+1];
         s = sr[p+1];
         r = p+1;
         for( i=p+2; i<=m-p-1; i++ )
             {
-            if( br[i] < b )  
+            if( br[i] < b )
                 {
                 b = br[i];  s = sr[i];  r = i; norem = nr[i];
                 }
             }
-        
+
         if( norem == 1 )  break;
 
         /* Check error of removal */
@@ -561,48 +561,48 @@ double              tol
             alf = (UQ[r] - UQ[r-k  ])/(UQ[r-k+p+1] - UQ[r-k  ]);
             bet = (UQ[r] - UQ[r-k+1])/(UQ[r-k+p+2] - UQ[r-k+1]);
             lam = alf/(alf + bet);
-            oml = 1.0 - lam; 
+            oml = 1.0 - lam;
             }
         else
             {
             k = (p + s)/2;
             l = r - k + p;
             }
-        
+
         rmf = true;
         for( i=r-k; i<=l; i++ )
             {
-            if( UQ[i] != UQ[i+1] )  
-                { 
-                te[i] = er[i] + b; 
-                if(te[i] > tol )  
-                    {  
-                    rmf = false;  
-                    break;  
+            if( UQ[i] != UQ[i+1] )
+                {
+                te[i] = er[i] + b;
+                if(te[i] > tol )
+                    {
+                    rmf = false;
+                    break;
                     }
                 }
             }
-        
+
         if( rmf )
             {
-            for( i=r-k; i<=l; i++ )  
+            for( i=r-k; i<=l; i++ )
                 {
-                if(UQ[i] != UQ[i+1] )  
+                if(UQ[i] != UQ[i+1] )
                 er[i] = te[i];
                 }
 
-            fout  = (2*r-s-p)/2;    
-            first = r-p;    
+            fout  = (2*r-s-p)/2;
+            first = r-p;
             last  = r-s;
-            off   = first-1;        
-            i     = first;  
+            off   = first-1;
+            i     = first;
             j     = last;
             ii    = 1;
             jj    = last-off;
-          
+
             tmpPoles[0] = polesWeighted[off];
             tmpPoles[last+1-off] = polesWeighted[last+1];
-            
+
             /* Get new control points for one removal step */
 
             while( (j-i) > 0 )
@@ -613,7 +613,7 @@ double              tol
                 omb = 1.0-bet;
                 weightSumDPoint4d(tmpPoles[ii], alf, polesWeighted[i], oma, tmpPoles[ii-1]);
                 weightSumDPoint4d(tmpPoles[jj], bet, polesWeighted[j], omb, tmpPoles[jj+1]);
-                i ++;  j --;  
+                i ++;  j --;
                 ii++;  jj--;
                 }
 
@@ -636,22 +636,22 @@ double              tol
                     if( wj > wmax )  wmax = wj;
                     i++;  j--;
                     }
-                    
-                if( wmin < WMIN || wmax > WMAX )  
-                    {  
+
+                if( wmin < WMIN || wmax > WMAX )
+                    {
                     nr[r] = 1;
                     br[r] = fc_hugeVal;
-                    continue;  
+                    continue;
                     }
                 }
-                
+
             /* Save new control points */
 
             if( (p+s)%2 )
                 {
                 weightSumDPoint4d(tmpPoles[jj+1], lam, tmpPoles[jj+1], oml, tmpPoles[ii-1]);
                 }
-            
+
             i = first;
             j = last;
             while( (j-i) > 0 )
@@ -660,7 +660,7 @@ double              tol
                 polesWeighted[j] = tmpPoles[j-off];
                 i++;  j--;
                 }
-            
+
             /* Shift down some parameters */
 
             if( s == 1 )  er[r-1] = std::max(er[r-1], er[r]);
@@ -672,14 +672,14 @@ double              tol
                 sr[i-1] = sr[i];
                 er[i-1] = er[i];
                 }
-            
+
             /* Shift down knots and control points */
 
             for( i=r+1;    i<=m; i++ )  UQ[i-1] = UQ[i];
             for( i=fout+1; i<=n; i++ )  polesWeighted[i-1] = polesWeighted[i];
 
-            n--;  m--; 
-            
+            n--;  m--;
+
             pCurve->params.numPoles = n+1;
             for (int cpi = 0; cpi < n+1; cpi++)
                 {
@@ -689,21 +689,21 @@ double              tol
                 if (rat)
                     pCurve->weights[cpi] = polesWeighted[cpi].w;
                 }
-                
+
             /* If no more internal knots -> finished */
 
             if( n == p )  break;
-            
+
             k = std::max (r-p, p+1);
             l = std::min (n, r+p-s);
             for( i=k; i<=l; i++ )
                 {
-                if( UQ[i] != UQ[i+1] && nr[i] != 1 ) 
-                    { 
+                if( UQ[i] != UQ[i+1] && nr[i] != 1 )
+                    {
                     br[i] = MSBsplineCurve::GetRemovalKnotBound (pCurve, i, sr[i]);
                     }
                 }
-                
+
             }
         else
             {
@@ -712,7 +712,7 @@ double              tol
             nr[r] = 1;
             }
         }
-        
+
     return SUCCESS;
     }
 
@@ -722,9 +722,9 @@ double              tol
 MSBsplineStatus MSBsplineCurve::RemoveKnotsBounded (double tol, int startPreservation, int endPreservation)
     {
     double param[2], knot;
-    int numParam = 0, status, paramType[2], iKnot, iMult, mult; 
+    int numParam = 0, status, paramType[2], iKnot, iMult, mult;
     int degree = params.order - 1, m = params.numPoles + params.order - 1;
-    
+
     if (startPreservation)
         {
         param[numParam] = 0.0;
@@ -735,7 +735,7 @@ MSBsplineStatus MSBsplineCurve::RemoveKnotsBounded (double tol, int startPreserv
         param[numParam] = 1.0;
         paramType[numParam++] = endPreservation;
         }
-    
+
     // flatten first knot if oversaturated
     if (knots[degree + 1] - knots[degree] < RELATIVE_BSPLINE_KNOT_TOLERANCE)
         {
@@ -766,13 +766,13 @@ MSBsplineStatus MSBsplineCurve::RemoveKnotsBounded (double tol, int startPreserv
 
     // remove oversaturation (knots are only removed if they are exact duplicates, requiring the flattening above)
     CleanKnots ();
-    
+
     // remove knots
     if (startPreservation || endPreservation)
         status = removeKnotsWithConstraints (this, 2, param, paramType, tol);
     else
         status = removeKnotsNoConstraints (this, tol);
-    
+
     return status;
     }
 

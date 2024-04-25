@@ -926,7 +926,7 @@ private :
     Options m_options;
 
     BentleyStatus CompareSchema(SchemaChange&, ECN::ECSchemaCP, ECN::ECSchemaCP);
-    BentleyStatus CompareReferences(SchemaReferenceChanges&, ECN::ECSchemaReferenceList const*, ECN::ECSchemaReferenceList const*);
+    BentleyStatus CompareReferences(SchemaReferenceChanges&, ECN::ECSchemaReferenceList const*, ECN::ECSchemaReferenceList const*, ECN::ECSchemaCP oldSchema, ECN::ECSchemaCP newSchema);
     BentleyStatus CompareClasses(ClassChanges&, ECN::ECClassContainerCP, ECN::ECClassContainerCP);
     BentleyStatus CompareClass(ClassChange&, ECN::ECClassCP, ECN::ECClassCP);
     BentleyStatus CompareBaseClasses(BaseClassChanges&, ECN::ECBaseClassesList const*, ECN::ECBaseClassesList const*);
@@ -978,6 +978,7 @@ struct CustomAttributeValidator final : NonCopyableClass
         {
         New = 1,
         Modified = 2,
+        AddOrUpdate = New | Modified,
         Delete = 4,
         All = New | Modified | Delete,
         };

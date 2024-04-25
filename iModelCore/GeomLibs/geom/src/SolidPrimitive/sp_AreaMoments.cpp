@@ -32,14 +32,14 @@ static bool sphereAreaMoments (double phi0, double phi1, DMatrix4dR products)
     double sn02 = sn0*sn0;
     double sn03 = sn02 * sn0;
     double sncd = div3 * (sn13 - sn03);
-    
-    products = DMatrix4d::FromZero (); 
-    
+
+    products = DMatrix4d::FromZero ();
+
         products.coff[0][0] = products.coff[1][1] = pi*r4*((sn1 - sn0) - sncd);
         products.coff[2][2] = tpr2*r2*sncd;
         products.coff[2][3] = products.coff[3][2] = tpr2*r*div2*(sn12 - sn02);
         products.coff[3][3] = tpr2*(sn1 - sn0);
-    
+
     return true;
     }
 // Compute all moments and area of a cone around the z axis with radius rA at zA and rB at zB.
@@ -61,16 +61,16 @@ static bool coneAreaMoments (double rA, double rB, double zB, DMatrix4dR integra
     double m2 = m * m;
     double m3 = m2 * m;
     double ct = sqrt(1 + m2)*pi;
-    integrals = DMatrix4d::FromZero (); 
-    
+    integrals = DMatrix4d::FromZero ();
+
         integrals.coff[0][0] = integrals.coff[1][1] = ct*(div4*zb4*m3 + zb3*m2*ra + div32*zb2*m*ra2 + zb*ra3);
         integrals.coff[2][2] = ct*2*(div4*zb4*m + div3*zb3*ra);
         integrals.coff[2][3] = integrals.coff[3][2] = ct*2*(div3*zb3*m + div2*zb2*ra);
         integrals.coff[3][3] = ct*2*(div2*zb2*m + zb*ra);
-    
+
     return true;
     }
-    
+
 // Compute area moments for the complete unit circle.
 static bool unitCircleAreaMoments (DMatrix4dR integrals)
     {
@@ -105,9 +105,9 @@ static bool unitTorusAreaMoments (double minorRadius,  double majorRadius, doubl
     double cs0 = cos(t0);
     double cs1 = cos(t1);
     double sindf = div4*(sin(2*t1) - sin(2*t0));
-    
+
     integrals = DMatrix4d::FromZero ();
-    
+
         integrals.coff[0][0] = rterm3 * (hsp + sindf);
         integrals.coff[0][1] = integrals.coff[1][0] = rterm3 * div2 * (sn1*sn1 - sn0*sn0);
         integrals.coff[1][1] = rterm3 * (hsp - sindf);
@@ -115,7 +115,7 @@ static bool unitTorusAreaMoments (double minorRadius,  double majorRadius, doubl
         integrals.coff[1][3] = integrals.coff[3][1] = rterm2 * (-cs1 + cs0);
         integrals.coff[2][2] = pi*r*a3*sp;
         integrals.coff[3][3] = rterm1*sp;
-       
+
     return true;
     }
 
@@ -155,7 +155,7 @@ static bool accumulateFullDiskAreaIntegrals (DEllipse3dCR ellipse, DMatrix4dR su
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
 bool DgnSphereDetail::ComputeSecondMomentAreaProducts (TransformR localToWorld, DMatrix4dR localProducts) const
-                              
+
     {
     localToWorld = m_localToWorld;
     if (sphereAreaMoments (m_startLatitude, m_startLatitude + m_latitudeSweep, localProducts))
@@ -176,11 +176,11 @@ bool DgnSphereDetail::ComputeSecondMomentAreaProducts (TransformR localToWorld, 
             double z1 = sin (phi1);
             cap1.Init (0,0,z1, r1, 0,0,   0, r1, 0,    0, Angle::TwoPi ());
             accumulateFullDiskAreaIntegrals (cap1, localProducts);
-            }   
+            }
         return true;
         }
     localProducts = DMatrix4d::FromZero ();
-    localToWorld = Transform::FromIdentity ();        
+    localToWorld = Transform::FromIdentity ();
     return false;
     }
 
@@ -211,11 +211,11 @@ bool DgnConeDetail::ComputeSecondMomentAreaProducts (TransformR localToWorld, DM
     Transform worldToLocal, skewLocalToWorld;
     GetTransforms (skewLocalToWorld, worldToLocal, radiusA, radiusB);
     double zB;
-    
+
     if (ConvertConeLocalToWorldToRigidScale (skewLocalToWorld, localToWorld, zB)
         && coneAreaMoments (radiusA, radiusB, zB, localProducts))
         {
-        DEllipse3d cap;          
+        DEllipse3d cap;
         if (IsRealCap (0))
             {
             cap.Init (0,0,0, radiusA, 0,0,  0,radiusA,0, 0.0, Angle::TwoPi ());
@@ -241,7 +241,7 @@ DEllipse3d unitTorusSectionEllipse (double minorRadius, double majorRadius, doub
                   minorRadius * c, minorRadius * s, 0.0,
                   0,               0,               minorRadius,
                   0.0, Angle::TwoPi ());
-    
+
     }
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -266,7 +266,7 @@ bool DgnTorusPipeDetail::ComputeSecondMomentAreaProducts (TransformR localToWorl
         return true;
         }
     localProducts = DMatrix4d::FromZero ();
-    localToWorld = Transform::FromIdentity ();        
+    localToWorld = Transform::FromIdentity ();
     return false;
     }
 
@@ -281,7 +281,7 @@ bool DgnBoxDetail::ComputeSecondMomentAreaProducts (TransformR localToWorld, DMa
     static int s_numGaussPoint = 5;
     BoxFaces cornerData;
     cornerData.Load (*this);
-    
+
     // setup machinery for both (a) a gauss rule for curved patch and (b) a reference unit square
     //   for parallelograms.
     BSIQuadraturePoints gaussRule;
@@ -328,13 +328,13 @@ bool DgnBoxDetail::ComputeSecondMomentAreaProducts (TransformR localToWorld, DMa
 +--------------------------------------------------------------------------------------*/
 bool DgnExtrusionDetail::ComputeSecondMomentAreaProducts (TransformR localToWorld, DMatrix4dR localProducts) const
     {
-    localToWorld = Transform::FromIdentity ();  
+    localToWorld = Transform::FromIdentity ();
     localProducts = DMatrix4d::FromZero ();
 
     DMatrix4d baseAreaProducts = DMatrix4d::FromZero ();
     DMatrix4d baseWireProducts = DMatrix4d::FromZero ();
     Transform transform = Transform::From (m_extrusionVector);
-    
+
     if (!m_baseCurve->ComputeSecondMomentWireProducts (baseWireProducts))
         return false;
     localProducts = DMatrix4d::SweepMomentProducts (baseWireProducts, m_extrusionVector);
@@ -343,7 +343,7 @@ bool DgnExtrusionDetail::ComputeSecondMomentAreaProducts (TransformR localToWorl
         if (!m_baseCurve->ComputeSecondMomentAreaProducts (baseAreaProducts))
             return false;
         localProducts.Add (baseAreaProducts);
-        
+
         DMatrix4d topAreaProducts = DMatrix4d::FromSandwichProduct (transform, baseAreaProducts, 1.0);
         localProducts.Add (topAreaProducts);
         }
@@ -369,7 +369,7 @@ bool GetProducts (TransformR localToWorld, DMatrix4dR localProducts)
     localProducts = m_products;
     localToWorld = Transform::FromIdentity ();
     return true;
-    }    
+    }
 
 
 AreaMomentAccumulator ()
@@ -383,10 +383,10 @@ AreaMomentAccumulator ()
     m_bcurveStrokeOptions = IFacetOptions::CreateForCurves ();
     m_bcurveStrokeOptions->SetParamsRequired (true);
     m_bcurveStrokeOptions->SetAngleTolerance (s_bcurveAngleTolerance);
-    m_bcurveStrokeOptions->SetCurveParameterMapping (CURVE_PARAMETER_MAPPING_BezierFraction);    
+    m_bcurveStrokeOptions->SetCurveParameterMapping (CURVE_PARAMETER_MAPPING_BezierFraction);
     }
 
-    
+
 bool AddClosed (CurveVectorCR curves)
     {
     if (!curves.IsAnyRegionType ())
@@ -425,9 +425,9 @@ bool AddBetween (DEllipse3d ellipseA, DEllipse3d ellipseB, double f0, double f1)
             }
         }
     BeAssert (DoubleOps::AlmostEqual (checksum, f1 - f0));
-    m_products.Add (products);        
+    m_products.Add (products);
     return true;
-    
+
     }
 
 bool AddBetween (DEllipse3d ellipseA, DEllipse3d ellipseB)
@@ -447,25 +447,25 @@ bool AddBetween (DEllipse3d ellipseA, DEllipse3d ellipseB)
     return true;
     }
 
-    
+
 bool AddBetween (DSegment3dCR segmentA, DSegment3d segmentB)
     {
     DBilinearPatch3d patch (segmentA, segmentB);
     DMatrix4d products = DMatrix4d::FromZero ();
     AddBilinearQuadAreaMoments (patch, m_lineGauss, products);
-    m_products.Add (products);        
+    m_products.Add (products);
     return true;
     }
 
 bool AddBetween (CurveVectorCR curveA, CurveVectorCR curveB);   // for recursive calls ...
 bool AddBetween (ICurvePrimitiveCR curveA, ICurvePrimitiveCR curveB)
     {
-    
+
     ICurvePrimitive::CurvePrimitiveType typeA = curveA.GetCurvePrimitiveType ();
     ICurvePrimitive::CurvePrimitiveType typeB = curveB.GetCurvePrimitiveType ();
     if (typeA != typeB)
         return false;
-        
+
 
     DSegment3d segmentA, segmentB;
     DEllipse3d ellipseA, ellipseB;
@@ -537,7 +537,7 @@ bool DgnRuledSweepDetail::ComputeSecondMomentAreaProducts (TransformR localToWor
     {
     localProducts = DMatrix4d::FromZero ();
     localToWorld = Transform::FromIdentity ();
-        
+
     AreaMomentAccumulator accumulator;
     size_t numSection = m_sectionCurves.size ();
     if (numSection > 0 && m_capped)
@@ -551,7 +551,7 @@ bool DgnRuledSweepDetail::ComputeSecondMomentAreaProducts (TransformR localToWor
         if (!accumulator.AddBetween (*m_sectionCurves[i-1], *m_sectionCurves[i]))
             return false;
         }
-        
+
     return accumulator.GetProducts  (localToWorld, localProducts);
     }
 GEOMDLLIMPEXP DMatrix4d RotateMoments (DMatrix4dCR baseWedgeIntegrals, double theta0, double theta1);
@@ -623,7 +623,7 @@ bool ISolidPrimitive::ComputeSecondMomentAreaProducts (TransformR localToWorld, 
     localToWorld = Transform::FromIdentity ();
     return false;
     }
-    
+
 //! Return the various integrated products for area moment calculations.   The primitive is treated as a thin shell.
 //! @param [out] products integrated [xx xy xz x; xy yy yz y; xz yz zz z; x y z 1] dA
 //! @return false if unable to compute.

@@ -19,7 +19,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
         return PrepareInSubqueryRef(nativeSqlSnippets, ctx, exp);
 
     if (exp.IsVirtualProperty()) {
-        BeAssert(exp.GetPropertyPath().Size() == 1);
+        BeAssert(exp.GetResolvedPropertyPath().Size() == 1);
         NativeSqlBuilder builder;
         if (ctx.GetCurrentScope().GetECSqlType() == ECSqlType::Select) {
             // we only append property scope only if its different from tablevalued class name and not empty
@@ -271,16 +271,16 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                         }
                     else
                         {
-                        Utf8String accessStringPrefix = exp.GetPropertyPath().ToString();
+                        Utf8String accessStringPrefix = exp.GetResolvedPropertyPath().ToString();
                         const bool thisPropertyIsAlias = propertyRef->ReferToAlias();
                         if (thisPropertyIsAlias)
                             {
-                            if (exp.GetPropertyPath().Size() == 1)
+                            if (exp.GetResolvedPropertyPath().Size() == 1)
                                 accessStringPrefix.clear();
                             else
                                 {
                                 // Alias qualified property
-                                accessStringPrefix = propertyMap->GetAccessString() + "." +  exp.GetPropertyPath().Skip(1).ToString();
+                                accessStringPrefix = propertyMap->GetAccessString() + "." +  exp.GetResolvedPropertyPath().Skip(1).ToString();
                                 }
                             }
 
@@ -316,6 +316,78 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
             nativeSqlSnippets = propertyRef->GetNativeSql();
             break;
             }
+            case Exp::Type::NavValueCreationFunc:
+                {
+                PropertyNameExp const& referencedPropertyNameExp = *referencedValueExp->GetAs<NavValueCreationFuncExp>().GetPropertyNameExp();
+                if (!referencedPropertyNameExp.IsPropertyRef())
+                    {
+                    if (!propertyRef->WasToNativeSqlCalled())
+                        {
+                        if (const auto virtualProp = referencedPropertyNameExp.GetVirtualProperty()) {
+                            nativeSqlSnippets.push_back(NativeSqlBuilder(virtualProp->GetName()));
+                            if (SUCCESS != propertyRef->ToNativeSql(nativeSqlSnippets)) {
+                                return ECSqlStatus::Error;
+                            }
+                            nativeSqlSnippets = propertyRef->GetNativeSql();
+                            return ECSqlStatus::Success;
+                        }
+                        PropertyMap const* propertyMap = referencedPropertyNameExp.GetPropertyMap();
+                        NativeSqlBuilder::List snippets;
+                        if (propertyMap->GetType() == PropertyMap::Type::ConstraintECClassId)
+                            {
+                            snippets.push_back(NativeSqlBuilder(propertyMap->GetAccessString()));
+                            if (SUCCESS != propertyRef->ToNativeSql(snippets))
+                                return ECSqlStatus::Error;
+                            }
+                        else
+                            {
+                            Utf8String accessStringPrefix = exp.GetResolvedPropertyPath().ToString();
+                            const bool thisPropertyIsAlias = propertyRef->ReferToAlias();
+                            if (thisPropertyIsAlias)
+                                {
+                                if (exp.GetResolvedPropertyPath().Size() == 1)
+                                    accessStringPrefix.clear();
+                                else
+                                    {
+                                    // Alias qualified property
+                                    accessStringPrefix = propertyMap->GetAccessString() + "." +  exp.GetResolvedPropertyPath().Skip(1).ToString();
+                                    }
+                                }
+
+                            ToSqlPropertyMapVisitor sqlVisitor(propertyMap->GetClassMap().GetJoinedOrPrimaryTable(), ToSqlPropertyMapVisitor::ECSqlScope::Select);
+                            propertyMap->AcceptVisitor(sqlVisitor);
+                            std::vector<bool> filter;
+                            for (ToSqlPropertyMapVisitor::Result const& r : sqlVisitor.GetResultSet())
+                                {
+                                const bool isMatch = r.GetPropertyMap().GetAccessString().StartsWithIAscii(accessStringPrefix.c_str());
+                                filter.push_back(isMatch || accessStringPrefix.empty());
+                                snippets.push_back(r.GetSqlBuilder());
+                                }
+
+                            if (SUCCESS != propertyRef->ToNativeSql(snippets, filter))
+                                return ECSqlStatus::Error;
+                            }
+                        }
+                    }
+                else
+                    {
+                    NativeSqlBuilder::List snippets;
+                    ctx.PushScope(ctx.GetCurrentScope().GetExp());
+                    ECSqlStatus stat = PrepareInSubqueryRef(snippets, ctx, referencedPropertyNameExp);
+                    if (!stat.IsSuccess())
+                        return stat;
+
+                    ctx.PopScope();
+
+                    if (SUCCESS != propertyRef->ToNativeSql(snippets))
+                        return ECSqlStatus::Error;
+                    }
+
+                nativeSqlSnippets = propertyRef->GetNativeSql();
+                if (ctx.GetCurrentScope().IsRootScope() && exp.GetParent()->GetType() == Exp::Type::DerivedProperty)
+                    ECSqlFieldFactory::CreateField(ctx, exp.GetParent()->GetAsCP<DerivedPropertyExp>(), ctx.GetCurrentScope().GetNativeSqlSelectClauseColumnCount());
+                break;
+                }
             default: {
                 if (exp.IsPropertyFromCommonTableBlock()) {
                     NativeSqlBuilder sqlSnippet;
@@ -326,7 +398,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                         sqlSnippet.Append(ctb.GetName());
                     }
                     sqlSnippet.AppendDot();
-                    sqlSnippet.Append(exp.GetPropertyPath().Last().GetName());
+                    sqlSnippet.Append(exp.GetResolvedPropertyPath().Last().GetName());
                     nativeSqlSnippets.push_back(sqlSnippet);
                 } else {
                     //Here we presume any primitive value expression which must have a alias.

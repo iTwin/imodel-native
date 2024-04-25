@@ -34,7 +34,7 @@ DPoint3d vu_interpolate (VuP node0, double f, VuP node1)
 
 struct CrossingState
 {
-enum CrossingLocation 
+enum CrossingLocation
     {
     CL_LeftUp  = 0,
     CL_LeftDn  = 1,
@@ -163,7 +163,7 @@ bool IsAxisSequenceExactHit (DPoint3dCR xyz, VuP node0, VuPositionDetailR detail
     y1 = vu_getY (node1);
     if (y0 == yRef || y1 != yRef)
         return false;   // NEVER NEVER NEVER OCCURS.    This test ensures the loop will reach some
-    
+
     CrossingState    xBracket;
     xBracket.InitXRange (node0);
 
@@ -257,7 +257,7 @@ bool vu_isPointInOrOnByHorizontalScan (VuSetP pGraph, VuP nodeA, DPoint3d xyz, V
     CrossingState crossingState;
     hitDetail = VuPositionDetail ();
     leftDetail = rightDetail = hitDetail;
-    
+
 
     VU_FACE_LOOP (node0, nodeA)
         {
@@ -297,7 +297,7 @@ bool vu_isPointInOrOnByHorizontalScan (VuSetP pGraph, VuP nodeA, DPoint3d xyz, V
             }
         }
     END_VU_FACE_LOOP (node0, nodeA)
-    
+
     if (crossingState.IsInsideByPlanarParity ())
         {
         // Summary detail says face ..
@@ -323,7 +323,7 @@ bool resolveToEdge (DPoint3dCR xyzA, DPoint3dCR xyzB, DPoint3dCR xyz, double &fr
         {
         fraction = 0.0;
         return true;
-        }           
+        }
     else if (numerator > 0.0 && numerator <= denominator)
         {
         fraction = numerator / denominator;
@@ -331,13 +331,13 @@ bool resolveToEdge (DPoint3dCR xyzA, DPoint3dCR xyzB, DPoint3dCR xyz, double &fr
         }
     return false;
     }
-    
+
 Public bool vu_faceContainsPoint (VuSetP pGraph, VuP nodeA, DPoint3dCR xyz, VuP &edgeHitNode, double &edgeFraction)
     {
     DPoint3d xyzA, xyzB, xyzC;
     vu_getDPoint3d (&xyzA, nodeA);
     VuP nodeB = vu_fsucc (nodeA);
-    vu_getDPoint3d (&xyzB, nodeB); 
+    vu_getDPoint3d (&xyzB, nodeB);
     VuP nodeC = vu_fsucc (nodeB);
     vu_getDPoint3d (&xyzC, nodeC);
     int numIn = 0;  // Incremented at any simple containment
@@ -472,7 +472,7 @@ Public VuP vu_findClosestVertexXY_linearSearch (VuSetP pGraph, DPoint3dCR xyz, V
                 {
                 a2Min = a2;
                 nearNode = node;
-                }   
+                }
             }
         }
     END_VU_SET_LOOP (node, pGraph)
@@ -693,7 +693,7 @@ double targetDistance  //!< distance to target point
     else if (sideA == 0 || sideB == 0)
         {
         // The usual case is both 0 i.e. ray is clearly along the edge.
-        
+
         int alongA = dataA.ClassifyU (targetDistance, m_tol);
         int alongB = dataB.ClassifyU (targetDistance, m_tol);
         if (alongA == 0 && sideA == 0)
@@ -722,7 +722,7 @@ double targetDistance  //!< distance to target point
             result = VuPositionDetail::FromVertex (dataA.GetNode (),
                             dataA.GetU () > dataB.GetU () ? dataA.GetXYZ () : dataB.GetXYZ ());
             }
-        else   
+        else
             {
             // This shouldn't happen -- maybe as if the initial edge point was not within the edge???
             if (   fabs (dataA.GetU ()) < m_tol
@@ -811,7 +811,7 @@ double targetDistance  //!< distance to target point
                     result = VuPositionDetail::FromFace (outboundEdge, xyzBase);
                     return result;
                     }
-                }                
+                }
             }
         else if (v0 < -m_tol)
             {
@@ -845,7 +845,7 @@ VuPositionDetailR firstAfter    //! first hit at or after target distance
     firstAfter.SetDTag (DBL_MAX);
     NodeDPoint3dDPoint2d data0, data1, data2;
     data0 = NodeDPoint3dDPoint2d::FromNodeAndRay(faceNode, ray);
-    
+
     VU_FACE_LOOP (node0, faceNode)
         {
         VuP node1 = vu_fsucc (node0);
@@ -867,7 +867,7 @@ VuPositionDetailR firstAfter    //! first hit at or after target distance
             if (u1 > targetDistance && u1 < firstAfter.GetDTag ())
                 firstAfter = vertexHit;
             if (u1 < targetDistance && u1 > lastBefore.GetDTag ())
-                lastBefore = vertexHit;            
+                lastBefore = vertexHit;
             }
         else if (v0 * v1 < 0.0)
             {
@@ -992,7 +992,7 @@ Public VuPositionDetail vu_moveTo (VuSetP pGraph, VuPositionDetailR startPositio
 
 
     //double tol = vu_getMergeTol (pGraph);
-    
+
     for (;searchPosition.GetITag () == 0;)
         {
         if (announcer != nullptr)
@@ -1051,7 +1051,7 @@ Public VuPositionDetail vu_moveTo (VuSetP pGraph, VuPositionDetailR startPositio
                     {
                     searchPosition = lastBefore;
                     break;
-                    }                
+                    }
                 }
             }
         else if (searchPosition.IsEdge ())
@@ -1271,7 +1271,7 @@ void Update (DPoint3dCR xyz, size_t index)
         m_xyz1 = xyz;
         m_d = d;
         }
-    }    
+    }
 };
 // Insert scattered points as seeds ...
 static void InsertSeedPoints (InsertAndRetriangulateContext &context, bvector<DPoint3d> & points, bool newZWins, size_t numPerBlock, size_t maxblockPerSide)
@@ -1335,12 +1335,12 @@ static void InsertSeedPoints (InsertAndRetriangulateContext &context, bvector<DP
         ptrdiff_t blockIndex = ix + iy * numX;
         blocks[blockIndex].Update (points[i], i);
         }
-        
+
     for (size_t blockIndex = 0; blockIndex < blocks.size (); blockIndex++)
         {
         if (blocks[blockIndex].IsValid ())
             context.InsertAndRetriangulate (blocks[blockIndex].m_xyz1, newZWins);
-        }        
+        }
     }
 
 
@@ -1363,8 +1363,8 @@ Public void vu_insertAndRetriangulate (VuSetP pGraph, DPoint3dCP rawPoints, size
     double abstol = s_relTol * diagonal.MagnitudeXY ();
     bsiDPoint3dArray_findClusters (const_cast<DPoint3dP>(rawPoints), numRaw, clusterIndices, &points, abstol, false, false);
     InsertSeedPoints (context, points, newZWins, s_targetPerBlock, s_maxBlockPerSide);
-    vu_flipTrianglesToImproveQuadraticAspectRatio (pGraph);   
-#define continuousFlip 1     
+    vu_flipTrianglesToImproveQuadraticAspectRatio (pGraph);
+#define continuousFlip 1
 #ifdef continuousFlip
     VuMarkedEdgeSetP edgeSetP = vu_markedEdgeSetNew(
             pGraph, VU_ALL_FIXED_EDGES_MASK );
@@ -1432,7 +1432,7 @@ Public void vu_insertAndRetriangulate (VuSetP pGraph, TaggedPolygonVectorCR allP
                 numSinceFlip = 0;
                 context.Reset ();
                 }
-            }        
+            }
         }
     if (numSinceFlip > 0)
         vu_flipTrianglesToImproveQuadraticAspectRatio (pGraph);
@@ -1456,7 +1456,7 @@ Public void vu_collectInteriorFaces (VuSetP graph, TaggedPolygonVectorR polygons
                     {
                     DPoint3d xyz;
                     vu_getDPoint3d (&xyz, vertex);
-                    polygons.back ().Add (xyz);                    
+                    polygons.back ().Add (xyz);
                     }
                 END_VU_FACE_LOOP (vertex, seed)
                 }
@@ -1484,7 +1484,7 @@ Public void vu_collectFacesByMask (VuSetP graph, TaggedPolygonVectorR polygons, 
                     {
                     DPoint3d xyz;
                     vu_getDPoint3d (&xyz, vertex);
-                    polygons.back ().Add (xyz);                    
+                    polygons.back ().Add (xyz);
                     }
                 END_VU_FACE_LOOP (vertex, seed)
                 }

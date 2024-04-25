@@ -575,7 +575,7 @@ TEST(bsptrim, rotor)
             for (auto g : geometry)
                 {
                 auto bsurf = g->GetAsMSBsplineSurface();
-                if (bsurf.IsValid())                
+                if (bsurf.IsValid())
                     {
                     DRange3d range;
                     bsurf->GetPoleRange(range);
@@ -831,7 +831,7 @@ TEST(bsptrim, strut)
                 {
                 auto bsurf = g->GetAsMSBsplineSurface();
                 if (bsurf.IsValid())
-                    { 
+                    {
                     DRange3d range;
                     bsurf->GetPoleRange(range);
                     // SaveAndRestoreCheckTransform shifter1 (5 * range.XLength(), 0, 0);
@@ -1019,37 +1019,37 @@ TEST(bsptrim, IvanSurface)
     points.push_back(DPoint3d::From(0.0494555588802541, 0.037144000481021067, -0.12963287616171471));
     points.push_back(DPoint3d::From(0.049920873913038122, 0.036654161583783207, -0.1303400252086746));
     points.push_back(DPoint3d::From(0.049892051409983651, 0.036684569214571638, -0.13131244161872857));
-    
+
     points.push_back(DPoint3d::From(0.049105649299235665, 0.038205279970043193, -0.12964405282359692));
     points.push_back(DPoint3d::From(0.049689783130929754, 0.037406676647151471, -0.1296137487349931));
     points.push_back(DPoint3d::From(0.050101056639732633, 0.036847138182110939, -0.13030746211618904));
     points.push_back(DPoint3d::From(0.050089252198858958, 0.0368670002202407, -0.13128068710145158));
-    
+
     points.push_back(DPoint3d::From(0.049848747715827812, 0.038741321303177756, -0.12964657267327695));
     points.push_back(DPoint3d::From(0.050228938695795478, 0.037816993419482969, -0.12958055388626022));
     points.push_back(DPoint3d::From(0.050509594811387615, 0.037145049171385836, -0.13024887041546052));
     points.push_back(DPoint3d::From(0.050519558315500035, 0.037134961595597815, -0.13122247565047473));
-    
+
     points.push_back(DPoint3d::From(0.051100935660656432, 0.039096783198715457, -0.12965297644706553));
     points.push_back(DPoint3d::From(0.051152994463450341, 0.038102556068224658, -0.12954452747489142));
     points.push_back(DPoint3d::From(0.051195703832263462, 0.037346711481973216, -0.13018114886983057));
     points.push_back(DPoint3d::From(0.051202889346654956, 0.037290856348931811, -0.13115313443450205));
-    
+
     points.push_back(DPoint3d::From(0.0524097528676748, 0.038993937499412823, -0.12965941458290331));
     points.push_back(DPoint3d::From(0.05212894357669029, 0.038042811680043087, -0.12952087046345184));
     points.push_back(DPoint3d::From(0.051910871482732546, 0.037297298065027462, -0.13013416421466673));
     points.push_back(DPoint3d::From(0.05188885037853197, 0.037213346720250229, -0.1311038492578227));
-    
+
     points.push_back(DPoint3d::From(0.053603508789706211, 0.038433759905387888, -0.12966314693494496));
     points.push_back(DPoint3d::From(0.053022340582401739, 0.037632926293440505, -0.12951009941574299));
     points.push_back(DPoint3d::From(0.052561098255864636, 0.036996472296095817, -0.13011186994276613));
     points.push_back(DPoint3d::From(0.052502034911981355, 0.036913894596409591, -0.13108006382318393));
-    
+
     points.push_back(DPoint3d::From(0.054214830024989169, 0.037802258453211834, -0.12966256356600425));
     points.push_back(DPoint3d::From(0.053477337604817876, 0.037161426358807148, -0.12951125648420359));
     points.push_back(DPoint3d::From(0.052892387261749718, 0.036653546054253638, -0.13011447032329571));
     points.push_back(DPoint3d::From(0.052817924129954008, 0.0365893904420318, -0.13108292544091427));
-    
+
     points.push_back(DPoint3d::From(0.0544540377593421, 0.037444079263309504, -0.12966174391673135));
     points.push_back(DPoint3d::From(0.053653762053158971, 0.036893533760576247, -0.12951409206068831));
     points.push_back(DPoint3d::From(0.053021433040612465, 0.036458526310866546, -0.13012015601047366));
@@ -1078,7 +1078,7 @@ TEST(bsptrim, IvanSurface)
     vKnots.insert(vKnots.end(), 4, 0.988475801421034);
 
     MSBsplineSurfacePtr surface = MSBsplineSurface::CreateFromPolesAndOrder(points, &weights, &uKnots, static_cast<int>(uKnots.size() - uPoleCount), uPoleCount, false, &vKnots, static_cast<int>(vKnots.size() - vPoleCount), vPoleCount, false, false);
-    
+
     Check::True(surface.IsValid(), "B-spline Surface constructor succeeded");
 
     // We normalize this surface's knots WITHOUT similarly transforming the trim curves' poles because the latter are invalid
@@ -1136,7 +1136,7 @@ TEST(bsptrim, IvanSurface)
     bvector<double> boundary4Knots;
     boundary4Knots.insert(boundary4Knots.end(), 2, 0.0);
     boundary4Knots.insert(boundary4Knots.end(), 2, 1.0);
-        
+
     MSBsplineCurvePtr boundary1A = MSBsplineCurve::CreateFromPolesAndOrder(boundary1UVPoints, nullptr, &boundary1Knots, static_cast<int>(boundary1Knots.size() - boundary1UVPoints.size()), false, false);
     MSBsplineCurvePtr boundary2A = MSBsplineCurve::CreateFromPolesAndOrder(boundary2UVPoints, nullptr, &boundary2Knots, static_cast<int>(boundary2Knots.size() - boundary2UVPoints.size()), false, false);
     MSBsplineCurvePtr boundary3A = MSBsplineCurve::CreateFromPolesAndOrder(boundary3UVPoints, nullptr, &boundary3Knots, static_cast<int>(boundary3Knots.size() - boundary3UVPoints.size()), false, false);
@@ -1153,7 +1153,7 @@ TEST(bsptrim, IvanSurface)
 
     bvector<Byte> buffer;
     BentleyGeometryFlatBuffer::GeometryToBytes(*surface, buffer);
-    MSBsplineSurfacePtr surfaceRoundtripped = BentleyGeometryFlatBuffer::BytesToMSBsplineSurface(buffer.data());
+    MSBsplineSurfacePtr surfaceRoundtripped = BentleyGeometryFlatBuffer::BytesToMSBsplineSurfaceSafe(buffer.data(), buffer.size());
     Check::True(surface->IsSameStructureAndGeometry(*surfaceRoundtripped, 0.0), "Surface successfully roundtripped through flatbuffer");
 
     auto range = surface->TrimmedSurfaceRange(nullptr, 0.2, true);
@@ -1224,7 +1224,7 @@ TEST(bsptrim, IvanSurface2)
     vKnots.insert(vKnots.end(), 4, -6.677127913652331E-16);
 
     MSBsplineSurfacePtr surface = MSBsplineSurface::CreateFromPolesAndOrder(points, nullptr, &uKnots, static_cast<int>(uKnots.size() - uPoleCount), uPoleCount, false, &vKnots, static_cast<int>(vKnots.size() - vPoleCount), vPoleCount, false, false);
-    
+
     Check::True(surface.IsValid(), "B-spline Surface constructor succeeded");
 
     // Note that we don't normalize surface knots. The trim curves' poles already live in the non-normalized knot space.
@@ -1248,7 +1248,7 @@ TEST(bsptrim, IvanSurface2)
     bvector<double> boundary4Knots;
     boundary4Knots.insert(boundary4Knots.end(), 2, -1.5707963267948966);
     boundary4Knots.insert(boundary4Knots.end(), 2, 0.0);
-        
+
     MSBsplineCurvePtr boundary1A = MSBsplineCurve::CreateFromPolesAndOrder(boundary1UVPoints, nullptr, &boundary1Knots, static_cast<int>(boundary1Knots.size() - boundary1UVPoints.size()), false, false);
     MSBsplineCurvePtr boundary2A = MSBsplineCurve::CreateFromPolesAndOrder(boundary2UVPoints, nullptr, &boundary2Knots, static_cast<int>(boundary2Knots.size() - boundary2UVPoints.size()), false, false);
     MSBsplineCurvePtr boundary3A = MSBsplineCurve::CreateFromPolesAndOrder(boundary3UVPoints, nullptr, &boundary3Knots, static_cast<int>(boundary3Knots.size() - boundary3UVPoints.size()), false, false);
@@ -1265,7 +1265,7 @@ TEST(bsptrim, IvanSurface2)
 
     bvector<Byte> buffer;
     BentleyGeometryFlatBuffer::GeometryToBytes(*surface, buffer);
-    MSBsplineSurfacePtr surfaceRoundtripped = BentleyGeometryFlatBuffer::BytesToMSBsplineSurface(buffer.data());
+    MSBsplineSurfacePtr surfaceRoundtripped = BentleyGeometryFlatBuffer::BytesToMSBsplineSurfaceSafe(buffer.data(), buffer.size());
     Check::True(surface->IsSameStructureAndGeometry(*surfaceRoundtripped, 0.0), "Surface successfully roundtripped through flatbuffer");
 
     auto range = surface->TrimmedSurfaceRange(nullptr, 0.2, true);
@@ -1303,9 +1303,9 @@ TEST(bsptrim, MikeSurface)
     points.push_back(DPoint3d::From(0.001045379593670025, 0.0010021188019361952, 0.0));
     points.push_back(DPoint3d::From(0.0007391949995981128, 0.0007086050004036228, -0.005046903940040597));
     points.push_back(DPoint3d::From(-0.004001524345804632, -0.004044785138670333, -0.007137399999999616));
-        
+
     points.push_back(DPoint3d::From(-0.004023084031561151, -0.004023225452913814, -0.007137399999999616));
-    points.push_back(DPoint3d::From(-0.006413449999548907, -0.006413550000448599, -0.005046903940040597)); 
+    points.push_back(DPoint3d::From(-0.006413449999548907, -0.006413550000448599, -0.005046903940040597));
     points.push_back(DPoint3d::From(-0.009069987970963778, -0.009070129393592372, 0.0));
     points.push_back(DPoint3d::From(-0.006413449999548907, -0.006413550000448599, 0.005046903940040597));
     points.push_back(DPoint3d::From(-0.004023084031561151, -0.004023225452913814, 0.007137399999999616));
@@ -1331,7 +1331,7 @@ TEST(bsptrim, MikeSurface)
     vKnots.insert(vKnots.end(), vOrder, 1.0);
 
     MSBsplineSurfacePtr surface = MSBsplineSurface::CreateFromPolesAndOrder(points, &weights, &uKnots, uOrder, uPoleCount, false, &vKnots, vOrder, vPoleCount, false, true);
-    
+
     Check::True(surface.IsValid(), "B-spline Surface constructor succeeded");
 
     bvector<DPoint2d> uvBoundaryPoints;
@@ -1368,11 +1368,11 @@ TEST(bsptrim, MikeSurface)
 
     bvector<Byte> buffer;
     BentleyGeometryFlatBuffer::GeometryToBytes(*surface, buffer);
-    MSBsplineSurfacePtr surfaceRoundtripped = BentleyGeometryFlatBuffer::BytesToMSBsplineSurface(buffer.data());
+    MSBsplineSurfacePtr surfaceRoundtripped = BentleyGeometryFlatBuffer::BytesToMSBsplineSurfaceSafe(buffer.data(), buffer.size());
     Check::True(surface->IsSameStructureAndGeometry(*surfaceRoundtripped, 0.0), "Surface successfully roundtripped through flatbuffer");
 
     // The trim boundary encloses zero area, and since holeOrigin == true, what's inside the loop survives, which is nothing.
-    // If we ever ignore these loops in the mesher, this check should be inverted so as not to fail.  
+    // If we ever ignore these loops in the mesher, this check should be inverted so as not to fail.
     auto range = surface->TrimmedSurfaceRange(nullptr, 0.2, true);
     Check::True(range.IsNull(), "Surface has been completely trimmed out");
 
@@ -1400,7 +1400,7 @@ TEST(bsptrim, EugeneSurface)
                 {
                 bvector<Byte> buffer;
                 BentleyGeometryFlatBuffer::GeometryToBytes(*surface, buffer);
-                MSBsplineSurfacePtr surfaceRoundtripped = BentleyGeometryFlatBuffer::BytesToMSBsplineSurface(buffer.data());
+                MSBsplineSurfacePtr surfaceRoundtripped = BentleyGeometryFlatBuffer::BytesToMSBsplineSurfaceSafe(buffer.data(), buffer.size());
                 Check::True(surface->IsSameStructureAndGeometry(*surfaceRoundtripped, 0.0), "Surface successfully roundtripped through flatbuffer");
 
                 auto range = surface->TrimmedSurfaceRange(nullptr, 0.2, true);

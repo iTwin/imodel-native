@@ -302,7 +302,7 @@ NativeLogging::CategoryLogger ECPresentationUtils::GetLogger() {return NativeLog
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPresentationManager* ECPresentationUtils::CreatePresentationManager(Dgn::PlatformLib::Host::IKnownLocationsAdmin& locations, IJsonLocalState& localState,
+std::unique_ptr<ECPresentationManager> ECPresentationUtils::CreatePresentationManager(Dgn::PlatformLib::Host::IKnownLocationsAdmin& locations,
     std::shared_ptr<IUpdateRecordsHandler> updateRecordsHandler, BeJsConst props)
     {
     BeFileName assetsDir = locations.GetDgnPlatformAssetsDirectory();
@@ -330,12 +330,12 @@ ECPresentationManager* ECPresentationUtils::CreatePresentationManager(Dgn::Platf
     params.SetConnections(CreateConfiguredConnectionManager(props));
     params.SetContentCachingParams(contentCacheParams);
     params.SetMultiThreadingParams(threadingParams);
-    params.SetECPropertyFormatter(new DefaultPropertyFormatter(CreateDefaultFormatsMap(props["defaultFormats"])));
+    params.SetECPropertyFormatter(std::make_shared<DefaultPropertyFormatter>(CreateDefaultFormatsMap(props["defaultFormats"])));
     params.SetCachingParams(CreateCachingParams(props["cacheConfig"]));
-    params.SetLocalState(&localState);
+    params.SetLocalState(std::make_shared<JsonLocalState>(std::make_unique<RuntimeLocalState>()));
     params.SetECInstanceChangeEventSources({std::make_shared<DgnDbECInstanceChangeEventSource>()});
     params.SetUpdateRecordsHandlers({ updateRecordsHandler });
-    return new ECPresentationManager(params);
+    return std::make_unique<ECPresentationManager>(params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -413,6 +413,55 @@ ECPresentationResult ECPresentationUtils::ClearRulesets(SimpleRuleSetLocater& lo
     locater.Clear();
     return ECPresentationResult(rapidjson::Value());
     }
+
+/*=================================================================================**//**
+* This class may be used to prohibit closing an ECDb while IModelHolder, created for that
+* ECDb, is alive.
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct IModelHolder
+{
+    struct HoldingAppData : Db::AppData
+    {
+    private:
+        BeSQLite::Db::AppData::Key m_key;
+        std::weak_ptr<IModelHolder> m_holder;
+    private:
+        HoldingAppData(std::shared_ptr<IModelHolder> const& holder)
+            : m_holder(holder)
+            {}
+    public:
+        static RefCountedPtr<HoldingAppData> Create(std::shared_ptr<IModelHolder> const& holder)
+            {
+            return new HoldingAppData(holder);
+            }
+        ~HoldingAppData()
+            {
+            while (!m_holder.expired())
+                BeThreadUtilities::BeSleep(1);
+            }
+        BeSQLite::Db::AppData::Key const& GetKey() const {return m_key;}
+    };
+
+private:
+    ECDbCR m_db;
+    BeSQLite::Db::AppData::Key const* m_appdataKey;
+public:
+    IModelHolder(ECDbCR db) : m_db(db), m_appdataKey(nullptr) {}
+    static std::shared_ptr<IModelHolder> Create(ECDbCR db)
+        {
+        auto holder = std::make_shared<IModelHolder>(db);
+        auto appdata = HoldingAppData::Create(holder);
+        holder->m_appdataKey = &appdata->GetKey();
+        db.AddAppData(appdata->GetKey(), appdata.get());
+        return holder;
+        }
+    ~IModelHolder()
+        {
+        if (m_appdataKey)
+            m_db.DropAppData(*m_appdataKey);
+        }
+};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -787,9 +836,14 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetRootNodes(ECPresenta
     params.SetInstanceFilter(std::move(instanceFilterParam.GetValue()));
     params.SetLimit(sizeLimitParam.GetValue());
 
+    SchemaManager const* schemaManagerBeforeRequest = &db.Schemas();
     return manager.GetNodes(ECPresentation::MakePaged(CreateAsyncParams(params, db, paramsJson), pageParams.GetValue()))
-        .then([](NodesResponse nodesResponse)
+        .then([&db, schemaManagerBeforeRequest](NodesResponse nodesResponse)
             {
+            auto holdIModel = IModelHolder::Create(db);
+            if (&db.Schemas() != schemaManagerBeforeRequest)
+                return ECPresentationResult(ECPresentationStatus::Canceled, "IModel's SchemaManager changed while producing the response");
+
             ECPresentationSerializerContext ctx;
             return ECPresentationResult(IModelJsECPresentationSerializer().AsJson(ctx, *nodesResponse));
             });
@@ -887,9 +941,14 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetChildren(ECPresentat
     params.SetInstanceFilter(std::move(instanceFilterParam.GetValue()));
     params.SetLimit(sizeLimitParam.GetValue());
 
+    SchemaManager const* schemaManagerBeforeRequest = &db.Schemas();
     return manager.GetNodes(ECPresentation::MakePaged(CreateAsyncParams(params, db, paramsJson), pageParams.GetValue()))
-        .then([](NodesResponse nodesResponse)
+        .then([&db, schemaManagerBeforeRequest](NodesResponse nodesResponse)
             {
+            auto holdIModel = IModelHolder::Create(db);
+            if (&db.Schemas() != schemaManagerBeforeRequest)
+                return ECPresentationResult(ECPresentationStatus::Canceled, "IModel's SchemaManager changed while producing the response");
+
             ECPresentationSerializerContext ctx;
             return ECPresentationResult(IModelJsECPresentationSerializer().AsJson(ctx, *nodesResponse));
             });
@@ -912,10 +971,14 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetHierarchyLevelDescri
     if (parentKeyParams.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, parentKeyParams.GetError());
 
-    auto params = HierarchyLevelDescriptorRequestParams(rulesetParams.GetValue(), parentKeyParams.GetValue().get());
-    return manager.GetNodesDescriptor(CreateAsyncParams(params, db, paramsJson))
-        .then([formatter = &manager.GetFormatter()](NodesDescriptorResponse descriptorResponse)
+    SchemaManager const* schemaManagerBeforeRequest = &db.Schemas();
+    return manager.GetNodesDescriptor(CreateAsyncParams(HierarchyLevelDescriptorRequestParams(rulesetParams.GetValue(), parentKeyParams.GetValue().get()), db, paramsJson))
+        .then([&db, formatter = &manager.GetFormatter(), schemaManagerBeforeRequest](NodesDescriptorResponse descriptorResponse)
             {
+            auto holdIModel = IModelHolder::Create(db);
+            if (&db.Schemas() != schemaManagerBeforeRequest)
+                return ECPresentationResult(ECPresentationStatus::Canceled, "IModel's SchemaManager changed while producing the response");
+
             auto const& descriptor = *descriptorResponse;
             if (descriptor.IsNull())
                 return ECPresentationResult(rapidjson::Value());
@@ -991,10 +1054,14 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetNodesPaths(ECPresent
     if (keyPaths.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, keyPaths.GetError());
 
-    NodePathsFromInstanceKeyPathsRequestParams params(rulesetParams.GetValue(), keyPaths.GetValue(), markedIndex.GetValue());
-    return manager.GetNodePaths(CreateAsyncParams(params, db, paramsJson))
-        .then([](NodePathsResponse response)
+    SchemaManager const* schemaManagerBeforeRequest = &db.Schemas();
+    return manager.GetNodePaths(CreateAsyncParams(NodePathsFromInstanceKeyPathsRequestParams(rulesetParams.GetValue(), keyPaths.GetValue(), markedIndex.GetValue()), db, paramsJson))
+        .then([&db, schemaManagerBeforeRequest](NodePathsResponse response)
             {
+            auto holdIModel = IModelHolder::Create(db);
+            if (&db.Schemas() != schemaManagerBeforeRequest)
+                return ECPresentationResult(ECPresentationStatus::Canceled, "IModel's SchemaManager changed while producing the response");
+
             auto const& paths = *response;
             rapidjson::Document json;
             json.SetArray();
@@ -1033,10 +1100,14 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetFilteredNodesPaths(E
     if (filterText.HasError())
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, filterText.GetError());
 
-    NodePathsFromFilterTextRequestParams params(rulesetParams.GetValue(), filterText.GetValue());
-    return manager.GetNodePaths(CreateAsyncParams(params, db, paramsJson))
-        .then([](NodePathsResponse response)
+    SchemaManager const* schemaManagerBeforeRequest = &db.Schemas();
+    return manager.GetNodePaths(CreateAsyncParams(NodePathsFromFilterTextRequestParams(rulesetParams.GetValue(), filterText.GetValue()), db, paramsJson))
+        .then([&db, schemaManagerBeforeRequest](NodePathsResponse response)
             {
+            auto holdIModel = IModelHolder::Create(db);
+            if (&db.Schemas() != schemaManagerBeforeRequest)
+                return ECPresentationResult(ECPresentationStatus::Canceled, "IModel's SchemaManager changed while producing the response");
+
             auto const& paths = *response;
             rapidjson::Document json;
             json.SetArray();
@@ -1155,10 +1226,14 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContentSources(ECPre
         requestedClasses.push_back(ecClass);
         }
 
-    ContentClassesRequestParams params(ContentMetadataRequestParams(rulesetParams.GetValue(), "", 0), requestedClasses);
-    return manager.GetContentClasses(CreateAsyncParams(params, db, paramsJson))
-        .then([](ContentClassesResponse response)
+    SchemaManager const* schemaManagerBeforeRequest = &db.Schemas();
+    return manager.GetContentClasses(CreateAsyncParams(ContentClassesRequestParams(ContentMetadataRequestParams(rulesetParams.GetValue(), "", 0), requestedClasses), db, paramsJson))
+        .then([&db, schemaManagerBeforeRequest](ContentClassesResponse response)
             {
+            auto holdIModel = IModelHolder::Create(db);
+            if (&db.Schemas() != schemaManagerBeforeRequest)
+                return ECPresentationResult(ECPresentationStatus::Canceled, "IModel's SchemaManager changed while producing the response");
+
             CompressedClassSerializer ecClassSerializer;
             ECPresentationSerializerContext serializerCtx;
             serializerCtx.SetClassSerializer(&ecClassSerializer);
@@ -1529,12 +1604,17 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContentDescriptor(EC
         return ECPresentationResult(ECPresentationStatus::InvalidArgument, contentFlags.GetError());
     int contentFlagsValue = contentFlags.GetValue().IsValid() ? contentFlags.GetValue().Value() : 0;
 
+    SchemaManager const* schemaManagerBeforeRequest = &db.Schemas();
     ContentDescriptorRequestParams descriptorParams(
         ContentMetadataRequestParams(rulesetParams.GetValue(), displayTypeValue, contentFlagsValue),
         *keys.GetValue());
     return manager.GetContentDescriptor(CreateAsyncParams(descriptorParams, db, paramsJson))
-        .then([formatter = &manager.GetFormatter()](ContentDescriptorResponse response)
+        .then([&db, formatter = &manager.GetFormatter(), schemaManagerBeforeRequest](ContentDescriptorResponse response)
             {
+            auto holdIModel = IModelHolder::Create(db);
+            if (&db.Schemas() != schemaManagerBeforeRequest)
+                return ECPresentationResult(ECPresentationStatus::Canceled, "IModel's SchemaManager changed while producing the response");
+
             auto const& descriptor = *response;
             if (descriptor.IsNull())
                 return ECPresentationResult(rapidjson::Value());
@@ -1577,12 +1657,17 @@ static folly::Future<ECPresentationResult> GetSerializedContent(
     bool omitFormattedValues = paramsJson.HasMember("omitFormattedValues") && paramsJson["omitFormattedValues"].IsBool() && paramsJson["omitFormattedValues"].GetBool();
     auto diagnostics = ECPresentation::Diagnostics::GetCurrentScope().lock();
 
+    SchemaManager const* schemaManagerBeforeRequest = &db.Schemas();
     ContentDescriptorRequestParams descriptorParams(
         ContentMetadataRequestParams(rulesetParams.GetValue(), descriptorOverrides.GetValue().GetDisplayType(), descriptorOverrides.GetValue().GetContentFlags()),
         *keys.GetValue(), descriptorOverrides.GetValue().GetExclusiveIncludePaths());
     return manager.GetContentDescriptor(CreateAsyncParams(descriptorParams, db, paramsJson))
-        .then([&manager, &db, descriptorOverrides = descriptorOverrides.GetValue(), pageOptions = pageOptions.GetValue(), formatter = &manager.GetFormatter(), diagnostics, omitFormattedValues, contentSerializer](ContentDescriptorResponse descriptorResponse) -> folly::Future<ECPresentationResult>
+        .then([&manager, &db, descriptorOverrides = descriptorOverrides.GetValue(), pageOptions = pageOptions.GetValue(), formatter = &manager.GetFormatter(), diagnostics, omitFormattedValues, contentSerializer, schemaManagerBeforeRequest](ContentDescriptorResponse descriptorResponse) -> folly::Future<ECPresentationResult>
             {
+            auto holdIModel = IModelHolder::Create(db);
+            if (&db.Schemas() != schemaManagerBeforeRequest)
+                return ECPresentationResult(ECPresentationStatus::Canceled, "IModel's SchemaManager changed while producing the response");
+
             auto scope = diagnostics->Hold();
 
             ContentDescriptorCPtr descriptor = *descriptorResponse;
@@ -1591,8 +1676,12 @@ static folly::Future<ECPresentationResult> GetSerializedContent(
 
             descriptorOverrides.Apply(descriptor);
             return manager.GetContent(ECPresentation::MakePaged(AsyncContentRequestParams::Create(db, *descriptor), pageOptions))
-                .then([formatter, omitFormattedValues, contentSerializer](ContentResponse contentResponse)
+                .then([&db, formatter, omitFormattedValues, contentSerializer, schemaManagerBeforeRequest](ContentResponse contentResponse)
                     {
+                    auto holdIModel = IModelHolder::Create(db);
+                    if (&db.Schemas() != schemaManagerBeforeRequest)
+                        return ECPresentationResult(ECPresentationStatus::Canceled, "IModel's SchemaManager changed while producing the response");
+
                     auto const& content = *contentResponse;
                     if (content.IsNull())
                         return ECPresentationResult(ECPresentationStatus::Error, "Error creating content");
@@ -1649,12 +1738,17 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetContentSetSize(ECPre
 
     auto diagnostics = ECPresentation::Diagnostics::GetCurrentScope().lock();
 
+    SchemaManager const* schemaManagerBeforeRequest = &db.Schemas();
     ContentDescriptorRequestParams descriptorParams(
         ContentMetadataRequestParams(rulesetParams.GetValue(), descriptorOverrides.GetValue().GetDisplayType(), descriptorOverrides.GetValue().GetContentFlags()),
         *keys.GetValue(), descriptorOverrides.GetValue().GetExclusiveIncludePaths());
     return manager.GetContentDescriptor(CreateAsyncParams(descriptorParams, db, paramsJson))
-        .then([&manager, &db, descriptorOverrides = descriptorOverrides.GetValue(), diagnostics](ContentDescriptorResponse descriptorResponse) -> folly::Future<ECPresentationResult>
+        .then([&manager, &db, descriptorOverrides = descriptorOverrides.GetValue(), diagnostics, schemaManagerBeforeRequest](ContentDescriptorResponse descriptorResponse) -> folly::Future<ECPresentationResult>
         {
+        auto holdIModel = IModelHolder::Create(db);
+        if (&db.Schemas() != schemaManagerBeforeRequest)
+            return ECPresentationResult(ECPresentationStatus::Canceled, "IModel's SchemaManager changed while producing the response");
+
         auto scope = diagnostics->Hold();
 
         ContentDescriptorCPtr descriptor = *descriptorResponse;
@@ -1703,12 +1797,17 @@ folly::Future<ECPresentationResult> ECPresentationUtils::GetPagedDistinctValues(
 
     auto diagnostics = ECPresentation::Diagnostics::GetCurrentScope().lock();
 
+    SchemaManager const* schemaManagerBeforeRequest = &db.Schemas();
     ContentDescriptorRequestParams descriptorParams(
         ContentMetadataRequestParams(rulesetParams.GetValue(), descriptorOverrides.GetValue().GetDisplayType(), descriptorOverrides.GetValue().GetContentFlags()),
         *keys.GetValue(), std::make_shared<RelatedClassPathsList>(fieldMatcher->ExtractPaths()));
     return manager.GetContentDescriptor(CreateAsyncParams(descriptorParams, db, paramsJson))
-        .then([&manager, &db, descriptorOverrides = descriptorOverrides.GetValue(), fieldMatcher, pageOptions = pageOptions.GetValue(), diagnostics](ContentDescriptorResponse descriptorResponse) -> folly::Future<ECPresentationResult>
+        .then([&manager, &db, descriptorOverrides = descriptorOverrides.GetValue(), fieldMatcher, pageOptions = pageOptions.GetValue(), diagnostics, schemaManagerBeforeRequest](ContentDescriptorResponse descriptorResponse) -> folly::Future<ECPresentationResult>
             {
+            auto holdIModel = IModelHolder::Create(db);
+            if (&db.Schemas() != schemaManagerBeforeRequest)
+                return ECPresentationResult(ECPresentationStatus::Canceled, "IModel's SchemaManager changed while producing the response");
+
             auto scope = diagnostics->Hold();
 
             ContentDescriptorCPtr descriptor = *descriptorResponse;

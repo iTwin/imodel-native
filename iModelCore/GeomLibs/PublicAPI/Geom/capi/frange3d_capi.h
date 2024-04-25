@@ -12,13 +12,13 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 //! values.
 //!
 //! @param
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFRange3d_init (FRange3dP pRange);
 
 //!
 //!
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFRange3d_initFromDRange3d
 (
@@ -32,15 +32,15 @@ DRange3dP pSource
 //! by ~mbsiFRange3d_init.  (Note that ranges with other values with low > high
 //! are not necessarily null by this condition.)
 //!
-//! 
-//! 
+//!
+//!
 //!
 Public GEOMDLLIMPEXP bool    bsiFRange3d_isNull (FRange3dCP pRange);
 
 //!
 //! @return 0 if null range (as decided by ~mbsiFRange3d_isNull), otherwise
 //!       sum of squared axis extents.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP double    bsiFRange3d_extentSquared (FRange3dCP pRange);
 
@@ -50,26 +50,26 @@ Public GEOMDLLIMPEXP double    bsiFRange3d_extentSquared (FRange3dCP pRange);
 //! Note that equal components do not indicate empty.
 //!
 //! returns true if any low component is less than the corresponding high component
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool        bsiFRange3d_isEmpty (FRange3dCP pRange);
 
 //!
 //!
 //! @return true if high is less than or equal to low in every direction.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool        bsiFRange3d_isPoint (FRange3dCP pRange);
 
 //!
 //! returns product of axis extents.  No test for zero or negative axes.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP double      bsiFRange3d_volume (FRange3dCP pRange);
 
 //!
 //! Initializes the range to contain the single given point.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFRange3d_initFromFPoint3d
 (
@@ -79,7 +79,7 @@ FPoint3dCP pPoint
 
 //!
 //! Initializes the range to contain the single given point.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFRange3d_initFromDPoint3d
 (
@@ -91,7 +91,7 @@ DPoint3dCP pPoint
 //! Initializes the range to contain the two given points.
 //! @param pPoint0 IN      first point
 //! @param pPoint1 IN      second point
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFRange3d_initFrom2FPoint3d
 (
@@ -104,7 +104,7 @@ FPoint3dCP pPoint1
 //! Initializes the range to contain the two given points.
 //! @param pPoint0 IN      first point
 //! @param pPoint1 IN      second point
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFRange3d_initFrom2DPoint3d
 (
@@ -122,7 +122,7 @@ DPoint3dCP pPoint1
 //! @param x1 IN      second x
 //! @param y1 IN      second y
 //! @param z1 IN      second z
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFRange3d_initFrom2Components
 (
@@ -140,7 +140,7 @@ double          z1
 //! @param x0 IN      x coordinate
 //! @param y0 IN      y coordinate
 //! @param z0 IN      z coordinate
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFRange3d_initFromComponents
 (
@@ -154,7 +154,7 @@ double          z
 //! Initialize the range from given min and max in all directions.
 //! @param v0 IN      min (or max)
 //! @param v1 IN      max (or min)
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFRange3d_initFromCubeLimits
 (
@@ -169,7 +169,7 @@ double          v1
 //! @param pPoint1 IN      second point
 //! @param pPoint2 IN      third point
 //! @param
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFRange3d_initFrom3DPoint3d
 (
@@ -187,7 +187,7 @@ DPoint3dCP pPoint2
 //!
 //! @param pPoint IN      array of points to search
 //! @param n IN      number of points in array
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFRange3d_initFromDPoint3dArray
 (
@@ -204,7 +204,7 @@ int             n
 //!
 //! @param pPoint IN      array of points to search
 //! @param n IN      number of points in array
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFRange3d_initFromFPoint3dArray
 (
@@ -223,7 +223,7 @@ int             n
 //! @param pPoint IN      array of points to search
 //! @param n IN      number of points in array
 //! @param zVal IN      default z value
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFRange3d_initFromDPoint2dArray
 (
@@ -238,7 +238,7 @@ double           zVal
 //! Extend each axis by the given distance on both ends of the range.
 //!
 //! @param extend IN      distance to extend
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void bsiFRange3d_extendByDistance
 (
@@ -252,7 +252,7 @@ double           extend
 //! to include the single additional point pPoint.
 //!
 //! @param pPoint IN      new point to be included in the range.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFRange3d_extendByDPoint3d
 (
@@ -270,7 +270,7 @@ DPoint3dCP pPoint
 //! @param y IN      extended range coordinate
 //! @param z IN      extended range coordinate
 //! @param
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFRange3d_extendByComponents
 (
@@ -286,7 +286,7 @@ double      z
 //! to include the (normalized image of) the given 4D point.
 //!
 //! @param pPoint4d IN      new point to be included in minmax ranges
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFRange3d_extendByDPoint4d
 (
@@ -300,7 +300,7 @@ DPoint4dCP pPoint4d
 //! to include the (normalized image of the) array of DPoint4d
 //!
 //! @param pPoint4d IN      array of  to be included in minmax ranges
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFRange3d_extendByDPoint4dArray
 (
@@ -316,7 +316,7 @@ int             numPoint
 //!
 //! @param pArray IN      new points to be included in minmax ranges
 //! @param n IN      number of points
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFRange3d_extendByDPoint3dArray
 (
@@ -331,7 +331,7 @@ int             n
 //! include the range cube range1P.
 //!
 //! @param pRange1 IN      second range
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFRange3d_extendByFRange3d
 (
@@ -345,7 +345,7 @@ FRange3dCP pRange1
 //! include the range cube range1P.
 //!
 //! @param pRange1 IN      second range
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFRange3d_extendByDRange3d
 (
@@ -360,7 +360,7 @@ DRange3dCP pRange1
 //! @param pRange1 IN      first range
 //! @param pRange2 IN      second range
 //! @return same result as checkOverlap(pRange1,pRange2).
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool       bsiFRange3d_intersect
 (
@@ -375,7 +375,7 @@ FRange3dP pRange2
 //!
 //! @param pRange1 IN      first range.
 //! @param pRange2 IN      second range.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void bsiFRange3d_combineRange
 (
@@ -391,7 +391,7 @@ FRange3dCP pRange2
 //! @param pOuterRange IN      outer range
 //! @return true if the given range is a (possibly improper) subset of
 //!   pOuterRange.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool    bsiFRange3d_isContained
 (
@@ -406,7 +406,7 @@ FRange3dCP pOuterRange
 //! @param pOuterRange IN      outer range
 //! @return true if the given range is a proper subset of
 //!   pOuterRange.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool    bsiFRange3d_isStrictlyContainedXY
 (
@@ -420,7 +420,7 @@ FRange3dCP pOuterRange
 //! of a non-trivial direction of pOuterRange.
 //!
 //! @param pOuterRange IN      outer range
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool        bsiFRange3d_touchesEdge
 (
@@ -445,7 +445,7 @@ FRange3dCP pOuterRange
 //!
 //! @param pRange0 IN      range to be restricted
 //! @param pMinMax IN      allowable minmax range.  Assumed to have low < high
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFRange3d_restrictToMinMax
 (
@@ -460,7 +460,7 @@ FRange3dCP pMinMax
 //!
 //! @param pRangeIn IN      original range
 //! @param scale IN      scale factor
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void            bsiFRange3d_scaleAboutCenter
 (
@@ -475,7 +475,7 @@ double           scale
 //!
 //! @param pOriginArray OUT     array of plane origins
 //! @param pNormalArray OUT     array of plane normals
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void            bsiFRange3d_extractPlanes
 (
@@ -488,7 +488,7 @@ DPoint3dP pNormalArray
 //!
 //! Return the index of the axis with largest absolute range.
 //!
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP int      bsiFRange3d_indexOfMaximalAxis (FRange3dCP pRange);
 
@@ -506,7 +506,7 @@ Public GEOMDLLIMPEXP int      bsiFRange3d_indexOfMaximalAxis (FRange3dCP pRange)
 //! @param pStart IN      start point of ray
 //! @param pDirection IN      direction of ray
 //! @return true if non-empty intersection.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool        bsiFRange3d_intersectRay
 (
@@ -523,7 +523,7 @@ DPoint3dCP pDirection
 //!
 //! @return the largest individual coordinate value among (a) range min point,
 //! (b) range max point, and (c) range diagonal vector.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP double  bsiFRange3d_getLargestCoordinate (FRange3dCP pRange);
 
@@ -541,7 +541,7 @@ Public GEOMDLLIMPEXP double  bsiFRange3d_getLargestCoordinate (FRange3dCP pRange
 //! @param maxPoints IN      dimensioned size of receiver buffer.
 //! @param pOrigin IN      any point on the plane
 //! @param pNormal IN      plane normal vector (not necessarily unit)
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void bsiFRange3d_intersectPlane
 (
@@ -560,7 +560,7 @@ int         sort
 //! maintained from the cube.
 //!
 //! @param pBox OUT     array of 8 points of the box
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP void     bsiFRange3d_box2Points
 (
@@ -578,7 +578,7 @@ DPoint3dP pBox
 //! @param mask   IN      selects faces to consider. Valid values are the constants
 //!       RangePlane_XMin
 //! @return number of points that were "in" before the first "out" or end of array.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP int      bsiFRange3d_numLeadingPointsInRange
 (
@@ -595,7 +595,7 @@ RangePlaneMask mask
 //!
 //! @param pRange2 IN      second range
 //! @return extentSquared() for the intersection range.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP double  bsiFRange3d_getOverlap
 (
@@ -610,7 +610,7 @@ FRange3dCP pRange2
 //! @param pRange1 IN      first range
 //! @param pRange2 IN      second range
 //! @return true if ranges overlap, false if not.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool    bsiFRange3d_checkOverlap
 (
@@ -629,7 +629,7 @@ FRange3dCP pRange2
 //! @param pNewRange IN      candidate for modified range relationship.
 //! @param pOuterRnage IN      containing range
 //! @return true if touching condition occurs.
-//! 
+//!
 //!
 Public GEOMDLLIMPEXP bool     bsiFRange3d_moveChangesRange
 (

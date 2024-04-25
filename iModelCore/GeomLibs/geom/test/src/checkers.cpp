@@ -5,7 +5,6 @@
 #include "checkers.h"
 #include <GeomSerialization/GeomSerializationApi.h>
 #include <Bentley/BeTest.h>
-#include <BeJsonCpp/BeJsonUtilities.h>
 static double s_simpleZeroTol = 1.0e-12;
 
 struct ScopedPrintState
@@ -227,6 +226,10 @@ bool Check::True (bool a, char const*pString)
     return false;
     }
 
+bool Check::IsNull(void* object, char const*pString)
+    {
+    return Check::True(object == nullptr, pString);
+    }
 
 bool Check::ValidateDistances
 (
@@ -1221,6 +1224,16 @@ void Check::Print (RotMatrixCR data, char const *name)
     printf (");\n)");
     }
 
+void Check::Print(DMatrix4dCR data, char const *name)
+    {
+    if(!PrintFixedStructs())
+        return;
+    printf("\n    DMatrix4d::FromRowValues (//%s", NULL != name ? name : "DMatrix4d");
+    for (int i = 0; i < 4; i++)
+        printf("\n         %.17g, %.17g, %.17g, %.17g", data.coff[i][0], data.coff[i][1], data.coff[i][2], data.coff[i][3]);
+    printf(");\n)");
+    }
+
 void Check::Print (TransformCR data, char const *name, char const *terminator)
     {
     if (!PrintFixedStructs ())
@@ -1825,7 +1838,7 @@ void Check::TearDown()
     }
 
 // verify geometry round trip through both JSON and FlatBuffer
-bool Check::NearRoundTrip(IGeometryCR g, double tolerance, char const* pString)
+bool Check::NearRoundTrip(IGeometryCR g, double tolerance, char const*  pString)
     {
     std::string myString;
     if (pString)
@@ -1850,7 +1863,7 @@ bool Check::NearRoundTrip(IGeometryCR g, double tolerance, char const* pString)
     IGeometryPtr g1;
     BentleyGeometryFlatBuffer::GeometryToBytes(g, buffer);
     if (Check::False(buffer.empty(), (myString + "convert geometry to flatbuffer").c_str()) &&
-        Check::True((g1 = BentleyGeometryFlatBuffer::BytesToGeometry(buffer.data())).IsValid(), (myString + "convert flatbuffer to geometry").c_str()))
+        Check::True((g1 = BentleyGeometryFlatBuffer::BytesToGeometry(buffer)).IsValid(), (myString + "convert flatbuffer to geometry").c_str()))
         {
         roundTripFB = Check::True(g.IsSameStructureAndGeometry(*g1, tolerance), (myString + "geometry roundtrips through flatbuffer").c_str());
         }

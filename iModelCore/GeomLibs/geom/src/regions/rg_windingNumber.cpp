@@ -59,7 +59,7 @@ struct AreaMarkupContext
     ~AreaMarkupContext ()
         {
         }
-        
+
     bool IsValidGroupId (size_t g)
         {
         return g < groupStateArray.size ();
@@ -170,7 +170,7 @@ bool IsActiveEdge (MTGNodeId nodeId)
         return false;
         }
     return true;
-    }    
+    }
 /*------------------------------------------------------------------*//**
 * Find the maximum group id in the graph.
 * Initialize parity array to zero for each group id from 0 to max.
@@ -200,7 +200,7 @@ bool  InitStateArrays (size_t &numOrphan)
                 }
             else
                 {
-                numOrphan++; 
+                numOrphan++;
                 }
             }
         }
@@ -274,7 +274,7 @@ int                 noisy
 )
     {
     MTGNodeId currNodeId, mateNodeId, topNodeId;
-    MTGGraph *pGraph = jmdlRG_getGraph (m_pRG);    
+    MTGGraph *pGraph = jmdlRG_getGraph (m_pRG);
     bool    boolstat = true;
     static int s_noisyTrigger = 0;
 
@@ -422,7 +422,7 @@ bool        FloodFromAllSeeds ()
     jmdlMTGGraph_dropMask (pGraph, edgeVisited);
     return boolstat;
     }
-    
+
 };
 
 
@@ -454,7 +454,7 @@ MTGMask      activeEdgeMask
     static bool    s_noisy = false;
     int oldNoisy = jmdlRG_getNoisy ();
     if (s_noisy)
-        jmdlRG_setNoisy (1000);  
+        jmdlRG_setNoisy (1000);
     bool    result = false;
 
     jmdlMTGMarkSet_empty (pMarkSet);

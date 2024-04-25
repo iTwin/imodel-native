@@ -246,6 +246,7 @@ static void Print (DPoint4dCR, const char *name = NULL);
 static void Print (DPoint2dCR, const char *name = NULL);
 static void Print (DVec3dCR, const char *name = NULL);
 static void Print (RotMatrixCR data, char const *name = NULL);
+static void Print (DMatrix4dCR data, char const *name = NULL);
 static void Print (TransformCR data, char const *name = nullptr, char const *terminator = nullptr);
 static void Print (double data, char const *name = NULL);
 static void PrintE3 (double data, char const *name = NULL);
@@ -369,8 +370,7 @@ static bool ValidIndex (size_t index, bvector<T> const &data, char const*pString
 
 static bool LessThanOrEqual (double a, double b, char const*pString = nullptr);
 
-// test if distances increase
-// 
+// Test if distances increase
 static bool ValidateDistances
 (
 bvector<PathLocationDetailPair> const &data,
@@ -379,9 +379,11 @@ DRange1dCR validInternalDistances0, // range of allowed gaps within pair with ta
 DRange1dCR validInternalDistances1 // range of allowed gaps within pair with tagA nonzero
 );
 
-
 static bool Size (size_t a, size_t b, char const*pName = NULL);
 static bool Ptrdiff (ptrdiff_t a, ptrdiff_t b, char const*pName = NULL);
+
+// Test if object is nullptr
+static bool IsNull(void* object, char const *pString = nullptr);
 
 template<typename T>
 static bool Near (bvector<T> &a, bvector<T> &b, char const*pName = NULL)
@@ -583,7 +585,7 @@ void DoShift (DVec3dCR vector, bool resetBaseTransform = false)
                             }
                             );
         Check::SaveTransformed (*box);
-        }    
+        }
     if (resetBaseTransform)
         {
         Check::SetTransform (m_baseTransform);

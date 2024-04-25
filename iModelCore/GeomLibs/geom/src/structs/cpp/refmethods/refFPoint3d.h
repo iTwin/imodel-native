@@ -739,7 +739,7 @@ double                  tolerance
 ) const
     {
     bool result;
-    
+
     result = fabs (x - vector2.x) <= tolerance &&
              fabs (y - vector2.y) <= tolerance &&
              fabs (z - vector2.z) <= tolerance;
@@ -2453,7 +2453,7 @@ double fractionB        //!< [in] fractional position for perpenedicular to seco
     DVec3d U = targetA - basePoint;
     DVec3d V = targetB - basePoint;
     double dx, dy;
-    
+
     if (bsiSVD_solve2x2 (&dx, &dy,
             U.x, U.y,
             V.x, V.y,

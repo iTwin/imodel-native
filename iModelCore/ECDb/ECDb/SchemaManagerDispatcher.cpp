@@ -554,6 +554,24 @@ ECDerivedClassesList const* SchemaManager::Dispatcher::GetDerivedClasses(ECN::EC
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+Nullable<ECN::ECDerivedClassesList> SchemaManager::Dispatcher::GetAllDerivedClasses(ECN::ECClassCR baseClass, Utf8CP tableSpace) const
+    {
+    Iterable iterable = GetIterable(tableSpace);
+    if (!iterable.IsValid())
+        return nullptr;
+
+    for (const TableSpaceSchemaManager* manager : iterable)
+        {
+        if (const auto subClasses = manager->GetAllDerivedClasses(baseClass); subClasses.IsValid())
+            return subClasses;
+        }
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 ECEnumerationCP SchemaManager::Dispatcher::GetEnumeration(Utf8StringCR schemaNameOrAlias, Utf8StringCR enumName, SchemaLookupMode mode, Utf8CP tableSpace) const
     {
     Iterable iterable = GetIterable(tableSpace);
@@ -842,6 +860,27 @@ ECDerivedClassesList const* TableSpaceSchemaManager::GetDerivedClasses(ECN::ECCl
         }
 
     return &baseClass.GetDerivedClasses();
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Nullable<ECDerivedClassesList> TableSpaceSchemaManager::GetAllDerivedClasses(ECN::ECClassCR baseClass) const
+    {
+    ECClassId id = m_reader.GetClassId(baseClass);
+    if (!id.IsValid())
+        {
+        LOG.errorv("SchemaManager::GetAllDerivedClasses failed for ECClass %s. The ECClass does not exist.", baseClass.GetFullName());
+        return nullptr;
+        }
+
+    if (SUCCESS != m_reader.EnsureDerivedClassesExist(id))
+        {
+        LOG.errorv("SchemaManager::GetAllDerivedClasses failed for ECClass %s. Its subclasses could not be loaded.", baseClass.GetFullName());
+        return nullptr;
+        }
+    
+    return Nullable<ECDerivedClassesList>(m_reader.GetAllDerivedClasses(id));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1148,51 +1187,53 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         }
 
     auto& schemaSync = m_ecdb.Schemas().GetSchemaSync();
+    const auto isSchemaSyncDisabled = schemaSync.IsSchemaSyncDisabled();
     auto resolvedSyncDbUri = syncDbUri.IsEmpty() ? schemaSync.GetDefaultSyncDbUri() : syncDbUri;
     const auto localDbInfo = schemaSync.GetInfo();
 
-    if (localDbInfo.IsEmpty() && !resolvedSyncDbUri.IsEmpty())
+    if (!isSchemaSyncDisabled)
         {
-        m_ecdb.GetImpl().Issues().ReportV(
-            IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0585,
-            "Failed to import ECSchemas. Cannot import schemas into a file which is not setup to use schema sync but sync db uri was provided. Sync-Id: {%s}, uri: {%s}.",
-
-            localDbInfo.GetSyncId().ToString().c_str(),
-            resolvedSyncDbUri.GetUri().c_str()
-        );
-        return SchemaImportResult::ERROR;
-        }
-
-    if (!localDbInfo.IsEmpty())
-        {
-        if (resolvedSyncDbUri.IsEmpty())
+        if (localDbInfo.IsEmpty() && !resolvedSyncDbUri.IsEmpty())
             {
             m_ecdb.GetImpl().Issues().ReportV(
-                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0586,
-                "Failed to import ECSchemas. Cannot import schemas into a file which is setup to use schema sync but sync db uri was not provided. Sync-Id: {%s}.",
-
-                localDbInfo.GetSyncId().ToString().c_str()
-            );
-            return SchemaImportResult::ERROR;
-            }
-
-        if (schemaSync.Pull(resolvedSyncDbUri, schemaImportToken) != SchemaSync::Status::OK)
-            {
-            m_ecdb.GetImpl().Issues().ReportV(
-                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0587,
-                "Failed to import ECSchemas. Unable to pull changes from Sync-Id: {%s}, uri: {%s}.",
+                IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0585,
+                "Failed to import ECSchemas. Cannot import schemas into a file which is not setup to use schema sync but sync db uri was provided. Sync-Id: {%s}, uri: {%s}.",
                 localDbInfo.GetSyncId().ToString().c_str(),
                 resolvedSyncDbUri.GetUri().c_str()
             );
             return SchemaImportResult::ERROR;
             }
-        if (!GetECDb().GetImpl().GetIdFactory().Reset())
-            {
-            LOG.error("Failed to import ECSchemas: Failed to create id factory.");
-            return SchemaImportResult::ERROR;
-            }
-        }
 
+        if (!localDbInfo.IsEmpty())
+            {
+            if (resolvedSyncDbUri.IsEmpty())
+                {
+                m_ecdb.GetImpl().Issues().ReportV(
+                    IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0586,
+                    "Failed to import ECSchemas. Cannot import schemas into a file which is setup to use schema sync but sync db uri was not provided. Sync-Id: {%s}.",
+
+                    localDbInfo.GetSyncId().ToString().c_str()
+                );
+                return SchemaImportResult::ERROR;
+                }
+
+            if (schemaSync.Pull(resolvedSyncDbUri, schemaImportToken) != SchemaSync::Status::OK)
+                {
+                m_ecdb.GetImpl().Issues().ReportV(
+                    IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0587,
+                    "Failed to import ECSchemas. Unable to pull changes from Sync-Id: {%s}, uri: {%s}.",
+                    localDbInfo.GetSyncId().ToString().c_str(),
+                    resolvedSyncDbUri.GetUri().c_str()
+                );
+                return SchemaImportResult::ERROR;
+                }
+            if (!GetECDb().GetImpl().GetIdFactory().Reset())
+                {
+                LOG.error("Failed to import ECSchemas: Failed to create id factory.");
+                return SchemaImportResult::ERROR;
+                }
+            }   
+        }
     for (auto schema: schemas) {
         if (ECSchemaOwnershipClaimAppData::HasOwnershipClaim(*schema) && !ECSchemaOwnershipClaimAppData::IsOwnedBy(GetECDb(), *schema)) {
             m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0283, "Failed to import ECSchemas. Cannot import schema owned by another ECDb connection");
@@ -1249,7 +1290,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
         return rc;
         }
 
-    if (!localDbInfo.IsEmpty() && rc.IsOk())
+    if (!isSchemaSyncDisabled && !localDbInfo.IsEmpty() && rc.IsOk())
         {
         if (schemaSync.Push(resolvedSyncDbUri) != SchemaSync::Status::OK)
             {
@@ -1574,7 +1615,7 @@ ClassMappingStatus MainSchemaManager::MapClass(SchemaImportContext& ctx, ClassMa
     if (status == ClassMappingStatus::BaseClassesNotMapped || status == ClassMappingStatus::Error)
         return status;
 
-    if (SUCCESS != DbMappingManager::Classes::MapUserDefinedIndexes(ctx, *classMapP))
+    if (SUCCESS != DbMappingManager::Classes::MapIndexes(ctx, *classMapP, false))
         return ClassMappingStatus::Error;
 
     return MapDerivedClasses(ctx, mappingInfo.GetClass());

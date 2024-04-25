@@ -688,7 +688,7 @@ Public GEOMDLLIMPEXP void bsiDConic4d_getDPoint3dEndPoints
 (
 DConic4dCP pConic,
 DPoint3dP pStartPoint,
-DPoint3dP pEndPoint                  
+DPoint3dP pEndPoint
 )
     {
     bsiDConic4d_angleParameterToDPoint3d (pConic, pStartPoint, pConic->start);
@@ -3477,7 +3477,7 @@ bool extend
 
     if (numCandidate > 0)
         {
-        minDistSquared  = DBL_MAX; 
+        minDistSquared  = DBL_MAX;
         iMin = 0;
         for (i = 0; i < numCandidate; i++)
             {
@@ -4543,7 +4543,7 @@ int        clipType
 Public GEOMDLLIMPEXP int bsiDConic4d_solveTangentsPerpendicularToVector
 (
 DConic4dP pConic,
-double  *angles,   
+double  *angles,
 DVec3dR vector
 )
     {

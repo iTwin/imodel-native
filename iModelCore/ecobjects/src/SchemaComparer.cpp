@@ -12,18 +12,6 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 //=======================================================================================
-// For case-insensitive UTF-8 string comparisons in STL collections that only use ASCII
-// strings
-// @bsistruct
-//+===============+===============+===============+===============+===============+======
-struct CompareIUtf8Ascii
-    {
-    bool operator()(Utf8CP s1, Utf8CP s2) const { return BeStringUtilities::StricmpAscii(s1, s2) < 0; }
-    bool operator()(Utf8StringCR s1, Utf8StringCR s2) const { return BeStringUtilities::StricmpAscii(s1.c_str(), s2.c_str()) < 0; }
-    bool operator()(Utf8StringCP s1, Utf8StringCP s2) const { BeAssert(s1 != nullptr && s2 != nullptr); return BeStringUtilities::StricmpAscii(s1->c_str(), s2->c_str()) < 0; }
-    };
-
-//=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct SchemaProxy final
@@ -602,7 +590,7 @@ BentleyStatus SchemaComparer::CompareSchema(SchemaChange& change, ECSchemaCP old
         return ERROR;
         }
 
-    if (CompareReferences(change.References(), oldSchema.References(), newSchema.References()) != SUCCESS)
+    if (CompareReferences(change.References(), oldSchema.References(), newSchema.References(), oldVal, newVal) != SUCCESS)
         {
         LOG.errorv("Schema Reference comparison for schema %s failed", change.GetChangeName());
         return ERROR;
@@ -620,7 +608,7 @@ BentleyStatus SchemaComparer::CompareSchema(SchemaChange& change, ECSchemaCP old
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareReferences(SchemaReferenceChanges& changes, ECSchemaReferenceList const* oldVal, ECSchemaReferenceList const* newVal)
+BentleyStatus SchemaComparer::CompareReferences(SchemaReferenceChanges& changes, ECSchemaReferenceList const* oldVal, ECSchemaReferenceList const* newVal, ECSchemaCP oldSchema, ECSchemaCP newSchema)
     {
     bmap<Utf8String, Utf8String, CompareIUtf8Ascii> oldReferences, newReferences;
     bset<Utf8String, CompareIUtf8Ascii> allReferences;
@@ -632,7 +620,10 @@ BentleyStatus SchemaComparer::CompareReferences(SchemaReferenceChanges& changes,
             const Utf8String fullname = kvPair.second->GetFullSchemaName();
             if (!oldReferences.insert(make_bpair(name, fullname)).second)
                 {
-                LOG.errorv("Schema Reference comparison failed because multiple schema references for %s were found in the old schema.", name.c_str());
+                const auto oldIt = oldReferences.find(name);
+                Utf8String existingFullName = oldIt != oldReferences.end() ? oldIt->second : name;
+                LOG.errorv("Schema Reference comparison failed (Comparing old schema %s against new schema %s). Multiple schema references with the same name were found in the old schema (%s and %s).",
+                    oldSchema->GetFullSchemaName().c_str(), newSchema->GetFullSchemaName().c_str(), existingFullName.c_str(), fullname.c_str());
                 BeAssert(false && "Multiple version of same referenced schema is not supported");
                 return ERROR;
                 }
@@ -649,7 +640,10 @@ BentleyStatus SchemaComparer::CompareReferences(SchemaReferenceChanges& changes,
             const Utf8String fullname = kvPair.second->GetFullSchemaName();
             if (!newReferences.insert(make_bpair(name, fullname)).second)
                 {
-                LOG.errorv("Schema Reference comparison failed because multiple schema references for %s were found in the new schema.", name.c_str());
+                const auto newIt = newReferences.find(name);
+                Utf8String existingFullName = newIt != newReferences.end() ? newIt->second : name;
+                LOG.errorv("Schema Reference comparison failed (Comparing old schema %s against new schema %s). Multiple schema references with the same name were found in the new schema (%s and %s).",
+                    oldSchema->GetFullSchemaName().c_str(), newSchema->GetFullSchemaName().c_str(), existingFullName.c_str(), fullname.c_str());
                 BeAssert(false && "Multiple version of same referenced schema is not supported");
                 return ERROR;
                 }
