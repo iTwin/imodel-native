@@ -34,6 +34,7 @@ enum class ECJsonInt64Format
 //!     - <b>Reserved member names</b>:
 //!         - "id": ECInstanceId of the instance or the navigation id within a %Navigation property
 //!         - "className": Fully qualified class name ("<schema name>.<class name>")
+//!         - "classFullName": Fully qualified class name ("<schema name>:<class name>")
 //!         - "sourceId" : ECInstanceId of source instance of a relationship instance
 //!         - "sourceClassName" : Fully qualified class name ("<schema name>.<class name>") of source instance of a relationship instance
 //!         - "targetId" : ECInstanceId of target instance of a relationship instance
@@ -124,7 +125,7 @@ struct ECJsonSystemNames final
         //! are not considered by the check.
         //! @param[in] topLevelMemberName Name of top-level member of ECJSON object to check
         //! @return true or false
-        static bool IsTopLevelSystemMember(Utf8StringCR topLevelMemberName) { return topLevelMemberName.Equals(Id()) || topLevelMemberName.Equals(ClassName()) || topLevelMemberName.Equals(SourceId()) || topLevelMemberName.Equals(TargetId()) || topLevelMemberName.Equals(SourceClassName()) || topLevelMemberName.Equals(TargetClassName()); }
+        static bool IsTopLevelSystemMember(Utf8StringCR topLevelMemberName) { return topLevelMemberName.Equals(Id()) || topLevelMemberName.Equals(ClassName()) || topLevelMemberName.Equals(ClassFullName()) || topLevelMemberName.Equals(SourceId()) || topLevelMemberName.Equals(TargetId()) || topLevelMemberName.Equals(SourceClassName()) || topLevelMemberName.Equals(TargetClassName()); }
     };
 
 
@@ -145,6 +146,8 @@ public:
     static constexpr Json::StaticString json_id() { return Json::StaticString(ECJsonSystemNames::Id()); }
     //! @ref ECN::ECJsonSystemNames::ClassName "ECJsonSystemNames::ClassName" as JsonCpp StaticString
     static constexpr Json::StaticString json_className() { return Json::StaticString(ECJsonSystemNames::ClassName()); }
+    //! @ref ECN::ECJsonSystemNames::ClassFullName "ECJsonSystemNames::ClassFullName" as JsonCpp StaticString
+    static constexpr Json::StaticString json_classFullName() { return Json::StaticString(ECJsonSystemNames::ClassFullName()); }
     //! @ref ECN::ECJsonSystemNames::SourceId "ECJsonSystemNames::SourceId" as JsonCpp StaticString
     static constexpr Json::StaticString json_sourceId() { return Json::StaticString(ECJsonSystemNames::SourceId()); }
     //! @ref ECN::ECJsonSystemNames::SourceClassName "ECJsonSystemNames::SourceClassName" as JsonCpp StaticString
@@ -202,7 +205,7 @@ public:
     //! @name Methods for JSON values of the JsonCpp API
     //! @{
 
-    //! Writes the fully qualified name of an ECClass into a JSON value.
+    //! Writes the fully qualified name of an ECClass into a JSON value: &lt;schema name&gt;&lt;separator&gt;&lt;class name&gt;
     //! @param[out] json JSON value
     //! @param[in] ecClass ECClass
     //! @param[in] separator Separator between schema name and class name. Default: .
