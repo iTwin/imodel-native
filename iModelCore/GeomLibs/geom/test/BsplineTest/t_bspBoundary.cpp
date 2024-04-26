@@ -1409,3 +1409,55 @@ TEST(bsptrim, EugeneSurface)
             }
         }
     }
+
+// A connector-produced cylinder with trim boundaries, one of which crosses the u-periodic seam the long/wrong way around
+TEST(bsptrim, YurySurface)
+    {
+    BeFileName dataPath;
+    BeTest::GetHost().GetDocumentsRoot(dataPath);
+    dataPath.AppendToPath(L"GeomLibsTestData");
+    dataPath.AppendToPath(L"BSpline");
+    dataPath.AppendToPath(L"yurySurface.fb");
+    bvector<Byte> fb;
+    if (Check::True(GTestFileOps::ReadAsBytes(dataPath, fb), "Import geometry from flatbuffer"))
+        {
+        bvector<IGeometryPtr> geometry;
+        if (Check::True(BentleyGeometryFlatBuffer::BytesToVectorOfGeometrySafe(fb, geometry), "Convert flatbuffer to geometry"))
+            {
+            for (auto const& g : geometry)
+                {
+                auto surface = g->GetAsMSBsplineSurface();
+                if (Check::True(surface.IsValid(), "Geometry is a B-spline surface"))
+                    {
+                    double area0, area1, area2;
+                    DVec3d centroid;
+                    RotMatrix axes;
+                    DVec3d momentXYZ;
+                    Check::True(surface->ComputePrincipalAreaMoments(area0, centroid, axes, momentXYZ), "computed pre-split area");
+                    Check::Near(area0, 0.0220632773625, "expected area of original trimmed surface", 100.0);
+
+                    bvector<bvector<DPoint2d>> strokedLoops;
+                    surface->GetUVBoundaryLoops(strokedLoops, false);
+                    Check::SaveTransformed(strokedLoops);
+                    Check::SaveTransformed(surface);
+
+                    double relTol = 0.02; // larger than default, but fits Yury's data
+                    Check::True(surface->SplitStrokedBoundaryLoopsAtParametricSeams(relTol), "splitter succeeded");
+
+                    Check::Shift(2, 0, 0);
+                    surface->GetUVBoundaryLoops(strokedLoops, false);
+                    Check::SaveTransformed(strokedLoops);
+                    Check::SaveTransformed(surface);
+
+                    Check::True(surface->ComputePrincipalAreaMoments(area1, centroid, axes, momentXYZ), "computed post-split area");
+                    Check::Near(area1, 0.0276995502899, "expected area of new trimmed surface", 100.0);
+
+                    surface->DeleteBoundaries();
+                    Check::True(surface->ComputePrincipalAreaMoments(area2, centroid, axes, momentXYZ), "computed unbounded area");
+                    Check::Near(area2, 0.0298922541104, "expected area of unbounded surface", 100.0);
+                    }
+                }
+            }
+        }
+    Check::ClearGeometry("bsptrim.YurySurface");
+    }
