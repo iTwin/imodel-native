@@ -766,7 +766,7 @@ double              tolerance
     bool ComputeSecondMomentAreaProducts
         (
         DMatrix4dR products,
-        double relativeTolerancefForFacets,
+        double relativeToleranceForFacets,
         int numGauss,
         int &numEvaluations
         ) const;
@@ -845,6 +845,11 @@ bvector<CurveAndSolidLocationDetail> &curvePoints     //!< [out] hit points on c
 
     //! Delete previous trim and add new trim.
     void SetTrim (CurveVectorR curves);
+
+    //! Split stroked boundary loops at parametric seams, where closed knots wrap around.
+    //! Existing stroked boundary loops are replaced; existing TrimCurves are removed.
+    //! @param [in] seamRelTol fraction of knot range to serve as relative tolerance for computing seam proximity. Pass nonpositive for default (0.01).
+    bool SplitStrokedBoundaryLoopsAtParametricSeams(double seamRelTol = -1.0);
 
     //! Copy poles from a row into a curve structure. index -1 is understood as "end"
     MSBsplineCurvePtr GetPolygonRowAsCurve (int index) const;
