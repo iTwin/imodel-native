@@ -518,9 +518,11 @@ public:
         }
     void SchemaSyncInit(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+        REQUIRE_ARGUMENT_STRING(1, containerId);
+        REQUIRE_ARGUMENT_BOOL(2, overrideContainer);
         auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
         LastErrorListener lastError(m_ecdb);
-        auto rc = m_ecdb.Schemas().GetSchemaSync().Init(syncDbUri);
+        auto rc = m_ecdb.Schemas().GetSchemaSync().Init(syncDbUri, containerId, overrideContainer);
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
                 THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
@@ -1285,12 +1287,12 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         if (italic) {
             emphasis = emphasis | TextEmphasis::Italic;
         }
-        
+
         BeJsNapiObject result(Env());
         JsInterop::ComputeRangeForText(result, db, text, FontId(static_cast<uint64_t>(fontId)), emphasis, widthFactor, height);
         return result;
     }
-    
+
     Napi::Value DumpChangeSet(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);
@@ -1948,9 +1950,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         }
     void SchemaSyncInit(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, schemaSyncDbUriStr);
+        REQUIRE_ARGUMENT_STRING(1, containerId);
+        REQUIRE_ARGUMENT_BOOL(2, overrideContainer);
         auto syncDbUri = SchemaSync::SyncDbUri(schemaSyncDbUriStr.c_str());
         LastErrorListener lastError(GetOpenedDb(info));
-        auto rc = GetOpenedDb(info).Schemas().GetSchemaSync().Init(syncDbUri);
+        auto rc = GetOpenedDb(info).Schemas().GetSchemaSync().Init(syncDbUri, containerId, overrideContainer);
         if (rc != SchemaSync::Status::OK) {
             if (lastError.HasError()) {
                 THROW_JS_EXCEPTION(lastError.GetLastError().c_str());

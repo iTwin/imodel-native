@@ -28,6 +28,7 @@ struct SchemaSync final {
     using FileUri = Utf8String;
     using DataVer = uint64_t;
     using TableList = bvector<Utf8String>;
+    struct SyncDbInfo;
     enum class Status {
         OK = BE_SQLITE_OK,
         ERROR = BE_SQLITE_ERROR,
@@ -40,49 +41,6 @@ struct SchemaSync final {
         ERROR_SCHEMA_SYNC_INFO_DONOT_MATCH,
         ERROR_UNABLE_TO_ATTACH,
         ERROR_SYNC_SQL_SCHEMA,
-    };
-    //=======================================================================================
-    // @bsiclass
-    //+===============+===============+===============+===============+===============+======
-    struct SyncDbInfo final{
-        friend struct SchemaSync;
-        private:
-            DataVer m_dataVer;
-            BeGuid m_syncId;
-        public:
-            SyncDbInfo():m_dataVer(0){}
-            SyncDbInfo(SyncDbInfo&&)=default;
-            SyncDbInfo(SyncDbInfo const&)=default;
-            SyncDbInfo& operator=(SyncDbInfo&&)=default;
-            SyncDbInfo& operator=(SyncDbInfo const&)=default;
-            BeGuidCR GetSyncId() const { return m_syncId; }
-            DataVer GetDataVersion() const { return m_dataVer; }
-            bool IsEmpty() const { return !m_syncId.IsValid(); }
-            ECDB_EXPORT void To(BeJsValue) const;
-            ECDB_EXPORT static SyncDbInfo From(BeJsConst);
-            ECDB_EXPORT static SyncDbInfo From(DbCR);
-    };
-    //=======================================================================================
-    // @bsiclass
-    //+===============+===============+===============+===============+===============+======
-    struct LocalDbInfo final {
-        friend struct SchemaSync;
-        private:
-            DataVer m_dataVer;
-            BeGuid m_syncId;
-
-        public:
-            LocalDbInfo():m_dataVer(0){}
-            LocalDbInfo(LocalDbInfo&&)=default;
-            LocalDbInfo(LocalDbInfo const&)=default;
-            LocalDbInfo& operator=(LocalDbInfo&&)=default;
-            LocalDbInfo& operator=(LocalDbInfo const&)=default;
-            BeGuidCR GetSyncId() const { return m_syncId; }
-            DataVer GetDataVersion() const { return m_dataVer; }
-            bool IsEmpty() const { return !m_syncId.IsValid(); }
-            ECDB_EXPORT void To(BeJsValue) const;
-            ECDB_EXPORT static LocalDbInfo From(BeJsConst);
-            ECDB_EXPORT static LocalDbInfo From(DbCR);
     };
     //=======================================================================================
     // @bsiclass
@@ -101,21 +59,68 @@ struct SchemaSync final {
             ECDB_EXPORT Utf8String GetDbAttachUri() const;
             ECDB_EXPORT SyncDbInfo GetInfo() const;
     };
+    //=======================================================================================
+    // @bsiclass
+    //+===============+===============+===============+===============+===============+======
+    struct SyncDbInfo final{
+        friend struct SchemaSync;
+        private:
+            DataVer m_dataVer;
+            Utf8String m_syncId;
+        public:
+            SyncDbInfo():m_dataVer(1){}
+            SyncDbInfo(SyncDbInfo&&)=default;
+            SyncDbInfo(SyncDbInfo const&)=default;
+            SyncDbInfo& operator=(SyncDbInfo&&)=default;
+            SyncDbInfo& operator=(SyncDbInfo const&)=default;
+            Utf8StringCR GetSyncId() const { return m_syncId; }
+            DataVer GetDataVersion() const { return m_dataVer; }
+            bool IsEmpty() const { return m_syncId.empty(); }
+            ECDB_EXPORT void To(BeJsValue) const;
+            ECDB_EXPORT static SyncDbInfo From(BeJsConst);
+            ECDB_EXPORT static SyncDbInfo From(DbCR);
+            ECDB_EXPORT static SyncDbInfo From(SyncDbUri);
+    };
+    //=======================================================================================
+    // @bsiclass
+    //+===============+===============+===============+===============+===============+======
+    struct LocalDbInfo final {
+        friend struct SchemaSync;
+        private:
+            DataVer m_dataVer;
+            Utf8String m_syncId;
+
+        public:
+            LocalDbInfo():m_dataVer(1){}
+            LocalDbInfo(LocalDbInfo&&)=default;
+            LocalDbInfo(LocalDbInfo const&)=default;
+            LocalDbInfo& operator=(LocalDbInfo&&)=default;
+            LocalDbInfo& operator=(LocalDbInfo const&)=default;
+            Utf8StringCR GetSyncId() const { return m_syncId; }
+            DataVer GetDataVersion() const { return m_dataVer; }
+            bool IsEmpty() const { return m_syncId.empty(); }
+            ECDB_EXPORT void To(BeJsValue) const;
+            ECDB_EXPORT static LocalDbInfo From(BeJsConst);
+            ECDB_EXPORT static LocalDbInfo From(DbCR);
+    };
+
 private:
     ECDbR m_conn;
     SyncDbUri m_defaultSyncDbUri;
     bool m_disabledForProfileUpgrade;
-
-    DbResult UpdateOrCreateSyncDbInfo(DbR syncDb);
-    DbResult UpdateOrCreateSyncDbInfo(SyncDbUri syncDbUri);
-    DbResult UpdateOrCreateLocalDbInfo(SyncDbInfo const& from);
-    Status Init(SyncDbUri const&, TableList);
+    int64_t m_modifiedRowCount;
+    Status Init(SyncDbUri const&, Utf8StringCR, bool, TableList);
     Status PullInternal(SyncDbUri const&, TableList);
     Status PushInternal(SyncDbUri const&, TableList);
     Status VerifySyncDb(SyncDbUri const&, bool isPull) const;
     DbResult PullSqlSchema(DbR conn);
     DbResult PushSqlSchema(DbR conn);
-    static void ParseQueryParams(Db::OpenParams&, SyncDbUri const& uri);
+    Status SaveLocalDbInfo(DbR, LocalDbInfo const&);
+    Status SaveSyncDbInfo(DbR, SyncDbInfo const&);
+    Status SaveSyncDbInfo(SyncDbUri, SyncDbInfo const&);
+    void BeginModifiedRowCount() { m_modifiedRowCount = m_conn.GetTotalModifiedRowCount64(); }
+    void EndModifiedRowCount() { m_modifiedRowCount = m_conn.GetTotalModifiedRowCount64() - m_modifiedRowCount; }
+    static void ParseQueryParams(Db::OpenParams&, SyncDbUri const&);
 
 public:
     SchemaSync(SchemaSync&&) = delete;
@@ -129,12 +134,14 @@ public:
     void DisableSchemaSync() { m_disabledForProfileUpgrade = true; }
     void ReEnableSchemaSync() { m_disabledForProfileUpgrade = false; }
     bool IsSchemaSyncDisabled() const { return m_disabledForProfileUpgrade; }
+    ECDB_EXPORT int64_t GetModifiedRowCount() const { return m_modifiedRowCount; }
     ECDB_EXPORT Status UpdateDbSchema();
     ECDB_EXPORT LocalDbInfo GetInfo() const;
-    ECDB_EXPORT Status SetDefaultSyncDbUri(SyncDbUri syncDbUri);
-    ECDB_EXPORT Status Init(SyncDbUri const&);
+    ECDB_EXPORT Status SetDefaultSyncDbUri(SyncDbUri);
+    ECDB_EXPORT Status Init(SyncDbUri const&, Utf8StringCR, bool);
     ECDB_EXPORT Status Pull(SyncDbUri const&, SchemaImportToken const* token = nullptr); // read/write op
     ECDB_EXPORT Status Push(SyncDbUri const&);
+    ECDB_EXPORT static bool ContainsChangeToLocalDbInfo(ChangeStream&);
 };
 //=======================================================================================
 //! Options for how to refer to an ECSchema when looking it up using the SchemaManager

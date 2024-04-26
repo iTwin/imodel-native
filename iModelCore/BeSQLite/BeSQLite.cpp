@@ -815,6 +815,7 @@ void Db::Interrupt() const {return sqlite3_interrupt(GetSqlDb());}
 int64_t  Db::GetLastInsertRowId() const {return sqlite3_last_insert_rowid(GetSqlDb());}
 int      Db::GetModifiedRowCount() const {return sqlite3_changes(GetSqlDb());}
 int      Db::GetTotalModifiedRowCount() const { return sqlite3_total_changes(GetSqlDb()); }
+int64_t  Db::GetTotalModifiedRowCount64() const { return sqlite3_total_changes64(GetSqlDb()); }
 void     SnappyFromBlob::Finish() {m_blobIO.Close();}
 
 Utf8String ProfileVersion::ToJson() const { return ToString("{\"major\":%" PRIu16 ",\"minor\":%" PRIu16 ",\"sub1\":%" PRIu16 ",\"sub2\":%" PRIu16 "}"); }

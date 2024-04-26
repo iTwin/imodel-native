@@ -119,7 +119,7 @@ describe("basic tests", () => {
     iModelDb.createIModel(seedUri, { rootSubject: { name: "test file" } });
 
     // initialize sync db.
-    iModelDb.schemaSyncInit(syncDbUri);
+    iModelDb.schemaSyncInit(syncDbUri, "xxxxx", false);
     iModelDb.saveChanges();
     iModelDb.performCheckpoint();
 
@@ -127,7 +127,7 @@ describe("basic tests", () => {
     const sharedInfo = iModelDb.schemaSyncGetSyncDbInfo(syncDbUri);
     assert.equal(localInfo?.id, sharedInfo?.id);
     assert.equal(localInfo?.dataVer, sharedInfo?.dataVer);
-    assert.equal(localInfo?.dataVer, "0x2");
+    assert.equal(localInfo?.dataVer, "0x1");
     iModelDb.closeFile();
 
     // create first briefcase

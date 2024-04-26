@@ -833,7 +833,12 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
     auto const ignoreNoop = containsSchemaChanges;
     /** This will disable cascade action and so no new changes are created when applying changeset */
     auto const fkNoAction = true;
-
+    if (containsSchemaChanges && !m_dgndb.Schemas().GetSchemaSync().GetInfo().IsEmpty()){
+        if (!SchemaSync::ContainsChangeToLocalDbInfo(changeStream)) {
+             LOG.error("MergeDataChanges failed. SchemaSync is enabled while schema changeset seem to be pushed by application that ignored schema sync container.");
+            return ChangesetStatus::ApplyError;
+        }
+    }
     DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, mergeNeeded ? &rebase : nullptr, false, ignoreNoop, fkNoAction);
     if (result != BE_SQLITE_OK) {
         if (changeStream.GetLastErrorMessage().empty())
@@ -1440,7 +1445,7 @@ DbResult TxnManager::ApplyDdlChanges(DdlChangesCR ddlChanges) {
     BeAssert(!ddlChanges._IsEmpty() && "DbSchemaChangeSet is empty");
     auto info = GetDgnDb().Schemas().GetSchemaSync().GetInfo();
     if (!info.IsEmpty()) {
-        LOG.infov("Skipping DDL Changes as IModel has schema sync enabled. Sync-Id {%s}.", info.GetSyncId().ToString().c_str());
+        LOG.infov("Skipping DDL Changes as IModel has schema sync enabled. Sync-Id {%s}.", info.GetSyncId().c_str());
         return BE_SQLITE_OK;
     }
 

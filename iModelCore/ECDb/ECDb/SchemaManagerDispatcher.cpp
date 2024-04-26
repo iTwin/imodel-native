@@ -750,7 +750,7 @@ bool SchemaManager::Dispatcher::IsClassUnsupported(ECClassId classId) const
 
             if (stmt.BindId(1, caClassId) != DbResult::BE_SQLITE_OK)
                 return;
-            
+
             while (stmt.Step() == BE_SQLITE_ROW)
                 {
                 auto classId = stmt.GetValueId<ECClassId>(0);
@@ -768,7 +768,7 @@ bool SchemaManager::Dispatcher::IsClassUnsupported(ECClassId classId) const
                     if (ca.Verify(m_ecdb.GetImpl().Issues(), classCaption.c_str()) == BentleyStatus::SUCCESS)
                         continue; //step out, our current code passes the CA requirements
                     }
-                
+
                 if (classWithCA->IsEntityClass() || classWithCA->IsRelationshipClass()) //ignoring structs here for now, the CA has no effect on those
                     {
                     baseUnsupportedClasses.insert(classId);
@@ -879,7 +879,7 @@ Nullable<ECDerivedClassesList> TableSpaceSchemaManager::GetAllDerivedClasses(ECN
         LOG.errorv("SchemaManager::GetAllDerivedClasses failed for ECClass %s. Its subclasses could not be loaded.", baseClass.GetFullName());
         return nullptr;
         }
-    
+
     return Nullable<ECDerivedClassesList>(m_reader.GetAllDerivedClasses(id));
     }
 
@@ -1198,7 +1198,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
             m_ecdb.GetImpl().Issues().ReportV(
                 IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0585,
                 "Failed to import ECSchemas. Cannot import schemas into a file which is not setup to use schema sync but sync db uri was provided. Sync-Id: {%s}, uri: {%s}.",
-                localDbInfo.GetSyncId().ToString().c_str(),
+                localDbInfo.GetSyncId().c_str(),
                 resolvedSyncDbUri.GetUri().c_str()
             );
             return SchemaImportResult::ERROR;
@@ -1212,7 +1212,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
                     IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0586,
                     "Failed to import ECSchemas. Cannot import schemas into a file which is setup to use schema sync but sync db uri was not provided. Sync-Id: {%s}.",
 
-                    localDbInfo.GetSyncId().ToString().c_str()
+                    localDbInfo.GetSyncId().c_str()
                 );
                 return SchemaImportResult::ERROR;
                 }
@@ -1222,7 +1222,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
                 m_ecdb.GetImpl().Issues().ReportV(
                     IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0587,
                     "Failed to import ECSchemas. Unable to pull changes from Sync-Id: {%s}, uri: {%s}.",
-                    localDbInfo.GetSyncId().ToString().c_str(),
+                    localDbInfo.GetSyncId().c_str(),
                     resolvedSyncDbUri.GetUri().c_str()
                 );
                 return SchemaImportResult::ERROR;
@@ -1232,7 +1232,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
                 LOG.error("Failed to import ECSchemas: Failed to create id factory.");
                 return SchemaImportResult::ERROR;
                 }
-            }   
+            }
         }
     for (auto schema: schemas) {
         if (ECSchemaOwnershipClaimAppData::HasOwnershipClaim(*schema) && !ECSchemaOwnershipClaimAppData::IsOwnedBy(GetECDb(), *schema)) {
@@ -1297,7 +1297,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
             m_ecdb.GetImpl().Issues().ReportV(
                 IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0587,
                 "Failed to import ECSchemas. Unable to push changes to Sync-Id: {%s}, uri: {%s}.",
-                localDbInfo.GetSyncId().ToString().c_str(),
+                localDbInfo.GetSyncId().c_str(),
                 resolvedSyncDbUri.GetUri().c_str());
             return SchemaImportResult::ERROR;
             }
