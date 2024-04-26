@@ -19,13 +19,11 @@ Transform EcefLocation::ComputeTransform()
         DVec3d zVector;
         zVector.CrossProduct(m_xVector, m_yVector);
         zVector.Normalize();
-        ecefTrans = Transform::FromOriginAndVectors(m_origin, m_xVector, m_yVector, zVector);
-        return SUCCESS;
+        return Transform::FromOriginAndVectors(m_origin, m_xVector, m_yVector, zVector);
         }
 
     // Otherwise, use the angles (or orientation) combined with origin to create the ECEF transform.
-    ecefTrans = m_angles.ToTransform(m_origin);
-    return SUCCESS;
+    return m_angles.ToTransform(m_origin);
     }
 
 /*---------------------------------------------------------------------------------**//**
