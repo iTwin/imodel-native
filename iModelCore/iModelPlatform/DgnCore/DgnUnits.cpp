@@ -10,6 +10,9 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt EcefLocation::ComputeTransform(TransformR ecefTrans)
     {
+    if (!m_isValid)
+        return Transform::FromIdentity();
+
     // If we have vectors, combine them with origin to create the ECEF transform.
     if (m_haveVectors)
         {
