@@ -1946,42 +1946,42 @@ class StrokedLoopSplitter
             ConvexClipPlaneSet northwest;
             northwest.push_back(toUp);
             northwest.push_back(toLeft);
-            m_clipRegions.push_back(std::move(ClipShiftData(northwest, m_uRange.Length(), -m_vRange.Length())));
+            m_clipRegions.push_back(ClipShiftData(northwest, m_uRange.Length(), -m_vRange.Length()));
 
             ConvexClipPlaneSet northeast;
             northeast.push_back(toUp);
             northeast.push_back(toRight);
-            m_clipRegions.push_back(std::move(ClipShiftData(northeast, -m_uRange.Length(), -m_vRange.Length())));
+            m_clipRegions.push_back(ClipShiftData(northeast, -m_uRange.Length(), -m_vRange.Length()));
 
             ConvexClipPlaneSet southwest;
             southwest.push_back(toDown);
             southwest.push_back(toLeft);
-            m_clipRegions.push_back(std::move(ClipShiftData(southwest, m_uRange.Length(), m_vRange.Length())));
+            m_clipRegions.push_back(ClipShiftData(southwest, m_uRange.Length(), m_vRange.Length()));
 
             ConvexClipPlaneSet southeast;
             southeast.push_back(toDown);
             southeast.push_back(toRight);
-            m_clipRegions.push_back(std::move(ClipShiftData(southeast, -m_uRange.Length(), m_vRange.Length())));
+            m_clipRegions.push_back(ClipShiftData(southeast, -m_uRange.Length(), m_vRange.Length()));
             }
         if (m_uClosed)
             {
             ConvexClipPlaneSet west(uvRange, false, false, true, true, false, false);
             west.push_back(toLeft);
-            m_clipRegions.push_back(std::move(ClipShiftData(west, m_uRange.Length(), 0)));
+            m_clipRegions.push_back(ClipShiftData(west, m_uRange.Length(), 0));
 
             ConvexClipPlaneSet east(uvRange, false, false, true, true, false, false);
             east.push_back(toRight);
-            m_clipRegions.push_back(std::move(ClipShiftData(east, -m_uRange.Length(), 0)));
+            m_clipRegions.push_back(ClipShiftData(east, -m_uRange.Length(), 0));
             }
         if (m_vClosed)
             {
             ConvexClipPlaneSet north(uvRange, true, true, false, false, false, false);
             north.push_back(toUp);
-            m_clipRegions.push_back(std::move(ClipShiftData(north, 0, -m_vRange.Length())));
+            m_clipRegions.push_back(ClipShiftData(north, 0, -m_vRange.Length()));
 
             ConvexClipPlaneSet south(uvRange, true, true, false, false, false, false);
             south.push_back(toDown);
-            m_clipRegions.push_back(std::move(ClipShiftData(south, 0, m_vRange.Length())));
+            m_clipRegions.push_back(ClipShiftData(south, 0, m_vRange.Length()));
             }
         }
 
