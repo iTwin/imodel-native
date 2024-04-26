@@ -8,6 +8,26 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt EcefLocation::ComputeTransform(TransformR ecefTrans)
+    {
+    // If we have vectors, combine them with origin to create the ECEF transform.
+    if (m_haveVectors)
+        {
+        DVec3d zVector;
+        zVector.CrossProduct(m_xVector, m_yVector);
+        zVector.Normalize();
+        ecefTrans = Transform::FromOriginAndVectors(m_origin, m_xVector, m_yVector, zVector);
+        return SUCCESS;
+        }
+
+    // Otherwise, use the angles (or orientation) combined with origin to create the ECEF transform.
+    ecefTrans = m_angles.ToTransform(m_origin);
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void EcefLocation::ToJson(BeJsValue val) const
     {
     val.SetNull();
