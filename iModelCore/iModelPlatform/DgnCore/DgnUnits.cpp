@@ -8,7 +8,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt EcefLocation::ComputeTransform(TransformR ecefTrans)
+Transform EcefLocation::ComputeTransform()
     {
     if (!m_isValid)
         return Transform::FromIdentity();
