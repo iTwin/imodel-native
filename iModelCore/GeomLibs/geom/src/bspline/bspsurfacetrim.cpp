@@ -1938,7 +1938,7 @@ class StrokedLoopSplitter
 
         // always clip to parametric range
         ConvexClipPlaneSet center{ConvexClipPlaneSet::FromXYBox(m_uRange.low, m_vRange.low, m_uRange.high, m_vRange.high)};
-        m_clipRegions.push_back(std::move(ClipShiftData(center)));
+        m_clipRegions.push_back(ClipShiftData(center));
 
         // clip in quadrants beyond the parametric range if periodic
         if (m_uClosed && m_vClosed)
