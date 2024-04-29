@@ -2,7 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { DbResult, Id64Array, Id64String, IModelStatus, OpenMode } from "@itwin/core-bentley";
+import { DbResult, Id64Array, Id64String, IModelStatus, Logger, LogLevel, OpenMode } from "@itwin/core-bentley";
 import { BlobRange, DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, ProfileOptions, RelationshipProps } from "@itwin/core-common";
 import { DomainOptions } from "@itwin/core-common/lib/cjs/BriefcaseTypes";
 import { assert, expect } from "chai";
@@ -1111,5 +1111,47 @@ describe("basic tests", () => {
     expect(schemaXmlStr!.includes(propCatStr)).to.be.true;
 
     testDb.closeFile();
+  });
+  it("NoCaseCollation", async () => {
+    const pathToDb = path.join(getAssetsDir(), "test.bim");
+    Logger.initializeToConsole();
+    Logger.setLevelDefault(LogLevel.Trace);
+    const testFile = path.join(getAssetsDir(), "collation.bim");
+    if (fs.existsSync(testFile)) {
+      fs.unlinkSync(testFile);
+    }
+    fs.copyFileSync(pathToDb, testFile);
+
+    const db = new iModelJsNative.DgnDb();
+    db.openIModel(testFile, OpenMode.ReadWrite);
+    expect(db.getNoCaseCollation()).to.be.equals("ASCII");
+    const executeSql = (sql: string, cb: (stmt: IModelJsNative.SqliteStatement) => void) => {
+      const stmt = new iModelJsNative.SqliteStatement();
+      stmt.prepare(db, sql);
+      cb(stmt);
+      stmt.dispose();
+    };
+    db.saveChanges();
+    executeSql("CREATE TABLE [Foo]([Id] INTEGER PRIMARY KEY, [Name] TEXT UNIQUE COLLATE NOCASE);", (stmt) => {
+      expect(stmt.step()).equals(DbResult.BE_SQLITE_DONE);
+    });
+
+    db.saveChanges();
+    executeSql("INSERT INTO Foo(Name)VALUES('ÀÁÂÃÄÅ')", (stmt) => {
+      expect(stmt.step()).equals(DbResult.BE_SQLITE_DONE);
+    });
+    executeSql("INSERT INTO Foo(Name)VALUES('àáâãäå')", (stmt) => {
+      expect(stmt.step()).equals(DbResult.BE_SQLITE_DONE);
+    });
+    db.abandonChanges();
+    db.setNoCaseCollation("Latin1");
+
+    executeSql("INSERT INTO Foo(Name)VALUES('ÀÁÂÃÄÅ')", (stmt) => {
+      expect(stmt.step()).equals(DbResult.BE_SQLITE_DONE);
+    });
+    executeSql("INSERT INTO Foo(Name)VALUES('àáâãäå')", (stmt) => {
+      expect(stmt.step()).equals(DbResult.BE_SQLITE_CONSTRAINT_UNIQUE);
+    });
+    db.closeFile();
   });
 });
