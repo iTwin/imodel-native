@@ -1543,7 +1543,7 @@ void ConcurrentQueryMgr::Shutdown(ECDbCR ecdb) {
 void QueryRequest::FromJs(BeJsConst const& val) {
     if (val.isObjectMember(JQuota)) {
         auto a = val[JQuota];
-        m_quota.FromJs(a);
+        m_quota = m_quota.FromJs(a);
     }
     if (val.isNumericMember(JPriority)) {
         m_priority = val[JPriority].asInt();
