@@ -36,6 +36,13 @@ SQLiteDir = $(baseDir)SQLite/
 SubpartLibs = $(BuildContext)SubParts/Libs/
 o = $(PartBuildDir)
 
+
+dirToSearch = $(BuildContext)VendorAPI/icu4c
+%include cincapnd.mki
+
+dirToSearch = $(BuildContext)VendorAPI/
+%include cincapnd.mki
+
 # DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
 appName = iTwinSQLite
 CCompPDBName = $(appName)
@@ -71,6 +78,7 @@ $(o)BeBriefcaseBasedIdSequence$(oext) : $(baseDir)BeBriefcaseBasedIdSequence.cpp
 objs +% $(MultiCompileObjectList)
 
 # Third-party section of this library.
+
 CCompFpOpts=precise
 %include $(sharedmki)PushThirdPartyIgnores.mki
 
@@ -101,6 +109,7 @@ BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(libprefix)iTwinBentley$(libext)
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)iTwinCurl$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)iTwinOpenSSL$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)iTwin_google_re2$(stlibext)
+BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(libprefix)iTwinIcu4c$(libext)
 
 DLM_OBJECT_FILES    = $(objs)
 DLM_NAME            = $(appName)
