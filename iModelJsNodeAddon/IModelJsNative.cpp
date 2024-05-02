@@ -1136,7 +1136,36 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         }
         OpenIModelDb(BeFileName(dbName), openParams);
     }
+    Napi::Value GetNoCaseCollation(NapiInfoCR info){
+        auto& db = GetOpenedDb(info);
+        if (db.GetNoCaseCollation() == NoCaseCollation::ASCII)
+            return Napi::String::New(Env(), "ASCII");
+        else if (db.GetNoCaseCollation() == NoCaseCollation::Latin1)
+            return Napi::String::New(Env(), "Latin1");
+        THROW_JS_TYPE_EXCEPTION("unknown collation");
+    }
 
+    void SetNoCaseCollation(NapiInfoCR info){
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_STRING(0, collationName);
+        if (collationName.EqualsIAscii("ASCII")) {
+            if(db.GetNoCaseCollation() != NoCaseCollation::ASCII){
+                auto rc = db.SetNoCaseCollation(NoCaseCollation::ASCII);
+                if (rc != BE_SQLITE_OK)
+                    THROW_JS_TYPE_EXCEPTION("failed to set case collation.");
+            }
+        } else  if (collationName.EqualsIAscii("Latin1")) {
+            if(db.GetNoCaseCollation() != NoCaseCollation::Latin1){
+                db.ClearECDbCache();
+                db.GetStatementCache().Empty();
+                auto rc = db.SetNoCaseCollation(NoCaseCollation::Latin1);
+                if (rc != BE_SQLITE_OK)
+                    THROW_JS_TYPE_EXCEPTION("failed to set case collation.");
+            }
+        } else {
+            THROW_JS_TYPE_EXCEPTION("unknown collation");
+        }
+    }
     void RestartDefaultTxn(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         auto& txns = db.Txns();
@@ -1272,6 +1301,25 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
       return worker->Queue();
     }
 
+    Napi::Value ComputeRangesForText(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        REQUIRE_ARGUMENT_STRING(0, text);
+        REQUIRE_ARGUMENT_UINTEGER(1, fontId);
+        REQUIRE_ARGUMENT_BOOL(2, bold);
+        REQUIRE_ARGUMENT_BOOL(3, italic);
+        REQUIRE_ARGUMENT_NUMBER(4, widthFactor);
+        REQUIRE_ARGUMENT_NUMBER(5, height);
+
+        auto emphasis = bold ? TextEmphasis::Bold : TextEmphasis::None;
+        if (italic) {
+            emphasis = emphasis | TextEmphasis::Italic;
+        }
+        
+        BeJsNapiObject result(Env());
+        JsInterop::ComputeRangeForText(result, db, text, FontId(static_cast<uint64_t>(fontId)), emphasis, widthFactor, height);
+        return result;
+    }
+    
     Napi::Value DumpChangeSet(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);
@@ -2488,6 +2536,50 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     void ConcurrentQueryShutdown(NapiInfoCR info) {
         ConcurrentQueryMgr::Shutdown(GetOpenedDb(info));
     }
+    static Napi::Value ZlibCompress(NapiInfoCR info) {
+        if (info.Length() < 1 || !info[0].IsTypedArray()){
+            BeNapi::ThrowJsException(info.Env(), "expect UInt8Array argument");
+        }
+        Napi::TypedArray typedArray = info[0].As<Napi::TypedArray>();
+        if (typedArray.TypedArrayType() != napi_uint8_array) {
+            BeNapi::ThrowJsException(info.Env(), "expect UInt8Array argument");
+        }
+        Napi::Uint8Array uint8Array = typedArray.As<Napi::Uint8Array>();
+        bvector<Byte> bytes(uint8Array.Data(), uint8Array.Data() + uint8Array.ElementLength());
+        bvector<Byte> compressed;
+        if (!BeSQLiteLib::ZlibCompress(compressed, bytes)){
+            BeNapi::ThrowJsException(info.Env(), "failed to compress buffer");
+        }
+
+        auto blob = Napi::Uint8Array::New(info.Env(), compressed.size());
+        memcpy(blob.Data(), compressed.data(), compressed.size());
+        return blob;
+    }
+
+    static Napi::Value ZlibDecompress(NapiInfoCR info) {
+        if (info.Length() < 1 || !info[0].IsTypedArray()){
+            BeNapi::ThrowJsException(info.Env(), "expect UInt8Array as first argument");
+        }
+        if (info.Length() < 2 || !info[1].IsNumber()){
+            BeNapi::ThrowJsException(info.Env(), "expect int as second argument argument");
+        }
+        Napi::TypedArray typedArray = info[0].As<Napi::TypedArray>();
+        if (typedArray.TypedArrayType() != napi_uint8_array) {
+            BeNapi::ThrowJsException(info.Env(), "expect UInt8Array argument");
+        }
+
+        Napi::Number uncompressSize = info[1].As<Napi::Number>();
+        Napi::Uint8Array uint8Array = typedArray.As<Napi::Uint8Array>();
+        bvector<Byte> bytes(uint8Array.Data(), uint8Array.Data() + uint8Array.ElementLength());
+        bvector<Byte> uncompressed;
+        if (!BeSQLiteLib::ZlibDecompress(uncompressed, bytes, uncompressSize.Uint32Value())){
+            BeNapi::ThrowJsException(info.Env(), "failed to decompress buffer");
+        }
+
+        auto blob = Napi::Uint8Array::New(info.Env(), uncompressed.size());
+        memcpy(blob.Data(), uncompressed.data(), uncompressed.size());
+        return blob;
+    }
     // ========================================================================================
     // Test method handler
     // ========================================================================================
@@ -2519,6 +2611,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("closeFile", &NativeDgnDb::CloseFile),
             InstanceMethod("completeCreateChangeset", &NativeDgnDb::CompleteCreateChangeset),
             InstanceMethod("computeProjectExtents", &NativeDgnDb::ComputeProjectExtents),
+            InstanceMethod("computeRangesForText", &NativeDgnDb::ComputeRangesForText),
             InstanceMethod("concurrentQueryExecute", &NativeDgnDb::ConcurrentQueryExecute),
             InstanceMethod("concurrentQueryResetConfig", &NativeDgnDb::ConcurrentQueryResetConfig),
             InstanceMethod("concurrentQueryShutdown", &NativeDgnDb::ConcurrentQueryShutdown),
@@ -2669,8 +2762,12 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("performCheckpoint", &NativeDgnDb::PerformCheckpoint),
             InstanceMethod("setAutoCheckpointThreshold", &NativeDgnDb::SetAutoCheckpointThreshold),
             InstanceMethod("getLocalChanges", &NativeDgnDb::GetLocalChanges),
+            InstanceMethod("getNoCaseCollation", &NativeDgnDb::GetNoCaseCollation),
+            InstanceMethod("setNoCaseCollation", &NativeDgnDb::SetNoCaseCollation),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
+            StaticMethod("zlibCompress", &NativeDgnDb::ZlibCompress),
+            StaticMethod("zlibDecompress", &NativeDgnDb::ZlibDecompress),
         });
 
         exports.Set("DgnDb", t);

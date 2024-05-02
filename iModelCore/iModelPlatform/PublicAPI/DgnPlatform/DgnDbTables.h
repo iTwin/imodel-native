@@ -580,6 +580,7 @@ struct EcefLocation
     }
     // Constructor to compute ECEF location from an cartographic origin
     DGNPLATFORM_EXPORT EcefLocation(GeoPointCR originLL, DPoint3dCR originIn, GeoCoordinates::BaseGCSCP GCS);
+    DGNPLATFORM_EXPORT Transform ComputeTransform();
 };
 
 //! Source of DgnGeoLocation.GetProjectExtents

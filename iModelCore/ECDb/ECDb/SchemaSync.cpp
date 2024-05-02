@@ -35,11 +35,6 @@ FROM   [ec_index] [idx]
 struct JsonNames {
 	constexpr static char SyncId[] = "id";
 	constexpr static char SyncDataVer[] = "dataVer";
-	constexpr static char SyncProjectId[] = "projectId";
-	constexpr static char SyncFileId[] = "fileId";
-	constexpr static char SyncLastModeUtc[] = "lastModUtc";
-	constexpr static char SyncChangeSetId[] = "parentChangesetId";
-	constexpr static char SyncChangeSetIndex[] = "parentChangesetIndex";
 	constexpr static char JNamespace[] = "ec_Db";
     constexpr static char JSyncDbInfo[] = "syncDbInfo";
 	constexpr static char JLocalChannelInfo[] = "localDbInfo";
@@ -497,7 +492,26 @@ SchemaSync::Status SchemaSync::Init(SyncDbUri const& syncDbUri, TableList additi
 	}
 
     sharedDb.CloseDb();
-    return PushInternal(syncDbUri, additionTables);
+    const auto pullResult = PushInternal(syncDbUri, additionTables);
+	if (pullResult != Status::OK)
+        return pullResult;
+
+	if (std::find(additionTables.begin(),additionTables.end(), SchemaSyncHelper::TABLE_BE_PROP) != additionTables.end()){
+		// after BE_PROP pull into syncdb it include JLocalChannelInfo which
+		// need to be deleted as its confusing as it should only be in the briefcase.
+		rc = sharedDb.OpenBeSQLiteDb(syncDbUri.GetUri().c_str(), openParams);
+		if (rc != BE_SQLITE_OK) {
+			m_conn.GetImpl().Issues().ReportV(
+				IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0617,
+				"Fail to open schema sync db %s. %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
+			return Status::ERROR_SCHEMA_SYNC_DB_ALREADY_INITIALIZED;
+		}
+		const auto propSpec = PropertySpec(JsonNames::JLocalChannelInfo, JsonNames::JNamespace);
+        sharedDb.DeleteProperty(propSpec);
+        sharedDb.SaveChanges();
+		sharedDb.CloseDb();
+    }
+    return Status::OK;
 }
 
 //---------------------------------------------------------------------------------------
@@ -896,47 +910,12 @@ SchemaSync::LocalDbInfo SchemaSync::GetInfo() const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String SchemaSync::GetParentRevisionId() const {
-    const auto PARENT_CS_ID = "ParentChangeSetId";
-	Utf8String revisionId;
-    DbResult result = m_conn.QueryBriefcaseLocalValue(revisionId, PARENT_CS_ID);
-    return (BE_SQLITE_ROW == result) ? revisionId : "";
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-void SchemaSync::GetParentRevision(int32_t& index, Utf8StringR id) const {
-    const auto PARENT_CHANGESET = "parentChangeset";
-    id = GetParentRevisionId();
-    index = id.empty() ? 0 : -1;
-    Utf8String json;
-
-    if (BE_SQLITE_ROW != m_conn.QueryBriefcaseLocalValue(json, PARENT_CHANGESET))
-        return;
-
-    BeJsDocument jsonObj(json);
-    if (jsonObj.isStringMember("id") && jsonObj.isNumericMember("index") && id.Equals(jsonObj["id"].asString()))
-        index = jsonObj["index"].GetInt();
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
 DbResult SchemaSync::UpdateOrCreateSyncDbInfo(DbR syncDb) {
     auto info = SyncDbInfo::From(syncDb);
 	if (info.IsEmpty()) {
         info.m_syncId.Create();
-        info.m_projectId = m_conn.QueryProjectGuid();
-        info.m_fileId = m_conn.GetDbGuid();
     }
 
-	int32_t csIndex;
-	Utf8String csId;
-	GetParentRevision(csIndex, csId);
-	info.m_changesetId = csId;
-	info.m_changesetIndex = csIndex;
-	info.m_lastModUtc = DateTime::GetCurrentTimeUtc();
     info.m_dataVer += 1;
 
     const auto propSpec = PropertySpec(JsonNames::JSyncDbInfo, JsonNames::JNamespace);
@@ -975,7 +954,6 @@ DbResult SchemaSync::UpdateOrCreateSyncDbInfo(SyncDbUri syncDbUri) {
 DbResult SchemaSync::UpdateOrCreateLocalDbInfo(SyncDbInfo const& from) {
     auto info = GetInfo();
 	info.m_dataVer = from.m_dataVer;
-	info.m_lastModUtc = from.GetLastModUtc();
 	info.m_syncId = from.m_syncId;
 
 	// Save property
@@ -998,11 +976,6 @@ void SchemaSync::SyncDbInfo::To(BeJsValue val) const {
     val.SetEmptyObject();
     val[JsonNames::SyncDataVer] = BeInt64Id(m_dataVer).ToHexStr();
     val[JsonNames::SyncId] = m_syncId.ToString();
-	val[JsonNames::SyncProjectId] = m_projectId.ToString();
-	val[JsonNames::SyncFileId] = m_fileId.ToString();
-	val[JsonNames::SyncLastModeUtc] = m_lastModUtc.ToTimestampString();
-	val[JsonNames::SyncChangeSetId] = m_changesetId;
-	val[JsonNames::SyncChangeSetIndex] = m_changesetIndex;
 }
 
 //SchemaSyncHelper::SyncDbUri==================================================
@@ -1061,14 +1034,7 @@ SchemaSync::SyncDbInfo SchemaSync::SyncDbInfo::From(BeJsConst val){
 	}
 
     SyncDbInfo info;
-    if (val.isStringMember(JsonNames::SyncDataVer)
-		 && val.isStringMember(JsonNames::SyncId)
-		 && val.isStringMember(JsonNames::SyncProjectId)
-		 && val.isStringMember(JsonNames::SyncFileId)
-		 && val.isStringMember(JsonNames::SyncLastModeUtc)
-		 && val.isStringMember(JsonNames::SyncChangeSetId)
-		 && val.isNumericMember(JsonNames::SyncChangeSetIndex)
-	) {
+    if (val.isStringMember(JsonNames::SyncDataVer) && val.isStringMember(JsonNames::SyncId)) {
         BentleyStatus status;
         info.m_dataVer = BeInt64Id::FromString(val[JsonNames::SyncDataVer].asCString(), &status).GetValueUnchecked();
 		if (status == ERROR) {
@@ -1079,12 +1045,6 @@ SchemaSync::SyncDbInfo SchemaSync::SyncDbInfo::From(BeJsConst val){
 		if (!info.m_syncId.IsValid()) {
 			return s_empty;
 		}
-
-		info.m_projectId.FromString(val[JsonNames::SyncProjectId].asCString());
-		info.m_fileId.FromString(val[JsonNames::SyncFileId].asCString());
-		info.m_lastModUtc = DateTime::FromString(val[JsonNames::SyncLastModeUtc].asCString());
-        info.m_changesetId = val[JsonNames::SyncChangeSetId].asCString();
-        info.m_changesetIndex = (int32_t)val[JsonNames::SyncChangeSetIndex].asInt();
         return info;
     }
     return s_empty;
@@ -1100,7 +1060,6 @@ void SchemaSync::LocalDbInfo::To(BeJsValue val) const {
     val.SetEmptyObject();
     val[JsonNames::SyncDataVer] = BeInt64Id(m_dataVer).ToHexStr();
     val[JsonNames::SyncId] = m_syncId.ToString();
-	val[JsonNames::SyncLastModeUtc] = m_lastModUtc.ToTimestampString();
 }
 
 //---------------------------------------------------------------------------------------
@@ -1128,10 +1087,7 @@ SchemaSync::LocalDbInfo SchemaSync::LocalDbInfo::From(BeJsConst val){
 	}
 
     LocalDbInfo info;
-    if (val.isStringMember(JsonNames::SyncDataVer)
-		 && val.isStringMember(JsonNames::SyncId)
-		 && val.isStringMember(JsonNames::SyncLastModeUtc)
-	) {
+    if (val.isStringMember(JsonNames::SyncDataVer) && val.isStringMember(JsonNames::SyncId)) {
         BentleyStatus status;
         info.m_dataVer = BeInt64Id::FromString(val[JsonNames::SyncDataVer].asCString(), &status).GetValueUnchecked();
 		if (status == ERROR) {
@@ -1142,8 +1098,6 @@ SchemaSync::LocalDbInfo SchemaSync::LocalDbInfo::From(BeJsConst val){
 		if (!info.m_syncId.IsValid()) {
 			return s_empty;
 		}
-
-		info.m_lastModUtc = DateTime::FromString(val[JsonNames::SyncLastModeUtc].asCString());
         return info;
     }
     return s_empty;

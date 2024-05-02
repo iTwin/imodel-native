@@ -110,7 +110,7 @@ void JsLogger::LogMessage(Utf8CP category, SEVERITY sev, Utf8CP msg)
         {
         logToJs(category, sev, msg);
         }
-    else
+    else if (m_processLogsOnMainThread)
         {
         m_processLogsOnMainThread.NonBlockingCall([this, category = Utf8String(category), sev, msg = Utf8String(msg)](Napi::Env, Napi::Function)
             {
@@ -125,6 +125,10 @@ void JsLogger::LogMessage(Utf8CP category, SEVERITY sev, Utf8CP msg)
                 // the node process, so we just silently ignore it.
                 }
             });
+        }
+    else
+        {
+        // js logger is not set
         }
     }
 

@@ -19,6 +19,7 @@ BE_JSON_NAME(customAttributes)
 BE_JSON_NAME(direction)
 BE_JSON_NAME(displayLabel)
 BE_JSON_NAME(ecclass)
+BE_JSON_NAME(classId)
 BE_JSON_NAME(extendedType)
 BE_JSON_NAME(federationGuid)
 BE_JSON_NAME(isCustomHandled)
@@ -183,11 +184,13 @@ DgnDbStatus JsInterop::GetECClassMetaData(BeJsValue mjson, DgnDbR dgndb, Utf8CP 
     if (nullptr == ecclass)
         return DgnDbStatus::NotFound;    // This is not an exception. It just returns an empty result.
 
+    DgnClassId classId(ecclass->GetId().GetValue());
     if (ecclass->Is(dgndb.Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Element)))
         {
-        dgn_ElementHandler::Element::FindHandler(dgndb, DgnClassId(ecclass->GetId().GetValue()));
+        dgn_ElementHandler::Element::FindHandler(dgndb, classId);
         }
 
+    mjson[json_classId()] = classId.ToHexStr();
     mjson[json_ecclass()] = ecclass->GetFullName();
     SET_IF_NOT_EMPTY_STR(mjson[json_description()], ecclass->GetDescription());
     SET_IF_NOT_NULL_STR (mjson[json_modifier()], modifierToString(ecclass->GetClassModifier()));
@@ -1085,6 +1088,28 @@ void JsInterop::QueryModelExtents(BeJsValue extentsJson, DgnDbR db, BeJsConst op
         throwDgnDbStatus(DgnDbStatus::NoGeometry);
 
     extents.ToJson(extentsJson[json_modelExtents()]);
+}
+
+void JsInterop::ComputeRangeForText(BeJsValue result, DgnDbR db, Utf8StringCR text, FontId fontId, TextEmphasis emphasis, double widthFactor, double height) {
+    DRange2d layoutRange = DRange2d::From(0, 0, 0, height);
+    DRange2d justificationRange = layoutRange;
+    if (text.size() > 0) {
+        auto& font = db.Fonts().FindFont(fontId);
+        GlyphLayoutContext layoutContext;
+        layoutContext.m_string = text;
+        layoutContext.m_drawSize = DPoint2d::From(height, height * widthFactor);
+        layoutContext.m_isBold = TextEmphasis::None != (emphasis & TextEmphasis::Bold);
+        layoutContext.m_isItalic = TextEmphasis::None != (emphasis & TextEmphasis::Italic);
+        
+        GlyphLayoutResult layoutResult;
+        if (SUCCESS == font.LayoutGlyphs(layoutResult, layoutContext)) {
+            layoutRange = layoutResult.m_range;
+            justificationRange = layoutResult.m_justificationRange;
+        }
+    }
+
+    BeJsGeomUtils::DRange2dToJson(result["layout"], layoutRange);
+    BeJsGeomUtils::DRange2dToJson(result["justification"], justificationRange);
 }
 
 /*---------------------------------------------------------------------------------**//**
