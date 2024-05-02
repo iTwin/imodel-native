@@ -107,11 +107,6 @@ Every BeSQLite database has a table named "be_EmbedFile" that holds copies of fi
 These files are stored as blobs, and are not directly accessible by external applications. Instead, BeSQLite provides
 methods to extract them into temporary locations.
 
-@section OVRBeSQLiteLanguageSupport 7. Support for language-specific collation and case-folding
-
-By default, BeSQLite does not support language-specific collation, and performs case-folding only for the ASCII
-character set. However, applications can extend BeSQLite by implementing the #BeSQLiteLib::ILanguageSupport interface.
-
 */
 
 #ifdef __BE_SQLITE_HOST_DLL__
@@ -344,6 +339,13 @@ struct BeServerIssuedId : BeInt64Id
 #define BESERVER_ISSUED_ID_SUBCLASS(classname,superclass) struct classname : superclass {BEINT64_ID_DECLARE_MEMBERS(classname,superclass)};
 #define BESERVER_ISSUED_ID_CLASS(classname) BESERVER_ISSUED_ID_SUBCLASS(classname,BeSQLite::BeServerIssuedId)
 
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+enum class NoCaseCollation {
+    ASCII,
+    Latin1 //! Latin-1 (ISO-8859-1: Western European) https://www.charset.org/charsets/iso-8859-1
+};
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
@@ -631,44 +633,6 @@ enum class DbValueType : int
 struct BeSQLiteLib
 {
 public:
-    //=======================================================================================
-    //! This is an interface class that allows applications to provide custom language processing for SQL case and collation operations.
-    //! While a single static instance of this class is registered, collations are registered on a per-database basis. They are <i>not</i> expected to vary per database.
-    // @bsiclass
-    //=======================================================================================
-    struct ILanguageSupport
-    {
-        //! Signature of the callback method used to free collator objects provided by _InitCollation. Objects will be freed as each database is closed (since they are created for each database).
-        typedef void(*CollationUserDataFreeFunc)(void*);
-
-        //! Describes a custom collator to register.
-        //! @see _InitCollation.
-        struct CollationEntry
-        {
-            AString m_name;     //!< Name that query strings will use to use this collation.
-            void* m_collator;   //!< User data object provided in the collation callback. @see _Collate. @see CollationUserDataFreeFunc.
-        };
-
-        //! Converts source to lower-case into result according to localeName. result cannot be reallocated, and is typically over-allocated based on source.
-        //! This is called when the SQL scalar function LOWER is processed.
-        virtual void _Lower(Utf16CP source, int sourceLen, Utf16P result, int resultLen) = 0;
-
-        //! Converts source to upper-case into result according to localeName. result cannot be reallocated, and is typically over-allocated based on source.
-        //! This is called when the SQL scalar function UPPER is processed.
-        virtual void _Upper(Utf16CP source, int sourceLen, Utf16P result, int resultLen) = 0;
-
-        //! Registers a collection of collations with the database.
-        //! This is called when every database is opened, and collatorFreeFunc is called when the database is closed for each collator provided.
-        virtual void _InitCollation(bvector<CollationEntry>& collations, CollationUserDataFreeFunc& collatorFreeFunc) = 0;
-
-        //! Compares two strings for sorting purposes. collator is the m_collator object provided in the corresponding CollationEntry.
-        //! This is called when a custom collation is processed in a SQL query (e.g. in an ORDER BY clause).
-        virtual int _Collate(Utf16CP lhs, int lhsLen, Utf16CP rhs, int rhsLen, void* collator) = 0;
-
-        //! Maps the given UTF-32 character to its case folding equivalent (i.e. a normalized form used for comparison). This is primarily used in the LIKE operator.
-        //! If the character has no case folding equivalent, the character itself is returned.
-        virtual uint32_t _FoldCase(uint32_t) = 0;
-    };
 
     enum class LogErrors : bool {Yes=1, No=0};
 
@@ -696,13 +660,6 @@ public:
     static void FreeMem(void* p);
 
     BE_SQLITE_EXPORT static int CloseSqlDb(void* p);
-
-    //! Sets the static ILanguageSupport object for handling custom language processing.
-    //! This should be called once per session before opening any databases and applies to all future opened databases.
-    BE_SQLITE_EXPORT static void SetLanguageSupport(ILanguageSupport*);
-
-    //! Gets the current ILanguageSupport. Can return nullptr.
-    BE_SQLITE_EXPORT static ILanguageSupport* GetLanguageSupport();
 
     //! Get memory used by SQLite for current process
     BE_SQLITE_EXPORT static DbResult GetMemoryUsed(int64_t& current, int64_t& high, bool reset = false);
@@ -2424,6 +2381,7 @@ protected:
     Savepoint m_defaultTxn;
     BeBriefcaseId m_briefcaseId;
     StatementCache m_statements;
+    NoCaseCollation m_noCaseCollation;
     DbTxns m_txns;
     std::unique_ptr<ScalarFunction> m_regexFunc, m_regexExtractFunc, m_base36Func;
     explicit DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode, std::optional<int> busyTimeout);
@@ -2445,6 +2403,8 @@ protected:
     void SaveCachedProperties(bool isCommit);
     Utf8String GetLastError(DbResult* lastResult) const;
     void SaveCachedBlvs(bool isCommit);
+    DbResult SetNoCaseCollation(NoCaseCollation col);
+    NoCaseCollation GetNoCaseCollation() const { return m_noCaseCollation; }
     BE_SQLITE_EXPORT DbResult SaveProperty(PropertySpecCR spec, Utf8CP strData, void const* value, uint32_t propsize, uint64_t majorId=0, uint64_t subId=0);
     BE_SQLITE_EXPORT bool HasProperty(PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
     BE_SQLITE_EXPORT DbResult QueryPropertySize(uint32_t& propsize, PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
@@ -3324,6 +3284,8 @@ public:
     BE_SQLITE_EXPORT DbBuffer Serialize(const char *zSchema = nullptr) const;
 
     BE_SQLITE_EXPORT static DbResult Deserialize(DbBuffer& buffer, DbR db, DbDeserializeOptions opts = DbDeserializeOptions::FreeOnClose, const char *zSchema = nullptr, std::function<void(DbR)> beforeDefaultTxnStarts = nullptr);
+    BE_SQLITE_EXPORT DbResult SetNoCaseCollation(NoCaseCollation col) { return m_dbFile->SetNoCaseCollation(col); }
+    BE_SQLITE_EXPORT NoCaseCollation GetNoCaseCollation() const { return m_dbFile->GetNoCaseCollation(); }
 };
 
 //=======================================================================================
