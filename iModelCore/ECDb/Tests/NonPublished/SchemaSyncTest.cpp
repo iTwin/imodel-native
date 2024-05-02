@@ -491,7 +491,8 @@ TEST_F(SchemaSyncTestFixture, Verify_SyncInfo_BeProp_Entries)
     b1->PullMergePush("push change");
 
     auto changesets = hub.Query();
-    ASSERT_TRUE(SchemaSync::ContainsChangeToLocalDbInfo(*changesets.back()));
+    bool hasSchemaChanges;
+    ASSERT_TRUE(SchemaSync::IsValid(*changesets.back(), hasSchemaChanges));
 
     syncDb = schemaSyncDb.OpenReadOnly();
     ASSERT_EQ(BE_SQLITE_ROW, syncDb->QueryProperty(strData0, syncDbInfoProp));
