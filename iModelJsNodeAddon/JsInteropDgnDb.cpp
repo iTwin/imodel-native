@@ -299,40 +299,6 @@ DgnDbStatus JsInterop::GetSchemaItem(BeJsValue mjson, DgnDbR dgndb, Utf8CP schem
     return DgnDbStatus::NotFound;    // This is not an exception. It just returns an empty result.
 }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-DgnDbStatus JsInterop::GetElement(BeJsValue elementJson, DgnDbR dgndb, Napi::Object obj) {
-    BeJsConst inOpts(obj);
-    DgnElementCPtr elem;
-    DgnElementId eid = inOpts[json_id()].GetId64<DgnElementId>();
-    BeJsConst fedJson = inOpts[json_federationGuid()];
-    BeJsConst codeJson = inOpts[json_code()];
-
-    CachedECSqlStatementPtr stmt;
-    if (eid.IsValid()) {
-        stmt = dgndb.GetPreparedECSqlStatement("SELECT $ FROM Bis.Element WHERE ECInstanceId=? OPTIONS USE_JS_PROP_NAMES");
-        stmt->BindId(1, eid);
-    } else if (fedJson.isString()) {
-        BeGuid federationGuid;
-        federationGuid.FromString(fedJson.asCString());
-        stmt = dgndb.GetPreparedECSqlStatement("SELECT $ FROM Bis.Element WHERE FederationGuid=? OPTIONS USE_JS_PROP_NAMES");
-        stmt->BindGuid(1, federationGuid);
-    } else {
-        DgnCode code = DgnCode::FromJson(codeJson, dgndb, false);
-        stmt = dgndb.GetPreparedECSqlStatement("SELECT $ FROM Bis.Element WHERE CodeSpecId=? AND CodeScopeId=? AND CodeValue=? LIMIT 1 OPTIONS USE_JS_PROP_NAMES");
-        stmt->BindId(1, code.GetCodeSpecId());
-        stmt->BindId(2, code.GetScopeElementId(dgndb));
-        stmt->BindText(3, code.GetValueUtf8CP(), IECSqlBinder::MakeCopy::No);
-    }
-
-    if (BE_SQLITE_ROW != stmt->Step())
-        return DgnDbStatus::NotFound;
-
-    elementJson.From(BeJsDocument(stmt->GetValueText(0)));
-    return DgnDbStatus::Success;
-}
-
 struct SetNapiObjOnElement {
     DgnElementR m_element;
     SetNapiObjOnElement(DgnElementR element, NapiObjectCP obj) : m_element(element) {BeAssert(nullptr==element.m_napiObj); element.m_napiObj = obj;}

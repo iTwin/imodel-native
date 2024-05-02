@@ -3,9 +3,9 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 
-import { assert } from "chai";
-import { Guid, GuidString, Id64Array, Id64String } from "@itwin/core-bentley";
-import type { ModelGeometryChangesProps, RelatedElementProps, RelationshipProps, SubjectProps } from "@itwin/core-common";
+import { assert, expect } from "chai";
+import { DbResult, Guid, GuidString, Id64Array, Id64String } from "@itwin/core-bentley";
+import { type ModelGeometryChangesProps, type RelatedElementProps, type RelationshipProps, type SubjectProps, mapNativeElementProps } from "@itwin/core-common";
 import { IModelJsNative } from "../NativeLibrary";
 import { copyFile, dbFileName } from "./utils";
 import { openDgnDb } from "./index";
@@ -126,8 +126,17 @@ function makeEDE(sourceId: Id64String, targetId: Id64String): ElementDrivesEleme
   };
 }
 
+function getElement(db: IModelJsNative.DgnDb, elid: Id64String) {
+  const statement = new IModelJsNative.ECSqlStatement();
+  statement.prepare(db, `SELECT $ FROM Bis.Element WHERE ECInstanceId=${elid} OPTIONS USE_JS_PROP_NAMES`);
+  expect(statement.step()).eq(DbResult.BE_SQLITE_ROW);
+  const nativeElementProps = statement.getValue(0).getString();
+  statement.dispose();
+  return mapNativeElementProps(JSON.parse(nativeElementProps));
+}
+
 function updateElement(db1: IModelJsNative.DgnDb, elid: Id64String, newLabel: string) {
-  const ed2 = db1.getElement({ id: elid });
+  const ed2 = getElement(db, elid);
   ed2.userLabel = newLabel;
   db1.updateElement(ed2);
 }
@@ -156,7 +165,7 @@ describe("elementDependency", () => {
     db.enableTxnTesting();
 
     mockTxn.fmtElem = (_cn: string, id: Id64String) => {
-      return db.getElement({ id }).code.value!;
+      return getElement(db, id).code.value!;
     };
 
     const p2id = db.insertElement(makeSubject("p2"));
@@ -215,7 +224,7 @@ describe("elementDependency", () => {
     db.enableTxnTesting();
 
     mockTxn.fmtElem = (_cn: string, id: Id64String) => {
-      return db.getElement({ id }).code.value!;
+      return getElement(db, id).code.value!;
     };
 
     // The full graph:
@@ -334,7 +343,7 @@ describe("elementDependency", () => {
     db.enableTxnTesting();
 
     mockTxn.fmtElem = (_cn: string, id: Id64String) => {
-      return db.getElement({ id }).code.value!;
+      return getElement(db, id).code.value!;
     };
 
     const e1id = db.insertElement(makeSubject("e1"));
@@ -382,41 +391,41 @@ describe("elementDependency", () => {
     db.enableTxnTesting();
 
     mockTxn.fmtElem = (_cn: string, id: Id64String) => {
-      return db.getElement({ id }).code.value!;
+      return getElement(db, id).code.value!;
     };
 
     const e1id = db.insertElement(makeSubject("e1"));
-    const e1 = db.getElement({ id: e1id });
+    const e1 = getElement(db, e1id);
     assert.isTrue(Guid.isGuid(e1.federationGuid!)); // if you don't supply a federationGuid, one is created
 
     const e11props = makeSubject("e11");
     e11props.federationGuid = Guid.empty;
     const e11id = db.insertElement(e11props);
-    const e11 = db.getElement({ id: e11id });
+    const e11 = getElement(db, e11id);
     assert.isUndefined(e11.federationGuid); // if you supply empty federationGuid, it is saved as null and returned as undefined
 
     const e2props = makeSubject("e2");
     e2props.federationGuid = Guid.createValue();
     const e2id = db.insertElement(e2props);
-    const e2 = db.getElement({ id: e2id });
+    const e2 = getElement(db, e2id);
     assert.strictEqual(e2.federationGuid, e2props.federationGuid); // you may supply your own federationGuid
 
     const e21props = makeSubject("e21");
     e21props.federationGuid = "bad guid";
     const e21id = db.insertElement(e21props);
-    const e21 = db.getElement({ id: e21id });
+    const e21 = getElement(db, e21id);
     assert.isUndefined(e21.federationGuid); // if you supply an invalid federationGuid, it is saved as null and returned as undefined
 
     const e3props = makeSubject("e3");
     e3props.federationGuid = undefined;
     const e3id = db.insertElement(e3props);
-    const e3 = db.getElement({ id: e3id });
+    const e3 = getElement(db, e3id);
     assert.isTrue(Guid.isGuid(e3.federationGuid!)); // if you supply "undefined" for federationGuid, one is created.
 
     const e4props = makeSubject("e4");
     e4props.federationGuid = "";
     const e4id = db.insertElement(e4props);
-    const e4 = db.getElement({ id: e4id });
+    const e4 = getElement(db, e4id);
     assert.isUndefined(e4.federationGuid); // if you supply an blank federationGuid, it is saved as null and returned as undefined
 
     const ede_1_2 = makeEDE(e1id, e2id);

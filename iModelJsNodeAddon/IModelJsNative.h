@@ -496,7 +496,6 @@ public:
     static DgnDbPtr CreateIModel(Utf8StringCR filename, BeJsConst props);
     static DgnDbStatus GetECClassMetaData(BeJsValue results, DgnDbR db, Utf8CP schema, Utf8CP ecclass);
     static DgnDbStatus GetSchemaItem(BeJsValue results, DgnDbR db, Utf8CP schemaName, Utf8CP itemName);
-    static DgnDbStatus GetElement(BeJsValue results, DgnDbR db, Napi::Object);
     static Napi::String InsertElement(DgnDbR db, Napi::Object props, Napi::Value options);
     static void UpdateElement(DgnDbR db, Napi::Object);
     static void DeleteElement(DgnDbR db, Utf8StringCR eidStr);

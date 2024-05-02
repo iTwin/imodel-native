@@ -567,7 +567,6 @@ export declare namespace IModelJsNative {
     public getCurrentChangeset(): ChangesetIndexAndId;
     public getCurrentTxnId(): TxnIdString;
     public getECClassMetaData(schema: string, className: string): ErrorStatusOrResult<IModelStatus, string>;
-    public getElement(opts: ElementLoadProps): ElementProps;
     public getFilePath(): string; // full path of the DgnDb file
     public getGeoCoordinatesFromIModelCoordinates(points: GeoCoordinatesRequestProps): GeoCoordinatesResponseProps;
     public getGeometryContainment(props: object): Promise<GeometryContainmentResponseProps>;
