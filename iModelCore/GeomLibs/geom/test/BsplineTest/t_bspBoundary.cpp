@@ -1056,7 +1056,7 @@ TEST(bsptrim, IvanSurface)
     points.push_back(DPoint3d::From(0.052943920585107662, 0.036405202020773686, -0.1310889134404789));
 
     bvector<double> weights;
-    for (size_t i = 0; i < vPoleCount; ++i)
+    for (auto i = 0; i < vPoleCount; ++i)
         {
         weights.push_back(1.17207441027282);
         weights.push_back(0.93412532019840921);
