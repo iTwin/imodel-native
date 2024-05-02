@@ -2105,26 +2105,25 @@ TEST_F(DgnElementTests, RelatedElementFromJson)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnElementTests, ToJson)
 {
-    Utf8String validJsonString(R"json(
-{
+    Utf8String validJsonString(R"json({
     "arrayOfStructs": [
         {
-            "city": {
-                "country": "US",
-                "name": "Exton",
-                "state": "PA",
-                "zip": 19341
-            },
-            "street": "690 Pennsylvania Drive"
+        "city": {
+            "country": "US",
+            "name": "Exton",
+            "state": "PA",
+            "zip": 19341.0
+        },
+        "street": "690 Pennsylvania Drive"
         },
         {
-            "city": {
-                "country": "US",
-                "name": "Philadelphia",
-                "state": "PA",
-                "zip": 19102
-            },
-            "street": "1601 Cherry Street"
+        "city": {
+            "country": "US",
+            "name": "Philadelphia",
+            "state": "PA",
+            "zip": 19102.0
+        },
+        "street": "1601 Cherry Street"
         }
     ],
     "b": false,
@@ -2133,102 +2132,69 @@ TEST_F(DgnElementTests, ToJson)
     "code": {
         "scope": "0x1",
         "spec": "0x1",
-        "value": "code value"
+        "value": ""
     },
     "d": 3.14,
     "dt": "2018-02-04T00:00:00.000",
     "dtUtc": "2018-02-05T00:00:00.000Z",
-    "i": 50,
-    "id": "0x14",
+    "i": 50.0,
     "iGeom": {
         "lineSegment": [
-            [
-                -21908.999,
-                4111.625,
-                0
-            ],
-            [
-                -22956.749,
-                4111.625,
-                0
-            ]
+        [
+            -21908.999,
+            4111.625,
+            0.0
+        ],
+        [
+            -22956.749,
+            4111.625,
+            0.0
+        ]
         ]
     },
-    "inSpatialIndex": true,
-    "l": 100,
-    "lastMod": "2024-04-12T11:49:31.805Z",
+    "id": "0x14",
+    "l": 100.0,
     "model": "0x11",
     "p2d": {
-        "x": 3,
-        "y": 5
+        "x": 3.0,
+        "y": 5.0
     },
     "p3d": {
-        "x": 3,
-        "y": 5,
-        "z": 7
+        "x": 3.0,
+        "y": 5.0,
+        "z": 7.0
     },
     "placement": {
         "angles": null,
         "bbox": {
-            "high": [
-                -1.7976931348623157e+308,
-                -1.7976931348623157e+308,
-                -1.7976931348623157e+308
-            ],
-            "low": [
-                1.7976931348623157e+308,
-                1.7976931348623157e+308,
-                1.7976931348623157e+308
-            ]
+        "high": [
+            -1.7976931348623157e+308,
+            -1.7976931348623157e+308,
+            -1.7976931348623157e+308
+        ],
+        "low": [
+            1.7976931348623157e+308,
+            1.7976931348623157e+308,
+            1.7976931348623157e+308
+        ]
         },
         "origin": [
-            0,
-            0,
-            0
+        0.0,
+        0.0,
+        0.0
         ]
     },
-    "s": "test string",
-    "testDoubleProperty1": 0,
-    "testDoubleProperty2": 0,
-    "testDoubleProperty3": 0,
-    "testDoubleProperty4": 0,
-    "testElementProperty": "",
-    "testIntegerProperty1": 0,
-    "testIntegerProperty2": 0,
-    "testIntegerProperty3": 0,
-    "testIntegerProperty4": 0,
-    "testPointProperty1": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-    },
-    "testPointProperty2": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-    },
-    "testPointProperty3": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-    },
-    "testPointProperty4": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-    }
-})json");
+    "s": "test string"
+    })json");
 
     Json::Value validJson;
     EXPECT_TRUE(Json::Reader::Parse(validJsonString, validJson));
-
-    std::vector<Utf8CP> volatileProperties = { "lastMod" };
 
     SetupSeedProject();
 
     DgnElementId elementId;
     DgnClassId classId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME));
-    TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode(CodeSpec::GetNullCodeSpecId(), DgnElementId((uint64_t)1LL), "code value", DgnCodeValue::Behavior::Exact));
+    TestElement::CreateParams params(*m_db, m_defaultModelId, classId, m_defaultCategoryId, Placement3d(), DgnCode());
     params.SetFederationGuid(BeGuid(false));
 
     bool const b = false;
@@ -2322,7 +2288,7 @@ TEST_F(DgnElementTests, ToJson)
     //   Needed because we handle in-memory element data using ECJsonUtilities and from Db with JsonECSqlSelectAdapter for auto-handled properties.
     BeJsDocument jsval;
     persistentEl->ToJson(jsval);
-    EXPECT_TRUE(jsval.isAlmostEqual(validJson, 0, 0, volatileProperties));
+    EXPECT_TRUE(jsval.isExactEqual(validJson));
 
     // persist the element into the db
     elementId = persistentEl->GetElementId();
@@ -2342,7 +2308,7 @@ TEST_F(DgnElementTests, ToJson)
     //   Needed because we handle in-memory element data using ECJsonUtilities and from Db with JsonECSqlSelectAdapter for auto-handled properties.
     BeJsDocument jsval;
     element->ToJson(jsval);
-    EXPECT_TRUE(jsval.isAlmostEqual(validJson, 0, 0, volatileProperties));
+    EXPECT_TRUE(jsval.isExactEqual(validJson));
     m_db->CloseDb();
     }
 

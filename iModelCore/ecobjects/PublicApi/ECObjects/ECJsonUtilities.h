@@ -34,7 +34,6 @@ enum class ECJsonInt64Format
 //!     - <b>Reserved member names</b>:
 //!         - "id": ECInstanceId of the instance or the navigation id within a %Navigation property
 //!         - "className": Fully qualified class name ("<schema name>.<class name>")
-//!         - "classFullName": Fully qualified class name ("<schema name>:<class name>")
 //!         - "sourceId" : ECInstanceId of source instance of a relationship instance
 //!         - "sourceClassName" : Fully qualified class name ("<schema name>.<class name>") of source instance of a relationship instance
 //!         - "targetId" : ECInstanceId of target instance of a relationship instance
@@ -75,7 +74,6 @@ struct ECJsonSystemNames final
     public:
         static constexpr Utf8CP Id() { return "id"; }
         static constexpr Utf8CP ClassName() { return "className"; }
-        static constexpr Utf8CP ClassFullName() { return "classFullName"; }
 
         static constexpr Utf8CP SourceId() { return "sourceId"; }
         static constexpr Utf8CP SourceClassName() { return "sourceClassName"; }
@@ -125,7 +123,7 @@ struct ECJsonSystemNames final
         //! are not considered by the check.
         //! @param[in] topLevelMemberName Name of top-level member of ECJSON object to check
         //! @return true or false
-        static bool IsTopLevelSystemMember(Utf8StringCR topLevelMemberName) { return topLevelMemberName.Equals(Id()) || topLevelMemberName.Equals(ClassName()) || topLevelMemberName.Equals(ClassFullName()) || topLevelMemberName.Equals(SourceId()) || topLevelMemberName.Equals(TargetId()) || topLevelMemberName.Equals(SourceClassName()) || topLevelMemberName.Equals(TargetClassName()); }
+        static bool IsTopLevelSystemMember(Utf8StringCR topLevelMemberName) { return topLevelMemberName.Equals(Id()) || topLevelMemberName.Equals(ClassName()) || topLevelMemberName.Equals(SourceId()) || topLevelMemberName.Equals(TargetId()) || topLevelMemberName.Equals(SourceClassName()) || topLevelMemberName.Equals(TargetClassName()); }
     };
 
 
@@ -146,8 +144,6 @@ public:
     static constexpr Json::StaticString json_id() { return Json::StaticString(ECJsonSystemNames::Id()); }
     //! @ref ECN::ECJsonSystemNames::ClassName "ECJsonSystemNames::ClassName" as JsonCpp StaticString
     static constexpr Json::StaticString json_className() { return Json::StaticString(ECJsonSystemNames::ClassName()); }
-    //! @ref ECN::ECJsonSystemNames::ClassFullName "ECJsonSystemNames::ClassFullName" as JsonCpp StaticString
-    static constexpr Json::StaticString json_classFullName() { return Json::StaticString(ECJsonSystemNames::ClassFullName()); }
     //! @ref ECN::ECJsonSystemNames::SourceId "ECJsonSystemNames::SourceId" as JsonCpp StaticString
     static constexpr Json::StaticString json_sourceId() { return Json::StaticString(ECJsonSystemNames::SourceId()); }
     //! @ref ECN::ECJsonSystemNames::SourceClassName "ECJsonSystemNames::SourceClassName" as JsonCpp StaticString
@@ -176,11 +172,10 @@ private:
     static BentleyStatus PointCoordinateFromJson(double&, RapidJsonValueCR, Utf8CP coordinateKey);
 
 public:
-    //! Generates the fully qualified name of an ECClass as used in the ECJSON format: &lt;schema name&gt;&lt;separator&gt;&lt;class name&gt;
+    //! Generates the fully qualified name of an ECClass as used in the ECJSON format: &lt;schema name&gt;.&lt;class name&gt;
     //! @param[in] ecClass ECClass
-    //! @param[in] separator Separator between schema name and class name. Default: .
     //! @return Fully qualified class name for the ECJSON format
-    static Utf8String FormatClassName(ECClassCR ecClass, Utf8Char separator = '.') {return Utf8PrintfString("%s%c%s", ecClass.GetSchema().GetName().c_str(), separator, ecClass.GetName().c_str());}
+    static Utf8String FormatClassName(ECClassCR ecClass) {return Utf8PrintfString("%s.%s", ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str());}
 
     //! Generates the fully qualified name of an PropertyCategory as used in the ECJSON format: &lt;schema name&gt;.&lt;PropertyCategory name&gt;
     //! @param[in] ecPropertyCategory PropertyCategory
@@ -205,12 +200,11 @@ public:
     //! @name Methods for JSON values of the JsonCpp API
     //! @{
 
-    //! Writes the fully qualified name of an ECClass into a JSON value: &lt;schema name&gt;&lt;separator&gt;&lt;class name&gt;
+    //! Writes the fully qualified name of an ECClass into a JSON value: &lt;schema name&gt;.&lt;class name&gt;
     //! @param[out] json JSON value
     //! @param[in] ecClass ECClass
-    //! @param[in] separator Separator between schema name and class name. Default: .
     //! @return SUCCESS or ERROR
-    static void ClassNameToJson(BeJsValue json, ECClassCR ecClass, Utf8Char separator = '.') { json = FormatClassName(ecClass, separator); }
+    static void ClassNameToJson(BeJsValue json, ECClassCR ecClass) { json = FormatClassName(ecClass); }
 
     //! Returns a fully qualified name of any SchemaChild
     //! Type must have both GetName() and GetSchema() methods

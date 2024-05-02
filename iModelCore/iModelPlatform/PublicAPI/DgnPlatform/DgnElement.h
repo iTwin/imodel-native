@@ -2048,6 +2048,8 @@ public:
     //! @see GetPropertyIndex
     DGNPLATFORM_EXPORT DgnDbStatus ClearPropertyArray(uint32_t propertyIndex);
 
+    DGNPLATFORM_EXPORT void ToBaseJson(BeJsValue out) const;
+
     //! Create a BeJsValue that represents the state of this element.
     //! @param[in] opts options for customizing the value. If opts["wantGeometry"] != true, geometry stream is not included.
     void ToJson(BeJsValue val, BeJsConst opts = BeJsDocument()) const { val.SetEmptyObject(); _ToJson(val, opts); }

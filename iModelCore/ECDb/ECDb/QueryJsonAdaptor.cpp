@@ -48,7 +48,7 @@ BentleyStatus QueryJsonAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& st
                     if (extendTypeId == ExtendedTypeHelper::ExtendedType::Id)
                         memberName = ECN::ECJsonSystemNames::Id();
                     else if(extendTypeId == ExtendedTypeHelper::ExtendedType::ClassId)
-                        memberName = ECN::ECJsonSystemNames::ClassFullName();
+                        memberName = ECN::ECJsonSystemNames::ClassName();
                     else if(extendTypeId == ExtendedTypeHelper::ExtendedType::SourceId)
                         memberName = ECN::ECJsonSystemNames::SourceId();
                     else if(extendTypeId == ExtendedTypeHelper::ExtendedType::SourceClassId)
@@ -59,8 +59,9 @@ BentleyStatus QueryJsonAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& st
                         memberName = ECN::ECJsonSystemNames::TargetClassName();
                     else
                         ECN::ECJsonUtilities::LowerFirstChar(memberName);
-                } else
+                } else {
                     ECN::ECJsonUtilities::LowerFirstChar(memberName);
+                }
 
                 if (SUCCESS != RenderRootProperty(rowJson[memberName], ecsqlValue))
                     return ERROR;
@@ -174,7 +175,7 @@ BentleyStatus QueryJsonAdaptor::RenderLong(BeJsValue out, IECSqlValue const& in,
             if(m_classIdToClassNames || m_useJsName) {
                 auto classCP = m_ecdb.Schemas().GetClass(id);
                 if (classCP != nullptr) {
-                    ECN::ECJsonUtilities::ClassNameToJson(out, *classCP, m_useJsName ? ':' : '.');
+                    ECN::ECJsonUtilities::ClassNameToJson(out, *classCP);
                     return SUCCESS;
                 }
             }
@@ -290,7 +291,7 @@ BentleyStatus QueryJsonAdaptor::RenderNavigationProperty(BeJsValue out, IECSqlVa
             const auto classId = relClassIdVal.GetId<ECN::ECClassId>();
             auto classCP = m_ecdb.Schemas().GetClass(classId);
             if (classCP != nullptr) {
-                ECN::ECJsonUtilities::ClassNameToJson(out[jsClassId], *classCP, m_useJsName ? ':' : '.');
+                ECN::ECJsonUtilities::ClassNameToJson(out[jsClassId], *classCP);
                 return SUCCESS;
             }
         }
