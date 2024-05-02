@@ -128,7 +128,8 @@ function makeEDE(sourceId: Id64String, targetId: Id64String): ElementDrivesEleme
 
 function getElement(db: IModelJsNative.DgnDb, elid: Id64String) {
   const statement = new IModelJsNative.ECSqlStatement();
-  statement.prepare(db, `SELECT $ FROM Bis.Element WHERE ECInstanceId=${elid} OPTIONS USE_JS_PROP_NAMES`);
+  statement.prepare(db, `SELECT $ FROM Bis.Element WHERE ECInstanceId=? OPTIONS USE_JS_PROP_NAMES`);
+  statement.getBinder(1).bindId(elid);
   expect(statement.step()).eq(DbResult.BE_SQLITE_ROW);
   const nativeElementProps = statement.getValue(0).getString();
   statement.dispose();
