@@ -2105,87 +2105,88 @@ TEST_F(DgnElementTests, RelatedElementFromJson)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnElementTests, ToJson)
 {
-    Utf8String validJsonString(R"json({
-    "arrayOfStructs": [
-        {
-        "city": {
-            "country": "US",
-            "name": "Exton",
-            "state": "PA",
-            "zip": 19341.0
-        },
-        "street": "690 Pennsylvania Drive"
-        },
-        {
-        "city": {
-            "country": "US",
-            "name": "Philadelphia",
-            "state": "PA",
-            "zip": 19102.0
-        },
-        "street": "1601 Cherry Street"
-        }
-    ],
-    "b": false,
-    "category": "0x12",
-    "classFullName": "DgnPlatformTest:TestElementWithNoHandler",
-    "code": {
-        "scope": "0x1",
-        "spec": "0x1",
-        "value": ""
+    Utf8String validJsonString(R"json(
+{
+  "arrayOfStructs": [
+    {
+      "city": {
+        "country": "US",
+        "name": "Exton",
+        "state": "PA",
+        "zip": 19341.0
+      },
+      "street": "690 Pennsylvania Drive"
     },
-    "d": 3.14,
-    "dt": "2018-02-04T00:00:00.000",
-    "dtUtc": "2018-02-05T00:00:00.000Z",
-    "i": 50.0,
-    "iGeom": {
-        "lineSegment": [
-        [
-            -21908.999,
-            4111.625,
-            0.0
-        ],
-        [
-            -22956.749,
-            4111.625,
-            0.0
-        ]
-        ]
-    },
-    "id": "0x14",
-    "l": 100.0,
-    "model": "0x11",
-    "p2d": {
-        "x": 3.0,
-        "y": 5.0
-    },
-    "p3d": {
-        "x": 3.0,
-        "y": 5.0,
-        "z": 7.0
-    },
-    "placement": {
-        "angles": null,
-        "bbox": {
-        "high": [
-            -1.7976931348623157e+308,
-            -1.7976931348623157e+308,
-            -1.7976931348623157e+308
-        ],
-        "low": [
-            1.7976931348623157e+308,
-            1.7976931348623157e+308,
-            1.7976931348623157e+308
-        ]
-        },
-        "origin": [
-        0.0,
-        0.0,
+    {
+      "city": {
+        "country": "US",
+        "name": "Philadelphia",
+        "state": "PA",
+        "zip": 19102.0
+      },
+      "street": "1601 Cherry Street"
+    }
+  ],
+  "b": false,
+  "category": "0x12",
+  "classFullName":"DgnPlatformTest:TestElementWithNoHandler",
+  "code": {
+    "scope": "0x1",
+    "spec": "0x1",
+    "value": ""
+  },
+  "d": 3.14,
+  "dt": "2018-02-04T00:00:00.000",
+  "dtUtc": "2018-02-05T00:00:00.000Z",
+  "i": 50.0,
+  "iGeom": {
+    "lineSegment": [
+      [
+        -21908.999,
+        4111.625,
         0.0
-        ]
+      ],
+      [
+        -22956.749,
+        4111.625,
+        0.0
+      ]
+    ]
+  },
+  "id": "0x14",
+  "l": 100.0,
+  "model": "0x11",
+  "p2d": {
+    "x": 3.0,
+    "y": 5.0
+  },
+  "p3d": {
+    "x": 3.0,
+    "y": 5.0,
+    "z": 7.0
+  },
+  "placement": {
+    "angles": null,
+    "bbox": {
+      "high": [
+        -1.7976931348623157e+308,
+        -1.7976931348623157e+308,
+        -1.7976931348623157e+308
+      ],
+      "low": [
+        1.7976931348623157e+308,
+        1.7976931348623157e+308,
+        1.7976931348623157e+308
+      ]
     },
-    "s": "test string"
-    })json");
+    "origin": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "s": "test string"
+})json");
 
     Json::Value validJson;
     EXPECT_TRUE(Json::Reader::Parse(validJsonString, validJson));
