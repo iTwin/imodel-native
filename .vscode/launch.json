@@ -66,7 +66,7 @@
             "program": "${env:OutRoot}Winx64/Product/ECDb-Gtest/ECDbTest.exe",
             "args": [
                 "--gtest_break_on_failure",
-                "--gtest_filter=SchemaSyncTestFixture.Verify_SyncInfo_BeProp_Entries"
+                "--gtest_filter=SchemaSyncTestFixture.Test"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
