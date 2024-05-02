@@ -415,11 +415,14 @@ TEST_F(SchemaSyncTestFixture, Verify_SyncInfo_BeProp_Entries)
     {
     ECDbHub hub;
     auto b1 = hub.CreateBriefcase();
+    auto b2 = hub.CreateBriefcase();
     SchemaSyncDb schemaSyncDb("sync-db");
 
     ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "xxxxx", false));
-    b1->PullMergePush("init");
+    ASSERT_EQ(b1->Schemas().GetSchemaSync().GetModifiedRowCount(), 1490);
     b1->SaveChanges();
+    b1->PullMergePush("init");
+
 
     // 1. SyncDb must only have syncDbInfo with id and dataVer properties.
     // 2. Briefcase must only have localDbInfo with id and dataVer properties.
@@ -483,7 +486,12 @@ TEST_F(SchemaSyncTestFixture, Verify_SyncInfo_BeProp_Entries)
     );
     syncDb = nullptr;
     ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b1, schema, SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(b1->Schemas().GetSchemaSync().GetModifiedRowCount(), 1593);
     b1->SaveChanges("schema import");
+    b1->PullMergePush("push change");
+
+    auto changesets = hub.Query();
+    ASSERT_TRUE(SchemaSync::ContainsChangeToLocalDbInfo(*changesets.back()));
 
     syncDb = schemaSyncDb.OpenReadOnly();
     ASSERT_EQ(BE_SQLITE_ROW, syncDb->QueryProperty(strData0, syncDbInfoProp));
@@ -507,6 +515,7 @@ TEST_F(SchemaSyncTestFixture, Verify_SyncInfo_BeProp_Entries)
         b1->Schemas().GetSchemaSync().Init(schemaSyncDbNew.GetSyncDbUri(), "yyyyyy", false));
 
     ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDbNew.GetSyncDbUri(), "yyyyyy", true));
+    ASSERT_EQ(b1->Schemas().GetSchemaSync().GetModifiedRowCount(), 1506);
 
     syncDb = schemaSyncDbNew.OpenReadOnly();
     ASSERT_EQ(BE_SQLITE_ROW, syncDb->QueryProperty(strData0, syncDbInfoProp));
@@ -518,6 +527,25 @@ TEST_F(SchemaSyncTestFixture, Verify_SyncInfo_BeProp_Entries)
     ASSERT_STRCASEEQ(info0[kSyncDataVer].asCString(), "0x2");
     ASSERT_STRCASEEQ(info0[kSyncId].asCString(), "yyyyyy");
 
+    info3.Parse(strData3);
+    ASSERT_TRUE(info3.isStringMember(kSyncId));
+    ASSERT_TRUE(info3.isStringMember(kSyncDataVer));
+    ASSERT_STRCASEEQ(info3[kSyncDataVer].asCString(), "0x2");
+    ASSERT_STRCASEEQ(info3[kSyncId].asCString(), "yyyyyy");
+
+    b2->PullMergePush("");
+    ASSERT_EQ(BE_SQLITE_ROW, b2->QueryProperty(strData3, localDbInfoProp));
+    info3.Parse(strData3);
+    ASSERT_TRUE(info3.isStringMember(kSyncId));
+    ASSERT_TRUE(info3.isStringMember(kSyncDataVer));
+    ASSERT_STRCASEEQ(info3[kSyncDataVer].asCString(), "0x2");
+    ASSERT_STRCASEEQ(info3[kSyncId].asCString(), "xxxxx");
+
+    b1->SaveChanges("schema import");
+    b1->PullMergePush("push change");
+
+    b2->PullMergePush("");
+    ASSERT_EQ(BE_SQLITE_ROW, b2->QueryProperty(strData3, localDbInfoProp));
     info3.Parse(strData3);
     ASSERT_TRUE(info3.isStringMember(kSyncId));
     ASSERT_TRUE(info3.isStringMember(kSyncDataVer));

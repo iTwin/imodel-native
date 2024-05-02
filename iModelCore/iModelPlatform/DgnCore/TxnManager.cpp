@@ -833,12 +833,18 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
     auto const ignoreNoop = containsSchemaChanges;
     /** This will disable cascade action and so no new changes are created when applying changeset */
     auto const fkNoAction = true;
+#if 0
     if (containsSchemaChanges && !m_dgndb.Schemas().GetSchemaSync().GetInfo().IsEmpty()){
-        if (!SchemaSync::ContainsChangeToLocalDbInfo(changeStream)) {
-             LOG.error("MergeDataChanges failed. SchemaSync is enabled while schema changeset seem to be pushed by application that ignored schema sync container.");
-            return ChangesetStatus::ApplyError;
+        bool hasSchemaChanges; // changes to ec_ tables or ecdb profile version is consider schema changeset.
+        if (!SchemaSync::IsValid(changeStream, hasSchemaChanges)) {
+            if (hasSchemaChanges) {
+                LOG.errorv("MergeDataChanges failed. SchemaSync is enabled while schema changeset seem to be pushed by application that ignored schema sync container. (ChangesetId:%s)", revision.GetChangesetId().c_str());
+                LOG.errorv("Changeset with id: %s need to be delete from imodel history.", revision.GetChangesetId().c_str());
+                return ChangesetStatus::ApplyError;
+            }
         }
     }
+#endif
     DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, mergeNeeded ? &rebase : nullptr, false, ignoreNoop, fkNoAction);
     if (result != BE_SQLITE_OK) {
         if (changeStream.GetLastErrorMessage().empty())

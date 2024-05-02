@@ -102,7 +102,7 @@ struct SchemaSync final {
             ECDB_EXPORT void To(BeJsValue) const;
             ECDB_EXPORT static LocalDbInfo From(BeJsConst);
             ECDB_EXPORT static LocalDbInfo From(DbCR);
-    };
+};
 
 private:
     ECDbR m_conn;
@@ -111,8 +111,8 @@ private:
     int64_t m_modifiedRowCount;
     Status Init(SyncDbUri const&, Utf8StringCR, bool, TableList);
     Status PullInternal(SyncDbUri const&, TableList);
-    Status PushInternal(SyncDbUri const&, TableList);
-    Status VerifySyncDb(SyncDbUri const&, bool isPull) const;
+    Status PushInternal(SyncDbUri const&, TableList, bool isInit);
+    Status VerifySyncDb(SyncDbUri const&, bool isPull, bool isInit) const;
     DbResult PullSqlSchema(DbR conn);
     DbResult PushSqlSchema(DbR conn);
     Status SaveLocalDbInfo(DbR, LocalDbInfo const&);
@@ -120,7 +120,6 @@ private:
     Status SaveSyncDbInfo(SyncDbUri, SyncDbInfo const&);
     void BeginModifiedRowCount() { m_modifiedRowCount = m_conn.GetTotalModifiedRowCount64(); }
     void EndModifiedRowCount() { m_modifiedRowCount = m_conn.GetTotalModifiedRowCount64() - m_modifiedRowCount; }
-    static void ParseQueryParams(Db::OpenParams&, SyncDbUri const&);
 
 public:
     SchemaSync(SchemaSync&&) = delete;
@@ -129,11 +128,12 @@ public:
     SchemaSync& operator=(SchemaSync const&)=delete;
     explicit SchemaSync(ECDbR conn):m_conn(conn), m_disabledForProfileUpgrade(false) {}
     bool IsEnabled() const { return !GetInfo().IsEmpty(); }
-    SyncDbUri const& GetDefaultSyncDbUri() const { return m_defaultSyncDbUri;  }
+    SyncDbUri const& GetDefaultSyncDbUri() const { return m_defaultSyncDbUri; }
     Status SetDefaultSyncDbUri(Utf8CP syncDbUri) { return SetDefaultSyncDbUri(SyncDbUri(syncDbUri)); }
     void DisableSchemaSync() { m_disabledForProfileUpgrade = true; }
     void ReEnableSchemaSync() { m_disabledForProfileUpgrade = false; }
     bool IsSchemaSyncDisabled() const { return m_disabledForProfileUpgrade; }
+    Status UpdateDataVersion(SyncDbUri const&);
     ECDB_EXPORT int64_t GetModifiedRowCount() const { return m_modifiedRowCount; }
     ECDB_EXPORT Status UpdateDbSchema();
     ECDB_EXPORT LocalDbInfo GetInfo() const;
@@ -141,7 +141,8 @@ public:
     ECDB_EXPORT Status Init(SyncDbUri const&, Utf8StringCR, bool);
     ECDB_EXPORT Status Pull(SyncDbUri const&, SchemaImportToken const* token = nullptr); // read/write op
     ECDB_EXPORT Status Push(SyncDbUri const&);
-    ECDB_EXPORT static bool ContainsChangeToLocalDbInfo(ChangeStream&);
+    ECDB_EXPORT static bool IsValid(ChangeStream&, bool &hasSchemaChanges);
+    static void ParseQueryParams(Db::OpenParams&, SyncDbUri const&);
 };
 //=======================================================================================
 //! Options for how to refer to an ECSchema when looking it up using the SchemaManager

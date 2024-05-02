@@ -115,7 +115,7 @@ bool IdFactory::Reset() const {
     m_relationshipConstraintIdSeq = IdSequence::Create(m_ecdb, TABLE_RelationshipConstraint, COL_DEFAULTNAME_Id);
     m_relationshipConstraintClassIdSeq = IdSequence::Create(m_ecdb, TABLE_RelationshipConstraintClass, COL_DEFAULTNAME_Id);
     m_schemaIdSeq = IdSequence::Create(m_ecdb, TABLE_Schema, COL_DEFAULTNAME_Id);
-    m_schemaReferencIdSeq = IdSequence::Create(m_ecdb, TABLE_SchemaReference, COL_DEFAULTNAME_Id);
+    m_schemaReferenceIdSeq = IdSequence::Create(m_ecdb, TABLE_SchemaReference, COL_DEFAULTNAME_Id);
     m_tableIdSeq = IdSequence::Create(m_ecdb, TABLE_Table, COL_DEFAULTNAME_Id);
     m_unitIdSeq = IdSequence::Create(m_ecdb, TABLE_Unit, COL_DEFAULTNAME_Id);
     m_unitSystemIdSeq = IdSequence::Create(m_ecdb, TABLE_UnitSystem, COL_DEFAULTNAME_Id);
@@ -144,7 +144,7 @@ bool IdFactory::IsValid() const {
         m_relationshipConstraintIdSeq != nullptr &&
         m_relationshipConstraintClassIdSeq != nullptr &&
         m_schemaIdSeq != nullptr &&
-        m_schemaReferencIdSeq != nullptr &&
+        m_schemaReferenceIdSeq != nullptr &&
         m_tableIdSeq != nullptr &&
         m_unitIdSeq != nullptr &&
         m_unitSystemIdSeq != nullptr;

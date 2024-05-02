@@ -901,11 +901,10 @@ ECDbHub::ECDbHub():m_id(true), m_briefcaseid(10) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::vector<ECDbChangeSet*> ECDbHub::Query(int afterChangesetId) {
 	std::vector<ECDbChangeSet*> results;
-	const auto cid = afterChangesetId - 1;
-	if (cid < 0 || cid > (int)m_changesets.size() - 1) {
+	if (afterChangesetId < 0 || afterChangesetId >= (int)m_changesets.size()) {
 		return results;
 	}
-	for (auto i = cid; i < m_changesets.size(); ++i) {
+	for (auto i = afterChangesetId; i < m_changesets.size(); ++i) {
 		results.push_back(m_changesets[i].get());
 	}
 	return results;
