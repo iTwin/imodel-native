@@ -2129,7 +2129,7 @@ TEST_F(DgnElementTests, ToJson)
   ],
   "b": false,
   "category": "0x12",
-  "classFullName":"DgnPlatformTest:TestElementWithNoHandler",
+  "classFullName": "DgnPlatformTest:TestElementWithNoHandler",
   "code": {
     "scope": "0x1",
     "spec": "0x1",
