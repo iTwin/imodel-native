@@ -319,7 +319,7 @@ template<> bool getRange(TextStringCR text, DRange3dR range, TransformCP transfo
     range.high.y += yPad;
 
     Transform textTransform = text.ComputeTransform();
-    textTransform.Multiply(&range.low, 2);
+    textTransform.Multiply(range, range);
 
     if (nullptr != transform)
         transform->Multiply(range, range);

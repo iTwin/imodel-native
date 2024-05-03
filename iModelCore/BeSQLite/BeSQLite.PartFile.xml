@@ -68,6 +68,7 @@
         <SubPart LibType="Static" PartName="BeCurl" PartFile="iModelCore\libsrc\curl\BeCurl"/>
         <SubPart LibType="Static" PartName="Compress" PartFile="iModelCore\libsrc\compress\Zlib"/>
         <SubPart LibType="Static" PartName="Library" PartFile="iModelCore\libsrc\openssl\BeOpenSSL"/>
+        <SubPart LibType="Static" PartName="BeIcu4cLibrary" PartFile="iModelCore\libsrc\icu4c\BeIcu4cLibrary"/>
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">
                 Delivery/sqlite3$(exeext)
