@@ -27312,13 +27312,10 @@ cs_Time_ CS_fileModTime(Utf8CP filePath) {
 
 
 _csFile* CS_fopen(Utf8CP filename, Utf8CP mode) {
-    bool useWsFile = true;
     if (0 == strncmp(mode, "r", 1)) {
         auto wsFile = BentleyApi::GeoCoordinates::GeoCoordWorkspaces::FindResource(filename);
         if (wsFile)
             return wsFile;
-        else
-            useWsFile = false;
     }
 
     if (!BentleyApi::GeoCoordinates::s_loadLocalFiles)
