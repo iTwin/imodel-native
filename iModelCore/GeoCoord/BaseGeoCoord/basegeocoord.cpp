@@ -8946,7 +8946,7 @@ struct GeoCoordWorkspaces {
             Logging::LogMessageV("GeoCoord", LOG_ERROR, "Unable to read data for GCS file %s from workspace %s, rc=%d", path, row.db->GetDbFileName(), rc);
             delete resource; // weren't able to read from row.
         }
-        Logging::LogMessageV("GeoCoord", LOG_WARNING, "Unable to find GCS file %s in any workspace", path);
+        Logging::LogMessageV("GeoCoord", LOG_INFO, "Unable to find GCS file %s in any workspace", path);
         return nullptr;
     }
 
@@ -27312,10 +27312,13 @@ cs_Time_ CS_fileModTime(Utf8CP filePath) {
 
 
 _csFile* CS_fopen(Utf8CP filename, Utf8CP mode) {
+    bool useWsFile = true;
     if (0 == strncmp(mode, "r", 1)) {
         auto wsFile = BentleyApi::GeoCoordinates::GeoCoordWorkspaces::FindResource(filename);
         if (wsFile)
             return wsFile;
+        else
+            useWsFile = false;
     }
 
     if (!BentleyApi::GeoCoordinates::s_loadLocalFiles)
@@ -27323,6 +27326,11 @@ _csFile* CS_fopen(Utf8CP filename, Utf8CP mode) {
 
     auto name = BentleyApi::GeoCoordinates::toAssetName(filename);
     auto file = CS_fopen_caseInsensitive(name.c_str(), mode);
+    if (file != nullptr)
+        Logging::LogMessageV("GeoCoord", LOG_INFO, "Successfully loaded GCS file %s from %s", filename, name.c_str());
+    else
+        Logging::LogMessageV("GeoCoord", LOG_WARNING, "Unable to find GCS file %s in Workspace or locally", filename);
+
     return nullptr == file ? nullptr : new AssetDirFile(file);
 }
 

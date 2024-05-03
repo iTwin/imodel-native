@@ -5340,7 +5340,12 @@ DgnGCSP         DgnGCS::FromProject(DgnDbR project)
     ScopedArray<Byte> buffer(propSize);
     project.QueryProperty(buffer.GetData(), propSize, DgnProjectProperty::DgnGCS());
 
+    StopWatch timer;
+    timer.Start();
     auto gcs = FromGeoCoordType66AppData((short const*)buffer.GetData(), project);
+    timer.Stop();
+    Logging::LogMessageV("GeoCoord", LOG_INFO, "Time to load gcs: %fs", timer.GetElapsedSeconds());
+
     if (NULL == gcs)
         {
         project.AddAppData(NotFoundAppData::GetKey(), new NotFoundAppData());
