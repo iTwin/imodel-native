@@ -9020,6 +9020,9 @@ StatusInt BaseGCS::Initialize(Utf8CP dataDirectory) {
     ::CS_gpfnm("GeodeticPath.dty");
     ::CS_altdr(s_assetsDirPrefix.c_str());
     s_assetsDir = dataDirectory;
+    if(getenv("GEOCOORD_DIR")){
+        s_assetsDir = getenv("GEOCOORD_DIR");
+    }
 
 #if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
     if (s_assetsDir.StartsWith("\\\\?\\")) // fopen doesn't work correctly with long path prefix on Windows
