@@ -1303,7 +1303,7 @@ BeFileNameStatus BeFileName::CreateNewDirectory(WCharCP inPath)
         while (':' != *root && 0 != *root)
             root++;
     root += 2;
-    // BeAssert(root < path.c_str() + path.size());
+    BeAssert(root < path.c_str() + path.size());
 
     WString fullpath;
     size_t start = root ? root-path.c_str() : 0;
