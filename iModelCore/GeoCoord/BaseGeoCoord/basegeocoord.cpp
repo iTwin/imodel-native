@@ -8946,7 +8946,10 @@ struct GeoCoordWorkspaces {
             Logging::LogMessageV("GeoCoord", LOG_ERROR, "Unable to read data for GCS file %s from workspace %s, rc=%d", path, row.db->GetDbFileName(), rc);
             delete resource; // weren't able to read from row.
         }
-        Logging::LogMessageV("GeoCoord", LOG_INFO, "Unable to find GCS file %s in any workspace", path);
+        if (BentleyApi::GeoCoordinates::s_loadLocalFiles)
+            Logging::LogMessageV("GeoCoord", LOG_INFO, "Unable to find GCS file %s in any workspace, trying local file", path);
+        else
+            Logging::LogMessageV("GeoCoord", LOG_WARNING, "Unable to find GCS file %s in any workspace", path);
         return nullptr;
     }
 
