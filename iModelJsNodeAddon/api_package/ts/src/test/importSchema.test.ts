@@ -6,9 +6,10 @@ import { assert, expect } from "chai";
 import * as fs from "fs";
 import * as path from "path";
 import { getOutputDir, iModelJsNative } from "./utils";
-import { Guid, OpenMode } from "@itwin/core-bentley";
-import { Code, ElementProps } from "@itwin/core-common";
+import { DbResult, Guid, Id64String, OpenMode } from "@itwin/core-bentley";
+import { Code, ElementProps, mapNativeElementProps } from "@itwin/core-common";
 import { clearRegistry, loadMetaData } from "./loadMetaData";
+import { IModelJsNative } from "../NativeLibrary";
 
 const testSchemaXmlV10 = `<?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="Test" alias="test" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -69,6 +70,16 @@ const testInformationRecordElementV11: ElementProps & { property1: string, prope
   property2: "Prop2",
 };
 
+function getElement(db: IModelJsNative.DgnDb, elid: Id64String) {
+  const statement = new IModelJsNative.ECSqlStatement();
+  statement.prepare(db, `SELECT $ FROM Bis.Element WHERE ECInstanceId=? OPTIONS USE_JS_PROP_NAMES`);
+  statement.getBinder(1).bindId(elid);
+  expect(statement.step()).eq(DbResult.BE_SQLITE_ROW);
+  const nativeElementProps = statement.getValue(0).getString();
+  statement.dispose();
+  return mapNativeElementProps(JSON.parse(nativeElementProps));
+}
+
 describe("ImportSchema", () => {
 
   it("should import schema into a locally changed briefcase", () => {
@@ -98,7 +109,7 @@ describe("ImportSchema", () => {
     expect(testInfoClassV10.properties).not.hasOwnProperty("property2");
 
     const el1Id = db.insertElement(testInformationRecordElementV10);
-    const el1v10 = db.getElement({ id: el1Id });
+    const el1v10 = getElement(db, el1Id);
     expect(el1v10).has.property("property1");
     expect(el1v10).not.has.property("property2");
     expect((el1v10 as any).property1).eq(testInformationRecordElementV10.property1);
@@ -121,13 +132,13 @@ describe("ImportSchema", () => {
     expect(testInfoClassV11.properties).hasOwnProperty("property1");
     expect(testInfoClassV11.properties).hasOwnProperty("property2");
 
-    const el1v11 = db.getElement({ id: el1Id });
+    const el1v11 = getElement(db, el1Id);
     expect(el1v11).has.property("property1");
     expect(el1v11).not.has.property("property2");
     expect((el1v11 as any).property1).eq(testInformationRecordElementV10.property1);
 
     const el2Id = db.insertElement(testInformationRecordElementV11);
-    const el2v11 = db.getElement({ id: el2Id });
+    const el2v11 = getElement(db, el2Id);
     expect(el2v11).has.property("property1");
     expect(el2v11).has.property("property2");
     expect((el2v11 as any).property1).eq(testInformationRecordElementV11.property1);
