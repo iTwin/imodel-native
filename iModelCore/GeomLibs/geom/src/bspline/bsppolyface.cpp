@@ -4022,7 +4022,7 @@ DVec3dR momentxyz
     return stat;
     }
 
-bool MSBsplineSurface::ComputeSecondMomentAreaProducts(DMatrix4dR products, double relativeTolerancefForFacets, int numGauss, int &numEvaluations) const
+bool MSBsplineSurface::ComputeSecondMomentAreaProducts(DMatrix4dR products, double relativeToleranceForFacets, int numGauss, int &numEvaluations) const
     {
     SurfacePropertiesContext context(*this, true, false, numGauss);
     DRange3d range;
@@ -4031,7 +4031,7 @@ bool MSBsplineSurface::ComputeSecondMomentAreaProducts(DMatrix4dR products, doub
     auto options = IFacetOptions::Create();
     options->SetParamsRequired(true);
     GetPoleRange(range);
-    options->SetChordTolerance(tolerance = relativeTolerancefForFacets * range.low.Distance(range.high));
+    options->SetChordTolerance(tolerance = relativeToleranceForFacets * range.low.Distance(range.high));
 
     if (SUCCESS == meshSurface
         (

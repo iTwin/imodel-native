@@ -1697,3 +1697,124 @@ TEST_F (BeSQLiteDbTests, Limits)
     ASSERT_EQ(0, m_db.GetLimit(DbLimits::WorkerThreads));
     m_db.AbandonChanges();
 }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+#if 0 // Require ICU
+TEST_F (BeSQLiteDbTests, icu_upper_lower_func) {
+
+    SetupDb (L"icu_case.db");
+    EXPECT_TRUE (m_db.IsDbOpen ());
+    auto toLower = [&](Utf8String str) {
+        auto stmt = m_db.GetCachedStatement("SELECT LOWER(?)");
+        stmt->BindText(1, str.c_str(), Statement::MakeCopy::Yes);
+        stmt->Step();
+        return Utf8String(stmt->GetValueText(0));
+    };
+    auto toUpper = [&](Utf8String str) {
+        auto stmt = m_db.GetCachedStatement("SELECT UPPER(?)");
+        stmt->BindText(1, str.c_str(), Statement::MakeCopy::Yes);
+        stmt->Step();
+        return Utf8String(stmt->GetValueText(0));
+    };
+
+    const Utf8String expectedUpper = "À Á Â Ã Ä Å Æ Ç È É Ê Ë Ì Í Î Ï Ð Ñ Ò Ó Ô Õ Ö × Ø Ù Ú Û Ü Ý Ÿ Þ ¡ ¢ £ ¤ ¥ ¦ § ¨ © ª « ¬ ­ ® ¯ ° ± ² ³ ´ Μ ¶ ¸ ¹ º » ¼ ½ ¾ ¿ Ƒ ·";
+    const Utf8String expectedLower = "à á â ã ä å æ ç è é ê ë ì í î ï ð ñ ò ó ô õ ö × ø ù ú û ü ý ÿ þ ¡ ¢ £ ¤ ¥ ¦ § ¨ © ª « ¬ ­ ® ¯ ° ± ² ³ ´ μ ¶ ¸ ¹ º » ¼ ½ ¾ ¿ ƒ ·";
+    const Utf8String actualUpper = toUpper(expectedLower);
+    const Utf8String actualLower = toLower(expectedUpper);
+
+    ASSERT_STREQ(expectedUpper.c_str(), actualUpper.c_str());
+    ASSERT_STREQ(expectedLower.c_str(), actualLower.c_str());
+    ASSERT_STREQ("SS", toUpper("ß").c_str());
+}
+#endif
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F (BeSQLiteDbTests, nocase_latin1_ascii_support)
+{
+    SetupDb (L"icu.db");
+    EXPECT_TRUE (m_db.IsDbOpen ());
+    auto setupTable = [&](Utf8CP tableName, Utf8CP collation) {
+        ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteDdl(SqlPrintfString("CREATE TABLE [%s](str TEXT UNIQUE COLLATE %s)", tableName, collation)));
+    };
+    auto insert = [&](Utf8CP tableName, Utf8CP str) {
+        auto stmt = m_db.GetCachedStatement(SqlPrintfString("INSERT INTO [%s](str) VALUES(?1)", tableName));
+        stmt->BindText(1, str, Statement::MakeCopy::Yes);
+        return stmt->Step();
+    };
+    auto countWhere = [&](Utf8CP tableName, Utf8CP str) {
+        auto stmt = m_db.GetCachedStatement(SqlPrintfString("SELECT COUNT(*) FROM %s WHERE str = ?", tableName));
+        stmt->BindText(1, str, Statement::MakeCopy::No);
+        if(stmt->Step() == BE_SQLITE_ROW){
+            return stmt->GetValueInt(0);
+        }
+        return -1;
+    };
+    auto countWhereWithoutIndex = [&](Utf8CP tableName, Utf8CP str) {
+        auto stmt = m_db.GetCachedStatement(SqlPrintfString("SELECT COUNT(*) FROM %s WHERE +str = ?", tableName));
+        stmt->BindText(1, str, Statement::MakeCopy::No);
+        if(stmt->Step() == BE_SQLITE_ROW){
+            return stmt->GetValueInt(0);
+        }
+        return -1;
+    };
+    auto reindex = [&](Utf8CP tableName) {
+        auto stmt = m_db.GetCachedStatement(SqlPrintfString("REINDEX %s", tableName));
+        return stmt->Step();
+    };
+    ASSERT_EQ(m_db.GetNoCaseCollation(), NoCaseCollation::ASCII);
+    setupTable("test1", "NOCASE");
+    ASSERT_EQ(BE_SQLITE_DONE, insert("test1", "ÀÁÂÃÄÅ"));
+    ASSERT_EQ(BE_SQLITE_DONE, insert("test1", "àáâãäå"));
+    ASSERT_EQ(BE_SQLITE_DONE, insert("test1", "ÀÁÂãäå"));
+    ASSERT_EQ(BE_SQLITE_DONE, insert("test1", "àáâÃÄÅ"));
+    ASSERT_EQ(BE_SQLITE_DONE, insert("test1", "aaaaaa"));
+
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, insert("test1", "ÀÁÂÃÄÅ"));
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, insert("test1", "àáâãäå"));
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, insert("test1", "AAAaaa"));
+    m_db.SaveChanges();
+
+    ASSERT_EQ(countWhere("test1", "ÀÁÂÃÄÅ"), 1);
+    ASSERT_EQ(countWhere("test1", "AAAAAA"), 1);
+    ASSERT_EQ(countWhere("test1", "àáâãäå"), 1);
+    ASSERT_EQ(countWhere("test1", "aaaaaa"), 1);
+    ASSERT_EQ(countWhere("test1", "AAAaaa"), 1);
+    ASSERT_EQ(countWhere("test1", "ÀÁÂãäå"), 1);
+
+    m_db.GetStatementCache().Empty();
+    ASSERT_EQ(m_db.SetNoCaseCollation(NoCaseCollation::Latin1), BE_SQLITE_OK);
+    ASSERT_EQ(m_db.GetNoCaseCollation(), NoCaseCollation::Latin1);
+    // with index we still going to get wrong answer after
+    // enabling Latin1 case insensitive with ignore accents
+    ASSERT_EQ(countWhere("test1", "ÀÁÂÃÄÅ"), 1);
+    ASSERT_EQ(countWhere("test1", "AAAAAA"), 1);
+    ASSERT_EQ(countWhere("test1", "àáâãäå"), 1);
+    ASSERT_EQ(countWhere("test1", "aaaaaa"), 1);
+    ASSERT_EQ(countWhere("test1", "AAAaaa"), 1);
+    ASSERT_EQ(countWhere("test1", "ÀÁÂãäå"), 1);
+
+    // without index count correlate with NOCASE
+    ASSERT_EQ(countWhereWithoutIndex("test1", "ÀÁÂÃÄÅ"), 5);
+    ASSERT_EQ(countWhereWithoutIndex("test1", "AAAAAA"), 5);
+    ASSERT_EQ(countWhereWithoutIndex("test1", "àáâãäå"), 5);
+    ASSERT_EQ(countWhereWithoutIndex("test1", "aaaaaa"), 5);
+    ASSERT_EQ(countWhereWithoutIndex("test1", "AAAaaa"), 5);
+    ASSERT_EQ(countWhereWithoutIndex("test1", "ÀÁÂãäå"), 5);
+
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, insert("test1", "aaaÃÄÅ"));
+
+    // index failed due to duplicate values
+    ASSERT_EQ(reindex("test1"), BE_SQLITE_CONSTRAINT_UNIQUE);
+
+    // switch back to ascii
+    m_db.GetStatementCache().Empty();
+    ASSERT_EQ(m_db.SetNoCaseCollation(NoCaseCollation::ASCII), BE_SQLITE_OK);
+    ASSERT_EQ(m_db.GetNoCaseCollation(), NoCaseCollation::ASCII);
+    ASSERT_EQ(BE_SQLITE_DONE, insert("test1", "ÀÁÂÃÄå"));
+    ASSERT_EQ(BE_SQLITE_DONE, insert("test1", "ÀÁâãÄÅ"));
+
+
+    m_db.SaveChanges();
+}

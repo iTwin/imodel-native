@@ -373,30 +373,36 @@ double                  radius
                 MSBsplineCurveP pCurve = const_cast<MSBsplineCurveP> (GetMSBsplineCurveCP (parentCurveId));
 #ifdef USE_ARTIFICIAL_GEOMETRY
                 MSBsplineCurve partialCurve;
-                bspcurv_segmentCurve (&partialCurve, pCurve, s0, s1);
-                jmdlRIMSBS_intersectXY_MSBsplineCurve_circle
+                if (BSISUCCESS == bspcurv_segmentCurve (&partialCurve, pCurve, s0, s1))
+                    {
+                    jmdlRIMSBS_intersectXY_MSBsplineCurve_circle
                             (
                             pContext,
                             pParameterArray, pPointArray,
                             &partialCurve,
                             pCenter, radius
                             );
-                bspcurv_freeCurve (&partialCurve);
+                    bspcurv_freeCurve (&partialCurve);
+                    myResult = true;
+                    }
 #elif defined (PROJECT_TO_GLOBAL_CURVE)
                 bspcurv_intersectXYCircle (pCurve, s0, s1,
                                 pCenter->x, pCenter->y, radius,
                                 0.0, bspcurv_cb_accumulatePointAndLocalFraction,
                                 pPointArray, pParameterArray);
+                myResult = true;
 #else
                 MSBsplineCurve partialCurve;
-                bspcurv_segmentCurve (&partialCurve, pCurve, s0, s1);
-                bspcurv_intersectXYCircle (&partialCurve, 0.0, 1.0,
+                if (BSISUCCESS == bspcurv_segmentCurve (&partialCurve, pCurve, s0, s1))
+                    {
+                    bspcurv_intersectXYCircle (&partialCurve, 0.0, 1.0,
                                 pCenter->x, pCenter->y, radius,
                                 0.0, bspcurv_cb_accumulatePointAndLocalFraction,
                                 pPointArray, pParameterArray);
-                bspcurv_freeCurve (&partialCurve);
+                    bspcurv_freeCurve (&partialCurve);
+                    myResult = true;
+                    }
 #endif
-                myResult = true;
                 break;
                 }
             case RIMSBS_CurveInterval:
@@ -420,7 +426,6 @@ double                  radius
                           s0, s1, pCenter, radius);
                 break;
                 }
-                break;
             }
         }
     return  myResult;

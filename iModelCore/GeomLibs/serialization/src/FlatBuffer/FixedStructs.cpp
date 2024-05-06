@@ -85,17 +85,15 @@ static Byte *GetFBStart (bvector<Byte> &allbytes)
     }
 
 // confirm that allbytes starts with the expected prefix.  If so return pointer to "real" flatbuffer data following ...
-static Byte const *GetFBStart (Byte const *allbytes)
+static Byte const *GetFBStart (Byte const *allbytes, size_t bufferSize)
     {
+    if (bufferSize <= s_prefixBufferSize)
+        return nullptr;
     for (size_t i = 0; i < s_prefixBufferSize; i++)
         if (s_prefixBuffer[i] != allbytes[i])
             return nullptr;
     return allbytes + s_prefixBufferSize;
     }
-
-
-
-
 
 struct FBWriter
 {
@@ -2116,11 +2114,11 @@ bool BentleyGeometryFlatBuffer::IsFlatBufferFormat(bvector<Byte> & buffer)
     return nullptr != fbStart;
     }
 
-bool BentleyGeometryFlatBuffer::IsFlatBufferFormat(Byte const *buffer)
+bool BentleyGeometryFlatBuffer::IsFlatBufferFormat(Byte const *buffer, size_t bufferSize)
     {
-    if (nullptr == buffer)
+    if (nullptr == buffer || bufferSize == 0)
         return false;
-    Byte const *fbStart = GetFBStart(buffer);
+    Byte const *fbStart = GetFBStart(buffer, bufferSize);
     return nullptr != fbStart;
     }
 
@@ -2129,7 +2127,7 @@ PtrType BytesToXXXSafe(Byte const *buffer, size_t bufferSize, bool applyValidati
     {
     if (nullptr == buffer)
         return nullptr;
-    Byte const *fbStart = GetFBStart(buffer);
+    Byte const *fbStart = GetFBStart(buffer, bufferSize);
     if (nullptr == fbStart)
         return nullptr;
     auto fbRoot = flatbuffers::GetRoot<BGFB::VariantGeometry>(fbStart);
@@ -2231,7 +2229,7 @@ bool BentleyGeometryFlatBuffer::BytesToPolyfaceQueryCarrierSafe
     {
     if (nullptr == buffer)
         return false;
-    Byte const* fbStart = GetFBStart(buffer);
+    Byte const *fbStart = GetFBStart(buffer, bufferSize);
     if (nullptr == fbStart)
         return false;
     auto fbRoot = flatbuffers::GetRoot<BGFB::VariantGeometry>(fbStart);

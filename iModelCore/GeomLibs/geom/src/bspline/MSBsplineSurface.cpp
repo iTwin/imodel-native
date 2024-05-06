@@ -154,6 +154,7 @@ bool vClosed,
 bool inputPointsHaveWeightsAppliedAlready
 )
     {
+    Zero ();
     StatusInt status = ERROR;
     size_t numPoints = pointVector.size ();
     size_t numWeights = weightVector != NULL  ? weightVector->size () : 0;
@@ -186,7 +187,6 @@ bool inputPointsHaveWeightsAppliedAlready
         if (   (numUKnots == 0 || numUKnots == BsplineParam::NumberAllocatedKnots(numUPoints, uOrder, uClosed))
             && (numVKnots == 0 || numVKnots == BsplineParam::NumberAllocatedKnots(numVPoints, vOrder, vClosed)))
             {
-            Zero ();
             uParams.order = uOrder;
             uParams.numPoles = numUPoints;
             uParams.closed = uClosed;
@@ -234,6 +234,10 @@ bool inputPointsHaveWeightsAppliedAlready
                 }
             }
         }
+    if (SUCCESS == status && !IsValidGeometry())
+        status = ERROR;
+    if (status != SUCCESS)
+        ReleaseMem();
     return status;
     }
 
@@ -2462,4 +2466,10 @@ bool MSBsplineSurface::IsValidGeometry(GeometryValidatorPtr &validator) const
             return false;
 
     return true;
+    }
+
+bool MSBsplineSurface::IsValidGeometry() const
+    {
+    static GeometryValidatorPtr s_validator = GeometryValidator::Create();
+    return IsValidGeometry(s_validator);
     }

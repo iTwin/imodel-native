@@ -58,14 +58,15 @@ void NavValueTestFixture::SetUp()
             </ECRelationshipClass>
             <ECEntityClass typeName="CustomBook" modifier="abstract">
                 <ECCustomAttributes>
-                    <View>
+                    <QueryView>
                         <Query>
                             SELECT
                                 [ECInstanceId],
+                                ec_classid('TestSchema', 'CustomBook') as [ECClassId],
                                 NAVIGATION_VALUE(ts.Book.Author, 1, 2)
                             FROM ts.Book
                         </Query>
-                    </View>
+                    </QueryView>
                 </ECCustomAttributes>
                 <ECNavigationProperty propertyName="Author" relationshipName="CustomBookHasAuthor" direction="Forward"/>
             </ECEntityClass>
@@ -228,7 +229,7 @@ TEST_F(NavValueTestFixture, SimpleSelectNavValue)
         ASSERT_EQ(stmt.GetValueId<ECInstanceId>(1), instId);
         auto& firstColInfo = stmt.GetColumnInfo(0);
         ASSERT_TRUE(firstColInfo.IsValid());
-        ASSERT_TRUE(firstColInfo.IsGeneratedProperty());
+        ASSERT_FALSE(firstColInfo.IsGeneratedProperty());
         ASSERT_TRUE(firstColInfo.GetDataType().IsNavigation());
 
         instId = stmt.GetValueNavigation<ECInstanceId>(2, &relClassId);

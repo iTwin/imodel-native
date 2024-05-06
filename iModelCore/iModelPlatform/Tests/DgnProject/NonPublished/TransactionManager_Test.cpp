@@ -756,7 +756,6 @@ TEST_F (TransactionManagerTests, ForEachLocalChange) {
         for (auto& change : changes) {
             auto obj = doc.appendObject();
             obj["id"] = change.instanceKey.GetInstanceId().ToHexStr();
-            obj["classId"] = change.instanceKey.GetClassId().ToHexStr();
             obj["className"] = change.className;
             obj["changeType"] = change.changeType == DbOpcode::Delete ? "delete" : (change.changeType == DbOpcode::Insert ? "insert" : "update");
         }
@@ -924,73 +923,61 @@ TEST_F (TransactionManagerTests, ForEachLocalChange) {
         auto expected = R"x([
             {
                 "id": "0x19",
-                "classId": "0xd1",
                 "className": "BisCore:ModelSelector",
                 "changeType": "insert"
             },
             {
                 "id": "0x18",
-                "classId": "0x8b",
                 "className": "BisCore:DefinitionPartition",
                 "changeType": "insert"
             },
             {
                 "id": "0x16",
-                "classId": "0x141",
                 "className": "DgnPlatformTest:TestElement",
                 "changeType": "insert"
             },
             {
                 "id": "0x17",
-                "classId": "0xe3",
                 "className": "BisCore:PhysicalPartition",
                 "changeType": "insert"
             },
             {
                 "id": "0x14",
-                "classId": "0xe3",
                 "className": "BisCore:PhysicalPartition",
                 "changeType": "insert"
             },
             {
                 "id": "0x15",
-                "classId": "0x141",
                 "className": "DgnPlatformTest:TestElement",
                 "changeType": "insert"
             },
             {
                 "id": "0x1",
-                "classId": "0xef",
                 "className": "BisCore:RepositoryModel",
                 "changeType": "update"
             },
             {
                 "id": "0x18",
-                "classId": "0x89",
                 "className": "BisCore:DefinitionModel",
                 "changeType": "insert"
             },
             {
                 "id": "0x17",
-                "classId": "0xdf",
                 "className": "BisCore:PhysicalModel",
                 "changeType": "insert"
             },
             {
                 "id": "0x14",
-                "classId": "0xdf",
                 "className": "BisCore:PhysicalModel",
                 "changeType": "insert"
             },
             {
                 "id": "0x21",
-                "classId": "0xd2",
                 "className": "BisCore:ModelSelectorRefersToModels",
                 "changeType": "insert"
             },
             {
                 "id": "0x22",
-                "classId": "0xd2",
                 "className": "BisCore:ModelSelectorRefersToModels",
                 "changeType": "insert"
             }
