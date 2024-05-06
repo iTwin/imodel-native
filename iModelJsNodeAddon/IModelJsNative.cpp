@@ -2644,7 +2644,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("getCurrentChangeset", &NativeDgnDb::GetCurrentChangeset),
             InstanceMethod("getCurrentTxnId", &NativeDgnDb::GetCurrentTxnId),
             InstanceMethod("getECClassMetaData", &NativeDgnDb::GetECClassMetaData),
-            InstanceMethod("getElement", &NativeDgnDb::GetElement),
             InstanceMethod("getFilePath", &NativeDgnDb::GetFilePath),
             InstanceMethod("getGeoCoordinatesFromIModelCoordinates", &NativeDgnDb::GetGeoCoordsFromIModelCoords),
             InstanceMethod("getGeometryContainment", &NativeDgnDb::GetGeometryContainment),

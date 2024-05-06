@@ -18,7 +18,7 @@ import type {
   StatusCodeWithMessage,
 } from "@itwin/core-bentley";
 import type {
-  ChangesetIndexAndId, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps, ElementGraphicsRequestProps, ElementLoadProps, ElementProps,
+  ChangesetIndexAndId, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps, ElementGraphicsRequestProps, ElementProps,
   FilePropertyProps, FontId, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
   GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, IModelCoordinatesRequestProps,
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
