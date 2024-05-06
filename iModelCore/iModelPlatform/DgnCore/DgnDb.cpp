@@ -286,6 +286,8 @@ DbResult DgnDb::SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade)
         {
         case SchemaStatus::Success:
             return BE_SQLITE_OK;
+        case SchemaStatus::SchemaNotFound:
+           return BE_SQLITE_ERROR_SchemaNotFound;
         case SchemaStatus::SchemaTooNew:
             return BE_SQLITE_ERROR_SchemaTooNew;
         case SchemaStatus::SchemaTooOld:
@@ -294,10 +296,46 @@ DbResult DgnDb::SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade)
             return BE_SQLITE_ERROR_SchemaUpgradeRequired;
         case SchemaStatus::SchemaUpgradeRecommended:
             return BE_SQLITE_ERROR_SchemaUpgradeRecommended;
-       case SchemaStatus::DataTransformRequired:
+        case SchemaStatus::DataTransformRequired:
            return BE_SQLITE_ERROR_DataTransformRequired;
+        case SchemaStatus::SchemaReadFailed:
+            return BE_SQLITE_ERROR_SchemaReadFailed;
+        case SchemaStatus::SchemaIsDynamic:
+            return BE_SQLITE_ERROR_SchemaIsDynamic;
+        case SchemaStatus::SchemaDomainNamesMismatched:
+            return BE_SQLITE_ERROR_SchemaDomainNamesMismatched;
+        case SchemaStatus::DbIsReadonly:
+            return BE_SQLITE_ERROR_DbIsReadonly;
         default:
             return isUpgrade ? BE_SQLITE_ERROR_SchemaUpgradeFailed : BE_SQLITE_ERROR_SchemaImportFailed;
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//--------------------------------------------------------------------------------------
+DbResult DgnDb::SchemaReadStatusToDbResult(ECN::SchemaReadStatus status)
+    {
+    switch (status)
+        {
+        case ECN::SchemaReadStatus::FailedToParseXml:
+           return BE_SQLITE_ERROR_FailedToParseXml;
+        case ECN::SchemaReadStatus::InvalidECSchemaXml:
+            return BE_SQLITE_ERROR_InvalidECSchemaXml;
+        case ECN::SchemaReadStatus::ReferencedSchemaNotFound:
+            return BE_SQLITE_ERROR_ReferencedSchemaNotFound;
+        case ECN::SchemaReadStatus::DuplicateSchema:
+            return BE_SQLITE_ERROR_DuplicateSchema;
+        case ECN::SchemaReadStatus::DuplicateTypeName:
+            return BE_SQLITE_ERROR_DuplicateTypeName;
+        case ECN::SchemaReadStatus::InvalidPrimitiveType:
+           return BE_SQLITE_ERROR_InvalidPrimitiveType;
+        case ECN::SchemaReadStatus::HasReferenceCycle:
+            return BE_SQLITE_ERROR_HasReferenceCycle;
+        case ECN::SchemaReadStatus::PruneItem:
+            return BE_SQLITE_ERROR_PruneItem;
+        default:
+            return BE_SQLITE_OK;
         }
     }
 

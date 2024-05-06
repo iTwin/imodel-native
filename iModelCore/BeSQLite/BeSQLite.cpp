@@ -5352,7 +5352,7 @@ Utf8CP BeSQLiteLib::GetErrorName(DbResult code) {
         case BE_SQLITE_ERROR_ProfileTooNewForReadWrite:   return "BE_SQLITE_ERROR_ProfileTooNewForReadWrite";
         case BE_SQLITE_ERROR_ProfileTooNew:               return "BE_SQLITE_ERROR_ProfileTooNew";
         case BE_SQLITE_ERROR_ChangeTrackError:            return "BE_SQLITE_ERROR_ChangeTrackError";
-        case BE_SQLITE_ERROR_InvalidChangeSetVersion:      return "BE_SQLITE_ERROR_InvalidChangeSetVersion";
+        case BE_SQLITE_ERROR_InvalidChangeSetVersion:     return "BE_SQLITE_ERROR_InvalidChangeSetVersion";
         case BE_SQLITE_ERROR_SchemaUpgradeRequired:       return "BE_SQLITE_ERROR_SchemaUpgradeRequired";
         case BE_SQLITE_ERROR_SchemaTooNew:                return "BE_SQLITE_ERROR_SchemaTooNew";
         case BE_SQLITE_ERROR_SchemaTooOld:                return "BE_SQLITE_ERROR_SchemaTooOld";
@@ -5361,6 +5361,19 @@ Utf8CP BeSQLiteLib::GetErrorName(DbResult code) {
         case BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes: return "BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes";
         case BE_SQLITE_ERROR_SchemaUpgradeRecommended:    return "BE_SQLITE_ERROR_SchemaUpgradeRecommended";
         case BE_SQLITE_ERROR_NOTOPEN:                     return "BE_SQLITE_ERROR_NOTOPEN";
+        case BE_SQLITE_ERROR_SchemaNotFound:              return "BE_SQLITE_ERROR_SchemaNotFound";
+        case BE_SQLITE_ERROR_SchemaReadFailed:            return "BE_SQLITE_ERROR_SchemaReadFailed";
+        case BE_SQLITE_ERROR_SchemaIsDynamic:             return "BE_SQLITE_ERROR_SchemaIsDynamic";
+        case BE_SQLITE_ERROR_SchemaDomainNamesMismatched: return "BE_SQLITE_ERROR_SchemaDomainNamesMismatched";
+        case BE_SQLITE_ERROR_DbIsReadonly:                return "BE_SQLITE_ERROR_DbIsReadonly";
+        case BE_SQLITE_ERROR_FailedToParseXml:            return "BE_SQLITE_ERROR_FailedToParseXml";
+        case BE_SQLITE_ERROR_InvalidECSchemaXml:          return "BE_SQLITE_ERROR_InvalidECSchemaXml";
+        case BE_SQLITE_ERROR_ReferencedSchemaNotFound:    return "BE_SQLITE_ERROR_ReferencedSchemaNotFound";
+        case BE_SQLITE_ERROR_DuplicateSchema:             return "BE_SQLITE_ERROR_DuplicateSchema";
+        case BE_SQLITE_ERROR_DuplicateTypeName:           return "BE_SQLITE_ERROR_DuplicateTypeName";
+        case BE_SQLITE_ERROR_InvalidPrimitiveType:        return "BE_SQLITE_ERROR_InvalidPrimitiveType";
+        case BE_SQLITE_ERROR_HasReferenceCycle:           return "BE_SQLITE_ERROR_HasReferenceCycle";
+        case BE_SQLITE_ERROR_PruneItem:                   return "BE_SQLITE_ERROR_PruneItem";
     };
 
     int rc = (int)code;
@@ -5497,6 +5510,19 @@ Utf8CP BeSQLiteLib::GetErrorString(DbResult rc) {
         case BE_SQLITE_ERROR_SchemaImportFailed:            return "failed to import schemas";
         case BE_SQLITE_ERROR_CouldNotAcquireLocksOrCodes:   return "error acquiring locks or codes";
         case BE_SQLITE_ERROR_NOTOPEN:                       return "db not open";
+        case BE_SQLITE_ERROR_SchemaNotFound:                return "schema is not found in the list of referenced schemas";
+        case BE_SQLITE_ERROR_SchemaReadFailed:              return "failed to read schema";
+        case BE_SQLITE_ERROR_SchemaIsDynamic:               return "schema is dynamic so its contents must be checked for updates";
+        case BE_SQLITE_ERROR_SchemaDomainNamesMismatched:   return "schema name does not match the domain name";
+        case BE_SQLITE_ERROR_DbIsReadonly:                  return "cannot import schemas into the database because it is Readonly";
+        case BE_SQLITE_ERROR_FailedToParseXml:              return "failed to read ECSchema from XML";
+        case BE_SQLITE_ERROR_InvalidECSchemaXml:            return "invalid ECSchema XML";
+        case BE_SQLITE_ERROR_ReferencedSchemaNotFound:      return "failed to locate referenced schema while deserializing XML";
+        case BE_SQLITE_ERROR_DuplicateSchema:               return "schema is already loaded in the cache";
+        case BE_SQLITE_ERROR_DuplicateTypeName:             return "duplicate class node is present in the schema";
+        case BE_SQLITE_ERROR_InvalidPrimitiveType:          return "invalid type name on enumeration";
+        case BE_SQLITE_ERROR_HasReferenceCycle:             return "schema has reference cycles";
+        case BE_SQLITE_ERROR_PruneItem:                     return "pruning schema item";
     };
     return sqlite3_errstr(rc);
 }
