@@ -567,12 +567,6 @@ BentleyStatus DgnDb::ReadProfileVersion(bool& isOlderVersion) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::DbResult DgnDb::_OnBeforeProfileUpgrade(Db::OpenParams const& params)
     {
-    if (!params.m_schemaLockHeld)
-        {
-        LOG.error("Upgrading profile requires schema lock that is not held.");
-        return DbResult::BE_SQLITE_ERROR_DataTransformRequired;
-        }
-
     if (AreTxnsEnabled())
         Txns().EnableTracking(true);
 

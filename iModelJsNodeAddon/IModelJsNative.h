@@ -355,6 +355,9 @@ enum class SchemaSourceType {
     XmlString
 };
 
+enum class TextEmphasis { None, Bold, Italic, BoldItalic };
+ENUM_IS_FLAGS(TextEmphasis);
+
 struct JsInterop {
     [[noreturn]] static void throwSqlResult(Utf8CP msg, Utf8CP fileName, DbResult result) {
         BeNapi::ThrowJsException(Env(), Utf8PrintfString("%s [%s]: %s", msg, fileName, BeSQLiteLib::GetErrorString(result)).c_str(), result);
@@ -567,6 +570,7 @@ public:
 
     static void FormatCurrentTime(char* buf, size_t maxbuf);
 
+    static void ComputeRangeForText(BeJsValue result, DgnDbR db, Utf8StringCR text, FontId fontId, TextEmphasis emphasis, double widthFactor, double height);
     static void AddCrashReportDgnDb(Dgn::DgnDbR);
     static void RemoveCrashReportDgnDb(Dgn::DgnDbR);
 
@@ -652,8 +656,13 @@ struct NativeChangeset {
         Napi::Value GetRow(Napi::Env env, int target);
         Napi::Value GetTableName(Napi::Env env);
         Napi::Value IsIndirectChange(Napi::Env env);
-        Napi::Value IsPrimaryKeyColumn(Napi::Env env, int col);
         Napi::Value Step(Napi::Env env);
+        Napi::Value GetColumnValueId(Napi::Env env, int col, int target);
+        Napi::Value GetColumnValueInteger(Napi::Env env, int col, int target);
+        Napi::Value GetColumnValueDouble(Napi::Env env, int col, int target);
+        Napi::Value GetColumnValueText(Napi::Env env, int col, int target);
+        Napi::Value GetColumnValueBinary(Napi::Env env, int col, int target);
+        Napi::Value IsColumnValueNull(Napi::Env env, int col, int target);
 };
 
 //=======================================================================================

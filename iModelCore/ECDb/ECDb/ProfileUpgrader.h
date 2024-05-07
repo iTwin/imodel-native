@@ -80,7 +80,23 @@ protected:
 
 public:
     virtual ~ProfileUpgrader() {}
-    DbResult Upgrade(ECDbCR ecdb) const { return _Upgrade(ecdb); }
+    DbResult Upgrade(ECDbCR ecdb) const
+        {
+        ecdb.Schemas().GetSchemaSync().DisableSchemaSync();
+        const auto returnValue = _Upgrade(ecdb);
+        ecdb.Schemas().GetSchemaSync().ReEnableSchemaSync();
+        return returnValue;
+        }
+    };
+
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct ProfileUpgrader_4005 final : ProfileUpgrader
+    {
+    //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
+    private:
+        DbResult _Upgrade(ECDbCR) const override;
     };
 
 //=======================================================================================

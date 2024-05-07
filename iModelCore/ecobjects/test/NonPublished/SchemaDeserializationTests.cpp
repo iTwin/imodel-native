@@ -2378,6 +2378,44 @@ TEST_F (SchemaDeserializationTest, ECNameValidation_NonASCIICharsAreNotRemoved)
     removeControlChars("Здравствуйте");
     }
 
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (SchemaDeserializationTest, NonASCIICharsInSchemaPath)
+    {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"Widgets.01.00.ecschema.xml").c_str(), *schemaContext);
+    EXPECT_EQ(SchemaReadStatus::Success, status);
+    VerifyWidgetsSchema(schema);
+
+    WString schemaDir = ECTestFixture::GetTempDataPath(L"");
+    schemaDir.AppendUtf8("こんにちは");
+    BeFileNameStatus::Success, BeFileName::CreateNewDirectory(schemaDir.c_str());
+    BeFileName::EmptyDirectory(schemaDir.c_str());
+
+    BeFileName schemaPath(schemaDir);
+    schemaPath.AppendToPath(L"Widgets.ecschema.xml");
+    SchemaWriteStatus status2 = schema->WriteToXmlFile(schemaPath.GetWCharCP());
+    EXPECT_EQ(SchemaWriteStatus::Success, status2);
+
+    ECSchemaPtr deserializedSchema;
+    schemaContext = ECSchemaReadContext::CreateContext();
+    status = ECSchema::ReadFromXmlFile(deserializedSchema, schemaPath.GetWCharCP(), *schemaContext);
+    EXPECT_EQ(SchemaReadStatus::Success, status);
+    VerifyWidgetsSchema(deserializedSchema);
+
+    schemaContext = ECSchemaReadContext::CreateContext(false, true);
+    schemaContext->AddSchemaPath(schemaDir.GetWCharCP());
+    ECSchemaPtr deserializedSchema2;
+    SchemaKey key = deserializedSchema->GetSchemaKey();
+    deserializedSchema2 = schemaContext->LocateSchema(key, SchemaMatchType::LatestReadCompatible);
+    EXPECT_TRUE(deserializedSchema2.IsValid());
+    VerifyWidgetsSchema(deserializedSchema2);
+    }
+
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
