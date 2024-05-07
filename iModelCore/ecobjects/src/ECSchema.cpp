@@ -3094,7 +3094,7 @@ void SearchPathSchemaFileLocater::AddCandidateNoExtensionSchema(bvector<Candidat
         return;
 
     pugi::xml_document xmlDoc;
-    pugi::xml_parse_result result = xmlDoc.load_file(schemaPathname.GetNameUtf8().c_str());
+    pugi::xml_parse_result result = xmlDoc.load_file(schemaPathname.GetWCharCP());
     if(!result)
     {
         BeAssert(s_noAssert);
