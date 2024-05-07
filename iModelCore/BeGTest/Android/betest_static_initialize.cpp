@@ -164,6 +164,9 @@ jstring         localStateDir
     s_tempDir.AppendSeparator();
     s_localStateDir.AppendSeparator();
 
+    // initialize ICU
+    BeStringUtilities::Initialize(s_assetsDir);
+
     __android_log_print (ANDROID_LOG_INFO, "TestRunner", "initializeJni (assetsDir=%s, docsDir=%s, tempDir=%s, localStateDir=%s)",
                                             UTF8CSTR(s_assetsDir),
                                             UTF8CSTR(s_docsDir),

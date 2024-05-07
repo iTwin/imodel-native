@@ -135,7 +135,7 @@ struct ProxyConnection : IConnection
 private:
     IProxyConnectionsTracker* m_tracker;
     PrimaryConnection const& m_primaryConnection;
-    mutable BeSQLite::Db m_db;
+    mutable ECDb m_db;
     mutable BeAtomic<uint32_t> m_refCount;
     mutable BeAtomic<int> m_disableThreadVerification;
     uint64_t m_threadId;

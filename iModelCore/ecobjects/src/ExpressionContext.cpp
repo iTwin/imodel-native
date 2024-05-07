@@ -508,7 +508,7 @@ static ExpressionStatus GetInstanceValue (EvaluationResultR evalResult, uint32_t
                 evalResult = ECValue(BeInt64Id::FromString(instance.GetInstanceId().c_str()).ToHexStr().c_str());
                 return ExpressionStatus::Success;
                 }
-            else if (accessString.Equals("ECClassId"))
+            if (accessString.Equals("ECClassId"))
                 {
                 evalResult = ECValue(instance.GetClass().HasId() ? instance.GetClass().GetId().ToHexStr().c_str() : BeInt64Id().ToHexStr().c_str());
                 return ExpressionStatus::Success;
@@ -517,7 +517,7 @@ static ExpressionStatus GetInstanceValue (EvaluationResultR evalResult, uint32_t
             ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "GetInstanceValue: UnknownSymbol. Property is NULL");
             return ExpressionStatus::UnknownSymbol;
             }
-        else if (currentProperty->GetIsArray())
+        if (currentProperty->GetIsArray())
             {
             uint32_t propIdx;
             if (ECObjectsStatus::Success != instance.GetEnabler().GetPropertyIndex (propIdx, accessString.c_str()))
@@ -555,7 +555,8 @@ static ExpressionStatus GetInstanceValue (EvaluationResultR evalResult, uint32_t
         evalResult = ecval;
         return ExpressionStatus::Success;
         }
-    else if (TOKEN_LeftBracket == nextOperation)
+
+    if (TOKEN_LeftBracket == nextOperation)
         {
         if (NULL == currentProperty || !currentProperty->GetIsArray())
             {
@@ -595,8 +596,11 @@ static ExpressionStatus GetInstanceValue (EvaluationResultR evalResult, uint32_t
 
         ExpressionStatus exprStatus = indexNode->GetValue (indexResult, *contextsStack.back());
         if (ExpressionStatus::Success != exprStatus)
-            { evalResult.Clear(); return exprStatus; }
-        else if (indexResult.GetValueType() != ValType_ECValue || !indexResult.GetECValue()->ConvertToPrimitiveType (PRIMITIVETYPE_Integer) || indexResult.GetECValue()->IsNull())
+            {
+            evalResult.Clear();
+            return exprStatus;
+            }
+        if (indexResult.GetValueType() != ValType_ECValue || !indexResult.GetECValue()->ConvertToPrimitiveType (PRIMITIVETYPE_Integer) || indexResult.GetECValue()->IsNull())
             {
             ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("GetInstanceValue: StructRequired. Result: %s = %s", primaryList.GetName(startIndex), evalResult.ToString().c_str()).c_str());
             evalResult.Clear();
@@ -614,10 +618,10 @@ static ExpressionStatus GetInstanceValue (EvaluationResultR evalResult, uint32_t
         if (isPrimitive && COMPONENT_INDEX_None != componentIndex)
             {
             if (arrayVal.IsNull() || (is2d && !arrayVal.IsPoint3d()) || (!is2d && !arrayVal.IsPoint3d()))
-            {
-            ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("GetInstanceValue: ECValue is not supported. Expected to be 2D or 3D point (%s)", arrayVal.ToString().c_str()).c_str());
-            return ExpressionStatus::DotNotSupported;
-            }
+                {
+                ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("GetInstanceValue: ECValue is not supported. Expected to be 2D or 3D point (%s)", arrayVal.ToString().c_str()).c_str());
+                return ExpressionStatus::DotNotSupported;
+                }
 
             DPoint3d pt = !is2d ? arrayVal.GetPoint3d() : DPoint3d::From (arrayVal.GetPoint2d().x, arrayVal.GetPoint2d().y, 0.0);
             double* component = (&pt.x) + componentIndex;
@@ -636,23 +640,22 @@ static ExpressionStatus GetInstanceValue (EvaluationResultR evalResult, uint32_t
             evalResult = arrayVal;
             return ExpressionStatus::Success;
             }
-        else if (!arrayVal.IsStruct())
+        if (!arrayVal.IsStruct())
             {
             evalResult.Clear();
             ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, Utf8PrintfString("GetInstanceValue: StructRequired: Result: %s = %s", primaryList.GetName(startIndex), evalResult.ToString().c_str()).c_str());
             return ExpressionStatus::StructRequired;
             }
-
         if (TOKEN_LParen == nextOperation)
             {
             --index;    // place the LParen back in queue, caller will handle it.
             evalResult = arrayVal;
             return ExpressionStatus::Success;
             }
-        else
-            return GetInstanceValue (evalResult, index, primaryList, contextsStack, *arrayVal.GetStruct());
+        return GetInstanceValue (evalResult, index, primaryList, contextsStack, *arrayVal.GetStruct());
         }
-    else if (TOKEN_Dot == nextOperation && currentProperty->GetIsNavigation())
+
+    if (TOKEN_Dot == nextOperation && currentProperty && currentProperty->GetIsNavigation())
         {
         NodeCP node = primaryList.GetOperatorNode(index);
         nextOperation = primaryList.GetOperation(++index);
@@ -680,7 +683,8 @@ static ExpressionStatus GetInstanceValue (EvaluationResultR evalResult, uint32_t
             evalResult = ECValue(v.GetNavigationInfo().GetId<BeInt64Id>().GetValue());
         return ExpressionStatus::Success;
         }
-    else if (TOKEN_Dot == nextOperation || TOKEN_LParen == nextOperation)
+
+    if (TOKEN_Dot == nextOperation || TOKEN_LParen == nextOperation)
         {
         // we get here if we find a dot following something that is not a struct. e.g., 'someArray.Count', 'someArray.Any (x => x < 5)', etc.
         if (NULL != currentProperty && currentProperty->GetIsArray())
@@ -732,8 +736,8 @@ static ExpressionStatus GetInstanceValue (EvaluationResultR evalResult, uint32_t
             }
         }
 
-        ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "GetInstanceValue: UnknownError");
-        return ExpressionStatus::UnknownError;
+    ECEXPRESSIONS_EVALUATE_LOG(NativeLogging::LOG_ERROR, "GetInstanceValue: UnknownSymbol");
+    return ExpressionStatus::UnknownSymbol;
     }
 
 /*---------------------------------------------------------------------------------**//**

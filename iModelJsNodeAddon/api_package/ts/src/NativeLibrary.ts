@@ -19,12 +19,12 @@ import type {
 } from "@itwin/core-bentley";
 import type {
   ChangesetIndexAndId, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps, ElementGraphicsRequestProps, ElementLoadProps, ElementProps,
-  FilePropertyProps, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
+  FilePropertyProps, FontId, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
   GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, IModelCoordinatesRequestProps,
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
   ModelProps, QueryQuota, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions,
 } from "@itwin/core-common";
-import type { Range3dProps } from "@itwin/core-geometry";
+import type { Range2dProps, Range3dProps } from "@itwin/core-geometry";
 
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-restricted-syntax */
@@ -53,7 +53,7 @@ export const NativeLoggerCategory = {
 /** @internal */
 export interface NativeLogger {
   readonly minLevel: LogLevel | undefined;
-  readonly categoryFilter: {[categoryName: string]: LogLevel};
+  readonly categoryFilter: { [categoryName: string]: LogLevel };
   logTrace: (category: string, message: string) => void;
   logInfo: (category: string, message: string) => void;
   logWarning: (category: string, message: string) => void;
@@ -487,10 +487,21 @@ export declare namespace IModelJsNative {
     status: IModelStatus;
   }
 
+  interface TextLayoutRangesProps {
+    layout: Range2dProps;
+    justification: Range2dProps;
+  }
+
+  enum TextEmphasis { None = 0, Bold = 1, Italic = 2, BoldItalic = Bold | Italic }
+
+  type NoCaseCollation = "ASCII" | "Latin1";
+
   /** The native object for a Briefcase. */
   class DgnDb implements IConcurrentQueryManager, SQLiteOps {
     constructor();
     public readonly cloudContainer?: CloudContainer;
+    public getNoCaseCollation(): NoCaseCollation;
+    public setNoCaseCollation(collation: NoCaseCollation): void;
     public schemaSyncSetDefaultUri(syncDbUri: string): void;
     public schemaSyncGetDefaultUri(): string;
     public schemaSyncInit(syncDbUri: string): void;
@@ -514,6 +525,7 @@ export declare namespace IModelJsNative {
     public closeFile(): void;
     public completeCreateChangeset(arg: { index: number }): void;
     public computeProjectExtents(wantFullExtents: boolean, wantOutlierIds: boolean): { extents: Range3dProps, fullExtents?: Range3dProps, outliers?: Id64Array };
+    public computeRangesForText(chars: string, fontId: FontId, bold: boolean, italic: boolean, widthFactor: number, height: number): TextLayoutRangesProps;
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
     public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
     public concurrentQueryShutdown(): void;
@@ -645,7 +657,7 @@ export declare namespace IModelJsNative {
     public startCreateChangeset(): ChangesetFileProps;
     public startProfiler(scopeName?: string, scenarioName?: string, overrideFile?: boolean, computeExecutionPlan?: boolean): DbResult;
     public stopProfiler(): { rc: DbResult, elapsedTime?: number, scopeId?: number, fileName?: string };
-    public updateElement(elemProps: ElementProps): void;
+    public updateElement(elemProps: Partial<ElementProps>): void;
     public updateElementAspect(aspectProps: ElementAspectProps): void;
     public updateElementGeometryCache(props: object): Promise<any>;
     public updateIModelProps(props: IModelProps): void;
@@ -661,6 +673,8 @@ export declare namespace IModelJsNative {
     public setAutoCheckpointThreshold(frames: number): void;
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
+    public static zlibCompress(data: Uint8Array): Uint8Array;
+    public static zlibDecompress(data: Uint8Array, actualSize: number): Uint8Array;
   }
 
   /** The native object for GeoServices. */
@@ -1344,38 +1358,29 @@ export declare namespace IModelJsNative {
     featureUserData?: FeatureUserDataKeyValuePair[];
   }
 
-  const enum DbChangeStage {
-    Old = 0,
-    New = 1,
-  }
-
-  const enum DbValueType {
-    IntegerVal = 1,
-    FloatVal = 2,
-    TextVal = 3,
-    BlobVal = 4,
-    NullVal = 5,
-  }
-
-  type ChangeValueType = Uint8Array | number | string | null | undefined;
-
   class ChangesetReader {
     public close(): void;
     public getColumnCount(): number;
-    public getColumnValue(col: number, stage: DbChangeStage): ChangeValueType;
-    public getColumnValueType(col: number, stage: DbChangeStage): DbValueType | undefined;
+    public getColumnValue(col: number, stage: number): Uint8Array | number | string | null | undefined;
+    public getColumnValueBinary(col: number, stage: number): Uint8Array | undefined;
+    public getColumnValueDouble(col: number, stage: number): number | undefined;
+    public getColumnValueId(col: number, stage: number): string | undefined;
+    public getColumnValueInteger(col: number, stage: number): number | undefined;
+    public getColumnValueText(col: number, stage: number): string | undefined;
+    public getColumnValueType(col: number, stage: number): number | undefined;
     public getDdlChanges(): string | undefined;
     public getOpCode(): DbOpcode;
-    public getPrimaryKeys(): ChangeValueType[];
-    public getRow(stage: DbChangeStage): ChangeValueType[];
+    public getPrimaryKeys(): (Uint8Array | number | string | null | undefined)[];
+    public getRow(stage: number): (Uint8Array | number | string | null | undefined)[];
     public getTableName(): string;
+    public hasRow(): boolean;
+    public isColumnValueNull(col: number, stage: number): boolean | undefined;
     public isIndirectChange(): boolean;
-    public isPrimaryKeyColumn(col: number): boolean;
+    public getPrimaryKeyColumnIndexes(): number[];
     public openFile(fileName: string, invert: boolean): void;
     public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean): void;
     public reset(): void;
     public step(): boolean;
-    public hasRow(): boolean;
   }
 
   class DisableNativeAssertions implements IDisposable {
