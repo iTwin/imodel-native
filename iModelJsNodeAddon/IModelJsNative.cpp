@@ -5986,11 +5986,11 @@ public:
         bvector<Utf8String> sourceTokens;
         BeStringUtilities::Split(sourceClassFullName.c_str(), ".:", sourceTokens);
         if (2 != sourceTokens.size())
-            return Napi::Number::New(Env(), (int) DgnDbStatus::InvalidName);
+            return toJsString(Env(), "");
  
         DgnClassId sourceClassId = m_importContext->GetSourceDb().Schemas().GetClassId(sourceTokens[0].c_str(), sourceTokens[1].c_str());
         if (!sourceClassId.IsValid())
-            return Napi::Number::New(Env(), (int) DgnDbStatus::InvalidName);
+            return toJsString(Env(), "");
  
         DgnClassId targetClass = m_importContext->FindClassId(sourceClassId);
         return toJsString(Env(), targetClass);
