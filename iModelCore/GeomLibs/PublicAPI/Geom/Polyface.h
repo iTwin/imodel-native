@@ -1862,7 +1862,7 @@ GEOMDLLIMPEXP void Compress(double pointAbsTol, double normalAbsTol = -1.0, doub
 //! Points are active.
 //! Point indices are active if style is MESH_ELM_STYLE_INDEXED_FACE_LOOPS
 //! All other coordinate and index arrays are NOT active.
-//! TwoSided is true.
+//! TwoSided is false.
 GEOMDLLIMPEXP void ClearTags (uint32_t numPerFace, uint32_t meshStyle);
 
 //! Add data to index arrays.

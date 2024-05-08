@@ -1001,12 +1001,9 @@ PolyfaceHeaderPtr tryValueToPolyfaceHeader (BeJsConst parentValue)
     if (iNumPerFace.IsValid ())
         pf->SetNumPerFace (iNumPerFace.Value ());
 
-    auto jTwoSided = value["twoSided"];
-    if (jTwoSided.isBool ())
-        pf->SetTwoSided (jTwoSided.asBool ());
-    auto jExpectedClosure = value["expectedClosure"];
-    if (jExpectedClosure.isNumeric())
-        pf->SetExpectedClosure(jExpectedClosure.asInt());
+    bool twoSided;
+    derefBool(value, "twoSided", twoSided, false);
+    pf->SetTwoSided(twoSided);
 
     auto iExpectedClosure = AsInt (value["expectedClosure"]);
     if (iExpectedClosure.IsValid())
