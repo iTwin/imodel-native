@@ -1951,7 +1951,7 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
                         }
 
                     // Drop the existing index as its defintion has modified and need to be recreated.
-                    if (BE_SQLITE_OK != m_ecdb.ExecuteDdl(SqlPrintfString("DROP INDEX IF EXISTS [%s]", index.GetName().c_str())))
+                    if (BE_SQLITE_OK != m_ecdb.GetImpl().ExecuteDDL(SqlPrintfString("DROP INDEX IF EXISTS [%s]", index.GetName().c_str())))
                         return ERROR;
 
                     if (SUCCESS != DbSchemaPersistenceManager::CreateIndex(m_ecdb, index, ddl))
@@ -1971,7 +1971,7 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
             else
                 {
                 // This is for safety.
-                if (BE_SQLITE_OK != m_ecdb.ExecuteDdl(SqlPrintfString("DROP INDEX IF EXISTS [%s]", index.GetName().c_str())))
+                if (BE_SQLITE_OK != m_ecdb.GetImpl().ExecuteDDL(SqlPrintfString("DROP INDEX IF EXISTS [%s]", index.GetName().c_str())))
                     return ERROR;
 
                 LOG.debugv("Schema Import> Creating Index '%s'.", index.GetName().c_str());

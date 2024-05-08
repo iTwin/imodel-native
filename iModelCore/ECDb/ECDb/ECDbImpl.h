@@ -12,7 +12,6 @@
 #include <atomic>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
@@ -90,8 +89,16 @@ struct PragmaManager;
 struct ECDb::Impl final
     {
 friend struct ECDb;
+friend struct DisableDDLTracking;
 
 public:
+    struct DisableDDLTracking {
+        private:
+            ECDbCR m_ecdb;
+        public:
+            DisableDDLTracking(ECDbCR ecdb): m_ecdb(ecdb) {m_ecdb.GetImpl().m_disableDDLTracking = true; }
+            ~DisableDDLTracking() { m_ecdb.GetImpl().m_disableDDLTracking = false; }
+    };
     //=======================================================================================
     //! The clear cache counter is incremented with every call to ClearECDbCache. This is used
     //! by code that refers to objects held in the cache to invalidate itself.
@@ -161,6 +168,7 @@ private:
     mutable std::unique_ptr<ExtractInstFunc> m_extractInstFunc;
     mutable std::unique_ptr<ExtractPropFunc> m_extractPropFunc;
     mutable EC::ECSqlConfig m_ecSqlConfig;
+    mutable bool m_disableDDLTracking;
     mutable std::unique_ptr<PragmaManager> m_pragmaProcessor;
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
     explicit Impl(ECDbR ecdb);
@@ -224,6 +232,7 @@ public:
     ChangeManager const& GetChangeManager() const { return m_changeManager; }
     BeGuid GetId() const  {return m_id; }
     IdFactory& GetIdFactory() const;
+    DbResult ExecuteDDL(Utf8CP) const;
     PragmaManager& GetPragmaManager() const;
     //! The clear cache counter is incremented with every call to ClearECDbCache. This is used
     //! by code that refers to objects held in the cache to invalidate itself.

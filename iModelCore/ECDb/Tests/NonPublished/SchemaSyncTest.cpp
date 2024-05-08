@@ -492,7 +492,11 @@ TEST_F(SchemaSyncTestFixture, Verify_SyncInfo_BeProp_Entries)
 
     auto changesets = hub.Query();
     bool hasSchemaChanges;
-    ASSERT_TRUE(SchemaSync::IsValid(*changesets.back(), hasSchemaChanges));
+    bool isSchemaSyncInfoChanged;
+    bool isECDbProfileChanged;
+    bool isECMetaDataChanged ;
+    SchemaSync::ScanForSchemaChanges(*changesets.back(), isSchemaSyncInfoChanged, isECDbProfileChanged, isECMetaDataChanged)
+    ASSERT_TRUE(isECMetaDataChanged);
 
     syncDb = schemaSyncDb.OpenReadOnly();
     ASSERT_EQ(BE_SQLITE_ROW, syncDb->QueryProperty(strData0, syncDbInfoProp));

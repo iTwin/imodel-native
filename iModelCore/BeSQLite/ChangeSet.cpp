@@ -47,6 +47,24 @@ void DdlChanges::AddDDL(Utf8CP ddl)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<Utf8String>  DdlChanges::GetDDLs() const {
+    const auto kStmtDelimiter = ";";
+    bvector<Utf8String> individualSQLs;
+    BeStringUtilities::Split(ToString().c_str(), kStmtDelimiter, individualSQLs);
+
+    auto it = individualSQLs.begin();
+    while(it != individualSQLs.end()) {
+        if (it->Trim().empty())
+            it = individualSQLs.erase(it);
+        else
+            ++it;
+    }
+    return individualSQLs;
+}
+
+/*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String DdlChanges::ToString() const {
@@ -700,13 +718,11 @@ DbResult ChangeStream::ToChangeSet(ChangeSet& changeSet, bool invert) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeStream::ApplyChanges(DbR db, Rebase* rebase, bool invert, bool ignoreNoop, bool fkNoAction) const
+DbResult ChangeStream::ApplyChanges(DbR db, Rebase* rebase, bool invert, bool fkNoAction) const
     {
-    int flags = SQLITE_CHANGESETAPPLY_NOSAVEPOINT;
+    int flags = SQLITE_CHANGESETAPPLY_NOSAVEPOINT | SQLITE_CHANGESETAPPLY_IGNORENOOP;
     if (invert)
         flags |= SQLITE_CHANGESETAPPLY_INVERT;
-    if(ignoreNoop)
-        flags |= SQLITE_CHANGESETAPPLY_IGNORENOOP;
     if(fkNoAction)
         flags |= SQLITE_CHANGESETAPPLY_FKNOACTION;
     auto reader = _GetReader();

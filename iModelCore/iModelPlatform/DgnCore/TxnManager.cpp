@@ -830,22 +830,25 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
     bool mergeNeeded = HasPendingTxns() && m_initTableHandlers; // if tablehandlers are not present we can't merge - happens for schema upgrade
     Rebase rebase;
 
-    auto const ignoreNoop = containsSchemaChanges;
     /** This will disable cascade action and so no new changes are created when applying changeset */
     auto const fkNoAction = true;
 #if 0
-    if (containsSchemaChanges && !m_dgndb.Schemas().GetSchemaSync().GetInfo().IsEmpty()){
-        bool hasSchemaChanges; // changes to ec_ tables or ecdb profile version is consider schema changeset.
-        if (!SchemaSync::IsValid(changeStream, hasSchemaChanges)) {
-            if (hasSchemaChanges) {
-                LOG.errorv("MergeDataChanges failed. SchemaSync is enabled while schema changeset seem to be pushed by application that ignored schema sync container. (ChangesetId:%s)", revision.GetChangesetId().c_str());
-                LOG.errorv("Changeset with id: %s need to be delete from imodel history.", revision.GetChangesetId().c_str());
-                return ChangesetStatus::ApplyError;
-            }
+    if (containsSchemaChanges && !m_dgndb.Schemas().GetSchemaSync().IsEnabled()){
+        bool isECMetaDataChanged;
+        bool isECDbProfileChanged;
+        bool isSchemaSyncInfoChanged;
+        if (BE_SQLITE_OK != SchemaSync::ScanForSchemaChanges(changeStream, isECMetaDataChanged, isECDbProfileChanged, isSchemaSyncInfoChanged)) {
+            return ChangesetStatus::ApplyError;
         }
+        if (!isSchemaSyncInfoChanged) {
+            LOG.errorv("MergeDataChanges failed. SchemaSync is enabled while schema changeset seem to be pushed by application that ignored schema sync container. (ChangesetId:%s)", revision.GetChangesetId().c_str());
+            LOG.errorv("Changeset with id: %s need to be delete from imodel history.", revision.GetChangesetId().c_str());
+            return ChangesetStatus::ApplyError;
+        }
+
     }
 #endif
-    DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, mergeNeeded ? &rebase : nullptr, false, ignoreNoop, fkNoAction);
+    DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, mergeNeeded ? &rebase : nullptr, false, fkNoAction);
     if (result != BE_SQLITE_OK) {
         if (changeStream.GetLastErrorMessage().empty())
             m_dgndb.ThrowException("failed to apply changes", result);
@@ -1249,7 +1252,7 @@ struct DisableTracking {
 * Apply a changeset to the database. Notify all TxnTables about what was in the Changeset afterwards.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bool containsSchemaChanges, Rebase* rebase, bool invert, bool ignoreNoop, bool fkNoAction) {
+DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bool containsSchemaChanges, Rebase* rebase, bool invert, bool fkNoAction) {
     BeAssert(action != TxnAction::None);
     AutoRestore<TxnAction> saveAction(&m_action, action);
 
@@ -1271,7 +1274,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
 
     if (!m_dgndb.IsReadonly()) {
         DisableTracking _v(*this);
-        auto result = changeset.ApplyChanges(m_dgndb, rebase, invert, ignoreNoop, fkNoAction); // this actually updates the database with the changes
+        auto result = changeset.ApplyChanges(m_dgndb, rebase, invert, fkNoAction); // this actually updates the database with the changes
         if (result != BE_SQLITE_OK) {
             LOG.errorv("failed to apply changeset: %s", BeSQLiteLib::GetErrorName(result));
             m_dgndb.AbandonChanges();

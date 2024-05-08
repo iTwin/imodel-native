@@ -46,12 +46,17 @@ PragmaManager& ECDb::Impl::GetPragmaManager() const
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-ECDb::Impl::Impl(ECDbR ecdb) : m_ecdb(ecdb), m_profileManager(ecdb), m_changeManager(ecdb), m_sqliteStatementCache(50, &m_mutex), m_idSequenceManager(ecdb, bvector<Utf8CP>(1, "ec_instanceidsequence"))
-    {
+ECDb::Impl::Impl(ECDbR ecdb) :
+    m_ecdb(ecdb),
+    m_profileManager(ecdb),
+    m_changeManager(ecdb),
+    m_sqliteStatementCache(50, &m_mutex),
+    m_idSequenceManager(ecdb, bvector<Utf8CP>(1, "ec_instanceidsequence")),
+    m_disableDDLTracking(false) {
     m_schemaManager = std::make_unique<SchemaManager>(ecdb, m_mutex);
     // set default logger
     IssueDataSource::AppendLogSink(m_issueReporter, "ECDb");
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
@@ -233,7 +238,18 @@ void ECDb::Impl::OnInit() const
     RegisterECSqlPragmas();
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::Impl::ExecuteDDL(Utf8CP ddl) const {
+    if (m_disableDDLTracking) {
+        // execute SQL track data changes only so DDL will skip through
+        return m_ecdb.ExecuteSql(ddl);
+    }
 
+    // track data and DDL changes.
+    return m_ecdb.ExecuteDdl(ddl);
+}
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------

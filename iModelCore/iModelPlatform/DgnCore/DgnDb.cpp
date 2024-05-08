@@ -266,7 +266,7 @@ DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
         Schemas().GetSchemaSync().DisableSchemaSync();
         status = Domains().UpgradeSchemas(schemasToImport, domainsToImport, schemaImportOptions);
         Schemas().GetSchemaSync().ReEnableSchemaSync();
-        
+
         return SchemaStatusToDbResult(status, true /*=isUpgrade*/);
     }
 

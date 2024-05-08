@@ -795,7 +795,7 @@ SchemaSync::Status SchemaSync::PullInternal(SyncDbUri const& syncDbUri, TableLis
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SchemaSync::PullSqlSchema(DbR conn) {
+DbResult SchemaSync::PullSqlSchema(ECDbR conn) {
 
     Utf8String facetsThatDoesNotExitsSql = SqlPrintfString(
         "SELECT [s].[sql] FROM [%s].[" TABLE_SQLSCHEMA "] [s] WHERE NOT EXISTS (SELECT 1 FROM [%s].[sqlite_master] m WHERE [m].[type]=[s].[type] AND [m].[name]=[s].[name]) ORDER BY [s].[id]",
@@ -812,7 +812,7 @@ DbResult SchemaSync::PullSqlSchema(DbR conn) {
 
     while ((rc=stmt.Step()) == BE_SQLITE_ROW) {
         auto sql = stmt.GetValueText(0);
-        rc = conn.ExecuteDdl(sql);
+        rc = conn.GetImpl().ExecuteDDL(sql);
         if (rc != BE_SQLITE_OK) {
             LOG.errorv("PullSqlSchema() fail to execute ddl (%s): %s", sql, conn.GetLastError().c_str());
             return rc;
@@ -825,7 +825,7 @@ DbResult SchemaSync::PullSqlSchema(DbR conn) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SchemaSync::PushSqlSchema(DbR conn) {
+DbResult SchemaSync::PushSqlSchema(ECDbR conn) {
     Utf8String truncatSql = SqlPrintfString("DELETE FROM [%s].[" TABLE_SQLSCHEMA "]", SchemaSyncHelper::ALIAS_SYNC_DB).GetUtf8CP();
     auto rc = conn.TryExecuteSql(truncatSql.c_str());
     if (rc != BE_SQLITE_OK) {
@@ -1060,31 +1060,32 @@ SchemaSync::Status SchemaSync::Push(SyncDbUri const& syncDbUri) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool SchemaSync::IsValid(ChangeStream& stream, bool &hasSchemaChanges)  {
+DbResult SchemaSync::ScanForSchemaChanges(ChangeStream& stream, bool& isECMetaDataChanged, bool& isECDbProfileChanged, bool& isSchemaSyncInfoChanged) {
     // Check if be_Prop has change for NameSpace=JsonNames::JNamespace && Name=JsonNames::JLocalDbInfo
     // every time schema sync is used it will increment data ver which should change JLocalDbInfo
-    bool syncDataVerChanged = false;
-    bool ecdbProfileVerChanged = false;
-    hasSchemaChanges = false;
+    isSchemaSyncInfoChanged = false;
+    isECDbProfileChanged = false;
+    isECMetaDataChanged = false;
     Utf8String tableName;
     for(auto& change : stream.GetChanges()) {
         Utf8CP tableNameP = nullptr;
         int nCols;
         DbOpcode opcode;
         int indirect;
-        if (BE_SQLITE_OK != change.GetOperation(&tableNameP, &nCols, &opcode, &indirect))
-            continue;
+        auto rc = change.GetOperation(&tableNameP, &nCols, &opcode, &indirect);
+        if (BE_SQLITE_OK != rc)
+            return rc;
 
         UNUSED_VARIABLE(nCols);
         UNUSED_VARIABLE(opcode);
         UNUSED_VARIABLE(indirect);
 
         tableName.AssignOrClear(tableNameP);
-        if (!hasSchemaChanges && tableName.StartsWithIAscii("ec_") && !tableName.StartsWithIAscii("ec_cache_")) {
-            hasSchemaChanges = true;
+        if (!isECMetaDataChanged && tableName.StartsWithIAscii("ec_") && !tableName.StartsWithIAscii("ec_cache_")) {
+            isECMetaDataChanged = true;
         }
         if (tableName.EqualsIAscii("be_Prop")) {
-            if (!syncDataVerChanged) {
+            if (!isSchemaSyncInfoChanged) {
                 auto namespaceVal = change.GetOldValue(0);
                 auto nameVal = change.GetOldValue(1);
                 const auto ns = namespaceVal.IsValid() && namespaceVal.GetValueType() == DbValueType::TextVal ? namespaceVal.GetValueText() : nullptr;
@@ -1092,10 +1093,10 @@ bool SchemaSync::IsValid(ChangeStream& stream, bool &hasSchemaChanges)  {
                 if (ns && name &&
                     0 == BeStringUtilities::StricmpAscii(ns, JsonNames::JNamespace) &&
                     0 == BeStringUtilities::StricmpAscii(name, JsonNames::JLocalDbInfo)) {
-                    syncDataVerChanged = true;
+                    isSchemaSyncInfoChanged = true;
                 }
             }
-            if (!ecdbProfileVerChanged) {
+            if (!isECDbProfileChanged) {
                 auto namespaceVal = change.GetOldValue(0);
                 auto nameVal = change.GetOldValue(1);
                 const auto ns = namespaceVal.IsValid() && namespaceVal.GetValueType() == DbValueType::TextVal ? namespaceVal.GetValueText() : nullptr;
@@ -1103,13 +1104,12 @@ bool SchemaSync::IsValid(ChangeStream& stream, bool &hasSchemaChanges)  {
                 if (ns && name &&
                     0 == BeStringUtilities::StricmpAscii(ns, ECDB_PROPSPEC_NAMESPACE) &&
                     0 == BeStringUtilities::StricmpAscii(name, "SchemaVersion")) {
-                    ecdbProfileVerChanged = true;
+                    isECDbProfileChanged = true;
                 }
             }
         }
     }
-    hasSchemaChanges = hasSchemaChanges || ecdbProfileVerChanged;
-    return ecdbProfileVerChanged || syncDataVerChanged;
+    return BE_SQLITE_OK;
 }
 //=======================================================================================
 //     SchemaSync::LocalDbInfo

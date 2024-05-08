@@ -38,6 +38,8 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
     DbResult result = iter.GetOperation(&tableName, &nCols, &opcode, &indirect);
     BeAssert(result == BE_SQLITE_OK);
     UNUSED_VARIABLE(result);
+    Utf8String tbl;
+    tbl.assign(tableName);
 
     const auto jsIModelDb = m_dgndb.GetJsIModelDb();
     if (nullptr != jsIModelDb) {
@@ -224,6 +226,17 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
             LOG.warning("UPDATE/DELETE before value do not match with one in db or CASCADE action was triggered.");
             iter.Dump(m_dgndb, false, 1);
         } else {
+            if (tbl.StartsWithIAscii("ec_")) {
+                return ChangeSet::ConflictResolution::Skip;
+            }
+            if (tbl.EqualsIAscii ("be_Prop")) {
+                 Utf8String ns = iter.GetValue(0, Changes::Change::Stage::Old).GetValueText();
+                 Utf8String name = iter.GetValue(1, Changes::Change::Stage::Old).GetValueText();
+                if (ns.EqualsIAscii("ec_Db") && name.EqualsIAscii("localDbInfo")) {
+                    return ChangeSet::ConflictResolution::Skip;
+                }
+            }
+
             m_lastErrorMessage = "UPDATE/DELETE before value do not match with one in db or CASCADE action was triggered.";
             LOG.fatal(m_lastErrorMessage.c_str());
             iter.Dump(m_dgndb, false, 1);
@@ -241,6 +254,9 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
             LOG.warning("PRIMARY KEY INSERT CONFLICT - resolved by replacing the existing row with the incoming row");
             iter.Dump(m_dgndb, false, 1);
         } else {
+            if (tbl.StartsWithIAscii("ec_")) {
+                return ChangeSet::ConflictResolution::Skip;
+            }
             m_lastErrorMessage = "PRIMARY KEY INSERT CONFLICT - rejecting this changeset";
             LOG.fatal(m_lastErrorMessage.c_str());
             iter.Dump(m_dgndb, false, 1);
@@ -660,6 +676,9 @@ std::unique_ptr<ChangeSet> TxnManager::CreateChangesetFromLocalChanges(bool incl
     DdlChanges ddlChanges;
     ChangeGroup dataChangeGroup;
     for (auto currTxnId = startTxnId; currTxnId < endTxnId; currTxnId = QueryNextTxnId(currTxnId)) {
+        if (TxnType::Data != GetTxnType(currTxnId))
+            continue;
+
         ChangeSet sqlChangeSet;
         if (BE_SQLITE_OK != ReadDataChanges(sqlChangeSet, currTxnId, TxnAction::None))
             m_dgndb.ThrowException("unable to read data changes", (int) ChangesetStatus::CorruptedTxn);
@@ -889,7 +908,7 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
     TxnId startTxnId = QueryNextTxnId(TxnId(0));
     int64_t lastRebaseId = QueryLastRebaseId();
 
-    DdlChanges ddlChanges;
+    DdlChanges ddlChangeGroup;
     ChangeGroup dataChangeGroup(m_dgndb);
     for (TxnId currTxnId = startTxnId; currTxnId < endTxnId; currTxnId = QueryNextTxnId(currTxnId)) {
         auto txnType = GetTxnType(currTxnId);
@@ -897,9 +916,13 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
             dataChangeGroup.SetContainsEcSchemaChanges();
 
         if (txnType == TxnType::Ddl) {
-            BeAssert(ddlChanges._IsEmpty());
-            if (ZIP_SUCCESS != ReadChanges(ddlChanges, currTxnId))
+            DdlChanges ddlChange;
+            if (ZIP_SUCCESS != ReadChanges(ddlChange, currTxnId))
                 m_dgndb.ThrowException("unable to read schema changes", (int) ChangesetStatus::CorruptedTxn);
+
+            for(auto& ddl : ddlChange.GetDDLs())
+                ddlChangeGroup.AddDDL(ddl.c_str());
+
         } else {
             ChangeSet sqlChangeSet;
             if (BE_SQLITE_OK != ReadDataChanges(sqlChangeSet, currTxnId, TxnAction::None))
@@ -916,7 +939,7 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
         m_dgndb.ThrowException("rebase failed", (int) ChangesetStatus::SQLiteError);
 
     BeFileName changesetFileName((m_dgndb.GetTempFileBaseName() + (extension ? extension : "") +  ".changeset").c_str());
-    WriteChangesToFile(changesetFileName, ddlChanges, dataChangeGroup, (lastRebaseId != 0) ? &rebaser : nullptr);
+    WriteChangesToFile(changesetFileName, ddlChangeGroup, dataChangeGroup, (lastRebaseId != 0) ? &rebaser : nullptr);
 
     auto parentRevId = GetParentChangesetId();
     auto revId = ChangesetIdGenerator::GenerateId(parentRevId, changesetFileName, m_dgndb);

@@ -106,6 +106,13 @@ DbResult ECDb::_AfterSchemaChangeSetApplied() const
     ClearECDbCache();
     Schemas().RepopulateCacheTables();
     if (!Schemas().GetSchemaSync().GetInfo().IsEmpty()) {
+        /**
+         * NOTE: We disable DDL tracking to avoid generating new changes after
+         * changeset is applied. These DDL does not need to be tracked as its already
+         * part of changeset and when SchemaSync is on we do not execute DDL from
+         * changeset instead we use ec_* schema data to recreate DDL and execute them.
+        */
+        ECDb::Impl::DisableDDLTracking _(*this);
         if (Schemas().GetSchemaSync().UpdateDbSchema() != SchemaSync::Status::OK){
             return BE_SQLITE_ERROR;
         }
