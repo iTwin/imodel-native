@@ -10,7 +10,6 @@
 #include "DeleteStatementExp.h"
 #include "PragmaStatementExp.h"
 #include "CommonTableExp.h"
-#include "WindowFunctionExp.h"
 #include "ValueCreationFuncExp.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -258,28 +257,11 @@ private:
     BentleyStatus ParseTableValuedFunction(std::unique_ptr<TableValuedFunctionExp>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseIIFExp(std::unique_ptr<ValueExp> &valueExp, connectivity::OSQLParseNode const *parseNode) const;
     BentleyStatus ParseTypePredicate(std::unique_ptr<ValueExp> &valueExp, connectivity::OSQLParseNode const *parseNode) const;
-    BentleyStatus ParseWindowClause(std::unique_ptr<WindowFunctionClauseExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseWindowDefinitionListExp(std::unique_ptr<WindowDefinitionListExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseWindowDefinitionExp(std::unique_ptr<WindowDefinitionExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseWindowFunctionType(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseArgumentlessWindowFunction(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseNtileFunction(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseLeadOrLagFunction(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseOptLeadOrLagFunctionArguments(std::unique_ptr<FunctionCallExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseFirstOrLastValueFunction(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseNthValueFunction(std::unique_ptr<ValueExp>&exp, connectivity::OSQLParseNode const* parseNode) const;
-    BentleyStatus ParseWindowSpecification(std::unique_ptr<WindowSpecification>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseWindowPartitionClause(std::unique_ptr<WindowPartitionColumnReferenceListExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseWindowPartitionColumnRef(std::unique_ptr<WindowPartitionColumnReferenceExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseCollateClause(WindowPartitionColumnReferenceExp::CollateClauseFunction&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseFilterClause(std::unique_ptr<FilterClauseExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseWindowFrameClause(std::unique_ptr<WindowFrameClauseExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseWindowFrameUnit(WindowFrameClauseExp::WindowFrameUnit&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseWindowFrameStart(std::unique_ptr<WindowFrameStartExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseWindowFrameExclusion(WindowFrameClauseExp::WindowFrameExclusionType&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseWindowFrameBetween(std::unique_ptr<WindowFrameBetweenExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseFirstWindowFrameBound(std::unique_ptr<FirstWindowFrameBoundExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseSecondWindowFrameBound(std::unique_ptr<SecondWindowFrameBoundExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseValueCreationFuncExp(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const *) const;
     BentleyStatus ParseNavValueCreationFuncExp(std::unique_ptr<NavValueCreationFuncExp>&, connectivity::OSQLParseNode const *) const;
 

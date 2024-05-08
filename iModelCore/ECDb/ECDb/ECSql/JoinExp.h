@@ -151,7 +151,7 @@ struct QualifiedJoinExp final : JoinExp
 
         struct ResolvedEndPoint
             {
-            friend ECRelationshipJoinExp;
+            friend UsingRelationshipJoinExp;
             private:
                 ClassNameExp const*    m_classRef;
                 ClassLocation           m_location;
@@ -187,7 +187,7 @@ struct QualifiedJoinExp final : JoinExp
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
 
     public:
-        ECRelationshipJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to, std::unique_ptr<ClassRefExp> relationship, JoinDirection direction)
+        UsingRelationshipJoinExp(std::unique_ptr<ClassRefExp> from, std::unique_ptr<ClassRefExp> to, std::unique_ptr<ClassRefExp> relationship, JoinDirection direction)
             : JoinExp(Type::ECRelationshipJoin, ECSqlJoinType::JoinUsingRelationship, std::move(from), std::move(to)), m_direction(direction)
             {
             m_relationshipClassNameExpIndex = AddChild(std::move(relationship));

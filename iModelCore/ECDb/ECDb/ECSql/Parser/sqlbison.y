@@ -205,7 +205,7 @@ using namespace connectivity;
 %type <pParseNode> value_exp_commalist in_predicate_value unique_test update_source
 %type <pParseNode> all sql_not comparison cross_union
 %type <pParseNode> select_statement
-%type <pParseNode> function_name function_args_commalist function_arg
+%type <pParseNode> function_name function_args_commalist function_arg opt_function_arg
 %type <pParseNode> table_node tablespace_qualified_class_name qualified_class_name class_name table_primary_as_range_column opt_as
 %type <pParseNode> table_node_with_opt_member_func_call table_node_path table_node_path_entry opt_member_function_args
 %type <pParseNode> case_expression else_clause result_expression result case_specification searched_when_clause simple_when_clause searched_case simple_case
@@ -1429,6 +1429,16 @@ general_set_fct:
             $$->append($4);
             $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
+    ;
+
+opt_function_arg:
+        {$$ = SQL_NEW_RULE;}
+    |   ',' function_arg
+    {
+        $$ = SQL_NEW_RULE;
+        $$->append($1 = CREATE_NODE(",", SQL_NODE_PUNCTUATION));
+        $$->append($2);
+    }
     ;
 
 set_fct_type:
