@@ -8921,6 +8921,9 @@ struct WorkspaceResource : _csFile {
     virtual int printf(Utf8CP format...) override { return readonly(); }
 };
 
+static bool s_loadLocalFiles = true;
+void BaseGCS::EnableLocalGcsFiles(bool yesNo) { s_loadLocalFiles = yesNo; }
+
 //=======================================================================================
 // static methods for finding resources in the list of GCS resource files.
 // @bsiclass
@@ -8946,7 +8949,7 @@ struct GeoCoordWorkspaces {
             Logging::LogMessageV("GeoCoord", LOG_ERROR, "Unable to read data for GCS file %s from workspace %s, rc=%d", path, row.db->GetDbFileName(), rc);
             delete resource; // weren't able to read from row.
         }
-        if (BentleyApi::GeoCoordinates::s_loadLocalFiles)
+        if (s_loadLocalFiles)
             Logging::LogMessageV("GeoCoord", LOG_INFO, "Unable to find GCS file %s in any workspace, trying local file", path);
         else
             Logging::LogMessageV("GeoCoord", LOG_WARNING, "Unable to find GCS file %s in any workspace", path);
@@ -8982,9 +8985,6 @@ struct GeoCoordWorkspaces {
         return blank;
     }
 };
-
-static bool s_loadLocalFiles = true;
-void BaseGCS::EnableLocalGcsFiles(bool yesNo) { s_loadLocalFiles = yesNo; }
 
 /** Add a new entry to the list of gcs WorkspaceDbs */
 bool BaseGCS::AddWorkspaceDb(Utf8String dbName, CloudContainerP container, int priority) {
