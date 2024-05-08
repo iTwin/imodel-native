@@ -19,6 +19,7 @@ BE_JSON_NAME(customAttributes)
 BE_JSON_NAME(direction)
 BE_JSON_NAME(displayLabel)
 BE_JSON_NAME(ecclass)
+BE_JSON_NAME(classId)
 BE_JSON_NAME(extendedType)
 BE_JSON_NAME(federationGuid)
 BE_JSON_NAME(isCustomHandled)
@@ -183,11 +184,13 @@ DgnDbStatus JsInterop::GetECClassMetaData(BeJsValue mjson, DgnDbR dgndb, Utf8CP 
     if (nullptr == ecclass)
         return DgnDbStatus::NotFound;    // This is not an exception. It just returns an empty result.
 
+    DgnClassId classId(ecclass->GetId().GetValue());
     if (ecclass->Is(dgndb.Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Element)))
         {
-        dgn_ElementHandler::Element::FindHandler(dgndb, DgnClassId(ecclass->GetId().GetValue()));
+        dgn_ElementHandler::Element::FindHandler(dgndb, classId);
         }
 
+    mjson[json_classId()] = classId.ToHexStr();
     mjson[json_ecclass()] = ecclass->GetFullName();
     SET_IF_NOT_EMPTY_STR(mjson[json_description()], ecclass->GetDescription());
     SET_IF_NOT_NULL_STR (mjson[json_modifier()], modifierToString(ecclass->GetClassModifier()));
