@@ -233,7 +233,7 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
                  Utf8String ns = iter.GetValue(0, Changes::Change::Stage::Old).GetValueText();
                  Utf8String name = iter.GetValue(1, Changes::Change::Stage::Old).GetValueText();
                 if (ns.EqualsIAscii("ec_Db") && name.EqualsIAscii("localDbInfo")) {
-                    return ChangeSet::ConflictResolution::Skip;
+                    return ChangeSet::ConflictResolution::Replace;
                 }
             }
 

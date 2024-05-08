@@ -2,7 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { DbResult, Id64Array, Id64String, IModelStatus, Logger, LogLevel, OpenMode } from "@itwin/core-bentley";
+import { DbResult, Id64Array, Id64String, IModelStatus, OpenMode } from "@itwin/core-bentley";
 import { BlobRange, DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, ProfileOptions, RelationshipProps } from "@itwin/core-common";
 import { DomainOptions } from "@itwin/core-common/lib/cjs/BriefcaseTypes";
 import { assert, expect } from "chai";
@@ -1115,8 +1115,6 @@ describe("basic tests", () => {
   });
   it("NoCaseCollation", async () => {
     const pathToDb = path.join(getAssetsDir(), "test.bim");
-    Logger.initializeToConsole();
-    Logger.setLevelDefault(LogLevel.Trace);
     const testFile = path.join(getAssetsDir(), "collation.bim");
     if (fs.existsSync(testFile)) {
       fs.unlinkSync(testFile);
