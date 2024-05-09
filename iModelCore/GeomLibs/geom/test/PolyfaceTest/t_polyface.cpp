@@ -4617,11 +4617,11 @@ TEST(Polyface, DegenerateTriangulation)
         {
         for (auto const& g : geometry)
             {
-            auto mesh = g->GetAsPolyfaceHeader();
+            PolyfaceHeaderPtr mesh = g->GetAsPolyfaceHeader();
             if (Check::True(mesh.IsValid(), "Geometry is a polyface"))
                 {
                 Check::SaveTransformed(mesh);
-                Check::True(SUCCESS == mesh->Triangulate(), "Triangulate");
+                Check::True(ERROR == mesh->Triangulate(), "Some faces could not be triangulated");
                 Check::Shift(100,0,0);
                 Check::SaveTransformed(mesh);
 
@@ -4629,8 +4629,9 @@ TEST(Polyface, DegenerateTriangulation)
                 PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*mesh);
                 for (visitor->Reset(); visitor->AdvanceToNextFace(); faceCounter++)
                     {
-                    char sFacetCounter[10];
-                    sprintf(sFacetCounter, "face is a triangle %d", faceCounter);
+                    char sFacetCounter[30];
+                    uint32_t numEdgesThisFace = visitor->NumEdgesThisFace();
+                    sprintf_s(sFacetCounter, "face #%d has %d edges", faceCounter, numEdgesThisFace);
                     Check::Size(3, visitor->NumEdgesThisFace(), sFacetCounter);
                     }
                 }

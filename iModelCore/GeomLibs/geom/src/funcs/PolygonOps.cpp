@@ -315,26 +315,6 @@ bool PolygonOps::IsConvex (bvector<DPoint3d> const &xyz)
     return fabs (negativeArea) < s_areaRelTol * positiveArea;
     }
 
-/**
-* Triangulate a single xy polygon.  Triangulation preserves original
-*   indices.
-* @param pSignedOneBasedIndices <= array of indices.  Each face is added
-*           as one-based indices, followed by a 0 (terminator).
-*           Interior edges are optionally negated.
-* @param pExteriorLoopIndices <= array of indices of actual outer loops. (optional)
-*           (These are clockwise loops as viewed.)
-* @param pXYZOut <= output points.  The first numPoint points are exactly
-*           the input points.   If necessary and permitted, additional
-*           xyz are added at crossings.  In the usual case in which crossings
-*           are not expected, this array may be NULL.
-* @param pointP => array of polygon points.
-* @param numPoint => number of polygon points.
-* @param xyTolerance => tolerance for short edges on input polygon.
-* @param signedOneBasedIndices => if true, output indices are 1 based, with 0 as separator.
-           If false, indices are zero based wtih -1 as separator.
-* @param addVerticesAtCrossings => true if new coorinates can be added to pXYZOut
-* @return false if nonsimple polygon.
-*/
 bool PolygonOps::FixupAndTriangulateLoopsXY
 (
 bvector<int>    *pIndices,
@@ -390,7 +370,7 @@ bool             addVerticesAtCrossings
         // We triangulated.  So of course there are 3 nodes per face.
         // Really?  If the input polygon retraces itself, there will be
         // sliver faces with only 2 edges.
-        if (vu_faceLoopSize (faceP) < 3)
+        if (vu_faceLoopSize (faceP) != 3)
             continue;
 
         VU_FACE_LOOP (currP, faceP)
@@ -442,6 +422,9 @@ bool             addVerticesAtCrossings
         END_VU_FACE_LOOP (currP, faceP)
         pIndices->push_back (separator);
         }
+
+    if (0 == pIndices->size())
+        status = false;
 
     // Exterior loops
     if (status && pExteriorLoopIndices)
