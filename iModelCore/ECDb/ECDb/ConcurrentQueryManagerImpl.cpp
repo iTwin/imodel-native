@@ -595,9 +595,9 @@ std::unique_ptr<RunnableRequestBase> RunnableRequestQueue::WaitForDequeue() {
 QueryQuota RunnableRequestQueue::AdjustQuota(QueryQuota const& requestedQuota) const {
     auto maxMem = requestedQuota.MaxMemoryAllowed();
     auto maxTime = requestedQuota.MaxTimeAllowed();
-    if (m_quota.MaxMemoryAllowed() < maxMem || maxMem <=0)
+    if (m_quota.MaxMemoryAllowed() < maxMem || maxMem <= 32000)
         maxMem = m_quota.MaxMemoryAllowed() ;
-    if (m_quota.MaxTimeAllowed() < maxTime || maxTime <= std::chrono::seconds(0))
+    if (m_quota.MaxTimeAllowed() < maxTime || maxTime <= std::chrono::seconds(10))
         maxTime = m_quota.MaxTimeAllowed();
 
     return QueryQuota(maxTime, maxMem);
@@ -1543,7 +1543,7 @@ void ConcurrentQueryMgr::Shutdown(ECDbCR ecdb) {
 void QueryRequest::FromJs(BeJsConst const& val) {
     if (val.isObjectMember(JQuota)) {
         auto a = val[JQuota];
-        m_quota = m_quota.FromJs(a);
+        m_quota = QueryQuota::FromJs(a);
     }
     if (val.isNumericMember(JPriority)) {
         m_priority = val[JPriority].asInt();
