@@ -369,6 +369,7 @@ static bool ValidIndex (size_t index, bvector<T> const &data, char const*pString
     }
 
 static bool LessThanOrEqual (double a, double b, char const*pString = nullptr);
+static bool LessThanOrEqual(size_t a, size_t b, char const* pString = nullptr);
 
 // Test if distances increase
 static bool ValidateDistances
