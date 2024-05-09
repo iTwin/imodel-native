@@ -7,7 +7,7 @@
 #include <Bentley/BeTest.h>
 #include <Bentley/BeFile.h>
 
-bool GTestFileOps::ReadAsBytes(BeFileName &filename, bvector<Byte> &bytes)
+bool GTestFileOps::ReadAsBytes(BeFileNameCR filename, bvector<Byte> &bytes)
     {
     bytes.clear();
     BeFile file;
@@ -17,7 +17,7 @@ bool GTestFileOps::ReadAsBytes(BeFileName &filename, bvector<Byte> &bytes)
     return false;
     }
 
-bool GTestFileOps::ReadAsString (BeFileName &filename, Utf8String &string)
+bool GTestFileOps::ReadAsString (BeFileNameCR filename, Utf8String &string)
     {
     string.clear ();
     BeFile file;
@@ -41,7 +41,15 @@ bool GTestFileOps::ReadAsString (char const *filenameChar, Utf8String &string)
     return ReadAsString(beFilename, string);
     }
 
-bool GTestFileOps::JsonFileToGeometry (BeFileName &filename, bvector<IGeometryPtr> &geometry)
+bool GTestFileOps::FlatBufferFileToGeometry(BeFileNameCR fileName, bvector<IGeometryPtr>& geometry)
+    {
+    bvector<Byte> bytes;
+    if (ReadAsBytes(fileName, bytes) && bytes.size() > 0)
+        return BentleyGeometryFlatBuffer::BytesToVectorOfGeometrySafe(bytes, geometry);
+    return false;
+    }
+
+bool GTestFileOps::JsonFileToGeometry (BeFileNameCR filename, bvector<IGeometryPtr> &geometry)
     {
     geometry.clear ();
     Utf8String string;
