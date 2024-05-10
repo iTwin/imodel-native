@@ -35,7 +35,7 @@ ECSqlStatus DynamicSelectClauseECClass::CheckForDuplicateName(Utf8StringCR propN
         DerivedPropertyExp const* otherSelectClauseItem = it->second;
         if (!columnAlias.empty() || !otherSelectClauseItem->GetColumnAlias().empty())
         {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0463, "Alias '%s' used in the select clause is ambiguous.", propName.c_str());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Alias '%s' used in the select clause is ambiguous.", propName.c_str());
             return ECSqlStatus::InvalidECSql;
         }
 

@@ -211,7 +211,7 @@ void FromExp::FindRangeClassRefs(std::vector<RangeClassInfo>& classRefs, ClassRe
                 FindRangeClassRefs(classRefs, join.GetFromClassRef(), scope);
                 FindRangeClassRefs(classRefs, join.GetToClassRef(), scope);
                 if (classRef.GetType() == Type::ECRelationshipJoin)
-                    FindRangeClassRefs(classRefs, join.GetAs<ECRelationshipJoinExp>().GetRelationshipClassNameExp(), scope);
+                    FindRangeClassRefs(classRefs, join.GetAs<UsingRelationshipJoinExp>().GetRelationshipClassNameExp(), scope);
 
                 break;
                 }

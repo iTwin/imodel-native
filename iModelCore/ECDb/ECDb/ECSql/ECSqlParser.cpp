@@ -859,7 +859,6 @@ BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLPa
                     IssueSeverity::Error,
                     IssueCategory::BusinessProperties,
                     IssueType::ECSQL,
-                    ECDbIssueId::ECDb_0612,
                     "Invalid grammar. Property access string cannot end with '?'.");
                 return ERROR;
             }
@@ -1541,7 +1540,7 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
                         m_context->Issues().ReportV(
                             IssueSeverity::Error,
                             IssueCategory::BusinessProperties,
-                            IssueType::ECSQL, ECDbIssueId::ECDb_0710, "Invalid View Class '%s'. There is not query supplied for view.", classCP->GetFullName());
+                            IssueType::ECSQL, "Invalid View Class '%s'. There is not query supplied for view.", classCP->GetFullName());
                         return ERROR;
                     }
 
@@ -1549,7 +1548,7 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
                         m_context->Issues().ReportV(
                             IssueSeverity::Error,
                             IssueCategory::BusinessProperties,
-                            IssueType::ECSQL, ECDbIssueId::ECDb_0711, "ONLY keyword is not supported for view classes (ViewClass: %s).", classCP->GetFullName());
+                            IssueType::ECSQL, "ONLY keyword is not supported for view classes (ViewClass: %s).", classCP->GetFullName());
                         return ERROR;
                     }
 
@@ -1559,7 +1558,7 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
                         m_context->Issues().ReportV(
                             IssueSeverity::Error,
                             IssueCategory::BusinessProperties,
-                            IssueType::ECSQL, ECDbIssueId::ECDb_0712, "Invalid View Class '%s'. View query references itself recusively (%s).", classCP->GetFullName(), viewStack.GetStackAsString().c_str());
+                            IssueType::ECSQL, "Invalid View Class '%s'. View query references itself recusively (%s).", classCP->GetFullName(), viewStack.GetStackAsString().c_str());
                         return ERROR;
                     }
 
@@ -1568,7 +1567,7 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
                         m_context->Issues().ReportV(
                             IssueSeverity::Error,
                             IssueCategory::BusinessProperties,
-                            IssueType::ECSQL, ECDbIssueId::ECDb_0713, "Invalid View Class '%s'. View ECSQL failed to parse.", classCP->GetFullName());
+                            IssueType::ECSQL, "Invalid View Class '%s'. View ECSQL failed to parse.", classCP->GetFullName());
                         return ERROR;
                     }
 
@@ -1576,7 +1575,7 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
                         m_context->Issues().ReportV(
                             IssueSeverity::Error,
                             IssueCategory::BusinessProperties,
-                            IssueType::ECSQL, ECDbIssueId::ECDb_0714, "Invalid View Class '%s'. View ECSQL is not a SELECT statement.", classCP->GetFullName());
+                            IssueType::ECSQL, "Invalid View Class '%s'. View ECSQL is not a SELECT statement.", classCP->GetFullName());
                         return ERROR;
                     }
 
@@ -1637,7 +1636,7 @@ BentleyStatus ECSqlParser::ParseJoinedTable(std::unique_ptr<JoinExp>& exp, OSQLP
             }
             case OSQLParseNode::ecrelationship_join:
             {
-            std::unique_ptr<ECRelationshipJoinExp> joinExp = nullptr;
+            std::unique_ptr<UsingRelationshipJoinExp> joinExp = nullptr;
             if (SUCCESS != ParseECRelationshipJoin(joinExp, parseNode))
                 return ERROR;
 
@@ -1654,7 +1653,7 @@ BentleyStatus ECSqlParser::ParseJoinedTable(std::unique_ptr<JoinExp>& exp, OSQLP
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParser::ParseECRelationshipJoin(std::unique_ptr<ECRelationshipJoinExp>& exp, OSQLParseNode const* parseNode) const
+BentleyStatus ECSqlParser::ParseECRelationshipJoin(std::unique_ptr<UsingRelationshipJoinExp>& exp, OSQLParseNode const* parseNode) const
     {
     if (!SQL_ISRULE(parseNode, ecrelationship_join))
         {
@@ -1694,7 +1693,7 @@ BentleyStatus ECSqlParser::ParseECRelationshipJoin(std::unique_ptr<ECRelationshi
     else if (op_relationship_direction->getTokenID() == SQL_TOKEN_BACKWARD)
         direction = JoinDirection::Backward;
 
-    exp = std::make_unique<ECRelationshipJoinExp>(std::move(from_table_ref), std::move(to_table_ref), std::move(table_node), direction);
+    exp = std::make_unique<UsingRelationshipJoinExp>(std::move(from_table_ref), std::move(to_table_ref), std::move(table_node), direction);
     return SUCCESS;
     }
 

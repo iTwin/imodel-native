@@ -625,7 +625,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassRefExp(NativeSqlBuilder::List& nativeS
             case Exp::Type::CrossJoin:
                 return PrepareCrossJoinExp(ctx, exp.GetAs<CrossJoinExp>());
             case Exp::Type::ECRelationshipJoin:
-                return PrepareRelationshipJoinExp(ctx, exp.GetAs<ECRelationshipJoinExp>());
+                return PrepareRelationshipJoinExp(ctx, exp.GetAs<UsingRelationshipJoinExp>());
             case Exp::Type::NaturalJoin:
                 return PrepareNaturalJoinExp(ctx, exp.GetAs<NaturalJoinExp>());
             case Exp::Type::QualifiedJoin:
@@ -1157,7 +1157,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareQueryExp(NativeSqlBuilder::List& nativeSqlS
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ctx, ECRelationshipJoinExp const& exp)
+ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ctx, UsingRelationshipJoinExp const& exp)
     {
     // (from) INNER JOIN (to) ON (from.ECInstanceId = to.ECInstanceId)
     // (from) INNER JOIN (view) ON view.SourceECInstanceId = from.ECInstanceId INNER JOIN to ON view.TargetECInstanceId=to.ECInstanceId
@@ -1167,8 +1167,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
     NativeSqlBuilder& sql = ctx.GetSqlBuilder();
 
     ///Resolve direction of the relationship
-    ECRelationshipJoinExp::ResolvedEndPoint const& fromEP = exp.GetResolvedFromEndPoint();
-    ECRelationshipJoinExp::ResolvedEndPoint const& toEP = exp.GetResolvedToEndPoint();
+    UsingRelationshipJoinExp::ResolvedEndPoint const& fromEP = exp.GetResolvedFromEndPoint();
+    UsingRelationshipJoinExp::ResolvedEndPoint const& toEP = exp.GetResolvedToEndPoint();
     JoinDirection direction = exp.GetDirection();
 
     enum class TriState
@@ -1180,7 +1180,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
 
     switch (fromEP.GetLocation())
         {
-            case ECRelationshipJoinExp::ClassLocation::ExistInBoth:
+            case UsingRelationshipJoinExp::ClassLocation::ExistInBoth:
             {
             switch (direction)
                 {
@@ -1198,7 +1198,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
                 };
             break;
             }
-            case ECRelationshipJoinExp::ClassLocation::ExistInSource:
+            case UsingRelationshipJoinExp::ClassLocation::ExistInSource:
             {
             if (direction != JoinDirection::Implied)
                 {
@@ -1212,7 +1212,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
             fromIsSource = TriState::True;
             } 
             break;
-            case ECRelationshipJoinExp::ClassLocation::ExistInTarget:
+            case UsingRelationshipJoinExp::ClassLocation::ExistInTarget:
             {
             if (direction != JoinDirection::Implied)
                 {
@@ -2075,20 +2075,20 @@ ECSqlStatus ECSqlExpPreparer::PrepareNavValueCreationFuncExp(NativeSqlBuilder::L
 
     if (!property->GetIsNavigation())
         {
-        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0720, "NAV function expects first argument to be an ECNavigation property.");
+        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "NAV function expects first argument to be an ECNavigation property.");
         return ECSqlStatus::InvalidECSql;
         }
 
     if ((exp.GetIdArgExp()->GetType() == Exp::Type::LiteralValue && !exp.GetIdArgExp()->GetTypeInfo().IsExactNumeric()) || (exp.GetRelECClassIdExp() != nullptr && exp.GetRelECClassIdExp()->GetType() == Exp::Type::LiteralValue && !exp.GetRelECClassIdExp()->GetTypeInfo().IsExactNumeric()))
         {
-        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0721, "NAV function expects second and third arguments to be positive integers.");
+        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "NAV function expects second and third arguments to be positive integers.");
         return ECSqlStatus::InvalidECSql;
         }
 
     auto isUnaryValueValidForId = [&ctx](UnaryValueExp const * argExp) {
         if (argExp->GetOperator() == UnaryValueExp::Operator::Minus || (argExp->GetOperand()->GetType() == Exp::Type::LiteralValue && argExp->GetOperand()->GetAs<LiteralValueExp>().GetRawValue() == "0"))
             {
-            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0721, "NAV function expects second and third arguments to be positive integers.");
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "NAV function expects second and third arguments to be positive integers.");
             return false;
             }
         return true;
@@ -2097,7 +2097,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareNavValueCreationFuncExp(NativeSqlBuilder::L
     auto isLiteralValueValidForId = [&ctx](LiteralValueExp const * argExp) {
         if (argExp->GetRawValue() == "0")
             {
-            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0721, "NAV function expects second and third arguments to be positive integers.");
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "NAV function expects second and third arguments to be positive integers.");
             return false;
             }
         return true;

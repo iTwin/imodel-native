@@ -124,7 +124,6 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/NavigationPropertyECSqlField.h \
                 $(baseDir)ECSql/ECInstanceAdapterHelper.h \
                 $(baseDir)ECSql/CommonTableExp.h \
-                $(baseDir)ECSql/ECSqlPragmas.h \
                 $(baseDir)ECSql/ValueCreationFuncExp.h \
                 $(baseDir)DbSchema.h \
                 $(baseDir)DbSchemaPersistenceManager.h \
@@ -196,8 +195,6 @@ $(o)ClassMapPersistenceManager$(oext):                        $(baseDir)ClassMap
 $(o)ECDbImpl$(oext):                                          $(baseDir)ECDbImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbSqlFunctions$(oext):                                  $(baseDir)ECDbSqlFunctions.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)BuiltInFuncs$(oext):                                      $(baseDir)BuiltInFuncs.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDb$(oext):                                              $(baseDir)ECDb.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -369,8 +366,6 @@ $(o)CommonTableExp$(oext):                                    $(baseDir)ECSql/Co
 
 $(o)NavigationPropertyECSqlField$(oext):                      $(baseDir)ECSql/NavigationPropertyECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlPragmas$(oext):                                      $(baseDir)ECSql/ECSqlPragmas.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
 $(o)ValueCreationFuncExp$(oext):                              $(baseDir)ECSql/ValueCreationFuncExp.cpp  $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)DbSchema$(oext):                                          $(baseDir)DbSchema.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
@@ -384,12 +379,6 @@ $(o)ClassMapColumnFactory$(oext):                             $(baseDir)ClassMap
 $(o)ConcurrentQueryManagerImpl$(oext):                        $(baseDir)ConcurrentQueryManagerImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)InstanceReaderImpl$(oext):                                $(baseDir)InstanceReaderImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)SchemaSync$(oext):                                $(baseDir)SchemaSync.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)IntegrityChecker$(oext):                                  $(baseDir)IntegrityChecker.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)BuiltInVTabs$(oext):                                      $(baseDir)BuiltInVTabs.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ClassViews$(oext):                                        $(baseDir)ClassViews.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

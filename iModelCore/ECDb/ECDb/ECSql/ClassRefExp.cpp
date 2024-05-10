@@ -19,7 +19,6 @@ Exp::FinalizeParseStatus TableValuedFunctionExp::_FinalizeParsing(ECSqlParseCont
                 IssueSeverity::Error, 
                 IssueCategory::BusinessProperties, 
                 IssueType::ECDbIssue,
-                ECDbIssueId::ECDb_0451,
                 "TableValuedFunction %s.%s() has no ECClass describing its output.",
                 m_schemaName.c_str(),
                 classValuedFunc.c_str()

@@ -93,7 +93,7 @@ void QualifiedJoinExp::_ToECSql(ECSqlRenderContext& ctx) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-Exp::FinalizeParseStatus ECRelationshipJoinExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
+Exp::FinalizeParseStatus UsingRelationshipJoinExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     if (mode == FinalizeParseMode::BeforeFinalizingChildren)
         {
@@ -107,7 +107,7 @@ Exp::FinalizeParseStatus ECRelationshipJoinExp::_FinalizeParsing(ECSqlParseConte
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& ctx)
+BentleyStatus UsingRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& ctx)
     {
     auto getClassNameExp = [](ClassRefExp const& classRef) -> ClassNameExp const* {
         if (classRef.GetType() == Exp::Type::SubqueryRef) {
@@ -142,7 +142,6 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& 
                             IssueSeverity::Error,
                             IssueCategory::BusinessProperties,
                             IssueType::ECSQL,
-                            ECDbIssueId::ECDb_0718,
                             "Invalid join direction BACKWARD in %s. Either specify FORWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.",
                             ToString().c_str()
                         );
@@ -156,7 +155,6 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& 
                             IssueSeverity::Error,
                             IssueCategory::BusinessProperties,
                             IssueType::ECSQL,
-                            ECDbIssueId::ECDb_0719,
                             "Invalid join direction FORWARD in %s. Either specify BACKWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.",
                             ToString().c_str()
                         );
@@ -390,7 +388,7 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-void ECRelationshipJoinExp::_ToECSql(ECSqlRenderContext& ctx) const
+void UsingRelationshipJoinExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
     ctx.AppendToECSql(GetFromClassRef()).AppendToECSql(" JOIN ").AppendToECSql(GetToClassRef());
     ctx.AppendToECSql(" USING ").AppendToECSql(GetRelationshipClassNameExp());
@@ -402,7 +400,7 @@ void ECRelationshipJoinExp::_ToECSql(ECSqlRenderContext& ctx) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String ECRelationshipJoinExp::_ToString() const
+Utf8String UsingRelationshipJoinExp::_ToString() const
     {
     Utf8String str("RelationshipJoin [Direction: ");
     str.append(ExpHelper::ToECSql(m_direction)).append("]");

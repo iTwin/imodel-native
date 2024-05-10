@@ -63,8 +63,6 @@
 #include "ChangeSummaryExtractor.h"
 #include "ConcurrentQueryManagerImpl.h"
 #include "InstanceReaderImpl.h"
-#include "IntegrityChecker.h"
-#include "BuiltInVTabs.h"
 #include "ClassViews.h"
 #include "ECSql/NativeSqlBuilder.h"
 #include "ECSql/Parser/SqlScan.h"

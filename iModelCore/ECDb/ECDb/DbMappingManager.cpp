@@ -739,7 +739,7 @@ BentleyStatus DbMappingManager::Classes::MapIndexes(SchemaImportContext& importC
             {
             if (!classMap.GetClass().IsRelationshipClass() || !classMap.GetMapStrategy().GetTphInfo().IsValid())
                 {
-                importCtx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0680,
+                importCtx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, 
                     "The system index '%s' specified in the custom attribute 'DbIndexList' for class '%s' is not eligible for a modification. System-generated indexes can only be modified in relationship classes with TPH map strategy.",
                     indexCA.GetName().c_str(), classMap.GetClass().GetFullName());
                 return ERROR;
@@ -911,7 +911,7 @@ BentleyStatus DbMappingManager::Classes::MapIndex(SchemaImportContext& importCtx
                 }
             else
                 {
-                importCtx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0077,
+                importCtx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, 
                     "DbIndex custom attribute '%s' on ECClass '%s' is invalid. The properties that make up the index are mapped to different tables.", indexCA.GetName().c_str(), ecClass.GetFullName());
 
                 BeAssert(false && "Properties of DbIndex are mapped to different tables although JoinedTable option is not applied.");
@@ -1865,7 +1865,7 @@ DbTable* DbMappingManager::Tables::FindOrCreateTable(SchemaImportContext& ctx, C
         {
         if (table->GetType() != tableType)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0103,
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, 
                 "Table %s is already used by another ECClass for a different mapping type.", table->GetName().c_str());
             return nullptr;
             }
@@ -1873,7 +1873,7 @@ DbTable* DbMappingManager::Tables::FindOrCreateTable(SchemaImportContext& ctx, C
         if (table->HasExclusiveRootECClass())
             {
             BeAssert(table->GetExclusiveRootECClassId() != exclusiveRootClassId);
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0104,
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, 
                 "Table %s is exclusively used by the ECClass with Id %s and therefore cannot be used by other ECClasses which are no subclass of the mentioned ECClass.", table->GetName().c_str(), table->GetExclusiveRootECClassId().ToString().c_str());
             return nullptr;
             }
@@ -1881,7 +1881,7 @@ DbTable* DbMappingManager::Tables::FindOrCreateTable(SchemaImportContext& ctx, C
         if (exclusiveRootClassId.IsValid())
             {
             BeAssert(table->GetExclusiveRootECClassId() != exclusiveRootClassId);
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0105,
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, 
                 "The ECClass with Id %s requests exclusive use of the table %s, but it is already used by some other ECClass.", exclusiveRootClassId.ToString().c_str(), table->GetName().c_str());
             return nullptr;
             }
@@ -1926,7 +1926,6 @@ DbTable* DbMappingManager::Tables::CreateTableForOtherStrategies(SchemaImportCon
             IssueSeverity::Error,
             IssueCategory::BusinessProperties,
             IssueType::ECDbIssue,
-            ECDbIssueId::ECDb_0106,
             "Failed to map ECClass '%s'. It would be mapped to table '%s' which exists already and was not created by ECDb. Mapping classes to pre-existing tables requires the MapStrategy 'ExistingTable'.",
             classMap.GetClass().GetFullName(),
             tableName.c_str()
@@ -1971,7 +1970,7 @@ DbTable* DbMappingManager::Tables::CreateTableForExistingTableStrategy(SchemaImp
 
     if (existingColumnInfos.empty())
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0107,
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, 
             "Failed to map ECClass '%s'. The table '%s' specified in ClassMap custom attribute must exist if MapStrategy is ExistingTable.", classMap.GetClass().GetFullName(), existingTableName.c_str());
         return nullptr;
         }
@@ -2015,7 +2014,7 @@ DbTable* DbMappingManager::Tables::CreateTableForExistingTableStrategy(SchemaImp
         {
         if (pkColumns.size() > 1)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0108,
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, 
                 "Failed to map ECClass '%s'. Multi-column PK not supported for MapStrategy 'ExistingTable'. Table: %s", classMap.GetClass().GetFullName(), existingTableName.c_str());
             return nullptr;
             }
@@ -2032,7 +2031,6 @@ DbTable* DbMappingManager::Tables::CreateTableForExistingTableStrategy(SchemaImp
             IssueSeverity::Error,
             IssueCategory::BusinessProperties,
             IssueType::ECDbIssue,
-            ECDbIssueId::ECDb_0109,
             "Failed to map ECClass '%s'. " ECDBSYS_PROP_ECInstanceId " column '%s' does not exist in table '%s' which was specified in ClassMap custom attribute together with ExistingTable MapStrategy.",
             classMap.GetClass().GetFullName(),
             primaryKeyColName.c_str(),
