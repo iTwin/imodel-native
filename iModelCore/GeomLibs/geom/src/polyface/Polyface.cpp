@@ -330,6 +330,18 @@ PolyfaceHeaderPtr PolyfaceHeader::CreateIndexedMesh (int numPerFace, bvector<DPo
     return mesh;
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+PolyfaceHeaderPtr PolyfaceHeader::CreateIndexedMesh(int numPerFace, bvector<DPoint3d>& points, bvector<int>& pointIndices)
+    {
+    auto mesh = numPerFace > 1 ? CreateFixedBlockIndexed(numPerFace) : CreateVariableSizeIndexed();
+    mesh->Point().swap(points);
+    mesh->PointIndex().swap(pointIndices);
+    mesh->Point().SetActive(true);
+    mesh->PointIndex().SetActive(true);
+    return mesh;
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod

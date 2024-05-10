@@ -2196,6 +2196,9 @@ GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateFixedBlockCoordinates (int numPerFa
 //! Create a mesh with (just) point and index data.
 GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateIndexedMesh (int numPerFace, bvector<DPoint3d> const &points, bvector<int> const &indexData);
 
+//! Create a mesh with (just) point and index data.
+//! For efficiency, the non-const input vector contents are swapped with those of the newly constructed mesh, so these inputs are empty on return.
+GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateIndexedMesh(int numPerFace, bvector<DPoint3d>& points, bvector<int>& pointIndices);
 
 //! Create a (indexed) polyface containing all polygons from a TaggedPolygonVector
 GEOMDLLIMPEXP PolyfaceHeaderPtr static CreateFromTaggedPolygons
