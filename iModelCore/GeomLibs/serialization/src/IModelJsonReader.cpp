@@ -996,10 +996,21 @@ PolyfaceHeaderPtr tryValueToPolyfaceHeader (BeJsConst parentValue)
     auto value = parentValue["indexedMesh"];
     if (value.isNull ())
         return nullptr;
-    PolyfaceHeaderPtr pf = PolyfaceHeader::CreateVariableSizeIndexed ();    // this makes numPerFace 0
+
+    bvector<DPoint3d> points;
+    if (!tryValueToBVectorDPoint3d(value["point"], points))
+        return nullptr;
+    bvector<int> pointIndices;
+    if (!tryValueToBVectorInt(value["pointIndex"], pointIndices))
+        return nullptr;
+
+    int numPerFace = 0;
     auto iNumPerFace = AsInt (value["numPerFace"], 0);
-    if (iNumPerFace.IsValid ())
-        pf->SetNumPerFace (iNumPerFace.Value ());
+    if (iNumPerFace.IsValid())
+        numPerFace = iNumPerFace.Value();
+
+    // set numPerFace and required arrays, initialize inactive arrays
+    PolyfaceHeaderPtr pf = PolyfaceHeader::CreateIndexedMeshSwap(numPerFace, points, pointIndices);
 
     bool twoSided;
     derefBool(value, "twoSided", twoSided, false);
@@ -1009,17 +1020,10 @@ PolyfaceHeaderPtr tryValueToPolyfaceHeader (BeJsConst parentValue)
     if (iExpectedClosure.IsValid())
         pf->SetExpectedClosure(iExpectedClosure.Value());
 
-    if (tryValueToBVectorDPoint3d (value["point"], pf->Point ()))
-        pf->Point().SetActive (true);
-    if (tryValueToBVectorInt(value["pointIndex"], pf->PointIndex ()))
-        pf->PointIndex().SetActive (true);
-
     if (tryValueToBVectorUInt32 (value["color"], pf->IntColor ()))
         pf->IntColor().SetActive (true);
     if (tryValueToBVectorInt(value["colorIndex"], pf->ColorIndex ()))
-        pf->ColorIndex().SetTags(pf->ColorIndex().NumPerStruct(), pf->ColorIndex().StructsPerRow(),
-                                 MESH_ELM_TAG_FACE_LOOP_TO_INT_COLOR_INDICES,   // force correct tag
-                                 pf->ColorIndex().IndexFamily(), pf->ColorIndex().IndexedBy(), true);
+        pf->ColorIndex().SetActive(true);
 
     if (tryValueToBVectorDVec3d (value["normal"], pf->Normal ()))
         pf->Normal().SetActive (true);
@@ -1042,9 +1046,8 @@ PolyfaceHeaderPtr tryValueToPolyfaceHeader (BeJsConst parentValue)
 
     TaggedNumericData numericData;
     if (tryValueToTaggedNumericData(value["tags"], numericData))
-        {
         pf->SetNumericTags (numericData);
-        }
+
     return pf;
     }
 
