@@ -764,13 +764,22 @@ const flatbuffers::Offset<BGFB::TaggedNumericData> WriteFBTaggedNumericData(Tagg
 +---------------+---------------+---------------+---------------+---------------+------*/
 flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyfaceDirect(PolyfaceQueryCR parent)
     {
+    int32_t meshStyle = parent.GetMeshStyle ();
+    if (meshStyle != MESH_ELM_STYLE_INDEXED_FACE_LOOPS)
+        {
+        // FB mesh index format is 1-based, 0-terminated/padded, variable/fixed-size face loops
+        auto indexedMesh = parent.CloneAsVariableSizeIndexed();
+        if (indexedMesh.IsValid())
+            return WriteAsFBPolyfaceDirect(*indexedMesh);
+        return 0;
+        }
+
     int32_t numPerFace = parent.GetNumPerFace ();
     int32_t numPerRow = parent.GetNumPerRow ();
-    int32_t meshStyle = parent.GetMeshStyle ();
     bool    twoSided  = parent.GetTwoSided ();
     uint32_t expectedClosure = parent.GetExpectedClosure();
 
-    // NOTE: both internal and FlatBuffer Polyface/AuxData index arrays are parallel, 1-based, 0-terminated/padded
+    // ASSUME: Polyface/AuxData index arrays are parallel
     const flatbuffers::Offset<flatbuffers::Vector<double>> point = WriteOptionalVector<DPoint3d, double, 3>(parent.GetPointCP (), parent.GetPointCount ());
     const flatbuffers::Offset<flatbuffers::Vector<double>> param = WriteOptionalVector<DPoint2d, double, 2>(parent.GetParamCP (), parent.GetParamCount ());
     const flatbuffers::Offset<flatbuffers::Vector<double>> normal = WriteOptionalVector<DVec3d, double, 3>(parent.GetNormalCP (), parent.GetNormalCount ());
@@ -1282,24 +1291,22 @@ static PolyfaceHeaderPtr ReadPolyfaceHeaderDirect (const BGFB::Polyface *fbPolyf
     {
     if (!fbPolyface)
         return nullptr;
+
     uint32_t numPerFace   = (uint32_t)fbPolyface->numPerFace ();
     int numPerRow       = fbPolyface->numPerRow ();
     uint32_t meshStyle    = (uint32_t)fbPolyface->meshStyle ();
     bool twoSided       = 0 != fbPolyface->twoSided ();
-    uint32_t expectedClosure = fbPolyface->expectedClosure ();
-    // uninitialized (garbage) expectedClosure values have been observed.
-    // expected values are 0,1,2.
+
+    uint32_t expectedClosure = (uint32_t)fbPolyface->expectedClosure();
     if (expectedClosure >= 3)
         expectedClosure = 0;
 
     PolyfaceHeaderPtr polyface = PolyfaceHeader::New ();
+    polyface->ClearTags (numPerFace, meshStyle);
     polyface->SetNumPerRow (numPerRow);
     polyface->SetTwoSided (twoSided);
     polyface->SetExpectedClosure(expectedClosure);
-    polyface->ClearTags (numPerFace, meshStyle);
-    // Blocked vectors need non-zero numPerRow ...
-    if (numPerRow < 1)
-        numPerRow = 1;
+
     if (fbPolyface->has_point ())
         {
         auto fbPoints = fbPolyface->point ();
@@ -1384,7 +1391,6 @@ static PolyfaceHeaderPtr ReadPolyfaceHeaderDirect (const BGFB::Polyface *fbPolyf
         {
         auto fbFaceData = fbPolyface->faceData ();
         auto pFaceDataDoubles = (double const*)fbFaceData->GetStructFromOffset(0);
-        //int numFaceData = (size_t)(fbFaceData->Length () / 8);
         if (unpackFaceData (pFaceDataDoubles, (size_t)fbFaceData->Length (), polyface->FaceData ()))
             {
             polyface->FaceData().SetTags (1,1,0,0,0, true);
@@ -1418,13 +1424,17 @@ static bool ReadPolyfaceQueryCarrierDirect (const BGFB::Polyface *fbPolyface, Po
     {
     if (!fbPolyface)
         return false;
+
     uint32_t numPerFace   = (uint32_t)fbPolyface->numPerFace ();
     int numPerRow       = fbPolyface->numPerRow ();
     uint32_t meshStyle    = (uint32_t)fbPolyface->meshStyle ();
     bool twoSided       = 0 != fbPolyface->twoSided ();
-    uint32_t expectedClosure = fbPolyface->expectedClosure();
 
-    size_t numPoint = 0, numParam = 0, numNormal = 0, numColor = 0, numFace = 0; //numDoubleColor = 0, numIntColor = 0, numColorTable = 0;
+    uint32_t expectedClosure = (uint32_t)fbPolyface->expectedClosure();
+    if (expectedClosure >= 3)
+        expectedClosure = 0;
+
+    size_t numPoint = 0, numParam = 0, numNormal = 0, numColor = 0, numFace = 0;
     size_t numPointIndex = 0, numParamIndex = 0, numNormalIndex = 0, numColorIndex = 0, numFaceIndex = 0;
     int32_t const * pPointIndex = nullptr;
     int32_t const * pNormalIndex = nullptr;
@@ -1432,17 +1442,16 @@ static bool ReadPolyfaceQueryCarrierDirect (const BGFB::Polyface *fbPolyface, Po
     int32_t const * pColorIndex = nullptr;
     int32_t const * pFaceIndex = nullptr;
 
-
     DPoint3dCP pPoints = nullptr;
     DPoint2dCP pParams = nullptr;
     DVec3dCP   pNormals = nullptr;
     FacetFaceDataCP pFaceData = nullptr;
-//    RgbFactor const* pDoubleColor = nullptr;
     uint32_t const* pIntColor = nullptr;
 
     // Blocked vectors need non-zero numPerRow ...
     if (numPerRow < 1)
         numPerRow = 1;
+
     if (fbPolyface->has_point ())
         {
         auto fbPoints = fbPolyface->point ();
@@ -1496,7 +1505,6 @@ static bool ReadPolyfaceQueryCarrierDirect (const BGFB::Polyface *fbPolyface, Po
         {
         auto fbData = fbPolyface->intColor();
         pIntColor = (uint32_t const*)fbData->GetStructFromOffset(0);
-//        numIntColor = (size_t)fbData->Length ();
         numColor = (size_t)fbData->Length ();
         }
 
@@ -1510,15 +1518,9 @@ static bool ReadPolyfaceQueryCarrierDirect (const BGFB::Polyface *fbPolyface, Po
     if (fbPolyface->has_faceData ())
         {
         auto fbData = fbPolyface->faceData();
-		pFaceData = (FacetFaceDataCP)fbData->GetStructFromOffset(0);
+        pFaceData = (FacetFaceDataCP)fbData->GetStructFromOffset(0);
         numFace = (size_t)fbData->Length () / 8;
         }
-//    if (fbPolyface->has_colorTable ())
-//        {
-//        auto fbData = fbPolyface->colorTable ();
-//        pColorTable = (uint32_t*)fbData->GetStructFromOffset(0);
-//        numColorTable = (size_t)fbData->Length ();
-//        }
 
     if (numParamIndex > 0 && numParamIndex != numPointIndex)
         return false;
@@ -1528,15 +1530,6 @@ static bool ReadPolyfaceQueryCarrierDirect (const BGFB::Polyface *fbPolyface, Po
         return false;
     if (numFaceIndex > 0 && numFaceIndex != numPointIndex)
         return false;
-
-//    size_t numColor = 0;
-
-//    if (nullptr != pDoubleColor)
-//        numColor = numDoubleColor;
-//    else if (nullptr != pIntColor)
-//        numColor = numIntColor;
-//    else if (nullptr != pColorTable)
-//        numColor = numColorTable;
 
     carrier = PolyfaceQueryCarrier (
         numPerFace, twoSided, numPointIndex,

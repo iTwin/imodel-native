@@ -568,19 +568,18 @@ void IndexedPolyfaceToJson(BeJsValue in, PolyfaceHeaderCR mesh)
         return;
 
     auto allData = in["indexedMesh"];
-    auto indexCount = mesh.GetPointIndexCount ();
-    static bool s_outputNumPerFace = true;
-    static bool s_outputTwoSided = false;
-    static uint32_t s_outputExpectedClosure = true;
-    if (s_outputNumPerFace)
-        allData["numPerFace"] = mesh.GetNumPerFace ();
-    if (s_outputTwoSided)
-        allData["twoSided"] = mesh.GetTwoSided ();
-    if (s_outputExpectedClosure)
-        allData["expectedClosure"] = mesh.GetExpectedClosure();
 
+    // these are the only required fields
+    auto indexCount = mesh.GetPointIndexCount ();
     toJson (allData["point"], mesh.GetPointCP (), mesh.GetPointCount ());
     toJson (allData["pointIndex"], mesh.GetPointIndexCP (), indexCount);
+
+    if (mesh.GetNumPerFace() > 2)
+        allData["numPerFace"] = mesh.GetNumPerFace();
+    if (mesh.GetTwoSided())
+        allData["twoSided"] = true;
+    if (auto expectedClosure = mesh.GetExpectedClosure())
+        allData["expectedClosure"] = expectedClosure;
 
     if (mesh.GetColorCount() > 0)
         toJson (allData["color"], mesh.GetIntColorCP (), mesh.GetColorCount ());
@@ -596,6 +595,7 @@ void IndexedPolyfaceToJson(BeJsValue in, PolyfaceHeaderCR mesh)
         toJson (allData["normal"], mesh.GetNormalCP (), mesh.GetNormalCount ());
     if (mesh.GetNormalIndexCP() != nullptr)
         toJson (allData["normalIndex"], mesh.GetNormalIndexCP (), indexCount);
+
     if (mesh.GetFaceDataCP() != nullptr && mesh.GetFaceCount () > 0)
         FaceDataToJson (allData["faceData"], mesh.GetFaceDataCP (), mesh.GetFaceCount ());
     if (mesh.GetFaceIndexCount () > 0)  // There is a separate GetFaceIndexCount, but it has to match GetPointIndexCount.
