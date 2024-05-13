@@ -140,6 +140,28 @@ void DerivedPropertyExp::_ToECSql(ECSqlRenderContext& ctx) const
     ctx.AppendToECSql("(").AppendToECSql(*GetExpression()).AppendToECSql(") AS ").AppendToECSql(m_columnAlias);
     }
 
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+ExtractPropertyValueExp const* DerivedPropertyExp::TryGetExtractPropExp() const {
+    const Exp* exp = GetExpression();
+    while(exp) {
+        if (exp->GetType() == Exp::Type::ExtractProperty)
+            return exp->GetAsCP<ExtractPropertyValueExp>();
+        if (exp->GetType() == Exp::Type::PropertyName) {
+            auto prop = exp->GetAsCP<PropertyNameExp>();
+            if (!prop->IsPropertyRef())
+                return nullptr;
+            exp = prop->GetPropertyRef()->GetEndPointDerivedProperty().GetExpression();
+        } else if (exp->GetChildrenCount() == 1)
+            exp = exp->GetChildren()[0];
+        else
+            return nullptr;
+    }
+    return (ExtractPropertyValueExp const*)exp;
+}
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
