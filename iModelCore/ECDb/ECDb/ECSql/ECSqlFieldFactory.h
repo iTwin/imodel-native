@@ -33,7 +33,7 @@ struct ECSqlFieldFactory final
         static ECN::ECTypeDescriptor DetermineDataType(DateTime::Info&, ECN::ECStructClassCP&, IssueDataSource const&, ECN::ECPropertyCR);
 
         static ECSqlSelectPreparedStatement& GetPreparedStatement(ECSqlPrepareContext&);
-        static ECSqlStatus CreateFieldForView(ECSqlPrepareContext& ctx, PropertyNameExp const& propNameExp, ClassNameExp const& viewClassNameExp, DerivedPropertyExp const& derivedProperty, int startColumnIndex, bool isDynamic);
+        static ECSqlStatus CreateFieldForView(ECSqlPrepareContext& ctx, PropertyNameExp const& propNameExp, ClassNameExp const& viewClassNameExp, DerivedPropertyExp const& derivedProperty, int startColumnIndex);
 
     public:
         static ECSqlStatus CreateField(ECSqlPrepareContext&, DerivedPropertyExp const* derivedProperty, int startColumnIndex);
