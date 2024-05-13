@@ -1491,9 +1491,37 @@ MTG_MarkSet *pMarkSet
     }
 
 /*------------------------------------------------------------------*//**
+* Detect faces that can be ignored in region parity markup.
++---------------+---------------+---------------+---------------+------*/
+static bool markup_isMaskedNullFace(RG_Header* pRG, MTGNodeId nodeId, MTGMask mask)
+    {
+    if (pRG && pRG->pGraph)
+        {
+        if (jmdlRG_faceIsNull(pRG, nodeId))
+            return true; // an official null face
+
+        // unofficial null faces: 2-edge, 0-area faces with given mask
+        if (pRG->pGraph->HasMaskAt(nodeId, mask))
+            {
+            if (2 == pRG->pGraph->CountNodesAroundFace(nodeId))
+                {
+                double area = 0.0;
+                if (jmdlRG_getFaceSweepProperties(pRG, &area, nullptr, nullptr, nodeId))
+                    {
+                    // a 2-edge face with positive area (curved "banana" face) is not null
+                    if (0.0 == area)
+                        return true;
+                    }
+                }
+            }
+        }
+    return false;
+    }
+
+/*------------------------------------------------------------------*//**
 * Find the maximum group id in the graph.
 * Initialize parity array to zero for each group id from 0 to max.
-* @return false if there are edges with no groupid.
+* @return false if there are edge(s) in non-null face(s) with no groupid.
 * @bsimethod
 +---------------+---------------+---------------+---------------+------*/
 static bool        markup_initGroupParityArray
@@ -1520,7 +1548,7 @@ SimpleBooleanMarkupContext *pMarkup
                 if (groupId > maxGroupId)
                     maxGroupId = groupId;
                 }
-            else
+            else if (!markup_isMaskedNullFace(pRG, seedNodeId, RG_MTGMASK_NULL_FACE | RG_MTGMASK_GAP_MASK))
                 {
                 boolstat = false;
                 }
