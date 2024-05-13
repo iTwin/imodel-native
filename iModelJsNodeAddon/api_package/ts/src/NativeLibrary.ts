@@ -681,7 +681,7 @@ export declare namespace IModelJsNative {
   class GeoServices {
     constructor();
     public static getGeographicCRSInterpretation(props: GeographicCRSInterpretRequestProps): GeographicCRSInterpretResponseProps;
-
+    public static getListOfGCS(ignoreLegacy: boolean, extent?: Range2dProps): Array<{ name: string, description: string }>;
   }
 
   /**
