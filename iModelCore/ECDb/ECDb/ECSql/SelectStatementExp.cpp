@@ -981,30 +981,6 @@ void SubqueryRefExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPr
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void SubqueryRefExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
-    //! ITWINJS_PARSE_TREE: SubqueryRefExp
-    val.SetEmptyObject();
-    auto viewClass = GetViewClass();
-    if (viewClass == nullptr) {
-    val["id"] = "SubqueryRefExp";
-        if (!GetAlias().empty())
-            val["alias"] = GetAlias();
-
-        GetSubquery()->ToJson(val["query"], fmt);
-        auto polymorphicInfo = GetPolymorphicInfo().ToECSql();
-        if (!polymorphicInfo.empty())
-            GetPolymorphicInfo().ToJson(val["polymorphicInfo"]);
-
-        if(!GetAlias().empty())
-            val["alias"] = GetAlias();
-    } else {
-        viewClass->ToJson(val, fmt);
-    }
-}
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
 void SubqueryRefExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
     if (GetPolymorphicInfo().IsOnly())

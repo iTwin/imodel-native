@@ -462,21 +462,6 @@ bool PropertyNameExp::IsLhsAssignmentOperandExpression() const
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-void PropertyNameExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
-    //! ITWINJS_PARSE_TREE: PropertyNameExp
-    val.SetEmptyObject();
-    val["id"] = "PropertyNameExp";
-    Utf8String path;
-    path.append(m_originalPropertyPath.ToString(false, false, true));
-    if (path.empty()) {
-        path.append(m_resolvedPropertyPath.ToString(false, false, true));
-    }
-    val["path"] = path;
-}
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 void PropertyNameExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
