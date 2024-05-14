@@ -491,11 +491,11 @@ TEST_F(SchemaSyncTestFixture, Verify_SyncInfo_BeProp_Entries)
     b1->PullMergePush("push change");
 
     auto changesets = hub.Query();
-    bool hasSchemaChanges;
+
     bool isSchemaSyncInfoChanged;
     bool isECDbProfileChanged;
     bool isECMetaDataChanged ;
-    SchemaSync::ScanForSchemaChanges(*changesets.back(), isSchemaSyncInfoChanged, isECDbProfileChanged, isECMetaDataChanged)
+    SchemaSync::ScanForSchemaChanges(*changesets.back(), isSchemaSyncInfoChanged, isECDbProfileChanged, isECMetaDataChanged);
     ASSERT_TRUE(isECMetaDataChanged);
 
     syncDb = schemaSyncDb.OpenReadOnly();
