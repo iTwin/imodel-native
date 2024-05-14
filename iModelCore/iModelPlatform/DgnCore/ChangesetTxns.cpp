@@ -39,7 +39,7 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
     BeAssert(result == BE_SQLITE_OK);
     UNUSED_VARIABLE(result);
     Utf8String tbl;
-    tbl.assign(tableName);
+    tbl.AssignOrClear(tableName);
 
     const auto jsIModelDb = m_dgndb.GetJsIModelDb();
     if (nullptr != jsIModelDb) {
