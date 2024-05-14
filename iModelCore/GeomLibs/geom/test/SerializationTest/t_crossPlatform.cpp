@@ -5,7 +5,7 @@
 #include "testHarness.h"
 #include <GeomSerialization/GeomSerializationApi.h>
 
-// this fixup is not needed in the TypeScript crossPlatform test because only native API outputs fixed-size mesh format
+// this fixup is not needed in the TypeScript crossPlatform test because only native API deserializes in fixed-size mesh format
 static void convertNativeMeshToVariableSized(IGeometryR geom)
     {
     auto mesh = geom.GetAsPolyfaceHeader();
@@ -49,6 +49,21 @@ TEST(CrossPlatform, Equivalence)
     auxDataMesh.m_fileNames.at(TestCase::TypeScript).at(TestCase::FlatBuffer).push_back(BeFileName(typeScriptRoot).AppendToPath(testName).AppendString(L"-old").AppendExtension(L"fb"));
     auxDataMesh.m_fileNames.at(TestCase::TypeScript).at(TestCase::JSON).push_back(BeFileName(typeScriptRoot).AppendToPath(testName).AppendExtension(L"imjs"));
     testCases.push_back(auxDataMesh);
+
+    TestCase auxDataMesh2;  // inspired by Scientific Visualization sandbox
+    testName = L"indexedMesh-auxData2";
+    auxDataMesh2.m_fileNames.at(TestCase::Native).at(TestCase::FlatBuffer).push_back(BeFileName(nativeRoot).AppendToPath(testName).AppendExtension(L"fb"));
+    auxDataMesh2.m_fileNames.at(TestCase::Native).at(TestCase::JSON).push_back(BeFileName(nativeRoot).AppendToPath(testName).AppendExtension(L"imjs"));
+    auxDataMesh2.m_fileNames.at(TestCase::Native).at(TestCase::FlatBuffer).push_back(BeFileName(nativeRoot).AppendToPath(testName).AppendString(L"-size3").AppendExtension(L"fb"));
+    auxDataMesh2.m_fileNames.at(TestCase::Native).at(TestCase::JSON).push_back(BeFileName(nativeRoot).AppendToPath(testName).AppendString(L"-size3").AppendExtension(L"imjs"));
+    auxDataMesh2.m_fileNames.at(TestCase::Native).at(TestCase::FlatBuffer).push_back(BeFileName(nativeRoot).AppendToPath(testName).AppendString(L"-size4").AppendExtension(L"fb"));
+    auxDataMesh2.m_fileNames.at(TestCase::Native).at(TestCase::JSON).push_back(BeFileName(nativeRoot).AppendToPath(testName).AppendString(L"-size4").AppendExtension(L"imjs"));
+    auxDataMesh2.m_fileNames.at(TestCase::Native).at(TestCase::FlatBuffer).push_back(BeFileName(nativeRoot).AppendToPath(testName).AppendString(L"-size5").AppendExtension(L"fb"));
+    auxDataMesh2.m_fileNames.at(TestCase::Native).at(TestCase::JSON).push_back(BeFileName(nativeRoot).AppendToPath(testName).AppendString(L"-size5").AppendExtension(L"imjs"));
+    auxDataMesh2.m_fileNames.at(TestCase::TypeScript).at(TestCase::FlatBuffer).push_back(BeFileName(typeScriptRoot).AppendToPath(testName).AppendString(L"-new").AppendExtension(L"fb"));
+    auxDataMesh2.m_fileNames.at(TestCase::TypeScript).at(TestCase::FlatBuffer).push_back(BeFileName(typeScriptRoot).AppendToPath(testName).AppendString(L"-old").AppendExtension(L"fb"));
+    auxDataMesh2.m_fileNames.at(TestCase::TypeScript).at(TestCase::JSON).push_back(BeFileName(typeScriptRoot).AppendToPath(testName).AppendExtension(L"imjs"));
+    testCases.push_back(auxDataMesh2);
 
     TestCase fixedSizeMesh;
     testName = L"indexedMesh-fixedSize";
