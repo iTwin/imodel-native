@@ -1086,7 +1086,7 @@ TEST_F(BeSQLiteEmbeddedFileTests, ReplaceExistingEmbeddedFile)
 
     //test file
     //  Using a much larger file so I could check that the embedded blobs were removed from the BE_Prop table.
-    Utf8CP testFileNameOld = "Bentley_Standard_CustomAttributes.01.13.ecschema.xml";
+    Utf8CP testFileNameOld = "Bentley_Standard_CustomAttributes.01.14.ecschema.xml";
     WString testFileNameOldW(testFileNameOld, BentleyCharEncoding::Utf8);
 
     BeFileName testFilePathOld;
@@ -1136,7 +1136,7 @@ TEST_F(BeSQLiteEmbeddedFileTests, ReadAddNewEntrySaveEmbeddedFile)
 
     //test file
     //  Used a fairly large file for this to verify that it correctly handles files that are larger than one blob.
-    Utf8CP testFileName = "Bentley_Standard_CustomAttributes.01.13.ecschema.xml";
+    Utf8CP testFileName = "Bentley_Standard_CustomAttributes.01.14.ecschema.xml";
     WString testFileNameW(testFileName, BentleyCharEncoding::Utf8);
 
     BeFileName testFilePath;
@@ -1156,7 +1156,7 @@ TEST_F(BeSQLiteEmbeddedFileTests, ReadAddNewEntrySaveEmbeddedFile)
     ASSERT_EQ(BE_SQLITE_OK, stat);
     ASSERT_TRUE(embeddedFileId.IsValid());
 
-    Utf8CP NewFileName = "Copy_Bentley_Standard_CustomAttributes.01.13.ecschema.xml";
+    Utf8CP NewFileName = "Copy_Bentley_Standard_CustomAttributes.01.14.ecschema.xml";
     WString NewFileNameW(NewFileName, BentleyCharEncoding::Utf8);
     ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.AddEntry(NewFileName, "xml"));
 
@@ -1247,6 +1247,46 @@ struct MyChangeSet : ChangeSet
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+TEST_F(BeSQLiteDbTests, SchemaChangeBetweenDataChangesets)
+    {
+    SetupDb(L"changeset.db");
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("CREATE TABLE TestTable (ID INTEGER PRIMARY KEY, T REAL)"));
+
+    MyChangeTracker changeTracker(m_db);
+
+    changeTracker.EnableTracking(true);
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO TestTable (T) values (1)"));
+
+    MyChangeSet cs1;
+    ASSERT_EQ(BE_SQLITE_OK, cs1.FromChangeTrack(changeTracker));
+    changeTracker.EndTracking();
+
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("ALTER TABLE TestTable ADD COLUMN P REAL"));
+
+    changeTracker.EnableTracking(true);
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO TestTable (T, P) values (1, 1)"));
+
+    MyChangeSet cs2;
+    ASSERT_EQ(BE_SQLITE_OK, cs2.FromChangeTrack(changeTracker));
+    changeTracker.EndTracking();
+
+    ChangeGroup group;
+    ASSERT_EQ(BE_SQLITE_OK, cs1.AddToChangeGroup(group));
+    ASSERT_EQ(BE_SQLITE_SCHEMA, cs2.AddToChangeGroup(group));
+
+
+    ChangeGroup groupS(m_db);
+    ASSERT_EQ(BE_SQLITE_OK, cs1.AddToChangeGroup(groupS));
+    ASSERT_EQ(BE_SQLITE_OK, cs2.AddToChangeGroup(groupS));
+    groupS.Finalize();
+
+    m_db.SaveChanges();
+    m_db.CloseDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 TEST_F(BeSQLiteDbTests, RealUpdateTest)
     {
     SetupDb(L"RealTest.db");
@@ -1330,6 +1370,61 @@ TEST_F(BeSQLiteDbTests, InsertMismatchedColumns)
     EXPECT_TRUE(result == BE_SQLITE_OK); // SQLite should ideally fail here - we have reported this to them 8/31/2017
     m_db.SaveChanges();
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F (BeSQLiteDbTests, ChangeSetApply_IgnoreNoop)
+{
+    const auto kMainFile = "test1.db";
+    SetupDb (WString(kMainFile, true).c_str());
+    EXPECT_TRUE (m_db.IsDbOpen ());
+
+    auto cloneDb = [&](DbR from, DbR out, Utf8CP name) {
+        ASSERT_EQ (BE_SQLITE_OK, from.SaveChanges());
+        Utf8String fileName = from.GetDbFileName();
+        fileName.ReplaceAll(kMainFile, name);
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(BeFileName(m_db.GetDbFileName(), true), BeFileName(fileName.c_str(), true)));
+        ASSERT_EQ(BE_SQLITE_OK, out.OpenBeSQLiteDb(fileName.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite)));
+    };
+
+    ASSERT_EQ (BE_SQLITE_OK, m_db.CreateTable ("t1", "id integer primary key")) << "Creating table T1 failed.";
+    ASSERT_EQ (BE_SQLITE_OK, m_db.CreateTable ("t2", "id integer primary key, t1_id integer not null references t1(id) on delete cascade")) << "Creating table T2 failed.";
+
+    Db beforeDb;
+    cloneDb(m_db, beforeDb, "before.db");
+
+    // Make a changeset
+    MyChangeTracker changeTracker(m_db);
+    changeTracker.EnableTracking(true);
+    EXPECT_EQ (BE_SQLITE_OK, m_db.ExecuteSql ("insert into t1 values(100)"));
+    EXPECT_EQ (BE_SQLITE_OK, m_db.ExecuteSql ("insert into t2 values(201, 100)"));
+    EXPECT_EQ (BE_SQLITE_OK, m_db.ExecuteSql ("insert into t2 values(202, 100)"));
+    MyChangeSet changeSet;
+    changeSet.FromChangeTrack(changeTracker);
+    auto size = changeSet.GetSize();
+    ASSERT_TRUE(size > 0);
+    changeTracker.EndTracking();
+
+    Db afterDb;
+    cloneDb(m_db, afterDb, "after.db");
+
+    BeTest::SetFailOnAssert(false);
+    // Apply changeset to db that not have the data and should not cause conflicts
+    ASSERT_EQ(BE_SQLITE_OK, changeSet.ApplyChanges(beforeDb)) << "this should not cause conflict";
+
+
+    // Apply to a db that already have data
+    ASSERT_EQ(BE_SQLITE_ABORT, changeSet.ApplyChanges(afterDb)) << "this should cause conflict and abort";
+
+    BeTest::SetFailOnAssert(true);
+
+    // Apply to a db that already have data but with ignoreNoop flag
+    ASSERT_EQ(BE_SQLITE_OK, changeSet.ApplyChanges(afterDb, nullptr, false, /* ignoreNoop = */true)) << "with ignore noop flag this should succeed";
+
+    beforeDb.SaveChanges();
+    afterDb.SaveChanges();
+}
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -1455,7 +1550,7 @@ TEST_F(BeSQLiteDbTests, CreateChangeSetWithSchemaAndDataChanges)
     // Create change set - fails!
     changeSet.Clear();
     result = changeSet.FromChangeTrack(changeTracker);
-    ASSERT_TRUE(result == BE_SQLITE_SCHEMA); // Failure!
+    ASSERT_TRUE(result == BE_SQLITE_OK); // This does not fail any more
 
     // Add row to TestTable 1
     result = m_db.ExecuteSql("INSERT INTO TestTable1 (Column1,Column2) values (3.3,4.4)");
@@ -1464,7 +1559,7 @@ TEST_F(BeSQLiteDbTests, CreateChangeSetWithSchemaAndDataChanges)
     // Create change set - fails!
     changeSet.Clear();
     result = changeSet.FromChangeTrack(changeTracker);
-    ASSERT_TRUE(result == BE_SQLITE_SCHEMA); // Failure!
+    ASSERT_TRUE(result == BE_SQLITE_OK); // This does not fail any more
 
     changeTracker.EndTracking();
     changeSet.Clear();
@@ -1589,7 +1684,7 @@ TEST_F (BeSQLiteDbTests, Limits)
     EXPECT_TRUE (m_db.IsDbOpen ());
 
     ASSERT_EQ(10, m_db.GetLimit(DbLimits::Attached));
-    ASSERT_EQ(2000, m_db.GetLimit(DbLimits::Column));
+    ASSERT_EQ(2200, m_db.GetLimit(DbLimits::Column));
     ASSERT_EQ(500, m_db.GetLimit(DbLimits::CompoundSelect));
     ASSERT_EQ(2000, m_db.GetLimit(DbLimits::ExprDepth));
     ASSERT_EQ(127, m_db.GetLimit(DbLimits::FunctionArg));
@@ -1601,4 +1696,125 @@ TEST_F (BeSQLiteDbTests, Limits)
     ASSERT_EQ(250000000, m_db.GetLimit(DbLimits::VdbeOp));
     ASSERT_EQ(0, m_db.GetLimit(DbLimits::WorkerThreads));
     m_db.AbandonChanges();
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+#if 0 // Require ICU
+TEST_F (BeSQLiteDbTests, icu_upper_lower_func) {
+
+    SetupDb (L"icu_case.db");
+    EXPECT_TRUE (m_db.IsDbOpen ());
+    auto toLower = [&](Utf8String str) {
+        auto stmt = m_db.GetCachedStatement("SELECT LOWER(?)");
+        stmt->BindText(1, str.c_str(), Statement::MakeCopy::Yes);
+        stmt->Step();
+        return Utf8String(stmt->GetValueText(0));
+    };
+    auto toUpper = [&](Utf8String str) {
+        auto stmt = m_db.GetCachedStatement("SELECT UPPER(?)");
+        stmt->BindText(1, str.c_str(), Statement::MakeCopy::Yes);
+        stmt->Step();
+        return Utf8String(stmt->GetValueText(0));
+    };
+
+    const Utf8String expectedUpper = "À Á Â Ã Ä Å Æ Ç È É Ê Ë Ì Í Î Ï Ð Ñ Ò Ó Ô Õ Ö × Ø Ù Ú Û Ü Ý Ÿ Þ ¡ ¢ £ ¤ ¥ ¦ § ¨ © ª « ¬ ­ ® ¯ ° ± ² ³ ´ Μ ¶ ¸ ¹ º » ¼ ½ ¾ ¿ Ƒ ·";
+    const Utf8String expectedLower = "à á â ã ä å æ ç è é ê ë ì í î ï ð ñ ò ó ô õ ö × ø ù ú û ü ý ÿ þ ¡ ¢ £ ¤ ¥ ¦ § ¨ © ª « ¬ ­ ® ¯ ° ± ² ³ ´ μ ¶ ¸ ¹ º » ¼ ½ ¾ ¿ ƒ ·";
+    const Utf8String actualUpper = toUpper(expectedLower);
+    const Utf8String actualLower = toLower(expectedUpper);
+
+    ASSERT_STREQ(expectedUpper.c_str(), actualUpper.c_str());
+    ASSERT_STREQ(expectedLower.c_str(), actualLower.c_str());
+    ASSERT_STREQ("SS", toUpper("ß").c_str());
+}
+#endif
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F (BeSQLiteDbTests, nocase_latin1_ascii_support)
+{
+    SetupDb (L"icu.db");
+    EXPECT_TRUE (m_db.IsDbOpen ());
+    auto setupTable = [&](Utf8CP tableName, Utf8CP collation) {
+        ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteDdl(SqlPrintfString("CREATE TABLE [%s](str TEXT UNIQUE COLLATE %s)", tableName, collation)));
+    };
+    auto insert = [&](Utf8CP tableName, Utf8CP str) {
+        auto stmt = m_db.GetCachedStatement(SqlPrintfString("INSERT INTO [%s](str) VALUES(?1)", tableName));
+        stmt->BindText(1, str, Statement::MakeCopy::Yes);
+        return stmt->Step();
+    };
+    auto countWhere = [&](Utf8CP tableName, Utf8CP str) {
+        auto stmt = m_db.GetCachedStatement(SqlPrintfString("SELECT COUNT(*) FROM %s WHERE str = ?", tableName));
+        stmt->BindText(1, str, Statement::MakeCopy::No);
+        if(stmt->Step() == BE_SQLITE_ROW){
+            return stmt->GetValueInt(0);
+        }
+        return -1;
+    };
+    auto countWhereWithoutIndex = [&](Utf8CP tableName, Utf8CP str) {
+        auto stmt = m_db.GetCachedStatement(SqlPrintfString("SELECT COUNT(*) FROM %s WHERE +str = ?", tableName));
+        stmt->BindText(1, str, Statement::MakeCopy::No);
+        if(stmt->Step() == BE_SQLITE_ROW){
+            return stmt->GetValueInt(0);
+        }
+        return -1;
+    };
+    auto reindex = [&](Utf8CP tableName) {
+        auto stmt = m_db.GetCachedStatement(SqlPrintfString("REINDEX %s", tableName));
+        return stmt->Step();
+    };
+    ASSERT_EQ(m_db.GetNoCaseCollation(), NoCaseCollation::ASCII);
+    setupTable("test1", "NOCASE");
+    ASSERT_EQ(BE_SQLITE_DONE, insert("test1", "ÀÁÂÃÄÅ"));
+    ASSERT_EQ(BE_SQLITE_DONE, insert("test1", "àáâãäå"));
+    ASSERT_EQ(BE_SQLITE_DONE, insert("test1", "ÀÁÂãäå"));
+    ASSERT_EQ(BE_SQLITE_DONE, insert("test1", "àáâÃÄÅ"));
+    ASSERT_EQ(BE_SQLITE_DONE, insert("test1", "aaaaaa"));
+
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, insert("test1", "ÀÁÂÃÄÅ"));
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, insert("test1", "àáâãäå"));
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, insert("test1", "AAAaaa"));
+    m_db.SaveChanges();
+
+    ASSERT_EQ(countWhere("test1", "ÀÁÂÃÄÅ"), 1);
+    ASSERT_EQ(countWhere("test1", "AAAAAA"), 1);
+    ASSERT_EQ(countWhere("test1", "àáâãäå"), 1);
+    ASSERT_EQ(countWhere("test1", "aaaaaa"), 1);
+    ASSERT_EQ(countWhere("test1", "AAAaaa"), 1);
+    ASSERT_EQ(countWhere("test1", "ÀÁÂãäå"), 1);
+
+    m_db.GetStatementCache().Empty();
+    ASSERT_EQ(m_db.SetNoCaseCollation(NoCaseCollation::Latin1), BE_SQLITE_OK);
+    ASSERT_EQ(m_db.GetNoCaseCollation(), NoCaseCollation::Latin1);
+    // with index we still going to get wrong answer after
+    // enabling Latin1 case insensitive with ignore accents
+    ASSERT_EQ(countWhere("test1", "ÀÁÂÃÄÅ"), 1);
+    ASSERT_EQ(countWhere("test1", "AAAAAA"), 1);
+    ASSERT_EQ(countWhere("test1", "àáâãäå"), 1);
+    ASSERT_EQ(countWhere("test1", "aaaaaa"), 1);
+    ASSERT_EQ(countWhere("test1", "AAAaaa"), 1);
+    ASSERT_EQ(countWhere("test1", "ÀÁÂãäå"), 1);
+
+    // without index count correlate with NOCASE
+    ASSERT_EQ(countWhereWithoutIndex("test1", "ÀÁÂÃÄÅ"), 5);
+    ASSERT_EQ(countWhereWithoutIndex("test1", "AAAAAA"), 5);
+    ASSERT_EQ(countWhereWithoutIndex("test1", "àáâãäå"), 5);
+    ASSERT_EQ(countWhereWithoutIndex("test1", "aaaaaa"), 5);
+    ASSERT_EQ(countWhereWithoutIndex("test1", "AAAaaa"), 5);
+    ASSERT_EQ(countWhereWithoutIndex("test1", "ÀÁÂãäå"), 5);
+
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, insert("test1", "aaaÃÄÅ"));
+
+    // index failed due to duplicate values
+    ASSERT_EQ(reindex("test1"), BE_SQLITE_CONSTRAINT_UNIQUE);
+
+    // switch back to ascii
+    m_db.GetStatementCache().Empty();
+    ASSERT_EQ(m_db.SetNoCaseCollation(NoCaseCollation::ASCII), BE_SQLITE_OK);
+    ASSERT_EQ(m_db.GetNoCaseCollation(), NoCaseCollation::ASCII);
+    ASSERT_EQ(BE_SQLITE_DONE, insert("test1", "ÀÁÂÃÄå"));
+    ASSERT_EQ(BE_SQLITE_DONE, insert("test1", "ÀÁâãÄÅ"));
+
+
+    m_db.SaveChanges();
 }

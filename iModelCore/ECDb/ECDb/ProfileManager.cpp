@@ -66,6 +66,19 @@ ProfileState ProfileManager::CheckProfileVersion() const
     return Db::CheckProfileVersion(ECDb::CurrentECDbProfileVersion(), m_profileVersion, ECDb::MinimumUpgradableECDbProfileVersion(), PROFILENAME);
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+BentleyStatus ProfileManager::RefreshProfileVersion() const
+    {
+    m_profileVersion = ProfileVersion(0, 0, 0, 0);
+
+    if (BE_SQLITE_OK != ReadProfileVersion())
+        return BentleyStatus::ERROR;
+
+    return BentleyStatus::SUCCESS;
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
@@ -190,14 +203,16 @@ DbResult ProfileManager::ReadProfileVersion() const
     //if version entry does not exist, this either means it is ECDb profile 1.0 (because we did not store
     // a version entry for profile 1.0 or it isn't an ECDb file at all. In order to tell these we need
     // to check for a typical table of the ECDb profile:
-    if (BE_SQLITE_ROW == m_ecdb.QueryProperty(currentVersionString, GetProfileVersionPropertySpec()))
+    if (BE_SQLITE_ROW != m_ecdb.QueryProperty(currentVersionString, GetProfileVersionPropertySpec()))
         {
-        m_profileVersion.FromJson(currentVersionString.c_str());
-        return BE_SQLITE_OK;
+        return BE_SQLITE_ERROR_InvalidProfileVersion;
+        
         }
 
-    //File is no ECDb file
-    return BE_SQLITE_ERROR_InvalidProfileVersion;
+    if (m_profileVersion.FromJson(currentVersionString.c_str()) != BentleyStatus::SUCCESS)
+        return BE_SQLITE_ERROR_InvalidProfileVersion;
+
+    return BE_SQLITE_OK;
     }
 
 //-----------------------------------------------------------------------------------------

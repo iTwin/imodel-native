@@ -33,13 +33,24 @@ Exp::FinalizeParseStatus TypeListExp::_FinalizeParsing(ECSqlParseContext& ctx, F
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void TypeListExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: TypeListExp
+    val.SetEmptyArray();
+     for (auto classNameExp : ClassNames()) {
+        classNameExp->ToJson(val.appendValue(), fmt);
+     }
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void TypeListExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
     if (HasParentheses())
         ctx.AppendToECSql("(");
 
     ctx.AppendToECSql("(");
-    
+
     auto classNameList = ClassNames();
     for (auto classNameExp : ClassNames())
         {
@@ -93,7 +104,14 @@ Exp::FinalizeParseStatus IIFExp::_FinalizeParsing(ECSqlParseContext& ctx, Finali
             auto typeInfo = Then()->GetTypeInfo();
             if (typeInfo.IsGeometry() || typeInfo.IsPoint() || typeInfo.IsNavigation() || !(typeInfo.IsPrimitive() || typeInfo.IsNull()))
                 {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid IIF(cond, trueExpr. falseExpr) expression '%s'. In trueExpr <exp>, <exp> must evalute to a primitive value (string, datetime, numeric, binary or null)", ToECSql().c_str());
+                ctx.Issues().ReportV(
+                    IssueSeverity::Error,
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECSQL,
+                    ECDbIssueId::ECDb_0579,
+                    "Invalid IIF(cond, trueExpr. falseExpr) expression '%s'. In trueExpr <exp>, <exp> must evalute to a primitive value (string, datetime, numeric, binary or null)",
+                    ToECSql().c_str()
+                );
                 return FinalizeParseStatus::Error;
                 }
             if (typeInfo.GetKind() != ECSqlTypeInfo::Kind::Varies && typeInfo.GetKind() != ECSqlTypeInfo::Kind::Unset && !typeInfo.IsNull())
@@ -104,7 +122,14 @@ Exp::FinalizeParseStatus IIFExp::_FinalizeParsing(ECSqlParseContext& ctx, Finali
             auto typeInfo = Else()->GetTypeInfo();
             if (typeInfo.IsGeometry() || typeInfo.IsPoint() || typeInfo.IsNavigation() || !(typeInfo.IsPrimitive() || typeInfo.IsNull()))
                 {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid IIF(cond, trueExpr. falseExpr) expression '%s'. In falseExpr <exp>, <exp> must evalute to a primitive value (string, datetime, numeric, binary or null)", ToECSql().c_str());
+                ctx.Issues().ReportV(
+                    IssueSeverity::Error,
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECSQL,
+                    ECDbIssueId::ECDb_0580,
+                    "Invalid IIF(cond, trueExpr. falseExpr) expression '%s'. In falseExpr <exp>, <exp> must evalute to a primitive value (string, datetime, numeric, binary or null)",
+                    ToECSql().c_str()
+                );
                 return FinalizeParseStatus::Error;
                 }
             if (typeInfo.GetKind() != ECSqlTypeInfo::Kind::Varies && typeInfo.GetKind() != ECSqlTypeInfo::Kind::Unset && !typeInfo.IsNull())
@@ -123,6 +148,20 @@ Exp::FinalizeParseStatus IIFExp::_FinalizeParsing(ECSqlParseContext& ctx, Finali
     BeAssert(false);
     return FinalizeParseStatus::Error;
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void IIFExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: IIFExp
+    val.SetEmptyObject();
+    val["id"] = "IIFExp";
+
+    When()->ToJson(val["when"], fmt);
+    Then()->ToJson(val["then"], fmt);
+    Else()->ToJson(val["else"], fmt);
+}
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -183,7 +222,14 @@ Exp::FinalizeParseStatus SearchCaseValueExp::_FinalizeParsing(ECSqlParseContext&
             auto typeInfo = Else()->GetTypeInfo();
             if (typeInfo.IsGeometry() || typeInfo.IsPoint() || typeInfo.IsNavigation() || !(typeInfo.IsPrimitive() || typeInfo.IsNull()))
                 {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid CASE-THEN expression '%s'. In THEN <exp>, <exp> must evalute to a primitive value (string, datetime, numeric, binary or null)", ToECSql().c_str());
+                ctx.Issues().ReportV(
+                    IssueSeverity::Error,
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECSQL,
+                    ECDbIssueId::ECDb_0581,
+                    "Invalid CASE-THEN expression '%s'. In THEN <exp>, <exp> must evalute to a primitive value (string, datetime, numeric, binary or null)",
+                    ToECSql().c_str()
+                );
                 return FinalizeParseStatus::Error;
                 }
             }
@@ -242,6 +288,24 @@ Utf8String SearchCaseValueExp::_ToString() const
     Utf8String str("CASE-WHEN-THEN");
         return str;
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SearchCaseValueExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: SearchCaseValueExp
+    val.SetEmptyObject();
+    val["id"] = "SearchCaseValueExp";
+    auto list = val["whenThenList"];
+    list.toArray();
+
+    for (auto& when : WhenList())
+        when->ToJson(list.appendValue(), fmt);
+
+    if (auto el = Else()) {
+        Else()->ToJson(val["elseExp"], fmt);
+    }
+}
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -278,7 +342,7 @@ Exp::FinalizeParseStatus SearchedWhenClauseExp::_FinalizeParsing(ECSqlParseConte
         }
 
     if (mode == FinalizeParseMode::AfterFinalizingChildren)
-        {      
+        {
         auto typeInfo = this->Then()->GetTypeInfo();
         if (this->Then()->IsParameterExp())
             {
@@ -288,7 +352,14 @@ Exp::FinalizeParseStatus SearchedWhenClauseExp::_FinalizeParsing(ECSqlParseConte
 
         if (typeInfo.IsGeometry() || typeInfo.IsPoint() || typeInfo.IsNavigation() || !(typeInfo.IsPrimitive() || typeInfo.IsNull()))
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid CASE-THEN expression '%s'. In THEN <exp>, <exp> must evalute to a primitive value (string, datetime, numeric, binary or null)", ToECSql().c_str());
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECSQL,
+                ECDbIssueId::ECDb_0582,
+                "Invalid CASE-THEN expression '%s'. In THEN <exp>, <exp> must evalute to a primitive value (string, datetime, numeric, binary or null)",
+                ToECSql().c_str()
+            );
             return FinalizeParseStatus::Error;
             }
 
@@ -316,6 +387,16 @@ Utf8String SearchedWhenClauseExp::_ToString() const
     Utf8String str("WHEN-THEN");
         return str;
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SearchedWhenClauseExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: SearchedWhenClauseExp
+    val.SetEmptyObject();
+    When()->ToJson(val["when"], fmt);
+    Then()->ToJson(val["then"], fmt);
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -358,7 +439,8 @@ Exp::FinalizeParseStatus BetweenRangeValueExp::_FinalizeParsing(ECSqlParseContex
             ECSqlTypeInfo const& typeInfo = operand->GetTypeInfo();
             if (!typeInfo.IsPrimitive() || typeInfo.IsGeometry() || typeInfo.IsPoint() || typeInfo.IsNavigation())
                 {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid BETWEEN expression '%s'. Operands must be of numeric, date/timestamp, or string type.", ToECSql().c_str());
+                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0583,
+                    "Invalid BETWEEN expression '%s'. Operands must be of numeric, date/timestamp, or string type.", ToECSql().c_str());
                 return FinalizeParseStatus::Error;
                 }
             }
@@ -370,6 +452,15 @@ Exp::FinalizeParseStatus BetweenRangeValueExp::_FinalizeParsing(ECSqlParseContex
     return FinalizeParseStatus::Error;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void BetweenRangeValueExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: BetweenRangeValueExp
+    val.SetEmptyObject();
+    GetLowerBoundOperand()->ToJson(val["lbound"], fmt);
+    GetUpperBoundOperand()->ToJson(val["ubound"], fmt);
+}
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -439,7 +530,8 @@ Exp::FinalizeParseStatus BinaryValueExp::_FinalizeParsing(ECSqlParseContext& ctx
 
                 if (!typeInfo.IsPrimitive())
                     {
-                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Expecting a primitive value expression as operand. '%s'", ToECSql().c_str());
+                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0584,
+                        "Expecting a primitive value expression as operand. '%s'", ToECSql().c_str());
                     return FinalizeParseStatus::Error;
                     }
 
@@ -453,12 +545,14 @@ Exp::FinalizeParseStatus BinaryValueExp::_FinalizeParsing(ECSqlParseContext& ctx
                 else */
                 if (expectedType.IsNumeric() && !typeInfo.IsNumeric())
                     {
-                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Expecting a numeric value expression as operand. '%s'", ToECSql().c_str());
+                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0052,
+                        "Expecting a numeric value expression as operand. '%s'", ToECSql().c_str());
                     return FinalizeParseStatus::Error;
                     }
                 else if (expectedType.GetPrimitiveType() == PRIMITIVETYPE_String && typeInfo.GetPrimitiveType() != PRIMITIVETYPE_String)
                     {
-                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Expecting value expression of type String as operand. '%s'", ToECSql().c_str());
+                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0053,
+                        "Expecting value expression of type String as operand. '%s'", ToECSql().c_str());
                     return FinalizeParseStatus::Error;
                     }
                 }
@@ -482,6 +576,17 @@ bool BinaryValueExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, Param
     return true;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void BinaryValueExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: BinaryValueExp
+    val.SetEmptyObject();
+    val["id"] = "BinaryValueExp";
+    val["op"] = ExpHelper::ToSql(GetOperator());
+    GetLeftOperand()->ToJson(val["lhs"], fmt);
+    GetRightOperand()->ToJson(val["rhs"], fmt);
+}
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -518,7 +623,8 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
         //if operands are parameters set the target exp in those expressions
         if (GetCastOperand()->IsParameterExp())
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Parameters are not supported in a CAST expression ('%s').", ToECSql().c_str());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0060,
+                "Parameters are not supported in a CAST expression ('%s').", ToECSql().c_str());
             return FinalizeParseStatus::Error;
             }
 
@@ -527,7 +633,14 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
             ECN::PrimitiveType targetType;
             if (ExpHelper::ToPrimitiveType(targetType, GetCastTargetPrimitiveType()) != SUCCESS)
                 {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid CAST target type '%s'. Valid target types are the EC primitive types, a fully qualified EC struct type or arrays of those.", GetCastTargetPrimitiveType().c_str());
+                ctx.Issues().ReportV(
+                    IssueSeverity::Error,
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECSQL,
+                    ECDbIssueId::ECDb_0267,
+                    "Invalid CAST target type '%s'. Valid target types are the EC primitive types, a fully qualified EC struct type or arrays of those.",
+                    GetCastTargetPrimitiveType().c_str()
+                );
                 return FinalizeParseStatus::Error;
                 }
 
@@ -546,13 +659,15 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
         ECClassCP targetClassType = ctx.Schemas().GetClass(m_castTargetSchemaName, GetCastTargetTypeName(), SchemaLookupMode::AutoDetect);
         if (targetClassType == nullptr)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid CAST target type '%s.%s'. The type does not exist.", m_castTargetSchemaName.c_str(), GetCastTargetTypeName().c_str());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0269,
+                "Invalid CAST target type '%s.%s'. The type does not exist.", m_castTargetSchemaName.c_str(), GetCastTargetTypeName().c_str());
             return FinalizeParseStatus::Error;
             }
 
         if (!targetClassType->IsStructClass())
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid CAST target type '%s.%s'. Only enumeration and struct types are supported.", m_castTargetSchemaName.c_str(), GetCastTargetTypeName().c_str());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0270,
+                "Invalid CAST target type '%s.%s'. Only enumeration and struct types are supported.", m_castTargetSchemaName.c_str(), GetCastTargetTypeName().c_str());
             return FinalizeParseStatus::Error;
             }
 
@@ -566,14 +681,16 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
 
     if (!castOperandTypeInfo.IsPrimitive())
         {
-        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "CAST expects operand to be a primitive value expression or the null constant.");
+        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0272,
+            "CAST expects operand to be a primitive value expression or the null constant.");
         return FinalizeParseStatus::Error;
         }
 
     ECSqlTypeInfo const& targetTypeInfo = GetTypeInfo();
     if (!targetTypeInfo.IsPrimitive())
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid target type in CAST expression '%s'. Non-primitive target type can only be used when casting NULL.", ToECSql().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0273,
+            "Invalid target type in CAST expression '%s'. Non-primitive target type can only be used when casting NULL.", ToECSql().c_str());
         return FinalizeParseStatus::Error;
         }
 
@@ -585,7 +702,15 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
             {
             if (typeInfo->IsPoint())
                 {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Casting from '%s' to '%s' is not supported", ExpHelper::ToString(castOperandTypeInfo.GetPrimitiveType()), ExpHelper::ToString(targetTypeInfo.GetPrimitiveType()));
+                ctx.Issues().ReportV(
+                    IssueSeverity::Error,
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECSQL,
+                    ECDbIssueId::ECDb_0274,
+                    "Casting from '%s' to '%s' is not supported",
+                    ExpHelper::ToString(castOperandTypeInfo.GetPrimitiveType()),
+                    ExpHelper::ToString(targetTypeInfo.GetPrimitiveType())
+                );
                 return FinalizeParseStatus::Error;
                 }
             }
@@ -593,7 +718,25 @@ Exp::FinalizeParseStatus CastExp::_FinalizeParsing(ECSqlParseContext& ctx, Final
 
     return FinalizeParseStatus::Completed;
     }
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void CastExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: CastExp
+    val.SetEmptyObject();
+    val["id"] = "CastExp";
+    GetCastOperand()->ToJson(val["exp"], fmt);
 
+    Utf8String asType;
+    if (!m_castTargetSchemaName.empty())
+        asType.append(m_castTargetSchemaName).append(".");
+
+    asType.append(m_castTargetTypeName);
+    if (m_castTargetIsArray)
+        asType.append("[]");
+
+    val["as"] = asType;
+}
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -643,7 +786,7 @@ Utf8String CastExp::_ToString() const
 BentleyStatus MemberFunctionCallExp::ValidateArgument(ValueExp const& arg, Utf8StringR msg)
     {
     std::vector<Exp const*> expList;
-    if (!m_tableValuedFunc) 
+    if (!m_tableValuedFunc)
         {
         expList = arg.Find (Exp::Type::PropertyName, true);
         if (!expList.empty())
@@ -679,20 +822,42 @@ Exp::FinalizeParseStatus MemberFunctionCallExp::_FinalizeParsing(ECSqlParseConte
         FunctionSignature const* funcSig = FunctionSignatureSet::GetInstance().Find(m_functionName.c_str());
         if (funcSig == nullptr)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unknown member function '%s'", m_functionName.c_str());
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECSQL,
+                ECDbIssueId::ECDb_0383,
+                "Unknown member function '%s'",
+                m_functionName.c_str()
+            );
             return Exp::FinalizeParseStatus::Error;
             }
 
         if (funcSig->SetParameterType(GetChildrenR()) != SUCCESS)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Error in function call '%s' - Varying argument list cannot be parameterized.", m_functionName.c_str());
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECSQL,
+                ECDbIssueId::ECDb_0403,
+                "Error in function call '%s' - Varying argument list cannot be parameterized.",
+                m_functionName.c_str()
+            );
             return Exp::FinalizeParseStatus::Error;
             }
 
         Utf8String err;
         if (funcSig->Verify(err, GetChildren()) != SUCCESS)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Error in function call '%s' - %s", m_functionName.c_str(), err.c_str());
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECSQL,
+                ECDbIssueId::ECDb_0443,
+                "Error in function call '%s' - %s",
+                m_functionName.c_str(),
+                err.c_str()
+            );
             return Exp::FinalizeParseStatus::Error;
             }
 
@@ -703,6 +868,20 @@ Exp::FinalizeParseStatus MemberFunctionCallExp::_FinalizeParsing(ECSqlParseConte
     return FinalizeParseStatus::NotCompleted;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void MemberFunctionCallExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: MemberFunctionCallExp
+    val.SetEmptyObject();
+    val["id"] = "MemberFunctionCallExp";
+    val["name"] = m_functionName;
+
+    auto args = val["args"];
+    args.toArray();
+    for (Exp const* argExp : GetChildren())
+        argExp->ToJson(args.appendValue(), fmt);
+}
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -785,21 +964,34 @@ Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing(ECSqlParseContext& ct
         {
         return FinalizeParseStatus::NotCompleted;
         }
-    
+
     DetermineReturnType(ctx.GetECDb());
     //verify that args are all primitive and handle parameter args
     const size_t argCount = GetChildrenCount();
     if (m_setQuantifier != SqlSetQuantifier::NotSpecified && argCount != 1)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Function '%s' can only have one argument if used with the %s operator.",
-                                      m_functionName.c_str(), ExpHelper::ToSql(m_setQuantifier));
+        ctx.Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECSQL,
+            ECDbIssueId::ECDb_0450,
+            "Function '%s' can only have one argument if used with the %s operator.",
+            m_functionName.c_str(),
+            ExpHelper::ToSql(m_setQuantifier)
+        );
         return FinalizeParseStatus::Error;
         }
 
     if (m_isGetter && argCount != 0)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Function '%s' is a getter function any may not have any arguments.",
-                             m_functionName.c_str());
+        ctx.Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECSQL,
+            ECDbIssueId::ECDb_0477,
+            "Function '%s' is a getter function any may not have any arguments.",
+            m_functionName.c_str()
+        );
         return FinalizeParseStatus::Error;
         }
 
@@ -814,8 +1006,14 @@ Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing(ECSqlParseContext& ct
         ECSqlTypeInfo::Kind typeKind = argExp->GetTypeInfo().GetKind();
         if (typeKind != ECSqlTypeInfo::Kind::Unset)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "The function '%s' can only be called with an unset argument type as the first argument, for example, InVirtualSet(?, <second argument>). However, the first argument is not unset.",
-                                          m_functionName.c_str());
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECSQL,
+                ECDbIssueId::ECDb_0544,
+                "The function '%s' can only be called with an unset argument type as the first argument, for example, InVirtualSet(?, <second argument>). However, the first argument is not unset.",
+                m_functionName.c_str()
+            );
             return FinalizeParseStatus::Error;
             }
 
@@ -831,8 +1029,15 @@ Exp::FinalizeParseStatus FunctionCallExp::_FinalizeParsing(ECSqlParseContext& ct
         ECSqlTypeInfo::Kind typeKind = argExp->GetTypeInfo().GetKind();
         if (typeKind != ECSqlTypeInfo::Kind::Primitive && typeKind != ECSqlTypeInfo::Kind::Null)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Function '%s' can only be called with primitive arguments. Argument #%" PRIu64 " is not primitive.",
-                                          m_functionName.c_str(), (uint64_t) (i + 1));
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECSQL,
+                ECDbIssueId::ECDb_0547,
+                "Function '%s' can only be called with primitive arguments. Argument #%" PRIu64 " is not primitive.",
+                m_functionName.c_str(),
+                (uint64_t) (i + 1)
+            );
             return FinalizeParseStatus::Error;
             }
         }
@@ -924,6 +1129,26 @@ void FunctionCallExp::DetermineReturnType(ECDbCR ecdb)
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+Utf8StringCR FunctionCallExp::GetSqliteFunctionName() const {
+    auto it = s_substituteECSqlToSqlFuncMap.find(m_functionName);
+    if (it != s_substituteECSqlToSqlFuncMap.end()) {
+        return it->second;
+    }
+    return m_functionName;
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+FunctionCallExp::SubstituteFuncMap FunctionCallExp::s_substituteECSqlToSqlFuncMap =
+    FunctionCallExp::SubstituteFuncMap {
+        {"greatest","MAX"},
+        {"least","MIN"}
+    };
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8String FunctionCallExp::_ToString() const
     {
@@ -937,6 +1162,21 @@ Utf8String FunctionCallExp::_ToString() const
     return str;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void FunctionCallExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: FunctionCallExp
+    val.SetEmptyObject();
+    val["id"] = "FunctionCallExp";
+    val["name"] = m_functionName;
+    if (m_setQuantifier != SqlSetQuantifier::NotSpecified)
+        val["quantifier"]=ExpHelper::ToSql(m_setQuantifier);
+    auto args = val["args"];
+    args.toArray();
+    for (Exp const* argExp : GetChildren())
+        argExp->ToJson(args.appendValue(), fmt);
+}
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -985,11 +1225,13 @@ std::map<Utf8CP, ECSqlTypeInfo, CompareIUtf8Ascii> const& FunctionCallExp::GetBu
         {"changes", ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Long)},
         {"char", ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String)},
         {"count", ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Long)},
+        {"cume_dist", ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Double)},
         {CURRENT_DATE(), ECSqlTypeInfo::CreateDateTime(DateTime::Info::CreateForDate())},
         {CURRENT_TIMESTAMP(), ECSqlTypeInfo::CreateDateTime(DateTime::Info::CreateForDateTime(DateTime::Kind::Utc))},
         {CURRENT_TIME(), ECSqlTypeInfo::CreateDateTime(DateTime::Info::CreateForTimeOfDay())},
         {"date", ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String)},
         {"datetime", ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String)},
+        {"dense_rank", ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Long)},
         {"every", ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Boolean)},
         {"glob", ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Boolean)},
         {"group_concat", ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String)},
@@ -1018,13 +1260,16 @@ std::map<Utf8CP, ECSqlTypeInfo, CompareIUtf8Ascii> const& FunctionCallExp::GetBu
         {"ltrim", ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String)},
         {"match", ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Boolean)},
         {"quote", ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String)},
+        {"percent_rank", ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Double)},
         {"printf", ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String)},
         {"random", ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Long)},
         {"randomblob", ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Binary)},
+        {"rank", ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Long)},
         {"regexp", ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Boolean)},
         {"replace", ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String)},
         {"rtrim", ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String)},
         {"round", ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Double)},
+        {"row_number", ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Long)},
         {"some", ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_Boolean)},
         {"soundex", ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String)},
         {"sqlite_compileoption_get", ECSqlTypeInfo::CreatePrimitive(PRIMITIVETYPE_String)},
@@ -1083,6 +1328,18 @@ ValueExp const* LikeRhsValueExp::GetEscapeExp() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void LikeRhsValueExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: LikeRhsValueExp
+    val.SetEmptyObject();
+    val["id"] = "LikeRhsValueExp";
+    GetRhsExp()->ToJson(val["pattren"], fmt);
+    if (HasEscapeExp())
+        GetEscapeExp()->ToJson(val["escape"], fmt);
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void LikeRhsValueExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
     if (HasParentheses())
@@ -1105,6 +1362,14 @@ EnumValueExp::EnumValueExp(ECEnumeratorCR value, PropertyPath const& expPath) : 
     {
     SetTypeInfo(ECSqlTypeInfo::CreateEnum(value.GetEnumeration()));
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void EnumValueExp::_ToJson(BeJsValue val , JsonFormat const&) const  {
+    //! ITWINJS_PARSE_TREE: EnumValueExp
+    val = m_expPath.ToString(true, false);
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -1146,7 +1411,8 @@ BentleyStatus LiteralValueExp::Create(std::unique_ptr<ValueExp>& exp, ECSqlParse
         DateTime dt;
         if (SUCCESS != DateTime::FromString(dt, value))
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid format for DATE/TIMESTAMP/TIME in expression '%s'.", valueExp->ToECSql().c_str());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0555,
+                "Invalid format for DATE/TIMESTAMP/TIME in expression '%s'.", valueExp->ToECSql().c_str());
             return ERROR;
             }
 
@@ -1172,7 +1438,8 @@ BentleyStatus LiteralValueExp::ResolveDataType(ECSqlParseContext& ctx)
         DateTime dt;
         if (SUCCESS != DateTime::FromString(dt, m_rawValue.c_str()))
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid format for DATE/TIMESTAMP/TIME in expression '%s'.", ToECSql().c_str());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0555,
+                "Invalid format for DATE/TIMESTAMP/TIME in expression '%s'.", ToECSql().c_str());
             return ERROR;
             }
 
@@ -1239,6 +1506,47 @@ BentleyStatus LiteralValueExp::TryParse(ECN::ECValue& val) const
         }
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void LiteralValueExp::_ToJson(BeJsValue val , JsonFormat const&) const  {
+    //! ITWINJS_PARSE_TREE: LiteralValueExp
+    val.SetEmptyObject();
+    val["id"] = "LiteralValueExp";
+    ECSqlTypeInfo const& typeInfo = GetTypeInfo();
+    if (typeInfo.IsNull()) {
+        val["kind"] = "NULL";
+        return;
+    } else if (typeInfo.IsPrimitive()) {
+        const PrimitiveType primType = typeInfo.GetPrimitiveType();
+        if (primType == PRIMITIVETYPE_String) {
+            val["kind"] = "STRING";
+            Utf8String escapedLiteral(m_rawValue);
+            escapedLiteral.ReplaceAll("'", "''");
+            val["value"] = escapedLiteral;
+            return;
+        } else if (primType == PRIMITIVETYPE_DateTime) {
+            DateTime::Info const& dtInfo = typeInfo.GetDateTimeInfo();
+            DateTime::Component comp = dtInfo.IsValid() ? dtInfo.GetComponent() : DateTime::Component::DateAndTime;
+            switch (comp) {
+                case DateTime::Component::Date:
+                    val["kind"] = "DATE";
+                    break;
+                case DateTime::Component::TimeOfDay:
+                    val["kind"] = "TIME";
+                    break;
+                default:
+                case DateTime::Component::DateAndTime:
+                    val["kind"] = "TIMESTAMP";
+                    break;
+            }
+            val["value"] = m_rawValue;
+            return;
+        }
+    }
+    val["kind"] = "RAW";
+    val["value"] = m_rawValue;
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -1345,7 +1653,7 @@ Exp::FinalizeParseStatus ParameterExp::_FinalizeParsing(ECSqlParseContext& ctx, 
         m_parameterIndex = ctx.TrackECSqlParameter(*this);
         return FinalizeParseStatus::NotCompleted;
         }
-    
+
     return FinalizeParseStatus::Completed;
     }
 
@@ -1392,6 +1700,18 @@ void ParameterExp::SetTargetExpInfo(ECSqlTypeInfo const& targetTypeInfo)
     m_targetExp = nullptr;
     SetIsComplete();
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void ParameterExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: ParameterExp
+    val.SetEmptyObject();
+    val["id"] = "ParameterExp";
+    if(IsNamedParameter())
+        val["name"] = m_parameterName;
+}
+
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -1456,17 +1776,24 @@ Exp::FinalizeParseStatus UnaryValueExp::_FinalizeParsing(ECSqlParseContext& ctx,
         {
         switch (m_op)
             {
-                case Operator::Minus:
-                case Operator::Plus:
-                    SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Double));
-                    break;
-                case Operator::BitwiseNot:
-                    SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Long));
-                    break;
+            case Operator::Minus:
+            case Operator::Plus:
+                SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Double));
+                break;
+            case Operator::BitwiseNot:
+                SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Long));
+                break;
 
-                default:
-                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid unary operator in expression %s.", ToECSql().c_str());
-                    return FinalizeParseStatus::Error;
+            default:
+                ctx.Issues().ReportV(
+                    IssueSeverity::Error,
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECSQL,
+                    ECDbIssueId::ECDb_0556,
+                    "Invalid unary operator in expression %s.",
+                    ToECSql().c_str()
+                );
+                return FinalizeParseStatus::Error;
             }
 
         return FinalizeParseStatus::NotCompleted;
@@ -1480,31 +1807,34 @@ Exp::FinalizeParseStatus UnaryValueExp::_FinalizeParsing(ECSqlParseContext& ctx,
     auto const& operandTypeInfo = operand->GetTypeInfo();
     switch (m_op)
         {
-            case Operator::Minus:
-            case Operator::Plus:
+        case Operator::Minus:
+        case Operator::Plus:
             {
             if (!operandTypeInfo.IsNumeric())
                 {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid type in expression %s: Unary operator expects a numeric type expression", ToECSql().c_str());
+                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0557,
+                    "Invalid type in expression %s: Unary operator expects a numeric type expression", ToECSql().c_str());
                 return FinalizeParseStatus::Error;
                 }
 
             break;
             }
-            case Operator::BitwiseNot:
+        case Operator::BitwiseNot:
             {
             if (!operandTypeInfo.IsExactNumeric())
                 {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid type in expression %s: Unary operator expects an integral type expression", ToECSql().c_str());
+                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0558,
+                    "Invalid type in expression %s: Unary operator expects an integral type expression", ToECSql().c_str());
                 return FinalizeParseStatus::Error;
                 }
 
             break;
             }
 
-            default:
+        default:
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid unary operator in expression %s.", ToECSql().c_str());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0556,
+                "Invalid unary operator in expression %s.", ToECSql().c_str());
             return FinalizeParseStatus::Error;
             }
         }
@@ -1524,7 +1854,19 @@ bool UnaryValueExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, Parame
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void UnaryValueExp::_ToECSql(ECSqlRenderContext& ctx) const
+void UnaryValueExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: UnaryValueExp
+    val.SetEmptyObject();
+    val["id"] = "UnaryValueExp";
+    val["op"] = ExpHelper::ToSql(m_op);
+    GetOperand()->ToJson(val["exp"], fmt);
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void UnaryValueExp::_ToECSql(
+    ECSqlRenderContext& ctx) const
     {
     if (HasParentheses())
         ctx.AppendToECSql("(");

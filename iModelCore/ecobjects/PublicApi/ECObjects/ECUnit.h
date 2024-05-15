@@ -8,7 +8,7 @@
 #include <Units/Units.h>
 #include <Bentley/Nullable.h>
 #include <Formatting/FormattingApi.h>
-#include <json/BeJsValue.h>
+#include <BeRapidJson/BeJsValue.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 

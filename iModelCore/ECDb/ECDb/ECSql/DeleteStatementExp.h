@@ -23,6 +23,7 @@ struct DeleteStatementExp final : Exp
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override { return "Delete"; }
 
     public:

@@ -13,6 +13,14 @@
 USING_NAMESPACE_BENTLEY_EC
 #include <ECDb/ConcurrentQueryManager.h>
 
+#define ASSERT_ECSQL(X, Y)                     \
+    {                                          \
+        ECSqlStatement stmt;                   \
+        ASSERT_EQ(Y, stmt.Prepare(m_ecdb, X)); \
+    }
+#define ASSERT_ECSQL_SUCCESS(X) ASSERT_ECSQL(X, ECSqlStatus::Success)
+#define ASSERT_ECSQL_INVALID(X) ASSERT_ECSQL(X, ECSqlStatus::InvalidECSql)
+
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 struct InstanceReaderFixture : ECDbTestFixture {};
@@ -49,8 +57,6 @@ struct InstancePropPerfTest {
     constexpr static auto JTestQueryInstanceWithNoFilter = "test-query-instance-with-no-filter";
     constexpr static auto JTestQueryInstanceProperties = "test-query-instance-properties";
     using TestFunc = std::function<void(BeJsValue, std::function<void(BeJsValue)>, std::function<void(BeJsValue)>)>;
-    struct CompareIUtf8Ascii {
-        bool operator()(Utf8StringCR s1, Utf8StringCR s2) const { return BeStringUtilities::StricmpAscii(s1.c_str(), s2.c_str()) < 0; } };
     private:
         ECDb m_conn;
         std::default_random_engine m_randEngine;
@@ -1116,12 +1122,75 @@ TEST_F(InstanceReaderFixture, ecsql_read_property) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, rapid_json_patch_to_render_inf_and_nan_as_null_instead_of_failing_stringify) {
+        // Test for bentley specific change \src\imodel-native\iModelCore\libsrc\rapidjson\vendor\include\rapidjson\writer.h#551
+        // Patch to RapidJson write null instead of failing
+       BeJsDocument docNan;
+       docNan.toObject();
+       docNan["a"] = 0.1;
+       docNan["b"] = std::numeric_limits<double>::quiet_NaN();
+       docNan["c"] = 4.4;
+       ASSERT_STRCASEEQ("{\"a\":0.1,\"b\":null,\"c\":4.4}", docNan.Stringify().c_str());
+
+
+       BeJsDocument docInf;
+       docInf.toObject();
+       docInf["a"] = 0.1;
+       docInf["b"] = std::numeric_limits<double>::infinity();
+       docInf["c"] = 4.4;
+       ASSERT_STRCASEEQ("{\"a\":0.1,\"b\":null,\"c\":4.4}", docInf.Stringify().c_str());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, rapid_json_patch_to_render_inf_and_nan_as_null_instead_of_failing_writer) {
+        // Test for bentley specific change \src\imodel-native\iModelCore\libsrc\rapidjson\vendor\include\rapidjson\writer.h#353
+        // Patch to RapidJson write null instead of failing
+       std::ostringstream stream0;
+       rapidjson::OStreamWrapper osw0(stream0);
+
+       rapidjson::Writer<rapidjson::OStreamWrapper> writer0(osw0);
+       writer0.StartObject();
+       writer0.Key("a");
+       writer0.Double(0.1);
+       writer0.Key("b");
+       writer0.Double(std::numeric_limits<double>::infinity());
+       writer0.Key("c");
+       writer0.Double(4.4);
+       writer0.EndObject();
+       writer0.Flush();
+       osw0.Flush();
+       stream0.flush();
+       ASSERT_STRCASEEQ("{\"a\":0.1,\"b\":null,\"c\":4.4}", stream0.str().c_str());
+
+
+       std::ostringstream stream1;
+       rapidjson::OStreamWrapper osw1(stream1);
+       rapidjson::Writer<rapidjson::OStreamWrapper> writer1(osw1);
+       writer1.StartObject();
+       writer1.Key("a");
+       writer1.Double(0.1);
+       writer1.Key("b");
+       writer1.Double(std::numeric_limits<double>::quiet_NaN());
+       writer1.Key("c");
+       writer1.Double(4.4);
+       writer1.EndObject();
+       writer1.Flush();
+       osw1.Flush();
+       stream1.flush();
+       ASSERT_STRCASEEQ("{\"a\":0.1,\"b\":null,\"c\":4.4}", stream1.str().c_str());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, instance_reader) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("instanceReader.ecdb"));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"sql(
-        SELECT ECClassId, ECInstanceId, EXTRACT_INST('meta.ecClassDef',ECInstanceId) FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.'
+        SELECT ECClassId, ECInstanceId, EXTRACT_INST('meta.ecClassDef',ECInstanceId,0x0) FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.'
     )sql"));
 
     BeJsDocument doc;
@@ -1551,7 +1620,6 @@ TEST_F(InstanceReaderFixture, extract_prop) {
                     </ECEntityClass>
                </ECSchema>)xml")));
     m_ecdb.SaveChanges();
-
     // sample primitive type
     const bool kB = true;
     const DateTime kDt = DateTime::GetCurrentTimeUtc();
@@ -1584,16 +1652,16 @@ TEST_F(InstanceReaderFixture, extract_prop) {
 
     const auto sql =
         "SELECT                                        "
-        "   EXTRACT_INST(ecClassId, ecInstanceId),"
-        "   EXTRACT_PROP(ecClassId, ecInstanceId, 's'  ),"
-        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'i'  ),"
-        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'd'  ),"
-        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'p2d'),"
-        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'p3d'),"
-        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'bi' ),"
-        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'l'  ),"
-        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'dt' ),"
-        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'b'  ) "
+        "   EXTRACT_INST(ecClassId, ecInstanceId, 0),"
+        "   EXTRACT_PROP(ecClassId, ecInstanceId, 's'  , 0),"
+        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'i'  , 0),"
+        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'd'  , 0),"
+        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'p2d', 0),"
+        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'p3d', 0),"
+        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'bi' , 0),"
+        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'l'  , 0),"
+        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'dt' , 0),"
+        "   EXTRACT_PROP(ecClassId, ecInstanceId, 'b'  , 0) "
         "FROM ts.P                                     ";
 
     ECSqlStatement stmt;
@@ -1629,104 +1697,6 @@ TEST_F(InstanceReaderFixture, extract_prop) {
             ASSERT_TRUE(stmt.GetValueDateTime (i++).Equals(kDt, true));
             ASSERT_EQ(stmt.GetValueBoolean(i++), kB);
         }
-    }
-
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(InstanceReaderFixture, prop_exists) {
-    ASSERT_EQ(SUCCESS, SetupECDb("PROP_EXISTS.ecdb", SchemaItem(
-        R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
-                   <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
-                   <ECEntityClass typeName="Base" modifier="Abstract">
-                        <ECCustomAttributes>
-                            <ClassMap xmlns="ECDbMap.02.00">
-                                <MapStrategy>TablePerHierarchy</MapStrategy>
-                            </ClassMap>
-                            <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
-                        </ECCustomAttributes>
-                        <ECProperty propertyName="Prop1" typeName="string" />
-                        <ECProperty propertyName="Prop2" typeName="int" />
-                    </ECEntityClass>
-                    <ECEntityClass typeName="Sub">
-                      <BaseClass>Base</BaseClass>
-                      <ECProperty propertyName="SubProp1" typeName="string" />
-                      <ECProperty propertyName="SubProp2" typeName="int" />
-                     </ECEntityClass>
-               </ECSchema>)xml")));
-    m_ecdb.SaveChanges();
-
-    if ("case sensitive check") {
-        const auto sql =
-            "SELECT "
-            "   PROP_EXISTS(ec_classid('ts.Base'), 'ECClassId'   ),"
-            "   PROP_EXISTS(ec_classid('ts.Base'), 'ECInstanceId'),"
-            "   PROP_EXISTS(ec_classid('ts.Base'), 'Prop1'       ),"
-            "   PROP_EXISTS(ec_classId('ts.base'), 'Prop2'       ),"
-            "   PROP_EXISTS(ec_classid('ts.Base'), 'SubProp1'    ),"
-            "   PROP_EXISTS(ec_classid('ts.Base'), 'SubProp2'    ),"
-            "   PROP_EXISTS(ec_classid('ts.Sub'),  'ECClassId'   ),"
-            "   PROP_EXISTS(ec_classid('ts.Sub'),  'ECInstanceId'),"
-            "   PROP_EXISTS(ec_classid('ts.Sub'),  'Prop1'       ),"
-            "   PROP_EXISTS(ec_classId('ts.Sub'),  'Prop2'       ),"
-            "   PROP_EXISTS(ec_classid('ts.Sub'),  'SubProp1'    ),"
-            "   PROP_EXISTS(ec_classid('ts.Sub'),  'SubProp2'    )";
-
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
-
-        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-
-        int i = 0;
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 0); // SubProp1 does not exist in base
-        ASSERT_EQ(stmt.GetValueInt(i++), 0); // SubProp2 does not exist in base
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-    }
-
-    if ("case insensitive check") {
-        const auto sql =
-            "SELECT "
-            "   PROP_EXISTS(ec_classid('ts.Base'), 'ECCLASSID'   ),"
-            "   PROP_EXISTS(ec_classid('ts.Base'), 'ECINSTANCEID'),"
-            "   PROP_EXISTS(ec_classid('ts.Base'), 'PROP1'       ),"
-            "   PROP_EXISTS(ec_classId('ts.base'), 'PROP2'       ),"
-            "   PROP_EXISTS(ec_classid('ts.Base'), 'SUBPROP1'    ),"
-            "   PROP_EXISTS(ec_classid('ts.Base'), 'SUBPROP2'    ),"
-            "   PROP_EXISTS(ec_classid('ts.Sub'),  'ECCLASSID'   ),"
-            "   PROP_EXISTS(ec_classid('ts.Sub'),  'ECINSTANCEID'),"
-            "   PROP_EXISTS(ec_classid('ts.Sub'),  'PROP1'       ),"
-            "   PROP_EXISTS(ec_classId('ts.Sub'),  'PROP2'       ),"
-            "   PROP_EXISTS(ec_classid('ts.Sub'),  'SUBPROP1'    ),"
-            "   PROP_EXISTS(ec_classid('ts.Sub'),  'SUBPROP2'    )";
-
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql));
-        ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
-
-        int i = 0;
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 0); // SubProp1 does not exist in base
-        ASSERT_EQ(stmt.GetValueInt(i++), 0); // SubProp2 does not exist in base
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
-        ASSERT_EQ(stmt.GetValueInt(i++), 1);
     }
 }
 
@@ -1846,6 +1816,7 @@ TEST_F(InstanceReaderFixture, nested_struct) {
             </ECSchema>)xml")));
     m_ecdb.Schemas().CreateClassViewsInDb();
     m_ecdb.SaveChanges();
+
     ECInstanceKey instKey;
     if ("insert data") {
         ECSqlStatement stmt;
@@ -1873,8 +1844,8 @@ TEST_F(InstanceReaderFixture, nested_struct) {
         const bool b_array[] = {true, false, true};
         const std::vector<std::vector<uint8_t>> bi_array = {
             {0x48, 0x65, 0x6},
-            {0x48, 0x65, 0x6},
-            {0x48, 0x65, 0x6}
+            {0x48, 0x65, 0x6, 0x6c},
+            {0x48, 0x65, 0x6, 0x6c, 0x6f}
         };
         const std::vector<double> d_array = {123.3434, 345.223, -532.123};
         const std::vector<DateTime> dt_array = {
@@ -2051,7 +2022,7 @@ TEST_F(InstanceReaderFixture, nested_struct) {
         "ECInstanceId": "0x1",
         "ECClassId": "0x58",
         "b": true,
-        "bi": "encoding=base64;SA==",
+        "bi": "{\"bytes\":13}",
         "d": 3.141592653589793,
         "dt": "2017-01-17T00:00:00.000",
         "dtUtc": "2018-02-17T00:00:00.000Z",
@@ -2087,9 +2058,9 @@ TEST_F(InstanceReaderFixture, nested_struct) {
             true
         ],
         "bi_array": [
-            "encoding=base64;SA==",
-            "encoding=base64;SA==",
-            "encoding=base64;SA=="
+            "{\"bytes\":3}",
+            "{\"bytes\":4}",
+            "{\"bytes\":5}"
         ],
         "d_array": [
             123.3434,
@@ -2197,7 +2168,7 @@ TEST_F(InstanceReaderFixture, nested_struct) {
         ],
         "p": {
             "b": true,
-            "bi": "encoding=base64;SA==",
+            "bi": "{\"bytes\":13}",
             "d": 3.141592653589793,
             "dt": "2017-01-17T00:00:00.000",
             "dtUtc": "2018-02-17T00:00:00.000Z",
@@ -2235,9 +2206,9 @@ TEST_F(InstanceReaderFixture, nested_struct) {
                 true
             ],
             "bi_array": [
-                "encoding=base64;SA==",
-                "encoding=base64;SA==",
-                "encoding=base64;SA=="
+                "{\"bytes\":3}",
+                "{\"bytes\":4}",
+                "{\"bytes\":5}"
             ],
             "d_array": [
                 123.3434,
@@ -2347,7 +2318,7 @@ TEST_F(InstanceReaderFixture, nested_struct) {
         "array_of_p": [
             {
                 "b": true,
-                "bi": "encoding=base64;SA==",
+                "bi": "{\"bytes\":3}",
                 "d": 123.3434,
                 "dt": "2017-01-14T00:00:00.000",
                 "dtUtc": "2017-01-17T00:00:00.000Z",
@@ -2380,7 +2351,7 @@ TEST_F(InstanceReaderFixture, nested_struct) {
             },
             {
                 "b": false,
-                "bi": "encoding=base64;SA==",
+                "bi": "{\"bytes\":4}",
                 "d": 345.223,
                 "dt": "2018-01-13T00:00:00.000",
                 "dtUtc": "2018-01-11T00:00:00.000Z",
@@ -2420,9 +2391,9 @@ TEST_F(InstanceReaderFixture, nested_struct) {
                     true
                 ],
                 "bi_array": [
-                    "encoding=base64;SA==",
-                    "encoding=base64;SA==",
-                    "encoding=base64;SA=="
+                    "{\"bytes\":3}",
+                    "{\"bytes\":4}",
+                    "{\"bytes\":5}"
                 ],
                 "d_array": [
                     123.3434,
@@ -2536,9 +2507,9 @@ TEST_F(InstanceReaderFixture, nested_struct) {
                     true
                 ],
                 "bi_array": [
-                    "encoding=base64;SA==",
-                    "encoding=base64;SA==",
-                    "encoding=base64;SA=="
+                    "{\"bytes\":3}",
+                    "{\"bytes\":4}",
+                    "{\"bytes\":5}"
                 ],
                 "d_array": [
                     123.3434,
@@ -2672,7 +2643,7 @@ TEST_F(InstanceReaderFixture, nested_struct) {
         actual.Parse(stmt.GetValueText(0));
         EXPECT_STRCASEEQ(expected.Stringify(StringifyFormat::Indented).c_str(), actual.Stringify(StringifyFormat::Indented).c_str());
     }
-        if ("test if we get similar result from instance rendered by $") {
+    if ("test if we get similar result from instance rendered by $") {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(
             m_ecdb, R"sql(
@@ -2705,20 +2676,59 @@ TEST_F(InstanceReaderFixture, nested_struct) {
                 FROM ts.e_mix
             )sql"));
         ASSERT_EQ(stmt.Step(), BE_SQLITE_ROW);
+
+        ASSERT_TRUE(stmt.GetColumnInfo(0).GetDataType().IsPrimitive());
+        ASSERT_EQ(stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
         ASSERT_EQ(expected["b"].asBool(), stmt.GetValueBoolean(0));
+
+        ASSERT_TRUE(stmt.GetColumnInfo(1).GetDataType().IsPrimitive());
+        ASSERT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Binary);
         ASSERT_STRCASEEQ("Hello, World!", stmt.GetValueText(1));
+
+        ASSERT_TRUE(stmt.GetColumnInfo(2).GetDataType().IsPrimitive());
+        ASSERT_EQ(stmt.GetColumnInfo(2).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Double);
         ASSERT_EQ(expected["d"].asDouble(), stmt.GetValueDouble(2));
-        /*
-            ASSERT_STRCASEEQ(expected["dt"].asCString(), stmt.GetValueDateTime(3).ToString().c_str());
-            ASSERT_STRCASEEQ(expected["dtUtc"].asCString(), stmt.GetValueDateTime(4).ToString().c_str());
-            ASSERT_EQ(expected["i"].asInt(), stmt.GetValueInt64(4));
-            ASSERT_EQ(expected["l"].asInt64(), stmt.GetValueInt64(5));
-            ASSERT_STRCASEEQ(expected["s"].asCString(), stmt.GetValueText(6));
-            ASSERT_STRCASEEQ(expected["p2d"].Stringify().c_str(), stmt.GetValueText(7));
-            ASSERT_STRCASEEQ(expected["p3d"].Stringify().c_str(), stmt.GetValueText(8));
-            ASSERT_STRCASEEQ(expected["b_array"].Stringify().c_str(), stmt.GetValueText(9));
-            ASSERT_STRCASEEQ(expected["bi_array"].Stringify().c_str(), stmt.GetValueText(10));
-        */
+
+        ASSERT_TRUE(stmt.GetColumnInfo(3).GetDataType().IsPrimitive());
+        ASSERT_EQ(stmt.GetColumnInfo(3).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_DateTime);
+        ASSERT_STRCASEEQ(expected["dt"].asCString(), stmt.GetValueDateTime(3).ToString().c_str());
+
+        ASSERT_TRUE(stmt.GetColumnInfo(4).GetDataType().IsPrimitive());
+        ASSERT_EQ(stmt.GetColumnInfo(4).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_DateTime);
+        ASSERT_STRCASEEQ(expected["dtUtc"].asCString(), stmt.GetValueDateTime(4).ToString().c_str());
+
+        ASSERT_TRUE(stmt.GetColumnInfo(5).GetDataType().IsPrimitive());
+        ASSERT_EQ(stmt.GetColumnInfo(5).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Integer);
+        ASSERT_EQ(expected["i"].asInt(), stmt.GetValueInt64(5));
+
+        ASSERT_TRUE(stmt.GetColumnInfo(6).GetDataType().IsPrimitive());
+        ASSERT_EQ(stmt.GetColumnInfo(6).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Long);
+        ASSERT_EQ(expected["l"].asInt64(), stmt.GetValueInt64(6));
+
+        ASSERT_TRUE(stmt.GetColumnInfo(7).GetDataType().IsPrimitive());
+        ASSERT_EQ(stmt.GetColumnInfo(7).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_String);
+        ASSERT_STRCASEEQ(expected["s"].asCString(), stmt.GetValueText(7));
+
+        ASSERT_TRUE(stmt.GetColumnInfo(8).GetDataType().IsPrimitive());
+        ASSERT_EQ(stmt.GetColumnInfo(8).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_String);
+        ASSERT_STRCASEEQ(stmt.GetColumnInfo(8).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "json");
+        ASSERT_STRCASEEQ(expected["p2d"].Stringify().c_str(), stmt.GetValueText(8));
+
+        ASSERT_TRUE(stmt.GetColumnInfo(9).GetDataType().IsPrimitive());
+        ASSERT_EQ(stmt.GetColumnInfo(9).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_String);
+        ASSERT_STRCASEEQ(stmt.GetColumnInfo(9).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "json");
+        ASSERT_STRCASEEQ(expected["p3d"].Stringify().c_str(), stmt.GetValueText(9));
+
+        ASSERT_TRUE(stmt.GetColumnInfo(10).GetDataType().IsPrimitive());
+        ASSERT_EQ(stmt.GetColumnInfo(10).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_String);
+        ASSERT_STRCASEEQ(stmt.GetColumnInfo(10).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "json");
+        ASSERT_STRCASEEQ(expected["b_array"].Stringify().c_str(), stmt.GetValueText(10));
+
+        ASSERT_TRUE(stmt.GetColumnInfo(11).GetDataType().IsPrimitive());
+        ASSERT_EQ(stmt.GetColumnInfo(11).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_String);
+        ASSERT_STRCASEEQ(stmt.GetColumnInfo(11).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "json");
+        ASSERT_STRCASEEQ(expected["bi_array"].Stringify().c_str(), stmt.GetValueText(11));
+
 
         // BeJsDocument actual;
         // actual.Parse(stmt.GetValueText(0));

@@ -65,9 +65,16 @@ BentleyStatus SchemaPolicies::ReadPolicy(ECDbCR ecdb, ECN::ECSchemaCR schema, Sc
     auto it = m_optedInPolicies.find(policyType);
     if (it != m_optedInPolicies.end())
         {
-        ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import schemas. Schema '%s' opts in policy '%s' although it is already opted in by schema '%s'. A schema policy can only be opted in by one schema.",
-                                                      schema.GetName().c_str(), SchemaPolicy::TypeToString(policyType),
-                                                    SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), it->second->GetOptingInSchemaId()).c_str());
+        ecdb.GetImpl().Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0265,
+            "Failed to import schemas. Schema '%s' opts in policy '%s' although it is already opted in by schema '%s'. A schema policy can only be opted in by one schema.",
+            schema.GetName().c_str(),
+            SchemaPolicy::TypeToString(policyType),
+            SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), it->second->GetOptingInSchemaId()).c_str()
+        );
         return ERROR;
         }
 
@@ -197,9 +204,15 @@ std::unique_ptr<SchemaPolicy> NoAdditionalRootEntityClassesPolicy::Create(ECDbCR
     bvector<bvector<Utf8String>> tokenedExceptions;
     if (SUCCESS != RetrieveExceptions(tokenedExceptions, policyCA, "Exceptions"))
         {
-        ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
-                                                      policyCA.GetClass().GetName().c_str(),
-                                                    SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), optingInSchemaId).c_str());
+        ecdb.GetImpl().Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0266,
+            "Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
+            policyCA.GetClass().GetName().c_str(),
+            SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), optingInSchemaId).c_str()
+        );
         return nullptr;
         }
 
@@ -208,8 +221,9 @@ std::unique_ptr<SchemaPolicy> NoAdditionalRootEntityClassesPolicy::Create(ECDbCR
         const size_t tokenCount = tokenizedException.size();
         if (tokenCount == 0 || tokenCount > 2)
             {
-            ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
-                                                          policyCA.GetClass().GetName().c_str(), SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), optingInSchemaId).c_str());
+            ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0266,
+                "Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
+                policyCA.GetClass().GetName().c_str(), SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), optingInSchemaId).c_str());
             return nullptr;
             }
 
@@ -241,9 +255,15 @@ BentleyStatus NoAdditionalRootEntityClassesPolicy::Evaluate(ECDbCR ecdb, ECN::EC
     if (ecClass.HasBaseClasses() || ecClass.IsMixin() || ClassViews::IsViewClass(ecClass) || IsException(ecClass))
         return SUCCESS;
 
-    ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import ECClass '%s'. It violates against the 'No additional root entity classes' policy which means that all entity classes must subclass from classes defined in the ECSchema %s",
-                                   ecClass.GetFullName(),
-                                   SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), GetOptingInSchemaId()).c_str());
+    ecdb.GetImpl().Issues().ReportV(
+        IssueSeverity::Error,
+        IssueCategory::BusinessProperties,
+        IssueType::ECDbIssue,
+        ECDbIssueId::ECDb_0268,
+        "Failed to import ECClass '%s'. It violates against the 'No additional root entity classes' policy which means that all entity classes must subclass from classes defined in the ECSchema %s",
+        ecClass.GetFullName(),
+        SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), GetOptingInSchemaId()).c_str()
+    );
 
     return ERROR;
     }
@@ -263,9 +283,15 @@ std::unique_ptr<SchemaPolicy> NoAdditionalLinkTablesPolicy::Create(ECDbCR ecdb, 
     bvector<bvector<Utf8String>> tokenedExceptions;
     if (SUCCESS != RetrieveExceptions(tokenedExceptions, policyCA, "Exceptions"))
         {
-        ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
-                                       policyCA.GetClass().GetName().c_str(),
-                                       SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), optingInSchemaId).c_str());
+        ecdb.GetImpl().Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0266,
+            "Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
+            policyCA.GetClass().GetName().c_str(),
+            SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), optingInSchemaId).c_str()
+        );
         return nullptr;
         }
 
@@ -274,9 +300,15 @@ std::unique_ptr<SchemaPolicy> NoAdditionalLinkTablesPolicy::Create(ECDbCR ecdb, 
         const size_t tokenCount = tokenizedException.size();
         if (tokenCount == 0 || tokenCount > 2)
             {
-            ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
-                                           policyCA.GetClass().GetName().c_str(),
-                                           SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), optingInSchemaId).c_str());
+            ecdb.GetImpl().Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0266,
+                "Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
+                policyCA.GetClass().GetName().c_str(),
+                SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), optingInSchemaId).c_str()
+            );
             return nullptr;
             }
 
@@ -307,8 +339,15 @@ BentleyStatus NoAdditionalLinkTablesPolicy::Evaluate(ECDbCR ecdb, ECN::ECRelatio
     if (relClass.HasBaseClasses() || IsException(relClass))
         return SUCCESS;
 
-    ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import ECRelationshipClass '%s'. It violates against the 'No additional link tables' policy which means that relationship classes with 'Link table' mapping must subclass from relationship classes defined in the ECSchema %s",
-                                   relClass.GetFullName(), SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), GetOptingInSchemaId()).c_str());
+    ecdb.GetImpl().Issues().ReportV(
+        IssueSeverity::Error,
+        IssueCategory::BusinessProperties,
+        IssueType::ECDbIssue,
+        ECDbIssueId::ECDb_0271,
+        "Failed to import ECRelationshipClass '%s'. It violates against the 'No additional link tables' policy which means that relationship classes with 'Link table' mapping must subclass from relationship classes defined in the ECSchema %s",
+        relClass.GetFullName(),
+        SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), GetOptingInSchemaId()).c_str()
+    );
 
     return ERROR;
     }
@@ -326,9 +365,15 @@ std::unique_ptr<SchemaPolicy> NoAdditionalForeignKeyConstraintsPolicy::Create(EC
 
     if (SUCCESS != policy->ReadExceptionsFromCA(ecdb, policyCA))
         {
-        ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
-                                       policyCA.GetClass().GetName().c_str(),
-                                       SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), optingInSchemaId).c_str());
+        ecdb.GetImpl().Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0266,
+            "Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
+            policyCA.GetClass().GetName().c_str(),
+            SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), optingInSchemaId).c_str()
+        );
         return nullptr;
         }
 
@@ -346,9 +391,15 @@ BentleyStatus NoAdditionalForeignKeyConstraintsPolicy::ReadExceptionsFromCA(ECDb
     bvector<bvector<Utf8String>> tokenedExceptions;
     if (SUCCESS != RetrieveExceptions(tokenedExceptions, policyCA, "Exceptions"))
         {
-        ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
-                                       policyCA.GetClass().GetName().c_str(),
-                                       SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), m_optingInSchemaId).c_str());
+        ecdb.GetImpl().Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0266,
+            "Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
+            policyCA.GetClass().GetName().c_str(),
+            SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), m_optingInSchemaId).c_str()
+        );
         return ERROR;
         }
 
@@ -357,8 +408,15 @@ BentleyStatus NoAdditionalForeignKeyConstraintsPolicy::ReadExceptionsFromCA(ECDb
         const size_t tokenCount = tokenizedException.size();
         if (tokenCount == 0 || tokenCount > 3)
             {
-            ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
-                                                          policyCA.GetClass().GetName().c_str(), SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), m_optingInSchemaId).c_str());
+            ecdb.GetImpl().Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0266,
+                "Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
+                policyCA.GetClass().GetName().c_str(),
+                SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), m_optingInSchemaId).c_str()
+            );
             return ERROR;
             }
 
@@ -397,9 +455,16 @@ BentleyStatus NoAdditionalForeignKeyConstraintsPolicy::Evaluate(ECDbCR ecdb, ECN
     if (IsException(navPropWithFkConstraintCA))
         return SUCCESS;
 
-    ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to import ECClass '%s'. Its navigation property '%s' violates against the 'No additional foreign key constraints' policy which means that navigation properties may not define the 'ForeignKeyConstraint' custom attribute other than in the ECSchema %s",
-                                   navPropWithFkConstraintCA.GetClass().GetFullName(), navPropWithFkConstraintCA.GetName().c_str(),
-                                   SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), GetOptingInSchemaId()).c_str());
+    ecdb.GetImpl().Issues().ReportV(
+        IssueSeverity::Error,
+        IssueCategory::BusinessProperties,
+        IssueType::ECDbIssue,
+        ECDbIssueId::ECDb_0275,
+        "Failed to import ECClass '%s'. Its navigation property '%s' violates against the 'No additional foreign key constraints' policy which means that navigation properties may not define the 'ForeignKeyConstraint' custom attribute other than in the ECSchema %s",
+        navPropWithFkConstraintCA.GetClass().GetFullName(),
+        navPropWithFkConstraintCA.GetName().c_str(),
+        SchemaPersistenceHelper::GetSchemaName(ecdb, DbTableSpace::Main(), GetOptingInSchemaId()).c_str()
+    );
 
     return ERROR;
     }
@@ -467,7 +532,7 @@ std::string SqlTypeDetector::Join(std::vector<std::string> const& v, const std::
     }
     std::string init = v.front();
     return std::accumulate(v.begin() + 1, v.end(), init,
-                           [&](std::string& s, const std::string& piece) -> decltype(auto) {
+                           [&](std::string s, const std::string& piece) -> decltype(auto) {
                                return s.append(sep).append(piece);
                            });
 }
@@ -696,7 +761,7 @@ DbResult TransformData::Task::Execute(ECDbCR conn) const {
         Utf8String msg = SqlPrintfString("[TransformData] Failed: %s - %s: %s",
                                         m_description.c_str(), m_sql.c_str(), BeSQLiteLib::GetLogError(rc).c_str())
                             .GetUtf8CP();
-        conn.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, msg.c_str());
+        conn.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0605, msg.c_str());
         LOG.error(msg.c_str());
         BeAssert(false && "transform query failed");
         return rc;
@@ -715,6 +780,7 @@ bool TransformData::Task::Validate(ECDbCR conn) const {
             IssueSeverity::Error,
             IssueCategory::BusinessProperties,
             IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0606,
             "[TransformData] Failed: %s. SQLite Error: %s", m_description.c_str(), BeSQLiteLib::GetLogError(rc).c_str());
         return false;
     }
@@ -723,6 +789,7 @@ bool TransformData::Task::Validate(ECDbCR conn) const {
             IssueSeverity::Error,
             IssueCategory::BusinessProperties,
             IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0607,
             "[TransformData] Failed: %s. Transform sql should not be parameterized.", m_description.c_str());
         return false;
     }
@@ -731,6 +798,7 @@ bool TransformData::Task::Validate(ECDbCR conn) const {
             IssueSeverity::Error,
             IssueCategory::BusinessProperties,
             IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0608,
             "[TransformData] Failed: %s. Transform sql must be a DML statement.", m_description.c_str());
         return false;
     }

@@ -16,6 +16,13 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 struct ECSqlStatementTestFixture : ECDbTestFixture {};
+//including macro
+#define ASSERT_ECSQL(ECDB_OBJ, PREPARESTATUS, STEPSTATUS, ECSQL)   {\
+                                                                    ECSqlStatement stmt;\
+                                                                    ASSERT_EQ(PREPARESTATUS, stmt.Prepare(ECDB_OBJ, ECSQL));\
+                                                                    if (PREPARESTATUS == ECSqlStatus::Success)\
+                                                                        ASSERT_EQ(STEPSTATUS, stmt.Step());\
+                                                                   }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
@@ -94,7 +101,7 @@ TEST_F(ECSqlStatementTestFixture, ECSqlStatus)
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, CTECrash) {
-    ASSERT_EQ(SUCCESS, SetupECDb("cte_crash.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("cte_crash.ecdb"));
     auto ecsql = R"(
         WITH RECURSIVE
         F (A) AS (SELECT 1),
@@ -104,17 +111,17 @@ TEST_F(ECSqlStatementTestFixture, CTECrash) {
     for (int i = 0; i < 1; ++i) {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
-        ASSERT_STREQ( stmt.GetNativeSql(), "WITH F(A) AS (SELECT 1),S(A) AS (SELECT F.A FROM F UNION SELECT 1 FROM S WHERE S.A=1)\nSELECT S.A FROM S");
+        ASSERT_STREQ( stmt.GetNativeSql(), "WITH RECURSIVE F(A) AS (SELECT 1),S(A) AS (SELECT F.A FROM F UNION SELECT 1 FROM S WHERE S.A=1)\nSELECT S.A FROM S");
     }
 }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, DisableFunction) {
-    ASSERT_EQ(SUCCESS, SetupECDb("disabledFunc.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("disabledFunc.ecdb"));
     struct IssueListener: ECN::IIssueListener {
         mutable bvector<Utf8String> m_issues;
-        void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, Utf8CP message) const override {
+        void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override {
             m_issues.push_back(message);
         }
         Utf8String const& GetLastError() const { return m_issues.back();}
@@ -155,7 +162,7 @@ TEST_F(ECSqlStatementTestFixture, DisableFunction) {
 * ECSqlStatementTestFixture.BugFix
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, NestedValConstructor) {
-    ASSERT_EQ(SUCCESS, SetupECDb("RowConstructor.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("RowConstructor.ecdb"));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,"SELECT * FROM (SELECT 1001 a)"));
@@ -164,17 +171,104 @@ TEST_F(ECSqlStatementTestFixture, NestedValConstructor) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, RowValConstructor) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("RowValConstructor.ecdb"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,"SELECT * FROM (VALUES(1,2), (3,4))"));
+    ASSERT_STREQ(stmt.GetNativeSql(), "SELECT [K0],[K1] FROM (SELECT 1 [K0],2 [K1] UNION ALL SELECT 3,4)");
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb,"SELECT * FROM (VALUES(1,2), (3,4), (5,1))"));
+    ASSERT_STREQ(stmt.GetNativeSql(), "SELECT [K0],[K1] FROM (SELECT 1 [K0],2 [K1] UNION ALL SELECT 3,4 UNION ALL SELECT 5,1)");
+    stmt.Finalize();
+}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, PopulateECSql_TestDbWithTestData)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
     NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(m_ecdb);
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, MultilineStringLiteralOrName) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("MultilineStringLiteralOrName.ecdb"));
+    if ("multi line quoted string") {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 [\nHello\nWorld\n]"));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STRCASEEQ(stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str(), "\nHello\nWorld\n");
+    }
+    if ("multi line string literal") {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT '\nHello\nWorld\n'"));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STRCASEEQ(stmt.GetValueText(0), "\nHello\nWorld\n");
+    }
+    if ("multi line name") {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 \"\nHello\nWorld\n\""));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STRCASEEQ(stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str(), "\nHello\nWorld\n");
+    }
+    if ("multi line name with backtick") {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 `\nHello\nWorld\n`"));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STRCASEEQ(stmt.GetColumnInfo(0).GetProperty()->GetDisplayLabel().c_str(), "\nHello\nWorld\n");
+    }
+    if ("pragma parse_tree with double quote") {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"*(
+            PRAGMA parse_tree("
+                SELECT
+                    1,
+                    2,
+                    3,
+                    4
+            ") ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES
+        )*"));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STRCASEEQ(stmt.GetValueText(0), "{\"id\":\"SelectStatementExp\",\"select\":{\"id\":\"RowConstructor\",\"values\":[{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"1\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"2\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"3\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"4\"}}]}}");
+    }
+    if ("pragma parse_tree with square quote") {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"*(
+            PRAGMA parse_tree([
+                SELECT
+                    1,
+                    2,
+                    3,
+                    4
+            ]) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES
+        )*"));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STRCASEEQ(stmt.GetValueText(0), "{\"id\":\"SelectStatementExp\",\"select\":{\"id\":\"RowConstructor\",\"values\":[{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"1\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"2\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"3\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"4\"}}]}}");
+    }
+    if ("pragma parse_tree with backtick quote") {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"*(
+            PRAGMA parse_tree(`
+                SELECT
+                    1,
+                    2,
+                    3,
+                    4
+            `) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES
+        )*"));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STRCASEEQ(stmt.GetValueText(0), "{\"id\":\"SelectStatementExp\",\"select\":{\"id\":\"RowConstructor\",\"values\":[{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"1\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"2\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"3\"}},{\"id\":\"DerivedPropertyExp\",\"exp\":{\"id\":\"LiteralValueExp\",\"kind\":\"RAW\",\"value\":\"4\"}}]}}");
+    }
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, SelectBitwiseOperators)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("bitwise.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("bitwise.ecdb"));
     auto testOp = [&] (Utf8CP test)
         {
         ECSqlStatement stmt;
@@ -204,7 +298,7 @@ TEST_F(ECSqlStatementTestFixture, SelectBitwiseOperators)
     }
 TEST_F(ECSqlStatementTestFixture, WhereBitwiseOperators)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("bitwise.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("bitwise.ecdb"));
     auto testOp = [&] (Utf8CP test)
         {
         ECSqlStatement stmt;
@@ -260,7 +354,7 @@ TEST_F(ECSqlStatementTestFixture, WhereBitwiseOperators)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, NavPropAlias)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("NavPropAlias.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("NavPropAlias.ecdb"));
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Schema, Schema MySchema FROM meta.ECClassDef"));
     int rowCount = 0;
@@ -305,7 +399,7 @@ TEST_F(ECSqlStatementTestFixture, NavPropAlias)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, SelectAsterisk)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("SelectAsterisk.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SelectAsterisk.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
@@ -535,7 +629,7 @@ TEST_F(ECSqlStatementTestFixture, SelectAsterisk)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, SelectAsteriskOnRelationshipClass)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("SelectAsteriskOnRelationshipClass.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SelectAsteriskOnRelationshipClass.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
@@ -592,7 +686,7 @@ TEST_F(ECSqlStatementTestFixture, SelectAsteriskOnRelationshipClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, SelectAsteriskAndViewGenerator)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("SelectAsterisk.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SelectAsterisk.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
@@ -718,7 +812,7 @@ TEST_F(ECSqlStatementTestFixture, SelectAsteriskAndViewGenerator)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, InsertWithoutPropClause)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("InsertWithoutPropClause.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InsertWithoutPropClause.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
@@ -858,7 +952,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithoutPropClause)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, ClassAliases)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("classaliases.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("classaliases.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="A">
@@ -935,6 +1029,18 @@ TEST_F(ECSqlStatementTestFixture, ClassAliases)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 
+    {
+    ECSqlStatement stmt;
+    auto classId = m_ecdb.Schemas().GetClassId("TestSchema", "A").GetValue();
+    Utf8PrintfString stmtStr("SELECT (SELECT [b].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,%" PRIu64 " ECClassId FROM [main].[ts_A]) [b])", classId);
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT (SELECT b.ECInstanceId FROM ts.A b)"));
+    EXPECT_STRCASEEQ(stmtStr.c_str(), stmt.GetNativeSql()) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    EXPECT_EQ(1, stmt.GetColumnCount()) << stmt.GetECSql();
+    ASSERT_EQ(1, stmt.GetValueId<ECInstanceId>(0).GetValue()) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -942,7 +1048,7 @@ TEST_F(ECSqlStatementTestFixture, ClassAliases)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, UnionTests)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
     NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(m_ecdb);
 
     struct PowSqlFunction final : ScalarFunction
@@ -1063,7 +1169,7 @@ TEST_F(ECSqlStatementTestFixture, UnionTests)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, ExceptTests)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
     NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(m_ecdb);
 
     ECSqlStatement stmt;
@@ -1100,7 +1206,7 @@ TEST_F(ECSqlStatementTestFixture, ExceptTests)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, IntersectTests)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
     NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(m_ecdb);
 
     ECSqlStatement stmt;
@@ -1135,7 +1241,7 @@ TEST_F(ECSqlStatementTestFixture, IntersectTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, QuoteTest)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO stco.ClassWithPrimitiveProperties (stringProp) VALUES('''a''a''')"));
@@ -1159,7 +1265,7 @@ TEST_F(ECSqlStatementTestFixture, QuoteTest)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, IsNull)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlisnull.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlisnull.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
               <ECStructClass typeName="PrimStruct">
@@ -1422,7 +1528,7 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
         ecsql.Sprintf("SELECT P2D, P2D.X, P2D.Y, P3D.X, P3D.Y, P3D.Z, Struct.pstruct.p2d.X, Struct.pstruct.p2d.Y, Struct.pstruct.p3d.X, Struct.pstruct.p3d.Y, Struct.pstruct.p3d.Z FROM ts.%s WHERE ECInstanceId=%s",
                       testClassName, key.GetInstanceId().ToString().c_str());
 
-        std::set<Utf8String> notNullItems {"P2D", "P2D.X", "P3D.Y", "Struct.pstruct.p2d.X", "Struct.pstruct.p3d.Y"};
+        std::set<Utf8String> notNullItems {"P2D.X", "P3D.Y", "Struct.pstruct.p2d.X", "Struct.pstruct.p3d.Y"};
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql.c_str();
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
         for (int i = 0; i < stmt.GetColumnCount(); i++)
@@ -1440,7 +1546,7 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, pragma_ecdb_version)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("pragma.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("pragma.ecdb"));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA ecdb_ver"));
@@ -1502,7 +1608,7 @@ TEST_F(ECSqlStatementTestFixture, view_generator_must_use_escaped_class_name_whe
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, IsNullForIncompletePoints)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("IsNullForIncompletePoints.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IsNullForIncompletePoints.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'> "
         "    <ECEntityClass typeName='Element' modifier='None'>"
@@ -1522,8 +1628,8 @@ TEST_F(ECSqlStatementTestFixture, IsNullForIncompletePoints)
     IECSqlValue const& point2D = stmt.GetValue(0);
     IECSqlValue const& point3D = stmt.GetValue(1);
 
-    //IsNull only returns true if all coordinates cols are NULL.
-    ASSERT_FALSE(point2D.IsNull());
+    //IsNull should return true if one or more co-ordinates are INF/NaN/Null
+    ASSERT_TRUE(point2D.IsNull());
     ASSERT_TRUE(point3D.IsNull());
     }
 //-----------------------------------------------------------------------------------
@@ -1531,7 +1637,7 @@ TEST_F(ECSqlStatementTestFixture, IsNullForIncompletePoints)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, SubQueryAliasCheck)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("TopLevelAliasCheck.ecdb", SchemaItem(R"(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("TopLevelAliasCheck.ecdb", SchemaItem(R"(
     <ECSchema schemaName="Test" alias="test" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECStructClass typeName="MyStruct" modifier="Sealed">
             <ECProperty propertyName="Bl"   typeName="binary"/>
@@ -1667,7 +1773,7 @@ TEST_F(ECSqlStatementTestFixture, SubQueryAliasCheck)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, TopLevelAliasCheck)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("TopLevelAliasCheck.ecdb", SchemaItem(R"(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("TopLevelAliasCheck.ecdb", SchemaItem(R"(
     <ECSchema schemaName="Test" alias="test" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECStructClass typeName="MyStruct" modifier="Sealed">
             <ECProperty propertyName="Bl"   typeName="binary"/>
@@ -2422,7 +2528,7 @@ TEST_F(ECSqlStatementTestFixture, TopLevelAliasCheck)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, CompositPropertyAccessFromASubQuery)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("SubQueryAlias.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SubQueryAlias.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -2683,7 +2789,7 @@ TEST_F(ECSqlStatementTestFixture, CompositPropertyAccessFromASubQuery)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, PrimitiveArrayUnsetMembers)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlprimarray_unsetmembers.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlprimarray_unsetmembers.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECEntityClass typeName="MyClass">
@@ -2816,7 +2922,7 @@ TEST_F(ECSqlStatementTestFixture, PrimitiveArrayUnsetMembers)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, StructArrayUnsetMembers)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstructarray_unsetmembers.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstructarray_unsetmembers.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
           <ECEntityClass typeName="MyClass">
@@ -2896,7 +3002,7 @@ TEST_F(ECSqlStatementTestFixture, StructArrayUnsetMembers)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, DateTimeCast)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("datetimecast.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("datetimecast.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     DateTime expectedDateOnly(2017, 2, 22);
     DateTime expectedDtUtc(DateTime::Kind::Utc, 2017, 2, 22, 10, 4, 2);
@@ -2944,7 +3050,7 @@ TEST_F(ECSqlStatementTestFixture, DateTimeCast)
 TEST_F(ECSqlStatementTestFixture, NullLiteralForPoints)
     {
     const int rowCountPerClass = 3;
-    ASSERT_EQ(SUCCESS, SetupECDb("nullliterals.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("nullliterals.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     ASSERT_EQ(SUCCESS, PopulateECDb( rowCountPerClass));
 
     {
@@ -3019,7 +3125,7 @@ TEST_F(ECSqlStatementTestFixture, NullLiteralForPoints)
 TEST_F(ECSqlStatementTestFixture, NullLiteralForStructs)
     {
     const int rowCountPerClass = 3;
-    ASSERT_EQ(SUCCESS, SetupECDb("nullliterals.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("nullliterals.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     ASSERT_EQ(SUCCESS, PopulateECDb( rowCountPerClass));
 
     ECClassCP structType = m_ecdb.Schemas().GetClass("ECSqlTest", "PStruct");
@@ -3099,7 +3205,7 @@ TEST_F(ECSqlStatementTestFixture, NullLiteralForStructs)
 TEST_F(ECSqlStatementTestFixture, NullLiteralForPrimArrays)
     {
     const int rowCountPerClass = 3;
-    ASSERT_EQ(SUCCESS, SetupECDb("nullliterals.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("nullliterals.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     ASSERT_EQ(SUCCESS, PopulateECDb( rowCountPerClass));
 
 
@@ -3114,18 +3220,7 @@ TEST_F(ECSqlStatementTestFixture, NullLiteralForPrimArrays)
             }
         };
 
-    {
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT CAST(NULL AS TIMESTAMP[]) FROM ecsql.PSA LIMIT 1"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
-    assertColumn(PRIMITIVETYPE_DateTime, stmt.GetValue(0), true);
-    }
-
     bmap<Utf8CP, bool> ecsqls;
-    ecsqls["SELECT CAST(NULL AS TIMESTAMP[]) FROM ecsql.P "
-        "UNION ALL "
-        "SELECT Dt_Array FROM ecsql.PSA"] = true;
-
     ecsqls["SELECT CAST(NULL AS Double) FROM ecsql.P "
         "UNION ALL "
         "SELECT Dt_Array FROM ecsql.PSA"] = false;
@@ -3174,7 +3269,7 @@ TEST_F(ECSqlStatementTestFixture, NullLiteralForPrimArrays)
 TEST_F(ECSqlStatementTestFixture, NullLiteralForStructArrays)
     {
     const int rowCountPerClass = 3;
-    ASSERT_EQ(SUCCESS, SetupECDb("nullliterals.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("nullliterals.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     ASSERT_EQ(SUCCESS, PopulateECDb( rowCountPerClass));
 
     ECClassCP structType = m_ecdb.Schemas().GetClass("ECSqlTest", "PStruct");
@@ -3191,22 +3286,7 @@ TEST_F(ECSqlStatementTestFixture, NullLiteralForStructArrays)
             }
         };
 
-    {
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT CAST(NULL AS ecsql.PStruct[]) FROM ecsql.PSA LIMIT 1"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
-    assertColumn(*structType, stmt.GetValue(0), true);
-    }
-
     bmap<Utf8CP, bool> ecsqls;
-    ecsqls["SELECT CAST(NULL AS ecsql.PStruct[]) FROM ecsql.P "
-        "UNION ALL "
-        "SELECT PStruct_Array FROM ecsql.PSA"] = true;
-
-    ecsqls["SELECT CAST(NULL AS [ecsql].[PStruct][]) FROM ecsql.P "
-        "UNION ALL "
-        "SELECT PStruct_Array FROM ecsql.PSA"] = true;
-
     ecsqls["SELECT CAST(NULL AS ecsql.PStruct) FROM ecsql.P "
         "UNION ALL "
         "SELECT PStruct_Array FROM ecsql.PSA"] = false;
@@ -3250,7 +3330,7 @@ TEST_F(ECSqlStatementTestFixture, NullLiteralForStructArrays)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, Coalesce)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ecsql.P(I,S) VALUES(22, null)"));
@@ -3274,7 +3354,7 @@ TEST_F(ECSqlStatementTestFixture, Coalesce)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, NestedSelectStatementsTests)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
     NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(m_ecdb);
 
     ECSqlStatement stmt;
@@ -3308,7 +3388,7 @@ TEST_F(ECSqlStatementTestFixture, NestedSelectStatementsTests)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, PredicateFunctionsInNestedSelectStatement)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
     NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(m_ecdb);
 
     ECSqlStatement stmt;
@@ -3331,7 +3411,7 @@ TEST_F(ECSqlStatementTestFixture, PredicateFunctionsInNestedSelectStatement)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, ParametersInNestedSelectStatement)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("parametersinnestedselect.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("parametersinnestedselect.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ecsql.PSA(L,I) VALUES(33,123)"));
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ecsql.PSA(L,I) VALUES(123456789,123)"));
@@ -3412,7 +3492,7 @@ TEST_F(ECSqlStatementTestFixture, ParametersInNestedSelectStatement)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, GroupByClauseTests)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
     NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(m_ecdb);
 
     Utf8CP expectedProductsNames;
@@ -3482,7 +3562,7 @@ TEST_F(ECSqlStatementTestFixture, GroupByClauseTests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, GroupByPoint)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                       <ECEntityClass typeName="Foo" >
                         <ECProperty propertyName="Name" typeName="string" />
                         <ECProperty propertyName="Origin" typeName="Point3d" />
@@ -3557,7 +3637,7 @@ TEST_F(ECSqlStatementTestFixture, GroupByPoint)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, GroupByGeometry)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                       <ECEntityClass typeName="Foo" >
                         <ECProperty propertyName="Name" typeName="string" />
                         <ECProperty propertyName="Geometry" typeName="Bentley.Geometry.Common.IGeometry" />
@@ -3631,7 +3711,7 @@ TEST_F(ECSqlStatementTestFixture, GroupByGeometry)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, GroupByStruct)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                      <ECStructClass typeName="Person" >
                         <ECProperty propertyName="Name" typeName="string" />
                         <ECProperty propertyName="Age" typeName="int" />
@@ -3713,7 +3793,7 @@ TEST_F(ECSqlStatementTestFixture, GroupByStruct)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, GroupByArray)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                      <ECStructClass typeName="Person" >
                         <ECProperty propertyName="Name" typeName="string" />
                         <ECProperty propertyName="Age" typeName="int" />
@@ -3833,7 +3913,7 @@ TEST_F(ECSqlStatementTestFixture, GroupByArray)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, VerifyLiteralExpressionAsConstants)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
 
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ECST.Product (UnitPrice, ProductAvailable, ProductName) VALUES(100*5, true, 'Chair')"));
@@ -3886,7 +3966,7 @@ TEST_F(ECSqlStatementTestFixture, VerifyLiteralExpressionAsConstants)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, WrapWhereClauseInParams)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
     NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(m_ecdb);
 
     ECSqlStatement statement;
@@ -3910,7 +3990,7 @@ TEST_F(ECSqlStatementTestFixture, WrapWhereClauseInParams)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, HexLiteral)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("HexLiteral.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("HexLiteral.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECEntityClass typeName="Sample" modifier="None">
                     <ECProperty propertyName="StringProp" typeName="string" />
@@ -3937,7 +4017,7 @@ TEST_F(ECSqlStatementTestFixture, HexLiteral)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, BindECInstanceIdAsString)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("BindIdStrings.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("BindIdStrings.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEntityClass typeName="Foo" modifier="None">
                     <ECProperty propertyName="Name" typeName="string" />
@@ -4039,7 +4119,7 @@ TEST_F(ECSqlStatementTestFixture, BindECInstanceIdAsString)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, BindIdStrings)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("BindIdStrings.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("BindIdStrings.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="Foo" modifier="None">
                     <ECProperty propertyName="i" typeName="int" />
@@ -4409,7 +4489,7 @@ TEST_F(ECSqlStatementTestFixture, BindIdStrings)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, BindDateTimeStrings)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("BindIdStrings.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("BindIdStrings.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
               <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
@@ -4960,7 +5040,7 @@ TEST_F(ECSqlStatementTestFixture, BindDateTimeStrings)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, BindStringToGuidParameter)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("BindStringToGuidParameter.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("BindStringToGuidParameter.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECStructClass typeName="GuidStruct" modifier="None">
                 <ECProperty propertyName="beguid" typeName="binary" extendedTypeName="BeGuid" />
@@ -5187,7 +5267,7 @@ TEST_F(ECSqlStatementTestFixture, BindStringToGuidParameter)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, PolymorphicDelete)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("PolymorphicDeleteSharedTable.ecdb", SchemaItem::CreateForFile("NestedStructArrayTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PolymorphicDeleteSharedTable.ecdb", SchemaItem::CreateForFile("NestedStructArrayTest.01.00.00.ecschema.xml")));
     NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb(m_ecdb, true);
 
     ASSERT_FALSE(GetHelper().TableExists("nsat_DerivedA"));
@@ -5219,7 +5299,7 @@ TEST_F(ECSqlStatementTestFixture, PolymorphicDelete)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, PolymorphicUpdateNoTph)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("PolymorphicUpdateNoTph.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PolymorphicUpdateNoTph.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECEntityClass typeName="Base" >
                     <ECProperty propertyName="BaseProp" typeName="int" />
@@ -5306,7 +5386,7 @@ TEST_F(ECSqlStatementTestFixture, PolymorphicUpdateNoTph)
 TEST_F(ECSqlStatementTestFixture, PolymorphicUpdate)
     {
     SchemaItem testSchema(NestedStructArrayTestSchemaHelper::s_testSchemaXml);
-    ASSERT_EQ(SUCCESS, SetupECDb("PolymorphicUpdateTest.ecdb", testSchema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PolymorphicUpdateTest.ecdb", testSchema));
 
     NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb(m_ecdb, false);
 
@@ -5332,7 +5412,7 @@ TEST_F(ECSqlStatementTestFixture, PolymorphicUpdate)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, DeleteWithNestedSelectStatements)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
     NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(m_ecdb);
 
     ECSqlStatement stmt;
@@ -5357,7 +5437,7 @@ TEST_F(ECSqlStatementTestFixture, DeleteWithNestedSelectStatements)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, UpdateWithNestedSelectStatments)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
     NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(m_ecdb);
 
     ECSqlStatement stmt;
@@ -5376,7 +5456,7 @@ TEST_F(ECSqlStatementTestFixture, UpdateWithNestedSelectStatments)
 TEST_F(ECSqlStatementTestFixture, InsertStructArray)
     {
     const int perClassRowCount = 10;
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     ASSERT_EQ(SUCCESS, PopulateECDb( perClassRowCount));
     Utf8CP ecsql = "INSERT INTO ecsql.PSA (L,PStruct_Array) VALUES(?, ?)";
     ECSqlStatement statement;
@@ -5411,7 +5491,7 @@ TEST_F(ECSqlStatementTestFixture, InsertStructArray)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, DeleteStructArray)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("PolymorphicUpdateTest.ecdb", SchemaItem::CreateForFile("NestedStructArrayTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PolymorphicUpdateTest.ecdb", SchemaItem::CreateForFile("NestedStructArrayTest.01.00.00.ecschema.xml")));
 
     auto in = NestedStructArrayTestSchemaHelper::CreateECInstances(m_ecdb, 1, "ClassP");
 
@@ -5449,7 +5529,7 @@ TEST_F(ECSqlStatementTestFixture, DeleteStructArray)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, Int64InStructArrays)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("Int64InStructArrays.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("Int64InStructArrays.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='testSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECStructClass typeName='MyStruct' >"
@@ -5489,7 +5569,7 @@ TEST_F(ECSqlStatementTestFixture, Int64InStructArrays)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, ColumnInfoAndSystemProperties)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb( 3));
     {
     ECSqlStatement statement;
@@ -5559,7 +5639,7 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoAndSystemProperties)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, ColumnInfoGetOriginProperty)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb( 3));
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT ECInstanceId, I as MyInt, S as MyString FROM ecsql.P LIMIT 1"));
@@ -5590,7 +5670,7 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoGetOriginProperty)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, ColumnInfoGetOriginPropertyForNonPropertyColumns)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb( 3));
         {
         ECSqlStatement statement;
@@ -5665,7 +5745,7 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoGetOriginPropertyForNonPropertyColum
 TEST_F(ECSqlStatementTestFixture, ColumnInfoWithJoin)
     {
     const int perClassRowCount = 10;
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb( perClassRowCount));
 
     Utf8CP ecsql = "SELECT c1.ECInstanceId, c2.ECInstanceId, c1.ECClassId, c2.ECClassId FROM ecsql.PSA c1, ecsql.P c2 LIMIT 1";
@@ -5719,7 +5799,7 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoWithJoin)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, ColumnInfoAndNavigationAndPointProp)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb( 3));
 
     ECSqlStatement statement;
@@ -5761,7 +5841,7 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoAndNavigationAndPointProp)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, InvalidBindArrayCalls)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ecsql.PSA(I_Array, PStruct_Array) VALUES(?,?)"));
@@ -5788,7 +5868,7 @@ TEST_F(ECSqlStatementTestFixture, InvalidBindArrayCalls)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, StructArrayUpdate)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     ASSERT_EQ(SUCCESS, PopulateECDb( 2));
 
     Utf8CP ecsql = "UPDATE  ONLY ecsql.PSA SET L = ?,  PStruct_Array = ? WHERE I = ?";
@@ -5832,7 +5912,7 @@ void setProductsValues(StandaloneECInstancePtr instance, int ProductId, Utf8CP P
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, StructArrayDelete)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     ASSERT_EQ(SUCCESS, PopulateECDb( 2));
     auto ecsql = "DELETE FROM  ONLY ecsql.PSA WHERE I = ?";
     ECSqlStatement statement;
@@ -5850,7 +5930,7 @@ TEST_F(ECSqlStatementTestFixture, StructArrayDelete)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, BindToNumericProps)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("BindToNumericProps.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("BindToNumericProps.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
           <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
           <ECEntityClass typeName="Parent" modifier="None" >
@@ -5976,7 +6056,7 @@ TEST_F(ECSqlStatementTestFixture, BindToNumericProps)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, InsertNullForECInstanceId)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecinstanceidbindnull.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecinstanceidbindnull.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     auto assertSequence = [] (ECDbCR ecdb, BeInt64Id expectedSequenceValue)
         {
@@ -6012,7 +6092,7 @@ TEST_F(ECSqlStatementTestFixture, InsertNullForECInstanceId)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, BindEnum)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("BindEnum.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("BindEnum.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEnumeration typeName="Status" backingTypeName="int" isStrict="true">
                     <ECEnumerator name="On" value="1" />
@@ -6133,7 +6213,7 @@ TEST_F(ECSqlStatementTestFixture, BindEnum)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, BindSourceAndTargetECInstanceId)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECSqlStatement stmt;
 
@@ -6240,7 +6320,7 @@ TEST_F(ECSqlStatementTestFixture, BindSourceAndTargetECInstanceId)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, BindPrimitiveArray)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     ASSERT_EQ(SUCCESS, PopulateECDb( 10));
 
     std::vector<int> expectedIntArray = {1, 2, 3, 4, 5, 6, 7, 8};
@@ -6299,7 +6379,7 @@ TEST_F(ECSqlStatementTestFixture, BindPrimitiveArray)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, Insert_BindDateTimeArray)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     ASSERT_EQ(SUCCESS, PopulateECDb( 10));
 
     ECSqlStatement statement;
@@ -6339,7 +6419,7 @@ TEST_F(ECSqlStatementTestFixture, Insert_BindDateTimeArray)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, BindPrimitiveArrayWithDifferentTypes)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("BindPrimitiveArrayWithDifferentTypes.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("BindPrimitiveArrayWithDifferentTypes.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ecsql.PSA(B_Array,Bi_Array,D_Array,Dt_Array,I_Array,L_Array,P2D_Array,P3D_Array,S_Array) VALUES(?,?,?,?,?,?,?,?,?)"));
@@ -6527,7 +6607,7 @@ TEST_F(ECSqlStatementTestFixture, BindPrimitiveArrayWithDifferentTypes)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, ConstrainedArrayProps)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ConstrainedArrayProps.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ConstrainedArrayProps.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                        <ECEntityClass typeName="Foo">
                                                             <ECArrayProperty propertyName="PrimArray" typeName="int" minOccurs="5" maxOccurs="10" />
@@ -6622,7 +6702,7 @@ TEST_F(ECSqlStatementTestFixture, ConstrainedArrayProps)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("InsertWithStructBinding.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InsertWithStructBinding.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     ASSERT_EQ(SUCCESS, PopulateECDb(10));
 
     ECClassCP pStructClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PStruct");
@@ -6775,7 +6855,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithStructBinding)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, UpdateWithStructBinding)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("UpdateWithStructBinding.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("UpdateWithStructBinding.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     ASSERT_EQ(SUCCESS, PopulateECDb(10));
     ECClassCP psaClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSA");
     ASSERT_TRUE(psaClass != nullptr);
@@ -6851,7 +6931,7 @@ TEST_F(ECSqlStatementTestFixture, StructsInWhereClause)
                       "    </ECEntityClass>"
                       "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", schema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", schema));
 
     {
     ECSqlStatement stmt;
@@ -6939,7 +7019,7 @@ TEST_F(ECSqlStatementTestFixture, StructsInWhereClause)
 TEST_F(ECSqlStatementTestFixture, ParameterInSelectClause)
     {
     const auto perClassRowCount = 10;
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb( perClassRowCount));
 
     {
@@ -7002,7 +7082,7 @@ TEST_F(ECSqlStatementTestFixture, ParameterInSelectClause)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, GetParameterIndex)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ecsql.PSA(I,L,S) VALUES(123,123456789,'Sample string')"));
 
@@ -7102,7 +7182,7 @@ TEST_F(ECSqlStatementTestFixture, GetParameterIndex)
 TEST_F(ECSqlStatementTestFixture, NoECClassIdFilterOption)
     {
     const auto perClassRowCount = 10;
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     ASSERT_EQ(SUCCESS, PopulateECDb( perClassRowCount));
 
     {
@@ -7224,7 +7304,7 @@ TEST_F(ECSqlStatementTestFixture, NoECClassIdFilterOption)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, ReadonlyPropertiesAreUpdatable)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ReadonlyPropertiesAreUpdatable.ecdb",
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ReadonlyPropertiesAreUpdatable.ecdb",
                            SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -7354,7 +7434,7 @@ void AssertColumnInfo(Utf8CP expectedPropertyName, bool expectedIsSystem, bool e
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, ColumnInfoForPrimitiveArrays)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb( 10));
 
     ECSqlStatement stmt;
@@ -7389,7 +7469,7 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoForPrimitiveArrays)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, ColumnInfoForStructs)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb( 10));
 
     ECSqlStatement stmt;
@@ -7426,7 +7506,7 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoForStructs)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, ColumnInfoForStructArrays)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb( 10));
 
     ECSqlStatement stmt;
@@ -7476,7 +7556,7 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoForStructArrays)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, GetArrayValue)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("GetArrayValue.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("GetArrayValue.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECInstanceKey key;
     {
@@ -7533,7 +7613,7 @@ TEST_F(ECSqlStatementTestFixture, GetArrayValue)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, Step)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     ASSERT_EQ(SUCCESS, PopulateECDb( 10));
 
     {
@@ -7569,7 +7649,7 @@ TEST_F(ECSqlStatementTestFixture, Step)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, MultipleInsertsWithoutReprepare)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     ASSERT_EQ(SUCCESS, PopulateECDb( 10));
 
     ECSqlStatement statement;
@@ -7644,7 +7724,7 @@ TEST_F(ECSqlStatementTestFixture, MultipleInsertsWithoutReprepare)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, Reset)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb( 10));
 
     {
@@ -7674,7 +7754,7 @@ TEST_F(ECSqlStatementTestFixture, Reset)
 TEST_F(ECSqlStatementTestFixture, Finalize)
     {
     const int perClassRowCount = 10;
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
     ASSERT_EQ(SUCCESS, PopulateECDb( perClassRowCount));
 
     {
@@ -7721,7 +7801,7 @@ TEST_F(ECSqlStatementTestFixture, Finalize)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, IssueListener)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     ASSERT_EQ(SUCCESS, PopulateECDb( 10));
 
     {
@@ -7760,7 +7840,7 @@ TEST_F(ECSqlStatementTestFixture, IssueListener)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, GetValueWithPartialPoints)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("jsonreaderpartialpoints.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("jsonreaderpartialpoints.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECClassCP testClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSA");
     ASSERT_TRUE(testClass != nullptr);
@@ -7797,7 +7877,7 @@ void AssertGeometry(IGeometryCR expected, IGeometryCR actual, Utf8CP assertMessa
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, Geometry)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     std::vector<IGeometryPtr> expectedGeoms;
 
@@ -7959,7 +8039,7 @@ TEST_F(ECSqlStatementTestFixture, Geometry)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, GeometryAndOverflow)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsql_geometry.ecdb", SchemaItem(R"xml(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsql_geometry.ecdb", SchemaItem(R"xml(
                             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                              <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                               <ECEntityClass typeName="Element">
@@ -8032,7 +8112,7 @@ TEST_F(ECSqlStatementTestFixture, GeometryAndOverflow)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, GetGeometryWithInvalidBlobFormat)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     // insert invalid geom blob
     Statement stmt;
@@ -8061,7 +8141,7 @@ TEST_F(ECSqlStatementTestFixture, GetGeometryWithInvalidBlobFormat)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayInsert)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ecsql.SA (SAStructProp) VALUES(?)"));
@@ -8099,7 +8179,7 @@ TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayInsert)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, StructArrayInsertWithParametersLongAndArray)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     auto ecsql = "INSERT INTO ecsql.PSA (L,PStruct_Array) VALUES(123, ?)";
     ECSqlStatement statement;
@@ -8145,7 +8225,7 @@ TEST_F(ECSqlStatementTestFixture, StructArrayInsertWithParametersLongAndArray)
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, SystemProperties) {
-    ASSERT_EQ(SUCCESS, SetupECDb("system.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("system.ecdb"));
 
     auto sysClass = m_ecdb.Schemas().GetClass("ECDbSystem", "ClassECSqlSystemProperties");
     ASSERT_NE(sysClass, nullptr);
@@ -8187,6 +8267,10 @@ TEST_F(ECSqlStatementTestFixture, SystemProperties) {
     auto propId = sysNavigation->GetPropertyP("Id");
     ASSERT_NE(propId, nullptr);
     ASSERT_STREQ(propId->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "NavId");
+
+    // Some tests below have been marked "Wrong" in a comment.
+    // The expected results for them are incorrect, but they are what we expect due to a "feature" that renders classid as Id instead of the class name in itwinjs/imodel console.
+    // These "wrong" results are hence required to be so for itwinjs tests to pass.
 
     // meta.ClassHasBaseClasses
 
@@ -8416,7 +8500,7 @@ TEST_F(ECSqlStatementTestFixture, SystemProperties) {
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, InsertWithMixParametersIntAndInt)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     auto ecsql = "INSERT INTO ecsql.Sub1 (I,Sub1I) VALUES(123, ?)";
     ECSqlStatement statement;
@@ -8448,7 +8532,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithMixParametersIntAndInt)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, InsertWithMixParameters)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     auto ecsql = "INSERT INTO ecsql.P (B,D,I,L,S) VALUES(1, ?,?,123,?)";
     ECSqlStatement statement;
@@ -8487,7 +8571,7 @@ TEST_F(ECSqlStatementTestFixture, InsertWithMixParameters)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayInsertWithDotOperator)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     auto ecsql = "INSERT INTO ecsql.SA (SAStructProp.PStruct_Array) VALUES(?)";
     ECSqlStatement statement;
@@ -8542,7 +8626,7 @@ TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayInsertWithDotO
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, StructUpdateWithDotOperator)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     auto ecsql = "INSERT INTO ecsql.SA (SAStructProp.PStructProp.i) VALUES(2)";
 
@@ -8589,7 +8673,7 @@ TEST_F(ECSqlStatementTestFixture, StructUpdateWithDotOperator)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, ClassWithStructHavingStructArrayUpdateWithDotOperator)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     auto ecsql = "INSERT INTO ecsql.SA (SAStructProp.PStruct_Array) VALUES(?)";
     ECSqlStatement insertStatement;
@@ -8677,7 +8761,7 @@ TEST_F(ECSqlStatementTestFixture, AmbiguousQuery)
                          "    </ECEntityClass>"
                          "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("AmbiguousQuery.ecdb", schemaXml));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("AmbiguousQuery.ecdb", schemaXml));
 
     ECN::ECSchemaCP schema = m_ecdb.Schemas().GetSchema("TestSchema");
 
@@ -8747,7 +8831,7 @@ TEST_F(ECSqlStatementTestFixture, AmbiguousQuery)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, BindNegECInstanceId)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("BindNegECInstanceId.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("BindNegECInstanceId.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECSqlStatement stmt;
 
@@ -8785,7 +8869,7 @@ TEST_F(ECSqlStatementTestFixture, InstanceInsertionInArray)
                       "    </ECEntityClass>"
                       "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("InstanceInsertionInArray.ecdb", schema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InstanceInsertionInArray.ecdb", schema));
 
     std::vector<Utf8String> expectedStringArray = {"val1", "val2", "val3"};
     std::vector<int> expectedIntArray = {200, 400, 600};
@@ -8860,7 +8944,7 @@ TEST_F(ECSqlStatementTestFixture, SelectAfterImport)
         ASSERT_EQ(SUCCESS, db.Schemas().ImportSchemas(contextPtr->GetCache().GetSchemas()));
         };
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ImportTwoInARow.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ImportTwoInARow.ecdb"));
 
     {
     ECN::ECSchemaPtr schema;
@@ -8906,7 +8990,7 @@ TEST_F(ECSqlStatementTestFixture, SelectCountPolymorphic)
         return statement.GetValueInt(0);
         };
 
-    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
     ASSERT_EQ(SUCCESS, PopulateECDb( 3));
 
     /*
@@ -8935,7 +9019,7 @@ TEST_F(ECSqlStatementTestFixture, SelectCountPolymorphic)
 //---------------------------------------------------------------------------------------
 TEST_F(ECSqlStatementTestFixture, SelectClause)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
     ASSERT_EQ(SUCCESS, PopulateECDb( 3));
     ECClassCP employee = m_ecdb.Schemas().GetClass("StartupCompany", "Employee");
     ASSERT_TRUE(employee != nullptr);
@@ -9002,7 +9086,7 @@ TEST_F(ECSqlStatementTestFixture, SelectClause)
 TEST_F(ECSqlStatementTestFixture, OrderBy)
     {
     // Create StartupCompany
-    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
 
     auto insertPerson = [](ECDbCR ecdb, ECClassCR ecClass, Utf8CP firstName, Utf8CP lastName)
         {
@@ -9064,12 +9148,70 @@ TEST_F(ECSqlStatementTestFixture, OrderBy)
     ASSERT_EQ(0, strcmp(lastName, "Da Vinci"));
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+
+TEST_F(ECSqlStatementTestFixture, NullsOrdering) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO StartupCompany.Employee (FirstName, LastName) VALUES ('Leonardo', 'Da Vinci')");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO StartupCompany.Employee (FirstName, LastName) VALUES (NULL, NULL)");
+    m_ecdb.SaveChanges();
+    //// Test ORDER BY NULLS FIRST
+    if ("ORDER BY FirstName NULLS FIRST") {
+        ECSqlStatement statement;
+        ECSqlStatus stat = statement.Prepare(m_ecdb, "SELECT FirstName, LastName FROM StartupCompany.Employee ORDER BY FirstName NULLS FIRST");
+        ASSERT_EQ(ECSqlStatus::Success, stat);
+
+        int count = 0;
+        while (statement.Step() == BE_SQLITE_ROW && count < 2) {
+            auto firstName = statement.GetValueText(0);
+            auto lastName = statement.GetValueText(1);
+            // Validate the first few entries
+            if (count == 0) {
+                ASSERT_STREQ(firstName, nullptr);
+                ASSERT_STREQ(lastName, nullptr);
+            }
+            else if (count == 1) {
+                ASSERT_STREQ(firstName, "Leonardo");
+                ASSERT_STREQ(lastName, "Da Vinci");
+            }
+            count++;
+        }
+            statement.Finalize();
+    }
+    // Test ORDER BY NULLS LAST
+    if ("ORDER BY LastName NULLS LAST") {
+        ECSqlStatement statement;
+        ECSqlStatus stat = statement.Prepare(m_ecdb, "SELECT FirstName, LastName FROM StartupCompany.Employee ORDER BY LastName NULLS LAST");
+        ASSERT_EQ(ECSqlStatus::Success, stat);
+        int counter = 0;
+        while (statement.Step() == BE_SQLITE_ROW && counter < 2) {
+            auto firstName = statement.GetValueText(0);
+            auto lastName = statement.GetValueText(1);
+
+            // Validate the first few entries
+            if (counter == 0) {
+                ASSERT_STREQ(firstName, "Leonardo");
+                ASSERT_STREQ(lastName, "Da Vinci");
+            }
+            else if (counter == 1) {
+                ASSERT_STREQ(firstName, nullptr);
+                ASSERT_STREQ(lastName, nullptr);
+            }
+            counter++;
+        }
+        statement.Finalize();
+    }
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 TEST_F(ECSqlStatementTestFixture, LimitOffset)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
 
     // Populate 100 instances
     ECClassCP ecClass = m_ecdb.Schemas().GetClass("StartupCompany", "ClassWithPrimitiveProperties");
@@ -9113,7 +9255,7 @@ TEST_F(ECSqlStatementTestFixture, LimitOffset)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, RowConstructor)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("emptydb.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("emptydb.ecdb"));
 
         {
         ECSqlStatement stmt;
@@ -9337,7 +9479,7 @@ TEST_F(ECSqlStatementTestFixture, RowConstructor)
 //---------------------------------------------------------------------------------------
 TEST_F(ECSqlStatementTestFixture, WriteCalculatedECProperty)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("SimpleCompany.ecdb", SchemaItem::CreateForFile("SimpleCompany.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SimpleCompany.ecdb", SchemaItem::CreateForFile("SimpleCompany.01.00.00.ecschema.xml")));
     Utf8String instanceXml = "<Manager xmlns = \"SimpleCompany.01.00\" >"
         "<FirstName>StRiNg - 10002</FirstName>"
         "<LastName>StRiNg - 10002</LastName>"
@@ -9403,7 +9545,7 @@ TEST_F(ECSqlStatementTestFixture, WriteCalculatedECProperty)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, PointsMappedToSharedColumns)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("pointsmappedtosharedcolumns.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("pointsmappedtosharedcolumns.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -9456,7 +9598,7 @@ TEST_F(ECSqlStatementTestFixture, PointsMappedToSharedColumns)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, BindZeroBlob)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("bindzeroblob.ecdb", SchemaItem(R"xml(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("bindzeroblob.ecdb", SchemaItem(R"xml(
                             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                              <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                               <ECEntityClass typeName="Element">
@@ -9549,7 +9691,7 @@ TEST_F(ECSqlStatementTestFixture, BlobIO)
         };
 
 
-    ASSERT_EQ(SUCCESS, SetupECDb("blobio.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("blobio.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     assertBlobIO(m_ecdb, "P", "Bi");
     assertBlobIO(m_ecdb, "PSA", "PStructProp.bi");
@@ -9560,7 +9702,7 @@ TEST_F(ECSqlStatementTestFixture, BlobIO)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, BlobIOForInvalidProperties)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("blobioinvalidcases.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("blobioinvalidcases.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     {
     ECClassCP ecClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSA");
@@ -9602,7 +9744,7 @@ TEST_F(ECSqlStatementTestFixture, BlobIOForInvalidProperties)
     m_ecdb.CloseDb();
 
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("blobioinvalidcases2.ecdb", SchemaItem(R"xml(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("blobioinvalidcases2.ecdb", SchemaItem(R"xml(
                             <ECSchema schemaName="TestSchema" alias="ts1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                              <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                               <ECEntityClass typeName="Element">
@@ -9665,7 +9807,7 @@ TEST_F(ECSqlStatementTestFixture, ECSqlOnAbstractClassWithOrderbyClause)
         ASSERT_EQ(dbResult, statement.Step());
         };
 
-    ASSERT_EQ(SUCCESS, SetupECDb("ecsqlonabstractclasswithorderbyclause.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlonabstractclasswithorderbyclause.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                                                        "<ECSchema schemaName='TestSchema' alias='rs' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                                        "    <ECEntityClass typeName='Element' modifier='Abstract'>"
                                                                        "        <ECProperty propertyName='P0' typeName='string' />"
@@ -9702,7 +9844,7 @@ TEST_F(ECSqlStatementTestFixture, ECSqlOnAbstractClassWithOrderbyClause)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, OrderByAgainstMixin)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("orderbyonmixin.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("orderbyonmixin.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
@@ -9795,7 +9937,7 @@ TEST_F(ECSqlStatementTestFixture, OrderByAgainstMixin)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, UpdateAndDeleteAgainstMixin)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("updatedeletemixin.ecdb",
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updatedeletemixin.ecdb",
                            SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                                           <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                           <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA" />
@@ -9962,7 +10104,7 @@ TEST_F(ECSqlStatementTestFixture, UpdateAndDeleteAgainstMixin)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, PrepareECSqlStatmentUsingSecondaryReadonlyConnection)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("econn1.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("econn1.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="A">
@@ -9978,7 +10120,7 @@ TEST_F(ECSqlStatementTestFixture, PrepareECSqlStatmentUsingSecondaryReadonlyConn
     BeFileName seedFileA(m_ecdb.GetDbFileName(), true);
     m_ecdb.CloseDb();
 
-    ASSERT_EQ(SUCCESS, SetupECDb("econn2.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("econn2.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="A">
@@ -10064,7 +10206,7 @@ TEST_F(ECSqlStatementTestFixture, PrepareECSqlStatmentUsingSecondaryReadonlyConn
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, InterruptStep)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("InterruptStep.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("InterruptStep.ecdb"));
 
     int totalRowCount = -1;
     {
@@ -10119,7 +10261,7 @@ TEST_F(ECSqlStatementTestFixture, OptimizeECSqlForSealedAndClassWithNotDerviedCl
     {
     if (true)
         {
-        ASSERT_EQ(SUCCESS, SetupECDb("ecsqlOpt00.ecdb", SchemaItem(
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlOpt00.ecdb", SchemaItem(
             R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="Foo">
@@ -10178,7 +10320,7 @@ TEST_F(ECSqlStatementTestFixture, OptimizeECSqlForSealedAndClassWithNotDerviedCl
 
     if (true)
         {
-        ASSERT_EQ(SUCCESS, SetupECDb("ecsqlOpt01.ecdb", SchemaItem(
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlOpt01.ecdb", SchemaItem(
             R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -10249,7 +10391,7 @@ TEST_F(ECSqlStatementTestFixture, OptimizeECSqlForSealedAndClassWithNotDerviedCl
 
     if (true)
         {
-        ASSERT_EQ(SUCCESS, SetupECDb("ecsqlOpt02.ecdb", SchemaItem(
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlOpt02.ecdb", SchemaItem(
             R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -10406,7 +10548,7 @@ TEST_F(ECSqlStatementTestFixture, AliasedEnumProps)
                 </ECEntityClass>
               </ECSchema>)xml"})
         {
-        ASSERT_EQ(SUCCESS, SetupECDb("AliasedEnumProps.ecdb", SchemaItem(schemaXml)));
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("AliasedEnumProps.ecdb", SchemaItem(schemaXml)));
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(Status,Statuses,Domain,Domains) VALUES (1,?,'Org',?)"));
         ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindInt(1)) << stmt.GetECSql();
@@ -10449,7 +10591,7 @@ TEST_F(ECSqlStatementTestFixture, AliasedEnumProps)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, EnumeratorNamesForEC31Enums)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("EnumeratorNamesForEC31Enums.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("EnumeratorNamesForEC31Enums.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8' ?>"
         "<ECSchema schemaName='TestSchema' displayLabel='Test Schema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECEnumeration typeName='Colors' displayLabel='Color' backingTypeName='string' isStrict='True'>"
@@ -10505,7 +10647,7 @@ TEST_F(ECSqlStatementTestFixture, EnumeratorNamesForEC31Enums)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, EnumeratorNames)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("EnumeratorNames.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("EnumeratorNames.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8' ?>"
         "<ECSchema schemaName='TestSchema' displayLabel='Test Schema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
         "    <ECEnumeration typeName='Colors' displayLabel='Color' backingTypeName='string' isStrict='True'>"
@@ -10562,7 +10704,7 @@ TEST_F(ECSqlStatementTestFixture, EnumeratorNames)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, ORedEnumerators)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ORedEnumerators.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ORedEnumerators.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEnumeration typeName="Status" backingTypeName="int" isStrict="false">
                     <ECEnumerator name="On" value="1" />
@@ -10598,7 +10740,7 @@ TEST_F(ECSqlStatementTestFixture, ORedEnumerators)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, TryGetContainedEnumerators)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("TryGetContainedEnumerators.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("TryGetContainedEnumerators.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEnumeration typeName="Color" backingTypeName="int" isStrict="false">
                     <ECEnumerator name="Red" value="1" />
@@ -10704,7 +10846,7 @@ TEST_F(ECSqlStatementTestFixture, TryGetContainedEnumerators)
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, ConfuseRealNumberWithClassName) {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem(
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem(
             R"xml(<ECSchema schemaName="NwdDynamic" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="E000005521485VFW120710002235" >
                         <ECProperty propertyName="P" typeName="string" />

@@ -88,13 +88,14 @@ TEST_F(SchemaTest, AddAndRemoveEnumerations)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaTest, CreateDynamicSchema)
     {
-    auto dynamicClass = CoreCustomAttributeHelper::GetCustomAttributeClass("DynamicSchema");
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    auto dynamicClass = CoreCustomAttributeHelper::GetCustomAttributeClass(*schemaContext, "DynamicSchema");
     IECInstancePtr dynamicSchemaCA = dynamicClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ECSchemaCachePtr cache = ECSchemaCache::Create();
     
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 2, 0, 1);
-    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema());
+    schema->AddReferencedSchema(*CoreCustomAttributeHelper::GetSchema(*schemaContext));
     EC_ASSERT_SUCCESS(schema->SetCustomAttribute(*dynamicSchemaCA));
     
 
@@ -103,6 +104,64 @@ TEST_F(SchemaTest, CreateDynamicSchema)
     ASSERT_NE(nullptr, retrievedSchema);
 
     ASSERT_TRUE(retrievedSchema->IsDynamicSchema());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaTest, AddCycleReference)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 2, 0, 1);
+    ASSERT_EQ(ECObjectsStatus::SchemaHasReferenceCycle, schema->AddReferencedSchema(*schema));
+
+    ECSchemaPtr schema2;
+    ECSchema::CreateSchema(schema2, "TestSchema", "ts", 2, 0, 4); //different version
+    ASSERT_EQ(ECObjectsStatus::SchemaHasReferenceCycle, schema->AddReferencedSchema(*schema2));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaTest, AddIndirectCycleReference)
+    {
+    //Create reference cycle Foo -> Middle -> Bar -> Foo
+    ECSchemaPtr foo;
+    ECSchema::CreateSchema(foo, "Foo", "foo", 2, 0, 1);
+
+    ECSchemaPtr middle;
+    ECSchema::CreateSchema(middle, "Middle", "middle", 2, 0, 1);
+    ASSERT_EQ(ECObjectsStatus::Success, foo->AddReferencedSchema(*middle));
+
+    ECSchemaPtr bar;
+    ECSchema::CreateSchema(bar, "Bar", "bar", 2, 0, 1);
+    ASSERT_EQ(ECObjectsStatus::Success, bar->AddReferencedSchema(*foo));
+
+    ASSERT_EQ(ECObjectsStatus::SchemaHasReferenceCycle, middle->AddReferencedSchema(*bar));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaTest, AddIndirectCycleReferenceToDifferentVersion)
+    {
+    //Create reference cycle Foo -> Middle -> Bar -> FooAlt (Same name different version as Foo)
+    ECSchemaPtr foo;
+    ECSchema::CreateSchema(foo, "Foo", "foo", 2, 0, 1);
+
+    ECSchemaPtr fooAlt;
+    ECSchema::CreateSchema(fooAlt, "Foo", "foo", 2, 0, 5);
+
+    ECSchemaPtr middle;
+    ECSchema::CreateSchema(middle, "Middle", "middle", 2, 0, 1);
+    ASSERT_EQ(ECObjectsStatus::Success, foo->AddReferencedSchema(*middle));
+    ASSERT_EQ(ECObjectsStatus::Success, fooAlt->AddReferencedSchema(*middle));
+
+    ECSchemaPtr bar;
+    ECSchema::CreateSchema(bar, "Bar", "bar", 2, 0, 1);
+    ASSERT_EQ(ECObjectsStatus::Success, bar->AddReferencedSchema(*fooAlt));
+
+    ASSERT_EQ(ECObjectsStatus::SchemaHasReferenceCycle, middle->AddReferencedSchema(*bar));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1293,7 +1352,8 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveReferencedSchemaWithIsMixin)
 
     refSchema->CreateEntityClass(entityClass, "EntityClass");
     
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixinClass, "Mixin", *entityClass)) << "Should not fail to add mixin with class in referenced schema";
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixinClass, "Mixin", *entityClass, *schemaContext)) << "Should not fail to add mixin with class in referenced schema";
     EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schema, *refSchema)) << "The CreateMixinClass succeeded without creating a reference to the schema the AppliesTo class is located in.";
 
     EXPECT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema)) << "The schema containing the appliesTo class was removed when it shouldn't be because it is still in use within the Mixin CA";
@@ -2441,6 +2501,49 @@ TEST_F(SchemaCacheTest, DropSchema)
     EXPECT_EQ(cache->GetCount(), 0);
     }
 
+/*---------------------------------------------------------------------------------**//**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaCacheTest, FindSchema)
+    {
+    ECSchemaCachePtr cache = ECSchemaCache::Create();
+    ECSchemaPtr schema1;
+    ECSchemaPtr schema2;
+    ECSchemaPtr schema3;
+
+    ECSchema::CreateSchema(schema1, "Widget", "ts", 5, 0, 1);
+    ECSchema::CreateSchema(schema2, "BASESchema1", "ts", 2, 0, 0);
+    ECSchema::CreateSchema(schema3, "BaseSchema1", "ts", 5, 0, 5);
+
+    EXPECT_TRUE(cache->AddSchema(*schema1) == ECObjectsStatus::Success);
+    EXPECT_TRUE(cache->AddSchema(*schema2) == ECObjectsStatus::Success);
+    EXPECT_TRUE(cache->AddSchema(*schema3) == ECObjectsStatus::Success);
+    EXPECT_EQ(cache->FindSchema([](SchemaKeyCR key) { return key.GetVersionMinor() == 5; }), schema3.get());
+    EXPECT_EQ(cache->FindSchema([](SchemaKeyCR key) { return key.GetName() == "Widget"; }), schema1.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ * @bsimethod
+ +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaCacheTest, FindSchemaByNameI)
+    {
+    ECSchemaCachePtr cache = ECSchemaCache::Create();
+    ECSchemaPtr schema1;
+    ECSchemaPtr schema2;
+    ECSchemaPtr schema3;
+
+    ECSchema::CreateSchema(schema1, "Widget", "ts", 5, 0, 1);
+    ECSchema::CreateSchema(schema2, "BASESchema1", "ts", 2, 0, 0);
+    ECSchema::CreateSchema(schema3, "BaseSchema1", "ts", 5, 0, 5);
+
+    EXPECT_TRUE(cache->AddSchema(*schema1) == ECObjectsStatus::Success);
+    EXPECT_TRUE(cache->AddSchema(*schema2) == ECObjectsStatus::Success);
+    EXPECT_TRUE(cache->AddSchema(*schema3) == ECObjectsStatus::Success);
+    EXPECT_EQ(cache->FindSchemaByNameI("Widget"), schema1.get());
+    EXPECT_EQ(cache->FindSchemaByNameI("WIDGET"), schema1.get());
+    EXPECT_EQ(cache->FindSchemaByNameI("baseschema1"), schema2.get());
+    }
+
 //=======================================================================================
 //! SchemaChecksumTest
 //=======================================================================================
@@ -3086,7 +3189,7 @@ TEST_F(SchemaCreationTest, CodifyAllowedNamelessItems)
     EXPECT_EQ(ECObjectsStatus::InvalidName, schema->CreateEntityClass(baseEntityClass, "")) << "cannot create an entity class with an empty name";
 
     ECEntityClassP mixin;
-    EXPECT_EQ(ECObjectsStatus::InvalidName, schema->CreateMixinClass(mixin, "", *baseEntityClass)) << "cannot create a mixin class with an empty name";
+    EXPECT_EQ(ECObjectsStatus::InvalidName, schema->CreateMixinClass(mixin, "", *baseEntityClass, *readCtx)) << "cannot create a mixin class with an empty name";
 
     ECStructClassP structClass;
     EXPECT_EQ(ECObjectsStatus::InvalidName, schema->CreateStructClass(structClass, "")) << "cannot create a struct class with an empty name";

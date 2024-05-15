@@ -28,12 +28,12 @@ struct ECSqlFieldFactory final
         static ECSqlStatus CreateStructMemberFields(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, ECN::ECStructClassCR, ECSqlColumnInfo const&);
         static ECSqlStatus CreateChildField(std::unique_ptr<ECSqlField>& childField, ECSqlPrepareContext&, int& sqlColumnIndex, ECSqlColumnInfo const& parentFieldColumnInfo, ECN::ECPropertyCR childProperty);
 
-        static ECSqlColumnInfo CreateColumnInfoForProperty(ECSqlPrepareContext const& ctx, ECN::ECPropertyCP generatedProperty, PropertyNameExp const* propertyNameExp);
-        static ECSqlColumnInfo CreateTopLevelColumnInfo(IssueDataSource const& issues, bool isSystemProperty, bool isGeneratedProperty, ECSqlPropertyPath const& propertyPath, ECSqlColumnInfo::RootClass const& rootClass, ECN::ECPropertyCP originalProperty);
+        static ECSqlColumnInfo CreateColumnInfoForProperty(ECSqlPrepareContext const& ctx, ECN::ECPropertyCP generatedProperty, PropertyNameExp const* propertyNameExp, bool isDynamic);
+        static ECSqlColumnInfo CreateTopLevelColumnInfo(IssueDataSource const& issues, bool isSystemProperty, bool isGeneratedProperty, ECSqlPropertyPath const& propertyPath, ECSqlColumnInfo::RootClass const& rootClass, ECN::ECPropertyCP originalProperty, bool isDynamic);
         static ECN::ECTypeDescriptor DetermineDataType(DateTime::Info&, ECN::ECStructClassCP&, IssueDataSource const&, ECN::ECPropertyCR);
 
         static ECSqlSelectPreparedStatement& GetPreparedStatement(ECSqlPrepareContext&);
-        static ECSqlStatus CreateFieldForView(ECSqlPrepareContext& ctx, PropertyNameExp const& propNameExp, ClassNameExp const& viewClassNameExp, DerivedPropertyExp const& derivedProperty, int startColumnIndex);
+        static ECSqlStatus CreateFieldForView(ECSqlPrepareContext& ctx, PropertyNameExp const& propNameExp, ClassNameExp const& viewClassNameExp, DerivedPropertyExp const& derivedProperty, int startColumnIndex, bool isDynamic);
 
     public:
         static ECSqlStatus CreateField(ECSqlPrepareContext&, DerivedPropertyExp const* derivedProperty, int startColumnIndex);

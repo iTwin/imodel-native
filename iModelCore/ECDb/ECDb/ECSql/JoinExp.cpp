@@ -10,6 +10,25 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+//*************************** CrossJoinExp ******************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void CrossJoinExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: CrossJoinExp
+    val.SetEmptyObject();
+    val["id"] = "CrossJoinExp";
+    val["type"] = ExpHelper::ToSql(ECSqlJoinType::CrossJoin);
+    GetFromClassRef().ToJson(val["from"], fmt);
+    GetToClassRef().ToJson(val["to"], fmt);
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+void CrossJoinExp::_ToECSql(ECSqlRenderContext& ctx) const {
+    ctx.AppendToECSql(GetFromClassRef()).AppendToECSql(" CROSS JOIN ").AppendToECSql(GetToClassRef());
+}
 
 //*************************** JoinExp ******************************************
 //-----------------------------------------------------------------------------------------
@@ -44,12 +63,32 @@ BooleanExp const* JoinConditionExp::GetSearchCondition() const { return GetChild
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void JoinConditionExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: JoinConditionExp
+    GetSearchCondition()->ToJson(val, fmt);
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void JoinConditionExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
     ctx.AppendToECSql("ON ").AppendToECSql(*GetSearchCondition());
     }
 
 //*************************** NaturalJoinExp ******************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void NaturalJoinExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: NaturalJoinExp
+    val.SetEmptyArray();
+    val["id"] = "NaturalJoinExp";
+    val["type"] = Utf8String(ExpHelper::ToSql(m_appliedJoinType));
+    GetFromClassRef().ToJson(val["from"], fmt);
+    GetToClassRef().ToJson(val["to"], fmt);
+}
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -77,6 +116,19 @@ QualifiedJoinExp::QualifiedJoinExp(std::unique_ptr<ClassRefExp> from, std::uniqu
     {
     m_nJoinSpecIndex = AddChild(std::move(joinSpecExp));
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void QualifiedJoinExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: QualifiedJoinExp
+    val.SetEmptyObject();
+    val["id"] = "QualifiedJoinExp";
+    val["type"] = ExpHelper::ToSql(GetJoinType());
+    GetFromClassRef().ToJson(val["from"], fmt);
+    GetToClassRef().ToJson(val["to"], fmt);
+    GetJoinSpec()->ToJson(val["spec"], fmt);
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -142,6 +194,7 @@ BentleyStatus UsingRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContex
                             IssueSeverity::Error,
                             IssueCategory::BusinessProperties,
                             IssueType::ECSQL,
+                            ECDbIssueId::ECDb_0718,
                             "Invalid join direction BACKWARD in %s. Either specify FORWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.",
                             ToString().c_str()
                         );
@@ -155,6 +208,7 @@ BentleyStatus UsingRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContex
                             IssueSeverity::Error,
                             IssueCategory::BusinessProperties,
                             IssueType::ECSQL,
+                            ECDbIssueId::ECDb_0719,
                             "Invalid join direction FORWARD in %s. Either specify BACKWARD or omit the direction as the direction can be unambiguously implied in this ECSQL.",
                             ToString().c_str()
                         );
@@ -204,7 +258,7 @@ BentleyStatus UsingRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContex
 
     if (toEP.GetLocation() == ClassLocation::NotResolved)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL,
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0541,
             "'%s' class is not related to by the relationship '%s'", toECClass.GetFullName(), relationshipClass->GetFullName());
         return ERROR;
         }
@@ -239,29 +293,22 @@ BentleyStatus UsingRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContex
             }
         }
 
-    //ECSQL_TODO: If possible remove child class from 'from class list'. If parent is added do not add child to it. 
+    //ECSQL_TODO: If possible remove child class from 'from class list'. If parent is added do not add child to it.
 
     if (fromClassExistsInSourceList.empty() && fromClassExistsInTargetList.empty())
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL,
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0542,
             "No ECClass in the FROM and JOIN clauses matches the ends of the relationship '%s'.", relationshipClass->GetFullName());
         return ERROR;
         }
 
     if (fromClassExistsInSourceList.size() > 1 || fromClassExistsInTargetList.size() > 1)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Multiple classes in the FROM and JOIN clauses match an end of the relationship '%s'.", relationshipClass->GetFullName());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0543,
+            "Multiple classes in the FROM and JOIN clauses match an end of the relationship '%s'.", relationshipClass->GetFullName());
         return ERROR;
         }
 
-    if (fromClassExistsInSourceList.size() == 1 && fromClassExistsInTargetList.size() == 1)
-        {
-        if (fromClassExistsInSourceList.begin()->first != fromClassExistsInTargetList.begin()->first)
-            {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Multiple classes in the FROM and JOIN clauses match an end of the relationship '%s'.", relationshipClass->GetFullName());
-            return ERROR;
-            }
-        }
 
     if (!fromClassExistsInSourceList.empty())
         {
@@ -300,7 +347,7 @@ BentleyStatus UsingRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContex
         //Rule: In self-join direction must be provided
         if (GetDirection() == JoinDirection::Implied)
             {
-            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL,
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0545,
                 "FORWARD or BACKWARD must be specified for joins where source and target cannot be identified unambiguously, e.g. joins between the same class.");
             return ERROR;
             }
@@ -308,14 +355,14 @@ BentleyStatus UsingRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContex
 
     if (fromEP.GetLocation() == ClassLocation::NotResolved || fromEP.GetClassNameRef() == nullptr)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL,
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0546,
             "Could not find class on one of the ends of relationship %s", relationshipClass->GetFullName());
         return ERROR;
         }
 
     if (toEP.GetLocation() == ClassLocation::NotResolved || toEP.GetClassNameRef() == nullptr)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL,
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0546,
             "Could not find class on one of the ends of relationship %s", relationshipClass->GetFullName());
         return ERROR;
         }
@@ -387,6 +434,19 @@ BentleyStatus UsingRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContex
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void UsingRelationshipJoinExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: UsingRelationshipJoinExp
+    val.SetEmptyObject();
+    val["id"] = "UsingRelationshipJoinExp";
+    GetFromClassRef().ToJson(val["from"], fmt);
+    GetToClassRef().ToJson(val["to"], fmt);
+    GetRelationshipClassNameExp().ToJson(val["using"], fmt);
+    if (m_direction != JoinDirection::Implied)
+        val["direction"] = ExpHelper::ToECSql(m_direction);
+}
+//-----------------------------------------------------------------------------------------
+// @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 void UsingRelationshipJoinExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
@@ -407,5 +467,53 @@ Utf8String UsingRelationshipJoinExp::_ToString() const
     return str;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+void NamedPropertiesJoinExp::_ToECSql(ECSqlRenderContext& ctx) const
+    {
+    ctx.AppendToECSql("USING (");
+    bool isFirstProp = true;
+    for (Utf8StringCR property : m_properties)
+        {
+        if (!isFirstProp)
+            ctx.AppendToECSql(", ");
+
+        ctx.AppendToECSql(property);
+        isFirstProp = false;
+        }
+
+    ctx.AppendToECSql(")");
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+void NamedPropertiesJoinExp::_ToJson(BeJsValue val, JsonFormat const&) const {
+    //! ITWINJS_PARSE_TREE: NamedPropertiesJoinExp
+    val.SetEmptyArray();
+    for(auto& prop : m_properties)
+        val.appendValue() = prop;
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+Utf8String NamedPropertiesJoinExp::_ToString() const
+    {
+    Utf8String str("NamedPropertiesJoin [Properties: ");
+    bool isFirstItem = true;
+    for (auto const& propertyName : m_properties)
+        {
+        if (!isFirstItem)
+            str.append(", ");
+
+        str.append(propertyName.c_str());
+        isFirstItem = false;
+        }
+
+    str.append("]");
+    return str;
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

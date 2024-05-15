@@ -36,6 +36,13 @@ SQLiteDir = $(baseDir)SQLite/
 SubpartLibs = $(BuildContext)SubParts/Libs/
 o = $(PartBuildDir)
 
+
+dirToSearch = $(BuildContext)VendorAPI/icu4c
+%include cincapnd.mki
+
+dirToSearch = $(BuildContext)VendorAPI/
+%include cincapnd.mki
+
 # DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
 appName = iTwinSQLite
 CCompPDBName = $(appName)
@@ -55,11 +62,13 @@ $(o)ChangeSet$(oext) : $(baseDir)ChangeSet.cpp $(baseDir)/PublicAPI/BeSQLite/BeS
 
 $(o)CloudSqlite$(oext) : $(baseDir)CloudSqlite.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/ChangeSet.h ${MultiCompileDepends}
 
-$(o)RevisionChangesFile$(oext) : $(baseDir)RevisionChangesFile.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/RevisionChangesFile.h ${MultiCompileDepends}
+$(o)ChangesetFile$(oext) : $(baseDir)ChangesetFile.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/ChangesetFile.h ${MultiCompileDepends}
 
 $(o)BeSQLiteProfileManager$(oext) : $(baseDir)BeSQLiteProfileManager.cpp $(baseDir)/BeSQLiteProfileManager.h  $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h ${MultiCompileDepends}
 
 $(o)Profiler$(oext) : $(baseDir)Profiler.cpp $(baseDir)/PublicAPI/BeSQLite/Profiler.h ${MultiCompileDepends}
+
+$(o)VirtualTab$(oext) : $(baseDir)VirtualTab.cpp $(baseDir)/PublicAPI/BeSQLite/VirtualTab.h ${MultiCompileDepends}
 
 $(o)BeLzma$(oext) : $(baseDir)BeLzma.cpp $(baseDir)/PublicAPI/BeSQLite/BeLzma.h ${MultiCompileDepends}
 
@@ -69,6 +78,7 @@ $(o)BeBriefcaseBasedIdSequence$(oext) : $(baseDir)BeBriefcaseBasedIdSequence.cpp
 objs +% $(MultiCompileObjectList)
 
 # Third-party section of this library.
+
 CCompFpOpts=precise
 %include $(sharedmki)PushThirdPartyIgnores.mki
 
@@ -78,24 +88,28 @@ $(o)bentley-sqlite$(oext) : $(SQLiteDir)bentley-sqlite.c ${MultiCompileDepends} 
 
 $(o)bcvutil$(oext) : $(SQLiteDir)bcvutil.c ${MultiCompileDepends} ${bcvheaders}
 
+$(o)bcvlog$(oext): $(SQLiteDir)bcvlog.c ${MultiCompileDepends} ${bcvheaders}
+
 $(o)simplexml$(oext) : $(SQLiteDir)simplexml.c ${MultiCompileDepends} ${bcvheaders}
 
 $(o)bcvmodule$(oext) : $(SQLiteDir)bcvmodule.c ${MultiCompileDepends} ${bcvheaders}
+
+$(o)bcvencrypt$(oext) : $(SQLiteDir)bcvencrypt.c ${MultiCompileDepends} ${bcvheaders}
 
 %include $(sharedmki)PopThirdPartyIgnores.mki
 
 %include MultiCppCompileGo.mki
 
-objs +% $(o)bentley-sqlite$(oext) $(o)bcvutil$(oext) $(o)bcvmodule$(oext) $(o)simplexml$(oext)
+objs +% $(o)bentley-sqlite$(oext) $(o)bcvutil$(oext) $(o)bcvmodule$(oext) $(o)simplexml$(oext) $(o)bcvlog$(oext) $(o)bcvencrypt$(oext)
 
 BeSQLiteRequiredLibs = $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)snappy$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)lzma$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(libprefix)iTwinBentley$(libext)
-BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(libprefix)iTwinJsonCpp$(libext)
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)iTwinCurl$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)iTwinOpenSSL$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(stlibprefix)iTwin_google_re2$(stlibext)
+BeSQLiteRequiredLibs + $(ContextSubPartsLibs)$(libprefix)iTwinIcu4c$(libext)
 
 DLM_OBJECT_FILES    = $(objs)
 DLM_NAME            = $(appName)

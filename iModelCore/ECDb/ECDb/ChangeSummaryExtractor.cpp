@@ -70,7 +70,8 @@ BentleyStatus ChangeSummaryExtractor::Extract(Context& ctx, ECInstanceId summary
         ECInstanceId primaryInstanceId = rowEntry.GetPrimaryInstanceId();
         if (primaryClass == nullptr || !primaryInstanceId.IsValid())
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Could not determine the primary instance for %s", rowEntry.ToString().c_str());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0015,
+                "Could not determine the primary instance for %s", rowEntry.ToString().c_str());
             return ERROR;
             }
 
@@ -105,7 +106,8 @@ BentleyStatus ChangeSummaryExtractor::ExtractInstance(Context& ctx, ECInstanceId
     const bool recordOnlyIfUpdatedProperties = (rowEntry.GetDbOpcode() == DbOpcode::Update);
     if (SUCCESS != RecordInstance(ctx, instance, rowEntry, recordOnlyIfUpdatedProperties))
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to extract change summary. Failed to extract from %s.", rowEntry.ToString().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0016,
+            "Failed to extract change summary. Failed to extract from %s.", rowEntry.ToString().c_str());
         return ERROR;
         }
 
@@ -123,8 +125,15 @@ BentleyStatus ChangeSummaryExtractor::ExtractRelInstance(Context& ctx, ECInstanc
     ClassMap const* classMap = ctx.GetPrimaryFileSchemaManager().GetClassMap(*primaryClass);
     if (classMap == nullptr)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to extract change summary. The changed relationship class '%s' is not in the main ECDb, but in an attached file, which is not supported. [%s]",
-                            primaryClass->GetFullName(), rowEntry.ToString().c_str());
+        ctx.Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0017,
+            "Failed to extract change summary. The changed relationship class '%s' is not in the main ECDb, but in an attached file, which is not supported. [%s]",
+            primaryClass->GetFullName(),
+            rowEntry.ToString().c_str()
+        );
         return ERROR;
         }
 
@@ -522,7 +531,8 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(Context& ctx
         if (!relClassId.IsValid())
             {
             //rel class id wasn't set along with nav id
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to extract change summary. ECClassId of ForeignKey Relationship %s not found.", rowEntry.ToString().c_str());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0018,
+                "Failed to extract change summary. ECClassId of ForeignKey Relationship %s not found.", rowEntry.ToString().c_str());
             return ERROR;
             }
         }
@@ -531,14 +541,40 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(Context& ctx
     if (relClassRaw == nullptr || !relClassRaw->IsRelationshipClass())
         {
         //rel class id wasn't set along with nav id
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to extract change summary for a navigation property. ForeignKey Relationship %s does not refer to relationship class.", rowEntry.ToString().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0019,
+            "Failed to extract change summary for a navigation property. ForeignKey Relationship %s does not refer to relationship class.", rowEntry.ToString().c_str());
         // We decided to treat this as not an error, because ECDb allows to insert this into the DB without validation. We do not want this data error to completely
         // stop change summary generation from working.
-        return SUCCESS;
+
+        if (!endTableRelMap.m_fallbackClassId.IsValid())
+            return SUCCESS;
+
+        //! default to root case
+        relClassRaw = ctx.GetPrimaryECDb().Schemas().GetClass(endTableRelMap.m_relationshipClassId);
+        if (relClassRaw == nullptr)
+            return SUCCESS;
         }
 
     ECRelationshipClassCR relClass = *relClassRaw->GetRelationshipClassCP();
-    RelationshipClassEndTableMap const& relClassMap = ctx.GetPrimaryFileSchemaManager().GetClassMap(relClass)->GetAs<RelationshipClassEndTableMap>();
+    auto classMap = ctx.GetPrimaryFileSchemaManager().GetClassMap(relClass);
+
+    if (classMap->GetType() != ClassMap::Type::RelationshipEndTable) {
+        //rel class id wasn't set along with nav id
+        ctx.Issues().ReportV(IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0679,
+            "Failed to extract change summary for a navigation property. ForeignKey Relationship %s does not refer to a endtable relationship class.", rowEntry.ToString().c_str());
+
+        if (!endTableRelMap.m_fallbackClassId.IsValid())
+            return SUCCESS;
+
+        relClassRaw = ctx.GetPrimaryECDb().Schemas().GetClass(endTableRelMap.m_fallbackClassId);
+        if (relClassRaw == nullptr)
+            return SUCCESS;
+
+        classMap = ctx.GetPrimaryFileSchemaManager().GetClassMap(relClass);
+        if (classMap == nullptr || classMap->GetType() != ClassMap::Type::RelationshipEndTable)
+            return SUCCESS;
+    }
+    RelationshipClassEndTableMap const& relClassMap = classMap->GetAs<RelationshipClassEndTableMap>();
 
     ECInstanceId relInstanceId = rowEntry.GetPrimaryInstanceId();
 
@@ -553,8 +589,15 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(Context& ctx
     if (otherEndClassIdColumn == nullptr)
         {
         BeAssert(false && "Need to adjust code when constraint ecclassid column is nullptr");
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to extract change summary. %sECClassId column not found for ForeignKey Relationship %s.", otherEnd == ECRelationshipEnd_Source ? "Source" : "Target",
-                             rowEntry.ToString().c_str());
+        ctx.Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0020,
+            "Failed to extract change summary. %sECClassId column not found for ForeignKey Relationship %s.",
+            otherEnd == ECRelationshipEnd_Source ? "Source" : "Target",
+            rowEntry.ToString().c_str()
+        );
         return ERROR;
         }
 
@@ -565,7 +608,15 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(Context& ctx
         ECRelationshipConstraintCR endConstraint = (otherEnd == ECRelationshipEnd_Source) ? relClass.GetSource() : relClass.GetTarget();
         if (endConstraint.GetConstraintClasses().size() != 1)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to extract change summary. Could not determine %sECClassId for the ForeignKey Relationship '%s': More than one constraint class on this end.", otherEnd == ECRelationshipEnd_Source ? "Source" : "Target", rowEntry.ToString().c_str());
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0021,
+                "Failed to extract change summary. Could not determine %sECClassId for the ForeignKey Relationship '%s': More than one constraint class on this end.",
+                otherEnd == ECRelationshipEnd_Source ? "Source" : "Target",
+                rowEntry.ToString().c_str()
+            );
             return ERROR;
             }
 
@@ -577,7 +628,15 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(Context& ctx
         DbTable const& otherEndTable = otherEndClassIdColumn->GetTable();
         if (otherEndTable.GetPrimaryKeyConstraint() == nullptr || otherEndTable.GetPrimaryKeyConstraint()->GetColumns().size() != 1)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to extract change summary. Could not determine %sECClassId for the ForeignKey Relationship '%s': Related table has a multi-column primary key which is not supported.", otherEnd == ECRelationshipEnd_Source ? "Source" : "Target", rowEntry.ToString().c_str());
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0022,
+                "Failed to extract change summary. Could not determine %sECClassId for the ForeignKey Relationship '%s': Related table has a multi-column primary key which is not supported.",
+                otherEnd == ECRelationshipEnd_Source ? "Source" : "Target",
+                rowEntry.ToString().c_str()
+            );
             return ERROR;
             }
 
@@ -588,8 +647,16 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(Context& ctx
             if (SUCCESS != DbUtilities::QueryRowClassId(newOtherEndClassId, ctx.GetPrimaryECDb(), otherEndTable.GetName(), otherEndClassIdColumn->GetName(), otherEndPkCol.GetName(),
                                                               newOtherEndInstanceId))
                 {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to extract change summary. Could not determine new value of %sECClassId for the ForeignKey Relationship '%s': Related instance in related table %s not found.", otherEnd == ECRelationshipEnd_Source ? "Source" : "Target", rowEntry.ToString().c_str(),
-                                     otherEndTable.GetName().c_str());
+                ctx.Issues().ReportV(
+                    IssueSeverity::Error,
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECDbIssue,
+                    ECDbIssueId::ECDb_0023,
+                    "Failed to extract change summary. Could not determine new value of %sECClassId for the ForeignKey Relationship '%s': Related instance in related table %s not found.",
+                    otherEnd == ECRelationshipEnd_Source ? "Source" : "Target",
+                    rowEntry.ToString().c_str(),
+                    otherEndTable.GetName().c_str()
+                );
                 return ERROR;
                 }
             }
@@ -599,8 +666,16 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(Context& ctx
             if (SUCCESS != DbUtilities::QueryRowClassId(oldOtherEndClassId, ctx.GetPrimaryECDb(), otherEndTable.GetName(), otherEndClassIdColumn->GetName(), otherEndPkCol.GetName(),
                                                                          oldOtherEndInstanceId))
                 {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to extract change summary. Could not determine old value of %sECClassId for the ForeignKey Relationship '%s': Related instance in related table %s not found.", otherEnd == ECRelationshipEnd_Source ? "Source" : "Target", rowEntry.ToString().c_str(),
-                                     otherEndTable.GetName().c_str());
+                ctx.Issues().ReportV(
+                    IssueSeverity::Error,
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECDbIssue,
+                    ECDbIssueId::ECDb_0024,
+                    "Failed to extract change summary. Could not determine old value of %sECClassId for the ForeignKey Relationship '%s': Related instance in related table %s not found.",
+                    otherEnd == ECRelationshipEnd_Source ? "Source" : "Target",
+                    rowEntry.ToString().c_str(),
+                    otherEndTable.GetName().c_str()
+                );
                 return ERROR;
                 }
             }
@@ -642,7 +717,8 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(Context& ctx
     InstanceChange instance(summaryId, ECInstanceKey(relClassId, relInstanceId), relDbOpcode, RawIndirectToBool(rowEntry.GetIndirect()));
     if (SUCCESS != ChangeSummaryExtractor::RecordRelInstance(ctx, instance, rowEntry, *oldSourceInstanceKey, *newSourceInstanceKey, *oldTargetInstanceKey, *newTargetInstanceKey))
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to extract change summary. Failed to persist extraction from ForeignKey Relationship %s.", rowEntry.ToString().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0025,
+            "Failed to extract change summary. Failed to persist extraction from ForeignKey Relationship %s.", rowEntry.ToString().c_str());
         return ERROR;
         }
 
@@ -673,7 +749,8 @@ BentleyStatus ChangeSummaryExtractor::LinkTableRelChangeExtractor::Extract(Conte
 
     if (SUCCESS != ChangeSummaryExtractor::RecordRelInstance(ctx, instance, rowEntry, oldSourceInstanceKey, newSourceInstanceKey, oldTargetInstanceKey, newTargetInstanceKey))
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to extract change summary. Failed to persist extraction from Link Table %s.", rowEntry.ToString().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0026,
+            "Failed to extract change summary. Failed to persist extraction from Link Table %s.", rowEntry.ToString().c_str());
         return ERROR;
         }
 
@@ -737,8 +814,16 @@ BentleyStatus ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndClas
     ConstraintECClassIdPropertyMap const* classIdPropMap = relationshipClassMap.GetConstraintECClassIdPropMap(relEnd);
     if (classIdPropMap == nullptr)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to extract change summary. Could not determine %s value of %sECClassId for the Link Table '%s': Its PropertyMap could not be found.",
-                             isBeforeChange ? "old" : "new", relEnd == ECRelationshipEnd_Source ? "Source" : "Target", rowEntry.ToString().c_str());
+        ctx.Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0027,
+            "Failed to extract change summary. Could not determine %s value of %sECClassId for the Link Table '%s': Its PropertyMap could not be found.",
+            isBeforeChange ? "old" : "new",
+            relEnd == ECRelationshipEnd_Source ? "Source" : "Target",
+            rowEntry.ToString().c_str()
+        );
         return ERROR;
         }
 
@@ -746,7 +831,16 @@ BentleyStatus ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndClas
     classIdPropMap->AcceptVisitor(columnsDisp);
     if (columnsDisp.GetColumns().size() != 1)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to extract change summary. Could not determine %s value of %sECClassId for the Link Table '%s': Its PropertyMap maps to more than one column.", isBeforeChange ? "old" : "new", relEnd == ECRelationshipEnd_Source ? "Source" : "Target", rowEntry.ToString().c_str());
+        ctx.Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0028,
+            "Failed to extract change summary. Could not determine %s value of %sECClassId for the Link Table '%s': Its PropertyMap maps to more than one column.",
+            isBeforeChange ? "old" : "new",
+            relEnd == ECRelationshipEnd_Source ? "Source" : "Target",
+            rowEntry.ToString().c_str()
+        );
         return ERROR;
         }
 
@@ -776,7 +870,16 @@ BentleyStatus ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndClas
         ECRelationshipConstraintCR endConstraint = (relEnd == ECRelationshipEnd_Source) ? relClass.GetSource() : relClass.GetTarget();
         if (endConstraint.GetConstraintClasses().size() != 1)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to extract change summary. Could not determine %s value of %sECClassId for the Link Table '%s': More than one constraint class on this end.", isBeforeChange ? "old" : "new", relEnd == ECRelationshipEnd_Source ? "Source" : "Target", rowEntry.ToString().c_str());
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0029,
+                "Failed to extract change summary. Could not determine %s value of %sECClassId for the Link Table '%s': More than one constraint class on this end.",
+                isBeforeChange ? "old" : "new",
+                relEnd == ECRelationshipEnd_Source ? "Source" : "Target",
+                rowEntry.ToString().c_str()
+            );
             return ERROR;
             }
 
@@ -788,14 +891,32 @@ BentleyStatus ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndClas
     if (classIdPropMap->GetTables().size() > 1)
         {
         BeAssert(false && "Link table with multiple related tables on one constraint end is not supported, so should not occur anymore");
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to extract change summary. Could not determine %s value of %sECClassId for the Link Table '%s': Constraint maps to more than one table which is not supported.", isBeforeChange ? "old" : "new", relEnd == ECRelationshipEnd_Source ? "Source" : "Target", rowEntry.ToString().c_str());
+        ctx.Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0030,
+            "Failed to extract change summary. Could not determine %s value of %sECClassId for the Link Table '%s': Constraint maps to more than one table which is not supported.",
+            isBeforeChange ? "old" : "new",
+            relEnd == ECRelationshipEnd_Source ? "Source" : "Target",
+            rowEntry.ToString().c_str()
+        );
         return ERROR;
         }
 
     DbTable const& relatedTable = classIdColumn->GetTable();
     if (relatedTable.GetPrimaryKeyConstraint() == nullptr || relatedTable.GetPrimaryKeyConstraint()->GetColumns().size() != 1)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to extract change summary. Could not determine %s value of %sECClassId for the Link Table '%s': Related table has a multi-column primary key which is not supported.", isBeforeChange ? "old" : "new", relEnd == ECRelationshipEnd_Source ? "Source" : "Target", rowEntry.ToString().c_str());
+        ctx.Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0031,
+            "Failed to extract change summary. Could not determine %s value of %sECClassId for the Link Table '%s': Related table has a multi-column primary key which is not supported.",
+            isBeforeChange ? "old" : "new",
+            relEnd == ECRelationshipEnd_Source ? "Source" : "Target",
+            rowEntry.ToString().c_str()
+        );
         return ERROR;
         }
 
@@ -804,7 +925,16 @@ BentleyStatus ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndClas
     CachedECSqlStatementPtr stmt = ctx.GetChangeSummaryStatement("SELECT ChangedInstance.ClassId FROM change.InstanceChange WHERE Summary.Id=? AND ChangedInstance.Id=?");
     if (stmt == nullptr || ECSqlStatus::Success != stmt->BindId(1, summaryId) || ECSqlStatus::Success != stmt->BindId(2, relEndInstanceId))
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to extract change summary. ECSQL to determine %s value of %sECClassId for the Link Table '%s' in the current change summary failed to execute.", isBeforeChange ? "old" : "new", relEnd == ECRelationshipEnd_Source ? "Source" : "Target", rowEntry.ToString().c_str());
+        ctx.Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0032,
+            "Failed to extract change summary. ECSQL to determine %s value of %sECClassId for the Link Table '%s' in the current change summary failed to execute.",
+            isBeforeChange ? "old" : "new",
+            relEnd == ECRelationshipEnd_Source ? "Source" : "Target",
+            rowEntry.ToString().c_str()
+        );
         return ERROR;
         }
 
@@ -818,7 +948,17 @@ BentleyStatus ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndClas
 
     if (SUCCESS != DbUtilities::QueryRowClassId(endClassId, ctx.GetPrimaryECDb(), relatedTable.GetName(), classIdColumn->GetName(), relatedTable.GetPrimaryKeyConstraint()->GetColumns()[0]->GetName(), relEndInstanceId))
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to extract change summary. ECSQL to determine %s value of %sECClassId for the Link Table '%s' in the related table %s failed to execute.", isBeforeChange ? "old" : "new", relEnd == ECRelationshipEnd_Source ? "Source" : "Target", rowEntry.ToString().c_str(), relatedTable.GetName().c_str());
+        ctx.Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0033,
+            "Failed to extract change summary. ECSQL to determine %s value of %sECClassId for the Link Table '%s' in the related table %s failed to execute.",
+            isBeforeChange ? "old" : "new",
+            relEnd == ECRelationshipEnd_Source ? "Source" : "Target",
+            rowEntry.ToString().c_str(),
+            relatedTable.GetName().c_str()
+        );
         return ERROR;
         }
 
@@ -842,7 +982,8 @@ ChangeSummaryExtractor::Context::~Context()
         {
         if (BE_SQLITE_OK != changeCache.SaveChanges())
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to extract ChangeSummaries from change set: Could not commit changes to Change Cache file '%s'.", changeCache.GetDbFileName());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0034,
+                "Failed to extract ChangeSummaries from change set: Could not commit changes to Change Cache file '%s'.", changeCache.GetDbFileName());
             BeAssert(false);
             }
         }
@@ -857,8 +998,8 @@ ChangeSummaryExtractor::Context::~Context()
         {
         if (BE_SQLITE_OK != m_primaryECDb.AttachDb(m_attachedChangeCachePath.c_str(), TABLESPACE_ECChange))
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to extract ChangeSummaries from change set: Could not re-attach Change Cache file '%s' to '%s'.",
-                            m_attachedChangeCachePath.c_str(), m_primaryECDb.GetDbFileName());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0035,
+                "Failed to extract ChangeSummaries from change set: Could not re-attach Change Cache file '%s' to '%s'.", m_attachedChangeCachePath.c_str(), m_primaryECDb.GetDbFileName());
             BeAssert(false);
             }
         }
@@ -871,7 +1012,8 @@ DbResult ChangeSummaryExtractor::Context::Initialize()
     {
     if (!m_primaryECDb.IsDbOpen())
         {
-        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to extract ChangeSummaries from change set: Primary file must be open.");
+        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0036,
+            "Failed to extract ChangeSummaries from change set: Primary file must be open.");
         return BE_SQLITE_ERROR;
         }
 
@@ -880,7 +1022,8 @@ DbResult ChangeSummaryExtractor::Context::Initialize()
         {
         if (!m_userChangeCacheECDb->IsDbOpen() || m_userChangeCacheECDb->IsReadonly())
             {
-            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to extract ChangeSummaries from change set: Change Cache file must be opened read-write.");
+            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0037,
+                "Failed to extract ChangeSummaries from change set: Change Cache file must be opened read-write.");
             return BE_SQLITE_ERROR;
             }
 
@@ -891,7 +1034,8 @@ DbResult ChangeSummaryExtractor::Context::Initialize()
         {
         if (!m_attachedChangeCachePath.empty() && !m_primaryECDb.IsChangeCacheAttached())
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to extract ChangeSummaries from change set: Change Cache file attached to '%s' is no valid Change Cache file.", m_primaryECDb.GetDbFileName());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0038,
+                "Failed to extract ChangeSummaries from change set: Change Cache file attached to '%s' is no valid Change Cache file.", m_primaryECDb.GetDbFileName());
             return BE_SQLITE_ERROR;
             }
 
@@ -906,7 +1050,8 @@ DbResult ChangeSummaryExtractor::Context::Initialize()
         DbResult r = GetPrimaryECDb().DetachChangeCache();
         if (BE_SQLITE_OK != r)
             {
-            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to extract ChangeSummaries from change set: Could not detach Change Cache file from '%s': %s", GetPrimaryECDb().GetDbFileName(), GetPrimaryECDb().GetLastError().c_str());
+            Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0039,
+                "Failed to extract ChangeSummaries from change set: Could not detach Change Cache file from '%s': %s", GetPrimaryECDb().GetDbFileName(), GetPrimaryECDb().GetLastError().c_str());
             return r;
             }
         }

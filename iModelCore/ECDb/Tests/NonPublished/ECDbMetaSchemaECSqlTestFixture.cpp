@@ -1729,7 +1729,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbMetaSchemaECSqlTestFixture, VerifyQueries)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbmetaschematests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbmetaschematests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
     AssertSchemaDefs();
     }
 
@@ -1738,7 +1738,7 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, VerifyQueries)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMetaSchemaECSqlTestFixture, ECClassId)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("metaschematests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("metaschematests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * from meta.ECSchemaDef WHERE ECClassId IS NOT NULL"));
@@ -1764,7 +1764,7 @@ and which is 4th overall in override priority... it can override properties from
 -------------+---------------+---------------+---------------+---------------+---------*/
 TEST_F(ECDbMetaSchemaECSqlTestFixture, PropertyOverrides)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("metaschema_propertyoverrides.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("metaschema_propertyoverrides.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                 <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
                     <ECEntityClass typeName="AB">

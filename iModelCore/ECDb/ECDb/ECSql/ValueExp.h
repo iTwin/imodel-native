@@ -25,7 +25,7 @@ struct ValueExp : ComputedExp
     public:
         virtual ~ValueExp() {}
         bool IsConstant() const { return m_isConstant; }
-        
+
     };
 
 //=======================================================================================
@@ -40,6 +40,7 @@ struct BetweenRangeValueExp final : ValueExp
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
 
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override { return "BetweenRangeValue"; }
 
     public:
@@ -68,6 +69,7 @@ struct BinaryValueExp final : ValueExp
         bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
 
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
 
     public:
@@ -96,6 +98,8 @@ struct SearchedWhenClauseExp final : ValueExp
         bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
 
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
+
         Utf8String _ToString() const override;
 
     public:
@@ -125,6 +129,8 @@ struct IIFExp final : ValueExp
         bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
 
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
+
         Utf8String _ToString() const override;
 
     public:
@@ -150,6 +156,7 @@ struct TypeListExp final : ValueExp
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
         bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
 
     public:
@@ -180,6 +187,7 @@ struct SearchCaseValueExp final : ValueExp
         bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
 
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
 
     public:
@@ -188,7 +196,7 @@ struct SearchCaseValueExp final : ValueExp
             {
              for(auto& it : whenList)
                  m_lastWhenIndex = AddChild(std::move(it));
-            
+
              if (elseExp)
                  m_elseIndex = AddChild(std::move(elseExp));
             }
@@ -199,8 +207,8 @@ struct SearchCaseValueExp final : ValueExp
                 whenList.push_back(GetChild<SearchedWhenClauseExp>(i));
             return whenList;
             }
-        ValueExp const* Else() const 
-            { 
+        ValueExp const* Else() const
+            {
             if (m_elseIndex)
                 return GetChild<ValueExp>(m_elseIndex);
 
@@ -222,6 +230,7 @@ struct CastExp final : ValueExp
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
 
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
 
     public:
@@ -259,13 +268,15 @@ struct LiteralValueExp final : ValueExp
         BentleyStatus ResolveDataType(ECSqlParseContext&);
 
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
+
         Utf8String _ToString() const override;
 
     public:
         static BentleyStatus Create(std::unique_ptr<ValueExp>&, ECSqlParseContext&, Utf8CP value, ECSqlTypeInfo const&);
 
         Utf8StringCR GetRawValue() const { return m_rawValue; }
-        
+
         BentleyStatus TryParse(ECN::ECValue&) const;
 
         static Utf8String EscapeStringLiteral(Utf8StringCR constantStringLiteral);
@@ -280,6 +291,7 @@ struct EnumValueExp final : ValueExp
         ECN::ECEnumeratorCR m_enumerator;
         PropertyPath m_expPath;
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
 
     public:
@@ -292,15 +304,22 @@ struct EnumValueExp final : ValueExp
 //+===============+===============+===============+===============+===============+======
 struct FunctionCallExp final : ValueExp
     {
+        using SubstituteFuncMap = std::map<Utf8String, Utf8String, CompareIUtf8Ascii>;
+
     private:
         Utf8String m_functionName;
         bool m_isGetter = false;
         bool m_isStandardSetFunction = false;
         SqlSetQuantifier m_setQuantifier = SqlSetQuantifier::NotSpecified;
+        // translate function name from ECSql->Sql
+        static SubstituteFuncMap s_substituteECSqlToSqlFuncMap;
+
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
         bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
+
         Utf8String _ToString() const override;
 
         void DetermineReturnType(ECDbCR);
@@ -312,6 +331,8 @@ struct FunctionCallExp final : ValueExp
         virtual ~FunctionCallExp() {}
 
         Utf8StringCR GetFunctionName() const { return m_functionName; }
+        //! May substitute ecsql name to a different sqlite function name.
+        Utf8StringCR GetSqliteFunctionName() const;
         //! If true, function neither has parentheses nor arguments
         bool IsGetter() const { return m_isGetter; }
         SqlSetQuantifier GetSetQuantifier() const { return m_setQuantifier; }
@@ -321,6 +342,7 @@ struct FunctionCallExp final : ValueExp
         static constexpr Utf8CP CURRENT_DATE() { return "CURRENT_DATE"; };
         static constexpr Utf8CP CURRENT_TIMESTAMP() { return "CURRENT_TIMESTAMP"; }
         static constexpr Utf8CP CURRENT_TIME() { return "CURRENT_TIME"; }
+
     };
 
 //=======================================================================================
@@ -336,6 +358,7 @@ struct MemberFunctionCallExp final : ValueExp
 
         void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         BentleyStatus ValidateArgument(ValueExp const& arg, Utf8StringR msg);
 
     public:
@@ -463,6 +486,8 @@ struct LikeRhsValueExp final : ValueExp
         bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
 
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
+
         Utf8String _ToString() const override { return "LikeRhsValue"; }
 
     public:
@@ -491,6 +516,7 @@ struct ParameterExp final : ValueExp
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
 
     public:
@@ -525,6 +551,8 @@ struct UnaryValueExp final : ValueExp
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
         bool _TryDetermineParameterExpType(ECSqlParseContext&, ParameterExp&) const override;
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
+
         Utf8String _ToString() const override;
 
     public:

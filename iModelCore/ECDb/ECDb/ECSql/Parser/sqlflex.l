@@ -76,7 +76,7 @@ using namespace connectivity;
 
 static Utf8String aEmptyString;
 
-static sal_Int32    gatherString(yyscan_t yyscanner, sal_Char delim, sal_Int32 nTyp, bool checkForArrayIndex = false);
+static sal_Int32    gatherString(yyscan_t yyscanner, sal_Char delim, sal_Int32 nTyp);
 static sal_Int32    gatherName(yyscan_t yyscanner, const sal_Char*);
 static sal_Int32    gatherNamePre(yyscan_t yyscanner, const sal_Char* );
 static sal_Int32    parseString(yyscan_t yyscanner);
@@ -133,36 +133,49 @@ BY                  {SQL_NEW_KEYWORD(SQL_TOKEN_BY);  }
 
 CASE                {SQL_NEW_KEYWORD(SQL_TOKEN_CASE);  }
 CAST                {SQL_NEW_KEYWORD(SQL_TOKEN_CAST);  }
-COMMIT              {SQL_NEW_KEYWORD(SQL_TOKEN_COMMIT);  }
+COLLATE             {SQL_NEW_KEYWORD(SQL_TOKEN_COLLATE);  }
 COUNT               {SQL_NEW_KEYWORD(SQL_TOKEN_COUNT);  }
 CROSS               {SQL_NEW_KEYWORD(SQL_TOKEN_CROSS);  }
+CUME_DIST           {SQL_NEW_KEYWORD(SQL_TOKEN_CUME_DIST);  }
+CURRENT             {SQL_NEW_KEYWORD(SQL_TOKEN_CURRENT);  }
 CURRENT_DATE        {SQL_NEW_KEYWORD(SQL_TOKEN_CURRENT_DATE);  }
 CURRENT_TIME        {SQL_NEW_KEYWORD(SQL_TOKEN_CURRENT_TIME);  }
 CURRENT_TIMESTAMP   {SQL_NEW_KEYWORD(SQL_TOKEN_CURRENT_TIMESTAMP);  }
 
 DATE                {SQL_NEW_KEYWORD(SQL_TOKEN_DATE);  }
-DEFAULT             {SQL_NEW_KEYWORD(SQL_TOKEN_DEFAULT);  }
 DELETE              {SQL_NEW_KEYWORD(SQL_TOKEN_DELETE);  }
+DENSE_RANK          {SQL_NEW_KEYWORD(SQL_TOKEN_DENSE_RANK);  }
 DESC                {SQL_NEW_KEYWORD(SQL_TOKEN_DESC);  }
 DISTINCT            {SQL_NEW_KEYWORD(SQL_TOKEN_DISTINCT);  }
 DOUBLE              {SQL_NEW_KEYWORD(SQL_TOKEN_DOUBLE);  }
 
 ECSQLOPTIONS        {SQL_NEW_KEYWORD(SQL_TOKEN_ECSQLOPTIONS);  }
+OPTIONS             {SQL_NEW_KEYWORD(SQL_TOKEN_ECSQLOPTIONS);  }
 ELSE                {SQL_NEW_KEYWORD(SQL_TOKEN_ELSE);  }
 END                 {SQL_NEW_KEYWORD(SQL_TOKEN_END);  }
 ESCAPE              {SQL_NEW_KEYWORD(SQL_TOKEN_ESCAPE);  }
 EVERY               {SQL_NEW_KEYWORD(SQL_TOKEN_EVERY);  }
 EXCEPT              {SQL_NEW_KEYWORD(SQL_TOKEN_EXCEPT);  }
+EXCLUDE             {SQL_NEW_KEYWORD(SQL_TOKEN_EXCLUDE); }
 EXISTS              {SQL_NEW_KEYWORD(SQL_TOKEN_EXISTS);  }
 FALSE               {SQL_NEW_KEYWORD(SQL_TOKEN_FALSE);  }
 FLOAT               {SQL_NEW_KEYWORD(SQL_TOKEN_FLOAT);  }
 
+FIRST               {SQL_NEW_KEYWORD(SQL_TOKEN_FIRST);  }
+LAST                {SQL_NEW_KEYWORD(SQL_TOKEN_LAST);  }
+NULLS               {SQL_NEW_KEYWORD(SQL_TOKEN_NULLS);  }
+
+FILTER              {SQL_NEW_KEYWORD(SQL_TOKEN_FILTER);  }
+FIRST_VALUE         {SQL_NEW_KEYWORD(SQL_TOKEN_FIRST_VALUE);  }
+FOLLOWING           {SQL_NEW_KEYWORD(SQL_TOKEN_FOLLOWING);  }
 FOR                 {SQL_NEW_KEYWORD(SQL_TOKEN_FOR);  }
 FORWARD             {SQL_NEW_KEYWORD(SQL_TOKEN_FORWARD);  }
 FROM                {SQL_NEW_KEYWORD(SQL_TOKEN_FROM);  }
 FULL                {SQL_NEW_KEYWORD(SQL_TOKEN_FULL);  }
 
 GROUP               {SQL_NEW_KEYWORD(SQL_TOKEN_GROUP);  }
+GROUP_CONCAT        {SQL_NEW_KEYWORD(SQL_TOKEN_GROUP_CONCAT);  }
+GROUPS              {SQL_NEW_KEYWORD(SQL_TOKEN_GROUPS);  }
 
 HAVING              {SQL_NEW_KEYWORD(SQL_TOKEN_HAVING);  }
 
@@ -178,6 +191,9 @@ IS                  {SQL_NEW_KEYWORD(SQL_TOKEN_IS);  }
 
 JOIN                {SQL_NEW_KEYWORD(SQL_TOKEN_JOIN);  }
 
+LAG                 {SQL_NEW_KEYWORD(SQL_TOKEN_LAG);  }
+LAST_VALUE          {SQL_NEW_KEYWORD(SQL_TOKEN_LAST_VALUE); }
+LEAD                {SQL_NEW_KEYWORD(SQL_TOKEN_LEAD);  }
 LEFT                {SQL_NEW_KEYWORD(SQL_TOKEN_LEFT);  }
 LIKE                {SQL_NEW_KEYWORD(SQL_TOKEN_LIKE);  }
 LIMIT               {SQL_NEW_KEYWORD(SQL_TOKEN_LIMIT);  }
@@ -192,6 +208,8 @@ NAVIGATION_VALUE    {SQL_NEW_KEYWORD(SQL_TOKEN_NAVIGATION_VALUE);  }
 NO                  {SQL_NEW_KEYWORD(SQL_TOKEN_NO);  }
 NOCASE              {SQL_NEW_KEYWORD(SQL_TOKEN_NOCASE);  }
 NOT                 {SQL_NEW_KEYWORD(SQL_TOKEN_NOT);  }
+NTH_VALUE           {SQL_NEW_KEYWORD(SQL_TOKEN_NTH_VALUE); }
+NTILE               {SQL_NEW_KEYWORD(SQL_TOKEN_NTILE);  }
 NULL                {SQL_NEW_KEYWORD(SQL_TOKEN_NULL);  }
 
 OFFSET              {SQL_NEW_KEYWORD(SQL_TOKEN_OFFSET);  }
@@ -199,14 +217,24 @@ ON                  {SQL_NEW_KEYWORD(SQL_TOKEN_ON);  }
 ONLY                {SQL_NEW_KEYWORD(SQL_TOKEN_ONLY);  }
 OR                  {SQL_NEW_KEYWORD(SQL_TOKEN_OR);  }
 ORDER               {SQL_NEW_KEYWORD(SQL_TOKEN_ORDER);  }
+OTHERS              {SQL_NEW_KEYWORD(SQL_TOKEN_OTHERS);  }
 OUTER               {SQL_NEW_KEYWORD(SQL_TOKEN_OUTER);  }
+OVER                {SQL_NEW_KEYWORD(SQL_TOKEN_OVER);  }
 
+PARTITION           {SQL_NEW_KEYWORD(SQL_TOKEN_PARTITION);  }
+PERCENT_RANK        {SQL_NEW_KEYWORD(SQL_TOKEN_PERCENT_RANK);  }
 PRAGMA              {SQL_NEW_KEYWORD(SQL_TOKEN_PRAGMA);  }
+PRECEDING           {SQL_NEW_KEYWORD(SQL_TOKEN_PRECEDING);  }
 
+RANGE               {SQL_NEW_KEYWORD(SQL_TOKEN_RANGE);  }
+RANK                {SQL_NEW_KEYWORD(SQL_TOKEN_RANK);  }
 REAL                {SQL_NEW_KEYWORD(SQL_TOKEN_REAL);  }
-RECURSIVE           {SQL_NEW_KEYWORD(SQL_TOKEN_RECURSIVE);}
+RECURSIVE           {SQL_NEW_KEYWORD(SQL_TOKEN_RECURSIVE);  }
 RIGHT               {SQL_NEW_KEYWORD(SQL_TOKEN_RIGHT);  }
-ROLLBACK            {SQL_NEW_KEYWORD(SQL_TOKEN_ROLLBACK);  }
+ROW                 {SQL_NEW_KEYWORD(SQL_TOKEN_ROW);  }
+ROWS                {SQL_NEW_KEYWORD(SQL_TOKEN_ROWS);  }
+ROW_NUMBER          {SQL_NEW_KEYWORD(SQL_TOKEN_ROW_NUMBER);  }
+RTRIM               {SQL_NEW_KEYWORD(SQL_TOKEN_RTRIM);  }
 
 SELECT              {SQL_NEW_KEYWORD(SQL_TOKEN_SELECT);  }
 SET                 {SQL_NEW_KEYWORD(SQL_TOKEN_SET);  }
@@ -215,11 +243,13 @@ STRING              {SQL_NEW_KEYWORD(SQL_TOKEN_STRING);  }
 SUM                 {SQL_NEW_KEYWORD(SQL_TOKEN_SUM);  }
 
 THEN                {SQL_NEW_KEYWORD(SQL_TOKEN_THEN);  }
+TIES                {SQL_NEW_KEYWORD(SQL_TOKEN_TIES);  }
 TIME                {SQL_NEW_KEYWORD(SQL_TOKEN_TIME);  }
 TIMESTAMP           {SQL_NEW_KEYWORD(SQL_TOKEN_TIMESTAMP);  }
-
+TOTAL               {SQL_NEW_KEYWORD(SQL_TOKEN_TOTAL);  }
 TRUE                {SQL_NEW_KEYWORD(SQL_TOKEN_TRUE);  }
 
+UNBOUNDED           {SQL_NEW_KEYWORD(SQL_TOKEN_UNBOUNDED);  }
 UNION               {SQL_NEW_KEYWORD(SQL_TOKEN_UNION);  }
 UNIQUE              {SQL_NEW_KEYWORD(SQL_TOKEN_UNIQUE);  }
 UNKNOWN             {SQL_NEW_KEYWORD(SQL_TOKEN_UNKNOWN);  }
@@ -232,7 +262,8 @@ VARCHAR             {SQL_NEW_KEYWORD(SQL_TOKEN_VARCHAR);  }
 
 WHEN                {SQL_NEW_KEYWORD(SQL_TOKEN_WHEN);  }
 WHERE               {SQL_NEW_KEYWORD(SQL_TOKEN_WHERE);  }
-WITH                {SQL_NEW_KEYWORD(SQL_TOKEN_WITH);}
+WITH                {SQL_NEW_KEYWORD(SQL_TOKEN_WITH);  }
+WINDOW              {SQL_NEW_KEYWORD(SQL_TOKEN_WINDOW);  }
 "$"                 {SQL_NEW_KEYWORD(SQL_TOKEN_DOLLAR);}
 
 "<"                 { SQL_NEW_NODE(Utf8String(yytext), SQL_NODE_LESS);return SQL_LESS;}
@@ -285,17 +316,18 @@ WITH                {SQL_NEW_KEYWORD(SQL_TOKEN_WITH);}
 <PREDICATE_GER>","[0-9]*[eE][+-]?[0-9]+        {SQL_NEW_APPROXNUM;  }
 <PREDICATE_GER,PREDICATE_ENG>[0-9.,][A-Za-z0-9_.,%]* {return gatherNamePre(yyscanner, yytext);}
 
-<SQL>\"    { return gatherString(yyscanner, '\"',0); }
-<SQL>`    { return gatherString(yyscanner, '`' ,0); }
-\'        { return parseString(yyscanner); }
+<SQL>\" { return gatherString(yyscanner, '\"',0); }
+<SQL>`  { return gatherString(yyscanner, '`' ,0); }
+\'      { return gatherString(yyscanner, '\'',1); }
 
-<PREDICATE_GER,PREDICATE_ENG,DATE,SQL>"["       { return gatherString(yyscanner,']' , 0, true);}
-<PREDICATE_GER,PREDICATE_ENG,DATE>#             { return gatherString(yyscanner,'#' ,2); }
+<PREDICATE_GER,PREDICATE_ENG,DATE,SQL>"[" { return gatherString(yyscanner, ']' ,0);}
+<PREDICATE_GER,PREDICATE_ENG,DATE>#       { return gatherString(yyscanner, '#' ,2);}
+
 <DATE>[0-9]{1,4}[^ ]*[0-9] |
 <DATE>[0-9]{1,4}[^ ]*[0-9][ ][0-9]{1,4}[^ ]*[0-9]        { SQL_NEW_DATE; }
 <STRING>["-""+""*""/"":""("")"",""."";""?""{""}"]        { return yytext[0]; } /*  */
-<STRING>"["                    { return gatherString(yyscanner,']' ,0, true); }
-<STRING>[^ ':["?"]*            { return gatherNamePre(yyscanner,yytext); }
+<STRING>"["                    { return gatherString(yyscanner, ']', 0); }
+<STRING>[^ ':["?"]*            { return gatherNamePre(yyscanner, yytext); }
 \n              {}
 [ \t\r]+        {}
 "--".*$         {}
@@ -390,19 +422,20 @@ sal_Int32 parseString (yyscan_t yyscanner)
 /*
  * Read SQL string literal
  * Valid strings:
- *    ''    'a string'    'quote '' within string'
- *    ""    "a string"    "quote "" within string"
- * nTyp == 0 -> SQL_NODE_NAME | SQL_NODE_ARRAY_INDEX
+ *  ''  'a string'  'quote '' within string'
+ *  ""  "a string"  "quote "" within string"
+ * nTyp == 0 -> SQL_NODE_NAME
  * nTyp == 1 -> SQL_NODE_STRING
  * nTyp == 2 -> SQL_NODE_ACCESS_DATE
  */
-//------------------------------------------------------------------------------
-sal_Int32 gatherString(yyscan_t yyscanner, sal_Char delim, sal_Int32 nTyp, bool checkForArrayIndex)
+sal_Int32 gatherString(yyscan_t yyscanner, sal_Char delim, sal_Int32 nTyp)
 {
     sal_Char ch;
     Utf8String sBuffer;
     sBuffer.reserve(256);
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
+    assert(nTyp == 0 || nTyp == 1 || nTyp == 2);
+
     while (!checkeof(ch = yyinput(yyscanner)))
     {
         if (ch == delim)
@@ -414,53 +447,15 @@ sal_Int32 gatherString(yyscan_t yyscanner, sal_Char delim, sal_Int32 nTyp, bool 
 
                 switch(nTyp)
                 {
-                    case 0:
-                        {
-                        bool isNumeric = checkForArrayIndex;
-                        if (checkForArrayIndex)
-                            {
-                            for (size_t i = 0; i < sBuffer.size(); i++)
-                                {
-                                if (sBuffer[i] == '-' || sBuffer[i] == '+')
-                                    continue;
-                                isNumeric = (isNumeric & (isdigit (sBuffer[i]) != 0));
-                                }
-                            }
-
-                        bool checkForSign = true;
-                        if(isNumeric)
-                            {
-                            for (size_t i = 0; i < sBuffer.size(); i++)
-                                {
-                                if (sBuffer[i] == '-' || sBuffer[i] == '+')
-                                    {
-                                    if (checkForSign)
-                                        {
-                                        if (sBuffer[i] == '-')
-                                            {
-                                            YY_FATAL_ERROR("Invalid array index. Only positive integer is expected.");
-                                            return SQL_TOKEN_INVALIDSYMBOL;
-                                            }
-                                        checkForSign = false;
-                                        }
-                                    else
-                                        {
-                                        YY_FATAL_ERROR("Invalid array index. Only positive integer is expected.");
-                                        return SQL_TOKEN_INVALIDSYMBOL;
-                                        }
-                                    }
-                                }
-                            }
-
-                        SQL_NEW_NODE(sBuffer, isNumeric ? SQL_NODE_ARRAY_INDEX : SQL_NODE_NAME);
-                        return isNumeric ? SQL_TOKEN_ARRAY_INDEX : SQL_TOKEN_NAME;
-                        }
-                    case 1:
-                        SQL_NEW_NODE(sBuffer, SQL_NODE_STRING);
-                        return SQL_TOKEN_STRING;
-                    case 2:
-                        SQL_NEW_NODE(sBuffer, SQL_NODE_ACCESS_DATE);
-                        return SQL_TOKEN_ACCESS_DATE;
+                case 0:
+                    SQL_NEW_NODE(sBuffer, SQL_NODE_NAME);
+                    return SQL_TOKEN_NAME;
+                case 1:
+                    SQL_NEW_NODE(sBuffer, SQL_NODE_STRING);
+                    return SQL_TOKEN_STRING;
+                case 2:
+                    SQL_NEW_NODE(sBuffer, SQL_NODE_ACCESS_DATE);
+                    return SQL_TOKEN_ACCESS_DATE;
                 }
             }
             else
@@ -469,7 +464,7 @@ sal_Int32 gatherString(yyscan_t yyscanner, sal_Char delim, sal_Int32 nTyp, bool 
             }
 
         }
-        else if (nTyp != 1 && (ch == '\r' || ch == '\n') )
+        else if (nTyp == 2 && (ch == '\r' || ch == '\n') )
             break;
         else
         {
@@ -536,12 +531,12 @@ sal_Int32 gatherName(yyscan_t yyscanner, const sal_Char* text)
         case IParseContext::KEY_MAX:
         case IParseContext::KEY_MIN:
         case IParseContext::KEY_SUM:
-    case IParseContext::KEY_EVERY:
-    case IParseContext::KEY_ANY:
-    case IParseContext::KEY_SOME:
-    case IParseContext::KEY_COLLECT:
-    case IParseContext::KEY_FUSION:
-    case IParseContext::KEY_INTERSECTION:
+        case IParseContext::KEY_EVERY:
+        case IParseContext::KEY_ANY:
+        case IParseContext::KEY_SOME:
+        case IParseContext::KEY_COLLECT:
+        case IParseContext::KEY_FUSION:
+        case IParseContext::KEY_INTERSECTION:
             nToken = mapEnumToToken(eKeyCode);
             SQL_NEW_KEYWORD(nToken);
             break;
@@ -579,12 +574,12 @@ sal_Int32 gatherNamePre(yyscan_t yyscanner, const sal_Char* text)
         case IParseContext::KEY_MAX:
         case IParseContext::KEY_MIN:
         case IParseContext::KEY_SUM:
-    case IParseContext::KEY_EVERY:
-    case IParseContext::KEY_ANY:
-    case IParseContext::KEY_SOME:
-    case IParseContext::KEY_COLLECT:
-    case IParseContext::KEY_FUSION:
-    case IParseContext::KEY_INTERSECTION:
+        case IParseContext::KEY_EVERY:
+        case IParseContext::KEY_ANY:
+        case IParseContext::KEY_SOME:
+        case IParseContext::KEY_COLLECT:
+        case IParseContext::KEY_FUSION:
+        case IParseContext::KEY_INTERSECTION:
             nToken = mapEnumToToken(eKeyCode);
             SQL_NEW_KEYWORD(nToken);
             break;

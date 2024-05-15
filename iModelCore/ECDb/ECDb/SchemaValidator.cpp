@@ -67,9 +67,9 @@ bool SchemaValidator::NoUnitsInEC31SchemaRule::Validate(SchemaImportContext cons
 
     if (schema.GetUnitSystemCount() != 0 || schema.GetPhenomenonCount() != 0 || schema.GetUnitCount() != 0 || schema.GetFormatCount() != 0)
         {
-        issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECSchema '%s' defines units, formats, unit systems, or phenomena which requires its original XML version to be at least 3.2. "
-                              "It is %" PRIu32 ".%" PRIu32 " though.",
-                              schema.GetFullSchemaName().c_str(), schema.GetOriginalECXmlVersionMajor(), schema.GetOriginalECXmlVersionMinor());
+        issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0292,
+            "ECSchema '%s' defines units, formats, unit systems, or phenomena which requires its original XML version to be at least 3.2. It is %" PRIu32 ".%" PRIu32 " though.",
+            schema.GetFullSchemaName().c_str(), schema.GetOriginalECXmlVersionMajor(), schema.GetOriginalECXmlVersionMinor());
         return false;
         }
 
@@ -103,13 +103,13 @@ bool SchemaValidator::ValidBaseClassesRule::Validate(SchemaImportContext const& 
             if (Enum::Contains(ctx.GetOptions(), SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues))
                 {
                 //in legacy mode entity class multi-inheritance must be supported, but  not for other class types
-                LOG.warningv("ECClass '%s' has invalid base classes which can lead to data corruption. Error: Multi-inheritance is not supported. Use mixins instead.",
-                             ecClass.GetFullName());
+                issueReporter.ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0631, 
+                    "Ignoring validation error: ECClass '%s' has multiple base classes but only one is allowed, use mixins instead.  Error suppressed, multiple base classes will be allowed now but this may cause unexpected errors.", ecClass.GetFullName());
                 continue;
                 }
 
-            issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "ECClass '%s' has multiple base classes. Order is important, only the first base class can be an entity, additional ones must use mixins instead.",
-                          ecClass.GetFullName());
+            issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0293,
+                "ECClass '%s' has multiple base classes. Order is important, only the first base class can be an entity, additional ones must use mixins instead.", ecClass.GetFullName());
             return false;
             }
         }
@@ -143,8 +143,9 @@ bool SchemaValidator::ValidRelationshipRule::ValidateConstraint(IssueDataSource 
     //we cannot yet enforce one class per constraint.
     if (constraintClassCount == 0)
         {
-        issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The relationship class '%'s is not abstract and therefore constraints must be defined. The %s constraint is empty though.",
-                             relClass.GetFullName(), constraintEnd == ECRelationshipEnd_Source ? "source" : "target");
+        issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0294,
+            "The relationship class '%'s is not abstract and therefore constraints must be defined. The %s constraint is empty though.",
+            relClass.GetFullName(), constraintEnd == ECRelationshipEnd_Source ? "source" : "target");
         return false;
         }
 
@@ -154,14 +155,16 @@ bool SchemaValidator::ValidRelationshipRule::ValidateConstraint(IssueDataSource 
         {
         if (constraintClass->GetSchema().IsStandardSchema() && constraintClass->GetName().EqualsIAscii("AnyClass"))
             {
-            issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "The relationship class '%s' uses the AnyClass constraint. AnyClass is not supported.", relClass.GetFullName());
+            issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0295,
+                "The relationship class '%s' uses the AnyClass constraint. AnyClass is not supported.", relClass.GetFullName());
             valid = false;
             }
 
         if (duplicateConstraintClasses.find(constraintClass) != duplicateConstraintClasses.end())
             {
-            issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, " The relationship class '%s' defines class '%s' more than once in the %s constraint. This is not supported.",
-                                 relClass.GetFullName(), constraintClass->GetFullName(), constraintEnd == ECRelationshipEnd_Source ? "source" : "target");
+            issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0296,
+                "The relationship class '%s' defines class '%s' more than once in the %s constraint. This is not supported.",
+                relClass.GetFullName(), constraintClass->GetFullName(), constraintEnd == ECRelationshipEnd_Source ? "source" : "target");
             valid = false;
             }
         else
@@ -194,8 +197,9 @@ bool SchemaValidator::ValidPropertyRule::Validate(IssueDataSource const& issueRe
         NavigationECPropertyCP navProp = prop.GetAsNavigationProperty();
         if (navProp->GetRelationshipClass()->HasBaseClasses())
             {
-            issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Invalid navigation property in ECClass '%s': The navigation property '%s' references the relationship class '%s' which has a base class. Navigation properties must always reference the root relationship class though.",
-                                 ecClass.GetFullName(), navProp->GetName().c_str(), navProp->GetRelationshipClass()->GetFullName());
+            issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0297,
+                "Invalid navigation property in ECClass '%s': The navigation property '%s' references the relationship class '%s' which has a base class. Navigation properties must always reference the root relationship class though.",
+                ecClass.GetFullName(), navProp->GetName().c_str(), navProp->GetRelationshipClass()->GetFullName());
             isValid = false;
             }
         }
@@ -236,7 +240,8 @@ bool SchemaValidator::ValidPropertyRule::ValidatePropertyName(IssueDataSource co
 
     if (isCollision)
         {
-        issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Invalid property in ECClass '%s': The property '%s' has a name of an ECSQL system property which is not allowed.", ecClass.GetFullName(), propName.c_str());
+        issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0298,
+            "Invalid property in ECClass '%s': The property '%s' has a name of an ECSQL system property which is not allowed.", ecClass.GetFullName(), propName.c_str());
         return false;
         }
 
@@ -263,8 +268,15 @@ bool SchemaValidator::ValidPropertyRule::ValidatePropertyStructType(IssueDataSou
 
     if (structType->Is(&owningStruct))
         {
-        issueReporter.ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Invalid cyclic struct reference: ECStructClass '%s' contains the property '%s' which is of the same type or a derived type than this ECStructClass.",
-                             owningStruct.GetFullName(), prop.GetName().c_str());
+        issueReporter.ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0299,
+            "Invalid cyclic struct reference: ECStructClass '%s' contains the property '%s' which is of the same type or a derived type than this ECStructClass.",
+            owningStruct.GetFullName(),
+            prop.GetName().c_str()
+        );
         return false;
         }
 

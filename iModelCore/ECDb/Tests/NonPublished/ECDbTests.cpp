@@ -143,7 +143,7 @@ TEST_F(ECDbTestFixture, Settings)
         SchemaImportToken const* GetImportToken() const { return GetECDbSettingsManager().GetSchemaImportToken(); }
         };
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("settings.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("settings.ecdb"));
     BeFileName testFilePath(m_ecdb.GetDbFileName());
     CloseECDb();
 
@@ -250,7 +250,7 @@ TEST_F(ECDbTestFixture, TwoConnections)
     {
     BeFileName testECDbPath;
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("twoConnections.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("twoConnections.ecdb"));
     testECDbPath = BeFileName(m_ecdb.GetDbFileName());
     m_ecdb.CloseDb();
     }
@@ -337,7 +337,7 @@ TEST_F(ECDbTestFixture, TwoConnectionsWithBusyRetryHandler)
     {
     BeFileName testECDbPath;
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("twoConnectionsWithBusyRetryHandler.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("twoConnectionsWithBusyRetryHandler.ecdb"));
     testECDbPath = BeFileName(m_ecdb.GetDbFileName());
     m_ecdb.CloseDb();
     }
@@ -413,7 +413,7 @@ TEST_F(ECDbTestFixture, ResetInstanceIdSequence)
             }
         };
 
-    ASSERT_EQ(SUCCESS, SetupECDb("ResetInstanceIdSequence.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ResetInstanceIdSequence.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                                             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                                                                             <ECEntityClass typeName="A" >
@@ -471,11 +471,11 @@ TEST_F(ECDbTestFixture, ResetInstanceIdSequence)
     std::map<uint32_t, uint64_t> sequenceValuesPerBriefcase {{masterBriefcaseId.GetValue(), 0},
                                         {briefcaseAId.GetValue(), 0}, {briefcaseBId.GetValue(), 0}};
 
-    ASSERT_EQ(BE_SQLITE_OK, PopulateECDb(5));
+    ASSERT_EQ(BentleyStatus::SUCCESS, PopulateECDb(5));
     sequenceValuesPerBriefcase[masterBriefcaseId.GetValue()] = UINT64_C(40);
 
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ResetBriefcaseId(briefcaseAId));
-    ASSERT_EQ(BE_SQLITE_OK, PopulateECDb(5));
+    ASSERT_EQ(BentleyStatus::SUCCESS, PopulateECDb(5));
     sequenceValuesPerBriefcase[briefcaseAId.GetValue()] = UINT64_C(40);
 
     m_ecdb.CloseDb();
@@ -500,7 +500,7 @@ TEST_F(ECDbTestFixture, ResetInstanceIdSequence)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, GetAndAssignBriefcaseIdForDb)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbbriefcaseIdtest.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecdbbriefcaseIdtest.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
 
     BeBriefcaseId id = m_ecdb.GetBriefcaseId();
     ASSERT_TRUE(id.IsValid());
@@ -515,7 +515,7 @@ TEST_F(ECDbTestFixture, GetAndAssignBriefcaseIdForDb)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, GetAndChangeGUIDForDb)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ecdbbriefcaseIdtest.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("getAndChangeGUIDForDb.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.00.ecschema.xml")));
 
     BeGuid guid = m_ecdb.GetDbGuid();
     ASSERT_TRUE(guid.IsValid());
@@ -538,7 +538,7 @@ TEST_F(ECDbTestFixture, GetAndChangeGUIDForDb)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, CurrentECSqlVersion)
     {
-    BeVersion expectedVersion (1, 0, 1, 1);
+    BeVersion expectedVersion (1, 2, 8, 1);
     ASSERT_EQ(ECDb::GetECSqlVersion(), expectedVersion);
     }
 
@@ -561,5 +561,367 @@ TEST_F(ECDbTestFixture, NewFileECDbProfileVersion)
     ASSERT_EQ(m_ecdb.GetECDbProfileVersion(), expectedVersion);
     }
 
+class IssueListener : public ECN::IIssueListener
+    {
+    mutable bvector<Utf8String> m_issues;
+    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override
+        {
+        m_issues.push_back(message);
+        }
+    public:
+    Utf8StringCR GetLastError() const { return m_issues.back();}
+    void ClearMessages() { m_issues.clear(); }
+    };
+
+TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsWithLiterals)
+    {
+    IssueListener listener;
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("newFile.ecdb"));
+    m_ecdb.AddIssueListener(listener);
+
+    // Test DQL statements
+    for (const auto& [lineNumber, sqlStatement, expectedStatus, expectedResult, errorMsg] : bvector<std::tuple<const int, const Utf8String, const ECSqlStatus, const std::vector<Utf8String>, const Utf8String>>
+        {
+        { __LINE__, "SELECT GREATEST()", ECSqlStatus::InvalidECSql, { "0" }, "Preparing the ECSQL 'SELECT GREATEST()' failed. Underlying SQLite statement failed to prepare: BE_SQLITE_ERROR wrong number of arguments to function MAX() (BE_SQLITE_ERROR) [SQL: SELECT MAX()]" },
+        { __LINE__, "SELECT GREATEST(4)", ECSqlStatus::Success, { "4" }, "" },
+        { __LINE__, "SELECT GREATEST(4, 2, 1, 5, 3)", ECSqlStatus::Success, { "5" }, "" },
+
+        { __LINE__, "SELECT LEAST()", ECSqlStatus::InvalidECSql, { "0" }, "Preparing the ECSQL 'SELECT LEAST()' failed. Underlying SQLite statement failed to prepare: BE_SQLITE_ERROR wrong number of arguments to function MIN() (BE_SQLITE_ERROR) [SQL: SELECT MIN()]" },
+        { __LINE__, "SELECT LEAST(4)", ECSqlStatus::Success, { "4" }, "" },
+        { __LINE__, "SELECT LEAST(4, 2, 1, 5, 3)", ECSqlStatus::Success, { "1" }, "" },
+
+        { __LINE__, "SELECT MAX()", ECSqlStatus::InvalidECSql, { "0" }, "Failed to parse ECSQL 'SELECT MAX()': syntax error" },
+        { __LINE__, "SELECT MAX(  )", ECSqlStatus::InvalidECSql, { "0" }, "Failed to parse ECSQL 'SELECT MAX(  )': syntax error" },
+        { __LINE__, "SELECT MAX( \n )", ECSqlStatus::InvalidECSql, { "0" }, "Failed to parse ECSQL 'SELECT MAX( \n )': syntax error" },
+        { __LINE__, "SELECT MAX(4)", ECSqlStatus::Success, { "4" }, "" },
+        { __LINE__, "SELECT MAX(4, 2, 1, 5, 3)", ECSqlStatus::InvalidECSql, { "0" }, "Failed to parse ECSQL 'SELECT MAX(4, 2, 1, 5, 3)': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+
+        { __LINE__, "SELECT MIN()", ECSqlStatus::InvalidECSql, { "0" }, "Failed to parse ECSQL 'SELECT MIN()': syntax error" },
+        { __LINE__, "SELECT MIN(  )", ECSqlStatus::InvalidECSql, { "0" }, "Failed to parse ECSQL 'SELECT MIN(  )': syntax error" },
+        { __LINE__, "SELECT MIN( \n )", ECSqlStatus::InvalidECSql, { "0" }, "Failed to parse ECSQL 'SELECT MIN( \n )': syntax error" },
+        { __LINE__, "SELECT MIN(4)", ECSqlStatus::Success, { "4" }, "" },
+        { __LINE__, "SELECT MIN(4, 2, 1, 5, 3)", ECSqlStatus::InvalidECSql, { "0" }, "Failed to parse ECSQL 'SELECT MIN(4, 2, 1, 5, 3)': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+
+        { __LINE__, "SELECT GREATEST(4, 5, 1), GREATEST(6, 7, 9)", ECSqlStatus::Success, { "5", "9" }, "" },
+        { __LINE__, "SELECT GREATEST(4, 5, 1), LEAST(4, 5, 1)", ECSqlStatus::Success, { "5", "1" }, "" },
+        { __LINE__, "SELECT LEAST(4, 5, 1), GREATEST(4, 5, 1)", ECSqlStatus::Success, { "1", "5" }, "" },
+        { __LINE__, "SELECT LEAST(4, 5, 1), LEAST(6, 7, 9)", ECSqlStatus::Success, { "1", "6" }, "" },
+        { __LINE__, "SELECT MAX(4, 5, 1), MIN(4, 5, 1)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MAX(4, 5, 1), MIN(4, 5, 1)': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT MIN(4, 5, 1), MAX(4, 5, 1)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MIN(4, 5, 1), MAX(4, 5, 1)': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+
+        { __LINE__, "SELECT 'GREATEST(2,3)' AS str", ECSqlStatus::Success, { "GREATEST(2,3)" }, "" },
+        { __LINE__, "SELECT 'LEAST(2,3)' AS str", ECSqlStatus::Success, { "LEAST(2,3)" }, "" },
+        { __LINE__, "SELECT 'MAX(2,3)' AS str", ECSqlStatus::Success, { "MAX(2,3)" }, "" },
+        { __LINE__, "SELECT 'MIN(2,3)' AS str", ECSqlStatus::Success, { "MIN(2,3)" }, "" },
+
+        { __LINE__, "SELECT '  GREATEST( 3, 4)'", ECSqlStatus::Success, { "  GREATEST( 3, 4)" }, "" },
+        { __LINE__, "SELECT '  LEAST( 3, 4)'", ECSqlStatus::Success, { "  LEAST( 3, 4)" }, "" },
+        { __LINE__, "SELECT '  MAX( 3, 4)'", ECSqlStatus::Success, { "  MAX( 3, 4)" }, "" },
+        { __LINE__, "SELECT '  MIN( 3, 4)'", ECSqlStatus::Success, { "  MIN( 3, 4)" }, "" },
+
+        { __LINE__, "-- GREATEST( 3, 4)  comment", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL '-- GREATEST( 3, 4)  comment': syntax error" },
+        { __LINE__, "-- LEAST( 3, 4)  comment", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL '-- LEAST( 3, 4)  comment': syntax error" },
+        { __LINE__, "-- MAX( 3, 4)  comment", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL '-- MAX( 3, 4)  comment': syntax error" },
+        { __LINE__, "-- MIN( 3, 4)  comment", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL '-- MIN( 3, 4)  comment': syntax error" },
+
+        { __LINE__, "SELECT  GREATEST( 3, 4)", ECSqlStatus::Success, { "4" }, "" },
+        { __LINE__, "SELECT  LEAST( 3, 4)", ECSqlStatus::Success, { "3" }, "" },
+        { __LINE__, "SELECT  MAX( 3, 4)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT  MAX( 3, 4)': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT  MIN( 3, 4)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT  MIN( 3, 4)': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+
+        { __LINE__, "SELECT GREATEST('a', 'b', 'c')", ECSqlStatus::Success, { "c" }, "" },
+        { __LINE__, "SELECT LEAST('a', 'b', 'c')", ECSqlStatus::Success, { "a" }, "" },
+        { __LINE__, "SELECT MAX('a', 'b', 'c')", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MAX('a', 'b', 'c')': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT MIN('a', 'b', 'c')", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MIN('a', 'b', 'c')': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+
+        { __LINE__, "SELECT GREATEST(1.5, 1.4, 1.1)", ECSqlStatus::Success, { "1.5" }, "" },
+        { __LINE__, "SELECT LEAST(1.5, 1.4, 1.1)", ECSqlStatus::Success, { "1.1" }, "" },
+        { __LINE__, "SELECT MAX(1.5, 1.4, 1.1)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MAX(1.5, 1.4, 1.1)': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT MIN(1.5, 1.4, 1.1)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MIN(1.5, 1.4, 1.1)': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+
+        { __LINE__, "SELECT GREATEST(GREATEST(3, 4), GREATEST(5, 9))", ECSqlStatus::Success, { "9" }, "" },
+        { __LINE__, "SELECT GREATEST(LEAST(3, 4), GREATEST(5, 9))", ECSqlStatus::Success, { "9" }, "" },
+        { __LINE__, "SELECT GREATEST(GREATEST(3, 4), LEAST(5, 9))", ECSqlStatus::Success, { "5" }, "" },
+        { __LINE__, "SELECT GREATEST(LEAST(3, 4), LEAST(5, 9))", ECSqlStatus::Success, { "5" }, "" },
+        { __LINE__, "SELECT LEAST(LEAST(3, 4), LEAST(5, 9))", ECSqlStatus::Success, { "3" }, "" },
+        { __LINE__, "SELECT LEAST(LEAST(3, 4), GREATEST(5, 9))", ECSqlStatus::Success, { "3" }, "" },
+        { __LINE__, "SELECT LEAST(GREATEST(3, 4), LEAST(5, 9))", ECSqlStatus::Success, { "4" }, "" },
+        { __LINE__, "SELECT LEAST(GREATEST(3, 4), GREATEST(5, 9))", ECSqlStatus::Success, { "4" }, "" },
+
+        { __LINE__, "SELECT MAX(GREATEST(3, 4), LEAST(5, 9))", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MAX(GREATEST(3, 4), LEAST(5, 9))': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT MAX(GREATEST(3, 4))", ECSqlStatus::Success, { "4" }, "" },
+        { __LINE__, "SELECT MIN(GREATEST(3, 4), LEAST(5, 9))", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MIN(GREATEST(3, 4), LEAST(5, 9))': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT MIN(GREATEST(3, 4))", ECSqlStatus::Success, { "4" }, "" },
+
+        { __LINE__, "SELECT LEAST(MAX(3, 4), LEAST(5, 9))", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT LEAST(MAX(3, 4), LEAST(5, 9))': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT LEAST(GREATEST(3, 4), MAX(5, 9))", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT LEAST(GREATEST(3, 4), MAX(5, 9))': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT LEAST(MIN(3, 4), LEAST(5, 9))", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT LEAST(MIN(3, 4), LEAST(5, 9))': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT LEAST(GREATEST(3, 4), MIN(5, 9))", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT LEAST(GREATEST(3, 4), MIN(5, 9))': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+
+        { __LINE__, "SELECT MAX(MAX(3, 4), 9)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MAX(MAX(3, 4), 9)': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT MAX(MIN(3, 4), 9)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MAX(MIN(3, 4), 9)': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT MIN(MAX(3, 4), 9)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MIN(MAX(3, 4), 9)': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT MIN(MIN(3, 4), 9)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MIN(MIN(3, 4), 9)': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+
+        { __LINE__, "SELECT MAX(MAX(3, 4))", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MAX(MAX(3, 4))': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT MAX(MIN(3, 4))", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MAX(MIN(3, 4))': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT MIN(MAX(3, 4))", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MIN(MAX(3, 4))': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, "SELECT MIN(MIN(3, 4))", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MIN(MIN(3, 4))': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+        })
+        {
+        listener.ClearMessages();
+        ECSqlStatement statement;
+        EXPECT_EQ(expectedStatus, statement.Prepare(m_ecdb, sqlStatement.c_str())) << "Test case at line " << lineNumber << " failed.\n";
+        if (expectedStatus == ECSqlStatus::Success)
+            {
+            EXPECT_EQ(BE_SQLITE_ROW, statement.Step()) << "Test case at line " << lineNumber << " failed.\n";
+            for (auto i = 0; i < expectedResult.size(); ++i)
+                EXPECT_EQ(expectedResult[i], statement.GetValueText(i)) << "Test case at line " << lineNumber << " failed.\n";
+            }
+        else
+            {
+            EXPECT_STREQ(listener.GetLastError().c_str(), errorMsg.c_str()) << "Test case at line " << lineNumber << " failed.\n";
+            }
+        statement.Finalize();
+        }
+    }
+
+TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsDQLAndDML)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("newFile.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='TestClass' modifier='None'>"
+        "        <ECProperty propertyName='TestCol1' typeName='int' />"
+        "        <ECProperty propertyName='TestCol2' typeName='int' />"
+        "    </ECEntityClass>"
+        "</ECSchema>")));
+
+    IssueListener listener;
+    m_ecdb.AddIssueListener(listener);
+
+    for (const auto& [lineNumber, isSelect, sqlStatement, expectedStatus, expectedResult, errorMsg]
+    : bvector<std::tuple<const int, const bool, const Utf8String, const ECSqlStatus, const std::vector<std::pair<Utf8String, Utf8String>>, const Utf8String>>
+        {
+        // Inserts with literals
+        { __LINE__, false, "INSERT INTO ts.TestClass(TestCol1, TestCol2) VALUES(GREATEST(5, 2, 1, 4), 0)", ECSqlStatus::Success, { {"5", "0"} }, "" },
+        { __LINE__, false, "INSERT INTO ts.TestClass(TestCol1, TestCol2) VALUES(LEAST(5, 2, 1, 4), 0)", ECSqlStatus::Success, { {"5", "0"}, {"1", "0"} }, "" },
+        { __LINE__, false, "INSERT INTO ts.TestClass(TestCol1, TestCol2) VALUES(GREATEST(5, 2, 1, 4), GREATEST(6, 9, 4))", ECSqlStatus::Success, { {"5", "0"}, {"1", "0"}, {"5", "9"} }, "" },
+        { __LINE__, false, "INSERT INTO ts.TestClass(TestCol1, TestCol2) VALUES(GREATEST(2, 1, 4), LEAST(6, 1, 4))", ECSqlStatus::Success, { {"5", "0"}, {"1", "0"}, {"5", "9"}, {"4", "1"} }, "" },
+        { __LINE__, false, "INSERT INTO ts.TestClass(TestCol1, TestCol2) VALUES(LEAST(2, 1, 4), GREATEST(6, 1, 4))", ECSqlStatus::Success, { {"5", "0"}, {"1", "0"}, {"5", "9"}, {"4", "1"}, {"1", "6"} }, "" },
+        { __LINE__, false, "INSERT INTO ts.TestClass(TestCol1, TestCol2) VALUES(LEAST(8, 7, 9), LEAST(6, 1, 4))", ECSqlStatus::Success, { {"5", "0"}, {"1", "0"}, {"5", "9"}, {"4", "1"}, {"1", "6"}, {"7", "1"} }, "" },
+
+        // Select with column values
+        { __LINE__,  true, "SELECT COUNT(*) FROM ts.TestClass WHERE TestCol2=GREATEST(1, 2, 6)", ECSqlStatus::Success, { {"1", ""} }, "" },
+        { __LINE__,  true, "SELECT COUNT(*) FROM ts.TestClass WHERE TestCol1=least(9, 7, 5)", ECSqlStatus::Success, { {"2", ""} }, "" },
+
+        { __LINE__,  true, "SELECT GREATEST(TestCol1, TestCol2) FROM ts.TestClass", ECSqlStatus::Success, { {"5", ""}, {"1", ""}, {"9", ""}, {"4", ""}, {"6", ""}, {"7", ""} }, "" },
+        { __LINE__,  true, "SELECT GREATEST(GREATEST(TestCol1, TestCol2)) FROM ts.TestClass", ECSqlStatus::Success, { {"9", ""} }, "" },
+        { __LINE__,  true, "SELECT GREATEST(LEAST(TestCol1, TestCol2)) FROM ts.TestClass", ECSqlStatus::Success, { {"5", ""} }, "" },
+        { __LINE__,  true, "SELECT LEAST(TestCol1, TestCol2) FROM ts.TestClass", ECSqlStatus::Success, { {"0", ""}, {"0", ""}, {"5", ""}, {"1", ""}, {"1", ""}, {"1", ""} }, "" },
+        { __LINE__,  true, "SELECT LEAST(GREATEST(TestCol1, TestCol2)) FROM ts.TestClass", ECSqlStatus::Success, { {"1", ""} }, "" },
+        { __LINE__,  true, "SELECT LEAST(LEAST(TestCol1, TestCol2)) FROM ts.TestClass", ECSqlStatus::Success, { {"0", ""} }, "" },
+
+        { __LINE__, true, "SELECT GREATEST(TestCol1, TestCol2) FROM ts.TestClass ORDER BY TestCol1", ECSqlStatus::Success, { {"1", ""}, {"6", ""}, {"4", ""}, {"5", ""}, {"9", ""}, {"7", ""} }, "" },
+        { __LINE__, true, "SELECT GREATEST(TestCol1, TestCol2) FROM ts.TestClass ORDER BY TestCol2 DESC", ECSqlStatus::Success, { {"9", ""}, {"6", ""}, {"4", ""}, {"7", ""}, {"5", ""}, {"1", ""} }, "" },
+        { __LINE__, true, "SELECT GREATEST(TestCol1, (Select LEAST(TestCol1, TestCol2) from ts.TestClass)) from ts.TestClass ORDER BY TestCol1", ECSqlStatus::Success, { {"1", ""}, {"1", ""}, {"4", ""}, {"5", ""}, {"5", ""}, {"7", ""} }, "" },
+        { __LINE__, true, "SELECT GREATEST(TestCol1, (Select LEAST(TestCol1, TestCol2) from ts.TestClass ORDER BY TestCol2)) from ts.TestClass", ECSqlStatus::Success, { {"5", ""}, {"1", ""}, {"5", ""}, {"4", ""}, {"1", ""}, {"7", ""} }, "" },
+        { __LINE__, true, "SELECT * FROM (SELECT GREATEST(TestCol1, (Select LEAST(TestCol1, TestCol2) from ts.TestClass ORDER BY TestCol2)) AS TestCol from ts.TestClass) TEMP WHERE TestCol >= GREATEST(1, 4, 5)", ECSqlStatus::Success, { {"5", ""}, {"5", ""}, {"7", ""} }, "" },
+        { __LINE__, true, "SELECT * FROM (SELECT GREATEST(TestCol1, (Select LEAST(TestCol1, TestCol2) from ts.TestClass ORDER BY TestCol2)) AS TestCol from ts.TestClass) TEMP WHERE TestCol <= LEAST(5, 7, 4)", ECSqlStatus::Success, { {"1", ""}, {"4", ""}, {"1", ""} }, "" },
+        { __LINE__, true, "SELECT * FROM (SELECT LEAST(TestCol1, (Select GREATEST(TestCol1, TestCol2) from ts.TestClass ORDER BY TestCol2)) AS TestCol from ts.TestClass) TEMP WHERE TestCol = GREATEST(1, 5)", ECSqlStatus::Success, { {"5", ""}, {"5", ""}, {"5", ""} }, "" },
+        { __LINE__, true, "SELECT LEAST(4, GREATEST(TestCol1, (Select LEAST(TestCol1, TestCol2) from ts.TestClass ORDER BY TestCol1))) from ts.TestClass", ECSqlStatus::Success, { {"4", ""}, {"1", ""}, {"4", ""}, {"4", ""}, {"1", ""}, {"4", ""} }, "" },
+
+        { __LINE__,  true, "SELECT MAX(GREATEST(TestCol1, TestCol2)) FROM ts.TestClass", ECSqlStatus::Success, {{"9", ""}}, "" },
+        { __LINE__,  true, "SELECT MAX(LEAST(TestCol1, TestCol2)) FROM ts.TestClass", ECSqlStatus::Success, {{"5", ""}}, "" },
+        { __LINE__,  true, "SELECT MIN(GREATEST(TestCol1, TestCol2)) FROM ts.TestClass", ECSqlStatus::Success, {{"1", ""}}, "" },
+        { __LINE__,  true, "SELECT MIN(LEAST(TestCol1, TestCol2)) FROM ts.TestClass", ECSqlStatus::Success, {{"0", ""}}, "" },
+
+        // Select with column values (Negative tests)
+        { __LINE__,  true, "SELECT MAX(TestCol1, TestCol2) FROM ts.TestClass", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MAX(TestCol1, TestCol2) FROM ts.TestClass': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__,  true, "SELECT MAX(MAX(TestCol1, TestCol2)) FROM ts.TestClass", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MAX(MAX(TestCol1, TestCol2)) FROM ts.TestClass': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__,  true, "SELECT MAX(MIN(TestCol1, TestCol2)) FROM ts.TestClass", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MAX(MIN(TestCol1, TestCol2)) FROM ts.TestClass': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+        { __LINE__,  true, "SELECT MIN(TestCol1, TestCol2) FROM ts.TestClass", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MIN(TestCol1, TestCol2) FROM ts.TestClass': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+        { __LINE__,  true, "SELECT MIN(MAX(TestCol1, TestCol2)) FROM ts.TestClass", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MIN(MAX(TestCol1, TestCol2)) FROM ts.TestClass': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__,  true, "SELECT MIN(MIN(TestCol1, TestCol2)) FROM ts.TestClass", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT MIN(MIN(TestCol1, TestCol2)) FROM ts.TestClass': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+
+        { __LINE__, true, "select GREATEST\n( 3,\n4)\n FROM ts.TestClass", ECSqlStatus::Success, {{"4", ""}, {"4", ""}, {"4", ""}, {"4", ""}, {"4", ""}, {"4", ""}}, "" },
+        { __LINE__, true, "select LEAST\n( 3, \n4)\nFROM ts.TestClass", ECSqlStatus::Success, { {"3", "" }, {"3", ""}, {"3", ""}, {"3", ""}, {"3", ""}, {"3", ""}}, "" },
+        { __LINE__, true, "select MAX\n( 3, \n4)\nFROM ts.TestClass", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'select MAX\n( 3, \n4)\nFROM ts.TestClass': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, true, "select MIN\n( 3, \n4)\nFROM ts.TestClass", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'select MIN\n( 3, \n4)\nFROM ts.TestClass': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+
+        // Update using least function with multiple literals
+        { __LINE__, false, "UPDATE ts.TestClass SET TestCol1=greatest(3, 1, 2)", ECSqlStatus::Success, { {"3", "0"}, {"3", "0"}, {"3", "9"}, {"3", "1"}, {"3", "6"}, {"3", "1"} }, "" },
+        { __LINE__, false, "UPDATE ts.TestClass SET TestCol2 = LEAST(12, 45, 20, 15) WHERE TestCol2=0", ECSqlStatus::Success, { {"3", "12"}, {"3", "12"}, {"3", "9"}, {"3", "1"}, {"3", "6"}, {"3", "1"} }, "" },
+
+        // Delete
+        { __LINE__, false, "DELETE FROM ts.TestClass WHERE TestCol2 = least(3, 2, 1)", ECSqlStatus::Success, { {"3", "12"}, {"3", "12"}, {"3", "9"}, {"3", "6"} }, "" },
+        { __LINE__, false, "DELETE FROM ts.TestClass WHERE TestCol1 = greatest(3, 2, 1)", ECSqlStatus::Success, { }, "" },
+
+        // DML (Negative tests)
+        { __LINE__, false, "INSERT INTO ts.TestClass(TestCol1, TestCol2) VALUES(MAX(3, 2, 1))", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'INSERT INTO ts.TestClass(TestCol1, TestCol2) VALUES(MAX(3, 2, 1))': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, false, "UPDATE ts.TestClass SET TestCol1=max(5, 0, 1)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'UPDATE ts.TestClass SET TestCol1=max(5, 0, 1)': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__,  true, "SELECT COUNT(*) FROM ts.TestClass WHERE TestCol1 = MAX(3, 0, 1)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT COUNT(*) FROM ts.TestClass WHERE TestCol1 = MAX(3, 0, 1)': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+        { __LINE__, false, "DELETE FROM ts.TestClass WHERE TestCol1 = max(3, 0, 1)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'DELETE FROM ts.TestClass WHERE TestCol1 = max(3, 0, 1)': Use GREATEST(arg0, arg1 [, ...]) instead of MAX(arg0, arg1 [, ...])" },
+
+        { __LINE__, false, "INSERT INTO ts.TestClass(TestCol1, TestCol2) VALUES(MIN(3, 2, 1))", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'INSERT INTO ts.TestClass(TestCol1, TestCol2) VALUES(MIN(3, 2, 1))': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+        { __LINE__, false, "UPDATE ts.TestClass SET TestCol1=MIN(5, 0, 1)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'UPDATE ts.TestClass SET TestCol1=MIN(5, 0, 1)': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+        { __LINE__,  true, "SELECT COUNT(*) FROM ts.TestClass WHERE TestCol1 = min(3, 0, 1)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'SELECT COUNT(*) FROM ts.TestClass WHERE TestCol1 = min(3, 0, 1)': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+        { __LINE__, false, "DELETE FROM ts.TestClass WHERE TestCol1 = min(3, 0, 1)", ECSqlStatus::InvalidECSql, {}, "Failed to parse ECSQL 'DELETE FROM ts.TestClass WHERE TestCol1 = min(3, 0, 1)': Use LEAST(arg0, arg1 [, ...]) instead of MIN(arg0, arg1 [, ...])" },
+        })
+        {
+        // Reset listener queue for current test case
+        listener.ClearMessages();
+
+        ECSqlStatement testCaseSQL;
+        // Prepare the SQL statement
+        EXPECT_EQ(expectedStatus, testCaseSQL.Prepare(m_ecdb, sqlStatement.c_str(), true)) << "Test case at line " << lineNumber << " failed.\n";
+
+        if (expectedStatus == ECSqlStatus::Success)
+            {
+            if (isSelect)
+                {
+                // Test the select statement test case results
+                auto i = 0U;
+                while (BE_SQLITE_ROW == testCaseSQL.Step())
+                    {
+                    EXPECT_EQ(expectedResult[i].first, testCaseSQL.GetValueText(0)) << "Test case at line " << lineNumber << " failed.\n";
+                    if (!Utf8String::IsNullOrEmpty(expectedResult[i].second.c_str()))
+                        EXPECT_EQ(expectedResult[i].second, testCaseSQL.GetValueText(1)) << "Test case at line " << lineNumber << " failed.\n";
+                    ++i;
+                    }
+                testCaseSQL.Finalize();
+                }
+            else
+                {
+                // Test the insert, update and delete test case results
+                EXPECT_EQ(BE_SQLITE_DONE, testCaseSQL.Step()) << "Test case at line " << lineNumber << " failed.\n";
+                testCaseSQL.Finalize();
+
+                // Query the table to test whether insert/update/delete has been done
+                ECSqlStatement selectStatement;
+                if (selectStatement.Prepare(m_ecdb, "SELECT TestCol1, TestCol2 FROM ts.TestClass") == ECSqlStatus::Success)
+                    {
+                    auto i = 0U;
+                    while (BE_SQLITE_ROW == selectStatement.Step())
+                        {
+                        EXPECT_EQ(expectedResult[i].first, selectStatement.GetValueText(0)) << "Test case at line " << lineNumber << " failed.\n";
+                        if (!Utf8String::IsNullOrEmpty(expectedResult[i].second.c_str()))
+                            EXPECT_EQ(expectedResult[i].second, selectStatement.GetValueText(1)) << "Test case at line " << lineNumber << " failed.\n";
+                        ++i;
+                        }
+                    }
+                selectStatement.Finalize();
+                }
+            }
+        else
+            {
+            // Test if the parsing for MIN/MAX has failed with appropriate error message
+            EXPECT_STREQ(listener.GetLastError().c_str(), errorMsg.c_str()) << "Test case at line " << lineNumber << " failed.\n";
+            }
+        }
+    }
+
+TEST_F(ECDbTestFixture, NullOrEmptyStringUnitLabelsInCompositeFormats)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("UnitLabelsCompositeFormat.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+
+    Utf8CP schemaXml = R"xml(
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+
+            <Unit typeName="TestUnitMajor" displayLabel="TestUnitMajorLabel" definition="u:KM" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitMiddle" displayLabel="TestUnitMiddleLabel" definition="u:M" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitMinor" displayLabel="TestUnitMinorLabel" definition="u:CM" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitSub" displayLabel="TestUnitSubLabel" definition="u:MM" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+
+            <Format typeName="TestFormat" displayLabel="TestFormat" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero" precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" " >
+                <Composite spacer="=" includeZero="False">
+                    <Unit label="romeo">TestUnitMajor</Unit>
+                    <Unit label="oscar">TestUnitMiddle</Unit>
+                    <Unit label="hotel">TestUnitMinor</Unit>
+                    <Unit label="tango">TestUnitSub</Unit>
+                </Composite>
+            </Format>
+
+            <KindOfQuantity typeName="TestKOQ1" description="Test KOQ1" displayLabel="TestKOQ1" persistenceUnit="u:M" presentationUnits="TestFormat[TestUnitMajor][TestUnitMiddle|foxtrot][TestUnitMinor|][TestUnitSub|tango]" relativeError="10e-3" />
+
+            <Format typeName="TestFormatWithSpecialLabels" displayLabel="TestFormatWithSpecialLabels" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero" precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" " >
+                <Composite spacer="=" includeZero="False">
+                    <Unit>TestUnitMajor</Unit>
+                    <Unit label="">TestUnitMiddle</Unit>
+                    <Unit label="&quot;">TestUnitMinor</Unit>
+                    <Unit label="tango">TestUnitSub</Unit>
+                </Composite>
+            </Format>
+
+            <KindOfQuantity typeName="TestKOQ2" description="Test KOQ2" displayLabel="TestKOQ2" persistenceUnit="u:M" presentationUnits="TestFormatWithSpecialLabels[TestUnitMajor|][TestUnitMiddle][TestUnitMinor][TestUnitSub|tango]" relativeError="10e-3" />
+        </ECSchema>)xml";
+
+        const std::vector<std::pair<bool, Utf8CP>> compositeSpecStringLabels = {{true, "romeo"}, {true, "oscar"}, {true, "hotel"}, {true, "tango"}};
+        const std::vector<std::pair<bool, Utf8CP>> compositeSpecDifferentLabels = {{false, "TestUnitMajorLabel"}, {true, ""}, {true, "\""}, {true, "tango"}};
+        const std::vector<std::pair<bool, Utf8CP>> overriddenFormatKOQ1 = {{false, "TestUnitMajorLabel"}, {true, "foxtrot"}, {true, ""}, {true, "tango"}};
+        const std::vector<std::pair<bool, Utf8CP>> overriddenFormatKOQ2 = {{true, ""}, {false, "TestUnitMiddleLabel"}, {false, "TestUnitMinorLabel"}, {true, "tango"}};
+
+        static const auto verifyCompositeFormatLabels = [](NamedFormatCR format, std::vector<std::pair<bool, Utf8CP>> expectedResults, Utf8CP errMsg) -> void
+            {
+            ASSERT_EQ(expectedResults.size(), 4) << "Composite Units cannot be more than 4";
+
+            const auto spec = format.GetCompositeSpec();
+
+            EXPECT_EQ(expectedResults[0].first, spec->HasMajorLabel()) << errMsg;
+            EXPECT_EQ(expectedResults[1].first, spec->HasMiddleLabel()) << errMsg;
+            EXPECT_EQ(expectedResults[2].first, spec->HasMinorLabel()) << errMsg;
+            EXPECT_EQ(expectedResults[3].first, spec->HasSubLabel()) << errMsg;
+
+            EXPECT_STREQ(expectedResults[0].second, spec->GetMajorLabel().c_str()) << errMsg;
+            EXPECT_STREQ(expectedResults[1].second, spec->GetMiddleLabel().c_str()) << errMsg;
+            EXPECT_STREQ(expectedResults[2].second, spec->GetMinorLabel().c_str()) << errMsg;
+            EXPECT_STREQ(expectedResults[3].second, spec->GetSubLabel().c_str()) << errMsg;
+            };
+
+        static const auto verifyFormats = [&](ECSchemaCP schema, Utf8CP errMsg) -> void
+            {
+            ASSERT_TRUE(schema);
+
+            // Test the composite units on the main format
+            verifyCompositeFormatLabels(*schema->GetFormatCP("TestFormat"), compositeSpecStringLabels, Utf8PrintfString("%s for TestFormat.", errMsg).c_str());
+            verifyCompositeFormatLabels(*schema->GetFormatCP("TestFormatWithSpecialLabels"), compositeSpecDifferentLabels, Utf8PrintfString("%s for TestFormatWithSpecialLabels.", errMsg).c_str());
+            
+            // Test the overriden format composite units on both the KoQ
+            const auto koq1 = schema->GetKindOfQuantityCP("TestKOQ1");
+            ASSERT_TRUE(koq1);
+            verifyCompositeFormatLabels(koq1->GetPresentationFormats()[0], overriddenFormatKOQ1, Utf8PrintfString("%s for TestKOQ1.", errMsg).c_str());
+
+            const auto koq2 = schema->GetKindOfQuantityCP("TestKOQ2");
+            ASSERT_TRUE(koq2);
+            verifyCompositeFormatLabels(koq2->GetPresentationFormats()[0], overriddenFormatKOQ2, Utf8PrintfString("%s for TestKOQ2.", errMsg).c_str());
+            };
+
+        // Test case 1: Import schema and check if composite formats are correct
+        {
+        ASSERT_EQ(SUCCESS, GetHelper().ImportSchemas({SchemaItem(schemaXml)}));
+        verifyFormats(m_ecdb.Schemas().GetSchema("TestSchema"), "Failed when testing schema import");
+        }
+
+        // Test case 2: RoundTrip Test
+        {
+        Utf8String serializedSchemaXml;
+        // Deserialize original XML
+        ECSchemaPtr schema;
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+        verifyFormats(schema.get(), "Failed when testing initial schema deserialization");
+
+        //  Serialize it to Xml
+        ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml, ECVersion::Latest));
+        
+        // Deserialize it back and verify the formats in the schema
+        ECSchemaPtr roundtrippedSchema;
+        ECSchemaReadContextPtr newContext = ECSchemaReadContext::CreateContext();
+        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(roundtrippedSchema, serializedSchemaXml.c_str(), *newContext));
+        verifyFormats(roundtrippedSchema.get(), "Failed when testing final schema deserialization");
+        }
+    }
 
 END_ECDBUNITTESTS_NAMESPACE

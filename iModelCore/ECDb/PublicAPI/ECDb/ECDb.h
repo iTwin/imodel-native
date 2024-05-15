@@ -117,19 +117,24 @@ struct ECSqlConfig {
     };
     private:
         DisableSqlFunctions m_disabledFunctions;
-        std::unordered_map<OptimizationOptions, bool> m_optimisationOptionsMap;
+        bool m_experimentalFeaturesEnabled;
+        mutable std::unordered_map<OptimizationOptions, bool> m_optimisationOptionsMap;
 
     public:
-        ECSqlConfig() {
+        ECSqlConfig(): m_experimentalFeaturesEnabled(false) {
             m_optimisationOptionsMap[OptimizationOptions::OptimizeJoinForClassIds] = true;
             m_optimisationOptionsMap[OptimizationOptions::OptimizeJoinForNestedSelectQuery] = true;
         }
         ECSqlConfig(const ECSqlConfig&)=delete;
         ECSqlConfig& operator=(const ECSqlConfig&)=delete;
         DisableSqlFunctions& GetDisableFunctions() {return m_disabledFunctions;}
-        bool GetOptimizationOption(OptimizationOptions option) {return m_optimisationOptionsMap[option];}
+        bool GetOptimizationOption(OptimizationOptions option) const {return m_optimisationOptionsMap[option];}
         void SetOptimizationOption(OptimizationOptions option, bool flag) {m_optimisationOptionsMap[option] = flag;}
+        bool GetExperimentalFeaturesEnabled() const { return m_experimentalFeaturesEnabled; }
+        void SetExperimentalFeaturesEnabled(bool v)  { m_experimentalFeaturesEnabled = v; }
 };
+
+
 //=======================================================================================
 //! ECDb is the %EC API used to access %EC data in an @ref ECDbFile "ECDb file".
 //!
@@ -232,6 +237,7 @@ protected:
     ECDB_EXPORT void ApplyECDbSettings(bool requireECCrudWriteToken, bool requireECSchemaImportToken);
 
     ECDB_EXPORT DbResult _OnDbOpening() override;
+    ECDB_EXPORT DbResult _OnDbOpened(OpenParams const&) override;
     ECDB_EXPORT DbResult _OnDbCreated(CreateParams const&) override;
     ECDB_EXPORT void _OnAfterSetBriefcaseId() override;
     ECDB_EXPORT void _OnDbClose() override;
@@ -297,7 +303,7 @@ public:
     //         e.g. Remove a sql function or change required argument or format of its return value.
     //  Sub1:  Backward compatible change to 'Syntax'. For example adding new syntax/functions but not breaking any existing.
     //  Sub2:  Backward compatible change to 'Runtime'. For example adding a new sql function.
-    static BeVersion GetECSqlVersion() { return BeVersion(1, 0, 1, 1); }
+    static BeVersion GetECSqlVersion() { return BeVersion(1, 2, 8, 1); }
 
     //! Gets the current version of the ECDb profile
     static ProfileVersion CurrentECDbProfileVersion() { return ProfileVersion(4, 0, 0, 5); }
@@ -521,5 +527,18 @@ public:
 
 typedef ECDb& ECDbR;
 typedef ECDb const& ECDbCR;
+
+struct LastErrorListener final : NonCopyableClass {
+    private:
+        ECDbCR m_ecdb;
+        Utf8String m_lastError;
+        cancel_callback_type m_cancel;
+
+    public:
+        ECDB_EXPORT LastErrorListener(ECDbCR ecdb);
+        Utf8StringCR GetLastError() const { return m_lastError; }
+        bool HasError() const { return !m_lastError.empty(); }
+        ECDB_EXPORT ~LastErrorListener();
+};
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

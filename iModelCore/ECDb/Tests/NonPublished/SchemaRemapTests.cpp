@@ -17,26 +17,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 struct SchemaRemapTestFixture : public ECDbTestFixture
     {
-    std::vector<Utf8String> m_updatedDbs;
     protected:
-
-        //---------------------------------------------------------------------------------------
-        // @bsimethod
-        //+---------------+---------------+---------------+---------------+---------------+------
-        void CloseReOpenECDb()
-            {
-            Utf8CP dbFileName = m_ecdb.GetDbFileName();
-            BeFileName dbPath(dbFileName);
-            m_ecdb.CloseDb();
-            ASSERT_FALSE(m_ecdb.IsDbOpen());
-            ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(dbPath, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
-            ASSERT_TRUE(m_ecdb.IsDbOpen());
-            }
-
-        //---------------------------------------------------------------------------------------
-        // @bsimethod
-        //+---------------+---------------+---------------+---------------+---------------+------
-        DbResult OpenBesqliteDb(Utf8CP dbPath) { return m_ecdb.OpenBeSQLiteDb(dbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)); }
         BentleyStatus ImportSchemasFromFolder(BeFileName const& schemaFolder);
         BentleyStatus ImportSchemaFromFile(BeFileName const& fileName);
     };
@@ -66,7 +47,7 @@ TEST_F(SchemaRemapTestFixture, ChangeBaseClassDownInExistingHierarchy)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("modifyBaseClassDownInExistingHierarchy.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("modifyBaseClassDownInExistingHierarchy.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO NewBaseClass.C (PropA,PropC) VALUES ('FIRSTA', 'FIRSTC')");
     }
@@ -122,7 +103,7 @@ TEST_F(SchemaRemapTestFixture, AddTwoClassesInMiddleOfHierarchy)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("addTwoClassesInMiddleOfHierarchy.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("addTwoClassesInMiddleOfHierarchy.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO NewBaseClass.D (PropA,PropD) VALUES ('FIRSTA', 'FIRSTD')");
     }
@@ -186,7 +167,7 @@ TEST_F(SchemaRemapTestFixture, RemoveClassFromMiddleOfHiearchy)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("removeClassFromMiddleOfHiearchy.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("removeClassFromMiddleOfHiearchy.ecdb", schemaItem));
 
     //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
@@ -230,7 +211,7 @@ TEST_F(SchemaRemapTestFixture, MoveClassToDifferentHierarchy)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("moveClassToDifferentHierarchy.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("moveClassToDifferentHierarchy.ecdb", schemaItem));
 
     //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
@@ -326,7 +307,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchyUsingOverflowTable)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("movePropertyUpInHierarchyUsingOverflowTable.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertyUpInHierarchyUsingOverflowTable.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.BAFFLE_SILENCERS (MovingProperty) VALUES ('FIRST')");
 
@@ -445,7 +426,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchySimplified)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("movePropertyUpInHierarchySimple.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertyUpInHierarchySimple.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
 
@@ -517,7 +498,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchyRemoveOriginal)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("movePropertyUpInHierarchyRemoveOriginal.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertyUpInHierarchyRemoveOriginal.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
 
@@ -589,7 +570,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyUpInHierarchyDeleteBeforeAddInSchema)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("movePropertyUpInHierarchyDeleteBeforeAdd.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertyUpInHierarchyDeleteBeforeAdd.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
 
@@ -660,7 +641,7 @@ TEST_F(SchemaRemapTestFixture, RemoveOverwrittenProperty)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("removeOverwrittenProperty.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("removeOverwrittenProperty.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
 
@@ -731,7 +712,7 @@ TEST_F(SchemaRemapTestFixture, MoveMultiplePropertiesUpInHierarchy)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("moveMultiplePropertyUpInHierarchy.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("moveMultiplePropertyUpInHierarchy.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (MovingProperty2) VALUES ('FIRST2')");
@@ -804,7 +785,7 @@ TEST_F(SchemaRemapTestFixture, AddOverwrittenPropertyInOneStep)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("addOverwittenProperty.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("addOverwittenProperty.ecdb", schemaItem));
 
     //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
@@ -863,7 +844,7 @@ TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUp)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("newBaseClassMoveProperty.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("newBaseClassMoveProperty.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
 
@@ -940,7 +921,7 @@ TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUpRemoveOrigin
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("newBaseClassMovePropertyRemoveOrig.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("newBaseClassMovePropertyRemoveOrig.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
 
@@ -1016,7 +997,7 @@ TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUpReversed)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("newBaseClassMovePropertyRev.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("newBaseClassMovePropertyRev.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
 
@@ -1090,7 +1071,7 @@ TEST_F(SchemaRemapTestFixture, AddNewBaseClassInMiddleMovePropertyUpRemoveOrigin
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("newBaseClassMovePropertyRemoveOrigRev.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("newBaseClassMovePropertyRemoveOrigRev.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
 
@@ -1162,7 +1143,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyToNonSharedColumn)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("movePropertyToNonSharedColumn.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertyToNonSharedColumn.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
 
@@ -1236,7 +1217,7 @@ TEST_F(SchemaRemapTestFixture, MoveMultiColumnPropertyUp)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("moveMultiColumnPropertyUpInHierarchySimple.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("moveMultiColumnPropertyUpInHierarchySimple.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty.blue, MovingProperty.green, MovingProperty.red) VALUES (1,2,3)");
 
@@ -1329,7 +1310,7 @@ TEST_F(SchemaRemapTestFixture, MoveMultiColumnPropertiesUp)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("movePropertiesUpInHierarchy.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertiesUpInHierarchy.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (Color.blue, Color.green, Color.red, SimpleProp, Coords.x, Coords.y) VALUES ('A.blue','A.green','A.red', 'A simple', 'A.x', 'A.y')");
     auto result = GetHelper().ExecuteSelectECSql("SELECT Color, SimpleProp, Coords FROM TestSchema.A");
@@ -1434,7 +1415,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyToMixin)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("movePropertyToMixin.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertyToMixin.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
 
@@ -1525,7 +1506,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertiesInNonSharedColumns)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("movePropertiesInNonSharedColumns.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertiesInNonSharedColumns.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (Color.blue, Color.green, Color.red, SimpleProp, Coords.x, Coords.y) VALUES ('A.blue','A.green','A.red', 'A simple', 'A.x', 'A.y')");
     auto result = GetHelper().ExecuteSelectECSql("SELECT Color, SimpleProp, Coords FROM TestSchema.A");
@@ -1631,7 +1612,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertiesInDefaultTables)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("movePropertiesInDefaultTables.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertiesInDefaultTables.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (Color.blue, Color.green, Color.red, SimpleProp, Coords.x, Coords.y) VALUES ('A.blue','A.green','A.red', 'A simple', 'A.x', 'A.y')");
     auto result = GetHelper().ExecuteSelectECSql("SELECT Color, SimpleProp, Coords FROM TestSchema.A");
@@ -1727,7 +1708,7 @@ TEST_F(SchemaRemapTestFixture, ModifyAndMoveStruct)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("modifyAndMoveStruct.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("modifyAndMoveStruct.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty.blue, MovingProperty.green, MovingProperty.red) VALUES (1,2,3)");
 
@@ -1809,7 +1790,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyToMixinAndRemoveOriginal)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("movePropertyToMixinAndRemoveOriginal.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertyToMixinAndRemoveOriginal.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
 
@@ -1914,7 +1895,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyOnRelationshipClass)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("movePropertyOnRelationshipClass.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertyOnRelationshipClass.ecdb", schemaItem));
     {
     ECClassId categoryClassId = m_ecdb.Schemas().GetSchema("TestSchema")->GetClassCP("Category")->GetId();
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Category (Description) VALUES ('Category 1')");
@@ -2174,7 +2155,7 @@ TEST_F(SchemaRemapTestFixture, SpatialCompositionNewBaseScenario)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("spatialCompositionNewBaseScenario.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("spatialCompositionNewBaseScenario.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Building (Identity_PART) VALUES ('TEST1')");
 
@@ -2400,7 +2381,7 @@ TEST_F(SchemaRemapTestFixture, InsertBaseClassHierarchy)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("insertBaseClassHierarchy.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("insertBaseClassHierarchy.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.F (A1,B1,F1) VALUES ('A11','B11','F11')");
 
@@ -2484,7 +2465,7 @@ TEST_F(SchemaRemapTestFixture, InsertBaseClassHierarchyAndMovePropertyUp)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("insertBaseClassHierarchyAndMovePropertyUp.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("insertBaseClassHierarchyAndMovePropertyUp.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.F (A1,B1,F1,F2) VALUES ('A11','B11','F11','F21')");
 
@@ -2566,7 +2547,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyFromMixin)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("movePropertyFromMixin.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertyFromMixin.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty) VALUES ('FIRST')");
 
@@ -2682,7 +2663,7 @@ TEST_F(SchemaRemapTestFixture, InvalidRootPropertyId)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("invalidRootPropertyId.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("invalidRootPropertyId.ecdb", schemaItem));
 
     //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
@@ -2826,7 +2807,7 @@ TEST_F(SchemaRemapTestFixture, MoveMultiplePropertiesUp)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("moveMultiplePropertiesUp.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("moveMultiplePropertiesUp.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.SubElement1 (Sub11,Sub12,Sub13,SubShared) VALUES ('Sub11A', 'Sub12A','Sub13A','SubSharedA')");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.SubElement4 (Sub41,Sub42,Sub43,Sub44,Sub45) VALUES ('Sub41B', 'Sub42B','Sub43B','Sub44B','Sub45B')");
@@ -2942,7 +2923,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyToOverflow)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("movePropertyToOverflow.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertyToOverflow.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (Base1,Base2,Base3,A1,A2) VALUES ('Base1','Base2','Base3','A1','A2')");
 
@@ -3023,7 +3004,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyFromOverflow)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("movePropertyFromOverflow.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertyFromOverflow.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (Base1,Base2,Base3,A1,A2,A3) VALUES ('Base1','Base2','Base3','A1','A2','A3')");
 
@@ -3107,7 +3088,7 @@ TEST_F(SchemaRemapTestFixture, SwapColumnsWithOverflow)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("swapColumnsWithOverflow.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("swapColumnsWithOverflow.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Peanut (A,B,C) VALUES ('PA','PB','PC')");
     auto result = GetHelper().ExecuteSelectECSql("SELECT A,B,C FROM TestSchema.Peanut");
@@ -3202,7 +3183,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyFromOverflowDropOverflowTable)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("movePropertyFromOverflowDropOverflowTable.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertyFromOverflowDropOverflowTable.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (Base1,Base2,Base3,A1,A2) VALUES ('Base1','Base2','Base3','A1','A2')");
 
@@ -3274,7 +3255,7 @@ TEST_F(SchemaRemapTestFixture, SwapColumnsForProperty)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("swapPropertyColumns.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("swapPropertyColumns.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (Base1,Sub1,Sub2) VALUES ('ABase1','ASub1','ASub2')");
     auto result = GetHelper().ExecuteSelectECSql("SELECT Base1,Sub1,Sub2 FROM TestSchema.A");
@@ -3365,7 +3346,7 @@ TEST_F(SchemaRemapTestFixture, MoveMultiplePropertiesInCircle)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("moveMultiplePropertiesInCircle.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("moveMultiplePropertiesInCircle.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Class1 (A,B,C,D) VALUES ('1A','1B','1C','1D')");
     auto result = GetHelper().ExecuteSelectECSql("SELECT A,B,C,D FROM TestSchema.Class1");
@@ -3462,7 +3443,7 @@ TEST_F(SchemaRemapTestFixture, MovePropertyToOverflowUsingDifferentIdColumn)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("movePropertyToOverflowUsingDifferentIdColumn.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("movePropertyToOverflowUsingDifferentIdColumn.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (Base1,Base2,Base3,A1,A2) VALUES ('Base1','Base2','Base3','A1','A2')");
 
@@ -3632,7 +3613,7 @@ TEST_F(SchemaRemapTestFixture, CivilProblemMay21)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("civilProblemMay21.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("civilProblemMay21.ecdb", schemaItem));
 
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Alignment (Name,GeometryClass) VALUES ('First Alignment', 1)");
@@ -3959,7 +3940,7 @@ TEST_F(SchemaRemapTestFixture, IfcProblemJune21)
 </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("IfcProblemJune21.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IfcProblemJune21.ecdb", schemaItem));
 
     //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version="1.0" encoding="UTF-8"?>
@@ -4153,7 +4134,10 @@ TEST_F(SchemaRemapTestFixture, IfcProblemJune21)
 BentleyStatus SchemaRemapTestFixture::ImportSchemaFromFile(BeFileName const& fileName)
     {
     ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext(false, true);
+    
     ctx->AddSchemaLocater(m_ecdb.GetSchemaLocater());
+    BeFileName directory = fileName.GetDirectoryName();
+    ctx->AddSchemaPath(directory);
 
     BeFileName ecdbSchemaSearchPath;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(ecdbSchemaSearchPath);
@@ -4222,10 +4206,10 @@ BentleyStatus SchemaRemapTestFixture::ImportSchemasFromFolder(BeFileName const& 
     {
     //This and the next test are used to diagnose problems with a single or a set of schemas loaded from the local file system.
     //That is useful so the file can be modified and executed many times without the need to rebuild the test.
-    NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
-    NativeLogging::LoggingConfig::SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
-    NativeLogging::LoggingConfig::SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
-    ASSERT_EQ(SUCCESS, SetupECDb("ImportSchemasFromExternalFolders.ecdb"));
+    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ImportSchemasFromExternalFolders.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("CREATE VIRTUAL TABLE dgn_SpatialIndex USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"));
     BeFileName schemasFolder(L"F:\\data\\input1\\");
     ASSERT_EQ(SUCCESS, ImportSchemasFromFolder(schemasFolder));
@@ -4239,16 +4223,15 @@ BentleyStatus SchemaRemapTestFixture::ImportSchemasFromFolder(BeFileName const& 
 //+---------------+---------------+---------------+---------------+---------------+------
 /*TEST_F(SchemaRemapTestFixture, ImportSchemasFromFiles)
     {
-    NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
-    NativeLogging::LoggingConfig::SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
-    NativeLogging::LoggingConfig::SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
-    ASSERT_EQ(SUCCESS, SetupECDb("ImportSchemasFromFiles.ecdb"));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("CREATE VIRTUAL TABLE dgn_SpatialIndex USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"));
-    BeFileName fileName1(L"F:\\defects\\plant_condensed\\ProcessFunctional.01.00.00.ecschema.xml");
-    ASSERT_EQ(SUCCESS, ImportSchemaFromFile(fileName1));
+    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECDb", BentleyApi::NativeLogging::LOG_TRACE);
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_TRACE);
 
-    BeFileName fileName2(L"F:\\defects\\plant_condensed\\ProcessFunctional.01.00.02.ecschema.xml");
-    ASSERT_EQ(SUCCESS, ImportSchemaFromFile(fileName2));
+    CloseECDb();
+    BeFileName fileName("E:\\data\\importschema\\testimodel.bim");
+    OpenECDb(fileName);
+    BeFileName fileName1(L"E:\\data\\importschema\\StructuralAnalysis.ecschema.xml");
+    ASSERT_EQ(SUCCESS, ImportSchemaFromFile(fileName1));
     }*/
 
 //---------------------------------------------------------------------------------------
@@ -4294,7 +4277,7 @@ TEST_F(SchemaRemapTestFixture, MixinToBaseClass)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("MixinToBaseClass.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("MixinToBaseClass.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty, PropA1, PropMixin1, PropMixin2) VALUES ('FIRST', 'A1', 'Mix1', 'Mix2')");
 
@@ -4401,7 +4384,7 @@ TEST_F(SchemaRemapTestFixture, DerivedMixinToBaseClass)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("DerivedMixinToBaseClassIssue.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("DerivedMixinToBaseClassIssue.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty, PropA1, PropMixin1, PropMixin2) VALUES ('FIRST', 'A1', 'Mix1', 'Mix2')");
 
@@ -4513,7 +4496,7 @@ TEST_F(SchemaRemapTestFixture, MixinToBaseClassTwoLevels)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("MixinToBaseClassTwoLevels.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("MixinToBaseClassTwoLevels.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (MovingProperty, PropA1, PropMixin1, PropMixin2) VALUES ('FIRST', 'A1', 'Mix1', 'Mix2')");
 
@@ -4780,7 +4763,7 @@ TEST_F(SchemaRemapTestFixture, BuildingUSMappingProblem)
 </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("BuildingUSMappingProblem.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("BuildingUSMappingProblem.ecdb", schemaItem));
 
     //import edited schema with some changes.
     SchemaItem editedSchemaItem(R"schema(<?xml version='1.0' encoding='utf-8' ?>
@@ -5045,7 +5028,7 @@ TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchy)
 </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("PutSiblingsIntoHierarchy.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PutSiblingsIntoHierarchy.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Building (A) VALUES ('A')");
 
@@ -5139,7 +5122,7 @@ TEST_F(SchemaRemapTestFixture, PutMultipleSiblingsIntoHierarchy)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("PutMultipleSiblingsIntoHierarchy.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PutMultipleSiblingsIntoHierarchy.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Building (A) VALUES ('A')");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.SpecializedFacility (B,C) VALUES ('B','C')");
@@ -5239,7 +5222,7 @@ TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchyWithStruct)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("PutSiblingsIntoHierarchyWithStruct.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PutSiblingsIntoHierarchyWithStruct.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (PropA.blue, PropA.green, PropA.red) VALUES (1,2,3)");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (PropB) VALUES ('B')");
@@ -5336,7 +5319,7 @@ TEST_F(SchemaRemapTestFixture, InsertBaseClassRemapSiblingsWithStruct)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("InsertBaseClassRemapSiblingsWithStruct.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InsertBaseClassRemapSiblingsWithStruct.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (PropA.blue, PropA.green, PropA.red) VALUES (1,2,3)");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (PropB) VALUES ('B')");
@@ -5426,7 +5409,7 @@ TEST_F(SchemaRemapTestFixture, InsertTwoConnectedBaseClassesRemapSiblings)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("InsertTwoConnectedBaseClassesRemapSiblings.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InsertTwoConnectedBaseClassesRemapSiblings.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (PropA.blue, PropA.green, PropA.red) VALUES (1,2,3)");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (PropB) VALUES ('B')");
@@ -5517,7 +5500,7 @@ TEST_F(SchemaRemapTestFixture, InsertBaseClassTwice)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("InsertBaseClassTwice.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InsertBaseClassTwice.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.E (PropA, PropC, PropE) VALUES ('A','C','E')");
 
@@ -5606,7 +5589,7 @@ TEST_F(SchemaRemapTestFixture, PutTwoClassesIntoHierarchy)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("PutTwoClassesIntoHierarchy.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PutTwoClassesIntoHierarchy.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.E (PropA, PropC, PropE) VALUES ('A','C','E')");
 
@@ -5698,7 +5681,7 @@ TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchyWithNestedStruct)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("PutSiblingsIntoHierarchyWithNestedStruct.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PutSiblingsIntoHierarchyWithNestedStruct.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (f.c.a, f.c.b, f.d, g) VALUES ('f.c.a' ,'f.c.b', 'f.d', 'g')");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (h.a, h.b, i) VALUES ('h.a' ,'h.b', 'i')");
@@ -5796,7 +5779,7 @@ TEST_F(SchemaRemapTestFixture, PutSiblingsIntoHierarchyWithPropertyOverrides)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("PutSiblingsIntoHierarchyWithPropertyOverrides.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PutSiblingsIntoHierarchyWithPropertyOverrides.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.A (a, b, c) VALUES ('a', 'b', 'c')");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.B (a, b, c, d) VALUES ('a2', 'b2', 'c2', 'd2')");
@@ -5910,7 +5893,7 @@ TEST_F(SchemaRemapTestFixture, PutBaseClassTurnPropertiesIntoOverrides)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("PutBaseClassTurnPropertiesIntoOverrides.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PutBaseClassTurnPropertiesIntoOverrides.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Leaf (a, b, c, d, e, f, g, h) VALUES ('A','B','C','D','E','F','G','H')");
 
@@ -6008,7 +5991,7 @@ TEST_F(SchemaRemapTestFixture, CreateBaseClassTurnPropertiesIntoOverrides)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("PutBaseClassTurnPropertiesIntoOverrides.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PutBaseClassTurnPropertiesIntoOverrides.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Leaf (a, b, c, d, e, f, g, h) VALUES ('A','B','C','D','E','F','G','H')");
 
@@ -6108,7 +6091,7 @@ TEST_F(SchemaRemapTestFixture, PutSiblingsWithSwappedPropertiesIntoHierarchy)
 </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("PutSiblingsWithSwappedPropertiesIntoHierarchy.ecdb", schemaItem));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PutSiblingsWithSwappedPropertiesIntoHierarchy.ecdb", schemaItem));
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Duck (name, description) VALUES ('Donald','Donald the Duck')");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.Fish (name, description) VALUES ('Nemo','Nemo the Clownfish')");
@@ -6197,7 +6180,7 @@ TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("InjectBaseClassInBaseSchema.ecdb", s1v1));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InjectBaseClassInBaseSchema.ecdb", s1v1));
 
     SchemaItem s2(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="Schema2" alias="s2" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -6290,7 +6273,7 @@ TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema2)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("InjectBaseClassInBaseSchema2.ecdb", s1v1));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InjectBaseClassInBaseSchema2.ecdb", s1v1));
 
     SchemaItem s2(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="Schema2" alias="s2" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -6385,7 +6368,7 @@ TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema3)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("InjectBaseClassInBaseSchema3.ecdb", s1v1));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InjectBaseClassInBaseSchema3.ecdb", s1v1));
 
     SchemaItem s2(R"schema(<?xml version='1.0' encoding='utf-8' ?>
         <ECSchema schemaName="Schema2" alias="s2" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -6483,7 +6466,7 @@ TEST_F(SchemaRemapTestFixture, InjectBaseClassInBaseSchema4)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("InjectBaseClassInBaseSchema4.ecdb", bisCore));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InjectBaseClassInBaseSchema4.ecdb", bisCore));
 
     SchemaItem spCompV1(R"schema(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="SpatialComposition" alias="spcomp" version="01.00.00" description="Provision of a spatial structure of the project by aggregating spatial elements." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -6636,7 +6619,7 @@ TEST_F(SchemaRemapTestFixture, InjectBaseClass4_Simplified)
         </ECSchema>
         )schema");
 
-    ASSERT_EQ(SUCCESS, SetupECDb("InjectBaseClass4_Simplified.ecdb", bisCore));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InjectBaseClass4_Simplified.ecdb", bisCore));
 
     {
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO TestSchema.IfcBuilding (ifcCompositionType) VALUES ('A')");

@@ -42,7 +42,14 @@ Exp::FinalizeParseStatus UpdateStatementExp::_FinalizeParsing(ECSqlParseContext&
 
         if (classNameExp->GetMemberFunctionCallExp() != nullptr)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "May not call function on class in a UPDATE statement: %s", ToECSql().c_str());
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECSQL,
+                ECDbIssueId::ECDb_0577,
+                "May not call function on class in a UPDATE statement: %s",
+                ToECSql().c_str()
+            );
             return FinalizeParseStatus::Error;
             }
 
@@ -85,6 +92,22 @@ OptionsExp const* UpdateStatementExp::GetOptionsClauseExp() const
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void UpdateStatementExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: UpdateStatementExp
+    val.SetEmptyObject();
+    val["id"] = "UpdateStatementExp";
+    GetClassNameExp()->ToJson(val["className"], fmt);
+    GetAssignmentListExp()->ToJson(val["assignment"], fmt);
+    if (GetWhereClauseExp()) {
+        GetWhereClauseExp()->ToJson(val["where"], fmt);
+    }
+    if (GetOptionsClauseExp() != nullptr)
+        GetOptionsClauseExp()->ToJson(val["options"], fmt);
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 void UpdateStatementExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
@@ -110,6 +133,22 @@ AssignmentExp::AssignmentExp(std::unique_ptr<PropertyNameExp> propNameExp, std::
     m_valueExpIndex = AddChild(std::move(valueExp));
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+void AssignmentExp::_ToECSql(ECSqlRenderContext& ctx) const {
+    ctx.AppendToECSql(*GetPropertyNameExp()).AppendToECSql(" = ").AppendToECSql(*GetValueExp());
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+void AssignmentExp::_ToJson(BeJsValue val, JsonFormat const& fmt) const {
+    //! ITWINJS_PARSE_TREE: AssignmentExp
+    val["id"] = "AssignmentExp";
+    GetPropertyNameExp()->ToJson(val["propertyName"], fmt);
+    GetValueExp()->ToJson(val["value"], fmt);
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -127,7 +166,14 @@ Exp::FinalizeParseStatus AssignmentExp::_FinalizeParsing(ECSqlParseContext& ctx,
             ValueExp const* valueExp = GetValueExp();
             if (!valueExp->IsParameterExp() && !GetPropertyNameExp()->GetTypeInfo().CanCompare(valueExp->GetTypeInfo(), &errorMessage))
                 {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Type mismatch in SET clause of UPDATE statement: %s", errorMessage.c_str());
+                ctx.Issues().ReportV(
+                    IssueSeverity::Error,
+                    IssueCategory::BusinessProperties,
+                    IssueType::ECSQL,
+                    ECDbIssueId::ECDb_0578,
+                    "Type mismatch in SET clause of UPDATE statement: %s",
+                    errorMessage.c_str()
+                );
                 return FinalizeParseStatus::Error;
                 }
 

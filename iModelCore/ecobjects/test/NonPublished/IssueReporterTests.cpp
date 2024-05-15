@@ -13,15 +13,15 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct IssueReporterTests : ECTestFixture {};
 
-template <typename IssueReportedCallback = void(*)(IssueSeverity, IssueCategory, IssueType, Utf8CP)>
+template <typename IssueReportedCallback = void(*)(IssueSeverity, IssueCategory, IssueType, IssueId, Utf8CP)>
 struct TestIssueListener : public IIssueListener
     {
     IssueReportedCallback m_onIssueReported;
     TestIssueListener(IssueReportedCallback onIssueReported) : m_onIssueReported(onIssueReported) {}
 private:
-    virtual void _OnIssueReported(IssueSeverity severity, IssueCategory category, IssueType type, Utf8CP message) const override
+    virtual void _OnIssueReported(IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message) const override
         {
-        m_onIssueReported(severity, category, type, message);
+        m_onIssueReported(severity, category, type, id, message);
         }
     };
 
@@ -38,7 +38,7 @@ namespace
 TEST_F(IssueReporterTests, SchemaXmlReaderCantResolveSchemaReference)
     {
     int testListenerReportCount = 0;
-    auto testListener = MakeTestIssueListener([&](IssueSeverity severity, IssueCategory category, IssueType type, Utf8CP message){
+    auto testListener = MakeTestIssueListener([&](IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message){
         ++testListenerReportCount;
     });
 
@@ -71,8 +71,10 @@ TEST_F(IssueReporterTests, SchemaConverterClassMapBadMapStrategyReported)
     {
     int testListenerReportCount = 0;
     Utf8String lastReportMessage = "";
-    auto testListener = MakeTestIssueListener([&](IssueSeverity severity, IssueCategory category, IssueType type, Utf8CP message){
+    IssueId lastIssueId = IssueId("");
+    auto testListener = MakeTestIssueListener([&](IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message){
         lastReportMessage = message;
+        lastIssueId = id;
         ++testListenerReportCount;
     });
 
@@ -100,13 +102,13 @@ TEST_F(IssueReporterTests, SchemaConverterClassMapBadMapStrategyReported)
 
     CustomECSchemaConverterPtr converter = CustomECSchemaConverter::Create();
     IECCustomAttributeConverterPtr classMapConv = new ECDbClassMapConverter();
-    converter->AddSchemaReadContext(*context);
     converter->AddConverter(ECDbClassMapConverter::GetSchemaName(), ECDbClassMapConverter::GetClassName(), classMapConv);
-    ASSERT_TRUE(converter->Convert(*schema.get(), true)) << "schema conversion should succeed (dropping the offending item)";
+    ASSERT_TRUE(converter->Convert(*schema.get(), *context.get(), true)) << "schema conversion should succeed (dropping the offending item)";
 
     EXPECT_EQ(1, testListenerReportCount);
     std::cout << lastReportMessage << std::endl;
     EXPECT_EQ("Failed to convert ECDbMap:ClassMap on TestSchema:C because the MapStrategy is not 'SharedTable with AppliesToSubclasses == true' or 'NotMapped'.  Removing and skipping.", lastReportMessage);
+    EXPECT_EQ(ECIssueId::EC_0010, lastIssueId);
 
     context->Issues().RemoveListener();
     }

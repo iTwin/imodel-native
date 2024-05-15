@@ -8,13 +8,13 @@
 #include <Bentley/bset.h>
 #include <Bentley/BeId.h>
 #include <Bentley/BeEvent.h>
-#include <json/BeJsValue.h>
+#include <BeRapidJson/BeJsValue.h>
 #include <list>
 #include <type_traits>
 #include <functional>
 #include <chrono>
 #include <Bentley/Logging.h>
-
+#include <optional>
 /** @namespace BentleyApi::BeSQLite Classes used to access a SQLite database. */
 
 /****
@@ -107,11 +107,6 @@ Every BeSQLite database has a table named "be_EmbedFile" that holds copies of fi
 These files are stored as blobs, and are not directly accessible by external applications. Instead, BeSQLite provides
 methods to extract them into temporary locations.
 
-@section OVRBeSQLiteLanguageSupport 7. Support for language-specific collation and case-folding
-
-By default, BeSQLite does not support language-specific collation, and performs case-folding only for the ASCII
-character set. However, applications can extend BeSQLite by implementing the #BeSQLiteLib::ILanguageSupport interface.
-
 */
 
 #ifdef __BE_SQLITE_HOST_DLL__
@@ -195,6 +190,10 @@ namespace MemorySize {
 };
 
 typedef struct CloudContainer* CloudContainerP;
+
+struct ProfileVersion;
+typedef ProfileVersion& ProfileVersionR;
+typedef ProfileVersion const& ProfileVersionCR;
 
 //=======================================================================================
 //! A 16-byte Globally Unique Id. A value of all zeros means "Invalid Id".
@@ -343,6 +342,13 @@ struct BeServerIssuedId : BeInt64Id
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
+enum class NoCaseCollation {
+    ASCII,
+    Latin1 //! Latin-1 (ISO-8859-1: Western European) https://www.charset.org/charsets/iso-8859-1
+};
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
 enum DbConstants
 {
     DbUserVersion           = 10,  //!< the "user" version of SQLite databases created by this version of the BeSQLite library
@@ -398,12 +404,14 @@ public:
     explicit ProfileVersion(Utf8CP json) {FromJson(json);}
     bool operator==(BeVersionCR rhs) const { return CompareTo(rhs) == 0; }
     bool operator!=(BeVersionCR rhs) const { return CompareTo(rhs) != 0; }
+    bool operator==(ProfileVersionCR rhs) const { return CompareTo(rhs) == 0; }
+    bool operator!=(ProfileVersionCR rhs) const { return CompareTo(rhs) != 0; }
     bool operator<(BeVersionCR rhs) const { return CompareTo(rhs) < 0; }
     bool operator<=(BeVersionCR rhs) const { return CompareTo(rhs) <= 0; }
     bool operator>(BeVersionCR rhs) const { return CompareTo(rhs) > 0; }
     bool operator>=(BeVersionCR rhs) const { return CompareTo(rhs) >= 0; }
     BE_SQLITE_EXPORT Utf8String ToJson() const;
-    BE_SQLITE_EXPORT void FromJson(Utf8CP);
+    BE_SQLITE_EXPORT BentleyStatus FromJson(Utf8CP);
 };
 //=======================================================================================
 // @bsiclass
@@ -625,44 +633,6 @@ enum class DbValueType : int
 struct BeSQLiteLib
 {
 public:
-    //=======================================================================================
-    //! This is an interface class that allows applications to provide custom language processing for SQL case and collation operations.
-    //! While a single static instance of this class is registered, collations are registered on a per-database basis. They are <i>not</i> expected to vary per database.
-    // @bsiclass
-    //=======================================================================================
-    struct ILanguageSupport
-    {
-        //! Signature of the callback method used to free collator objects provided by _InitCollation. Objects will be freed as each database is closed (since they are created for each database).
-        typedef void(*CollationUserDataFreeFunc)(void*);
-
-        //! Describes a custom collator to register.
-        //! @see _InitCollation.
-        struct CollationEntry
-        {
-            AString m_name;     //!< Name that query strings will use to use this collation.
-            void* m_collator;   //!< User data object provided in the collation callback. @see _Collate. @see CollationUserDataFreeFunc.
-        };
-
-        //! Converts source to lower-case into result according to localeName. result cannot be reallocated, and is typically over-allocated based on source.
-        //! This is called when the SQL scalar function LOWER is processed.
-        virtual void _Lower(Utf16CP source, int sourceLen, Utf16P result, int resultLen) = 0;
-
-        //! Converts source to upper-case into result according to localeName. result cannot be reallocated, and is typically over-allocated based on source.
-        //! This is called when the SQL scalar function UPPER is processed.
-        virtual void _Upper(Utf16CP source, int sourceLen, Utf16P result, int resultLen) = 0;
-
-        //! Registers a collection of collations with the database.
-        //! This is called when every database is opened, and collatorFreeFunc is called when the database is closed for each collator provided.
-        virtual void _InitCollation(bvector<CollationEntry>& collations, CollationUserDataFreeFunc& collatorFreeFunc) = 0;
-
-        //! Compares two strings for sorting purposes. collator is the m_collator object provided in the corresponding CollationEntry.
-        //! This is called when a custom collation is processed in a SQL query (e.g. in an ORDER BY clause).
-        virtual int _Collate(Utf16CP lhs, int lhsLen, Utf16CP rhs, int rhsLen, void* collator) = 0;
-
-        //! Maps the given UTF-32 character to its case folding equivalent (i.e. a normalized form used for comparison). This is primarily used in the LIKE operator.
-        //! If the character has no case folding equivalent, the character itself is returned.
-        virtual uint32_t _FoldCase(uint32_t) = 0;
-    };
 
     enum class LogErrors : bool {Yes=1, No=0};
 
@@ -691,13 +661,6 @@ public:
 
     BE_SQLITE_EXPORT static int CloseSqlDb(void* p);
 
-    //! Sets the static ILanguageSupport object for handling custom language processing.
-    //! This should be called once per session before opening any databases and applies to all future opened databases.
-    BE_SQLITE_EXPORT static void SetLanguageSupport(ILanguageSupport*);
-
-    //! Gets the current ILanguageSupport. Can return nullptr.
-    BE_SQLITE_EXPORT static ILanguageSupport* GetLanguageSupport();
-
     //! Get memory used by SQLite for current process
     BE_SQLITE_EXPORT static DbResult GetMemoryUsed(int64_t& current, int64_t& high, bool reset = false);
 
@@ -718,6 +681,8 @@ public:
     static bool IsConstraintDbResult(DbResult val1) {return GetBaseDbResult(val1) == BE_SQLITE_CONSTRAINT;}
     BE_SQLITE_EXPORT static bool s_throwExceptionOnUnexpectedAutoCommit;
 
+    BE_SQLITE_EXPORT static bool ZlibCompress(bvector<Byte>& compressedBuffer, const bvector<Byte>& sourceBuffer);
+    BE_SQLITE_EXPORT static bool ZlibDecompress(bvector<Byte>& uncompressedBuffer, const bvector<Byte>& compressedBuffer, unsigned long uncompressSize);
 };
 
 //=======================================================================================
@@ -899,6 +864,10 @@ public:
     //! @private internal use only
     //! Bind a DbValue from a BeSQLite function (1-based)
     BE_SQLITE_EXPORT DbResult BindDbValue(int paramNum, struct DbValue const& dbVal);
+
+    //! @private internal use only
+    //! Set value to NULL but also Bind a pointer. This is used by sql function ro virtual tables.
+    BE_SQLITE_EXPORT DbResult BindPointer(int col, void* ptr, const char* name, void (*destroy)(void*));
 
     //! Get the number of columns resulting from Step on this Statement (0-based)
     //! @see sqlite3_column_count
@@ -1155,6 +1124,7 @@ public:
     bool IsNull()  const {return DbValueType::NullVal == GetValueType();} //!< return true if this value is null
     SqlValueP GetSqlValueP() const {return m_val;}  //!< for direct use of sqlite3 api
 
+    BE_SQLITE_EXPORT bool        FromBinding() const;              //!< see sqlite3_value_frombind
     BE_SQLITE_EXPORT DbValueType GetValueType() const;      //!< see sqlite3_value_type
     BE_SQLITE_EXPORT DbValueType GetNumericType() const;    //!< see sqlite3_value_numeric_type
     BE_SQLITE_EXPORT int         GetValueBytes() const;     //!< see sqlite3_value_bytes
@@ -1165,6 +1135,8 @@ public:
     uint64_t GetValueUInt64() const {return (uint64_t) GetValueInt64();}
     BE_SQLITE_EXPORT double      GetValueDouble() const;    //!< see sqlite3_value_double
     BE_SQLITE_EXPORT BeGuid      GetValueGuid() const;      //!< get the value as a GUID
+    BE_SQLITE_EXPORT unsigned int GetSubType() const; //!< see sqlite3_value_subtype
+    BE_SQLITE_EXPORT void*       GetValuePointer(Utf8CP name) const;      //!< get pointer
     template <class T_Id> T_Id   GetValueId() const {return T_Id(GetValueUInt64());}
 
     BE_SQLITE_EXPORT Utf8String Format(int detailLevel) const; //!< for debugging purposes.
@@ -2409,10 +2381,13 @@ protected:
     Savepoint m_defaultTxn;
     BeBriefcaseId m_briefcaseId;
     StatementCache m_statements;
+    NoCaseCollation m_noCaseCollation;
     DbTxns m_txns;
-    std::unique_ptr<ScalarFunction> m_regexFunc, m_regexExtractFunc;
-    explicit DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode);
+    std::unique_ptr<ScalarFunction> m_regexFunc, m_regexExtractFunc, m_base36Func;
+    explicit DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode, std::optional<int> busyTimeout);
     ~DbFile();
+
+    DbResult SetBusyTimeout(int ms);
     DbResult StartSavepoint(Savepoint&, BeSQLiteTxnMode);
     DbResult StopSavepoint(Savepoint&, bool isCommit, Utf8CP operation);
     void DeactivateSavepoint(Savepoint&);
@@ -2428,6 +2403,8 @@ protected:
     void SaveCachedProperties(bool isCommit);
     Utf8String GetLastError(DbResult* lastResult) const;
     void SaveCachedBlvs(bool isCommit);
+    DbResult SetNoCaseCollation(NoCaseCollation col);
+    NoCaseCollation GetNoCaseCollation() const { return m_noCaseCollation; }
     BE_SQLITE_EXPORT DbResult SaveProperty(PropertySpecCR spec, Utf8CP strData, void const* value, uint32_t propsize, uint64_t majorId=0, uint64_t subId=0);
     BE_SQLITE_EXPORT bool HasProperty(PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
     BE_SQLITE_EXPORT DbResult QueryPropertySize(uint32_t& propsize, PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
@@ -2498,6 +2475,9 @@ public:
         DefaultTxn m_startDefaultTxn = DefaultTxn::Yes;
         ProfileUpgradeOptions m_profileUpgradeOptions = ProfileUpgradeOptions::None;
 
+        // if set take precedence over busy handler
+        std::optional<int> m_busyTimeout;
+
         // if true the database should be opened without checking for the BeSQLite properties table.
         bool m_rawSQLite = false;
 
@@ -2510,6 +2490,9 @@ public:
 
         // Skip the check for SQLite file validity before opening. When using the CloudSqlite mode, the local file is not in SQLite normal format.
         bool m_skipFileCheck = false;
+
+        // Provide uri to shared schema channel use by default during schema upgrade or update.
+        Utf8String m_schemaSyncDbUri;
 
         BusyRetry* m_busyRetry = nullptr;
         mutable bvector<Utf8String> m_queryParams;
@@ -2565,8 +2548,7 @@ public:
 
         //! Sets a BusyRetry handler
         //! @param[in] retry A BusyRetry handler for the database connection. The BeSQLite::Db will hold a ref-counted-ptr to the retry object.
-        //!                  The default is to not attempt retries. Note, many BeSQLite applications (e.g. Bim) rely on a single non-shared connection
-        //!                  to the database and do not permit sharing.
+        //! The default is to not attempt retries.
         void SetBusyRetry(BusyRetry* retry) { m_busyRetry = retry; }
 
         //! Open the database as "immutable". This means that SQLite will not hold any locks on the file. Only use this if you're *sure* the
@@ -3298,9 +3280,12 @@ public:
     //! DO NOT call this under normal circumstances. It is for obscure cases where you are opening an untrusted file (i.e. NOT from the hub).
     //! Opens the specified database, performs a sqlite integrity check, and closes it. Returns BE_SQLITE_OK if the check was successful, otherwise BE_SQLITE_CORRUPT or other chained errors if there was a failure.
     BE_SQLITE_EXPORT static DbResult CheckDbIntegrity(BeFileNameCR dbFileName);
-
+    BE_SQLITE_EXPORT DbResult SetBusyTimeout(int ms);
     BE_SQLITE_EXPORT DbBuffer Serialize(const char *zSchema = nullptr) const;
+
     BE_SQLITE_EXPORT static DbResult Deserialize(DbBuffer& buffer, DbR db, DbDeserializeOptions opts = DbDeserializeOptions::FreeOnClose, const char *zSchema = nullptr, std::function<void(DbR)> beforeDefaultTxnStarts = nullptr);
+    BE_SQLITE_EXPORT DbResult SetNoCaseCollation(NoCaseCollation col) { return m_dbFile->SetNoCaseCollation(col); }
+    BE_SQLITE_EXPORT NoCaseCollation GetNoCaseCollation() const { return m_dbFile->GetNoCaseCollation(); }
 };
 
 //=======================================================================================

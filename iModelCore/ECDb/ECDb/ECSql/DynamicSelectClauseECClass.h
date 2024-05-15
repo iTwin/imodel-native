@@ -27,7 +27,7 @@ struct DynamicSelectClauseECClass final
 
         ECSqlStatus Initialize();
 
-        ECSqlStatus AddProperty(ECN::ECPropertyCP& generatedProperty, ECSqlPrepareContext&, Utf8StringCR propName, DerivedPropertyExp const& selectClauseItemExp, PropertyNameExp const* selectClauseItemPropNameExp);
+        ECSqlStatus AddProperty(ECN::ECPropertyCP& generatedProperty, ECSqlPrepareContext&, Utf8StringCR propName, DerivedPropertyExp const& selectClauseItemExp, PropertyNameExp const* selectClauseItemPropNameExp, bool isDynamic);
         BentleyStatus AddSchemaReference(ECN::ECSchemaCR schemaToReference) const;
         ECN::ECEntityClassR GetClass() const { BeAssert(m_class != nullptr); return *m_class; }
         ECN::ECSchemaR GetSchema() const { BeAssert(m_schema != nullptr); return *m_schema; }
@@ -35,7 +35,7 @@ struct DynamicSelectClauseECClass final
 
     public:
         DynamicSelectClauseECClass() {}
-        ECSqlStatus GeneratePropertyIfRequired(ECN::ECPropertyCP& generatedProperty, ECSqlPrepareContext&, DerivedPropertyExp const& selectClauseItemExp, PropertyNameExp const* selectClauseItemPropNameExp);
+        ECSqlStatus GeneratePropertyIfRequired(ECN::ECPropertyCP& generatedProperty, ECSqlPrepareContext&, DerivedPropertyExp const& selectClauseItemExp, PropertyNameExp const* selectClauseItemPropNameExp, bool isDynamic);
         ECSqlStatus CheckForDuplicateName(Utf8StringCR propName, Utf8StringCR columnAlias, bool& isDuplicate, ECSqlPrepareContext& ctx); //Checks if a column of the given name is already selected
         void RegisterSelectClauseItem(Utf8StringCR propName, DerivedPropertyExp const& selectClauseItemExp);
     };

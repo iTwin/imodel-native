@@ -13,11 +13,13 @@
 #endif
 
 #include "sqlite3.h"
+#include "bcvencrypt.h"
 
 typedef sqlite3_int64 i64;
 typedef sqlite3_uint64 u64;
 typedef unsigned char u8;
 typedef unsigned int u32;
+typedef unsigned short u16;
 
 #ifdef __WIN32__
 # include <winsock2.h>
@@ -113,6 +115,9 @@ typedef struct BcvContainer BcvContainer;
 typedef struct BcvWrapper BcvWrapper;
 typedef struct BcvBuffer BcvBuffer;
 typedef struct BcvEncryptionKey BcvEncryptionKey;
+typedef struct BcvIntKey BcvIntKey;
+typedef struct BcvLog BcvLog;
+
 
 
 struct Manifest {
@@ -210,6 +215,9 @@ struct BcvCommon {
   int nHash;                      /* Number of hash buckets */
   int nBlk;                       /* Number of blocks in cache file */
 
+  /* Virtual table log object */
+  BcvLog *pLog;
+
   /* To access blocksdb.bcv */
   sqlite3 *bdb;                   /* Open database handle */
   sqlite3_stmt *pInsertBlock;     /* REPLACE INTO blocks... */
@@ -233,7 +241,7 @@ struct Container {
   const char *zLocalDir;          /* Local directory used by container */
 
   Manifest *pMan;                 /* Current container manifest */
-  int nClient;                    /* Current number of clients */
+  int nClient;                    /* Number of clients (incl. prefetch) */
   Container *pNext;               /* Next container on same VFS */
 
   int nBcv;
@@ -241,7 +249,7 @@ struct Container {
   int eState;                     /* CONTAINER_STATE_* constant */
 
   u8 aKey[BCV_LOCAL_KEYSIZE];     /* Encryption key to use */
-  BcvEncryptionKey *pKey;         /* Compiled encryption key to use */
+  BcvIntKey *pKey;                /* Compiled encryption key to use */
   int iEnc;                       /* Encryption id (or 0 for no encryption) */
 };
 
@@ -307,6 +315,7 @@ void bcvMHashFree(ManifestHash *pHash);
 
 
 void bcvBufferAppendU32(int *pRc, BcvBuffer *p, u32 iVal);
+void bcvBufferAppendU64(int *pRc, BcvBuffer *p, u64 iVal);
 void bcvBufferMsgString(int *pRc, BcvBuffer *p, const char *zStr);
 void bcvBufferMsgBlob(int *pRc, BcvBuffer *p, const u8 *aData, int nData);
 void bcvBufferZero(BcvBuffer *p);
@@ -353,7 +362,7 @@ Manifest *bcvManifestRef(Manifest *p);
 int bcvManifestDup(Manifest *p, Manifest **ppNew);
 void bcvManifestExpand(int*, Manifest**, int);
 
-void bcvBlockidToText(Manifest *p, const u8 *pBlk, char *aBuf);
+void bcvBlockidToText(int nName, const u8 *pBlk, char *aBuf);
 
 int bcvWritefile(sqlite3_file *pFd, const u8 *aData, int nData, i64 iOff);
 int bcvOpenLocal(const char *, int bWal, int bReadonly, sqlite3_file **ppFd);
@@ -387,7 +396,9 @@ void bcvfsBlockidToText(const u8 *pBlk, int nBlk, char *aBuf);
 ManifestDb *bcvManifestDbidToDb(Manifest *p, i64 iDbId);
 void bcvfsLruAdd(BcvCommon *p, CacheEntry *pEntry);
 u8 *bcvDatabaseVtabData(
-    int*, BcvCommon*, const char*, const char*, const char*, u32, int*
+    int*, BcvCommon*, const char*, const char*, const char*, 
+    void(*xClientCount)(BcvCommon*,Container*,int,int*,int*,int*),
+    u32, int*, int*
 );
 int bcvManifestUpdate(BcvCommon*, Container*, Manifest*, char**);
 void bcvExecPrintf(int *pRc, sqlite3 *db, const char *zFmt, ...);
@@ -395,6 +406,8 @@ void bcvfsUnusedAdd(BcvCommon *p, CacheEntry *pEntry);
 void bcvfsLruAddIf(BcvCommon *p, CacheEntry *pEntry);
 int bcvfsNameToBlockid(Manifest *p, const char *zName, u8 *aBlk);
 u8 *bcvEmptyKV(int *pRc, int *pnData);
+
+int bcvfsCreateLocalDb(BcvCommon*, const char*, const char*, sqlite3_file**);
 
 /*
 ** Below here should be eventually moved back to blockcachevfsd. 
@@ -421,6 +434,7 @@ void bcvDispatchFree(BcvDispatch*);
 void bcvDispatchVerbose(BcvDispatch*, int);
 void bcvDispatchTimeout(BcvDispatch*, int);
 void bcvDispatchLog(BcvDispatch*, void*, void (*xLog)(void*,int,const char*));
+void bcvDispatchLogObj(BcvDispatch*, BcvLog*);
 
 int bcvDispatchFetch(
   BcvDispatch *p,
@@ -429,7 +443,7 @@ int bcvDispatchFetch(
   const char *zETag,
   const void *pMd5,
   void *pApp,
-  void (*x)(void*, int rc, char *zETag, const u8 *aData, int nData)
+  void (*x)(void*, int rc, char *zETag, const u8*, int, const u8*, int)
 );
 
 int bcvDispatchPut(
@@ -474,6 +488,7 @@ int bcvDispatchList(
 );
 
 int bcvDispatchLogmsg(BcvDispatch *p, const char *zFmt, ...);
+int bcvDispatchClientId(BcvDispatch *p, const char *z);
 
 int bcvCreateModuleUnsafe(const char*, sqlite3_bcv_module*, void*);
 
@@ -486,8 +501,6 @@ int bcvContainerOpen(
   char **pzErr                    /* OUT: error message (if any) */
 );
 void bcvContainerClose(BcvContainer*);
-
-void bcvDispatchFail(BcvDispatch*, BcvContainer*, int, const char*);
 
 int bcv_socket_is_valid(BCV_SOCKET_TYPE s);
 void bcv_close_socket(BCV_SOCKET_TYPE s);
@@ -521,6 +534,7 @@ typedef struct BcvPrefetchReply BcvPrefetchReply;
 struct BcvHelloMsg {
   const char *zContainer;
   const char *zDatabase;
+  int bPrefetch;
 };
 
 struct BcvHelloReply {
@@ -565,11 +579,13 @@ struct BcvVtabMsg {
   const char *zContainer;
   const char *zDatabase;
   u32 colUsed;
+  int iVersion;                   /* Vtab schema version requested */
 };
 
 struct BcvVtabReply {
   int nData;
   const u8 *aData;
+  int iVersion;                   /* Vtab schema version supplied */
 };
 
 struct BcvDetachMsg {
@@ -615,7 +631,8 @@ struct BcvPrefetchReply {
 /*
 ** Candidate values for BcvCmdMsg.eCmd
 */
-#define BCV_CMD_POLL   2
+#define BCV_CMD_POLL     2
+#define BCV_CMD_CLIENT   3
 
 struct BcvMessage {
   int eType;                      /* BCV_MESSAGE_* value */
@@ -650,7 +667,7 @@ int bcvSendMsg(BCV_SOCKET_TYPE fd, BcvMessage *pMsg);
 #define BCV_MESSAGE_REPLY          0x03      /* d->c   BcvReply */
 #define BCV_MESSAGE_ATTACH         0x04      /* d->c   BcvAttachMsg */
 #define BCV_MESSAGE_VTAB           0x05      /* c->d   BcvVtabMsg */
-#define BCV_MESSAGE_VTAB_REPLY     0x06      /* d->c   BcvVtabMsg */
+#define BCV_MESSAGE_VTAB_REPLY     0x06      /* d->c   BcvVtabReply */
 #define BCV_MESSAGE_DETACH         0x07      /* c->d   BcvDetachMsg */
 #define BCV_MESSAGE_READ           0x08      /* c->d   BcvReadMsg */
 #define BCV_MESSAGE_READ_REPLY     0x09      /* d->c   BcvReadReply */
@@ -661,10 +678,47 @@ int bcvSendMsg(BCV_SOCKET_TYPE fd, BcvMessage *pMsg);
 #define BCV_MESSAGE_PREFETCH       0x0E      /* c->d   BcvPrefetchMsg */
 #define BCV_MESSAGE_PREFETCH_REPLY 0x0F      /* d->c   BcvPrefetchReply */
 
-BcvEncryptionKey *bcvEncryptionKeyNew(const u8 *aKey);
-void bcvEncryptionKeyFree(BcvEncryptionKey*);
-BcvEncryptionKey *bcvEncryptionKeyRef(BcvEncryptionKey*);
+BcvIntKey *bcvIntEncryptionKeyRef(BcvIntKey*);
+BcvIntKey *bcvIntEncryptionKeyNew(const u8 *aKey);
+void bcvIntEncryptionKeyFree(BcvIntKey*);
+int bcvIntDecrypt(BcvIntKey*, sqlite3_int64, u8*, u8*, int);
+int bcvIntEncrypt(BcvIntKey*, sqlite3_int64, u8*, u8*, int);
 
-int bcvDecrypt(BcvEncryptionKey*, sqlite3_int64, u8*, u8*, int);
-int bcvEncrypt(BcvEncryptionKey*, sqlite3_int64, u8*, u8*, int);
+
+const char *bcvRequestHeader(const u8 *aHdrs, int nHdrs, const char *zHdr);
+
+/* Allocate a new log object.  */
+BcvLog *bcvLogNew();
+
+/* Free a log object.  */
+void bcvLogDelete(BcvLog*);
+
+/*
+** The different reasons cloudsqlite might make an http request.
+*/
+#define BCV_REQUEST_BLOCK_DEMAND       /* GET a block on demand */
+#define BCV_REQUEST_BLOCK_PREFETCH     /* GET a block as part of a prefetch */
+#define BCV_REQUEST_MANIFEST           /* GET a manifest */
+#define BCV_REQUEST_BCV_KV             /* GET a bcv.kv database file */
+
+int bcvLogRequest(
+  BcvLog *pLog, 
+  const char *zClientId,          /* Id of client that made this request */
+  const char *zMsg,               /* Log message accompanying request */
+  int eMethod,                    /* SQLITE_BCV_METHOD_* constant */
+  int nRetry,                     /* 0 for first attempt, 1 for second... */
+  const char *zUri,               /* Logging URI of request */
+  i64 *piLogId                    /* OUT: Logging id */
+);
+
+int bcvLogReply(
+  BcvLog *pLog,
+  i64 iLogId,
+  int httpcode,
+  i64 *piMs
+);
+
+int bcvLogGetData(BcvLog *pLog, BcvBuffer *pBuf);
+void bcvTimeToString(i64 iTime, char *zBuf);
+void bcvLogConfig(BcvLog *pLog, int op, i64 iVal);
 

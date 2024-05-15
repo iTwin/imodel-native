@@ -151,7 +151,7 @@ BeFileStatus BeFile::SetLastError() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileStatus BeFile::SetPointer(uint64_t pos, BeFileSeekOrigin origin)
+BeFileStatus BeFile::SetPointer(int64_t pos, BeFileSeekOrigin origin)
     {
 #if defined (BENTLEYCONFIG_OS_WINDOWS)
 
@@ -162,10 +162,10 @@ BeFileStatus BeFile::SetPointer(uint64_t pos, BeFileSeekOrigin origin)
 
 #elif defined (BENTLEYCONFIG_OS_UNIX)
 
-    if (pos != (uint32_t)pos)
+    if (pos != (off_t)pos)
         return m_lastError = BeFileStatus::UnknownError;
 
-    if (lseek(AS_FDES(m_handle), (uint32_t)pos, (int)origin) != -1)
+    if (lseek(AS_FDES(m_handle), (off_t)pos, (int)origin) != -1)
         return BeFileStatus::Success;
 
     lseek(AS_FDES(m_handle), 0, SEEK_END); // make sure the next read fails
@@ -338,6 +338,60 @@ BeFileStatus BeFile::Write(uint32_t* bytesWritten, void const* buf, uint32_t num
         return BeFileStatus::Success;
 
     return SetLastError();
+
+#else
+#error unknown runtime
+#endif
+    }
+
+BeFileStatus BeFile::WriteAll(void const* buf, size_t numBytes)
+    {
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
+  
+    size_t bytesWritten = 0;  
+    ULONG chunkSizeMax = ULONG_MAX; 
+
+    while(bytesWritten < numBytes) {
+
+      ULONG chunkBytesToWrite = (numBytes - bytesWritten) > chunkSizeMax ? chunkSizeMax : static_cast<ULONG>(numBytes - bytesWritten);      
+      ULONG chunkBytesWritten = 0;
+
+      if (!WriteFile(m_handle, static_cast<const char *>(buf) + bytesWritten, chunkBytesToWrite, &chunkBytesWritten, NULL)) {
+        return SetLastError();
+      }
+
+      if(chunkBytesWritten != chunkBytesToWrite) {
+        return SetLastError();
+      }
+
+      bytesWritten += chunkBytesWritten;
+    }
+
+    return BeFileStatus::Success;
+
+#elif defined (BENTLEYCONFIG_OS_UNIX)
+
+    // https://man7.org/linux/man-pages/man2/write.2.html#NOTES
+    // "On Linux, write() (and similar system calls) will transfer at most 0x7ffff000 (2,147,479,552) bytes,
+    // returning the number of bytes actually transferred.  (This is true on both 32-bit and 64-bit systems.)"
+    // On MacOS we observe that attempting to write more than this maximum produced "incorrect parameters" error.
+    // So write in chunks no larger than this limit.
+    size_t chunkSizeMax = 0x7ffff000;
+    size_t bytesWritten = 0;
+
+    while(bytesWritten < numBytes) {
+
+      size_t chunkBytesToWrite = (numBytes - bytesWritten) > chunkSizeMax ? chunkSizeMax : numBytes - bytesWritten;      
+      size_t chunkBytesWritten = write(AS_FDES(m_handle), static_cast<const char *>(buf) + bytesWritten, chunkBytesToWrite);
+
+      if(chunkBytesWritten == -1 || chunkBytesWritten != chunkBytesToWrite) {
+        return SetLastError();
+      }
+
+      bytesWritten += chunkBytesWritten;
+    }
+
+    return BeFileStatus::Success;
 
 #else
 #error unknown runtime

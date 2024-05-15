@@ -6,6 +6,28 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+//****************************** CommonTablePropertyNameExp *************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+void CommonTablePropertyNameExp::_ToJson(BeJsValue val, JsonFormat const&) const {
+    //! ITWINJS_PARSE_TREE: CommonTablePropertyNameExp
+    val.SetEmptyObject();
+    val["id"] = "PropertyNameExp";
+    Utf8String path;
+    path.append(!m_blockName->GetAlias().empty()? m_blockName->GetAlias() : m_blockName->GetName()).append(".").append(m_name);
+    val["path"] = path;
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+Utf8String CommonTablePropertyNameExp::_ToString() const {
+    Utf8String path;
+    path.append(!m_blockName->GetAlias().empty()? m_blockName->GetAlias() : m_blockName->GetName()).append(".").append(m_name);
+    return path;
+}
+
 //****************************** CommonTableBlockExp *************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -17,7 +39,7 @@ CommonTableBlockExp::CommonTableBlockExp(Utf8CP name, std::vector<Utf8String> co
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-bool CommonTableBlockExp::ExpandDerivedProperties() const { 
+bool CommonTableBlockExp::ExpandDerivedProperties() const {
     // when we encounter wild card we will leave it deferred.
     if (!m_deferredExpand) {
         return true;
@@ -55,7 +77,7 @@ Exp::FinalizeParseStatus CommonTableBlockExp::_FinalizeParsing(ECSqlParseContext
         for (auto& col : m_columnList) {
             auto it = uniqueCols.insert(col.c_str());
             if (false == it.second) {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL,
+                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0452,
                     "Invalid ECSql : Common table '%s' has duplicate column with same name '%s'. %s", GetName().c_str(), col.c_str(), ToECSql().c_str());
                 return FinalizeParseStatus::Error;
             }
@@ -65,11 +87,11 @@ Exp::FinalizeParseStatus CommonTableBlockExp::_FinalizeParsing(ECSqlParseContext
         const auto columns = GetColumns().size();
         const auto values = GetQuery()->GetSelection()->GetChildrenCount();
         if (columns != values) {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL,
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0453,
                 "Invalid ECSql : Common table '%s' has %d values for columns %d. %s", GetName().c_str(), columns, values, ToECSql().c_str());
             return FinalizeParseStatus::Error;
         }
-        
+
         return FinalizeParseStatus::Completed;
     }
 
@@ -96,6 +118,23 @@ ECSqlTypeInfo CommonTableBlockExp::FindType (Utf8StringCR col) const {
         }
     }
     return resolvedTypeInfo;
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void CommonTableBlockExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: CommonTableBlockExp
+    val.SetEmptyObject();
+    val["id"] = "CommonTableBlockExp";
+    val["name"] = m_name;
+    if (!GetColumns().empty()) {
+        auto args = val["args"];
+        args.toArray();
+        for(auto& col : GetColumns())
+            args.appendValue() = col;
+    }
+    GetQuery()->ToJson(val["asQuery"], fmt);
 }
 
 //-----------------------------------------------------------------------------------------
@@ -223,9 +262,25 @@ Exp::FinalizeParseStatus CommonTableExp::_FinalizeParsing(ECSqlParseContext& ctx
     if (mode == Exp::FinalizeParseMode::AfterFinalizingChildren) {
         return FinalizeParseStatus::Completed;
     }
-    
+
     BeAssert(false && "Programmer Error");
     return FinalizeParseStatus::Error;
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void CommonTableExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: CommonTableExp
+    val.SetEmptyObject();
+    val["id"] = "CommonTableExp";
+    val["recursive"] = Recursive();
+    auto blocks = val["blocks"];
+    blocks.toArray();
+    for(auto& cteList : GetCteList())
+        cteList->ToJson(blocks.appendValue(), fmt);
+
+    GetQuery()->ToJson(val["select"], fmt);
 }
 
 //-----------------------------------------------------------------------------------------
@@ -251,7 +306,7 @@ void CommonTableExp::_ToECSql(ECSqlRenderContext& ctx) const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 Utf8String CommonTableExp::_ToString() const {
-    return "";    
+    return "";
 }
 
 //-----------------------------------------------------------------------------------------
@@ -262,7 +317,7 @@ std::vector<CommonTableBlockExp const*> CommonTableExp::GetCteList() const {
     for (auto child : GetChildren()) {
         if (child->GetType() != Exp::Type::CommonTableBlock)
             continue;
-        
+
         list.push_back(child->GetAsCP<CommonTableBlockExp>());
     }
     return list;
@@ -287,13 +342,13 @@ const CommonTableBlockExp*  CommonTableBlockNameExp::ResolveBlock(ECSqlParseCont
         }
         if (m_blockExp == nullptr) {
             if (logError) {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL,
+                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0454,
                     "Invalid expression : Unable to find a common table expression block with '%s' name.", ToECSql().c_str());
             }
         }
     } else {
         if (logError) {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL,
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0455,
                 "Invalid ECSQL class expression '%s': Valid syntax: [<table space>.]<schema name or alias>.<class name>[.function call]", ToECSql().c_str());
         }
     }
@@ -313,7 +368,7 @@ Exp::FinalizeParseStatus CommonTableBlockNameExp::_FinalizeParsing(ECSqlParseCon
 
         return FinalizeParseStatus::Completed;
     }
-    
+
     BeAssert(false && "Programmer Error");
     return FinalizeParseStatus::Error;
 }
@@ -355,6 +410,17 @@ PropertyMatchResult CommonTableBlockNameExp::_FindProperty(ECSqlParseContext& ct
 
     return PropertyMatchResult::NotFound();
 }
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void CommonTableBlockNameExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: CommonTableBlockNameExp
+    val.SetEmptyObject();
+    val["id"] = "CommonTableBlockNameExp";
+    val["name"] = m_name;
+    if(!GetAlias().empty())
+        val["alias"] = GetAlias();
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -393,7 +459,7 @@ Exp::FinalizeParseStatus CommonTablePropertyNameExp::_FinalizeParsing(ECSqlParse
         }
         return FinalizeParseStatus::Completed;
     }
-    
+
     BeAssert(false && "Programmer Error");
     return FinalizeParseStatus::Error;
 }

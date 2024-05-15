@@ -17,7 +17,8 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
     {
     if (&context.GetDataSourceConnection() != &context.GetECDb() && (Exp::Type::Select != exp.GetType() && Exp::Type::CommonTable != exp.GetType()))
         {
-        context.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Only SELECT queries can be executed against a separate data source connection.");
+        context.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0507,
+            "Only SELECT queries can be executed against a separate data source connection.");
         return ECSqlStatus::Error;
         }
 
@@ -72,6 +73,7 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
                 return ECSqlStatus::Error;
         }
 
+    context.GetAnchors().ExecutePendingReplacements(context.GetSqlBuilder());
     nativeSql.assign(context.GetSqlBuilder().GetSql());
     return ECSqlStatus::Success;
     }
@@ -84,8 +86,114 @@ ECSqlStatus ECSqlPreparer::Prepare(Utf8StringR nativeSql, ECSqlPrepareContext& c
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareAllOrAnyExp(ECSqlPrepareContext& ctx, AllOrAnyExp const& exp)
     {
-    ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "ALL or ANY expression not yet supported.");
-    return ECSqlStatus::InvalidECSql;
+    const BooleanSqlOperator op = exp.GetOperator();
+    if (op != BooleanSqlOperator::EqualTo &&
+       op != BooleanSqlOperator::GreaterThanOrEqualTo &&
+       op != BooleanSqlOperator::GreaterThan &&
+       op != BooleanSqlOperator::LessThanOrEqualTo &&
+       op != BooleanSqlOperator::LessThan &&
+       op != BooleanSqlOperator::NotEqualTo)
+        {
+        BeAssert(false && "Incorrect Boolean operator before ALL/ANY/SOME");
+        return ECSqlStatus::InvalidECSql;
+        }
+
+    SqlCompareListType type = exp.GetCompareType();
+    if (type == SqlCompareListType::All)
+        ctx.GetSqlBuilder().Append("NOT").AppendSpace();
+
+    ctx.GetSqlBuilder().Append("EXISTS").AppendParenLeft();
+
+    SelectStatementExp const* subquery = (exp.GetSubquery())->GetQuery();
+    ECSqlStatus stat = ECSqlSelectPreparer::Prepare(ctx, *subquery);
+    if (stat != ECSqlStatus::Success)
+        return stat;
+
+    // Subquery insertion
+    SingleSelectStatementExp const& subquerySelect = subquery->GetFirstStatement();
+    NativeSqlBuilder queryToReplace;
+    NativeSqlBuilder allOrAnyQuery;
+    bool trailingParen = false;
+    if (subquerySelect.GetWhere() == nullptr)
+        {
+        ECSqlSelectPreparer::PreparePartial(queryToReplace, ctx, *subquery);
+
+        if (FromExp const* fromExp = subquerySelect.GetFrom())
+            {
+            queryToReplace.AppendSpace().Append("FROM").AppendSpace();
+            bool isFirstItem = true;
+            for (Exp const* classRefExp : fromExp->GetChildren())
+                {
+                if (!isFirstItem)
+                    queryToReplace.AppendComma();
+                PrepareClassRefExp(queryToReplace, ctx, classRefExp->GetAs<ClassRefExp>());
+                isFirstItem = false;
+                }
+            }
+
+        allOrAnyQuery.Append(queryToReplace).AppendSpace().Append("WHERE").AppendSpace();
+        }
+    else
+        {
+        NativeSqlBuilder insert;
+        ECSqlExpPreparer::PrepareSearchConditionExp(insert, ctx, *subquerySelect.GetWhere()->GetSearchConditionExp());
+
+        queryToReplace.Append("WHERE").AppendSpace();
+        allOrAnyQuery.Append(queryToReplace).AppendParenLeft().Append(insert).AppendParenRight().AppendSpace().Append("AND").AppendSpace().AppendParenLeft();
+        queryToReplace.Append(insert);
+        trailingParen = true;
+        }
+
+    NativeSqlBuilder::List nativeSqlSnippets;
+    stat = PrepareValueExp(nativeSqlSnippets, ctx, *exp.GetOperand());
+    if (stat != ECSqlStatus::Success)
+        return stat;
+
+    BeAssert(nativeSqlSnippets.size() == 1);
+    NativeSqlBuilder operand = nativeSqlSnippets.at(0);
+
+    bool isFirstItem = true;
+    switch (type)
+        {
+        case SqlCompareListType::All:
+            for (Exp const* childExp : subquerySelect.GetSelection()->GetChildren())
+                {
+                if (!isFirstItem)
+                    allOrAnyQuery.AppendSpace().Append("AND").AppendSpace();
+
+                allOrAnyQuery.Append(childExp->ToECSql()).AppendSpace();
+                if (op == BooleanSqlOperator::EqualTo)
+                    allOrAnyQuery.Append(ExpHelper::ToSql(BooleanSqlOperator::NotEqualTo));
+                else if (op == BooleanSqlOperator::NotEqualTo)
+                    allOrAnyQuery.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo));
+                else
+                    allOrAnyQuery.Append(ExpHelper::ToSql(op));
+                allOrAnyQuery.AppendSpace().Append(operand);
+                isFirstItem = false;
+                }
+            if (trailingParen)
+                allOrAnyQuery.AppendParenRight();
+            break;
+        case SqlCompareListType::Any:
+        case SqlCompareListType::Some:
+            for (Exp const* childExp : subquerySelect.GetSelection()->GetChildren())
+                {
+                if (!isFirstItem)
+                    allOrAnyQuery.AppendSpace().Append("OR").AppendSpace();
+
+                allOrAnyQuery.Append(operand).AppendSpace().Append(ExpHelper::ToSql(op)).AppendSpace().Append(childExp->ToECSql());
+                isFirstItem = false;
+                }
+            if (trailingParen)
+                allOrAnyQuery.AppendParenRight();
+            break;
+        default:
+            BeAssert(false && "Unhandled SqlCompareListType case.");
+            return ECSqlStatus::Error;
+        }
+
+    ctx.GetSqlBuilder().Replace(queryToReplace.GetSql().c_str(), allOrAnyQuery.GetSql().c_str()).AppendParenRight();
+    return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -107,7 +215,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareBetweenRangeValueExp(NativeSqlBuilder::List
     const size_t tokenCount = lowerBoundSqlTokens.size();
     if (tokenCount != upperBoundSqlTokens.size())
         {
-        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Type mismatch between lower bound operand and upper bound operand in BETWEEN expression.");
+        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0509,
+            "Type mismatch between lower bound operand and upper bound operand in BETWEEN expression.");
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -242,7 +351,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp(NativeSqlBuilder::List& na
 
     if (rhsOperand->GetType() == Exp::Type::TypeList)
         {
-        // TypeList predicate 
+        // TypeList predicate
         sqlBuilder.Append(lhsNativeSqlSnippets[0]);
         if (op == BooleanSqlOperator::IsNot)
             sqlBuilder.Append(" NOT ");
@@ -250,7 +359,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareBinaryBooleanExp(NativeSqlBuilder::List& na
             sqlBuilder.AppendSpace();
         sqlBuilder.Append(rhsNativeSqlSnippets[0]);
         }
-    else 
+    else
         {
         bool isFirstSnippet = true;
         for (size_t i = 0; i < nativeSqlSnippetCount; i++)
@@ -359,8 +468,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSn
 
     if (!exp.GetTypeInfo().IsPrimitive())
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid ECSQL expression '%s': Only primitive types are supported as CAST target type",
-                                                               exp.ToECSql().c_str());
+        ctx.Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECSQL,
+            ECDbIssueId::ECDb_0510,
+            "Invalid ECSQL expression '%s': Only primitive types are supported as CAST target type",
+            exp.ToECSql().c_str()
+        );
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -521,7 +636,7 @@ void ECSqlExpPreparer::RemovePropertyRefs(ECSqlPrepareContext& ctx, ClassRefExp 
 
         const RangeClassRefExp* classRefExp = propertyNameExp->GetClassRefExp();
         if (&exp == classRefExp)
-            ctx.GetSelectionOptionsR().AddProperty(propertyNameExp->GetPropertyMap());
+            ctx.GetSelectionOptionsR().AddProperty(*propertyNameExp->GetPropertyMap());
         }
     }
 
@@ -537,7 +652,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
     Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, currentScopeECSqlType, exp.GetPolymorphicInfo().IsPolymorphic()));
     if (!policy.IsSupported())
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0511, "Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -547,9 +662,11 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
             case ECSqlType::Select:
             {
             if (ctx.GetECDb().GetECSqlConfig().GetOptimizationOption(OptimizationOptions::OptimizeJoinForNestedSelectQuery))
-                RemovePropertyRefs(ctx, exp, classMap);
+            RemovePropertyRefs(ctx, exp, classMap);
+
             NativeSqlBuilder classViewSql;
-            if (SUCCESS != ViewGenerator::GenerateSelectFromViewSql(classViewSql, ctx, classMap, exp.GetPolymorphicInfo(), exp.DisqualifyPrimaryJoin(), exp.GetMemberFunctionCallExp()))
+            auto instanceProps = exp.GetInstancePropNames();
+            if (SUCCESS != ViewGenerator::GenerateSelectFromViewSql(classViewSql, ctx, classMap, exp.GetPolymorphicInfo(), exp.DisqualifyPrimaryJoin(), exp.GetMemberFunctionCallExp(), &instanceProps, &exp))
                 return ECSqlStatus::InvalidECSql;
 
             classViewSql.AppendSpace().AppendEscaped(exp.GetId());
@@ -669,17 +786,20 @@ ECSqlStatus ECSqlExpPreparer::PrepareTableValuedFunctionExp(NativeSqlBuilder::Li
 
         if (valueSnippets.size() != 1 ){
             ctx.Issues().ReportV(
-                IssueSeverity::Error, 
-                IssueCategory::BusinessProperties, 
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
                 IssueType::ECDbIssue,
-                "Invalid arg to %s.%s(): TableValuedFunction only accept primitive value expression.", 
-                    exp.GetSchemaName().c_str(), exp.GetFunctionExp()->GetFunctionName().c_str());
-                return ECSqlStatus::InvalidECSql;
+                ECDbIssueId::ECDb_0512,
+                "Invalid arg to %s.%s(): TableValuedFunction only accept primitive value expression.",
+                exp.GetSchemaName().c_str(),
+                exp.GetFunctionExp()->GetFunctionName().c_str()
+            );
+            return ECSqlStatus::InvalidECSql;
         }
-        builder.Append(valueSnippets.front());
         if (i > 0) {
             builder.AppendComma();
         }
+        builder.Append(valueSnippets.front());
     }
     builder.AppendParenRight();
     if (!exp.GetAlias().empty()) {
@@ -729,7 +849,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareEnumValueExp(NativeSqlBuilder::List& native
         nativeSqlBuilder.AppendQuoted(enumerator.GetString().c_str());
     else
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Unsupported ECEnumeration %s. Only integer and string enumerations are supported.", enumerator.GetEnumeration().GetFullName().c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0513,
+            "Unsupported ECEnumeration %s. Only integer and string enumerations are supported.", enumerator.GetEnumeration().GetFullName().c_str());
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -758,7 +879,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareLiteralValueExp(NativeSqlBuilder::List& nat
 
     if (exp.HasParentheses())
         nativeSqlBuilder.AppendParenLeft();
-    
+
     if (typeInfo.IsPrimitive())
         {
         switch (typeInfo.GetPrimitiveType())
@@ -768,7 +889,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareLiteralValueExp(NativeSqlBuilder::List& nat
                 ECValue val;
                 if (SUCCESS != exp.TryParse(val))
                     {
-                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid boolean literal in expression '%s'", exp.ToECSql().c_str());
+                    ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0514, "Invalid boolean literal in expression '%s'", exp.ToECSql().c_str());
                     return ECSqlStatus::InvalidECSql;
                     }
 
@@ -831,7 +952,17 @@ ECSqlStatus ECSqlExpPreparer::PrepareNullExp(NativeSqlBuilder::List& nativeSqlSn
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareCrossJoinExp(ECSqlPrepareContext& ctx, CrossJoinExp const& exp)
     {
-    ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Cross join expression not yet supported.");
+    NativeSqlBuilder& sqlBuilder = ctx.GetSqlBuilder();
+    ECSqlStatus r = PrepareClassRefExp(sqlBuilder, ctx, exp.GetFromClassRef());
+    if (!r.IsSuccess())
+        return r;
+
+    sqlBuilder.Append(" CROSS JOIN ");
+
+    r = PrepareClassRefExp(sqlBuilder, ctx, exp.GetToClassRef());
+    if (!r.IsSuccess())
+        return r;
+
     return ECSqlStatus::Success;
     }
 
@@ -916,7 +1047,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareLikeRhsValueExp(NativeSqlBuilder::List& nat
 
         if (escapeExpSqlSnippets.size() != 1)
             {
-            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Invalid type in LIKE ESCAPE expression. ESCAPE only works with a string value.");
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0516,
+                "Invalid type in LIKE ESCAPE expression. ESCAPE only works with a string value.");
             return ECSqlStatus::InvalidECSql;
             }
 
@@ -962,7 +1094,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareLimitOffsetExp(ECSqlPrepareContext& ctx, Li
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareNaturalJoinExp(ECSqlPrepareContext& ctx, NaturalJoinExp const& exp)
     {
-    ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Natural join expression not yet supported.");
+    ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0517, "Natural join expression not yet supported.");
     return ECSqlStatus::InvalidECSql;
     }
 
@@ -975,10 +1107,24 @@ ECSqlStatus ECSqlExpPreparer::PrepareOrderByExp(ECSqlPrepareContext& ctx, OrderB
     ctx.PushScope(exp);
 
     NativeSqlBuilder orderBySqlBuilder;
+    ECSqlStatus status = PrepareOrderByExp(orderBySqlBuilder, ctx, exp);
+    if (!status.IsSuccess())
+        return status;
+
+    if (!orderBySqlBuilder.IsEmpty())
+        ctx.GetSqlBuilder().Append(orderBySqlBuilder);
+
+    ctx.PopScope();
+    return ECSqlStatus::Success;
+    }
+
+ECSqlStatus ECSqlExpPreparer::PrepareOrderByExp(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, OrderByExp const& exp)
+    {
+    NativeSqlBuilder orderBySqlBuilder;
     bool isFirstSpec = true;
     for (Exp const* child : exp.GetChildren())
         {
-        OrderBySpecExp const& specification =child->GetAs<OrderBySpecExp>();
+        OrderBySpecExp const& specification = child->GetAs<OrderBySpecExp>();
 
         ComputedExp const* sortExp = specification.GetSortExpression();
         NativeSqlBuilder::List sqlSnippets;
@@ -1016,15 +1162,26 @@ ECSqlStatus ECSqlExpPreparer::PrepareOrderByExp(ECSqlPrepareContext& ctx, OrderB
                     case OrderBySpecExp::SortDirection::NotSpecified:
                         break; //default direction is ASCENDING
                 }
+            switch (specification.GetNullsOrder())
+                {
+                    case OrderBySpecExp::NullsOrder::First:
+                        orderBySqlBuilder.Append(" NULLS FIRST");
+                        break;
+
+                    case OrderBySpecExp::NullsOrder::Last:
+                        orderBySqlBuilder.Append(" NULLS LAST");
+                        break;
+                    case OrderBySpecExp::NullsOrder::NotSpecified:
+                        break; //default direction is ASCENDING
+                }
             isFirstSnippet = false;
             isFirstSpec = false; //needs to be inside the inner loop so that empty sqlSnippets are handled correctly
             }
         }
 
     if (!orderBySqlBuilder.IsEmpty())
-        ctx.GetSqlBuilder().Append("ORDER BY ").Append(orderBySqlBuilder);
+        nativeSqlBuilder.Append("ORDER BY ").Append(orderBySqlBuilder);
 
-    ctx.PopScope();
     return ECSqlStatus::Success;
     }
 
@@ -1076,10 +1233,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareQualifiedJoinExp(ECSqlPrepareContext& ctx, 
     if (!r.IsSuccess())
         return r;
 
-    //ECSQL_LIMITATION: 
-    //https://www.sqlite.org/omitted.html
-    //RIGHT and FULL OUTER JOIN  LEFT OUTER JOIN is implemented, but not RIGHT OUTER JOIN or FULL OUTER JOIN.
-    //
     switch (exp.GetJoinType())
         {
             case ECSqlJoinType::InnerJoin:
@@ -1094,15 +1247,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareQualifiedJoinExp(ECSqlPrepareContext& ctx, 
             }
             case ECSqlJoinType::RightOuterJoin:
             {
-            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "'RIGHT OUTER JOIN' is currently not supported");
-            return ECSqlStatus::InvalidECSql;
+            sqlBuilder.Append(" RIGHT OUTER JOIN ");
+            break;
             }
             case ECSqlJoinType::FullOuterJoin:
             {
-            //ECSQL_TODO: way around full outer join 
-            //http://stackoverflow.com/questions/1923259/full-outer-join-with-sqlite
-            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "'FULL OUTER JOIN' is currently not supported");
-            return ECSqlStatus::InvalidECSql;
+            sqlBuilder.Append(" FULL OUTER JOIN ");
+            break;
             }
         }
 
@@ -1134,7 +1285,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareQualifiedJoinExp(ECSqlPrepareContext& ctx, 
         }
     else if (exp.GetJoinSpec()->GetType() == Exp::Type::NamedPropertiesJoin)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "JOIN <class/subquery> USING (property,...) is not supported yet.");
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0520, "JOIN <class/subquery> USING (property,...) is not supported yet.");
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -1149,7 +1300,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareQualifiedJoinExp(ECSqlPrepareContext& ctx, 
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareQueryExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, QueryExp const& exp)
     {
-    ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Query expression not yet supported.");
+    ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0521, "Query expression not yet supported.");
     return ECSqlStatus::InvalidECSql;
     }
 
@@ -1202,15 +1353,18 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
     return ECSqlStatus::Success;
     }
 
+
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, FunctionCallExp const& exp)
     {
-    Utf8StringCR functionName = exp.GetFunctionName();
+    Utf8StringCR functionName = exp.GetSqliteFunctionName();
     if (ctx.GetECDb().GetECSqlConfig().GetDisableFunctions().Exists(functionName)) {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Failed to prepare function with name '%s': Function is disabled by application.", functionName.c_str());
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0524,
+            "Failed to prepare function with name '%s': Function is disabled by application.", functionName.c_str());
         return ECSqlStatus::InvalidECSql;
     }
     NativeSqlBuilder nativeSql;
@@ -1302,7 +1456,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareFunctionArgList(NativeSqlBuilder::List& arg
 
         if (nativeSqlArgumentList.size() != 1)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Failed to prepare function expression '%s': Functions in ECSQL can only accept primitive scalar arguments (i.e. excluding Point2d/Point3d).", functionCallExp.ToECSql().c_str());
+            ctx.Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECSQL,
+                ECDbIssueId::ECDb_0525,
+                "Failed to prepare function expression '%s': Functions in ECSQL can only accept primitive scalar arguments (i.e. excluding Point2d/Point3d).",
+                functionCallExp.ToECSql().c_str()
+            );
             return ECSqlStatus::InvalidECSql;
             }
 
@@ -1379,7 +1540,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryTestExp(NativeSqlBuilder::List& nat
     {
     if (exp.GetOperator() == SubqueryTestOperator::Unique)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "UNIQUE (subquery) expression not supported.");
+        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0526, "UNIQUE (subquery) expression not supported.");
         return ECSqlStatus::InvalidECSql;
         }
     NativeSqlBuilder nativeSqlBuilder;
@@ -1483,7 +1644,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareIIFExp(NativeSqlBuilder::List& nativeSqlSni
     nativeBuilder.AppendComma();
     nativeBuilder.Append(elseSql);
     nativeBuilder.AppendParenRight();
-   
+
     if (exp.HasParentheses())
         nativeBuilder.AppendParenRight();
 
@@ -1533,7 +1694,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareCaseExp(NativeSqlBuilder::List& nativeSqlSn
         nativeBuilder.Append(elseSql);
         }
     nativeBuilder.Append(" END ");
-    
+
     if (exp.HasParentheses())
         nativeBuilder.AppendParenRight();
 
@@ -1552,10 +1713,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareTypeListExp(NativeSqlBuilder::List& nativeS
     NativeSqlBuilder::List exactList;
     if (exp.HasParentheses())
         nativeBuilder.AppendParenLeft();
-    
+
     auto classNames = exp.ClassNames();
     auto it = classNames.begin();
-    while(it != classNames.end()) 
+    while(it != classNames.end())
         {
         auto const& srcClass = (*it)->GetInfo().GetMap().GetClass();
         auto const isSrcPoly = (*it)->GetPolymorphicInfo().IsPolymorphic();
@@ -1613,7 +1774,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareTypeListExp(NativeSqlBuilder::List& nativeS
         exactConstraint.Append(exactList, ",");
         nativeBuilder.AppendFormatted("IN (%s)", exactConstraint.GetSql().c_str());
         }
-    else 
+    else
         {
         // general case for poly only or ploy and exact
         NativeSqlBuilder polyConstraint;
@@ -1644,6 +1805,530 @@ ECSqlStatus ECSqlExpPreparer::PrepareTypeListExp(NativeSqlBuilder::List& nativeS
     nativeSqlSnippets.push_back(nativeBuilder);
     return ECSqlStatus::Success;
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static`
+ECSqlStatus ECSqlExpPreparer::PrepareWindowFunctionClauseExp(ECSqlPrepareContext& ctx, WindowFunctionClauseExp const& exp)
+    {
+    NativeSqlBuilder::List nativeSqlBuilderSnippets;
+    ctx.GetSqlBuilder().Append("WINDOW ");
+    ECSqlStatus status = PrepareWindowDefinitionListExp(nativeSqlBuilderSnippets, ctx, *exp.GetWindowDefinitionListExp());
+    if (!status.IsSuccess())
+        return status;
+
+    bool isFirstSnippet = true;
+    for (auto const& snippet : nativeSqlBuilderSnippets)
+        {
+        if (!isFirstSnippet)
+            {
+            ctx.GetSqlBuilder().AppendComma();
+            ctx.GetSqlBuilder().AppendSpace();
+            }
+        
+        ctx.GetSqlBuilder().Append(snippet);
+        isFirstSnippet = false;
+        }
+
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static`
+ECSqlStatus ECSqlExpPreparer::PrepareWindowDefinitionListExp(NativeSqlBuilder::List& nativeSqlBuilderSnippets, ECSqlPrepareContext& ctx, WindowDefinitionListExp const& exp)
+    {
+    ECSqlStatus status;
+    for (size_t nPos = 0; nPos < exp.GetChildrenCount(); nPos++)
+        {
+        NativeSqlBuilder nativeSqlBuilder;
+        status = PrepareWindowDefinitionExp(nativeSqlBuilder, ctx, exp.GetChildren()[nPos]->GetAs<WindowDefinitionExp>());
+        if (!status.IsSuccess())
+            return status;
+
+        nativeSqlBuilderSnippets.push_back(nativeSqlBuilder);
+        }
+
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static`
+ECSqlStatus ECSqlExpPreparer::PrepareWindowDefinitionExp(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowDefinitionExp const& exp)
+    {
+    nativeSqlBuilder.Append(exp.GetWindowName()).Append(" AS ");
+    ECSqlStatus status = PrepareWindowSpecification(nativeSqlBuilder, ctx, *exp.GetWindowSpecification());
+    if (!status.IsSuccess())
+        return status;
+
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static`
+ECSqlStatus ECSqlExpPreparer::PrepareWindowFunctionExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, WindowFunctionExp const& exp)
+    {
+    ECSqlStatus status;
+    NativeSqlBuilder nativeSqlBuilder;
+    NativeSqlBuilder::List nativeSqlFunctionSnippets;
+    status = PrepareFunctionCallExp(nativeSqlFunctionSnippets, ctx, exp.GetWindowFunctionCallExp()->GetAs<FunctionCallExp>());
+    if (!status.IsSuccess())
+        return status;
+    
+    for (auto snippet : nativeSqlFunctionSnippets)
+        nativeSqlBuilder.Append(snippet);
+
+    if (FilterClauseExp const * e = exp.GetFilterClauseExp())
+        {
+        status = PrepareFilterClauseExp(nativeSqlBuilder, ctx, *e);
+        if (!status.IsSuccess())
+            return status;
+        }
+
+    nativeSqlBuilder.Append(" OVER");
+    if (WindowSpecification const * e = exp.GetWindowSpecification())
+        {
+        status = PrepareWindowSpecification(nativeSqlBuilder, ctx, *e);
+        if (!status.IsSuccess())
+            return status;
+        
+        nativeSqlSnippets.push_back(nativeSqlBuilder);
+        return ECSqlStatus::Success;
+        }
+    else if (exp.GetWindowName().size() != 0)
+        {
+        nativeSqlBuilder.AppendSpace();
+        nativeSqlBuilder.Append(exp.GetWindowName());
+        nativeSqlSnippets.push_back(nativeSqlBuilder);
+        return ECSqlStatus::Success;
+        }
+    else
+        {
+        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0661, "Unsupported window function expression.");
+        return ECSqlStatus::InvalidECSql;    
+        }
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static`
+ECSqlStatus ECSqlExpPreparer::PrepareWindowPartitionColumnReference(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowPartitionColumnReferenceExp const& exp)
+    {
+    NativeSqlBuilder::List nativeSqlSnippets;
+    ECSqlStatus status;
+    switch (exp.GetColumnRef()->GetType())
+        {
+        case Exp::Type::PropertyName:
+            status = ECSqlPropertyNameExpPreparer::Prepare(nativeSqlSnippets, ctx, exp.GetColumnRef()->GetAs<PropertyNameExp>());
+            if (!status.IsSuccess())
+                return status;
+            break;
+        case Exp::Type::EnumValue:
+            status =  PrepareEnumValueExp(nativeSqlSnippets, ctx, exp.GetColumnRef()->GetAs<EnumValueExp>());
+            if (!status.IsSuccess())
+                return status;
+            break;
+        case Exp::Type::ExtractProperty:
+            status =  PrepareExtractPropertyExp(nativeSqlSnippets, ctx, exp.GetColumnRef()->GetAs<ExtractPropertyValueExp>());
+            if (!status.IsSuccess())
+                return status;
+            break;
+        case Exp::Type::ExtractInstance:
+            status = PrepareExtractInstanceExp(nativeSqlSnippets, ctx, exp.GetColumnRef()->GetAs<ExtractInstanceValueExp>());
+            if (!status.IsSuccess())
+                return status;
+            break;
+        }
+
+    for (auto sqlBuilder : nativeSqlSnippets)
+        nativeSqlBuilder.Append(sqlBuilder);
+
+    if (exp.GetCollateClauseFunction() == WindowPartitionColumnReferenceExp::CollateClauseFunction::NotSpecified)
+        return ECSqlStatus::Success;
+
+    status = PrepareWindowPartitionColumnCollateFunction(nativeSqlBuilder, ctx, exp.GetCollateClauseFunction());
+    if (!status.IsSuccess())
+        return status;
+
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static`
+ECSqlStatus ECSqlExpPreparer::PrepareWindowPartitionColumnCollateFunction(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowPartitionColumnReferenceExp::CollateClauseFunction collateFunction)
+    {
+    nativeSqlBuilder.Append(" COLLATE");
+    switch (collateFunction)
+        {
+        case WindowPartitionColumnReferenceExp::CollateClauseFunction::Binary:
+            nativeSqlBuilder.Append(" BINARY");
+            break;
+        case WindowPartitionColumnReferenceExp::CollateClauseFunction::NoCase:
+            nativeSqlBuilder.Append(" NOCASE");
+            break;
+        case WindowPartitionColumnReferenceExp::CollateClauseFunction::Rtrim:
+            nativeSqlBuilder.Append(" RTRIM");
+            break;
+        default:
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0662, "Unsupported COLLATE function.");
+            return ECSqlStatus::InvalidECSql;
+        }
+
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static`
+ECSqlStatus ECSqlExpPreparer::PrepareWindowPartitionColumnReferenceList(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowPartitionColumnReferenceListExp const& exp)
+    {
+    nativeSqlBuilder.Append("PARTITION BY");
+    ECSqlStatus status;
+    bool isFirstItem = true;
+    for (size_t nPos = 0; nPos < exp.GetChildrenCount(); nPos++)
+        {
+        if (!isFirstItem)
+            nativeSqlBuilder.AppendComma();
+
+        nativeSqlBuilder.AppendSpace();
+        status = PrepareWindowPartitionColumnReference(nativeSqlBuilder, ctx, exp.GetChildren()[nPos]->GetAs<WindowPartitionColumnReferenceExp>());
+        if (!status.IsSuccess())
+            return status;
+        
+        isFirstItem = false;
+        }
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static`
+ECSqlStatus ECSqlExpPreparer::PrepareWindowSpecification(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowSpecification const& exp)
+    {
+    nativeSqlBuilder.AppendParenLeft();
+    ECSqlStatus status;
+    bool isFirstWindowSpecificationClause = true;
+    if (exp.GetWindowName().size() != 0)
+        {
+        nativeSqlBuilder.Append(exp.GetWindowName());
+        isFirstWindowSpecificationClause = false;
+        }
+    if (WindowPartitionColumnReferenceListExp const * e = exp.GetPartitionBy())
+        {
+        if (!isFirstWindowSpecificationClause)
+            nativeSqlBuilder.AppendSpace();
+
+        status = PrepareWindowPartitionColumnReferenceList(nativeSqlBuilder, ctx, *e);
+        if (!status.IsSuccess())
+            return status; 
+
+        isFirstWindowSpecificationClause = false;
+        }
+
+    if (OrderByExp const * e = exp.GetOrderBy())
+        {
+        if (!isFirstWindowSpecificationClause)
+            nativeSqlBuilder.AppendSpace();
+
+        status = ECSqlExpPreparer::PrepareOrderByExp(nativeSqlBuilder, ctx, *e);
+        if (!status.IsSuccess())
+            return status;
+
+        isFirstWindowSpecificationClause = false;
+        }
+    
+    if (WindowFrameClauseExp const * e = exp.GetWindowFrameClause())
+        {
+        if (!isFirstWindowSpecificationClause)
+            nativeSqlBuilder.AppendSpace();
+
+        status = ECSqlExpPreparer::PrepareWindowFrameClauseExp(nativeSqlBuilder, ctx, *e);
+        if (!status.IsSuccess())
+            return status;
+        }
+        
+    nativeSqlBuilder.AppendParenRight();
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static`
+ECSqlStatus ECSqlExpPreparer::PrepareFilterClauseExp(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, FilterClauseExp const& exp)
+    {
+    nativeSqlBuilder.Append(" FILTER (");
+    ECSqlStatus status = PrepareWhereExp(nativeSqlBuilder, ctx, *exp.GetWhereExp());
+    if (!status.IsSuccess())
+        return status;
+
+    nativeSqlBuilder.Append(")");
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static`
+ECSqlStatus ECSqlExpPreparer::PrepareWindowFrameClauseExp(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowFrameClauseExp const& exp)
+    {
+    ECSqlStatus status = PrepareWindowFrameUnits(nativeSqlBuilder, ctx, exp.GetWindowFrameUnit());
+    if (!status.IsSuccess())
+        return status;
+
+    if (WindowFrameStartExp const * e = exp.GetWindowFrameStartExp())
+        {
+        status = PrepareWindowFrameStartExp(nativeSqlBuilder, ctx, *e);
+        if (!status.IsSuccess())
+            return status;
+        }
+    else if (WindowFrameBetweenExp const * e = exp.GetWindowFrameBetweenExp())
+        {
+        status = PrepareWindowFrameBetweenExp(nativeSqlBuilder, ctx, *e);
+        if (!status.IsSuccess())
+            return status;
+        }
+    else
+        {
+        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0661, "Unsupported window frame clause expression.");
+        return ECSqlStatus::InvalidECSql;
+        }
+
+    if (exp.GetWindowFrameExclusionType() == WindowFrameClauseExp::WindowFrameExclusionType::NotSpecified)
+        return ECSqlStatus::Success;
+
+    status = PrepareWindowFrameExclusion(nativeSqlBuilder, ctx, exp.GetWindowFrameExclusionType());
+    if (!status.IsSuccess())
+        return status;
+
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static`
+ECSqlStatus ECSqlExpPreparer::PrepareWindowFrameUnits(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowFrameClauseExp::WindowFrameUnit unit)
+    {
+    switch (unit)
+        {
+        case WindowFrameClauseExp::WindowFrameUnit::Rows:
+            nativeSqlBuilder.Append("ROWS ");
+            return ECSqlStatus::Success;
+        case WindowFrameClauseExp::WindowFrameUnit::Range:
+            nativeSqlBuilder.Append("RANGE ");
+            return ECSqlStatus::Success;
+        case WindowFrameClauseExp::WindowFrameUnit::Groups:
+            nativeSqlBuilder.Append("GROUPS ");
+            return ECSqlStatus::Success;
+        default:
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0663, "Unsupported window frame unit.");
+            return ECSqlStatus::InvalidECSql;
+        }
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static`
+ECSqlStatus ECSqlExpPreparer::PrepareWindowFrameStartExp(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowFrameStartExp const& exp)
+    {
+    switch (exp.GetWindowFrameStartType())
+        {
+        case WindowFrameStartExp::WindowFrameStartType::CurrentRow:
+            {
+            nativeSqlBuilder.Append("CURRENT ROW");
+            return ECSqlStatus::Success;
+            }
+        case WindowFrameStartExp::WindowFrameStartType::UnboundedPreceding:
+            {
+            nativeSqlBuilder.Append("UNBOUNDED PRECEDING");
+            return ECSqlStatus::Success;
+            }
+        case WindowFrameStartExp::WindowFrameStartType::ValuePreceding:
+            {
+            NativeSqlBuilder::List nativeSqlSnippets;
+            ECSqlStatus status = PrepareValueExp(nativeSqlSnippets, ctx, *exp.GetValueExp());
+            if (!status.IsSuccess())
+                return status;
+            
+            for (const auto& snippet: nativeSqlSnippets)
+                nativeSqlBuilder.Append(snippet);
+            
+            nativeSqlBuilder.Append(" PRECEDING");
+            return ECSqlStatus::Success;
+            }
+        default:
+            {
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0664, "Unsupported window frame start expression.");
+            return ECSqlStatus::InvalidECSql;
+            }
+        }
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static`
+ECSqlStatus ECSqlExpPreparer::PrepareWindowFrameBetweenExp(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowFrameBetweenExp const& exp)
+    {
+    ECSqlStatus status;
+    nativeSqlBuilder.Append("BETWEEN ");
+    status = PrepareFirstWindowFrameBound(nativeSqlBuilder, ctx, *exp.GetFirstWindowFrameBoundExp());
+    if (!status.IsSuccess())
+        return status;
+
+    nativeSqlBuilder.Append(" AND ");
+    status = PrepareSecondWindowFrameBound(nativeSqlBuilder, ctx, *exp.GetSecondWindowFrameBoundExp());
+    if (!status.IsSuccess())
+        return status;
+
+    return ECSqlStatus::Success;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static`
+ECSqlStatus ECSqlExpPreparer::PrepareFirstWindowFrameBound(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, FirstWindowFrameBoundExp const& exp)
+    {
+    const auto windowFrameBoundType = exp.GetWindowFrameBoundType();
+    switch (windowFrameBoundType)
+        {
+        case FirstWindowFrameBoundExp::WindowFrameBoundType::UnboundedPreceding:
+            {
+            nativeSqlBuilder.Append("UNBOUNDED PRECEDING");
+            return ECSqlStatus::Success;
+            }
+        case FirstWindowFrameBoundExp::WindowFrameBoundType::CurrentRow:
+            {
+            nativeSqlBuilder.Append("CURRENT ROW");
+            return ECSqlStatus::Success;
+            }
+        case FirstWindowFrameBoundExp::WindowFrameBoundType::ValueFollowing:
+        case FirstWindowFrameBoundExp::WindowFrameBoundType::ValuePreceding:
+            {
+            NativeSqlBuilder::List nativeSqlSnippets;
+            ECSqlStatus status = PrepareValueExp(nativeSqlSnippets, ctx, *exp.GetValueExp());
+            if (!status.IsSuccess())
+                return status;
+
+            for (const auto& snippet : nativeSqlSnippets)
+                nativeSqlBuilder.Append(snippet);
+
+            nativeSqlBuilder.Append(windowFrameBoundType == FirstWindowFrameBoundExp::WindowFrameBoundType::ValuePreceding ? " PRECEDING" : " FOLLOWING");
+            return ECSqlStatus::Success;
+            }
+        default:
+            {
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0665, "Unsupported first window frame bound expression.");
+            return ECSqlStatus::InvalidECSql;
+            }
+        }
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static`
+ECSqlStatus ECSqlExpPreparer::PrepareSecondWindowFrameBound(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, SecondWindowFrameBoundExp const& exp)
+    {
+    const auto windowFrameBoundType = exp.GetWindowFrameBoundType();
+    switch (windowFrameBoundType)
+        {
+        case SecondWindowFrameBoundExp::WindowFrameBoundType::UnboundedFollowing:
+            {
+            nativeSqlBuilder.Append("UNBOUNDED FOLLOWING");
+            return ECSqlStatus::Success;
+            }
+        case SecondWindowFrameBoundExp::WindowFrameBoundType::CurrentRow:
+            {
+            nativeSqlBuilder.Append("CURRENT ROW");
+            return ECSqlStatus::Success;
+            }
+        case SecondWindowFrameBoundExp::WindowFrameBoundType::ValueFollowing:
+        case SecondWindowFrameBoundExp::WindowFrameBoundType::ValuePreceding:
+            {
+            NativeSqlBuilder::List nativeSqlSnippets;
+            ECSqlStatus status = PrepareValueExp(nativeSqlSnippets, ctx, *exp.GetValueExp());
+            if (!status.IsSuccess())
+                return status;
+
+            for (const auto& snippet : nativeSqlSnippets)
+                nativeSqlBuilder.Append(snippet);
+
+            nativeSqlBuilder.Append(windowFrameBoundType == SecondWindowFrameBoundExp::WindowFrameBoundType::ValuePreceding ? " PRECEDING " : " FOLLOWING");
+            return ECSqlStatus::Success;
+            }
+        default:
+            {
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0666, "Unsupported first window frame bound expression.");
+            return ECSqlStatus::InvalidECSql;
+            }
+        }
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+//static`
+ECSqlStatus ECSqlExpPreparer::PrepareWindowFrameExclusion(NativeSqlBuilder& nativeSqlBuilder, ECSqlPrepareContext& ctx, WindowFrameClauseExp::WindowFrameExclusionType exclusionType)
+    {
+    switch (exclusionType)
+        {
+        case WindowFrameClauseExp::WindowFrameExclusionType::ExcludeCurrentRow:
+            nativeSqlBuilder.Append(" EXCLUDE CURRENT ROW");
+            return ECSqlStatus::Success;
+        case WindowFrameClauseExp::WindowFrameExclusionType::ExcludeGroup:
+            nativeSqlBuilder.Append(" EXCLUDE GROUP");
+            return ECSqlStatus::Success;  
+        case WindowFrameClauseExp::WindowFrameExclusionType::ExcludeNoOthers:
+            nativeSqlBuilder.Append(" EXCLUDE NO OTHERS");
+            return ECSqlStatus::Success;  
+        case WindowFrameClauseExp::WindowFrameExclusionType::ExcludeTies:
+            nativeSqlBuilder.Append(" EXCLUDE CURRENT ROW");
+            return ECSqlStatus::Success;
+        default:
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0667, "Unsupported first window frame exclusion expression.");
+            return ECSqlStatus::InvalidECSql;
+        }
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECSqlExpPreparer::QueryOptionExperimentalFeaturesEnabled(ECDbCR db, ExpCR exp)
+    {
+    return OptionsExp::FindLocalOrInheritedOption<bool>(
+        exp,
+        OptionsExp::ENABLE_EXPERIMENTAL_FEATURES,
+        [](OptionExp const& opt) { return opt.asBool(); },
+        [&db]() { return db.GetECSqlConfig().GetExperimentalFeaturesEnabled(); });
+    }
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+unsigned int ECSqlExpPreparer::QueryOptionsInstanceFlags(ExpCR exp)
+    {
+    const auto useJsPropName = OptionsExp::FindLocalOrInheritedOption<bool>(exp, OptionsExp::USE_JS_PROP_NAMES, [](OptionExp const& opt) { return opt.asBool(); }, []() { return false; });
+    const auto doNotTruncateBlob = OptionsExp::FindLocalOrInheritedOption<bool>(exp, OptionsExp::DO_NOT_TRUNCATE_BLOB, [](OptionExp const& opt) { return opt.asBool(); }, []() { return false; });
+    unsigned int flags = 0;
+    if (useJsPropName) flags |= InstanceReader::FLAGS_UseJsPropertyNames;
+    if (doNotTruncateBlob) flags |= InstanceReader::FLAGS_DoNotTruncateBlobs;
+    return flags;
+    }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1657,16 +2342,21 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractPropertyExp(NativeSqlBuilder::List& 
     if (rc != ECSqlStatus::Success) {
         return rc;
     }
-    
+
     rc = PrepareValueExp(instanceIdSql, ctx, exp.GetInstanceIdPropExp());
     if (rc != ECSqlStatus::Success) {
         return rc;
     }
-    
-    builder.AppendFormatted("extract_prop(%s,%s,'%s')", 
+
+    const auto flags = QueryOptionsInstanceFlags(exp);
+    builder.AppendFormatted("extract_prop(%s,%s,'%s',0x%x%s)",
         classIdSql.front().GetSql().c_str(),
-        instanceIdSql.front().GetSql().c_str(), 
-        exp.GetTargetPath().ToString().c_str());
+        instanceIdSql.front().GetSql().c_str(),
+        exp.GetTargetPath().ToString().c_str(),
+        flags,
+        exp.GetSqlAnchor([&](Utf8CP name) {
+            return ctx.GetAnchors().CreateAnchor(name);
+        }).c_str());
 
     nativeSqlSnippets.push_back(std::move(builder));
     return ECSqlStatus::Success;
@@ -1680,19 +2370,20 @@ ECSqlStatus ECSqlExpPreparer::PrepareExtractInstanceExp(NativeSqlBuilder::List& 
     NativeSqlBuilder builder;
     NativeSqlBuilder::List classIdSql;
     NativeSqlBuilder::List instanceIdSql;
-
     auto rc = PrepareValueExp(classIdSql, ctx, exp.GetClassIdPropExp());
     if (rc != ECSqlStatus::Success) {
         return rc;
     }
-    
+
     rc = PrepareValueExp(instanceIdSql, ctx, exp.GetInstanceIdPropExp());
     if (rc != ECSqlStatus::Success) {
         return rc;
     }
-    
-    builder.AppendFormatted("extract_inst(%s,%s)", classIdSql.front().GetSql().c_str(),instanceIdSql.front().GetSql().c_str());
+
+    const auto flags = QueryOptionsInstanceFlags(exp);
+    builder.AppendFormatted("json(extract_inst(%s,%s, 0x%x))", classIdSql.front().GetSql().c_str(),instanceIdSql.front().GetSql().c_str(), flags);
     nativeSqlSnippets.push_back(std::move(builder));
+    ctx.SetIsInstanceQuery(true);
     return ECSqlStatus::Success;
 }
 //-----------------------------------------------------------------------------------------
@@ -1758,11 +2449,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp(NativeSqlBuilder::List& nativeSqlS
                 nativeSqlSnippets.push_back(builder);
                 return ECSqlStatus::Success;
             }
+            case Exp::Type::WindowFunction:
+                return PrepareWindowFunctionExp(nativeSqlSnippets, ctx, exp.GetAs<WindowFunctionExp>());
             case Exp::Type::NavValueCreationFunc:
                 return PrepareNavValueCreationFuncExp(nativeSqlSnippets, ctx, exp.GetAs<NavValueCreationFuncExp>());
             default:
                 break;
-        }
+            }
 
     BeAssert(false && "ECSqlPreparer::PrepareValueExp> Unhandled ValueExp subclass.");
     return ECSqlStatus::Error;
@@ -1925,20 +2618,20 @@ ECSqlStatus ECSqlExpPreparer::PrepareNavValueCreationFuncExp(NativeSqlBuilder::L
 
     if (!property->GetIsNavigation())
         {
-        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "NAV function expects first argument to be an ECNavigation property.");
+        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0720, "NAV function expects first argument to be an ECNavigation property.");
         return ECSqlStatus::InvalidECSql;
         }
 
     if ((exp.GetIdArgExp()->GetType() == Exp::Type::LiteralValue && !exp.GetIdArgExp()->GetTypeInfo().IsExactNumeric()) || (exp.GetRelECClassIdExp() != nullptr && exp.GetRelECClassIdExp()->GetType() == Exp::Type::LiteralValue && !exp.GetRelECClassIdExp()->GetTypeInfo().IsExactNumeric()))
         {
-        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "NAV function expects second and third arguments to be positive integers.");
+        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0721, "NAV function expects second and third arguments to be positive integers.");
         return ECSqlStatus::InvalidECSql;
         }
 
     auto isUnaryValueValidForId = [&ctx](UnaryValueExp const * argExp) {
         if (argExp->GetOperator() == UnaryValueExp::Operator::Minus || (argExp->GetOperand()->GetType() == Exp::Type::LiteralValue && argExp->GetOperand()->GetAs<LiteralValueExp>().GetRawValue() == "0"))
             {
-            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "NAV function expects second and third arguments to be positive integers.");
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0721, "NAV function expects second and third arguments to be positive integers.");
             return false;
             }
         return true;
@@ -1947,7 +2640,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareNavValueCreationFuncExp(NativeSqlBuilder::L
     auto isLiteralValueValidForId = [&ctx](LiteralValueExp const * argExp) {
         if (argExp->GetRawValue() == "0")
             {
-            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "NAV function expects second and third arguments to be positive integers.");
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0721, "NAV function expects second and third arguments to be positive integers.");
             return false;
             }
         return true;
@@ -2026,7 +2719,7 @@ BooleanSqlOperator ECSqlExpPreparer::DetermineCompoundLogicalOpForCompoundExpres
 
             default:
                 return BooleanSqlOperator::And;
-        }
+            }
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -25,6 +25,8 @@ Utf8String Db::OpenParams::SetFromContainer(Utf8CP dbName, CloudContainerP conta
     m_skipFileCheck = true;
     m_fromContainer = true;
     AddQueryParam(Utf8PrintfString("vfs=%s", container->m_cache->m_name.c_str()).c_str());
+    if (!container->m_logId.empty())
+        AddQueryParam(Utf8PrintfString("logId=%s", container->m_logId.c_str()).c_str());
     return Utf8String("/") + container->m_alias + "/" + dbName;
 }
 
@@ -85,7 +87,6 @@ void CloudCache::ReadGuid() {
     Db::CreateParams params;
     params.m_failIfDbExists = false;
     params.m_rawSQLite = true;
-    params.m_startDefaultTxn = DefaultTxn::No;
 
     if (BE_SQLITE_OK != localStoreDb.CreateNewDb(guidFile, params))
         return;
@@ -98,7 +99,7 @@ void CloudCache::ReadGuid() {
     stat = stmt.Step();
     BeAssert(stat == BE_SQLITE_DONE);
     stmt.Finalize();
-    localStoreDb.TryExecuteSql("COMMIT");
+    localStoreDb.SaveChanges();
     localStoreDb.CloseDb();
 }
 
@@ -153,7 +154,7 @@ void CloudCache::Destroy() {
         m_cloudDb.CloseDb();
 
     for (auto entry : m_containers)
-        entry->Disconnect(true);
+        entry->Disconnect(false, true);
 
     m_containers.clear();
 
@@ -195,7 +196,7 @@ int CloudCache::GetNumCleanupBlocks(CloudContainer& container) {
     auto rc = stmt.Prepare(m_cloudDb, "SELECT ncleanup FROM bcv_container WHERE container=? AND user=?");
     if (rc == BE_SQLITE_OK) {
         stmt.BindText(1, container.m_containerId, Statement::MakeCopy::No);
-        stmt.BindText(2, container.m_accessName, Statement::MakeCopy::No);
+        stmt.BindText(2, container.m_baseUri, Statement::MakeCopy::No);
         rc = stmt.Step();
     }
     return BE_SQLITE_ROW == rc ? stmt.GetValueInt(0) : -1;
@@ -207,7 +208,7 @@ bool CloudCache::IsAttached(CloudContainer& container) {
     auto rc = stmt.Prepare(m_cloudDb, "SELECT 1 FROM bcv_container WHERE container=? AND user=?");
     if (rc == BE_SQLITE_OK) {
         stmt.BindText(1, container.m_containerId, Statement::MakeCopy::No);
-        stmt.BindText(2, container.m_accessName, Statement::MakeCopy::No);
+        stmt.BindText(2, container.m_baseUri, Statement::MakeCopy::No);
         rc = stmt.Step();
     }
     return BE_SQLITE_ROW == rc;
@@ -224,19 +225,19 @@ CloudResult CloudCache::CallSqliteFn(std::function<int(Utf8P*)> fn, Utf8CP funcN
     return CloudResult(stat, stat == 0 ? "" : Utf8PrintfString("%s error: %s", funcName, msg.m_msg ? msg.m_msg : Db::InterpretDbResult((DbResult)stat)).c_str());
 }
 
-CloudContainer* CloudCache::FindMatching(Utf8CP accessName, Utf8CP containerName) {
+CloudContainer* CloudCache::FindMatching(Utf8CP baseUri, Utf8CP containerName) {
     auto isDaemon = this->IsDaemon();
     for (auto entry : m_containers) {
         // For the daemon we presume that all containers are from the same storage account for a single process. No need to check baseUri in this case.
-        if (entry->m_containerId.Equals(containerName) && (isDaemon || entry->m_accessName.Equals(accessName)))
+        if (entry->m_containerId.Equals(containerName) && (isDaemon || entry->m_baseUri.Equals(baseUri)))
             return entry;
     }
     return nullptr;
 }
 
 /** callback to find the authorization token for one of the containers attached to this CloudCache */
-int CloudCache::FindToken(Utf8CP storage, Utf8CP accessName, Utf8CP containerName, Utf8P* token) {
-    auto container = FindMatching(accessName, containerName);
+int CloudCache::FindToken(Utf8CP storage, Utf8CP baseUri, Utf8CP containerName, Utf8P* token) {
+    auto container = FindMatching(baseUri, containerName);
     if (nullptr == container)
         return SQLITE_AUTH;
 
@@ -250,12 +251,15 @@ int CloudCache::FindToken(Utf8CP storage, Utf8CP accessName, Utf8CP containerNam
 CloudResult CloudContainer::Connect(CloudCache& cache) {
     if (nullptr != m_cache)
         return CloudResult(1, "container already attached");
-    if (nullptr != cache.FindMatching(m_accessName.c_str(), m_containerId.c_str()))
+    if (nullptr != cache.FindMatching(m_baseUri.c_str(), m_containerId.c_str()))
         return CloudResult(1, "container with that name already attached");
 
     cache.m_containers.push_back(this); // needed for authorization from attach.
+    auto attachFlags = SQLITE_BCV_ATTACH_IFNOT;
+    if (m_secure) 
+        attachFlags |= SQLITE_BCV_ATTACH_SECURE;
     if (!cache.IsAttached(*this)) {
-        auto result = cache.CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_attach(cache.m_vfs, m_storageType.c_str(), m_accessName.c_str(), m_containerId.c_str(), m_alias.c_str(), SQLITE_BCV_ATTACH_IFNOT, msg); }, "attach");
+        auto result = cache.CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_attach(cache.m_vfs, GetOpenParams().c_str(), m_baseUri.c_str(), m_containerId.c_str(), m_alias.c_str(), attachFlags, msg); }, "attach");
         if (!result.IsSuccess()) {
             cache.m_containers.pop_back(); // failed, remove from list
             return result;
@@ -273,11 +277,13 @@ CloudResult CloudContainer::Connect(CloudCache& cache) {
 
 /**
  * Disconnect this container from the CloudCache. If the containerDb is open, close it first.
+ * @note This function does nothing if the CloudContainer is not connected to a CloudCache. See CloudContainer::Connect
  */
-CloudResult CloudContainer::Disconnect(bool fromCacheDtor) {
+CloudResult CloudContainer::Disconnect(bool isDetach, bool fromCacheDtor) {
     if (nullptr == m_cache)
         return CloudResult();
 
+    OnDisconnect(isDetach);
     m_onDisconnect.RaiseEvent(this);
 
     CloseDbIfOpen();
@@ -291,19 +297,9 @@ CloudResult CloudContainer::Disconnect(bool fromCacheDtor) {
         if (entry != containers.end())
             containers.erase(entry);
     }
+    OnDisconnected(isDetach);
 
-    return CloudResult();
-}
-
-/**
- * Permanently disconnect and then detach this container from the CloudCache.
- */
-CloudResult CloudContainer::Detach() {
-    if (nullptr == m_cache)
-        return CloudResult();
-    auto thisCache = m_cache;
-    auto stat = Disconnect(false);
-    return !stat.IsSuccess() ? stat : thisCache->CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_detach(thisCache->m_vfs, m_alias.c_str(), msg); }, "detach");
+    return isDetach ? thisCache->CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_detach(thisCache->m_vfs, m_alias.c_str(), msg); }, "detach") :  CloudResult();
 }
 
 static int uploadBusy(void* container, int nTries) {
@@ -312,6 +308,7 @@ static int uploadBusy(void* container, int nTries) {
 
 /**
  * Upload all local changes from this container.
+ * @note this function requires the CloudContainer to be connected to a CloudCache. See CloudContainer::Connect
  */
 CloudResult CloudContainer::UploadChanges() {
     BeAssert(m_writeLockHeld);
@@ -320,6 +317,7 @@ CloudResult CloudContainer::UploadChanges() {
 
 /**
  * Revert all local changes from this container.
+ * @note this function requires the CloudContainer to be connected to a CloudCache. See CloudContainer::Connect
  */
 CloudResult CloudContainer::RevertChanges() {
     return CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_revert(m_cache->m_vfs, m_alias.c_str(), msg); }, "revert");
@@ -329,6 +327,7 @@ CloudResult CloudContainer::RevertChanges() {
  * Make a copy of a database in the manifest with a new name.
  * @note this does *not* actually copy any data, it merely makes a second entry in the manifest pointing to all the same blocks.
  * The two databases only differ when one or the other is modified later.
+ * @note this function requires the CloudContainer to be connected to a CloudCache. See CloudContainer::Connect
  */
 CloudResult CloudContainer::CopyDatabase(Utf8StringCR dbFrom, Utf8StringCR dbTo) {
     if (dbFrom.empty() || dbTo.empty())
@@ -338,6 +337,7 @@ CloudResult CloudContainer::CopyDatabase(Utf8StringCR dbFrom, Utf8StringCR dbTo)
 
 /**
  * Remove a database from the CloudContainer.
+ * @note this function requires the CloudContainer to be connected to a CloudCache. See CloudContainer::Connect
  */
 CloudResult CloudContainer::DeleteDatabase(Utf8StringCR dbName) {
     if (dbName.empty())
@@ -347,6 +347,7 @@ CloudResult CloudContainer::DeleteDatabase(Utf8StringCR dbName) {
 
 /**
  * Poll the cloud container for updates to the manifest (made by others).
+ * @note this function requires the CloudContainer to be connected to a CloudCache. See CloudContainer::Connect
  */
 CloudResult CloudContainer::PollManifest() {
     return CallSqliteFn([&](Utf8P* msg) { return sqlite3_bcvfs_poll(m_cache->m_vfs, m_alias.c_str(), msg); }, "poll");
@@ -405,7 +406,7 @@ CloudPrefetch::PrefetchStatus CloudPrefetch::Run(int nRequest, int timeout) {
  * @param httpTimeout if >0, the number of seconds to wait before considering an http request as timed out. Timed out requests will be tried. Default is 60 seconds.
  */
 CloudResult CloudUtil::Init(CloudContainer const& container, int logLevel, int nRequest, int httpTimeout) {
-    int stat = sqlite3_bcv_open(container.m_storageType.c_str(), container.m_accessName.c_str(), container.m_accessToken.c_str(), container.m_containerId.c_str(), &m_handle);
+    int stat = sqlite3_bcv_open(container.GetOpenParams().c_str(), container.m_baseUri.c_str(), container.m_accessToken.c_str(), container.m_containerId.c_str(), &m_handle);
     if (SQLITE_OK != stat)
         return CloudResult(stat,  Utf8PrintfString("cannot open CloudContainer: %s", sqlite3_bcv_errmsg(m_handle)).c_str());
 

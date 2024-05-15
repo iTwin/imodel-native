@@ -359,6 +359,17 @@ TEST_F (LiteralExpressionTests, FloatComparisons)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(LiteralExpressionTests, IdProperties)
+    {
+    auto a = CreateInstanceA(0);
+    EvaluationResult result;
+    TestExpressionEquals(*a, "this.ECInstanceId", ECValue(BeInt64Id::FromString(a->GetInstanceId().c_str()).ToHexStr().c_str()));
+    TestExpressionEquals(*a, "this.ECClassId", ECValue("0")); // ECClassId is 0 because the class is not persisted
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(LiteralExpressionTests, NavigationProperties)
     {
     auto a = CreateInstanceA(0);
@@ -549,6 +560,16 @@ TEST_F (LiteralExpressionTests, MiscSymbols)
 #undef TEST_PATH_SEP
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(LiteralExpressionTests, ReturnsErrorOnNonExistingProperty)
+    {
+    auto a = CreateInstanceA(0);
+    EvaluationResult result;
+    ExpressionStatus status = EvaluateExpression(result, "this.DoesNotExist.X", *a);
+    EXPECT_EQ(ExpressionStatus::UnknownSymbol, status);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct

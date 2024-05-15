@@ -18,7 +18,8 @@ ECSqlStatus IECSqlPreparedStatement::Prepare(ECSqlPrepareContext& ctx, Exp const
     {
     if (m_type != ECSqlType::Select && m_type != ECSqlType::Pragma && m_ecdb.IsReadonly())
         {
-        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "ECDb file is opened read-only. For data-modifying ECSQL statements write access is needed.");
+        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0498,
+            "ECDb file is opened read-only. For data-modifying ECSQL statements write access is needed.");
         return ECSqlStatus::Error;
         }
 
@@ -140,8 +141,17 @@ ECSqlStatus SingleECSqlPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
 
     if (nativeSqlStat != BE_SQLITE_OK)
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Preparing the ECSQL '%s' failed. Underlying SQLite statement failed to prepare: %s %s [SQL: %s]", GetECSql(),
-            ECDb::InterpretDbResult(nativeSqlStat), ctx.GetDataSourceConnection().GetLastError().c_str(), nativeSql.c_str());
+        ctx.Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECSQL,
+            ECDbIssueId::ECDb_0499,
+            "Preparing the ECSQL '%s' failed. Underlying SQLite statement failed to prepare: %s %s [SQL: %s]",
+            GetECSql(),
+            ECDb::InterpretDbResult(nativeSqlStat),
+            ctx.GetDataSourceConnection().GetLastError().c_str(),
+            nativeSql.c_str()
+        );
 
         //even if this is a SQLite error, we want this to be an InvalidECSql error as the reason usually
         //is a wrong ECSQL provided by the user.
@@ -373,10 +383,50 @@ Utf8CP CompoundECSqlPreparedStatement::_GetNativeSql() const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+ECSqlStatus ECSqlSelectPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp const& exp) {
+    auto rc = SingleECSqlPreparedStatement::_Prepare(ctx, exp);
+    if (GetSqliteStatement().IsPrepared()) {
+        m_thisStmtBindIndex = GetSqliteStatement().GetParameterIndex(ctx.GetThisStmtPtrParamDecl());
+        BindThisPtr();
+    }
+    return rc;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+ECSqlField* ECSqlSelectPreparedStatement::GetField(int columnIndex) {
+    if (columnIndex >= 0 && columnIndex < m_fields.size())
+        return m_fields[columnIndex].get();
+    return nullptr;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSqlSelectPreparedStatement::BindThisPtr() {
+    if (m_thisStmtBindIndex > 0)
+        GetSqliteStatement().BindPointer(m_thisStmtBindIndex, this, SELECT_PTR_NAME, nullptr);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+ECSqlStatus ECSqlSelectPreparedStatement::_ClearBindings()  {
+    auto rc = SingleECSqlPreparedStatement::_ClearBindings();
+    BindThisPtr();
+    return rc;
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 DbResult ECSqlSelectPreparedStatement::Step()
     {
     if (SUCCESS != AssertIsValid())
         return BE_SQLITE_ERROR;
+
+    if (IsInstanceQuery())
+        m_ecdb.GetInstanceReader().Reset();
 
     const DbResult stat = DoStep();
     if (BE_SQLITE_ROW == stat)
@@ -500,7 +550,8 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
 
     if (prepareInfo.GetPropertyNameListExp().GetSpecialTokenExpIndexMap().Contains(ECSqlSystemPropertyInfo::ECClassId()))
         {
-        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDBSYS_PROP_ECClassId " may never be specified in the ECSQL INSERT property name expression list.");
+        ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0500,
+            ECDBSYS_PROP_ECClassId " may never be specified in the ECSQL INSERT property name expression list.");
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -509,7 +560,8 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         {
         if (!prepareInfo.GetPropertyNameListExp().GetSpecialTokenExpIndexMap().Contains(ECSqlSystemPropertyInfo::SourceECInstanceId()) && !prepareInfo.GetPropertyNameListExp().GetSpecialTokenExpIndexMap().Contains(ECSqlSystemPropertyInfo::TargetECInstanceId()))
             {
-            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "In an ECSQL INSERT statement against an ECRelationship class " ECDBSYS_PROP_SourceECInstanceId " and " ECDBSYS_PROP_TargetECInstanceId " must always be specified.");
+            ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0501,
+                "In an ECSQL INSERT statement against an ECRelationship class " ECDBSYS_PROP_SourceECInstanceId " and " ECDBSYS_PROP_TargetECInstanceId " must always be specified.");
             return ECSqlStatus::InvalidECSql;
             }
         }
@@ -524,7 +576,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         if (propNameExp->IsPropertyRef())
             continue;
 
-        PropertyMap const* propertyMap = &propNameExp->GetPropertyMap();
+        PropertyMap const* propertyMap = propNameExp->GetPropertyMap();
         BeAssert(propertyMap != nullptr);
         DbTable const* table = nullptr;
         if (propertyMap->IsData()) // sys props are treated separately
@@ -803,7 +855,14 @@ DbResult ECSqlInsertPreparedStatement::StepForEndTableRelationship(ECInstanceKey
         //this can with inserting an end table relationship, as the INSERT really is an update. The SQLite update has a where exp
         //which checks that the FK of the row to be update is NULL. Therefore if the update doesn't affect anything it most likely
         //means that this ECSQL attempts to overwrite the FK which is not supported.
-        GetECDb().GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Could not insert the ECRelationship (%s). Either the source or target constraint's " ECDBSYS_PROP_ECInstanceId " does not exist or the source or target constraint's cardinality is violated.", GetECSql());
+        GetECDb().GetImpl().Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECSQL,
+            ECDbIssueId::ECDb_0502,
+            "Could not insert the ECRelationship (%s). Either the source or target constraint's " ECDBSYS_PROP_ECInstanceId " does not exist or the source or target constraint's cardinality is violated.",
+            GetECSql()
+        );
         return BE_SQLITE_CONSTRAINT_UNIQUE;
         }
 
@@ -928,8 +987,14 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
     SystemPropertyExpIndexMap const& specialTokenExpIndexMap = prepareInfo.GetAssignmentListExp().GetSpecialTokenExpIndexMap();
     if (specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::ECInstanceId()) || specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::ECClassId()))
         {
-        ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Failed to prepare ECSQL '%s'. " ECDBSYS_PROP_ECInstanceId " or " ECDBSYS_PROP_ECClassId " are not allowed in SET clause of ECSQL UPDATE statement. ECDb does not support to modify those.",
-                                                        prepareInfo.GetExp().ToECSql().c_str());
+        ctx.Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECSQL,
+            ECDbIssueId::ECDb_0503,
+            "Failed to prepare ECSQL '%s'. " ECDBSYS_PROP_ECInstanceId " or " ECDBSYS_PROP_ECClassId " are not allowed in SET clause of ECSQL UPDATE statement. ECDb does not support to modify those.",
+            prepareInfo.GetExp().ToECSql().c_str()
+        );
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -940,10 +1005,11 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::TargetECInstanceId()) ||
             specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::TargetECClassId()))
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Failed to prepare ECSQL '%s'. " ECDBSYS_PROP_SourceECInstanceId ", " ECDBSYS_PROP_SourceECClassId ", " ECDBSYS_PROP_TargetECInstanceId
-                                                            ", or " ECDBSYS_PROP_TargetECClassId " are not allowed in the SET clause of ECSQL UPDATE statement. "
-                                                            "ECDb does not support to modify those as they are keys of the relationship. Instead delete the relationship and insert the desired new one.",
-                                                            prepareInfo.GetExp().ToECSql().c_str());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0504,
+                "Failed to prepare ECSQL '%s'. " ECDBSYS_PROP_SourceECInstanceId ", " ECDBSYS_PROP_SourceECClassId ", " ECDBSYS_PROP_TargetECInstanceId
+                ", or " ECDBSYS_PROP_TargetECClassId " are not allowed in the SET clause of ECSQL UPDATE statement. "
+                "ECDb does not support to modify those as they are keys of the relationship. Instead delete the relationship and insert the desired new one.",
+                prepareInfo.GetExp().ToECSql().c_str());
             return ECSqlStatus::InvalidECSql;
             }
         }
@@ -952,14 +1018,14 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         {
         AssignmentExp const& assignmentExp = childExp->GetAs<AssignmentExp>();
         PropertyNameExp const* lhsExp = assignmentExp.GetPropertyNameExp();
-        PropertyMap const& lhsPropMap = lhsExp->GetPropertyMap();
-        if (!lhsPropMap.IsData())
+        PropertyMap const* lhsPropMap = lhsExp->GetPropertyMap();
+        if (!lhsPropMap->IsData())
             {
-            BeAssert(lhsPropMap.IsData());
+            BeAssert(lhsPropMap->IsData());
             return ECSqlStatus::Error;
             }
 
-        DbTable const& table = lhsPropMap.GetAs<DataPropertyMap>().GetTable();
+        DbTable const& table = lhsPropMap->GetAs<DataPropertyMap>().GetTable();
         prepareInfo.AddAssignmentExp(assignmentExp, table);
 
         ValueExp const* rhsExp = assignmentExp.GetValueExp();
@@ -972,16 +1038,17 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
                 continue;
 
             GetTablesPropertyMapVisitor getTablesVisitor;
-            if (SUCCESS != propNameExp.GetPropertyMap().AcceptVisitor(getTablesVisitor))
+            if (SUCCESS != propNameExp.GetPropertyMap()->AcceptVisitor(getTablesVisitor))
                 {
                 BeAssert(false);
                 return ECSqlStatus::Error;
                 }
 
-            if (getTablesVisitor.GetTables().find(&table) == getTablesVisitor.GetTables().end())
+            if (!getTablesVisitor.Contains(table))
                 {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "Failed to prepare ECSQL '%s'. The expression '%s' in the SET clause refers to different tables. This is not yet supported.",
-                                                                prepareInfo.GetExp().ToECSql().c_str(), assignmentExp.ToECSql().c_str());
+                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0505,
+                    "Failed to prepare ECSQL '%s'. The expression '%s' in the SET clause refers to different tables. This is not yet supported.",
+                    prepareInfo.GetExp().ToECSql().c_str(), assignmentExp.ToECSql().c_str());
                 return ECSqlStatus::InvalidECSql;
                 }
             }
@@ -1069,8 +1136,8 @@ bool ECSqlUpdatePreparedStatement::IsWhereClauseSelectorStatementNeeded(PrepareI
         if (propNameExp.IsPropertyRef())
             continue;
 
-        PropertyMap const& propMap = propNameExp.GetPropertyMap();
-        if (propMap.GetType() == PropertyMap::Type::ECInstanceId || propMap.GetType() == PropertyMap::Type::ECClassId)
+        PropertyMap const* propMap = propNameExp.GetPropertyMap();
+        if (propMap->GetType() == PropertyMap::Type::ECInstanceId || propMap->GetType() == PropertyMap::Type::ECClassId)
             continue;//ECInstanceId and ECClassId exist in all tables, so they don't require a where clause selector
 
         //if more than one table is involved and the where clause has a prop name exp other than ECInstanceId or ECClassId
@@ -1081,14 +1148,13 @@ bool ECSqlUpdatePreparedStatement::IsWhereClauseSelectorStatementNeeded(PrepareI
         //A single table is involved in assignment. We can skip the extra SELECT if the where clause does not involve
         //other tables
         GetTablesPropertyMapVisitor getTablesVisitor;
-        if (SUCCESS != propMap.AcceptVisitor(getTablesVisitor))
+        if (SUCCESS != propMap->AcceptVisitor(getTablesVisitor))
             {
             BeAssert(false);
             return false;
             }
 
-        std::set<DbTable const*> const& mappedTables = getTablesVisitor.GetTables();
-        if (mappedTables.find(singleTableInvolvedInAssignment) == mappedTables.end())
+        if (!getTablesVisitor.Contains(*singleTableInvolvedInAssignment))
             return true;
         }
 
@@ -1283,12 +1349,13 @@ ECSqlStatus ECSqlUpdatePreparedStatement::CheckForReadonlyProperties(PrepareInfo
         PropertyNameExp const* lhsOperandOfAssignmentExp = expr->GetAs<AssignmentExp>().GetPropertyNameExp();
         if (!lhsOperandOfAssignmentExp->IsPropertyRef())
             {
-            ECPropertyCR prop = lhsOperandOfAssignmentExp->GetPropertyMap().GetProperty();
+            ECPropertyCR prop = lhsOperandOfAssignmentExp->GetPropertyMap()->GetProperty();
 
             if (prop.IsReadOnlyFlagSet() && prop.GetIsReadOnly() && !prop.IsCalculated())
                 {
-                prepareInfo.GetContext().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "The ECProperty '%s' is read-only. Read-only ECProperties cannot be modified by an ECSQL UPDATE statement. %s",
-                                                                       prop.GetName().c_str(), prepareInfo.GetExp().ToECSql().c_str());
+                prepareInfo.GetContext().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0506,
+                    "The ECProperty '%s' is read-only. Read-only ECProperties cannot be modified by an ECSQL UPDATE statement. %s",
+                     prop.GetName().c_str(), prepareInfo.GetExp().ToECSql().c_str());
                 return ECSqlStatus::InvalidECSql;
                 }
             }

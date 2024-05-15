@@ -50,7 +50,7 @@ TEST_F(ProfileTestFixture, Profile)
 
     //now create an ECDb file
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ecdbprofiletest.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ecdbprofiletest.ecdb"));
 
     EXPECT_TRUE(GetHelper().TableExists(PROFILE_TABLE)) << "ECDb profile table not found in ECDb file which was newly created.";
 
@@ -72,7 +72,7 @@ TEST_F(ProfileTestFixture, Profile)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ProfileTestFixture, ProfileSchemas)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("empty.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("empty.ecdb"));
 
     ECSchemaCP systemSchema = m_ecdb.Schemas().GetSchema("ECDbSystem");
     ASSERT_TRUE(systemSchema != nullptr);
@@ -112,7 +112,7 @@ TEST_F(ProfileTestFixture, GetECDbProfileVersion)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ProfileTestFixture, CreateProfileFailsIfAlreadyCreated)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ecdbprofiletest2.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ecdbprofiletest2.ecdb"));
 
     EXPECT_TRUE(GetHelper().TableExists(PROFILE_TABLE)) << "ECDb profile table not found in ECDb file which was newly created.";
 
@@ -241,7 +241,7 @@ TEST_F(ProfileTestFixture, CheckECDbProfileVersion)
         ASSERT_EQ(BE_SQLITE_OK, db.SaveChanges()) << versionStr;
         };
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ecdbprofiletest.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ecdbprofiletest.ecdb"));
     BeFileName filePath(m_ecdb.GetDbFileName());
     CloseECDb();
 
@@ -332,7 +332,7 @@ TEST_F(ProfileTestFixture, ImportSchemaByProfileVersion)
         ASSERT_EQ(BE_SQLITE_OK, db.SaveChanges()) << versionStr;
         };
 
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ecdbprofileschemaimporttest.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ecdbprofileschemaimporttest.ecdb"));
     BeFileName filePath(m_ecdb.GetDbFileName());
     CloseECDb();
 

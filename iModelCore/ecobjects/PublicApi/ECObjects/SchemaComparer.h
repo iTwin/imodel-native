@@ -172,6 +172,7 @@ public:
         bool HasChangeName() const { return !m_changeName.empty(); }
         ECOBJECTS_EXPORT Utf8CP GetChangeName() const;
         OpCode GetOpCode() const { return m_opCode; }
+        void SetOpCode(OpCode opCode) { m_opCode = opCode; }
         ECChange const* GetParent() const { return m_parent; }
         //! IsChanged is always true if ECChange::GetOpCode is OpCode::New or OpCode::Deleted.
         //! If ECChange::GetOpCode is OpCode::Modified, IsChanged returns true if old and new value differ from each other
@@ -444,6 +445,8 @@ struct PrimitiveChange final : public ECChange
 
             m_old = oldValue;
             m_new = newValue;
+            if (m_new.IsNull())
+                SetOpCode(OpCode::Deleted);
             return SUCCESS;
             }
 
@@ -923,7 +926,7 @@ private :
     Options m_options;
 
     BentleyStatus CompareSchema(SchemaChange&, ECN::ECSchemaCP, ECN::ECSchemaCP);
-    BentleyStatus CompareReferences(SchemaReferenceChanges&, ECN::ECSchemaReferenceList const*, ECN::ECSchemaReferenceList const*);
+    BentleyStatus CompareReferences(SchemaReferenceChanges&, ECN::ECSchemaReferenceList const*, ECN::ECSchemaReferenceList const*, ECN::ECSchemaCP oldSchema, ECN::ECSchemaCP newSchema);
     BentleyStatus CompareClasses(ClassChanges&, ECN::ECClassContainerCP, ECN::ECClassContainerCP);
     BentleyStatus CompareClass(ClassChange&, ECN::ECClassCP, ECN::ECClassCP);
     BentleyStatus CompareBaseClasses(BaseClassChanges&, ECN::ECBaseClassesList const*, ECN::ECBaseClassesList const*);

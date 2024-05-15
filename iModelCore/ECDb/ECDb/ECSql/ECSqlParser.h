@@ -10,6 +10,7 @@
 #include "DeleteStatementExp.h"
 #include "PragmaStatementExp.h"
 #include "CommonTableExp.h"
+#include "WindowFunctionExp.h"
 #include "ValueCreationFuncExp.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -190,7 +191,7 @@ private:
     BentleyStatus ParseFunctionArg(std::unique_ptr<ValueExp>& exp, connectivity::OSQLParseNode const& argNode) const { return ParseResult(exp, &argNode); }
     BentleyStatus ParseAndAddFunctionArg(FunctionCallExp&, connectivity::OSQLParseNode const*) const;
 
-    BentleyStatus ParseGeneralSetFct(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseAggregateFct(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseGroupByClause(std::unique_ptr<GroupByExp>&, connectivity::OSQLParseNode const*) const;
 
     BentleyStatus ParseCTEBlock(std::unique_ptr<CommonTableBlockExp>&, connectivity::OSQLParseNode const*) const;
@@ -240,6 +241,7 @@ private:
     BentleyStatus ParseSubquery(std::unique_ptr<SubqueryExp>&, connectivity::OSQLParseNode const*) const;
 
     BentleyStatus ParseTableNode(std::unique_ptr<ClassNameExp>&, connectivity::OSQLParseNode const& tableNode, ECSqlType, PolymorphicInfo) const;
+    BentleyStatus ParseTableNodeRef(std::unique_ptr<ClassRefExp>&, connectivity::OSQLParseNode const&, ECSqlType) const;
     BentleyStatus ParseTableNodeWithOptMemberCall(std::unique_ptr<ClassNameExp>&, connectivity::OSQLParseNode const&, ECSqlType, PolymorphicInfo polymorphic, bool disqualifyPrimaryJoin) const;
     BentleyStatus ParseTableRef(std::unique_ptr<ClassRefExp>&, connectivity::OSQLParseNode const*, ECSqlType ecsqlType) const;
     BentleyStatus ParseTerm(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
@@ -252,16 +254,35 @@ private:
     BentleyStatus ParseValueExp(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseValueExpCommalist(std::unique_ptr<ValueExpListExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseValueExpPrimary(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseValuesCommalist(std::unique_ptr<SelectStatementExp>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseValuesOrQuerySpec(std::vector<std::unique_ptr<ValueExp>>&, connectivity::OSQLParseNode const&) const;
-    BentleyStatus ParseWhereClause(std::unique_ptr<WhereExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseWindowFunction(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseWhereClause(std::unique_ptr<WhereExp> &, connectivity::OSQLParseNode const *) const;
     BentleyStatus ParseTableValuedFunction(std::unique_ptr<TableValuedFunctionExp>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseIIFExp(std::unique_ptr<ValueExp> &valueExp, connectivity::OSQLParseNode const *parseNode) const;
     BentleyStatus ParseTypePredicate(std::unique_ptr<ValueExp> &valueExp, connectivity::OSQLParseNode const *parseNode) const;
+    BentleyStatus ParseWindowClause(std::unique_ptr<WindowFunctionClauseExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseWindowDefinitionListExp(std::unique_ptr<WindowDefinitionListExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseWindowDefinitionExp(std::unique_ptr<WindowDefinitionExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseWindowFunctionType(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseArgumentlessWindowFunction(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseNtileFunction(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseLeadOrLagFunction(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseOptLeadOrLagFunctionArguments(std::unique_ptr<FunctionCallExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseFirstOrLastValueFunction(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseNthValueFunction(std::unique_ptr<ValueExp>&exp, connectivity::OSQLParseNode const* parseNode) const;
+    BentleyStatus ParseWindowSpecification(std::unique_ptr<WindowSpecification>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseWindowPartitionClause(std::unique_ptr<WindowPartitionColumnReferenceListExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseWindowPartitionColumnRef(std::unique_ptr<WindowPartitionColumnReferenceExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseCollateClause(WindowPartitionColumnReferenceExp::CollateClauseFunction&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseFilterClause(std::unique_ptr<FilterClauseExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseWindowFrameClause(std::unique_ptr<WindowFrameClauseExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseWindowFrameUnit(WindowFrameClauseExp::WindowFrameUnit&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseWindowFrameStart(std::unique_ptr<WindowFrameStartExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseWindowFrameExclusion(WindowFrameClauseExp::WindowFrameExclusionType&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseWindowFrameBetween(std::unique_ptr<WindowFrameBetweenExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseFirstWindowFrameBound(std::unique_ptr<FirstWindowFrameBoundExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseSecondWindowFrameBound(std::unique_ptr<SecondWindowFrameBoundExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseValueCreationFuncExp(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const *) const;
     BentleyStatus ParseNavValueCreationFuncExp(std::unique_ptr<NavValueCreationFuncExp>&, connectivity::OSQLParseNode const *) const;
 

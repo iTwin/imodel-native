@@ -4,6 +4,7 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECDb/ConcurrentQueryManager.h>
+#include "QueryJsonAdaptor.h"
 #include <queue>
 #include <map>
 #include <thread>
@@ -33,7 +34,6 @@ using recursive_guard_t = std::lock_guard<recursive_mutex_t>;
 
 struct CachedConnection;
 struct ConnectionCache;
-struct QueryJsonAdaptor;
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
@@ -42,7 +42,7 @@ struct ErrorListenerScope final: ECN::IIssueListener {
         mutable std::string m_lastError;
         ECDb& m_ecdb;
         BeMutexHolder m_lock;
-        void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, Utf8CP message) const override;
+        void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override;
     public:
         explicit ErrorListenerScope (ECDb& ecdb);
         ~ErrorListenerScope();
@@ -59,14 +59,14 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
         std::string m_cachedString;
         rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator> m_allocator;
         rapidjson::CrtAllocator m_stackAllocator;
-        rapidjson::Document m_cachedXmlDoc;
+        rapidjson::Document m_cachedJsonDoc;
         Db const* m_conn;
         bool m_usePrimaryConn;
     public:
-        CachedQueryAdaptor() :m_cachedXmlDoc(&m_allocator, 1024, &m_stackAllocator), m_usePrimaryConn(false) { m_cachedXmlDoc.SetArray(); }
+        CachedQueryAdaptor() :m_cachedJsonDoc(&m_allocator, 1024, &m_stackAllocator), m_usePrimaryConn(false) { m_cachedJsonDoc.SetArray(); }
         ECSqlStatement& GetStatement() { return m_stmt; }
         QueryJsonAdaptor& GetJsonAdaptor();
-        rapidjson::Document& ClearAndGetCachedXmlDocument() { m_cachedXmlDoc.Clear();  return m_cachedXmlDoc; }
+        rapidjson::Document& ClearAndGetCachedJsonDocument() { m_cachedJsonDoc.Clear(); m_allocator.Clear(); return m_cachedJsonDoc; }
         std::string& ClearAndGetCachedString() { m_cachedString.clear(); return m_cachedString; }
         bool GetUsePrimaryConn() const { return m_usePrimaryConn; }
         void SetUsePrimaryConn(bool val) { m_usePrimaryConn = val; }
@@ -78,39 +78,6 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
         }
 };
 
-//=======================================================================================
-//! @bsiclass
-//=======================================================================================
-struct QueryJsonAdaptor {
-private:
-    bool m_abbreviateBlobs;
-    bool m_classIdToClassNames;
-    bool m_useJsName;
-    ECDbCR m_ecdb;
-
-private:
-    BentleyStatus RenderRootProperty(BeJsValue out, IECSqlValue const& in) const;
-    BentleyStatus RenderProperty(BeJsValue out, IECSqlValue const& in) const;
-    BentleyStatus RenderPrimitiveProperty(BeJsValue out, IECSqlValue const& in, ECN::PrimitiveType const* prop) const;
-    BentleyStatus RenderNavigationProperty(BeJsValue out, IECSqlValue const& in) const;
-    BentleyStatus RenderPoint2d(BeJsValue out, IECSqlValue const& in) const;
-    BentleyStatus RenderPoint3d(BeJsValue out, IECSqlValue const& in) const;
-    BentleyStatus RenderLong(BeJsValue out, IECSqlValue const& in, ECN::PrimitiveECPropertyCP prop) const;
-    BentleyStatus RenderGeometryProperty(BeJsValue out, IECSqlValue const& in) const;
-    BentleyStatus RenderBinaryProperty(BeJsValue out, IECSqlValue const& in) const;
-    BentleyStatus RenderStructProperty(BeJsValue out, IECSqlValue const& in) const;
-    BentleyStatus RenderPrimitiveArrayProperty(BeJsValue out, IECSqlValue const& in) const;
-    BentleyStatus RenderStructArrayProperty(BeJsValue out, IECSqlValue const& in) const;
-
-public:
-    QueryJsonAdaptor(ECDbCR ecdb):m_ecdb(ecdb),m_abbreviateBlobs(true), m_classIdToClassNames(false),m_useJsName(false){}
-    QueryJsonAdaptor& SetAbbreviateBlobs(bool v) { m_abbreviateBlobs = v; return *this;}
-    QueryJsonAdaptor& SetConvertClassIdsToClassNames(bool v) { m_classIdToClassNames = v; return *this; }
-    QueryJsonAdaptor& UseJsNames(bool v) { m_useJsName = v; return *this; }
-    BentleyStatus RenderRow(BeJsValue rowJson, IECSqlRow const& stmt, bool asArray = true) const;
-    BentleyStatus RenderValue(BeJsValue valJson, IECSqlValue const& val) { return RenderRootProperty(valJson, val); }
-    void GetMetaData(QueryProperty::List& list, ECSqlStatement const& stmt) const;
-};
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================

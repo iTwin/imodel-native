@@ -56,14 +56,15 @@ struct DerivedPropertyExp final : Exp
         std::vector<Utf8String> m_resultSetColumns;
 
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override { Utf8String str("DerivedProperty [Column alias: "); str.append(m_columnAlias).append("]"); return str; }
-        
+
     public:
         DerivedPropertyExp(std::unique_ptr<ValueExp> valueExp, Utf8CP columnAlias);
 
         ValueExp const* GetExpression() const { return GetChild<ValueExp>(0); }
         Utf8String GetName() const;
-        
+
         Utf8StringCR GetColumnAlias() const;
         Utf8StringCR GetCteColumnName() const { return m_cteColumnName; }
         Utf8StringCR GetNestedAlias() const { return m_cteColumnName.empty() ? m_nestedAlias : m_cteColumnName; }
@@ -95,6 +96,7 @@ struct FromExp final : Exp
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
 
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override { return "FromClause"; }
 
     public:
@@ -120,7 +122,8 @@ struct GroupByExp final : Exp
         size_t m_groupingValueListExpIndex;
 
         Exp::FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
-        void _ToECSql(ECSqlRenderContext& ctx) const override { ctx.AppendToECSql("GROUP BY ").AppendToECSql(*GetGroupingValueListExp()); }
+        void _ToECSql(ECSqlRenderContext& ctx) const override;
+        void _ToJson(BeJsValue val, JsonFormat const& fmt) const override;
         Utf8String _ToString() const override { return "GroupBy"; }
 
     public:
@@ -138,7 +141,8 @@ struct HavingExp final : Exp
     private:
         size_t m_searchConditionExpIndex;
 
-        void _ToECSql(ECSqlRenderContext& ctx) const override { ctx.AppendToECSql("HAVING ").AppendToECSql(*GetSearchConditionExp()); }
+        void _ToECSql(ECSqlRenderContext& ctx) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override { return "Having"; }
 
     public:
@@ -158,6 +162,7 @@ struct LimitOffsetExp final : Exp
         int m_offsetExpIndex = UNSET_CHILDINDEX;
 
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override { return "LimitOffset"; }
 
         Exp::FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
@@ -178,6 +183,11 @@ struct LimitOffsetExp final : Exp
 struct OrderBySpecExp final : Exp
     {
     public:
+        enum class NullsOrder {
+            NotSpecified,
+            First,
+            Last
+        };
         enum class SortDirection
             {
             Ascending,
@@ -186,15 +196,21 @@ struct OrderBySpecExp final : Exp
             };
     private:
         SortDirection m_direction;
-
+        NullsOrder m_nullsOrder;
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
 
     public:
-        OrderBySpecExp(std::unique_ptr<ComputedExp>& expr, SortDirection direction) : Exp(Type::OrderBySpec), m_direction(direction) { AddChild(std::move(expr)); }
+        OrderBySpecExp(std::unique_ptr<ComputedExp>& expr, SortDirection direction, NullsOrder nullsOrder) :
+            Exp(Type::OrderBySpec),
+            m_nullsOrder(nullsOrder),
+            m_direction(direction) { AddChild(std::move(expr)); }
         ComputedExp const* GetSortExpression() const { return GetChild<ComputedExp>(0); }
         SortDirection GetSortDirection() const { return m_direction; }
+        NullsOrder GetNullsOrder() const { return m_nullsOrder; }
+
     };
 
 //=======================================================================================
@@ -207,6 +223,7 @@ struct OrderByExp final : Exp
         std::vector<SingleSelectStatementExp const*> m_unionClauses;
 
         void _ToECSql(ECSqlRenderContext& ctx) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override { return "OrderBy"; }
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
         ComputedExp const* FindIncompatibleOrderBySpecExpForUnion() const;
@@ -231,6 +248,7 @@ struct SelectClauseExp final : Exp
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
 
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override { return "Selection (aka SelectClause)"; }
 
     public:
@@ -260,6 +278,7 @@ struct QueryExp : Exp
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
+struct WindowFunctionClauseExp;
 struct SingleSelectStatementExp final : QueryExp
     {
     private:
@@ -270,6 +289,7 @@ struct SingleSelectStatementExp final : QueryExp
         int m_orderByClauseIndex = UNSET_CHILDINDEX;
         int m_groupByClauseIndex = UNSET_CHILDINDEX;
         int m_havingClauseIndex = UNSET_CHILDINDEX;
+        int m_WindowFunctionClauseExpExpIndex = UNSET_CHILDINDEX;
         int m_limitOffsetClauseIndex = UNSET_CHILDINDEX;
         int m_optionsClauseIndex = UNSET_CHILDINDEX;
         std::vector<RangeClassInfo> m_rangeClassRefExpCache;
@@ -277,6 +297,7 @@ struct SingleSelectStatementExp final : QueryExp
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
 
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
 
     protected:
@@ -285,18 +306,18 @@ struct SingleSelectStatementExp final : QueryExp
 
     public:
         SingleSelectStatementExp(SqlSetQuantifier selectionType, std::unique_ptr<SelectClauseExp>, std::unique_ptr<FromExp>, std::unique_ptr<WhereExp>,
-                                 std::unique_ptr<OrderByExp>, std::unique_ptr<GroupByExp>, std::unique_ptr<HavingExp>, std::unique_ptr<LimitOffsetExp> limitOffsetExp, std::unique_ptr<OptionsExp>);
+                                 std::unique_ptr<OrderByExp>, std::unique_ptr<WindowFunctionClauseExp>, std::unique_ptr<GroupByExp>, std::unique_ptr<HavingExp>, std::unique_ptr<LimitOffsetExp> limitOffsetExp, std::unique_ptr<OptionsExp>);
 
         explicit SingleSelectStatementExp(std::vector<std::unique_ptr<ValueExp>>&);
         bool IsRowConstructor() const { return m_fromClauseIndex == UNSET_CHILDINDEX;}
 
         SqlSetQuantifier GetSelectionType() const { return m_selectionType; }
-        FromExp const* GetFrom() const 
-            { 
+        FromExp const* GetFrom() const
+            {
             if (m_fromClauseIndex < 0)
                 return nullptr;
 
-            return GetChild<FromExp>((size_t) m_fromClauseIndex); 
+            return GetChild<FromExp>((size_t) m_fromClauseIndex);
             }
 
         WhereExp const* GetWhere() const
@@ -305,6 +326,14 @@ struct SingleSelectStatementExp final : QueryExp
                 return nullptr;
 
             return GetChild<WhereExp>((size_t) m_whereClauseIndex);
+            }
+        
+        WindowFunctionClauseExp const* GetWindowFunctionClause() const
+            {
+            if (m_WindowFunctionClauseExpExpIndex < 0)
+                return nullptr;
+
+            return GetChild<WindowFunctionClauseExp>((size_t) m_WindowFunctionClauseExpExpIndex);
             }
 
         OrderByExp const* GetOrderBy() const
@@ -346,7 +375,7 @@ struct SingleSelectStatementExp final : QueryExp
 
             return GetChild<OptionsExp>((size_t) m_optionsClauseIndex);
             }
-        
+
 
         bool IsCoreSelect() const { return m_limitOffsetClauseIndex == UNSET_CHILDINDEX && m_optionsClauseIndex == UNSET_CHILDINDEX; }
     };
@@ -358,8 +387,9 @@ struct SingleSelectStatementExp final : QueryExp
 struct SelectStatementExp;
 struct SubqueryExp final : QueryExp
     {
-    private:       
+    private:
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override { return "Subquery"; }
 
     protected:
@@ -391,6 +421,7 @@ struct SelectStatementExp final : QueryExp
         bool m_isAll;
 
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override { return "SelectStatementExp"; }
         PropertyMatchResult _FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const override{ return GetFirstStatement().FindProperty(ctx, propertyPath, options); }
         SelectClauseExp const* _GetSelection() const override { return GetFirstStatement().GetSelection(); }
@@ -416,7 +447,7 @@ struct SelectStatementExp final : QueryExp
             } while(cur != nullptr);
             return list;
         }
-        
+
     };
 
 
@@ -442,6 +473,7 @@ struct SubqueryRefExp final : RangeClassRefExp
         }
         void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
         ECN::ECClassCP m_viewClass;
         Utf8String m_viewTableSpace;
@@ -467,6 +499,7 @@ struct AllOrAnyExp final : BooleanExp
         size_t m_subqueryExpIndex;
 
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
 
     public:
@@ -488,6 +521,7 @@ struct SubqueryTestExp final : BooleanExp
         SubqueryTestOperator m_op;
 
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override;
 
     public:
@@ -507,6 +541,7 @@ struct SubqueryValueExp final : ValueExp
     private:
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override { return "SubqueryValue"; }
 
     public:

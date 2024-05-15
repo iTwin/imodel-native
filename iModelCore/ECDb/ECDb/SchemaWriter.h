@@ -152,7 +152,7 @@ struct SchemaWriter final
                 rules.Append(ACCEPT, "*", "*", ALL);
                 }
 
-            BentleyStatus PreprocessSchemas(bvector<ECN::ECSchemaCP>& out, bvector<ECN::ECSchemaCP> const& in);
+            BentleyStatus PreprocessSchemas(bvector<ECN::ECSchemaCP>& out, bvector<ECN::ECSchemaCP> const& in, ECN::ECSchemaReadContextR schemaContext);
             BentleyStatus PostprocessSchemas(bvector<ECN::ECSchemaCP>& out, bvector<ECN::ECSchemaCP> const& in);
             bool AssertReservedPropertyPolicy(ECN::ECClassCR entityClass, ECN::ECPropertyCP property = nullptr) const;
             void ClearCache() { m_schemasToImport.clear(); m_existingSchemas.clear(); GetECDb().ClearECDbCache(); }
@@ -166,6 +166,7 @@ struct SchemaWriter final
             ECN::SchemaDiff& GetDiff() { return m_diff; }
 
             bool AreMajorSchemaVersionChangesAllowed() const { return !Enum::Contains(m_importCtx.GetOptions(), SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade); }
+            bool IsMajorSchemaVersionChangeAllowedForDynamicSchemas() const { return Enum::Contains(m_importCtx.GetOptions(), SchemaManager::SchemaImportOptions::AllowMajorSchemaUpgradeForDynamicSchemas); }
             bool IgnoreIllegalDeletionsAndModifications() const { return Enum::Contains(m_importCtx.GetOptions(), SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications); }
             bool IsMajorSchemaVersionChange(ECN::ECSchemaId schemaId) const { return m_schemasWithMajorVersionChange.find(schemaId) != m_schemasWithMajorVersionChange.end(); }
             bool IsEC32AvailableInFile() const { return m_ec32AvailableInFile; }
@@ -238,16 +239,18 @@ struct SchemaWriter final
         static BentleyStatus UpdateFormatCompositeUnitLabel(Context&, ECN::FormatId, ECN::StringChange& unitLabelChange, int ordinal);
 
         static BentleyStatus UpdateProperties(Context&, ECN::PropertyChanges&, ECN::ECClassCR oldClass, ECN::ECClassCR newClass);
-        static BentleyStatus DeleteClass(Context&, ECN::ClassChange&, ECN::ECClassCR);
-        static BentleyStatus DeleteProperty(Context&, ECN::PropertyChange&, ECN::ECPropertyCR, ECN::ECPropertyCP);
+        static BentleyStatus DeleteClass(Context&, ECN::ClassChange&, ECN::ECClassCR, bool);
+        static BentleyStatus DeleteProperty(Context&, ECN::PropertyChange&, ECN::ECPropertyCR, ECN::ECPropertyCP, bool);
         static BentleyStatus DeleteCustomAttributes(Context&, ECContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType);
         static BentleyStatus DeleteInstances(Context&, ECN::ECClassCR);
         static BentleyStatus DeleteCustomAttributeClass(Context&, ECN::ECCustomAttributeClassCR);
         static BentleyStatus DeletePropertyCategory(Context&, ECN::PropertyCategoryCR);
+        static BentleyStatus DeleteKindOfQuantity(Context&, ECN::KindOfQuantityCR, bool);
+        static BentleyStatus DeleteEnumeration(Context&, ECN::ECEnumerationCR, bool);
 
         static bool IsSpecifiedInRelationshipConstraint(Context&, ECN::ECClassCR);
 
-        static bool IsPropertyTypeChangeSupported(Utf8StringR error, ECN::StringChange& typeChange, ECN::ECPropertyCR oldProperty, ECN::ECPropertyCR newProperty);
+        static bool IsPropertyTypeChangeSupported(Utf8StringR error, ECN::StringChange& typeChange, ECN::ECPropertyCR oldProperty, ECN::ECPropertyCR newProperty, bool isPrimitiveTypeChangeAllowed);
         static bool UnitChangeAllowed (Context& ctx, ECN::ECPropertyCR oldProperty, ECN::ECPropertyCR newProperty);
 
         static BentleyStatus UpdateBaseClasses(Context&, ECN::BaseClassChanges&, ECN::ECClassCR, ECN::ECClassCR);

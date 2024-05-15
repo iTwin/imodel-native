@@ -131,7 +131,7 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor
     private:
         Type m_type;
         ECN::ECPropertyCR m_ecProperty;
-        PropertyMap const* m_parentPropertMap = nullptr;
+        PropertyMap const* m_parentPropertyMap = nullptr;
         ClassMap const& m_classMap;
         const Utf8String m_propertyAccessString;
 
@@ -144,10 +144,10 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor
     protected:
 
         PropertyMap(Type kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
-            : m_type(kind), m_classMap(classMap), m_ecProperty(ecProperty), m_parentPropertMap(nullptr), m_propertyAccessString(ecProperty.GetName()) {}
+            : m_type(kind), m_classMap(classMap), m_ecProperty(ecProperty), m_parentPropertyMap(nullptr), m_propertyAccessString(ecProperty.GetName()) {}
 
         PropertyMap(Type type, PropertyMap const& parentPropertyMap, ECN::ECPropertyCR ecProperty, Utf8StringCR accessString)
-            :m_type(type), m_classMap(parentPropertyMap.GetClassMap()), m_ecProperty(ecProperty), m_parentPropertMap(&parentPropertyMap),
+            :m_type(type), m_classMap(parentPropertyMap.GetClassMap()), m_ecProperty(ecProperty), m_parentPropertyMap(&parentPropertyMap),
             m_propertyAccessString(accessString)
             {}
 
@@ -167,7 +167,7 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor
         //! return full access string from root property to current property.
         Utf8StringCR GetAccessString() const { return m_propertyAccessString; }
         //! return parent property map if any.
-        PropertyMap const* GetParent() const { return m_parentPropertMap; }
+        PropertyMap const* GetParent() const { return m_parentPropertyMap; }
         //! return class map that owns this property
         ClassMap const& GetClassMap() const { return m_classMap; }
 

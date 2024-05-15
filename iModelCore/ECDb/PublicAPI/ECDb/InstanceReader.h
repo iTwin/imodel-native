@@ -17,6 +17,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! @internal Allow fast reading of full instance by its classid and instanceId
 //=======================================================================================
 struct InstanceReader final {
+    public:
+    constexpr static unsigned FLAGS_UseJsPropertyNames = 0x1u;
+    constexpr static unsigned FLAGS_DoNotTruncateBlobs = 0x2u;
+
     struct JsonParams {
         private:
             bool m_abbreviateBlobs:1;
@@ -24,7 +28,7 @@ struct InstanceReader final {
             bool m_useJsName:3;
             bool m_indent:4;
         public:
-            JsonParams():m_abbreviateBlobs(true),m_classIdToClassNames(true), m_useJsName(false), m_indent(false){}
+            JsonParams():m_abbreviateBlobs(true),m_classIdToClassNames(false), m_useJsName(false), m_indent(false){}
             bool GetAbbreviateBlobs() const { return m_abbreviateBlobs;}
             bool GetClassIdToClassNames() const {return m_classIdToClassNames;}
             bool GetUseJsName() const {return m_useJsName; }
@@ -59,12 +63,12 @@ struct InstanceReader final {
             Position(ECInstanceId instanceId,  ECN::ECClassId classId, Utf8CP accessString = nullptr):
                 m_instanceId(instanceId), m_classId(classId), m_accessString(accessString),m_classFullName(nullptr){}
             Position(ECInstanceId instanceId, Utf8CP classFullName, Utf8CP accessString = nullptr):
-                m_instanceId(instanceId), m_classFullName(classFullName), m_accessString(accessString){} 
+                m_instanceId(instanceId), m_classFullName(classFullName), m_accessString(accessString){}
             ECN::ECClassId GetClassId() const { return m_classId; }
             ECInstanceId GetInstanceId() const { return m_instanceId; }
             Utf8CP GetAccessString() const { return m_accessString; }
             Utf8CP GetClassFullName() const { return m_classFullName; }
-            Position Resolve(ECN::ECClassId classId) const { 
+            Position Resolve(ECN::ECClassId classId) const {
                 return Position(m_instanceId, classId, m_accessString) ;
             }
     };
@@ -78,6 +82,7 @@ struct InstanceReader final {
         ECDB_EXPORT explicit InstanceReader(ECDbCR);
         ECDB_EXPORT ~InstanceReader();
         ECDB_EXPORT bool Seek(Position const&, RowCallback) const;
+        ECDB_EXPORT void Reset();
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

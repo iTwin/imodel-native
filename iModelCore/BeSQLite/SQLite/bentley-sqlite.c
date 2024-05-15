@@ -17,6 +17,7 @@
 #define SQLITE_OMIT_COMPLETE 1
 #define SQLITE_OMIT_PROGRESS_CALLBACK 1
 #define SQLITE_MAX_EXPR_DEPTH 2000
+
 //Allocate around ~ 32 Mb
 #define SQLITE_DEFAULT_CACHE_SIZE 8000
 #define SQLITE_ENABLE_FTS5 1    // include support for full text search
@@ -27,6 +28,8 @@
 #define SQLITE_ENABLE_NORMALIZE 1
 // Set max row or blob size to 2Gig-1 (SQLite's max). We override this when db is opened back to 1G.
 #define SQLITE_MAX_LENGTH 2147483647
+// Set max terms in the result set of a SELECT statement
+#define SQLITE_MAX_COLUMN 2200
 
 #define HAVE_STDINT_H
 
@@ -64,8 +67,8 @@
 #endif
 
 #include "sqlite3.c"
-#include "closure.c"
 #include "blockcachevfs.c"
+#include "shathree.c"
 
 #if defined (SQLITE_ENABLE_SQLLOG)
 #include "test_sqllog.c"

@@ -6,9 +6,6 @@ ThreadSafetyTests.*     # Experimental tests for thread safety. Should not run w
 #----------------------------------------------------------------------------------------
 #   Tests that need to be looked at
 #----------------------------------------------------------------------------------------
-# currently ignore due to patch system schema. @affan
-# ECDbSystem schema extended types do not match the extended types returned.  This is a known issue, to fix we must update the ECDbSystem schema to have the correct extended types
-ECDbMetaSchemaECSqlTestFixture.VerifyQueries
 
 ConcurrentQueryFixture.RestartToken
 ConcurrentQueryFixture.QuotaCheck

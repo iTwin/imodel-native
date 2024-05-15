@@ -281,7 +281,7 @@ ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDer
     if (!renamedProperty->GetIsDisplayLabelDefined())
         renamedProperty->SetDisplayLabel(originalName);
 
-    LOG.infov("Renamed conflict property %s:%s to %s\n", GetFullName(), originalName.c_str(), newName.c_str());
+    LOG.tracev("Renamed conflict property %s:%s to %s\n", GetFullName(), originalName.c_str(), newName.c_str());
 
     // If newProperty was successfully added we need to add a CustomAttribute. To help identify the property when doing instance data conversion.
     AddPropertyMapping(originalName.c_str(), newName.c_str());
@@ -1886,7 +1886,7 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (pugi::xml_node childNode, ECSch
 
     if (context.IsAliasToPrune(GetSchema().GetName(), alias))
         {
-        context.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECClass,
+        context.Issues().ReportV(IssueSeverity::Info, IssueCategory::BusinessProperties, IssueType::ECClass, ECIssueId::EC_0001,
             "Dropping base class '%s' from '%s' because the base class is defined in a schema set to be pruned in the schema read context.", qualifiedClassName.c_str(), GetFullName());
         return SchemaReadStatus::Success;
         }

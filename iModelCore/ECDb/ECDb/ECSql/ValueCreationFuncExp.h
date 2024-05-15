@@ -51,6 +51,7 @@ struct NavValueCreationFuncExp final : ValueCreationFuncExp
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override { return FinalizeParseStatus::Completed; }
         bool _TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const override { parameterExp.SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Long)); return true; }
         void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override { return "NavValueCreationFuncExp"; }
 
     public:

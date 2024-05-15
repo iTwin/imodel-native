@@ -112,16 +112,16 @@ CustomECSchemaConverterP ECSchemaConverter::GetSingleton()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool CustomECSchemaConverter::Convert(ECSchemaR schema, bool doValidate)
+bool CustomECSchemaConverter::Convert(ECSchemaR schema, ECSchemaReadContextR context, bool doValidate)
     {
     m_convertedOK = true;
 
     auto classes = GetHierarchicallySortedClasses(schema);
-    ConvertClassLevel(classes);
+    ConvertClassLevel(classes, context);
 
-    ConvertPropertyLevel(classes);
+    ConvertPropertyLevel(classes, context);
 
-    ConvertSchemaLevel(schema);
+    ConvertSchemaLevel(schema, context);
 
     RemoveSchemaReferences(schema);
 
@@ -251,7 +251,7 @@ bool IsCustomAttributeFromOldStandardSchemas(IECInstanceR customAttribute)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void CustomECSchemaConverter::ProcessCustomAttributeInstances(IECCustomAttributeContainerR container, Utf8String containerName)
+void CustomECSchemaConverter::ProcessCustomAttributeInstances(IECCustomAttributeContainerR container, Utf8String containerName, ECSchemaReadContextR contxt)
     {
     ECSchemaP schema = container.GetContainerSchema();
     for (auto const& attr : container.GetCustomAttributes(false))
@@ -261,7 +261,7 @@ void CustomECSchemaConverter::ProcessCustomAttributeInstances(IECCustomAttribute
         IECCustomAttributeConverterP converter = GetConverter(fullName);
         if (nullptr != converter)
             {
-            auto status = converter->Convert(*schema, container, *attr, m_schemaContext.get());
+            auto status = converter->Convert(*schema, container, *attr, &contxt);
             if (ECObjectsStatus::Success != status)
                 {
                 LOG.errorv("Failed [%s Converter][Container %s]. ", fullName, containerName.c_str());
@@ -304,20 +304,20 @@ void CustomECSchemaConverter::ProcessRelationshipConstraint(ECRelationshipConstr
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void CustomECSchemaConverter::ConvertClassLevel(bvector<ECClassP>& classes)
+void CustomECSchemaConverter::ConvertClassLevel(bvector<ECClassP>& classes, ECSchemaReadContextR context)
     {
     for (auto const& ecClass : classes)
         {
-        ProcessCustomAttributeInstances(*ecClass, "ECClass:" + ecClass->GetName());
+        ProcessCustomAttributeInstances(*ecClass, "ECClass:" + ecClass->GetName(), context);
         if (ecClass->IsRelationshipClass())
             {
             ECRelationshipClassP relClass = ecClass->GetRelationshipClassP();
             ECRelationshipConstraintR source = relClass->GetSource();
-            ProcessCustomAttributeInstances(source, "ECRelationshipConstraint:" + source.GetRoleLabel());
+            ProcessCustomAttributeInstances(source, "ECRelationshipConstraint:" + source.GetRoleLabel(), context);
             ProcessRelationshipConstraint(source, true);
 
             ECRelationshipConstraintR target = relClass->GetTarget();
-            ProcessCustomAttributeInstances(target, "ECRelationshipConstraint:" + target.GetRoleLabel());
+            ProcessCustomAttributeInstances(target, "ECRelationshipConstraint:" + target.GetRoleLabel(), context);
             ProcessRelationshipConstraint(target, false);
             }
         }
@@ -326,7 +326,7 @@ void CustomECSchemaConverter::ConvertClassLevel(bvector<ECClassP>& classes)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void CustomECSchemaConverter::ConvertPropertyLevel(bvector<ECClassP>& classes)
+void CustomECSchemaConverter::ConvertPropertyLevel(bvector<ECClassP>& classes, ECSchemaReadContextR context)
     {
     for (auto const& ecClass : classes)
         {
@@ -347,7 +347,7 @@ void CustomECSchemaConverter::ConvertPropertyLevel(bvector<ECClassP>& classes)
                 }
             
             Utf8String debugName = Utf8String("ECProperty:") + ecClass->GetFullName() + Utf8String(".") + ecProp->GetName();
-            ProcessCustomAttributeInstances(*ecProp, debugName);
+            ProcessCustomAttributeInstances(*ecProp, debugName, context);
 
             // Need to make sure that property name does not conflict with one of the reserved system properties or aliases.
             Utf8CP thisName = ecProp->GetName().c_str();
@@ -549,7 +549,7 @@ ECObjectsStatus ECDbClassMapConverter::Convert(ECSchemaR schema, IECCustomAttrib
     if (ECObjectsStatus::Success != instance.GetValue(strategy, STRATEGY) || !convertStrategyName(strategy, instance, convertedStrategyName))
         {
         context->Issues().ReportV(
-            IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECClass,
+            IssueSeverity::Warning, IssueCategory::BusinessProperties, IssueType::ECClass, ECIssueId::EC_0010,
             "Failed to convert ECDbMap:ClassMap on %s because the MapStrategy is not 'SharedTable with AppliesToSubclasses == true' or 'NotMapped'.  Removing and skipping.", container.GetContainerName().c_str()
         );
         return ECObjectsStatus::Success;
@@ -558,7 +558,8 @@ ECObjectsStatus ECDbClassMapConverter::Convert(ECSchemaR schema, IECCustomAttrib
     if (nullptr == context)
         {
         BeAssert(true);
-        context->Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, "Missing ECSchemaReadContext, it is necessary to perform conversion on a ECDbMap:ClassMap custom attribute.");
+        context->Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0011,
+            "Missing ECSchemaReadContext, it is necessary to perform conversion on a ECDbMap:ClassMap custom attribute.");
         return ECObjectsStatus::Error;
         }
 
@@ -859,9 +860,17 @@ ECObjectsStatus StandardValuesConverter::ConvertToEnum(ECClassP rootClass, ECCla
         PrimitiveArrayECPropertyP primitiveArray = prop->GetAsPrimitiveArrayPropertyP();
 
         ECEnumerationCP primitiveEnumeration = (nullptr != primitive) ? primitive->GetEnumeration() : primitiveArray->GetEnumeration();
-
         if (nullptr == primitiveEnumeration)
+            {
+            if (&(rootClass->GetSchema()) != &(currentClass->GetSchema()) &&
+                !ECSchema::IsSchemaReferenced(currentClass->GetSchema(), rootClass->GetSchema()) &&
+                ECObjectsStatus::Success != currentClass->GetSchemaR().AddReferencedSchema(rootClass->GetSchemaR()))
+                {
+                LOG.errorv("Unable to add the %s schema as a reference to %s.", rootClass->GetSchema().GetFullSchemaName().c_str(), currentClass->GetSchema().GetName().c_str());
+                return ECObjectsStatus::SchemaNotFound;
+                }
             status = (nullptr != primitive) ? primitive->SetType(*enumeration) : primitiveArray->SetType(*enumeration);
+            }
         else if (primitiveEnumeration != enumeration)
             {
             LOG.errorv("Failed to convert to enumeration because the derived property %s.%s already has an ECEnumeration '%s' as its type but it is not the same as the type '%s' from the base property in class %s.%s",
@@ -1484,7 +1493,7 @@ ECObjectsStatus StandardCustomAttributeReferencesConverter::Convert(ECSchemaR sc
         }
     auto mapping = it->second;
 
-    auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema();
+    auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema(*context);
 
     ECClassP customAttributeClass = customAttributeSchema->GetClassP(mapping.GetNewCustomAttributeName().c_str());
     IECInstancePtr targetAttributeInstance = customAttributeClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -1844,7 +1853,7 @@ ECObjectsStatus HidePropertyConverter::Convert(ECSchemaR schema, IECCustomAttrib
     bool if3d = getBoolValue(instance, IF3D, true);
     bool showProp = !if2d && !if3d;
 
-    auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema();
+    auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema(*context);
     IECInstancePtr hiddenProperty = customAttributeSchema->GetClassCP(HIDDEN_PROPERTY)->GetDefaultStandaloneEnabler()->CreateInstance();
 
     ECValue value(showProp);
@@ -1870,12 +1879,12 @@ bool shouldHide(IECInstanceR instance)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus DisplayOptionsConverter::ConvertSchemaDisplayOptions(ECSchemaR schema, IECInstanceR instance)
+ECObjectsStatus DisplayOptionsConverter::ConvertSchemaDisplayOptions(ECSchemaR schema, IECInstanceR instance, ECSchemaReadContextR context)
     {
     bool hideSchema = shouldHide(instance);
     if (hideSchema)
         {
-        auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema();
+        auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema(context);
         IECInstancePtr hiddenSchema = customAttributeSchema->GetClassCP(HIDDEN_SCHEMA)->GetDefaultStandaloneEnabler()->CreateInstance();
         schema.AddReferencedSchema(*customAttributeSchema);
         schema.SetCustomAttribute(*hiddenSchema);
@@ -1887,11 +1896,11 @@ ECObjectsStatus DisplayOptionsConverter::ConvertSchemaDisplayOptions(ECSchemaR s
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus DisplayOptionsConverter::ConvertClassDisplayOptions(ECSchemaR schema, ECClassR ecClass, IECInstanceR instance)
+ECObjectsStatus DisplayOptionsConverter::ConvertClassDisplayOptions(ECSchemaR schema, ECClassR ecClass, IECInstanceR instance, ECSchemaReadContextR context)
     {
     bool hideClass = shouldHide(instance);
 
-    auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema();
+    auto customAttributeSchema = CoreCustomAttributeHelper::GetSchema(context);
     IECInstancePtr hiddenClass = customAttributeSchema->GetClassCP(HIDDEN_CLASS)->GetDefaultStandaloneEnabler()->CreateInstance();
     ECValue show(!hideClass);
     hiddenClass->SetValue(SHOW, show);
@@ -1911,11 +1920,11 @@ ECObjectsStatus DisplayOptionsConverter::Convert(ECSchemaR schema, IECCustomAttr
     {
     ECClassP ecClass = dynamic_cast<ECClassP> (&container);
     if (nullptr != ecClass)
-        return ConvertClassDisplayOptions(schema, *ecClass, instance);
+        return ConvertClassDisplayOptions(schema, *ecClass, instance, *context);
 
     ECSchemaP ecSchema = dynamic_cast<ECSchemaP> (&container);
     if (nullptr != ecSchema)
-        return ConvertSchemaDisplayOptions(schema, instance);
+        return ConvertSchemaDisplayOptions(schema, instance, *context);
 
     LOG.infov("Found DisplayOptions custom attribute on a container which is not a schema or class, removing. Container is %s", container.GetContainerName().c_str());
     container.RemoveCustomAttribute(BSCA_SCHEMANAME, DISPLAY_OPTIONS);

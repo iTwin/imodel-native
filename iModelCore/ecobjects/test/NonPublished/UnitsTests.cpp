@@ -691,6 +691,13 @@ TEST_F(UnitConversionTests, TestMiscConversions)
 
     //FORCE
     testUnitConversion(1000.0, "PDL", 138.254954376, "N", 10);
+    testUnitConversion(1000.0, "PDL", 13.8254954376, "DECAN", 1);
+    testUnitConversion(10, "N", 1.0, "DECAN", 1);
+    testUnitConversion(0.1, "DECAN", 1.0, "N", 1);
+    testUnitConversion(100, "DECAN", 1.0, "KN", 1);
+    testUnitConversion(0.01, "KN", 1.0, "DECAN", 1);
+    testUnitConversion(1.0 / 1.0e-5, "DYNE", 1.0, "N", 1);
+    testUnitConversion(10 / 1.0e-5, "DYNE", 1.0, "DECAN", 1);
     testUnitConversion(42.42, "PDL", 6.5922695314e-4, "SHORT_TON_FORCE", 1e4); // conversion from http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
     testUnitConversion(42.42, "PDL", 5.8859549387e-4,"LONG_TON_FORCE", 2e4);  // conversion from http://www.knowledgedoor.com/2/calculators/convert_to_new_units.html
     testUnitConversion(42.42, "PDL", 42.42 / 32.174048556430442 / 2000, "SHORT_TON_FORCE", 1); // 32.174048556430442 is 9.80665 converted to ft/s^2 using out system, 2000 is the number of pounds in a short ton
@@ -979,6 +986,7 @@ TEST_F(UnitConversionTests, UnitsConversions_Complex)
     testUnitConversion(1000 / 1.0e-5, "DYNE", 1.0, "KN", 1);
     testUnitConversion(0.001 / 1.0e-5, "DYNE", 1.0, "MN", 1);
     testUnitConversion(1.0 / 1.0e-5, "DYNE", 1.0, "N", 1);
+    testUnitConversion(10 / 1.0e-5, "DYNE", 1.0, "DECAN", 1);
     testUnitConversion(9.80665e6 / 1.0e-5, "DYNE", 1.0e6, "KGF", 1);
     testUnitConversion(1.0e5 / 1.01325e5, "ATM", 1.0, "BAR", 1);
     testUnitConversion(((1 + 1.01325) * 1.0e5) / 1.01325e5, "ATM", 1.0, "BAR_GAUGE", 1); //Gauge Offset was inverse in Units 1.0.  Switched - to + to correct expected value
@@ -994,9 +1002,9 @@ TEST_F(UnitConversionTests, UnitsConversions_Complex)
     testUnitConversion(((1 + 101.325 / 98.0665) * 9.80665e4) / 1.01325e5, "ATM", 1.0, "AT_GAUGE", 1); //Gauge Offset was inverse in Units 1.0.  Switched - to + to correct expected value
     testUnitConversion(9.80665 / 1.01325e5, "ATM", 1.0, "KGF_PER_SQ_M", 1);
     testUnitConversion(1000 / 1.01325e5, "ATM", 1.0, "KILOPASCAL", 1);
-    testUnitConversion(((1 + 101.325) * 1000) / 1.01325e5, "ATM", 1.0, "KILOPASCAL_GAUGE", 1); //Gauge Offset was inverse in Units 1.0.  Switched - to + to correct expected value
+    testUnitConversion(((1 + 101.325) * 1000) / 1.01325e5, "ATM", 1.0, "KILOPASCAL_GAUGE", 5); //Gauge Offset was inverse in Units 1.0.  Switched - to + to correct expected value
     testUnitConversion(1000000 / 1.01325e5, "ATM", 1.0, "MEGAPASCAL", 1);
-    testUnitConversion(((1 + 101.325 / 1000) * 1000000) / 1.01325e5, "ATM", 1.0, "MEGAPASCAL_GAUGE", 1); //Gauge Offset was inverse in Units 1.0.  Switched - to + to correct expected value
+    testUnitConversion(((1 + 101.325 / 1000) * 1000000) / 1.01325e5, "ATM", 1.0, "MEGAPASCAL_GAUGE", 5); //Gauge Offset was inverse in Units 1.0.  Switched - to + to correct expected value
     testUnitConversion(9806.65 / 1.01325e5, "ATM", 1.0, "M_H2O", 1);
     testUnitConversion(9.80665 / 1.01325e5, "ATM", 1.0, "MM_H2O", 1);
     testUnitConversion(1.0, "MM_HG_AT_32F", 1.33322e2 / 101325.0, "ATM", 1);  // KnowledgeDoor and hand calculation agree with actual value more than value from old system

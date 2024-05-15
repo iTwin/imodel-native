@@ -16,9 +16,10 @@ Exp::FinalizeParseStatus TableValuedFunctionExp::_FinalizeParsing(ECSqlParseCont
         const auto tableViewClassP = vsm.GetClass(m_schemaName, classValuedFunc);
         if (tableViewClassP == nullptr) {
             ctx.Issues().ReportV(
-                IssueSeverity::Error, 
-                IssueCategory::BusinessProperties, 
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
                 IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0451,
                 "TableValuedFunction %s.%s() has no ECClass describing its output.",
                 m_schemaName.c_str(),
                 classValuedFunc.c_str()
@@ -53,7 +54,7 @@ void TableValuedFunctionExp::_ExpandSelectAsterisk(
 
         auto exp = std::make_unique<PropertyNameExp>(path,  *this, *prop);
         expandedSelectClauseItemList.push_back(
-            std::make_unique<DerivedPropertyExp>(std::move(exp), nullptr)); 
+            std::make_unique<DerivedPropertyExp>(std::move(exp), nullptr));
     }
 }
 /*---------------------------------------------------------------------------------------
@@ -81,14 +82,28 @@ PropertyMatchResult TableValuedFunctionExp::_FindProperty(ECSqlParseContext& ctx
         auto resolvedPath = propertyPath.Skip(1);
         resolvedPath.SetPropertyDef(0, *property);
         return PropertyMatchResult(options, propertyPath, resolvedPath, *property, 1);
-    }  
+    }
     return PropertyMatchResult::NotFound();
 }
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void TableValuedFunctionExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: TableValuedFunctionExp
+    val.SetEmptyObject();
+    val["id"] = "TableValuedFunctionExp";
+    val["schema"] = GetSchemaName();
+    GetFunctionExp()->ToJson(val["func"], fmt);
+    if (!GetAlias().empty())
+        val["alias"] = GetAlias();
+}
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TableValuedFunctionExp::_ToECSql(ECSqlRenderContext&) const{
-
+void TableValuedFunctionExp::_ToECSql(ECSqlRenderContext& ctx) const{
+    ctx.AppendToECSql(GetSchemaName()).AppendToECSql(".");
+    GetFunctionExp()->ToECSql(ctx);
 }
 /*---------------------------------------------------------------------------------------
 * @bsimethod
@@ -99,7 +114,7 @@ Utf8String TableValuedFunctionExp::_ToString () const {
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TableValuedFunctionExp::TableValuedFunctionExp (Utf8StringCR schemaName, std::unique_ptr<MemberFunctionCallExp> func, PolymorphicInfo polymorphic) 
+TableValuedFunctionExp::TableValuedFunctionExp (Utf8StringCR schemaName, std::unique_ptr<MemberFunctionCallExp> func, PolymorphicInfo polymorphic)
     : RangeClassRefExp (Exp::Type::TableValuedFunction, polymorphic), m_schemaName(schemaName){
         AddChild(std::move(func));
 }
@@ -185,7 +200,7 @@ PropertyMatchResult ClassNameExp::_FindProperty(ECSqlParseContext& ctx, Property
         bool classAliasWasIgnored = false;
         // RULE 3.1 See if first component is a schema or schema alias
         const bool matchSchema = matchClassAlias ||
-                                    firstPathComp.GetName().EqualsIAscii(ecClass.GetSchema().GetName()) || 
+                                    firstPathComp.GetName().EqualsIAscii(ecClass.GetSchema().GetName()) ||
                                     firstPathComp.GetName().EqualsIAscii(ecClass.GetSchema().GetAlias());
         if (matchSchema) {
             if (matchClassAlias) {
@@ -219,7 +234,7 @@ PropertyMatchResult ClassNameExp::_FindProperty(ECSqlParseContext& ctx, Property
             }
         }
     }
-    // RULE 1 - try acces string as is 
+    // RULE 1 - try acces string as is
     auto propertyMap = GetInfo().GetMap().GetPropertyMaps().Find(propertyPath.ToString().c_str());
     if (propertyMap != nullptr) {
         PropertyPath effectivePath = propertyPath;
@@ -283,6 +298,64 @@ Utf8String ClassNameExp::_ToString() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+MemberFunctionCallExp const* ClassNameExp::GetMemberFunctionCallExp() const
+    {
+    if (GetChildren().empty())
+        return nullptr;
+
+    Exp const* childExp = GetChildren()[0];
+    if (childExp->GetType() != Exp::Type::MemberFunctionCall)
+        return nullptr;
+
+    return childExp->GetAsCP<MemberFunctionCallExp>();
+    }
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+std::set<Utf8String, CompareIUtf8Ascii> ClassNameExp::GetInstancePropNames() const {
+    std::set<Utf8String, CompareIUtf8Ascii> dynamicProps;
+    if (auto selectExp = FindParent(Exp::Type::SingleSelect)) {
+        auto props = selectExp->Find(Exp::Type::ExtractProperty, true);
+        for(auto& prop: props) {
+            auto& extractProp = prop->GetAs<ExtractPropertyValueExp>();
+            if (extractProp.IsOptional())
+                continue;
+
+            auto classIdClassRef = extractProp.GetClassIdPropExp().GetClassRefExp();
+            if (classIdClassRef == this) {
+                dynamicProps.insert(extractProp.GetTargetPath().ToString().c_str());
+            }
+        }
+    }
+    return dynamicProps;
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void ClassNameExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: ClassNameExp
+    val.SetEmptyObject();
+    val["id"] = "ClassNameExp";
+    const auto polymorphicInfo = GetPolymorphicInfo().ToECSql();
+    if (!polymorphicInfo.empty())
+        GetPolymorphicInfo().ToJson(val["polymorphicInfo"]);
+
+    val["tableSpace"] = m_tableSpace;
+    val["schemaName"] = HasMetaInfo() ? GetInfo().GetMap().GetClass().GetSchema().GetName() : m_schemaAlias;
+    val["className"] = HasMetaInfo() ? GetInfo().GetMap().GetClass().GetName() : m_className;
+
+    if(auto memb = GetMemberFunctionCallExp()) {
+        memb->ToJson(val["func"], fmt);
+    }
+
+    if(!GetAlias().empty())
+        val["alias"] = GetAlias();
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void ClassNameExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
     const auto polymorphicInfo = GetPolymorphicInfo().ToECSql();
@@ -290,6 +363,11 @@ void ClassNameExp::_ToECSql(ECSqlRenderContext& ctx) const
         ctx.AppendToECSql(polymorphicInfo).AppendToECSql(" ");
 
     ctx.AppendToECSql(GetFullName());
+    if(auto memb = GetMemberFunctionCallExp()) {
+        ctx.AppendToECSql(".");
+        memb->ToECSql(ctx);
+    }
+
     if (!GetAlias().empty())
         ctx.AppendToECSql(" ").AppendToECSql(GetAlias());
     }
@@ -297,7 +375,7 @@ void ClassNameExp::_ToECSql(ECSqlRenderContext& ctx) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-bool PolymorphicInfo::TryParseToken(Type& type, Utf8StringCR str) 
+bool PolymorphicInfo::TryParseToken(Type& type, Utf8StringCR str)
     {
         if (str.EqualsIAscii("ONLY")) {
             type = Type::Only;
@@ -313,8 +391,25 @@ bool PolymorphicInfo::TryParseToken(Type& type, Utf8StringCR str)
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String PolymorphicInfo::ToECSql() const 
+void PolymorphicInfo::ToJson(BeJsValue v) const {
+        v.SetEmptyObject();
+        if (m_disqualify) {
+            v["disqualify"] = "+";
+            if (m_type== Type::NotSpecified) {
+                v["scope"] = "ALL";
+                return;
+            }
+        }
+        v["scope"] = m_type == Type::Only ? "ONLY" : "ALL";
+}
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String PolymorphicInfo::ToECSql() const
     {
+    if (m_type == Type::NotSpecified){
+        return "";
+    }
     Utf8String ecsql;
     if (m_disqualify)
         {
@@ -324,7 +419,7 @@ Utf8String PolymorphicInfo::ToECSql() const
         {
         ecsql.append("ONLY");
         }
-    if (m_disqualify && m_type == Type::All)
+    if (m_type == Type::All)
         {
         ecsql.append("ALL");
         }
@@ -349,4 +444,12 @@ PolymorphicInfo PolymorphicInfo::All()
     return ct;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+PolymorphicInfo PolymorphicInfo::NotSpecified()
+    {
+    static PolymorphicInfo ct(Type::NotSpecified, false);
+    return ct;
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -29,10 +29,11 @@ enum struct IssueSeverity
 struct ECOBJECTS_EXPORT IssueCategory
     {
     const char* m_stringId;
-    IssueCategory(const char* stringId): m_stringId(stringId) {}
+    explicit IssueCategory(const char* stringId): m_stringId(stringId) {}
     operator const char*() const { return m_stringId; }
 
     static IssueCategory BusinessProperties; // should be used when an issue is related to ECFramework;
+    static IssueCategory SchemaSync;
     };
 
 //=======================================================================================
@@ -42,7 +43,7 @@ struct ECOBJECTS_EXPORT IssueCategory
 struct ECOBJECTS_EXPORT IssueType
     {
     const char* m_stringId;
-    IssueType(const char* stringId): m_stringId(stringId) {}
+    explicit IssueType(const char* stringId): m_stringId(stringId) {}
     operator const char*() const { return m_stringId; }
 
     static IssueType ECClass;
@@ -59,6 +60,83 @@ struct ECOBJECTS_EXPORT IssueType
     };
 
 //=======================================================================================
+// @bsistruct
+//+===============+===============+===============+===============+===============+======
+struct ECOBJECTS_EXPORT IssueId
+    {
+    const char* m_issueId;
+    explicit IssueId(const char* issueId): m_issueId(issueId) {}
+    operator const char*() const { return m_issueId; }
+    };
+
+//=======================================================================================
+// @bsistruct
+//+===============+===============+===============+===============+===============+======
+struct ECOBJECTS_EXPORT ECIssueId
+    {
+    static IssueId EC_0001;
+    static IssueId EC_0002;
+    static IssueId EC_0003;
+    static IssueId EC_0004;
+    static IssueId EC_0005;
+    static IssueId EC_0006;
+    static IssueId EC_0007;
+    static IssueId EC_0008;
+    static IssueId EC_0009;
+    static IssueId EC_0010;
+    static IssueId EC_0011;
+    static IssueId EC_0012;
+    static IssueId EC_0013;
+    static IssueId EC_0014;
+    static IssueId EC_0015;
+    static IssueId EC_0016;
+    static IssueId EC_0017;
+    static IssueId EC_0018;
+    static IssueId EC_0019;
+    static IssueId EC_0020;
+    static IssueId EC_0021;
+    static IssueId EC_0022;
+    static IssueId EC_0023;
+    static IssueId EC_0024;
+    static IssueId EC_0025;
+    static IssueId EC_0026;
+    static IssueId EC_0027;
+    static IssueId EC_0028;
+    static IssueId EC_0029;
+    static IssueId EC_0030;
+    static IssueId EC_0031;
+    static IssueId EC_0032;
+    static IssueId EC_0033;
+    static IssueId EC_0034;
+    static IssueId EC_0035;
+    static IssueId EC_0036;
+    static IssueId EC_0037;
+    static IssueId EC_0038;
+    static IssueId EC_0039;
+    static IssueId EC_0040;
+    static IssueId EC_0041;
+    static IssueId EC_0042;
+    static IssueId EC_0043;
+    static IssueId EC_0044;
+    static IssueId EC_0045;
+    static IssueId EC_0046;
+    static IssueId EC_0047;
+    static IssueId EC_0048;
+    static IssueId EC_0049;
+    static IssueId EC_0050;
+    static IssueId EC_0051;
+    static IssueId EC_0052;
+    static IssueId EC_0053;
+    static IssueId EC_0054;
+    static IssueId EC_0055;
+    static IssueId EC_0056;
+    static IssueId EC_0057;
+    static IssueId EC_0058;
+    static IssueId EC_0059;
+    static IssueId EC_0060;
+    };
+
+//=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct IIssueListener
@@ -66,7 +144,7 @@ struct IIssueListener
 private:
     //! Fired by ECObjects whenever an issue occurred.
     //! @param[in] message Issue message
-    ECOBJECTS_EXPORT virtual void _OnIssueReported(IssueSeverity severity, IssueCategory category, IssueType type, Utf8CP message) const = 0;
+    ECOBJECTS_EXPORT virtual void _OnIssueReported(IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message) const = 0;
 
 public:
     IIssueListener() {}
@@ -75,7 +153,7 @@ public:
 #if !defined (DOCUMENTATION_GENERATOR)
     //! Report an issue to clients
     //! @param[in] message Issue message
-    void ReportIssue(IssueSeverity severity, IssueCategory category, IssueType type, Utf8CP message) const { _OnIssueReported(severity, category, type, message); }
+    void ReportIssue(IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message) const { _OnIssueReported(severity, category, type, id, message); }
 #endif
     };
 
@@ -88,19 +166,19 @@ struct IIssueReporter
     {
 protected:
     IIssueReporter() {}
-    virtual void _Report(IssueSeverity severity, IssueCategory category, IssueType type, Utf8CP message) const = 0;
+    virtual void _Report(IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message) const = 0;
     virtual NativeLogging::CategoryLogger GetLogger() const = 0;
 public:
 
     template<typename ...FmtArgs>
-    void ReportV(IssueSeverity severity, IssueCategory category, IssueType type, Utf8CP message, FmtArgs&& ...fmtArgs) const
+    void ReportV(IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message, FmtArgs&& ...fmtArgs) const
         {
         Utf8String formattedMessage;
         formattedMessage.Sprintf(message, std::forward<FmtArgs>(fmtArgs)...);
-        Report(severity, category, type, formattedMessage.c_str());
+        Report(severity, category, type, id, formattedMessage.c_str());
         }
 
-    void Report(IssueSeverity severity, IssueCategory category, IssueType type, Utf8CP message) const
+    void Report(IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message) const
         {
         auto LOG = GetLogger();
         if (severity == IssueSeverity::Info)
@@ -109,7 +187,7 @@ public:
             LOG.warning(message);
         else if (severity == IssueSeverity::Error || severity == IssueSeverity::Fatal)
             LOG.error(message);
-        _Report(severity, category, type, message);
+        _Report(severity, category, type, id, message);
         }
 
     virtual ~IIssueReporter() {}
@@ -125,7 +203,7 @@ private:
     IIssueListener const* m_issueListener = nullptr;
 
 protected:
-    ECOBJECTS_EXPORT void _Report(IssueSeverity severity, IssueCategory category, IssueType type, Utf8CP message) const override;
+    ECOBJECTS_EXPORT void _Report(IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message) const override;
     NativeLogging::CategoryLogger GetLogger() const override { return NativeLogging::CategoryLogger("ECObjectsNative"); }
 
 public:

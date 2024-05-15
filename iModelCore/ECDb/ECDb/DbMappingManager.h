@@ -53,7 +53,7 @@ struct FkRelationshipMappingInfo final
             {
             private:
                 Utf8String m_fkColName;
-                Utf8String m_relClassIdColName;
+                mutable Utf8String m_relClassIdColName;
                 explicit ForeignKeyColumnInfo(Utf8StringCR fkColName) : m_fkColName(fkColName) {}
                 static Utf8String DetermineRelClassIdColumnName(Utf8StringCR fkColName);
 
@@ -62,6 +62,7 @@ struct FkRelationshipMappingInfo final
                 static ForeignKeyColumnInfo FromNavigationProperty(ECN::NavigationECPropertyCR);
                 Utf8StringCR GetFkColumnName() const { return m_fkColName; }
                 Utf8StringCR GetRelClassIdColumnName() const { return m_relClassIdColName; }
+                void SwitchToAlternativeRelClassIdColumnName() const;
             };
 
     private:

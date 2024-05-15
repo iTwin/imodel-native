@@ -5,7 +5,7 @@
 #pragma once
 #include "ECDbInternalTypes.h"
 #include "DbSchema.h"
-#include "ECDbSqlFunctions.h"
+#include "BuiltInFuncs.h"
 #include "ECSql/ClassRefExp.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -60,8 +60,10 @@ struct ViewGenerator final
             PolymorphicInfo m_polymorphicInfo;
             bool m_disqualifyPrimaryJoin = false;
             MemberFunctionCallExp const* m_memberFunctionCallExp = nullptr;
+            std::set<Utf8String, CompareIUtf8Ascii> const* m_instanceProps = nullptr;
+
         public:
-            SelectFromViewContext(ECSqlPrepareContext const&, TableSpaceSchemaManager const& manager, PolymorphicInfo polymorphicQuery, bool disqualifyPrimaryJoin, MemberFunctionCallExp const*);
+            SelectFromViewContext(ECSqlPrepareContext const&, TableSpaceSchemaManager const& manager, PolymorphicInfo polymorphicQuery, bool disqualifyPrimaryJoin, MemberFunctionCallExp const*, std::set<Utf8String, CompareIUtf8Ascii> const*);
             ~SelectFromViewContext() {}
 
             ECSqlPrepareContext const& GetPrepareCtx() const { return m_prepareCtx; }
@@ -71,6 +73,16 @@ struct ViewGenerator final
 
             bool IsECClassIdFilterEnabled() const;
             bool IsInSelectClause(Utf8StringCR exp, bool alwaysSelectSystemProperties = true) const;
+            bool HasInstanceProps() const {return m_instanceProps != nullptr && !m_instanceProps->empty(); }
+            Utf8String MakeInstancePropsJsonArrayString() const {
+                BeJsDocument doc;
+                doc.SetEmptyArray();
+                if (HasInstanceProps()) {
+                    for (auto& prop : *m_instanceProps)
+                        doc.appendValue() = prop;
+                }
+                return doc.Stringify();
+            }
             };
 
         //=======================================================================================
@@ -90,14 +102,14 @@ struct ViewGenerator final
                 void AddViewColumnName(Utf8StringCR propAccessString) { BeAssert(MustCaptureViewColumnNames()); if (!MustCaptureViewColumnNames()) return;  BeAssert(!propAccessString.empty()); m_viewColumnNameList.push_back(&propAccessString); }
 
                 bvector<Utf8StringCP> const& GetViewColumnNames() const { return m_viewColumnNameList; }
-                
+
             };
 
         struct ToSqlVisitor final : IPropertyMapVisitor
             {
                 struct Result final
                     {
-                    public: 
+                    public:
                         enum class SqlExpressionType
                             {
                             PropertyName,
@@ -144,7 +156,7 @@ struct ViewGenerator final
                 //Shared columns are of type BLOB which behaves differently in terms of type conversions prior to comparisons
                 //(see https://sqlite.org/datatype3.html#type_conversions_prior_to_comparison)
                 bool RequiresCast(SingleColumnDataPropertyMap const& propMap) const
-                    { 
+                    {
                     return m_context.GetViewType() == ViewType::ECClassView && propMap.GetColumn().IsShared() && propMap.GetColumnDataType() != DbColumn::Type::Any && propMap.GetColumnDataType() != DbColumn::Type::Blob;
                     }
 
@@ -175,7 +187,16 @@ struct ViewGenerator final
         static BentleyStatus RenderMixinClassMap(bmap<Utf8String, bpair<DbTable const*, bvector<ECN::ECClassId>>, CompareIUtf8Ascii>& selectClauses, Context& ctx, ClassMap const& mixInClassMap, ClassMap const& derivedClassMap);
         static BentleyStatus GenerateECClassIdFilter(Utf8StringR filterSqlExpression, ClassMap const&, DbTable const&, DbColumn const& classIdColumn, PolymorphicInfo const& polymorphic);
     public:
-        static BentleyStatus GenerateSelectFromViewSql(NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, ClassMap const& classMap, PolymorphicInfo polymorphicQuery, bool disqualifyPrimaryJoin, MemberFunctionCallExp const* memberFunctionCallExp = nullptr);
+        static BentleyStatus GenerateSelectFromViewSql(
+            NativeSqlBuilder& viewSql,
+            ECSqlPrepareContext const& prepareContext,
+            ClassMap const& classMap,
+            PolymorphicInfo polymorphicQuery,
+            bool disqualifyPrimaryJoin,
+            MemberFunctionCallExp const* memberFunctionCallExp = nullptr,
+            std::set<Utf8String, CompareIUtf8Ascii> const* instanceProps = nullptr,
+            ClassNameExp const* originalClassNameExp = nullptr);
+
         static BentleyStatus CreateECClassViews(ECDbCR, bvector<ECN::ECClassId> const&);
         static BentleyStatus CreateECClassViews(ECDbCR);
         static BentleyStatus DropECClassViews(ECDbCR);
@@ -196,7 +217,7 @@ struct ConstraintECClassIdJoinInfo final
         ConstraintECClassIdJoinInfo() : m_joinIsRequired(false), m_isClassIdSelected(false), m_primaryECInstanceIdCol(nullptr), m_primaryECClassIdCol(nullptr), m_foreignECInstanceIdCol(nullptr), m_propertyMap(nullptr) {}
         Utf8CP GetSqlTableAlias()const;
         Utf8CP GetSqlECClassIdColumnAlias()const;
-  
+
     public:
 
         static ConstraintECClassIdJoinInfo Create(ConstraintECClassIdPropertyMap const& propertyMap, DbTable const& contextTable, bool isClassIdSelected);

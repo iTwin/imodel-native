@@ -17,7 +17,7 @@
 #include <Bentley/Nullable.h>
 #include <Bentley/Logging.h>
 #include <Formatting/FormattingApi.h>
-#include <json/BeJsValue.h>
+#include <BeRapidJson/BeJsValue.h>
 #include <pugixml/src/pugixml.hpp>
 #include <pugixml/src/BePugiXmlHelper.h>
 
@@ -96,7 +96,7 @@ protected:
     //! Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
     ECObjectsStatus SetSupplementedCustomAttribute(IECInstanceR customAttributeInstance);
 
-    CustomAttributeReadStatus ReadCustomAttributes(pugi::xml_node containerNode, ECSchemaReadContextR context, ECSchemaCR fallBackSchema);
+    CustomAttributeReadStatus ReadCustomAttributes(pugi::xml_node containerNode, ECSchemaReadContextR context);
     SchemaWriteStatus WriteCustomAttributes(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion = ECVersion::Latest) const;
     void WriteFilteredCustomAttributes(BeJsValue& parentNode, bool(*skipClassPredicate)(Utf8CP)) const;
     void WriteCustomAttributes(BeJsValue& parentNode) const;
@@ -2466,6 +2466,7 @@ struct SchemaKeyLessThan
 };
 
 typedef bmap<SchemaKey , ECSchemaPtr> SchemaMap;
+typedef std::function<bool(SchemaKeyCR)> SchemaKeyMatchCallback;
 
 //=======================================================================================
 // @bsistruct
@@ -2877,8 +2878,18 @@ public:
     //! Get the requested schema from this cache.
     //! @param[in] key  The SchemaKey fully describing the schema to be retrieved
     //! @param[in] matchType    The SchemaMatchType defining how exact of a match for the located schema is tolerated
-    //! @returns The ECSchema if it is contained in the cache; otherise nullptr.
+    //! @returns The ECSchema if it is contained in the cache; otherwise nullptr.
     ECOBJECTS_EXPORT ECSchemaP GetSchema(SchemaKeyCR key, SchemaMatchType matchType) const;
+
+    //! Get a requested schema from this cache.
+    //! @param[in] predicate    Custom schema matching predicate against cached schemas.
+    //! @returns The first matching ECSchema if it is contained in the cache; otherwise nullptr.
+    ECOBJECTS_EXPORT ECSchemaP FindSchema(const SchemaKeyMatchCallback& predicate) const;
+
+    //! Get a requested schema from this cache by case-insensitive name.
+    //! @param[in] schemaName    Schema name to match against cached schemas.
+    //! @returns The first matching ECSchema if it is contained in the cache; otherwise nullptr.
+    ECOBJECTS_EXPORT ECSchemaP FindSchemaByNameI(Utf8CP schemaName) const;
 
     virtual ~ECSchemaCache() {m_schemas.clear();} //!< Destructor
     static ECSchemaCachePtr Create() {return new ECSchemaCache;}; //!< Creates an ECSchemaCachePtr
@@ -2927,6 +2938,19 @@ public:
     bvector<WString>const& GetSearchPath() const {return m_searchPaths;}
     //! Create a new SearchPathSchemaFileLocater using the input paths as schema search paths
     ECOBJECTS_EXPORT static SearchPathSchemaFileLocaterPtr CreateSearchPathSchemaFileLocater(bvector<WString> const& searchPaths, bool includeFilesWithNoVerExt=false);
+};
+
+//=======================================================================================
+//! Reads schemas from a given set of Xml strings
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE StringSchemaLocater : IECSchemaLocater, NonCopyableClass
+{
+private:
+    bmap<SchemaKey, Utf8String> m_schemaStrings;
+protected:
+    ECOBJECTS_EXPORT ECSchemaPtr _LocateSchema(SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext) override;
+public:
+    ECOBJECTS_EXPORT void AddSchemaString(SchemaKeyCR schemaKey, Utf8StringCR schemaXml) {m_schemaStrings[schemaKey] = schemaXml;}
 };
 
 struct SupplementalSchemaInfo;
@@ -3162,7 +3186,7 @@ private:
     ECObjectsStatus SetVersionFromString(Utf8CP versionString);
     ECObjectsStatus SetECVersion(ECVersion ecVersion);
 
-    void SetSupplementalSchemaInfo(SupplementalSchemaInfo* info);
+    void SetSupplementalSchemaInfo(SupplementalSchemaInfo* info, ECSchemaReadContextR readContext);
 
     ECObjectsStatus AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR alias, ECSchemaReadContextR readContext);
     void CollectAllSchemasInGraph(bvector<ECN::ECSchemaCP>& allSchemas, bool includeRootSchema) const;
@@ -3393,8 +3417,9 @@ public:
     //! @param[out] ecClass If successful, will contain a new ECEntityClass object
     //! @param[in]  name        Name of the class to create
     //! @param[in]  appliesTo   The class used to set the AppliesToEntityClass property in the IsMixin Custom Attribute
+    //! @param[in]  schemaContext   Contains the information of where to look for CoreCustomAttributes schema
     //! @return A status code indicating whether or not the class was successfully created and added to the schema
-    ECOBJECTS_EXPORT ECObjectsStatus CreateMixinClass(ECEntityClassP& ecClass, Utf8StringCR name, ECEntityClassCR appliesTo);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateMixinClass(ECEntityClassP& ecClass, Utf8StringCR name, ECEntityClassCR appliesTo, ECSchemaReadContextR schemaContext);
 
     //! If the class name is valid, will create an ECStructClass object and add the new class to the schema
     //! @param[out] ecClass If successful, will contain a new ECStructClass object
@@ -4108,10 +4133,10 @@ public:
     ECOBJECTS_EXPORT static bool IsStandardSchema(Utf8StringCR schemaName);
 
     //! Sorts schemas in a vector by their dependency order (starting at leaf nodes with no dependencies).
-    //! Also adds missing referenced schemas from the dependency tree to the vector.
     //! Internally uses a reversed topological sort (https://en.wikipedia.org/wiki/Topological_sorting)
-    //! @param[in]  schemas  vector that will be modified
-    ECOBJECTS_EXPORT static void SortSchemasInDependencyOrder(bvector<ECN::ECSchemaCP>& schemas);
+    //! @param[in]  schemas                  Vector that will be modified
+    //! @param[in]  ignoreReferencedSchemas  If true then referenced schemas missing from the dependency tree are not added to the vector. Defaults to false.
+    ECOBJECTS_EXPORT static void SortSchemasInDependencyOrder(bvector<ECN::ECSchemaCP>& schemas, bool ignoreReferencedSchemas=false);
 
     //! Find all ECSchemas in the schema graph, avoiding duplicates and any cycles.
     //! @param[out]   allSchemas            Vector of schemas including rootSchema.
@@ -4135,6 +4160,9 @@ public:
     //!Loops through a schema's classes and properties and removes control characters from their descriptions, display labels, and role labels.
     //! @param[in]  schema  pointer to the schema which will be looped through
     ECOBJECTS_EXPORT static void RemoveInvalidDisplayCharacters(ECSchemaR schema);
+
+    //! The schemaXml will be read to obtain the SchemaKey
+    ECOBJECTS_EXPORT static SchemaReadStatus ReadSchemaKey(Utf8StringR schemaXml, SchemaKey& schemaKey);
 };
 
 //*=================================================================================**//**

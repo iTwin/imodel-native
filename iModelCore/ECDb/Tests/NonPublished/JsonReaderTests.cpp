@@ -252,7 +252,7 @@ struct JsonECSqlSelectAdapterTests : public ECDbTestFixture {};
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonECSqlSelectAdapterTests, RepreparedStatements)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("RepreparedStatements.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("RepreparedStatements.ecdb"));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM meta.ECSchemaDef LIMIT 1"));
@@ -284,7 +284,7 @@ TEST_F(JsonECSqlSelectAdapterTests, RepreparedStatements)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonECSqlSelectAdapterTests, JsonMemberNames)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("JsonMemberNamesInJsonECSqlSelectAdapter.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("JsonMemberNamesInJsonECSqlSelectAdapter.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECClassId relClassId = m_ecdb.Schemas().GetClassId("ECSqlTest", "PSAHasP_N1");
     ASSERT_TRUE(relClassId.IsValid());
@@ -405,7 +405,7 @@ TEST_F(JsonECSqlSelectAdapterTests, JsonMemberNames)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonECSqlSelectAdapterTests, GetRowInstanceAndDuplicateMemberNames)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("JsonECSqlSelectAdapterTests_GetRowInstanceAndDuplicateMemberNames.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("JsonECSqlSelectAdapterTests_GetRowInstanceAndDuplicateMemberNames.ecdb"));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT s.ECInstanceId, c.ECInstanceId, c.Schema.Id id, c.Name, s.ECClassId, s.Name, s.ECClassId FROM meta.ECSchemaDef s JOIN meta.ECClassDef c ON c.Schema.Id=s.ECInstanceId"));
@@ -474,7 +474,7 @@ TEST_F(JsonECSqlSelectAdapterTests, GetRowInstanceAndDuplicateMemberNames)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonECSqlSelectAdapterTests, AppendToJson)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("JsonECSqlSelectAdapterTests_AppendToJson.ecdb"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("JsonECSqlSelectAdapterTests_AppendToJson.ecdb"));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, Name, Type, Modifier FROM meta.ECClassDef LIMIT 1"));
@@ -545,7 +545,7 @@ TEST_F(JsonECSqlSelectAdapterTests, AppendToJson)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonECSqlSelectAdapterTests, SpecialSelectClauseItems)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("SpecialSelectClauseItemsInJsonECSqlSelectAdapter.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SpecialSelectClauseItemsInJsonECSqlSelectAdapter.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                                             <ECStructClass typeName="MyStruct" >
                                                                                 <ECProperty propertyName="SomeNumber" typeName="int" />
@@ -820,7 +820,7 @@ TEST_F(JsonECSqlSelectAdapterTests, SpecialSelectClauseItems)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonECSqlSelectAdapterTests, ReservedWordsCollisions)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("jsonecsqlselectadapter_ReservedWordsCollisions.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("jsonecsqlselectadapter_ReservedWordsCollisions.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                                             <ECEntityClass typeName="Foo" >
                                                                                 <ECProperty propertyName="className" typeName="string" />
@@ -1103,7 +1103,7 @@ TEST_F(JsonECSqlSelectAdapterTests, ReservedWordsCollisions)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonECSqlSelectAdapterTests, DataTypes)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("jsonecsqlselectadapter_datatypes.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("jsonecsqlselectadapter_datatypes.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                                             <ECStructClass typeName="Person" >
                                                                                 <ECProperty propertyName="Name" typeName="string" />
@@ -1324,7 +1324,7 @@ TEST_F(JsonECSqlSelectAdapterTests, DataTypes)
 
     TEST_F(JsonECSqlSelectAdapterTests, AbbreviateBlobs)
         {
-        ASSERT_EQ(SUCCESS, SetupECDb("jsonecsqlselectadapter_datatypes.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("jsonecsqlselectadapter_datatypes.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                                             <ECEntityClass typeName="Foo" >
                                                                                 <ECProperty propertyName="Bi" typeName="binary" />
@@ -1472,7 +1472,7 @@ TEST_F(JsonECSqlSelectAdapterTests, DataTypes)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonECSqlSelectAdapterTests, LongDataType)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("jsonecsqlselectadapter_longtype.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("jsonecsqlselectadapter_longtype.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                         <ECEntityClass typeName="Foo" >
                                                             <ECProperty propertyName="L" typeName="long" />
@@ -1527,7 +1527,7 @@ TEST_F(JsonECSqlSelectAdapterTests, LongDataType)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonECSqlSelectAdapterTests, JsonStructAndArrays)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("jsonecsqlselectadapter_JsonStruct.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("jsonecsqlselectadapter_JsonStruct.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                                     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                                         <ECStructClass typeName="MyStruct" >
                                                             <ECProperty propertyName="Alpha" typeName="int" />
@@ -1614,7 +1614,7 @@ struct JsonReaderTests : public ECDbTestFixture {};
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonReaderTests, PartialPoints)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("jsonreaderpartialpoints.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("jsonreaderpartialpoints.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ecsql.PSA(P2D.X,P3D.Y,PStructProp.p2d.y,PStructProp.p3d.z) VALUES(1.0, 2.0, 3.0, 4.0)"));
@@ -1642,55 +1642,25 @@ TEST_F(JsonReaderTests, PartialPoints)
     ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
     ASSERT_TRUE_NULLABLE(javaScriptJson.IsObject()) << javaScriptJson.ToString();
 
-    //ECSqlStatement fills the NULL coordinates with the SQLite defaults for NULL which is 0
+    // Point2/3D will be considered NULL if one or more co-ordinates are INF/Nan/Null
     {
-    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("P2D"));
-    ASSERT_TRUE_NULLABLE(defaultJson["P2D"].IsObject());
-    EXPECT_DOUBLE_EQ_NULLABLE(1.0, defaultJson["P2D"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["P2D"][ECJsonSystemNames::Point::Y()].GetDouble());
-
-    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("p2D"));
-    ASSERT_TRUE_NULLABLE(javaScriptJson["p2D"].IsObject());
-    EXPECT_DOUBLE_EQ_NULLABLE(1.0, javaScriptJson["p2D"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["p2D"][ECJsonSystemNames::Point::Y()].GetDouble());
+    EXPECT_FALSE_NULLABLE(defaultJson.HasMember("P2D"));
+    EXPECT_FALSE_NULLABLE(javaScriptJson.HasMember("p2D"));
     }
 
     {
-    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("P3D"));
-    ASSERT_TRUE_NULLABLE(defaultJson["P3D"].IsObject());
-    EXPECT_DOUBLE_EQ_NULLABLE(0, defaultJson["P3D"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(2, defaultJson["P3D"][ECJsonSystemNames::Point::Y()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(0, defaultJson["P3D"][ECJsonSystemNames::Point::Z()].GetDouble());
-
-    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("p3D"));
-    ASSERT_TRUE_NULLABLE(javaScriptJson["p3D"].IsObject());
-    EXPECT_DOUBLE_EQ_NULLABLE(0, javaScriptJson["p3D"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(2, javaScriptJson["p3D"][ECJsonSystemNames::Point::Y()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(0, javaScriptJson["p3D"][ECJsonSystemNames::Point::Z()].GetDouble());
+    EXPECT_FALSE_NULLABLE(defaultJson.HasMember("P3D"));
+    EXPECT_FALSE_NULLABLE(javaScriptJson.HasMember("p3D"));
     }
 
     {
-    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("PStructProp.p2d"));
-    ASSERT_TRUE_NULLABLE(defaultJson["PStructProp.p2d"].IsObject());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["PStructProp.p2d"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(3.0, defaultJson["PStructProp.p2d"][ECJsonSystemNames::Point::Y()].GetDouble());
-
-    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("pStructProp.p2d"));
-    ASSERT_TRUE_NULLABLE(javaScriptJson["pStructProp.p2d"].IsObject());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["pStructProp.p2d"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(3.0, javaScriptJson["pStructProp.p2d"][ECJsonSystemNames::Point::Y()].GetDouble());
+    EXPECT_FALSE_NULLABLE(defaultJson.HasMember("PStructProp.p2d"));
+    EXPECT_FALSE_NULLABLE(javaScriptJson.HasMember("pStructProp.p2d"));
     }
 
     {
-    ASSERT_TRUE_NULLABLE(defaultJson["PStructProp.p3d"].IsObject());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["PStructProp.p3d"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["PStructProp.p3d"][ECJsonSystemNames::Point::Y()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(4.0, defaultJson["PStructProp.p3d"][ECJsonSystemNames::Point::Z()].GetDouble());
-
-    ASSERT_TRUE_NULLABLE(javaScriptJson["pStructProp.p3d"].IsObject());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["pStructProp.p3d"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["pStructProp.p3d"][ECJsonSystemNames::Point::Y()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(4.0, javaScriptJson["pStructProp.p3d"][ECJsonSystemNames::Point::Z()].GetDouble());
+    EXPECT_FALSE_NULLABLE(defaultJson.HasMember("PStructProp.p3d"));
+    EXPECT_FALSE_NULLABLE(javaScriptJson.HasMember("pStructProp.p3d"));
     }
 
     ECClassCP testClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSA");
@@ -1708,48 +1678,25 @@ TEST_F(JsonReaderTests, PartialPoints)
     ASSERT_TRUE_NULLABLE(defaultJson.IsObject()) << defaultJson.ToString();
     ASSERT_TRUE_NULLABLE(javaScriptJson.IsObject()) << javaScriptJson.ToString();
 
+    // Point2/3D will be considered NULL if one or more co-ordinates are INF/Nan/Null
     {
-    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("P2D"));
-    ASSERT_TRUE_NULLABLE(defaultJson["P2D"].IsObject());
-    EXPECT_DOUBLE_EQ_NULLABLE(1.0, defaultJson["P2D"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["P2D"][ECJsonSystemNames::Point::Y()].GetDouble());
-
-    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("p2D"));
-    ASSERT_TRUE_NULLABLE(javaScriptJson["p2D"].IsObject());
-    EXPECT_DOUBLE_EQ_NULLABLE(1.0, javaScriptJson["p2D"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["p2D"][ECJsonSystemNames::Point::Y()].GetDouble());
+    EXPECT_FALSE_NULLABLE(defaultJson.HasMember("P2D"));
+    EXPECT_FALSE_NULLABLE(javaScriptJson.HasMember("p2D"));
     }
 
     {
-    ASSERT_TRUE_NULLABLE(defaultJson.HasMember("P3D"));
-    ASSERT_TRUE_NULLABLE(defaultJson["P3D"].IsObject());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["P3D"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(2.0, defaultJson["P3D"][ECJsonSystemNames::Point::Y()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["P3D"][ECJsonSystemNames::Point::Z()].GetDouble());
-
-    ASSERT_TRUE_NULLABLE(javaScriptJson.HasMember("p3D"));
-    ASSERT_TRUE_NULLABLE(javaScriptJson["p3D"].IsObject());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["p3D"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(2.0, javaScriptJson["p3D"][ECJsonSystemNames::Point::Y()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["p3D"][ECJsonSystemNames::Point::Z()].GetDouble());
+    EXPECT_FALSE_NULLABLE(defaultJson.HasMember("P3D"));
+    EXPECT_FALSE_NULLABLE(javaScriptJson.HasMember("p3D"));
     }
 
     {
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["PStructProp"]["p2d"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(3.0, defaultJson["PStructProp"]["p2d"][ECJsonSystemNames::Point::Y()].GetDouble());
-
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["pStructProp"]["p2d"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(3.0, javaScriptJson["pStructProp"]["p2d"][ECJsonSystemNames::Point::Y()].GetDouble());
+    EXPECT_FALSE_NULLABLE(defaultJson.HasMember("PStructProp.p2d"));
+    EXPECT_FALSE_NULLABLE(defaultJson.HasMember("pStructProp.p2d"));
     }
 
     {
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["PStructProp"]["p3d"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, defaultJson["PStructProp"]["p3d"][ECJsonSystemNames::Point::Y()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(4.0, defaultJson["PStructProp"]["p3d"][ECJsonSystemNames::Point::Z()].GetDouble());
-
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["pStructProp"]["p3d"][ECJsonSystemNames::Point::X()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(0.0, javaScriptJson["pStructProp"]["p3d"][ECJsonSystemNames::Point::Y()].GetDouble());
-    EXPECT_DOUBLE_EQ_NULLABLE(4.0, javaScriptJson["pStructProp"]["p3d"][ECJsonSystemNames::Point::Z()].GetDouble());
+    EXPECT_FALSE_NULLABLE(defaultJson.HasMember("PStructProp.p3d"));
+    EXPECT_FALSE_NULLABLE(defaultJson.HasMember("pStructProp.p3d"));
     }
     }
 
@@ -1758,7 +1705,7 @@ TEST_F(JsonReaderTests, PartialPoints)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonReaderTests, RoundTrip_ReadThenInsert)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("jsonroundtrip_readtheninsert.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("jsonroundtrip_readtheninsert.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECInstanceKey pKey;
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(pKey, "INSERT INTO ecsql.P(ECInstanceId) VALUES(NULL)"));

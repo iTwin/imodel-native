@@ -20,7 +20,122 @@ enum class SchemaChangeType {
 //! Schema change event notify about event that led to schema change.
 using SchemaChangeEvent = BeEvent<ECDbCR,SchemaChangeType>;
 
+//=======================================================================================
+//! @ingroup ECDbGroup
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SchemaSync final {
+    using FileUri = Utf8String;
+    using DataVer = uint64_t;
+    using TableList = bvector<Utf8String>;
+    enum class Status {
+        OK = BE_SQLITE_OK,
+        ERROR = BE_SQLITE_ERROR,
+        ERROR_SCHEMA_SYNC_DB_ALREADY_INITIALIZED,
+        ERROR_OPENING_SCHEMA_SYNC_DB,
+        ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB,
+        ERROR_INVALID_SCHEMA_SYNC_DB,
+        ERROR_INVALID_LOCAL_SYNC_DB,
+        ERROR_READONLY,
+        ERROR_SCHEMA_SYNC_INFO_DONOT_MATCH,
+        ERROR_UNABLE_TO_ATTACH,
+        ERROR_SYNC_SQL_SCHEMA,
+    };
+    //=======================================================================================
+    // @bsiclass
+    //+===============+===============+===============+===============+===============+======
+    struct SyncDbInfo final{
+        friend struct SchemaSync;
+        private:
+            DataVer m_dataVer;
+            BeGuid m_syncId;
+        public:
+            SyncDbInfo():m_dataVer(0){}
+            SyncDbInfo(SyncDbInfo&&)=default;
+            SyncDbInfo(SyncDbInfo const&)=default;
+            SyncDbInfo& operator=(SyncDbInfo&&)=default;
+            SyncDbInfo& operator=(SyncDbInfo const&)=default;
+            BeGuidCR GetSyncId() const { return m_syncId; }
+            DataVer GetDataVersion() const { return m_dataVer; }
+            bool IsEmpty() const { return !m_syncId.IsValid(); }
+            ECDB_EXPORT void To(BeJsValue) const;
+            ECDB_EXPORT static SyncDbInfo From(BeJsConst);
+            ECDB_EXPORT static SyncDbInfo From(DbCR);
+    };
+    //=======================================================================================
+    // @bsiclass
+    //+===============+===============+===============+===============+===============+======
+    struct LocalDbInfo final {
+        friend struct SchemaSync;
+        private:
+            DataVer m_dataVer;
+            BeGuid m_syncId;
 
+        public:
+            LocalDbInfo():m_dataVer(0){}
+            LocalDbInfo(LocalDbInfo&&)=default;
+            LocalDbInfo(LocalDbInfo const&)=default;
+            LocalDbInfo& operator=(LocalDbInfo&&)=default;
+            LocalDbInfo& operator=(LocalDbInfo const&)=default;
+            BeGuidCR GetSyncId() const { return m_syncId; }
+            DataVer GetDataVersion() const { return m_dataVer; }
+            bool IsEmpty() const { return !m_syncId.IsValid(); }
+            ECDB_EXPORT void To(BeJsValue) const;
+            ECDB_EXPORT static LocalDbInfo From(BeJsConst);
+            ECDB_EXPORT static LocalDbInfo From(DbCR);
+    };
+    //=======================================================================================
+    // @bsiclass
+    //+===============+===============+===============+===============+===============+======
+    struct SyncDbUri final{
+        private:
+            Utf8String m_uri;
+        public:
+            SyncDbUri(SyncDbUri&&)=default;
+            SyncDbUri(SyncDbUri const&)=default;
+            SyncDbUri& operator=(SyncDbUri&&)=default;
+            SyncDbUri& operator=(SyncDbUri const&)=default;
+            SyncDbUri(Utf8CP uri = ""):m_uri(uri){};
+            Utf8StringCR GetUri() const { return m_uri; }
+            bool IsEmpty() const {return m_uri.empty();}
+            ECDB_EXPORT Utf8String GetDbAttachUri() const;
+            ECDB_EXPORT SyncDbInfo GetInfo() const;
+    };
+private:
+    ECDbR m_conn;
+    SyncDbUri m_defaultSyncDbUri;
+    bool m_disabledForProfileUpgrade;
+
+    DbResult UpdateOrCreateSyncDbInfo(DbR syncDb);
+    DbResult UpdateOrCreateSyncDbInfo(SyncDbUri syncDbUri);
+    DbResult UpdateOrCreateLocalDbInfo(SyncDbInfo const& from);
+    Status Init(SyncDbUri const&, TableList);
+    Status PullInternal(SyncDbUri const&, TableList);
+    Status PushInternal(SyncDbUri const&, TableList);
+    Status VerifySyncDb(SyncDbUri const&, bool isPull) const;
+    DbResult PullSqlSchema(DbR conn);
+    DbResult PushSqlSchema(DbR conn);
+    static void ParseQueryParams(Db::OpenParams&, SyncDbUri const& uri);
+
+public:
+    SchemaSync(SchemaSync&&) = delete;
+    SchemaSync(SchemaSync const&)=delete;
+    SchemaSync& operator=(SchemaSync&&)=delete;
+    SchemaSync& operator=(SchemaSync const&)=delete;
+    explicit SchemaSync(ECDbR conn):m_conn(conn), m_disabledForProfileUpgrade(false) {}
+    bool IsEnabled() const { return !GetInfo().IsEmpty(); }
+    SyncDbUri const& GetDefaultSyncDbUri() const { return m_defaultSyncDbUri;  }
+    Status SetDefaultSyncDbUri(Utf8CP syncDbUri) { return SetDefaultSyncDbUri(SyncDbUri(syncDbUri)); }
+    void DisableSchemaSync() { m_disabledForProfileUpgrade = true; }
+    void ReEnableSchemaSync() { m_disabledForProfileUpgrade = false; }
+    bool IsSchemaSyncDisabled() const { return m_disabledForProfileUpgrade; }
+    ECDB_EXPORT Status UpdateDbSchema();
+    ECDB_EXPORT LocalDbInfo GetInfo() const;
+    ECDB_EXPORT Status SetDefaultSyncDbUri(SyncDbUri syncDbUri);
+    ECDB_EXPORT Status Init(SyncDbUri const&);
+    ECDB_EXPORT Status Pull(SyncDbUri const&, SchemaImportToken const* token = nullptr); // read/write op
+    ECDB_EXPORT Status Push(SyncDbUri const&);
+};
 //=======================================================================================
 //! Options for how to refer to an ECSchema when looking it up using the SchemaManager
 //! @ingroup ECDbGroup
@@ -50,7 +165,6 @@ struct SchemaImportResult final
         bool operator == (Status r) const { return r == m_status; }
         bool operator != (Status r) const { return r != m_status; }
     };
-
 
 //=======================================================================================
 //! Options for how to refer to an ECSchema when looking it up using the SchemaManager
@@ -106,12 +220,12 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct InstanceFinder {
 
-    struct ForignKeyRelation final {
+    struct ForeignKeyRelation final {
         private:
             ECInstanceKey m_thisEnd;
             ECInstanceKey m_otherEnd;
         public:
-            ForignKeyRelation(ECInstanceKey&& thisEnd, ECInstanceKey&& otherEnd) :m_thisEnd(thisEnd), m_otherEnd(otherEnd) {}
+            ForeignKeyRelation(ECInstanceKey&& thisEnd, ECInstanceKey&& otherEnd) :m_thisEnd(thisEnd), m_otherEnd(otherEnd) {}
             ECInstanceKey const& GetThisEndKey() const { return m_thisEnd; }
             ECInstanceKey const& GetOtherEndKey() const { return m_otherEnd; }
     };
@@ -149,16 +263,16 @@ struct InstanceFinder {
         private:
             std::map<ECN::ECClassId, std::vector<ECInstanceKey>> m_entityKeyMap;
             std::map<ECN::ECClassId, std::vector<LinkTableRelation>> m_linktableRelMap;
-            std::map<ECN::ECClassId, std::vector<ForignKeyRelation>> m_foreignKeyMap;
+            std::map<ECN::ECClassId, std::vector<ForeignKeyRelation>> m_foreignKeyMap;
             ECDB_EXPORT static void ToJson(BeJsValue v, ECInstanceKey const& key, JsonFormatOptions const* options);
-            ECDB_EXPORT static void ToJson(BeJsValue v, ForignKeyRelation const& key, JsonFormatOptions const* options);
+            ECDB_EXPORT static void ToJson(BeJsValue v, ForeignKeyRelation const& key, JsonFormatOptions const* options);
             ECDB_EXPORT static void ToJson(BeJsValue v, LinkTableRelation const& key, JsonFormatOptions const* options);
         public:
             SearchResults() {}
             SearchResults(
                 std::map<ECN::ECClassId, std::vector<ECInstanceKey>>&& entities,
                 std::map<ECN::ECClassId, std::vector<LinkTableRelation>>&& linkTableRels,
-                std::map<ECN::ECClassId, std::vector<ForignKeyRelation>>&& fkRels
+                std::map<ECN::ECClassId, std::vector<ForeignKeyRelation>>&& fkRels
                 ) : m_entityKeyMap(entities), m_linktableRelMap(linkTableRels), m_foreignKeyMap(fkRels){}
             SearchResults(SearchResults&& rhs)
                 :m_linktableRelMap(std::move(rhs.m_linktableRelMap)),
@@ -289,8 +403,8 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
             DisallowMajorSchemaUpgrade                  = 1 << 1,   //! If specified, schema upgrades where the major version has changed, are not supported.
             DoNotFailForDeletionsOrModifications        = 1 << 2,   //! This is for the case of domain schemas that differ between files even though the schema name and versions are unchanged.  In such a case, we only want to merge in acceptable changes, not delete anything
             AllowDataTransformDuringSchemaUpgrade       = 1 << 4,   //! The allow schema upgrade to transform data if needed.
+            AllowMajorSchemaUpgradeForDynamicSchemas    = 1 << 5,   //! If specified, schema upgrades where the major version has changed are only supported for dynamic schemas. Takes precedence over DisallowMajorSchemaUpgrade.
             };
-
 #if !defined (DOCUMENTATION_GENERATOR)
         struct Dispatcher;
 #endif
@@ -317,6 +431,9 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         SchemaManager(ECDb const&, BeMutex&);
         ~SchemaManager();
 #endif
+
+        ECDB_EXPORT SchemaSync& GetSchemaSync() const;
+
         //! Drop a leaf schema from ecdb as long as it has no instances
         //! @param[in] name  name of schema to be dropped.
         //! @param [in] token Token required to perform ECSchema imports if the
@@ -347,7 +464,12 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         //! See documentation of the respective ECDb subclass to find out whether the option is enabled or not.
         //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
         //! @see @ref ECDbECSchemaImportAndUpgrade
-        SchemaImportResult ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaImportToken const* token = nullptr) const { return ImportSchemas(schemas, SchemaImportOptions::None, token); }
+        SchemaImportResult ImportSchemas(
+            bvector<ECN::ECSchemaCP> const& schemas,
+            SchemaImportToken const* token = nullptr,
+            SchemaSync::SyncDbUri syncDbUri = SchemaSync::SyncDbUri()) const {
+                return ImportSchemas(schemas, SchemaImportOptions::None, token, syncDbUri);
+            }
 
         //! Imports the list of @ref ECN::ECSchema "ECSchemas" (which must include all its references)
         //! into the @ref ECDbFile "ECDb file".
@@ -369,7 +491,11 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         //! See documentation of the respective ECDb subclass to find out whether the option is enabled or not.
         //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
         //! @see @ref ECDbECSchemaImportAndUpgrade
-        ECDB_EXPORT SchemaImportResult ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaImportOptions options, SchemaImportToken const* token = nullptr) const;
+        ECDB_EXPORT SchemaImportResult ImportSchemas(
+            bvector<ECN::ECSchemaCP> const& schemas,
+            SchemaImportOptions options,
+            SchemaImportToken const* token = nullptr,
+            SchemaSync::SyncDbUri syncDbUri = SchemaSync::SyncDbUri()) const;
 
         //! Gets all @ref ECN::ECSchema "ECSchemas" stored in the @ref ECDbFile "ECDb file"
         //! @remarks If called with @p loadSchemaEntities = true this can be a costly call as all schemas and their content would be loaded into memory.

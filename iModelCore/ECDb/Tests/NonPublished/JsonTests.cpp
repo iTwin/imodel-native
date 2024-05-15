@@ -33,7 +33,7 @@ TEST_F(JsonTests, json_tree) {
         "orbital_period" : "687 days",
         "moons": ["Phobos", "Deimos"]
     })";
-    ASSERT_EQ(SUCCESS, SetupECDb("test.ecdb", test_schema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("test.ecdb", test_schema));
     if(true){
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "insert into ts.json_docs(doc) values (?)"));
@@ -431,7 +431,7 @@ TEST_F(JsonTests, json_each) {
         "orbital_period" : "687 days",
         "moons": ["Phobos", "Deimos"]
     })";
-    ASSERT_EQ(SUCCESS, SetupECDb("test.ecdb", test_schema));
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("test.ecdb", test_schema));
     if(true){
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "insert into ts.json_docs(doc) values (?)"));

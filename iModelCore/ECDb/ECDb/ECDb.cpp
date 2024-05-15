@@ -89,10 +89,27 @@ DbResult ECDb::_OnDbCreated(CreateParams const& params)
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::_OnDbOpened(OpenParams const& params)
+    {
+    DbResult stat = Db::_OnDbOpened(params);
+    if (stat != BE_SQLITE_OK)
+        return stat;
+
+    return m_pimpl->OnDbOpened(params);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::_AfterSchemaChangeSetApplied() const
     {
     ClearECDbCache();
     Schemas().RepopulateCacheTables();
+    if (!Schemas().GetSchemaSync().GetInfo().IsEmpty()) {
+        if (Schemas().GetSchemaSync().UpdateDbSchema() != SchemaSync::Status::OK){
+            return BE_SQLITE_ERROR;
+        }
+    }
     Schemas().UpgradeECInstances();
     return BE_SQLITE_OK;
     }
@@ -102,7 +119,11 @@ DbResult ECDb::_AfterSchemaChangeSetApplied() const
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::_AfterDataChangeSetApplied()
     {
-    BentleyStatus status = ResetInstanceIdSequence(GetBriefcaseId());
+    BentleyStatus status = m_pimpl->GetProfileManager().RefreshProfileVersion();
+    if (status != SUCCESS)
+        return BE_SQLITE_ERROR;
+
+    status = ResetInstanceIdSequence(GetBriefcaseId());
     if (status != SUCCESS)
         return BE_SQLITE_ERROR;
     return BE_SQLITE_OK;

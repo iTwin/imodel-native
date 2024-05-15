@@ -11,6 +11,12 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
+struct DisableAssertions
+    {
+    DisableAssertions() { BeTest::SetFailOnAssert(false); }
+    ~DisableAssertions() { BeTest::SetFailOnAssert(true); }
+    };
+
 struct SchemaCompareTest : ECTestFixture 
     {
     ECSchemaPtr m_firstSchema;
@@ -626,6 +632,156 @@ TEST_F(SchemaCompareTest, CompareFormatsModifiedCompositeSpecs)
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
+TEST_F(SchemaCompareTest, NullOrEmptyStringsInCompositeFormat)
+    {
+    Utf8CP firstSchemaXml = R"xml(
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+
+            <Unit typeName="TestUnitMajor" displayLabel="TestUnitMajorLabel" definition="u:KM" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitMiddle" displayLabel="TestUnitMiddleLabel" definition="u:M" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitMinor" displayLabel="TestUnitMinorLabel" definition="u:CM" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitSub" displayLabel="TestUnitSubLabel" definition="u:MM" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+
+            <Format typeName="TestFormatNoLabel" displayLabel="TestFormatNoLabel" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero" precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" " >
+                <Composite spacer="=" includeZero="False">
+                    <Unit>TestUnitMajor</Unit>
+                    <Unit label="">TestUnitMiddle</Unit>
+                    <Unit>TestUnitMinor</Unit>
+                    <Unit label="bravo">TestUnitSub</Unit>
+                </Composite>
+            </Format>
+
+            <Format typeName="TestFormatEmptyLabel" displayLabel="TestFormatEmptyLabel" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero" precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" " >
+                <Composite spacer="=" includeZero="False">
+                    <Unit>TestUnitMajor</Unit>
+                    <Unit label="alpha">TestUnitMiddle</Unit>
+                    <Unit label="">TestUnitMinor</Unit>
+                    <Unit label="">TestUnitSub</Unit>
+                </Composite>
+            </Format>
+        </ECSchema>)xml";
+
+    Utf8CP secondSchemaXml = R"xml(
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+
+            <Unit typeName="TestUnitMajorNew" displayLabel="TestUnitMajorNewLabel" definition="u:MILE" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitMiddleNew" displayLabel="TestUnitMiddleNewLabel" definition="u:YRD" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitMinorNew" displayLabel="TestUnitMinorNewLabel" definition="u:FT" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+            <Unit typeName="TestUnitSubNew" displayLabel="TestUnitSubNewLabel" definition="u:IN" numerator="1.0" phenomenon="u:LENGTH" unitSystem="u:METRIC" />
+
+            <Format typeName="TestFormatNoLabel" displayLabel="TestFormatNoLabel" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero" precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" " >
+                <Composite spacer="=" includeZero="False">
+                    <Unit>TestUnitMajorNew</Unit>
+                    <Unit>TestUnitMiddleNew</Unit>
+                    <Unit label="">TestUnitMinorNew</Unit>
+                    <Unit label="">TestUnitSubNew</Unit>
+                </Composite>
+            </Format>
+
+            <Format typeName="TestFormatEmptyLabel" displayLabel="TestFormatEmptyLabel" roundFactor="0.3" type="Fractional" showSignOption="OnlyNegative" formatTraits="TrailZeroes|KeepSingleZero" precision="4" decimalSeparator="." thousandSeparator="," uomSeparator=" " >
+                <Composite spacer="=" includeZero="False">
+                    <Unit label="charlie">TestUnitMajorNew</Unit>
+                    <Unit>TestUnitMiddleNew</Unit>
+                    <Unit label="tango">TestUnitMinorNew</Unit>
+                    <Unit label="">TestUnitSubNew</Unit>
+                </Composite>
+            </Format>
+        </ECSchema>)xml";
+
+    ECSchemaPtr firstSchema;
+    auto context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(firstSchema, firstSchemaXml, *context));
+
+    ECSchemaPtr secondSchema;
+    auto secondContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(secondSchema, secondSchemaXml, *secondContext));
+
+    SchemaComparer comparer;
+    SchemaDiff changes;
+    bvector<ECSchemaCP> first;
+    bvector<ECSchemaCP> second;
+    first.push_back(firstSchema.get());
+    second.push_back(secondSchema.get());
+    comparer.Compare(changes, first, second);
+
+    EXPECT_EQ(1, changes.Changes().Count());
+    auto& formatChanges = changes.Changes()[0].Formats();
+
+    EXPECT_EQ(2, formatChanges.Count());
+
+    auto testFormatNoLabel = formatChanges[1];
+    EXPECT_EQ(1, testFormatNoLabel.MemberChangesCount());
+
+    auto spec = testFormatNoLabel.CompositeSpec();
+
+    // No label specified in Old, No label specified in New
+    EXPECT_FALSE(spec.MajorLabel().GetOld().IsValid());
+    EXPECT_STREQ("TestSchema:TestUnitMajor", spec.MajorUnit().GetOld().Value().c_str());
+
+    EXPECT_FALSE(spec.MajorLabel().GetNew().IsValid());
+    EXPECT_STREQ("TestSchema:TestUnitMajorNew", spec.MajorUnit().GetNew().Value().c_str());
+
+    // Label set to empty string "" in Old, No label specified in New
+    EXPECT_STREQ("", spec.MiddleLabel().GetOld().Value().c_str());
+    EXPECT_STREQ("TestSchema:TestUnitMiddle", spec.MiddleUnit().GetOld().Value().c_str());
+
+    EXPECT_FALSE(spec.MiddleLabel().GetNew().IsValid());
+    EXPECT_STREQ("TestSchema:TestUnitMiddleNew", spec.MiddleUnit().GetNew().Value().c_str());
+
+    // No label specified in Old, Label set to empty string "" in New
+    EXPECT_FALSE(spec.MinorLabel().GetOld().IsValid());
+    EXPECT_STREQ("TestSchema:TestUnitMinor", spec.MinorUnit().GetOld().Value().c_str());
+    
+    EXPECT_STREQ("", spec.MinorLabel().GetNew().Value().c_str());
+    EXPECT_STREQ("TestSchema:TestUnitMinorNew", spec.MinorUnit().GetNew().Value().c_str());
+      
+    // Label set to string "bravo" in Old, Label set to empty string "" in New
+    EXPECT_STREQ("bravo", spec.SubLabel().GetOld().Value().c_str());
+    EXPECT_STREQ("TestSchema:TestUnitSub", spec.SubUnit().GetOld().Value().c_str());
+    
+    EXPECT_STREQ("", spec.SubLabel().GetNew().Value().c_str());
+    EXPECT_STREQ("TestSchema:TestUnitSubNew", spec.SubUnit().GetNew().Value().c_str());
+
+    auto testFormatEmptyLabel = formatChanges[0];
+    EXPECT_EQ(1, testFormatEmptyLabel.MemberChangesCount());
+
+    spec = testFormatEmptyLabel.CompositeSpec();
+
+    // No label specified in Old, label set to "charlie" in New
+    EXPECT_FALSE(spec.MajorLabel().GetOld().IsValid());
+    EXPECT_STREQ("TestSchema:TestUnitMajor", spec.MajorUnit().GetOld().Value().c_str());
+
+    EXPECT_STREQ("charlie", spec.MajorLabel().GetNew().Value().c_str());
+    EXPECT_STREQ("TestSchema:TestUnitMajorNew", spec.MajorUnit().GetNew().Value().c_str());
+
+    // Label set to "alpha" in Old, No label specified in New
+    EXPECT_STREQ("alpha", spec.MiddleLabel().GetOld().Value().c_str());
+    EXPECT_STREQ("TestSchema:TestUnitMiddle", spec.MiddleUnit().GetOld().Value().c_str());
+
+    EXPECT_FALSE(spec.MiddleLabel().GetNew().IsValid());
+    EXPECT_STREQ("TestSchema:TestUnitMiddleNew", spec.MiddleUnit().GetNew().Value().c_str());
+
+    // Label set to empty string "" in Old, Label set to "tango" in New
+    EXPECT_STREQ("", spec.MinorLabel().GetOld().Value().c_str());
+    EXPECT_STREQ("TestSchema:TestUnitMinor", spec.MinorUnit().GetOld().Value().c_str());
+
+    EXPECT_STREQ("tango", spec.MinorLabel().GetNew().Value().c_str());
+    EXPECT_STREQ("TestSchema:TestUnitMinorNew", spec.MinorUnit().GetNew().Value().c_str());
+      
+    // Label set to empty string "" in Old, Label set to empty string "" in New
+    // Since there is no change between the sublabels in the two formats being comapred, the will both be set to null by the comparer
+    EXPECT_FALSE(spec.SubLabel().GetOld().IsValid());
+    EXPECT_STREQ("TestSchema:TestUnitSub", spec.SubUnit().GetOld().Value().c_str());
+    
+    EXPECT_FALSE(spec.SubLabel().GetNew().IsValid());
+    EXPECT_STREQ("TestSchema:TestUnitSubNew", spec.SubUnit().GetNew().Value().c_str());
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+--------
 TEST_F(SchemaCompareTest, CompareFormatsDeletedNumericSpec)
     {
     CreateFirstSchema();
@@ -1004,6 +1160,43 @@ TEST_F(SchemaCompareTest, CompareECSchemaClassPropertyDescriptionAgainstNull)
     auto& propertyChange = classChange.Properties()[0];
     ASSERT_TRUE(propertyChange.Description().IsChanged());
     ASSERT_TRUE(propertyChange.Description().GetOld().IsNull());
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+--------
+TEST_F(SchemaCompareTest, MultipleSchemaReferencesToSameSchema)
+    {
+    // To test written log messages and warnings, unfortunately, this is global and there is currently no way to intercept the messages
+    // NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
+    // NativeLogging::ConsoleLogger::GetLogger().SetSeverity("ECObjectsNative", BentleyApi::NativeLogging::LOG_WARNING);
+    // log output reads:
+    // WARNING  ECObjectsNative      Schema TestSchema.01.00.00 is adding a reference to RefSchema.01.01.00 while it already references RefSchema.01.00.00. For compatibility this is currently permitted but probably indicates a problem.
+    // ERROR    ECObjectsNative      Schema Reference comparison failed (Comparing old schema TestSchema.01.00.00 against new schema TestSchema.01.00.00). Multiple schema references with the same name were found in the old schema (RefSchema.01.00.00 and RefSchema.01.01.00).
+    // ERROR    ECObjectsNative      Schema Reference comparison failed (Comparing old schema TestSchema.01.00.00 against new schema TestSchema.01.00.00). Multiple schema references with the same name were found in the new schema (RefSchema.01.00.00 and RefSchema.01.01.00).
+    CreateFirstSchema();
+    CreateSecondSchema();
+    ECSchemaPtr referencedSchema1;
+    ECSchema::CreateSchema(referencedSchema1, "RefSchema", "ref", 1, 0, 0);
+    ECSchemaPtr referencedSchema2;
+    ECSchema::CreateSchema(referencedSchema2, "RefSchema", "ref", 1, 1, 0);
+
+    m_firstSchema->AddReferencedSchema(*referencedSchema1);
+    m_firstSchema->AddReferencedSchema(*referencedSchema2);
+
+    SchemaComparer comparer;
+    SchemaDiff changes;
+    bvector<ECSchemaCP> first;
+    bvector<ECSchemaCP> second;
+    first.push_back(m_firstSchema.get());
+    second.push_back(m_secondSchema.get());
+
+    DisableAssertions _notUsed; // The attempt produces an assertion which we need to ignore
+    //should fail since old schema has multiple references to RefSchema
+    ASSERT_EQ(BentleyStatus::ERROR, comparer.Compare(changes, first, second));
+
+    //swap the input schemas, so the new schema is now the invalid one
+    ASSERT_EQ(BentleyStatus::ERROR, comparer.Compare(changes, second, first));
     }
 
 //---------------------------------------------------------------------------------------

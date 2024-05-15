@@ -1285,12 +1285,12 @@ BentleyStatus SchemaReader::ReadFormatComposite(Context& ctx, ECFormat& format, 
     if (BE_SQLITE_OK != stmt->BindId(1, formatId))
         return ERROR;
 
-    bvector<Utf8String> labels;
+    bvector<Nullable<Utf8String>> labels;
     bvector<ECN::UnitId> unitIds;
     while (BE_SQLITE_ROW == stmt->Step())
         {
         Utf8CP label = stmt->GetValueText(0);
-        labels.push_back(label);
+        labels.push_back(label ? Nullable<Utf8String>(label) : nullptr);
 
         unitIds.push_back(stmt->GetValueId<UnitId>(1));
         }

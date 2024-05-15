@@ -255,8 +255,13 @@ public:
     // A "safe" version of swscanf. Actually, all this does is make sure you don't use "%s" in your format string - that's not safe
     // due to buffer overrun and should be avoided.
     template<typename... Args> static int Swscanf_safe(const wchar_t* buffer, const wchar_t* format, Args&&... args) {
+      // Use string_view if possible, to avoid compiler error C2064 with VS2022/Debug
+      #if BENTLEY_CPLUSPLUS >= 201103L // C++17
+        BeAssert(std::wstring_view(format).find(L"%s") == std::wstring::npos && "%s is unsafe, do not use sscanf for that purpose");
+      #elif
         // The lambda is because of a compiler error with just the straight expression. It does not seem to like the temporary variable in the template.
         BeAssert([](const wchar_t* format) {return (std::wstring::npos == std::wstring(format).find(L"%s") && "%s is unsafe, do not use sscanf for that purpose");}(format));
+      #endif        
 PUSH_DISABLE_DEPRECATION_WARNINGS
         return swscanf(buffer, format, std::forward<Args>(args)...);
 POP_DISABLE_DEPRECATION_WARNINGS
@@ -360,6 +365,10 @@ public:
     BENTLEYDLL_EXPORT bool EndsWith(Utf8StringCR ending) const;
     // Removes all whitespace from the left and right sides. Whitespace includes space, line feed, carriage return, and tab (e.g. iswspace).
     BENTLEYDLL_EXPORT Utf8StringR Trim();
+    // Removes all whitespace from the left and right sides. Uses libicu's `u_isspace` which includes '\x00a0' (&nbsp;), not all their API does,
+    // not even their `trim` function, which follow's Java's old decision that nbsp is semantically not supposed to be trimmed
+    // SEE: "Detailed Description" section of https://unicode-org.github.io/icu-docs/apidoc/released/icu4c/uchar_8h.html
+    BENTLEYDLL_EXPORT Utf8StringR TrimUtf8();
     // Removes all whitespace from the end. Whitespace includes space, line feed, carriage return, and tab (e.g. iswspace).
     BENTLEYDLL_EXPORT Utf8StringR TrimEnd();
     // Removes all instances of any of the given characters from the left and right sides.
@@ -496,9 +505,13 @@ public:
     // A "safe" version of sscanf. Actually, all this does is make sure you don't use "%s" in your format string - that's not safe
     // due to buffer overrun and should be avoided.
     template<typename... Args> static int Sscanf_safe(const char* const buffer, const char* const format, Args&&... args) {
-        // NOTE: When we use C++17 this can be string_view and become a static_assert
+      // Use string_view if possible, to avoid compiler error C2064 with VS2022/Debug
+      #if BENTLEY_CPLUSPLUS >= 201103L // C++17
+        BeAssert(std::string_view(format).find("%s") == std::string::npos && "%s is unsafe, do not use sscanf for that purpose");
+      #elif
         // The lambda is because of a compiler error with just the straight expression. It does not seem to like the temporary variable in the template.
         BeAssert([](const char* const format) {return (std::string::npos == std::string(format).find("%s") && "%s is unsafe, do not use sscanf for that purpose");}(format));
+      #endif     
 PUSH_DISABLE_DEPRECATION_WARNINGS // this is safe, because we're sure the format string doesn't use
         return sscanf(buffer, format, std::forward<Args>(args)...);
 POP_DISABLE_DEPRECATION_WARNINGS
@@ -537,5 +550,20 @@ typedef bvector<Utf8String> T_Utf8StringVector;
 typedef T_Utf8StringVector*         T_Utf8StringVectorP, &T_Utf8StringVectorR;
 typedef T_Utf8StringVector const*   T_Utf8StringVectorCP;
 typedef T_Utf8StringVector const&   T_Utf8StringVectorCR;
+
+// Supports char8_t (including u8 literals) interop with Utf8String/Utf8CP APIs.
+template <size_t N>
+class Utf8Chars {
+    Utf8Char m_characters[N];
+    
+    template<size_t... I>
+    constexpr Utf8Chars(const char8_t (&input)[N], std::index_sequence<I...>) : m_characters {static_cast<Utf8Char>(input[I])...} {}
+    
+public:
+    constexpr Utf8Chars(const char8_t (&input)[N]) : Utf8Chars(input, std::make_index_sequence<N>()) {}
+
+    constexpr operator Utf8CP() const { return m_characters; }
+    constexpr Utf8CP operator&() const { return m_characters; }
+};
 
 END_BENTLEY_NAMESPACE

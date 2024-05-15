@@ -31,6 +31,7 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)ChangeIterator.h \
                 $(publicApiDir)ConcurrentQueryManager.h \
                 $(publicApiDir)InstanceReader.h \
+                $(publicApiDir)ECDbVirtualTab.h \
                 $(publicApiDir)ECDbExpressionSymbolContext.h
 
 ECDbAllHeaders = \
@@ -41,7 +42,7 @@ ECDbAllHeaders = \
                 $(baseDir)IssueReporter.h \
                 $(baseDir)MapStrategy.h \
                 $(baseDir)ECDbImpl.h \
-                $(baseDir)ECDbSqlFunctions.h \
+                $(baseDir)BuiltInFuncs.h \
                 $(baseDir)FeatureManager.h \
                 $(baseDir)DbUtilities.h \
                 $(baseDir)SchemaManagerDispatcher.h \
@@ -71,7 +72,11 @@ ECDbAllHeaders = \
                 $(baseDir)ChangeSummaryExtractor.h \
                 $(baseDir)ChangeSummaryImpl.h \
                 $(baseDir)ConcurrentQueryManagerImpl.h \
+                $(baseDir)QueryJsonAdaptor.h \
                 $(baseDir)InstanceReaderImpl.h \
+                $(baseDir)SchemaSync.h \
+                $(baseDir)IntegrityChecker.h \
+                $(baseDir)BuiltInVTabs.h \
                 $(baseDir)ECSql/DynamicSelectClauseECClass.h \
                 $(baseDir)ECSql/Parser/SqlTypes.h \
                 $(baseDir)ECSql/Parser/IParseContext.h \
@@ -86,6 +91,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/ListExp.h \
                 $(baseDir)ECSql/PropertyNameExp.h \
                 $(baseDir)ECSql/ValueExp.h \
+                $(baseDir)ECSql/WindowFunctionExp.h \
                 $(baseDir)ECSql/WhereExp.h \
                 $(baseDir)ECSql/SelectStatementExp.h \
                 $(baseDir)ECSql/InsertStatementExp.h \
@@ -124,6 +130,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/NavigationPropertyECSqlField.h \
                 $(baseDir)ECSql/ECInstanceAdapterHelper.h \
                 $(baseDir)ECSql/CommonTableExp.h \
+                $(baseDir)ECSql/ECSqlPragmas.h \
                 $(baseDir)ECSql/ValueCreationFuncExp.h \
                 $(baseDir)DbSchema.h \
                 $(baseDir)DbSchemaPersistenceManager.h \
@@ -194,7 +201,7 @@ $(o)ClassMapPersistenceManager$(oext):                        $(baseDir)ClassMap
 
 $(o)ECDbImpl$(oext):                                          $(baseDir)ECDbImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECDbSqlFunctions$(oext):                                  $(baseDir)ECDbSqlFunctions.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)BuiltInFuncs$(oext):                                      $(baseDir)BuiltInFuncs.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDb$(oext):                                              $(baseDir)ECDb.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -255,6 +262,8 @@ $(o)Exp$(oext):                                               $(baseDir)ECSql/Ex
 $(o)ComputedExp$(oext):                                       $(baseDir)ECSql/ComputedExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ValueExp$(oext):                                          $(baseDir)ECSql/ValueExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)WindowFunctionExp$(oext):                                 $(baseDir)ECSql/WindowFunctionExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ListExp$(oext):                                           $(baseDir)ECSql/ListExp.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -346,7 +355,7 @@ $(o)NavigationPropertyECSqlBinder$(oext):                     $(baseDir)ECSql/Na
 
 $(o)IdECSqlBinder$(oext):                                     $(baseDir)ECSql/IdECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)VirtualSetBinder$(oext):                                       $(baseDir)ECSql/VirtualSetBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)VirtualSetBinder$(oext):                                  $(baseDir)ECSql/VirtualSetBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlParseTreeFormatter$(oext):                           $(baseDir)ECSql/ECSqlParseTreeFormatter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -366,6 +375,8 @@ $(o)CommonTableExp$(oext):                                    $(baseDir)ECSql/Co
 
 $(o)NavigationPropertyECSqlField$(oext):                      $(baseDir)ECSql/NavigationPropertyECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)ECSqlPragmas$(oext):                                      $(baseDir)ECSql/ECSqlPragmas.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
 $(o)ValueCreationFuncExp$(oext):                              $(baseDir)ECSql/ValueCreationFuncExp.cpp  $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)DbSchema$(oext):                                          $(baseDir)DbSchema.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
@@ -378,7 +389,15 @@ $(o)ClassMapColumnFactory$(oext):                             $(baseDir)ClassMap
 
 $(o)ConcurrentQueryManagerImpl$(oext):                        $(baseDir)ConcurrentQueryManagerImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)QueryJsonAdaptor$(oext):                                  $(baseDir)QueryJsonAdaptor.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
 $(o)InstanceReaderImpl$(oext):                                $(baseDir)InstanceReaderImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)SchemaSync$(oext):                                $(baseDir)SchemaSync.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)IntegrityChecker$(oext):                                  $(baseDir)IntegrityChecker.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)BuiltInVTabs$(oext):                                      $(baseDir)BuiltInVTabs.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ClassViews$(oext):                                        $(baseDir)ClassViews.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

@@ -1488,15 +1488,16 @@ const Byte * ECValue::GetIGeometry(size_t& size) const
 BentleyStatus ECValue::SetIGeometry(const Byte * data, size_t size, bool holdADuplicate)
     {
     Clear();
-    if (0 == size)
-        return SUCCESS;
-
+    bool badBuffer = false;
     m_primitiveType = PRIMITIVETYPE_IGeometry;
-
-    if (!BentleyGeometryFlatBuffer::IsFlatBufferFormat(data))
-        return ERROR;
-
-    return SetBinaryInternal(data, size, holdADuplicate);
+    if (!BentleyGeometryFlatBuffer::IsFlatBufferFormat(data, size))
+        {
+        badBuffer = size != 0; // data has bytes but not in flatbuffer format
+        data = nullptr;
+        size = 0;
+        }
+    BentleyStatus status =  SetBinaryInternal(data, size, holdADuplicate);
+    return badBuffer ? ERROR : status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1845,6 +1846,10 @@ Utf8String    ECValue::ToString() const
     else if (IsStruct())
         {
         return "IECInstance containing struct value";
+        }
+    else if (IsNavigation())
+        {
+        str.Sprintf("Id: %" PRIu64, m_navigationInfo.GetId<BeInt64Id>().GetValue());
         }
     else if (PRIMITIVETYPE_DateTime == m_primitiveType)
         str = GetDateTime().ToString(); // want something more readable than the ticks

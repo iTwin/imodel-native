@@ -39,7 +39,7 @@ Exp::FinalizeParseStatus DeleteStatementExp::_FinalizeParsing(ECSqlParseContext&
 
         if (classNameExp->GetMemberFunctionCallExp() != nullptr)
             {
-            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, "May not call function on class in FROM clause in a DELETE statement: %s", ToECSql().c_str());
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0462, "May not call function on class in FROM clause in a DELETE statement: %s", ToECSql().c_str());
             return FinalizeParseStatus::Error;
             }
 
@@ -81,6 +81,22 @@ OptionsExp const* DeleteStatementExp::GetOptionsClauseExp() const
 
     return GetChild<OptionsExp>((size_t) m_optionsClauseIndex);
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void DeleteStatementExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
+    //! ITWINJS_PARSE_TREE: DeleteStatementExp
+    val.SetEmptyObject();
+    val["id"] = "DeleteStatementExp";
+
+    GetClassNameExp()->ToJson(val["class"], fmt);
+    if (GetWhereClauseExp() != nullptr)
+        GetWhereClauseExp()->ToJson(val["where"], fmt);
+
+    if (GetOptionsClauseExp() != nullptr)
+        GetOptionsClauseExp()->ToJson(val["options"], fmt);
+}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod

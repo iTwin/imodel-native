@@ -87,7 +87,7 @@ bool ClassViews::CheckViews(ECDbCR conn) {
         conn.GetImpl().Issues().ReportV(
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
-                IssueType::ECDbIssue, "Total of %d view classes were checked and %d were found to be invalid.", (int)dbViews.size(), invalidViews);
+                IssueType::ECDbIssue, ECDbIssueId::ECDb_0700, "Total of %d view classes were checked and %d were found to be invalid.", (int)dbViews.size(), invalidViews);
         return false;
     }
     return invalidViews == 0;
@@ -101,7 +101,7 @@ bool ClassViews::IsValid(ECN::ECClassCR viewClass, ECDbCR conn){
         conn.GetImpl().Issues().ReportV(
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
-                IssueType::ECDbIssue, "Invalid view class '%s'. View definition can only be applied to EntityClass or RelationshipClass.", viewClassName);
+                IssueType::ECDbIssue, ECDbIssueId::ECDb_0701, "Invalid view class '%s'. View definition can only be applied to EntityClass or RelationshipClass.", viewClassName);
         return false;
     }
 
@@ -110,7 +110,7 @@ bool ClassViews::IsValid(ECN::ECClassCR viewClass, ECDbCR conn){
         conn.GetImpl().Issues().ReportV(
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
-                IssueType::ECDbIssue, "Invalid view class '%s'. View class does not have a classmap", viewClassName);
+                IssueType::ECDbIssue, ECDbIssueId::ECDb_0716,"Invalid view class '%s'. View class does not have a classmap", viewClassName);
         return false;
     }
     if (viewClass.IsRelationshipClass()) {
@@ -119,7 +119,7 @@ bool ClassViews::IsValid(ECN::ECClassCR viewClass, ECDbCR conn){
             conn.GetImpl().Issues().ReportV(
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
-                IssueType::ECDbIssue, "Invalid view class '%s'. If view is applied to the ECRelationshipClass, then source and target classes must be view classes as well.", viewClassName);
+                IssueType::ECDbIssue, ECDbIssueId::ECDb_0722,"Invalid view class '%s'. If view is applied to the ECRelationshipClass, then source and target classes must be view classes as well.", viewClassName);
             return false;
         }
     }
@@ -127,28 +127,28 @@ bool ClassViews::IsValid(ECN::ECClassCR viewClass, ECDbCR conn){
         conn.GetImpl().Issues().ReportV(
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
-                IssueType::ECDbIssue, "Invalid view class '%s'. View class must be mapped to virtual table and not physical table.", viewClassName);
+                IssueType::ECDbIssue, ECDbIssueId::ECDb_0717,"Invalid view class '%s'. View class must be mapped to virtual table and not physical table.", viewClassName);
         return false;
     }
     if (viewClass.GetClassModifier() != ECClassModifier::Abstract) {
         conn.GetImpl().Issues().ReportV(
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
-                IssueType::ECDbIssue, "Invalid view class '%s'. 'QueryView' customattribute must be applied to a 'Abstract' class.", viewClassName);
+                IssueType::ECDbIssue, ECDbIssueId::ECDb_0702, "Invalid view class '%s'. 'QueryView' customattribute must be applied to a 'Abstract' class.", viewClassName);
         return false;
     }
     if (viewClass.HasBaseClasses()) {
         conn.GetImpl().Issues().ReportV(
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
-                IssueType::ECDbIssue, "Invalid view class '%s'. 'QueryView' cannot be derived from another class", viewClassName);
+                IssueType::ECDbIssue, ECDbIssueId::ECDb_0703, "Invalid view class '%s'. 'QueryView' cannot be derived from another class", viewClassName);
         return false;
     }
     if (!conn.Schemas().GetDerivedClasses(viewClass).empty()) {
         conn.GetImpl().Issues().ReportV(
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
-                IssueType::ECDbIssue, "Invalid view class '%s'. View class definition cannot have derived classes.", viewClassName);
+                IssueType::ECDbIssue, ECDbIssueId::ECDb_0704, "Invalid view class '%s'. View class definition cannot have derived classes.", viewClassName);
         return false;
     }
     Utf8String ecsql;
@@ -156,7 +156,7 @@ bool ClassViews::IsValid(ECN::ECClassCR viewClass, ECDbCR conn){
         conn.GetImpl().Issues().ReportV(
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
-                IssueType::ECDbIssue, "Invalid view class '%s'. No query specified in view", viewClassName);
+                IssueType::ECDbIssue, ECDbIssueId::ECDb_0705, "Invalid view class '%s'. No query specified in view", viewClassName);
         return false;
     }
     ECSqlStatement stmt;
@@ -164,7 +164,7 @@ bool ClassViews::IsValid(ECN::ECClassCR viewClass, ECDbCR conn){
         conn.GetImpl().Issues().ReportV(
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
-                IssueType::ECDbIssue, "Invalid view class '%s'. Failed to prepare view query (%s)", viewClassName, ecsql.c_str());
+                IssueType::ECDbIssue, ECDbIssueId::ECDb_0706, "Invalid view class '%s'. Failed to prepare view query (%s)", viewClassName, ecsql.c_str());
         return false;
     }
     std::set<Utf8String, CompareIUtf8Ascii> viewClassProps;
@@ -180,7 +180,7 @@ bool ClassViews::IsValid(ECN::ECClassCR viewClass, ECDbCR conn){
             conn.GetImpl().Issues().ReportV(
                     IssueSeverity::Error,
                     IssueCategory::BusinessProperties,
-                    IssueType::ECDbIssue, "Invalid view class '%s'. View class has property '%s' which is not returned by view query.", viewClassName, viewClassProp->GetName().c_str());
+                    IssueType::ECDbIssue, ECDbIssueId::ECDb_0707, "Invalid view class '%s'. View class has property '%s' which is not returned by view query.", viewClassName, viewClassProp->GetName().c_str());
             return false;
         }
 
@@ -189,7 +189,7 @@ bool ClassViews::IsValid(ECN::ECClassCR viewClass, ECDbCR conn){
             conn.GetImpl().Issues().ReportV(
                     IssueSeverity::Error,
                     IssueCategory::BusinessProperties,
-                    IssueType::ECDbIssue, "Invalid view class '%s'. View class property '%s' type does not match the type returned by view query ('%s' <> '%s').",
+                    IssueType::ECDbIssue, ECDbIssueId::ECDb_0708, "Invalid view class '%s'. View class property '%s' type does not match the type returned by view query ('%s' <> '%s').",
                     viewClassName,
                     queryProp->GetName().c_str(),
                     viewClassProp->GetTypeFullName().c_str(),
@@ -215,7 +215,7 @@ bool ClassViews::IsValid(ECN::ECClassCR viewClass, ECDbCR conn){
                     conn.GetImpl().Issues().ReportV(
                             IssueSeverity::Error,
                             IssueCategory::BusinessProperties,
-                            IssueType::ECDbIssue, "Invalid view class '%s'. ECInstanceId must be a primitive integer or long.", viewClassName);
+                            IssueType::ECDbIssue, ECDbIssueId::ECDb_0725, "Invalid view class '%s'. ECInstanceId must be a primitive integer or long.", viewClassName);
                     return false;
                 }
 
@@ -230,7 +230,7 @@ bool ClassViews::IsValid(ECN::ECClassCR viewClass, ECDbCR conn){
                     conn.GetImpl().Issues().ReportV(
                             IssueSeverity::Error,
                             IssueCategory::BusinessProperties,
-                            IssueType::ECDbIssue, "Invalid view class '%s'. ECClassId must be a primitive integer or long.", viewClassName);
+                            IssueType::ECDbIssue, ECDbIssueId::ECDb_0726, "Invalid view class '%s'. ECClassId must be a primitive integer or long.", viewClassName);
                     return false;
                 }
                 hasECClassId = true;
@@ -244,7 +244,7 @@ bool ClassViews::IsValid(ECN::ECClassCR viewClass, ECDbCR conn){
             conn.GetImpl().Issues().ReportV(
                         IssueSeverity::Error,
                         IssueCategory::BusinessProperties,
-                        IssueType::ECDbIssue, "Invalid view class '%s'. View query returns property '%s' which not defined in view class or is a invalid system property.", viewClassName, sysProp->GetName().c_str());
+                        IssueType::ECDbIssue, ECDbIssueId::ECDb_0709, "Invalid view class '%s'. View query returns property '%s' which not defined in view class or is a invalid system property.", viewClassName, sysProp->GetName().c_str());
             return false;
         }
     }
@@ -253,7 +253,7 @@ bool ClassViews::IsValid(ECN::ECClassCR viewClass, ECDbCR conn){
         conn.GetImpl().Issues().ReportV(
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
-                IssueType::ECDbIssue, "Invalid view class '%s'. View query must return ECInstanceId.", viewClassName);
+                IssueType::ECDbIssue, ECDbIssueId::ECDb_0727, "Invalid view class '%s'. View query must return ECInstanceId.", viewClassName);
         return false;
     }
 
@@ -261,7 +261,7 @@ bool ClassViews::IsValid(ECN::ECClassCR viewClass, ECDbCR conn){
         conn.GetImpl().Issues().ReportV(
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
-                IssueType::ECDbIssue, "Invalid view class '%s'. View query must return ECClassId.", viewClassName);
+                IssueType::ECDbIssue, ECDbIssueId::ECDb_0728, "Invalid view class '%s'. View query must return ECClassId.", viewClassName);
         return false;
     }
 

@@ -5,11 +5,11 @@
 #pragma once
 
 #include <vector>
-#include <bitset>      
+#include <bitset>
 #include "Exp.h"
 #include "OptionsExp.h"
 #include "NativeSqlBuilder.h"
- 
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct IECSqlPreparedStatement;
@@ -23,6 +23,23 @@ struct SingleContextTableECSqlPreparedStatement;
 struct ECSqlPrepareContext final
     {
     public:
+
+        //=======================================================================================
+        // @bsiclass
+        // Allow to put anchors in generated sql and then later replace it with something else.
+        //+===============+===============+===============+===============+===============+======
+        struct SqlAnchors final
+            {
+            private:
+                std::map<Utf8String, Utf8String> m_anchors;
+                Utf8String CreateAnchorStr(Utf8CP name, size_t id);
+
+            public:
+                Utf8String CreateAnchor(Utf8CP name);
+                void QueueReplacementForAnchor(Utf8StringCR anchorName, Utf8CP replacement);
+                void ExecutePendingReplacements(NativeSqlBuilder & builder);
+            };
+
         //=======================================================================================
         // @bsiclass
         //+===============+===============+===============+===============+===============+======
@@ -113,6 +130,8 @@ struct ECSqlPrepareContext final
         ExpScopeStack m_scopes;
         SelectClauseInfo m_selectionOptions;
         int m_nextSystemSqlParameterNameSuffix = 0;
+        SqlAnchors m_anchors;
+        bool m_isInstanceQuery = false;
         //not copyable
         ECSqlPrepareContext(ECSqlPrepareContext const&) = delete;
         ECSqlPrepareContext& operator=(ECSqlPrepareContext const&) = delete;
@@ -140,13 +159,16 @@ struct ECSqlPrepareContext final
 
         bool NativeStatementIsNoop() const { return m_nativeStatementIsNoop; }
         void SetNativeStatementIsNoop(bool flag) { m_nativeStatementIsNoop = flag; }
-
         ExpScope const& GetCurrentScope() const { return m_scopes.Current(); }
         ExpScope& GetCurrentScopeR() { return m_scopes.CurrentR(); }
         void PushScope(ExpCR exp, OptionsExp const* options = nullptr) { m_scopes.Push(exp, options); }
         void PopScope() { m_scopes.Pop(); }
-
         int IncrementSystemSqlParameterSuffix() { m_nextSystemSqlParameterNameSuffix++; return m_nextSystemSqlParameterNameSuffix; }
+        Utf8CP GetThisStmtPtrParamName() const { return "ecdb_this_ptr"; }
+        Utf8CP GetThisStmtPtrParamDecl() const { return ":ecdb_this_ptr"; }
+        SqlAnchors& GetAnchors() { return m_anchors; }
+        void SetIsInstanceQuery(const bool isInstanceQuery) { m_isInstanceQuery = isInstanceQuery; }
+        bool IsInstanceQuery() const { return m_isInstanceQuery; }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
