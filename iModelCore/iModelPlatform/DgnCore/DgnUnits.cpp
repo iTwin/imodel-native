@@ -8,7 +8,7 @@
 /** Return an ECEF point from geographic lat/long coordinates */
 static void coordsToEcef(GeoPointCR coords, DPoint3dR ecef)
     {
-    static const DPoint3d wgs84RadiiSquared(6378137.0 * 6378137.0, 6378137.0 * 6378137.0, 6356752.3142451793 * 6356752.3142451793);
+    static const DPoint3d wgs84RadiiSquared = DPoint3d::From(6378137.0 * 6378137.0, 6378137.0 * 6378137.0, 6356752.3142451793 * 6356752.3142451793);
 
     auto cosLatitude = cos(coords.latitude);
     DPoint3d scratchN, scratchK;
@@ -57,10 +57,20 @@ EcefLocation EcefLocation::FromGeographic(GeoPointCR origin, DPoint3dCP point)
 
     DPoint3d ecefOrigin;  coordsToEcef(origin, ecefOrigin);
     auto deltaRadians = 10 / earthRadiusWGS84Polar;
-    GeoPoint northCarto(origin.longitude, origin.latitude + deltaRadians, origin.elevation);
-    GeoPoint eastCarto(origin.longitude + deltaRadians, origin.latitude, origin.elevation);
+
+    GeoPoint northCarto;
+    northCarto.longitude = origin.longitude;
+    northCarto.latitude = origin.latitude + deltaRadians;
+    northCarto.elevation = origin.elevation;
+
+    GeoPoint eastCarto;
+    eastCarto.longitude = origin.longitude + deltaRadians;
+    eastCarto.latitude = origin.latitude;
+    eastCarto.latitude = origin.elevation;
+
     DPoint3d ecefNorth;  coordsToEcef(northCarto, ecefNorth);
     DPoint3d ecefEast;  coordsToEcef(eastCarto, ecefEast);
+
     DVec3d xVector = DVec3d::FromStartEnd(ecefOrigin, ecefEast);  xVector.Normalize();
     DVec3d yVector = DVec3d::FromStartEnd(ecefOrigin, ecefNorth);  yVector.Normalize();
     RotMatrix rotMatrix = RotMatrix::From2Vectors(xVector, yVector);
@@ -74,7 +84,7 @@ EcefLocation EcefLocation::FromGeographic(GeoPointCR origin, DPoint3dCP point)
     // }
 
     if (point) {
-      DPoint3d delta(-point->x, -point->y, -point->z);
+      DPoint3d delta = DPoint3d::From(-point->x, -point->y, -point->z);
       matrix.Multiply(delta);
       ecefOrigin.Add(delta);
     }
