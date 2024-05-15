@@ -691,6 +691,7 @@ describe("basic tests", () => {
     assert(result.result);
     const classMetaData = JSON.parse(result.result);
     expect(classMetaData).to.deep.equal({
+      classId: "0x44",
       ecclass: "BisCore:ISubModeledElement",
       description:
         "An interface which indicates that an Element can be broken down or described by a (sub) Model.  " +

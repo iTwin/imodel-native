@@ -238,7 +238,8 @@ std::shared_ptr<CachedConnection> CachedConnection::Make(ConnectionCache& cache,
 void ConnectionCache::InterruptIf(std::function<bool(RunnableRequestBase const&)> predicate, bool cancel) {
     recursive_guard_t lock(m_mutex);
     for (auto& conn: m_conns) {
-        conn->InterruptIf(predicate, cancel);
+        if (conn != nullptr)
+            conn->InterruptIf(predicate, cancel);
     }
 }
 //---------------------------------------------------------------------------------------
