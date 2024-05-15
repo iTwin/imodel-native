@@ -57,20 +57,10 @@ EcefLocation EcefLocation::FromGeographic(GeoPointCR origin, DPoint3dCP point)
 
     DPoint3d ecefOrigin;  coordsToEcef(origin, ecefOrigin);
     auto deltaRadians = 10 / earthRadiusWGS84Polar;
-
-    GeoPoint northCarto;
-    northCarto.longitude = origin.longitude;
-    northCarto.latitude = origin.latitude + deltaRadians;
-    northCarto.elevation = origin.elevation;
-
-    GeoPoint eastCarto;
-    eastCarto.longitude = origin.longitude + deltaRadians;
-    eastCarto.latitude = origin.latitude;
-    eastCarto.latitude = origin.elevation;
-
+    GeoPoint northCarto;  northCarto.Init(origin.longitude, origin.latitude + deltaRadians, origin.elevation);
+    GeoPoint eastCarto;  eastCarto.Init(origin.longitude + deltaRadians, origin.latitude, origin.elevation);
     DPoint3d ecefNorth;  coordsToEcef(northCarto, ecefNorth);
     DPoint3d ecefEast;  coordsToEcef(eastCarto, ecefEast);
-
     DVec3d xVector = DVec3d::FromStartEnd(ecefOrigin, ecefEast);  xVector.Normalize();
     DVec3d yVector = DVec3d::FromStartEnd(ecefOrigin, ecefNorth);  yVector.Normalize();
     RotMatrix rotMatrix = RotMatrix::From2Vectors(xVector, yVector);
