@@ -104,7 +104,7 @@ TEST(CrossPlatform, Equivalence)
             {
             for (size_t i = 1; i < geometry.size(); ++i)
                 {
-                sprintf_s(buf, "testCase[%zu]: geom0 compares to geom%zu", iTestCase, i);
+                snprintf(buf, sizeof buf, "testCase[%zu]: geom0 compares to geom%zu", iTestCase, i);
                 Check::True(geometry[0]->IsSameStructureAndGeometry(*geometry[i]), buf);
                 }
             }

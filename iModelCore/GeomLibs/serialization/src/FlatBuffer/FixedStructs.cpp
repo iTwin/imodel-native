@@ -1179,11 +1179,11 @@ static PolyfaceAuxDataPtr ReadPolyfaceAuxData(const BGFB::Polyface* fbPolyface, 
 
     // HEURISTICS to identify legacy AuxData indices, mistakenly serialized by Typescript API as 0-based and unterminated
     auto isLegacy = false;
-    auto pointIndicesPadCount = CountZeroes((int32_t*) fbPointIndices->GetStructFromOffset(0), fbPointIndices->size());
+    auto pointIndicesPadCount = CountZeroes((int32_t const*) fbPointIndices->GetStructFromOffset(0), fbPointIndices->size());
     if (numPerFace > 1)
         {
         int32_t auxIndexMin, auxIndexMax;
-        auto auxIndexNumZeroes = CountZeroes((int32_t*) fbAuxIndices->GetStructFromOffset(0), fbAuxIndices->size(), auxIndexMin, auxIndexMax);
+        auto auxIndexNumZeroes = CountZeroes((int32_t const*) fbAuxIndices->GetStructFromOffset(0), fbAuxIndices->size(), auxIndexMin, auxIndexMax);
         if (auxIndexMax > 0 && (uint32_t) auxIndexMax > fbNumData) // auxIndices invalid
             return nullptr;
         if (auxIndexMax == fbNumData) // auxIndices 1-based
@@ -1204,7 +1204,7 @@ static PolyfaceAuxDataPtr ReadPolyfaceAuxData(const BGFB::Polyface* fbPolyface, 
 
     bvector<int32_t> indices;
     if (isLegacy)
-        WriteOneBasedIndicesFromZeroBasedIndicesWithExternalBlocking(indices, (int32_t*) fbAuxIndices->GetStructFromOffset(0), fbAuxIndices->size(), (int32_t*) fbPointIndices->GetStructFromOffset(0), fbPointIndices->size());
+        WriteOneBasedIndicesFromZeroBasedIndicesWithExternalBlocking(indices, (int32_t const*) fbAuxIndices->GetStructFromOffset(0), fbAuxIndices->size(), (int32_t const*) fbPointIndices->GetStructFromOffset(0), fbPointIndices->size());
     else
         {
         indices.resize(fbAuxIndices->size());
