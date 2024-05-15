@@ -850,7 +850,7 @@ BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLPa
                     return ERROR;
                 }
                 auto rhsPropExp = rhsExp->GetAsCP<PropertyNameExp>();
-                exp = std::make_unique<ExtractPropertyValueExp>(lhsPropExp->GetResolvedPropertyPath(), rhsPropExp->GetResolvedPropertyPath(), isOptionalProp);
+                exp = std::make_unique<ExtractPropertyValueExp>(lhsPropExp->GetResolvedPropertyPath(), rhsPropExp->GetResolvedPropertyPath());
                 return SUCCESS;
             }
         } else {
@@ -3208,8 +3208,6 @@ BentleyStatus ECSqlParser::ParseValueExp(std::unique_ptr<ValueExp>& valueExp, OS
                 }
                 case OSQLParseNode::value_exp_primary:
                     return ParseValueExpPrimary(valueExp, parseNode);
-                case OSQLParseNode::window_function:
-                    return ParseWindowFunction(valueExp, parseNode);
                 case OSQLParseNode::value_creation_fct:
                     return ParseValueCreationFuncExp(valueExp, parseNode);
                 default:

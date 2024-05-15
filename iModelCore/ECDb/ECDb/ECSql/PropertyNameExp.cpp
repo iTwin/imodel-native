@@ -421,7 +421,7 @@ PropertyMap const& PropertyNameExp::GetPropertyMap() const
         {
         case Exp::Type::ClassName:
             {
-            ClassNameExp const& classNameExp = classRefExp->GetAs<ClassNameExp>();
+            ClassNameExp const& classNameExp = GetClassRefExp()->GetAs<ClassNameExp>();
             propertyMap = classNameExp.GetInfo().GetMap().GetPropertyMaps().Find(GetResolvedPropertyPath().ToString(false).c_str());
             break;
             }
@@ -472,7 +472,7 @@ void PropertyNameExp::_ToECSql(ECSqlRenderContext& ctx) const
         else
             ctx.AppendToECSql(m_className).AppendToECSql(".");
     }
-    ctx.AppendToECSql(m_resolvedPropertyPath.ToString(true, false, true));
+    ctx.AppendToECSql(m_resolvedPropertyPath.ToString(true, false));
     }
 
 //-----------------------------------------------------------------------------------------

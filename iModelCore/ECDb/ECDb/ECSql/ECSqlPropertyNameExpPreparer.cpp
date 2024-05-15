@@ -280,7 +280,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                             else
                                 {
                                 // Alias qualified property
-                                accessStringPrefix = propertyMap->GetAccessString() + "." +  exp.GetResolvedPropertyPath().Skip(1).ToString();
+                                accessStringPrefix = propertyMap.GetAccessString() + "." +  exp.GetResolvedPropertyPath().Skip(1).ToString();
                                 }
                             }
 
@@ -331,11 +331,11 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                             nativeSqlSnippets = propertyRef->GetNativeSql();
                             return ECSqlStatus::Success;
                         }
-                        PropertyMap const* propertyMap = referencedPropertyNameExp.GetPropertyMap();
+                        PropertyMap const& propertyMap = referencedPropertyNameExp.GetPropertyMap();
                         NativeSqlBuilder::List snippets;
-                        if (propertyMap->GetType() == PropertyMap::Type::ConstraintECClassId)
+                        if (propertyMap.GetType() == PropertyMap::Type::ConstraintECClassId)
                             {
-                            snippets.push_back(NativeSqlBuilder(propertyMap->GetAccessString()));
+                            snippets.push_back(NativeSqlBuilder(propertyMap.GetAccessString()));
                             if (SUCCESS != propertyRef->ToNativeSql(snippets))
                                 return ECSqlStatus::Error;
                             }
@@ -350,12 +350,12 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                                 else
                                     {
                                     // Alias qualified property
-                                    accessStringPrefix = propertyMap->GetAccessString() + "." +  exp.GetResolvedPropertyPath().Skip(1).ToString();
+                                    accessStringPrefix = propertyMap.GetAccessString() + "." +  exp.GetResolvedPropertyPath().Skip(1).ToString();
                                     }
                                 }
 
-                            ToSqlPropertyMapVisitor sqlVisitor(propertyMap->GetClassMap().GetJoinedOrPrimaryTable(), ToSqlPropertyMapVisitor::ECSqlScope::Select);
-                            propertyMap->AcceptVisitor(sqlVisitor);
+                            ToSqlPropertyMapVisitor sqlVisitor(propertyMap.GetClassMap().GetJoinedOrPrimaryTable(), ToSqlPropertyMapVisitor::ECSqlScope::Select);
+                            propertyMap.AcceptVisitor(sqlVisitor);
                             std::vector<bool> filter;
                             for (ToSqlPropertyMapVisitor::Result const& r : sqlVisitor.GetResultSet())
                                 {

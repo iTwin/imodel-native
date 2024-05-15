@@ -80,7 +80,7 @@ struct PropertyNameExp final : ValueExp
         PropertyPath const& GetOriginalPropertyPath() const { return m_originalPropertyPath; }
         //The resolved property path e.g. with resolved aliases and property pointers
         PropertyPath const& GetResolvedPropertyPath() const { return m_resolvedPropertyPath; }
-        PropertyMap const* GetPropertyMap() const;
+        PropertyMap const& GetPropertyMap() const;
         SourceType const GetSourceType() const { return m_sourceType; }
         Utf8CP GetClassName() const { return m_className.c_str(); }
         RangeClassRefExp const* GetClassRefExp() const { return m_classRefExp; }
