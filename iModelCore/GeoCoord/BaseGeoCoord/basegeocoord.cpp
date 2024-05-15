@@ -8940,18 +8940,21 @@ struct GeoCoordWorkspaces {
             auto resource = new WorkspaceResource();
             auto rc = resource->Init(row);
             if (BE_SQLITE_OK == rc) {
-                Logging::LogMessageV("GeoCoord", LOG_INFO, "Successfully loaded GCS file %s from workspace %s", path, row.db->GetDbFileName());
+                Logging::LogMessageV("GeoCoord", LOG_TRACE, "Successfully loaded GCS file %s from workspace %s", path, row.db->GetDbFileName());
                 return resource;
             }
             Logging::LogMessageV("GeoCoord", LOG_ERROR, "Unable to read data for GCS file %s from workspace %s, rc=%d", path, row.db->GetDbFileName(), rc);
             delete resource; // weren't able to read from row.
         }
         if (BentleyApi::GeoCoordinates::s_loadLocalFiles)
-            Logging::LogMessageV("GeoCoord", LOG_INFO, "Unable to find GCS file %s in any workspace, trying local file", path);
+            Logging::LogMessageV("GeoCoord", LOG_TRACE, "Unable to find GCS file %s in any workspace, trying local file", path);
         else
             Logging::LogMessageV("GeoCoord", LOG_WARNING, "Unable to find GCS file %s in any workspace", path);
         return nullptr;
     }
+
+    static bool s_loadLocalFiles = true;
+    void BaseGCS::EnableLocalGcsFiles(bool yesNo) { s_loadLocalFiles = yesNo; }
 
     // get the row for a resource for csmap by pathname. Path will include the "assets" prefix.
     static WorkspaceRow GetRow(Utf8CP path) {
@@ -8982,9 +8985,6 @@ struct GeoCoordWorkspaces {
         return blank;
     }
 };
-
-static bool s_loadLocalFiles = true;
-void BaseGCS::EnableLocalGcsFiles(bool yesNo) { s_loadLocalFiles = yesNo; }
 
 /** Add a new entry to the list of gcs WorkspaceDbs */
 bool BaseGCS::AddWorkspaceDb(Utf8String dbName, CloudContainerP container, int priority) {
@@ -27330,7 +27330,7 @@ _csFile* CS_fopen(Utf8CP filename, Utf8CP mode) {
     auto name = BentleyApi::GeoCoordinates::toAssetName(filename);
     auto file = CS_fopen_caseInsensitive(name.c_str(), mode);
     if (file != nullptr)
-        Logging::LogMessageV("GeoCoord", LOG_INFO, "Successfully loaded GCS file %s from %s", filename, name.c_str());
+        Logging::LogMessageV("GeoCoord", LOG_TRACE, "Successfully loaded GCS file %s from %s", filename, name.c_str());
     else
         Logging::LogMessageV("GeoCoord", LOG_WARNING, "Unable to find GCS file %s in Workspace or locally", filename);
 
