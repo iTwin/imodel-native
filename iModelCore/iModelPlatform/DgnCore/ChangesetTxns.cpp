@@ -32,14 +32,14 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 // @bsimethod
 //---------------------------------------------------------------------------------------
 ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) {
-    Utf8CP tableName = nullptr;
+    Utf8CP tableNameP = nullptr;
     int nCols, indirect;
     DbOpcode opcode;
-    DbResult result = iter.GetOperation(&tableName, &nCols, &opcode, &indirect);
+    DbResult result = iter.GetOperation(&tableNameP, &nCols, &opcode, &indirect);
     BeAssert(result == BE_SQLITE_OK);
     UNUSED_VARIABLE(result);
-    Utf8String tbl;
-    tbl.AssignOrClear(tableName);
+    Utf8String tableName;
+    tableName.AssignOrClear(tableNameP);
 
     const auto jsIModelDb = m_dgndb.GetJsIModelDb();
     if (nullptr != jsIModelDb) {
@@ -226,10 +226,10 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
             LOG.warning("UPDATE/DELETE before value do not match with one in db or CASCADE action was triggered.");
             iter.Dump(m_dgndb, false, 1);
         } else {
-            if (tbl.StartsWithIAscii("ec_")) {
+            if (tableName.StartsWithIAscii("ec_")) {
                 return ChangeSet::ConflictResolution::Skip;
             }
-            if (tbl.EqualsIAscii ("be_Prop")) {
+            if (tableName.EqualsIAscii ("be_Prop")) {
                  Utf8String ns = iter.GetValue(0, Changes::Change::Stage::Old).GetValueText();
                  Utf8String name = iter.GetValue(1, Changes::Change::Stage::Old).GetValueText();
                 if (ns.EqualsIAscii("ec_Db") && name.EqualsIAscii("localDbInfo")) {
@@ -254,7 +254,7 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
             LOG.warning("PRIMARY KEY INSERT CONFLICT - resolved by replacing the existing row with the incoming row");
             iter.Dump(m_dgndb, false, 1);
         } else {
-            if (tbl.StartsWithIAscii("ec_")) {
+            if (tableName.StartsWithIAscii("ec_")) {
                 return ChangeSet::ConflictResolution::Skip;
             }
             m_lastErrorMessage = "PRIMARY KEY INSERT CONFLICT - rejecting this changeset";
