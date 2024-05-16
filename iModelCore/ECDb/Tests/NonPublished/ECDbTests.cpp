@@ -286,6 +286,147 @@ TEST_F(ECDbTestFixture, TwoConnections)
     }
     }
 
+TEST_F(ECDbTestFixture, TestDropSchemasWithInstances)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("TestDropSchemasWithInstances.ecdb"));
+
+    auto schema1 = 
+        R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema1' alias='ts1' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+            <ECEntityClass typeName='A'>
+                <ECProperty propertyName='Prop_A' typeName='int' />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    auto schema2 = 
+        R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema2' alias='ts2' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+            <ECEntityClass typeName='B'>
+                <ECProperty propertyName='Prop_B' typeName='int' />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    // Import schemas
+    auto context = ECSchemaReadContext::CreateContext();
+    ASSERT_TRUE(context.IsValid());
+    context->AddSchemaLocater(m_ecdb.GetSchemaLocater());
+    ECSchemaPtr schema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schema1, *context));
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schema2, *context));
+
+    m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas());
+
+    ASSERT_TRUE(m_ecdb.Schemas().ContainsSchema("TestSchema1"));
+    ASSERT_TRUE(m_ecdb.Schemas().ContainsSchema("TestSchema2"));
+
+    // Add instances
+    ECSqlStatement stmt;
+    ECInstanceKey instanceKey;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts1.A(Prop_A) VALUES(100)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(instanceKey));
+
+    // Schema drop should fail
+    IssueListener listener;
+    m_ecdb.AddIssueListener(listener);
+    auto status = m_ecdb.Schemas().DropSchemas({ "TestSchema1", "TestSchema2" });
+    EXPECT_TRUE(status.IsError());
+    EXPECT_TRUE(status.HasInstances());
+    EXPECT_STREQ(listener.GetLastError().c_str(), "Drop ECSchema failed. One or more schemas have instances. Make sure to delete them before dropping the schemas.");
+
+    // Delete the instances
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ts1.A WHERE ECInstanceId=?"));
+    stmt.BindId(1, instanceKey.GetInstanceId());
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+    // Schema drop should now pass
+    listener.ClearMessages();
+    EXPECT_TRUE(m_ecdb.Schemas().DropSchemas({ "TestSchema1", "TestSchema2" }).IsSuccess());
+    }
+
+TEST_F(ECDbTestFixture, TestDropSchemasBeingReferenced)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("TestDropSchemasBeingReferenced.ecdb"));
+
+    auto schema1 = 
+        R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema1' alias='ts1' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+            <ECEntityClass typeName='ts_A'>
+                <ECProperty propertyName='Prop_A' typeName='int' />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    auto schema2 = 
+        R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema2' alias='ts2' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+            <ECEntityClass typeName='ts_B'>
+                <ECProperty propertyName='Prop_B' typeName='int' />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    auto schema3 = 
+        R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema3' alias='ts3' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+            <ECSchemaReference name='TestSchema1' version='1.0.0' alias='ts1' />
+            <ECEntityClass typeName='C'>
+                <BaseClass>ts1:ts_A</BaseClass>
+                <ECProperty propertyName='Prop_C' typeName='int' />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    auto schema4 = 
+        R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema4' alias='ts4' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+            <ECSchemaReference name='TestSchema2' version='1.0.0' alias='ts2' />
+            <ECEntityClass typeName='D'>
+                <BaseClass>ts2:ts_B</BaseClass>
+                <ECProperty propertyName='Prop_D' typeName='int' />
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    // Import schemas
+    auto context = ECSchemaReadContext::CreateContext();
+    ASSERT_TRUE(context.IsValid());
+    context->AddSchemaLocater(m_ecdb.GetSchemaLocater());
+    ECSchemaPtr schema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schema1, *context));
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schema2, *context));
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schema3, *context));
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schema4, *context));
+
+    m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas());
+
+    for (auto i = 1; i <= 4; ++i)
+        ASSERT_TRUE(m_ecdb.Schemas().ContainsSchema(Utf8PrintfString("TestSchema%d", i)));
+
+    // Try to drop schemas which don't exist. Shoud fail with ErrorSchemaNotFound.
+    IssueListener listener;
+    m_ecdb.AddIssueListener(listener);
+    auto status = m_ecdb.Schemas().DropSchemas({ "TestSchema1", "TestSchemaMissing1", "TestSchema2", "TestSchemaMissing2" });
+    EXPECT_TRUE(status.IsError());
+    EXPECT_EQ(status.GetStatus(), DropSchemaResult::ErrorSchemaNotFound);
+    EXPECT_STREQ(listener.GetLastError().c_str(), "Drop ECSchemas failed. ECSchema: Schemas TestSchemaMissing1,TestSchemaMissing2 not found.");
+
+    // Try to drop schemas that are being referenced by other schemas. Should fail with ErrorDeletedSchemaIsReferencedByAnotherSchema.
+    listener.ClearMessages();
+    status = m_ecdb.Schemas().DropSchemas({ "TestSchema1", "TestSchema2" });
+    EXPECT_TRUE(status.IsError());
+    EXPECT_TRUE(status.HasDependendSchemas());
+    EXPECT_STREQ(listener.GetLastError().c_str(), "Drop ECSchemas failed. Schemas TestSchema1,TestSchema2 are being referenced by other schemas.");
+
+    // Drop the referencing schemas first
+    listener.ClearMessages();
+    EXPECT_TRUE(m_ecdb.Schemas().DropSchemas({ "TestSchema3", "TestSchema4" }).IsSuccess());
+    EXPECT_TRUE(listener.IsEmpty());
+
+    // Drop should now succeed
+    listener.ClearMessages();
+    status = m_ecdb.Schemas().DropSchemas({ "TestSchema1", "TestSchema2" });
+    EXPECT_TRUE(status.IsSuccess());
+    EXPECT_FALSE(status.HasDependendSchemas());
+    EXPECT_TRUE(listener.IsEmpty());
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -560,18 +701,6 @@ TEST_F(ECDbTestFixture, NewFileECDbProfileVersion)
     ProfileVersion expectedVersion (4, 0, 0, 5);
     ASSERT_EQ(m_ecdb.GetECDbProfileVersion(), expectedVersion);
     }
-
-class IssueListener : public ECN::IIssueListener
-    {
-    mutable bvector<Utf8String> m_issues;
-    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override
-        {
-        m_issues.push_back(message);
-        }
-    public:
-    Utf8StringCR GetLastError() const { return m_issues.back();}
-    void ClearMessages() { m_issues.clear(); }
-    };
 
 TEST_F(ECDbTestFixture, TestGreatestAndLeastFunctionsWithLiterals)
     {

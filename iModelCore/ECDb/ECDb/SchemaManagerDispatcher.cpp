@@ -1075,6 +1075,72 @@ DropSchemaResult MainSchemaManager::DropSchema(Utf8StringCR name, SchemaImportTo
     return rc;
 }
 
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DropSchemaResult MainSchemaManager::DropSchemas(T_Utf8StringVectorCR schemaNames, SchemaImportToken const* schemaImportToken, bool logIssue) const
+    {
+    ECDB_PERF_LOG_SCOPE("Drop multiple schemas");
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::DropSchemas");
+    OnBeforeSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
+    SchemaImportContext ctx(m_ecdb, SchemaManager::SchemaImportOptions());
+
+    if (const auto policy = PolicyManager::GetPolicy(SchemaImportPermissionPolicyAssertion(m_ecdb, schemaImportToken)); !policy.IsSupported())
+        {
+        LOG.error("Failed to drop ECSchemas: Caller has not provided a SchemaImportToken.");
+        return DropSchemaResult(DropSchemaResult::Status::Error);
+        }
+    if (m_ecdb.IsReadonly())
+        {
+        m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0278, "Failed to drop ECSchemas. ECDb file is read-only.");
+        return DropSchemaResult(DropSchemaResult::Status::Error);
+        }
+
+    if (m_ecdb.GetECDbProfileVersion().CompareTo(ECDb::CurrentECDbProfileVersion(), ProfileVersion::VERSION_MajorMinorSub1) > 0)
+        {
+        m_ecdb.GetImpl().Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0280,
+            "Failed to drop ECSchemas. Cannot drop schemas from a file which was created with a higher version of this softwares. The file's version, however, is %s.",
+            ECDb::CurrentECDbProfileVersion().ToString().c_str(),
+            m_ecdb.GetECDbProfileVersion().ToString().c_str());
+        return DropSchemaResult(DropSchemaResult::Status::Error);
+        }
+
+    BeMutexHolder lock(m_mutex);
+    if (auto rc =  SchemaWriter::DropSchemas(schemaNames, ctx, logIssue); rc.IsError())
+        return rc;
+
+    if (SUCCESS != ViewGenerator::DropECClassViews(m_ecdb))
+        return DropSchemaResult(DropSchemaResult::Status::Error);
+
+    if (SUCCESS != CreateOrUpdateIndexesInDb(ctx))
+        {
+        ClearCache();
+        return DropSchemaResult(DropSchemaResult::Status::Error);
+        }
+
+    if (SUCCESS != PurgeOrphanTables(ctx))
+        {
+        ClearCache();
+        return DropSchemaResult(DropSchemaResult::Status::Error);
+        }
+
+    m_ecdb.ClearECDbCache();
+    if (SUCCESS != DbMapValidator(ctx).Validate())
+        {
+        ClearCache();
+        return DropSchemaResult(DropSchemaResult::Status::Error);
+        }
+
+    m_ecdb.ClearECDbCache();
+    OnAfterSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
+    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaManager::DropSchemas");
+    return DropSchemaResult::Success;
+    }
+
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
