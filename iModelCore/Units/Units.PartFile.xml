@@ -11,6 +11,7 @@
     <Part Name="UnitsNative" BentleyBuildMakeFile="Units.mke">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll"  PartFile="iModelCore/Bentley/Bentley" />
+        <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley" />
         <SubPart PartName="BeJsonCpp"   PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
         <Bindings>
             <Libs>Delivery/$(libprefix)iTwinUnits$(libext)</Libs>

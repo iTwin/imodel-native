@@ -5,10 +5,8 @@
 #pragma once
 
 #include <Bentley/Bentley.h>
-//#include <Bentley/BeConsole.h>
 #include <Geom/GeomApi.h>
-#include <BeJsonCpp/BeJsonUtilities.h>
-#include <json/BeJsValue.h>
+#include <BeRapidJson/BeJsValue.h>
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
@@ -95,4 +93,3 @@ public: static GEOMLIBS_SERIALIZATION_EXPORT bool TryIModelJsonValueToTaggedNume
 };
 
 END_BENTLEY_GEOMETRY_NAMESPACE
-

@@ -8,7 +8,7 @@
 #include <Formatting/FormattingEnum.h>
 #include <Formatting/AliasMappings.h>
 #include <Bentley/Nullable.h>
-#include <json/BeJsValue.h>
+#include <BeRapidJson/BeJsValue.h>
 
 namespace BEU = BentleyApi::Units;
 
@@ -422,7 +422,7 @@ public:
     UNITS_EXPORT CompositeValueSpec(CompositeValueSpecCR other);
     UNITS_EXPORT bool ToJson(BeJsValue out, bool verbose = false, bool excludeUnits = false) const;
     UNITS_EXPORT static bool FromJson(CompositeValueSpecR out, JsonValueCR jval, BEU::IUnitsContextCP context);
-    UNITS_EXPORT static bool FromJson(CompositeValueSpecR out, JsonValueCR jsonWithoutUnits, bvector<BEU::UnitCP> const& units, bvector<Utf8String> const& unitLabels);
+    UNITS_EXPORT static bool FromJson(CompositeValueSpecR out, JsonValueCR jsonWithoutUnits, bvector<BEU::UnitCP> const& units, bvector<Nullable<Utf8String>> const& unitLabels);
 
     UNITS_EXPORT bool IsIdentical(CompositeValueSpecCR other) const;
 

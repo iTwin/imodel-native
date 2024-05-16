@@ -23,6 +23,7 @@
 
     <Part Name="GeomDlls" BentleyBuildMakeFile="geom/build/BentleyGeom/BentleyGeom.mke">
         <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" />
+        <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley" />
         <SubPart PartName="BeJsonCpp" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
         <SubPart PartName="PublicAPI" />
         <Bindings>
@@ -35,7 +36,8 @@
         <SubPart PartName="GeomDlls"/>
         <SubPart PartName="BentleyDll" PartFile="iModelCore/Bentley/Bentley" />
         <SubPart PartName="Headers" PartFile="iModelCore/libsrc/flatbuffers/flatbuffers"/>
-        <SubPart PartName="BeJsonCpp"       PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
+        <SubPart PartName="BeJsonCpp" PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
+        <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley" />
         <Bindings>
             <Assemblies>Delivery/$(shlibprefix)iTwinGeomSerialization$(shlibext)</Assemblies>
             <Libs>Delivery/$(libprefix)iTwinGeomSerialization$(libext)</Libs>
