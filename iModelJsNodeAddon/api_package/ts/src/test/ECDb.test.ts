@@ -126,6 +126,161 @@ describe("concurrent query tests", () => {
     expect(rc.status).eq(DbResponseStatus.Partial);
   });
 
+  it("Test quota memory and time passed together through params", async () => {
+    // Reset Config to defaults
+    const resetConf = ConcurrentQueryHelper.resetConfig(conn);
+    expect(resetConf.ignorePriority).eq(false);
+    expect(resetConf.ignoreDelay).eq(true);
+    expect(resetConf.requestQueueSize).eq(2000);
+    expect(resetConf.workerThreads).not.eq(0);
+    expect(resetConf.globalQuota?.memory).eq(0x800000);
+    expect(resetConf.globalQuota?.time).eq(60);
+    // Case 1: Set memory quota to 64000 and time to 15, and ensure these limits are updated in the query response
+    const rc1 = await ConcurrentQueryHelper.executeQueryRequest(conn, {
+      kind: DbRequestKind.ECSql,
+      query:
+        "with cnt(x) as (values(0) union select x+1 from cnt where x < 1000 ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
+      quota: {
+        memory: 64000,
+        time: 15,
+      },
+    } as DbQueryRequest);
+
+    expect(rc1.stats.memLimit).eq(64000);
+    expect(rc1.stats.timeLimit).eq(15000);
+
+    // Case 2: For no quota passed ensure global maximum limits are getting used
+    const rc2 = await ConcurrentQueryHelper.executeQueryRequest(conn, {
+      kind: DbRequestKind.ECSql,
+      query:
+        "with cnt(x) as (values(0) union select x+1 from cnt where x < 1000 ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
+    } as DbQueryRequest);
+
+    expect(rc2.stats.memLimit).eq(0x800000);
+    expect(rc2.stats.timeLimit).eq(60000);
+
+    // Case 3: For memory quota limits exceeding global maximum, ensure global maximum limit is used only for memoory
+    const rc3 = await ConcurrentQueryHelper.executeQueryRequest(conn, {
+      kind: DbRequestKind.ECSql,
+      query:
+        "with cnt(x) as (values(0) union select x+1 from cnt where x < 1000 ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
+      quota: {
+        memory: 85464865465,
+        time: 20,
+      },
+    } as DbQueryRequest);
+
+    expect(rc3.stats.memLimit).eq(0x800000);
+    expect(rc3.stats.timeLimit).eq(20000);
+
+    // Case 4: For time quota limit exceeding global maximum, ensure global maximum limits is used only for time
+    const rc4 = await ConcurrentQueryHelper.executeQueryRequest(conn, {
+      kind: DbRequestKind.ECSql,
+      query:
+        "with cnt(x) as (values(0) union select x+1 from cnt where x < 1000 ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
+      quota: {
+        memory: 64000,
+        time: 6198,
+      },
+    } as DbQueryRequest);
+
+    expect(rc4.stats.memLimit).eq(64000);
+    expect(rc4.stats.timeLimit).eq(60000);
+
+    // Case 5: For both quota limits exceeding global maximum, ensure both global maximum limits are getting used
+    const rc5 = await ConcurrentQueryHelper.executeQueryRequest(conn, {
+      kind: DbRequestKind.ECSql,
+      query:
+        "with cnt(x) as (values(0) union select x+1 from cnt where x < 1000 ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
+      quota: {
+        memory: 85464865465,
+        time: 6198,
+      },
+    } as DbQueryRequest);
+
+    expect(rc5.stats.memLimit).eq(0x800000);
+    expect(rc5.stats.timeLimit).eq(60000);
+  });
+
+  it("Test quota memory and time passed individually through params", async () => {
+    // Reset Config with custom quota
+    const resetConf = ConcurrentQueryHelper.resetConfig(conn, {
+      globalQuota: {
+        time: 30,
+        memory: 100000,
+      },
+    });
+
+    expect(resetConf.globalQuota?.memory).eq(100000);
+    expect(resetConf.globalQuota?.time).eq(30);
+    // Case 1: Set memory quota to 64000 , and ensure only memory uses local quota, and time uses global
+    const rc1 = await ConcurrentQueryHelper.executeQueryRequest(conn, {
+      kind: DbRequestKind.ECSql,
+      query:
+        "with cnt(x) as (values(0) union select x+1 from cnt where x < 1000 ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
+      quota: {
+        memory: 64000,
+      },
+    } as DbQueryRequest);
+
+    expect(rc1.stats.memLimit).eq(64000);
+    expect(rc1.stats.timeLimit).eq(30000);
+
+    // Case 2: Set time to 12, and ensure only time uses local quota, and memory uses global
+    const rc2 = await ConcurrentQueryHelper.executeQueryRequest(conn, {
+      kind: DbRequestKind.ECSql,
+      query:
+        "with cnt(x) as (values(0) union select x+1 from cnt where x < 1000 ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
+      quota: {
+        time: 12,
+      },
+    } as DbQueryRequest);
+
+    expect(rc2.stats.memLimit).eq(100000);
+    expect(rc2.stats.timeLimit).eq(12000);
+  });
+
+  it("Test for very small value passed for memory and time ", async () => {
+    // Reset Config with custom quota
+    const resetConf = ConcurrentQueryHelper.resetConfig(conn, {
+      globalQuota: {
+        time: 30,
+        memory: 100000,
+      },
+    });
+
+    expect(resetConf.globalQuota?.memory).eq(100000);
+    expect(resetConf.globalQuota?.time).eq(30);
+
+    // Case 1: Set memory & time quota to 0 , and ensure they default to global quota
+    const rc1 = await ConcurrentQueryHelper.executeQueryRequest(conn, {
+      kind: DbRequestKind.ECSql,
+      query:
+        "with cnt(x) as (values(0) union select x+1 from cnt where x < 1000 ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
+      quota: {
+        memory: 0,
+        time: 0,
+      },
+    } as DbQueryRequest);
+
+    expect(rc1.stats.memLimit).eq(100000);
+    expect(rc1.stats.timeLimit).eq(30000);
+
+    // Case 2: Set memory & time values to 31kb and 9 sec, and ensure they default to global quota
+    const rc2 = await ConcurrentQueryHelper.executeQueryRequest(conn, {
+      kind: DbRequestKind.ECSql,
+      query:
+        "with cnt(x) as (values(0) union select x+1 from cnt where x < 1000 ) select x, CAST(randomblob(1000) AS BINARY) from cnt",
+      quota: {
+        time: 9,
+        memory: 31000,
+      },
+    } as DbQueryRequest);
+
+    expect(rc2.stats.memLimit).eq(100000);
+    expect(rc2.stats.timeLimit).eq(30000);
+  });
+
   it("restart query", async () => {
     // set max time for query to 1 sec
     ConcurrentQueryHelper.resetConfig(conn, { globalQuota: { time: 20 }, ignoreDelay: false });
