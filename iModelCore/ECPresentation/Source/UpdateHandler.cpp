@@ -558,7 +558,6 @@ private:
         AffectedHierarchyLevelIdentifier grandparentLevel(parentHierarchyLevelIdentifier, grandParent.IsValid() ? grandParent->GetKey().get() : nullptr);
 
         newProvider.GetContext().GetHierarchyLevelLocker().Unlock();
-        std::shared_ptr<IHierarchyLevelLocker> grandParentHierarchyLock = m_nodesCache->CreateHierarchyLevelLocker(grandparentLevel.GetHierarchyLevelIdentifier(), true);
         RefreshHierarchyLevel(grandparentLevel);
         }
 

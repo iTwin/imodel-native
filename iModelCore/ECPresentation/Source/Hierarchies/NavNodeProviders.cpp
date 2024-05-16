@@ -3560,7 +3560,7 @@ NavNodesProviderPtr SameLabelGroupingNodesPostProcessorDeprecated::_PostProcess(
     // it's more efficient to use the cached version compared to loading and merging everything again, so just return the cached provider.
     HierarchyLevelIdentifier hlIdentifier = GetHierarchyLevelIdentifier(*context);
     DataSourceInfo mergedDatasourceInfo = GetMergedDataSourceInfo(*context, hlIdentifier.GetId());
-    if (mergedDatasourceInfo.GetIdentifier().IsValid() && mergedDatasourceInfo.IsInitialized())
+    if (mergedDatasourceInfo.IsInitialized())
         {
         auto cachedProcessedProvider = context->GetNodesCache().GetCombinedHierarchyLevel(*context, context->GetHierarchyLevelIdentifier());
         DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Hierarchies, cachedProcessedProvider.IsValid(), "Expected the processed provider to be cached but it's not.");
