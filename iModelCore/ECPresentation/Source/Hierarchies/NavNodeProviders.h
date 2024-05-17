@@ -732,7 +732,8 @@ private:
     bool IsSuitableForMerge(NavNodeCR node) const;
     NavNodePtr MergeNodes(NavNodesProviderContextCR context, NavNodeR lhs, NavNodeR rhs) const;
     ECPRESENTATION_EXPORT void InitGroupedClasses(IRulesPreprocessorR, NavNodeCP, bvector<ChildNodeSpecificationCP> const&, ECSchemaHelper const&, IJsonLocalState const*);
-    static HierarchyLevelIdentifier GetHierarchyLevelIdentifier(NavNodesProviderContextCR);
+    static HierarchyLevelIdentifier GetHierarchyLevelIdentifier(NavNodesProviderContextCR, bool createNew = false);
+    static DataSourceInfo GetMergedDataSourceInfo(NavNodesProviderContextCR, BeGuidCR, bool createNew = false);
 protected:
     ECPRESENTATION_EXPORT NavNodesProviderPtr _PostProcess(NavNodesProviderCR processedProvider) const override;
 public:

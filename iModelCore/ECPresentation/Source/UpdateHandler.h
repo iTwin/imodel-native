@@ -69,13 +69,10 @@ private:
     std::shared_ptr<NodesCache> m_nodesCache;
     bset<AffectedHierarchyLevelIdentifier> m_handledHierarchies;
     bset<Utf8String> m_reportedContentRulesetIds;
-    bmap<AffectedHierarchyLevelIdentifier, std::shared_ptr<IHierarchyLevelLocker>> m_hierarchyLocks;
 public:
     bset<AffectedHierarchyLevelIdentifier>& GetHandledHierarchies() {return m_handledHierarchies;}
     bset<AffectedHierarchyLevelIdentifier> const& GetHandledHierarchies() const {return m_handledHierarchies;}
     bset<Utf8String>& GetReportedContentRulesetIds() {return m_reportedContentRulesetIds;}
-    void SetHierarchyLocks(bmap<AffectedHierarchyLevelIdentifier, std::shared_ptr<IHierarchyLevelLocker>> const& locks) {m_hierarchyLocks = locks;}
-    bmap<AffectedHierarchyLevelIdentifier, std::shared_ptr<IHierarchyLevelLocker>>& GetHierarchyLocks() {return m_hierarchyLocks;}
     void SetNodesCache(std::shared_ptr<NodesCache> cache) {m_nodesCache = cache;}
     std::shared_ptr<NodesCache> GetNodesCache() const {return m_nodesCache;}
 };
@@ -144,7 +141,7 @@ private:
     void AddTask(bvector<IUpdateTaskPtr>& tasks, size_t startIndex, IUpdateTask& task) const;
     void ExecuteTasks(bvector<IUpdateTaskPtr>& tasks) const;
     void DoFullUpdate(Utf8CP rulesetId, bool updateHierarchies = true, bool updateContent = true) const;
-    bvector<AffectedHierarchyLevelIdentifier> GetAffectedHierarchyLevels(NodesCache&, IConnectionCR, UpdateContext&, bvector<ECInstanceChangeEventSource::ChangedECInstance> const&) const;
+    bvector<AffectedHierarchyLevelIdentifier> GetAffectedHierarchyLevels(NodesCache&, IConnectionCR, bvector<ECInstanceChangeEventSource::ChangedECInstance> const&) const;
 
 public:
     ECPRESENTATION_EXPORT UpdateHandler(INodesCacheManager const&, ContentCache*, IConnectionManagerCR, INodesProviderContextFactoryCR,
