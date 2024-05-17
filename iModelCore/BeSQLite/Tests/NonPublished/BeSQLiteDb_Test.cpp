@@ -1414,10 +1414,12 @@ TEST_F (BeSQLiteDbTests, ChangeSetApply_IgnoreNoop)
 
 
     // Apply to a db that already have data
-    ASSERT_EQ(BE_SQLITE_OK, changeSet.ApplyChanges(afterDb)) << "with default ignore noop flag this should succeed";
+    ASSERT_EQ(BE_SQLITE_ABORT, changeSet.ApplyChanges(afterDb)) << "this should cause conflict and abort";
 
     BeTest::SetFailOnAssert(true);
 
+    // Apply to a db that already have data but with ignoreNoop flag
+    ASSERT_EQ(BE_SQLITE_OK, changeSet.ApplyChanges(afterDb, nullptr, false, /* ignoreNoop = */true)) << "with ignore noop flag this should succeed";
 
     beforeDb.SaveChanges();
     afterDb.SaveChanges();
