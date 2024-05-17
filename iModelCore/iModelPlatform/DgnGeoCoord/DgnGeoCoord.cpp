@@ -5342,20 +5342,32 @@ DgnGCSP         DgnGCS::FromProject(DgnDbR project)
 
     StopWatch timer;
     timer.Start();
+    auto msg = DateTime::GetCurrentTime().ToTimestampString() + " | START GCS Load Time";
+    Logging::LogMessage("GeoCoord", LOG_INFO, msg.c_str());
     auto gcs = FromGeoCoordType66AppData((short const*)buffer.GetData(), project);
+    msg = DateTime::GetCurrentTime().ToTimestampString() + " | END GCS Load Time";
+    Logging::LogMessage("GeoCoord", LOG_INFO, msg.c_str());
     timer.Stop();
     Logging::LogMessageV("GeoCoord", LOG_INFO, "Time to load gcs: %fs", timer.GetElapsedSeconds());
 
+    msg = DateTime::GetCurrentTime().ToTimestampString() + " | START IF GCS NULL";
+    Logging::LogMessage("GeoCoord", LOG_INFO, msg.c_str());
     if (NULL == gcs)
         {
         project.AddAppData(NotFoundAppData::GetKey(), new NotFoundAppData());
         return NULL;
         }
-
+    msg = DateTime::GetCurrentTime().ToTimestampString() + " | END IF GCS NULL";
+    Logging::LogMessage("GeoCoord", LOG_INFO, msg.c_str());
         // *** NEEDS WORK: Global origin is not saved, right? I have to get it from the project, don't I?
+    
+    msg = DateTime::GetCurrentTime().ToTimestampString() + " | START GetGlobalOrigin";
+    Logging::LogMessage("GeoCoord", LOG_INFO, msg.c_str());
     gcs->m_globalOrigin = project.GeoLocation().GetGlobalOrigin();
 
     project.AddAppData(DgnGCSAppData::GetKey(), new DgnGCSAppData(*gcs));
+    msg = DateTime::GetCurrentTime().ToTimestampString() + " | END GetGlobalOrigin";
+    Logging::LogMessage("GeoCoord", LOG_INFO, msg.c_str());
     return gcs;
     }
 

@@ -8921,6 +8921,10 @@ struct WorkspaceResource : _csFile {
     virtual int printf(Utf8CP format...) override { return readonly(); }
 };
 
+
+static bool s_loadLocalFiles = true;
+void BaseGCS::EnableLocalGcsFiles(bool yesNo) { s_loadLocalFiles = yesNo; }
+
 //=======================================================================================
 // static methods for finding resources in the list of GCS resource files.
 // @bsiclass
@@ -8952,9 +8956,6 @@ struct GeoCoordWorkspaces {
             Logging::LogMessageV("GeoCoord", LOG_WARNING, "Unable to find GCS file %s in any workspace", path);
         return nullptr;
     }
-
-    static bool s_loadLocalFiles = true;
-    void BaseGCS::EnableLocalGcsFiles(bool yesNo) { s_loadLocalFiles = yesNo; }
 
     // get the row for a resource for csmap by pathname. Path will include the "assets" prefix.
     static WorkspaceRow GetRow(Utf8CP path) {
