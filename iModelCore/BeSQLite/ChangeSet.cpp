@@ -20,6 +20,53 @@ USING_NAMESPACE_BENTLEY_SQLITE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeGroup::FilterIfElse(ChangeStreamR in, std::function<bool(Changes::Change const&)> filter, ChangeGroup& ifChangeGroup, ChangeGroup& elseChangeGroup){
+    DbResult result = BE_SQLITE_OK;
+    for (auto& change : in.GetChanges()) {
+        if (filter(change)) {
+            result = ifChangeGroup.AddChange(change);
+            if (result != BE_SQLITE_OK) {
+                break;
+            }
+        }
+        else {
+            result = elseChangeGroup.AddChange(change);
+            if (result != BE_SQLITE_OK) {
+                break;
+            }
+        }
+    }
+    return result;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeGroup::FilterIf(ChangeStreamR in, std::function<bool(Changes::Change const&)> filter, ChangeGroup& ifChangeGroup) {
+    DbResult result = BE_SQLITE_OK;
+    for (auto& change : in.GetChanges()) {
+        if (filter(change)) {
+            result = ifChangeGroup.AddChange(change);
+            if (result != BE_SQLITE_OK) {
+                break;
+            }
+        }
+    }
+    return result;
+}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeGroup::AddChange(Changes::Change const& change) {
+    if (m_changegroup == nullptr || change.m_iter == nullptr)
+        return BE_SQLITE_ERROR;
+
+    return (DbResult)sqlite3changegroup_add_change((sqlite3_changegroup*)m_changegroup, (sqlite3_changeset_iter*)change.m_iter);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ChangeTracker::RecordDbSchemaChange(Utf8CP ddl)
     {
     if (!IsTracking())
