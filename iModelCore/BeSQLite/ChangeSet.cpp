@@ -718,11 +718,13 @@ DbResult ChangeStream::ToChangeSet(ChangeSet& changeSet, bool invert) {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeStream::ApplyChanges(DbR db, Rebase* rebase, bool invert, bool fkNoAction) const
+DbResult ChangeStream::ApplyChanges(DbR db, Rebase* rebase, bool invert, bool ignoreNoop, bool fkNoAction) const
     {
-    int flags = SQLITE_CHANGESETAPPLY_NOSAVEPOINT | SQLITE_CHANGESETAPPLY_IGNORENOOP;
+    int flags = SQLITE_CHANGESETAPPLY_NOSAVEPOINT;
     if (invert)
         flags |= SQLITE_CHANGESETAPPLY_INVERT;
+    if(ignoreNoop)
+        flags |= SQLITE_CHANGESETAPPLY_IGNORENOOP;
     if(fkNoAction)
         flags |= SQLITE_CHANGESETAPPLY_FKNOACTION;
     auto reader = _GetReader();
