@@ -441,9 +441,7 @@ bool PolyfaceHeader::Triangulate (size_t maxEdge, bool hideNewEdges, IPolyfaceVi
                 triangulateThisFacet = false;       // It's planar and low edge count.  Nothing to do.
             }
 
-        if (    !triangulateThisFacet
-            &&  facePoints.size () <= (size_t) maxEdge + 1
-            )
+        if (!triangulateThisFacet)
             {
             for (ptrdiff_t i = 0, n = facePoints.size () - 1; i < n; i++)
                 newIndices.push_back ((int)i + 1);  // one based loop.
@@ -482,7 +480,6 @@ bool PolyfaceHeader::Triangulate (size_t maxEdge, bool hideNewEdges, IPolyfaceVi
             errors++;
             continue;
             }
-
 
         size_t n = newIndices.size ();
         // Prevalidate all indices ...
