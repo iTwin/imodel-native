@@ -6,6 +6,8 @@
 
 #include <Geom/PatternMatching.h>
 
+static double s_areaRelTol = 1.0e-12;
+
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @description Compute the volume of the tent formed by a polygon base and a given "pole" vector.
@@ -271,7 +273,6 @@ bool PolygonOps::IsConvex (bvector<DPoint3d> const &xyz)
     {
     DVec3d vecA, vecB, maxCross, cross;
     int numPoint = (int)xyz.size ();
-    static double s_areaRelTol = 1.0e-12;
     DVec3d unitNormal;
 
     double positiveArea = 0.0;
@@ -363,15 +364,21 @@ bool             addVerticesAtCrossings
 
     vu_collectInteriorFaceLoops (faceArrayP, graphP);
 
+    double areaTol = s_areaRelTol * (1.0 + xyTolerance);
+
     vu_arrayOpen (faceArrayP);
     status = true;
     for (i = 0; status && vu_arrayRead (faceArrayP, &faceP); i++)
         {
-        // We triangulated.  So of course there are 3 nodes per face.
-        // Really?  If the input polygon retraces itself, there will be
-        // sliver faces with only 2 edges.
-        if (vu_faceLoopSize (faceP) != 3)
-            continue;
+        int numEdges = vu_faceLoopSize(faceP);
+        if (numEdges < 3)
+            continue; // ignore sliver faces (e.g., polygon retraces itself)
+        if (numEdges > maxPerFace)
+            { // faces failed to triangulate
+            if (fabs(vu_area(faceP) < areaTol))
+                continue; // ignore faces with all colinear vertices
+            BeAssert(!"face failed to triangulate");
+            }
 
         VU_FACE_LOOP (currP, faceP)
             {
