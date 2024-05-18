@@ -2263,11 +2263,14 @@ GEOMDLLIMPEXP void CopyTo (PolyfaceHeader& dest) const;
 //!  Set face data for all facets added since last call to SetNewFaceData. (endIndex = 0 for all facets).
 GEOMDLLIMPEXP void SetNewFaceData (FacetFaceData* faceData, size_t endIndex = 0);
 
-//! Triangulate faces.
-//! return SUCCESS if all faces triangulated. If ERROR is returned, degenerate facets that could not
-//! be triangulated are removed, so that all facets are triangular on return. For example, facets with
-//! all colinear vertices cannot be triangulated, and thus are removed, but such a mesh is nevertheless
-//! satisfactory for e.g., display purposes.
+//! Triangulate facets.
+//! New edges are hidden.
+//! Return `SUCCESS` if all facets are triangulated.
+//! If return is not `SUCCESS`, at least one facet could not be triangulated and was removed, but the resulting
+//! mesh still consists of triangular facets, and may be usable. For example a facet with all vertices colinear
+//! cannot be triangulated and will be removed on return; its formerly shared edges in adjacent facets may
+//! become boundary edges (bounding a "hole" with no area), but such a mesh may still be satisfactory for
+//! display purposes.
 GEOMDLLIMPEXP BentleyStatus Triangulate ();
 
 //! Copy all data to a new mesh, reorganizing so that all data arrays have the same index structure.
@@ -2340,17 +2343,23 @@ GEOMDLLIMPEXP bool SplitByMaxEdgeLength(double splitLength, bvector<PolyfaceHead
 //! Add Edge Chains
 GEOMDLLIMPEXP BentleyStatus AddEdgeChains (size_t drawMethodIndex);
 
-//! Triangulate faces that are nonplanar or have too many edges.
-//! return `true` if all faces triangulated. If `false` is returned, degenerate facets that could not
-//! be triangulated are removed, so that all facets are triangular on return. For example, facets with
-//! all colinear vertices cannot be triangulated, and thus are removed, but such a mesh is nevertheless
-//! satisfactory for e.g., display purposes.
+//! Triangulate facets that have more than `maxEdge` edges or are nonplanar.
+//! New edges are hidden.
+//! Return `true` if all requested facets are triangulated.
+//! If return is `false`, at least one facet could not be triangulated and was removed, but the resulting
+//! mesh still consists of facets triangulated per inputs, and may be usable. For example a facet with all
+//! vertices colinear cannot be triangulated and will be removed on return; its formerly shared edges in
+//! adjacent facets may become boundary edges (bounding a "hole" with no area), but such a mesh may still
+//! be satisfactory for display purposes.
 GEOMDLLIMPEXP bool Triangulate (size_t maxEdge);
-//! Triangulate selected facets
-//! return `true` if all faces triangulated. If `false` is returned, degenerate facets that could not
-//! be triangulated are removed, so that all facets are triangular on return. For example, facets with
-//! all colinear vertices cannot be triangulated, and thus are removed, but such a mesh is nevertheless
-//! satisfactory for e.g., display purposes.
+//! Triangulate selected facets that have more than `maxEdge` edges or are nonplanar.
+//! New edges are hidden if and only if `hideNewEdges` is `true`.
+//! Return `true` if all requested facets are triangulated.
+//! If return is `false`, at least one facet could not be triangulated and was removed, but the resulting
+//! mesh still consists of facets triangulated per inputs, and may be usable. For example a facet with all
+//! vertices colinear cannot be triangulated and will be removed on return; its formerly shared edges in
+//! adjacent facets may become boundary edges (bounding a "hole" with no area), but such a mesh may still
+//! be satisfactory for display purposes.
 GEOMDLLIMPEXP bool Triangulate
 (
 size_t maxEdge,                //!< [in] target edges per facet.
