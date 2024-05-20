@@ -55,8 +55,7 @@ struct IHierarchyLevelLocker
 {
     enum LockOptions
         {
-        DisableLockWait        = 1 << 0, //!< Disables waiting if lock could not be acquired
-        CheckLockedChildLevels = 1 << 1  //!< Additionally checks if there are no locked child levels when acquiring lock
+        DisableLockWait = 1 << 0, //!< Disables waiting if lock could not be acquired
         };
 
 protected:
@@ -402,7 +401,7 @@ private:
     Nullable<uint64_t> m_lockTimestamp;
 
 private:
-    LockResult TryLockHierarchyLevel(int);
+    LockResult TryLockHierarchyLevel();
 
 protected:
     ECPRESENTATION_EXPORT virtual bool _Lock(int) override;
