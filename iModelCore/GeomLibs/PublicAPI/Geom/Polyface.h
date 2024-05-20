@@ -2344,18 +2344,20 @@ GEOMDLLIMPEXP bool SplitByMaxEdgeLength(double splitLength, bvector<PolyfaceHead
 GEOMDLLIMPEXP BentleyStatus AddEdgeChains (size_t drawMethodIndex);
 
 //! Triangulate facets that have more than `maxEdge` edges or are nonplanar.
-//! New edges are hidden.
-//! Return `true` if all requested facets are triangulated.
-//! If return is `false`, at least one facet could not be triangulated and was removed, but the resulting
+//! * Specifically, facets with more than `maxEdge` edges are decomposed into facets with at most `maxEdge` edges.
+//! * New edges are hidden.
+//! * Return `true` if all requested facets are triangulated.
+//! * If return is `false`, at least one facet could not be triangulated and was removed, but the resulting
 //! mesh still consists of facets triangulated per inputs, and may be usable. For example a facet with all
 //! vertices colinear cannot be triangulated and will be removed on return; its formerly shared edges in
 //! adjacent facets may become boundary edges (bounding a "hole" with no area), but such a mesh may still
 //! be satisfactory for display purposes.
 GEOMDLLIMPEXP bool Triangulate (size_t maxEdge);
 //! Triangulate selected facets that have more than `maxEdge` edges or are nonplanar.
-//! New edges are hidden if and only if `hideNewEdges` is `true`.
-//! Return `true` if all requested facets are triangulated.
-//! If return is `false`, at least one facet could not be triangulated and was removed, but the resulting
+//! * Specifically, selected facets with more than `maxEdge` edges are decomposed into facets with at most `maxEdge` edges.
+//! * New edges are hidden if and only if `hideNewEdges` is `true`.
+//! * Return `true` if all requested facets are triangulated.
+//! * If return is `false`, at least one facet could not be triangulated and was removed, but the resulting
 //! mesh still consists of facets triangulated per inputs, and may be usable. For example a facet with all
 //! vertices colinear cannot be triangulated and will be removed on return; its formerly shared edges in
 //! adjacent facets may become boundary edges (bounding a "hole" with no area), but such a mesh may still

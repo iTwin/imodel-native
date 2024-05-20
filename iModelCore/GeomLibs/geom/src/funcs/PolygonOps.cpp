@@ -370,14 +370,16 @@ bool             addVerticesAtCrossings
     status = true;
     for (i = 0; status && vu_arrayRead (faceArrayP, &faceP); i++)
         {
+        // ignore faces that did not triangulate, such as a part of the polygon that retraces itself
         int numEdges = vu_faceLoopSize(faceP);
         if (numEdges < 3)
-            continue; // ignore sliver faces (e.g., polygon retraces itself)
+            continue;
         if (numEdges > maxPerFace)
-            { // faces failed to triangulate
-            if (fabs(vu_area(faceP) < areaTol))
-                continue; // ignore faces with all colinear vertices
-            BeAssert(!"face failed to triangulate");
+            {
+            double faceArea = fabs(vu_area(faceP));
+            if (faceArea > areaTol)
+                BeAssert(!"nontrivial face failed to triangulate");
+            continue; // leave it out per caller expectations
             }
 
         VU_FACE_LOOP (currP, faceP)
