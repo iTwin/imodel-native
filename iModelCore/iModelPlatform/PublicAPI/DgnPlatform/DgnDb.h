@@ -388,8 +388,6 @@ public:
 
     DGNPLATFORM_EXPORT static BeSQLite::DbResult SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade);
 
-    DGNPLATFORM_EXPORT static BeSQLite::DbResult SchemaReadStatusToDbResult(ECN::SchemaReadStatus status);
-
     //! Inserts a new link table ECRelationship.
     //! @note This function is only for ECRelationships that are stored in a link table. ECRelationships that are implemented as Navigation properties must be accessed using the element property API.
     //! @param[out] relKey key of the new ECRelationship

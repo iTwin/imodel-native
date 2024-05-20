@@ -2052,7 +2052,15 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             options.m_customSchemaContext = NativeECSchemaXmlContext::Unwrap(maybeEcSchemaContextVal.As<Napi::Object>())->GetContext();
             }
 
+        LastErrorListener lastError(GetOpenedDb(info));
         DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::File, options);
+        if (DbResult::BE_SQLITE_OK != result) {
+            if (lastError.HasError()) {
+                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
+            } else {
+                THROW_JS_EXCEPTION("Failed to import schemas");
+            }
+        }
 
         return Napi::Number::New(Env(), (int)result);
         }
@@ -2068,7 +2076,16 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         if (jsSyncDbUri.IsString())
             options.m_schemaSyncDbUri = jsSyncDbUri.ToString().Utf8Value();
 
+
+        LastErrorListener lastError(GetOpenedDb(info));
         DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::XmlString, options);
+        if (DbResult::BE_SQLITE_OK != result) {
+            if (lastError.HasError()) {
+                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
+            } else {
+                THROW_JS_EXCEPTION("Failed to import schemas");
+            }
+        }
         return Napi::Number::New(Env(), (int)result);
         }
 
