@@ -4724,7 +4724,7 @@ TEST(Polyface,AuxData)
             }
         }
     }
-    
+
 TEST(Polyface, DegenerateTriangulation)
     {
     auto oldVolume = Check::SetMaxVolume(PRIMITIVE_PRINT_VOLUME);
