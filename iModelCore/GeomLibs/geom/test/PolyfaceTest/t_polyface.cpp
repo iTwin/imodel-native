@@ -4642,7 +4642,7 @@ struct ComparePoints
         }
     };
 
-TEST (Polyface, SphereMeshSanity)
+TEST(Polyface, SphereMeshSanity)
     {
     auto center = DPoint3d::FromZero();
     auto mesh = SphereMesh(center, 10);
@@ -4723,4 +4723,91 @@ TEST(Polyface,AuxData)
                 }
             }
         }
+
+TEST(Polyface, DegenerateTriangulation)
+    {
+    auto oldVolume = Check::SetMaxVolume(PRIMITIVE_PRINT_VOLUME);
+    char buf[100];
+
+    BeFileName dataPath;
+    BeTest::GetHost().GetDocumentsRoot(dataPath);
+    dataPath.AppendToPath(L"GeomLibsTestData");
+    dataPath.AppendToPath(L"Polyface");
+    dataPath.AppendToPath(L"DegenerateTriangles");
+
+    bvector<BeFileName> testCases;
+    testCases.push_back(BeFileName(dataPath).AppendToPath(L"meshTriangulation.imjs"));  // facets sized 3-5
+    testCases.push_back(BeFileName(dataPath).AppendToPath(L"meshTriangulation2.imjs")); // facets sized 3-6
+    testCases.push_back(BeFileName(dataPath).AppendToPath(L"meshTriangulation3.imjs")); // facets sized 3-32
+
+    auto printFacetSizes = [&](PolyfaceHeaderCR mesh, size_t& numNonDegen, size_t& numDegen) -> void
+        {
+        numNonDegen = numDegen = 0;
+
+        DPoint3d centroid;
+        DVec3d normal;
+        double area;
+        for (auto visitor = PolyfaceVisitor::Attach(mesh); visitor->AdvanceToNextFace(); )
+            {
+            if (!visitor->TryGetFacetCentroidNormalAndArea(centroid, normal, area) || fabs(area) < 1.0e-10)
+                ++numDegen;
+            else
+                ++numNonDegen;
+            }
+        };
+
+    struct RejectAllFilter : IPolyfaceVisitorFilter { bool TestFacet(PolyfaceVisitorCR visitor) override { return false; } };
+    RejectAllFilter myFilter;
+
+    size_t meshCounter = 0;
+    for (auto& testCase : testCases)
+        {
+        bvector<IGeometryPtr> geometry;
+        if (Check::True(GTestFileOps::JsonFileToGeometry(testCase, geometry), "Import geometry from JSON"))
+            {
+            for (auto const& g : geometry)
+                {
+                PolyfaceHeaderPtr origMesh = g->GetAsPolyfaceHeader();
+                if (Check::True(origMesh.IsValid(), "Geometry is a polyface"))
+                    {
+                    Check::SaveTransformed(origMesh);
+
+                    size_t numNonDegen, numDegen;
+                    printFacetSizes(*origMesh, numNonDegen, numDegen);
+
+                    for (size_t maxEdges = 3; maxEdges < 6; ++maxEdges)
+                        {
+                        Check::Shift(0, 0, 50);
+                        auto mesh = origMesh->Clone();
+
+                        bool hadErrors = !mesh->Triangulate(maxEdges);
+                        Check::SaveTransformed(mesh);
+
+                        // Triangulator can fail on some facets, resulting in them being skipped.
+                        // Verify that only facets of size <= maxEdges, regardless of return value.
+                        Check::Bool(hadErrors, numDegen > 0, "PolyfaceHeader::Triangulate should report degenerate facets");
+                        size_t facetCounter = 0;
+                        for (auto visitor = PolyfaceVisitor::Attach(*mesh); visitor->AdvanceToNextFace(); facetCounter++)
+                            {
+                            uint32_t numEdgesThisFace = visitor->NumEdgesThisFace();
+                            snprintf(buf, sizeof buf, "facet #%zu should have at most %zu edges, but has %d edges", facetCounter, maxEdges, numEdgesThisFace);
+                            Check::True(numEdgesThisFace <= maxEdges, buf);
+                            }
+
+                        snprintf(buf, sizeof buf, "triangulated mesh #%zu should not reduce non-degenerate facet count", meshCounter);
+                        Check::True(numNonDegen <= mesh->GetNumFacet(), buf);
+
+                        mesh = origMesh->Clone();
+                        mesh->Triangulate(maxEdges, true, &myFilter);
+                        Check::Size(origMesh->GetNumFacet(), mesh->GetNumFacet(), "reject-all filter preserves facet count");
+                        }
+
+                    Check::Shift(100, -140, 0);
+                    }
+                }
+            }
+        ++meshCounter;
+        }
+    Check::SetMaxVolume(oldVolume);
+    Check::ClearGeometry("Polyface.DegenerateTriangulation");
     }

@@ -409,8 +409,6 @@ void PushTriangle(bvector<int> &indices, int i0, int i1, int i2)
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
-Triangulate faces.
-@return SUCCESS if all faces triangulated.
 +--------------------------------------------------------------------------------------*/
 bool PolyfaceHeader::Triangulate (size_t maxEdge)
     {
@@ -418,8 +416,6 @@ bool PolyfaceHeader::Triangulate (size_t maxEdge)
     }
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
-Triangulate faces.
-@return SUCCESS if all faces triangulated.
 +--------------------------------------------------------------------------------------*/
 bool PolyfaceHeader::Triangulate (size_t maxEdge, bool hideNewEdges, IPolyfaceVisitorFilter *tester)
     {
@@ -457,9 +453,7 @@ bool PolyfaceHeader::Triangulate (size_t maxEdge, bool hideNewEdges, IPolyfaceVi
                 triangulateThisFacet = false;       // It's planar and low edge count.  Nothing to do.
             }
 
-        if (    !triangulateThisFacet
-            &&  facePoints.size () <= (size_t) maxEdge + 1
-            )
+        if (!triangulateThisFacet)
             {
             for (ptrdiff_t i = 0, n = facePoints.size () - 1; i < n; i++)
                 newIndices.push_back ((int)i + 1);  // one based loop.
@@ -498,7 +492,6 @@ bool PolyfaceHeader::Triangulate (size_t maxEdge, bool hideNewEdges, IPolyfaceVi
             errors++;
             continue;
             }
-
 
         size_t n = newIndices.size ();
         // Prevalidate all indices ...
@@ -606,8 +599,6 @@ bool PolyfaceHeader::Triangulate (size_t maxEdge, bool hideNewEdges, IPolyfaceVi
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
-Triangulate faces.
-@return SUCCESS if all faces triangulated.
 +--------------------------------------------------------------------------------------*/
 BentleyStatus PolyfaceHeader::Triangulate ()
     {
