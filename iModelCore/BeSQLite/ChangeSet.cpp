@@ -898,17 +898,21 @@ int ApplyChangesArgs::FilterTableCallback(void* pCtx, Utf8CP tableName) {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ApplyChangesArgs::IsSchemaTable(Utf8CP tableName) {
-    if (!tableName)
-        false;
-
-    if (!tableName[0] || (tableName[0] != 'e' && tableName[0] != 'E'))
+    if (!tableName) {
         return false;
+    }
 
-    if (!tableName[1] || (tableName[1] != 'c' && tableName[1] != 'C'))
+    if (!tableName[0] || (tableName[0] != 'e' && tableName[0] != 'E'))  {
         return false;
+    }
 
-    if (!tableName[2] || tableName[2] != '_' )
+    if (!tableName[1] || (tableName[1] != 'c' && tableName[1] != 'C')) {
         return false;
+    }
+
+    if (!tableName[2] || tableName[2] != '_' ) {
+        return false;
+    }
 
     return true;
 }
