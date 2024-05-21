@@ -2807,45 +2807,33 @@ struct NativeGeoServices : BeObjectWrap<NativeGeoServices>
         return results;
         }
 
-    static Napi::Value GetListOfGCS(NapiInfoCR info)
+    static Napi::Value GetListOfCRS(NapiInfoCR info)
         {
-        REQUIRE_ARGUMENT_BOOL(0, ignoreLegacy);
-        OPTIONAL_ARGUMENT_ANY_OBJ(1, extent, Napi::Object::New(info.Env()));
-
-        // Check if parameter is present and valid
-        bool extentIsValid =    extent.Get("low").IsObject() && 
-                                extent.Get("high").IsObject() &&
-                                extent.Get("low").As<Napi::Object>().Get("x").IsNumber() &&
-                                extent.Get("low").As<Napi::Object>().Get("y").IsNumber() &&
-                                extent.Get("high").As<Napi::Object>().Get("x").IsNumber() &&
-                                extent.Get("high").As<Napi::Object>().Get("y").IsNumber();
+        OPTIONAL_ARGUMENT_ANY_OBJ(0, extent, Napi::Object::New(info.Env()));
 
         DRange2d extentRange;
-        if (extentIsValid) 
-            {
-            // Convert extent to a DRange2d
-            auto lowProp = extent.Get("low");
-            auto lowX = lowProp.As<Napi::Object>().Get("x").As<Napi::Number>().DoubleValue();
-            auto lowY = lowProp.As<Napi::Object>().Get("y").As<Napi::Number>().DoubleValue();
+        BeJsGeomUtils::DRange2dFromJson(extentRange, extent);
 
-            auto highProp = extent.Get("high");
-            auto highX = highProp.As<Napi::Object>().Get("x").As<Napi::Number>().DoubleValue();
-            auto highY = highProp.As<Napi::Object>().Get("y").As<Napi::Number>().DoubleValue();
+        // When extent parameter is not provided, extentRange is initialized to (0,0,0,0)
+        bool extentIsValid = (extentRange.low.x != 0 || extentRange.low.y != 0 || extentRange.high.x != 0 || extentRange.high.y != 0);
 
-            extentRange = DRange2d::From(lowX, lowY, highX, highY);
-            }
-
-        bvector<GCSListResponseProps> listOfGCS = GeoServicesInterop::GetListOfGCS(ignoreLegacy, extentIsValid ? &extentRange : nullptr);
+        bvector<CRSListResponseProps> listOfCRS = GeoServicesInterop::GetListOfCRS(extentIsValid ? &extentRange : nullptr );
 
         uint32_t index = 0;
-        auto ret = Napi::Array::New(info.Env(), listOfGCS.size());
-        for (auto& gcs : listOfGCS)
+        auto ret = Napi::Array::New(info.Env(), listOfCRS.size());
+        for (auto& gcs : listOfCRS)
             {
-            auto gcsDescription = Napi::Object::New(info.Env());
-            gcsDescription.Set(Napi::String::New(info.Env(), "name"), Napi::String::New(info.Env(), gcs.m_name.c_str()));
-            gcsDescription.Set(Napi::String::New(info.Env(), "description"), Napi::String::New(info.Env(), gcs.m_description.c_str()));
-            ret.Set(index++, gcsDescription);
+            auto gcsDefinition = Napi::Object::New(info.Env());
+            gcsDefinition.Set(Napi::String::New(info.Env(), "name"), Napi::String::New(info.Env(), gcs.m_name.c_str()));
+            gcsDefinition.Set(Napi::String::New(info.Env(), "description"), Napi::String::New(info.Env(), gcs.m_description.c_str()));
+            gcsDefinition.Set(("deprecated"), gcs.m_deprecated);
+            Napi::Object crsExtent = Napi::Object::New(info.Env());
+            BeJsGeomUtils::DRange2dToJson(crsExtent, gcs.m_crsExtent);
+            gcsDefinition.Set("crsExtent", crsExtent);
+
+            ret.Set(index++, gcsDefinition);
             }
+
         return ret;
         }
 
@@ -2855,7 +2843,7 @@ struct NativeGeoServices : BeObjectWrap<NativeGeoServices>
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "GeoServices", {
             StaticMethod("getGeographicCRSInterpretation", &NativeGeoServices::GetGeographicCRSInterpretation),
-            StaticMethod("getListOfGCS", &NativeGeoServices::GetListOfGCS)
+            StaticMethod("getListOfCRS", &NativeGeoServices::GetListOfCRS)
         });
 
         exports.Set("GeoServices", t);
