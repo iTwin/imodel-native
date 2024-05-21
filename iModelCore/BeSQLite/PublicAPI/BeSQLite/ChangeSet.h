@@ -49,6 +49,7 @@ public:
 
     //! A single change to a database row.
     struct Change {
+        friend struct ChangeGroup;
         using iterator_category=std::input_iterator_tag;
         using value_type=Change const;
         using difference_type=std::ptrdiff_t;
@@ -57,7 +58,7 @@ public:
 
     private:
         bool m_isValid;
-        SqlChangesetIterP m_iter;
+        mutable SqlChangesetIterP m_iter;
 
         Utf8String FormatChange(Db const& db, Utf8CP tableName, DbOpcode opcode, int indirect, int detailLevel) const;
 
@@ -157,6 +158,36 @@ public:
     void SetContainsEcSchemaChanges() { m_containsEcSchemaChanges = true; }
     BE_SQLITE_EXPORT ChangeGroup();
     BE_SQLITE_EXPORT ChangeGroup(DbCR, Utf8CP zDb = "main");
+    /**
+     * @brief Adds a change to the change group.
+     *
+     * This function adds a change to the change group.
+     *
+     * @param change The change to be added.
+     * @return The result of the operation.
+     */
+    BE_SQLITE_EXPORT DbResult AddChange(Changes::Change const& change);
+    /**
+     * Filters the given change stream based on the provided filter function and populates the ifChangeGroup with the filtered changes.
+     *
+     * @param in The input change stream to be filtered.
+     * @param filter The filter function that determines whether a change should be included in the filtered result.
+     * @param ifChangeGroup The output change group that will contain the filtered changes.
+     * @return The database result indicating the success or failure of the filtering operation.
+     */
+    BE_SQLITE_EXPORT static DbResult FilterIf(ChangeStreamR in, std::function<bool(Changes::Change const&)> filter, ChangeGroup& ifChangeGroup);
+
+    /**
+     * Filters the changes in the given change stream based on the provided filter function.
+     * The filtered changes are then divided into two change groups: ifChangeGroup and elseChangeGroup.
+     *
+     * @param in The input change stream to filter.
+     * @param filter The filter function used to determine if a change should be included in the filtered result.
+     * @param ifChangeGroup The change group to store the filtered changes that pass the filter function.
+     * @param elseChangeGroup The change group to store the filtered changes that do not pass the filter function.
+     * @return The result of the filtering operation.
+     */
+    BE_SQLITE_EXPORT static DbResult FilterIfElse(ChangeStreamR in, std::function<bool(Changes::Change const&)> filter, ChangeGroup& ifChangeGroup, ChangeGroup& elseChangeGroup);
     BE_SQLITE_EXPORT void Finalize();
     ~ChangeGroup() { Finalize(); }
 };
