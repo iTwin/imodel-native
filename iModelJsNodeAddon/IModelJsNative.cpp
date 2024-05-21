@@ -1463,14 +1463,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         changesetInfo[JsInterop::json_index()] = 0;
         changesetInfo[JsInterop::json_parentId()] = changeset->GetParentId().c_str();
         changesetInfo[JsInterop::json_pathname()] = Utf8String(changeset->GetFileName()).c_str();
-
-        enum ChangesetType { Data = 0, Schema = 1, SchemaSync = Schema | 64,  };
-        auto changesetType = ChangesetType::Data;
-        if (changeset->ContainsSchemaChanges(db)) {
-            changesetType = db.Schemas().GetSchemaSync().IsEnabled() ? ChangesetType::SchemaSync : ChangesetType::Schema;
-        }
-
-        changesetInfo[JsInterop::json_changesType()] = (int)changesetType;
+        changesetInfo[JsInterop::json_changesType()] = (int)changeset->GetChangesetType();
         return changesetInfo;
     }
 

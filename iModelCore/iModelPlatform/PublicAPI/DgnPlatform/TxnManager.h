@@ -971,6 +971,12 @@ namespace dgn_TableHandler {
 // @bsiclass
 //=======================================================================================
 struct ChangesetProps : RefCountedBase {
+    enum class ChangesetType {
+        Regular  = 0,
+        Schema = 1,
+        SchemaSync = Schema | 64,
+    };
+
     TxnManager::TxnId m_endTxnId;
     int64_t m_lastRebaseId = 0;
     Utf8String m_id;
@@ -981,15 +987,16 @@ struct ChangesetProps : RefCountedBase {
     Utf8String m_userName;
     DateTime m_dateTime;
     Utf8String m_summary;
-
-    ChangesetProps(Utf8StringCR changesetId, int32_t changesetIndex, Utf8StringCR parentRevisionId, Utf8StringCR dbGuid, BeFileNameCR fileName) :
-        m_id(changesetId), m_index(changesetIndex), m_parentId(parentRevisionId), m_dbGuid(dbGuid), m_fileName(fileName) {}
+    ChangesetType m_changesetType;
+    ChangesetProps(Utf8StringCR changesetId, int32_t changesetIndex, Utf8StringCR parentRevisionId, Utf8StringCR dbGuid, BeFileNameCR fileName, ChangesetType changesetType) :
+        m_id(changesetId), m_index(changesetIndex), m_parentId(parentRevisionId), m_dbGuid(dbGuid), m_fileName(fileName), m_changesetType(changesetType) {}
 
     Utf8StringCR GetChangesetId() const { return m_id; }
     int32_t GetChangesetIndex() const { return m_index; }
     void SetChangesetIndex(int32_t index) { m_index = index; }
     Utf8StringCR GetParentId() const { return m_parentId; }
     Utf8StringCR GetDbGuid() const { return m_dbGuid; }
+    ChangesetType GetChangesetType() const { return m_changesetType; };
     BeFileNameCR GetFileName() const { return m_fileName; }
 
     //! Get or set the user name
@@ -1004,8 +1011,10 @@ struct ChangesetProps : RefCountedBase {
     Utf8StringCR GetSummary() const { return m_summary; }
     void SetSummary(Utf8CP summary) { m_summary = summary; }
 
+    bool ContainsEcChanges() const { return ((int)m_changesetType & (int)ChangesetType::Schema) > 0; }
+
     //! Determines if the revision contains schema changes
-    DGNPLATFORM_EXPORT bool ContainsSchemaChanges(DgnDbR dgndb) const;
+    DGNPLATFORM_EXPORT bool ContainsDdlChanges(DgnDbR dgndb) const;
     DGNPLATFORM_EXPORT void ValidateContent(DgnDbR dgndb) const;
     DGNPLATFORM_EXPORT void Dump(DgnDbR dgndb) const;
 };

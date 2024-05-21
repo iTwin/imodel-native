@@ -736,6 +736,35 @@ DbResult ChangeStream::ApplyChanges(DbR db, Rebase* rebase, bool invert, bool ig
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeStream::ApplyChanges(DbR db, ApplyChangesArgs const& args) const
+    {
+    int flags = SQLITE_CHANGESETAPPLY_NOSAVEPOINT;
+    if (args.GetInvert())
+        flags |= SQLITE_CHANGESETAPPLY_INVERT;
+    if(args.GetIgnoreNoop())
+        flags |= SQLITE_CHANGESETAPPLY_IGNORENOOP;
+    if(args.GetFkNoAction())
+        flags |= SQLITE_CHANGESETAPPLY_FKNOACTION;
+    auto reader = _GetReader();
+    m_args = &args;
+
+    DbResult result = (DbResult) sqlite3changeset_apply_v2_strm(
+        db.GetSqlDb(),
+        Changes::Reader::ReadCallback,
+        (void*) reader.get(),
+        ApplyChangesArgs::FilterTableCallback,
+        ApplyChangesArgs::ConflictCallback,
+        (void*) this,
+        args.GetRebase() ? &(args.GetRebase()->m_data) : nullptr, args.GetRebase() ? &(args.GetRebase()->m_size) : nullptr,
+        flags);
+
+    m_args = nullptr;
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ChangeStream::ReadFrom(Changes::Reader& inStream)  {
     DbResult result = BE_SQLITE_OK;
     Byte buffer[STREAM_PAGE_BYTE_SIZE];
@@ -795,3 +824,66 @@ DbResult Rebaser::DoRebase(ChangeStream const& in, ChangeStream& out) {
 Rebase::~Rebase() {
     if (m_data) BeSQLiteLib::FreeMem(m_data);
 }
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+int ApplyChangesArgs::ConflictCallback(void* pCtx, int cause, SqlChangesetIterP iter) {
+    const auto changeStream = (ChangeStream*)pCtx;
+    if (changeStream->m_args && changeStream->m_args->HasConflictHandler()){
+        return (int)(((ChangeStream*)pCtx)->m_args)->OnConflict((ChangeSet::ConflictCause)cause, Changes::Change(iter, true));
+    }
+    return (int)changeStream->_OnConflict((ChangeSet::ConflictCause)cause, Changes::Change(iter, true));
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+int ApplyChangesArgs::FilterTableCallback(void* pCtx, Utf8CP tableName) {
+    const auto changeStream = (ChangeStream*)pCtx;
+    if (changeStream->m_args && changeStream->m_args->HasFilterTable()){
+        return (int)(((ChangeStream*)pCtx)->m_args)->FilterTable(tableName);
+    }
+    return (int)changeStream->_FilterTable(tableName);
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ApplyChangesArgs::IsSchemaTable(Utf8CP tableName) {
+    if (!tableName)
+        false;
+
+    if (!tableName[0] || (tableName[0] != 'e' && tableName[0] != 'E'))
+        return false;
+
+    if (!tableName[1] || (tableName[1] != 'c' && tableName[1] != 'C'))
+        return false;
+
+    if (!tableName[2] || tableName[2] != '_' )
+        return false;
+
+    return true;
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ChangeStream::ApplyChangesForTable ApplyChangesArgs::FilterTable(Utf8CP tableName) const {
+    auto rc = m_filterTable ? m_filterTable(tableName) : ChangeStream::ApplyChangesForTable::Yes;
+    if (rc == ChangeStream::ApplyChangesForTable::Yes ){
+        ++m_filterRowCount;
+    }
+    return rc;
+}
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ChangeStream::ConflictResolution ApplyChangesArgs::OnConflict(ChangeStream::ConflictCause cause, Changes::Change iter) const {
+    auto rc = m_conflictHandler ? m_conflictHandler(cause, iter) : ChangeStream::ConflictResolution::Abort;
+    ++m_conflictRowCount;
+    return rc;
+}
+ApplyChangesArgs& ApplyChangesArgs::ApplyOnlySchemaChanges() { m_filterTable = [](Utf8CP tableName) { return ApplyChangesArgs::IsSchemaTable(tableName) ? ChangeStream::ApplyChangesForTable::Yes : ChangeStream::ApplyChangesForTable::No; }; return *this; }
+ApplyChangesArgs& ApplyChangesArgs::ApplyOnlyDataChanges() { m_filterTable = [](Utf8CP tableName) { return ApplyChangesArgs::IsSchemaTable(tableName) ? ChangeStream::ApplyChangesForTable::No : ChangeStream::ApplyChangesForTable::Yes; }; return *this; }

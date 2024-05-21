@@ -385,9 +385,9 @@ DbResult DgnDb::_AfterSchemaChangeSetApplied() const {
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-DbResult DgnDb::_AfterDataChangeSetApplied()
+DbResult DgnDb::_AfterDataChangeSetApplied(bool schemaChanged)
     {
-    DbResult result = T_Super::_AfterDataChangeSetApplied();
+    DbResult result = T_Super::_AfterDataChangeSetApplied(schemaChanged);
     if (result != BE_SQLITE_OK)
         return result;
 

@@ -117,14 +117,13 @@ DbResult ECDb::_AfterSchemaChangeSetApplied() const
             return BE_SQLITE_ERROR;
         }
     }
-    Schemas().UpgradeECInstances();
     return BE_SQLITE_OK;
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::_AfterDataChangeSetApplied()
+DbResult ECDb::_AfterDataChangeSetApplied(bool schemaChanged)
     {
     BentleyStatus status = m_pimpl->GetProfileManager().RefreshProfileVersion();
     if (status != SUCCESS)
@@ -133,6 +132,12 @@ DbResult ECDb::_AfterDataChangeSetApplied()
     status = ResetInstanceIdSequence(GetBriefcaseId());
     if (status != SUCCESS)
         return BE_SQLITE_ERROR;
+
+    if (schemaChanged) {
+        status = Schemas().UpgradeECInstances();
+        if (status != SUCCESS)
+            return BE_SQLITE_ERROR;
+    }
     return BE_SQLITE_OK;
     }
 

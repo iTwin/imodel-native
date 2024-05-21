@@ -467,9 +467,8 @@ void ChangesetProps::ValidateContent(DgnDbR dgndb) const {
 /**
  * determine whether the Changeset has schema changes.
  */
-bool ChangesetProps::ContainsSchemaChanges(DgnDbR dgndb) const {
+bool ChangesetProps::ContainsDdlChanges(DgnDbR dgndb) const {
     ChangesetFileReader changeStream(m_fileName, dgndb);
-
     bool containsSchemaChanges;
     DdlChanges ddlChanges;
     DbResult result = changeStream.MakeReader()->GetSchemaChanges(containsSchemaChanges, ddlChanges);
@@ -945,7 +944,12 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
     auto revId = ChangesetIdGenerator::GenerateId(parentRevId, changesetFileName, m_dgndb);
     auto dbGuid = m_dgndb.GetDbGuid().ToString();
 
-    m_changesetInProgress = new ChangesetProps(revId, -1, parentRevId, dbGuid, changesetFileName);
+    auto changesetType = ChangesetProps::ChangesetType::Regular;
+    if (dataChangeGroup.ContainsEcSchemaChanges()) {
+        changesetType = m_dgndb.Schemas().GetSchemaSync().IsEnabled() ? ChangesetProps::ChangesetType::SchemaSync : ChangesetProps::ChangesetType::Schema;
+    }
+
+    m_changesetInProgress = new ChangesetProps(revId, -1, parentRevId, dbGuid, changesetFileName, changesetType);
     m_changesetInProgress->m_endTxnId = endTxnId;
     m_changesetInProgress->m_lastRebaseId = lastRebaseId;
 
