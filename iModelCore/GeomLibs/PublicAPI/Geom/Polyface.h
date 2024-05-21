@@ -796,8 +796,11 @@ GEOMDLLIMPEXP bool                          TryGetFacetFaceDataAtReadIndex (size
 //! Return a PolyfaceHeader with the same contents.
 GEOMDLLIMPEXP PolyfaceHeaderPtr Clone () const;
 
-//! Return a PolyfaceHeader, with variable length faces.
+//! @deprecated 5/2024 - use no-arg overload
 GEOMDLLIMPEXP PolyfaceHeaderPtr CloneAsVariableSizeIndexed (PolyfaceQueryCR source) const;
+
+//! Return a PolyfaceHeader with the same contents, but with variable length index blocking.
+GEOMDLLIMPEXP PolyfaceHeaderPtr CloneAsVariableSizeIndexed() const;
 
 //!
 //! Collect information about faces in the mesh.
@@ -1862,7 +1865,7 @@ GEOMDLLIMPEXP void Compress(double pointAbsTol, double normalAbsTol = -1.0, doub
 //! Points are active.
 //! Point indices are active if style is MESH_ELM_STYLE_INDEXED_FACE_LOOPS
 //! All other coordinate and index arrays are NOT active.
-//! TwoSided is true.
+//! NOTE: TwoSided is set to true, contrary to the typical default of false.
 GEOMDLLIMPEXP void ClearTags (uint32_t numPerFace, uint32_t meshStyle);
 
 //! Add data to index arrays.
@@ -2196,6 +2199,9 @@ GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateFixedBlockCoordinates (int numPerFa
 //! Create a mesh with (just) point and index data.
 GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateIndexedMesh (int numPerFace, bvector<DPoint3d> const &points, bvector<int> const &indexData);
 
+//! Create a mesh with (just) point and index data.
+//! For efficiency, the non-const input vector contents are swapped with those of the newly constructed mesh, so these inputs are empty on return.
+GEOMDLLIMPEXP static PolyfaceHeaderPtr CreateIndexedMeshSwap(int numPerFace, bvector<DPoint3d>& points, bvector<int>& pointIndices);
 
 //! Create a (indexed) polyface containing all polygons from a TaggedPolygonVector
 GEOMDLLIMPEXP PolyfaceHeaderPtr static CreateFromTaggedPolygons

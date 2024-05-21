@@ -330,6 +330,18 @@ PolyfaceHeaderPtr PolyfaceHeader::CreateIndexedMesh (int numPerFace, bvector<DPo
     return mesh;
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+PolyfaceHeaderPtr PolyfaceHeader::CreateIndexedMeshSwap(int numPerFace, bvector<DPoint3d>& points, bvector<int>& pointIndices)
+    {
+    auto mesh = numPerFace > 1 ? CreateFixedBlockIndexed(numPerFace) : CreateVariableSizeIndexed();
+    mesh->Point().swap(points);
+    mesh->PointIndex().swap(pointIndices);
+    mesh->Point().SetActive(true);
+    mesh->PointIndex().SetActive(true);
+    return mesh;
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -842,12 +854,18 @@ void PolyfaceHeader::ReplicateMissingIndexArrays ()
         }
     }
 
-PolyfaceHeaderPtr PolyfaceQuery::CloneAsVariableSizeIndexed (PolyfaceQueryCR source) const
+PolyfaceHeaderPtr PolyfaceQuery::CloneAsVariableSizeIndexed() const
     {
-    PolyfaceHeaderPtr clone = PolyfaceHeader::CreateVariableSizeIndexed ();
-    clone->CopyFrom (source);
-    clone->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops ();
+    PolyfaceHeaderPtr clone = PolyfaceHeader::CreateVariableSizeIndexed();
+    clone->CopyFrom(*this);
+    clone->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops();
     return clone;
+    }
+
+// Deprecated 5/2024 because instance is unused
+PolyfaceHeaderPtr PolyfaceQuery::CloneAsVariableSizeIndexed(PolyfaceQueryCR source) const
+    {
+    return source.CloneAsVariableSizeIndexed();
     }
 
 PolyfaceHeaderPtr PolyfaceQuery::Clone () const
@@ -1525,7 +1543,7 @@ PolyfaceAuxDataPtr&                 PolyfaceHeader::AuxData()           { return
 void PolyfaceHeader::ClearTags (uint32_t numPerFace, uint32_t meshStyle)
     {
     SetNumPerFace (numPerFace);
-    SetTwoSided (true);
+    SetTwoSided (true); // This was a mistake, but we are stuck with it.
     SetMeshStyle (meshStyle);
     bool activePointIndex = meshStyle == MESH_ELM_STYLE_INDEXED_FACE_LOOPS;
     uint32_t b = numPerFace > 1 ? numPerFace : 1;
