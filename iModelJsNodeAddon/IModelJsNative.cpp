@@ -2032,7 +2032,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             }
         }
     }
-    Napi::Value ImportSchemas(NapiInfoCR info)
+    void ImportSchemas(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
@@ -2054,18 +2054,16 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
         LastErrorListener lastError(db);
         DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::File, options);
-        if (DbResult::BE_SQLITE_OK != result && DbResult::BE_SQLITE_ERROR_SchemaLockFailed != result) {
+        if (DbResult::BE_SQLITE_OK != result) {
             if (lastError.HasError()) {
-                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
+                BeNapi::ThrowJsException(info.Env(), lastError.GetLastError().c_str(), (int) result);
             } else {
-                THROW_JS_EXCEPTION("Failed to import schemas");
+                BeNapi::ThrowJsException(info.Env(), "Failed to import schemas", (int) result);
             }
         }
-
-        return Napi::Number::New(Env(), (int)result);
         }
 
-    Napi::Value ImportXmlSchemas(NapiInfoCR info)
+    void ImportXmlSchemas(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
@@ -2079,14 +2077,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
         LastErrorListener lastError(db);
         DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::XmlString, options);
-        if (DbResult::BE_SQLITE_OK != result && DbResult::BE_SQLITE_ERROR_SchemaLockFailed != result) {
+        if (DbResult::BE_SQLITE_OK != result) {
             if (lastError.HasError()) {
-                THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
+                BeNapi::ThrowJsException(info.Env(), lastError.GetLastError().c_str(), (int) result);
             } else {
-                THROW_JS_EXCEPTION("Failed to import schemas");
+                BeNapi::ThrowJsException(info.Env(), "Failed to import schemas", (int) result);
             }
         }
-        return Napi::Number::New(Env(), (int)result);
         }
 
     Napi::Value FindGeometryPartReferences(NapiInfoCR info)
