@@ -2052,9 +2052,9 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             options.m_customSchemaContext = NativeECSchemaXmlContext::Unwrap(maybeEcSchemaContextVal.As<Napi::Object>())->GetContext();
             }
 
-        LastErrorListener lastError(GetOpenedDb(info));
+        LastErrorListener lastError(db);
         DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::File, options);
-        if (DbResult::BE_SQLITE_OK != result) {
+        if (DbResult::BE_SQLITE_OK != result && DbResult::BE_SQLITE_ERROR_SchemaLockFailed != result) {
             if (lastError.HasError()) {
                 THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
             } else {
@@ -2077,9 +2077,9 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             options.m_schemaSyncDbUri = jsSyncDbUri.ToString().Utf8Value();
 
 
-        LastErrorListener lastError(GetOpenedDb(info));
+        LastErrorListener lastError(db);
         DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::XmlString, options);
-        if (DbResult::BE_SQLITE_OK != result) {
+        if (DbResult::BE_SQLITE_OK != result && DbResult::BE_SQLITE_ERROR_SchemaLockFailed != result) {
             if (lastError.HasError()) {
                 THROW_JS_EXCEPTION(lastError.GetLastError().c_str());
             } else {
