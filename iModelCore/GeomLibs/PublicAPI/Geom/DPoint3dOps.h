@@ -1491,24 +1491,23 @@ public: static GEOMDLLIMPEXP bool IsConvex (bvector<DPoint3d> const &xyz);
 
 
 //!
-//! Triangulate a single xy polygon.  Triangulation preserves original
-//!   indices.
-//! @param [out] pIndices array of indices.  Each face is added
+//! Triangulate a single xy polygon. Triangulation preserves original indices.
+//! @param [out] pIndices array of indices. Each face is added
 //!           as one-based indices, followed by a 0 (terminator).
 //!           Interior edges are optionally negated.
 //! @param [out] pExteriorLoopIndices array of indices of actual outer loops. (optional)
 //!           (These are clockwise loops as viewed.)
-//! @param [out] pXYZOut output points.  The first numPoint points are exactly
-//!           the input points.   If necessary and permitted, additional
-//!           xyz are added at crossings.  In the usual case in which crossings
+//! @param [out] pXYZOut output points. The first numPoint points are exactly
+//!           the input points. If necessary and permitted, additional
+//!           xyz are added at crossings. In the usual case in which crossings
 //!           are not expected, this array may be NULL.
 //! @param [in] pXYZIn array of polygon points.
 //! @param [in] xyTolerance tolerance for short edges on input polygon.
 //! @param [in] maxPerFace number of edges allowed per face.
 //! @param [in] signedOneBasedIndices if true, output indices are 1 based, with 0 as separator.
-//!           If false, indices are zero based wtih -1 as separator.
-//! @param [in] addVerticesAtCrossings true if new coorinates can be added to pXYZOut
-//! @return false if nonsimple polygon.
+//!           If false, indices are zero based with -1 as separator.
+//! @param [in] addVerticesAtCrossings true if new coordinates can be added to pXYZOut
+//! @return `false` if non-simple polygon. Outputs are invalid if return is `false`.
 //!
 public:
 static GEOMDLLIMPEXP bool FixupAndTriangulateLoopsXY
@@ -1517,10 +1516,10 @@ bvector<int>        *pIndices,
 bvector<int>        *pExteriorLoopIndices,
 bvector<DPoint3d>   *pXYZOut,
 bvector<DPoint3d>   *pXYZIn,
-double                  xyTolerance,
-int                     maxPerFace,
-bool                    signedOneBasedIndices,
-bool                    addVerticesAtCrossings
+double              xyTolerance,
+int                 maxPerFace,
+bool                signedOneBasedIndices,
+bool                addVerticesAtCrossings
 );
 
 //!
