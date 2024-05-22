@@ -2809,14 +2809,10 @@ struct NativeGeoServices : BeObjectWrap<NativeGeoServices>
 
     static Napi::Value GetListOfCRS(NapiInfoCR info)
         {
-        OPTIONAL_ARGUMENT_ANY_OBJ(0, extent, Napi::Object::New(info.Env()));
-
         DRange2d extentRange;
-        BeJsGeomUtils::DRange2dFromJson(extentRange, extent);
-
-        // When extent parameter is not provided, extentRange is initialized to (0,0,0,0)
-        bool extentIsValid = (extentRange.low.x != 0 || extentRange.low.y != 0 || extentRange.high.x != 0 || extentRange.high.y != 0);
-
+        bool extentIsValid = ARGUMENT_IS_ANY_OBJ(0);
+        if (extentIsValid)
+            BeJsGeomUtils::DRange2dFromJson(extentRange, info[0].As<Napi::Object>());
         bvector<CRSListResponseProps> listOfCRS = GeoServicesInterop::GetListOfCRS(extentIsValid ? &extentRange : nullptr );
 
         uint32_t index = 0;
