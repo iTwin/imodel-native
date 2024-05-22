@@ -668,6 +668,17 @@ ConvexClipPlaneSet ConvexClipPlaneSet::FromXYBox (double x0, double y0, double x
     return convexSet;
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+ClipPlaneSet ClipPlaneSet::FromXYBox(double x0, double y0, double x1, double y1)
+    {
+    return ClipPlaneSet(ConvexClipPlaneSet::FromXYBox(x0, y0, x1, y1));
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
 ConvexClipPlaneSet ConvexClipPlaneSet::FromXYPolyLine (bvector<DPoint3d> const &points, bvector<BoolTypeForVector> const &interior, bool leftIsInside)
     {
     ConvexClipPlaneSet  convexSet;
@@ -688,10 +699,17 @@ ConvexClipPlaneSet ConvexClipPlaneSet::FromXYPolyLine (bvector<DPoint3d> const &
     return convexSet;
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
 ClipPlaneSet  ClipPlaneSet::FromSweptPolygon (DPoint3dCP points, size_t n, DVec3dCP direction)
     {
     return FromSweptPolygon (points, n, direction, nullptr);
     }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
 static bool AppendPlaneThroughXYSegment
 (
 ConvexClipPlaneSet &convexSet,

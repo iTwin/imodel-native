@@ -1505,6 +1505,14 @@ void Check::SaveTransformed(MSBsplineCurvePtr const &data, bool savePolygon)
         Check::SaveTransformed (data->poles, data->GetNumPoles ());
     }
 
+void Check::SaveTransformed(bvector<DPoint2d> const& data, bool addClosure)
+    {
+    auto cv = ICurvePrimitive::CreateLineString(data);
+    if (addClosure && data.size() > 0)
+        cv->GetLineStringP()->push_back(DPoint3d::From(data[0]));
+    SaveTransformed(IGeometry::Create(cv));
+    }
+
 void Check::SaveTransformed (bvector<DPoint3d> const &data, bool addClosure)
     {
     auto cv = ICurvePrimitive::CreateLineString (data);
@@ -1558,7 +1566,11 @@ void Check::SaveTransformedMarkers (bvector<DPoint3d> const &data, double marker
         SaveTransformedMarker (xyz, markerSize);
     }
 
-
+void Check::SaveTransformed(bvector<bvector<DPoint2d>> const &data)
+    {
+    for (auto a : data)
+        SaveTransformed(a);
+    }
 
 void Check::SaveTransformed (bvector<bvector<DPoint3d>> const &data)
     {
