@@ -2133,8 +2133,8 @@ TEST(DEllipse3d,FromStartTangentNormalRadiusSweep)
                 Check::Print(sweep, "sweep");
                 Check::Print (arc.Value (), "arc");
                 Check::LessThanOrEqual (0,
-                        radius * arc.Value ().vector0.TripleProduct (arc.Value ().vector90, normal) > 0.0,
-                        "Arc Frame is orientation follows radius, normal"
+                        radius * arc.Value ().vector0.TripleProduct (arc.Value ().vector90, normal),
+                        "Arc Frame orientation follows radius, normal"
                         );
                 Check::Near (sweep, arc.Value ().sweep, "sweep applied directly");
                 }
