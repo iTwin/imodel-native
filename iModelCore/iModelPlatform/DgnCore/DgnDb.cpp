@@ -274,7 +274,13 @@ DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
 // @bsimethod
 //--------------------------------------------------------------------------------------
 DgnDb::PullResult DgnDb::PullSchemaChanges(SyncDbUri uri) {
-    return Schemas().GetSchemaSync().Pull(uri, GetSchemaImportToken());
+    auto rc = Schemas().GetSchemaSync().Pull(uri, GetSchemaImportToken());
+    if (rc == PullResult::OK) {
+        if (Schemas().GetSchemaSync().GetModifiedRowCount()>0) {
+            this->Txns().SetHasEcSchemaChanges(true);
+        }
+    }
+    return rc;
 }
 
 //--------------------------------------------------------------------------------------
