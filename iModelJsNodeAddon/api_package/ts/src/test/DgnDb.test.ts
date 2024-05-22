@@ -288,9 +288,12 @@ describe("basic tests", () => {
             <ECProperty propertyName="Name" typeName="string" />
         </ECEntityClass>
     </ECSchema>`;
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    const BE_SQLITE_ERROR_SchemaUpgradeFailed = (DbResult.BE_SQLITE_IOERR | 19 << 24);
     try {
       db.importXmlSchemas([schema], { schemaLockHeld: false });
     } catch (error: any) {
+      assert.equal(error.errorNumber, BE_SQLITE_ERROR_SchemaUpgradeFailed);
       expect(error.message).equals("Failed to import ECClass 'TestSchema:NewRootClass'. It violates against the 'No additional root entity classes' policy which means that all entity classes must subclass from classes defined in the ECSchema BisCore");
     }
   });
