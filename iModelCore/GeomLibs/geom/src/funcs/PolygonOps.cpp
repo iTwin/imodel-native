@@ -6,6 +6,8 @@
 
 #include <Geom/PatternMatching.h>
 
+static double s_areaRelTol = 1.0e-12;
+
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @description Compute the volume of the tent formed by a polygon base and a given "pole" vector.
@@ -271,7 +273,6 @@ bool PolygonOps::IsConvex (bvector<DPoint3d> const &xyz)
     {
     DVec3d vecA, vecB, maxCross, cross;
     int numPoint = (int)xyz.size ();
-    static double s_areaRelTol = 1.0e-12;
     DVec3d unitNormal;
 
     double positiveArea = 0.0;
@@ -315,26 +316,6 @@ bool PolygonOps::IsConvex (bvector<DPoint3d> const &xyz)
     return fabs (negativeArea) < s_areaRelTol * positiveArea;
     }
 
-/**
-* Triangulate a single xy polygon.  Triangulation preserves original
-*   indices.
-* @param pSignedOneBasedIndices <= array of indices.  Each face is added
-*           as one-based indices, followed by a 0 (terminator).
-*           Interior edges are optionally negated.
-* @param pExteriorLoopIndices <= array of indices of actual outer loops. (optional)
-*           (These are clockwise loops as viewed.)
-* @param pXYZOut <= output points.  The first numPoint points are exactly
-*           the input points.   If necessary and permitted, additional
-*           xyz are added at crossings.  In the usual case in which crossings
-*           are not expected, this array may be NULL.
-* @param pointP => array of polygon points.
-* @param numPoint => number of polygon points.
-* @param xyTolerance => tolerance for short edges on input polygon.
-* @param signedOneBasedIndices => if true, output indices are 1 based, with 0 as separator.
-           If false, indices are zero based wtih -1 as separator.
-* @param addVerticesAtCrossings => true if new coorinates can be added to pXYZOut
-* @return false if nonsimple polygon.
-*/
 bool PolygonOps::FixupAndTriangulateLoopsXY
 (
 bvector<int>    *pIndices,
@@ -383,15 +364,23 @@ bool             addVerticesAtCrossings
 
     vu_collectInteriorFaceLoops (faceArrayP, graphP);
 
+    double areaTol = s_areaRelTol * (1.0 + xyTolerance);
+
     vu_arrayOpen (faceArrayP);
     status = true;
     for (i = 0; status && vu_arrayRead (faceArrayP, &faceP); i++)
         {
-        // We triangulated.  So of course there are 3 nodes per face.
-        // Really?  If the input polygon retraces itself, there will be
-        // sliver faces with only 2 edges.
-        if (vu_faceLoopSize (faceP) < 3)
+        // ignore faces that did not triangulate, such as a part of the polygon that retraces itself
+        int numEdges = vu_faceLoopSize(faceP);
+        if (numEdges < 3)
             continue;
+        if (numEdges > maxPerFace)
+            {
+            double faceArea = fabs(vu_area(faceP));
+            if (faceArea > areaTol)
+                BeAssert(!"nontrivial face failed to triangulate");
+            continue; // leave it out per caller expectations
+            }
 
         VU_FACE_LOOP (currP, faceP)
             {
@@ -442,6 +431,9 @@ bool             addVerticesAtCrossings
         END_VU_FACE_LOOP (currP, faceP)
         pIndices->push_back (separator);
         }
+
+    if (0 == pIndices->size())
+        status = false;
 
     // Exterior loops
     if (status && pExteriorLoopIndices)
