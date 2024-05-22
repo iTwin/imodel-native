@@ -830,11 +830,7 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
     bool mergeNeeded = HasPendingTxns() && m_initTableHandlers; // if tablehandlers are not present we can't merge - happens for schema upgrade
     Rebase rebase;
 
-    auto const ignoreNoop = containsSchemaChanges;
-    /** This will disable cascade action and so no new changes are created when applying changeset */
-    auto const fkNoAction = true;
-
-    DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, mergeNeeded ? &rebase : nullptr, false, ignoreNoop, fkNoAction);
+    DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, mergeNeeded ? &rebase : nullptr, false);
     if (result != BE_SQLITE_OK) {
         if (changeStream.GetLastErrorMessage().empty())
             m_dgndb.ThrowException("failed to apply changes", result);
@@ -1244,7 +1240,7 @@ struct DisableTracking {
 * Apply a changeset to the database. Notify all TxnTables about what was in the Changeset afterwards.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bool containsSchemaChanges, Rebase* rebase, bool invert, bool ignoreNoop, bool fkNoAction) {
+DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bool containsSchemaChanges, Rebase* rebase, bool invert) {
     BeAssert(action != TxnAction::None);
     AutoRestore<TxnAction> saveAction(&m_action, action);
 
@@ -1286,7 +1282,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
                 return result;
             }
         }
-        
+
         m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
             if (action == TxnAction::Merge) {
                 const auto result = m_dgndb.AfterSchemaChangeSetApplied();
