@@ -49,7 +49,7 @@ DropSchemaResult SchemaManager::DropSchema(Utf8StringCR name, SchemaImportToken 
     return Main().DropSchema(name, token, logIssue);
 }
 
-DropSchemaResult SchemaManager::DropSchemas(T_Utf8StringVectorCR schemaNames, SchemaImportToken const* token, bool logIssue) const {
+DropSchemaResult SchemaManager::DropSchemas(bvector<Utf8String> schemaNames, SchemaImportToken const* token, bool logIssue) const {
     return Main().DropSchemas(schemaNames, token, logIssue);
 }
 /*---------------------------------------------------------------------------------------

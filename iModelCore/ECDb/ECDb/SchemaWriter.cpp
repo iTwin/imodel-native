@@ -135,11 +135,11 @@ DropSchemaResult SchemaWriter::DropSchema(Utf8StringCR schemaName, SchemaImportC
     return DropSchemaResult(DropSchemaResult::Status::Success);
 }
 
-DropSchemaResult SchemaWriter::DropSchemas(T_Utf8StringVectorCR schemaNames, SchemaImportContext& ctx, bool logIssue)
+DropSchemaResult SchemaWriter::DropSchemas(bvector<Utf8String> schemaNames, SchemaImportContext& ctx, bool logIssue)
     {
     bvector<ECSchemaId> schemaIds;
-    T_Utf8StringVector schemaIdStrings;
-    T_Utf8StringVector errorSchemas;
+    bvector<Utf8String> schemaIdStrings;
+    bvector<Utf8String> errorSchemas;
     for (const auto& name : schemaNames)
         {
         // make sure the schema exists

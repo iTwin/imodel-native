@@ -1078,7 +1078,7 @@ DropSchemaResult MainSchemaManager::DropSchema(Utf8StringCR name, SchemaImportTo
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DropSchemaResult MainSchemaManager::DropSchemas(T_Utf8StringVectorCR schemaNames, SchemaImportToken const* schemaImportToken, bool logIssue) const
+DropSchemaResult MainSchemaManager::DropSchemas(bvector<Utf8String> schemaNames, SchemaImportToken const* schemaImportToken, bool logIssue) const
     {
     ECDB_PERF_LOG_SCOPE("Drop multiple schemas");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::DropSchemas");

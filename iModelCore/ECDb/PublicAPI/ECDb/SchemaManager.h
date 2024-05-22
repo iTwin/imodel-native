@@ -454,7 +454,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         //! See documentation of the respective ECDb subclass to find out whether the option is enabled or not.
         //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
         //! @see @ref ECDbECSchemaImportAndUpgrade
-        ECDB_EXPORT DropSchemaResult DropSchemas(T_Utf8StringVectorCR schemaNames, SchemaImportToken const* token = nullptr, bool logIssue = true) const;
+        ECDB_EXPORT DropSchemaResult DropSchemas(bvector<Utf8String> schemaNames, SchemaImportToken const* token = nullptr, bool logIssue = true) const;
 
         //! Imports the list of @ref ECN::ECSchema "ECSchemas" (which must include all its references)
         //! into the @ref ECDbFile "ECDb file".
