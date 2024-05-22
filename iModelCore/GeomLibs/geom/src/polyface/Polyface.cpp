@@ -330,6 +330,18 @@ PolyfaceHeaderPtr PolyfaceHeader::CreateIndexedMesh (int numPerFace, bvector<DPo
     return mesh;
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+PolyfaceHeaderPtr PolyfaceHeader::CreateIndexedMeshSwap(int numPerFace, bvector<DPoint3d>& points, bvector<int>& pointIndices)
+    {
+    auto mesh = numPerFace > 1 ? CreateFixedBlockIndexed(numPerFace) : CreateVariableSizeIndexed();
+    mesh->Point().swap(points);
+    mesh->PointIndex().swap(pointIndices);
+    mesh->Point().SetActive(true);
+    mesh->PointIndex().SetActive(true);
+    return mesh;
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -397,8 +409,6 @@ void PushTriangle(bvector<int> &indices, int i0, int i1, int i2)
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
-Triangulate faces.
-@return SUCCESS if all faces triangulated.
 +--------------------------------------------------------------------------------------*/
 bool PolyfaceHeader::Triangulate (size_t maxEdge)
     {
@@ -406,8 +416,6 @@ bool PolyfaceHeader::Triangulate (size_t maxEdge)
     }
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
-Triangulate faces.
-@return SUCCESS if all faces triangulated.
 +--------------------------------------------------------------------------------------*/
 bool PolyfaceHeader::Triangulate (size_t maxEdge, bool hideNewEdges, IPolyfaceVisitorFilter *tester)
     {
@@ -445,9 +453,7 @@ bool PolyfaceHeader::Triangulate (size_t maxEdge, bool hideNewEdges, IPolyfaceVi
                 triangulateThisFacet = false;       // It's planar and low edge count.  Nothing to do.
             }
 
-        if (    !triangulateThisFacet
-            &&  facePoints.size () <= (size_t) maxEdge + 1
-            )
+        if (!triangulateThisFacet)
             {
             for (ptrdiff_t i = 0, n = facePoints.size () - 1; i < n; i++)
                 newIndices.push_back ((int)i + 1);  // one based loop.
@@ -486,7 +492,6 @@ bool PolyfaceHeader::Triangulate (size_t maxEdge, bool hideNewEdges, IPolyfaceVi
             errors++;
             continue;
             }
-
 
         size_t n = newIndices.size ();
         // Prevalidate all indices ...
@@ -594,8 +599,6 @@ bool PolyfaceHeader::Triangulate (size_t maxEdge, bool hideNewEdges, IPolyfaceVi
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
-Triangulate faces.
-@return SUCCESS if all faces triangulated.
 +--------------------------------------------------------------------------------------*/
 BentleyStatus PolyfaceHeader::Triangulate ()
     {
@@ -851,12 +854,18 @@ void PolyfaceHeader::ReplicateMissingIndexArrays ()
         }
     }
 
-PolyfaceHeaderPtr PolyfaceQuery::CloneAsVariableSizeIndexed (PolyfaceQueryCR source) const
+PolyfaceHeaderPtr PolyfaceQuery::CloneAsVariableSizeIndexed() const
     {
-    PolyfaceHeaderPtr clone = PolyfaceHeader::CreateVariableSizeIndexed ();
-    clone->CopyFrom (source);
-    clone->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops ();
+    PolyfaceHeaderPtr clone = PolyfaceHeader::CreateVariableSizeIndexed();
+    clone->CopyFrom(*this);
+    clone->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops();
     return clone;
+    }
+
+// Deprecated 5/2024 because instance is unused
+PolyfaceHeaderPtr PolyfaceQuery::CloneAsVariableSizeIndexed(PolyfaceQueryCR source) const
+    {
+    return source.CloneAsVariableSizeIndexed();
     }
 
 PolyfaceHeaderPtr PolyfaceQuery::Clone () const
@@ -1534,7 +1543,7 @@ PolyfaceAuxDataPtr&                 PolyfaceHeader::AuxData()           { return
 void PolyfaceHeader::ClearTags (uint32_t numPerFace, uint32_t meshStyle)
     {
     SetNumPerFace (numPerFace);
-    SetTwoSided (true);
+    SetTwoSided (true); // This was a mistake, but we are stuck with it.
     SetMeshStyle (meshStyle);
     bool activePointIndex = meshStyle == MESH_ELM_STYLE_INDEXED_FACE_LOOPS;
     uint32_t b = numPerFace > 1 ? numPerFace : 1;

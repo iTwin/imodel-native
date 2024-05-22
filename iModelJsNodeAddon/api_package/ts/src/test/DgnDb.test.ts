@@ -343,7 +343,7 @@ describe("basic tests", () => {
     }
     iModelJsNative.setCrashReporting({
       enableCrashDumps: true,
-      crashDir: __dirname,
+      crashDir: path.join(getOutputDir(), "crashdumps"),
       params: [
         { name: "foo", value: "bar" },
         { name: "foo2", value: "baz" },
