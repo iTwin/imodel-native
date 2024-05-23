@@ -2807,12 +2807,39 @@ struct NativeGeoServices : BeObjectWrap<NativeGeoServices>
         return results;
         }
 
+    static Napi::Value GetListOfCRS(NapiInfoCR info)
+        {
+        DRange2d extentRange;
+        bool extentIsValid = ARGUMENT_IS_ANY_OBJ(0);
+        if (extentIsValid)
+            BeJsGeomUtils::DRange2dFromJson(extentRange, info[0].As<Napi::Object>());
+        bvector<CRSListResponseProps> listOfCRS = GeoServicesInterop::GetListOfCRS(extentIsValid ? &extentRange : nullptr );
+
+        uint32_t index = 0;
+        auto ret = Napi::Array::New(info.Env(), listOfCRS.size());
+        for (auto& gcs : listOfCRS)
+            {
+            auto gcsDefinition = Napi::Object::New(info.Env());
+            gcsDefinition.Set(Napi::String::New(info.Env(), "name"), Napi::String::New(info.Env(), gcs.m_name.c_str()));
+            gcsDefinition.Set(Napi::String::New(info.Env(), "description"), Napi::String::New(info.Env(), gcs.m_description.c_str()));
+            gcsDefinition.Set(("deprecated"), gcs.m_deprecated);
+            Napi::Object crsExtent = Napi::Object::New(info.Env());
+            BeJsGeomUtils::DRange2dToJson(crsExtent, gcs.m_crsExtent);
+            gcsDefinition.Set("crsExtent", crsExtent);
+
+            ret.Set(index++, gcsDefinition);
+            }
+
+        return ret;
+        }
+
     //  Create projections
     static void Init(Napi::Env& env, Napi::Object exports)
         {
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "GeoServices", {
-            StaticMethod("getGeographicCRSInterpretation", &NativeGeoServices::GetGeographicCRSInterpretation)
+            StaticMethod("getGeographicCRSInterpretation", &NativeGeoServices::GetGeographicCRSInterpretation),
+            StaticMethod("getListOfCRS", &NativeGeoServices::GetListOfCRS)
         });
 
         exports.Set("GeoServices", t);
