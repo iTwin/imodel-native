@@ -3479,7 +3479,7 @@ NavNodePtr SameLabelGroupingNodesPostProcessorDeprecated::MergeNodes(NavNodesPro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-HierarchyLevelIdentifier SameLabelGroupingNodesPostProcessorDeprecated::GetHierarchyLevelIdentifier(NavNodesProviderContextCR context)
+HierarchyLevelIdentifier SameLabelGroupingNodesPostProcessorDeprecated::GetHierarchyLevelIdentifier(NavNodesProviderContextCR context, bool createNew)
     {
     auto combinedHlIdentifier = context.GetHierarchyLevelIdentifier();
     BeGuid virtualParentId = context.GetVirtualParentNode().IsValid() ? context.GetVirtualParentNode()->GetNodeId() : BeGuid();
@@ -3489,11 +3489,31 @@ HierarchyLevelIdentifier SameLabelGroupingNodesPostProcessorDeprecated::GetHiera
     HierarchyLevelIdentifier identifier(combinedHlIdentifier, virtualParentId);
     if (hlId.IsValid())
         identifier.SetId(hlId);
-    else
+    else if (createNew)
         context.GetNodesCache().Cache(identifier);
 
     return identifier;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DataSourceInfo SameLabelGroupingNodesPostProcessorDeprecated::GetMergedDataSourceInfo(NavNodesProviderContextCR context, BeGuidCR hierarchyLevelId, bool createNew)
+    {
+    if (!hierarchyLevelId.IsValid())
+        return DataSourceInfo();
+
+    DataSourceIdentifier mergedDatasourceIdentifier(hierarchyLevelId, {}, context.GetInstanceFilterPtr());
+    mergedDatasourceIdentifier.SetResultSetSizeLimit(context.GetResultSetSizeLimit());
+    DataSourceInfo mergedDatasourceInfo = context.GetNodesCache().FindDataSource(mergedDatasourceIdentifier, context.GetRulesetVariables(), DataSourceInfo::PART_IsFinalized);
+    if (mergedDatasourceInfo.GetIdentifier().IsValid() || !createNew)
+        return mergedDatasourceInfo;
+
+    mergedDatasourceInfo = DataSourceInfo(mergedDatasourceIdentifier, context.GetRelatedRulesetVariables(), DataSourceFilter(), bmap<ECClassId, bool>(), "", "");
+    context.GetNodesCache().Cache(mergedDatasourceInfo);
+    return mergedDatasourceInfo;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3538,10 +3558,9 @@ NavNodesProviderPtr SameLabelGroupingNodesPostProcessorDeprecated::_PostProcess(
 
     // attempt to find cached merged nodes provider - success means the whole hierarchy level is already post-processed and in cache.
     // it's more efficient to use the cached version compared to loading and merging everything again, so just return the cached provider.
-    DataSourceIdentifier mergedDatasourceIdentifier(GetHierarchyLevelIdentifier(*context).GetId(), {}, context->GetInstanceFilterPtr());
-    mergedDatasourceIdentifier.SetResultSetSizeLimit(context->GetResultSetSizeLimit());
-    DataSourceInfo mergedDatasourceInfo = context->GetNodesCache().FindDataSource(mergedDatasourceIdentifier, context->GetRulesetVariables());
-    if (mergedDatasourceInfo.GetIdentifier().IsValid())
+    HierarchyLevelIdentifier hlIdentifier = GetHierarchyLevelIdentifier(*context);
+    DataSourceInfo mergedDatasourceInfo = GetMergedDataSourceInfo(*context, hlIdentifier.GetId());
+    if (mergedDatasourceInfo.IsInitialized())
         {
         auto cachedProcessedProvider = context->GetNodesCache().GetCombinedHierarchyLevel(*context, context->GetHierarchyLevelIdentifier());
         DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Hierarchies, cachedProcessedProvider.IsValid(), "Expected the processed provider to be cached but it's not.");
@@ -3562,10 +3581,22 @@ NavNodesProviderPtr SameLabelGroupingNodesPostProcessorDeprecated::_PostProcess(
 
     // if we didn't find the cached provider, it means we're here for the first time - create and cache the merged nodes provider (even if it's going to be empty)
     IHierarchyCache::SavepointPtr savepoint = context->GetNodesCache().CreateSavepoint();
-    mergedDatasourceInfo = DataSourceInfo(mergedDatasourceIdentifier, context->GetRelatedRulesetVariables(), DataSourceFilter(), bmap<ECClassId, bool>(), "", "");
-    context->GetNodesCache().Cache(mergedDatasourceInfo);
-    DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Hierarchies, LOG_TRACE, "Cached merged provider");
-    mergedDatasourceIdentifier = mergedDatasourceInfo.GetIdentifier();
+
+    // attempt to get merged data source again in case it was cached while we were checking nodes count. Otherwise cache new merged data source.
+    hlIdentifier = GetHierarchyLevelIdentifier(*context, true);
+    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Hierarchies, hlIdentifier.IsValid(), "Expected hierarchy level to be cached but it's not.");
+    mergedDatasourceInfo = GetMergedDataSourceInfo(*context, hlIdentifier.GetId(), true);
+    DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Hierarchies, mergedDatasourceInfo.GetIdentifier().IsValid(), "Expected data source to be cached but it's not.");
+
+    // return cached provider if it was created while we were checking nodes count
+    if (mergedDatasourceInfo.IsInitialized())
+        {
+        auto cachedProcessedProvider = context->GetNodesCache().GetCombinedHierarchyLevel(*context, context->GetHierarchyLevelIdentifier());
+        DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Hierarchies, cachedProcessedProvider.IsValid(), "Expected the processed provider to be cached but it's not.");
+        return cachedProcessedProvider;
+        }
+
+    DataSourceIdentifier mergedDatasourceIdentifier = mergedDatasourceInfo.GetIdentifier();
 
     MaxNodesToLoadContext disableMaxNodesToLoad(processedProvider, (size_t)0);
     DisabledFullNodesLoadContext disableFullNodesLoad(processedProvider);

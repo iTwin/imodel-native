@@ -1247,6 +1247,83 @@ struct MyChangeSet : ChangeSet
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+TEST_F(BeSQLiteDbTests, ChangeGroup_Filter) {
+    SetupDb(L"changeset.db");
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("CREATE TABLE t1 (ID INTEGER PRIMARY KEY)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("CREATE TABLE t2 (ID INTEGER PRIMARY KEY)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("CREATE TABLE t3 (ID INTEGER PRIMARY KEY)"));
+
+    MyChangeTracker changeTracker(m_db);
+    changeTracker.EnableTracking(true);
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO t1 (ID) values (NULL)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO t2 (ID) values (NULL)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO t3 (ID) values (NULL)"));
+    changeTracker.EnableTracking(false);
+
+    auto getChangeTable = [&](Changes::Change const& change) -> Utf8String {
+        Utf8CP tableName;
+        int nCols;
+        DbOpcode opCode;
+        int  indirect;
+        EXPECT_EQ(BE_SQLITE_OK, change.GetOperation(&tableName, &nCols, &opCode, &indirect));
+        return Utf8String(tableName);
+    };
+    auto getChangeTables = [&](ChangeStream& changeset) -> std::vector<Utf8String> {
+        std::vector<Utf8String> tableNames;
+        for (auto change : changeset.GetChanges()) {
+            tableNames.push_back(getChangeTable(change));
+        }
+        return tableNames;
+    };
+
+    MyChangeSet cs;
+    cs.FromChangeTrack(changeTracker);
+    m_db.SaveChanges();
+
+    const auto tables = getChangeTables(cs);
+    ASSERT_EQ(3, tables.size());
+    ASSERT_STREQ("t1", tables[0].c_str());
+    ASSERT_STREQ("t2", tables[1].c_str());
+    ASSERT_STREQ("t3", tables[2].c_str());
+
+    // Filter changeset using ChangeGroup::FilterIf
+    ChangeGroup t1Group(m_db);
+    ASSERT_EQ(BE_SQLITE_OK, ChangeGroup::FilterIf(cs,
+        [&](Changes::Change const& change) {
+            return getChangeTable(change).EqualsIAscii("t1");
+        }, t1Group)
+    );
+    ChangeSet t1Changeset;
+    t1Changeset.FromChangeGroup(t1Group);
+    const auto t1Tables = getChangeTables(t1Changeset);
+    ASSERT_EQ(1, t1Tables.size());
+    ASSERT_STREQ("t1", t1Tables[0].c_str());
+
+    // Filter changeset using ChangeGroup::FilterIfElse
+    ChangeGroup t2Group(m_db);
+    ChangeGroup t1t3Group(m_db);
+    ASSERT_EQ(BE_SQLITE_OK, ChangeGroup::FilterIfElse(cs,
+        [&](Changes::Change const& change) {
+            return getChangeTable(change).EqualsIAscii("t2");
+        }, t2Group, t1t3Group)
+    );
+
+    ChangeSet t2Changeset;
+    t2Changeset.FromChangeGroup(t2Group);
+    const auto t2Tables = getChangeTables(t2Changeset);
+    ASSERT_EQ(1, t2Tables.size());
+    ASSERT_STREQ("t2", t2Tables[0].c_str());
+
+    ChangeSet t1t3Changeset;
+    t1t3Changeset.FromChangeGroup(t1t3Group);
+    const auto t1t3Tables = getChangeTables(t1t3Changeset);
+    ASSERT_EQ(2, t1t3Tables.size());
+    ASSERT_STREQ("t1", t1t3Tables[0].c_str());
+    ASSERT_STREQ("t3", t1t3Tables[1].c_str());
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 TEST_F(BeSQLiteDbTests, SchemaChangeBetweenDataChangesets)
     {
     SetupDb(L"changeset.db");

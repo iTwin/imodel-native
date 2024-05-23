@@ -607,9 +607,18 @@ public:
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
+struct CRSListResponseProps
+    {
+    Utf8String m_name;
+    Utf8String m_description;
+    bool m_deprecated;
+    DRange2d m_crsExtent;
+    };
+    
 struct GeoServicesInterop
 {
     static BentleyStatus GetGeographicCRSInterpretation(BeJsValue, BeJsConst);
+    static bvector<CRSListResponseProps> GetListOfCRS(DRange2dCP extent);
 };
 
 //=======================================================================================
