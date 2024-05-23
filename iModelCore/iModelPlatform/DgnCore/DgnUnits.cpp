@@ -5,6 +5,28 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 
+/** Return an ECEF point from geographic lat/long coordinates */
+static void coordsToEcef(GeoPointCR coords, DPoint3dR ecef)
+    {
+    static const DPoint3d wgs84RadiiSquared = DPoint3d::From(6378137.0 * 6378137.0, 6378137.0 * 6378137.0, 6356752.3142451793 * 6356752.3142451793);
+
+    auto cosLatitude = cos(coords.latitude);
+    DPoint3d scratchN, scratchK;
+    scratchN.x = cosLatitude * cos(coords.longitude);
+    scratchN.y = cosLatitude * sin(coords.longitude);
+    scratchN.z = sin(coords.latitude);
+    scratchN.Normalize();
+
+    scratchK.x = wgs84RadiiSquared.x * scratchN.x;
+    scratchK.y = wgs84RadiiSquared.y * scratchN.y;
+    scratchK.z = wgs84RadiiSquared.z * scratchN.z;
+    double gamma = sqrt(scratchN.DotProduct(scratchK));
+    scratchK.Scale(1.0 / gamma);
+    scratchN.Scale(coords.elevation);
+
+    ecef.Init(scratchK.x + scratchN.x, scratchK.y + scratchN.y, scratchK.z + scratchN.z);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -24,6 +46,46 @@ Transform EcefLocation::ComputeTransform()
 
     // Otherwise, use the angles (or orientation) combined with origin to create the ECEF transform.
     return m_angles.ToTransform(m_origin);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+EcefLocation EcefLocation::FromGeographic(GeoPointCR origin, DPoint3dCP point)
+    {
+    static const double earthRadiusWGS84Polar = 6356752.3142;
+
+    DPoint3d ecefOrigin;  coordsToEcef(origin, ecefOrigin);
+    auto deltaRadians = 10 / earthRadiusWGS84Polar;
+    GeoPoint northCarto;  northCarto.Init(origin.longitude, origin.latitude + deltaRadians, origin.elevation);
+    GeoPoint eastCarto;  eastCarto.Init(origin.longitude + deltaRadians, origin.latitude, origin.elevation);
+    DPoint3d ecefNorth;  coordsToEcef(northCarto, ecefNorth);
+    DPoint3d ecefEast;  coordsToEcef(eastCarto, ecefEast);
+    DVec3d xVector = DVec3d::FromStartEnd(ecefOrigin, ecefEast);  xVector.Normalize();
+    DVec3d yVector = DVec3d::FromStartEnd(ecefOrigin, ecefNorth);  yVector.Normalize();
+    RotMatrix rotMatrix = RotMatrix::From2Vectors(xVector, yVector);
+    RotMatrix matrix;
+    matrix.SquareAndNormalizeColumns(rotMatrix, 0, 1);
+
+    // ###TODO, if necessary in the future.
+    // if (angle) {
+    //   const north = Matrix3d.createRotationAroundAxisIndex(AxisIndex.Z, angle);
+    //   matrix.multiplyMatrixMatrix(north, matrix);
+    // }
+
+    if (point) {
+      DPoint3d delta = DPoint3d::From(-point->x, -point->y, -point->z);
+      matrix.Multiply(delta);
+      ecefOrigin.Add(delta);
+    }
+
+    YawPitchRollAngles angles;
+    if (!YawPitchRollAngles::TryFromRotMatrix(angles, matrix))
+        {
+        return EcefLocation(); // default EcefLocation with m_isValid=false indicates failure
+        }
+
+    return EcefLocation(ecefOrigin, angles, 0);
     }
 
 /*---------------------------------------------------------------------------------**//**
