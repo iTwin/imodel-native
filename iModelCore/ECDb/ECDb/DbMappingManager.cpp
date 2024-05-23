@@ -132,13 +132,13 @@ BentleyStatus DbMappingManager::Classes::MoveProperty(Context& ctx, ECPropertyCR
         }
 
         newColMap[propertyMap] = newCol;
-        LOG.debugv("AccessString (baseline): %s -> %s.%s  remap to %s.%s.", 
+        LOG.debugv("AccessString (baseline): %s -> %s.%s  remap to %s.%s.",
             propertyMap->GetAccessString().c_str(),
             propertyMap->GetTable().GetName().c_str(),
             propertyMap->GetColumn().GetName().c_str(),
             newCol->GetTable().GetName().c_str(),
             newCol->GetName().c_str());
-        
+
     }
     columnFactory.ResetCurrentPropertyOverflowFlag();
 
@@ -708,7 +708,7 @@ BentleyStatus DbMappingManager::Classes::MapIndexes(SchemaImportContext& importC
         }
 
     auto& table = classMap.GetJoinedOrPrimaryTable();
-    
+
     // Pre-process schema indexes to identify system indexes
     bset<Utf8String> systemIndexes;
     for (const auto& dbIndex : table.GetIndexes())
@@ -771,7 +771,7 @@ BentleyStatus DbMappingManager::Classes::MapIndexes(SchemaImportContext& importC
             const auto foundIndex = *itr;
             table.RemoveIndexDef(foundIndex);
 
-            if (BE_SQLITE_OK != importCtx.GetECDb().ExecuteDdl(SqlPrintfString("DROP INDEX IF EXISTS [%s]", foundIndex.c_str())))
+            if (BE_SQLITE_OK != importCtx.GetECDb().GetImpl().ExecuteDDL(SqlPrintfString("DROP INDEX IF EXISTS [%s]", foundIndex.c_str())))
                 return ERROR;
 
             if (BE_SQLITE_OK != importCtx.GetECDb().ExecuteSql(SqlPrintfString("DELETE FROM main." TABLE_Index " WHERE Name = '%s'", foundIndex.c_str())))
@@ -1032,8 +1032,8 @@ BentleyStatus DbMappingManager::Classes::TryDetermineRelationshipMappingType(Rel
     {
     LinkTableRelationshipMapCustomAttribute linkTableRelationshipMapCA;
     const bool hasLinkTableCA = ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(linkTableRelationshipMapCA, relClass);
-    const bool mustBeLinkTable = hasLinkTableCA 
-                                || (relClass.GetSource().GetMultiplicity().GetUpperLimit() > 1 && relClass.GetTarget().GetMultiplicity().GetUpperLimit() > 1) 
+    const bool mustBeLinkTable = hasLinkTableCA
+                                || (relClass.GetSource().GetMultiplicity().GetUpperLimit() > 1 && relClass.GetTarget().GetMultiplicity().GetUpperLimit() > 1)
                                 || relClass.GetPropertyCount(true) > 0;
     const bool isRootClass = !relClass.HasBaseClasses();
 

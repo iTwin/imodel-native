@@ -303,7 +303,7 @@ TEST_F(RevisionTestFixture, Workflow)
 
         ChangesetPropsPtr revision = CreateRevision(Utf8PrintfString("-cst%d", revNum).c_str());
         ASSERT_TRUE(revision.IsValid());
-        ASSERT_FALSE(revision->ContainsSchemaChanges(*m_db));
+        ASSERT_FALSE(revision->ContainsDdlChanges(*m_db));
 
         revisions.push_back(revision);
         }
@@ -350,7 +350,7 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
 
     ChangesetPropsPtr revision1 = CreateRevision("-cs2");
     ASSERT_TRUE(revision1.IsValid());
-    ASSERT_FALSE(revision1->ContainsSchemaChanges(*m_db));
+    ASSERT_FALSE(revision1->ContainsDdlChanges(*m_db));
 
     // Create Revision 2 after deleting the same element
     DgnElementCPtr el = m_db->Elements().Get<DgnElement>(elementId);
@@ -362,7 +362,7 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
 
     ChangesetPropsPtr revision2 = CreateRevision("-cs3");
     ASSERT_TRUE(revision2.IsValid());
-    ASSERT_FALSE(revision2->ContainsSchemaChanges(*m_db));
+    ASSERT_FALSE(revision2->ContainsDdlChanges(*m_db));
 
     // Create Revision 3 deleting the test model (the API causes Elements to get deleted)
     RestoreTestFile();
@@ -374,7 +374,7 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
 
     ChangesetPropsPtr revision3 = CreateRevision("-cs4");
     ASSERT_TRUE(revision3.IsValid());
-    ASSERT_FALSE(revision3->ContainsSchemaChanges(*m_db));
+    ASSERT_FALSE(revision3->ContainsDdlChanges(*m_db));
 
     ChangesetStatus revStatus;
 

@@ -106,18 +106,24 @@ DbResult ECDb::_AfterSchemaChangeSetApplied() const
     ClearECDbCache();
     Schemas().RepopulateCacheTables();
     if (!Schemas().GetSchemaSync().GetInfo().IsEmpty()) {
+        /**
+         * NOTE: We disable DDL tracking to avoid generating new changes after
+         * changeset is applied. These DDL does not need to be tracked as its already
+         * part of changeset and when SchemaSync is on we do not execute DDL from
+         * changeset instead we use ec_* schema data to recreate DDL and execute them.
+        */
+        ECDb::Impl::DisableDDLTracking _(*this);
         if (Schemas().GetSchemaSync().UpdateDbSchema() != SchemaSync::Status::OK){
             return BE_SQLITE_ERROR;
         }
     }
-    Schemas().UpgradeECInstances();
     return BE_SQLITE_OK;
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-DbResult ECDb::_AfterDataChangeSetApplied()
+DbResult ECDb::_AfterDataChangeSetApplied(bool schemaChanged)
     {
     BentleyStatus status = m_pimpl->GetProfileManager().RefreshProfileVersion();
     if (status != SUCCESS)
@@ -126,6 +132,12 @@ DbResult ECDb::_AfterDataChangeSetApplied()
     status = ResetInstanceIdSequence(GetBriefcaseId());
     if (status != SUCCESS)
         return BE_SQLITE_ERROR;
+
+    if (schemaChanged) {
+        status = Schemas().UpgradeECInstances();
+        if (status != SUCCESS)
+            return BE_SQLITE_ERROR;
+    }
     return BE_SQLITE_OK;
     }
 

@@ -57,7 +57,13 @@ public:
 
     //! Returns the profile version of the current file.
     //! Note this method must only be called after having called CheckProfileVersion, CreateProfile or UpgradeProfile.
-    ProfileVersion const& GetProfileVersion() const { BeAssert(!m_profileVersion.IsEmpty()); return m_profileVersion; }
+    ProfileVersion const& GetProfileVersion() const {
+        if (m_profileVersion.IsEmpty()) {
+            RefreshProfileVersion();
+        }
+        BeAssert(!m_profileVersion.IsEmpty());
+        return m_profileVersion;
+    }
 
     static bset<Utf8CP, CompareIUtf8Ascii> GetECDbSchemaNames()
         {

@@ -12,7 +12,6 @@
 #include <atomic>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
 //=======================================================================================
 // @bsiclass
 //+===============+===============+===============+===============+===============+======
@@ -20,11 +19,11 @@ struct IdFactory final: NonCopyableClass {
     struct IdSequence final: NonCopyableClass {
         private:
             mutable std::atomic<uint64_t> m_id;
-            bool m_isIntializedFromTable;
+            bool m_isInitializedFromTable;
         public:
-            explicit IdSequence(uint64_t id, bool isIntializedFromTable) :m_id(id), m_isIntializedFromTable(isIntializedFromTable){}
-            BeInt64Id NextId() const { BeAssert(m_isIntializedFromTable); return BeInt64Id(++m_id); }
-            bool IsIntializedFromTable() const { return m_isIntializedFromTable; }
+            explicit IdSequence(uint64_t id, bool isInitializedFromTable) :m_id(id), m_isInitializedFromTable(isInitializedFromTable){}
+            BeInt64Id NextId() const { BeAssert(m_isInitializedFromTable); return BeInt64Id(++m_id); }
+            bool IsInitializedFromTable() const { return m_isInitializedFromTable; }
             static std::unique_ptr<IdSequence> Create(ECDbCR db, Utf8CP tableName, Utf8CP idColumnName);
     };
 
@@ -47,7 +46,7 @@ struct IdFactory final: NonCopyableClass {
         mutable std::unique_ptr<IdSequence> m_relationshipConstraintIdSeq;
         mutable std::unique_ptr<IdSequence> m_relationshipConstraintClassIdSeq;
         mutable std::unique_ptr<IdSequence> m_schemaIdSeq;
-        mutable std::unique_ptr<IdSequence> m_schemaReferencIdSeq;
+        mutable std::unique_ptr<IdSequence> m_schemaReferenceIdSeq;
         mutable std::unique_ptr<IdSequence> m_tableIdSeq;
         mutable std::unique_ptr<IdSequence> m_unitIdSeq;
         mutable std::unique_ptr<IdSequence> m_unitSystemIdSeq;
@@ -72,7 +71,7 @@ struct IdFactory final: NonCopyableClass {
         IdSequence& RelationshipConstraint() const { return *m_relationshipConstraintIdSeq; }
         IdSequence& RelationshipConstraintClass() const { return *m_relationshipConstraintClassIdSeq; }
         IdSequence& Schema() const { return *m_schemaIdSeq; }
-        IdSequence& SchemaReference() const { return *m_schemaReferencIdSeq; }
+        IdSequence& SchemaReference() const { return *m_schemaReferenceIdSeq; }
         IdSequence& Table() const { return *m_tableIdSeq; }
         IdSequence& Unit() const { return *m_unitIdSeq; }
         IdSequence& UnitSystem() const { return *m_unitSystemIdSeq; }
@@ -90,8 +89,16 @@ struct PragmaManager;
 struct ECDb::Impl final
     {
 friend struct ECDb;
+friend struct DisableDDLTracking;
 
 public:
+    struct DisableDDLTracking {
+        private:
+            ECDbCR m_ecdb;
+        public:
+            DisableDDLTracking(ECDbCR ecdb): m_ecdb(ecdb) {m_ecdb.GetImpl().m_disableDDLTracking = true; }
+            ~DisableDDLTracking() { m_ecdb.GetImpl().m_disableDDLTracking = false; }
+    };
     //=======================================================================================
     //! The clear cache counter is incremented with every call to ClearECDbCache. This is used
     //! by code that refers to objects held in the cache to invalidate itself.
@@ -161,6 +168,7 @@ private:
     mutable std::unique_ptr<ExtractInstFunc> m_extractInstFunc;
     mutable std::unique_ptr<ExtractPropFunc> m_extractPropFunc;
     mutable EC::ECSqlConfig m_ecSqlConfig;
+    mutable bool m_disableDDLTracking;
     mutable std::unique_ptr<PragmaManager> m_pragmaProcessor;
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
     explicit Impl(ECDbR ecdb);
@@ -224,6 +232,7 @@ public:
     ChangeManager const& GetChangeManager() const { return m_changeManager; }
     BeGuid GetId() const  {return m_id; }
     IdFactory& GetIdFactory() const;
+    DbResult ExecuteDDL(Utf8CP) const;
     PragmaManager& GetPragmaManager() const;
     //! The clear cache counter is incremented with every call to ClearECDbCache. This is used
     //! by code that refers to objects held in the cache to invalidate itself.
@@ -240,7 +249,10 @@ public:
         return *m_instanceReader;
     }
     IssueDataSource const& Issues() const { return m_issueReporter; }
-
+    ProfileVersion const& RefreshProfileVersion() const {
+        m_profileManager.RefreshProfileVersion();
+        return m_profileManager.GetProfileVersion();
+    }
     BeMutex& GetMutex() const { return m_mutex; }
     };
 
