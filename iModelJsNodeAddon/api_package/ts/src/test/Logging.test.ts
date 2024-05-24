@@ -17,6 +17,10 @@ describe("Logger", () => {
     iModelJsNative.clearLogLevelCache();
   });
 
+  after(() => {
+    Logger.setLevel(testCategory, LogLevel.None);
+  });
+
   afterEach(() => {
     sinon.restore();
   });
@@ -87,7 +91,8 @@ describe("Logger", () => {
     const count = 50;
     let onFirstEmission: () => void;
     let isFirstEmission = true;
-    const logTrace = sinon.stub(iModelJsNative.logger, "logTrace").callsFake((_category, _message) => {
+    const logTrace = sinon.stub(iModelJsNative.logger, "logTrace").withArgs(testCategory, sinon.match.string);
+    logTrace.callsFake(() => {
       if (isFirstEmission) {
         onFirstEmission();
         isFirstEmission = false;
