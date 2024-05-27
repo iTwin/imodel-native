@@ -39,49 +39,49 @@ DbResult ProfileUpgrader_4003::_Upgrade(ECDbCR ecdb) const
 //+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
     {
-    DbResult stat = ecdb.ExecuteDdl("ALTER TABLE " TABLE_Schema " ADD COLUMN OriginalECXmlVersionMajor INTEGER");
+    DbResult stat = ecdb.GetImpl().ExecuteDDL("ALTER TABLE " TABLE_Schema " ADD COLUMN OriginalECXmlVersionMajor INTEGER");
     if (BE_SQLITE_OK != stat)
         {
         LOG.errorv("ECDb profile upgrade failed: Could not add column OriginalECXmlVersionMajor to table " TABLE_Schema ": %s.", ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    stat = ecdb.ExecuteDdl("ALTER TABLE " TABLE_Schema " ADD COLUMN OriginalECXmlVersionMinor INTEGER");
+    stat = ecdb.GetImpl().ExecuteDDL("ALTER TABLE " TABLE_Schema " ADD COLUMN OriginalECXmlVersionMinor INTEGER");
     if (BE_SQLITE_OK != stat)
         {
         LOG.errorv("ECDb profile upgrade failed: Could not add column OriginalECXmlVersionMinor to table " TABLE_Schema ": %s.", ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    stat = ecdb.ExecuteDdl(TABLEDDL_UnitSystem);
+    stat = ecdb.GetImpl().ExecuteDDL(TABLEDDL_UnitSystem);
     if (BE_SQLITE_OK != stat)
         {
         LOG.errorv("ECDb profile upgrade failed: Could not create table " TABLE_UnitSystem " and indexes: %s.", ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    stat = ecdb.ExecuteDdl(TABLEDDL_Phenomenon);
+    stat = ecdb.GetImpl().ExecuteDDL(TABLEDDL_Phenomenon);
     if (BE_SQLITE_OK != stat)
         {
         LOG.errorv("ECDb profile upgrade failed: Could not create table " TABLE_Phenomenon " and indexes: %s.", ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    stat = ecdb.ExecuteDdl(TABLEDDL_Unit);
+    stat = ecdb.GetImpl().ExecuteDDL(TABLEDDL_Unit);
     if (BE_SQLITE_OK != stat)
         {
         LOG.errorv("ECDb profile upgrade failed: Could not create table " TABLE_Unit " and indexes: %s.", ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    stat = ecdb.ExecuteDdl(TABLEDDL_Format);
+    stat = ecdb.GetImpl().ExecuteDDL(TABLEDDL_Format);
     if (BE_SQLITE_OK != stat)
         {
         LOG.errorv("ECDb profile upgrade failed: Could not create table " TABLE_Format " and indexes: %s.", ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    stat = ecdb.ExecuteDdl(TABLEDDL_FormatCompositeUnit);
+    stat = ecdb.GetImpl().ExecuteDDL(TABLEDDL_FormatCompositeUnit);
     if (BE_SQLITE_OK != stat)
         {
         LOG.errorv("ECDb profile upgrade failed: Could not create table " TABLE_FormatCompositeUnit " and indexes: %s.", ecdb.GetLastError().c_str());
