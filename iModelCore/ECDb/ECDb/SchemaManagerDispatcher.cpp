@@ -1005,74 +1005,7 @@ ClassMap* TableSpaceSchemaManager::AddClassMap(std::unique_ptr<ClassMap> classMa
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DropSchemaResult MainSchemaManager::DropSchema(Utf8StringCR name, SchemaImportToken const* schemaImportToken, bool logIssue) const {
-    ECDB_PERF_LOG_SCOPE("Drop schema");
-    STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::DropSchema");
-    OnBeforeSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
-    SchemaImportContext ctx(m_ecdb, SchemaManager::SchemaImportOptions());
-    Policy policy = PolicyManager::GetPolicy(SchemaImportPermissionPolicyAssertion(m_ecdb, schemaImportToken));
-    if (!policy.IsSupported()) {
-        LOG.error("Failed to drop ECSchema: Caller has not provided a SchemaImportToken.");
-        return DropSchemaResult(DropSchemaResult::Status::Error);
-    }
-    // if (!GetSchemaSync().GetInfo().IsEmpty()) {
-    //     m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, "Failed to drop ECSchema. ECDb is configured to use Schema Sync which does not support drop schema.");
-    //     return DropSchemaResult(DropSchemaResult::Status::Error);
-    // }
-    if (m_ecdb.IsReadonly()) {
-        m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0278, "Failed to drop ECSchema. ECDb file is read-only.");
-        return DropSchemaResult(DropSchemaResult::Status::Error);
-    }
-
-    if (m_ecdb.Schemas().GetSchema(name) == nullptr) {
-        m_ecdb.GetImpl().Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0279, "Failed to drop ECSchema. Schema provided does not exist");
-        return DropSchemaResult(DropSchemaResult::Status::ErrorSchemaNotFound);
-    }
-
-    const int majorMinorSub1Comp = m_ecdb.GetECDbProfileVersion().CompareTo(ECDb::CurrentECDbProfileVersion(), ProfileVersion::VERSION_MajorMinorSub1);
-    if (majorMinorSub1Comp > 0) {
-        m_ecdb.GetImpl().Issues().ReportV(
-            IssueSeverity::Error,
-            IssueCategory::BusinessProperties,
-            IssueType::ECDbIssue,
-            ECDbIssueId::ECDb_0280,
-            "Failed to drop ECSchema. Cannot drop schema from a file which was created with a higher version of this softwares. The file's version, however, is %s.",
-            ECDb::CurrentECDbProfileVersion().ToString().c_str(),
-            m_ecdb.GetECDbProfileVersion().ToString().c_str()
-        );
-        return DropSchemaResult(DropSchemaResult::Status::Error);
-    }
-
-    BeMutexHolder lock(m_mutex);
-    auto rc =  SchemaWriter::DropSchema(name, ctx, logIssue);
-    if (rc.IsError()) {
-        return rc;
-    }
-
-    if (SUCCESS != ViewGenerator::DropECClassViews(m_ecdb))
-        return DropSchemaResult(DropSchemaResult::Status::Error);
-
-    if (SUCCESS != CreateOrUpdateIndexesInDb(ctx))
-        {
-        ClearCache();
-        return DropSchemaResult(DropSchemaResult::Status::Error);
-        }
-
-    if (SUCCESS != PurgeOrphanTables(ctx))
-        {
-        ClearCache();
-        return DropSchemaResult(DropSchemaResult::Status::Error);
-        }
-
-    m_ecdb.ClearECDbCache();
-    if (SUCCESS != DbMapValidator(ctx).Validate()) {
-        ClearCache();
-        return DropSchemaResult(DropSchemaResult::Status::Error);
-    }
-
-    m_ecdb.ClearECDbCache();
-    OnAfterSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
-    STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaManager::DropSchema");
-    return rc;
+    return DropSchemas({ name }, schemaImportToken, logIssue);
 }
 
 /*---------------------------------------------------------------------------------------

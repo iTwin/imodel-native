@@ -261,7 +261,6 @@ struct SchemaWriter final
 
     public:
         static SchemaImportResult ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap, SchemaImportContext&, bvector<ECN::ECSchemaCP> const& primarySchemasOrderedByDependencies);
-        static DropSchemaResult DropSchema(Utf8StringCR name, SchemaImportContext& schemaImportCtx, bool logIssue);
         static DropSchemaResult DropSchemas(bvector<Utf8String> schemaNames, SchemaImportContext& schemaImportCtx, bool logIssue);
     };
 
