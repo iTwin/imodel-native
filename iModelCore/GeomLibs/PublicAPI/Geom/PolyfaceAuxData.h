@@ -80,7 +80,7 @@ template <typename T_Data>  struct T_PolyfaceAuxChannel : RefCountedBase
     bvector<DataPtr> const&     GetData() const             { return m_data; }                                                                  //! Return reference to the data.
     bool                        IsScalar() const            { return IsScalar(m_dataType); }                                                    //! Return true if scalar data (1 value per vertex).
     size_t                      GetValueCount() const       { return m_data.empty() ? 0 : m_data.front()->GetValueCount() / GetBlockSize(); }   //! Return the number of values.
-    size_t                      GetBlockSize() const        { return GetBlockSize(m_dataType) ? 1 : 3; }                                        //! Return the number of values per vertex.
+    size_t                      GetBlockSize() const        { return GetBlockSize(m_dataType); }                                                //! Return the number of values per vertex.
 
         //! Append data from channel input at index.
     void AppendDataByIndex(T_PolyfaceAuxChannel const& input, size_t index)

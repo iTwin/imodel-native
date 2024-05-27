@@ -97,7 +97,7 @@ struct TrackedECDb : ECDb {
     private:
         std::unique_ptr<ECDbChangeTracker> m_tracker;
         ECDbHub* m_hub;
-        int m_changesetId = 0;
+        int m_changesetId = -1;
         void SetupTracker(std::unique_ptr<ECDbChangeTracker> tracker = nullptr);
         virtual void _OnDbClose() override;
         virtual DbResult _OnDbCreated(CreateParams const& params) override;
