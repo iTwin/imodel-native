@@ -830,11 +830,7 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
     bool mergeNeeded = HasPendingTxns() && m_initTableHandlers; // if tablehandlers are not present we can't merge - happens for schema upgrade
     Rebase rebase;
 
-    auto const ignoreNoop = containsSchemaChanges;
-    /** This will disable cascade action and so no new changes are created when applying changeset */
-    auto const fkNoAction = true;
-
-    DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, mergeNeeded ? &rebase : nullptr, false, ignoreNoop, fkNoAction);
+    DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, mergeNeeded ? &rebase : nullptr, false);
     if (result != BE_SQLITE_OK) {
         if (changeStream.GetLastErrorMessage().empty())
             m_dgndb.ThrowException("failed to apply changes", result);
@@ -950,7 +946,7 @@ void TxnManager::ReverseChangeset(ChangesetPropsCR changeset) {
     if (GetParentChangesetId() != changeset.GetChangesetId())
         m_dgndb.ThrowException("changeset out of order", (int) ChangesetStatus::ParentMismatch);
 
-    if (changeset.ContainsSchemaChanges(m_dgndb))
+    if (changeset.ContainsDdlChanges(m_dgndb))
         m_dgndb.ThrowException("Cannot reverse a changeset containing schema changes", (int) ChangesetStatus::ReverseOrReinstateSchemaChanges);
 
     ChangesetFileReader changeStream(changeset.GetFileName(), m_dgndb);
@@ -987,17 +983,23 @@ ChangesetStatus TxnManager::MergeChangeset(ChangesetPropsCR changeset) {
 
     ChangesetFileReader changeStream(changeset.GetFileName(), m_dgndb);
 
-    bool containsSchemaChanges = changeset.ContainsSchemaChanges(m_dgndb);
+    const bool containsDDLChanges = changeset.ContainsDdlChanges(m_dgndb);
 
     ChangesetStatus status;
-    if (containsSchemaChanges) {
+    if (containsDDLChanges) {
         // Note: Schema changes may not necessary imply ddl changes. They could just be 'minor' ecschema/mapping changes.
         status = MergeDdlChanges(changeset, changeStream);
         if (ChangesetStatus::Success != status)
             return status;
     }
 
-    return MergeDataChanges(changeset, changeStream, containsSchemaChanges);
+
+    /**
+     * The value of this boolean variable is determined by checking if the changeset
+     * contains DDL changes or if the changeset type includes the Schema change type.
+     */
+    const bool hasEcOrDdlChanges = containsDDLChanges || changeset.ContainsEcChanges();
+    return MergeDataChanges(changeset, changeStream, hasEcOrDdlChanges);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -1238,7 +1240,7 @@ struct DisableTracking {
 * Apply a changeset to the database. Notify all TxnTables about what was in the Changeset afterwards.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bool containsSchemaChanges, Rebase* rebase, bool invert, bool ignoreNoop, bool fkNoAction) {
+DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bool containsSchemaChanges, Rebase* rebase, bool invert) {
     BeAssert(action != TxnAction::None);
     AutoRestore<TxnAction> saveAction(&m_action, action);
 
@@ -1258,41 +1260,77 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     }
 
 
-    if (!m_dgndb.IsReadonly()) {
-        DisableTracking _v(*this);
-        auto result = changeset.ApplyChanges(m_dgndb, rebase, invert, ignoreNoop, fkNoAction); // this actually updates the database with the changes
-        if (result != BE_SQLITE_OK) {
-            LOG.errorv("failed to apply changeset: %s", BeSQLiteLib::GetErrorName(result));
-            m_dgndb.AbandonChanges();
-            if (containsSchemaChanges)
-                m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
-            return result;
-        }
-    }
+    // apply schema part of changeset before data changes if schema changes are present
+    if (containsSchemaChanges) {
+        m_dgndb.Schemas().OnBeforeSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
+        auto schemaApplyArgs = ApplyChangesArgs::Default()
+            .SetRebase(rebase)
+            .SetInvert(invert)
+            .SetIgnoreNoop(true)
+            .SetFkNoAction(true)
+            .ApplyOnlySchemaChanges();
 
-    if (action == TxnAction::Merge) {
-        if (containsSchemaChanges) {
-            // Note: All caches that hold ec-classes and handler-associations in memory have to be cleared.
-            // The call to ClearECDbCache also clears all EC related caches held by DgnDb.
-            // Additionally, we force merging of revisions containing schema changes to happen right when the
-            // DgnDb is opened, and the Element caches haven't had a chance to get initialized.
-            auto result = m_dgndb.AfterSchemaChangeSetApplied();
+        if(!m_dgndb.IsReadonly()) {
+            const auto result = [&]() {
+                DisableTracking _v(*this);
+                return changeset.ApplyChanges(m_dgndb, schemaApplyArgs);
+            }();
             if (result != BE_SQLITE_OK) {
-                LOG.errorv("ApplyChanges failed schema changes: %s", BeSQLiteLib::GetErrorName(result));
-                BeAssert(false);
+                LOG.errorv("failed to apply changeset: %s", BeSQLiteLib::GetErrorName(result));
                 m_dgndb.AbandonChanges();
                 m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
                 return result;
             }
         }
 
-        auto result = m_dgndb.AfterDataChangeSetApplied();
+        m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
+            if (action == TxnAction::Merge) {
+                const auto result = m_dgndb.AfterSchemaChangeSetApplied();
+                if (result != BE_SQLITE_OK) {
+                    LOG.errorv("ApplyChanges failed schema changes: %s", BeSQLiteLib::GetErrorName(result));
+                    BeAssert(false);
+                    m_dgndb.AbandonChanges();
+                    return result;
+                }
+            }
+    }
+
+    auto dataApplyArgs = ApplyChangesArgs::Default()
+        .SetRebase(rebase)
+        .SetInvert(invert)
+        .SetIgnoreNoop(false)
+        .SetFkNoAction(true);
+
+    // If schema changes are present, we need to apply only data changes after schema changes are applied.
+    if (containsSchemaChanges){
+        dataApplyArgs.ApplyOnlyDataChanges();
+    }
+
+    if (!m_dgndb.IsReadonly()) {
+        const auto result = [&]() {
+            DisableTracking _v(*this);
+            return changeset.ApplyChanges(m_dgndb, dataApplyArgs);
+        }();
+
+        if (result != BE_SQLITE_OK) {
+            LOG.errorv("failed to apply changeset: %s", BeSQLiteLib::GetErrorName(result));
+            m_dgndb.AbandonChanges();
+            if (containsSchemaChanges) {
+                m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
+            }
+            return result;
+        }
+    }
+
+    if (action == TxnAction::Merge) {
+        auto result = m_dgndb.AfterDataChangeSetApplied(containsSchemaChanges);
         if (result != BE_SQLITE_OK) {
             LOG.errorv("ApplyChanges failed data changes: %s", BeSQLiteLib::GetErrorName(result));
             BeAssert(false);
             m_dgndb.AbandonChanges();
-            if (containsSchemaChanges)
+            if (containsSchemaChanges) {
                 m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
+            }
             return result;
         }
     }
@@ -1440,7 +1478,7 @@ DbResult TxnManager::ApplyDdlChanges(DdlChangesCR ddlChanges) {
     BeAssert(!ddlChanges._IsEmpty() && "DbSchemaChangeSet is empty");
     auto info = GetDgnDb().Schemas().GetSchemaSync().GetInfo();
     if (!info.IsEmpty()) {
-        LOG.infov("Skipping DDL Changes as IModel has schema sync enabled. Sync-Id {%s}.", info.GetSyncId().ToString().c_str());
+        LOG.infov("Skipping DDL Changes as IModel has schema sync enabled. Sync-Id {%s}.", info.GetSyncId().c_str());
         return BE_SQLITE_OK;
     }
 
