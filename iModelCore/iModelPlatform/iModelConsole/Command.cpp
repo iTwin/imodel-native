@@ -318,7 +318,7 @@ void SyncCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
     if (args[1].EqualsIAscii("init"))
         {
-        if (SchemaSync::Status::OK != session.GetFile().GetECDbHandle()->Schemas().GetSchemaSync().Init(SchemaSync::SyncDbUri(args[2].c_str())))
+        if (SchemaSync::Status::OK != session.GetFile().GetECDbHandle()->Schemas().GetSchemaSync().Init(SchemaSync::SyncDbUri(args[2].c_str()),"xxxx", false))
             {
             IModelConsole::WriteErrorLine("Failed to init : %s",args[2].c_str());
             }
