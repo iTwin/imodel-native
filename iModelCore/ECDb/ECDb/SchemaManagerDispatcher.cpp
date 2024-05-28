@@ -880,7 +880,7 @@ Nullable<ECDerivedClassesList> TableSpaceSchemaManager::GetAllDerivedClasses(ECN
         LOG.errorv("SchemaManager::GetAllDerivedClasses failed for ECClass %s. Its subclasses could not be loaded.", baseClass.GetFullName());
         return nullptr;
         }
-    
+
     return Nullable<ECDerivedClassesList>(m_reader.GetAllDerivedClasses(id));
     }
 
@@ -1199,7 +1199,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
             m_ecdb.GetImpl().Issues().ReportV(
                 IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0585,
                 "Failed to import ECSchemas. Cannot import schemas into a file which is not setup to use schema sync but sync db uri was provided. Sync-Id: {%s}, uri: {%s}.",
-                localDbInfo.GetSyncId().ToString().c_str(),
+                localDbInfo.GetSyncId().c_str(),
                 resolvedSyncDbUri.GetUri().c_str()
             );
             return SchemaImportResult::ERROR;
@@ -1213,7 +1213,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
                     IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0586,
                     "Failed to import ECSchemas. Cannot import schemas into a file which is setup to use schema sync but sync db uri was not provided. Sync-Id: {%s}.",
 
-                    localDbInfo.GetSyncId().ToString().c_str()
+                    localDbInfo.GetSyncId().c_str()
                 );
                 return SchemaImportResult::ERROR;
                 }
@@ -1223,7 +1223,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
                 m_ecdb.GetImpl().Issues().ReportV(
                     IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0587,
                     "Failed to import ECSchemas. Unable to pull changes from Sync-Id: {%s}, uri: {%s}.",
-                    localDbInfo.GetSyncId().ToString().c_str(),
+                    localDbInfo.GetSyncId().c_str(),
                     resolvedSyncDbUri.GetUri().c_str()
                 );
                 return SchemaImportResult::ERROR;
@@ -1233,7 +1233,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
                 LOG.error("Failed to import ECSchemas: Failed to create id factory.");
                 return SchemaImportResult::ERROR;
                 }
-            }   
+            }
         }
     for (auto schema: schemas) {
         if (ECSchemaOwnershipClaimAppData::HasOwnershipClaim(*schema) && !ECSchemaOwnershipClaimAppData::IsOwnedBy(GetECDb(), *schema)) {
@@ -1298,7 +1298,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bv
             m_ecdb.GetImpl().Issues().ReportV(
                 IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0587,
                 "Failed to import ECSchemas. Unable to push changes to Sync-Id: {%s}, uri: {%s}.",
-                localDbInfo.GetSyncId().ToString().c_str(),
+                localDbInfo.GetSyncId().c_str(),
                 resolvedSyncDbUri.GetUri().c_str());
             return SchemaImportResult::ERROR;
             }
@@ -1952,7 +1952,7 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
                         }
 
                     // Drop the existing index as its defintion has modified and need to be recreated.
-                    if (BE_SQLITE_OK != m_ecdb.ExecuteDdl(SqlPrintfString("DROP INDEX IF EXISTS [%s]", index.GetName().c_str())))
+                    if (BE_SQLITE_OK != m_ecdb.GetImpl().ExecuteDDL(SqlPrintfString("DROP INDEX IF EXISTS [%s]", index.GetName().c_str())))
                         return ERROR;
 
                     if (SUCCESS != DbSchemaPersistenceManager::CreateIndex(m_ecdb, index, ddl))
@@ -1972,7 +1972,7 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
             else
                 {
                 // This is for safety.
-                if (BE_SQLITE_OK != m_ecdb.ExecuteDdl(SqlPrintfString("DROP INDEX IF EXISTS [%s]", index.GetName().c_str())))
+                if (BE_SQLITE_OK != m_ecdb.GetImpl().ExecuteDDL(SqlPrintfString("DROP INDEX IF EXISTS [%s]", index.GetName().c_str())))
                     return ERROR;
 
                 LOG.debugv("Schema Import> Creating Index '%s'.", index.GetName().c_str());

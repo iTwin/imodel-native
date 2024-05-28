@@ -766,7 +766,7 @@ double              tolerance
     bool ComputeSecondMomentAreaProducts
         (
         DMatrix4dR products,
-        double relativeTolerancefForFacets,
+        double relativeToleranceForFacets,
         int numGauss,
         int &numEvaluations
         ) const;
@@ -846,6 +846,16 @@ bvector<CurveAndSolidLocationDetail> &curvePoints     //!< [out] hit points on c
     //! Delete previous trim and add new trim.
     void SetTrim (CurveVectorR curves);
 
+    //! Adjust stroked boundary loops of a closed B-spline surface by splitting them across a parametric seam, where
+    //! the knot space wraps around.
+    //! This method uses heuristics to detect a boundary loop that has successive points close to and on opposite
+    //! sides of a parametric seam. Such loops are reflected and split across the seam, resulting in multiple loops whose
+    //! union equates to the projection of a closed space curve onto the surface over its seam.
+    //! The surface's stroked boundary polygons are replaced, but all existing TrimCurves are removed.
+    //! @param [in] seamRelTol fraction of knot range to serve as relative tolerance for computing seam proximity. Pass nonpositive for default (0.01).
+    //! @return true if the operation succeeded or there are no boundaries; false if heuristics failed, in which case the instance is unchanged.
+    bool SplitStrokedBoundaryLoopsAtParametricSeams(double seamRelTol = -1.0);
+
     //! Copy poles from a row into a curve structure. index -1 is understood as "end"
     MSBsplineCurvePtr GetPolygonRowAsCurve (int index) const;
     //! Copy poles from a column into a curve structure. index -1 is understood as "end"
@@ -896,12 +906,10 @@ bvector<CurveAndSolidLocationDetail> &curvePoints     //!< [out] hit points on c
     bool IsSameStructure (MSBsplineSurfaceCR other) const;
     //! Compare all data.
     bool IsSameStructureAndGeometry (MSBsplineSurfaceCR other, double tolerance) const;
-    //! Dispatch to _IsValid(validator) virtual
-    //! <ul>
-    //! <li> Basic validation is "const".
-    //! <li> Future validators might do fixup, hence method is non-const.
-    //! </ul>
+    //! Confirm basic validity
     bool IsValidGeometry(GeometryValidatorPtr &validator) const;
+    //! Confirm basic validity using default validator
+    bool IsValidGeometry() const;
 
     }; //MSBsplineSurface
 

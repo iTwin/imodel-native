@@ -25,6 +25,9 @@
 #include <unordered_map>
 #include <list>
 #include <re2/re2.h>
+#include <unicode/ubrk.h>
+#include <unicode/ucol.h>
+#include <unicode/utf16.h>
 
 static NativeLogging::CategoryLogger LOG("BeSQLite");
 static NativeLogging::CategoryLogger NativeSqliteLog("SQLite");
@@ -815,6 +818,7 @@ void Db::Interrupt() const {return sqlite3_interrupt(GetSqlDb());}
 int64_t  Db::GetLastInsertRowId() const {return sqlite3_last_insert_rowid(GetSqlDb());}
 int      Db::GetModifiedRowCount() const {return sqlite3_changes(GetSqlDb());}
 int      Db::GetTotalModifiedRowCount() const { return sqlite3_total_changes(GetSqlDb()); }
+int64_t  Db::GetTotalModifiedRowCount64() const { return sqlite3_total_changes64(GetSqlDb()); }
 void     SnappyFromBlob::Finish() {m_blobIO.Close();}
 
 Utf8String ProfileVersion::ToJson() const { return ToString("{\"major\":%" PRIu16 ",\"minor\":%" PRIu16 ",\"sub1\":%" PRIu16 ",\"sub2\":%" PRIu16 "}"); }
@@ -945,7 +949,7 @@ static int besqliteBusyHandler(void* retry, int count) {return ((BusyRetry const
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode, std::optional<int> busyTimeout) : m_sqlDb(sqlDb), m_cachedProps(nullptr), m_blvCache(*this),
-            m_defaultTxn(*this, "default", defaultTxnMode), m_statements(10),
+            m_defaultTxn(*this, "default", defaultTxnMode), m_statements(10),m_noCaseCollation(NoCaseCollation::ASCII),
             m_regexFunc(RegExpFunc::Create()), m_regexExtractFunc(RegExpExtractFunc::Create()), m_base36Func(Base36Func::Create())
     {
     m_inCommit = false;
@@ -967,6 +971,73 @@ DbFile::DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode, s
     AddFunction(*m_regexExtractFunc);
     AddFunction(*m_base36Func);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void nocaseCollatingFuncLatin1Del(void *pCtx){
+  UCollator *p = (UCollator *)pCtx;
+  ucol_close(p);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static int nocaseCollatingFuncASCII(void *, int nLeft, const void *zLeft, int nRight, const void *zRight){
+    int r = sqlite3_strnicmp((const char *)zLeft, (const char *)zRight, (nLeft<nRight)?nLeft:nRight);
+    if(0 == r){
+        r = nLeft-nRight;
+    }
+    return r;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static int nocaseCollatingFuncLatin1(void *pCtx, int nLeft, const void *zLeft, int nRight, const void *zRight){
+  UCollationResult res;
+  UCollator *p = (UCollator*)pCtx;
+  UErrorCode status;
+  res = ucol_strcollUTF8(p, (Utf8CP)zLeft, nLeft, (Utf8CP)zRight, nRight, &status);
+  switch( res ){
+    case UCOL_LESS: return -1;
+    case UCOL_GREATER: return +1;
+    case UCOL_EQUAL: return 0;
+  }
+  return U_SUCCESS(status) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DbFile::SetNoCaseCollation(NoCaseCollation col) {
+    auto mutex = sqlite3_db_mutex(m_sqlDb);
+    sqlite3_mutex_enter(mutex);
+    const auto NOCASE = "NOCASE";
+    if (col == NoCaseCollation::ASCII) {
+        const auto rc = (DbResult)sqlite3_create_collation(m_sqlDb, NOCASE, SQLITE_UTF8, nullptr, nocaseCollatingFuncASCII);
+        if (rc == BE_SQLITE_OK){
+            m_noCaseCollation = col;
+        }
+        sqlite3_mutex_leave(mutex);
+        return rc;
+    }
+
+    UCollator *pUCollator;
+    UErrorCode status = U_ZERO_ERROR;
+    pUCollator = ucol_open("latin1", &status);
+    if( !U_SUCCESS(status) ){
+        sqlite3_mutex_leave(mutex);
+        return BE_SQLITE_ERROR;
+    }
+    ucol_setStrength(pUCollator, UCOL_PRIMARY);
+    const auto rc = sqlite3_create_collation_v2(m_sqlDb, NOCASE, SQLITE_UTF8, (void *)pUCollator, nocaseCollatingFuncLatin1, nocaseCollatingFuncLatin1Del);
+    if (rc == BE_SQLITE_OK){
+        m_noCaseCollation = col;
+    }
+    sqlite3_mutex_leave(mutex);
+    return (DbResult)rc;
+}
 
 BriefcaseLocalValueCache& DbFile::GetBLVCache() {return m_blvCache;}
 
@@ -1513,6 +1584,37 @@ DbResult DbFile::SaveProperty(PropertySpecCR spec, Utf8CP stringData, void const
     rc = stmt->Step();
     return (BE_SQLITE_DONE==rc) ? BE_SQLITE_OK : rc;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BeSQLiteLib::ZlibCompress(bvector<Byte>& compressedBuffer, const bvector<Byte>& sourceBuffer) {
+    auto compressedSize = compressBound((uLong)sourceBuffer.size());
+    compressedBuffer.resize(compressedSize);
+    if (Z_OK != compress2((Byte*)compressedBuffer.data(), &compressedSize, (Byte const*) sourceBuffer.data(), (uLong)sourceBuffer.size(), DefaultCompressionLevel)){
+        compressedBuffer.clear();
+        return false;
+    }
+    compressedBuffer.resize(compressedSize);
+    return true;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BeSQLiteLib::ZlibDecompress(bvector<Byte>& uncompressedBuffer, const bvector<Byte>& compressedBuffer, unsigned long uncompressSize) {
+    unsigned long actuallyRead = uncompressSize;
+    uncompressedBuffer.resize(uncompressSize);
+    if (Z_OK != uncompress((Byte*)uncompressedBuffer.data(), &actuallyRead, (Byte const*) compressedBuffer.data(), (uLong)compressedBuffer.size())){
+        uncompressedBuffer.clear();
+        return false;
+    }
+    if (actuallyRead != uncompressSize) {
+        uncompressedBuffer.clear();
+        return false;
+    }
+    return true;
+}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -5180,308 +5282,6 @@ static void isInVirtualSet(sqlite3_context* ctx, int nArgs, sqlite3_value** args
         }
     }
 
-//---------------------------------------------------------------------------------------
-// Direct sqlite callback when we override the LOWER and UPPER scalar functions to delegate to BeSQLiteLib::ILanguageSupport.
-// @bsimethod
-//---------------------------------------------------------------------------------------
-static void caseCallback(sqlite3_context* context, int numArgs, sqlite3_value** args)
-    {
-    // Largely a copy of icuCaseFunc16 in ext/icu/icu.c, but follows our coding standards and redirects the actual ICU call to the host.
-
-    BeSQLiteLib::ILanguageSupport* languageSupport = BeSQLiteLib::GetLanguageSupport();
-    if (nullptr == languageSupport)
-        {
-        BeAssert(false);
-        return;
-        }
-
-    if (1 != numArgs)
-        {
-        BeAssert(false);
-        return;
-        }
-
-    Utf16CP source = (Utf16CP)sqlite3_value_text16(args[0]);
-    if (nullptr == source)
-        return;
-
-    int sourceSize = sqlite3_value_bytes16(args[0]);
-    if (sourceSize <= 0)
-        return;
-
-    int resultSize = (2 * sourceSize) * sizeof(uint16_t);
-    Utf16P result = (Utf16P)sqlite3_malloc(resultSize);
-    if (nullptr == result)
-        {
-        BeAssert(false);
-        return;
-        }
-
-    if (0 != sqlite3_user_data(context))
-        languageSupport->_Upper(source, sourceSize / sizeof(uint16_t), result, resultSize / sizeof(uint16_t));
-    else
-        languageSupport->_Lower(source, sourceSize / sizeof(uint16_t), result, resultSize / sizeof(uint16_t));
-
-    sqlite3_result_text16(context, result, -1, sqlite3_free);
-    }
-
-//---------------------------------------------------------------------------------------
-// Copied from utf8.h in ICU.
-// Supports our LIKE operator implementation.
-// @bsimethod
-//---------------------------------------------------------------------------------------
-#define U8_NEXT_UNSAFE(s, i, c) \
-    {\
-    (c) = (uint8_t)(s)[(i)++]; \
-    if ((c) >= 0x80) {\
-        if ((c)<0xe0) {\
-                (c) = (((c)& 0x1f) << 6) | ((s)[(i)++] & 0x3f); \
-            } else if ((c)<0xf0) {\
-                /* no need for (c&0xf) because the upper bits are truncated after <<12 in the cast to (UChar) */ \
-                (c) = (unsigned char)(((c) << 12) | (((s)[i] & 0x3f) << 6) | ((s)[(i)+1] & 0x3f)); \
-                (i) += 2; \
-            } else {\
-                (c) = (((c)& 7) << 18) | (((s)[i] & 0x3f) << 12) | (((s)[(i)+1] & 0x3f) << 6) | ((s)[(i)+2] & 0x3f); \
-                (i) += 3; \
-            } \
-        } \
-    }
-
-//---------------------------------------------------------------------------------------
-// Copied from utf8.h in ICU.
-// Supports our LIKE operator implementation.
-// @bsimethod
-//---------------------------------------------------------------------------------------
-#define U8_COUNT_TRAIL_BYTES_UNSAFE(leadByte) (((leadByte)>=0xc0)+((leadByte)>=0xe0)+((leadByte)>=0xf0))
-
-//---------------------------------------------------------------------------------------
-// Copied from utf8.h in ICU.
-// Supports our LIKE operator implementation.
-// @bsimethod
-//---------------------------------------------------------------------------------------
-#define U8_FWD_1_UNSAFE(s, i) \
-    {\
-    (i) += 1 + U8_COUNT_TRAIL_BYTES_UNSAFE((uint8_t)(s)[i]); \
-    }
-
-//---------------------------------------------------------------------------------------
-// Actual comparison logic for our custom LIKE operator.
-// @see likeCallback
-// @bsimethod
-//---------------------------------------------------------------------------------------
-static int likeCompare(unsigned char const* patternString, unsigned char const* matchString, uint32_t escapeChar, BeSQLiteLib::ILanguageSupport* languageSupport)
-    {
-    // Largely a copy of icuLikeCompare in ext/icu/icu.c, but follows our coding standards and redirects the actual ICU call to the host.
-    // See also patternCompare in sqlite3/src/func.c... though that also supports globs and can use other nice internal utility functions that we can't, so copying is limited.
-
-    static const uint32_t MATCH_ONE = (uint32_t)'_';
-    static const uint32_t MATCH_ALL = (uint32_t)'%';
-
-    int iPattern = 0; // Current byte index in patternString
-    int iMatch = 0; // Current byte index in matchString
-    bool wasPreviousCharEscape = 0; // True if the previous character was escapeChar
-
-    while (0 != patternString[iPattern])
-        {
-        // Read (and consume) the next character from the input pattern.
-        uint32_t currPatternChar;
-        U8_NEXT_UNSAFE(patternString, iPattern, currPatternChar);
-        BeAssert(0 != currPatternChar);
-
-        // There are now 4 possibilities:
-        //  1. currPatternChar is an unescaped match-all character "%"
-        //  2. currPatternChar is an unescaped match-one character "_"
-        //  3. currPatternChar is an unescaped escape character
-        //  4. currPatternChar is to be handled as an ordinary character
-
-        if (!wasPreviousCharEscape && (MATCH_ALL == currPatternChar))
-            {
-            // Case 1.
-            uint8_t peekPatternChar;
-
-            // Skip any MATCH_ALL or MATCH_ONE characters that follow a MATCH_ALL. For each MATCH_ONE, skip one character in the test string.
-            while ((MATCH_ALL == (peekPatternChar = patternString[iPattern])) || (MATCH_ONE == peekPatternChar))
-                {
-                if (MATCH_ONE == peekPatternChar)
-                    {
-                    if (0 == matchString[iMatch])
-                        return 0;
-
-                    U8_FWD_1_UNSAFE(matchString, iMatch);
-                    }
-
-                ++iPattern;
-                }
-
-            if (0 == patternString[iPattern])
-                return 1;
-
-            while (0 != matchString[iMatch])
-                {
-                if (likeCompare(&patternString[iPattern], &matchString[iMatch], escapeChar, languageSupport))
-                    return 1;
-
-                U8_FWD_1_UNSAFE(matchString, iMatch);
-                }
-
-            return 0;
-            }
-        else if (!wasPreviousCharEscape && (MATCH_ONE == currPatternChar))
-            {
-            // Case 2.
-            if (0 == matchString[iMatch])
-                return 0;
-
-            U8_FWD_1_UNSAFE(matchString, iMatch);
-            }
-        else if (!wasPreviousCharEscape && (currPatternChar == escapeChar))
-            {
-            // Case 3.
-            wasPreviousCharEscape = true;
-            }
-        else{
-            // Case 4.
-            uint32_t currMatchChar;
-            U8_NEXT_UNSAFE(matchString, iMatch, currMatchChar);
-
-            currMatchChar = languageSupport->_FoldCase(currMatchChar);
-            currPatternChar = languageSupport->_FoldCase(currPatternChar);
-
-            if (currMatchChar != currPatternChar)
-                return 0;
-
-            wasPreviousCharEscape = false;
-            }
-        }
-
-    return (0 == matchString[iMatch]);
-    }
-
-//---------------------------------------------------------------------------------------
-// Direct sqlite callback when we override the LIKE operator to delegate to BeSQLiteLib::ILanguageSupport.
-// @bsimethod
-//---------------------------------------------------------------------------------------
-static void likeCallback(sqlite3_context* context, int numArgs, sqlite3_value** args)
-    {
-    // Largely a copy of icuLikeFunc in sqlite3/ext/icu/icu.c, but follows our coding standards and redirects the actual ICU call to the host.
-    // See also likeFunc in sqlite3/src/func.c... though that can use other nice internal utility functions that we can't, so copying is limited.
-
-    auto languageSupport = BeSQLiteLib::GetLanguageSupport();
-    if (nullptr == languageSupport)
-        {
-        BeAssert(false);
-        return;
-        }
-
-    if ((numArgs < 2) || (numArgs > 3))
-        {
-        BeAssert(false);
-        return;
-        }
-
-    auto patternString = sqlite3_value_text(args[0]);
-    auto matchString = sqlite3_value_text(args[1]);
-
-    if ((nullptr == patternString) || (nullptr == matchString))
-        return;
-
-    // Limit the length of the LIKE or GLOB pattern to avoid problems of deep recursion and N*N behavior in likeCompare.
-    auto maxPatternLen = sqlite3_limit(sqlite3_context_db_handle(context), SQLITE_LIMIT_LIKE_PATTERN_LENGTH, -1);
-    if (sqlite3_value_bytes(args[0]) > maxPatternLen)
-        {
-        BeAssert(false);
-        return;
-        }
-
-    uint32_t escapeChar = 0;
-    if (3 == numArgs)
-        {
-        // The escape character string must consist of a single UTF-8 character. Otherwise, return an error.
-        auto escapeCharStr = sqlite3_value_text(args[2]);
-        if (nullptr == escapeCharStr)
-            {
-            BeAssert(false);
-            return;
-            }
-
-        auto escapeCharNumBytes = sqlite3_value_bytes(args[2]);
-        int iNextChar = 0;
-        U8_NEXT_UNSAFE(escapeCharStr, iNextChar, escapeChar);
-
-        if (iNextChar != escapeCharNumBytes)
-            {
-            BeAssert(false);
-            return;
-            }
-        }
-
-    sqlite3_result_int(context, likeCompare(patternString, matchString, escapeChar, languageSupport));
-    }
-
-//---------------------------------------------------------------------------------------
-// Direct sqlite callback when we add custom collations to delegate to BeSQLiteLib::ILanguageSupport.
-// @bsimethod
-//---------------------------------------------------------------------------------------
-static int collateCallback(void* userData, int lhsSize, void const* lhs, int rhsSize, void const* rhs)
-    {
-    // Largely a copy of icuCollationColl in ext/icu/icu.c, but follows our coding standards and redirects the actual ICU call to the host.
-
-    BeSQLiteLib::ILanguageSupport* languageSupport = BeSQLiteLib::GetLanguageSupport();
-    if (nullptr == languageSupport)
-        {
-        BeAssert(false);
-        return 0;
-        }
-
-    return languageSupport->_Collate((Utf16CP)lhs, lhsSize / sizeof(uint16_t), (Utf16CP)rhs, rhsSize / sizeof(uint16_t), userData);
-    }
-
-//---------------------------------------------------------------------------------------
-// Registers overrides and additions to be able to delegate language-aware string processing to BeSQLiteLib::ILanguageSupport.
-// @bsimethod
-//---------------------------------------------------------------------------------------
-static void initLanguageSupportOnDb(sqlite3* db)
-    {
-    BeSQLiteLib::ILanguageSupport* languageSupport = BeSQLiteLib::GetLanguageSupport();
-    if (nullptr == languageSupport)
-        return;
-
-    int rc;
-    UNUSED_VARIABLE(rc);
-
-    // The ICU sample from the sqlite folks overrides scalar functions for both SQLITE_UTF8 and SQLITE_UTF16, but only provides SQLITE_UTF8 versions for operators and collations...
-    // I'm not sure why, but following their example until proven otherwise.
-
-    rc = sqlite3_create_function_v2(db, "lower", 1, SQLITE_UTF8, (void*)0, caseCallback, nullptr, nullptr, nullptr);
-    BeAssert(BE_SQLITE_OK == rc);
-
-    rc = sqlite3_create_function_v2(db, "lower", 1, SQLITE_UTF16, (void*)0, caseCallback, nullptr, nullptr, nullptr);
-    BeAssert(BE_SQLITE_OK == rc);
-
-    rc = sqlite3_create_function_v2(db, "upper", 1, SQLITE_UTF8, (void*)1, caseCallback, nullptr, nullptr, nullptr);
-    BeAssert(BE_SQLITE_OK == rc);
-
-    rc = sqlite3_create_function_v2(db, "upper", 1, SQLITE_UTF16, (void*)1, caseCallback, nullptr, nullptr, nullptr);
-    BeAssert(BE_SQLITE_OK == rc);
-
-    rc = sqlite3_create_function_v2(db, "like", 2, SQLITE_UTF8, (void*)0, likeCallback, nullptr, nullptr, nullptr);
-    BeAssert(BE_SQLITE_OK == rc);
-
-    rc = sqlite3_create_function_v2(db, "like", 3, SQLITE_UTF8, (void*)0, likeCallback, nullptr, nullptr, nullptr);
-    BeAssert(BE_SQLITE_OK == rc);
-
-    bvector<BeSQLiteLib::ILanguageSupport::CollationEntry> collationEntries;
-    BeSQLiteLib::ILanguageSupport::CollationUserDataFreeFunc collatorFreeFunc = nullptr;
-    languageSupport->_InitCollation(collationEntries, collatorFreeFunc);
-
-    for (auto const& collationEntry : collationEntries)
-        {
-        rc = sqlite3_create_collation_v2(db, collationEntry.m_name.c_str(), SQLITE_UTF16, collationEntry.m_collator, collateCallback, collatorFreeFunc);
-        BeAssert(BE_SQLITE_OK == rc);
-        }
-    }
-
-
 /*---------------------------------------------------------------------------------**//**
 * this function is called for every new database connection.
 * @bsimethod
@@ -5496,8 +5296,6 @@ static int besqlite_db_init(sqlite3* db, char** pzErrMsg, struct sqlite3_api_rou
 
     rc = sqlite3_shathree_init(db, nullptr, nullptr);
     BeAssert(BE_SQLITE_OK == rc);
-    // Register language-aware callbacks if necessary.
-    initLanguageSupportOnDb(db);
 
     return BE_SQLITE_OK;
 }
@@ -6013,10 +5811,6 @@ void BeSQLiteLib::Randomness(int numBytes, void* random) {sqlite3_randomness(num
 void* BeSQLiteLib::MallocMem(int sz) {return sqlite3_malloc(sz);}
 void* BeSQLiteLib::ReallocMem(void* p, int sz) {return sqlite3_realloc(p,sz);}
 void BeSQLiteLib::FreeMem(void* p) {sqlite3_free(p);}
-
-BeSQLiteLib::ILanguageSupport* s_languageSupport;
-void BeSQLiteLib::SetLanguageSupport(ILanguageSupport* value) {s_languageSupport = value;}
-BeSQLiteLib::ILanguageSupport* BeSQLiteLib::GetLanguageSupport() {return s_languageSupport;}
 
 #define DB_LZMA_MARKER   "LzmaDgnDb"
 

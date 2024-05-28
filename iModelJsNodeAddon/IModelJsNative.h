@@ -355,6 +355,9 @@ enum class SchemaSourceType {
     XmlString
 };
 
+enum class TextEmphasis { None, Bold, Italic, BoldItalic };
+ENUM_IS_FLAGS(TextEmphasis);
+
 struct JsInterop {
     [[noreturn]] static void throwSqlResult(Utf8CP msg, Utf8CP fileName, DbResult result) {
         BeNapi::ThrowJsException(Env(), Utf8PrintfString("%s [%s]: %s", msg, fileName, BeSQLiteLib::GetErrorString(result)).c_str(), result);
@@ -567,6 +570,7 @@ public:
 
     static void FormatCurrentTime(char* buf, size_t maxbuf);
 
+    static void ComputeRangeForText(BeJsValue result, DgnDbR db, Utf8StringCR text, FontId fontId, TextEmphasis emphasis, double widthFactor, double height);
     static void AddCrashReportDgnDb(Dgn::DgnDbR);
     static void RemoveCrashReportDgnDb(Dgn::DgnDbR);
 
@@ -603,9 +607,18 @@ public:
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
+struct CRSListResponseProps
+    {
+    Utf8String m_name;
+    Utf8String m_description;
+    bool m_deprecated;
+    DRange2d m_crsExtent;
+    };
+    
 struct GeoServicesInterop
 {
     static BentleyStatus GetGeographicCRSInterpretation(BeJsValue, BeJsConst);
+    static bvector<CRSListResponseProps> GetListOfCRS(DRange2dCP extent);
 };
 
 //=======================================================================================

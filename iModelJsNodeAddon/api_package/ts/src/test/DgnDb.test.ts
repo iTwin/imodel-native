@@ -31,6 +31,44 @@ describe("basic tests", () => {
     done();
   });
 
+  it("compress/decompress", () => {
+    const assertCompressAndThenDecompress = (sourceData: Uint8Array) => {
+      const compressData = iModelJsNative.DgnDb.zlibCompress(sourceData);
+      const decompressData = iModelJsNative.DgnDb.zlibDecompress(compressData, sourceData.length);
+      assert(compressData.length < decompressData.length);
+      assert.deepEqual(sourceData, decompressData);
+    };
+    // generate buffer with repeating byte where k is repeated n times.
+    const genBuff = (k: number, n: number) => {
+      return Uint8Array.from(Array.from({ length: n }, () => k ));
+    };
+
+    assertCompressAndThenDecompress(genBuff(1, 1024));
+    assertCompressAndThenDecompress(genBuff(2, 1024));
+
+    const seedUri = path.join(getOutputDir(), "compress-decompress.bim");
+    if (fs.existsSync(seedUri)) {
+      fs.unlinkSync(seedUri);
+    }
+    const iModelDb = new iModelJsNative.DgnDb();
+    iModelDb.createIModel(seedUri, { rootSubject: { name: "test file" } });
+
+    const propData = genBuff(1, 1024);
+    iModelDb.saveFileProperty({ namespace: "test", name: "test" }, "hello", propData);
+    iModelDb.saveChanges();
+    const stmt = new iModelJsNative.SqliteStatement();
+    stmt.prepare(iModelDb, "SELECT [RawSize], [Data] FROM [be_Prop] WHERE [NameSpace] = 'test' AND [Name] = 'test'");
+    assert.equal(stmt.step(), DbResult.BE_SQLITE_ROW);
+    const rawSize = stmt.getValueInteger(0);
+    assert.notEqual(rawSize, 0);
+    const blob = stmt.getValueBlob(1);
+    stmt.dispose();
+    const propDecompressData = iModelJsNative.DgnDb.zlibDecompress(blob, rawSize);
+    assert.deepEqual(propData, propDecompressData);
+    iModelDb.saveChanges();
+    iModelDb.closeFile();
+  });
+
   it("schema synchronization", () => {
 
     const copyAndOverrideFile = (from: string, to: string) => {
@@ -81,7 +119,7 @@ describe("basic tests", () => {
     iModelDb.createIModel(seedUri, { rootSubject: { name: "test file" } });
 
     // initialize sync db.
-    iModelDb.schemaSyncInit(syncDbUri);
+    iModelDb.schemaSyncInit(syncDbUri, "xxxxx", false);
     iModelDb.saveChanges();
     iModelDb.performCheckpoint();
 
@@ -89,7 +127,7 @@ describe("basic tests", () => {
     const sharedInfo = iModelDb.schemaSyncGetSyncDbInfo(syncDbUri);
     assert.equal(localInfo?.id, sharedInfo?.id);
     assert.equal(localInfo?.dataVer, sharedInfo?.dataVer);
-    assert.equal(localInfo?.dataVer, "0x2");
+    assert.equal(localInfo?.dataVer, "0x1");
     iModelDb.closeFile();
 
     // create first briefcase
@@ -305,7 +343,7 @@ describe("basic tests", () => {
     }
     iModelJsNative.setCrashReporting({
       enableCrashDumps: true,
-      crashDir: __dirname,
+      crashDir: path.join(getOutputDir(), "crashdumps"),
       params: [
         { name: "foo", value: "bar" },
         { name: "foo2", value: "baz" },
@@ -653,6 +691,7 @@ describe("basic tests", () => {
     assert(result.result);
     const classMetaData = JSON.parse(result.result);
     expect(classMetaData).to.deep.equal({
+      classId: "0x44",
       ecclass: "BisCore:ISubModeledElement",
       description:
         "An interface which indicates that an Element can be broken down or described by a (sub) Model.  " +
@@ -1073,5 +1112,45 @@ describe("basic tests", () => {
     expect(schemaXmlStr!.includes(propCatStr)).to.be.true;
 
     testDb.closeFile();
+  });
+  it("NoCaseCollation", async () => {
+    const pathToDb = path.join(getAssetsDir(), "test.bim");
+    const testFile = path.join(getAssetsDir(), "collation.bim");
+    if (fs.existsSync(testFile)) {
+      fs.unlinkSync(testFile);
+    }
+    fs.copyFileSync(pathToDb, testFile);
+
+    const db = new iModelJsNative.DgnDb();
+    db.openIModel(testFile, OpenMode.ReadWrite);
+    expect(db.getNoCaseCollation()).to.be.equals("ASCII");
+    const executeSql = (sql: string, cb: (stmt: IModelJsNative.SqliteStatement) => void) => {
+      const stmt = new iModelJsNative.SqliteStatement();
+      stmt.prepare(db, sql);
+      cb(stmt);
+      stmt.dispose();
+    };
+    db.saveChanges();
+    executeSql("CREATE TABLE [Foo]([Id] INTEGER PRIMARY KEY, [Name] TEXT UNIQUE COLLATE NOCASE);", (stmt) => {
+      expect(stmt.step()).equals(DbResult.BE_SQLITE_DONE);
+    });
+
+    db.saveChanges();
+    executeSql("INSERT INTO Foo(Name)VALUES('ÀÁÂÃÄÅ')", (stmt) => {
+      expect(stmt.step()).equals(DbResult.BE_SQLITE_DONE);
+    });
+    executeSql("INSERT INTO Foo(Name)VALUES('àáâãäå')", (stmt) => {
+      expect(stmt.step()).equals(DbResult.BE_SQLITE_DONE);
+    });
+    db.abandonChanges();
+    db.setNoCaseCollation("Latin1");
+
+    executeSql("INSERT INTO Foo(Name)VALUES('ÀÁÂÃÄÅ')", (stmt) => {
+      expect(stmt.step()).equals(DbResult.BE_SQLITE_DONE);
+    });
+    executeSql("INSERT INTO Foo(Name)VALUES('àáâãäå')", (stmt) => {
+      expect(stmt.step()).equals(DbResult.BE_SQLITE_CONSTRAINT_UNIQUE);
+    });
+    db.closeFile();
   });
 });

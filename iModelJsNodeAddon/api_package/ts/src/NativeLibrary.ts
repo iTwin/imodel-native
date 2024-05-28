@@ -19,12 +19,12 @@ import type {
 } from "@itwin/core-bentley";
 import type {
   ChangesetIndexAndId, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps, ElementGraphicsRequestProps, ElementLoadProps, ElementProps,
-  FilePropertyProps, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
+  FilePropertyProps, FontId, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
   GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, IModelCoordinatesRequestProps,
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
   ModelProps, QueryQuota, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions,
 } from "@itwin/core-common";
-import type { Range3dProps } from "@itwin/core-geometry";
+import type { Range2dProps, Range3dProps } from "@itwin/core-geometry";
 
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-restricted-syntax */
@@ -487,14 +487,26 @@ export declare namespace IModelJsNative {
     status: IModelStatus;
   }
 
+  interface TextLayoutRangesProps {
+    layout: Range2dProps;
+    justification: Range2dProps;
+  }
+
+  enum TextEmphasis { None = 0, Bold = 1, Italic = 2, BoldItalic = Bold | Italic }
+
+  type NoCaseCollation = "ASCII" | "Latin1";
+
   /** The native object for a Briefcase. */
   class DgnDb implements IConcurrentQueryManager, SQLiteOps {
     constructor();
     public readonly cloudContainer?: CloudContainer;
+    public getNoCaseCollation(): NoCaseCollation;
+    public setNoCaseCollation(collation: NoCaseCollation): void;
     public schemaSyncSetDefaultUri(syncDbUri: string): void;
     public schemaSyncGetDefaultUri(): string;
-    public schemaSyncInit(syncDbUri: string): void;
+    public schemaSyncInit(syncDbUri: string, containerId: string, overrideContainer: boolean): void;
     public schemaSyncPull(syncDbUri?: string): void;
+    public schemaSyncPush(syncDbUri?: string): void;
     public schemaSyncEnabled(): boolean;
     public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
     public schemaSyncGetSyncDbInfo(syncDbUri: string): SchemaSyncDbInfo | undefined;
@@ -514,6 +526,7 @@ export declare namespace IModelJsNative {
     public closeFile(): void;
     public completeCreateChangeset(arg: { index: number }): void;
     public computeProjectExtents(wantFullExtents: boolean, wantOutlierIds: boolean): { extents: Range3dProps, fullExtents?: Range3dProps, outliers?: Id64Array };
+    public computeRangesForText(chars: string, fontId: FontId, bold: boolean, italic: boolean, widthFactor: number, height: number): TextLayoutRangesProps;
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
     public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
     public concurrentQueryShutdown(): void;
@@ -661,13 +674,15 @@ export declare namespace IModelJsNative {
     public setAutoCheckpointThreshold(frames: number): void;
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
+    public static zlibCompress(data: Uint8Array): Uint8Array;
+    public static zlibDecompress(data: Uint8Array, actualSize: number): Uint8Array;
   }
 
   /** The native object for GeoServices. */
   class GeoServices {
     constructor();
     public static getGeographicCRSInterpretation(props: GeographicCRSInterpretRequestProps): GeographicCRSInterpretResponseProps;
-
+    public static getListOfCRS(extent?: Range2dProps): Array<{ name: string, description: string, deprecated: boolean, crsExtent: Range2dProps }>;
   }
 
   /**
@@ -705,8 +720,9 @@ export declare namespace IModelJsNative {
     public dropSchema(schemaName: string): void;
     public schemaSyncSetDefaultUri(syncDbUri: string): void;
     public schemaSyncGetDefaultUri(): string;
-    public schemaSyncInit(syncDbUri: string): void;
+    public schemaSyncInit(syncDbUri: string, containerId: string, overrideContainer: boolean): void;
     public schemaSyncPull(syncDbUri: string | undefined): void;
+    public schemaSyncPush(syncDbUri: string | undefined): void;
     public schemaSyncEnabled(): boolean;
     public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
     public schemaSyncGetSyncDbInfo(): SchemaSyncDbInfo | undefined;
