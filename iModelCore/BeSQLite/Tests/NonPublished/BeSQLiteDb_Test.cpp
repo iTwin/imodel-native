@@ -1243,7 +1243,66 @@ struct MyChangeSet : ChangeSet
     {
     virtual ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) { BeAssert(false); return ConflictResolution::Abort; }
     };
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQLiteDbTests, ApplyTable_Filter) {
+    const auto kMainFile = "changeset.db";
+    auto cloneDb = [&](DbR from, DbR out, Utf8CP name) {
+        ASSERT_EQ (BE_SQLITE_OK, from.SaveChanges());
+        Utf8String fileName = from.GetDbFileName();
+        fileName.ReplaceAll(kMainFile, name);
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(BeFileName(m_db.GetDbFileName(), true), BeFileName(fileName.c_str(), true)));
+        ASSERT_EQ(BE_SQLITE_OK, out.OpenBeSQLiteDb(fileName.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite)));
+    };
 
+    SetupDb(WString(kMainFile, true).c_str());
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("CREATE TABLE ec_t1 (ID INTEGER PRIMARY KEY)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("CREATE TABLE t2 (ID INTEGER PRIMARY KEY)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("CREATE TABLE t3 (ID INTEGER PRIMARY KEY)"));
+    m_db.SaveChanges();
+
+    Db anotherDb;
+    cloneDb(m_db, anotherDb, "changeset2.db");
+
+    MyChangeTracker changeTracker(m_db);
+    changeTracker.EnableTracking(true);
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO ec_t1 (ID) values (NULL)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO t2 (ID) values (NULL)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO t3 (ID) values (NULL)"));
+    changeTracker.EnableTracking(false);
+
+    MyChangeSet cs;
+    cs.FromChangeTrack(changeTracker);
+    m_db.SaveChanges();
+
+    auto getRowCount = [&](DbR db, Utf8CP tableName) -> int {
+        Statement stmt;
+        EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(db, SqlPrintfString("SELECT COUNT(*) FROM %s", tableName)));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        return stmt.GetValueInt(0);
+    };
+
+    ASSERT_EQ(BE_SQLITE_OK, cs.ApplyChanges(anotherDb, ApplyChangesArgs::Default().ApplyOnlySchemaChanges()));
+    ASSERT_EQ(1, getRowCount(anotherDb, "ec_t1"));
+    ASSERT_EQ(0, getRowCount(anotherDb, "t2"));
+    ASSERT_EQ(0, getRowCount(anotherDb, "t3"));
+
+    anotherDb.AbandonChanges();
+    ASSERT_EQ(BE_SQLITE_OK, cs.ApplyChanges(anotherDb, ApplyChangesArgs::Default().ApplyOnlyDataChanges()));
+    ASSERT_EQ(0, getRowCount(anotherDb, "ec_t1"));
+    ASSERT_EQ(1, getRowCount(anotherDb, "t2"));
+    ASSERT_EQ(1, getRowCount(anotherDb, "t3"));
+
+    anotherDb.AbandonChanges();
+    ASSERT_EQ(BE_SQLITE_OK, cs.ApplyChanges(anotherDb, ApplyChangesArgs::Default().ApplyAnyChanges()));
+    ASSERT_EQ(1, getRowCount(anotherDb, "ec_t1"));
+    ASSERT_EQ(1, getRowCount(anotherDb, "t2"));
+    ASSERT_EQ(1, getRowCount(anotherDb, "t3"));
+
+    anotherDb.SaveChanges();
+    m_db.SaveChanges();
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------

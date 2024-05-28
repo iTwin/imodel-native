@@ -252,7 +252,7 @@ protected:
     DGNPLATFORM_EXPORT void _OnAfterSetBriefcaseId() override;
 
     DGNPLATFORM_EXPORT BeSQLite::DbResult _AfterSchemaChangeSetApplied() const override;
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _AfterDataChangeSetApplied() override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _AfterDataChangeSetApplied(bool schemaChanged) override;
 
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
     void _OnBeforeClearECDbCache() override;
