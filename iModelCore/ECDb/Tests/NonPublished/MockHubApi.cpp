@@ -125,7 +125,7 @@ SchemaImportResult SchemaSyncTestFixture::SetupECDb(Utf8CP ecdbName)
     m_hub = std::make_unique<ECDbHub>(ECDbHub());
     m_briefcase = m_hub->CreateBriefcase();
     m_schemaChannel = std::make_unique<SchemaSyncDb>(SchemaSyncDb(ecdbName));
-    if (SchemaSync::Status::OK != m_briefcase->Schemas().GetSchemaSync().Init(GetSyncDbUri()))
+    if (SchemaSync::Status::OK != m_briefcase->Schemas().GetSchemaSync().Init(GetSyncDbUri(), BeGuid(true).ToString(), false))
         return SchemaImportResult::ERROR;
 
     EXPECT_EQ(BE_SQLITE_OK, m_briefcase->PullMergePush("init"));
@@ -145,7 +145,7 @@ SchemaImportResult SchemaSyncTestFixture::SetupECDb(Utf8CP ecdbName, SchemaItem 
     m_hub = std::make_unique<ECDbHub>(ECDbHub());
     m_briefcase = m_hub->CreateBriefcase();
     m_schemaChannel = std::make_unique<SchemaSyncDb>(SchemaSyncDb(ecdbName));
-    if (SchemaSync::Status::OK != m_briefcase->Schemas().GetSchemaSync().Init(GetSyncDbUri()))
+    if (SchemaSync::Status::OK != m_briefcase->Schemas().GetSchemaSync().Init(GetSyncDbUri(), BeGuid(true).ToString(), false))
         return SchemaImportResult::ERROR;
 
     EXPECT_EQ(BE_SQLITE_OK, m_briefcase->PullMergePush("init"));
@@ -901,11 +901,10 @@ ECDbHub::ECDbHub():m_id(true), m_briefcaseid(10) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::vector<ECDbChangeSet*> ECDbHub::Query(int afterChangesetId) {
 	std::vector<ECDbChangeSet*> results;
-	const auto cid = afterChangesetId - 1;
-	if (cid < 0 || cid > (int)m_changesets.size() - 1) {
+	if (afterChangesetId < 0 || afterChangesetId >= (int)m_changesets.size()) {
 		return results;
 	}
-	for (auto i = cid; i < m_changesets.size(); ++i) {
+	for (auto i = afterChangesetId; i < m_changesets.size(); ++i) {
 		results.push_back(m_changesets[i].get());
 	}
 	return results;
