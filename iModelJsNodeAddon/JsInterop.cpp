@@ -710,7 +710,7 @@ ChangesetPropsPtr JsInterop::GetChangesetProps(Utf8StringCR dbGuid, BeJsConst ar
     if (!changeSetPathname.DoesPathExist())
         ThrowJsException("changeset file not found");
 
-    ChangesetPropsPtr changeset = new ChangesetProps(arg["id"].asString(), arg["index"].asInt(), arg["parentId"].asString(), dbGuid, changeSetPathname);
+    ChangesetPropsPtr changeset = new ChangesetProps(arg["id"].asString(), arg["index"].asInt(), arg["parentId"].asString(), dbGuid, changeSetPathname, (ChangesetProps::ChangesetType)arg["changesType"].asInt());
 
     if (arg.isStringMember("pushDate"))
         changeset->SetDateTime(DateTime::FromString(arg["pushDate"].asString().c_str()));

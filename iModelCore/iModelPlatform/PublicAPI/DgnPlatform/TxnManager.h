@@ -462,7 +462,7 @@ private:
     BeSQLite::DbResult ReadDataChanges(BeSQLite::ChangeSet&, TxnId rowid, TxnAction);
 
     void ApplyTxnChanges(TxnId, TxnAction);
-    BeSQLite::DbResult ApplyChanges(BeSQLite::ChangeStreamCR, TxnAction txnAction, bool containsSchemaChanges, BeSQLite::Rebase* = nullptr, bool invert = false, bool ignoreNoop = false, bool fkNoAction = false);
+    BeSQLite::DbResult ApplyChanges(BeSQLite::ChangeStreamCR, TxnAction txnAction, bool containsSchemaChanges, BeSQLite::Rebase* = nullptr, bool invert = false);
     BeSQLite::DbResult ApplyDdlChanges(BeSQLite::DdlChangesCR);
 
     void OnBeginApplyChanges();
@@ -513,6 +513,7 @@ public:
 
     DGNPLATFORM_EXPORT void BeginPullMerge(PullMergeMethod method);
     DGNPLATFORM_EXPORT void EndPullMerge();
+    DGNPLATFORM_EXPORT ChangesetStatus MergeSingleChangeset(ChangesetPropsCR revision, PullMergeMethod method);
 
     //! Add a TxnMonitor. The monitor will be notified of all transaction events until it is dropped.
     DGNPLATFORM_EXPORT static void AddTxnMonitor(TxnMonitor& monitor);
@@ -984,6 +985,12 @@ namespace dgn_TableHandler {
 // @bsiclass
 //=======================================================================================
 struct ChangesetProps : RefCountedBase {
+    enum class ChangesetType {
+        Regular  = 0,
+        Schema = 1,
+        SchemaSync = Schema | 64,
+    };
+
     TxnManager::TxnId m_endTxnId;
     int64_t m_lastRebaseId = 0;
     Utf8String m_id;
@@ -994,15 +1001,16 @@ struct ChangesetProps : RefCountedBase {
     Utf8String m_userName;
     DateTime m_dateTime;
     Utf8String m_summary;
-
-    ChangesetProps(Utf8StringCR changesetId, int32_t changesetIndex, Utf8StringCR parentRevisionId, Utf8StringCR dbGuid, BeFileNameCR fileName) :
-        m_id(changesetId), m_index(changesetIndex), m_parentId(parentRevisionId), m_dbGuid(dbGuid), m_fileName(fileName) {}
+    ChangesetType m_changesetType;
+    ChangesetProps(Utf8StringCR changesetId, int32_t changesetIndex, Utf8StringCR parentRevisionId, Utf8StringCR dbGuid, BeFileNameCR fileName, ChangesetType changesetType) :
+        m_id(changesetId), m_index(changesetIndex), m_parentId(parentRevisionId), m_dbGuid(dbGuid), m_fileName(fileName), m_changesetType(changesetType) {}
 
     Utf8StringCR GetChangesetId() const { return m_id; }
     int32_t GetChangesetIndex() const { return m_index; }
     void SetChangesetIndex(int32_t index) { m_index = index; }
     Utf8StringCR GetParentId() const { return m_parentId; }
     Utf8StringCR GetDbGuid() const { return m_dbGuid; }
+    ChangesetType GetChangesetType() const { return m_changesetType; };
     BeFileNameCR GetFileName() const { return m_fileName; }
 
     //! Get or set the user name
@@ -1017,8 +1025,10 @@ struct ChangesetProps : RefCountedBase {
     Utf8StringCR GetSummary() const { return m_summary; }
     void SetSummary(Utf8CP summary) { m_summary = summary; }
 
+    bool ContainsEcChanges() const { return ((int)m_changesetType & (int)ChangesetType::Schema) > 0; }
+
     //! Determines if the revision contains schema changes
-    DGNPLATFORM_EXPORT bool ContainsSchemaChanges(DgnDbR dgndb) const;
+    DGNPLATFORM_EXPORT bool ContainsDdlChanges(DgnDbR dgndb) const;
     DGNPLATFORM_EXPORT void ValidateContent(DgnDbR dgndb) const;
     DGNPLATFORM_EXPORT void Dump(DgnDbR dgndb) const;
 };

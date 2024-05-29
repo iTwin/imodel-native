@@ -171,7 +171,7 @@ DgnElementId ChangeTestFixture::InsertPhysicalElement(DgnDbR db, PhysicalModelR 
     ChangesetProps changeset("ea0d6e98b43ec68f375fd453f9b9039ccb2d4634", 11138, "18a44651392ba36ab42e8e31963edcec43dd8792", m_db->GetDbGuid().ToString(), change1FileName);
     changeset.SetDateTime(DateTime::FromString("2023-05-25T12:36:29.387Z"));
 
-    Dgn::ChangesetStatus cStatus = m_db->Txns().MergeChangeset(changeset);
+    Dgn::ChangesetStatus cStatus = m_db->Txns().MergeSingleChangeset(changeset, TxnManager::PullMergeMethod::Merge);
     ASSERT_EQ(Dgn::ChangesetStatus::Success, cStatus);
     m_db->SaveChanges();
 

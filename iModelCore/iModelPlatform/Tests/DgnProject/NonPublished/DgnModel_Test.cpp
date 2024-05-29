@@ -885,6 +885,8 @@ TEST_F(DgnModelTests, FlagsAddedInBisCore108)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnModelTests, GeometryGuid)
     {
+    NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
+    NativeLogging::ConsoleLogger::GetLogger().SetSeverity("Changeset", BentleyApi::NativeLogging::LOG_TRACE);
     SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true);
     auto model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "GeometryGuid");
     m_db->SaveChanges();
