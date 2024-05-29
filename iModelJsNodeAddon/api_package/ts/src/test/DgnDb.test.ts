@@ -273,7 +273,7 @@ describe("basic tests", () => {
     assert.isTrue(bisProps.version >= "01.00.15"); // PR references 01.00.15+, so importing PR will cause it to upgrade.
   });
 
-  it("testSchemaImportNoAdditionalRootEntityClasses", () => {
+  it("testSchemaImport NoAdditionalRootEntityClasses", () => {
     const writeDbFileName = copyFile("noAdditionalRootEntityClasses.bim", dbFileName);
     // Without ProfileOptions.Upgrade, we get: Error | ECDb | Failed to import schema 'BisCore.01.00.15'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.
     const db = openDgnDb(writeDbFileName, { profile: ProfileOptions.Upgrade, schemaLockHeld: false });
@@ -290,12 +290,9 @@ describe("basic tests", () => {
     </ECSchema>`;
     // eslint-disable-next-line @typescript-eslint/naming-convention
     const BE_SQLITE_ERROR_SchemaUpgradeFailed = (DbResult.BE_SQLITE_IOERR | 19 << 24);
-    try {
-      db.importXmlSchemas([schema], { schemaLockHeld: false });
-    } catch (error: any) {
-      assert.equal(error.errorNumber, BE_SQLITE_ERROR_SchemaUpgradeFailed);
-      expect(error.message).equals("Failed to import ECClass 'TestSchema:NewRootClass'. It violates against the 'No additional root entity classes' policy which means that all entity classes must subclass from classes defined in the ECSchema BisCore");
-    }
+    expect( () => db.importXmlSchemas([schema], { schemaLockHeld: false }) )
+      .to.throw("Failed to import ECClass 'TestSchema:NewRootClass'. It violates against the 'No additional root entity classes' policy which means that all entity classes must subclass from classes defined in the ECSchema BisCore")
+      .property("errorNumber").equal(BE_SQLITE_ERROR_SchemaUpgradeFailed);
   });
 
   it("testSchemaImportPrefersExistingAndLocalOverStandard", () => {
@@ -617,11 +614,9 @@ describe("basic tests", () => {
     const BE_SQLITE_ERROR_DataTransformRequired = (DbResult.BE_SQLITE_IOERR | 23 << 24);
 
     // import should fail when schemaLockHeld flag is set to false which will fail the operation if data transform is required.
-    try {
-      db.importXmlSchemas([generateSchema(20, 20)], { schemaLockHeld: false });
-    } catch (error: any) {
-      assert.equal(error.errorNumber, BE_SQLITE_ERROR_DataTransformRequired);
-    }
+    expect( () => db.importXmlSchemas([generateSchema(20, 20)], { schemaLockHeld: false }) )
+      .to.throw("Transform SQL (Moving property structProp of class SchemaVersionTest:TestElement to overflow table): UPDATE [bis_GeometricElement2d] SET [js1]=NULL WHERE [ECClassId] IN (SELECT [ClassId] FROM [ec_cache_ClassHierarchy] WHERE BaseClassId=0x101)")
+      .property("errorNumber").equal(BE_SQLITE_ERROR_DataTransformRequired);
 
     // import should be successful when schemaLockHeld flag is set to true so it can transform data if required.
     db.importXmlSchemas([generateSchema(20, 20)], { schemaLockHeld: true });
