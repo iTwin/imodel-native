@@ -1026,7 +1026,6 @@ export declare namespace IModelJsNative {
     public destroy(): void;
   }
 
-  
   interface CleanDeletedBlocksOptions {
     /**
      * Any block that was marked as unused before this number of seconds ago will be deleted. Specifying a non-zero
