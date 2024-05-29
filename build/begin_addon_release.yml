@@ -4,6 +4,7 @@ trigger:
   branches:
     include:
     - main
+    - release/4.x
 
   paths:
     exclude:
