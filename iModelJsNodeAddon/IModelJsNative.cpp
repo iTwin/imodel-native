@@ -2064,8 +2064,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             }
         }
     }
-
-    Napi::Value ImportSchemas(NapiInfoCR info)
+    void ImportSchemas(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
@@ -2085,12 +2084,18 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             options.m_customSchemaContext = NativeECSchemaXmlContext::Unwrap(maybeEcSchemaContextVal.As<Napi::Object>())->GetContext();
             }
 
+        LastErrorListener lastError(db);
         DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::File, options);
-
-        return Napi::Number::New(Env(), (int)result);
+        if (DbResult::BE_SQLITE_OK != result)
+            {
+            if (lastError.HasError())
+                BeNapi::ThrowJsException(info.Env(), lastError.GetLastError().c_str(), (int) result);
+            else
+                BeNapi::ThrowJsException(info.Env(), "Failed to import schemas", (int) result);
+            }
         }
 
-    Napi::Value ImportXmlSchemas(NapiInfoCR info)
+    void ImportXmlSchemas(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
@@ -2101,8 +2106,15 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         if (jsSyncDbUri.IsString())
             options.m_schemaSyncDbUri = jsSyncDbUri.ToString().Utf8Value();
 
+        LastErrorListener lastError(db);
         DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::XmlString, options);
-        return Napi::Number::New(Env(), (int)result);
+        if (DbResult::BE_SQLITE_OK != result)
+            {
+            if (lastError.HasError())
+                BeNapi::ThrowJsException(info.Env(), lastError.GetLastError().c_str(), (int) result);
+            else
+                BeNapi::ThrowJsException(info.Env(), "Failed to import schemas", (int) result);
+            }
         }
 
     Napi::Value FindGeometryPartReferences(NapiInfoCR info)
