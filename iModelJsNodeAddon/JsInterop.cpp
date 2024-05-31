@@ -40,6 +40,7 @@ struct KnownLocationsAdmin : PlatformLib::Host::IKnownLocationsAdmin
 {
     BeFileName m_tempDirectory;
     BeFileName m_assetsDirectory;
+    BeFileName m_geoCoordAssetsDirectory;
 
     BeFileNameCR _GetLocalTempDirectoryBaseName() override {return m_tempDirectory;}
     BeFileNameCR _GetDgnPlatformAssetsDirectory() override {return m_assetsDirectory;}
