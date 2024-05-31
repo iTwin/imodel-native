@@ -1397,11 +1397,6 @@ SchemaImportResult MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvect
 
         if (!ctx.AllowDataTransform()) {
             ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0590, "Import ECSchema failed. Data transform is required which is rejected by default unless explicitly allowed.");
-            ctx.GetDataTransform().ForEach([&](TransformData::Task const& task) {
-                ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0591, "Transform SQL (%s): %s", task.GetDescription().c_str(), task.GetSql().c_str());
-                return true;
-            });
-
             return SchemaImportResult::ERROR_DATA_TRANSFORM_REQUIRED;
         }
         if (BE_SQLITE_OK != ctx.GetDataTransform().Execute(m_ecdb)) {
