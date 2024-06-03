@@ -615,7 +615,7 @@ describe("basic tests", () => {
 
     // import should fail when schemaLockHeld flag is set to false which will fail the operation if data transform is required.
     expect( () => db.importXmlSchemas([generateSchema(20, 20)], { schemaLockHeld: false }) )
-      .to.throw("Transform SQL (Moving property structProp of class SchemaVersionTest:TestElement to overflow table): UPDATE [bis_GeometricElement2d] SET [js1]=NULL WHERE [ECClassId] IN (SELECT [ClassId] FROM [ec_cache_ClassHierarchy] WHERE BaseClassId=0x101)")
+      .to.throw("Import ECSchema failed. Data transform is required which is rejected by default unless explicitly allowed.")
       .property("errorNumber").equal(BE_SQLITE_ERROR_DataTransformRequired);
 
     // import should be successful when schemaLockHeld flag is set to true so it can transform data if required.
