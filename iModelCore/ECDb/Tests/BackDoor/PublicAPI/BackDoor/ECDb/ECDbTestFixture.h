@@ -163,6 +163,19 @@ public:
     static bool IsECSqlExperimentalFeaturesEnabled(ECDbCR);
     static DbResult CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNameCR seedFilePath, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
     static DbResult CloneECDb(ECDbR clone, BeFileNameCR cloneFilePath, BeFileNameCR seedFilePath, ECDb::OpenParams const& openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+
+    class IssueListener : public ECN::IIssueListener
+        {
+        mutable bvector<Utf8String> m_issues;
+        void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override
+            {
+            m_issues.push_back(message);
+            }
+        public:
+        Utf8StringCR GetLastError() const { return m_issues.back();}
+        void ClearMessages() { m_issues.clear(); }
+        bool IsEmpty() const { return m_issues.empty(); }
+        };
     };
 
 SchemaItem operator"" _schema(const char* s, size_t n);

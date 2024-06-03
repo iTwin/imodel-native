@@ -271,6 +271,64 @@ TEST_F(DgnDbTest, ImportSchemaWithLocalChanges)
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnDbTest, DropSchemas)
+    {
+    auto result = BE_SQLITE_ERROR;
+    CreateDgnDbParams params(TEST_NAME);
+    auto dgndb = DgnDb::CreateIModel(&result, DgnDbTestDgnManager::GetOutputFilePath(L"DropSchemas.bim"), params);
+    ASSERT_TRUE(dgndb.IsValid());
+
+    auto schemaContext = ECN::ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater(dgndb->GetSchemaLocater());
+
+    BeFileName searchDir;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(searchDir);
+    searchDir.AppendToPath(L"ECSchemas").AppendToPath(L"Dgn");
+    schemaContext->AddSchemaLocater(dgndb->GetSchemaLocater());
+    schemaContext->AddSchemaPath(searchDir.GetName());
+
+    ECSchemaPtr schema = nullptr;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, R"xml(
+        <ECSchema schemaName="TestSchema1" alias="ts1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECEntityClass typeName="TestClass1">
+                <ECCustomAttributes>
+                    <ClassHasHandler xmlns="BisCore.1.0.0" />
+                </ECCustomAttributes>
+                <BaseClass>bis:PhysicalElement</BaseClass>
+                <ECProperty propertyName="Prop1" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml", *schemaContext));
+    ASSERT_TRUE(schema.IsValid());
+
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, R"xml(
+        <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="BisCore" version="1.0.0" alias="bis"/>
+            <ECSchemaReference name="TestSchema1" version="1.0.0" alias="ts1"/>
+            <ECEntityClass typeName="TestClass2">
+                <ECCustomAttributes>
+                    <ClassHasHandler xmlns="BisCore.1.0.0" />
+                </ECCustomAttributes>
+                <BaseClass>bis:PhysicalElement</BaseClass>
+                <ECProperty propertyName="Prop2" typeName="string" />
+            </ECEntityClass>
+        </ECSchema>)xml", *schemaContext));
+    ASSERT_TRUE(schema.IsValid());
+
+    ASSERT_EQ(SchemaStatus::Success, dgndb->ImportSchemas(schemaContext->GetCache().GetSchemas(), true));
+    dgndb->SaveChanges();
+
+    ASSERT_TRUE(dgndb->Schemas().ContainsSchema("TestSchema1"));
+    ASSERT_TRUE(dgndb->Schemas().ContainsSchema("TestSchema2"));
+
+    EXPECT_TRUE(dgndb->DropSchemas({"TestSchema1", "TestSchema2"}).IsSuccess());
+    EXPECT_FALSE(dgndb->Schemas().ContainsSchema("TestSchema1"));
+    EXPECT_FALSE(dgndb->Schemas().ContainsSchema("TestSchema2"));
+    }
+
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnDbTest, CreateWithInvalidName)
 {
     DgnDbPtr dgnProj;
