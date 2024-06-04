@@ -108,7 +108,7 @@ describe("basic tests", () => {
     // create empty sync db.
     const syncDbUri = path.join(baseDir, "syncdb.ecdb");
     const syncDb = new iModelJsNative.ECDb();
-    let rc: DbResult = syncDb.createDb(syncDbUri);
+    const rc: DbResult = syncDb.createDb(syncDbUri);
     assert.equal(DbResult.BE_SQLITE_OK, rc);
     syncDb.saveChanges();
     syncDb.closeDb();
@@ -157,8 +157,7 @@ describe("basic tests", () => {
             <ECProperty propertyName="p2" typeName="int" />
         </ECEntityClass>
     </ECSchema>`;
-    rc = b0.importXmlSchemas([schema1], { schemaSyncDbUri: syncDbUri });
-    assert.equal(DbResult.BE_SQLITE_OK, rc);
+    b0.importXmlSchemas([schema1], { schemaSyncDbUri: syncDbUri });
 
     const schema2 = `<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -171,8 +170,7 @@ describe("basic tests", () => {
           <ECProperty propertyName="p4" typeName="int" />
         </ECEntityClass>
     </ECSchema>`;
-    rc = b1.importXmlSchemas([schema2], { schemaSyncDbUri: syncDbUri });
-    assert.equal(DbResult.BE_SQLITE_OK, rc);
+    b1.importXmlSchemas([schema2], { schemaSyncDbUri: syncDbUri });
 
     b0.schemaSyncPull(syncDbUri);
 
@@ -201,8 +199,7 @@ describe("basic tests", () => {
           <ECProperty propertyName="p6" typeName="int" />
         </ECEntityClass>
     </ECSchema>`;
-    rc = b2.importXmlSchemas([schema3]);
-    assert.equal(DbResult.BE_SQLITE_OK, rc);
+    b2.importXmlSchemas([schema3]);
 
     b0.saveChanges();
     b1.saveChanges();
@@ -269,12 +266,33 @@ describe("basic tests", () => {
     let bisProps = db.getSchemaProps("BisCore");
     assert.isTrue(bisProps.version === "01.00.00");
     const schemaPath = path.join(iModelJsNative.DgnDb.getAssetsDir(), "ECSchemas/Domain/PresentationRules.ecschema.xml");
-    const result = db.importSchemas([schemaPath], { schemaLockHeld: false });
-    assert.isTrue(result === DbResult.BE_SQLITE_OK);
+    db.importSchemas([schemaPath], { schemaLockHeld: false });
 
     db.getSchemaProps("PresentationRules");
     bisProps = db.getSchemaProps("BisCore");
     assert.isTrue(bisProps.version >= "01.00.15"); // PR references 01.00.15+, so importing PR will cause it to upgrade.
+  });
+
+  it("testSchemaImport NoAdditionalRootEntityClasses", () => {
+    const writeDbFileName = copyFile("noAdditionalRootEntityClasses.bim", dbFileName);
+    // Without ProfileOptions.Upgrade, we get: Error | ECDb | Failed to import schema 'BisCore.01.00.15'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.
+    const db = openDgnDb(writeDbFileName, { profile: ProfileOptions.Upgrade, schemaLockHeld: false });
+    assert.isTrue(db !== undefined);
+    const bisProps = db.getSchemaProps("BisCore");
+    assert.isTrue(bisProps.version === "01.00.00");
+
+    const schema = `<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
+        <ECEntityClass typeName="NewRootClass" modifier="Abstract">
+            <ECProperty propertyName="Name" typeName="string" />
+        </ECEntityClass>
+    </ECSchema>`;
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    const BE_SQLITE_ERROR_SchemaUpgradeFailed = (DbResult.BE_SQLITE_IOERR | 19 << 24);
+    expect( () => db.importXmlSchemas([schema], { schemaLockHeld: false }) )
+      .to.throw("Failed to import ECClass 'TestSchema:NewRootClass'. It violates against the 'No additional root entity classes' policy which means that all entity classes must subclass from classes defined in the ECSchema BisCore")
+      .property("errorNumber").equal(BE_SQLITE_ERROR_SchemaUpgradeFailed);
   });
 
   it("testSchemaImportPrefersExistingAndLocalOverStandard", () => {
@@ -286,8 +304,7 @@ describe("basic tests", () => {
     // BisCore will not be updated because Test only requests BisCore.01.00.00 which is already in the db
     // db has higher precedence than standard schema paths so BisCore from the db is used as the schema ref
     const bisProps = db.getSchemaProps("BisCore");
-    let result = db.importSchemas([test100Path], { schemaLockHeld: false });
-    assert.equal(result, DbResult.BE_SQLITE_OK);
+    db.importSchemas([test100Path], { schemaLockHeld: false });
     assert.equal(db.getSchemaProps("BisCore").version, bisProps.version, "BisCore after Test 1.0.0 import");
 
     const testRefProps = db.getSchemaProps("TestRef");
@@ -297,8 +314,7 @@ describe("basic tests", () => {
     // local directory has higher precedence than the db
     const subAssetsDir = path.join(assetsDir, "LocalReferences");
     const test101Path = path.join(subAssetsDir, "Test.01.00.01.ecschema.xml");
-    result = db.importSchemas([test101Path], { schemaLockHeld: false });
-    assert.equal(result, DbResult.BE_SQLITE_OK);
+    db.importSchemas([test101Path], { schemaLockHeld: false });
     assert.equal(db.getSchemaProps("TestRef").version, "01.00.01", "TestRef after Test 1.0.1 import");
   });
 
@@ -591,20 +607,19 @@ describe("basic tests", () => {
     db.saveChanges();
 
     // import a schema with changes that only required SchemaLock
-    let rc = db.importXmlSchemas([generateSchema(20, 1)], { schemaLockHeld: false });
-    assert.equal(rc, DbResult.BE_SQLITE_OK);
+    db.importXmlSchemas([generateSchema(20, 1)], { schemaLockHeld: false });
     db.saveChanges();
 
     // eslint-disable-next-line @typescript-eslint/naming-convention
     const BE_SQLITE_ERROR_DataTransformRequired = (DbResult.BE_SQLITE_IOERR | 23 << 24);
 
     // import should fail when schemaLockHeld flag is set to false which will fail the operation if data transform is required.
-    rc = db.importXmlSchemas([generateSchema(20, 20)], { schemaLockHeld: false });
-    assert.equal(rc, BE_SQLITE_ERROR_DataTransformRequired);
+    expect( () => db.importXmlSchemas([generateSchema(20, 20)], { schemaLockHeld: false }) )
+      .to.throw("Import ECSchema failed. Data transform is required which is rejected by default unless explicitly allowed.")
+      .property("errorNumber").equal(BE_SQLITE_ERROR_DataTransformRequired);
 
     // import should be successful when schemaLockHeld flag is set to true so it can transform data if required.
-    rc = db.importXmlSchemas([generateSchema(20, 20)], { schemaLockHeld: true });
-    assert.equal(rc, DbResult.BE_SQLITE_OK);
+    db.importXmlSchemas([generateSchema(20, 20)], { schemaLockHeld: true });
     db.saveChanges();
     db.closeFile();
   });
@@ -803,8 +818,7 @@ describe("basic tests", () => {
       assert.isTrue(db.isOpen());
 
       // importXmlSchemas expects schemas to be in dependency order
-      const rc = db.importXmlSchemas([ec3RefSchema, ec3SchemaXml], { schemaLockHeld: true });
-      assert.equal(rc, DbResult.BE_SQLITE_OK);
+      db.importXmlSchemas([ec3RefSchema, ec3SchemaXml], { schemaLockHeld: true });
       db.saveChanges();
 
       const refSchema: IModelJsNative.SchemaProps = db.getSchemaProps("TrapRef");
@@ -849,8 +863,7 @@ describe("basic tests", () => {
       assert.isTrue(db !== undefined);
       assert.isTrue(db.isOpen());
 
-      const rc = db.importXmlSchemas(schemasWithUpdatedCA, { schemaLockHeld: true });
-      assert.equal(rc, DbResult.BE_SQLITE_OK);
+      db.importXmlSchemas(schemasWithUpdatedCA, { schemaLockHeld: true });
       db.saveChanges();
 
       const schema: IModelJsNative.SchemaProps = db.getSchemaProps("TestSchema");
@@ -950,8 +963,7 @@ describe("basic tests", () => {
       assert.isTrue(db !== undefined);
       assert.isTrue(db.isOpen());
 
-      const rc = db.importXmlSchemas([ec3RefSchema, ec3SchemaXml], { schemaLockHeld: true });
-      assert.equal(rc, DbResult.BE_SQLITE_OK);
+      db.importXmlSchemas([ec3RefSchema, ec3SchemaXml], { schemaLockHeld: true });
       db.saveChanges();
 
       const refSchema: IModelJsNative.SchemaProps = db.getSchemaProps("TrapRef");
@@ -1045,7 +1057,7 @@ describe("basic tests", () => {
     assert.isTrue(testDb !== undefined);
 
     // Import the schema as ECXML 3.2 which has ECXml 3.2 unit LUMEN_PER_W
-    assert.equal(DbResult.BE_SQLITE_OK, testDb.importXmlSchemas([`<?xml version="1.0" encoding="UTF-8"?>
+    testDb.importXmlSchemas([`<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" displayLabel="TestSchema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
         <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
@@ -1060,7 +1072,7 @@ describe("basic tests", () => {
         </ECEntityClass>
         <KindOfQuantity typeName="TestKoq" displayLabel="TestKoq" persistenceUnit="u:LUMEN_PER_W" relativeError="10.763910416709722" presentationUnits="f:DefaultRealU[u:LUMEN_PER_W]"/>
         <PropertyCategory typeName="TestCategory" displayLabel="TestCategory" priority="200000"/>
-    </ECSchema>`]));
+    </ECSchema>`]);
 
     testDb.saveChanges();
 

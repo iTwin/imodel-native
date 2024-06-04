@@ -471,10 +471,18 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
 
     Napi::Value CleanDeletedBlocks(NapiInfoCR info) {
         RequireWriteLock();
-        OPTIONAL_ARGUMENT_INTEGER(0, nSeconds, (60*60)); // default to one hour
+
+        bool debugLogging = false;
+        int nSeconds = 3600; // default is 1 hour.
+        if (info[0].IsObject()) {
+            auto cleanDeletedBlocksOpts = BeJsConst(info[0]);
+            debugLogging = cleanDeletedBlocksOpts[JSON_NAME(debugLogging)].asBool(false);
+            nSeconds = cleanDeletedBlocksOpts[JSON_NAME(nSeconds)].asInt(3600);
+        }
+
         return QueueWorker(info, [=]() {
             JsCloudUtil handle;
-            auto result = handle.Init(*this);
+            auto result = handle.Init(*this, debugLogging ? 1 : 0);
             if (result.IsSuccess())
                 result = handle.CleanDeletedBlocks(nSeconds);
             return result.IsSuccess() ? CloudContainer::PollManifest() : result;

@@ -2108,6 +2108,7 @@ TEST_F(DgnElementTests, ToJson)
     Utf8String validJsonString(R"json(
 {
   "arrayOfStructs": [
+    {},
     {
       "city": {
         "country": "US",
@@ -2125,7 +2126,8 @@ TEST_F(DgnElementTests, ToJson)
         "zip": 19102.0
       },
       "street": "1601 Cherry Street"
-    }
+    },
+    {}
   ],
   "b": false,
   "category": "0x12",
