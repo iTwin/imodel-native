@@ -4505,7 +4505,8 @@ public:
             InstanceMethod("stepForInsertAsync", &NativeECSqlStatement::StepForInsertAsync),
             InstanceMethod("getColumnCount", &NativeECSqlStatement::GetColumnCount),
             InstanceMethod("getValue", &NativeECSqlStatement::GetValue),
-            InstanceMethod("getNativeSql", &NativeECSqlStatement::GetNativeSql)
+            InstanceMethod("getNativeSql", &NativeECSqlStatement::GetNativeSql),
+            InstanceMethod("toRow", &NativeECSqlStatement::ToRow)
         });
 
         exports.Set("ECSqlStatement", t);
@@ -4640,6 +4641,19 @@ public:
             THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
 
         return Napi::String::New(Env(), m_stmt.GetNativeSql());
+    }
+
+    Napi::Value ToRow(NapiInfoCR info) {
+        if (!m_stmt.IsPrepared())
+            THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
+
+        REQUIRE_ARGUMENT_BOOL(0, abbreviateBlobs);
+        REQUIRE_ARGUMENT_BOOL(1, convertClassIdsToClassNames);
+        REQUIRE_ARGUMENT_BOOL(2, useJsName);
+
+        BeJsNapiObject out(info.Env());
+        m_stmt.ToRow(out, abbreviateBlobs, convertClassIdsToClassNames, useJsName);
+        return out;
     }
 
     static DbResult ToDbResult(ECSqlStatus status) {

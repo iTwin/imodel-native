@@ -124,6 +124,18 @@ IECSqlValue const& ECSqlStatement::GetValue(int columnIndex) const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+BentleyStatus ECSqlStatement::ToRow(BeJsValue rowJson, bool abbreviateBlobs, bool classIdToClassNames, bool useJsName) const
+    {
+    QueryJsonAdaptor adaptor(*this->GetECDb());
+    adaptor.SetAbbreviateBlobs(abbreviateBlobs);
+    adaptor.SetConvertClassIdsToClassNames(classIdToClassNames);
+    adaptor.UseJsNames(useJsName);
+    return adaptor.RenderRow(rowJson, ECSqlStatementRow(*this));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 Utf8CP ECSqlStatement::GetECSql() const { return m_pimpl->GetECSql(); }
 
 //---------------------------------------------------------------------------------------
