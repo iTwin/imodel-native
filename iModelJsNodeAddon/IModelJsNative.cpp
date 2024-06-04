@@ -4465,6 +4465,17 @@ public:
 };
 
 //=======================================================================================
+// Projects the ECSqlRowArg interface into JS.
+//! @bsiclass
+//=======================================================================================
+struct NativeECSqlRowArg {
+    bool m_abbreviateBlobs;
+    bool m_classIdToClassNames;
+    bool m_useJsName;
+    NativeECSqlRowArg(bool abbreviateBlobs, bool classIdToClassNames, bool useJsName): m_abbreviateBlobs(abbreviateBlobs), m_classIdToClassNames(classIdToClassNames), m_useJsName(useJsName) {}
+};
+
+//=======================================================================================
 // Projects the ECSqlStatement class into JS.
 //! @bsiclass
 //=======================================================================================
@@ -4643,16 +4654,28 @@ public:
         return Napi::String::New(Env(), m_stmt.GetNativeSql());
     }
 
+    static NativeECSqlRowArg getECSqlRowArg(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, optObj);
+        BeJsValue opts(optObj);
+        if (!opts.isBoolMember("abbreviateBlobs"))
+            BeNapi::ThrowJsException(info.Env(), "abbreviateBlobs argument missing");
+        if (!opts.isBoolMember("convertClassIdsToClassNames"))
+            BeNapi::ThrowJsException(info.Env(), "convertClassIdsToClassNames argument missing");
+        if (!opts.isNumericMember("rowFormat"))
+            BeNapi::ThrowJsException(info.Env(), "rowFormat argument missing");
+
+        bool useJsName = (ECSqlRequest::ECSqlValueFormat)opts["rowFormat"].asInt() == ECSqlRequest::ECSqlValueFormat::JsNames;
+        return NativeECSqlRowArg(opts["abbreviateBlobs"].asBool(), opts["convertClassIdsToClassNames"].asBool(), useJsName);
+    }
+
     Napi::Value ToRow(NapiInfoCR info) {
         if (!m_stmt.IsPrepared())
             THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
 
-        REQUIRE_ARGUMENT_BOOL(0, abbreviateBlobs);
-        REQUIRE_ARGUMENT_BOOL(1, convertClassIdsToClassNames);
-        REQUIRE_ARGUMENT_BOOL(2, useJsName);
+        NativeECSqlRowArg ecsqlRowArg = getECSqlRowArg(info);
 
         BeJsNapiObject out(info.Env());
-        m_stmt.ToRow(out, abbreviateBlobs, convertClassIdsToClassNames, useJsName);
+        m_stmt.ToRow(out, ecsqlRowArg.m_abbreviateBlobs, ecsqlRowArg.m_classIdToClassNames, ecsqlRowArg.m_useJsName);
         return out;
     }
 

@@ -130,7 +130,7 @@ BentleyStatus ECSqlStatement::ToRow(BeJsValue rowJson, bool abbreviateBlobs, boo
     adaptor.SetAbbreviateBlobs(abbreviateBlobs);
     adaptor.SetConvertClassIdsToClassNames(classIdToClassNames);
     adaptor.UseJsNames(useJsName);
-    return adaptor.RenderRow(rowJson, ECSqlStatementRow(*this));
+    return adaptor.RenderRow(rowJson, ECSqlStatementRow(*this), false);
     }
 
 //---------------------------------------------------------------------------------------
