@@ -36,6 +36,8 @@ public:
         friend class PlatformLib;
 
     public:
+
+        // DGNPLATFORM_EXPORT void GeoCoordInitialize(BeFileName geoCoordAssetPath);
         //! Provides Exception handling capabilities
         struct ExceptionHandler : IHostObject {
             //! Possible outcomes of handling an exception
@@ -248,8 +250,9 @@ public:
         DGNPLATFORM_EXPORT virtual VisualizationAdmin& _SupplyVisualizationAdmin();
 
         //! Supply the GeoCoordinationStateAdmin for this session. This method is guaranteed to be called once per thread from PlatformLib::Host::Initialize and never again..
-        DGNPLATFORM_EXPORT virtual GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin();
+        DGNPLATFORM_EXPORT virtual GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin(BeFileName geoCoorAssetPath);
 
+        DGNPLATFORM_EXPORT void GeoCoordInitialize(BeFileName geoCoordAssetPath);
         //! Supply the BRepGeometryAdmin for this session. This method is guaranteed to be called once per thread from PlatformLib::Host::Initialize and never again.
         DGNPLATFORM_EXPORT virtual BRepGeometryAdmin& _SupplyBRepGeometryAdmin();
 

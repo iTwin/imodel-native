@@ -2319,6 +2319,12 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return Napi::String::New(info.Env(), asset.GetNameUtf8().c_str());
         }
 
+    static void SetGeoCoordAssetDir(NapiInfoCR info)
+      {
+        BeFileName assetDir = BeFileName(info[0].ToString().Utf8Value().c_str());
+        T_HOST.GeoCoordInitialize(assetDir);
+      }
+
     static Napi::Value EnableSharedCache(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_BOOL(0, enabled);
@@ -2812,6 +2818,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("setNoCaseCollation", &NativeDgnDb::SetNoCaseCollation),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
+            StaticMethod("setGeoCoordAssetsDir", &NativeDgnDb::SetGeoCoordAssetDir),
             StaticMethod("zlibCompress", &NativeDgnDb::ZlibCompress),
             StaticMethod("zlibDecompress", &NativeDgnDb::ZlibDecompress),
         });
