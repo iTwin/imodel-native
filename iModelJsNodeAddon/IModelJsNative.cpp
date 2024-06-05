@@ -4465,6 +4465,16 @@ public:
 };
 
 //=======================================================================================
+// Projects the QueryRowFormat interface into JS.
+//! @bsiclass
+//=======================================================================================
+enum class NativeQueryRowFormat {
+    UseECSqlPropertyNames = 0,
+    UseECSqlPropertyIndexes = 1,
+    UseJsPropertyNames = 2
+};
+
+//=======================================================================================
 // Projects the ECSqlRowArg interface into JS.
 //! @bsiclass
 //=======================================================================================
@@ -4664,7 +4674,7 @@ public:
         if (!opts.isNumericMember("rowFormat"))
             BeNapi::ThrowJsException(info.Env(), "rowFormat argument missing");
 
-        bool useJsName = (ECSqlRequest::ECSqlValueFormat)opts["rowFormat"].asInt() == ECSqlRequest::ECSqlValueFormat::JsNames;
+        bool useJsName = (NativeQueryRowFormat)opts["rowFormat"].asInt() == NativeQueryRowFormat::UseJsPropertyNames;
         return NativeECSqlRowArg(opts["abbreviateBlobs"].asBool(), opts["convertClassIdsToClassNames"].asBool(), useJsName);
     }
 
