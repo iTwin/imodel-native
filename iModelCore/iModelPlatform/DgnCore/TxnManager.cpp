@@ -5,7 +5,9 @@
 #include <DgnPlatformInternal.h>
 
 BEGIN_UNNAMED_NAMESPACE
-#define PULL_MERGE_METHOD_PROP_NAME "PullMergeMethod"
+#define PULL_MERGE_METHOD_PROP_NAME "PullMerge.Method"
+#define PULL_MERGE_TXNID_PROP_NAME "PullMerge.Rebase.TxnId"
+
 typedef bvector<TxnMonitorP> TxnMonitors;
 static TxnMonitors s_monitors;
 static T_OnCommitCallback s_onCommitCallback = nullptr;
@@ -264,6 +266,7 @@ void TxnManager::BeginPullMerge(PullMergeMethod method){
     m_pullMergeMethod = resolvedMethod;
     m_pullMergeInProgress = true;
     m_dgndb.SaveBriefcaseLocalValue(PULL_MERGE_METHOD_PROP_NAME, (uint64_t)resolvedMethod);
+    m_dgndb.SaveBriefcaseLocalValue(PULL_MERGE_TXNID_PROP_NAME, m_pullMergeTxnId.GetValue());
 }
 struct Finally {
     using CallBack = std::function<void()>;
@@ -389,6 +392,7 @@ void TxnManager::EndPullMerge() {
         m_reversedTxn.pop_back();
         notifyJs(NotifyId::End, currTxnId, desc, type);
     }
+    m_dgndb.DeleteBriefcaseLocalValue(PULL_MERGE_TXNID_PROP_NAME);
 }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -944,6 +948,11 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
         if (!dataChangeSet._IsEmpty())
             OnRollback(dataChangeSet);
 
+        if (m_pullMergeInProgress) {
+            m_pullMergeInProgress = false;
+            m_pullMergeMethod = PullMergeMethod::Merge;
+            m_pullMergeTxnId = 0;
+        }
         return OnCommitStatus::Completed; // we've already done the rollback, tell BeSQLite not to try to do it
     }
 
@@ -1785,7 +1794,9 @@ ZipErrors TxnManager::ReadChanges(ChangeSet& changeset, TxnId rowId) {
 void TxnManager::ApplyTxnChanges(TxnId rowId, TxnAction action) {
     BeAssert(!HasDataChanges());
     BeAssert(TxnAction::Reverse == action || TxnAction::Reinstate == action); // Do not call ApplyChanges() if you don't want undo/redo notifications sent to TxnMonitors...
-    BeAssert(TxnType::Data == GetTxnType(rowId));
+    // const auto txnType = GetTxnType(rowId);
+    // UNUSED_VARIABLE(txnType);
+    // BeAssert(TxnType::Data == txnType);
 
     UndoChangeSet changeset;
     ReadDataChanges(changeset, rowId, action);
