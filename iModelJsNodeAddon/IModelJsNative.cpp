@@ -4683,7 +4683,6 @@ public:
             THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
 
         NativeECSqlRowArg ecsqlRowArg = getECSqlRowArg(info);
-
         BeJsNapiObject out(info.Env());
         m_stmt.ToRow(out, ecsqlRowArg.m_abbreviateBlobs, ecsqlRowArg.m_classIdToClassNames, ecsqlRowArg.m_useJsName);
         return out;

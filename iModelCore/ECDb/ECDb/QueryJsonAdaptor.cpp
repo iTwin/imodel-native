@@ -45,17 +45,17 @@ BentleyStatus QueryJsonAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& st
                 Utf8String memberName = memberProp->GetName();
                 if (prim && !prim->GetExtendedTypeName().empty()) {
                     const auto extendTypeId = ExtendedTypeHelper::GetExtendedType(prim->GetExtendedTypeName());
-                    if (extendTypeId == ExtendedTypeHelper::ExtendedType::Id)
+                    if (extendTypeId == ExtendedTypeHelper::ExtendedType::Id && memberName.EqualsIAscii(ECDBSYS_PROP_ECInstanceId))
                         memberName = ECN::ECJsonSystemNames::Id();
-                    else if(extendTypeId == ExtendedTypeHelper::ExtendedType::ClassId)
+                    else if(extendTypeId == ExtendedTypeHelper::ExtendedType::ClassId && memberName.EqualsIAscii(ECDBSYS_PROP_ECClassId))
                         memberName = ECN::ECJsonSystemNames::ClassName();
                     else if(extendTypeId == ExtendedTypeHelper::ExtendedType::SourceId)
                         memberName = ECN::ECJsonSystemNames::SourceId();
-                    else if(extendTypeId == ExtendedTypeHelper::ExtendedType::SourceClassId)
+                    else if(extendTypeId == ExtendedTypeHelper::ExtendedType::SourceClassId && memberName.EqualsIAscii(ECDBSYS_PROP_SourceECClassId))
                         memberName = ECN::ECJsonSystemNames::SourceClassName();
                     else if(extendTypeId == ExtendedTypeHelper::ExtendedType::TargetId)
                         memberName = ECN::ECJsonSystemNames::TargetId();
-                    else if(extendTypeId == ExtendedTypeHelper::ExtendedType::TargetClassId)
+                    else if(extendTypeId == ExtendedTypeHelper::ExtendedType::TargetClassId && memberName.EqualsIAscii(ECDBSYS_PROP_TargetECClassId))
                         memberName = ECN::ECJsonSystemNames::TargetClassName();
                     else
                         ECN::ECJsonUtilities::LowerFirstChar(memberName);
