@@ -33,6 +33,10 @@
 /* Maximum value for SQLITE_BCVCONFIG_LOG */
 #define BCV_MAX_NREQUEST 32
 
+#define BCV_MAX_RESULTS 5000
+
+#define BCV_DEFAULT_FINDORPHANS 1
+
 #define BCV_MANIFEST_SCHEMA \
   "CREATE TABLE config(                                         \n" \
   "  name TEXT PRIMARY KEY,                                     \n" \
@@ -73,6 +77,7 @@ struct sqlite3_bcv {
   bcv_progress_cb xProgress;      /* Progress-handler callback */
 
   int bTestNoKv;                  /* SQLITE_BCVCONFIG_TESTNOKV option */
+  int bFindOrphans;               /* SQLITE_BCVCONFIG_FINDORPHANS option */
 
   bcv_log_cb xBcvLog;
   void *pBcvLogCtx;
@@ -110,7 +115,7 @@ struct sqlite3_bcv_job {
     void (*xPut)(void*, int rc, char *zETag);
     void (*xCreate)(void*, int rc, char *zError);
     void (*xDestroy)(void*, int rc, char *zError);
-    void (*xList)(void*, int rc, char *z);
+    int (*xList)(void*, int rc, char *z);
     void (*xDelete)(void*, int rc, char *zError);
   } cb;
 
@@ -1130,6 +1135,7 @@ int sqlite3_bcv_open(
   if( pNew ){
     pNew->nRequest = 1;
     pNew->nHttpTimeout = BCV_DEFAULT_HTTPTIMEOUT;
+    pNew->bFindOrphans = BCV_DEFAULT_FINDORPHANS;
     pNew->errCode = bcvContainerOpen(
         zMod, zUser, zKey, zCont, &pNew->pCont, &pNew->zErrmsg
     );
@@ -1229,6 +1235,10 @@ int sqlite3_bcv_config(sqlite3_bcv *p, int eOp, ...){
         p->nHttpTimeout = va_arg(ap, int);
         bcvDispatchTimeout(p->pDisp, p->nHttpTimeout);
         break;
+      case SQLITE_BCVCONFIG_FINDORPHANS: {
+        p->bTestNoKv = va_arg(ap, int);
+        break;
+      }
       default:
         rc = SQLITE_MISUSE;
         break;
@@ -1821,6 +1831,7 @@ struct CollectCtx {
   ManifestHash *pHash;
   u8 *aDel;
   int nDel;
+  int nSeen;                      /* Number of invocations of bcvfsListCb */
   sqlite3_bcv *p;                 /* For logging messages */
 };
 
@@ -1832,6 +1843,12 @@ struct CollectCtx {
 **   The new aDelBlk array. When this object is created, aNew is set to
 **   point at a buffer as large as aOld - this way it is guaranteed to be
 **   large enough to accomodate the final aDelBlk array.
+**
+** nProgressDone:
+**   Total number of blocks deleted, as last reported to xProgress.
+**
+** nProgressTotal:
+**   Total number of blocks that will be deleted, as reported to xProgress.
 */
 typedef struct DeleteCtx DeleteCtx;
 struct DeleteCtx {
@@ -1841,11 +1858,13 @@ struct DeleteCtx {
   i64 nGC;                        /* Size of GC entry in bytes */
   i64 nName;                      /* Size of block id in bytes */
   int iOld;
-  int nOld;                       
+  int nOld;                       /* Number of entries in aOld[] */
   const u8 *aOld;
   int nNew;
   u8 *aNew;
   i64 iDelTime;
+  i64 nProgressDone;
+  i64 nProgressTotal;
   sqlite3_bcv *p;                 /* For errors and logging messages */
 };
 
@@ -1906,6 +1925,24 @@ static void bcvExtraLogManifest(
   }
 }
 
+/*
+** Invoke the progress-handler callback with the supplied parameters. This
+** is used for _cleanup() operations only, due to the special SQLITE_DONE
+** handling.
+*/
+static void bcvfsInvokeProgress(sqlite3_bcv *p, i64 nDone, i64 nTotal){
+  if( p->errCode==SQLITE_OK && p->xProgress ){
+    int res = p->xProgress(p->pProgressCtx, nDone, nTotal);
+    if( res!=SQLITE_OK ){
+      if( res==SQLITE_DONE ){
+        p->errCode = SQLITE_DONE;
+      }else{
+        bcvApiError(p, SQLITE_ABORT, "abort requested by progress callback");
+      }
+    }
+  }
+}
+
 /* 
 ** This callback may be invoked one of three ways:
 **
@@ -1913,7 +1950,7 @@ static void bcvExtraLogManifest(
 **     rc==SQLITE_OK, zFile==0    ->    List files is finished
 **     rc!=SQLITE_OK              ->    Error. zFile may be error message
 */
-static void bcvfsListCb(void *pArg, int rc, char *zFile){
+static int bcvfsListCb(void *pArg, int rc, char *zFile){
   CollectCtx *pCtx = (CollectCtx*)pArg;
   if( rc==SQLITE_OK ){
     if( zFile ){
@@ -1940,7 +1977,7 @@ static void bcvfsListCb(void *pArg, int rc, char *zFile){
           u8 *aNew = (u8*)sqlite3_realloc(pCtx->aDel, nNew*nGC);
           if( aNew==0 ){
             pCtx->rc = SQLITE_NOMEM;
-            return;
+            return pCtx->rc;
           }else{
             pCtx->aDel = aNew;
           }
@@ -1950,20 +1987,31 @@ static void bcvfsListCb(void *pArg, int rc, char *zFile){
         bcvPutU64(&pWrite[nName], 0);
         pCtx->nDel++;
       }
+
+      pCtx->nSeen++;
+      if( (pCtx->nSeen % pCtx->p->pCont->nMaxResults)==0 ){
+        bcvfsInvokeProgress(pCtx->p, 0, 1);
+        if( pCtx->p->errCode ) return pCtx->p->errCode;
+      }
     }
   }else{
     pCtx->rc = rc;
     pCtx->zErr = bcvStrdup(zFile);
   }
+  return  pCtx->rc;
 }
 
 static void bcvfsDeleteOneBlock(DeleteCtx *pCtx);
 
 static void bcvfsDeleteBlockDone(void *pArg, int rc, char *zErr){
   DeleteCtx *pCtx = (DeleteCtx*)pArg;
-  if( pCtx->p->errCode==SQLITE_OK && rc!=SQLITE_OK && rc!=HTTP_NOT_FOUND ){
-    bcvApiError(pCtx->p, rc, "delete block failed (%d) - %s", rc, zErr);
+  sqlite3_bcv *p = pCtx->p;
+
+  pCtx->nProgressDone++; 
+  if( p->errCode==SQLITE_OK && rc!=SQLITE_OK && rc!=HTTP_NOT_FOUND ){
+    bcvApiError(p, rc, "delete block failed (%d) - %s", rc, zErr);
   }
+  bcvfsInvokeProgress(p, pCtx->nProgressDone, pCtx->nProgressTotal);
   bcvfsDeleteOneBlock(pCtx);
 }
 
@@ -1988,7 +2036,7 @@ static void bcvfsDeleteOneBlock(DeleteCtx *pCtx){
         }
       }
 
-      if( pCtx->iDelTime==0 || iTime<=pCtx->iDelTime ){
+      if( bDel ){
         char zFile[BCV_MAX_FSNAMEBYTES];
         bcvBlockidToText(NAMEBYTES(pCtx->pMan), &pCtx->aOld[iOff], zFile);
         pCtx->p->errCode = bcvDispatchDelete(
@@ -2003,6 +2051,21 @@ static void bcvfsDeleteOneBlock(DeleteCtx *pCtx){
       }
     }
     pCtx->iOld = ii;
+  }
+}
+
+static void bcvCleanupSetTotal(DeleteCtx *pCtx){
+  assert( pCtx->nProgressTotal==0 );
+  assert( pCtx->nProgressDone==0 );
+  if( pCtx->p->xProgress ){
+    int ii;
+    for(ii=0; ii<pCtx->nOld; ii++){
+      int iOff = ii*pCtx->nGC;
+      i64 iTime = (i64)bcvGetU64(&pCtx->aOld[iOff + pCtx->nName]);
+      if( pCtx->iDelTime==0 || iTime<=pCtx->iDelTime ){
+        pCtx->nProgressTotal++;
+      }
+    }
   }
 }
 
@@ -2032,36 +2095,38 @@ int sqlite3_bcv_cleanup(sqlite3_bcv *p, int nSecond){
 
   bcvExtraLogManifest(p, "Manifest downloaded for cleanup:", ctx1.pMan);
 
-  /* Build a hash table of all blocks in the manifest */
-  p->errCode = bcvMHashBuild(ctx1.pMan, 1, 0, &ctx1.pHash);
-
-  /* Grab a list of files from the cloud container. Accumulate entries
-  ** for any orphaned files in the ctx1.aDel array.  */
-  if( p->errCode==SQLITE_OK ){
-    p->errCode = bcvDispatchList(pDisp, pBcv, 0, (void*)&ctx1, bcvfsListCb);
+  if( p->bFindOrphans ){
+    /* Build a hash table of all blocks in the manifest */
+    p->errCode = bcvMHashBuild(ctx1.pMan, 1, 0, &ctx1.pHash);
+  
+    /* Grab a list of files from the cloud container. Accumulate entries
+    ** for any orphaned files in the ctx1.aDel array.  */
     if( p->errCode==SQLITE_OK ){
-      bcvDispatchRunAll(pDisp);
-    }
-  }
-
-  /* If any orphaned blocks were found, add them to the manifest and 
-  ** upload it.  */
-  if( p->errCode==SQLITE_OK && ctx1.nDel ){
-    int nGC = GCENTRYBYTES(ctx1.pMan);
-    i64 nNew = ctx1.nDel + ctx1.pMan->nDelBlk;
-    u8 *aNew = (u8*)bcvMallocRc(&p->errCode, nNew*nGC);
-    if( aNew ){
-      if( ctx1.pMan->nDelBlk ){
-        memcpy(aNew, ctx1.pMan->aDelBlk, ctx1.pMan->nDelBlk*nGC);
+      p->errCode = bcvDispatchList(pDisp, pBcv, 0, (void*)&ctx1, bcvfsListCb);
+      if( p->errCode==SQLITE_OK ){
+        bcvDispatchRunAll(pDisp);
       }
-      memcpy(&aNew[nGC*ctx1.pMan->nDelBlk], ctx1.aDel, ctx1.nDel*nGC);
-      ctx1.pMan->aDelBlk = aNew;
-      ctx1.pMan->nDelBlk = nNew;
-      ctx1.pMan->bDelFree = 1;
-      bcvManifestUploadParsed(p, ctx1.pMan);
-      bcvExtraLogManifest(p, 
-          "Manifest uploaded by cleanup to add stray blocks:", ctx1.pMan
-      );
+    }
+  
+    /* If any orphaned blocks were found, add them to the manifest and 
+    ** upload it.  */
+    if( p->errCode==SQLITE_OK && ctx1.nDel ){
+      int nGC = GCENTRYBYTES(ctx1.pMan);
+      i64 nNew = ctx1.nDel + ctx1.pMan->nDelBlk;
+      u8 *aNew = (u8*)bcvMallocRc(&p->errCode, nNew*nGC);
+      if( aNew ){
+        if( ctx1.pMan->nDelBlk ){
+          memcpy(aNew, ctx1.pMan->aDelBlk, ctx1.pMan->nDelBlk*nGC);
+        }
+        memcpy(&aNew[nGC*ctx1.pMan->nDelBlk], ctx1.aDel, ctx1.nDel*nGC);
+        ctx1.pMan->aDelBlk = aNew;
+        ctx1.pMan->nDelBlk = nNew;
+        ctx1.pMan->bDelFree = 1;
+        bcvManifestUploadParsed(p, ctx1.pMan);
+        bcvExtraLogManifest(p, 
+            "Manifest uploaded by cleanup to add stray blocks:", ctx1.pMan
+        );
+      }
     }
   }
 
@@ -2080,18 +2145,27 @@ int sqlite3_bcv_cleanup(sqlite3_bcv *p, int nSecond){
       ctx2.iDelTime = sqlite_timestamp() - (i64)nSecond * 1000;
     }
 
+    /* Set DeleteCtx.nProgressTotal, if required */
+    bcvCleanupSetTotal(&ctx2);
+
     for(ii=0; p->errCode==SQLITE_OK && ii<p->nRequest; ii++){
       bcvfsDeleteOneBlock(&ctx2);
     }
     if( p->errCode==SQLITE_OK ){
       int rc = bcvDispatchRunAll(pDisp);
-      if( p->errCode==SQLITE_OK ) p->errCode = rc;
+      if( p->errCode==SQLITE_OK || p->errCode==SQLITE_DONE ) p->errCode = rc;
     }
     if( p->errCode==SQLITE_OK && ctx2.nNew<ctx2.nOld ){
       if( ctx1.pMan->bDelFree ) sqlite3_free(ctx1.pMan->aDelBlk);
       ctx1.pMan->aDelBlk = ctx2.aNew;
       ctx1.pMan->nDelBlk = ctx2.nNew;
       ctx1.pMan->bDelFree = 1;
+      if( ctx2.iOld<ctx2.nOld ){
+        int nCopy = (ctx2.nOld - ctx2.iOld);
+        const u8 *aCopy = &ctx2.aOld[ctx2.nGC * ctx2.iOld];
+        memcpy(&ctx2.aNew[ctx2.nGC * ctx2.nNew], aCopy, ctx2.nGC * nCopy);
+        ctx1.pMan->nDelBlk += nCopy;
+      }
       ctx2.aNew = 0;
       bcvManifestUploadParsed(p, ctx1.pMan);
       bcvExtraLogManifest(p, 
@@ -2100,6 +2174,7 @@ int sqlite3_bcv_cleanup(sqlite3_bcv *p, int nSecond){
     }
   }
 
+  if( p->errCode==SQLITE_DONE ) p->errCode = SQLITE_OK;
   bcvManifestFree(ctx1.pMan);
   bcvMHashFree(ctx1.pHash);
   sqlite3_free(ctx1.aDel);
@@ -2342,7 +2417,7 @@ void sqlite3_bcv_job_result(
     }
     case BCV_DISPATCH_LIST: {
       assert( nData<0 );
-      p->cb.xList(p->pCbApp, SQLITE_OK, (char*)pData);
+      p->rc = p->cb.xList(p->pCbApp, SQLITE_OK, (char*)pData);
       break;
     }
     default:
@@ -2579,6 +2654,7 @@ int bcvContainerOpen(
         memset(pNew, 0, sizeof(BcvContainer));
         pNew->pMod = &pMod->mod;
         pNew->nContRef = 1;
+        pNew->nMaxResults = BCV_MAX_RESULTS;
         rc = pMod->mod.xOpen(pMod->pCtx, (const char**)&azField[1], 
             zUser, zSecret, zCont, &pNew->pCont, pzErr
         );
@@ -2586,6 +2662,14 @@ int bcvContainerOpen(
           sqlite3_free(pNew);
         }else{
           *ppCont = pNew;
+          int ii;
+          for(ii=1; azField[ii-1] && azField[ii]; ii+=2){
+            if( sqlite3_stricmp("maxresults",azField[ii])==0 && azField[ii+1] ){
+              const u8 *z = (const u8*)azField[ii+1];
+              int nMax = bcvParseInt(z, strlen(azField[ii+1]));
+              if( nMax>0 ) pNew->nMaxResults = nMax;
+            }
+          }
         }
       }
     }else if( rc==SQLITE_OK ){
@@ -3327,7 +3411,7 @@ int bcvDispatchList(
   BcvContainer *pCont,
   const char *zPrefix,
   void *pApp,
-  void (*x)(void*, int rc, char *zError)
+  int (*x)(void*, int rc, char *zError)
 ){
   int rc = SQLITE_OK;
   BcvDispatchJob *pJob;
