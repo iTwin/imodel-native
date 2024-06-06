@@ -74,6 +74,7 @@ ScopedDgnHostImpl::ScopedDgnHostImpl(ScopedDgnHostConfig* config) : m_config(con
 
     PlatformLib::Initialize(*this);
     m_isInitialized = true;
+    T_HOST.GeoCoordInitialize(BeFileName(""));
     }
 
 /*---------------------------------------------------------------------------------**//**
