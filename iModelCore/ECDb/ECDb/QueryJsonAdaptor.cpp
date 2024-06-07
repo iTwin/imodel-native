@@ -39,7 +39,8 @@ BentleyStatus QueryJsonAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& st
                 continue;
             }
 
-            const auto memberProp = ecsqlValue.GetColumnInfo().GetProperty();
+            ECSqlColumnInfo const& columnInfo = ecsqlValue.GetColumnInfo();
+            const auto memberProp = columnInfo.GetProperty();
             if (m_useJsName) {
                 const auto prim = memberProp->GetAsPrimitiveProperty();
                 Utf8String memberName = memberProp->GetName();
@@ -57,7 +58,31 @@ BentleyStatus QueryJsonAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& st
                         memberName = ECN::ECJsonSystemNames::TargetId();
                     else if(extendTypeId == ExtendedTypeHelper::ExtendedType::TargetClassId && memberName.EqualsIAscii(ECDBSYS_PROP_TargetECClassId))
                         memberName = ECN::ECJsonSystemNames::TargetClassName();
-                    else
+                    else if (columnInfo.GetPropertyPath().Size() > 1)  {
+                        T_Utf8StringVector accessStringV;
+                        for (auto const* it : columnInfo.GetPropertyPath())
+                            accessStringV.push_back(it->GetProperty()->GetName().c_str());
+                        Utf8String tmp = accessStringV.front() + ".";
+                        for (int j = 1; j < accessStringV.size() - 1; ++j)
+                            tmp += accessStringV[j] + ".";
+
+                        auto &leafEntry = accessStringV.back();
+                        if (leafEntry == ECDBSYS_PROP_NavPropId)
+                            tmp += ECN::ECJsonSystemNames::Id();
+                        else if (leafEntry == ECDBSYS_PROP_NavPropRelECClassId)
+                            tmp += ECN::ECJsonSystemNames::Navigation::RelClassName();
+                        else if (leafEntry == ECDBSYS_PROP_PointX)
+                            tmp += ECN::ECJsonSystemNames::Point::X();
+                        else if (leafEntry == ECDBSYS_PROP_PointY)
+                            tmp += ECN::ECJsonSystemNames::Point::Y();
+                        else if (leafEntry == ECDBSYS_PROP_PointZ)
+                            tmp += ECN::ECJsonSystemNames::Point::Z();
+                        else
+                            tmp += leafEntry;
+
+                        memberName = tmp;
+                        ECN::ECJsonUtilities::LowerFirstChar(memberName);
+                    } else
                         ECN::ECJsonUtilities::LowerFirstChar(memberName);
                 } else {
                     ECN::ECJsonUtilities::LowerFirstChar(memberName);
