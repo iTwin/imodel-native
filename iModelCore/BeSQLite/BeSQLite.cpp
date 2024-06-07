@@ -818,6 +818,7 @@ void Db::Interrupt() const {return sqlite3_interrupt(GetSqlDb());}
 int64_t  Db::GetLastInsertRowId() const {return sqlite3_last_insert_rowid(GetSqlDb());}
 int      Db::GetModifiedRowCount() const {return sqlite3_changes(GetSqlDb());}
 int      Db::GetTotalModifiedRowCount() const { return sqlite3_total_changes(GetSqlDb()); }
+int64_t  Db::GetTotalModifiedRowCount64() const { return sqlite3_total_changes64(GetSqlDb()); }
 void     SnappyFromBlob::Finish() {m_blobIO.Close();}
 
 Utf8String ProfileVersion::ToJson() const { return ToString("{\"major\":%" PRIu16 ",\"minor\":%" PRIu16 ",\"sub1\":%" PRIu16 ",\"sub2\":%" PRIu16 "}"); }
@@ -5352,7 +5353,7 @@ Utf8CP BeSQLiteLib::GetErrorName(DbResult code) {
         case BE_SQLITE_ERROR_ProfileTooNewForReadWrite:   return "BE_SQLITE_ERROR_ProfileTooNewForReadWrite";
         case BE_SQLITE_ERROR_ProfileTooNew:               return "BE_SQLITE_ERROR_ProfileTooNew";
         case BE_SQLITE_ERROR_ChangeTrackError:            return "BE_SQLITE_ERROR_ChangeTrackError";
-        case BE_SQLITE_ERROR_InvalidChangeSetVersion:      return "BE_SQLITE_ERROR_InvalidChangeSetVersion";
+        case BE_SQLITE_ERROR_InvalidChangeSetVersion:     return "BE_SQLITE_ERROR_InvalidChangeSetVersion";
         case BE_SQLITE_ERROR_SchemaUpgradeRequired:       return "BE_SQLITE_ERROR_SchemaUpgradeRequired";
         case BE_SQLITE_ERROR_SchemaTooNew:                return "BE_SQLITE_ERROR_SchemaTooNew";
         case BE_SQLITE_ERROR_SchemaTooOld:                return "BE_SQLITE_ERROR_SchemaTooOld";
