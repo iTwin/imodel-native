@@ -232,6 +232,152 @@ TEST_F(PerformanceSchemaImportTests, ImportSimpleSchema)
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), 1, "Simple Schema Import Test with just a single class w/o props");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PerformanceSchemaImportTests, DropSchemasPerformance)
+    {
+    auto schemaXml = Utf8String(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema_X" alias="ts_X" version="01.00.00" description="Test Schema_X" displayLabel="TestSchema_X" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECStructClass typeName="TestClass1_X" modifier="Sealed">
+                <ECProperty propertyName="TestClassProperty1_X" typeName="string"/>
+                <ECProperty propertyName="TestClassProperty2_X" typeName="string"/>
+                <ECProperty propertyName="TestClassProperty3_X" typeName="string"/>
+                <ECProperty propertyName="TestClassProperty4_X" typeName="int"/>
+                <ECProperty propertyName="TestClassProperty5_X" typeName="string"/>
+            </ECStructClass>
+            <ECStructClass typeName="TestClass2_X" modifier="Sealed">
+                <ECProperty propertyName="TestClassProperty6_X" typeName="string"/>
+                <ECProperty propertyName="TestClassProperty7_X" typeName="string"/>
+                <ECProperty propertyName="TestClassProperty8_X" typeName="string"/>
+                <ECProperty propertyName="TestClassProperty9_X" typeName="int"/>
+                <ECProperty propertyName="TestClassProperty10_X" typeName="string"/>
+            </ECStructClass>
+            <ECStructClass typeName="TestClass3_X" modifier="Sealed">
+                <ECProperty propertyName="TestClassProperty11_X" typeName="string"/>
+                <ECProperty propertyName="TestClassProperty12_X" typeName="string"/>
+                <ECProperty propertyName="TestClassProperty13_X" typeName="string"/>
+                <ECProperty propertyName="TestClassProperty14_X" typeName="int"/>
+                <ECProperty propertyName="TestClassProperty15_X" typeName="string"/>
+            </ECStructClass>
+            <ECStructClass typeName="TestClass4_X" modifier="Sealed">
+                <ECProperty propertyName="TestClassProperty16_X" typeName="string"/>
+                <ECProperty propertyName="TestClassProperty17_X" typeName="string"/>
+                <ECProperty propertyName="TestClassProperty18_X" typeName="string"/>
+                <ECProperty propertyName="TestClassProperty19_X" typeName="int"/>
+                <ECProperty propertyName="TestClassProperty20_X" typeName="string"/>
+            </ECStructClass>
+            <ECStructClass typeName="TestClass5_X" modifier="Sealed">
+                <ECProperty propertyName="TestClassProperty21_X" typeName="string"/>
+                <ECProperty propertyName="TestClassProperty22_X" typeName="string"/>
+                <ECProperty propertyName="TestClassProperty23_X" typeName="string"/>
+                <ECProperty propertyName="TestClassProperty24_X" typeName="int"/>
+                <ECProperty propertyName="TestClassProperty25_X" typeName="string"/>
+            </ECStructClass>
+
+            <ECEntityClass typeName="TestClassArray1_X">
+                <ECStructArrayProperty propertyName="TestPropArray1_X" typeName="TestClass1_X" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="TestPropArray2_X" typeName="TestClass2_X" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="TestPropArray3_X" typeName="TestClass3_X" minOccurs="0" maxOccurs="unbounded"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="TestClassArray2_X">
+                <ECStructArrayProperty propertyName="TestPropArray4_X" typeName="TestClass1_X" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="TestPropArray5_X" typeName="TestClass4_X" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="TestPropArray6_X" typeName="TestClass5_X" minOccurs="0" maxOccurs="unbounded"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="TestClassArray3_X">
+                <ECStructArrayProperty propertyName="TestPropArray7_X" typeName="TestClass1_X" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="TestPropArray8_X" typeName="TestClass4_X" minOccurs="0" maxOccurs="unbounded"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="TestClassArray4_X">
+                <ECStructArrayProperty propertyName="TestPropArray9_X" typeName="TestClass1_X" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="TestPropArray10_X" typeName="TestClass2_X" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="TestPropArray11_X" typeName="TestClass3_X" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="TestPropArray12_X" typeName="TestClass4_X" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="TestPropArray13_X" typeName="TestClass5_X" minOccurs="0" maxOccurs="unbounded"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="TestClassArray5_X">
+                <ECStructArrayProperty propertyName="TestPropArray14_X" typeName="TestClass1_X" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="TestPropArray15_X" typeName="TestClass2_X" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="TestPropArray16_X" typeName="TestClass3_X" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="TestPropArray17_X" typeName="TestClass4_X" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="TestPropArray18_X" typeName="TestClass5_X" minOccurs="0" maxOccurs="unbounded"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="TestClassArray6_X">
+                <ECStructArrayProperty propertyName="TestPropArray19_X" typeName="TestClass1_X" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="TestPropArray20_X" typeName="TestClass2_X" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="TestPropArray21_X" typeName="TestClass3_X" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="TestPropArray22_X" typeName="TestClass4_X" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="TestPropArray23_X" typeName="TestClass5_X" minOccurs="0" maxOccurs="unbounded"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="TestClassArray7_X">
+                <ECStructArrayProperty propertyName="TestPropArray24_X" typeName="TestClass1_X" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="TestPropArray25_X" typeName="TestClass2_X" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="TestPropArray26_X" typeName="TestClass3_X" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="TestPropArray27_X" typeName="TestClass4_X" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="TestPropArray28_X" typeName="TestClass5_X" minOccurs="0" maxOccurs="unbounded"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="TestClassArray8_X">
+                <ECStructArrayProperty propertyName="TestPropArray29_X" typeName="TestClass1_X" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="TestPropArray30_X" typeName="TestClass2_X" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="TestPropArray31_X" typeName="TestClass3_X" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="TestPropArray32_X" typeName="TestClass4_X" minOccurs="0" maxOccurs="unbounded"/>
+                <ECStructArrayProperty propertyName="TestPropArray33_X" typeName="TestClass5_X" minOccurs="0" maxOccurs="unbounded"/>
+            </ECEntityClass>
+        </ECSchema>
+        )xml");
+
+    const auto numSchemas = 100;
+    T_Utf8StringVector schemaNames;
+    for (auto i = 1; i <= numSchemas; ++i)
+        schemaNames.push_back(Utf8PrintfString("TestSchema_%d", i));
+    
+    for (const auto& dropMultipleSchemas : { false /*Test DropSchema performance*/, true /*Test DropSchemas performance*/ })
+        {
+        // Setup ECDb and import schemas
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("DropSchemasPerformance.ecdb"));
+        auto context = ECSchemaReadContext::CreateContext();
+        ASSERT_TRUE(context.IsValid());
+        context->AddSchemaLocater(m_ecdb.GetSchemaLocater());
+
+        StopWatch timer(true);
+        for (auto i = 1; i <= numSchemas; ++i)
+            {
+            auto tempSchemaXml = schemaXml;
+            tempSchemaXml.ReplaceAll("_X", Utf8PrintfString("_%d", i).c_str());
+            ECSchemaPtr schema;
+            ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, tempSchemaXml.c_str(), *context));
+            ASSERT_TRUE(schema.IsValid());
+            }
+        ASSERT_EQ(SUCCESS, m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()));
+        timer.Stop();
+
+        LOGPERFDB(TEST_DETAILS, timer.GetElapsedSeconds(), "Importing schemas");
+
+        for (const auto& schemaName : schemaNames)
+            ASSERT_TRUE(m_ecdb.Schemas().ContainsSchema(schemaName));
+
+        timer.Start();
+        if (dropMultipleSchemas)
+            {
+            ASSERT_TRUE(m_ecdb.Schemas().DropSchemas(schemaNames).IsSuccess());
+            timer.Stop();
+            LOGPERFDB(TEST_DETAILS, timer.GetElapsedSeconds(), "Dropping all imported schemas at once with DropSchemas function");
+            }
+        else
+            {
+            for (const auto& schemaName : schemaNames)
+                ASSERT_TRUE(m_ecdb.Schemas().DropSchema(schemaName).IsSuccess());
+            timer.Stop();
+            LOGPERFDB(TEST_DETAILS, timer.GetElapsedSeconds(), "Dropping all imported schemas one at a time with DropSchema function");
+            }
+        for (const auto& schemaName : schemaNames)
+            ASSERT_FALSE(m_ecdb.Schemas().ContainsSchema(schemaName));
+
+        m_ecdb.AbandonChanges();
+        }
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
