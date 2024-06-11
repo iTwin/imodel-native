@@ -723,3 +723,4 @@ int bcvLogGetData(BcvLog *pLog, BcvBuffer *pBuf);
 void bcvTimeToString(i64 iTime, char *zBuf);
 void bcvLogConfig(BcvLog *pLog, int op, i64 iVal);
 
+int bcvDeleteBlocks(Manifest *pMan, int iDb);
