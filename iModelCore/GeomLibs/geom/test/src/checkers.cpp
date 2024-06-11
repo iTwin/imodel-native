@@ -218,6 +218,15 @@ bool Check::LessThanOrEqual (double a, double b, char const*pString)
     return false;
     }
 
+bool Check::LessThanOrEqual(size_t a, size_t b, char const* pString)
+    {
+    if (a <= b)
+        return true;
+    Check::PrintScope();
+    Check::Fail(Utf8PrintfString("(fail %zu <= %zu) %s\n", a, b, pString ? pString : "").c_str());
+    return false;
+    }
+
 bool Check::True (bool a, char const*pString)
     {
     if (a)
