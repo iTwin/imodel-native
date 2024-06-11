@@ -2064,8 +2064,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             }
         }
     }
-
-    Napi::Value ImportSchemas(NapiInfoCR info)
+    void ImportSchemas(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
@@ -2085,12 +2084,18 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             options.m_customSchemaContext = NativeECSchemaXmlContext::Unwrap(maybeEcSchemaContextVal.As<Napi::Object>())->GetContext();
             }
 
+        LastErrorListener lastError(db);
         DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::File, options);
-
-        return Napi::Number::New(Env(), (int)result);
+        if (DbResult::BE_SQLITE_OK != result)
+            {
+            if (lastError.HasError())
+                BeNapi::ThrowJsException(info.Env(), lastError.GetLastError().c_str(), (int) result);
+            else
+                BeNapi::ThrowJsException(info.Env(), "Failed to import schemas", (int) result);
+            }
         }
 
-    Napi::Value ImportXmlSchemas(NapiInfoCR info)
+    void ImportXmlSchemas(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_STRING_ARRAY(0, schemaFileNames);
@@ -2101,8 +2106,15 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         if (jsSyncDbUri.IsString())
             options.m_schemaSyncDbUri = jsSyncDbUri.ToString().Utf8Value();
 
+        LastErrorListener lastError(db);
         DbResult result = JsInterop::ImportSchemas(db, schemaFileNames, SchemaSourceType::XmlString, options);
-        return Napi::Number::New(Env(), (int)result);
+        if (DbResult::BE_SQLITE_OK != result)
+            {
+            if (lastError.HasError())
+                BeNapi::ThrowJsException(info.Env(), lastError.GetLastError().c_str(), (int) result);
+            else
+                BeNapi::ThrowJsException(info.Env(), "Failed to import schemas", (int) result);
+            }
         }
 
     Napi::Value FindGeometryPartReferences(NapiInfoCR info)
@@ -2306,6 +2318,17 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         BeFileName asset = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
         return Napi::String::New(info.Env(), asset.GetNameUtf8().c_str());
         }
+
+    static void SetGeoCoordAssetDir(NapiInfoCR info)
+      {
+        BeFileName assetDir = BeFileName(info[0].ToString().Utf8Value().c_str());
+        T_HOST.GeoCoordInitialize(assetDir);
+      }
+
+    static void TerminateGeoCoordAssetDir(NapiInfoCR info)
+      {
+        T_HOST.TerminateGeoCoordAdmin(true);
+      }
 
     static Napi::Value EnableSharedCache(NapiInfoCR info)
         {
@@ -2800,6 +2823,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("setNoCaseCollation", &NativeDgnDb::SetNoCaseCollation),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
+            StaticMethod("setGeoCoordAssetsDir", &NativeDgnDb::SetGeoCoordAssetDir),
+            StaticMethod("terminateGeoCoordAssetsDir", &NativeDgnDb::TerminateGeoCoordAssetDir),
             StaticMethod("zlibCompress", &NativeDgnDb::ZlibCompress),
             StaticMethod("zlibDecompress", &NativeDgnDb::ZlibDecompress),
         });

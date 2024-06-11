@@ -36,7 +36,7 @@ export function loadInstalledAddon(): typeof IModelJsNative {
   return NativeLibrary.load();
 }
 
-export function loadLocalBuildOfAddon(): any {
+export function loadLocalBuildOfAddon(): typeof IModelJsNative {
   if (process.env.OutRoot === undefined) {
     throw new Error("You must define 'OutRoot' in your environment");
   }
@@ -71,7 +71,9 @@ export function logTest(msg: string) {
 
 let _addon: undefined | typeof IModelJsNative;
 function loadAddon() {
-  return _addon ??= useLocalBuild ? loadLocalBuildOfAddon() : loadInstalledAddon();
+  _addon ??= useLocalBuild ? loadLocalBuildOfAddon() : loadInstalledAddon();
+  _addon.DgnDb.setGeoCoordAssetsDir("");
+  return _addon;
 }
 
 export const iModelJsNative: typeof IModelJsNative = loadAddon();

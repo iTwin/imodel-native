@@ -7,6 +7,7 @@
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/DgnECSymbolProvider.h>
 #include <DgnPlatform/Visualization.h>
+#include <DgnPlatform/PlatformLib.h>
 
 BeThreadLocalStorage t_threadId;
 
@@ -220,7 +221,8 @@ void PlatformLib::Terminate(bool onProgramExit) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PlatformLib::Host::Terminate(bool onProgramExit) {
 
-    ON_HOST_TERMINATE(m_geoCoordAdmin, onProgramExit);
+    if( m_geoCoordAdmin != nullptr )
+      ON_HOST_TERMINATE(m_geoCoordAdmin, onProgramExit);
     ON_HOST_TERMINATE(m_bRepGeometryAdmin, onProgramExit);
 
     // UnRegister Symbol Provider for ECExpressions
@@ -235,6 +237,13 @@ void _wassert(wchar_t const*, wchar_t const*, int) {BeAssert(false);}
 #endif
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void PlatformLib::Host::TerminateGeoCoordAdmin(bool onProgramExit) {
+    ON_HOST_TERMINATE(m_geoCoordAdmin, onProgramExit);
+}
+
+/*---------------------------------------------------------------------------------**//**
 * *Private* method called by Dgn::Host::Initialize.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -242,7 +251,7 @@ void PlatformLib::Host::Initialize()
     {
     BeAssert(NULL == m_knownLocationsAdmin); m_knownLocationsAdmin = &_SupplyIKnownLocationsAdmin();
     BeAssert(NULL == m_exceptionHandler); m_exceptionHandler = &_SupplyExceptionHandler();
-    BeAssert(NULL == m_geoCoordAdmin); m_geoCoordAdmin = &_SupplyGeoCoordinationAdmin();
+    // BeAssert(NULL == m_geoCoordAdmin); m_geoCoordAdmin = &_SupplyGeoCoordinationAdmin();
 
     auto assetDir = m_knownLocationsAdmin->GetDgnPlatformAssetsDirectory();
 
@@ -251,7 +260,7 @@ void PlatformLib::Host::Initialize()
                       &assetDir,
                        BeSQLiteLib::LogErrors::Yes);
 
-    GeoCoordinates::BaseGCS::Initialize(GetGeoCoordinationAdmin()._GetDataDirectory().GetNameUtf8().c_str());
+    // GeoCoordinates::BaseGCS::Initialize(GetGeoCoordinationAdmin()._GetDataDirectory().GetNameUtf8().c_str());
 
     DgnDomains::RegisterDomain(BisCoreDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
     DgnDomains::RegisterDomain(GenericDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
@@ -271,6 +280,15 @@ void PlatformLib::Host::Initialize()
     auto tempDirBase = m_knownLocationsAdmin->GetLocalTempDirectoryBaseName();
     m_bRepGeometryAdmin->_Initialize(assetDir, tempDirBase);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void PlatformLib::Host::GeoCoordInitialize(BeFileName geoCoordAssetPath) 
+  {
+    BeAssert(NULL == m_geoCoordAdmin); m_geoCoordAdmin = &_SupplyGeoCoordinationAdmin(geoCoordAssetPath);
+    GeoCoordinates::BaseGCS::Initialize(GetGeoCoordinationAdmin()._GetDataDirectory().GetNameUtf8().c_str());
+  }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -437,9 +455,14 @@ PlatformLib::Host::BRepGeometryAdmin& PlatformLib::Host::_SupplyBRepGeometryAdmi
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-PlatformLib::Host::GeoCoordinationAdmin& PlatformLib::Host::_SupplyGeoCoordinationAdmin()
+PlatformLib::Host::GeoCoordinationAdmin& PlatformLib::Host::_SupplyGeoCoordinationAdmin(BeFileName geoCoordAssetPath)
     {
-    BeFileName geo = GetIKnownLocationsAdmin().GetGeoCoordinateDataDirectory();
+    BeFileName geo;
+    if (geoCoordAssetPath.empty())
+        geo = GetIKnownLocationsAdmin().GetGeoCoordinateDataDirectory();
+    else
+        geo = geoCoordAssetPath;
+
 
     BeFileName path(geo);
     path.AppendToPath(L"DgnGeoCoord");

@@ -674,6 +674,8 @@ export declare namespace IModelJsNative {
     public setAutoCheckpointThreshold(frames: number): void;
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
+    public static setGeoCoordAssetsDir(dir: string): void;
+    public static terminateGeoCoordAssetsDir(): void;
     public static zlibCompress(data: Uint8Array): Uint8Array;
     public static zlibDecompress(data: Uint8Array, actualSize: number): Uint8Array;
   }
@@ -1026,6 +1028,17 @@ export declare namespace IModelJsNative {
     public destroy(): void;
   }
 
+  interface CleanDeletedBlocksOptions {
+    /**
+     * Any block that was marked as unused before this number of seconds ago will be deleted. Specifying a non-zero
+     * value gives a period of time for other clients to refresh their manifests and stop using the now-garbage blocks. Otherwise they may get
+     * a 404 error. Default is 1 hour.
+     */
+    nSeconds?: number;
+    /** if enabled, outputs verbose logs about the cleanup process. These would include outputting blocks which are determined as eligible for deletion. */
+    debugLogging?: boolean;
+  }
+
   /** A CloudSqlite container that may be connected to a CloudCache. */
   class CloudContainer {
     public onConnect?: (container: CloudContainer, cache: CloudCache) => void;
@@ -1149,11 +1162,9 @@ export declare namespace IModelJsNative {
      * by new versions, sometimes leaving the originals unused. In this case, they are not deleted immediately.
      * Instead, they are scheduled for deletion at some later time. Calling this method deletes all blocks in the cloud container
      * for which the scheduled deletion time has passed.
-     * @param nSeconds Any block that was marked as unused before this number of seconds ago will be deleted. Specifying a non-zero
-     * value gives a period of time for other clients to refresh their manifests and stop using the now-garbage blocks. Otherwise they may get
-     * a 404 error. Default is 1 hour.
+     * @param options options which influence the behavior of cleanDeletedBlocks. @see CleanDeletedBlocksOptions
      */
-    public cleanDeletedBlocks(nSeconds?: number): Promise<void>;
+    public cleanDeletedBlocks(options?: CleanDeletedBlocksOptions): Promise<void>;
 
     /**
      * Create a copy of an existing database within this CloudContainer with a new name.

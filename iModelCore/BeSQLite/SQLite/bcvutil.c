@@ -76,6 +76,7 @@ struct sqlite3_bcv {
 
   bcv_log_cb xBcvLog;
   void *pBcvLogCtx;
+  BcvLog *pBcvLogObj;
 };
 
 typedef struct sqlite3_bcv_job BcvDispatchJob;
@@ -1152,6 +1153,7 @@ void sqlite3_bcv_close(sqlite3_bcv *p){
   if( p && p!=&sqlite3_bcv_oom_handle ){
     bcvContainerClose(p->pCont);
     bcvDispatchFree(p->pDisp);
+    bcvLogDelete(p->pBcvLogObj);
     sqlite3_free(p->zErrmsg);
     sqlite3_free(p);
   }
@@ -1194,8 +1196,13 @@ int sqlite3_bcv_config(sqlite3_bcv *p, int eOp, ...){
       case SQLITE_BCVCONFIG_LOG: {
         p->pBcvLogCtx = va_arg(ap, void*);
         p->xBcvLog = (bcv_log_cb)va_arg(ap, bcv_log_cb);
+        if( p->pBcvLogObj==0 ){
+          p->pBcvLogObj = bcvLogNew();
+          if( p->pBcvLogObj==0 ) rc = SQLITE_NOMEM;
+        }
         if( p->xBcvLog ){
           bcvDispatchLog(p->pDisp, (void*)p, bcvLogWrapper);
+          bcvDispatchLogObj(p->pDisp, p->pBcvLogObj);
         }else{
           bcvDispatchLog(p->pDisp, 0, 0);
         }
