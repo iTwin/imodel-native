@@ -2325,6 +2325,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         T_HOST.GeoCoordInitialize(assetDir);
       }
 
+    static void TerminateGeoCoordAssetDir(NapiInfoCR info)
+      {
+        T_HOST.TerminateGeoCoordAdmin(true);
+      }
+
     static Napi::Value EnableSharedCache(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_BOOL(0, enabled);
@@ -2819,6 +2824,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
             StaticMethod("setGeoCoordAssetsDir", &NativeDgnDb::SetGeoCoordAssetDir),
+            StaticMethod("terminateGeoCoordAssetsDir", &NativeDgnDb::TerminateGeoCoordAssetDir),
             StaticMethod("zlibCompress", &NativeDgnDb::ZlibCompress),
             StaticMethod("zlibDecompress", &NativeDgnDb::ZlibDecompress),
         });

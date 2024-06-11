@@ -221,7 +221,8 @@ void PlatformLib::Terminate(bool onProgramExit) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PlatformLib::Host::Terminate(bool onProgramExit) {
 
-    ON_HOST_TERMINATE(m_geoCoordAdmin, onProgramExit);
+    if( m_geoCoordAdmin != nullptr )
+      ON_HOST_TERMINATE(m_geoCoordAdmin, onProgramExit);
     ON_HOST_TERMINATE(m_bRepGeometryAdmin, onProgramExit);
 
     // UnRegister Symbol Provider for ECExpressions
@@ -234,6 +235,13 @@ void PlatformLib::Host::Terminate(bool onProgramExit) {
 #if defined (__unix__) // WIP_NONPORT
 void _wassert(wchar_t const*, wchar_t const*, int) {BeAssert(false);}
 #endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void PlatformLib::Host::TerminateGeoCoordAdmin(bool onProgramExit) {
+    ON_HOST_TERMINATE(m_geoCoordAdmin, onProgramExit);
+}
 
 /*---------------------------------------------------------------------------------**//**
 * *Private* method called by Dgn::Host::Initialize.
@@ -273,6 +281,9 @@ void PlatformLib::Host::Initialize()
     m_bRepGeometryAdmin->_Initialize(assetDir, tempDirBase);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void PlatformLib::Host::GeoCoordInitialize(BeFileName geoCoordAssetPath) 
   {
     BeAssert(NULL == m_geoCoordAdmin); m_geoCoordAdmin = &_SupplyGeoCoordinationAdmin(geoCoordAssetPath);
@@ -447,7 +458,7 @@ PlatformLib::Host::BRepGeometryAdmin& PlatformLib::Host::_SupplyBRepGeometryAdmi
 PlatformLib::Host::GeoCoordinationAdmin& PlatformLib::Host::_SupplyGeoCoordinationAdmin(BeFileName geoCoordAssetPath)
     {
     BeFileName geo;
-    if (geoCoordAssetPath.c_str())
+    if (geoCoordAssetPath.empty())
         geo = GetIKnownLocationsAdmin().GetGeoCoordinateDataDirectory();
     else
         geo = geoCoordAssetPath;

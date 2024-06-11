@@ -253,6 +253,8 @@ public:
         DGNPLATFORM_EXPORT virtual GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin(BeFileName geoCoorAssetPath);
 
         DGNPLATFORM_EXPORT void GeoCoordInitialize(BeFileName geoCoordAssetPath);
+        
+        DGNPLATFORM_EXPORT void TerminateGeoCoordAdmin(bool onProgramExit);
         //! Supply the BRepGeometryAdmin for this session. This method is guaranteed to be called once per thread from PlatformLib::Host::Initialize and never again.
         DGNPLATFORM_EXPORT virtual BRepGeometryAdmin& _SupplyBRepGeometryAdmin();
 
