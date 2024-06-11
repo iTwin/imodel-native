@@ -423,7 +423,6 @@ POP_DISABLE_DEPRECATION_WARNINGS
     std::call_once(s_initFlag, []() {
         auto jsHost = new JsDgnHost();
         PlatformLib::Initialize(*jsHost);
-        // PlatformLib::GeoCoordInitialize(*jsHost);
         RegisterOptionalDomains();
         InitLogging();
         InitializeSolidKernel();

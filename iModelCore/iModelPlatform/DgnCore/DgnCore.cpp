@@ -251,7 +251,6 @@ void PlatformLib::Host::Initialize()
     {
     BeAssert(NULL == m_knownLocationsAdmin); m_knownLocationsAdmin = &_SupplyIKnownLocationsAdmin();
     BeAssert(NULL == m_exceptionHandler); m_exceptionHandler = &_SupplyExceptionHandler();
-    // BeAssert(NULL == m_geoCoordAdmin); m_geoCoordAdmin = &_SupplyGeoCoordinationAdmin();
 
     auto assetDir = m_knownLocationsAdmin->GetDgnPlatformAssetsDirectory();
 
@@ -260,7 +259,6 @@ void PlatformLib::Host::Initialize()
                       &assetDir,
                        BeSQLiteLib::LogErrors::Yes);
 
-    // GeoCoordinates::BaseGCS::Initialize(GetGeoCoordinationAdmin()._GetDataDirectory().GetNameUtf8().c_str());
 
     DgnDomains::RegisterDomain(BisCoreDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
     DgnDomains::RegisterDomain(GenericDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);

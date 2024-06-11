@@ -37,7 +37,6 @@ public:
 
     public:
 
-        // DGNPLATFORM_EXPORT void GeoCoordInitialize(BeFileName geoCoordAssetPath);
         //! Provides Exception handling capabilities
         struct ExceptionHandler : IHostObject {
             //! Possible outcomes of handling an exception
