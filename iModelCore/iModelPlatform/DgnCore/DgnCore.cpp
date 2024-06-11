@@ -437,9 +437,8 @@ PlatformLib::Host::BRepGeometryAdmin& PlatformLib::Host::_SupplyBRepGeometryAdmi
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-PlatformLib::Host::GeoCoordinationAdmin& PlatformLib::Host::_SupplyGeoCoordinationAdmin(BeFileNameCR path)
+PlatformLib::Host::GeoCoordinationAdmin& PlatformLib::Host::_SupplyGeoCoordinationAdmin()
     {
-    
     BeFileName geo = GetIKnownLocationsAdmin().GetGeoCoordinateDataDirectory();
 
     BeFileName path(geo);

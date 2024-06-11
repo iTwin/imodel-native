@@ -674,7 +674,6 @@ export declare namespace IModelJsNative {
     public setAutoCheckpointThreshold(frames: number): void;
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
-    public static setGeoCoordAssetsDir(dir: string): void;
     public static zlibCompress(data: Uint8Array): Uint8Array;
     public static zlibDecompress(data: Uint8Array, actualSize: number): Uint8Array;
   }

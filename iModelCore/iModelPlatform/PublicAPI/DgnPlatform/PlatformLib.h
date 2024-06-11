@@ -93,9 +93,6 @@ public:
             //! The only reason to use this method is when a PowerPlatform-based app is also using these libraries but wants to use the
             //! PowerPlatform based GeoCoordinateData and not the one from DgnClientSdk
             BeFileNameCR GetGeoCoordinateDataDirectory() { return _GetGeoCoordinateDataDirectory(); }
-
-            void SetGeocoordinateDataDirectory(BeFileNameCR path) {  }
-            
         };
 
         //=======================================================================================
