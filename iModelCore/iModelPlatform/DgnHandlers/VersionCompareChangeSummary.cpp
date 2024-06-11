@@ -832,7 +832,7 @@ void RelatedPropertyPathExplorer::TraverseInChunks(bmap<ECInstanceKey,ECInstance
             }
 
         // Merge the found related keys to this instance
-		ECInstanceKeySet& keySet = output[originKey];
+        ECInstanceKeySet& keySet = output[originKey];
         for (auto const& key : currentIntermediaryKeys)
             keySet.insert(key);
         }
@@ -1444,8 +1444,8 @@ void ChangedElementFinder::ProcessInstance(DgnDbR db, DgnChangeSummary& changeSu
     // Get type of change
     ElementChangesType changes;
     DgnModelId modelId;
-	GetChangesType(changes, modelId, db, instance);
-	info.m_changes = changes;
+    GetChangesType(changes, modelId, db, instance);
+    info.m_changes = changes;
 
     // Add parent key to the info object if it exists
     if (m_options.wantParents)
@@ -1721,7 +1721,7 @@ StatusInt    VersionCompareChangeSummary::ProcessChangesets()
 
     // Open Db file
     DbResult openStatus;
-	DgnDb::OpenParams params(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes);
+    DgnDb::OpenParams params(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes);
 
     // Clone the db if necessary
     bool cloneDb = WantTargetState() && !m_options.wantBriefcaseRoll;
@@ -1884,7 +1884,7 @@ StatusInt   VersionCompareChangeSummary::RollTargetDb(bvector<ChangesetPropsPtr>
     m_targetDb->CloseDb();
     // Re-open to apply changesets that contain schema changes
     BeSQLite::DbResult result;
-	DgnDb::OpenParams params(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes);
+    DgnDb::OpenParams params(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes);
     params.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(changesetsCP, RevisionProcessOption::Merge);
     m_targetDb = DgnDb::OpenIModelDb(&result, filename, params);
     BeAssert(result == BeSQLite::BE_SQLITE_OK && m_targetDb.IsValid());
