@@ -2328,6 +2328,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     static void TerminateGeoCoordAssetDir(NapiInfoCR info)
       {
         T_HOST.TerminateGeoCoordAdmin(true);
+        GeoCoordinates::BaseGCS::Shutdown();
       }
 
     static Napi::Value EnableSharedCache(NapiInfoCR info)
