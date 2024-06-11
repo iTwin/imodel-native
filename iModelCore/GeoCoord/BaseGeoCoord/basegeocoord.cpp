@@ -27329,7 +27329,7 @@ _csFile* CS_fopen(Utf8CP filename, Utf8CP mode) {
     if (file != nullptr)
         Logging::LogMessageV("GeoCoord", LOG_INFO, "Successfully loaded GCS file %s from %s", filename, name.c_str());
     else
-        Logging::LogMessageV("GeoCoord", LOG_WARNING, "Unable to find GCS file %s in Workspace or locally", filename);
+        Logging::LogMessageV("GeoCoord", LOG_WARNING, "Unable to find GCS file %s in Workspace or %s", filename, name.c_str());
 
     return nullptr == file ? nullptr : new AssetDirFile(file);
 }
