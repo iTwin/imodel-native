@@ -1236,7 +1236,7 @@ int sqlite3_bcv_config(sqlite3_bcv *p, int eOp, ...){
         bcvDispatchTimeout(p->pDisp, p->nHttpTimeout);
         break;
       case SQLITE_BCVCONFIG_FINDORPHANS: {
-        p->bTestNoKv = va_arg(ap, int);
+        p->bFindOrphans = va_arg(ap, int);
         break;
       }
       default:
@@ -1475,7 +1475,15 @@ int sqlite3_bcv_upload(
   return p->errCode;
 }
 
-static void bcvDeleteBlocks(Manifest *pMan, int iDb){
+/*
+** This function is called when deleting a database from a manifest file, 
+** either via sqlite3_bcv_delete() or sqlite3_bcvfs_delete(). It adds
+** all blocks from database iDb to the delete-list of the manifest, with
+** the current time as the timestamp.
+**
+** SQLITE_OK is returned if successful, otherwise an SQLite error code.
+*/
+int bcvDeleteBlocks(Manifest *pMan, int iDb){
   ManifestDb *pDb = &pMan->aDb[iDb];
   u8 *aGC = 0;
   i64 iTime = 0;
@@ -1484,30 +1492,40 @@ static void bcvDeleteBlocks(Manifest *pMan, int iDb){
   int iGC = 0;
   ManifestHash *pMH = 0;
   const int nName = NAMEBYTES(pMan);
+  int rc = SQLITE_OK;
 
   iTime = sqlite_timestamp();
   bcvPutU64(aTime, iTime);
 
-  bcvMHashBuild(pMan, 0, pDb, &pMH);
   assert( pDb->nBlkOrig==pDb->nBlkLocal );
-  aGC = (u8*)bcvMalloc((pMan->nDelBlk+pDb->nBlkOrig) * GCENTRYBYTES(pMan));
-  if( pMan->nDelBlk ){
-    memcpy(aGC, pMan->aDelBlk, pMan->nDelBlk * GCENTRYBYTES(pMan));
+  rc = bcvMHashBuild(pMan, 0, pDb, &pMH);
+  aGC = (u8*)bcvMallocRc(&rc, (pMan->nDelBlk+pDb->nBlkOrig)*GCENTRYBYTES(pMan));
+  if( rc==SQLITE_OK ){
+
+    if( pMan->nDelBlk ){
+      memcpy(aGC, pMan->aDelBlk, pMan->nDelBlk * GCENTRYBYTES(pMan));
+      if( pMan->bDelFree ){
+        sqlite3_free(pMan->aDelBlk);
+        pMan->aDelBlk = 0;
+      }
+    }
+
+    for(i=0; i<pDb->nBlkOrig; i++){
+      u8 *pDel = &pDb->aBlkOrig[i*nName];
+      if( 0==bcvMHashQuery(pMH, pDel, nName) ){
+        assert( GCENTRYBYTES(pMan)==nName+8 );
+        memcpy(&aGC[(pMan->nDelBlk+iGC)*GCENTRYBYTES(pMan)], pDel, nName);
+        memcpy(&aGC[(pMan->nDelBlk+iGC)*GCENTRYBYTES(pMan)+nName], aTime, 8);
+        iGC++;
+      }
+    }
+    pMan->nDelBlk += iGC;
+    pMan->aDelBlk = aGC;
+    pMan->bDelFree = 1;
   }
 
-  for(i=0; i<pDb->nBlkOrig; i++){
-    u8 *pDel = &pDb->aBlkOrig[i*nName];
-    if( 0==bcvMHashQuery(pMH, pDel, nName) ){
-      assert( GCENTRYBYTES(pMan)==nName+8 );
-      memcpy(&aGC[(pMan->nDelBlk+iGC)*GCENTRYBYTES(pMan)], pDel, nName);
-      memcpy(&aGC[(pMan->nDelBlk+iGC)*GCENTRYBYTES(pMan)+nName], aTime, 8);
-      iGC++;
-    }
-  }
-  pMan->nDelBlk += iGC;
-  pMan->aDelBlk = aGC;
-  pMan->bDelFree = 1;
   bcvMHashFree(pMH);
+  return rc;
 }
 
 /*
@@ -1807,16 +1825,18 @@ int sqlite3_bcv_delete(
     ManifestDb *pDb = &pMan->aDb[iDb];
 
     /* Move blocks to the delete list */
-    bcvDeleteBlocks(pMan, iDb);
+    rc = bcvDeleteBlocks(pMan, iDb);
 
-    assert( pDb->nBlkLocalAlloc==0 );
-    if( pDb->nBlkOrigAlloc ) sqlite3_free(pDb->aBlkOrig);
-    if( iDb<pMan->nDb-1 ){
-      memmove(pDb, &pDb[1], (pMan->nDb-iDb-1)*sizeof(ManifestDb));
+    if( rc==SQLITE_OK ){
+      assert( pDb->nBlkLocalAlloc==0 );
+      if( pDb->nBlkOrigAlloc ) sqlite3_free(pDb->aBlkOrig);
+      if( iDb<pMan->nDb-1 ){
+        memmove(pDb, &pDb[1], (pMan->nDb-iDb-1)*sizeof(ManifestDb));
+      }
+      pMan->nDb--;
+
+      rc = bcvManifestUploadParsed(p, pMan);
     }
-    pMan->nDb--;
-
-    rc = bcvManifestUploadParsed(p, pMan);
   }
 
   bcvManifestFree(pMan);
