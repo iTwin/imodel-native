@@ -1033,8 +1033,22 @@ export declare namespace IModelJsNative {
      * a 404 error. Default is 1 hour.
      */
     nSeconds?: number;
-    /** if enabled, outputs verbose logs about the cleanup process. These would include outputting blocks which are determined as eligible for deletion. */
+    /** if enabled, outputs verbose logs about the cleanup process. These would include outputting blocks which are determined as eligible for deletion.
+     * @default false
+    */
     debugLogging?: boolean;
+    /** If true, iterates over all blobs in the cloud container to add blocks that are 'orphaned' to the list of orphaned blocks in the manifest.
+     * An orphaned block is one which is not referenced by any of the databases in the manifest.bcv file.
+     * The list of orphaned blocks will then begin to be deleted.
+     * If false, the search for 'orphaned' blocks is skipped and only any blocks which are already marked as 'orphaned' are deleted. This option can be useful if a user is aware that they had an interrupted
+     * cleanDeletedBlocks operation in which blocks were already marked as orphaned but were not able to be deleted from blob storage due to the interruption.
+     * @default true
+     */
+    findOrphanedBlocks?: boolean;
+    /**
+     *
+     */
+    onProgress?: (loaded: number, total: number) => number;
   }
 
   /** A CloudSqlite container that may be connected to a CloudCache. */
@@ -1172,7 +1186,7 @@ export declare namespace IModelJsNative {
      */
     public copyDatabase(dbName: string, toAlias: string): Promise<void>;
 
-    /** Remove a database from this CloudContainer.
+    /** Remove a database from this CloudContainer, moving all of its no longer used blocks to the delete list in the manifest.
      * @see cleanDeletedBlocks
      */
     public deleteDatabase(dbName: string): Promise<void>;
@@ -1230,6 +1244,30 @@ export declare namespace IModelJsNative {
      * @throws exception if the operation has already completed.
      */
     public getProgress(): { loaded: number, total: number };
+
+    /** Promise that is resolved when the transfer completes, or is rejected if the transfer fails (or is cancelled.) */
+    public promise: Promise<void>;
+  }
+
+  class CleanDeletedBlocksJob {
+    /** create an instance of a transfer. The operation begins immediately when the object is created.
+     * @param direction either "upload" or "download"
+     * @param container the container holding the database. Does *not* require that the container be connected to a CloudCache.
+     * @param args The properties for the source and target of the transfer.
+     */
+    constructor(container: CloudContainer, args?: CleanDeletedBlocksOptions);
+
+    /** Cancel a currently pending transfer and cause the promise to be rejected with a Cancelled status.
+     * @throws exception if the operation has already completed.
+     */
+    public cancelTransfer(): void;
+    /** Get the current progress of the transfer.
+     * @throws exception if the operation has already completed.
+     */
+    public getProgress(): { loaded: number, total: number };
+
+    /** If one or more blocks have already been deleted in this job, then the job will be stopped and a new manifest file will be uploaded to reflect the progress made.  */
+    public stopAndSaveProgress(): void;
 
     /** Promise that is resolved when the transfer completes, or is rejected if the transfer fails (or is cancelled.) */
     public promise: Promise<void>;
