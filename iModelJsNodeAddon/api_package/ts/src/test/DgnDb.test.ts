@@ -17,6 +17,42 @@ import { copyFile, dbFileName, getAssetsDir, getOutputDir, iModelJsNative } from
 if (os.platform() === "linux")
   process.env.LINUX_MINIDUMP_ENABLED = "yes";
 
+describe.only("performance tests", () => {
+  const testFileName = "D:\\temp\\BT4_Bergen-D12_CM.bim";
+  it("getElement()", () => {
+    const dgndb = openDgnDb(testFileName);
+    const stmt = new iModelJsNative.SqliteStatement();
+    stmt.prepare(dgndb, "SELECT Id FROM bis_Element");
+    const start = new Date().getTime();
+    let count = 0;
+    while(stmt.step() === DbResult.BE_SQLITE_ROW) {
+      const id = stmt.getValueId(0);
+      dgndb.getInstance(id, "BisCore:Element");
+      ++count;
+    }
+    const end = new Date().getTime();
+    process.stdout.write(`${count} x getElement()  took ${end - start} ms \r\n`);
+    stmt.dispose();
+    dgndb.closeFile();
+  });
+  it("getInstance()", () => {
+    const dgndb = openDgnDb(testFileName);
+    const stmt = new iModelJsNative.SqliteStatement();
+    stmt.prepare(dgndb, "SELECT Id FROM bis_Element");
+    const start = new Date().getTime();
+    let count = 0;
+    while(stmt.step() === DbResult.BE_SQLITE_ROW) {
+      const id = stmt.getValueId(0);
+      dgndb.getInstance(id, "BisCore:Element");
+      ++count;
+    }
+    const end = new Date().getTime();
+    process.stdout.write(`${count} x getInstance() took ${end - start} ms \r\n`);
+    stmt.dispose();
+    dgndb.closeFile();
+  });
+});
+
 describe("basic tests", () => {
 
   let dgndb: IModelJsNative.DgnDb;

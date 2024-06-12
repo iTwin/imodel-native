@@ -2299,7 +2299,34 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         BeGuid beGuid = GetOpenedDb(info).QueryProjectGuid();
         return toJsString(Env(), beGuid.ToString());
     }
+    Napi::Value GetInstance(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, instanceIdStr);
+        REQUIRE_ARGUMENT_STRING(1, classFullNameStr);
+        auto& db = GetOpenedDb(info);
+        auto& instanceReader = db.GetInstanceReader();
+        ECInstanceId instanceId;
+        ECInstanceId::FromString(instanceId, instanceIdStr.c_str());
+        if (!instanceId.IsValid()){
+            THROW_JS_EXCEPTION("Invalid instanceId");
+        }
 
+        BeJsNapiObject obj(Env());
+        auto position = InstanceReader::Position{instanceId, classFullNameStr.c_str(), nullptr};
+        auto successful = instanceReader.Seek(position,
+            [&](InstanceReader::IRowContext const& row) {
+                ECSqlRowAdaptor adaptor(db);
+                if (ERROR == adaptor.RenderRow(obj, row, false)) {
+                    THROW_JS_EXCEPTION("Failed to render instance");
+                }
+            }
+        );
+
+        if (!successful) {
+            THROW_JS_EXCEPTION("Instance not found");
+        }
+        return obj;
+
+    }
     void ResetBriefcaseId(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_INTEGER(0, newId);
@@ -2699,6 +2726,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("getCurrentTxnId", &NativeDgnDb::GetCurrentTxnId),
             InstanceMethod("getECClassMetaData", &NativeDgnDb::GetECClassMetaData),
             InstanceMethod("getElement", &NativeDgnDb::GetElement),
+            InstanceMethod("getInstance", &NativeDgnDb::GetInstance),
             InstanceMethod("getFilePath", &NativeDgnDb::GetFilePath),
             InstanceMethod("getGeoCoordinatesFromIModelCoordinates", &NativeDgnDb::GetGeoCoordsFromIModelCoords),
             InstanceMethod("getGeometryContainment", &NativeDgnDb::GetGeometryContainment),
