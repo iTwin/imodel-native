@@ -12,45 +12,82 @@ import * as path from "path";
 import { openDgnDb } from ".";
 import { IModelJsNative, SchemaWriteStatus } from "../NativeLibrary";
 import { copyFile, dbFileName, getAssetsDir, getOutputDir, iModelJsNative } from "./utils";
+import { Suite } from "mocha";
 
 // Crash reporting on linux is gated by the presence of this env variable.
 if (os.platform() === "linux")
   process.env.LINUX_MINIDUMP_ENABLED = "yes";
 
-describe.only("performance tests", () => {
-  const testFileName = "D:\\temp\\BT4_Bergen-D12_CM.bim";
-  it("getElement()", () => {
-    const dgndb = openDgnDb(testFileName);
-    const stmt = new iModelJsNative.SqliteStatement();
-    stmt.prepare(dgndb, "SELECT Id FROM bis_Element");
-    const start = new Date().getTime();
-    let count = 0;
-    while(stmt.step() === DbResult.BE_SQLITE_ROW) {
-      const id = stmt.getValueId(0);
-      dgndb.getElement({id, wantGeometry: false});
-      ++count;
-    }
-    const end = new Date().getTime();
-    process.stdout.write(`${count} x getElement()  took ${end - start} ms \r\n`);
-    stmt.dispose();
-    dgndb.closeFile();
-  });
-  it("getInstance()", () => {
-    const dgndb = openDgnDb(testFileName);
-    const stmt = new iModelJsNative.SqliteStatement();
-    stmt.prepare(dgndb, "SELECT Id FROM bis_Element");
-    const start = new Date().getTime();
-    let count = 0;
-    while(stmt.step() === DbResult.BE_SQLITE_ROW) {
-      const id = stmt.getValueId(0);
-      dgndb.getInstance(id, "BisCore:Element");
-      ++count;
-    }
-    const end = new Date().getTime();
-    process.stdout.write(`${count} x getInstance() took ${end - start} ms \r\n`);
-    stmt.dispose();
-    dgndb.closeFile();
-  });
+describe.only("performance tests", function (this: Suite) {
+  this.timeout(0);
+  const testFileDir = "D:\\temp\\test-files\\";
+  const files = [
+    "BT4_Bergen-D12_CM.bim",
+    "2ER04_EDP.bim",
+    "03 North Portal Test.bim",
+    "#662NS (Iron Bridge) (FMG Model) LARGE.bim",
+    "Delaware River Waterfront Rail-DRWR04-S1.bim",
+  ];
+
+  for (const file of files.reverse()) {
+    const testFileName = path.join(testFileDir, file);
+    it("SELECT $", () => {
+      const dgndb = openDgnDb(testFileName);
+      const stmt = new iModelJsNative.SqliteStatement();
+      stmt.prepare(dgndb, "SELECT Id FROM bis_Element");
+
+      const ecsqlStmt = new iModelJsNative.ECSqlStatement();
+      ecsqlStmt.prepare(dgndb, "SELECT $ FROM BisCore.Element WHERE ECInstanceId=?");
+      const start = new Date().getTime();
+      let count = 0;
+      while (stmt.step() === DbResult.BE_SQLITE_ROW) {
+        ecsqlStmt.reset();
+        ecsqlStmt.clearBindings();
+        ecsqlStmt.getBinder(1).bindId(stmt.getValueId(0));
+        if (ecsqlStmt.step() === DbResult.BE_SQLITE_ROW) {
+          assert.isDefined(JSON.parse(ecsqlStmt.getValue(0).getString()));
+          ++count;
+        }
+      }
+      const end = new Date().getTime();
+      process.stdout.write(`${count} x SELECT $ (${file}) took ${end - start} ms ${(count/((end - start)/1000)).toFixed(0)} elements/sec\r\n`);
+      stmt.dispose();
+      ecsqlStmt.dispose();
+      dgndb.closeFile();
+    });
+    it("getElement()", () => {
+      const dgndb = openDgnDb(testFileName);
+      const stmt = new iModelJsNative.SqliteStatement();
+      stmt.prepare(dgndb, "SELECT Id FROM bis_Element");
+      const start = new Date().getTime();
+      let count = 0;
+      while (stmt.step() === DbResult.BE_SQLITE_ROW) {
+        const id = stmt.getValueId(0);
+        assert.isDefined(dgndb.getElement({ id, wantGeometry: false }));
+        ++count;
+      }
+      const end = new Date().getTime();
+      process.stdout.write(`${count} x getElement(${file})  took ${end - start} ms ${(count/((end - start)/1000)).toFixed(0)} elements/sec\r\n`);
+      stmt.dispose();
+      dgndb.closeFile();
+    });
+    it("getInstance()", () => {
+      const dgndb = openDgnDb(testFileName);
+      const stmt = new iModelJsNative.SqliteStatement();
+      stmt.prepare(dgndb, "SELECT Id FROM bis_Element");
+      const start = new Date().getTime();
+      let count = 0;
+      while (stmt.step() === DbResult.BE_SQLITE_ROW) {
+        const id = stmt.getValueId(0);
+        assert.isDefined(dgndb.getInstance(id, "BisCore:Element"));
+        ++count;
+      }
+      const end = new Date().getTime();
+      process.stdout.write(`${count} x getInstance(${file}) took ${end - start} ms ${(count/((end - start)/1000)).toFixed(0)} elements/sec\r\n`);
+      stmt.dispose();
+      dgndb.closeFile();
+    });
+  }
 });
 
 describe("basic tests", () => {
