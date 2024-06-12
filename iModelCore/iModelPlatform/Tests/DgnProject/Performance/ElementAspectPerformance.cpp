@@ -19,7 +19,7 @@ struct ElementAspectTests1 : public DgnDbTestFixture
 {
     CodeSpecPtr Create (Utf8CP name, bool insert = true)
     {
-        CodeSpecPtr codeSpec = CodeSpec::Create (*m_db, name);
+        CodeSpecPtr codeSpec = CodeSpec::Create (*m_db, name, CodeScopeSpec::CreateModelScope());
         if (insert)
         {
             EXPECT_EQ (DgnDbStatus::Success, codeSpec->Insert ());
@@ -142,7 +142,7 @@ TEST_F (ElementAspectTests1, SimpleElementPerformance_Update)
     StopWatch timer1 (true);
     for (int i = 1; i < count; i++) {
         tempEl[i]->SetUserLabel ("updated");
-        tempEl[i]->Update (&status);
+        status = tempEl[i]->Update ();
     }
     timer1.Stop ();
     LogTiming (timer1, "Update Simple Element Without Aspect", "TestElement", false, count-1, count-1);
@@ -179,7 +179,8 @@ TEST_F (ElementAspectTests1, UniqueAspectPerformance_Update)
     StopWatch timer1 (true);
     for (int i = 1; i < count; i++) {
         aspect[i]->SetTestUniqueAspectProperty ("Changed Value");
-        ASSERT_TRUE (m_db->Elements ().Update (*tempE3[i]).IsValid ());
+        DgnDbStatus stat = m_db->Elements ().Update (*tempE3[i]);
+        ASSERT_EQ(DgnDbStatus::Success, stat);
     }
     timer1.Stop ();
     LogTiming (timer1, "Update Element With a Unique Aspect", "TestElement2", false, count-1, count-1);
@@ -329,8 +330,9 @@ TEST_F (ElementAspectTests1, MultiAspectPerformance_Update)
         for (int i = 1; i < Aspectcount; i++)
         {
             aspect[i]->SetTestMultiAspectProperty ("updated");
+            DgnDbStatus stat = m_db->Elements ().Update (*tempE2[i]);
+            ASSERT_EQ(DgnDbStatus::Success, stat);
         }
-        ASSERT_TRUE (m_db->Elements ().Update (*tempE2[j]).IsValid ());
         timer1.Stop ();
         timeCount = timeCount + timer1.GetElapsedSeconds ();
     }
@@ -607,7 +609,7 @@ TEST_F (ElementAspectTests1, SimpleElementPerformanceProperties_Update)
         editE->SetPropertyValue ("PointProperty4", DPoint3d::From (1, 1, 1));
         editE->SetPropertyValue ("p2d", DPoint2d::From (2, 2));
         editE->SetPropertyValue ("b", true);
-        updated_element[i] = editE->Update (&status);
+        status = editE->Update ();
         ASSERT_EQ (DgnDbStatus::Success, status);
     }
     timer1.Stop ();
@@ -616,26 +618,27 @@ TEST_F (ElementAspectTests1, SimpleElementPerformanceProperties_Update)
     // get updated properties
     for (int i = 1; i < count; i++)
     {
+        TestElementPtr updatedE = m_db->Elements ().GetForEdit<TestElement> (id[i]);
         ECN::ECValue value;
-        EXPECT_EQ (DgnDbStatus::Success, updated_element[i]->GetPropertyValue (value, "DoubleProperty1"));
+        EXPECT_EQ (DgnDbStatus::Success, updatedE->GetPropertyValue (value, "DoubleProperty1"));
         ASSERT_EQ (23.0, value.GetDouble ());
-        EXPECT_EQ (DgnDbStatus::Success, updated_element[i]->GetPropertyValue (value, "DoubleProperty2"));
+        EXPECT_EQ (DgnDbStatus::Success, updatedE->GetPropertyValue (value, "DoubleProperty2"));
         ASSERT_EQ (23.0, value.GetDouble ());
-        EXPECT_EQ (DgnDbStatus::Success, updated_element[i]->GetPropertyValue (value, "DoubleProperty3"));
+        EXPECT_EQ (DgnDbStatus::Success, updatedE->GetPropertyValue (value, "DoubleProperty3"));
         ASSERT_EQ (23.0, value.GetDouble ());
-        EXPECT_EQ (DgnDbStatus::Success, updated_element[i]->GetPropertyValue (value, "DoubleProperty4"));
+        EXPECT_EQ (DgnDbStatus::Success, updatedE->GetPropertyValue (value, "DoubleProperty4"));
         ASSERT_EQ (23.0, value.GetDouble ());
-        EXPECT_EQ (DgnDbStatus::Success, updated_element[i]->GetPropertyValue (value, "PointProperty1"));
+        EXPECT_EQ (DgnDbStatus::Success, updatedE->GetPropertyValue (value, "PointProperty1"));
         ASSERT_EQ (DPoint3d::From (1, 1, 1), value.GetPoint3d());
-        EXPECT_EQ (DgnDbStatus::Success, updated_element[i]->GetPropertyValue (value, "PointProperty2"));
+        EXPECT_EQ (DgnDbStatus::Success, updatedE->GetPropertyValue (value, "PointProperty2"));
         ASSERT_EQ (DPoint3d::From (1, 1, 1), value.GetPoint3d ());
-        EXPECT_EQ (DgnDbStatus::Success, updated_element[i]->GetPropertyValue (value, "PointProperty3"));
+        EXPECT_EQ (DgnDbStatus::Success, updatedE->GetPropertyValue (value, "PointProperty3"));
         ASSERT_EQ (DPoint3d::From (1, 1, 1), value.GetPoint3d ());
-        EXPECT_EQ (DgnDbStatus::Success, updated_element[i]->GetPropertyValue (value, "PointProperty4"));
+        EXPECT_EQ (DgnDbStatus::Success, updatedE->GetPropertyValue (value, "PointProperty4"));
         ASSERT_EQ (DPoint3d::From (1, 1, 1), value.GetPoint3d ());
-        EXPECT_EQ (DgnDbStatus::Success, updated_element[i]->GetPropertyValue (value, "p2d"));
+        EXPECT_EQ (DgnDbStatus::Success, updatedE->GetPropertyValue (value, "p2d"));
         ASSERT_EQ (DPoint2d::From (2, 2), value.GetPoint2d ());
-        EXPECT_EQ (DgnDbStatus::Success, updated_element[i]->GetPropertyValue (value, "b"));
+        EXPECT_EQ (DgnDbStatus::Success, updatedE->GetPropertyValue (value, "b"));
         ASSERT_EQ (true, value.GetBoolean());
     }
 }
@@ -653,7 +656,6 @@ TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Update1)
     RefCountedPtr<DgnElement::UniqueAspect> aspect[count];
     ECN::ECClassCR aspectClassUnique = *TestUniqueAspect::GetECClass (*m_db);
     DgnElementCPtr persistentEl[count];
-    DgnElementCPtr updated_element[count];
     DgnElementId id[count];
     TestUniqueAspectP tempAspect[count];
 
@@ -701,7 +703,7 @@ TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Update1)
         ASSERT_EQ (DgnDbStatus::Success, tempAspect[i]->SetPropertyValue ("test7", ECValue (1.0)));
         ASSERT_EQ (DgnDbStatus::Success, tempAspect[i]->SetPropertyValue ("test8", ECValue ("updatedAspect2t8")));
 
-        updated_element[i] = editE->Update (&status);
+        status = editE->Update ();
         ASSERT_EQ (DgnDbStatus::Success, status);
     }
     timer1.Stop ();
@@ -721,7 +723,6 @@ TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Update2)
     double doubleVal = 1.61803398874;
     int const count = 1001;
     DgnElementCPtr persistentEl[count];
-    DgnElementCPtr updated_element[count];
     DgnElementId id[count];
     RefCountedPtr<DgnElement::UniqueAspect> aspect[count];
     ECN::ECClassCR aspectClassUnique = *TestUniqueAspect::GetECClass (*m_db);
@@ -779,7 +780,7 @@ TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Update2)
         ASSERT_EQ (DgnDbStatus::Success, tempAspect[i]->SetPropertyValue ("test2", ECValue ("updatedAspect2t2")));
         ASSERT_EQ (DgnDbStatus::Success, tempAspect[i]->SetPropertyValue ("test3", ECValue (1.0)));
 
-        updated_element[i] = editE->Update (&status);
+        status = editE->Update ();
         ASSERT_EQ (DgnDbStatus::Success, status);
     }
     timer1.Stop ();
@@ -800,7 +801,6 @@ TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Update3)
     int const count = 1001;
 
     DgnElementCPtr persistentEl[count];
-    DgnElementCPtr updated_element[count];
     DgnElementId id[count];
 
     for (int i = 1; i < count; i++)
@@ -853,7 +853,7 @@ TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Update3)
         EXPECT_EQ (DgnDbStatus::Success, editE->SetPropertyValue ("b", true));
         EXPECT_EQ (DgnDbStatus::Success, editE->SetPropertyValue ("p2d", DPoint2d::From (1, 1)));
 
-        updated_element[i] = editE->Update (&status);
+        status = editE->Update ();
         ASSERT_EQ (DgnDbStatus::Success, status);
     }
     timer1.Stop ();
