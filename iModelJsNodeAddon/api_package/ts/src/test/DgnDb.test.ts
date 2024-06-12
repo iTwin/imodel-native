@@ -27,7 +27,7 @@ describe.only("performance tests", () => {
     let count = 0;
     while(stmt.step() === DbResult.BE_SQLITE_ROW) {
       const id = stmt.getValueId(0);
-      dgndb.getInstance(id, "BisCore:Element");
+      dgndb.getElement({id, wantGeometry: false});
       ++count;
     }
     const end = new Date().getTime();
