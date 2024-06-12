@@ -4482,7 +4482,8 @@ struct NativeECSqlRowArg {
     bool m_abbreviateBlobs;
     bool m_classIdToClassNames;
     bool m_useJsName;
-    NativeECSqlRowArg(bool abbreviateBlobs, bool classIdToClassNames, bool useJsName): m_abbreviateBlobs(abbreviateBlobs), m_classIdToClassNames(classIdToClassNames), m_useJsName(useJsName) {}
+    bool m_includeMetaData;
+    NativeECSqlRowArg(bool abbreviateBlobs, bool classIdToClassNames, bool useJsName, bool includeMetaData): m_abbreviateBlobs(abbreviateBlobs), m_classIdToClassNames(classIdToClassNames), m_useJsName(useJsName), m_includeMetaData(includeMetaData) {}
 };
 
 //=======================================================================================
@@ -4673,9 +4674,11 @@ public:
             BeNapi::ThrowJsException(info.Env(), "convertClassIdsToClassNames argument missing");
         if (!opts.isNumericMember("rowFormat"))
             BeNapi::ThrowJsException(info.Env(), "rowFormat argument missing");
+        if (!opts.isBoolMember("includeMetaData"))
+            BeNapi::ThrowJsException(info.Env(), "includeMetaData argument missing");
 
         bool useJsName = (NativeQueryRowFormat)opts["rowFormat"].asInt() == NativeQueryRowFormat::UseJsPropertyNames;
-        return NativeECSqlRowArg(opts["abbreviateBlobs"].asBool(), opts["convertClassIdsToClassNames"].asBool(), useJsName);
+        return NativeECSqlRowArg(opts["abbreviateBlobs"].asBool(), opts["convertClassIdsToClassNames"].asBool(), useJsName, opts["includeMetaData"].asBool());
     }
 
     Napi::Value ToRow(NapiInfoCR info) {
@@ -4683,9 +4686,11 @@ public:
             THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
 
         NativeECSqlRowArg ecsqlRowArg = getECSqlRowArg(info);
-        BeJsNapiObject out(info.Env());
-        m_stmt.ToRow(out, ecsqlRowArg.m_abbreviateBlobs, ecsqlRowArg.m_classIdToClassNames, ecsqlRowArg.m_useJsName);
-        return out;
+
+        Json::Value jsonVal;
+        BeJsValue out(jsonVal);
+        m_stmt.ToRow(out, ecsqlRowArg.m_abbreviateBlobs, ecsqlRowArg.m_classIdToClassNames, ecsqlRowArg.m_useJsName, ecsqlRowArg.m_includeMetaData);
+        return toJsString(info.Env(), out.Stringify());
     }
 
     static DbResult ToDbResult(ECSqlStatus status) {

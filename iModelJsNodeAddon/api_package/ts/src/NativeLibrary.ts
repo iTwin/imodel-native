@@ -758,6 +758,7 @@ export declare namespace IModelJsNative {
     abbreviateBlobs?: boolean;
     convertClassIdsToClassNames?: boolean;
     rowFormat?: QueryRowFormat;
+    includeMetaData?: boolean;
   }
 
   class ECSqlStatement implements IDisposable {
