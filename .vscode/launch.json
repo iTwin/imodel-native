@@ -207,13 +207,13 @@
             "port": 9229
         },
         {
-            "name": "iModelPlatform Performance Test",
+            "name": "ECDb Performance Test",
             "presentation": {
                 "group": "3_PerformanceWin",
             },
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${env:OutRoot}Winx64/Product/iModelPlatform-Gtest-Performance/iModelPlatformPerformanceTests",
+            "program": "${env:OutRoot}WinX64/Product/ECDb-Gtest-Performance/ECDbTestPerformance",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
             "args": [
@@ -222,13 +222,13 @@
             ]
         },
         {
-            "name": "ECDb Performance Test",
+            "name": "iModelPlatform Performance Test",
             "presentation": {
                 "group": "3_PerformanceWin",
             },
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${env:OutRoot}WinX64/Product/ECDb-Gtest-Performance/ECDbTestPerformance",
+            "program": "${env:OutRoot}Winx64/Product/iModelPlatform-Gtest-Performance/iModelPlatformPerformanceTests",
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
             "args": [
