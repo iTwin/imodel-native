@@ -88,6 +88,83 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Retu
     }
 
 /*---------------------------------------------------------------------------------**//**
+// @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SelectedNodeInstances_MergesSameRelatedPropertiesWhenInputClassesAreDifferentAndRelatedPropertiesSpecificationHasInstanceFilter, R"*(
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="Element1">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="Element2">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ElementUniqueAspect">
+        <ECProperty propertyName="AspectName" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsUniqueAspect" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="ElementUniqueAspect"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_MergesSameRelatedPropertiesWhenInputClassesAreDifferentAndRelatedPropertiesSpecificationHasInstanceFilter)
+    {
+    ECEntityClassCP elementClass = GetClass("Element")->GetEntityClassCP();
+    ECEntityClassCP elementClass1 = GetClass("Element1")->GetEntityClassCP();
+    ECEntityClassCP elementClass2 = GetClass("Element2")->GetEntityClassCP();
+    ECEntityClassCP aspectClass = GetClass("ElementUniqueAspect")->GetEntityClassCP();
+    ECRelationshipClassCP elementOwnsUniqueAspectRelationship = GetClass("ElementOwnsUniqueAspect")->GetRelationshipClassCP();
+
+    // set up dataset
+    IECInstancePtr element1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass1);
+    IECInstancePtr aspect1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsUniqueAspectRelationship, *element1, *aspect1);
+
+    IECInstancePtr element2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass2);
+    IECInstancePtr aspect2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsUniqueAspectRelationship, *element2, *aspect2);
+
+    // set up selection
+    KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{ element1, element2 });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", true));
+    auto relatedPropertiesSpec = new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(elementOwnsUniqueAspectRelationship->GetFullName(), RequiredRelationDirection_Forward, aspectClass->GetFullName()),
+        }), { new PropertySpecification("*") }, RelationshipMeaning::SameInstance, true);
+    relatedPropertiesSpec->SetInstanceFilter("this.AspectName = NULL");
+    rule->GetSpecifications().back()->AddRelatedProperty(*relatedPropertiesSpec);
+    rules->AddPresentationRule(*rule);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", 0, *input)));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    ASSERT_EQ(2, descriptor->GetSelectClasses().size());
+    EXPECT_EQ(elementClass1, &descriptor->GetSelectClasses()[0].GetSelectClass().GetClass());
+    EXPECT_EQ(elementClass2, &descriptor->GetSelectClasses()[1].GetSelectClass().GetClass());
+
+    bvector<ContentDescriptor::Field*> fields = descriptor->GetVisibleFields();
+    ASSERT_EQ(1, fields.size());
+    EXPECT_TRUE(fields[0]->IsNestedContentField());
+    EXPECT_STREQ(NESTED_CONTENT_FIELD_NAME(elementClass, aspectClass), fields[0]->GetUniqueName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(RelatedPropertyValuesAreCorrectWhenSelectionIncludesInstanceOfRelatedInstanceClass, R"*(
@@ -1498,7 +1575,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
         classB->GetFullName(), "*", RelationshipMeaning::RelatedInstance));
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), 
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
         rules->GetRuleSetId(), RulesetVariables(), "", (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size());
@@ -9823,7 +9900,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesContentForDifferentR
     auto keys = KeySet::Create(bvector<IECInstancePtr>{ a1, a2 });
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), 
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(),
         "", 0, *keys)));
     ASSERT_TRUE(descriptor.IsValid());
 
