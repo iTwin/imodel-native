@@ -11,25 +11,11 @@ USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_DPTEST
 
-
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct ElementAspectTests1 : public DgnDbTestFixture
+struct ElementAspectPerformanceTest : public DgnDbTestFixture
 {
-    CodeSpecPtr Create (Utf8CP name, bool insert = true)
-    {
-        CodeSpecPtr codeSpec = CodeSpec::Create (*m_db, name, CodeScopeSpec::CreateModelScope());
-        if (insert)
-        {
-            EXPECT_EQ (DgnDbStatus::Success, codeSpec->Insert ());
-            auto codeSpecId = codeSpec->GetCodeSpecId ();
-            EXPECT_TRUE (codeSpecId.IsValid ());
-        }
-
-        return codeSpec;
-    }
-
 public:
     void LogTiming (StopWatch& timer, Utf8CP description, Utf8CP testClassName, bool omitClassIdFilter, int initialInstanceCount, int opCount) const;
     void LogTiming (double timer, Utf8CP description, Utf8CP testClassName, bool omitClassIdFilter, int initialInstanceCount, int opCount) const;
@@ -39,23 +25,15 @@ public:
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-void ElementAspectTests1::LogTiming (StopWatch& timer, Utf8CP description, Utf8CP testClassName, bool omitClassIdFilter, int initialInstanceCount, int opCount) const
+void ElementAspectPerformanceTest::LogTiming (StopWatch& timer, Utf8CP description, Utf8CP testClassName, bool omitClassIdFilter, int initialInstanceCount, int opCount) const
 {
-    Utf8CP noClassIdFilterStr = omitClassIdFilter ? "w/o ECClassId filter " : " ";
-
-    Utf8String totalDescription;
-    totalDescription.Sprintf ("%s %s '%s' [Initial count: %d]", description, noClassIdFilterStr, testClassName, initialInstanceCount);
-    Utf8String desc;
-    desc.Sprintf ("%s", description);
-    size_t pos = desc.find ("API");
-    Utf8String opType = desc.substr (pos + 4);
-    LOGTODB (TEST_DETAILS, timer.GetElapsedSeconds (), opCount, totalDescription.c_str (), true, opType.ToUpper (), initialInstanceCount);
+    LogTiming(timer.GetElapsedSeconds (), description, testClassName, omitClassIdFilter, initialInstanceCount, opCount);
 }
 
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-void ElementAspectTests1::LogTiming (double timer, Utf8CP description, Utf8CP testClassName, bool omitClassIdFilter, int initialInstanceCount, int opCount) const
+void ElementAspectPerformanceTest::LogTiming (double timer, Utf8CP description, Utf8CP testClassName, bool omitClassIdFilter, int initialInstanceCount, int opCount) const
 {
     Utf8CP noClassIdFilterStr = omitClassIdFilter ? "w/o ECClassId filter " : " ";
 
@@ -72,7 +50,7 @@ void ElementAspectTests1::LogTiming (double timer, Utf8CP description, Utf8CP te
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-TEST_F (ElementAspectTests1, UniqueAspectPerformance_Insert)
+TEST_F (ElementAspectPerformanceTest, UniqueAspectPerformance_Insert)
 {
     SetupSeedProject ();
     ECN::ECClassCR aclass = *TestUniqueAspect::GetECClass (*m_db);
@@ -97,7 +75,7 @@ TEST_F (ElementAspectTests1, UniqueAspectPerformance_Insert)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-TEST_F (ElementAspectTests1, SimpleElementPerformance_Insert)
+TEST_F (ElementAspectPerformanceTest, SimpleElementPerformance_Insert)
 {
     SetupSeedProject ();
     ECN::ECClassCR aclass = *TestUniqueAspect::GetECClass (*m_db);
@@ -121,7 +99,7 @@ TEST_F (ElementAspectTests1, SimpleElementPerformance_Insert)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-TEST_F (ElementAspectTests1, SimpleElementPerformance_Update)
+TEST_F (ElementAspectPerformanceTest, SimpleElementPerformance_Update)
 {
     SetupSeedProject ();
     ECN::ECClassCR aclass = *TestUniqueAspect::GetECClass (*m_db);
@@ -143,6 +121,7 @@ TEST_F (ElementAspectTests1, SimpleElementPerformance_Update)
     for (int i = 1; i < count; i++) {
         tempEl[i]->SetUserLabel ("updated");
         status = tempEl[i]->Update ();
+        ASSERT_EQ (DgnDbStatus::Success, status);
     }
     timer1.Stop ();
     LogTiming (timer1, "Update Simple Element Without Aspect", "TestElement", false, count-1, count-1);
@@ -152,7 +131,7 @@ TEST_F (ElementAspectTests1, SimpleElementPerformance_Update)
 /*=================================================================================**//**
 * @bsiclass
  +===============+===============+===============+===============+===============+======*/
-TEST_F (ElementAspectTests1, UniqueAspectPerformance_Update)
+TEST_F (ElementAspectPerformanceTest, UniqueAspectPerformance_Update)
 {
     SetupSeedProject ();
     ECN::ECClassCR aclass = *TestUniqueAspect::GetECClass (*m_db);
@@ -190,7 +169,7 @@ TEST_F (ElementAspectTests1, UniqueAspectPerformance_Update)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-TEST_F (ElementAspectTests1, SimpleElementPerformance_Delete)
+TEST_F (ElementAspectPerformanceTest, SimpleElementPerformance_Delete)
 {
     SetupSeedProject ();
     ECN::ECClassCR aclass = *TestUniqueAspect::GetECClass (*m_db);
@@ -219,7 +198,7 @@ TEST_F (ElementAspectTests1, SimpleElementPerformance_Delete)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-TEST_F (ElementAspectTests1, UniqueAspectPerformance_Delete)
+TEST_F (ElementAspectPerformanceTest, UniqueAspectPerformance_Delete)
 {
     SetupSeedProject ();
     ECN::ECClassCR aclass = *TestUniqueAspect::GetECClass (*m_db);
@@ -248,7 +227,7 @@ TEST_F (ElementAspectTests1, UniqueAspectPerformance_Delete)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-TEST_F (ElementAspectTests1, MultiAspectPerformance_Insert)
+TEST_F (ElementAspectPerformanceTest, MultiAspectPerformance_Insert)
 {
     SetupSeedProject ();
     int const Aspectcount = 11;
@@ -279,7 +258,7 @@ TEST_F (ElementAspectTests1, MultiAspectPerformance_Insert)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-TEST_F (ElementAspectTests1, MultiAspectPerformance_Update)
+TEST_F (ElementAspectPerformanceTest, MultiAspectPerformance_Update)
 {
     SetupSeedProject ();
     ECN::ECClassCR aclass = *TestMultiAspect::GetECClass (*m_db);
@@ -330,9 +309,9 @@ TEST_F (ElementAspectTests1, MultiAspectPerformance_Update)
         for (int i = 1; i < Aspectcount; i++)
         {
             aspect[i]->SetTestMultiAspectProperty ("updated");
-            DgnDbStatus stat = m_db->Elements ().Update (*tempE2[i]);
-            ASSERT_EQ(DgnDbStatus::Success, stat);
         }
+        DgnDbStatus stat = m_db->Elements ().Update (*tempE2[j]);
+        ASSERT_EQ (DgnDbStatus::Success, stat);
         timer1.Stop ();
         timeCount = timeCount + timer1.GetElapsedSeconds ();
     }
@@ -343,7 +322,7 @@ TEST_F (ElementAspectTests1, MultiAspectPerformance_Update)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-TEST_F (ElementAspectTests1, MultiAspectPerformance_Delete)
+TEST_F (ElementAspectPerformanceTest, MultiAspectPerformance_Delete)
 {
     SetupSeedProject ();
     int const Aspectcount = 11;
@@ -380,7 +359,7 @@ TEST_F (ElementAspectTests1, MultiAspectPerformance_Delete)
 /*=================================================================================**//**
 * @bsiclass
  +===============+===============+===============+===============+===============+======*/
-TEST_F (ElementAspectTests1, SimpleElementPerformanceProperties_Insert)
+TEST_F (ElementAspectPerformanceTest, SimpleElementPerformanceProperties_Insert)
 {
     SetupSeedProject ();
     double doubleVal = 1.61803398874;
@@ -420,7 +399,7 @@ TEST_F (ElementAspectTests1, SimpleElementPerformanceProperties_Insert)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Insert1)
+TEST_F (ElementAspectPerformanceTest, UniqueAspectElementPerfProperties_Insert1)
 {
     USING_NAMESPACE_BENTLEY_EC;
     SetupSeedProject ();
@@ -461,7 +440,7 @@ TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Insert1)
 /*=================================================================================**//**
 * @bsiclass
  +===============+===============+===============+===============+===============+======*/
-TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Insert2)
+TEST_F (ElementAspectPerformanceTest, UniqueAspectElementPerfProperties_Insert2)
 {
     USING_NAMESPACE_BENTLEY_EC;
     SetupSeedProject ();
@@ -504,7 +483,7 @@ TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Insert2)
 /*=================================================================================**//**
 * @bsiclass
  +===============+===============+===============+===============+===============+======*/
-TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Insert3)
+TEST_F (ElementAspectPerformanceTest, UniqueAspectElementPerfProperties_Insert3)
 {
     USING_NAMESPACE_BENTLEY_EC;
     SetupSeedProject ();
@@ -548,13 +527,12 @@ TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Insert3)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-TEST_F (ElementAspectTests1, SimpleElementPerformanceProperties_Update)
+TEST_F (ElementAspectPerformanceTest, SimpleElementPerformanceProperties_Update)
 {
     SetupSeedProject ();
     double doubleVal = 1.61803398874;
     int const count = 1001;
     DgnElementCPtr persistentEl[count];
-    DgnElementCPtr updated_element[count];
     TestElementPtr el[count];
     DgnElementId id[count];
 
@@ -647,7 +625,7 @@ TEST_F (ElementAspectTests1, SimpleElementPerformanceProperties_Update)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Update1)
+TEST_F (ElementAspectPerformanceTest, UniqueAspectElementPerfProperties_Update1)
 {
     USING_NAMESPACE_BENTLEY_EC;
     SetupSeedProject ();
@@ -716,7 +694,7 @@ TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Update1)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Update2)
+TEST_F (ElementAspectPerformanceTest, UniqueAspectElementPerfProperties_Update2)
 {
     USING_NAMESPACE_BENTLEY_EC;
     SetupSeedProject ();
@@ -793,7 +771,7 @@ TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Update2)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Update3)
+TEST_F (ElementAspectPerformanceTest, UniqueAspectElementPerfProperties_Update3)
 {
     USING_NAMESPACE_BENTLEY_EC;
     SetupSeedProject ();
@@ -866,7 +844,7 @@ TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Update3)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-TEST_F (ElementAspectTests1, SimpleElementPerformanceProperties_Delete)
+TEST_F (ElementAspectPerformanceTest, SimpleElementPerformanceProperties_Delete)
 {
     SetupSeedProject ();
     double doubleVal = 1.61803398874;
@@ -910,7 +888,7 @@ TEST_F (ElementAspectTests1, SimpleElementPerformanceProperties_Delete)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Delete1)
+TEST_F (ElementAspectPerformanceTest, UniqueAspectElementPerfProperties_Delete1)
 {
     USING_NAMESPACE_BENTLEY_EC;
     SetupSeedProject ();
@@ -957,7 +935,7 @@ TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Delete1)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Delete2)
+TEST_F (ElementAspectPerformanceTest, UniqueAspectElementPerfProperties_Delete2)
 {
     USING_NAMESPACE_BENTLEY_EC;
     SetupSeedProject ();
@@ -1006,7 +984,7 @@ TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Delete2)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Delete3)
+TEST_F (ElementAspectPerformanceTest, UniqueAspectElementPerfProperties_Delete3)
 {
     USING_NAMESPACE_BENTLEY_EC;
     SetupSeedProject ();
@@ -1057,7 +1035,7 @@ TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Delete3)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-TEST_F (ElementAspectTests1, SimpleElementPerformanceProperties_Read)
+TEST_F (ElementAspectPerformanceTest, SimpleElementPerformanceProperties_Read)
 {
     SetupSeedProject ();
     double doubleVal = 1.61803398874;
@@ -1115,7 +1093,7 @@ TEST_F (ElementAspectTests1, SimpleElementPerformanceProperties_Read)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Read1)
+TEST_F (ElementAspectPerformanceTest, UniqueAspectElementPerfProperties_Read1)
 {
     USING_NAMESPACE_BENTLEY_EC;
     SetupSeedProject ();
@@ -1172,7 +1150,7 @@ TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Read1)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Read2)
+TEST_F (ElementAspectPerformanceTest, UniqueAspectElementPerfProperties_Read2)
 {
     USING_NAMESPACE_BENTLEY_EC;
     SetupSeedProject ();
@@ -1236,7 +1214,7 @@ TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Read2)
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-TEST_F (ElementAspectTests1, UniqueAspectElementPerfProperties_Read3)
+TEST_F (ElementAspectPerformanceTest, UniqueAspectElementPerfProperties_Read3)
 {
     USING_NAMESPACE_BENTLEY_EC;
     SetupSeedProject ();
