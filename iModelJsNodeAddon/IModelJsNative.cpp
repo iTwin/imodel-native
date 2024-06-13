@@ -4690,7 +4690,7 @@ public:
         Json::Value jsonVal;
         BeJsValue out(jsonVal);
         m_stmt.ToRow(out, ecsqlRowArg.m_abbreviateBlobs, ecsqlRowArg.m_classIdToClassNames, ecsqlRowArg.m_useJsName, ecsqlRowArg.m_includeMetaData);
-        return toJsString(info.Env(), out.Stringify());
+        return Napi::String::New(info.Env(), out.Stringify());
     }
 
     static DbResult ToDbResult(ECSqlStatus status) {
