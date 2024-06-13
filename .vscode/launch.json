@@ -207,66 +207,6 @@
             "port": 9229
         },
         {
-            "name": "ECDb Performance Test",
-            "presentation": {
-                "group": "3_PerformanceWin",
-            },
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${env:OutRoot}WinX64/Product/ECDb-Gtest-Performance/ECDbTestPerformance",
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "args": [
-              "--gtest_break_on_failure",
-              "--gtest_filter=*"
-            ]
-        },
-        {
-            "name": "iModelPlatform Performance Test",
-            "presentation": {
-                "group": "3_PerformanceWin",
-            },
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${env:OutRoot}Winx64/Product/iModelPlatform-Gtest-Performance/iModelPlatformPerformanceTests",
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "args": [
-              "--gtest_break_on_failure",
-              "--gtest_filter=*"
-            ]
-        },
-        {
-            "name": "ECObjects Performance Test",
-            "presentation": {
-                "group": "3_PerformanceWin",
-            },
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${env:OutRoot}WinX64/Product/ECObjects-PerformanceGtest/ECObjectsPerformanceTests",
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "args": [
-              "--gtest_break_on_failure",
-              "--gtest_filter=*"
-            ]
-        },
-        {
-            "name": "ECPresentation Performance Test",
-            "presentation": {
-                "group": "3_PerformanceWin",
-            },
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${env:OutRoot}WinX64/Product/ECPresentation-Gtest-Performance/ECPresentationTest-Performance",
-            "cwd": "${workspaceFolder}",
-            "console": "integratedTerminal",
-            "args": [
-              "--gtest_break_on_failure",
-              "--gtest_filter=*"
-            ]
-        },
-        {
             "name": "LNX Native BentleyTest",
             "presentation": {
                 "group": "1_Linux",
@@ -369,29 +309,6 @@
             ]
         },
         {
-            "name": "MacOS Native Single iModelPlatformTest",
-            "presentation": {
-                "group": "2_MacOS",
-            },
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${env:OutRoot}MacOSX64/Product/iModelPlatform-Gtest/iModelPlatformTest",
-            "cwd": "${workspaceFolder}",
-            "externalConsole": false,
-            "MIMode": "lldb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ],
-            "args": [
-                "--gtest_break_on_failure",
-                "--gtest_filter=SchemaVersionTestFixture.*"
-            ]
-        },
-        {
             "name": "LNX Native ECDbTest",
             "presentation": {
                 "group": "1_Linux",
@@ -408,57 +325,6 @@
                     "text": "-enable-pretty-printing",
                     "ignoreFailures": true
                 }
-            ]
-        },
-        {
-            "name": "MacOS Native Single ECDbTest",
-            "presentation": {
-                "group": "2_MacOS",
-            },
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${env:OutRoot}MacOSX64/Product/ECDb-Gtest/ECDbTest",
-            "cwd": "${workspaceFolder}",
-            "externalConsole": false,
-            "MIMode": "lldb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ],
-            "args": [
-              "--gtest_break_on_failure",
-              "--gtest_filter=SchemaUpgradeTestFixture.UpdateClass_*"
-            ]
-        },
-        {
-            "name": "MacOS Native ECObjectsTest, single test",
-            "presentation": {
-                "group": "2_MacOS",
-            },
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${env:OutRoot}MacOSX64/Product/ECObjects-Gtest/ECObjectsTest",
-            "cwd": "${workspaceFolder}",
-            "MIMode": "lldb",
-            "args": [
-                "--gtest_filter=UnitSpecificationConversionTest.SchemaWithOldUnitSpecifications"
-            ]
-        },
-        {
-            "name": "MacOS Native UnitsTests, single test",
-            "presentation": {
-                "group": "2_MacOS",
-            },
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${env:OutRoot}MacOSX64/Product/Units-Gtest/UnitsTest",
-            "cwd": "${workspaceFolder}",
-            "MIMode": "lldb",
-            "args": [
-                "--gtest_filter=FormattingTestFixture.StdFormatting"
             ]
         },
         {
@@ -698,6 +564,140 @@
                     "text": "set follow-fork-mode child"
                 }
             ]
-        }
+        },
+        {
+            "name": "MacOS Native Single iModelPlatformTest",
+            "presentation": {
+                "group": "2_MacOS",
+            },
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}MacOSX64/Product/iModelPlatform-Gtest/iModelPlatformTest",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "lldb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "args": [
+                "--gtest_break_on_failure",
+                "--gtest_filter=SchemaVersionTestFixture.*"
+            ]
+        },
+        {
+            "name": "MacOS Native Single ECDbTest",
+            "presentation": {
+                "group": "2_MacOS",
+            },
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}MacOSX64/Product/ECDb-Gtest/ECDbTest",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "lldb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "args": [
+              "--gtest_break_on_failure",
+              "--gtest_filter=SchemaUpgradeTestFixture.UpdateClass_*"
+            ]
+        },
+        {
+            "name": "MacOS Native ECObjectsTest, single test",
+            "presentation": {
+                "group": "2_MacOS",
+            },
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}MacOSX64/Product/ECObjects-Gtest/ECObjectsTest",
+            "cwd": "${workspaceFolder}",
+            "MIMode": "lldb",
+            "args": [
+                "--gtest_filter=UnitSpecificationConversionTest.SchemaWithOldUnitSpecifications"
+            ]
+        },
+        {
+            "name": "MacOS Native UnitsTests, single test",
+            "presentation": {
+                "group": "2_MacOS",
+            },
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}MacOSX64/Product/Units-Gtest/UnitsTest",
+            "cwd": "${workspaceFolder}",
+            "MIMode": "lldb",
+            "args": [
+                "--gtest_filter=FormattingTestFixture.StdFormatting"
+            ]
+        },
+        {
+            "name": "ECDb Performance Test",
+            "presentation": {
+                "group": "3_PerformanceWin",
+            },
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}WinX64/Product/ECDb-Gtest-Performance/ECDbTestPerformance",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "args": [
+              "--gtest_break_on_failure",
+              "--gtest_filter=*"
+            ]
+        },
+        {
+            "name": "iModelPlatform Performance Test",
+            "presentation": {
+                "group": "3_PerformanceWin",
+            },
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}Winx64/Product/iModelPlatform-Gtest-Performance/iModelPlatformPerformanceTests",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "args": [
+              "--gtest_break_on_failure",
+              "--gtest_filter=*"
+            ]
+        },
+        {
+            "name": "ECObjects Performance Test",
+            "presentation": {
+                "group": "3_PerformanceWin",
+            },
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}WinX64/Product/ECObjects-PerformanceGtest/ECObjectsPerformanceTests",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "args": [
+              "--gtest_break_on_failure",
+              "--gtest_filter=*"
+            ]
+        },
+        {
+            "name": "ECPresentation Performance Test",
+            "presentation": {
+                "group": "3_PerformanceWin",
+            },
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}WinX64/Product/ECPresentation-Gtest-Performance/ECPresentationTest-Performance",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "args": [
+              "--gtest_break_on_failure",
+              "--gtest_filter=*"
+            ]
+        },
     ]
 }

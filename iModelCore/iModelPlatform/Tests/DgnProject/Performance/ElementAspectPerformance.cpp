@@ -27,7 +27,7 @@ public:
 +===============+===============+===============+===============+===============+======*/
 void ElementAspectPerformanceTest::LogTiming (StopWatch& timer, Utf8CP description, Utf8CP testClassName, bool omitClassIdFilter, int initialInstanceCount, int opCount) const
 {
-    LogTiming(timer.GetElapsedSeconds (), description, testClassName, omitClassIdFilter, initialInstanceCount, opCount);
+    LogTiming (timer.GetElapsedSeconds (), description, testClassName, omitClassIdFilter, initialInstanceCount, opCount);
 }
 
 /*=================================================================================**//**
@@ -159,7 +159,7 @@ TEST_F (ElementAspectPerformanceTest, UniqueAspectPerformance_Update)
     for (int i = 1; i < count; i++) {
         aspect[i]->SetTestUniqueAspectProperty ("Changed Value");
         DgnDbStatus stat = m_db->Elements ().Update (*tempE3[i]);
-        ASSERT_EQ(DgnDbStatus::Success, stat);
+        ASSERT_EQ (DgnDbStatus::Success, stat);
     }
     timer1.Stop ();
     LogTiming (timer1, "Update Element With a Unique Aspect", "TestElement2", false, count-1, count-1);
@@ -559,7 +559,7 @@ TEST_F (ElementAspectPerformanceTest, SimpleElementPerformanceProperties_Update)
 
         //get properties
         EXPECT_EQ (DPoint2d::From (0, 9), persistentEl[i]->GetPropertyValueDPoint2d ("p2d"));
-        EXPECT_EQ (doubleVal, persistentEl[i]->GetPropertyValueDouble("DoubleProperty1"));
+        EXPECT_EQ (doubleVal, persistentEl[i]->GetPropertyValueDouble ("DoubleProperty1"));
         EXPECT_EQ (doubleVal, persistentEl[i]->GetPropertyValueDouble ("DoubleProperty2"));
         EXPECT_EQ (doubleVal, persistentEl[i]->GetPropertyValueDouble ("DoubleProperty3"));
         EXPECT_EQ (doubleVal, persistentEl[i]->GetPropertyValueDouble ("DoubleProperty4"));
@@ -607,7 +607,7 @@ TEST_F (ElementAspectPerformanceTest, SimpleElementPerformanceProperties_Update)
         EXPECT_EQ (DgnDbStatus::Success, updatedE->GetPropertyValue (value, "DoubleProperty4"));
         ASSERT_EQ (23.0, value.GetDouble ());
         EXPECT_EQ (DgnDbStatus::Success, updatedE->GetPropertyValue (value, "PointProperty1"));
-        ASSERT_EQ (DPoint3d::From (1, 1, 1), value.GetPoint3d());
+        ASSERT_EQ (DPoint3d::From (1, 1, 1), value.GetPoint3d ());
         EXPECT_EQ (DgnDbStatus::Success, updatedE->GetPropertyValue (value, "PointProperty2"));
         ASSERT_EQ (DPoint3d::From (1, 1, 1), value.GetPoint3d ());
         EXPECT_EQ (DgnDbStatus::Success, updatedE->GetPropertyValue (value, "PointProperty3"));
@@ -617,7 +617,7 @@ TEST_F (ElementAspectPerformanceTest, SimpleElementPerformanceProperties_Update)
         EXPECT_EQ (DgnDbStatus::Success, updatedE->GetPropertyValue (value, "p2d"));
         ASSERT_EQ (DPoint2d::From (2, 2), value.GetPoint2d ());
         EXPECT_EQ (DgnDbStatus::Success, updatedE->GetPropertyValue (value, "b"));
-        ASSERT_EQ (true, value.GetBoolean());
+        ASSERT_EQ (true, value.GetBoolean ());
     }
 }
 
