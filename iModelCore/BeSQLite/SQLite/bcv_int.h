@@ -425,6 +425,7 @@ struct BcvContainer {
   sqlite3_bcv_container *pCont;
   sqlite3_bcv_module *pMod;
   int nContRef;
+  int nMaxResults;                /* Value of maxresults= parameter */
 };
 
 int bcvDispatchNew(BcvDispatch**);
@@ -484,7 +485,7 @@ int bcvDispatchList(
   BcvContainer *pCont,
   const char *zPrefix,
   void *pApp,
-  void (*x)(void*, int rc, char *zError)
+  int (*x)(void*, int rc, char *zError)
 );
 
 int bcvDispatchLogmsg(BcvDispatch *p, const char *zFmt, ...);
@@ -722,3 +723,4 @@ int bcvLogGetData(BcvLog *pLog, BcvBuffer *pBuf);
 void bcvTimeToString(i64 iTime, char *zBuf);
 void bcvLogConfig(BcvLog *pLog, int op, i64 iVal);
 
+int bcvDeleteBlocks(Manifest *pMan, int iDb);
