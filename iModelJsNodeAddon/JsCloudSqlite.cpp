@@ -469,26 +469,6 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             BeNapi::ThrowJsException(Env(), result.m_error.c_str(), result.m_status);
     }
 
-    Napi::Value CleanDeletedBlocks(NapiInfoCR info) {
-        RequireWriteLock();
-
-        bool debugLogging = false;
-        int nSeconds = 3600; // default is 1 hour.
-        if (info[0].IsObject()) {
-            auto cleanDeletedBlocksOpts = BeJsConst(info[0]);
-            debugLogging = cleanDeletedBlocksOpts[JSON_NAME(debugLogging)].asBool(false);
-            nSeconds = cleanDeletedBlocksOpts[JSON_NAME(nSeconds)].asInt(3600);
-        }
-
-        return QueueWorker(info, [=]() {
-            JsCloudUtil handle;
-            auto result = handle.Init(*this, debugLogging ? 1 : 0);
-            if (result.IsSuccess())
-                result = handle.CleanDeletedBlocks(nSeconds);
-            return result.IsSuccess() ? CloudContainer::PollManifest() : result;
-        });
-    }
-
     Napi::Value GetWriteLockExpiryTime(NapiInfoCR) {
         RequireConnected();
         BeJsDocument lockedBy;
@@ -719,7 +699,6 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             InstanceAccessor<&JsCloudContainer::GetWriteLockExpiryTime>("writeLockExpires"),
             InstanceMethod<&JsCloudContainer::AbandonChanges>("abandonChanges"),
             InstanceMethod<&JsCloudContainer::AcquireWriteLockJs>("acquireWriteLock"),
-            InstanceMethod<&JsCloudContainer::CleanDeletedBlocks>("cleanDeletedBlocks"),
             InstanceMethod<&JsCloudContainer::ClearWriteLockJs>("clearWriteLock"),
             InstanceMethod<&JsCloudContainer::Connect>("connect"),
             InstanceMethod<&JsCloudContainer::CopyDatabase>("copyDatabase"),
@@ -741,163 +720,40 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
     }
 };
 
-// How would we call getprogress / canceltransfer from JS if we called container.cleanDeletedBlocks to trigger a creation of this object?
-// It feels like we need this object in TS side.. so calling container.cleanDeletedBlocks might need to return this object.
-// well we need a similar setup in JS side to get the object, setup the callback interval. consumers should not have to do this
-// can I make cleanDeletedBlocks a JS function which instantiates a new CleanDeletedBlocksJob. I think thats my play here.
-// can I keep it defined on the container? I think CloudContainer is almost purely a native object..
-struct CleanDeletedBlocksJob: Napi::ObjectWrap<CleanDeletedBlocksJob> {
-    struct Cleaner : Napi::AsyncWorker {
-        struct JsCleanupJob: JsCloudUtil {
-            mutable BeMutex m_mutex;
-                uint64_t m_nDone = 0;
-                uint64_t m_nTotal = 0;
-                bool m_abort = false; // set from DownloadV2Checkpoint::CancelDownload
-                bool m_stopAndSaveProgress = false;
-                int _OnProgress(uint64_t nDone, uint64_t nTotal) override {
-                    BeMutexHolder holder(m_mutex);
-                    m_nDone = nDone;
-                    m_nTotal = nTotal;
-                    return m_abort ? BE_SQLITE_ABORT : m_stopAndSaveProgress ? BE_SQLITE_DONE : 0;
-                }
-        };
-        Napi::ObjectReference m_request;
-        JsCleanupJob m_job;
-        int m_nSeconds;
-        bool m_findOrphanedBlocks;
-
-        void Execute() override { // worker thread
-            auto stat = m_job.CleanDeletedBlocks(m_nSeconds, m_findOrphanedBlocks);
-            if (stat.m_status == BE_SQLITE_ABORT)
-                SetError("cancelled");
-            else if (stat.m_status != BE_SQLITE_OK)
-                SetError(stat.m_error);
-        }
-
-        void OnOK() override { // main thread
-            auto* request = CleanDeletedBlocksJob::Unwrap(m_request.Value());
-            request->m_promise.Resolve(Napi::Number::New(Env(), 0));
-            request->m_pending = nullptr;
-        }
-
-        void OnError(Napi::Error const& error) override { // main thread
-            auto* request = CleanDeletedBlocksJob::Unwrap(m_request.Value());
-            request->m_promise.Reject(error.Value());
-            request->m_pending = nullptr;
-        }
-
-        Cleaner(JsCloudContainer& container, Napi::Object args, CleanDeletedBlocksJob const& request) : Napi::AsyncWorker(args.Env()) {
-            m_request.Reset(request.Value(), 1);
-            m_findOrphanedBlocks = requireBool(args, JSON_NAME(findOrphanedBlocks));
-            m_nSeconds = requireInt(args, JSON_NAME(nSeconds));
-            auto debugLogging = requireBool(args, JSON_NAME(debugLogging));
-
-            auto stat = m_job.Init(container, debugLogging ? 1 : 0, intMember(args, JSON_NAME(nRequests), 0));
-            if (!stat.IsSuccess())
-                BeNapi::ThrowJsException(Env(), stat.m_error.c_str(), stat.m_status);
-        }
-
-        ~Cleaner() { m_request.Reset(); }
-    };
-
-    DEFINE_CONSTRUCTOR;
-    Napi::Promise::Deferred m_promise;
-    Cleaner* m_pending = nullptr;
-
-    void CheckStillPending(Napi::Env env) {
-        if (m_pending == nullptr)
-            BeNapi::ThrowJsException(env, "cleanup already completed");
-    }
-    // get the current progress of the active cleanup job.
-    Napi::Value GetProgress(NapiInfoCR info) {
-        CheckStillPending(info.Env());
-        auto& job = m_pending->m_job;
-        BeMutexHolder holder(job.m_mutex);
-        BeJsNapiObject ret(info.Env());
-        ret["loaded"] = (double)job.m_nDone;
-        ret["total"] = (double)job.m_nTotal;
-        return ret;
-    }
-
-    // Cancel a previous request for a cleanup
-    void CancelTransfer(NapiInfoCR info) {
-        CheckStillPending(info.Env());
-        m_pending->m_job.m_abort = true;
-    }
-
-    void StopAndSaveProgress(NapiInfoCR info) {
-        CheckStillPending(info.Env());
-        m_pending->m_job.m_stopAndSaveProgress = true;
-    }
-
-    CleanDeletedBlocksJob(NapiInfoCR info) : Napi::ObjectWrap<CleanDeletedBlocksJob>(info), m_promise(Napi::Promise::Deferred::New(info.Env())) {
-        REQUIRE_ARGUMENT_ANY_OBJ(0, jsContainer);
-        if (!JsCloudContainer::IsInstance(jsContainer))
-            BeNapi::ThrowJsException(Env(), "invalid container argument");
-        auto container = Napi::ObjectWrap<JsCloudContainer>::Unwrap(jsContainer);
-
-        bool debugLogging = false;
-        bool findOrphanedBlocks = true;
-        int nSeconds = 3600; // default is 1 hour.
-        if (info[1].IsObject()) {
-            auto cleanDeletedBlocksOpts = BeJsConst(info[1]);
-            debugLogging = cleanDeletedBlocksOpts[JSON_NAME(debugLogging)].asBool(false);
-            nSeconds = cleanDeletedBlocksOpts[JSON_NAME(nSeconds)].asInt(3600);
-            findOrphanedBlocks = cleanDeletedBlocksOpts[JSON_NAME(findOrphanedBlocks)].asBool(true);
-        }
-        Napi::Object args = Napi::Object::New(info.Env());
-        args.Set("nSeconds", Napi::Number::New(info.Env(), nSeconds));
-        args.Set("debugLogging", Napi::Boolean::New(info.Env(), debugLogging));
-        args.Set("findOrphanedBlocks", Napi::Boolean::New(info.Env(), findOrphanedBlocks));
-
-        Value().Set(JSON_NAME(promise), m_promise.Promise()); // holds a reference to the promise to keep it alive
-        m_pending = new Cleaner(*container, args, *this);
-        m_pending->Queue(); // takes ownership of m_pending, deletes on completion
-    }
-
-    static void Init(Napi::Env& env, Napi::Object exports) {
-        static constexpr Utf8CP className = "CleanDeletedBlocksJob";
-        Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, className, {
-            InstanceMethod<&CleanDeletedBlocksJob::CancelTransfer>("cancelTransfer"),
-            InstanceMethod<&CleanDeletedBlocksJob::GetProgress>("getProgress"),
-            InstanceMethod<&CleanDeletedBlocksJob::StopAndSaveProgress>("stopAndSaveProgress"),
-        });
-
-        exports.Set(className, t);
-        SET_CONSTRUCTOR(t);
-    }
-};
-
 
 /**
  * A request to upload or download a CloudDb
  */
-struct CloudDbTransfer : Napi::ObjectWrap<CloudDbTransfer> {
+struct CancellableCloudSqliteJob : Napi::ObjectWrap<CancellableCloudSqliteJob> {
     // Async Worker that does download on another thread.
-    struct Downloader : Napi::AsyncWorker {
-        enum Direction { Upload = 0, Download = 1 };
+    struct Worker : Napi::AsyncWorker {
+        enum JobType { Upload = 0, Download = 1, Cleanup = 2 };
         struct JsDownloadJob : JsCloudUtil { // runs on AsyncWorker thread
             mutable BeMutex m_mutex;
             uint64_t m_nDone = 0;
             uint64_t m_nTotal = 0;
             bool m_abort = false; // set from DownloadV2Checkpoint::CancelDownload
+            bool m_stopAndSaveProgress = false;
             int _OnProgress(uint64_t nDone, uint64_t nTotal) override {
                 BeMutexHolder holder(m_mutex);
                 m_nDone = nDone;
                 m_nTotal = nTotal;
-                return m_abort ? 1 : 0;
+                return m_abort ? BE_SQLITE_ABORT : m_stopAndSaveProgress ? BE_SQLITE_DONE : BE_SQLITE_OK;
             }
         };
 
         Napi::ObjectReference m_request;
-        Direction m_direction;
+        JobType m_jobType;
         JsDownloadJob m_job;
         Utf8String m_dbName;
         Utf8String m_localFile;
+        int m_nSeconds;
+        bool m_findOrphanedBlocks;
 
         void Execute() override { // worker thread
-            auto stat = m_direction == Direction::Upload ? m_job.UploadDatabase(m_localFile, m_dbName) : m_job.DownloadDatabase(m_dbName, m_localFile);
+            auto stat = m_jobType == JobType::Upload ? m_job.UploadDatabase(m_localFile, m_dbName) 
+            : m_jobType == JobType::Download ? m_job.DownloadDatabase(m_dbName, m_localFile)
+            : m_job.CleanDeletedBlocks(m_nSeconds, m_findOrphanedBlocks);
             if (stat.m_status == BE_SQLITE_ABORT)
                 SetError("cancelled");
             else if (stat.m_status != BE_SQLITE_OK)
@@ -905,35 +761,44 @@ struct CloudDbTransfer : Napi::ObjectWrap<CloudDbTransfer> {
         }
 
         void OnOK() override { // main thread
-            auto* request = CloudDbTransfer::Unwrap(m_request.Value());
+            auto* request = CancellableCloudSqliteJob::Unwrap(m_request.Value());
             request->m_promise.Resolve(Napi::Number::New(Env(), 0));
             request->m_pending = nullptr;
         }
 
         void OnError(Napi::Error const& error) override { // main thread
-            auto* request = CloudDbTransfer::Unwrap(m_request.Value());
+            auto* request = CancellableCloudSqliteJob::Unwrap(m_request.Value());
             request->m_promise.Reject(error.Value());
             request->m_pending = nullptr;
         }
 
-        Downloader(Direction direction, JsCloudContainer& container, Napi::Object args, CloudDbTransfer const& request) : Napi::AsyncWorker(args.Env()) {
-            if (direction == Direction::Upload)
+        Worker(JobType jobType, JsCloudContainer& container, Napi::Object args, CancellableCloudSqliteJob const& request) : Napi::AsyncWorker(args.Env()) {
+            if (jobType == JobType::Upload || jobType == JobType::Cleanup)
                 container.RequireWriteLock();
             m_request.Reset(request.Value(), 1);
-            m_direction = direction;
-            m_localFile = requireString(args, JSON_NAME(localFileName));
-            m_dbName = requireString(args, JSON_NAME(dbName));
-            auto stat = m_job.Init(container, 0, intMember(args, JSON_NAME(nRequests), 0), intMember(args, JSON_NAME(httpTimeout), 0));
+            m_jobType = jobType;
+            bool debugLogging = false;
+            if (m_jobType == JobType::Upload || m_jobType == JobType::Download) {
+                m_localFile = requireString(args, JSON_NAME(localFileName));
+                m_dbName = requireString(args, JSON_NAME(dbName));
+            }
+            else if (m_jobType == JobType::Cleanup) {
+                m_findOrphanedBlocks = requireBool(args, JSON_NAME(findOrphanedBlocks));
+                m_nSeconds = requireInt(args, JSON_NAME(nSeconds));
+                debugLogging = requireBool(args, JSON_NAME(debugLogging));
+            }
+
+            auto stat = m_job.Init(container, debugLogging ? 1 : 0, intMember(args, JSON_NAME(nRequests), 0), intMember(args, JSON_NAME(httpTimeout), 0));
             if (!stat.IsSuccess())
                 BeNapi::ThrowJsException(Env(), stat.m_error.c_str(), stat.m_status);
         }
 
-        ~Downloader() { m_request.Reset(); }
+        ~Worker() { m_request.Reset(); }
     };
 
     DEFINE_CONSTRUCTOR;
     Napi::Promise::Deferred m_promise;
-    Downloader* m_pending = nullptr;
+    Worker* m_pending = nullptr;
 
     void CheckStillPending(Napi::Env env) {
         if (m_pending == nullptr)
@@ -956,7 +821,25 @@ struct CloudDbTransfer : Napi::ObjectWrap<CloudDbTransfer> {
         m_pending->m_job.m_abort = true;
     }
 
-    CloudDbTransfer(NapiInfoCR info) : Napi::ObjectWrap<CloudDbTransfer>(info), m_promise(Napi::Promise::Deferred::New(info.Env())) {
+    // If this is called and some blocks have begun to be deleted, then the job will stop and upload the manifest reflecting which blocks have been deleted.
+    // For uploads and downloads this will abort the transfer without saving.
+    void StopAndSaveProgress(NapiInfoCR info) {
+        CheckStillPending(info.Env());
+        m_pending->m_job.m_stopAndSaveProgress = true;
+    }
+
+    void handleDefaultArgsForCleanupJob(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_ANY_OBJ(2, args);
+        auto optionsForCleanup = BeJsConst(info[2]);
+        if (!args.Has("debugLogging"))
+            args.Set("debugLogging", Napi::Boolean::New(info.Env(), false));
+        if (!args.Has("findOrphanedBlocks"))
+            args.Set("findOrphanedBlocks", Napi::Boolean::New(info.Env(), true));
+        if (!args.Has("nSeconds"))
+            args.Set("nSeconds", Napi::Number::New(info.Env(), 3600));
+    }
+
+    CancellableCloudSqliteJob(NapiInfoCR info) : Napi::ObjectWrap<CancellableCloudSqliteJob>(info), m_promise(Napi::Promise::Deferred::New(info.Env())) {
         REQUIRE_ARGUMENT_STRING(0, direction);
         REQUIRE_ARGUMENT_ANY_OBJ(1, jsContainer);
         if (!JsCloudContainer::IsInstance(jsContainer))
@@ -964,17 +847,21 @@ struct CloudDbTransfer : Napi::ObjectWrap<CloudDbTransfer> {
         auto container = Napi::ObjectWrap<JsCloudContainer>::Unwrap(jsContainer);
 
         REQUIRE_ARGUMENT_ANY_OBJ(2, args);
+        if (direction == "cleanup") {
+            handleDefaultArgsForCleanupJob(info);
+        }
         Value().Set(JSON_NAME(promise), m_promise.Promise()); // holds a reference to the promise to keep it alive
-        m_pending = new Downloader(direction.Equals("upload") ? Downloader::Direction::Upload : Downloader::Direction::Download, *container, args, *this);
+        m_pending = new Worker(direction.Equals("upload") ? Worker::JobType::Upload : direction.Equals("download") ? Worker::JobType::Download : Worker::JobType::Cleanup, *container, args, *this);
         m_pending->Queue(); // takes ownership of m_pending, deletes on completion
     }
 
     static void Init(Napi::Env& env, Napi::Object exports) {
-        static constexpr Utf8CP className = "CloudDbTransfer";
+        static constexpr Utf8CP className = "CancellableCloudSqliteJob";
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, className, {
-            InstanceMethod<&CloudDbTransfer::CancelTransfer>("cancelTransfer"),
-            InstanceMethod<&CloudDbTransfer::GetProgress>("getProgress"),
+            InstanceMethod<&CancellableCloudSqliteJob::CancelTransfer>("cancelTransfer"),
+            InstanceMethod<&CancellableCloudSqliteJob::GetProgress>("getProgress"),
+            InstanceMethod<&CancellableCloudSqliteJob::StopAndSaveProgress>("stopAndSaveProgress"),
         });
 
         exports.Set(className, t);
@@ -1141,8 +1028,7 @@ struct JsCloudPrefetch : Napi::ObjectWrap<JsCloudPrefetch> {
  * register the classes in this source file.
  */
 void registerCloudSqlite(Napi::Env env, Napi::Object exports) {
-    CloudDbTransfer::Init(env, exports);
-    CleanDeletedBlocksJob::Init(env, exports);
+    CancellableCloudSqliteJob::Init(env, exports);
     JsCloudCache::Init(env, exports);
     JsCloudContainer::Init(env, exports);
     JsCloudPrefetch::Init(env, exports);
