@@ -2300,23 +2300,64 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return toJsString(Env(), beGuid.ToString());
     }
     Napi::Value GetInstance(NapiInfoCR info) {
-        REQUIRE_ARGUMENT_STRING(0, instanceIdStr);
-        REQUIRE_ARGUMENT_STRING(1, classFullNameStr);
-        auto& db = GetOpenedDb(info);
-        auto& instanceReader = db.GetInstanceReader();
+        constexpr auto kUseJsName = "useJsNames";
+        constexpr auto kClassFullName = "classFullName";
+        constexpr auto kClassIdsToClassNames = "classIdsToClassNames";
+        constexpr auto kAbbreviateBlobs = "abbreviateBlobs";
+        constexpr auto kAccessString = "accessString";
+        constexpr auto kId = "id";
+
+        REQUIRE_ARGUMENT_ANY_OBJ(0, argsObj);
+        BeJsConst args(argsObj);
         ECInstanceId instanceId;
-        ECInstanceId::FromString(instanceId, instanceIdStr.c_str());
+        Utf8String classFullName;
+        Utf8String accessString;
+        auto abbreviateBlobs = true;
+        auto classIdsToClassNames = false;
+        auto useJsNames = false;
+        if (args.isStringMember(kId)){
+            ECInstanceId::FromString(instanceId, args[kId].asCString());
+        }
+        if (args.isStringMember(kClassFullName)){
+            classFullName = args[kClassFullName].asCString();
+        }
+        if (args.isStringMember(kAccessString)){
+            accessString = args[kAccessString].asCString();
+        }
+        if (args.isBoolMember(kAbbreviateBlobs)){
+            abbreviateBlobs = args[kAbbreviateBlobs].asBool();
+        }
+        if (args.isBoolMember(kClassIdsToClassNames)){
+            classIdsToClassNames = args[kClassIdsToClassNames].asBool();
+        }
+        if (args.isBoolMember(kUseJsName)){
+            useJsNames = args[kUseJsName].asBool();
+        }
         if (!instanceId.IsValid()){
             THROW_JS_EXCEPTION("Invalid instanceId");
         }
+        if (classFullName.empty()) {
+            THROW_JS_EXCEPTION("classFullName must be provided");
+        }
 
         BeJsNapiObject obj(Env());
-        auto position = InstanceReader::Position{instanceId, classFullNameStr.c_str(), nullptr};
+        auto& db = GetOpenedDb(info);
+        auto& instanceReader = db.GetInstanceReader();
+        auto position = InstanceReader::Position{instanceId, classFullName.c_str(), accessString.empty() ? accessString.c_str() : nullptr};
         auto successful = instanceReader.Seek(position,
             [&](InstanceReader::IRowContext const& row) {
                 ECSqlRowAdaptor adaptor(db);
-                if (ERROR == adaptor.RenderRow(obj, row, false)) {
-                    THROW_JS_EXCEPTION("Failed to render instance");
+                adaptor.SetAbbreviateBlobs(abbreviateBlobs);
+                adaptor.SetConvertClassIdsToClassNames(classIdsToClassNames);
+                adaptor.UseJsNames(useJsNames);
+                if (accessString.empty()) {
+                    if (ERROR == adaptor.RenderValue(obj, row.GetValue(0))) {
+                        THROW_JS_EXCEPTION("Failed to render value");
+                    }
+                } else {
+                    if (ERROR == adaptor.RenderRow(obj, row, false)) {
+                        THROW_JS_EXCEPTION("Failed to render instance");
+                    }
                 }
             }
         );
@@ -2325,7 +2366,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             THROW_JS_EXCEPTION("Instance not found");
         }
         return obj;
-
     }
     void ResetBriefcaseId(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);

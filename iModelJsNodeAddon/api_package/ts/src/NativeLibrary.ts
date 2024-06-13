@@ -369,6 +369,18 @@ export declare namespace IModelJsNative {
     diameter?: number;
   }
 
+  /**
+   * Represents the arguments for reading an instance.
+   */
+  interface InstanceArgs {
+    id: Id64String;
+    classFullName: string;
+    abbreviateBlobs?: boolean;
+    classIdsToClassNames?: boolean;
+    useJsNames?: boolean;
+    accessString?: string;
+  }
+
   enum FontType { TrueType = 1, Rsc = 2, Shx = 3 }
 
   interface FontFaceProps {
@@ -569,7 +581,7 @@ export declare namespace IModelJsNative {
     public getCurrentTxnId(): TxnIdString;
     public getECClassMetaData(schema: string, className: string): ErrorStatusOrResult<IModelStatus, string>;
     public getElement(opts: ElementLoadProps): ElementProps;
-    public getInstance(id: Id64String, classFullName: string): any;
+    public getInstance(args: InstanceArgs): any;
     public getFilePath(): string; // full path of the DgnDb file
     public getGeoCoordinatesFromIModelCoordinates(points: GeoCoordinatesRequestProps): GeoCoordinatesResponseProps;
     public getGeometryContainment(props: object): Promise<GeometryContainmentResponseProps>;

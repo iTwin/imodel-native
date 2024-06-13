@@ -18,7 +18,7 @@ import { Suite } from "mocha";
 if (os.platform() === "linux")
   process.env.LINUX_MINIDUMP_ENABLED = "yes";
 
-describe.only("performance tests", function (this: Suite) {
+describe.skip("performance tests", function (this: Suite) {
   this.timeout(0);
   const testFileDir = "D:\\temp\\test-files\\";
   const files = [
@@ -50,7 +50,7 @@ describe.only("performance tests", function (this: Suite) {
         }
       }
       const end = new Date().getTime();
-      process.stdout.write(`${count} x SELECT $ (${file}) took ${end - start} ms ${(count/((end - start)/1000)).toFixed(0)} elements/sec\r\n`);
+      process.stdout.write(`${count} x SELECT $ (${file}) took ${end - start} ms ${(count / ((end - start) / 1000)).toFixed(0)} elements/sec\r\n`);
       stmt.dispose();
       ecsqlStmt.dispose();
       dgndb.closeFile();
@@ -67,7 +67,7 @@ describe.only("performance tests", function (this: Suite) {
         ++count;
       }
       const end = new Date().getTime();
-      process.stdout.write(`${count} x getElement(${file})  took ${end - start} ms ${(count/((end - start)/1000)).toFixed(0)} elements/sec\r\n`);
+      process.stdout.write(`${count} x getElement(${file})  took ${end - start} ms ${(count / ((end - start) / 1000)).toFixed(0)} elements/sec\r\n`);
       stmt.dispose();
       dgndb.closeFile();
     });
@@ -79,11 +79,11 @@ describe.only("performance tests", function (this: Suite) {
       let count = 0;
       while (stmt.step() === DbResult.BE_SQLITE_ROW) {
         const id = stmt.getValueId(0);
-        assert.isDefined(dgndb.getInstance(id, "BisCore:Element"));
+        assert.isDefined(dgndb.getInstance({ id, classFullName: "BisCore:Element"}));
         ++count;
       }
       const end = new Date().getTime();
-      process.stdout.write(`${count} x getInstance(${file}) took ${end - start} ms ${(count/((end - start)/1000)).toFixed(0)} elements/sec\r\n`);
+      process.stdout.write(`${count} x getInstance(${file}) took ${end - start} ms ${(count / ((end - start) / 1000)).toFixed(0)} elements/sec\r\n`);
       stmt.dispose();
       dgndb.closeFile();
     });
