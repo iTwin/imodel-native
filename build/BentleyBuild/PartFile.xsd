@@ -1,0 +1,2188 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="BuildContext">
+        <xs:annotation>
+            <xs:documentation>
+                All parts in this file will build under a common build context, which assumes the base file name of this file.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:choice minOccurs="1" maxOccurs="unbounded">
+                <xs:element name="Part" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Each part is an individually buildable component of a build process.
+                            Parts are visible to other parts in this file, as well as externally to other part files.
+                            A typical part should have a BMakeFile or BentleyBuildMake attribute, zero or many SubPart elements, and one Bindings element.
+                            A part is fully qualified by its repository, part file, and part name.
+                            A part does not have to be targetted at external callers (i.e. it can serve to orchestrate another part in this file, while not providing any externally consumable results).
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:complexContent>
+                            <xs:extension base="PartType">
+                                <xs:choice minOccurs="0" maxOccurs="unbounded">
+                                    <xs:element name="SubToolPart" type="SubToolPartType" minOccurs="0" maxOccurs="unbounded"/>
+                                    <xs:element name="SubToolPackage" type="SubToolPackageType" minOccurs="0" maxOccurs="unbounded"/>
+                                    <xs:element minOccurs="0" maxOccurs="unbounded" name="SubPart" type="SubPartType" />
+                                    <xs:element minOccurs="0" maxOccurs="unbounded" name="SubProduct" type="SubProductType" />
+                                    <xs:element minOccurs="0" maxOccurs="unbounded" name="SubNuGetProduct" type="SubNuGetProductType" />
+                                    <xs:element minOccurs="0" maxOccurs="unbounded" name="SubUPackProduct" type="SubUPackProductType" />
+                                    <xs:element minOccurs="0" maxOccurs="unbounded" name="SubMultiPlatform" type="SubMultiPlatformType" />
+                                    <xs:element name="SubPackage" type="SubPackageType" minOccurs="0" maxOccurs="unbounded"/>
+                                    <xs:element name="Bindings" type="BindingsType" minOccurs="0" maxOccurs="unbounded"/>
+                                    <xs:element minOccurs="0" name="Documentation">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Allows you to deploy documentation files into a consuming part's build context.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                        <xs:complexType>
+                                            <xs:sequence>
+                                                <xs:element minOccurs="1" maxOccurs="unbounded" name="DocumentationItem">
+                                                    <xs:annotation>
+                                                        <xs:documentation>
+                                                            Documenatation items to pull for Documentation binding. This supports $(language) variable in file name.
+                                                        </xs:documentation>
+                                                    </xs:annotation>
+                                                    <xs:complexType>
+                                                        <xs:simpleContent>
+                                                            <xs:extension base="xs:string">
+                                                                <xs:attribute name="Name" use="required" type="xs:string">
+                                                                    <xs:annotation>
+                                                                        <xs:documentation>
+                                                                            Name of item to be used in Binding. Name has to be same, as that of used in Documentation binding, in the same Part.
+                                                                        </xs:documentation>
+                                                                    </xs:annotation>
+                                                                </xs:attribute>
+                                                                <xs:attribute name="ExcludeLanguages" use="optional" type="xs:string">
+                                                                    <xs:annotation>
+                                                                        <xs:documentation>
+                                                                            Comma separated list of languages for which, item will be excluded
+                                                                        </xs:documentation>
+                                                                    </xs:annotation>
+                                                                </xs:attribute>
+                                                                <xs:attribute name="IncludeLanguages" use="optional" type="xs:string">
+                                                                    <xs:annotation>
+                                                                        <xs:documentation>
+                                                                            Comma separated list of languages for which, item will be Included. No value will mean include for all languages
+                                                                        </xs:documentation>
+                                                                    </xs:annotation>
+                                                                </xs:attribute>
+                                                                <xs:attribute name="UseLanguageDir" use="optional" type="xs:boolean">
+                                                                    <xs:annotation>
+                                                                        <xs:documentation>
+                                                                            If set to false, then ProductDirectory will be used to set delivery documentation file. Default is true, hence, deliver in
+                                                                            language subfolder.
+                                                                        </xs:documentation>
+                                                                    </xs:annotation>
+                                                                </xs:attribute>
+                                                                <xs:attribute name="Language" use="optional" type="xs:string">
+                                                                    <xs:annotation>
+                                                                        <xs:documentation>
+                                                                           Name of the Language that shall be used for the documentation binding. The binding will be created only in this language for builds done in
+                                                                           all the allowed languages.
+                                                                        </xs:documentation>
+                                                                    </xs:annotation>
+                                                                </xs:attribute>
+
+                                                                <xs:attribute name="Type" use="required" >
+                                                                    <xs:annotation>
+                                                                        <xs:documentation>
+                                                                            The type of documentation being pulled.
+                                                                        </xs:documentation>
+                                                                    </xs:annotation>
+                                                                    <xs:simpleType>
+                                                                        <xs:restriction base="xs:string">
+                                                                            <xs:enumeration value="Trisoft" />
+                                                                        </xs:restriction>
+                                                                    </xs:simpleType>
+                                                                </xs:attribute>
+                                                                <xs:attribute name="Format" use="required" >
+                                                                    <xs:annotation>
+                                                                        <xs:documentation>
+                                                                            The format of documentation being pulled.
+                                                                        </xs:documentation>
+                                                                    </xs:annotation>
+                                                                    <xs:simpleType>
+                                                                        <xs:restriction base="xs:string">
+                                                                            <xs:enumeration value="pdf" >
+                                                                                <xs:annotation>
+                                                                                    <xs:documentation>
+                                                                                        Bentley PDF
+                                                                                    </xs:documentation>
+                                                                                </xs:annotation>
+                                                                            </xs:enumeration>
+                                                                            <xs:enumeration value="chm" >
+                                                                                <xs:annotation>
+                                                                                    <xs:documentation>
+                                                                                        Bentley CHM
+                                                                                    </xs:documentation>
+                                                                                </xs:annotation>
+                                                                            </xs:enumeration>
+                                                                            <xs:enumeration value="htmlhelp" >
+                                                                                <xs:annotation>
+                                                                                    <xs:documentation>
+                                                                                        Bentley WebHelp (TriPane)
+                                                                                    </xs:documentation>
+                                                                                </xs:annotation>
+                                                                            </xs:enumeration>
+                                                                            <xs:enumeration value="webhelp" >
+                                                                                <xs:annotation>
+                                                                                    <xs:documentation>
+                                                                                        Bentley WebHelp
+                                                                                    </xs:documentation>
+                                                                                </xs:annotation>
+                                                                            </xs:enumeration>
+                                                                          <xs:enumeration value="COMPILEDHELP" >
+                                                                            <xs:annotation>
+                                                                              <xs:documentation>
+                                                                                CHM (Compiled Help)
+                                                                              </xs:documentation>
+                                                                            </xs:annotation>
+                                                                          </xs:enumeration>
+                                                                          <xs:enumeration value="WEB_HELP" >
+                                                                            <xs:annotation>
+                                                                              <xs:documentation>
+                                                                                Web Help
+                                                                              </xs:documentation>
+                                                                            </xs:annotation>
+                                                                          </xs:enumeration>
+                                                                        </xs:restriction>
+                                                                    </xs:simpleType>
+                                                                </xs:attribute>
+                                                                <xs:attribute name="Baseline" type="xs:string" use="required" />
+                                                            </xs:extension>
+                                                        </xs:simpleContent>
+                                                    </xs:complexType>
+                                                </xs:element>
+
+                                            </xs:sequence>
+                                        </xs:complexType>
+                                    </xs:element>
+                                    <xs:element name="InstallerWixFile" minOccurs="0" maxOccurs="1">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Location of *.wix.xml file, which will be used to find definition for Windows Installer package, to be created for the product.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                        <xs:complexType>
+                                            <xs:attribute name="SourceFile" type="xs:string" use="required">
+                                                <xs:annotation>
+                                                    <xs:documentation>
+                                                        Location of *.wix.xml file. The name shall not contain file extension wix.xml.
+                                                        e.g. For wixXmlFileName.wix.xml, the SourceFile value will be "wixXmlFileName".
+                                                        The location of file shall be relative to BuildContext folder.
+                                                    </xs:documentation>
+                                                </xs:annotation>
+                                            </xs:attribute>
+                                            <xs:attribute name="WixVersion" type="xs:string" use="optional">
+                                                <xs:annotation>
+                                                    <xs:documentation>
+                                                        Version of WIX to use to build installers
+                                                    </xs:documentation>
+                                                </xs:annotation>
+                                            </xs:attribute>
+                                            <xs:attribute name="WixRepository" type="xs:string" use="optional">
+                                                <xs:annotation>
+                                                    <xs:documentation>
+                                                        Name of the repository, which contains the required WixToolsetVersion
+                                                    </xs:documentation>
+                                                </xs:annotation>
+                                            </xs:attribute>
+                                            <xs:attribute name="WixUpackTool" type="xs:boolean" use="optional">
+                                                <xs:annotation>
+                                                    <xs:documentation>
+                                                        Tells whether to pick up the Wix from the ToolCache as upack
+                                                    </xs:documentation>
+                                                </xs:annotation>
+                                            </xs:attribute>
+                                        </xs:complexType>
+                                    </xs:element>
+
+                                    <xs:element name="WixBundleFile" minOccurs="0" maxOccurs="1">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Location of *.bundle.wxs file, which will be used to find definition for Bundling packages referenced by Bundle file.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                        <xs:complexType>
+                                            <xs:attribute name="SourceFile" type="xs:string" use="required">
+                                                <xs:annotation>
+                                                    <xs:documentation>
+                                                        Location of *.bundle.wxs file. The name shall not contain file extension bundle.wxs.
+                                                        e.g. For bundleFileName.bundle.wxs, the SourceFile value will be "bundleFileName".
+                                                        The location of file shall be relative to BuildContext folder.
+                                                    </xs:documentation>
+                                                </xs:annotation>
+                                            </xs:attribute>
+                                            <xs:attribute name="LanguagePackBundle" type="xs:string" use="optional">
+                                                <xs:annotation>
+                                                    <xs:documentation>
+                                                        *.bundle.wxs file, which shall be used to build LanguagePack Bundle.
+                                                        Language pack will contain only Localized Resources.
+                                                        If not provided, $(bsicommon)sharedwix\LanguagePack.Bundle.wxs will be used.
+                                                    </xs:documentation>
+                                                </xs:annotation>
+                                            </xs:attribute>
+                                            <xs:attribute name="LanguageBundle" type="xs:string" use="optional">
+                                                <xs:annotation>
+                                                    <xs:documentation>
+                                                        *.bundle.wxs file, which shall be used to build Language Bundle. 
+                                                        Language Bundle need to contain Core Installer, all dependencies and language pack.
+                                                        If not provided, File in @SourceFile attribute will be used
+                                                    </xs:documentation>
+                                                </xs:annotation>
+                                            </xs:attribute>
+                                        </xs:complexType>
+                                    </xs:element>
+                                </xs:choice>
+                            </xs:extension>
+                        </xs:complexContent>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="ToolPart" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation>
+                        <xs:documentation>
+                            This is a special kind of part that is meant to deliver tools to output instead of traditional deliverables.
+                            NuGet and UPacks from it get linked into the ToolCache folder in the outputroot.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:complexContent>
+                            <xs:extension base="PartType">
+                                <xs:choice minOccurs="0" maxOccurs="unbounded">
+                                    <xs:element name="SubToolPart" type="SubToolPartType" minOccurs="0" maxOccurs="unbounded"/>
+                                    <xs:element name="SubToolPackage" type="SubToolPackageType" minOccurs="0" maxOccurs="unbounded"/>
+                                    <xs:element name="Bindings" type="BindingsType" minOccurs="0" maxOccurs="unbounded"/>
+                                </xs:choice>
+                            </xs:extension>
+                        </xs:complexContent>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="Product" type="ProductType" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation>
+                        <xs:documentation>
+                            A product is the transform from bindings of sub-parts and sub-products to a runnable tree.
+                            It also allows for feature aspect input to control what bindings get deployed.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="NuGetProduct" type="NuGetProductType" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation>
+                        <xs:documentation>
+                            A product is the transform from bindings of sub-parts and sub-products to a runnable tree.
+                            It also allows for feature aspect input to control what bindings get deployed.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+              <xs:element name="UPackProduct" type="UPackProductType" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                  <xs:documentation>
+                    Creates a layout for a Universal Package which can then be pushed to the server using "bb savenuget".
+                  </xs:documentation>
+                </xs:annotation>
+              </xs:element>
+              <xs:element name="MultiPlatform" minOccurs="0" maxOccurs="unbounded">
+                    <xs:annotation>
+                        <xs:documentation>
+                            [Deprecated] Use part instead
+                            A MultiPlatform is designed to sit above parts to allow multiple platforms to build.
+                            If you absolutely must have one installer that installs both x86 and x64 versions then
+                            this is the way to acheive that.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:complexContent>
+                            <xs:extension base="MultiPlatformType">
+                                <xs:choice minOccurs="0" maxOccurs="unbounded">
+                                    <xs:element name="SubToolPart" type="SubToolPartType" minOccurs="0" maxOccurs="unbounded"/>
+                                    <xs:element minOccurs="0" maxOccurs="unbounded" name="SubPart" type="SubPartType" />
+                                    <xs:element minOccurs="0" maxOccurs="unbounded" name="SubProduct" type="SubProductType" />
+                                    <xs:element minOccurs="0" maxOccurs="unbounded" name="SubNuGetProduct" type="SubNuGetProductType" />
+                                    <xs:element name="SubMultiPlatform" type="SubMultiPlatformType" minOccurs="0" maxOccurs="unbounded" />
+                                </xs:choice>
+                            </xs:extension>
+                        </xs:complexContent>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="ProductDirectoryList">
+                    <xs:annotation>
+                        <xs:documentation>
+                            This is a collection of mappings that correlate ProductDirectoryName's in Bindings to paths in the runnable tree.
+                            If multiple ProductDirectory entries exist with the same name, whichever is parent-most wins.
+                            Parent-most refers to the top-most entry in a Product/SubProduct tree.
+                            Paths are resolved with lazy evaluation, meaning a lower product in a tree can have a ProductDirectory relative to another ProductDirectory
+                            that has yet to be named (but will always be named by a consuming product).
+                            You are required to have a ProductDirectory entry for every name used in any ProductDirectoryName that your product consumes.
+                            If you do not want to deploy it at all (regardless of feature aspect), create a ProductDirectory entry, and set the Delivery attribute to false.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element minOccurs="0" maxOccurs="unbounded" name="ProductDirectory">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        A ProductDirectory describes a named use in a ProductDirectoryName in a binding to a relative path in the runnable tree.
+                                        The Path attribute cannot contain slashes (e.g. sub-folders); make multiple ProductDirectory entries and make children RelativeTo the parents.
+                                    </xs:documentation>
+                                </xs:annotation>
+                                <xs:complexType>
+                                    <xs:attribute name="Name" type="xs:string" use="required">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Name cooresponding to the phrase used in ProductDirectoryName attributes in bindings.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="LibType" type="xs:string" use="optional">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                This can be "Static" to refer to the static library.  Defaults to Dynamic.
+                                                It is necessary to differentiate between the static and dynamic libraries.  For example, "bentley.lib"
+                                                can be either the static or dynamic, but by default they will end up in the same place in the product tree
+                                                causing a conflict.  This option allows differentiation and products (typically SDKs) are able to just deliver one.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="SaveProduct" type="xs:boolean" use="optional">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                True by default. Set to False if the product directory should not be delivered when SaveProduct action is being run.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="Platforms" type="xs:string" use="optional">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Platforms for which this ProductDirectory applies to.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="Path" type="xs:string" use="optional">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Required unless setting the Deliver attribute to false.
+                                                This is the name of the folder to create in the runnable tree.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="Deliver" type="xs:boolean" use="optional" default="true">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Default is true, which deploys any binding's reference to this ProductDirectory in the runnable tree (barring feature aspect restrictions).
+                                                If set to false, the Path and RelativeTo attributes are ignored.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                    <xs:attribute name="RelativeTo" type="xs:string" use="optional">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Required unless setting the Deliver attribute to false.
+                                                The parent folder to this ProductDirectory.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:attribute>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                        <xs:attribute name="ListName" use="required">
+                            <xs:annotation>
+                                <xs:documentation>
+                                    The name of this list; used by products to reference this listing.
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+            </xs:choice>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="BaseSubPartType">
+        <xs:attribute name="PartFile" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    The name of the part file that the part is defined in.
+                    This is optional if the part resides in this part file.
+                    This value can be a relative path (based on this part file's path), or an absolute path.
+                    If this value resides in another repository, you must also set the Repository attribute to ensure BentleyBuild will get the required files.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Repository" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    The name of the repository that the part file resides in.
+                    This is optional if the part file resides in this repository.
+                    This name must match with a repository name defined in a build strategy repository list.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="LibType" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Specify LibType="Static" to force a static build of the subpart and any parts it consumes.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="Static" />
+                    <xs:enumeration value="Dynamic" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="SkipIfInLKG" type="xs:boolean" use="optional" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    If enabled, will skip adding this SubPart as a dependency to the parent if the parent is coming from LKGs.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="SubPartType">
+        <xs:annotation>
+            <xs:documentation>
+                Use a SubPart to describe a dependency on another part.
+                Each sub-part's bindings will be placed in this part's build context (BuildContext/PublicAPI/... and BuildContext/SubParts/...).
+                A sub-part can exist anywhere in this part file, or another part file. If not in this part file, you must also specify a part file and repository as appropriate.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="BaseSubPartType">
+                <xs:attribute name="PartName" type="xs:string" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The name of the sub-part in the referenced part file (see &lt;Part Name="xxx" ... /&gt;).
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="Platform" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The platform for which this subpart should be built.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="SubProductType">
+        <xs:annotation>
+            <xs:documentation>
+                Use a SubProduct to describe a dependency on a product.
+                This simply causes the product to evaluate, and does not bring anything into your build context (like a SubPart would).
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="BaseSubPartType">
+                <xs:attribute name="ProductName" type="xs:string" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The name of the sub-product in the referenced part file (see &lt;Product Name="xxx" ... /&gt;).
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="Platform" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The platform for which this subpart should be built.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="BindToDirectory" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The name of the ProductDirectory that this SubProduct should be delivered to. This creates a symlink to the
+                            SubProduct folder in the parent Product output.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="SubNuGetProductType">
+        <xs:annotation>
+            <xs:documentation>
+                Use a SubNuGetProduct to describe a dependency on a NuGet product.
+                This causes the NuGet product to evaluate, and add a dependency on the NuGet package.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="BaseSubPartType">
+                <xs:attribute name="NuGetProductName" type="xs:string" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The name of the sub-NuGetProduct in the referenced part file (see &lt;NuGet Product Name="xxx" ... /&gt;).
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="Platform" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The platform for which this subpart should be built.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+  <xs:complexType name="SubUPackProductType">
+    <xs:annotation>
+      <xs:documentation>
+        Use a SubUPackProduct to describe a dependency on a UPack (Universal Package) product.
+        This causes the UPack product to evaluate.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="BaseSubPartType">
+        <xs:attribute name="UPackProductName" type="xs:string" use="required">
+          <xs:annotation>
+            <xs:documentation>
+              The name of the sub-UPackProduct in the referenced part file.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="SubToolPartType">
+    <xs:annotation>
+      <xs:documentation>
+        Use a SubToolPart to describe a dependency on a Tool Part. Tool Parts are linked into $(OutRoot)Tools for use during the build.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="BaseSubPartType">
+        <xs:attribute name="Name" type="xs:string" use="required">
+          <xs:annotation>
+            <xs:documentation>
+              The name of the ToolPart in the referenced part file.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="IncludeInTranskit" type="xs:boolean" use="optional">
+          <xs:annotation>
+            <xs:documentation>
+              If true, copies the tool to the transkit.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="SubToolPackageType">
+    <xs:annotation>
+      <xs:documentation>
+        Use a SubToolPackage to describe a dependency on a package that calls a PartFile:ToolPartName in that package. Currently it's just UPacks (Universal Package).
+      </xs:documentation>
+    </xs:annotation>
+    <xs:complexContent>
+      <xs:extension base="BaseSubPartType">
+        <xs:attribute name="Name" type="xs:string" use="required">
+          <xs:annotation>
+            <xs:documentation>
+              The name of the package.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="PkgType" type="xs:string" use="required">
+          <xs:annotation>
+            <xs:documentation>
+              The type of package. Currently only UPacks.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="ToolPartName" type="xs:string" use="required">
+          <xs:annotation>
+            <xs:documentation>
+              If there is a part file and a part name to use, it can be speficied here. It is best to put the ToolPartName and PartFile in
+              the UpackSource element so that it will work for everyone, but this allows an override to a different part.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="IncludeInTranskit" type="xs:boolean" use="optional">
+          <xs:annotation>
+            <xs:documentation>
+              If true, copies the tool to the transkit.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+    <xs:complexType name="SubPackageType">
+        <xs:annotation>
+        <xs:documentation>
+            Use a SubPackage to describe a dependency on a package that calls a PartFile:PartName in that package. Currently it's just UPacks (Universal Package).
+        </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+        <xs:extension base="BaseSubPartType">
+            <xs:attribute name="Name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                The name of the package.
+                </xs:documentation>
+            </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="PkgType" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                The type of package. Currently only UPacks.
+                </xs:documentation>
+            </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="PartName" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                If there is a part file and a part name to use, it can be speficied here. It is best to put the PartName and PartFile in
+                the UpackSource element so that it will work for everyone, but this allows an override to a different part.
+                </xs:documentation>
+            </xs:annotation>
+            </xs:attribute>
+        </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="NuGetPackageType">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="targetFramework" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The (NuGet) target framework for which this subpart should be built.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="SubMultiPlatformType">
+        <xs:annotation>
+        <xs:documentation>
+            Use an SubMultiPlatform to describe a dependency on a MultiPlatform Part.
+        </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+        <xs:extension base="BaseSubPartType">
+            <xs:attribute name="Name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                The name of the sub-multiplatform in the referenced part file.
+                </xs:documentation>
+            </xs:annotation>
+            </xs:attribute>
+        </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="BindingsType">
+        <xs:annotation>
+            <xs:documentation>
+                Bindings describe what a consuming part sees from this build context. These bindings will be placed (linked) in the destination build context.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:choice minOccurs="1" maxOccurs="unbounded">
+            <xs:element minOccurs="0" maxOccurs="unbounded" name="PublicAPI">
+                <xs:annotation>
+                    <xs:documentation>
+                        Used for Bentley header files.
+                        It is assumed that the Domain attribute value matches a directory name in the current build context's PublicAPI directory.
+                        A directory in the destination build context's PublicAPI directory will be created (linked) based on the Domain attribute.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:complexContent>
+                        <xs:extension base="PartBindingType">
+                            <xs:attribute name="Domain" type="xs:string" use="required">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        A descriptive name describing this group of header files.
+                                        Source code will have the PublicAPI directory in the include path by default, and will have to explicitly list this domain when including.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="Upack" type="xs:string" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Upack name where the API is located.
+                                        Used together with the SourceDirectory attribute.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="Nuget" type="xs:string" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        NuGet name where the API is located.
+                                        Used together with the SourceDirectory attribute.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="SourceDirectory" type="xs:string" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Path where the PublicAPI is located.
+                                        Used together with Domain attribute to automatically prewire PublicAPI.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element minOccurs="0" maxOccurs="unbounded" name="VendorAPI" >
+                <xs:annotation>
+                    <xs:documentation>
+                        Used for third party header files.
+                        It is assumed that the Domain attribute value matches a directory name in the current build context's VendorAPI directory.
+                        A directory in the destination build context's VendorAPI directory will be created (linked) based on the Domain attribute.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:complexContent mixed="true">
+                        <xs:extension base="PartBindingType">
+                            <xs:attribute name="Domain" type="xs:string" use="required">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        A descriptive name describing this group of header files.
+                                        Source code will have the VendorAPI directory in the include path by default, and will have to explicitly list this domain when including.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="Upack" type="xs:string" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Upack name where the API is located.
+                                        Used together with the SourceDirectory attribute.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="Nuget" type="xs:string" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        NuGet name where the API is located.
+                                        Used together with the SourceDirectory attribute.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="SourceDirectory" type="xs:string" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Path where the API is located. If upack or nuget is provided use relative path. 
+                                        Used together with Domain attribute to automatically prewire VendorAPI.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element minOccurs="0" maxOccurs="unbounded" name="Libs" type="PartBindingType">
+                <xs:annotation>
+                    <xs:documentation>
+                        Specifies one (or many if using a wildcard) Lib file(s).
+                        Lib files are typically placed (linked) in a 'Delivery' directory in the build context.
+                        The file specified as the content of this element must be relative, and is rooted in the current build context.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" maxOccurs="unbounded" name="Assemblies">
+                <xs:annotation>
+                    <xs:documentation>
+                        Specifies one (or many if using a wildcard) Dll file(s) (can be native or managed).
+                        Dll files are typically placed (linked) in a 'Delivery' directory in the build context.
+                        The file specified as the content of this element must be relative, and is rooted in the current build context.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:complexContent mixed="true">
+                        <xs:extension  base="PartBindingWithTransKitType">
+                            <xs:attribute name="ExtractReg" use="optional">
+                            <xs:annotation>
+                                <xs:documentation>
+                                Set true to allow buildinstallset to extract regsitry for PE file. If no registry is expected to be extract, do not set this attribute.
+                                First item from the list in the binding will be picked up for regsitry extraction.
+                                Default is false.
+                                </xs:documentation>
+                            </xs:annotation>
+                            <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                <xs:enumeration value="true" >
+                                    <xs:annotation>
+                                    <xs:documentation>
+                                        Allow buildinstallset action to extract regsitry for PE file
+                                    </xs:documentation>
+                                    </xs:annotation>
+                                </xs:enumeration>
+                                <xs:enumeration value="extract" >
+                                    <xs:annotation>
+                                    <xs:documentation>
+                                        Allow buildinstallset action to extract regsitry for PE file
+                                    </xs:documentation>
+                                    </xs:annotation>
+                                </xs:enumeration>
+                                <xs:enumeration value="include" >
+                                    <xs:annotation>
+                                    <xs:documentation>
+                                        Wxi file with same file name as dll, but appeneded with “.wxi” extension needs to be in binding with “BindToWixBuild=true”. In that case, instead
+                                        of extracting registry, BuildInstallSet action will include that wxi file along with Component for First file in this binding.
+                                    </xs:documentation>
+                                    </xs:annotation>
+                                </xs:enumeration>
+                                <xs:enumeration value="includeChild" >
+                                    <xs:annotation>
+                                    <xs:documentation>
+                                        Wxi file with same file name as dll, but appeneded with “.wxi” extension needs to be in binding with “BindToWixBuild=true”. In that case, instead
+                                        of extracting registry, BuildInstallSet action will include that wxi file as a child element for the First file in this binding.
+                                    </xs:documentation>
+                                    </xs:annotation>
+                                </xs:enumeration>
+                                <xs:enumeration value="false" >
+                                    <xs:annotation>
+                                    <xs:documentation>
+                                        Buildinstallset action will perform any registry related task for bindings.
+                                    </xs:documentation>
+                                    </xs:annotation>
+                                </xs:enumeration>
+                                </xs:restriction>
+                            </xs:simpleType>
+                            </xs:attribute>
+                            <xs:attribute name="ExtractRegOnlyProducts" type="xs:string" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Product names separated by commas only for which ExtractReg will be performed.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="SubPartDirectory" type="xs:string" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        The name of the destination directory in the SubParts/Assemblies directory in the target build context.
+                                        Generally this is unnecessary; it is desirable to have all assemblies in one directory.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element minOccurs="0" maxOccurs="unbounded" name="MergeModules" type="PartBindingType">
+                <xs:annotation>
+                    <xs:documentation>
+                        Specifies one (or many if using a wildcard) MSM file(s).
+                        MSM files are typically placed (linked) in an 'Install' directory in the build context.
+                        The file specified as the content of this element must be relative, and is rooted in the current build context.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" maxOccurs="unbounded" name="Documentation">
+                <xs:annotation>
+                    <xs:documentation>
+                        This binding with same name as Part\Documentation\DocumentationItem will automatically bind file into BuildContext.
+                        This item will be read in transkit environment and hence, language packs will have documentation checked out of Documentaion repositories.
+                        The file names support $(language) variable.
+                        To delivery under $(language) subfolder, use UseLanguageDir in DocumentationItem.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:complexContent mixed="true">
+                        <xs:extension  base="PartBindingType">
+                            <xs:attribute name="Name" type="xs:string">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Name of Binding, which shall exactly match with Name of Part\Documentation\DocumentationItem.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element minOccurs="0" maxOccurs="unbounded" name="VendorNotices">
+                <xs:annotation>
+                    <xs:documentation>
+                        Notices that must be included in the delivery for third-party libraries such as open source.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType mixed="true">
+                    <xs:complexContent mixed="true">
+                        <xs:extension base="PartBindingType">
+                            <xs:attribute name="SubPartDirectory" type="xs:string" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        The name of the destination directory in the SubParts directory in the target build context.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element minOccurs="0" maxOccurs="unbounded" name="Directory">
+                <xs:annotation>
+                    <xs:documentation>
+                        Allows you to deploy an entire directory into a consuming part's build context.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType mixed="true">
+                    <xs:complexContent mixed="true">
+                        <xs:extension base="PartBindingType">
+                            <xs:attribute name="SourceName" type="xs:string" use="required">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        The name of the source directory in this build context.
+                                        The path specified must be relative, and is rooted in the current build context.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="TargetName" type="xs:string" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        The name of the destination directory in the target build context.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="SubPartDirectory" type="xs:string" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        The name of the destination directory in the SubParts directory in the target build context.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="SymlinkContents" type="xs:boolean" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Symlinks the contents of a directory individually instead of creating a folder symlink.
+                                        Recursive. Defaults to False.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="AddToTranskitTools" type="xs:boolean" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Adds direcotry to Transkit/Tools and skips the binding to Product and BuildContext.
+                                        Defaults to False.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element minOccurs="0" maxOccurs="unbounded" name="Files">
+                <xs:annotation>
+                    <xs:documentation>
+                        Allows you to deploy a file (or many if using a wildcard) into a consuming part's build context.
+                        The path specified must be relative, and is rooted in the current build context.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType mixed="true">
+                    <xs:complexContent mixed="true">
+                        <xs:extension base="PartBindingWithTransKitType">
+                            <xs:attribute name="SubPartDirectory" type="xs:string" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        The name of the subdirectory (within $(BuildContext)SubParts directory) of any Part that uses me as SubPart.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="ExtractReg" use="optional">
+                                <xs:annotation>
+                                <xs:documentation>
+                                    Set true to allow buildinstallset to extract regsitry for PE file. If no registry is expected to be extract, do not set this attribute.
+                                    First item from the list in the binding will be picked up for regsitry extraction.
+                                    Default is false.
+                                </xs:documentation>
+                                </xs:annotation>
+                                <xs:simpleType>
+                                <xs:restriction base="xs:string">
+                                    <xs:enumeration value="true" >
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                        Allow buildinstallset action to extract regsitry for PE file
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                    </xs:enumeration>
+                                    <xs:enumeration value="extract" >
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                        Allow buildinstallset action to extract regsitry for PE file
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                    </xs:enumeration>
+                                    <xs:enumeration value="include" >
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                        Wxi file with same file name as dll, but appeneded with “.wxi” extension needs to be in binding with “BindToWixBuild=true”. In that case, instead
+                                        of extracting registry, BuildInstallSet action will include that wxi file along with Component for First file in this binding.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                    </xs:enumeration>
+                                    <xs:enumeration value="includeChild" >
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                        Wxi file with same file name as dll, but appeneded with “.wxi” extension needs to be in binding with “BindToWixBuild=true”. In that case, instead
+                                        of extracting registry, BuildInstallSet action will include that wxi file as a child element for the First file in this binding.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                    </xs:enumeration>
+                                    <xs:enumeration value="false" >
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                        Buildinstallset action will perform any registry related task for bindings.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                    </xs:enumeration>
+                                </xs:restriction>
+                                </xs:simpleType>
+                            </xs:attribute>
+                            <xs:attribute name="ExtractRegOnlyProducts" type="xs:string" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Product names separated by commas only for which ExtractReg will be performed.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="AddToTranskitTools" type="xs:boolean" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Adds files to Transkit/Tools and skips the binding to Product and BuildContext.
+                                        Defaults to False.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+        </xs:choice>
+    </xs:complexType>
+    <xs:complexType name="BasePartType">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element minOccurs="0" maxOccurs="unbounded" name="RequiresFeatureAspectsComplete" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        This part requires that all Feature Aspect parts (marked with FeatureAspectBuild) are completed before running.
+                        Internally bb will create subpart dependencies from this part to all FA parts so it is possible to create circular
+                        dependencies with this option.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" maxOccurs="unbounded" name="ADOBuildArtifact" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        Alias of an Azure DevOps Artifact that needs to be downloaded
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" maxOccurs="unbounded" name="RequiredRepository" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        In general, you should not use this, but instead make a partfile and part in the other repository that you then reference here as a sub-part.
+                        This should only be used if you require files in repositories outside of this part file's repository to build a part.
+                        RequiredRepository is typically used for tools like Doxygen.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" maxOccurs="unbounded" name="SdkSource" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sdk Sources are a way to pull something from another stream.  It's not as good as pulling LKGs because it doesn't have all the safeguards,
+                        you cannot pull from sources to debug, etc.  Furthermore they require additional work on the other stream to set up the consumable product.
+                        However there are times when all the parts have the same names or the DLLs do that you need to pull things in this way.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" maxOccurs="unbounded" name="NuGetPackage" type="NuGetPackageType">
+                <xs:annotation>
+                    <xs:documentation>
+                        Pull a package from the NuGet service.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+          <xs:element minOccurs="0" maxOccurs="unbounded" name="Upack" type="xs:string">
+            <xs:annotation>
+              <xs:documentation>
+                What Microsoft calls a "Universal Package," it is their solution for anything greater than 500 mb.
+              </xs:documentation>
+            </xs:annotation>
+          </xs:element>
+          <xs:element minOccurs="0" maxOccurs="unbounded" name="NpmDependency" type="xs:string">
+                <xs:annotation>
+                  <xs:documentation>
+                    This is the directory of an NPM project dependency. It is expected that the developer will 
+                    commit the package-lock.json file. Bb will run "npm ci" in that directory to install the pieces. If you want something
+                    to run during the build such as "npm run", put it in the makefile called by the part. Bb will also keep a list of all used
+                    packages in the BDF file because it will be useful to be able to look this up, especially when there are internal parts. However
+                    the BDF will not be used during a pull; only the committed package-lock.json file is used.
+                  </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:choice>
+        <xs:attribute name="Name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The name of this part. It can be used unqualified in this part file, or externally by fully qualifying with a repository/part file/part name.
+                    If more than one Part element in a BuildPartFile has the same name, only the first one is used.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="Scope" use="optional" default="Public">
+            <xs:annotation>
+                 <xs:documentation>
+                    A Private scope is like a static C funciton; it cannot be called from outside the partfile.  Default is Public.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="Public" />
+                    <xs:enumeration value="Private" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+            <xs:attribute name="DeferType" type="xs:string" use="optional">
+                <xs:annotation>
+                     <xs:documentation>
+                        DeferType is a label that can be used in conjunction with the command line or BuildStrategy to defer parts until the end of the
+                        build or skip them entirely. This is primarily used for running tests or building documentation. Note that it is quite possible
+                        to casue build problems if the output of a part is needed for future non-deferred parts.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="PartType">
+        <xs:complexContent>
+            <xs:extension base="BasePartType">
+                <xs:attribute name="BMakeFile" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The bmake file to execute when building this part. Do not include bmake arguments in this attribute (see BMakeOptions).
+                            This value can be a relative path (based on this part file's path), or an absolute path.
+                            Depending on options given to BentleyBuild, arguments such as +im or +Da may be automatically appended.
+                            While this is not a required attribute, this part and/or at least one of its sub-parts should have this attribute in order for an action to occur.
+                            BMake is only supported on Windows, and must be used if you require ~task support. Otherwise, please consider BentleyBuildMake.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="BentleyBuildMakeFile" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The BentleyBuildMake file to execute when building this part. Do not include BentleyBuildMake arguments in this attribute (see BentleyBuildMakeOptions).
+                            This value can be a relative path (based on this part file's path), or an absolute path.
+                            Depending on options given to BentleyBuild, arguments such as +im or +Da may be automatically appended.
+                            While this is not a required attribute, this part and/or at least one of its sub-parts should have this attribute in order for an action to occur.
+                            BentleyBuildMake is a portable fork of BMake, and is required for cross-platform development. With the exception of MSBuild and .Net integration (e.g. ~task), it is identical to BMake.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="ProjectFile" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The Visual Studio or any other MSBuild based project file to execute when building this part.
+                            This value can be a relative path (based on this part file's path), or an absolute path.
+                            The specified project file will be compiled using a generic BMakeFile. ConfigFile can be used to specify a .mki file that sets up the environment.
+                            BMakeOptions can be used to insert extra arguments for the environment configuration.
+                            Consider using this over BMakeFile and BentleyBuildMakeFile if all of the underlying build logic is in the project file and the make files would only forward the informatuon to the project.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="DotNetSdkFile" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The project file that is supported by the dotnet SDK to execute when building this part.
+                            This value can be a relative path (based on this part file's path), or an absolute path.
+                            The specified project file will be compiled using a generic BMakeFile. ConfigFile can be used to specify a .mki file that sets up the environment.
+                            BMakeOptions can be used to insert extra arguments for the environment configuration.
+                            Consider using this over BMakeFile and BentleyBuildMakeFile if all of the underlying build logic is in the project file and the make files would only forward the informatuon to the project.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="NpmFile" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            NPM based package.json file to use when building this part.
+                            This value can be a relative path (based on this part file's path), or an absolute path.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="YarnFile" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Yarn based package.json file to use when building this part.
+                            This value can be a relative path (based on this part file's path), or an absolute path.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="ConfigFile" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Relative or full path to the build configuration make file (.mki) that sets up the environment for building this part.
+                            This will set BB_DEFAULT_CONFIGURATION_FILE environment variable that can be used in the make files.
+                            If ProjectFile or DotNetSdkFile is used then the specified file will be included before building the project.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="BMakeOptions" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The options to pass to the bmake command. BentleyBuild may pass additional options.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="BentleyBuildMakeOptions" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The options to pass to the BentleyBuildMake command. BentleyBuild may pass additional options.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="SolutionExtensibilityGlobals" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            This attribute is only used by the bb IDE action. Semi-colon separate properties can be specified to inject into the solutions ExtensibilityGlobals section.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="ApiNumber" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Use ApiNumber to put a version number on the end of a DLL, i.e. "DgnCore3.dll".  This value is passed through to the MakeFiles as DLM_API_NUMBER so that Dlmlink.mki can use it.
+                            In your binding statements use $(ApiNumber) to show the location, i.e. "DgnCore$(ApiNumber).dll".  The LIB files will not have the API Number.  Also, Assemblies will be linked
+                            into the build context twice, once with the API number and once without.  In both cases you can consume the DLL without having to change your code when the API number changes.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="PrgOutputDir" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>
+                            This is the directory to use in PRG to store the LKGs from this build.  Typically it's the common name for a product or library.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="Sequential" use="optional" type="xs:boolean">
+                        <xs:annotation>
+                            <xs:documentation>
+                                This is used to force the subparts to build in the order listed.  It is implemented as putting a parent dependency
+                                on the previous part in the chain.  Using this option is bad for parallelization and is always a symptom of a
+                                problem in the build part specification.  It is extremely easy to create cycles of dependencies with this flag.
+                            </xs:documentation>
+                        </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="ExcludeLibType" use="optional">
+                    <xs:annotation>
+                         <xs:documentation>
+                            Exclude this part when building Static or Dynamic libraries.  Defaults to building both.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                            <xs:enumeration value="Static" />
+                            <xs:enumeration value="Dynamic" />
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+                <xs:attribute name="WipPartEnable" type="xs:string" use="optional">
+                    <xs:annotation>
+                         <xs:documentation>
+                            This permits a developer to work on a new part without having to comment it out of the partfile before committing. If the matching
+                            environment variable is not set then the part will be excluded. For example, if  WipPartEnable="Foo" then WipPartEnable_Foo must
+                            be set for the part to be run. Note that because filters are on parts, the repository for that part will be pulled. If you want to
+                            avoid that, you must create a dummy part in your consuming partfile that then has your actual part as a subpart and add WipPartEnable 
+                            to the dummy part.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="FeatureAspectBuild" type="xs:boolean">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Set to True if this is the part that forces the build of FeatureAspects.  Once this part is hit bb will find the parent part
+                            with a FeatureAspects element and append locations for the Template and Instance files to the bmake command line for this part.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="ExcludePlatforms" type="ListOfExcludedPlatforms" use="optional" />
+                <xs:attribute name="OnlyPlatforms" type="ListOfOnlyPlatforms" use="optional" />
+           </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="MultiPlatformType">
+        <xs:complexContent>
+            <xs:extension base="BasePartType">
+                <xs:attribute name="PrgOutputDir" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>
+                            This is the directory to use in PRG to store the LKGs from this build.  Typically it's the common name for a product or library.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="Sequential" type="xs:boolean">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Force the subparts to build sequentially. This is very seldom needed; the better approach is
+                            to just make correct subpart dependencies. The actual behavior is just to internally make the
+                            first part a subpart of the second, the second part a subpart of the third, etc. so it will 
+                            degrade the parallelization.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="ProductType">
+        <xs:complexContent>
+            <xs:extension base="BasePartType">
+                <xs:choice minOccurs="0" maxOccurs="unbounded">
+                    <xs:element name="SubToolPart" type="SubToolPartType" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="SubToolPackage" type="SubToolPackageType" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="SubPart" type="SubPartType" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="SubProduct" type="SubProductType" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="SubNuGetProduct" type="SubNuGetProductType" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element minOccurs="0" maxOccurs="unbounded" name="SubUPackProduct" type="SubUPackProductType" />
+                    <xs:element name="SubMultiPlatform" type="SubMultiPlatformType" minOccurs="0" maxOccurs="unbounded" />
+                    <xs:element name="SubPackage" type="SubPackageType" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="InstallerWixFile" minOccurs="0" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Location of *.wix.xml file, which will be used to find definition for Windows Installer package, to be created for the product.
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:complexType>
+                            <xs:attribute name="SourceFile" type="xs:string" use="required">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Location of *.wix.xml file. The name shall not contain file extension wix.xml.
+                                        e.g. For wixXmlFileName.wix.xml, the SourceFile value will be "wixXmlFileName".
+                                        The location of file shall be relative to Part file.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="WixVersion" type="xs:string" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Version of WIX to use to build installers
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="WixRepository" type="xs:string" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Name of the repository, which contains the required WixToolsetVersion
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="WixUpackTool" type="xs:boolean" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Tells whether to pick up the Wix from the ToolCache as upack
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="WixBundleFile" minOccurs="0" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Location of *.bundle.wxs file, which will be used to find definition for Bundling packages referenced by Bundle file.
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:complexType>
+                            <xs:attribute name="SourceFile" type="xs:string" use="required">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Location of *.bundle.wxs file. The name shall not contain file extension bundle.wxs.
+                                        e.g. For bundleFileName.bundle.wxs, the SourceFile value will be "bundleFileName".
+                                        The location of file shall be relative to BuildContext folder.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="LanguagePackBundle" type="xs:string" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        *.bundle.wxs file, which shall be used to build LanguagePack Bundle.
+                                        Language pack will contain only Localized Resources.
+                                        If not provided, $(bsicommon)sharedwix\LanguagePack.Bundle.wxs will be used.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="LanguageBundle" type="xs:string" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        *.bundle.wxs file, which shall be used to build Language Bundle.
+                                        Language Bundle need to contain Core Installer, all dependencies and language pack.
+                                        If not provided, File in @SourceFile attribute will be used
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="NuSpecFile" minOccurs="0" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Location of NuSpec file to be used for creating NuGet Package.
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:complexType>
+                            <xs:attribute name="SourceFile" type="xs:string" use="required">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Location of *.nuspec
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                        </xs:complexType>
+                    </xs:element>
+
+                    <xs:element name="FeatureAspects" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                            Allows a product to filter what bindings it processes based on their declared feature aspects.
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:complexType>
+                            <xs:attribute name="Template" type="xs:string" use="required">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        The full path to the feature aspect template document. This will typically be ${SrcUtil}powerplatform\FeatureAspects\Schemas\FeatureAspectsTemplate.xml.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="Instance" type="xs:string" use="required">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        The full path to the instance document of feature aspects that represents this product.
+                                        This will typically be a file in ${SrcUtil}powerplatform\FeatureAspects\documents\.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="FeatureExclude" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Specifies a Feature name (or list of Feature names) to exclude from this Product. May include wildcards. FeatureInclude has priority over FeatureExclude.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="FeatureInclude" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Specifies a Feature name (or list of Feature names) to include in this Product. May include wildcards. FeatureInclude has priority over FeatureExclude.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="Directories" maxOccurs="unbounded">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Include a product directory name to path mapping list.
+                                See /BuildContext/ProductDirectoryList.
+                                If multiple included lists defined the same product directory name, the last one included wins.
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:complexType>
+                            <xs:attribute name="DirectoryListName" type="xs:string" use="required">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Name of the list to include; see /BuildContext/ProductDirectoryList[@ListName=...].
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="PartFile" type="xs:string" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Optional file name which this list is located in; required if list is not in this part file.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="Repository" type="xs:string" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Optional repository name which the referenced part file is located in; required if the part file is not in this part file's repository.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="ExcludePlatforms" type="ListOfExcludedPlatforms" use="optional" />
+                            <xs:attribute name="OnlyPlatforms" type="ListOfOnlyPlatforms" use="optional" />
+                            <xs:attribute name="WixVersion" type="xs:string" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Version of WIX to use to build installers
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="WixRepository" type="xs:string" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Name of the repository, which contains the required WixToolsetVersion
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                        </xs:complexType>
+                    </xs:element>
+                </xs:choice>
+                <xs:attribute name="AddIn" type="xs:boolean">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Whether to process as an "Add-In".  It's unclear what this means.  It appears to imply that it is ok to be missing product directories
+                            because this product will be added in to another product?
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="PrgOutputDir" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>
+                            This is the directory to use in PRG to store the LKGs from this build.  Typically it's the common name for a product or library.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="LibType" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>
+                            If LibType="Static", product builds with static libraries.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="SaveProduct" type="xs:boolean">
+                    <xs:annotation>
+                        <xs:documentation>
+                            If SaveProduct is set to true, then the output will be saved in LKGs in PRG.  This is meant for libraries and other small test apps to allow Certification to run the output;
+                            it is not intended to be a delivery mechanism.  It is likely to be replaced by something that will store the test collateral in a different location so don't rely on it.
+                            Also if the amount of disk space consumed is too large your product will be removed.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="ExcludePlatforms" type="ListOfExcludedPlatforms" use="optional" />
+                <xs:attribute name="OnlyPlatforms" type="ListOfOnlyPlatforms" use="optional" />
+                <xs:attribute name="BuildInstallSet" type="xs:boolean">
+                    <xs:annotation>
+                        <xs:documentation>
+                            If BuildInstallSet is set to true, then "bb buildinstallset" commmand will create a Windows Insataller package for this Product.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="InstallSetType" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Package type, to be created by BuildInstallSet action. Possible values are MSI and NUGET, with MSI as default.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                            <xs:enumeration value="NUGET">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        BuildInstallSet command will create NUPKG packages. NUGET tools are needed for this build.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:enumeration>
+                            <xs:enumeration value="MSI">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        BuildInstallSet command will create MSI packages.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:enumeration>
+                            <xs:enumeration value="CSPKG-NUGET">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                       BuildInstallSet command will create CSPKG and then, wrap it in NUGET. NUGET and CSPKG, both tools are needed for this build.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:enumeration>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+                <xs:attribute name="SaveTranskit" type="xs:boolean">
+                    <xs:annotation>
+                        <xs:documentation>
+                            If SaveTranskit is set to true, then "bb savetranskit" commmand will save this product in transkit.zip.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="ExcludeLibType" use="optional">
+                    <xs:annotation>
+                         <xs:documentation>
+                            Exclude this part when building Static or Dynamic libraries.  Defaults to building both.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                            <xs:enumeration value="Static" />
+                            <xs:enumeration value="Dynamic" />
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+                <xs:attribute name="WipPartEnable" type="xs:string" use="optional">
+                    <xs:annotation>
+                         <xs:documentation>
+                            This permits a developer to work on a new part without having to comment it out of the partfile before committing. If the matching
+                            environment variable is not set then the part will be excluded. For example, if  WipPartEnable="Foo" then WipPartEnable_Foo must
+                            be set for the part to be run. Note that because filters are on parts, the repository for that part will be pulled. If you want to
+                            avoid that, you must create a dummy part in your consuming partfile that then has your actual part as a subpart and add WipPartEnable 
+                            to the dummy part.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="NuGetProductType">
+        <xs:complexContent>
+            <xs:extension base="BasePartType">
+                <xs:choice minOccurs="0" maxOccurs="unbounded">
+                    <xs:element name="SubToolPart" type="SubToolPartType" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="SubToolPackage" type="SubToolPackageType" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="SubPart" type="SubPartType" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="SubProduct" type="SubProductType" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="SubNuGetProduct" type="SubNuGetProductType" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="SubUPackProduct" type="SubUPackProductType" minOccurs="0" maxOccurs="unbounded" />
+                    <xs:element name="SubMultiPlatform" type="SubMultiPlatformType" minOccurs="0" maxOccurs="unbounded" />
+                    <xs:element name="SubPackage" type="SubPackageType" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="Directories" maxOccurs="unbounded">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Include a product directory name to path mapping list.
+                                See /BuildContext/ProductDirectoryList.
+                                If multiple included lists defined the same product directory name, the last one included wins.
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:complexType>
+                            <xs:attribute name="DirectoryListName" type="xs:string" use="required">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Name of the list to include; see /BuildContext/ProductDirectoryList[@ListName=...].
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="PartFile" type="xs:string" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Optional file name which this list is located in; required if list is not in this part file.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="Repository" type="xs:string" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        Optional repository name which the referenced part file is located in; required if the part file is not in this part file's repository.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="FeatureExclude" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Specifies a Feature name (or list of Feature names) to exclude from this Product. May include wildcards. FeatureInclude has priority over FeatureExclude.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="FeatureInclude" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Specifies a Feature name (or list of Feature names) to include in this Product. May include wildcards. FeatureInclude has priority over FeatureExclude.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:choice>
+                <xs:attribute name="LicenseFile" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            A filepath relative to the repository that defines Third-Party nuget package info. Should be a JSON file that contains the following fields: name, version, homepage, SPDX-ID, licenseUrl, copyright, authors, description. NOTE: Every NuGetProduct needs to contain either this attribute or the Description attribute. This attribute is intended for Third-Party packages.
+                        </xs:documentation>
+                    </xs:annotation>                        
+                </xs:attribute>
+                <xs:attribute name="Description" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The description to be used for the created NuGet package. NOTE: Every NuGetProduct needs to contain either this attribute or the LicenseFile attribute. This attribute is intended for Bentley internal packages.
+                        </xs:documentation>
+                    </xs:annotation>                        
+                </xs:attribute>
+                <xs:attribute name="Native" type="xs:boolean" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Marking the NuGet product as Native currently just keeps any dependencies from being listed in the Nuspec. This is symmetrical with not listing any native NuGets as dependencies.
+                        </xs:documentation>
+                    </xs:annotation>                        
+                </xs:attribute>
+                <xs:attribute name="WipPartEnable" type="xs:string" use="optional">
+                    <xs:annotation>
+                         <xs:documentation>
+                            This permits a developer to work on a new part without having to comment it out of the partfile before committing. If the matching
+                            environment variable is not set then the part will be excluded. For example, if  WipPartEnable="Foo" then WipPartEnable_Foo must
+                            be set for the part to be run. Note that because filters are on parts, the repository for that part will be pulled. If you want to
+                            avoid that, you must create a dummy part in your consuming partfile that then has your actual part as a subpart and add WipPartEnable 
+                            to the dummy part.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="ExcludePlatforms" type="ListOfExcludedPlatforms" use="optional" />
+                <xs:attribute name="OnlyPlatforms" type="ListOfOnlyPlatforms" use="optional" />
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+  <xs:complexType name="UPackProductType">
+    <xs:complexContent>
+      <xs:extension base="BasePartType">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element name="SubToolPart" type="SubToolPartType" minOccurs="0" maxOccurs="unbounded"/>
+          <xs:element name="SubToolPackage" type="SubToolPackageType" minOccurs="0" maxOccurs="unbounded"/>
+          <xs:element name="SubPart" type="SubPartType" minOccurs="0" maxOccurs="unbounded"/>
+          <xs:element name="SubProduct" type="SubProductType" minOccurs="0" maxOccurs="unbounded"/>
+          <xs:element name="SubNuGetProduct" type="SubNuGetProductType" minOccurs="0" maxOccurs="unbounded"/>
+          <xs:element name="SubUPackProduct" type="SubUPackProductType" minOccurs="0" maxOccurs="unbounded" />
+          <xs:element name="SubMultiPlatform" type="SubMultiPlatformType" minOccurs="0" maxOccurs="unbounded" />
+          <xs:element name="SubPackage" type="SubPackageType" minOccurs="0" maxOccurs="unbounded"/>
+          <xs:element name="Directories" maxOccurs="unbounded">
+            <xs:annotation>
+              <xs:documentation>
+                Include a product directory name to path mapping list.
+                See /BuildContext/ProductDirectoryList.
+                If multiple included lists defined the same product directory name, the last one included wins.
+              </xs:documentation>
+            </xs:annotation>
+            <xs:complexType>
+              <xs:attribute name="DirectoryListName" type="xs:string" use="required">
+                <xs:annotation>
+                  <xs:documentation>
+                    Name of the list to include; see /BuildContext/ProductDirectoryList[@ListName=...].
+                  </xs:documentation>
+                </xs:annotation>
+              </xs:attribute>
+              <xs:attribute name="PartFile" type="xs:string" use="optional">
+                <xs:annotation>
+                  <xs:documentation>
+                    Optional file name which this list is located in; required if list is not in this part file.
+                  </xs:documentation>
+                </xs:annotation>
+              </xs:attribute>
+              <xs:attribute name="Repository" type="xs:string" use="optional">
+                <xs:annotation>
+                  <xs:documentation>
+                    Optional repository name which the referenced part file is located in; required if the part file is not in this part file's repository.
+                  </xs:documentation>
+                </xs:annotation>
+              </xs:attribute>
+            </xs:complexType>
+          </xs:element>
+        </xs:choice>
+        <xs:attribute name="Description" type="xs:string" use="required">
+          <xs:annotation>
+            <xs:documentation>
+              The description to be used for the created Universal Package on the server.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="MultiPlatform" type="xs:boolean" use="optional">
+          <xs:annotation>
+            <xs:documentation>
+              Setting the multi-platform flag, will publish the upack to server with platform appended. Defaults to false.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="WipPartEnable" type="xs:string" use="optional">
+          <xs:annotation>
+            <xs:documentation>
+              This permits a developer to work on a new part without having to comment it out of the partfile before committing. If the matching
+              environment variable is not set then the part will be excluded. For example, if  WipPartEnable="Foo" then WipPartEnable_Foo must
+              be set for the part to be run. Note that because filters are on parts, the repository for that part will be pulled. If you want to
+              avoid that, you must create a dummy part in your consuming partfile that then has your actual part as a subpart and add WipPartEnable
+              to the dummy part.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="ExcludePlatforms" type="ListOfExcludedPlatforms" use="optional" />
+        <xs:attribute name="OnlyPlatforms" type="ListOfOnlyPlatforms" use="optional" />
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="PartBindingType" mixed="true">
+        <xs:attribute name="Required" type="xs:boolean" use="optional" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    This attribute controls whether a product will attempt to consume this binding into a runnable tree.
+                    Useful for bindings required for a build, but not needed by customers.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="ProductDirectoryName" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Specifies the name of the delivery directory (see /BuildContext/Product) that this will be deployed to in a runnable tree.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="ProductSubDirectory" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    A sub-directory name under ProductDirectoryName.
+                    Invalid without specifying ProductDirectoryName.
+                    This allows the part-designer to create a folder structure based on what the product designed
+                    wants; this should generally be used sparingly, unless you require a specific directory structure
+                    for your part to work.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="FeatureAspect" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    When creating a runnable tree (via a product), this will only be deployed if the provided feature aspect is enabled.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="UseSymLink" type="xs:boolean" use="optional" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    If set to false then the file is copied rather than symlinked. In general this is much worse, but there are certain COM controls
+                    and other files that simply don't work through symlinks yet.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+      <xs:attribute name="Feature" type="xs:string" use="optional">
+        <xs:annotation>
+          <xs:documentation>
+            Establishes a name (or list of names, separated by "||") that can be used to specifiy whether this binding is included in a Product.
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="FeatureDefault" use="optional">
+        <xs:annotation>
+          <xs:documentation>
+            Determines the default value for whether this Feature is included in a Product if it is not mentioned in either a FeatureExclude or FeatureInclude in the Product specification.
+            Possible values are: "Yes", "No", or "Choose". Choose will cause the binding to fail unless this Feature is explicitly mentioned by a Product.
+          </xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="Yes" />
+            <xs:enumeration value="No" />
+            <xs:enumeration value="Choose" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+        <xs:attribute name="IfNotPresent" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Determines the action BentleyBuild will take if no files are present when this binding is executed.
+                    Default is "Stop".
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="Stop" />
+                    <xs:enumeration value="Warn" />
+                    <xs:enumeration value="Continue" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="BindToTranskit" type="xs:boolean" use="optional" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Use this to bind a file that is needed during tranksit generation but has no translatable resources itself.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="BindToWixBuild" type="xs:boolean" use="optional" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Use this to bind a file that is needed during installer\bundle build. This may or may not be deliverable file.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:anyAttribute namespace="##other" processContents="lax" />
+    </xs:complexType>
+
+    <xs:complexType name="PartBindingWithTransKitType" mixed="true">
+        <xs:complexContent mixed="true">
+            <xs:extension base="PartBindingType">
+                <xs:choice minOccurs="0" maxOccurs="unbounded">
+                    <xs:element name="LoadConfig"  minOccurs="0" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Allows this binding to append a value to a configuration variable (e.g. for stub loading MDL applications).
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:complexType>
+                            <xs:attribute name="AppName" type="xs:string" use="required">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        The name of the app that will be appended to the config var.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="ConfigVars" type="xs:string" use="required">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        A semi-colon delimited list of configuration variables AppName will be appended to.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                        </xs:complexType>
+                    </xs:element>
+                    <xs:element name="TransKit"  minOccurs="0" maxOccurs="unbounded">
+                        <xs:annotation>
+                            <xs:documentation>
+                                A transkit is a directory that holds the translatable files for a Binding.
+                                If a part (not just a binding) has more than one transkit, each must be uniquely named (see @TkName).
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:complexType>
+                            <xs:attribute name="SourceDirectory" type="xs:string" use="required">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        The location in the BuildContext to find the TransKit directory. This directory becomes part of the TransKit for any
+                                        Product that consumes this Part.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="IncludeDirectory" type="xs:string" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                The location for additional non-translated include files.  This gets linked into a special area of the transkit.
+                              </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                            <xs:attribute name="TkName" type="xs:string" use="optional">
+                                <xs:annotation>
+                                    <xs:documentation>
+                                        If a part has more than one transkit, each transkit must specify a unique name.
+                                    </xs:documentation>
+                                </xs:annotation>
+                            </xs:attribute>
+                        </xs:complexType>
+                    </xs:element>
+                </xs:choice>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:group name="WixSourceType">
+        <xs:choice>
+            <xs:element name="WxlFiles" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                        Semi-colon separated list of wxl files for localization strings.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:attribute name="AddFor" use="optional" type="InstallerAddTypes">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Add the localization file for Core, LangaugePack or Both kinds of builds.
+                                Default is "core"
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="Value" use="required" type="semicolonlist"/>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="WxsFiles" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                        Semi-colon separated list of wix source files for installer build.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:attribute name="AddFor" use="optional" type="InstallerAddTypes">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Add the wix source file for Core, LangaugePack or Both kinds of builds.
+                                Default is "core"
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="Value" use="required" type="semicolonlist"/>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="PropertyRefs" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                        Semi-colon separated list of Properties to be referenced from other fragments into Product fragment.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:attribute name="AddFor" use="optional" type="InstallerAddTypes">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Add the Property for Core, LangaugePack or Both kinds of builds.
+                                Default is "core"
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="Value" use="required" type="semicolonlist"/>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="CustomActionRefs" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                        Semi-colon separated list of CustomActions to be referenced from other fragments into Product fragment.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:attribute name="AddFor" use="optional" type="InstallerAddTypes">
+                        <xs:annotation>
+                            <xs:documentation>
+                                Add the CustomAction for Core, LangaugePack or Both kinds of builds.
+                                Default is "core"
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="Value" use="required" type="semicolonlist"/>
+                </xs:complexType>
+            </xs:element>
+        </xs:choice>
+    </xs:group>
+
+    <xs:simpleType name="semicolonlist">
+        <xs:annotation>
+            <xs:documentation>
+                Semi-colon separated list.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="Guid">
+        <xs:annotation>
+            <xs:documentation>Values of this type will look like: "{01234567-89AB-CDEF-0123-456789ABCDEF}". Also allows "PUT-GUID-HERE" for use in examples.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="\{[0-9A-Fa-f]{8}\-?[0-9A-Fa-f]{4}\-?[0-9A-Fa-f]{4}\-?[0-9A-Fa-f]{4}\-?[0-9A-Fa-f]{12}\}|([!$])(\(var|\(loc|\(wix)\.[_A-Za-z][0-9A-Za-z_.]*\)"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="InstallerAddTypes">
+        <xs:annotation>
+            <xs:documentation>
+                Shall this be added for core build, language pack build or both. Default is core only.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="core">
+                <xs:annotation>
+                    <xs:documentation>
+                    Add only in Core type installer build.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="languagepack">
+                <xs:annotation>
+                    <xs:documentation>
+                    Add only for LanguagePack build.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="both">
+                <xs:annotation>
+                    <xs:documentation>
+                    Add for both, Core installer build and LanguagePack installer build.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="YesNoType">
+        <xs:annotation>
+            <xs:documentation>Values of this type will either be "yes" or "no".</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base='xs:NMTOKEN'>
+            <xs:enumeration value="no"/>
+            <xs:enumeration value="yes"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="WixUITypes">
+        <xs:annotation>
+            <xs:documentation>
+            User interface for MSI package. Sequencing of dialogs, Feature selection dialog, path edit dialog etc.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="WixUI_NoCustomization">
+                <xs:annotation>
+                    <xs:documentation>
+                    UI do not take any inputs from users.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="WixUI_FeatureCustomization">
+                <xs:annotation>
+                    <xs:documentation>
+                    Lets user edit Features to install.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="WixUI_WithInstallLocations">
+                <xs:annotation>
+                    <xs:documentation>
+                    Lets user edit location to install.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="WixUI_WithInstallLocationsAndFeatureEdit">
+                <xs:annotation>
+                    <xs:documentation>
+                    Lets user edit both location and Features to install.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="Platform">
+        <xs:annotation>
+            <xs:documentation>
+                Name of platform that this subpart should be built for.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="x86" />
+            <xs:enumeration value="x64" />
+            <xs:enumeration value="WinRTx86" />
+            <xs:enumeration value="WinRTx64" />
+            <xs:enumeration value="WinRTARM" />
+            <xs:enumeration value="AndroidARM" />
+            <xs:enumeration value="AndroidARM7A" />
+            <xs:enumeration value="AndroidX86" />
+            <xs:enumeration value="AndroidX64" />
+            <xs:enumeration value="LinuxX86" />
+            <xs:enumeration value="iOSX86" />
+            <xs:enumeration value="iOSARM" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="ListOfExcludedPlatforms">
+        <xs:annotation>
+            <xs:documentation>
+                A comma-separated list of platforms where this part and its subparts should NOT be evaluated. For example, "AndroidARM,AndroidARM7A".  You can use wildcards: "AndroidARM*"
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string"/>
+<!--        <xs:list itemType="Platform" /> Not a list because 1. it is an attribute, and 2. it is comma-seperated. -->
+    </xs:simpleType>
+
+    <xs:simpleType name="ListOfOnlyPlatforms">
+        <xs:annotation>
+            <xs:documentation>
+                A comma-separated list of platforms where this part and its subparts SHOULD be evaluated. For example, "iOSARM,AndroidARM7A".  You can use wildcards: "iOS*"
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+</xs:schema>
