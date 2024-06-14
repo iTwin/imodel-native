@@ -43,6 +43,48 @@ struct ClassPropsModule : BeSQLite::DbModule {
         DbResult Connect(DbVirtualTable*& out, Config& conf, int argc, const char* const* argv) final;
 };
 
+//=======================================================================================
+//! Virtual Table for related instance finder
+// @bsiclass
+//=======================================================================================
+struct RelatedInstanceModule : ECDbModule {
+    struct RelatedInstanceTable : ECDbVirtualTable {
+        struct RelatedInstanceCursor : ECDbCursor {
+            enum class Columns{
+                ecInstanceId = 0,
+                ecClassId = 1,
+                relClassId = 2,
+                direction = 3 ,
+                id = 4,
+                classId = 5,
+                dirFilter = 6,
+            };
+            private:
+                int64_t m_iRowid = 0;
+                ECInstanceId m_id;
+                ECClassId m_classId;
+                RelatedInstanceFinder::DirectionFilter m_dirFilter;
+                Utf8String m_delimiter;
+                RelatedInstanceFinder::StandaloneIterator m_resultIt;
+
+            public:
+                RelatedInstanceCursor(RelatedInstanceTable& vt): ECDbCursor(vt){}
+                bool Eof() final;
+                DbResult Next() final;
+                DbResult GetColumn(int i, Context& ctx) final;
+                DbResult GetRowId(int64_t& rowId) final;
+                DbResult Filter(int idxNum, const char* idxStr, int argc, DbValue* argv) final;
+        };
+
+        public:
+            RelatedInstanceTable(RelatedInstanceModule& module): ECDbVirtualTable(module) {}
+            DbResult Open(DbCursor*& cur) override;
+            DbResult BestIndex(IndexInfo& indexInfo) final;
+    };
+    RelatedInstanceModule(ECDbR db);
+    DbResult Connect(DbVirtualTable*& out, Config& conf, int argc, const char* const* argv) final;
+};
+
 DbResult RegisterBuildInVTabs(ECDbR);
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

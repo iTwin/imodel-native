@@ -15,6 +15,7 @@ struct SchemaManager;
 struct InstanceReader;
 struct ECCrudWriteToken;
 struct SchemaImportToken;
+struct RelatedInstanceFinder;
 
 //=======================================================================================
 //! Enum which mirrors the ECEnumeration OpCode in the ECDbChange ECSchema.
@@ -510,6 +511,9 @@ public:
 
     //! Instance reader is bare metal to access full instance without requiring to prepare ECSqlStatement
     ECDB_EXPORT InstanceReader& GetInstanceReader() const;
+
+    //! Related instance finder
+    ECDB_EXPORT RelatedInstanceFinder const& GetRelatedInstanceFinder() const;
 
     //! When ECDb::ClearECDbCache is called, these listeners get notified before the actual caches are cleared.
     //! This gives users of ECDb the opportunity to free anything that relies on its caches, e.g.
