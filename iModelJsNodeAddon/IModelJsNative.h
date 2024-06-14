@@ -425,6 +425,7 @@ struct JsInterop {
     BE_JSON_NAME(face)
     BE_JSON_NAME(fileExt)
     BE_JSON_NAME(fileName)
+    BE_JSON_NAME(findOrphanedBlocks)
     BE_JSON_NAME(finishedAtOrAfterTime)
     BE_JSON_NAME(fonts)
     BE_JSON_NAME(forceUseId)
