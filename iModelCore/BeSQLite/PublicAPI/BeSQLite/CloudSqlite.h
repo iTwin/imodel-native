@@ -156,7 +156,7 @@ public:
     BE_SQLITE_EXPORT void Close();
     BE_SQLITE_EXPORT CloudResult Init(CloudContainer const& container, int logLevel = 0, int nRequests = 0, int httpTimeout = 0);
     BE_SQLITE_EXPORT CloudResult InitializeContainer(int nameSize = 0, int blockSize = 0);
-    BE_SQLITE_EXPORT CloudResult CleanDeletedBlocks(int deleteTime = 0);
+    BE_SQLITE_EXPORT CloudResult CleanDeletedBlocks(int deleteTime = 0, bool findOrphanedBlocks = true);
     BE_SQLITE_EXPORT CloudResult UploadDatabase(Utf8StringCR localFileName, Utf8StringCR dbName);
     BE_SQLITE_EXPORT CloudResult DownloadDatabase(Utf8StringCR dbName, Utf8StringCR localName);
 };
