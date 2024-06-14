@@ -2301,7 +2301,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     }
     Napi::Value GetInstance(NapiInfoCR info) {
         constexpr auto kUseJsName = "useJsNames";
-        constexpr auto kClassFullName = "classFullName";
+        constexpr auto kClassId = "classId";
         constexpr auto kClassIdsToClassNames = "classIdsToClassNames";
         constexpr auto kAbbreviateBlobs = "abbreviateBlobs";
         constexpr auto kAccessString = "accessString";
@@ -2310,7 +2310,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         REQUIRE_ARGUMENT_ANY_OBJ(0, argsObj);
         BeJsConst args(argsObj);
         ECInstanceId instanceId;
-        Utf8String classFullName;
+        ECClassId classId;
         Utf8String accessString;
         auto abbreviateBlobs = true;
         auto classIdsToClassNames = false;
@@ -2318,8 +2318,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         if (args.isStringMember(kId)){
             ECInstanceId::FromString(instanceId, args[kId].asCString());
         }
-        if (args.isStringMember(kClassFullName)){
-            classFullName = args[kClassFullName].asCString();
+        if (args.isStringMember(kClassId)){
+            ECClassId::FromString(classId, args[kClassId].asCString());
         }
         if (args.isStringMember(kAccessString)){
             accessString = args[kAccessString].asCString();
@@ -2336,22 +2336,22 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         if (!instanceId.IsValid()){
             THROW_JS_EXCEPTION("Invalid instanceId");
         }
-        if (classFullName.empty()) {
-            THROW_JS_EXCEPTION("classFullName must be provided");
+        if (!classId.IsValid()) {
+            THROW_JS_EXCEPTION("Invalid classId");
         }
 
         BeJsNapiObject obj(Env());
         auto& db = GetOpenedDb(info);
         auto& instanceReader = db.GetInstanceReader();
-        auto position = InstanceReader::Position{instanceId, classFullName.c_str(), accessString.empty() ? accessString.c_str() : nullptr};
+        auto position = InstanceReader::Position{instanceId, classId, nullptr};
         auto successful = instanceReader.Seek(position,
             [&](InstanceReader::IRowContext const& row) {
                 ECSqlRowAdaptor adaptor(db);
                 adaptor.SetAbbreviateBlobs(abbreviateBlobs);
                 adaptor.SetConvertClassIdsToClassNames(classIdsToClassNames);
                 adaptor.UseJsNames(useJsNames);
-                if (accessString.empty()) {
-                    if (ERROR == adaptor.RenderValue(obj, row.GetValue(0))) {
+                if (!accessString.empty()) {
+                    if (!ERROR == adaptor.RenderValue(obj, row.GetValue(0))) {
                         THROW_JS_EXCEPTION("Failed to render value");
                     }
                 } else {
