@@ -5278,6 +5278,9 @@ static int bcvfsDeleteDatabase(
           bcvfsUndirtyBlocks(pFs, nName, pDb, 0);
 
           if( rc==SQLITE_OK ){
+            rc = bcvDeleteBlocks(pMan, pDb - pMan->aDb);
+          }
+          if( rc==SQLITE_OK ){
             if( pDb->nBlkLocalAlloc ){
               sqlite3_free(pDb->aBlkLocal);
               pDb->nBlkLocalAlloc = 0;
