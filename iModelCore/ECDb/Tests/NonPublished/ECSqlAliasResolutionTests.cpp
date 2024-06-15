@@ -68,6 +68,9 @@ TEST_F(ECSqlAliasResolutionTestFixture, ColumnAliasesWithClauses) {
     EXPECT_ECSQL("select ECInstanceId, Name from (select ECInstanceId as idAlias, Name as nameAlias from meta.ECClassDef where idAlias < 30) group by nameAlias order by idAlias desc")
 
     EXPECT_ECSQL("select * from (select * from (select ECInstanceId as test from meta.ECClassDef)) group by test having test < 30")
+
+    EXPECT_ECSQL("select count(*) cnt from meta.ECClassDef group by ECClassId having cnt > 10")
+    EXPECT_ECSQL("select (select 1) a from meta.ECClassDef where a <> 1")
 }
 
 
