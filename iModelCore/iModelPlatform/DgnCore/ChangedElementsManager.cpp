@@ -432,6 +432,7 @@ DbResult ChangedElementsManager::ProcessChangesets(ECDbR cacheDb, Utf8String rul
         options.wantRelationshipCaching = m_wantRelationshipCaching;
         options.relationshipCacheSize = m_relationshipCacheSize;
         options.wantChunkTraversal = m_wantChunkTraversal;
+        options.wantBoundingBoxes = m_wantBoundingBoxes;
         VersionCompareChangeSummaryPtr summary = VersionCompareChangeSummary::Generate(dbFilename, currentRevisions, options);
         if (!summary.IsValid())
             {
