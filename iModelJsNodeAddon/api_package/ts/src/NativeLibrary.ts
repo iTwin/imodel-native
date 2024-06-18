@@ -761,7 +761,7 @@ export declare namespace IModelJsNative {
     public getBinder(param: number | string): ECSqlBinder;
     public getColumnCount(): number;
     public getValue(columnIndex: number): ECSqlValue;
-    public prepare(db: AnyECDb, ecsql: string, logErrors?: boolean): StatusCodeWithMessage<DbResult>;
+    public prepare(db: AnyECDb, ecsql: string, logErrors?: boolean, persistent?: boolean): StatusCodeWithMessage<DbResult>;
     public reset(): DbResult;
     public step(): DbResult;
     public stepAsync(callback: (result: DbResult) => void): void;
@@ -931,7 +931,7 @@ export declare namespace IModelJsNative {
     public getValueString(columnIndex: number): string;
     public isReadonly(): boolean;
     public isValueNull(columnIndex: number): boolean;
-    public prepare(db: AnyDb, sql: string, logErrors?: boolean): void;
+    public prepare(db: AnyDb, sql: string, logErrors?: boolean, persistent?: boolean): void;
     public reset(): DbResult;
     public step(): DbResult;
     public stepAsync(callback: (result: DbResult) => void): void;

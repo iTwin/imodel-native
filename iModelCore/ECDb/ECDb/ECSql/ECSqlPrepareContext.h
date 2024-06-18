@@ -132,12 +132,13 @@ struct ECSqlPrepareContext final
         int m_nextSystemSqlParameterNameSuffix = 0;
         SqlAnchors m_anchors;
         bool m_isInstanceQuery = false;
+        DbPrepareOptions m_prepareOpts;
         //not copyable
         ECSqlPrepareContext(ECSqlPrepareContext const&) = delete;
         ECSqlPrepareContext& operator=(ECSqlPrepareContext const&) = delete;
 
     public:
-        ECSqlPrepareContext(IECSqlPreparedStatement&, Db const& dataSourceECDb, IssueDataSource const&);
+        ECSqlPrepareContext(IECSqlPreparedStatement&, Db const& dataSourceECDb, IssueDataSource const&, DbPrepareOptions opts);
         void Reset(SingleECSqlPreparedStatement&);
 
         ECDbCR GetECDb() const { return m_ecdb; }
@@ -169,6 +170,7 @@ struct ECSqlPrepareContext final
         SqlAnchors& GetAnchors() { return m_anchors; }
         void SetIsInstanceQuery(const bool isInstanceQuery) { m_isInstanceQuery = isInstanceQuery; }
         bool IsInstanceQuery() const { return m_isInstanceQuery; }
+        DbPrepareOptions GetPrepareOptions() const { return m_prepareOpts; }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

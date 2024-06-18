@@ -19,7 +19,7 @@ NativeLogging::CategoryLogger* ECSqlStatement::Impl::s_prepareDiagnosticsLogger 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Db const* dataSourceECDb, Utf8CP ecsql, ECCrudWriteToken const* writeToken, bool logErrors)
+ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Db const* dataSourceECDb, Utf8CP ecsql, ECCrudWriteToken const* writeToken, bool logErrors, DbPrepareOptions opts)
     {
     m_hash64 = nullptr;
     auto filterAction = logErrors ?  IssueDataSource::FilterAction::Forward : IssueDataSource::FilterAction::Ignore;
@@ -92,7 +92,7 @@ ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Db const* dataSourceECDb,
         }
 
     //if dataSourceECDb is nullptr, the primary ECDb is used
-    ECSqlPrepareContext ctx(preparedStatement, dataSourceECDb != nullptr ? *dataSourceECDb : ecdb, filteredScope.Source());
+    ECSqlPrepareContext ctx(preparedStatement, dataSourceECDb != nullptr ? *dataSourceECDb : ecdb, filteredScope.Source(), opts);
     ECSqlStatus stat = preparedStatement.Prepare(ctx, *exp, ecsql);
     if (stat.IsSuccess())
         preparedStatement.SetIsInstanceQuery(ctx.IsInstanceQuery());
