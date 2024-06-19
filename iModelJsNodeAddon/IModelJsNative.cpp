@@ -4687,10 +4687,9 @@ public:
 
         NativeECSqlRowArg ecsqlRowArg = getECSqlRowArg(info);
 
-        Json::Value jsonVal;
-        BeJsValue out(jsonVal);
+        BeJsNapiObject out(info.Env());
         m_stmt.ToRow(out, ecsqlRowArg.m_abbreviateBlobs, ecsqlRowArg.m_classIdToClassNames, ecsqlRowArg.m_useJsName, ecsqlRowArg.m_includeMetaData);
-        return Napi::String::New(info.Env(), out.Stringify());
+        return out;
     }
 
     static DbResult ToDbResult(ECSqlStatus status) {
