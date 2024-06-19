@@ -40,23 +40,12 @@ private:
     HierarchyUpdater const& m_updater;
     UpdateContext& m_updateContext;
     AffectedHierarchyLevelIdentifier m_identifier;
-private:
-    void UpdateHierarchyLocks()
-        {
-        for (auto const& entry : m_updateContext.GetHierarchyLocks())
-            entry.second->Lock();
-        }
 protected:
     uint32_t _GetPriority() const override {return TASK_PRIORITY_RefreshHierarchy;}
     bvector<IUpdateTaskPtr> _Perform() override
         {
-        // before performing task update all currently held hierarchy locks to avoid them timeouting
-        UpdateHierarchyLocks();
         bvector<IUpdateTaskPtr> subTasks;
         m_updater.Update(subTasks, m_updateContext, m_identifier);
-
-        // remove hierarchy lock for this hierarchy level if it was aquired when creating update tasks
-        m_updateContext.GetHierarchyLocks().erase(m_identifier);
         return subTasks;
         }
     Utf8CP _GetName() const override {return "RefreshHierarchyTask";}
@@ -262,32 +251,7 @@ static bool ContainsAnyAncestorHierarchyLevel(bset< AffectedHierarchyLevelIdenti
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bmap<AffectedHierarchyLevelIdentifier, std::shared_ptr<IHierarchyLevelLocker>> CreateHierarchyLocks(bvector<AffectedHierarchyLevelIdentifier> const& identifiers, NodesCache& cache)
-    {
-    // filter top most common hierarchy levels
-    // 'identifiers' should be passed sorted from top most to deepest hierarchy levels
-    bset<AffectedHierarchyLevelIdentifier> filteredLevel;
-    for (auto const& identifier : identifiers)
-        {
-        if (ContainsAnyAncestorHierarchyLevel(filteredLevel, identifier))
-            continue;
-
-        filteredLevel.insert(identifier);
-        }
-    return ContainerHelpers::TransformContainer<bmap<AffectedHierarchyLevelIdentifier, std::shared_ptr<IHierarchyLevelLocker>>>(filteredLevel,
-        [&](AffectedHierarchyLevelIdentifier const& level)
-            {
-            std::shared_ptr<IHierarchyLevelLocker> locker = cache.CreateHierarchyLevelLocker(level.GetHierarchyLevelIdentifier());
-            // when locking check that all child hierarchy levels are unlocked
-            locker->Lock(IHierarchyLevelLocker::LockOptions::CheckLockedChildLevels);
-            return make_bpair(level, locker);
-            });
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bvector<AffectedHierarchyLevelIdentifier> UpdateHandler::GetAffectedHierarchyLevels(NodesCache& nodesCache, IConnectionCR connection, UpdateContext& updateContext, bvector<ECInstanceChangeEventSource::ChangedECInstance> const& changes) const
+bvector<AffectedHierarchyLevelIdentifier> UpdateHandler::GetAffectedHierarchyLevels(NodesCache& nodesCache, IConnectionCR connection, bvector<ECInstanceChangeEventSource::ChangedECInstance> const& changes) const
     {
     // create savepoint to avoid others writing to cache while looking for affected hierarchy levels
     IHierarchyCache::SavepointPtr savepoint = nodesCache.CreateSavepoint();
@@ -302,10 +266,7 @@ bvector<AffectedHierarchyLevelIdentifier> UpdateHandler::GetAffectedHierarchyLev
         NavNodePtr parentNode = hierarchyLevel.GetPhysicalParentNodeId().IsValid() ? nodesCache.GetNode(hierarchyLevel.GetPhysicalParentNodeId()) : nullptr;
         InsertAffectedHierarchyIdentifier(affectedHierarchyIdentifiers, hierarchyLevel, parentNode.get());
         }
-    savepoint = nullptr;
 
-    // lock all top most common hierarchy levels and put those lockers in update context
-    updateContext.SetHierarchyLocks(CreateHierarchyLocks(affectedHierarchyIdentifiers, nodesCache));
     return affectedHierarchyIdentifiers;
     }
 
@@ -318,7 +279,7 @@ bvector<IUpdateTaskPtr> UpdateHandler::CreateUpdateTasks(UpdateContext& updateCo
     bvector<IUpdateTaskPtr> tasks;
     if (nullptr != m_hierarchyUpdater && nullptr != updateContext.GetNodesCache())
         {
-        bvector<AffectedHierarchyLevelIdentifier> affectedHierarchies = GetAffectedHierarchyLevels(*updateContext.GetNodesCache(), connection, updateContext, changes);
+        bvector<AffectedHierarchyLevelIdentifier> affectedHierarchies = GetAffectedHierarchyLevels(*updateContext.GetNodesCache(), connection, changes);
         AddTasksForAffectedHierarchies(tasks, updateContext, affectedHierarchies);
         }
 
@@ -385,6 +346,27 @@ void UpdateHandler::AddTask(bvector<IUpdateTaskPtr>& tasks, size_t startIndex, I
     tasks.insert(iter, &task);
     }
 
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct UpdateRecordsScope
+{
+private:
+    BeMutexHolder& m_lock;
+    IUpdateRecordsHandler& m_updateRecordsHandler;
+public:
+    UpdateRecordsScope(BeMutexHolder& lock, IUpdateRecordsHandler& updateRecordsHandler)
+        : m_updateRecordsHandler(updateRecordsHandler), m_lock(lock)
+        {
+        m_lock.lock();
+        m_updateRecordsHandler.Start();
+        }
+    ~UpdateRecordsScope()
+        {
+        m_updateRecordsHandler.Finish();
+        }
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -395,11 +377,7 @@ void UpdateHandler::ExecuteTasks(bvector<IUpdateTaskPtr>& tasks) const
     auto scope = Diagnostics::Scope::Create("Execute update tasks");
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Update, LOG_TRACE, Utf8PrintfString("Total initial update tasks: %u", tasks.size()));
 
-    if (m_updateRecordsHandler)
-        {
-        lock.lock();
-        m_updateRecordsHandler->Start();
-        }
+    auto updateRecordsScope = m_updateRecordsHandler ? std::make_unique<UpdateRecordsScope>(lock, *m_updateRecordsHandler) : nullptr;
 
     size_t i = 0;
     while (i < tasks.size())
@@ -423,9 +401,6 @@ void UpdateHandler::ExecuteTasks(bvector<IUpdateTaskPtr>& tasks) const
         }
 
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Update, LOG_TRACE, Utf8PrintfString("Total executed tasks: %" PRIu64, (uint64_t)i));
-
-    if (m_updateRecordsHandler)
-        m_updateRecordsHandler->Finish();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -596,7 +571,7 @@ private:
 
         AffectedHierarchyLevelIdentifier grandparentLevel(parentHierarchyLevelIdentifier, grandParent.IsValid() ? grandParent->GetKey().get() : nullptr);
 
-        std::shared_ptr<IHierarchyLevelLocker> grandParentHierarchyLock = m_nodesCache->CreateHierarchyLevelLocker(grandparentLevel.GetHierarchyLevelIdentifier(), true);
+        newProvider.GetContext().GetHierarchyLevelLocker().Unlock();
         RefreshHierarchyLevel(grandparentLevel);
         }
 

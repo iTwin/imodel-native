@@ -145,7 +145,7 @@ struct SchemaWriter final
                         .Append(ACCEPT, "AppliesToEntityClass", MODIFIED); // allow to modify AppliesToEntityClass
 
                 rules
-                    .Append(ACCEPT, "ECDbMap", "View", MODIFIED); //allow to modify views
+                    .Append(ACCEPT, "ECDbMap", "QueryView", MODIFIED); //allow to modify views
 
                 rules.Append(REJECT, "ECDbMap", "*", ALL);
                 rules.Append(REJECT, "CoreCustomAttributes", "IsMixin", ALL);
@@ -261,7 +261,7 @@ struct SchemaWriter final
 
     public:
         static SchemaImportResult ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap, SchemaImportContext&, bvector<ECN::ECSchemaCP> const& primarySchemasOrderedByDependencies);
-        static DropSchemaResult DropSchema(Utf8StringCR name, SchemaImportContext& schemaImportCtx, bool logIssue);
+        static DropSchemaResult DropSchemas(bvector<Utf8String> schemaNames, SchemaImportContext& schemaImportCtx, bool logIssue);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

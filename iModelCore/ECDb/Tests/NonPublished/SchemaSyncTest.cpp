@@ -101,7 +101,7 @@ TEST_F(SchemaSyncTestFixture, FullSchemaSyncWorkflow)
     ECDbHub hub;
     SchemaSyncDb schemaSyncDb("sync-db");
     auto b1 = hub.CreateBriefcase();
-    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(),"xxxxx", false));
 
     b1->PullMergePush("init");
     b1->SaveChanges();
@@ -408,6 +408,155 @@ TEST_F(SchemaSyncTestFixture, InvalidSchemaChannel)
             }
     );
     }
+// ---------------------------------------------------------------------------------------
+// @bsitest\
+// +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, Verify_SyncInfo_BeProp_Entries)
+    {
+    ECDbHub hub;
+    auto b1 = hub.CreateBriefcase();
+    auto b2 = hub.CreateBriefcase();
+    SchemaSyncDb schemaSyncDb("sync-db");
+
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "xxxxx", false));
+    ASSERT_EQ(b1->Schemas().GetSchemaSync().GetModifiedRowCount(), 1490);
+    b1->SaveChanges();
+    b1->PullMergePush("init");
+
+
+    // 1. SyncDb must only have syncDbInfo with id and dataVer properties.
+    // 2. Briefcase must only have localDbInfo with id and dataVer properties.
+
+    const auto kSyncId = "id";
+    const auto kSyncDataVer = "dataVer";
+    const auto kNamespace = "ec_Db";
+    const auto kSyncDbInfo = "syncDbInfo";
+    const auto kLocalDbInfo = "localDbInfo";
+    const auto localDbInfoProp = PropertySpec(kLocalDbInfo, kNamespace);
+    const auto syncDbInfoProp = PropertySpec(kSyncDbInfo, kNamespace);
+
+    auto syncDb = schemaSyncDb.OpenReadOnly();
+
+    Utf8String strData0;
+    ASSERT_EQ(BE_SQLITE_ROW, syncDb->QueryProperty(strData0, syncDbInfoProp));
+
+    BeJsDocument info0;
+    info0.Parse(strData0);
+    ASSERT_TRUE(info0.isStringMember(kSyncId));
+    ASSERT_TRUE(info0.isStringMember(kSyncDataVer));
+    ASSERT_STRCASEEQ(info0[kSyncDataVer].asCString(), "0x1");
+
+    int nProp0 = 0;
+    info0.ForEachProperty([&](Utf8CP name, BeJsConst){ ++nProp0 ; return false; });
+    ASSERT_EQ(nProp0, 2);
+
+    Utf8String strData1;
+    ASSERT_EQ(BE_SQLITE_ERROR, syncDb->QueryProperty(strData1, localDbInfoProp));
+    ASSERT_TRUE(strData1.empty());
+
+    Utf8String strData2;
+    ASSERT_EQ(BE_SQLITE_ERROR, b1->QueryProperty(strData2, syncDbInfoProp));
+    ASSERT_TRUE(strData2.empty());
+
+    Utf8String strData3;
+    ASSERT_EQ(BE_SQLITE_ROW, b1->QueryProperty(strData3, localDbInfoProp));
+
+    BeJsDocument info3;
+    info3.Parse(strData3);
+    ASSERT_TRUE(info3.isStringMember(kSyncId));
+    ASSERT_TRUE(info3.isStringMember(kSyncDataVer));
+    ASSERT_STRCASEEQ(info3[kSyncDataVer].asCString(), "0x1");
+
+    int nProp3 = 0;
+    info3.ForEachProperty([&](Utf8CP name, BeJsConst){ ++nProp3 ; return false; });
+    ASSERT_EQ(nProp3, 2);
+
+    auto schema = SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Pipe1">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+            </ECEntityClass>
+        </ECSchema>)xml"
+    );
+    syncDb = nullptr;
+    ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b1, schema, SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(b1->Schemas().GetSchemaSync().GetModifiedRowCount(), 1593);
+    b1->SaveChanges("schema import");
+    b1->PullMergePush("push change");
+
+    auto changesets = hub.Query();
+
+    bool isSchemaSyncInfoChanged;
+    bool isECDbProfileChanged;
+    bool isECMetaDataChanged ;
+    SchemaSync::ScanForSchemaChanges(*changesets.back(), isSchemaSyncInfoChanged, isECDbProfileChanged, isECMetaDataChanged);
+    ASSERT_TRUE(isECMetaDataChanged);
+
+    syncDb = schemaSyncDb.OpenReadOnly();
+    ASSERT_EQ(BE_SQLITE_ROW, syncDb->QueryProperty(strData0, syncDbInfoProp));
+    ASSERT_EQ(BE_SQLITE_ROW, b1->QueryProperty(strData3, localDbInfoProp));
+
+    info0.Parse(strData0);
+    ASSERT_TRUE(info0.isStringMember(kSyncId));
+    ASSERT_TRUE(info0.isStringMember(kSyncDataVer));
+    ASSERT_STRCASEEQ(info0[kSyncDataVer].asCString(), "0x2");
+    ASSERT_STRCASEEQ(info0[kSyncId].asCString(), "xxxxx");
+
+    info3.Parse(strData3);
+    ASSERT_TRUE(info3.isStringMember(kSyncId));
+    ASSERT_TRUE(info3.isStringMember(kSyncDataVer));
+    ASSERT_STRCASEEQ(info3[kSyncDataVer].asCString(), "0x2");
+    ASSERT_STRCASEEQ(info3[kSyncId].asCString(), "xxxxx");
+
+    syncDb = nullptr;
+    SchemaSyncDb schemaSyncDbNew("sync-db-new");
+    ASSERT_EQ(SchemaSync::Status::ERROR_SCHEMA_SYNC_DB_ALREADY_INITIALIZED,
+        b1->Schemas().GetSchemaSync().Init(schemaSyncDbNew.GetSyncDbUri(), "yyyyyy", false));
+
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDbNew.GetSyncDbUri(), "yyyyyy", true));
+    ASSERT_EQ(b1->Schemas().GetSchemaSync().GetModifiedRowCount(), 1506);
+
+    syncDb = schemaSyncDbNew.OpenReadOnly();
+    ASSERT_EQ(BE_SQLITE_ROW, syncDb->QueryProperty(strData0, syncDbInfoProp));
+    ASSERT_EQ(BE_SQLITE_ROW, b1->QueryProperty(strData3, localDbInfoProp));
+
+    info0.Parse(strData0);
+    ASSERT_TRUE(info0.isStringMember(kSyncId));
+    ASSERT_TRUE(info0.isStringMember(kSyncDataVer));
+    ASSERT_STRCASEEQ(info0[kSyncDataVer].asCString(), "0x2");
+    ASSERT_STRCASEEQ(info0[kSyncId].asCString(), "yyyyyy");
+
+    info3.Parse(strData3);
+    ASSERT_TRUE(info3.isStringMember(kSyncId));
+    ASSERT_TRUE(info3.isStringMember(kSyncDataVer));
+    ASSERT_STRCASEEQ(info3[kSyncDataVer].asCString(), "0x2");
+    ASSERT_STRCASEEQ(info3[kSyncId].asCString(), "yyyyyy");
+
+    b2->PullMergePush("");
+    ASSERT_EQ(BE_SQLITE_ROW, b2->QueryProperty(strData3, localDbInfoProp));
+    info3.Parse(strData3);
+    ASSERT_TRUE(info3.isStringMember(kSyncId));
+    ASSERT_TRUE(info3.isStringMember(kSyncDataVer));
+    ASSERT_STRCASEEQ(info3[kSyncDataVer].asCString(), "0x2");
+    ASSERT_STRCASEEQ(info3[kSyncId].asCString(), "xxxxx");
+
+    b1->SaveChanges("schema import");
+    b1->PullMergePush("push change");
+
+    b2->PullMergePush("");
+    ASSERT_EQ(BE_SQLITE_ROW, b2->QueryProperty(strData3, localDbInfoProp));
+    info3.Parse(strData3);
+    ASSERT_TRUE(info3.isStringMember(kSyncId));
+    ASSERT_TRUE(info3.isStringMember(kSyncDataVer));
+    ASSERT_STRCASEEQ(info3[kSyncDataVer].asCString(), "0x2");
+    ASSERT_STRCASEEQ(info3[kSyncId].asCString(), "yyyyyy");
+}
 
 // ---------------------------------------------------------------------------------------
 // @bsitest
@@ -418,7 +567,7 @@ TEST_F(SchemaSyncTestFixture, InvalidSyncDbWithInitializedSchemaSync)
     auto b1 = hub.CreateBriefcase();
     SchemaSyncDb schemaSyncDb("sync-db");
 
-    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "xxxxx", false));
     b1->PullMergePush("init");
     b1->SaveChanges();
 
@@ -518,7 +667,7 @@ TEST_F(SchemaSyncTestFixture, PushSchemaToNewSchemaChannelWhenExistingSchemaChan
     SchemaSync::SyncDbUri emptyUri;
     auto b1 = hub.CreateBriefcase();
 
-    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "xxxx", false));
     b1->PullMergePush("init");
     b1->SaveChanges();
 
@@ -581,7 +730,7 @@ TEST_F(SchemaSyncTestFixture, SecondBriefcasePushesSchema)
     auto b1 = hub.CreateBriefcase();
     auto b2 = hub.CreateBriefcase();
 
-    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri())) << "Initialize schemaSyncDb from b1";
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "xxxx", false)) << "Initialize schemaSyncDb from b1";
     b1->PullMergePush("init");
     b1->SaveChanges();
 

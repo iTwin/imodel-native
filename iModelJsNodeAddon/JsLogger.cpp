@@ -42,7 +42,7 @@ SEVERITY JsLogger::JsLevelToSeverity(Napi::Number jsLevel)
 /** Synchronize the native std::map on this logger with the "_categoryFilter" map on the JavaScript logger object. */
 void JsLogger::SyncLogLevels()
     {
-    BeMutexHolder lock(m_severitiesMutex);
+    BeMutexHolder lock(m_mutex);
 
     // first sync the default severity level for categories not specified
     m_defaultSeverity = JsLevelToSeverity(m_loggerObj.Get("minLevel").As<Napi::Number>());
@@ -73,7 +73,7 @@ bool JsLogger::canUseJavaScript()
     }
 
 /** Given a category and severity level, return true if it should be logged.
- * @note Must be called with deferredMutex held
+ * @note Must be called with mutex held
  */
 bool JsLogger::isEnabled(Utf8CP catIn, SEVERITY sev)
     {
@@ -96,6 +96,7 @@ bool JsLogger::isEnabled(Utf8CP catIn, SEVERITY sev)
 
 void JsLogger::Cleanup()
     {
+    BeMutexHolder lock(m_mutex);
     m_loggerObj.Reset();
     if (m_processLogsOnMainThread)
         m_processLogsOnMainThread.Release();
@@ -109,8 +110,11 @@ void JsLogger::LogMessage(Utf8CP category, SEVERITY sev, Utf8CP msg)
     if (canUseJavaScript())
         {
         logToJs(category, sev, msg);
+        return;
         }
-    else
+
+    BeMutexHolder lock(m_mutex);
+    if (m_processLogsOnMainThread)
         {
         m_processLogsOnMainThread.NonBlockingCall([this, category = Utf8String(category), sev, msg = Utf8String(msg)](Napi::Env, Napi::Function)
             {
@@ -130,7 +134,7 @@ void JsLogger::LogMessage(Utf8CP category, SEVERITY sev, Utf8CP msg)
 
 bool JsLogger::IsSeverityEnabled(Utf8CP category, SEVERITY sev)
     {
-    BeMutexHolder lock(m_severitiesMutex);
+    BeMutexHolder lock(m_mutex);
     return isEnabled(category, sev);
     }
 
@@ -141,6 +145,7 @@ Napi::Value JsLogger::GetJsLogger()
 
 void JsLogger::SetJsLogger(Napi::CallbackInfo const& info)
     {
+    BeMutexHolder lock(m_mutex);
     Cleanup();
     m_processLogsOnMainThread = Napi::ThreadSafeFunction::New(info.Env(), Napi::Function::New(info.Env(), [](Napi::CallbackInfo const&){}), "JsLogger", 0, 1);
     m_processLogsOnMainThread.Unref(info.Env());

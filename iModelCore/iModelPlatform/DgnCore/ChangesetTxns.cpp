@@ -18,35 +18,163 @@ USING_NAMESPACE_BENTLEY_SQLITE
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+#define THROW_JS_TYPE_EXCEPTION(str) BeNapi::ThrowJsTypeException(info.Env(), str);
+#define ARGUMENT_IS_PRESENT(i) (info.Length() > (i))
+#define ARGUMENT_IS_NUMBER(i) (ARGUMENT_IS_PRESENT(i) && info[i].IsNumber())
+#define ARGUMENT_IS_NOT_NUMBER(i) !ARGUMENT_IS_NUMBER(i)
+#define REQUIRE_ARGUMENT_INTEGER(i, var)\
+    if (ARGUMENT_IS_NOT_NUMBER(i)) {\
+        THROW_JS_TYPE_EXCEPTION("Argument " #i " must be a number")\
+    }\
+    int32_t var = info[i].As<Napi::Number>().Int32Value();
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) {
-    Utf8CP tableName = nullptr;
+    Utf8CP tableNameP = nullptr;
     int nCols, indirect;
     DbOpcode opcode;
-    DbResult result = iter.GetOperation(&tableName, &nCols, &opcode, &indirect);
+    DbResult result = iter.GetOperation(&tableNameP, &nCols, &opcode, &indirect);
     BeAssert(result == BE_SQLITE_OK);
     UNUSED_VARIABLE(result);
+    Utf8String tableName;
+    tableName.AssignOrClear(tableNameP);
 
     const auto jsIModelDb = m_dgndb.GetJsIModelDb();
     if (nullptr != jsIModelDb) {
         const auto jsDgnDb = jsIModelDb->Value();
         const auto env = jsDgnDb.Env();
         const auto onChangesetConflictFunc = jsDgnDb.Get("onChangesetConflict").As<Napi::Function>();
+
         if (onChangesetConflictFunc.IsFunction()) {
             auto arg = Napi::Object::New(env);
             arg.Set("cause", Napi::Number::New(env, (int)cause));
             arg.Set("opcode", Napi::Number::New(env, (int)opcode));
             arg.Set("indirect", Napi::Boolean::New(env, indirect != 0));
             arg.Set("tableName", Napi::String::New(env, tableName));
+            arg.Set("columnCount", Napi::Number::New(env, nCols));
             arg.Set("changesetFile", Napi::String::New(env, GetFiles().front().GetNameUtf8()));
             arg.Set("getForeignKeyConflicts", Napi::Function::New(env, [&](const Napi::CallbackInfo&) -> Napi::Value {
                 int nConflicts = 0;
                 iter.GetFKeyConflicts(&nConflicts);
                 return Napi::Number::New(env, nConflicts);
             }));
+            arg.Set("getPrimaryKeyColumns", Napi::Function::New(env, [&](const Napi::CallbackInfo&) -> Napi::Value {
+                Byte* pks;
+                int nPkCols;
+                iter.GetPrimaryKeyColumns(&pks, &nPkCols);
+                auto array = Napi::Array::New(env);
+                int k = -1;
+                for (int i = 0; i < nPkCols; ++i){
+                    if (pks[i]) {
+                        array.Set(++k, Napi::Number::New(env, i));
+                    }
+                }
+                return array;
+            }));
+            arg.Set("getValueType", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> Napi::Value {
+                REQUIRE_ARGUMENT_INTEGER(0, columnIdx);
+                REQUIRE_ARGUMENT_INTEGER(1, stage);
+                if ((columnIdx < 0 && columnIdx >= nCols) || (stage !=0 && stage != 1))
+                    return env.Undefined();
 
+                auto val = iter.GetValue(columnIdx, (Changes::Change::Stage)stage);
+                if (!val.IsValid())
+                    return env.Undefined();
+
+                return Napi::Number::New(env, (int)val.GetValueType());
+            }));
+            arg.Set("getValueBinary", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> Napi::Value {
+                REQUIRE_ARGUMENT_INTEGER(0, columnIdx);
+                REQUIRE_ARGUMENT_INTEGER(1, stage);
+                if ((columnIdx < 0 && columnIdx >= nCols) || (stage !=0 && stage != 1))
+                    return env.Undefined();
+
+                auto val = iter.GetValue(columnIdx, (Changes::Change::Stage)stage);
+                if (!val.IsValid())
+                    return env.Undefined();
+
+                if (val.IsNull())
+                    return env.Null();
+
+                auto nBytes = val.GetValueBytes();
+                auto blob = Napi::Uint8Array::New(env, nBytes);
+                memcpy(blob.Data(), val.GetValueBlob(), nBytes);
+                return blob;
+            }));
+            arg.Set("getValueText", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> Napi::Value {
+                REQUIRE_ARGUMENT_INTEGER(0, columnIdx);
+                REQUIRE_ARGUMENT_INTEGER(1, stage);
+                if ((columnIdx < 0 && columnIdx >= nCols) || (stage !=0 && stage != 1))
+                    return env.Undefined();
+
+                auto val = iter.GetValue(columnIdx, (Changes::Change::Stage)stage);
+                if (!val.IsValid())
+                    return env.Undefined();
+
+                if (val.IsNull())
+                    return env.Null();
+
+                return Napi::String::New(env, val.GetValueText());
+            }));
+            arg.Set("getValueId", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> Napi::Value {
+                REQUIRE_ARGUMENT_INTEGER(0, columnIdx);
+                REQUIRE_ARGUMENT_INTEGER(1, stage);
+                if ((columnIdx < 0 && columnIdx >= nCols) || (stage !=0 && stage != 1))
+                    return env.Undefined();
+
+                auto val = iter.GetValue(columnIdx, (Changes::Change::Stage)stage);
+                if (!val.IsValid())
+                    return env.Undefined();
+
+                if (val.IsNull())
+                    return env.Null();
+
+                return Napi::String::New(env, BeInt64Id(val.GetValueUInt64()).ToHexStr());
+            }));
+            arg.Set("isValueNull", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> Napi::Value {
+                REQUIRE_ARGUMENT_INTEGER(0, columnIdx);
+                REQUIRE_ARGUMENT_INTEGER(1, stage);
+                auto val = iter.GetValue(columnIdx, (Changes::Change::Stage)stage);
+                if (!val.IsValid())
+                    return env.Undefined();
+
+                if (val.IsNull())
+                    return env.Null();
+
+                return Napi::Boolean::New(env, val.IsNull());
+            }));
+            arg.Set("getValueInteger", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> Napi::Value {
+                REQUIRE_ARGUMENT_INTEGER(0, columnIdx);
+                REQUIRE_ARGUMENT_INTEGER(1, stage);
+                if ((columnIdx < 0 && columnIdx >= nCols) || (stage !=0 && stage != 1))
+                    return env.Undefined();
+
+                auto val = iter.GetValue(columnIdx, (Changes::Change::Stage)stage);
+                if (!val.IsValid())
+                    return env.Undefined();
+
+                if (val.IsNull())
+                    return env.Null();
+
+                return Napi::Number::New(env, static_cast<double>(val.GetValueInt64()));
+            }));
+            arg.Set("getValueDouble", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> Napi::Value {
+                REQUIRE_ARGUMENT_INTEGER(0, columnIdx);
+                REQUIRE_ARGUMENT_INTEGER(1, stage);
+                if ((columnIdx < 0 && columnIdx >= nCols) || (stage !=0 && stage != 1))
+                    return env.Undefined();
+
+                auto val = iter.GetValue(columnIdx, (Changes::Change::Stage)stage);
+                if (!val.IsValid())
+                    return env.Undefined();
+
+                if (val.IsNull())
+                    return env.Null();
+
+                return Napi::Number::New(env, val.GetValueDouble());
+            }));
             arg.Set("dump", Napi::Function::New(env, [&](const Napi::CallbackInfo&) -> void {
                 iter.Dump(m_dgndb, false, 1);
             }));
@@ -60,6 +188,7 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
 
                 m_lastErrorMessage = val.As<Napi::String>().Utf8Value();
             }));
+
             const auto resolutionJsVal = onChangesetConflictFunc.Call(jsDgnDb, {arg});
 
             // if handler return undefined we revert to native handler.
@@ -97,6 +226,17 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
             LOG.warning("UPDATE/DELETE before value do not match with one in db or CASCADE action was triggered.");
             iter.Dump(m_dgndb, false, 1);
         } else {
+            if (tableName.StartsWithIAscii("ec_")) {
+                return ChangeSet::ConflictResolution::Skip;
+            }
+            if (tableName.EqualsIAscii ("be_Prop")) {
+                 Utf8String ns = iter.GetValue(0, Changes::Change::Stage::Old).GetValueText();
+                 Utf8String name = iter.GetValue(1, Changes::Change::Stage::Old).GetValueText();
+                if (ns.EqualsIAscii("ec_Db") && name.EqualsIAscii("localDbInfo")) {
+                    return ChangeSet::ConflictResolution::Replace;
+                }
+            }
+
             m_lastErrorMessage = "UPDATE/DELETE before value do not match with one in db or CASCADE action was triggered.";
             LOG.fatal(m_lastErrorMessage.c_str());
             iter.Dump(m_dgndb, false, 1);
@@ -114,6 +254,9 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
             LOG.warning("PRIMARY KEY INSERT CONFLICT - resolved by replacing the existing row with the incoming row");
             iter.Dump(m_dgndb, false, 1);
         } else {
+            if (tableName.StartsWithIAscii("ec_")) {
+                return ChangeSet::ConflictResolution::Skip;
+            }
             m_lastErrorMessage = "PRIMARY KEY INSERT CONFLICT - rejecting this changeset";
             LOG.fatal(m_lastErrorMessage.c_str());
             iter.Dump(m_dgndb, false, 1);
@@ -324,9 +467,8 @@ void ChangesetProps::ValidateContent(DgnDbR dgndb) const {
 /**
  * determine whether the Changeset has schema changes.
  */
-bool ChangesetProps::ContainsSchemaChanges(DgnDbR dgndb) const {
+bool ChangesetProps::ContainsDdlChanges(DgnDbR dgndb) const {
     ChangesetFileReader changeStream(m_fileName, dgndb);
-
     bool containsSchemaChanges;
     DdlChanges ddlChanges;
     DbResult result = changeStream.MakeReader()->GetSchemaChanges(containsSchemaChanges, ddlChanges);
@@ -533,6 +675,9 @@ std::unique_ptr<ChangeSet> TxnManager::CreateChangesetFromLocalChanges(bool incl
     DdlChanges ddlChanges;
     ChangeGroup dataChangeGroup;
     for (auto currTxnId = startTxnId; currTxnId < endTxnId; currTxnId = QueryNextTxnId(currTxnId)) {
+        if (TxnType::Data != GetTxnType(currTxnId))
+            continue;
+
         ChangeSet sqlChangeSet;
         if (BE_SQLITE_OK != ReadDataChanges(sqlChangeSet, currTxnId, TxnAction::None))
             m_dgndb.ThrowException("unable to read data changes", (int) ChangesetStatus::CorruptedTxn);
@@ -762,7 +907,7 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
     TxnId startTxnId = QueryNextTxnId(TxnId(0));
     int64_t lastRebaseId = QueryLastRebaseId();
 
-    DdlChanges ddlChanges;
+    DdlChanges ddlChangeGroup;
     ChangeGroup dataChangeGroup(m_dgndb);
     for (TxnId currTxnId = startTxnId; currTxnId < endTxnId; currTxnId = QueryNextTxnId(currTxnId)) {
         auto txnType = GetTxnType(currTxnId);
@@ -770,9 +915,13 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
             dataChangeGroup.SetContainsEcSchemaChanges();
 
         if (txnType == TxnType::Ddl) {
-            BeAssert(ddlChanges._IsEmpty());
-            if (ZIP_SUCCESS != ReadChanges(ddlChanges, currTxnId))
+            DdlChanges ddlChange;
+            if (ZIP_SUCCESS != ReadChanges(ddlChange, currTxnId))
                 m_dgndb.ThrowException("unable to read schema changes", (int) ChangesetStatus::CorruptedTxn);
+
+            for(auto& ddl : ddlChange.GetDDLs())
+                ddlChangeGroup.AddDDL(ddl.c_str());
+
         } else {
             ChangeSet sqlChangeSet;
             if (BE_SQLITE_OK != ReadDataChanges(sqlChangeSet, currTxnId, TxnAction::None))
@@ -789,13 +938,18 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
         m_dgndb.ThrowException("rebase failed", (int) ChangesetStatus::SQLiteError);
 
     BeFileName changesetFileName((m_dgndb.GetTempFileBaseName() + (extension ? extension : "") +  ".changeset").c_str());
-    WriteChangesToFile(changesetFileName, ddlChanges, dataChangeGroup, (lastRebaseId != 0) ? &rebaser : nullptr);
+    WriteChangesToFile(changesetFileName, ddlChangeGroup, dataChangeGroup, (lastRebaseId != 0) ? &rebaser : nullptr);
 
     auto parentRevId = GetParentChangesetId();
     auto revId = ChangesetIdGenerator::GenerateId(parentRevId, changesetFileName, m_dgndb);
     auto dbGuid = m_dgndb.GetDbGuid().ToString();
 
-    m_changesetInProgress = new ChangesetProps(revId, -1, parentRevId, dbGuid, changesetFileName);
+    auto changesetType = ChangesetProps::ChangesetType::Regular;
+    if (dataChangeGroup.ContainsEcSchemaChanges()) {
+        changesetType = m_dgndb.Schemas().GetSchemaSync().IsEnabled() ? ChangesetProps::ChangesetType::SchemaSync : ChangesetProps::ChangesetType::Schema;
+    }
+
+    m_changesetInProgress = new ChangesetProps(revId, -1, parentRevId, dbGuid, changesetFileName, changesetType);
     m_changesetInProgress->m_endTxnId = endTxnId;
     m_changesetInProgress->m_lastRebaseId = lastRebaseId;
 

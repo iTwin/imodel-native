@@ -27,15 +27,11 @@ always:
 
 %if defined (IS_VERACODE_BUILD)
     veracodeDir = ${OutputRootDir}/Veracode/bin/
-    pdbDir = ${OutputRootDir}/PDBs/
     dllDir = ${OutputRootDir}/imodeljsnodeaddon_pkgs/imodeljs-win32-x64/
 
-    %mkdir $(veracodeDir)
-
     always:
-        ~linkfile $(pdbDir)iTwinDaemon_exe.pdb=${OutputRootDir}/static/build/BeSQLite/ITwinDaemon/iTwinDaemon_exe.pdb
-        ~linkmultifiles $(veracodeDir)=$(dllDir)
-        ~linkmultifiles $(veracodeDir)=$(pdbDir)
-        $(BuildToolCache)bsitools/zip.exe ${OutputRootDir}/Veracode/Veracode.zip $(veracodeDir)/*
+        ~linkfile $(dllDir)iTwinDaemon_exe.pdb=${OutputRootDir}/static/build/BeSQLite/ITwinDaemon/iTwinDaemon_exe.pdb
+        ~mkdir $(veracodeDir)
+        $(BuildToolCache)bsitools/zip.exe ${OutputRootDir}/Veracode/Veracode.zip $(dllDir)/*
 
 %endif

@@ -5,7 +5,6 @@
 #include "checkers.h"
 #include <GeomSerialization/GeomSerializationApi.h>
 #include <Bentley/BeTest.h>
-#include <BeJsonCpp/BeJsonUtilities.h>
 static double s_simpleZeroTol = 1.0e-12;
 
 struct ScopedPrintState
@@ -219,6 +218,15 @@ bool Check::LessThanOrEqual (double a, double b, char const*pString)
     return false;
     }
 
+bool Check::LessThanOrEqual(size_t a, size_t b, char const* pString)
+    {
+    if (a <= b)
+        return true;
+    Check::PrintScope();
+    Check::Fail(Utf8PrintfString("(fail %zu <= %zu) %s\n", a, b, pString ? pString : "").c_str());
+    return false;
+    }
+
 bool Check::True (bool a, char const*pString)
     {
     if (a)
@@ -227,7 +235,7 @@ bool Check::True (bool a, char const*pString)
     return false;
     }
 
-bool Check::isNull (void* object, char const*pString)
+bool Check::IsNull(void* object, char const*pString)
     {
     return Check::True(object == nullptr, pString);
     }
@@ -1506,6 +1514,14 @@ void Check::SaveTransformed(MSBsplineCurvePtr const &data, bool savePolygon)
         Check::SaveTransformed (data->poles, data->GetNumPoles ());
     }
 
+void Check::SaveTransformed(bvector<DPoint2d> const& data, bool addClosure)
+    {
+    auto cv = ICurvePrimitive::CreateLineString(data);
+    if (addClosure && data.size() > 0)
+        cv->GetLineStringP()->push_back(DPoint3d::From(data[0]));
+    SaveTransformed(IGeometry::Create(cv));
+    }
+
 void Check::SaveTransformed (bvector<DPoint3d> const &data, bool addClosure)
     {
     auto cv = ICurvePrimitive::CreateLineString (data);
@@ -1559,7 +1575,11 @@ void Check::SaveTransformedMarkers (bvector<DPoint3d> const &data, double marker
         SaveTransformedMarker (xyz, markerSize);
     }
 
-
+void Check::SaveTransformed(bvector<bvector<DPoint2d>> const &data)
+    {
+    for (auto a : data)
+        SaveTransformed(a);
+    }
 
 void Check::SaveTransformed (bvector<bvector<DPoint3d>> const &data)
     {

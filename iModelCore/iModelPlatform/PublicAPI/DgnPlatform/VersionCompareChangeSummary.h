@@ -57,6 +57,7 @@ struct SummaryOptions
     bool wantBriefcaseRoll;
     bool wantRelationshipCaching;
     bool wantChunkTraversal;
+    bool wantBoundingBoxes;
     int relationshipCacheSize;
 
     ECPresentationManager* presentationManager;
@@ -75,7 +76,7 @@ struct SummaryOptions
         wantBriefcaseRoll = false;
         presentationManager = nullptr;
         wantRelationshipCaching = true;
-        // Default to 1 million max cache entries
+        wantBoundingBoxes = false;
         relationshipCacheSize = VC_DEFAULT_RELATIONSHIP_CACHE_SIZE;
         }
     }; // SummaryOptions
@@ -621,14 +622,12 @@ private:
     ECPresentationManagerR m_presentationManager;
     Utf8String m_rulesetId;
     Utf8String m_elementClassFullName;
-    bool m_wantParentKeys;
-    bool m_wantChecksums;
-    bool m_wantRelationshipCaching;
-    bool m_wantChunkTraversal;
-    int m_relationshipCacheSize;
+    SummaryOptions m_options;
 
     //! Query all model Ids of related instances that are not found in the change summary
     void QueryRelatedInstanceModelIds(BentleyApi::Dgn::DgnDbR db);
+    //! Query model ids of instances
+    void QueryMissingInstancesModelIds(BentleyApi::Dgn::DgnDbR db);
     //! Insert the changed instance as a ChangedElementRecord in the elements map
     void ProcessInstance(BentleyApi::Dgn::DgnDbR db, DgnChangeSummary& changeSummary, ChangeSummary::Instance const& instance, RelatedInstanceFinder& finder);
     void FindRelatedInstances(RelatedInstanceFinder& finder, BentleyApi::Dgn::DgnDbR db, DgnChangeSummary& changeSummary);
@@ -640,10 +639,8 @@ private:
 
 public:
     //! Constructor
-    ChangedElementFinder(ECPresentationManagerR presentationManager, Utf8StringCR rulesetId, Utf8StringCR elementClassFullName, bool wantParents = true, bool wantChecksums = true, bool wantRelationshipCaching = true, int relationshipCacheSize = VC_DEFAULT_RELATIONSHIP_CACHE_SIZE, bool wantChunkTraversal = false)
-        : m_presentationManager(presentationManager), m_rulesetId(rulesetId), m_elementClassFullName(elementClassFullName),
-          m_wantParentKeys(wantParents), m_wantChecksums(wantChecksums), m_wantRelationshipCaching(wantRelationshipCaching),
-          m_relationshipCacheSize(relationshipCacheSize), m_wantChunkTraversal(wantChunkTraversal) { }
+    ChangedElementFinder(SummaryOptions const& options, Utf8StringCR elementClassFullName)
+        : m_presentationManager(*options.presentationManager), m_rulesetId(options.rulesetId), m_elementClassFullName(elementClassFullName), m_options(options) { }
 
     //! Destructor
     ~ChangedElementFinder()
@@ -679,25 +676,17 @@ private:
     BeFileName  m_tempLocation;
     BeFileName  m_dbFilename;
 
-    bool    m_filterSpatial;
-    bool    m_filterLastMod;
-    bool    m_wantTargetState;
-    bool    m_wantParentKeys;
-    bool    m_wantPropertyChecksums;
-    bool    m_wantBriefcaseRoll;
-    bool    m_wantRelationshipCaching;
-    bool    m_wantChunkTraversal;
-    int     m_relationshipCacheSize;
+    SummaryOptions m_options;
 
     bmap<BentleyApi::BeSQLite::EC::ECInstanceId, BentleyApi::BeSQLite::EC::ChangeSummary::Instance> m_elementCache;
 
     //! Whether we should create a clone of the db and maintain the target state of comparison for querying properties
     //! Is more efficient to not clone the db or roll the briefcase in cases that we only want to process a single changeset
     //! This is a performance improvement for the agent case in which processing is done by single changesets
-    bool WantTargetState() { return m_wantTargetState || (m_changesets.size() != 1); }
+    bool WantTargetState() { return m_options.wantTargetState || (m_changesets.size() != 1); }
     //! Tells the change summary to avoid creating a cloned version of the database if possible
     //! Will only work when rolling a single changeset
-    void SetWantTargetState(bool wantTargetState) { m_wantTargetState = wantTargetState; }
+    void SetWantTargetState(bool wantTargetState) { m_options.wantTargetState = wantTargetState; }
 
     //! Gets the changesets separated by the ones that contain schema changes and such
     StatusInt   GetAppliableChangesets(bvector<bvector<BentleyApi::Dgn::ChangesetPropsPtr>>& appliableChangesets);
@@ -712,10 +701,8 @@ private:
     DgnElementCPtr  GetElement(BentleyApi::Dgn::DgnElementId elementId, BentleyApi::BeSQLite::DbOpcode opcode);
 
     //! Constructor
-    VersionCompareChangeSummary(BeFileName dbFilename, ECPresentationManagerR presentationManager)
-      : m_dbFilename(dbFilename), m_targetDb(nullptr), m_presentationManager(presentationManager), m_filterSpatial(false),
-        m_filterLastMod(false), m_wantTargetState(false), m_wantParentKeys(false), m_wantPropertyChecksums(true), m_wantBriefcaseRoll(false),
-       m_wantRelationshipCaching(true), m_relationshipCacheSize(VC_DEFAULT_RELATIONSHIP_CACHE_SIZE), m_wantChunkTraversal(false) { }
+    VersionCompareChangeSummary(BeFileName dbFilename, SummaryOptions const& options)
+        : m_dbFilename(dbFilename), m_presentationManager(*options.presentationManager), m_options(options) { }
 
     //! This method will process the changesets and obtain all the changed instances
     //! @param[in] changesets Vector of ChangesetPropsPtr containing the changesets to compile together
