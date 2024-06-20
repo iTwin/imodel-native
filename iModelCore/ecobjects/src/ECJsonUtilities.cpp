@@ -706,13 +706,66 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(ECN::IECInstanceR instan
 // @bsimethod
 //---------------------------------------------------------------------------------------
 BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, BeJsConst jsonValue, ECClassCR currentClass, Utf8StringCR currentAccessString,
-    IECClassLocaterR classLocater, bool ignoreUnknownProperties, IECSchemaRemapperCP remapper, std::function<bool(Utf8CP)> shouldSerializeProperty)
+    IECClassLocaterR classLocater, bool ignoreUnknownProperties, IECSchemaRemapperCP remapper, std::function<bool(Utf8CP)> shouldSerializeProperty, bool isDeepNull)
     {
-    if (!jsonValue.isObject())
+    if (!jsonValue.isObject() && !isDeepNull)
         return ERROR;
 
     bool checkShouldSerializeProperty = shouldSerializeProperty != nullptr;
     BentleyStatus stat = SUCCESS;
+
+    if (isDeepNull) 
+        {
+        ClassLayoutR classLayout = currentClass.GetDefaultStandaloneEnabler()->GetClassLayout();
+        uint32_t propIndex = 0;
+        if (ECObjectsStatus::Success != classLayout.GetPropertyIndex(propIndex, currentAccessString.c_str()))
+            return ERROR;
+
+        uint32_t childIndex = classLayout.GetFirstChildPropertyIndex(propIndex);
+        while (0 != childIndex)
+            {
+            Utf8CP innerMemberName;
+            if (ECObjectsStatus::Success != classLayout.GetAccessStringByIndex(innerMemberName, childIndex))
+                return ERROR;
+
+            ECPropertyP ecProperty = currentClass.GetPropertyP(innerMemberName);
+            Utf8String childAccessString = currentAccessString.empty() ? Utf8String(innerMemberName) : currentAccessString + "." + Utf8String(innerMemberName);
+            if (ecProperty->GetIsPrimitive())
+                {
+                ECValue ecValue;
+                ecValue.SetToNull();
+                ECObjectsStatus ecStatus = instance.SetInternalValue(childAccessString.c_str(), ecValue);
+                if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
+                    {
+                    stat = ERROR;
+                    BeAssert(ecStatus == ECObjectsStatus::Success || ecStatus == ECObjectsStatus::PropertyValueMatchesNoChange);
+                    }
+                }
+            else if (ecProperty->GetIsStruct())
+                {
+                BentleyStatus status = JsonToECInstance(instance, jsonValue, ecProperty->GetAsStructProperty()->GetType(), childAccessString, classLocater, ignoreUnknownProperties, remapper, nullptr, true);
+                if (status != SUCCESS)
+                    {
+                    stat = ERROR;
+                    BeAssert(SUCCESS == status);
+                    }
+                }
+            else if (ecProperty->GetIsArray())
+                {
+                ECObjectsStatus ecStatus = instance.ClearArray(childAccessString.c_str());
+                if (ECObjectsStatus::Success != ecStatus)
+                    {
+                    stat = ERROR;
+                    BeAssert(ECObjectsStatus::Success == ecStatus);
+                    }
+                }
+            
+            childIndex = classLayout.GetNextChildPropertyIndex(propIndex, childIndex);
+            }
+
+            return stat;
+        }
+
     jsonValue.ForEachProperty([&](Utf8CP memberName, BeJsConst childJsonValue) {
 
         auto convertOne = [&]() {
@@ -747,10 +800,7 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, B
             }
         else if (ecProperty->GetIsStruct())
             {
-            if (childJsonValue.isNull())
-                return false;
-
-            if (SUCCESS != JsonToECInstance(instance, childJsonValue, ecProperty->GetAsStructProperty()->GetType(), accessString, classLocater, ignoreUnknownProperties, remapper))
+            if (SUCCESS != JsonToECInstance(instance, childJsonValue, ecProperty->GetAsStructProperty()->GetType(), accessString, classLocater, ignoreUnknownProperties, remapper, nullptr, childJsonValue.isNull()))
                 return true;
 
             return false;
