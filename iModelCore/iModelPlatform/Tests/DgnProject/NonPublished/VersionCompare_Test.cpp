@@ -731,7 +731,9 @@ void CreateSummaryAndCheckOutput(DgnDbPtr db, ElementMap& map, bvector<Changeset
     VersionCompareChangeSummaryPtr changeSummary = VersionCompareChangeSummary::Generate (fileName, changesets, options);
     clock_t t1 = clock();
     double elapsed = (t1-t0)/(double)CLOCKS_PER_SEC;
+#ifdef VC_DEBUG_TIMING
     printf("VC Relationship Caching - Generate: %lf seconds\n", elapsed);
+#endif
 
     status = changeSummary->GetChangedElements(elements);
     EXPECT_EQ(SUCCESS, status);
@@ -750,7 +752,9 @@ void CreateSummaryAndCheckOutput(DgnDbPtr db, ElementMap& map, bvector<Changeset
     VersionCompareChangeSummaryPtr changeSummaryWithoutCaching = VersionCompareChangeSummary::Generate (fileName, changesets, options);
     t1 = clock();
     elapsed = (t1-t0)/(double)CLOCKS_PER_SEC;
+#ifdef VC_DEBUG_TIMING
     printf("VC No Relationship Caching - Generate: %lf seconds\n", elapsed);
+#endif
 
     status = changeSummaryWithoutCaching->GetChangedElements(elements);
     EXPECT_EQ(SUCCESS, status);
@@ -769,7 +773,9 @@ void CreateSummaryAndCheckOutput(DgnDbPtr db, ElementMap& map, bvector<Changeset
     VersionCompareChangeSummaryPtr changeSummaryWithChunk = VersionCompareChangeSummary::Generate (fileName, changesets, options);
     t1 = clock();
     elapsed = (t1-t0)/(double)CLOCKS_PER_SEC;
+#ifdef VC_DEBUG_TIMING
     printf("VC Chunk Traversal - Generate: %lf seconds\n", elapsed);
+#endif
 
     status = changeSummaryWithChunk->GetChangedElements(elements);
     EXPECT_EQ(SUCCESS, status);
@@ -1270,6 +1276,7 @@ TEST_F(VersionCompareTestFixture, ChangedElementsManagerTest1)
 	// Process forward from initial Db
     ChangedElementsManager ceMgr(initialDb);
     ceMgr.SetWantChunkTraversal(true);
+    ceMgr.SetWantBoundingBoxes(true);
     ECDb cacheDb;
     // Create the Db file
     // TODO: Good filename
@@ -1425,6 +1432,9 @@ TEST_F(VersionCompareTestFixture, ChangedElementsManagerTest2_ChangedModels)
 
     ChangedElementsManager ceMgr(initialDb);
     ceMgr.SetWantChunkTraversal(true);
+    // Allow processing and storing bounding boxes in the changed elements cache db for changed volume calculation
+    ceMgr.SetWantBoundingBoxes(true);
+
     ECDb cacheDb;
     // Create the Db file
     // TODO: Good filename
