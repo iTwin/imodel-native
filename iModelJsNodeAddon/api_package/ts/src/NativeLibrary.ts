@@ -20,7 +20,7 @@ import type {
 import type {
   ChangesetIndexAndId, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps, ElementGraphicsRequestProps, ElementLoadProps, ElementProps,
   FilePropertyProps, FontId, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
-  GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, IModelCoordinatesRequestProps,
+  GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, ImageBufferFormat, ImageSourceFormat, IModelCoordinatesRequestProps,
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
   ModelProps, QueryQuota, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions,
 } from "@itwin/core-common";
@@ -1475,4 +1475,7 @@ export declare namespace IModelJsNative {
     public wasExecuted(): boolean;
     public getState(): TestWorkerState;
   }
+
+  function imageSourceToImageBuffer(imageSourceData: Uint8Array, imageSourceFormat: ImageSourceFormat.Jpeg | ImageSourceFormat.Png, imageBufferFormat: ImageBufferFormat, flipVertically: boolean): Uint8Array | undefined;
+  function imageBufferToImageSource(imageBufferData: Uint8Array, imageBufferFormat: ImageBufferFormat, imageSourceFormat: ImageSourceFormat.Jpeg | ImageSourceFormat.Png, jpegQuality: number, flipVertically: boolean): Uint8Array | undefined;
 }

@@ -6537,6 +6537,14 @@ static Napi::Value queryConcurrency(NapiInfoCR info)
     return Napi::Number::New(info.Env(), static_cast<int>(concurrency));
     }
 
+static Napi::Value imageSourceToImageBuffer(NapiInfoCR info) {
+    
+}
+
+static Napi::Value imageBufferToImageSource(NapiInfoCR info) {
+    
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
