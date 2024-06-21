@@ -16,6 +16,7 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NumericFormatSpec)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(CompositeValueSpec)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(AlternativeFormatSpec)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Format)
 
 // Json presentation
@@ -480,6 +481,30 @@ public:
     UNITS_EXPORT static bool CreateCompositeSpec(CompositeValueSpecR out, bvector<BEU::UnitCP> const& units);
 };
 
+struct AlternativeFormatSpec
+{
+private:
+    NumericFormatSpec m_numericSpec;
+    CompositeValueSpec m_compositeSpec;
+    AlternativeFormatComparison m_comparison;
+    double m_threshold;
+
+public:
+    //! Creates a new valid NumericFormatSpec with a
+    UNITS_EXPORT AlternativeFormatSpec(): m_numericSpec(), m_compositeSpec(), m_comparison(AlternativeFormatComparison::GreaterThan), m_threshold(0.0) {};
+    
+    NumericFormatSpecR GetNumericSpec() { return m_numericSpec; }
+    NumericFormatSpecCR GetNumericSpec() const { return m_numericSpec; }
+
+    CompositeValueSpecR GetCompositeSpec() { return m_compositeSpec; }
+    CompositeValueSpecCR GetCompositeSpec() const { return m_compositeSpec; }
+
+    AlternativeFormatComparison GetComparison() const { return m_comparison; }
+    double GetThreshold() const { return m_threshold; }
+
+    void SetComparison(AlternativeFormatComparison comparison) { m_comparison = comparison; }
+    void SetThreshold(double threshold) { m_threshold = threshold; }
+};
 
 //=======================================================================================
 //! Container for keeping together numeric and composite spec types.
@@ -497,12 +522,13 @@ private:
     NumericFormatSpec   m_numericSpec;
     CompositeValueSpec  m_compositeSpec;
     FormatProblemDetail m_problem;
+    std::vector<AlternativeFormatSpec> m_alternativeFormats;
 
     UNITS_EXPORT virtual bool _ToJson(BeJsValue out, bool verbose) const;
 
 public:
 
-    Format() : m_specType(FormatSpecType::None), m_explicitlyDefinedComposite(false), m_problem(FormatProblemCode::NotInitialized) {};
+    Format() : m_specType(FormatSpecType::None), m_explicitlyDefinedComposite(false), m_problem(FormatProblemCode::NotInitialized), m_alternativeFormats() {};
     virtual ~Format(){}
     UNITS_EXPORT Format(FormatCR other);
     UNITS_EXPORT Format(NumericFormatSpecCR numSpec);
@@ -582,6 +608,9 @@ public:
     FormatProblemCode GetProblem() const {return m_problem.GetProblemCode();}
     Utf8String GetProblemDescription() const {return m_problem.GetProblemDescription();}
     PresentationType GetPresentationType() const { return m_numericSpec.GetPresentationType(); }
+
+    std::vector<AlternativeFormatSpec> const& GetAlternativeFormats() const { return m_alternativeFormats; }
+    std::vector<AlternativeFormatSpec>& GetAlternativeFormats() { return m_alternativeFormats; }
 
     Utf8String FormatQuantity(BEU::QuantityCR qty, Utf8StringCR space) const {return FormatQuantity(qty.ConvertTo(m_compositeSpec.GetMajorUnit()), nullptr, space.c_str());}
     UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = nullptr, Utf8CP useLabel = nullptr) const;
