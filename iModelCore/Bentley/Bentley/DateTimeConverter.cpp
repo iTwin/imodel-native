@@ -508,10 +508,10 @@ Utf8String DateTimeStringConverter::ToIso8601(DateTimeCR dateTime)
         return Utf8String();
 
     if (dateTime.GetInfo().GetComponent() == DateTime::Component::Date)
-        return ToIsoTimeString(dateTime, true);
+        return ToIsoDateString(dateTime);
 
     if (dateTime.IsTimeOfDay())
-        return ToIsoDateString(dateTime);
+        return ToIsoTimeString(dateTime, true);
 
     BeAssert(dateTime.GetInfo().GetComponent() == DateTime::Component::DateAndTime);
     return ToIsoDateTimeString(dateTime, true, true);
