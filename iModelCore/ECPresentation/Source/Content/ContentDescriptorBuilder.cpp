@@ -840,6 +840,17 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
+    static void AddActualSourceClasses(ContentDescriptor::RelatedContentField& field, std::unordered_set<ECClassCP> const& sourceClasses)
+        {
+        if (!field.GetActualSourceClasses())
+            field.SetActualSourceClasses(std::make_unique<std::unordered_set<ECClassCP>>(sourceClasses));
+        else
+            ContainerHelpers::Push(*field.GetActualSourceClasses(), sourceClasses);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
     struct MergeWithExistingRelatedContentFieldResult
         {
         ContentDescriptor::RelatedContentField* field;
@@ -888,7 +899,7 @@ private:
 
                 // if m_pathFromSelectToPropertyClass starts with existing nested content field path, this field should be nested in existing field
                 DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Found a related content field with similar start - merging");
-                ContainerHelpers::Push(existingRelatedContentField->GetActualSourceClasses(), sourceClasses);
+                AddActualSourceClasses(*existingRelatedContentField, sourceClasses);
                 RelatedClassPath prevPath = path;
                 path = GetPathDifference(path, existingRelatedContentField->GetPathFromSelectToContentClass());
                 if (path.empty())
@@ -934,7 +945,7 @@ private:
                     RelatedClassPath prevFieldPath = existingRelatedContentField->GetPathFromSelectToContentClass();
                     unifiedPath.SetTargetsCount(GetMaxTargetsCount(existingRelatedContentField->GetPathFromSelectToContentClass().GetTargetsCount(), path.GetTargetsCount()));
                     existingRelatedContentField->SetPathFromSelectToContentClass(unifiedPath);
-                    ContainerHelpers::Push(existingRelatedContentField->GetActualSourceClasses(), sourceClasses);
+                    AddActualSourceClasses(*existingRelatedContentField, sourceClasses);
                     result.field = existingRelatedContentField;
                     result.pathReplacement = std::make_unique<bpair<RelatedClassPath, RelatedClassPath>>(prevFieldPath, unifiedPath);
                     break;
@@ -1151,8 +1162,11 @@ public:
             ContentDescriptor::Property::DEFAULT_PRIORITY, actualPropertyClass.IsRelationshipClass());
 
         relatedContentField->SetSpecificationIdentifier(relatedPropertySpecsStack.back()->GetHash());
-        relatedContentField->SetActualSourceClasses(actualSourceClasses);
         relatedContentField->SetRelationshipMeaning(relatedPropertySpecsStack.back()->GetRelationshipMeaning());
+
+        // only set actual source classes if the field is not nested - they're pointing to nesting field's source otherwise
+        if (!mergeResult.nestingField)
+            relatedContentField->SetActualSourceClasses(std::make_unique<std::unordered_set<ECClassCP>>(actualSourceClasses));
 
         if (fieldAttributes.GetRenderer())
             relatedContentField->SetRenderer(new ContentFieldRenderer(*fieldAttributes.GetRenderer()));
