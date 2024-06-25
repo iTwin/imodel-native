@@ -522,7 +522,7 @@ void ContentProvider::LoadNestedContent(ContentSetItemR item, bvector<ContentDes
                 && item.GetClass()
                 && (
                     !item.GetClass()->Is(relatedContentField->GetPathFromSelectToContentClass().front().GetSourceClass())
-                    || !ContainerHelpers::Contains(relatedContentField->GetActualSourceClasses(), item.GetClass())
+                    || relatedContentField->GetActualSourceClasses() && !ContainerHelpers::Contains(*relatedContentField->GetActualSourceClasses(), item.GetClass())
                     )
                 )
                 {

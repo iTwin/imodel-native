@@ -1300,13 +1300,25 @@ QueryMonitor::QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor,
                 return false;
             }, false);
 
-            std::this_thread::sleep_for(m_pollInterval);
+            std::unique_lock<std::mutex> lock(m_queryMonitorMutex);
+            m_queryMonitorCv.wait_for(lock,m_pollInterval,[&]{ return m_stop.load() == true; });
+            m_queryMonitorCv.notify_all();
             std::this_thread::yield();
         } while (m_stop.load() == false);
         log_trace("%s monitor stopped.", GetTimestamp().c_str());
     }, notifyThreadHasStarted.get());
     notifyThreadHasStarted->get_future().get();
     notifyThreadHasStarted = nullptr;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+QueryMonitor::~QueryMonitor() { 
+    m_stop.store(true); 
+    m_queryMonitorCv.notify_all();
+    if (m_thread.joinable()) 
+        m_thread.join();
 }
 
 //---------------------------------------------------------------------------------------

@@ -3207,6 +3207,7 @@ struct NativeChangedElementsECDb : BeObjectWrap<NativeChangedElementsECDb>
             OPTIONAL_ARGUMENT_BOOL(9, wantRelationshipCaching, true);
             OPTIONAL_ARGUMENT_INTEGER(10, relationshipCacheSize, 200000);
             OPTIONAL_ARGUMENT_BOOL(11, wantChunkTraversal, false);
+            OPTIONAL_ARGUMENT_BOOL(12, wantBoundingBoxes, false);
 
             if (GetECDb().IsReadonly())
                 return Napi::Number::New(Env(), (int) BE_SQLITE_READONLY);
@@ -3224,6 +3225,7 @@ struct NativeChangedElementsECDb : BeObjectWrap<NativeChangedElementsECDb>
             m_manager->SetWantRelationshipCaching(wantRelationshipCaching);
             m_manager->SetRelationshipCacheSize(relationshipCacheSize);
             m_manager->SetWantChunkTraversal(wantChunkTraversal);
+            m_manager->SetWantBoundingBoxes(wantBoundingBoxes);
 
             if (!rulesetDir.empty())
                 m_manager->SetPresentationRulesetDirectory(rulesetDir);
