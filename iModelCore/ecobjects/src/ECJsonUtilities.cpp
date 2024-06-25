@@ -718,7 +718,7 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, B
         {
         ClassLayoutR classLayout = currentClass.GetDefaultStandaloneEnabler()->GetClassLayout();
         uint32_t propIndex = 0;
-        if (ECObjectsStatus::Success != classLayout.GetPropertyIndex(propIndex, currentAccessString.c_str()))
+        if (ECObjectsStatus::Success != classLayout.GetPropertyIndex(propIndex, "")) // we need to select the root of the currentClass
             return ERROR;
 
         uint32_t childIndex = classLayout.GetFirstChildPropertyIndex(propIndex);
