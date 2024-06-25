@@ -377,6 +377,8 @@ struct QueryResponse::Future::Impl {
 struct QueryMonitor {
     private:
         std::thread m_thread;
+        std::condition_variable m_queryMonitorCv;
+        std::mutex m_queryMonitorMutex;
         std::atomic_bool m_stop;
         RunnableRequestQueue& m_queue;
         QueryExecutor& m_executor;
@@ -384,7 +386,7 @@ struct QueryMonitor {
         cancel_callback_type m_cancelBeforeSchemaChanges;
     public:
         QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor, std::chrono::milliseconds pollInterval = 1000ms);
-        ~QueryMonitor() { m_stop.store(true); if (m_thread.joinable()) m_thread.join(); }
+        ~QueryMonitor();
 };
 
 //=======================================================================================
