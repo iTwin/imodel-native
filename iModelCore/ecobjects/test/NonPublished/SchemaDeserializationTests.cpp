@@ -1573,35 +1573,56 @@ TEST_F(SchemaDeserializationTest, PruneSchemas)
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     ASSERT_TRUE(schema.IsValid());
 
-    auto const& refedSchemas = schema->GetReferencedSchemas();
-    EXPECT_TRUE(refedSchemas.end() == std::find_if(refedSchemas.begin(), refedSchemas.end(), [&](const auto& s) { return s.second->GetName().EqualsIAscii("BaseElementSchema");}))
-        << "invalid schema should no longer be referenced";
-    ASSERT_TRUE(nullptr != schema->GetClassCP("RelationshipWithBadConstraint"))
-        << "baseElem-referencing constraint should have been pruned";
-    EXPECT_EQ(nullptr, schema->GetClassCP("Foo")->GetPropertyP("Params"))
-        << "baseElem-referencing struct property should have been pruned";
-    EXPECT_EQ(nullptr, schema->GetClassCP("Foo")->GetPropertyP("TestPrimitiveArray"))
-        << "baseElem-referencing primitive array property should have been pruned";
-    EXPECT_EQ(nullptr, schema->GetClassCP("Foo")->GetPropertyP("TestStructArray"))
-        << "baseElem-referencing struct array property should have been pruned";
-    EXPECT_EQ(nullptr, schema->GetClassCP("Foo")->GetPropertyP("ToPruneRef"))
-        << "baseElem-referencing primitive property should have been pruned";
-    EXPECT_NE(nullptr, schema->GetClassCP("Foo")->GetPropertyP("NonExistentRef"))
-        << "invalid reference property should remain as string";
+    const auto& refedSchemas = schema->GetReferencedSchemas();
+    EXPECT_TRUE(refedSchemas.end() == std::find_if(refedSchemas.begin(), refedSchemas.end(), [&](const auto& s) { return s.second->GetName().EqualsIAscii("BaseElementSchema");})) << "invalid schema should no longer be referenced";
+    EXPECT_TRUE(refedSchemas.end() != std::find_if(refedSchemas.begin(), refedSchemas.end(), [&](const auto& s) { return s.second->GetName().EqualsIAscii("ValidRefSchema");})) << "invalid schema should no longer be referenced";
 
-    EXPECT_FALSE(schema->GetCustomAttributeContainer().GetCustomAttribute("ValidRefSchema", "TestCustomAttr1").IsValid())
-        << "custom attribute referencing baseElem should be pruned";
-    EXPECT_FALSE(schema->GetCustomAttributeContainer().GetCustomAttribute("ValidRefSchema", "TestCustomAttr2").IsValid())
-        << "custom attribute referencing non existent schema should be pruned";
-    EXPECT_TRUE(schema->GetCustomAttributeContainer().GetCustomAttribute("ValidRefSchema", "TestCustomAttr3").IsValid())
-        << "custom attribute referencing valid schema should be fine";
+    ASSERT_TRUE(nullptr != schema->GetClassCP("RelationshipWithBadConstraint")) << "baseElem-referencing constraint should have been pruned";
+    EXPECT_EQ(nullptr, schema->GetClassCP("Foo")->GetPropertyP("Params")) << "baseElem-referencing struct property should have been pruned";
+    EXPECT_EQ(nullptr, schema->GetClassCP("Foo")->GetPropertyP("TestPrimitiveArray")) << "baseElem-referencing primitive array property should have been pruned";
+    EXPECT_EQ(nullptr, schema->GetClassCP("Foo")->GetPropertyP("TestStructArray")) << "baseElem-referencing struct array property should have been pruned";
+    EXPECT_EQ(nullptr, schema->GetClassCP("Foo")->GetPropertyP("ToPruneRef")) << "baseElem-referencing primitive property should have been pruned";
+    EXPECT_NE(nullptr, schema->GetClassCP("Foo")->GetPropertyP("NonExistentRef")) << "invalid reference property should remain as string";
 
-    EXPECT_FALSE(schema->GetClassCP("Foo")->IsDefined("ValidRefSchema", "TestCustomAttr4)"))
-        << "custom attribute referencing baseElem should be pruned";
-    EXPECT_FALSE(schema->GetClassCP("Foo")->IsDefined("ValidRefSchema", "TestCustomAttr5"))
-        << "custom attribute referencing non existent schema should be pruned";
-    EXPECT_TRUE(schema->GetClassCP("Foo")->IsDefined("ValidRefSchema", "TestCustomAttr6"))
-        << "custom attribute referencing valid schema should be fine";
+    // Custom attribute referencing baseElem and non-existent schema should be pruned.
+    // Custom attribute referencing the valid schema should be fine.
+    for (const auto& [testCaseNumber, schemaName, customAttr, expectedResult] : std::vector<std::tuple<unsigned int, Utf8CP, Utf8CP, bool>>
+        {
+            { 1, "BaseElementSchema", "TestCustomAttr1", false },
+            { 2, "BaseElementSchema", "TestCustomAttr2", false },
+            { 3, "BaseElementSchema", "TestCustomAttr3", false },
+
+            { 4, "NonExistentRefSchema", "TestCustomAttr1", false },
+            { 5, "NonExistentRefSchema", "TestCustomAttr2", false },
+            { 6, "NonExistentRefSchema", "TestCustomAttr3", false },
+
+            { 7, "ValidRefSchema", "TestCustomAttr1", false },
+            { 8, "ValidRefSchema", "TestCustomAttr2", false },
+            { 9, "ValidRefSchema", "TestCustomAttr3", true },
+        })
+        {
+        EXPECT_EQ(expectedResult, schema->GetCustomAttributeContainer().GetCustomAttribute(schemaName, customAttr).IsValid()) << "Test case " << testCaseNumber << " failed.";
+        }
+
+    // Custom attribute referencing baseElem and non-existent schema should be pruned.
+    // Custom attribute referencing the valid schema should be fine.
+    for (const auto& [testCaseNumber, schemaName, customAttr, expectedResult] : std::vector<std::tuple<unsigned int, Utf8CP, Utf8CP, bool>>
+        {
+            { 1, "BaseElementSchema", "TestCustomAttr4", false },
+            { 2, "BaseElementSchema", "TestCustomAttr5", false },
+            { 3, "BaseElementSchema", "TestCustomAttr6", false },
+
+            { 4, "NonExistentRefSchema", "TestCustomAttr4", false },
+            { 5, "NonExistentRefSchema", "TestCustomAttr5", false },
+            { 6, "NonExistentRefSchema", "TestCustomAttr6", false },
+
+            { 7, "ValidRefSchema", "TestCustomAttr4", false },
+            { 8, "ValidRefSchema", "TestCustomAttr5", false },
+            { 9, "ValidRefSchema", "TestCustomAttr6", true },
+        })
+        {
+        EXPECT_EQ(expectedResult, schema->GetClassCP("Foo")->IsDefined(schemaName, customAttr)) << "Test case " << testCaseNumber << " failed.";
+        }
     }
 
 //---------------------------------------------------------------------------------------

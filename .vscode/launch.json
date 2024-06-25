@@ -4,11 +4,11 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-
-
-
         {
-            "name": "Debug specific iModelPlatformTest",
+            "name": "Debug a specific iModelPlatform test",
+            "presentation": {
+                "group": "0_Windows",
+            },
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${env:OutRoot}Winx64/Product/iModelPlatform-Gtest/iModelPlatformTest.exe",
@@ -21,7 +21,10 @@
             "environment": [],
         },
         {
-            "name": "Debug specific iModelEvolutionTest",
+            "name": "Debug a specific iModelEvolution test",
+            "presentation": {
+                "group": "0_Windows",
+            },
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${env:OutRoot}Winx64/Product/IModelEvolutionGTest/IModelEvolutionTests.exe",
@@ -34,7 +37,10 @@
             "environment": [],
         },
         {
-            "name": "Debug specific BentleyDll Test",
+            "name": "Debug a specific BentleyDll test",
+            "presentation": {
+                "group": "0_Windows",
+            },
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${env:OutRoot}Winx64/Product/Bentley-Gtest/BentleyTest.exe",
@@ -47,7 +53,10 @@
             "environment": [],
         },
         {
-            "name": "Debug specific BeSQLite test",
+            "name": "Debug a specific BeSQLite test",
+            "presentation": {
+                "group": "0_Windows",
+            },
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${env:OutRoot}Winx64/Product/BeSQLite-Gtest/BeSQLiteTest.exe",
@@ -60,7 +69,10 @@
             "environment": [],
         },
         {
-            "name": "Debug specific ECDb test",
+            "name": "Debug a specific ECDb test",
+            "presentation": {
+                "group": "0_Windows",
+            },
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${env:OutRoot}Winx64/Product/ECDb-Gtest/ECDbTest.exe",
@@ -73,7 +85,10 @@
             "environment": [],
         },
         {
-            "name": "Debug specific GeoCoord test",
+            "name": "Debug a specific GeoCoord test",
+            "presentation": {
+                "group": "0_Windows",
+            },
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${env:OutRoot}Winx64/Product/GeoCoord-GTest/GeoCoordTests.exe",
@@ -86,7 +101,10 @@
             "environment": [],
         },
         {
-            "name": "Debug specific Units test",
+            "name": "Debug a specific Units test",
+            "presentation": {
+                "group": "0_Windows",
+            },
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${env:OutRoot}Winx64/Product/Units-Gtest/UnitsTest.exe",
@@ -99,7 +117,10 @@
             "environment": [],
         },
         {
-            "name": "Debug specific ECObjects test",
+            "name": "Debug a specific ECObjects test",
+            "presentation": {
+                "group": "0_Windows",
+            },
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${env:OutRoot}Winx64/Product/ECObjects-Gtest/ECObjectsTest.exe",
@@ -112,7 +133,10 @@
             "environment": [],
         },
         {
-            "name": "Debug specific ECPresentation test",
+            "name": "Debug a specific ECPresentation test",
+            "presentation": {
+                "group": "0_Windows",
+            },
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${env:OutRoot}Winx64/Product/ECPresentation-Gtest/ECPresentationTest.exe",
@@ -125,7 +149,10 @@
             "environment": [],
         },
         {
-            "name": "Debug specific Geomlib test",
+            "name": "Debug a specific Geomlib test",
+            "presentation": {
+                "group": "0_Windows",
+            },
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${env:OutRoot}Winx64/Product/GeomLibs-Gtest/GeomLibsTest.exe",
@@ -138,13 +165,10 @@
             "environment": [],
         },
         {
-            "type": "node",
-            "request": "attach",
-            "name": "Attach",
-            "port": 9229
-        },
-        {
-            "name": "Launch Native debugger for index.js tests",
+            "name": "Native debugger for index.js tests",
+            "presentation": {
+                "group": "0_Windows",
+            },
             "type": "cppvsdbg",
             "request": "launch",
             "program": "node.exe",
@@ -157,18 +181,36 @@
         },
         {
             "type": "node",
+            "presentation": {
+                "group": "0_Windows",
+            },
             "request": "launch",
-            "name": "imodel-native unit tests",
+            "name": "Node debugger for index.js tests",
             "program": "${workspaceFolder}/iModelJsNodeAddon/api_package/ts/lib/test/index.js"
         },
         {
-            "name": "(Windows) Attach",
+            "name": "Native attach",
+            "presentation": {
+                "group": "0_Windows",
+            },
             "type": "cppvsdbg",
             "request": "attach",
             "processId": "${command:pickProcess}"
         },
         {
+            "type": "node",
+            "presentation": {
+                "group": "0_Windows",
+            },
+            "request": "attach",
+            "name": "Node attach",
+            "port": 9229
+        },
+        {
             "name": "LNX Native BentleyTest",
+            "presentation": {
+                "group": "1_Linux",
+            },
             "type": "cppdbg",
             "request": "launch",
             "program": "${env:OutRoot}LinuxX64/static/ProductCopy/Bentley-Gtest/BentleyTest",
@@ -185,6 +227,9 @@
         },
         {
             "name": "LNX Native BeSQLiteTest",
+            "presentation": {
+                "group": "1_Linux",
+            },
             "type": "cppdbg",
             "request": "launch",
             "program": "${env:OutRoot}LinuxX64/static/ProductCopy/BeSQLite-Gtest/BeSQLiteTest",
@@ -201,6 +246,9 @@
         },
         {
             "name": "LNX Native iModelPlatformTest",
+            "presentation": {
+                "group": "1_Linux",
+            },
             "type": "cppdbg",
             "request": "launch",
             "program": "${env:OutRoot}LinuxX64/static/ProductCopy/iModelPlatform-Gtest/iModelPlatformTest",
@@ -217,6 +265,9 @@
         },
         {
             "name": "LNX Native VisualizationTest",
+            "presentation": {
+                "group": "1_Linux",
+            },
             "type": "cppdbg",
             "request": "launch",
             "program": "${env:OutRoot}LinuxX64/static/ProductCopy/VisualizationGtest/VisualizationTest",
@@ -236,6 +287,9 @@
         },
         {
             "name": "LNX TilesetPublisher",
+            "presentation": {
+                "group": "1_Linux",
+            },
             "type": "cppdbg",
             "request": "launch",
             "program": "${env:OutRoot}LinuxX64/Product/TilesetPublisher/TilesetPublisher",
@@ -254,29 +308,11 @@
                 "-o /home/paul/imdl"
             ]
         },
-
-        {
-          "name": "MacOS Native Single iModelPlatformTest",
-          "type": "cppdbg",
-          "request": "launch",
-          "program": "${env:OutRoot}MacOSX64/Product/iModelPlatform-Gtest/iModelPlatformTest",
-          "cwd": "${workspaceFolder}",
-          "externalConsole": false,
-          "MIMode": "lldb",
-          "setupCommands": [
-              {
-                  "description": "Enable pretty-printing for gdb",
-                  "text": "-enable-pretty-printing",
-                  "ignoreFailures": true
-              }
-          ],
-          "args": [
-            "--gtest_break_on_failure",
-            "--gtest_filter=SchemaVersionTestFixture.*"
-          ]
-        },
         {
             "name": "LNX Native ECDbTest",
+            "presentation": {
+                "group": "1_Linux",
+            },
             "type": "cppdbg",
             "request": "launch",
             "program": "${env:OutRoot}LinuxX64/static/ProductCopy/ECDb-Gtest/ECDbTest",
@@ -292,89 +328,10 @@
             ]
         },
         {
-            "name": "Single ECDbTest",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${env:OutRoot}WinX64/Product/ECDb-Gtest/ECDbTest",
-            "cwd": "${workspaceFolder}",
-            "externalConsole": false,
-            "MIMode": "gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ],
-            "args": [
-              "--gtest_break_on_failure",
-              "--gtest_filter=SchemaRemapTestFixture.*"
-            ]
-        },
-        {
-            "name": "Single ECDb Performance Test",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${env:OutRoot}WinX64/Product/ECDb-Gtest-Performance/ECDbTestPerformance",
-            "cwd": "${workspaceFolder}",
-            "externalConsole": false,
-            "MIMode": "gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ],
-            "args": [
-              "--gtest_break_on_failure",
-              "--gtest_filter=PerformanceSchemaImportTests.Upgrade*Deep*"
-            ]
-        },
-        {
-            "name": "MacOS Native Single ECDbTest",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${env:OutRoot}MacOSX64/Product/ECDb-Gtest/ECDbTest",
-            "cwd": "${workspaceFolder}",
-            "externalConsole": false,
-            "MIMode": "lldb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ],
-            "args": [
-              "--gtest_break_on_failure",
-              "--gtest_filter=SchemaUpgradeTestFixture.UpdateClass_*"
-            ]
-        },
-        {
-            "name": "MacOS Native ECObjectsTest, single test",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${env:OutRoot}MacOSX64/Product/ECObjects-Gtest/ECObjectsTest",
-            "cwd": "${workspaceFolder}",
-            "MIMode": "lldb",
-            "args": [
-                "--gtest_filter=UnitSpecificationConversionTest.SchemaWithOldUnitSpecifications"
-            ]
-        },
-        {
-            "name": "MacOS Native UnitsTests, single test",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${env:OutRoot}MacOSX64/Product/Units-Gtest/UnitsTest",
-            "cwd": "${workspaceFolder}",
-            "MIMode": "lldb",
-            "args": [
-                "--gtest_filter=FormattingTestFixture.StdFormatting"
-            ]
-        },
-        {
             "name": "LNX Native ECObjectsTest",
+            "presentation": {
+                "group": "1_Linux",
+            },
             "type": "cppdbg",
             "request": "launch",
             "program": "${env:OutRoot}LinuxX64/static/ProductCopy/ECObjects-Gtest/ECObjectsTest",
@@ -390,27 +347,10 @@
             ]
         },
         {
-          "name": "Filtered ECObjectsTest",
-          "type": "cppvsdbg",
-          "request": "launch",
-          "program": "${env:OutRoot}WinX64/Product/ECObjects-Gtest/ECObjectsTest",
-          "cwd": "${workspaceFolder}",
-          "externalConsole": false,
-          "MIMode": "gdb",
-          "setupCommands": [
-              {
-                  "description": "Enable pretty-printing for gdb",
-                  "text": "-enable-pretty-printing",
-                  "ignoreFailures": true
-              }
-          ],
-          "args": [
-            "--gtest_break_on_failure",
-            "--gtest_filter=SchemaComparerXmlTests.*"
-          ]
-        },
-        {
             "name": "LNX Native ECPresentationTest",
+            "presentation": {
+                "group": "1_Linux",
+            },
             "type": "cppdbg",
             "request": "launch",
             "program": "${env:OutRoot}LinuxX64/static/ProductCopy/ECPresentation-Gtest/ECPresentationTest",
@@ -427,6 +367,9 @@
         },
         {
             "name": "LNX Native GeomLibsTest",
+            "presentation": {
+                "group": "1_Linux",
+            },
             "type": "cppdbg",
             "request": "launch",
             "program": "${env:OutRoot}LinuxX64/static/ProductCopy/GeomLibs-Gtest/GeomLibsTest",
@@ -443,6 +386,9 @@
         },
         {
             "name": "LNX Native UnitsTest",
+            "presentation": {
+                "group": "1_Linux",
+            },
             "type": "cppdbg",
             "request": "launch",
             "program": "${env:OutRoot}LinuxX64/static/ProductCopy/Units-Gtest/UnitsTest",
@@ -459,6 +405,9 @@
         },
         {
             "name": "LNX Native JS-Backend Tests",
+            "presentation": {
+                "group": "1_Linux",
+            },
             "type": "cppdbg",
             "request": "launch",
             "program": "/usr/bin/node",
@@ -527,6 +476,9 @@
         },
         {
             "name": "LNX Native iModelJsNodeAddon Tests",
+            "presentation": {
+                "group": "1_Linux",
+            },
             "type": "cppdbg",
             "request": "launch",
             "program": "/usr/bin/node",
@@ -550,6 +502,9 @@
         },
         {
             "name": "LNX Script iModelJsNodeAddon Tests",
+            "presentation": {
+                "group": "1_Linux",
+            },
             "type": "node",
             "request": "launch",
             "program": "/workspace/src/imodel02/iModelJsNodeAddon/api_package/ts/lib/test/index.js",
@@ -565,6 +520,9 @@
         },
         {
             "name": "LNX Script JS-Backend Tests",
+            "presentation": {
+                "group": "1_Linux",
+            },
             "type": "node",
             "request": "launch",
             "program": "/workspace/imodeljs/core/backend/node_modules/@bentley/build-tools/scripts/test",
@@ -584,6 +542,9 @@
         },
         {
             "name": "LNX Native Node Attach",
+            "presentation": {
+                "group": "1_Linux",
+            },
             "type": "cppdbg",
             "request": "attach",
             "program": "/usr/bin/node",
@@ -603,6 +564,140 @@
                     "text": "set follow-fork-mode child"
                 }
             ]
-        }
+        },
+        {
+            "name": "MacOS Native Single iModelPlatformTest",
+            "presentation": {
+                "group": "2_MacOS",
+            },
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}MacOSX64/Product/iModelPlatform-Gtest/iModelPlatformTest",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "lldb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "args": [
+                "--gtest_break_on_failure",
+                "--gtest_filter=SchemaVersionTestFixture.*"
+            ]
+        },
+        {
+            "name": "MacOS Native Single ECDbTest",
+            "presentation": {
+                "group": "2_MacOS",
+            },
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}MacOSX64/Product/ECDb-Gtest/ECDbTest",
+            "cwd": "${workspaceFolder}",
+            "externalConsole": false,
+            "MIMode": "lldb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "args": [
+              "--gtest_break_on_failure",
+              "--gtest_filter=SchemaUpgradeTestFixture.UpdateClass_*"
+            ]
+        },
+        {
+            "name": "MacOS Native ECObjectsTest, single test",
+            "presentation": {
+                "group": "2_MacOS",
+            },
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}MacOSX64/Product/ECObjects-Gtest/ECObjectsTest",
+            "cwd": "${workspaceFolder}",
+            "MIMode": "lldb",
+            "args": [
+                "--gtest_filter=UnitSpecificationConversionTest.SchemaWithOldUnitSpecifications"
+            ]
+        },
+        {
+            "name": "MacOS Native UnitsTests, single test",
+            "presentation": {
+                "group": "2_MacOS",
+            },
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}MacOSX64/Product/Units-Gtest/UnitsTest",
+            "cwd": "${workspaceFolder}",
+            "MIMode": "lldb",
+            "args": [
+                "--gtest_filter=FormattingTestFixture.StdFormatting"
+            ]
+        },
+        {
+            "name": "ECDb Performance Test",
+            "presentation": {
+                "group": "3_PerformanceWin",
+            },
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}WinX64/Product/ECDb-Gtest-Performance/ECDbTestPerformance",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "args": [
+              "--gtest_break_on_failure",
+              "--gtest_filter=*"
+            ]
+        },
+        {
+            "name": "iModelPlatform Performance Test",
+            "presentation": {
+                "group": "3_PerformanceWin",
+            },
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}Winx64/Product/iModelPlatform-Gtest-Performance/iModelPlatformPerformanceTests",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "args": [
+              "--gtest_break_on_failure",
+              "--gtest_filter=*"
+            ]
+        },
+        {
+            "name": "ECObjects Performance Test",
+            "presentation": {
+                "group": "3_PerformanceWin",
+            },
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}WinX64/Product/ECObjects-PerformanceGtest/ECObjectsPerformanceTests",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "args": [
+              "--gtest_break_on_failure",
+              "--gtest_filter=*"
+            ]
+        },
+        {
+            "name": "ECPresentation Performance Test",
+            "presentation": {
+                "group": "3_PerformanceWin",
+            },
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${env:OutRoot}WinX64/Product/ECPresentation-Gtest-Performance/ECPresentationTest-Performance",
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "args": [
+              "--gtest_break_on_failure",
+              "--gtest_filter=*"
+            ]
+        },
     ]
 }

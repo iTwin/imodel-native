@@ -379,9 +379,22 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
                     break;
             }
         }
-     }
+    }
 
     if (matchProps.empty()) {
+        // Check if a column alias is being used within the select
+        if (auto parentSelect = FindParent(Exp::Type::SingleSelect); parentSelect != nullptr)
+            {
+            for (const auto dpExp : parentSelect->GetAsCP<SingleSelectStatementExp>()->GetSelection()->GetChildren())
+                {
+                const auto& derivedPropertyExp = dpExp->GetAs<DerivedPropertyExp>();
+                if (derivedPropertyExp.GetColumnAlias().EqualsI(GetPropertyName()))
+                    {
+                    SetPropertyRef(derivedPropertyExp);
+                    return SUCCESS;
+                    }
+                }
+            }
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0565,
             "No property or enumeration found for expression '%s'.", m_resolvedPropertyPath.ToString().c_str());
         return ERROR;
