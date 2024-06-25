@@ -121,6 +121,13 @@ export class NativeLibrary {
     return this._nativeLib;
   }
 }
+/** Use GetInstance() method
+ * @internal
+ */
+export const enum InstanceSerializationMethod {
+  JsonParse = 0,
+  BeJsNapi = 1
+}
 
 /** WAL checkpoint mode
  * @internal
@@ -374,11 +381,11 @@ export declare namespace IModelJsNative {
    */
   interface InstanceArgs {
     id: Id64String;
-    classFullName: string;
+    classId: Id64String;
+    serializationMethod: InstanceSerializationMethod;
     abbreviateBlobs?: boolean;
     classIdsToClassNames?: boolean;
     useJsNames?: boolean;
-    accessString?: string;
   }
 
   enum FontType { TrueType = 1, Rsc = 2, Shx = 3 }
@@ -581,13 +588,14 @@ export declare namespace IModelJsNative {
     public getCurrentTxnId(): TxnIdString;
     public getECClassMetaData(schema: string, className: string): ErrorStatusOrResult<IModelStatus, string>;
     public getElement(opts: ElementLoadProps): ElementProps;
-    public getInstance(args: InstanceArgs): any;
+    public executeSql(sql: string): DbResult;
     public getFilePath(): string; // full path of the DgnDb file
     public getGeoCoordinatesFromIModelCoordinates(points: GeoCoordinatesRequestProps): GeoCoordinatesResponseProps;
     public getGeometryContainment(props: object): Promise<GeometryContainmentResponseProps>;
     public getIModelCoordinatesFromGeoCoordinates(points: IModelCoordinatesRequestProps): IModelCoordinatesResponseProps;
     public getIModelId(): GuidString;
     public getIModelProps(): IModelProps;
+    public getInstance(args: InstanceArgs): { [key: string]: any };
     public getITwinId(): GuidString;
     public getLastError(): string;
     public getLastInsertRowId(): number;
@@ -740,6 +748,7 @@ export declare namespace IModelJsNative {
     public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
     public schemaSyncGetSyncDbInfo(): SchemaSyncDbInfo | undefined;
     public getFilePath(): string;
+    public getInstance(args: InstanceArgs): { [key: string]: any };
     public getSchemaProps(name: string): SchemaProps;
     public importSchema(schemaPathName: string): DbResult;
     public isOpen(): boolean;

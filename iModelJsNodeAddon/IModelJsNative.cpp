@@ -432,7 +432,10 @@ public:
         REQUIRE_ARGUMENT_FUNCTION(1, callback);
         JsInterop::ConcurrentQueryExecute(m_ecdb, requestObj, callback);
     }
-
+    Napi::Value GetInstance(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        return JsInterop::GetInstance(db, info);
+    }
     Napi::Value ConcurrentQueryResetConfig(NapiInfoCR info) {
         if (info.Length() > 0 && info[0].IsObject()) {
             Napi::Object inConf = info[0].As<Napi::Object>();
@@ -617,6 +620,7 @@ public:
             InstanceMethod("schemaSyncGetLocalDbInfo", &NativeECDb::SchemaSyncGetLocalDbInfo),
             InstanceMethod("schemaSyncGetSyncDbInfo", &NativeECDb::SchemaSyncGetSyncDbInfo),
             InstanceMethod("openDb", &NativeECDb::OpenDb),
+            InstanceMethod("getInstance", &NativeECDb::GetInstance),
             InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
             StaticMethod("enableSharedCache", &NativeECDb::EnableSharedCache),
         });
@@ -2299,73 +2303,14 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         BeGuid beGuid = GetOpenedDb(info).QueryProjectGuid();
         return toJsString(Env(), beGuid.ToString());
     }
-    Napi::Value GetInstance(NapiInfoCR info) {
-        constexpr auto kUseJsName = "useJsNames";
-        constexpr auto kClassId = "classId";
-        constexpr auto kClassIdsToClassNames = "classIdsToClassNames";
-        constexpr auto kAbbreviateBlobs = "abbreviateBlobs";
-        constexpr auto kAccessString = "accessString";
-        constexpr auto kId = "id";
-
-        REQUIRE_ARGUMENT_ANY_OBJ(0, argsObj);
-        BeJsConst args(argsObj);
-        ECInstanceId instanceId;
-        ECClassId classId;
-        Utf8String accessString;
-        auto abbreviateBlobs = true;
-        auto classIdsToClassNames = false;
-        auto useJsNames = false;
-        if (args.isStringMember(kId)){
-            ECInstanceId::FromString(instanceId, args[kId].asCString());
-        }
-        if (args.isStringMember(kClassId)){
-            ECClassId::FromString(classId, args[kClassId].asCString());
-        }
-        if (args.isStringMember(kAccessString)){
-            accessString = args[kAccessString].asCString();
-        }
-        if (args.isBoolMember(kAbbreviateBlobs)){
-            abbreviateBlobs = args[kAbbreviateBlobs].asBool();
-        }
-        if (args.isBoolMember(kClassIdsToClassNames)){
-            classIdsToClassNames = args[kClassIdsToClassNames].asBool();
-        }
-        if (args.isBoolMember(kUseJsName)){
-            useJsNames = args[kUseJsName].asBool();
-        }
-        if (!instanceId.IsValid()){
-            THROW_JS_EXCEPTION("Invalid instanceId");
-        }
-        if (!classId.IsValid()) {
-            THROW_JS_EXCEPTION("Invalid classId");
-        }
-
-        BeJsNapiObject obj(Env());
+    Napi::Value ExecuteSql(NapiInfoCR info) {
+         REQUIRE_ARGUMENT_STRING(0, sql);
         auto& db = GetOpenedDb(info);
-        auto& instanceReader = db.GetInstanceReader();
-        auto position = InstanceReader::Position{instanceId, classId, nullptr};
-        auto successful = instanceReader.Seek(position,
-            [&](InstanceReader::IRowContext const& row) {
-                ECSqlRowAdaptor adaptor(db);
-                adaptor.SetAbbreviateBlobs(abbreviateBlobs);
-                adaptor.SetConvertClassIdsToClassNames(classIdsToClassNames);
-                adaptor.UseJsNames(useJsNames);
-                if (!accessString.empty()) {
-                    if (!ERROR == adaptor.RenderValue(obj, row.GetValue(0))) {
-                        THROW_JS_EXCEPTION("Failed to render value");
-                    }
-                } else {
-                    if (ERROR == adaptor.RenderRow(obj, row, false)) {
-                        THROW_JS_EXCEPTION("Failed to render instance");
-                    }
-                }
-            }
-        );
-
-        if (!successful) {
-            THROW_JS_EXCEPTION("Instance not found");
-        }
-        return obj;
+        return Napi::Number::New(Env(), (int)db.ExecuteSql(sql.c_str()));
+    }
+    Napi::Value GetInstance(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        return JsInterop::GetInstance(db, info);
     }
     void ResetBriefcaseId(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
@@ -2767,6 +2712,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("getECClassMetaData", &NativeDgnDb::GetECClassMetaData),
             InstanceMethod("getElement", &NativeDgnDb::GetElement),
             InstanceMethod("getInstance", &NativeDgnDb::GetInstance),
+            InstanceMethod("executeSql", &NativeDgnDb::ExecuteSql),
             InstanceMethod("getFilePath", &NativeDgnDb::GetFilePath),
             InstanceMethod("getGeoCoordinatesFromIModelCoordinates", &NativeDgnDb::GetGeoCoordsFromIModelCoords),
             InstanceMethod("getGeometryContainment", &NativeDgnDb::GetGeometryContainment),
