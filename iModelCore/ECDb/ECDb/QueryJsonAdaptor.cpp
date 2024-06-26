@@ -197,7 +197,7 @@ BentleyStatus QueryJsonAdaptor::RenderLong(BeJsValue out, IECSqlValue const& in,
             if (!id.IsValid()) {
                 return SUCCESS;
             }
-            if (m_classIdToClassNames) {
+            if (m_classIdToClassNames && !prop->GetIsDisplayLabelDefined()) {
                 auto classCP = m_ecdb.Schemas().GetClass(id);
                 if (classCP != nullptr) {
                     ECN::ECJsonUtilities::ClassNameToJson(out, *classCP);
