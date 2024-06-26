@@ -439,7 +439,7 @@ static Utf8String ToIsoDateTimeString(DateTimeCR dateTime, bool useSubSec, bool 
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 static Utf8String ToIsoDateString(DateTimeCR dateTime) {
-    static char zBuf[16];
+    char zBuf[16];
     int Y = dateTime.GetYear();
     int M = dateTime.GetMonth();
     int D = dateTime.GetDay();
@@ -468,7 +468,7 @@ static Utf8String ToIsoDateString(DateTimeCR dateTime) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 static Utf8String ToIsoTimeString(DateTimeCR dateTime, bool useSubSec) {
-    static char zBuf[16];
+    char zBuf[16];
     int h = dateTime.GetHour();
     int m = dateTime.GetMinute();
     int s = dateTime.GetSecond();
