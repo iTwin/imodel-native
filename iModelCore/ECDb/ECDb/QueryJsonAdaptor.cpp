@@ -39,8 +39,7 @@ BentleyStatus QueryJsonAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& st
                 continue;
             }
 
-            ECSqlColumnInfo const& columnInfo = ecsqlValue.GetColumnInfo();
-            const auto memberProp = columnInfo.GetProperty();
+            const auto memberProp = ecsqlValue.GetColumnInfo().GetProperty();
             if (m_useJsName) {
                 const auto prim = memberProp->GetAsPrimitiveProperty();
                 Utf8String memberName = memberProp->GetName();
@@ -58,31 +57,11 @@ BentleyStatus QueryJsonAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& st
                         memberName = ECN::ECJsonSystemNames::TargetId();
                     else if(extendTypeId == ExtendedTypeHelper::ExtendedType::TargetClassId && memberName.EqualsIAscii(ECDBSYS_PROP_TargetECClassId))
                         memberName = ECN::ECJsonSystemNames::TargetClassName();
-                    else if (columnInfo.GetPropertyPath().Size() > 1)  {
-                        T_Utf8StringVector accessStringV;
-                        for (auto const* it : columnInfo.GetPropertyPath())
-                            accessStringV.push_back(it->GetProperty()->GetName().c_str());
-                        Utf8String tmp = accessStringV.front() + ".";
-                        for (int j = 1; j < accessStringV.size() - 1; ++j)
-                            tmp += accessStringV[j] + ".";
-
-                        auto &leafEntry = accessStringV.back();
-                        if (leafEntry == ECDBSYS_PROP_NavPropId)
-                            tmp += ECN::ECJsonSystemNames::Id();
-                        else if (leafEntry == ECDBSYS_PROP_NavPropRelECClassId)
-                            tmp += ECN::ECJsonSystemNames::Navigation::RelClassName();
-                        else if (leafEntry == ECDBSYS_PROP_PointX)
-                            tmp += ECN::ECJsonSystemNames::Point::X();
-                        else if (leafEntry == ECDBSYS_PROP_PointY)
-                            tmp += ECN::ECJsonSystemNames::Point::Y();
-                        else if (leafEntry == ECDBSYS_PROP_PointZ)
-                            tmp += ECN::ECJsonSystemNames::Point::Z();
-                        else
-                            tmp += leafEntry;
-
-                        memberName = tmp;
-                        ECN::ECJsonUtilities::LowerFirstChar(memberName);
-                    } else
+                    else if(extendTypeId == ExtendedTypeHelper::ExtendedType::NavId && memberName.EqualsIAscii(ECDBSYS_PROP_NavPropId))
+                        memberName = ECN::ECJsonSystemNames::Navigation::Id();
+                    else if(extendTypeId == ExtendedTypeHelper::ExtendedType::NavRelClassId && memberName.EqualsIAscii(ECDBSYS_PROP_NavPropRelECClassId))
+                        memberName = ECN::ECJsonSystemNames::Navigation::RelClassName();
+                    else
                         ECN::ECJsonUtilities::LowerFirstChar(memberName);
                 } else {
                     ECN::ECJsonUtilities::LowerFirstChar(memberName);
@@ -433,16 +412,25 @@ void QueryJsonAdaptor::GetMetaData(QueryProperty::List& list, ECSqlStatement con
                 jsName = tmp;
                 ECN::ECJsonUtilities::LowerFirstChar(jsName);
             } else {
-                switch(extendedTypeId) {
-                    case ExtendedType::Id: jsName = ECN::ECJsonSystemNames::Id(); break;
-                    case ExtendedType::ClassId: jsName = ECN::ECJsonSystemNames::ClassName(); break;
-                    case ExtendedType::SourceId: jsName = ECN::ECJsonSystemNames::SourceId(); break;
-                    case ExtendedType::SourceClassId:jsName = ECN::ECJsonSystemNames::SourceClassName(); break;
-                    case ExtendedType::TargetId: jsName = ECN::ECJsonSystemNames::TargetId(); break;
-                    case ExtendedType::TargetClassId: jsName = ECN::ECJsonSystemNames::TargetClassName(); break;
-                    case ExtendedType::NavId: jsName = ECN::ECJsonSystemNames::Navigation::Id(); break;
-                    case ExtendedType::NavRelClassId: jsName = ECN::ECJsonSystemNames::Navigation::RelClassName(); break;
-                }
+                jsName.assign(prop->GetName());
+                if (extendedTypeId == ExtendedTypeHelper::ExtendedType::Id && jsName.EqualsIAscii(ECDBSYS_PROP_ECInstanceId))
+                    jsName = ECN::ECJsonSystemNames::Id();
+                else if(extendedTypeId == ExtendedTypeHelper::ExtendedType::ClassId && jsName.EqualsIAscii(ECDBSYS_PROP_ECClassId))
+                    jsName = ECN::ECJsonSystemNames::ClassName();
+                else if(extendedTypeId == ExtendedTypeHelper::ExtendedType::SourceId && jsName.EqualsIAscii(ECDBSYS_PROP_SourceECInstanceId))
+                    jsName = ECN::ECJsonSystemNames::SourceId();
+                else if(extendedTypeId == ExtendedTypeHelper::ExtendedType::SourceClassId && jsName.EqualsIAscii(ECDBSYS_PROP_SourceECClassId))
+                    jsName = ECN::ECJsonSystemNames::SourceClassName();
+                else if(extendedTypeId == ExtendedTypeHelper::ExtendedType::TargetId && jsName.EqualsIAscii(ECDBSYS_PROP_TargetECInstanceId))
+                    jsName = ECN::ECJsonSystemNames::TargetId();
+                else if(extendedTypeId == ExtendedTypeHelper::ExtendedType::TargetClassId && jsName.EqualsIAscii(ECDBSYS_PROP_TargetECClassId))
+                    jsName = ECN::ECJsonSystemNames::TargetClassName();
+                else if(extendedTypeId == ExtendedTypeHelper::ExtendedType::NavId && jsName.EqualsIAscii(ECDBSYS_PROP_NavPropId))
+                    jsName = ECN::ECJsonSystemNames::Navigation::Id();
+                else if(extendedTypeId == ExtendedTypeHelper::ExtendedType::NavRelClassId && jsName.EqualsIAscii(ECDBSYS_PROP_NavPropRelECClassId))
+                    jsName = ECN::ECJsonSystemNames::Navigation::RelClassName();
+                else
+                    ECN::ECJsonUtilities::LowerFirstChar(jsName);
             }
         } else {
             jsName = col.GetPropertyPath().ToString();
