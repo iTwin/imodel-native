@@ -1060,4 +1060,48 @@ TEST_F(JsonUpdaterTests, UpdateStructPropertyToNull)
     EXPECT_EQ(JsonValue("[{\"IntProp\":6}]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT IntProp,ClassProp FROM ts.TestClass WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str()).c_str()));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JsonUpdaterTests, UpdateArrayPropertyToNull)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("updateArrayPropertyToNull.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECStructClass typeName="MyStruct">
+                <ECProperty propertyName="DeepNumber" typeName="int" />
+            </ECStructClass>
+            <ECEntityClass typeName="TestClass">
+                <ECProperty propertyName="IntProp" typeName="int" />
+                <ECArrayProperty propertyName="ArrBoolProp" typeName="boolean"/>
+                <ECStructArrayProperty propertyName="ArrStructProp" typeName="MyStruct" minOccurs="0" maxOccurs="unbounded" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ECInstanceKey key;
+    {
+    // Insert test instance
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestClass(IntProp,ArrBoolProp,ArrStructProp) VALUES(?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, 15));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(2).AddArrayElement().BindBoolean(true));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(2).AddArrayElement().BindBoolean(false));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(3).AddArrayElement()["DeepNumber"].BindInt(17));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(3).AddArrayElement()["DeepNumber"].BindInt(5));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(3).AddArrayElement()["DeepNumber"].BindInt(12));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    }
+
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "TestClass");
+    ASSERT_TRUE(testClass != nullptr);
+    EXPECT_EQ(JsonValue("[{\"IntProp\":15,\"ArrBoolProp\":[true, false],\"ArrStructProp\":[{\"DeepNumber\":17},{\"DeepNumber\":5},{\"DeepNumber\":12}]}]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT IntProp,ArrBoolProp,ArrStructProp FROM ts.TestClass WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str()).c_str()));
+
+    // Update test instance
+    JsonUpdater updater(m_ecdb, *testClass, nullptr);
+    ASSERT_TRUE(updater.IsValid());
+    ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetInstanceId(), JsonValue("{\"IntProp\":6,\"ArrBoolProp\": null, \"ArrStructProp\": null}").m_value));
+
+    // Check for ArrBoolProp and ArrStructProp to not exist (be null)
+    EXPECT_EQ(JsonValue("[{\"IntProp\":6}]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT IntProp,ArrBoolProp,ArrStructProp FROM ts.TestClass WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str()).c_str()));
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
