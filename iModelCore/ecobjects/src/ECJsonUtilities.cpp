@@ -807,9 +807,6 @@ BentleyStatus JsonECInstanceConverter::JsonToECInstance(IECInstanceR instance, B
             }
         else if (ecProperty->GetIsArray())
             {
-            if (childJsonValue.isNull())
-                return false;
-
             if (SUCCESS != JsonToArrayECValue(instance, childJsonValue, *ecProperty->GetAsArrayProperty(), accessString, classLocater))
                 return true;
             }
@@ -1045,28 +1042,18 @@ BentleyStatus JsonECInstanceConverter::JsonToPrimitiveECValue(ECValueR ecValue, 
 //---------------------------------------------------------------------------------------
 BentleyStatus JsonECInstanceConverter::JsonToArrayECValue(IECInstanceR instance, BeJsConst jsonValue, ArrayECPropertyCR property, Utf8StringCR accessString, IECClassLocaterR classLocater)
 {
-    if (!jsonValue.isArray())
+    if (!jsonValue.isArray() && !jsonValue.isNull())
         return ERROR;
 
-    const uint32_t length = jsonValue.size();
+    if (ECObjectsStatus::Success != instance.ClearArray(accessString.c_str()))
+        return ERROR;
 
-    ECValue arrayValue;
-    instance.GetValue(arrayValue, accessString.c_str());
-    uint32_t currentLength = arrayValue.IsNull()? 0: arrayValue.GetArrayInfo().GetCount();
-    if (length < currentLength)
-        {
-        // We need to shorten the array. Start by emptying it out.
-        if (ECObjectsStatus::Success != instance.ClearArray(accessString.c_str()))
-            return ERROR;
-        currentLength = 0;
-        // Now make the array the size we need
-        }
-    if (length > currentLength)
-        {
-        uint32_t xlength = length - currentLength;
-        if (ECObjectsStatus::Success != instance.AddArrayElements(accessString.c_str(), xlength))
-            return ERROR;
-        }
+    if (jsonValue.isNull())
+        return SUCCESS;
+
+    const uint32_t length = jsonValue.size();
+    if (length > 0 && ECObjectsStatus::Success != instance.AddArrayElements(accessString.c_str(), length))
+        return ERROR;
 
     if (property.GetIsStructArray())
         {
