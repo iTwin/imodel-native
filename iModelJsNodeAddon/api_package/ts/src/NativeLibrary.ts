@@ -22,7 +22,7 @@ import type {
   FilePropertyProps, FontId, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
   GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, IModelCoordinatesRequestProps,
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
-  ModelProps, QueryQuota, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions,
+  ModelProps, QueryQuota, QueryRowFormat, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions,
 } from "@itwin/core-common";
 import type { Range2dProps, Range3dProps } from "@itwin/core-geometry";
 
@@ -754,6 +754,13 @@ export declare namespace IModelJsNative {
     public cleanCaches(): void;
   }
 
+  export interface ECSqlRowArg {
+    abbreviateBlobs?: boolean;
+    convertClassIdsToClassNames?: boolean;
+    rowFormat?: QueryRowFormat;
+    includeMetaData?: boolean;
+  }
+
   class ECSqlStatement implements IDisposable {
     constructor();
     public clearBindings(): DbResult;
@@ -768,6 +775,7 @@ export declare namespace IModelJsNative {
     public stepForInsert(): { status: DbResult, id: string };
     public stepForInsertAsync(callback: (result: { status: DbResult, id: string }) => void): void;
     public getNativeSql(): string;
+    public toRow(arg: ECSqlRowArg): any;
   }
 
   class ECSqlBinder {

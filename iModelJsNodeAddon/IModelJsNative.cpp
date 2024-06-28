@@ -4467,6 +4467,28 @@ public:
 };
 
 //=======================================================================================
+// Projects the QueryRowFormat interface into JS.
+//! @bsiclass
+//=======================================================================================
+enum class NativeQueryRowFormat {
+    UseECSqlPropertyNames = 0,
+    UseECSqlPropertyIndexes = 1,
+    UseJsPropertyNames = 2
+};
+
+//=======================================================================================
+// Projects the ECSqlRowArg interface into JS.
+//! @bsiclass
+//=======================================================================================
+struct NativeECSqlRowArg {
+    bool m_abbreviateBlobs;
+    bool m_classIdToClassNames;
+    bool m_useJsName;
+    bool m_includeMetaData;
+    NativeECSqlRowArg(bool abbreviateBlobs, bool classIdToClassNames, bool useJsName, bool includeMetaData): m_abbreviateBlobs(abbreviateBlobs), m_classIdToClassNames(classIdToClassNames), m_useJsName(useJsName), m_includeMetaData(includeMetaData) {}
+};
+
+//=======================================================================================
 // Projects the ECSqlStatement class into JS.
 //! @bsiclass
 //=======================================================================================
@@ -4507,7 +4529,8 @@ public:
             InstanceMethod("stepForInsertAsync", &NativeECSqlStatement::StepForInsertAsync),
             InstanceMethod("getColumnCount", &NativeECSqlStatement::GetColumnCount),
             InstanceMethod("getValue", &NativeECSqlStatement::GetValue),
-            InstanceMethod("getNativeSql", &NativeECSqlStatement::GetNativeSql)
+            InstanceMethod("getNativeSql", &NativeECSqlStatement::GetNativeSql),
+            InstanceMethod("toRow", &NativeECSqlStatement::ToRow)
         });
 
         exports.Set("ECSqlStatement", t);
@@ -4642,6 +4665,33 @@ public:
             THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
 
         return Napi::String::New(Env(), m_stmt.GetNativeSql());
+    }
+
+    static NativeECSqlRowArg getECSqlRowArg(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, optObj);
+        BeJsValue opts(optObj);
+        if (!opts.isBoolMember("abbreviateBlobs"))
+            BeNapi::ThrowJsException(info.Env(), "abbreviateBlobs argument missing");
+        if (!opts.isBoolMember("convertClassIdsToClassNames"))
+            BeNapi::ThrowJsException(info.Env(), "convertClassIdsToClassNames argument missing");
+        if (!opts.isNumericMember("rowFormat"))
+            BeNapi::ThrowJsException(info.Env(), "rowFormat argument missing");
+        if (!opts.isBoolMember("includeMetaData"))
+            BeNapi::ThrowJsException(info.Env(), "includeMetaData argument missing");
+
+        bool useJsName = (NativeQueryRowFormat)opts["rowFormat"].asInt() == NativeQueryRowFormat::UseJsPropertyNames;
+        return NativeECSqlRowArg(opts["abbreviateBlobs"].asBool(), opts["convertClassIdsToClassNames"].asBool(), useJsName, opts["includeMetaData"].asBool());
+    }
+
+    Napi::Value ToRow(NapiInfoCR info) {
+        if (!m_stmt.IsPrepared())
+            THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
+
+        NativeECSqlRowArg ecsqlRowArg = getECSqlRowArg(info);
+
+        BeJsNapiObject out(info.Env());
+        m_stmt.ToRow(out, ecsqlRowArg.m_abbreviateBlobs, ecsqlRowArg.m_classIdToClassNames, ecsqlRowArg.m_useJsName, ecsqlRowArg.m_includeMetaData);
+        return out;
     }
 
     static DbResult ToDbResult(ECSqlStatus status) {
