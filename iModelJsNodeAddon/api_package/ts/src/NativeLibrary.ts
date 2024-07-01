@@ -53,7 +53,7 @@ export const NativeLoggerCategory = {
 /** @internal */
 export interface NativeLogger {
   readonly minLevel: LogLevel | undefined;
-  readonly categoryFilter: { [categoryName: string]: LogLevel };
+  readonly categoryFilter: Readonly<{[categoryName: string]: LogLevel | undefined}>;
   logTrace: (category: string, message: string) => void;
   logInfo: (category: string, message: string) => void;
   logWarning: (category: string, message: string) => void;
