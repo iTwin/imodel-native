@@ -291,7 +291,7 @@ BentleyStatus SchemaWriter::ImportSchema(Context& ctx, ECN::ECSchemaCR ecSchema)
                         schemaChange->VersionWrite().GetOld() == schemaChange->VersionWrite().GetNew())
                         {
                         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0729,
-                            "ECSchema import has failed. Schema %s has new changes, but references the same schema version.", schema->GetName().c_str());
+                            "ECSchema import has failed. Schema %s has new changes, but the schema version is not incremented.", schema->GetName().c_str());
                         return ERROR;
                         }
 
