@@ -1045,7 +1045,10 @@ BentleyStatus JsonECInstanceConverter::JsonToArrayECValue(IECInstanceR instance,
     if (!jsonValue.isArray() && !jsonValue.isNull())
         return ERROR;
 
-    if (ECObjectsStatus::Success != instance.ClearArray(accessString.c_str()))
+    ECValue arrayValue;
+    instance.GetValue(arrayValue, accessString.c_str());
+    uint32_t currentLength = arrayValue.IsNull() ? 0 : arrayValue.GetArrayInfo().GetCount();
+    if (currentLength != 0 && ECObjectsStatus::Success != instance.ClearArray(accessString.c_str()))
         return ERROR;
 
     if (jsonValue.isNull())
