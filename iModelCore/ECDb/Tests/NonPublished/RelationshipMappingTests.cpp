@@ -1020,6 +1020,69 @@ TEST_F(RelationshipMappingTestFixture, FKRelsWithDifferentNotNullConstraintsWith
     }
     }
 
+TEST_F(RelationshipMappingTestFixture, IdenticalFKRelsWithDifferentConstraints)
+    {
+    // This test attempts to produce a problem where 2 nav props of the same name go into the same table (BaseTPH) and share a column.
+    // The nav props have different on delete and on update constraints.
+    // We end up creating 2 fks each with their own on delete and on update constraints.
+    // However, only one version of the constraints is enforced which is the one that was added last (alphabetically the last relationship class added to the map)
+
+    auto schemaXml = SchemaItem(ConstructTestSchema(R"xml(
+        <ECEntityClass typeName="Material" modifier="Sealed">
+            <BaseClass>Element</BaseClass>
+            <ECProperty propertyName="PropMaterial" typeName="string"/>
+        </ECEntityClass>
+
+        <ECEntityClass typeName="SealedEntity1" modifier="Sealed">
+            <BaseClass>Element</BaseClass>
+            <ECProperty propertyName="PropSealedEntity1" typeName="string" />
+            <ECNavigationProperty propertyName="NavProp" relationshipName="MaterialOwnsSealedEntity1" direction="Forward">
+                <ECCustomAttributes>
+                    <ForeignKeyConstraint xmlns="ECDbMap.2.0.0">
+                        <OnDeleteAction>Restrict</OnDeleteAction>
+                    </ForeignKeyConstraint>
+                </ECCustomAttributes>
+            </ECNavigationProperty>
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="MaterialOwnsSealedEntity1" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+            <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="false">
+                <Class class="SealedEntity1" />
+            </Source>
+            <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
+                <Class class="Material"/>
+            </Target>
+        </ECRelationshipClass>
+
+        <ECEntityClass typeName="SealedEntity2" modifier="Sealed">
+            <BaseClass>Element</BaseClass>
+            <ECProperty propertyName="PropSealedEntity2" typeName="string" />
+            <ECNavigationProperty propertyName="NavProp" relationshipName="SealedEntity2RefersToMaterial" direction="Backward">
+                <ECCustomAttributes>
+                    <ForeignKeyConstraint xmlns="ECDbMap.2.0.0">
+                        <OnDeleteAction>Cascade</OnDeleteAction>
+                    </ForeignKeyConstraint>
+                </ECCustomAttributes>
+            </ECNavigationProperty>
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="SealedEntity2RefersToMaterial" strength="embedding" modifier="Sealed">
+            <Source multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="false">
+                <Class class="Material"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="refers to" polymorphic="false">
+                <Class class="SealedEntity2" />
+            </Target>
+        </ECRelationshipClass>
+        )xml"));
+    
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schemaXml));
+
+    EXPECT_STREQ(GetHelper().GetDdl("ts_BaseTPH").c_str(), "CREATE TABLE [ts_BaseTPH]([Id] INTEGER PRIMARY KEY, [ECClassId] INTEGER NOT NULL, [ps1] BLOB, [ps2] BLOB, [ps3] BLOB, [NavPropId] INTEGER, "
+        "FOREIGN KEY([NavPropId]) REFERENCES [ts_BaseTPH]([Id]) ON DELETE RESTRICT, FOREIGN KEY([NavPropId]) REFERENCES [ts_BaseTPH]([Id]) ON DELETE CASCADE)");
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
