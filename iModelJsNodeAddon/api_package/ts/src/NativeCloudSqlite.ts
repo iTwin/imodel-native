@@ -171,7 +171,7 @@ export namespace NativeCloudSqlite {
      * If the return value is 1, the job will be cancelled. If one or more blocks have already been deleted, then a new manifest file is uploaded saving the progress of the delete job.
      * Return any other non-0 value to abort the transfer without saving progress.
      */
-    onProgress?: (nDeleted: number, nTotalToDelete: number) => number;
+    onProgress?: (nDeleted: number, nTotalToDelete: number) => Promise<number>;
   }
 
   export type TransferDbProps = DbProps & TransferProgress & CloudHttpProps;
