@@ -532,6 +532,7 @@ public:
     static DgnDbStatus QueryDefinitionElementUsage(BeJsValue usageInfo, DgnDbR db, bvector<Utf8String> const& idStringArray);
     static void UpdateProjectExtents(DgnDbR dgndb, BeJsConst newExtents);
     static void UpdateIModelProps(DgnDbR dgndb, BeJsConst);
+    static Napi::Value GetInstance(ECDbR db, NapiInfoCR info);
 
     static DbResult CreateECDb(ECDbR, BeFileNameCR pathname);
     static DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenParams const&);
@@ -616,7 +617,7 @@ struct CRSListResponseProps
     bool m_deprecated;
     DRange2d m_crsExtent;
     };
-    
+
 struct GeoServicesInterop
 {
     static BentleyStatus GetGeographicCRSInterpretation(BeJsValue, BeJsConst);

@@ -53,7 +53,7 @@ export const NativeLoggerCategory = {
 /** @internal */
 export interface NativeLogger {
   readonly minLevel: LogLevel | undefined;
-  readonly categoryFilter: { [categoryName: string]: LogLevel };
+  readonly categoryFilter: Readonly<{[categoryName: string]: LogLevel | undefined}>;
   logTrace: (category: string, message: string) => void;
   logInfo: (category: string, message: string) => void;
   logWarning: (category: string, message: string) => void;
@@ -120,6 +120,13 @@ export class NativeLibrary {
     }
     return this._nativeLib;
   }
+}
+/** Use GetInstance() method
+ * @internal
+ */
+export const enum InstanceSerializationMethod {
+  JsonParse = 0,
+  BeJsNapi = 1
 }
 
 /** WAL checkpoint mode
@@ -369,6 +376,18 @@ export declare namespace IModelJsNative {
     diameter?: number;
   }
 
+  /**
+   * Represents the arguments for reading an instance.
+   */
+  interface InstanceArgs {
+    id: Id64String;
+    classId: Id64String;
+    serializationMethod: InstanceSerializationMethod;
+    abbreviateBlobs?: boolean;
+    classIdsToClassNames?: boolean;
+    useJsNames?: boolean;
+  }
+
   enum FontType { TrueType = 1, Rsc = 2, Shx = 3 }
 
   interface FontFaceProps {
@@ -568,12 +587,14 @@ export declare namespace IModelJsNative {
     public getCurrentChangeset(): ChangesetIndexAndId;
     public getCurrentTxnId(): TxnIdString;
     public getECClassMetaData(schema: string, className: string): ErrorStatusOrResult<IModelStatus, string>;
+    public executeSql(sql: string): DbResult;
     public getFilePath(): string; // full path of the DgnDb file
     public getGeoCoordinatesFromIModelCoordinates(points: GeoCoordinatesRequestProps): GeoCoordinatesResponseProps;
     public getGeometryContainment(props: object): Promise<GeometryContainmentResponseProps>;
     public getIModelCoordinatesFromGeoCoordinates(points: IModelCoordinatesRequestProps): IModelCoordinatesResponseProps;
     public getIModelId(): GuidString;
     public getIModelProps(): IModelProps;
+    public getInstance(args: InstanceArgs): { [key: string]: any };
     public getITwinId(): GuidString;
     public getLastError(): string;
     public getLastInsertRowId(): number;
@@ -726,6 +747,7 @@ export declare namespace IModelJsNative {
     public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
     public schemaSyncGetSyncDbInfo(): SchemaSyncDbInfo | undefined;
     public getFilePath(): string;
+    public getInstance(args: InstanceArgs): { [key: string]: any };
     public getSchemaProps(name: string): SchemaProps;
     public importSchema(schemaPathName: string): DbResult;
     public isOpen(): boolean;
@@ -747,7 +769,7 @@ export declare namespace IModelJsNative {
     public isOpen(): boolean;
     public closeDb(): void;
     public processChangesets(db: DgnDb, changesets: ChangesetFileProps[], rulesetId: string, filterSpatial?: boolean, wantParents?: boolean, wantPropertyChecksums?: boolean, rulesetDir?: string, tempDir?: string, wantChunkTraversal?: boolean): DbResult;
-    public processChangesetsAndRoll(dbFilename: string, dbGuid: string, changesets: ChangesetFileProps[], rulesetId: string, filterSpatial?: boolean, wantParents?: boolean, wantPropertyChecksums?: boolean, rulesetDir?: string, tempDir?: string, wantRelationshipCaching?: boolean, relationshipCacheSize?: number, wantChunkTraversal?: boolean): DbResult;
+    public processChangesetsAndRoll(dbFilename: string, dbGuid: string, changesets: ChangesetFileProps[], rulesetId: string, filterSpatial?: boolean, wantParents?: boolean, wantPropertyChecksums?: boolean, rulesetDir?: string, tempDir?: string, wantRelationshipCaching?: boolean, relationshipCacheSize?: number, wantChunkTraversal?: boolean, wantBoundingBoxes?: boolean): DbResult;
     public getChangedElements(startChangesetId: string, endChangesetId: string): ErrorStatusOrResult<IModelStatus, any>;
     public isProcessed(changesetId: string): boolean;
     public cleanCaches(): void;
