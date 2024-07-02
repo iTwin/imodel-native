@@ -180,7 +180,7 @@ BeJsValue RowRender::GetInstanceJsonObject(ECInstanceKeyCR instanceKey, IECSqlRo
     }
     auto& rowsDoc = ClearAndGetCachedJsonDocument();
     BeJsValue row(rowsDoc);
-    QueryJsonAdaptor adaptor(m_conn);
+    ECSqlRowAdaptor adaptor(m_conn);
     adaptor.UseJsNames(param.GetUseJsName());
     adaptor.SetAbbreviateBlobs(param.GetAbbreviateBlobs());
     adaptor.SetConvertClassIdsToClassNames(param.GetClassIdToClassNames());
@@ -201,7 +201,7 @@ BeJsValue RowRender::GetPropertyJsonValue(ECInstanceKeyCR instanceKey, Utf8Strin
     auto& rowsDoc = ClearAndGetCachedJsonDocument();
     BeJsValue row(rowsDoc);
     auto out = row["$"];
-    QueryJsonAdaptor adaptor(m_conn);
+    ECSqlRowAdaptor adaptor(m_conn);
     adaptor.UseJsNames(param.GetUseJsName());
     adaptor.SetAbbreviateBlobs(param.GetAbbreviateBlobs());
     adaptor.SetConvertClassIdsToClassNames(param.GetClassIdToClassNames());
