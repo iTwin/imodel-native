@@ -1047,17 +1047,22 @@ TEST_F(JsonUpdaterTests, UpdateStructPropertyToNull)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
     }
 
-    ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "TestClass");
-    ASSERT_TRUE(testClass != nullptr);
-    EXPECT_EQ(JsonValue("[{\"IntProp\":15,\"ClassProp\":{\"MyStructNumber\":17}}]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT IntProp,ClassProp FROM ts.TestClass WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str()).c_str()));
+    // Check for correct ClassProp value to be stored
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT IntProp,ClassProp FROM ts.TestClass WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
+    EXPECT_EQ(JsonValue("[{\"IntProp\":15,\"ClassProp\":{\"MyStructNumber\":17}}]"), GetHelper().ExecutePreparedECSql(stmt));
 
     // Update test instance
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "TestClass");
+    ASSERT_TRUE(testClass != nullptr);
     JsonUpdater updater(m_ecdb, *testClass, nullptr);
     ASSERT_TRUE(updater.IsValid());
     ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetInstanceId(), JsonValue("{\"IntProp\": 6, \"ClassProp\": null}").m_value));
 
     // Check for ClassProp to not exist (be null)
-    EXPECT_EQ(JsonValue("[{\"IntProp\":6}]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT IntProp,ClassProp FROM ts.TestClass WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str()).c_str()));
+    stmt.Reset();
+    EXPECT_EQ(JsonValue("[{\"IntProp\":6}]"), GetHelper().ExecutePreparedECSql(stmt));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1091,17 +1096,22 @@ TEST_F(JsonUpdaterTests, UpdateArrayPropertyToNull)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
     }
 
-    ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "TestClass");
-    ASSERT_TRUE(testClass != nullptr);
-    EXPECT_EQ(JsonValue("[{\"IntProp\":15,\"ArrBoolProp\":[true, false],\"ArrStructProp\":[{\"DeepNumber\":17},{\"DeepNumber\":5},{\"DeepNumber\":12}]}]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT IntProp,ArrBoolProp,ArrStructProp FROM ts.TestClass WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str()).c_str()));
+    // Check for correct ArrBoolProp and ArrStructProp values to be stored
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT IntProp,ArrBoolProp,ArrStructProp FROM ts.TestClass WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
+    EXPECT_EQ(JsonValue("[{\"IntProp\":15,\"ArrBoolProp\":[true, false],\"ArrStructProp\":[{\"DeepNumber\":17},{\"DeepNumber\":5},{\"DeepNumber\":12}]}]"), GetHelper().ExecutePreparedECSql(stmt));
 
     // Update test instance
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "TestClass");
+    ASSERT_TRUE(testClass != nullptr);
     JsonUpdater updater(m_ecdb, *testClass, nullptr);
     ASSERT_TRUE(updater.IsValid());
     ASSERT_EQ(BE_SQLITE_OK, updater.Update(key.GetInstanceId(), JsonValue("{\"IntProp\":6,\"ArrBoolProp\": null, \"ArrStructProp\": null}").m_value));
 
     // Check for ArrBoolProp and ArrStructProp to not exist (be null)
-    EXPECT_EQ(JsonValue("[{\"IntProp\":6}]"), GetHelper().ExecuteSelectECSql(Utf8PrintfString("SELECT IntProp,ArrBoolProp,ArrStructProp FROM ts.TestClass WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str()).c_str()));
+    stmt.Reset();
+    EXPECT_EQ(JsonValue("[{\"IntProp\":6}]"), GetHelper().ExecutePreparedECSql(stmt));
     }
 
 END_ECDBUNITTESTS_NAMESPACE
