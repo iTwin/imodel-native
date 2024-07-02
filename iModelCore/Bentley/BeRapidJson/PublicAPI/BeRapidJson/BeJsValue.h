@@ -347,7 +347,7 @@ public:
     // compare this value to another for equality, using 0 for tolerances
     bool isExactEqual(BeJsConst other) const { return isAlmostEqual(other, 0, 0); }
     // compare this value to another for equality, with absolute and relative tolerances on numeric values
-    bool isAlmostEqual(BeJsConst other, double absTol = 1.0e-15, double relTol = 1.0e-15) const;
+    bool isAlmostEqual(BeJsConst other, double absTol = 1.0e-15, double relTol = 1.0e-15, std::vector<Utf8CP> ignoreProperties = {}) const;
     // compare two doubles for equality, with absolute and relative tolerances
     static bool areAlmostEqual(double a, double b, double absTol, double relTol) {
         if (a == b)
@@ -936,7 +936,7 @@ public:
         }
 };
 
-inline bool BeJsConst::isAlmostEqual(BeJsConst other, double absTol, double relTol) const {
+inline bool BeJsConst::isAlmostEqual(BeJsConst other, double absTol, double relTol, std::vector<Utf8CP> ignoreProperties) const {
     if (isNull())
         return other.isNull();
     if (isBool())
@@ -958,12 +958,16 @@ inline bool BeJsConst::isAlmostEqual(BeJsConst other, double absTol, double relT
     if (isArray()) {
         return other.isArray() &&
                (size() == other.size()) &&
-               (false == ForEachArrayMember([&](ArrayIndex i, BeJsConst member) { return !member.isAlmostEqual(other[i], absTol, relTol); }));
+               (false == ForEachArrayMember([&](ArrayIndex i, BeJsConst member) { return !member.isAlmostEqual(other[i], absTol, relTol, ignoreProperties); }));
     }
     if (isObject()) {
         return other.isObject() &&
                (size() == other.size()) &&
-               (false == ForEachProperty([&](Utf8CP name, BeJsConst member) { return !member.isAlmostEqual(other[name], absTol, relTol); }));
+               (false == ForEachProperty([&](Utf8CP name, BeJsConst member) { 
+                    return std::find_if(ignoreProperties.begin(), ignoreProperties.end(), [&](Utf8CP ignoredName) { return std::strcmp(ignoredName, name) == 0; }) == ignoreProperties.end() 
+                        ? !member.isAlmostEqual(other[name], absTol, relTol, ignoreProperties)
+                        : false; 
+                }));
     }
     return false;
 }

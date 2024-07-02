@@ -80,17 +80,6 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
-struct ECSqlStatementRow : public IECSqlRow {
-    private:
-    ECSqlStatementCR m_stmt;
-    public:
-        ECSqlStatementRow(ECSqlStatement const& stmt):m_stmt(stmt){}
-        virtual int GetColumnCount() const override { return m_stmt.GetColumnCount(); }
-        virtual IECSqlValue const& GetValue(int columnIndex) const override { return m_stmt.GetValue(columnIndex);}
-};
-//=======================================================================================
-//! @bsiclass
-//=======================================================================================
 struct QueryAdaptorCache final {
     const static uint32_t kDefaultCacheSize =40;
     private:
