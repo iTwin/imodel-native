@@ -960,10 +960,10 @@ TEST_F(RelationshipMappingTestFixture, FKRelsWithDifferentNotNullConstraintsWith
         <ECEntityClass typeName="SealedEntity1" modifier="Sealed">
             <BaseClass>BaseTPHNonShared</BaseClass>
             <ECProperty propertyName="PropSealedEntity1" typeName="string" />
-            <ECNavigationProperty propertyName="NavProp" relationshipName="SealedEntity2RefersToMaterial" direction="Backward" />
+            <ECNavigationProperty propertyName="NavProp" relationshipName="MaterialOwnsSealedEntity1" direction="Backward" />
         </ECEntityClass>
 
-        <ECRelationshipClass typeName="SealedEntity2RefersToMaterial" strength="referencing" modifier="Sealed">
+        <ECRelationshipClass typeName="MaterialOwnsSealedEntity1" strength="referencing" modifier="Sealed">
             <Source multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="false">
                 <Class class="BaseTPHNonShared"/>
             </Source>
@@ -975,10 +975,10 @@ TEST_F(RelationshipMappingTestFixture, FKRelsWithDifferentNotNullConstraintsWith
         <ECEntityClass typeName="SealedEntity2" modifier="Sealed">
             <BaseClass>BaseTPHNonShared</BaseClass>
             <ECProperty propertyName="PropSealedEntity2" typeName="string" />
-            <ECNavigationProperty propertyName="NavProp" relationshipName="MaterialOwnsSealedEntity1" direction="Backward" />
+            <ECNavigationProperty propertyName="NavProp" relationshipName="SealedEntity2RefersToMaterial" direction="Backward" />
         </ECEntityClass>
 
-        <ECRelationshipClass typeName="MaterialOwnsSealedEntity1" strength="embedding" modifier="Sealed">
+        <ECRelationshipClass typeName="SealedEntity2RefersToMaterial" strength="embedding" modifier="Sealed">
             <Source multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="false">
                 <Class class="BaseTPHNonShared"/>
             </Source>
