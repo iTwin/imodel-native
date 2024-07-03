@@ -28,16 +28,16 @@ struct InstanceReader final {
             bool m_useJsName:3;
             bool m_indent:4;
         public:
-            JsonParams():m_abbreviateBlobs(true),m_classIdToClassNames(false), m_useJsName(false), m_indent(false){}
-            bool GetAbbreviateBlobs() const { return m_abbreviateBlobs;}
-            bool GetClassIdToClassNames() const {return m_classIdToClassNames;}
-            bool GetUseJsName() const {return m_useJsName; }
-            bool GetIndent() const {return m_indent;}
-            JsonParams& SetAbbreviateBlobs(bool v){ m_abbreviateBlobs = v; return *this; }
-            JsonParams& SetClassIdToClassNames(bool v){ m_classIdToClassNames = v; return *this; }
-            JsonParams& SetUseJsName(bool v){ m_useJsName = v; return *this; }
-            JsonParams& SetIndent(bool v){ m_indent = v; return *this; }
-            bool operator == (JsonParams const& rhs) const{
+            JsonParams() : m_abbreviateBlobs(true), m_classIdToClassNames(false), m_useJsName(false), m_indent(false) {}
+            bool GetAbbreviateBlobs() const { return m_abbreviateBlobs; }
+            bool GetClassIdToClassNames() const { return m_classIdToClassNames; }
+            bool GetUseJsName() const { return m_useJsName; }
+            bool GetIndent() const { return m_indent; }
+            JsonParams& SetAbbreviateBlobs(bool v) { m_abbreviateBlobs = v; return *this; }
+            JsonParams& SetClassIdToClassNames(bool v) { m_classIdToClassNames = v; return *this; }
+            JsonParams& SetUseJsName(bool v) { m_useJsName = v; return *this; }
+            JsonParams& SetIndent(bool v) { m_indent = v; return *this; }
+            bool operator == (JsonParams const& rhs) const {
                 if (this == &rhs) {
                     return true;
                 }

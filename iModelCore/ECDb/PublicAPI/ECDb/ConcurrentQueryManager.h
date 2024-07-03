@@ -60,8 +60,8 @@ struct QueryQuota final {
 struct QueryRequest {
     using Ptr = std::unique_ptr<QueryRequest>;
     enum class Kind {
-        BlobIO=0,
-        ECSql=1,
+        BlobIO = 0,
+        ECSql = 1,
     };
     private:
         static constexpr auto JQuota = "quota";
@@ -152,18 +152,18 @@ class ECSqlParams final {
     class ECSqlParam final {
         public:
             enum class Type {
-                Boolean=0,
-                Double=1,
-                Id=2,
-                IdSet=3,
-                Integer=4,
-                Long=5,
-                Null=6,
-                Point2d=7,
-                Point3d=8,
-                String=9,
-                Blob=10,
-                Struct=11,
+                Boolean = 0,
+                Double = 1,
+                Id = 2,
+                IdSet = 3,
+                Integer = 4,
+                Long = 5,
+                Null = 6,
+                Point2d = 7,
+                Point3d = 8,
+                String = 9,
+                Blob = 10,
+                Struct = 11,
             };
         private:
             static constexpr auto Jx = "x";
@@ -260,7 +260,7 @@ struct ECSqlRequest : public QueryRequest{
     using Ptr = std::unique_ptr<ECSqlRequest>;
     enum class ECSqlValueFormat {
         ECSqlNames = 0,
-        JsNames = 1
+        JsNames = 1,
     };
     private:
         static constexpr auto JQuery = "query";
@@ -318,9 +318,9 @@ struct ECSqlRequest : public QueryRequest{
 struct QueryResponse : std::enable_shared_from_this<QueryResponse> {
     using Ptr = std::shared_ptr<QueryResponse>;
     enum class Kind {
-        BlobIO=0,
-        ECSql=1,
-        NoResult=2,
+        BlobIO = 0,
+        ECSql = 1,
+        NoResult = 2,
     };
     struct Future final {
         struct Impl; //std::future not compitable with /clr
