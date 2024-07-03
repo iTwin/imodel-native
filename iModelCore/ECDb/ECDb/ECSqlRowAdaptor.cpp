@@ -11,7 +11,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus QueryJsonAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& stmt, bool asArray) const {
+BentleyStatus ECSqlRowAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& stmt, bool asArray) const {
     if (asArray) {
         rowJson.SetEmptyArray();
         const int count = stmt.GetColumnCount();
@@ -81,14 +81,14 @@ BentleyStatus QueryJsonAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& st
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus QueryJsonAdaptor::RenderRootProperty(BeJsValue out, IECSqlValue const& in) const {
+BentleyStatus ECSqlRowAdaptor::RenderRootProperty(BeJsValue out, IECSqlValue const& in) const {
     return RenderProperty(out, in);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus QueryJsonAdaptor::RenderProperty(BeJsValue out, IECSqlValue const& in) const {
+BentleyStatus ECSqlRowAdaptor::RenderProperty(BeJsValue out, IECSqlValue const& in) const {
     auto prop = in.GetColumnInfo().GetProperty();
     if (prop == nullptr) {
         BeAssert(false && "property is null");
@@ -110,7 +110,7 @@ BentleyStatus QueryJsonAdaptor::RenderProperty(BeJsValue out, IECSqlValue const&
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus QueryJsonAdaptor::RenderPrimitiveProperty(BeJsValue out, IECSqlValue const& in, ECN::PrimitiveType const* type) const {
+BentleyStatus ECSqlRowAdaptor::RenderPrimitiveProperty(BeJsValue out, IECSqlValue const& in, ECN::PrimitiveType const* type) const {
     ECN::PrimitiveECPropertyCP prop = nullptr;
     ECN::PrimitiveType propType = Enum::FromInt<ECN::PrimitiveType>(0);
     if (type != nullptr) {
@@ -166,7 +166,7 @@ BentleyStatus QueryJsonAdaptor::RenderPrimitiveProperty(BeJsValue out, IECSqlVal
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus QueryJsonAdaptor::RenderLong(BeJsValue out, IECSqlValue const& in, ECN::PrimitiveECPropertyCP prop) const {
+BentleyStatus ECSqlRowAdaptor::RenderLong(BeJsValue out, IECSqlValue const& in, ECN::PrimitiveECPropertyCP prop) const {
     if (prop != nullptr) {
         const auto id = in.GetId<ECN::ECClassId>();
         const auto extendTypeId = ExtendedTypeHelper::GetExtendedType(prop->GetExtendedTypeName());
@@ -199,7 +199,7 @@ BentleyStatus QueryJsonAdaptor::RenderLong(BeJsValue out, IECSqlValue const& in,
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus QueryJsonAdaptor::RenderPoint3d(BeJsValue out, IECSqlValue const& in) const {
+BentleyStatus ECSqlRowAdaptor::RenderPoint3d(BeJsValue out, IECSqlValue const& in) const {
     const auto pt = in.GetPoint3d();
     out.SetEmptyObject();
     if (m_useJsName) {
@@ -216,7 +216,7 @@ BentleyStatus QueryJsonAdaptor::RenderPoint3d(BeJsValue out, IECSqlValue const& 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus QueryJsonAdaptor::RenderPoint2d(BeJsValue out, IECSqlValue const& in) const {
+BentleyStatus ECSqlRowAdaptor::RenderPoint2d(BeJsValue out, IECSqlValue const& in) const {
     const auto pt = in.GetPoint2d();
     out.SetEmptyObject();
     if (m_useJsName) {
@@ -231,7 +231,7 @@ BentleyStatus QueryJsonAdaptor::RenderPoint2d(BeJsValue out, IECSqlValue const& 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus QueryJsonAdaptor::RenderGeometryProperty(BeJsValue out, IECSqlValue const& in) const {
+BentleyStatus ECSqlRowAdaptor::RenderGeometryProperty(BeJsValue out, IECSqlValue const& in) const {
     IGeometryPtr geom = in.GetGeometry();
     if (geom == nullptr)
         return ERROR;
@@ -250,7 +250,7 @@ BentleyStatus QueryJsonAdaptor::RenderGeometryProperty(BeJsValue out, IECSqlValu
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus QueryJsonAdaptor::RenderBinaryProperty(BeJsValue out, IECSqlValue const& in) const {
+BentleyStatus ECSqlRowAdaptor::RenderBinaryProperty(BeJsValue out, IECSqlValue const& in) const {
     bool isGuid = false;
     if (in.GetColumnInfo().GetProperty() != nullptr) {
         const auto prop = in.GetColumnInfo().GetProperty()->GetAsPrimitiveProperty();
@@ -280,7 +280,7 @@ BentleyStatus QueryJsonAdaptor::RenderBinaryProperty(BeJsValue out, IECSqlValue 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus QueryJsonAdaptor::RenderNavigationProperty(BeJsValue out, IECSqlValue const& in) const {
+BentleyStatus ECSqlRowAdaptor::RenderNavigationProperty(BeJsValue out, IECSqlValue const& in) const {
     out.SetEmptyObject();
     const auto jsId = m_useJsName ? ECN::ECJsonSystemNames::Navigation::Id() : ECDBSYS_PROP_NavPropId;
     const auto jsClassId = m_useJsName ? ECN::ECJsonSystemNames::Navigation::RelClassName() : ECDBSYS_PROP_NavPropRelECClassId;
@@ -306,7 +306,7 @@ BentleyStatus QueryJsonAdaptor::RenderNavigationProperty(BeJsValue out, IECSqlVa
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus QueryJsonAdaptor::RenderStructProperty(BeJsValue out, IECSqlValue const& in) const {
+BentleyStatus ECSqlRowAdaptor::RenderStructProperty(BeJsValue out, IECSqlValue const& in) const {
     out.SetEmptyObject();
     for (IECSqlValue const& structMemberValue : in.GetStructIterable()) {
         if (structMemberValue.IsNull())
@@ -328,7 +328,7 @@ BentleyStatus QueryJsonAdaptor::RenderStructProperty(BeJsValue out, IECSqlValue 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus QueryJsonAdaptor::RenderPrimitiveArrayProperty(BeJsValue out, IECSqlValue const& in) const {
+BentleyStatus ECSqlRowAdaptor::RenderPrimitiveArrayProperty(BeJsValue out, IECSqlValue const& in) const {
     out.SetEmptyArray();
     auto elementType  = in.GetColumnInfo().GetProperty()->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
     for (IECSqlValue const& arrayElementValue : in.GetArrayIterable()) {
@@ -343,7 +343,7 @@ BentleyStatus QueryJsonAdaptor::RenderPrimitiveArrayProperty(BeJsValue out, IECS
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BentleyStatus QueryJsonAdaptor::RenderStructArrayProperty(BeJsValue out, IECSqlValue const& in) const {
+BentleyStatus ECSqlRowAdaptor::RenderStructArrayProperty(BeJsValue out, IECSqlValue const& in) const {
     out.SetEmptyArray();
     for (IECSqlValue const& arrayElementValue : in.GetArrayIterable()) {
         if (arrayElementValue.IsNull())
@@ -357,7 +357,7 @@ BentleyStatus QueryJsonAdaptor::RenderStructArrayProperty(BeJsValue out, IECSqlV
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void QueryJsonAdaptor::GetMetaData(QueryProperty::List& list, ECSqlStatement const& stmt) const {
+void ECSqlRowAdaptor::GetMetaData(ECSqlRowProperty::List& list, ECSqlStatement const& stmt) const {
     const int count = stmt.GetColumnCount();
     using ExtendedType = ExtendedTypeHelper::ExtendedType;
     std::map<std::string, int> uniqueJsMembers;

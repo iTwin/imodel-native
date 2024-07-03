@@ -153,7 +153,7 @@ On the other hand, the following query makes `Foo` optional by adding `?` at the
 * Add support for RIGHT/FULL join.
   * Example: `SELECT $->name FROM meta.ECClassDef ECSQLOPTIONS enable_experimental_features`.
 
-## `8/9/2023`: Truncate BLob to {bytes:####} instead of a single byte via QueryJsonAdaptor
+## `8/9/2023`: Truncate BLob to {bytes:####} instead of a single byte via ECSqlRowAdaptor
 
 * This effect instance access and concurrent query.
 

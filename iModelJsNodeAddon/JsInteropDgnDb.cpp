@@ -1149,7 +1149,7 @@ void JsInterop::GetIModelProps(BeJsValue val, DgnDbCR dgndb) {
     auto rootSubject = dgndb.Elements().GetRootSubject();
     if (rootSubject.IsValid()) {
         auto subject = val[json_rootSubject()];
-        subject[json_name()] = rootSubject->GetCode().GetValueUtf8CP();
+        subject[json_name()] =  rootSubject->GetCode().IsEmpty() ? "" : rootSubject->GetCode().GetValueUtf8CP();
         auto descr = rootSubject->GetDescription();
         if (!descr.empty())
             subject[json_description()] = descr;
