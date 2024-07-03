@@ -188,7 +188,6 @@ describe("ECSqlStatement", () => {
     stmt.clearBindings();
     stmt.dispose();
 
-    // TODO: Update the test to verify the class name conversion when the convertClassIdsToClassNames option is set to true/false
     stmt.prepare(db, "SELECT ECInstanceId, ECClassId, B0 FROM test.Foo WHERE ECInstanceId=?");
     stmt.getBinder(1).bindId(id);
     assert.equal(stmt.step(), DbResult.BE_SQLITE_ROW);
@@ -202,7 +201,7 @@ describe("ECSqlStatement", () => {
       const resp = stmt.toRow(args);
       const row = formatCurrentRow(resp, args.rowFormat);
       assert.equal(row.id, id);
-      assert.equal(row.className, "Test.Foo");
+      assert.equal(row.className, "0x58");
       assert.equal(row.b0, boolVal);
     }
 
@@ -243,7 +242,7 @@ describe("ECSqlStatement", () => {
     }
 
     {
-      const args = { abbreviateBlobs: false, convertClassIdsToClassNames: false, rowFormat: QueryRowFormat.UseJsPropertyNames, includeMetaData: true };
+      const args = { abbreviateBlobs: false, convertClassIdsToClassNames: true, rowFormat: QueryRowFormat.UseJsPropertyNames, includeMetaData: true };
       const resp = stmt.toRow(args);
       const row = formatCurrentRow(resp, args.rowFormat);
       assert.equal(row.id, id);
@@ -291,7 +290,7 @@ describe("ECSqlStatement", () => {
       const expectedResp = {
         data: ["0x1", "Test.Foo", true],
       };
-      const args = { abbreviateBlobs: false, convertClassIdsToClassNames: false, rowFormat: QueryRowFormat.UseJsPropertyNames, includeMetaData: false };
+      const args = { abbreviateBlobs: false, convertClassIdsToClassNames: true, rowFormat: QueryRowFormat.UseJsPropertyNames, includeMetaData: false };
       const resp = stmt.toRow(args);
       assert.deepEqual(resp, expectedResp);
     }

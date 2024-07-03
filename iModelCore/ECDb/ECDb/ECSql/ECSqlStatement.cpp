@@ -126,7 +126,7 @@ IECSqlValue const& ECSqlStatement::GetValue(int columnIndex) const
 //---------------------------------------------------------------------------------------
 BentleyStatus ECSqlStatement::ToRow(BeJsValue outJson, bool abbreviateBlobs, bool classIdToClassNames, bool useJsName, bool includeMetaData) const
     {
-    QueryJsonAdaptor adaptor(*this->GetECDb());
+    ECSqlRowAdaptor adaptor(*this->GetECDb());
     adaptor.SetAbbreviateBlobs(abbreviateBlobs);
     adaptor.SetConvertClassIdsToClassNames(classIdToClassNames);
     adaptor.UseJsNames(useJsName);
@@ -136,7 +136,7 @@ BentleyStatus ECSqlStatement::ToRow(BeJsValue outJson, bool abbreviateBlobs, boo
         return BentleyStatus::ERROR;
     } else {
         if (includeMetaData) {
-            QueryProperty::List props;
+            ECSqlRowProperty::List props;
             adaptor.GetMetaData(props, *this);
             BeJsValue metaJson = outJson["meta"];
             props.ToJs(metaJson);
