@@ -11834,9 +11834,9 @@ TEST_F(ECSqlStatementTestFixture, UpdateToNullBinding)
 
     //*** Update all values to null
     {
-    SqlPrintfString insertEcsql("INSERT INTO ts.TestClass (p2d, st, array_i) VALUES (?,?,?)");
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (p2d, st, array_i) VALUES (?,?,?)");
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.GetUtf8CP())) << insertEcsql.GetUtf8CP();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
     stmt.BindPoint2d(1, p2d);
     auto& st = stmt.GetBinder(2);
     st["p2d"].BindPoint2d(st_p2d);
@@ -11848,8 +11848,8 @@ TEST_F(ECSqlStatementTestFixture, UpdateToNullBinding)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
     stmt.Finalize();
 
-    SqlPrintfString updateEcsql("UPDATE ONLY ts.TestClass SET p2d=?, st=?, array_i=? WHERE ECInstanceId=?", key.GetInstanceId().ToString().c_str());
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.GetUtf8CP())) << updateEcsql.GetUtf8CP();
+    Utf8String updateEcsql("UPDATE ONLY ts.TestClass SET p2d=?, st=?, array_i=? WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.c_str())) << updateEcsql.c_str();
     for (int i = 1; i <= 3; ++i)
         {
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindNull(i));
@@ -11859,8 +11859,8 @@ TEST_F(ECSqlStatementTestFixture, UpdateToNullBinding)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
     stmt.Finalize();
 
-    SqlPrintfString selectEcsql("SELECT p2d, p2d.X, p2d.Y, st, array_i FROM ts.TestClass WHERE ECInstanceId=?");
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.GetUtf8CP())) << selectEcsql.GetUtf8CP();
+    Utf8String selectEcsql("SELECT p2d, p2d.X, p2d.Y, st, array_i FROM ts.TestClass WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.c_str())) << selectEcsql.c_str();
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
     for (int i = 0; i < stmt.GetColumnCount(); ++i)
@@ -11884,17 +11884,17 @@ TEST_F(ECSqlStatementTestFixture, UpdateToNullBinding)
 
     //*** Update array to contain two null elements
     {
-    SqlPrintfString insertEcsql("INSERT INTO ts.TestClass (array_i) VALUES (?)");
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (array_i) VALUES (?)");
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.GetUtf8CP())) << insertEcsql.GetUtf8CP();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
     stmt.GetBinder(1).AddArrayElement().BindInt(i);
 
     ECInstanceKey key;
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
     stmt.Finalize();
 
-    SqlPrintfString updateEcsql("UPDATE ONLY ts.TestClass SET array_i=? WHERE ECInstanceId=?");
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.GetUtf8CP())) << updateEcsql.GetUtf8CP();
+    Utf8String updateEcsql("UPDATE ONLY ts.TestClass SET array_i=? WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.c_str())) << updateEcsql.c_str();
     IECSqlBinder& arrayBinder = stmt.GetBinder(1);
     ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindNull());
     ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindNull());
@@ -11903,8 +11903,8 @@ TEST_F(ECSqlStatementTestFixture, UpdateToNullBinding)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
     stmt.Finalize();
 
-    SqlPrintfString selectEcsql("SELECT array_i FROM ts.TestClass WHERE ECInstanceId=?");
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.GetUtf8CP())) << selectEcsql.GetUtf8CP();
+    Utf8String selectEcsql("SELECT array_i FROM ts.TestClass WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.c_str())) << selectEcsql.c_str();
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
 
@@ -11927,9 +11927,9 @@ TEST_F(ECSqlStatementTestFixture, UpdateToNullBinding)
 
     // Update points to be partially unset
     {
-    SqlPrintfString insertEcsql("INSERT INTO ts.TestClass (p2d, st) VALUES (?,?)");
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (p2d, st) VALUES (?,?)");
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.GetUtf8CP())) << insertEcsql.GetUtf8CP();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
     stmt.BindPoint2d(1, p2d);
     auto& st = stmt.GetBinder(2);
     st["p2d"].BindPoint2d(st_p2d);
@@ -11938,8 +11938,8 @@ TEST_F(ECSqlStatementTestFixture, UpdateToNullBinding)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
     stmt.Finalize();
 
-    SqlPrintfString updateEcsql("UPDATE ONLY ts.TestClass SET p2d.X=?, st.p2d.X=? WHERE ECInstanceId=?");
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.GetUtf8CP())) << updateEcsql.GetUtf8CP();
+    Utf8String updateEcsql("UPDATE ONLY ts.TestClass SET p2d.X=?, st.p2d.X=? WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.c_str())) << updateEcsql.c_str();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindNull(1));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindNull(2));
@@ -11948,8 +11948,8 @@ TEST_F(ECSqlStatementTestFixture, UpdateToNullBinding)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
     stmt.Finalize();
 
-    SqlPrintfString selectEcsql("SELECT p2d, p2d.X, p2d.Y, st.p2d, st.p2d.X, st.p2d.Y FROM ts.TestClass WHERE ECInstanceId=?");
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.GetUtf8CP())) << selectEcsql.GetUtf8CP();
+    Utf8String selectEcsql("SELECT p2d, p2d.X, p2d.Y, st.p2d, st.p2d.X, st.p2d.Y FROM ts.TestClass WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.c_str())) << selectEcsql.c_str();
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
 
@@ -11965,9 +11965,9 @@ TEST_F(ECSqlStatementTestFixture, UpdateToNullBinding)
 
     //*** Update nested struct to be partially unset
     {
-    SqlPrintfString insertEcsql("INSERT INTO ts.TestClass (st) VALUES (?)");
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (st) VALUES (?)");
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.GetUtf8CP())) << insertEcsql.GetUtf8CP();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
     auto& st = stmt.GetBinder(1);
     st["st"]["b"].BindBoolean(st_st_b);
     st["st"]["i"].BindBoolean(st_st_i);
@@ -11976,8 +11976,8 @@ TEST_F(ECSqlStatementTestFixture, UpdateToNullBinding)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
     stmt.Finalize();
 
-    SqlPrintfString updateEcsql("UPDATE ONLY ts.TestClass SET st=? WHERE ECInstanceId=?");
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.GetUtf8CP())) << updateEcsql.GetUtf8CP();
+    Utf8String updateEcsql("UPDATE ONLY ts.TestClass SET st=? WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.c_str())) << updateEcsql.c_str();
 
     auto& elementBinder = stmt.GetBinder(1);
     ASSERT_EQ(ECSqlStatus::Success, elementBinder["st"]["i"].BindNull()); // Set st.st.i = null
@@ -11987,8 +11987,8 @@ TEST_F(ECSqlStatementTestFixture, UpdateToNullBinding)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
     stmt.Finalize();
 
-    SqlPrintfString selectEcsql("SELECT st FROM ts.TestClass WHERE ECInstanceId=?");
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.GetUtf8CP())) << selectEcsql.GetUtf8CP();
+    Utf8String selectEcsql("SELECT st FROM ts.TestClass WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.c_str())) << selectEcsql.c_str();
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
 
@@ -12016,9 +12016,9 @@ TEST_F(ECSqlStatementTestFixture, UpdateToNullBinding)
 
     //*** Update nested struct to have all properties null
     {
-    SqlPrintfString insertEcsql("INSERT INTO ts.TestClass (st) VALUES (?)");
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (st) VALUES (?)");
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.GetUtf8CP())) << insertEcsql.GetUtf8CP();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
     auto& st = stmt.GetBinder(1);
     st["st"]["i"].BindInt(st_st_i);
     st["st"]["b"].BindBoolean(st_st_b);
@@ -12027,8 +12027,8 @@ TEST_F(ECSqlStatementTestFixture, UpdateToNullBinding)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
     stmt.Finalize();
 
-    SqlPrintfString updateEcsql("UPDATE ONLY ts.TestClass SET st.p2d=?, st.st.i=?, st.st.b=? WHERE ECInstanceId=?");
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.GetUtf8CP())) << updateEcsql.GetUtf8CP();
+    Utf8String updateEcsql("UPDATE ONLY ts.TestClass SET st.p2d=?, st.st.i=?, st.st.b=? WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.c_str())) << updateEcsql.c_str();
     ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).BindPoint2d(p2d)); // Make at least one arg in non-nested st not null.
     ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(2).BindNull());
     ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(3).BindNull());
@@ -12037,8 +12037,8 @@ TEST_F(ECSqlStatementTestFixture, UpdateToNullBinding)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
     stmt.Finalize();
 
-    SqlPrintfString selectEcsql("SELECT st FROM ts.TestClass WHERE ECInstanceId=?");
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.GetUtf8CP())) << selectEcsql.GetUtf8CP();
+    Utf8String selectEcsql("SELECT st FROM ts.TestClass WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.c_str())) << selectEcsql.c_str();
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
 
@@ -12087,9 +12087,9 @@ TEST_F(ECSqlStatementTestFixture, UpdateToNullInline)
 
     //*** Update all values to null
     {
-    SqlPrintfString insertEcsql("INSERT INTO ts.TestClass (p2d, st, array_i) VALUES (?,?,?)");
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (p2d, st, array_i) VALUES (?,?,?)");
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.GetUtf8CP())) << insertEcsql.GetUtf8CP();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
     stmt.BindPoint2d(1, p2d);
     auto& st = stmt.GetBinder(2);
     st["p2d"].BindPoint2d(st_p2d);
@@ -12130,9 +12130,9 @@ TEST_F(ECSqlStatementTestFixture, UpdateToNullInline)
 
     // Update points to be partially unset
     {
-    SqlPrintfString insertEcsql("INSERT INTO ts.TestClass (p2d, st) VALUES (?,?)");
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (p2d, st) VALUES (?,?)");
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.GetUtf8CP())) << insertEcsql.GetUtf8CP();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
     stmt.BindPoint2d(1, p2d);
     auto& st = stmt.GetBinder(2);
     st["p2d"].BindPoint2d(st_p2d);
@@ -12162,9 +12162,9 @@ TEST_F(ECSqlStatementTestFixture, UpdateToNullInline)
 
     //*** Update nested struct to be partially unset
     {
-    SqlPrintfString insertEcsql("INSERT INTO ts.TestClass (st) VALUES (?)");
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (st) VALUES (?)");
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.GetUtf8CP())) << insertEcsql.GetUtf8CP();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
     
     auto& st = stmt.GetBinder(1);
     st["st"]["b"].BindBoolean(st_st_b);
@@ -12207,9 +12207,9 @@ TEST_F(ECSqlStatementTestFixture, UpdateToNullInline)
 
     //*** Update nested struct to have all properties null
     {
-    SqlPrintfString insertEcsql("INSERT INTO ts.TestClass (st) VALUES (?)");
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (st) VALUES (?)");
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.GetUtf8CP())) << insertEcsql.GetUtf8CP();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
     
     auto& st = stmt.GetBinder(1);
     st["p2d"].BindPoint2d(p2d);
