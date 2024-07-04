@@ -60,16 +60,16 @@ struct InstanceReader final {
             Utf8CP m_accessString;
             Utf8CP m_classFullName;
         public:
-            Position(ECInstanceId instanceId,  ECN::ECClassId classId, Utf8CP accessString = nullptr):
-                m_instanceId(instanceId), m_classId(classId), m_accessString(accessString),m_classFullName(nullptr){}
+            Position(ECInstanceId instanceId, ECN::ECClassId classId, Utf8CP accessString = nullptr):
+                m_instanceId(instanceId), m_classId(classId), m_accessString(accessString), m_classFullName(nullptr) {}
             Position(ECInstanceId instanceId, Utf8CP classFullName, Utf8CP accessString = nullptr):
-                m_instanceId(instanceId), m_classFullName(classFullName), m_accessString(accessString){}
+                m_instanceId(instanceId), m_classFullName(classFullName), m_accessString(accessString) {}
             ECN::ECClassId GetClassId() const { return m_classId; }
             ECInstanceId GetInstanceId() const { return m_instanceId; }
             Utf8CP GetAccessString() const { return m_accessString; }
             Utf8CP GetClassFullName() const { return m_classFullName; }
             Position Resolve(ECN::ECClassId classId) const {
-                return Position(m_instanceId, classId, m_accessString) ;
+                return Position(m_instanceId, classId, m_accessString);
             }
     };
     using RowCallback = std::function<void(IRowContext const&)>;
