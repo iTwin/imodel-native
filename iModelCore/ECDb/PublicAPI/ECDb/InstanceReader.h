@@ -72,6 +72,16 @@ struct InstanceReader final {
                 return Position(m_instanceId, classId, m_accessString);
             }
     };
+
+    struct Options final {
+        private:
+            bool m_forceSeek:1;
+        public:
+            Options(bool forceSeek = false) : m_forceSeek(forceSeek) {}
+            bool GetForceSeek() const { return m_forceSeek; }
+            void SetForceSeek(bool v) { m_forceSeek = v; }
+    };
+
     using RowCallback = std::function<void(IRowContext const&)>;
     struct Impl;
     private:
@@ -81,7 +91,7 @@ struct InstanceReader final {
         InstanceReader& operator = (InstanceReader&) = delete;
         ECDB_EXPORT explicit InstanceReader(ECDbCR);
         ECDB_EXPORT ~InstanceReader();
-        ECDB_EXPORT bool Seek(Position const&, RowCallback) const;
+        ECDB_EXPORT bool Seek(Position const&, RowCallback, Options const& = new Options()) const;
         ECDB_EXPORT void Reset();
 };
 
