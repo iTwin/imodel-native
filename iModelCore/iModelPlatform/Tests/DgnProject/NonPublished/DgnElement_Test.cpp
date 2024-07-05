@@ -2105,8 +2105,7 @@ TEST_F(DgnElementTests, RelatedElementFromJson)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnElementTests, ToJson)
 {
-    Utf8String validJsonString(R"json(
-{
+    Utf8String validJsonString(R"json({
   "arrayOfStructs": [
     {},
     {

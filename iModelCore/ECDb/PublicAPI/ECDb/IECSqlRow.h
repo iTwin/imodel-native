@@ -16,7 +16,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlRow {
         //! @return Number of ECSQL columns in the result set
         virtual int GetColumnCount() const = 0;
 
-                //! Gets the value of the specified column.
+        //! Gets the value of the specified column.
         //! @remarks This is the generic way of getting the value of a specified column in the result set.
         //! All other GetValueXXX methods are convenience methods around GetValue.
         //! @return Value for the column

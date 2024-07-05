@@ -28,16 +28,16 @@ struct InstanceReader final {
             bool m_useJsName:3;
             bool m_indent:4;
         public:
-            JsonParams() : m_abbreviateBlobs(true), m_classIdToClassNames(false), m_useJsName(false), m_indent(false) {}
-            bool GetAbbreviateBlobs() const { return m_abbreviateBlobs; }
-            bool GetClassIdToClassNames() const { return m_classIdToClassNames; }
-            bool GetUseJsName() const { return m_useJsName; }
-            bool GetIndent() const { return m_indent; }
-            JsonParams& SetAbbreviateBlobs(bool v) { m_abbreviateBlobs = v; return *this; }
-            JsonParams& SetClassIdToClassNames(bool v) { m_classIdToClassNames = v; return *this; }
-            JsonParams& SetUseJsName(bool v) { m_useJsName = v; return *this; }
-            JsonParams& SetIndent(bool v) { m_indent = v; return *this; }
-            bool operator == (JsonParams const& rhs) const {
+            JsonParams():m_abbreviateBlobs(true),m_classIdToClassNames(false), m_useJsName(false), m_indent(false){}
+            bool GetAbbreviateBlobs() const { return m_abbreviateBlobs;}
+            bool GetClassIdToClassNames() const {return m_classIdToClassNames;}
+            bool GetUseJsName() const {return m_useJsName; }
+            bool GetIndent() const {return m_indent;}
+            JsonParams& SetAbbreviateBlobs(bool v){ m_abbreviateBlobs = v; return *this; }
+            JsonParams& SetClassIdToClassNames(bool v){ m_classIdToClassNames = v; return *this; }
+            JsonParams& SetUseJsName(bool v){ m_useJsName = v; return *this; }
+            JsonParams& SetIndent(bool v){ m_indent = v; return *this; }
+            bool operator == (JsonParams const& rhs) const{
                 if (this == &rhs) {
                     return true;
                 }
@@ -72,6 +72,16 @@ struct InstanceReader final {
                 return Position(m_instanceId, classId, m_accessString) ;
             }
     };
+
+    struct Options {
+        private:
+            bool m_forceSeek:1;
+        public:
+            Options() : m_forceSeek(false) {}
+            bool GetForceSeek() const { return m_forceSeek; }
+            void SetForceSeek(bool v) { m_forceSeek = v; }
+    };
+
     using RowCallback = std::function<void(IRowContext const&)>;
     struct Impl;
     private:
@@ -81,7 +91,7 @@ struct InstanceReader final {
         InstanceReader& operator = (InstanceReader&) = delete;
         ECDB_EXPORT explicit InstanceReader(ECDbCR);
         ECDB_EXPORT ~InstanceReader();
-        ECDB_EXPORT bool Seek(Position const&, RowCallback) const;
+        ECDB_EXPORT bool Seek(Position const&, RowCallback, Options const& = Options()) const;
         ECDB_EXPORT void Reset();
 };
 
