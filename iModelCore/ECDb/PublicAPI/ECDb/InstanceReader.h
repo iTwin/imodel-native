@@ -28,16 +28,16 @@ struct InstanceReader final {
             bool m_useJsName:3;
             bool m_indent:4;
         public:
-            JsonParams() : m_abbreviateBlobs(true), m_classIdToClassNames(false), m_useJsName(false), m_indent(false) {}
-            bool GetAbbreviateBlobs() const { return m_abbreviateBlobs; }
-            bool GetClassIdToClassNames() const { return m_classIdToClassNames; }
-            bool GetUseJsName() const { return m_useJsName; }
-            bool GetIndent() const { return m_indent; }
-            JsonParams& SetAbbreviateBlobs(bool v) { m_abbreviateBlobs = v; return *this; }
-            JsonParams& SetClassIdToClassNames(bool v) { m_classIdToClassNames = v; return *this; }
-            JsonParams& SetUseJsName(bool v) { m_useJsName = v; return *this; }
-            JsonParams& SetIndent(bool v) { m_indent = v; return *this; }
-            bool operator == (JsonParams const& rhs) const {
+            JsonParams():m_abbreviateBlobs(true),m_classIdToClassNames(false), m_useJsName(false), m_indent(false){}
+            bool GetAbbreviateBlobs() const { return m_abbreviateBlobs;}
+            bool GetClassIdToClassNames() const {return m_classIdToClassNames;}
+            bool GetUseJsName() const {return m_useJsName; }
+            bool GetIndent() const {return m_indent;}
+            JsonParams& SetAbbreviateBlobs(bool v){ m_abbreviateBlobs = v; return *this; }
+            JsonParams& SetClassIdToClassNames(bool v){ m_classIdToClassNames = v; return *this; }
+            JsonParams& SetUseJsName(bool v){ m_useJsName = v; return *this; }
+            JsonParams& SetIndent(bool v){ m_indent = v; return *this; }
+            bool operator == (JsonParams const& rhs) const{
                 if (this == &rhs) {
                     return true;
                 }
@@ -60,16 +60,16 @@ struct InstanceReader final {
             Utf8CP m_accessString;
             Utf8CP m_classFullName;
         public:
-            Position(ECInstanceId instanceId, ECN::ECClassId classId, Utf8CP accessString = nullptr):
-                m_instanceId(instanceId), m_classId(classId), m_accessString(accessString), m_classFullName(nullptr) {}
+            Position(ECInstanceId instanceId,  ECN::ECClassId classId, Utf8CP accessString = nullptr):
+                m_instanceId(instanceId), m_classId(classId), m_accessString(accessString),m_classFullName(nullptr){}
             Position(ECInstanceId instanceId, Utf8CP classFullName, Utf8CP accessString = nullptr):
-                m_instanceId(instanceId), m_classFullName(classFullName), m_accessString(accessString) {}
+                m_instanceId(instanceId), m_classFullName(classFullName), m_accessString(accessString){}
             ECN::ECClassId GetClassId() const { return m_classId; }
             ECInstanceId GetInstanceId() const { return m_instanceId; }
             Utf8CP GetAccessString() const { return m_accessString; }
             Utf8CP GetClassFullName() const { return m_classFullName; }
             Position Resolve(ECN::ECClassId classId) const {
-                return Position(m_instanceId, classId, m_accessString);
+                return Position(m_instanceId, classId, m_accessString) ;
             }
     };
 

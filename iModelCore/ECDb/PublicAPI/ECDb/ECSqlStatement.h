@@ -768,8 +768,8 @@ private:
     BentleyStatus RenderStructArrayProperty(BeJsValue out, IECSqlValue const& in) const;
 
 public:
-    ECSqlRowAdaptor(ECDbCR ecdb) : m_ecdb(ecdb), m_abbreviateBlobs(true), m_classIdToClassNames(false), m_useJsName(false) {}
-    ECSqlRowAdaptor& SetAbbreviateBlobs(bool v) { m_abbreviateBlobs = v; return *this; }
+    ECSqlRowAdaptor(ECDbCR ecdb):m_ecdb(ecdb), m_abbreviateBlobs(true), m_classIdToClassNames(false), m_useJsName(false){}
+    ECSqlRowAdaptor& SetAbbreviateBlobs(bool v) { m_abbreviateBlobs = v; return *this;}
     ECSqlRowAdaptor& SetConvertClassIdsToClassNames(bool v) { m_classIdToClassNames = v; return *this; }
     ECSqlRowAdaptor& UseJsNames(bool v) { m_useJsName = v; return *this; }
     ECDB_EXPORT BentleyStatus RenderRow(BeJsValue rowJson, IECSqlRow const& stmt, bool asArray = true) const;

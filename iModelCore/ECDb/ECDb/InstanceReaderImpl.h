@@ -12,7 +12,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include "ECSql/ECSqlPreparedStatement.h"
 #include "ECSql/Exp.h"
-#include "ConcurrentQueryManagerImpl.h"
+#include  "ConcurrentQueryManagerImpl.h"
 #include "ECDbLogger.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -37,12 +37,12 @@ struct InstanceReader::Impl final {
                 size_t operator ()(const Entry& val) const {
                     FNV1HashBuilder builder;
                     builder.UpdateUInt64(val.m_classId.GetValue());
-                    if (val.m_accessString) builder.UpdateNoCaseAsciiCharCP(val.m_accessString);
+                    if(val.m_accessString) builder.UpdateNoCaseAsciiCharCP(val.m_accessString);
                     return static_cast<size_t>(builder.GetHashCode());
                 }
             };
-            struct NoCaseAsciiStrEqual final {
-                bool operator ()(const Entry& lhs, const Entry& rhs) const {
+            struct  NoCaseAsciiStrEqual final {
+                bool operator ()(const Entry& lhs,const Entry& rhs ) const {
                     return (lhs.m_classId == rhs.m_classId)
                         && ((lhs.m_accessString == nullptr) != (rhs.m_accessString == nullptr))
                         && (rhs.m_accessString == nullptr || BeStringUtilities::StricmpAscii(lhs.m_accessString, rhs.m_accessString) == 0);
@@ -53,7 +53,7 @@ struct InstanceReader::Impl final {
             ECDbCR m_conn;
 
         public:
-            PropertyExists(ECDbCR conn) : m_conn(conn) {}
+            PropertyExists(ECDbCR conn):m_conn(conn){}
             void Clear() const;
             void Load() const;
             bool Exists(ECN::ECClassId classId, Utf8CP accessString) const;
@@ -63,7 +63,7 @@ struct InstanceReader::Impl final {
     //! @bsiclass
     //+===============+===============+===============+===============+===============+======
     struct TableView final {
-        using Ptr = std::unique_ptr<TableView>;
+        using Ptr = std::unique_ptr<TableView> ;
 
         private:
             mutable ECSqlSelectPreparedStatement m_stmt;
@@ -77,11 +77,11 @@ struct InstanceReader::Impl final {
             static Ptr CreateLinkTableView(ECDbCR, DbTable const&, RelationshipClassLinkTableMap const&);
             static Ptr CreateEntityTableView(ECDbCR, DbTable const&, ClassMapCR);
         public:
-            explicit TableView(ECDbCR conn) : m_stmt(conn), m_ecClassIdCol(-1), m_ecSourceClassIdCol(-1), m_ecTargetClassIdCol(-1) {}
+            explicit TableView(ECDbCR conn): m_stmt(conn), m_ecClassIdCol(-1),m_ecSourceClassIdCol(-1),m_ecTargetClassIdCol(-1) {}
             TableView(TableView const&) = delete;
             TableView& operator =(TableView const&) = delete;
             Statement& GetSqliteStmt() const { return m_stmt.GetSqliteStatement(); }
-            ECSqlSelectPreparedStatement& GetECSqlStmt() const { return m_stmt; }
+            ECSqlSelectPreparedStatement& GetECSqlStmt() const { return m_stmt;}
             int GetColumnIndexOf(DbColumnId) const;
             int GetColumnIndexOf(DbColumn const& col) const { return GetColumnIndexOf(col.GetId()); }
             int GetClassIdCol() const { return m_ecClassIdCol; }
@@ -98,7 +98,7 @@ struct InstanceReader::Impl final {
     //! @bsiclass
     //+===============+===============+===============+===============+===============+======
     struct Property final {
-        using Ptr = std::unique_ptr<Property>;
+        using Ptr = std::unique_ptr<Property> ;
 
         private:
             TableView const* m_table;
@@ -107,10 +107,10 @@ struct InstanceReader::Impl final {
         public:
             Property(TableView const& table, std::unique_ptr<ECSqlField> field);
             Property(Property const&) = delete;
-            Utf8StringCR GetName() const { return m_field->GetColumnInfo().GetProperty()->GetName(); }
+            Utf8StringCR GetName() const { return m_field->GetColumnInfo().GetProperty()->GetName() ;}
             Property& operator = (Property const&) = delete;
-            const IECSqlValue& GetValue() const { return *m_field; }
-            const TableView& GetTable() const { return *m_table; }
+            const IECSqlValue& GetValue() const { return *m_field;}
+            const TableView& GetTable() const {return *m_table; }
             bool Seek(ECInstanceId rowId, ECN::ECClassId& rowClassId) const;
             static Ptr Create(TableView const&, std::unique_ptr<ECSqlField>);
             ECSqlStatus OnAfterStep() const { return m_field->OnAfterStep(); }
@@ -121,7 +121,7 @@ struct InstanceReader::Impl final {
     //! @bsiclass
     //+===============+===============+===============+===============+===============+======
     struct Class final {
-        using Ptr = std::unique_ptr<Class>;
+        using Ptr = std::unique_ptr<Class> ;
         struct Factory final {
             private:
                 static ECSqlPropertyPath GetPropertyPath (PropertyMap const&);
@@ -140,13 +140,13 @@ struct InstanceReader::Impl final {
         private:
             std::vector<TableView const*> m_tables;
             std::vector<Property::Ptr> m_properties;
-            std::map<Utf8CP, Property const*, CompareIUtf8Ascii> m_propertyMap;
+            std::map<Utf8CP,  Property const*, CompareIUtf8Ascii> m_propertyMap;
             ECN::ECClassId m_id;
 
         public:
             Class(ECN::ECClassId, std::vector<Property::Ptr>);
             Class(Class const&) = delete;
-            Class& operator = (Class const&) = delete;
+            Class& operator =(Class const&) = delete;
             IECSqlValue const& GetValue(int index) const;
             size_t GetPropertyCount() const { return m_properties.size(); }
             Property const* FindProperty(Utf8CP) const;
@@ -176,7 +176,7 @@ struct InstanceReader::Impl final {
             Document& ClearAndGetCachedJsonDocument() const;
 
         public:
-            RowRender(ECDbCR conn) : m_conn(conn), m_cachedJsonDoc(&m_allocator, 1024, &m_stackAllocator) {
+            RowRender(ECDbCR conn):m_conn(conn), m_cachedJsonDoc(&m_allocator, 1024, &m_stackAllocator){
                 m_cachedJsonDoc.SetObject();
             }
             BeJsValue GetInstanceJsonObject(ECInstanceKeyCR instanceKey, IECSqlRow const& ecsqlRow, InstanceReader::JsonParams const& param = InstanceReader::JsonParams()) const;
@@ -202,15 +202,15 @@ struct InstanceReader::Impl final {
             mutable ECN::ECClassId m_rowClassId;
 
         public:
-            explicit SeekPos(ECDbCR conn) : m_rowRender(conn), m_class(nullptr), m_prop(nullptr) {}
-            bool HasRow() const { return m_rowId.IsValid(); }
+            explicit SeekPos(ECDbCR conn):m_rowRender(conn),m_class(nullptr), m_prop(nullptr){}
+            bool HasRow() const {return m_rowId.IsValid();}
             bool Seek(ECInstanceId rowId);
             CompareResult Compare(InstanceReader::Position pos);
-            ECInstanceId GetRowId() const { return m_rowId; }
+            ECInstanceId GetRowId() const {return m_rowId;}
             virtual IECSqlValue const& GetValue(int columnIndex) const override;
             virtual int GetColumnCount() const override;
-            Class const* GetClass() const { return m_class; }
-            Property const* GetProperty() const { return m_prop; }
+            Class const* GetClass() const {return m_class;}
+            Property const* GetProperty() const { return m_prop;}
             bool IsRowOfSubType() const {
                 return !m_rowId.IsValid() ||
                        !m_rowClassId.IsValid() ||
@@ -225,7 +225,7 @@ struct InstanceReader::Impl final {
     //=======================================================================================
     //! @bsiclass
     //+===============+===============+===============+===============+===============+======
-    struct Reader final : ECDb::IECDbCacheClearListener {
+    struct Reader final :  ECDb::IECDbCacheClearListener{
         private:
             struct LastClassResolved {
                 Utf8String m_className;
@@ -248,8 +248,8 @@ struct InstanceReader::Impl final {
             bool PrepareRowSchema(ECN::ECClassId classId, Utf8CP accessString) const;
 
         public:
-            explicit Reader(ECDbCR conn) : m_conn(conn), m_seekPos(conn), m_propExists(conn) {}
-            ~Reader() {}
+            explicit Reader(ECDbCR conn):m_conn(conn),m_seekPos(conn),m_propExists(conn){}
+            ~Reader() { }
             void Clear() const;
             bool Seek(InstanceReader::Position const& position, InstanceReader::RowCallback callback, InstanceReader::Options const& options) const;
     };
@@ -259,7 +259,7 @@ struct InstanceReader::Impl final {
         InstanceReader& m_owner;
 
     public:
-        Impl(InstanceReader&, ECDbCR);
+        Impl(InstanceReader& , ECDbCR);
         ~Impl();
         bool Seek(Position const& position, RowCallback callback, InstanceReader::Options const& options) const {
             return m_reader.Seek(position, callback, options);

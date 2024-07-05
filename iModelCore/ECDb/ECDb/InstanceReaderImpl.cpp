@@ -39,7 +39,7 @@ struct ClassIdECSqlField : ECSqlField {
 
     public:
         ClassIdECSqlField(ECSqlSelectPreparedStatement& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, ECN::ECClassId classId)
-            : ECSqlField(ecsqlStatement, ecsqlColumnInfo, false, false), m_classId(classId) {}
+            :ECSqlField(ecsqlStatement, ecsqlColumnInfo, false, false), m_classId(classId){}
 };
 
 // ======================================================================================
@@ -63,7 +63,7 @@ void PropertyExists::Clear() const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+-----
-void PropertyExists::Load() const {
+void PropertyExists::Load() const{
     Clear();
     auto sql = R"x(
         SELECT
@@ -85,7 +85,7 @@ void PropertyExists::Load() const {
     std::set<Utf8CP, CompareIUtf8Ascii> props;
     std::set<ECN::ECClassId> classIds;
     Entry entry;
-    while (stmt->Step() == BE_SQLITE_ROW) {
+    while(stmt->Step() == BE_SQLITE_ROW) {
         entry.m_classId = stmt->GetValueId<ECClassId>(0);
         const auto accessString = stmt->GetValueText(1);
         if (classIds.find(entry.m_classId) == classIds.end()) {
@@ -137,7 +137,7 @@ Property const* Class::FindProperty(Utf8CP propertyName) const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlValue const& Class::GetValue(int index) const {
-    if (index < 0 ||  index >= m_properties.size()) {
+    if (index < 0 ||  index >=m_properties.size()) {
         return NoopECSqlValue::GetSingleton();
     }
     return m_properties[index]->GetValue();
@@ -146,13 +146,13 @@ IECSqlValue const& Class::GetValue(int index) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Property::Property(TableView const& table, std::unique_ptr<ECSqlField> field) :
-    m_table(&table), m_field(std::move(field)) {}
+Property::Property(TableView const& table, std::unique_ptr<ECSqlField> field):
+    m_table(&table), m_field(std::move(field)){}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-InstanceReader::Impl::Impl(InstanceReader& owner, ECDbCR ecdb) : m_reader(ecdb), m_owner(owner) {}
+InstanceReader::Impl::Impl(InstanceReader& owner, ECDbCR ecdb): m_reader(ecdb), m_owner(owner){}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -174,7 +174,7 @@ RowRender::Document& RowRender::ClearAndGetCachedJsonDocument() const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BeJsValue RowRender::GetInstanceJsonObject(ECInstanceKeyCR instanceKey, IECSqlRow const& ecsqlRow, InstanceReader::JsonParams const& param) const  {
+BeJsValue RowRender::GetInstanceJsonObject(ECInstanceKeyCR instanceKey, IECSqlRow const& ecsqlRow, InstanceReader::JsonParams const& param ) const  {
     if (instanceKey == m_instanceKey && param == m_jsonParam && m_accessString.empty() && !(m_conn.IsDbOpen() && m_conn.IsWriteable())) {
         return BeJsValue(m_cachedJsonDoc);
     }
@@ -311,7 +311,7 @@ SeekPos::CompareResult SeekPos::Compare(InstanceReader::Position pos) {
     if (m_class == nullptr) {
         return CompareResult::None;
     }
-    if (m_class->GetClassId() != pos.GetClassId()) {
+    if (m_class->GetClassId() !=  pos.GetClassId()) {
         return CompareResult::None;
     }
 
@@ -337,7 +337,7 @@ IECSqlValue const& SeekPos::GetValue(int columnIndex) const {
         return NoopECSqlValue::GetSingleton();
     }
 
-    return m_prop == nullptr ? m_class->GetValue(columnIndex) : m_prop->GetValue();
+    return m_prop == nullptr ? m_class->GetValue(columnIndex): m_prop->GetValue();
 }
 
 //---------------------------------------------------------------------------------------
@@ -353,7 +353,7 @@ int SeekPos::GetColumnCount() const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void SeekPos::Reset(Class const& queryClass) const {
+void SeekPos::Reset(Class const& queryClass) const{
     Reset();
     m_class = &queryClass;
 }
@@ -362,17 +362,17 @@ void SeekPos::Reset(Class const& queryClass) const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void SeekPos::Reset() const {
-    m_class = nullptr;
+    m_class =nullptr;
     m_accessString.clear();
     m_prop = nullptr;
-    m_rowId = ECInstanceId();
+    m_rowId=ECInstanceId();
     m_rowClassId = ECN::ECClassId();
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void SeekPos::Reset(Class const& queryClass, Property const& queryProp, Utf8CP accessString) const {
+void SeekPos::Reset(Class const& queryClass, Property const& queryProp, Utf8CP accessString) const{
     Reset(queryClass);
     m_prop = &queryProp;
     m_accessString.assign(accessString);
@@ -382,22 +382,22 @@ void SeekPos::Reset(Class const& queryClass, Property const& queryProp, Utf8CP a
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool Class::Seek(ECInstanceId rowId, ECN::ECClassId& rowClassId) const {
-    if (m_tables.empty()) {
+    if(m_tables.empty()) {
         return false;
     }
-    for (auto& prop : m_properties) {
+    for (auto& prop: m_properties) {
         prop->OnAfterReset();
     }
     auto it = m_tables.begin();
     if (!(*it)->Seek(rowId, &rowClassId)) {
         return false;
     }
-    while (++it != m_tables.end()) {
+    while(++it != m_tables.end()) {
         if (!(*it)->Seek(rowId)) {
             return false;
         }
     }
-    for (auto& prop : m_properties) {
+    for (auto& prop: m_properties) {
         prop->OnAfterStep();
     }
     return true;
@@ -465,7 +465,7 @@ TableView const* Reader::GetOrAddTable(DbTable const& tbl) const {
 //+---------------+---------------+---------------+---------------+---------------+------
 Class const* Reader::GetOrAddClass(ECN::ECClassCR ecClass) const {
     const auto it = m_queryClassMap.find(ecClass.GetId());
-    if (it != m_queryClassMap.end()) {
+    if (it != m_queryClassMap.end()){
         return it->second.get();
     }
     const auto classMap = m_conn.Schemas().Main().GetClassMap(ecClass);
@@ -484,7 +484,7 @@ Class const* Reader::GetOrAddClass(ECN::ECClassCR ecClass) const {
 //+---------------+---------------+---------------+---------------+---------------+------
 Class const* Reader::GetOrAddClass(ECN::ECClassId classId) const {
     const auto it = m_queryClassMap.find(classId);
-    if (it != m_queryClassMap.end()) {
+    if (it != m_queryClassMap.end()){
         return it->second.get();
     }
     const auto cl = m_conn.Schemas().GetClass(classId);
@@ -505,9 +505,9 @@ Class const* Reader::GetOrAddClass(ECN::ECClassId classId) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-std::vector<Property::Ptr> Class::Factory::Create(ClassMapCR classMap, std::function<TableView const*(DbTable const&)> getTable) {
+std::vector<Property::Ptr> Class::Factory::Create(ClassMapCR classMap, std::function<TableView const*(DbTable const&)> getTable ) {
     std::vector<Property::Ptr> queryProps;
-    for (auto& propertyMap : classMap.GetPropertyMaps()) {
+    for (auto& propertyMap : classMap.GetPropertyMaps()){
         GetTablesPropertyMapVisitor visitor(PropertyMap::Type::All);
         propertyMap->AcceptVisitor(visitor);
         DbTable const* table =  (*visitor.GetTables().begin());
@@ -526,7 +526,7 @@ std::vector<Property::Ptr> Class::Factory::Create(ClassMapCR classMap, std::func
                 queryTable->GetECSqlStmt(),
                 *propertyMap,
                 *queryTable)
-        ));
+            ));
     }
     return queryProps;
 }
@@ -536,7 +536,7 @@ std::vector<Property::Ptr> Class::Factory::Create(ClassMapCR classMap, std::func
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlPropertyPath Class::Factory::GetPropertyPath (PropertyMap const& propertyMap) {
     ECSqlPropertyPath propertyPath;
-    for (auto& part : propertyMap.GetPath()) {
+    for(auto& part : propertyMap.GetPath()){
         propertyPath.AddEntry(part->GetProperty());
     }
     return propertyPath;
@@ -590,7 +590,7 @@ std::unique_ptr<ECSqlField>  Class::Factory::CreateSystemField(ECSqlSelectPrepar
         propertyMap.IsSystem(),
         false /* = isGenerated */,
         GetPropertyPath(propertyMap),
-        ECSqlColumnInfo::RootClass(propertyMap.GetClassMap().GetClass(), "")
+        ECSqlColumnInfo:: RootClass(propertyMap.GetClassMap().GetClass(), "")
     );
 
     const auto extendedType = ExtendedTypeHelper::GetExtendedType(prim->GetExtendedTypeName());
@@ -644,7 +644,7 @@ std::unique_ptr<ECSqlField> Class::Factory::CreateStructField(ECSqlSelectPrepare
 
     auto newStructField = std::make_unique<StructECSqlField>(stmt, columnInfo);
     auto& structPropertyMap =  propertyMap.GetAs<StructPropertyMap>();
-    for (auto& memberMap : structPropertyMap) {
+    for(auto& memberMap : structPropertyMap) {
         newStructField->AppendField(CreateField(stmt, *memberMap, tbl));
     }
     return std::move(newStructField);
@@ -690,7 +690,7 @@ std::unique_ptr<ECSqlField>  Class::Factory::CreateNavigationField(ECSqlSelectPr
 
     std::unique_ptr<ECSqlField> relClassIdField;
     auto& relClassIdMap = navMap.GetRelECClassIdPropertyMap();
-    if (relClassIdMap.GetColumn().IsVirtual()) {
+    if (relClassIdMap.GetColumn().IsVirtual()){
         relClassIdField = CreateClassIdField(stmt, relClassIdMap, prim->GetRelationshipClass()->GetId(), tbl);
     } else {
         relClassIdField = CreatePrimitiveField(stmt, navMap.GetRelECClassIdPropertyMap(), tbl);
@@ -703,7 +703,7 @@ std::unique_ptr<ECSqlField>  Class::Factory::CreateNavigationField(ECSqlSelectPr
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<ECSqlField> Class::Factory::CreateArrayField(ECSqlSelectPreparedStatement& stmt, PropertyMap const& propertyMap, TableView const& tbl) {
+std::unique_ptr<ECSqlField>   Class::Factory::CreateArrayField(ECSqlSelectPreparedStatement& stmt, PropertyMap const& propertyMap, TableView const& tbl) {
     ECN::ECTypeDescriptor desc;
     const auto& prop = propertyMap.GetProperty();
     if (prop.GetIsStructArray()) {
@@ -715,7 +715,7 @@ std::unique_ptr<ECSqlField> Class::Factory::CreateArrayField(ECSqlSelectPrepared
     ECSqlColumnInfo columnInfo(
         desc,
         DateTime::Info(),
-        prop.GetIsStructArray() ? &prop.GetAsStructArrayProperty()->GetStructElementType() : nullptr,
+        prop.GetIsStructArray()? &prop.GetAsStructArrayProperty()->GetStructElementType(): nullptr,
         &propertyMap.GetProperty(),
         &propertyMap.GetProperty(),
         propertyMap.IsSystem(),
@@ -724,24 +724,24 @@ std::unique_ptr<ECSqlField> Class::Factory::CreateArrayField(ECSqlSelectPrepared
         ECSqlColumnInfo::RootClass(propertyMap.GetClassMap().GetClass(), "")
     );
     auto& primMap = propertyMap.GetAs<SingleColumnDataPropertyMap>();
-    auto nCol = tbl. GetColumnIndexOf(primMap.GetColumn());
+    auto nCol =tbl. GetColumnIndexOf(primMap.GetColumn());
     return std::make_unique<ArrayECSqlField>(stmt, columnInfo, nCol);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<ECSqlField>  Class::Factory::CreateField(ECSqlSelectPreparedStatement& stmt, PropertyMap const& propertyMap, TableView const& tbl) {
+std::unique_ptr<ECSqlField>  Class::Factory::CreateField(ECSqlSelectPreparedStatement& stmt, PropertyMap const& propertyMap, TableView const& tbl){
     const auto& prop = propertyMap.GetProperty();
     if (propertyMap.IsSystem()) {
         return CreateSystemField(stmt, propertyMap, tbl);
-    } else if (prop.GetIsPrimitive()) {
+    } else if (prop.GetIsPrimitive() ){
         return CreatePrimitiveField(stmt, propertyMap, tbl);
     } else if (prop.GetIsStruct()) {
         return CreateStructField(stmt, propertyMap, tbl);
     } else if (prop.GetIsNavigation()) {
         return CreateNavigationField(stmt, propertyMap, tbl);
-    } else if (prop.GetIsArray()) {
+    } else if(prop.GetIsArray()) {
         return CreateArrayField(stmt, propertyMap, tbl);
     }
     return nullptr;
@@ -755,7 +755,7 @@ Class::Class(ECN::ECClassId classId, std::vector<Property::Ptr> properties)
         std::set<DbTableId> tableMap;
         for (auto& prop : m_properties) {
             m_propertyMap.insert(std::make_pair(prop->GetName().c_str(), prop.get()));
-            const auto id = prop->GetTable().GetId();
+            const auto id =prop->GetTable().GetId();
             const auto it = tableMap.find(id);
             if (it != tableMap.end()) {
                 continue;
@@ -781,10 +781,10 @@ Class::Ptr Class::Create(ECDbCR conn, ClassMapCR classMap, std::function<TableVi
 //+---------------+---------------+---------------+---------------+---------------+------
 Class::Ptr Class::Create(ECDbCR conn, ECN::ECClassId classId, std::function<TableView const*(DbTable const&)> getTable) {
     auto classP = conn.Schemas().GetClass(classId);
-    if (classP == nullptr) {
+    if (classP == nullptr ) {
         return nullptr;
     }
-    if (!classP->IsEntityClass()  && !classP->IsRelationshipClass()) {
+    if (!classP->IsEntityClass()  && !classP->IsRelationshipClass()){
         return nullptr;
     }
     auto classMap = conn.Schemas().Main().GetClassMap(*classP);
@@ -858,7 +858,7 @@ TableView::Ptr TableView::CreateTableView(ECDbCR conn, DbTable const& tbl) {
     auto const& columns = tbl.GetColumns();
     int appendCount = 0;
     builder.Append("SELECT ");
-    for (auto idx = 0; idx < columns.size(); ++idx) {
+    for (auto idx= 0; idx < columns.size(); ++idx) {
         auto& col = columns[idx];
         if (col->IsVirtual()) {
             continue;
@@ -906,7 +906,7 @@ TableView::Ptr TableView::CreateLinkTableView(ECDbCR conn, DbTable const& tbl, R
     const auto targetClassIdProp = targetClassIdSysProp.GetDataPropertyMaps().front();
 
     builder.Append("SELECT ");
-    for (auto idx = 0; idx < columns.size(); ++idx) {
+    for (auto idx= 0; idx < columns.size(); ++idx) {
         auto& col = columns[idx];
         if (appendCount > 0) {
             builder.AppendComma();
@@ -1009,13 +1009,13 @@ TableView::Ptr TableView::CreateLinkTableView(ECDbCR conn, DbTable const& tbl, R
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TableView::Ptr TableView::CreateEntityTableView(ECDbCR conn, DbTable const& tbl, ClassMapCR rootMap) {
+TableView::Ptr TableView::CreateEntityTableView(ECDbCR conn, DbTable const& tbl, ClassMapCR rootMap){
     auto tableView = std::make_unique<TableView>(conn);
     NativeSqlBuilder builder;
     auto const& columns = tbl.GetColumns();
     int appendCount = 0;
     builder.Append("SELECT ");
-    for (auto idx = 0; idx < columns.size(); ++idx) {
+    for (auto idx= 0; idx < columns.size(); ++idx) {
         auto& col = columns[idx];
         if (col == &tbl.GetECClassIdColumn()) {
             if (appendCount > 0) {
@@ -1080,7 +1080,7 @@ TableView::Ptr TableView::Create(ECDbCR conn, DbTable const& tbl) {
     }
 
     const auto rootClassMap = getRootClassMap();
-    if (rootClassMap->GetClass().IsMixin() || rootClassMap->GetType() == ClassMap::Type::RelationshipEndTable) {
+    if(rootClassMap->GetClass().IsMixin() || rootClassMap->GetType() == ClassMap::Type::RelationshipEndTable) {
         //! NOT SUPPORTED
         return nullptr;
     }
@@ -1116,7 +1116,7 @@ InstanceReader::~InstanceReader() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-InstanceReader::InstanceReader(ECDbCR ecdb) : m_pImpl(new Impl(*this, ecdb)) {}
+InstanceReader::InstanceReader(ECDbCR ecdb): m_pImpl(new Impl(*this, ecdb)) {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -1158,12 +1158,12 @@ DbResult InMemoryPropertyExistMap::Build(ECDbCR ecdb, bool onlyTopLevelPropertie
     }
 
     const auto rc = onlyTopLevelProperties ?
-        stmt.Prepare(ecdb,"SELECT pp.AccessString, pm.ClassId FROM ec_PropertyMap pm JOIN ec_PropertyPath pp on pp.Id = pm.PropertyPathId WHERE instr(pp.AccessString,'.')=0") :
-        stmt.Prepare(ecdb,"SELECT pp.AccessString, pm.ClassId FROM ec_PropertyMap pm JOIN ec_PropertyPath pp on pp.Id = pm.PropertyPathId");
+        stmt.Prepare(ecdb,"SELECT pp.AccessString, pm.ClassId FROM ec_PropertyMap pm JOIN ec_PropertyPath pp on pp.Id = pm.PropertyPathId WHERE instr(pp.AccessString,'.')=0"):
+        stmt.Prepare(ecdb,"SELECT pp.AccessString, pm.ClassId FROM ec_PropertyMap pm JOIN ec_PropertyPath pp on pp.Id = pm.PropertyPathId") ;
     if (rc != BE_SQLITE_OK) {
         return rc;
     }
-    while (stmt.Step() == BE_SQLITE_ROW) {
+    while(stmt.Step() == BE_SQLITE_ROW) {
         Insert(stmt.GetValueId<ECN::ECClassId>(1), stmt.GetValueText(0));
     }
     return rc;
