@@ -989,7 +989,8 @@ Napi::Value JsInterop::GetInstance(ECDbR db, NapiInfoCR info) {
     }
 
     auto& instanceReader = db.GetInstanceReader();
-    auto options = InstanceReader::Options{true};
+    InstanceReader::Options options;
+    options.SetForceSeek(true);
     auto position = InstanceReader::Position{instanceId, classId, nullptr};
     if (serializationMethod == SerializationMethod::JsonParse) {
         Napi::Value val;
