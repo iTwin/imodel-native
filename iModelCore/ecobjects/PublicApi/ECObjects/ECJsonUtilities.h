@@ -200,7 +200,7 @@ public:
     //! @name Methods for JSON values of the JsonCpp API
     //! @{
 
-    //! Writes the fully qualified name of an ECClass into a JSON value: {schema name}.{class name}
+    //! Writes the fully qualified name of an ECClass into a JSON value: &lt;schema name&gt;.&lt;class name&gt;
     //! @param[out] json JSON value
     //! @param[in] ecClass ECClass
     //! @return SUCCESS or ERROR

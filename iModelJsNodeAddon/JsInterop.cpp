@@ -989,6 +989,8 @@ Napi::Value JsInterop::GetInstance(ECDbR db, NapiInfoCR info) {
     }
 
     auto& instanceReader = db.GetInstanceReader();
+    InstanceReader::Options options;
+    options.SetForceSeek(true);
     auto position = InstanceReader::Position{instanceId, classId, nullptr};
     if (serializationMethod == SerializationMethod::JsonParse) {
         Napi::Value val;
@@ -1001,7 +1003,8 @@ Napi::Value JsInterop::GetInstance(ECDbR db, NapiInfoCR info) {
                 auto parse = Env().Global().Get("JSON").As<Napi::Object>().Get("parse").As<Napi::Function>();
                 auto obj = Napi::String::New(Env(), row.GetJson(params).Stringify());
                 val = parse({ obj });
-            }
+            },
+            options
         )) {
             THROW_JS_EXCEPTION("instance not found");
         }
@@ -1018,7 +1021,8 @@ Napi::Value JsInterop::GetInstance(ECDbR db, NapiInfoCR info) {
                 if (ERROR == adaptor.RenderRow(val, row, false)) {
                     THROW_JS_EXCEPTION("Failed to render instance");
                 }
-            }
+            },
+            options
         )) {
             THROW_JS_EXCEPTION("instance not found");
         }
