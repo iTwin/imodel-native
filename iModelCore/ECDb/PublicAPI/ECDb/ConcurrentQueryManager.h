@@ -260,7 +260,7 @@ struct ECSqlRequest : public QueryRequest{
     using Ptr = std::unique_ptr<ECSqlRequest>;
     enum class ECSqlValueFormat {
         ECSqlNames = 0,
-        JsNames = 1,
+        JsNames = 1
     };
     private:
         static constexpr auto JQuery = "query";

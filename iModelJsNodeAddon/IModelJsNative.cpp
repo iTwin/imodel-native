@@ -475,6 +475,7 @@ public:
         return Napi::Number::New(Env(), (int)status);
     }
 
+
     Napi::Value GetSchemaProps(NapiInfoCR info)  {
         REQUIRE_ARGUMENT_STRING(0, schemaName);
         auto schema = m_ecdb.Schemas().GetSchema(schemaName, true);
