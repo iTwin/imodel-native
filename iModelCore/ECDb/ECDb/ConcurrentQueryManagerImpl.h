@@ -4,7 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECDb/ConcurrentQueryManager.h>
-#include "QueryJsonAdaptor.h"
 #include <queue>
 #include <map>
 #include <thread>
@@ -55,7 +54,7 @@ struct ErrorListenerScope final: ECN::IIssueListener {
 struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor> {
     private:
         ECSqlStatement m_stmt;
-        std::unique_ptr<QueryJsonAdaptor> m_adaptor;
+        std::unique_ptr<ECSqlRowAdaptor> m_adaptor;
         std::string m_cachedString;
         rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator> m_allocator;
         rapidjson::CrtAllocator m_stackAllocator;
@@ -65,7 +64,7 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
     public:
         CachedQueryAdaptor() :m_cachedJsonDoc(&m_allocator, 1024, &m_stackAllocator), m_usePrimaryConn(false) { m_cachedJsonDoc.SetArray(); }
         ECSqlStatement& GetStatement() { return m_stmt; }
-        QueryJsonAdaptor& GetJsonAdaptor();
+        ECSqlRowAdaptor& GetJsonAdaptor();
         rapidjson::Document& ClearAndGetCachedJsonDocument() { m_cachedJsonDoc.Clear(); m_allocator.Clear(); return m_cachedJsonDoc; }
         std::string& ClearAndGetCachedString() { m_cachedString.clear(); return m_cachedString; }
         bool GetUsePrimaryConn() const { return m_usePrimaryConn; }
@@ -78,17 +77,6 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
         }
 };
 
-//=======================================================================================
-//! @bsiclass
-//=======================================================================================
-struct ECSqlStatementRow : public IECSqlRow {
-    private:
-    ECSqlStatementCR m_stmt;
-    public:
-        ECSqlStatementRow(ECSqlStatement const& stmt):m_stmt(stmt){}
-        virtual int GetColumnCount() const override { return m_stmt.GetColumnCount(); }
-        virtual IECSqlValue const& GetValue(int columnIndex) const override { return m_stmt.GetValue(columnIndex);}
-};
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
@@ -247,7 +235,7 @@ struct RunnableRequestBase {
         QueryResponse::Ptr CreateTimeoutResponse() const;
         QueryResponse::Ptr CreateCancelResponse() const;
         QueryResponse::Ptr CreateBlobIOResponse(std::vector<uint8_t>& meta, bool done, uint32_t rawBlobSize) const;
-        QueryResponse::Ptr CreateECSqlResponse(std::string& result, QueryProperty::List& meta, uint32_t rowcount, bool done) const;
+        QueryResponse::Ptr CreateECSqlResponse(std::string& result, ECSqlRowProperty::List& meta, uint32_t rowcount, bool done) const;
         static QueryResponse::Ptr CreateQueueFullResponse() ;
 
 };
@@ -350,7 +338,7 @@ struct QueryHelper final {
     private:
         static std::string FormatQuery(const char* query);
         static void BindLimits(ECSqlStatement& stmt, QueryLimit const& limit);
-        static QueryProperty::List GetMetaInfo(CachedQueryAdaptor&,bool);
+        static ECSqlRowProperty::List GetMetaInfo(CachedQueryAdaptor&,bool);
         static void Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase& request);
         static void ReadBlob(ECDbCR conn, RunnableRequestBase& request);
         static void ExecutePing(Json::Value const& pingJson, RunnableRequestBase& runnableRequest);
@@ -377,6 +365,8 @@ struct QueryResponse::Future::Impl {
 struct QueryMonitor {
     private:
         std::thread m_thread;
+        std::condition_variable m_queryMonitorCv;
+        std::mutex m_queryMonitorMutex;
         std::atomic_bool m_stop;
         RunnableRequestQueue& m_queue;
         QueryExecutor& m_executor;
@@ -384,7 +374,7 @@ struct QueryMonitor {
         cancel_callback_type m_cancelBeforeSchemaChanges;
     public:
         QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor, std::chrono::milliseconds pollInterval = 1000ms);
-        ~QueryMonitor() { m_stop.store(true); if (m_thread.joinable()) m_thread.join(); }
+        ~QueryMonitor();
 };
 
 //=======================================================================================
