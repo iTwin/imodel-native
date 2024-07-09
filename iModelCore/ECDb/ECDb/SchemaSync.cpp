@@ -796,7 +796,13 @@ SchemaSync::Status SchemaSync::PullInternal(SyncDbUri const& syncDbUri, TableLis
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult SchemaSync::PullSqlSchema(ECDbR conn) {
+    /*
+    This a somewhat incomplete implementation to deal with db tables not tracked by EC. It attempt copy sqlite_master from source briefcase
+    into sync db "sync_SqlSchema". On pull it will attempt to create tables indexes triggers etc that are not in target db.
 
+    It will log but not fail on any failures. In future we should have a way to generate patch sql
+    e.g. ALTER TABLE ADD COLUMN etc.to precisely patch untracked meta tables.
+    */
     Utf8String facetsThatDoesNotExitsSql = SqlPrintfString(
         "SELECT [s].[sql] FROM [%s].[" TABLE_SQLSCHEMA "] [s] WHERE NOT EXISTS (SELECT 1 FROM [%s].[sqlite_master] m WHERE [m].[type]=[s].[type] AND [m].[name]=[s].[name]) ORDER BY [s].[id]",
         SchemaSyncHelper::ALIAS_SYNC_DB,
@@ -812,10 +818,9 @@ DbResult SchemaSync::PullSqlSchema(ECDbR conn) {
 
     while ((rc=stmt.Step()) == BE_SQLITE_ROW) {
         auto sql = stmt.GetValueText(0);
-        rc = conn.GetImpl().ExecuteDDL(sql);
-        if (rc != BE_SQLITE_OK) {
-            LOG.errorv("PullSqlSchema() fail to execute ddl (%s): %s", sql, conn.GetLastError().c_str());
-            return rc;
+        const auto rcx = conn.GetImpl().ExecuteDDL(sql);
+        if (rcx != BE_SQLITE_OK) {
+            LOG.infov("PullSqlSchema() fail to execute ddl (%s): %s", sql, conn.GetLastError().c_str());
         }
     }
 

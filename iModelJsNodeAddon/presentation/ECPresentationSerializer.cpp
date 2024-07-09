@@ -289,8 +289,11 @@ void IModelJsECPresentationSerializer::_AsJson(ContextR ctx, ContentDescriptor::
     nestedContentBaseJson.AddMember("relationshipMeaning", rapidjson::StringRef(ParseRelationshipMeaning(relatedContentField.GetRelationshipMeaning())), nestedContentBaseJson.GetAllocator());
 
     rapidjson::Value actualSourceClassIdsJson(rapidjson::kArrayType);
-    for (auto const& actualSourceClass : relatedContentField.GetActualSourceClasses())
-        actualSourceClassIdsJson.PushBack(IModelJsECPresentationSerializer::_AsJson(ctx, actualSourceClass->GetId(), &nestedContentBaseJson.GetAllocator()), nestedContentBaseJson.GetAllocator());
+    if (relatedContentField.GetActualSourceClasses())
+        {
+        for (auto const& actualSourceClass : *relatedContentField.GetActualSourceClasses())
+            actualSourceClassIdsJson.PushBack(IModelJsECPresentationSerializer::_AsJson(ctx, actualSourceClass->GetId(), &nestedContentBaseJson.GetAllocator()), nestedContentBaseJson.GetAllocator());
+        }
     nestedContentBaseJson.AddMember("actualPrimaryClassIds", actualSourceClassIdsJson, nestedContentBaseJson.GetAllocator());
     }
 

@@ -53,7 +53,7 @@ export const NativeLoggerCategory = {
 /** @internal */
 export interface NativeLogger {
   readonly minLevel: LogLevel | undefined;
-  readonly categoryFilter: { [categoryName: string]: LogLevel };
+  readonly categoryFilter: Readonly<{[categoryName: string]: LogLevel | undefined}>;
   logTrace: (category: string, message: string) => void;
   logInfo: (category: string, message: string) => void;
   logWarning: (category: string, message: string) => void;
@@ -120,6 +120,13 @@ export class NativeLibrary {
     }
     return this._nativeLib;
   }
+}
+/** Use GetInstance() method
+ * @internal
+ */
+export const enum InstanceSerializationMethod {
+  JsonParse = 0,
+  BeJsNapi = 1
 }
 
 /** WAL checkpoint mode
@@ -369,6 +376,18 @@ export declare namespace IModelJsNative {
     diameter?: number;
   }
 
+  /**
+   * Represents the arguments for reading an instance.
+   */
+  interface InstanceArgs {
+    id: Id64String;
+    classId: Id64String;
+    serializationMethod: InstanceSerializationMethod;
+    abbreviateBlobs?: boolean;
+    classIdsToClassNames?: boolean;
+    useJsNames?: boolean;
+  }
+
   enum FontType { TrueType = 1, Rsc = 2, Shx = 3 }
 
   interface FontFaceProps {
@@ -569,12 +588,14 @@ export declare namespace IModelJsNative {
     public getCurrentTxnId(): TxnIdString;
     public getECClassMetaData(schema: string, className: string): ErrorStatusOrResult<IModelStatus, string>;
     public getElement(opts: ElementLoadProps): ElementProps;
+    public executeSql(sql: string): DbResult;
     public getFilePath(): string; // full path of the DgnDb file
     public getGeoCoordinatesFromIModelCoordinates(points: GeoCoordinatesRequestProps): GeoCoordinatesResponseProps;
     public getGeometryContainment(props: object): Promise<GeometryContainmentResponseProps>;
     public getIModelCoordinatesFromGeoCoordinates(points: IModelCoordinatesRequestProps): IModelCoordinatesResponseProps;
     public getIModelId(): GuidString;
     public getIModelProps(): IModelProps;
+    public getInstance(args: InstanceArgs): { [key: string]: any };
     public getITwinId(): GuidString;
     public getLastError(): string;
     public getLastInsertRowId(): number;
@@ -729,6 +750,7 @@ export declare namespace IModelJsNative {
     public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
     public schemaSyncGetSyncDbInfo(): SchemaSyncDbInfo | undefined;
     public getFilePath(): string;
+    public getInstance(args: InstanceArgs): { [key: string]: any };
     public getSchemaProps(name: string): SchemaProps;
     public importSchema(schemaPathName: string): DbResult;
     public isOpen(): boolean;
@@ -750,7 +772,7 @@ export declare namespace IModelJsNative {
     public isOpen(): boolean;
     public closeDb(): void;
     public processChangesets(db: DgnDb, changesets: ChangesetFileProps[], rulesetId: string, filterSpatial?: boolean, wantParents?: boolean, wantPropertyChecksums?: boolean, rulesetDir?: string, tempDir?: string, wantChunkTraversal?: boolean): DbResult;
-    public processChangesetsAndRoll(dbFilename: string, dbGuid: string, changesets: ChangesetFileProps[], rulesetId: string, filterSpatial?: boolean, wantParents?: boolean, wantPropertyChecksums?: boolean, rulesetDir?: string, tempDir?: string, wantRelationshipCaching?: boolean, relationshipCacheSize?: number, wantChunkTraversal?: boolean): DbResult;
+    public processChangesetsAndRoll(dbFilename: string, dbGuid: string, changesets: ChangesetFileProps[], rulesetId: string, filterSpatial?: boolean, wantParents?: boolean, wantPropertyChecksums?: boolean, rulesetDir?: string, tempDir?: string, wantRelationshipCaching?: boolean, relationshipCacheSize?: number, wantChunkTraversal?: boolean, wantBoundingBoxes?: boolean): DbResult;
     public getChangedElements(startChangesetId: string, endChangesetId: string): ErrorStatusOrResult<IModelStatus, any>;
     public isProcessed(changesetId: string): boolean;
     public cleanCaches(): void;
@@ -1028,17 +1050,6 @@ export declare namespace IModelJsNative {
     public destroy(): void;
   }
 
-  interface CleanDeletedBlocksOptions {
-    /**
-     * Any block that was marked as unused before this number of seconds ago will be deleted. Specifying a non-zero
-     * value gives a period of time for other clients to refresh their manifests and stop using the now-garbage blocks. Otherwise they may get
-     * a 404 error. Default is 1 hour.
-     */
-    nSeconds?: number;
-    /** if enabled, outputs verbose logs about the cleanup process. These would include outputting blocks which are determined as eligible for deletion. */
-    debugLogging?: boolean;
-  }
-
   /** A CloudSqlite container that may be connected to a CloudCache. */
   class CloudContainer {
     public onConnect?: (container: CloudContainer, cache: CloudCache) => void;
@@ -1158,15 +1169,6 @@ export declare namespace IModelJsNative {
     public uploadChanges(): Promise<void>;
 
     /**
-     * Clean any unused deleted blocks from cloud storage. When a database is written, a subset of its blocks are replaced
-     * by new versions, sometimes leaving the originals unused. In this case, they are not deleted immediately.
-     * Instead, they are scheduled for deletion at some later time. Calling this method deletes all blocks in the cloud container
-     * for which the scheduled deletion time has passed.
-     * @param options options which influence the behavior of cleanDeletedBlocks. @see CleanDeletedBlocksOptions
-     */
-    public cleanDeletedBlocks(options?: CleanDeletedBlocksOptions): Promise<void>;
-
-    /**
      * Create a copy of an existing database within this CloudContainer with a new name.
      * @note CloudSqlite uses copy-on-write semantics for this operation. That is, this method merely makes a
      * new entry in the manifest with the new name that *shares* all of its blocks with the original database.
@@ -1174,8 +1176,8 @@ export declare namespace IModelJsNative {
      */
     public copyDatabase(dbName: string, toAlias: string): Promise<void>;
 
-    /** Remove a database from this CloudContainer.
-     * @see cleanDeletedBlocks
+    /** Remove a database from this CloudContainer, moving all of its no longer used blocks to the delete list in the manifest.
+     * @see [[CloudSqlite.CleanDeletedBlocksJob]] to actually delete the blocks from the delete list.
      */
     public deleteDatabase(dbName: string): Promise<void>;
 
@@ -1216,13 +1218,13 @@ export declare namespace IModelJsNative {
    * @note The transfer begins when the object is constructed, and the object remains alive during the upload/download operation.
    * It provides the Promise that is resolved when the operation completes or fails, and has methods to provide feedback for progress and to cancel the operation prematurely.
    */
-  class CloudDbTransfer {
+  class CancellableCloudSqliteJob {
     /** create an instance of a transfer. The operation begins immediately when the object is created.
      * @param direction either "upload" or "download"
      * @param container the container holding the database. Does *not* require that the container be connected to a CloudCache.
      * @param args The properties for the source and target of the transfer.
      */
-    constructor(direction: NativeCloudSqlite.TransferDirection, container: CloudContainer, args: NativeCloudSqlite.TransferDbProps);
+    constructor(direction: NativeCloudSqlite.TransferDirection | "cleanup", container: CloudContainer, args: NativeCloudSqlite.TransferDbProps | NativeCloudSqlite.CleanDeletedBlocksOptions);
 
     /** Cancel a currently pending transfer and cause the promise to be rejected with a Cancelled status.
      * @throws exception if the operation has already completed.
@@ -1232,6 +1234,12 @@ export declare namespace IModelJsNative {
      * @throws exception if the operation has already completed.
      */
     public getProgress(): { loaded: number, total: number };
+
+    /**
+     * Only applicable to cleanup jobs. Calling this in a download or upload job will also stop the job but without saving progress.
+     * During a cleanup job, if any blocks have been deleted, the job will stop and upload the manifest reflecting which blocks have been deleted.
+     */
+    public stopAndSaveProgress(): void;
 
     /** Promise that is resolved when the transfer completes, or is rejected if the transfer fails (or is cancelled.) */
     public promise: Promise<void>;

@@ -432,7 +432,10 @@ public:
         REQUIRE_ARGUMENT_FUNCTION(1, callback);
         JsInterop::ConcurrentQueryExecute(m_ecdb, requestObj, callback);
     }
-
+    Napi::Value GetInstance(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        return JsInterop::GetInstance(db, info);
+    }
     Napi::Value ConcurrentQueryResetConfig(NapiInfoCR info) {
         if (info.Length() > 0 && info[0].IsObject()) {
             Napi::Object inConf = info[0].As<Napi::Object>();
@@ -617,6 +620,7 @@ public:
             InstanceMethod("schemaSyncGetLocalDbInfo", &NativeECDb::SchemaSyncGetLocalDbInfo),
             InstanceMethod("schemaSyncGetSyncDbInfo", &NativeECDb::SchemaSyncGetSyncDbInfo),
             InstanceMethod("openDb", &NativeECDb::OpenDb),
+            InstanceMethod("getInstance", &NativeECDb::GetInstance),
             InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
             StaticMethod("enableSharedCache", &NativeECDb::EnableSharedCache),
         });
@@ -2299,7 +2303,15 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         BeGuid beGuid = GetOpenedDb(info).QueryProjectGuid();
         return toJsString(Env(), beGuid.ToString());
     }
-
+    Napi::Value ExecuteSql(NapiInfoCR info) {
+         REQUIRE_ARGUMENT_STRING(0, sql);
+        auto& db = GetOpenedDb(info);
+        return Napi::Number::New(Env(), (int)db.ExecuteSql(sql.c_str()));
+    }
+    Napi::Value GetInstance(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        return JsInterop::GetInstance(db, info);
+    }
     void ResetBriefcaseId(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
         REQUIRE_ARGUMENT_INTEGER(0, newId);
@@ -2708,6 +2720,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("getCurrentTxnId", &NativeDgnDb::GetCurrentTxnId),
             InstanceMethod("getECClassMetaData", &NativeDgnDb::GetECClassMetaData),
             InstanceMethod("getElement", &NativeDgnDb::GetElement),
+            InstanceMethod("getInstance", &NativeDgnDb::GetInstance),
+            InstanceMethod("executeSql", &NativeDgnDb::ExecuteSql),
             InstanceMethod("getFilePath", &NativeDgnDb::GetFilePath),
             InstanceMethod("getGeoCoordinatesFromIModelCoordinates", &NativeDgnDb::GetGeoCoordsFromIModelCoords),
             InstanceMethod("getGeometryContainment", &NativeDgnDb::GetGeometryContainment),
@@ -3204,6 +3218,7 @@ struct NativeChangedElementsECDb : BeObjectWrap<NativeChangedElementsECDb>
             OPTIONAL_ARGUMENT_BOOL(9, wantRelationshipCaching, true);
             OPTIONAL_ARGUMENT_INTEGER(10, relationshipCacheSize, 200000);
             OPTIONAL_ARGUMENT_BOOL(11, wantChunkTraversal, false);
+            OPTIONAL_ARGUMENT_BOOL(12, wantBoundingBoxes, false);
 
             if (GetECDb().IsReadonly())
                 return Napi::Number::New(Env(), (int) BE_SQLITE_READONLY);
@@ -3221,6 +3236,7 @@ struct NativeChangedElementsECDb : BeObjectWrap<NativeChangedElementsECDb>
             m_manager->SetWantRelationshipCaching(wantRelationshipCaching);
             m_manager->SetRelationshipCacheSize(relationshipCacheSize);
             m_manager->SetWantChunkTraversal(wantChunkTraversal);
+            m_manager->SetWantBoundingBoxes(wantBoundingBoxes);
 
             if (!rulesetDir.empty())
                 m_manager->SetPresentationRulesetDirectory(rulesetDir);

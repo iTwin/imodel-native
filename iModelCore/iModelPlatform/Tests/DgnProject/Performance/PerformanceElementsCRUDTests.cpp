@@ -690,7 +690,7 @@ void PerformanceElementsCRUDTestFixture::ApiUpdateTime(Utf8CP className, int ini
     for (DgnElementPtr& element : elements)
         {
         DgnDbStatus stat = DgnDbStatus::Success;
-        element->DgnElement::Update(&stat);
+        stat = element->DgnElement::Update();
         ASSERT_EQ(DgnDbStatus::Success, stat);
         }
 
@@ -872,7 +872,7 @@ struct ElementLocksPerformanceTest : PerformanceElementsCRUDTestFixture
         auto dbName = asBriefcase ? L"LocksBriefcase.ibim" : L"LocksRepository.ibim";
         SetUpTestDgnDb(dbName, className, 0);
         if (asBriefcase)
-            TestDataManager::SetAsStandAlone(m_db, Db::OpenMode::ReadWrite);
+            TestDataManager::SetAsStandaloneDb(m_db, Db::OpenMode::ReadWrite);
 
         bvector<DgnElementPtr> elems;
         elems.reserve(numElems);
