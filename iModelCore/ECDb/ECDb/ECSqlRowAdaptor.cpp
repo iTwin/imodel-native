@@ -397,7 +397,7 @@ void ECSqlRowAdaptor::GetMetaData(ECSqlRowProperty::List& list, ECSqlStatement c
 
                 auto &leafEntry = accessStringV.back();
                 if (leafEntry == ECDBSYS_PROP_NavPropId)
-                    tmp += ECN::ECJsonSystemNames::Id();
+                    tmp += ECN::ECJsonSystemNames::Navigation::Id();
                 else if (leafEntry == ECDBSYS_PROP_NavPropRelECClassId)
                     tmp += ECN::ECJsonSystemNames::Navigation::RelClassName();
                 else if (leafEntry == ECDBSYS_PROP_PointX)
