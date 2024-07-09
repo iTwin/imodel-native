@@ -2801,4 +2801,53 @@ TEST_F(InstanceReaderFixture, InstanceReaderForceSeek) {
     }, opt));
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, ArraysStoreNullValues) {
+    // Setup test db
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ArraysStoreNullValues.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECStructClass typeName="StructClass" modifier="None">
+                <ECProperty propertyName="DoubleProp" typeName="double" />
+                <ECProperty propertyName="StringProp" typeName="string" />
+            </ECStructClass>
+            <ECEntityClass typeName="TestClass" modifier="None">
+                    <ECStructArrayProperty propertyName="structArrayProp" typeName="StructClass" minOccurs="0" maxOccurs="unbounded" />
+                <ECArrayProperty propertyName="intArrayProp" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>
+    )xml")));
+
+    // Insert null-containing values in test db
+    ECSqlStatement insertStatement;
+    ASSERT_EQ(ECSqlStatus::Success, insertStatement.Prepare(m_ecdb, "insert into ts.TestClass (structArrayProp, intArrayProp) values (?, ?)"));
+    auto& structArrayInsert = insertStatement.GetBinder(1);
+    auto& structEl1 = structArrayInsert.AddArrayElement();
+    structEl1["DoubleProp"].BindDouble(15.25);
+    structEl1["StringProp"].BindText("InitialValue1", IECSqlBinder::MakeCopy::No);
+    structArrayInsert.AddArrayElement().BindNull();
+    auto& structEl3 = structArrayInsert.AddArrayElement();
+    structEl3["DoubleProp"].BindDouble(41.64);
+    structEl3["StringProp"].BindText("InitialValue3", IECSqlBinder::MakeCopy::No);
+    auto& intArrayInsert = insertStatement.GetBinder(2);
+    intArrayInsert.AddArrayElement().BindInt(31);
+    intArrayInsert.AddArrayElement().BindInt(61);
+    intArrayInsert.AddArrayElement().BindNull();
+    intArrayInsert.AddArrayElement().BindInt(11);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, insertStatement.Step(key));
+
+    m_ecdb.SaveChanges();
+
+    Utf8PrintfString expectedValue ("{\"ECInstanceId\":\"%s\",\"ECClassId\":\"%s\",\"structArrayProp\":[{\"DoubleProp\":15.25,\"StringProp\":\"InitialValue1\"},null,{\"DoubleProp\":41.64,\"StringProp\":\"InitialValue3\"}],\"intArrayProp\":[31,61,null,11]}", key.GetInstanceId().ToHexStr().c_str(), key.GetClassId().ToHexStr().c_str());
+
+    // Test for expected row value being rendered with nulls in place
+    auto pos = InstanceReader::Position(key.GetInstanceId(), key.GetClassId());
+    ASSERT_EQ(true, m_ecdb.GetInstanceReader().Seek(pos, [&](InstanceReader::IRowContext const& row) {
+        EXPECT_STRCASEEQ(expectedValue.c_str(), row.GetJson().Stringify().c_str());
+    }));
+}
+
 END_ECDBUNITTESTS_NAMESPACE
