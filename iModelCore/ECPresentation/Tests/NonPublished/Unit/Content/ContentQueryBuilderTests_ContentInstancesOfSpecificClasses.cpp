@@ -448,14 +448,15 @@ TEST_F (ContentQueryBuilderTests, ContentInstancesOfSpecificClasses_SetsMergeRes
     auto querySet = GetQueryBuilder().CreateQuerySet(spec, *descriptor);
     ValidateQueries(querySet, [&]()
         {
-        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::PropertyPane, GetDefaultFlags((int)ContentFlags::MergeResults));
-        descriptor->AddSelectClass(SelectClassInfo(*classA, "this", false), "");
-
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::PropertyPane, GetDefaultFlags((int)ContentFlags::MergeResults | (int)ContentFlags::ShowLabels));
+        const auto selectClass = SelectClassInfo(*classA, "this", false);
+        descriptor->AddSelectClass(selectClass, "");
+        
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("Prop")));
 
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
-        query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query), "this");
+        query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query, CreateDisplayLabelField(selectClass.GetSelectClass())), "this");
         query->From(*classA, false, "this");
         return query;
         });

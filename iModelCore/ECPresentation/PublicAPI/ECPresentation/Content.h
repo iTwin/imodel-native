@@ -1520,7 +1520,8 @@ struct ContentSetItem : RefCountedBase, RapidJsonExtendedDataHolder<>
         SERIALIZE_FieldPropertyInstanceKeys = 1 << 7,
         SERIALIZE_UsersExtendedData = 1 << 8,
         SERIALIZE_InputKeys     = 1 << 9,
-        SERIALIZE_All           = ((1 << 10) - 1),
+        SERIALIZE_Label         = 1 << 10,
+        SERIALIZE_All           = ((1 << 11) - 1),
         };
 
     //===================================================================================

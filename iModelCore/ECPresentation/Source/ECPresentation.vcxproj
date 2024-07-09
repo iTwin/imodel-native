@@ -123,7 +123,6 @@
     <ClInclude Include="Content\ContentHelpers.h" />
     <ClInclude Include="Content\ContentItemBuilder.h" />
     <ClInclude Include="Content\ContentProviders.h" />
-    <ClInclude Include="Content\ContentQuery.h" />
     <ClInclude Include="Content\ContentQueryBuilder.h" />
     <ClInclude Include="Content\ContentQueryContracts.h" />
     <ClInclude Include="Content\ContentQueryResultsReader.h" />
@@ -182,7 +181,6 @@
     <ClCompile Include="Content\ContentHelpers.cpp" />
     <ClCompile Include="Content\ContentItemBuilder.cpp" />
     <ClCompile Include="Content\ContentProviders.cpp" />
-    <ClCompile Include="Content\ContentQuery.cpp" />
     <ClCompile Include="Content\ContentQueryBuilder.cpp" />
     <ClCompile Include="Content\ContentQueryContracts.cpp" />
     <ClCompile Include="Content\ContentQueryResultsReader.cpp" />
