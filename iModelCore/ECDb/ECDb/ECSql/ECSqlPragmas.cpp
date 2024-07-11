@@ -729,5 +729,63 @@ DbResult PragmaIntegrityCheck::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb,
 }
 
 
+//=======================================================================================
+// PurgeOrphanedRelationships
+//=======================================================================================
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult PragmaPurgeOrphanRelationships::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, const PragmaVal& val, PragmaManager::OptionsMap const& options)
+	{
+	if (!isExperimentalFeatureAllowed(ecdb, options))
+		{
+		ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0729, "'PRAGMA %s' is an experimental feature and is disabled by default.", GetName().c_str());
+		return BE_SQLITE_ERROR;
+		}
+
+	rowSet = std::make_unique<StaticPragmaResult>(ecdb);
+	rowSet->FreezeSchemaChanges();
+
+	bmap<Utf8CP, bvector<Utf8String>> orphanRelationshipRows;
+
+	auto callBack = [&](ECInstanceId id , Utf8CP relName, Utf8CP propertyName, ECInstanceId keyId, Utf8CP primaryClass)
+		{
+		orphanRelationshipRows[relName].push_back(id.ToString());
+		return true;
+		};
+
+	if (const auto check = IntegrityChecker(ecdb).CheckLinkTableFkIds(callBack); check != BE_SQLITE_OK)
+		return check;
+
+	for (const auto& [className, instanceIds] : orphanRelationshipRows)
+		{
+		ECSqlStatement stmt;
+		stmt.Prepare(ecdb, SqlPrintfString("delete from %s where ECInstanceId in (%s)", className, BeStringUtilities::Join(instanceIds, ",").c_str()).GetUtf8CP());
+		if (stmt.Step() != BE_SQLITE_DONE)
+			{
+			ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0730, "Failed to delete orphaned relationship %s", className);
+			return BE_SQLITE_ERROR;
+			}
+		stmt.Finalize();
+		}
+	return BE_SQLITE_OK;
+	}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult PragmaPurgeOrphanRelationships::Write(PragmaManager::RowSet& rowSet, ECDbCR ecdb, PragmaVal const&, PragmaManager::OptionsMap const& options)
+	{
+	if (!isExperimentalFeatureAllowed(ecdb, options))
+		{
+		ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0731, "'PRAGMA %s' is an experimental feature and is disabled by default.", GetName().c_str());
+		return BE_SQLITE_ERROR;
+		}
+
+	ecdb.GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0732, "PRAGMA %s does not accept assignment arguments.", GetName().c_str());
+	return BE_SQLITE_ERROR;
+	}
+
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

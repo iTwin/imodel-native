@@ -268,4 +268,166 @@ TEST_F(ECSqlPragmasTestFixture, view_generator_must_use_escaped_class_name_when_
         ASSERT_STREQ(SqlPrintfString("SELECT 1 FROM (SELECT [Id] ECInstanceId,[ECClassId] FROM [main].[g_Base] WHERE +[g_Base].ECClassId=%s) [a],(SELECT [Id] ECInstanceId,[ECClassId] FROM [main].[g_Base] WHERE [g_Base].ECClassId=%s) [b] WHERE [a].[ECInstanceId]=[b].[ECInstanceId]", groupClassId.ToString().c_str(), otherClassId.ToString().c_str()), stmt.GetNativeSql());
     }
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlPragmasTestFixture, purge_orphan_relationships)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("purge_orphan_relationships.ecdb"));
+
+    // Test syntax of PRAGMA purge_orphan_relationships
+    for (const auto& [testCaseNumber, ecsql, expectedOutput] : std::vector<std::tuple<int, Utf8CP, ECSqlStatus::Status>>
+        {
+            { 1, "PRAGMA purge_orphan_relationships", ECSqlStatus::Status::SQLiteError },
+            { 2, "PRAGMA purge_orphan_relationships()", ECSqlStatus::Status::InvalidECSql },
+            { 3, "PRAGMA purge_orphan_relationships=", ECSqlStatus::Status::InvalidECSql },
+            { 4, "PRAGMA purge_orphan_relationships=TRUE", ECSqlStatus::Status::SQLiteError },
+            { 5, "PRAGMA purge_orphan_relationships=false", ECSqlStatus::Status::SQLiteError },
+            { 6, "PRAGMA purge_orphan_relationships=0", ECSqlStatus::Status::SQLiteError },
+            { 7, "PRAGMA purge_orphan_relationships=1", ECSqlStatus::Status::SQLiteError },
+
+            { 8, "PRAGMA purge_orphan_relationships options enable_experimental_features", ECSqlStatus::Status::Success },
+            { 9, "PRAGMA purge_orphan_relationships() options enable_experimental_features", ECSqlStatus::Status::InvalidECSql },
+            {10, "PRAGMA purge_orphan_relationships= options enable_experimental_features", ECSqlStatus::Status::InvalidECSql },
+            {11, "PRAGMA purge_orphan_relationships=true options enable_experimental_features", ECSqlStatus::Status::SQLiteError },
+            {12, "PRAGMA purge_orphan_relationships=FALSE options enable_experimental_features", ECSqlStatus::Status::SQLiteError },
+            {13, "PRAGMA purge_orphan_relationships=1 options enable_experimental_features", ECSqlStatus::Status::SQLiteError },
+            {14, "PRAGMA purge_orphan_relationships=0 options enable_experimental_features", ECSqlStatus::Status::SQLiteError },
+        })
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(expectedOutput, stmt.Prepare(m_ecdb, ecsql).Get()) << "Test case " << testCaseNumber << " failed";
+
+        if (expectedOutput == ECSqlStatus::Status::Success)
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Test case " << testCaseNumber << " failed";
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlPragmasTestFixture, PurgeOrphanLinkTableRelationships)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PurgeOrphanLinkTableRelationships.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="rst" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+	        <ECSchemaReference name="ECDbMap" version="2.0.0" alias="ecdbmap" />
+
+            <ECEntityClass typeName="ClassA" modifier="None">
+                <ECProperty propertyName="ClassAProp" typeName="string" displayLabel="ClassAProp"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="ClassB" modifier="None">
+                <ECProperty propertyName="ClassBProp" typeName="string" displayLabel="ClassBProp"/>
+            </ECEntityClass>
+
+            <ECRelationshipClass typeName="Rel1" modifier="Sealed" strength="referencing" strengthDirection="backward">
+                <ECCustomAttributes>
+                    <LinkTableRelationshipMap xmlns="ECDbMap.2.0.0">
+                        <CreateForeignKeyConstraints>False</CreateForeignKeyConstraints>
+                    </LinkTableRelationshipMap>
+                </ECCustomAttributes>
+                <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                    <Class class="ClassA"/>
+                </Source>
+                <Target multiplicity="(1..*)" roleLabel="is referenced by" polymorphic="true">
+                    <Class class="ClassA"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="Rel2" modifier="Sealed" strength="referencing" strengthDirection="backward">
+                <ECCustomAttributes>
+                    <LinkTableRelationshipMap xmlns="ECDbMap.2.0.0">
+                        <CreateForeignKeyConstraints>False</CreateForeignKeyConstraints>
+                    </LinkTableRelationshipMap>
+                </ECCustomAttributes>
+                <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                    <Class class="ClassB"/>
+                </Source>
+                <Target multiplicity="(1..*)" roleLabel="is referenced by" polymorphic="true">
+                    <Class class="ClassB"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml")));
+
+    auto insertEntry = [&](Utf8CP className, Utf8CP propName)
+        {
+        ECSqlStatement stmt;
+        ECInstanceKey outKey;
+        if (ECSqlStatus::Success == stmt.Prepare(m_ecdb, Utf8PrintfString("INSERT INTO TestSchema.%s(%sProp) VALUES('%s')", className, className, propName).c_str()))
+            stmt.Step(outKey);
+        return outKey;
+        };
+
+    auto insertRelationship = [&](Utf8CP className, const ECInstanceKey& sourceKey, const ECInstanceKey& targetKey)
+        {
+        ECSqlStatement stmt;
+        ECInstanceKey outKey;
+        if (ECSqlStatus::Success == stmt.Prepare(m_ecdb, Utf8PrintfString("INSERT INTO TestSchema.%s(SourceECInstanceId, TargetECInstanceId) VALUES(%s,%s)", className, sourceKey.GetInstanceId().ToString().c_str(), targetKey.GetInstanceId().ToString().c_str()).c_str()))
+            stmt.Step(outKey);
+        return outKey;
+        };
+
+    // Insert class instances
+    const auto classA1 = insertEntry("ClassA", "A1");
+    const auto classA2 = insertEntry("ClassA", "A2");
+    const auto classA3 = insertEntry("ClassA", "A3");
+    const auto classB1 = insertEntry("ClassB", "B1");
+    const auto classB2 = insertEntry("ClassB", "B2");
+    const auto classB3 = insertEntry("ClassB", "B3");
+
+    // Insert link table relationships
+    const auto relA1_2 = insertRelationship("Rel1", classA1, classA2);
+    const auto relA1_3 = insertRelationship("Rel1", classA1, classA3);
+    const auto relB1_2 = insertRelationship("Rel2", classB1, classB2);
+    const auto relB1_3 = insertRelationship("Rel2", classB2, classB3);
+
+    // Delete instance A1 from ClassA and B2 from ClassB, thus creating 4 orphan relationship rows in classes Rel1 and Rel2
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("DELETE FROM TestSchema.ClassA WHERE ECInstanceId=%s", classA1.GetInstanceId().ToString().c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("DELETE FROM TestSchema.ClassB WHERE ECInstanceId=%s", classB2.GetInstanceId().ToString().c_str()).c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    // Run the integrity check command to verify that 4 orphan relationship rows exist
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "pragma integrity_check(check_linktable_fk_ids) options enable_experimental_features"));
+
+    for (const auto& [testCaseNumber, id, relationshipName, property, keyId, primaryClass] : std::vector<std::tuple<const int, const ECInstanceKey&, Utf8CP, Utf8CP, const ECInstanceKey&, Utf8CP>>
+        {
+            { 1, relA1_2, "TestSchema:Rel1", "SourceECInstanceId", classA1, "TestSchema:ClassA" },  // Orphan Relationship: A1 -> A2 (SourceECInstanceId A1 missing)
+            { 2, relA1_3, "TestSchema:Rel1", "SourceECInstanceId", classA1, "TestSchema:ClassA" },  // Orphan Relationship: A1 -> A3 (SourceECInstanceId A1 missing)
+            { 3, relB1_3, "TestSchema:Rel2", "SourceECInstanceId", classB2, "TestSchema:ClassB" },  // Orphan Relationship: B2 -> B3 (SourceECInstanceId B2 missing)
+            { 4, relB1_2, "TestSchema:Rel2", "TargetECInstanceId", classB2, "TestSchema:ClassB" },  // Orphan Relationship: B1 -> B2 (TargetECInstanceId B2 missing)
+        })
+        {
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step())                                           << "Test case " << testCaseNumber << " failed";
+        EXPECT_STREQ(stmt.GetValueText(1), id.GetInstanceId().ToHexStr().c_str())       << "Test case " << testCaseNumber << " failed";
+        EXPECT_STREQ(stmt.GetValueText(2), relationshipName)                            << "Test case " << testCaseNumber << " failed";
+        EXPECT_STREQ(stmt.GetValueText(3), property)                                    << "Test case " << testCaseNumber << " failed";
+        EXPECT_STREQ(stmt.GetValueText(4), keyId.GetInstanceId().ToHexStr().c_str())    << "Test case " << testCaseNumber << " failed";
+        EXPECT_STREQ(stmt.GetValueText(5), primaryClass)                                << "Test case " << testCaseNumber << " failed";
+        }
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    // Run the purge_orphan_relationships to remove the orphan relationship rows
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "pragma purge_orphan_relationships options enable_experimental_features"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    // Run the integrity check command to verify that all orphan relationship rows have been deleted
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "pragma integrity_check(check_linktable_fk_ids) options enable_experimental_features"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
