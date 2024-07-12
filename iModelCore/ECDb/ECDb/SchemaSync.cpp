@@ -831,10 +831,10 @@ DbResult SchemaSync::PullSqlSchema(ECDbR conn) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult SchemaSync::PushSqlSchema(ECDbR conn) {
-    Utf8String truncatSql = SqlPrintfString("DELETE FROM [%s].[" TABLE_SQLSCHEMA "]", SchemaSyncHelper::ALIAS_SYNC_DB).GetUtf8CP();
-    auto rc = conn.TryExecuteSql(truncatSql.c_str());
+    Utf8String truncateSql = SqlPrintfString("DELETE FROM [%s].[" TABLE_SQLSCHEMA "]", SchemaSyncHelper::ALIAS_SYNC_DB).GetUtf8CP();
+    auto rc = conn.TryExecuteSql(truncateSql.c_str());
     if (rc != BE_SQLITE_OK) {
-        LOG.errorv("PushSqlSchema() unable to prepare statement (%s): %s", truncatSql.c_str(), conn.GetLastError().c_str());
+        LOG.errorv("PushSqlSchema() unable to prepare statement (%s): %s", truncateSql.c_str(), conn.GetLastError().c_str());
         return rc;
     }
     Utf8String bulkInsertSql = SqlPrintfString(
