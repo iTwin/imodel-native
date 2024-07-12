@@ -320,7 +320,7 @@ TEST_F(ECSqlPragmasTestFixture, PurgeOrphanLinkTableRelationships)
                 <ECProperty propertyName="ClassBProp" typeName="string" displayLabel="ClassBProp"/>
             </ECEntityClass>
 
-            <ECRelationshipClass typeName="Rel1" modifier="Sealed" strength="referencing" strengthDirection="backward">
+            <ECRelationshipClass typeName="RelA_A" modifier="Sealed" strength="referencing" strengthDirection="backward">
                 <ECCustomAttributes>
                     <LinkTableRelationshipMap xmlns="ECDbMap.2.0.0">
                         <CreateForeignKeyConstraints>False</CreateForeignKeyConstraints>
@@ -333,7 +333,7 @@ TEST_F(ECSqlPragmasTestFixture, PurgeOrphanLinkTableRelationships)
                     <Class class="ClassA"/>
                 </Target>
             </ECRelationshipClass>
-            <ECRelationshipClass typeName="Rel2" modifier="Sealed" strength="referencing" strengthDirection="backward">
+            <ECRelationshipClass typeName="RelB_B" modifier="Sealed" strength="referencing" strengthDirection="backward">
                 <ECCustomAttributes>
                     <LinkTableRelationshipMap xmlns="ECDbMap.2.0.0">
                         <CreateForeignKeyConstraints>False</CreateForeignKeyConstraints>
@@ -344,6 +344,32 @@ TEST_F(ECSqlPragmasTestFixture, PurgeOrphanLinkTableRelationships)
                 </Source>
                 <Target multiplicity="(1..*)" roleLabel="is referenced by" polymorphic="true">
                     <Class class="ClassB"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="RelA_B" modifier="Sealed" strength="referencing" strengthDirection="backward">
+                <ECCustomAttributes>
+                    <LinkTableRelationshipMap xmlns="ECDbMap.2.0.0">
+                        <CreateForeignKeyConstraints>False</CreateForeignKeyConstraints>
+                    </LinkTableRelationshipMap>
+                </ECCustomAttributes>
+                <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                    <Class class="ClassA"/>
+                </Source>
+                <Target multiplicity="(1..*)" roleLabel="is referenced by" polymorphic="true">
+                    <Class class="ClassB"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="RelB_A" modifier="Sealed" strength="referencing" strengthDirection="backward">
+                <ECCustomAttributes>
+                    <LinkTableRelationshipMap xmlns="ECDbMap.2.0.0">
+                        <CreateForeignKeyConstraints>False</CreateForeignKeyConstraints>
+                    </LinkTableRelationshipMap>
+                </ECCustomAttributes>
+                <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                    <Class class="ClassB"/>
+                </Source>
+                <Target multiplicity="(1..*)" roleLabel="is referenced by" polymorphic="true">
+                    <Class class="ClassA"/>
                 </Target>
             </ECRelationshipClass>
         </ECSchema>)xml")));
@@ -375,12 +401,22 @@ TEST_F(ECSqlPragmasTestFixture, PurgeOrphanLinkTableRelationships)
     const auto classB3 = insertEntry("ClassB", "B3");
 
     // Insert link table relationships
-    const auto relA1_2 = insertRelationship("Rel1", classA1, classA2);
-    const auto relA1_3 = insertRelationship("Rel1", classA1, classA3);
-    const auto relB1_2 = insertRelationship("Rel2", classB1, classB2);
-    const auto relB1_3 = insertRelationship("Rel2", classB2, classB3);
+    const auto relA_A1 = insertRelationship("RelA_A", classA1, classA2);
+    const auto relA_A2 = insertRelationship("RelA_A", classA1, classA3);
+    const auto relB_B1 = insertRelationship("RelB_B", classB1, classB2);
+    const auto relB_B2 = insertRelationship("RelB_B", classB2, classB3);
 
-    // Delete instance A1 from ClassA and B2 from ClassB, thus creating 4 orphan relationship rows in classes Rel1 and Rel2
+    const auto relA_B1 = insertRelationship("RelA_B", classA1, classB1);
+    const auto relA_B2 = insertRelationship("RelA_B", classA2, classB2);
+    const auto relA_B3 = insertRelationship("RelA_B", classA1, classB2);
+    const auto relA_B4 = insertRelationship("RelA_B", classA2, classB3);
+
+    const auto relB_A1 = insertRelationship("RelB_A", classB2, classA2);
+    const auto relB_A2 = insertRelationship("RelB_A", classB1, classA1);
+    const auto relB_A3 = insertRelationship("RelB_A", classB2, classA1);
+    const auto relB_A4 = insertRelationship("RelB_A", classB3, classA3);
+
+    // Delete instance A1 from ClassA and B2 from ClassB, thus creating 4 orphan relationship rows in all link table relationships.
     {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, Utf8PrintfString("DELETE FROM TestSchema.ClassA WHERE ECInstanceId=%s", classA1.GetInstanceId().ToString().c_str()).c_str()));
@@ -398,10 +434,21 @@ TEST_F(ECSqlPragmasTestFixture, PurgeOrphanLinkTableRelationships)
 
     for (const auto& [testCaseNumber, id, relationshipName, property, keyId, primaryClass] : std::vector<std::tuple<const int, const ECInstanceKey&, Utf8CP, Utf8CP, const ECInstanceKey&, Utf8CP>>
         {
-            { 1, relA1_2, "TestSchema:Rel1", "SourceECInstanceId", classA1, "TestSchema:ClassA" },  // Orphan Relationship: A1 -> A2 (SourceECInstanceId A1 missing)
-            { 2, relA1_3, "TestSchema:Rel1", "SourceECInstanceId", classA1, "TestSchema:ClassA" },  // Orphan Relationship: A1 -> A3 (SourceECInstanceId A1 missing)
-            { 3, relB1_3, "TestSchema:Rel2", "SourceECInstanceId", classB2, "TestSchema:ClassB" },  // Orphan Relationship: B2 -> B3 (SourceECInstanceId B2 missing)
-            { 4, relB1_2, "TestSchema:Rel2", "TargetECInstanceId", classB2, "TestSchema:ClassB" },  // Orphan Relationship: B1 -> B2 (TargetECInstanceId B2 missing)
+            { 1, relA_A1, "TestSchema:RelA_A", "SourceECInstanceId", classA1, "TestSchema:ClassA" },  // A1 (missing) -> A2
+            { 2, relA_A2, "TestSchema:RelA_A", "SourceECInstanceId", classA1, "TestSchema:ClassA" },  // A1 (missing) -> A3
+
+            { 3, relA_B1, "TestSchema:RelA_B", "SourceECInstanceId", classA1, "TestSchema:ClassA" },  // A1 (missing) -> B1
+            { 4, relA_B3, "TestSchema:RelA_B", "SourceECInstanceId", classA1, "TestSchema:ClassA" },  // A1 (missing) -> B2 (missing)
+            { 5, relA_B2, "TestSchema:RelA_B", "TargetECInstanceId", classB2, "TestSchema:ClassB" },  // A2 -> B2 (missing)
+            { 6, relA_B3, "TestSchema:RelA_B", "TargetECInstanceId", classB2, "TestSchema:ClassB" },  // A1 (missing) -> B1 (missing)
+
+            { 7, relB_A1, "TestSchema:RelB_A", "SourceECInstanceId", classB2, "TestSchema:ClassB" },  // B2 (missing) -> A2
+            { 8, relB_A3, "TestSchema:RelB_A", "SourceECInstanceId", classB2, "TestSchema:ClassB" },  // B2 (missing) -> A1 (missing)
+            { 9, relB_A2, "TestSchema:RelB_A", "TargetECInstanceId", classA1, "TestSchema:ClassA" },  // B1 -> A1 (missing)
+            {10, relB_A3, "TestSchema:RelB_A", "TargetECInstanceId", classA1, "TestSchema:ClassA" },  // B2 (missing) -> A1 (missing)
+
+            {11, relB_B2, "TestSchema:RelB_B", "SourceECInstanceId", classB2, "TestSchema:ClassB" },  // B2 (missing) -> B3
+            {12, relB_B1, "TestSchema:RelB_B", "TargetECInstanceId", classB2, "TestSchema:ClassB" },  // B1 -> B2 (missing)
         })
         {
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step())                                           << "Test case " << testCaseNumber << " failed";
