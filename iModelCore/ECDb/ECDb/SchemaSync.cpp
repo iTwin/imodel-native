@@ -715,7 +715,7 @@ SchemaSync::Status SchemaSync::VerifySyncDb(SyncDbUri const& syncDbUri, bool isP
             "Sync id does not match (local) %s <> (SyncDb) %s.",
                 localDbInfo.GetSyncId().c_str(),
                 syncDbInfo.GetSyncId().c_str());
-        return Status::ERROR_SCHEMA_SYNC_INFO_DONOT_MATCH;
+        return Status::ERROR_SCHEMA_SYNC_INFO_DONT_MATCH;
     }
 
     sharedDb.CloseDb();

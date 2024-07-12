@@ -716,6 +716,7 @@ struct ECDB_EXPORT ECDbIssueId
     static ECN::IssueId ECDb_0684;
     static ECN::IssueId ECDb_0685;
     static ECN::IssueId ECDb_0686;
+    static ECN::IssueId ECDb_0687;
 
     static ECN::IssueId ECDb_0700;
     static ECN::IssueId ECDb_0701;
@@ -773,7 +774,7 @@ struct IssueDataSource final {
         mutable filter_callback_t m_filterCallback;
         mutable cancel_callback_type m_sourceCancel;
         mutable cancel_callback_type m_issueListenerCancel;
-        static std::map<IssueSeverity,NativeLogging::SEVERITY> s_serverityMap;
+        static std::map<IssueSeverity,NativeLogging::SEVERITY> s_severityMap;
     public:
         IssueDataSource(){}
         IssueDataSource(IssueDataSource const&) = delete;

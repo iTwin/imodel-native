@@ -187,6 +187,13 @@ private:
     mutable SchemaChangeEvent m_onBeforeSchemaChanged;
     mutable SchemaChangeEvent m_onAfterSchemaCHanged;
     mutable SchemaSync m_schemaSync;
+    mutable struct {
+        bool m_isFrozen;
+        Utf8String m_reason;
+        std::function<void()> m_reportError;
+
+    } m_schemaFreezeInfo;
+
     SchemaImportResult ImportSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const& schemas, SchemaImportToken const*, SchemaSync::SyncDbUri) const;
 
     SchemaImportResult MapSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&) const;
@@ -208,7 +215,9 @@ private:
     static DbResult UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(ECDbCR ecdb, SchemaImportContext* ctx = nullptr);
     void ResetIds(bvector<ECN::ECSchemaCP> const& schemas) const;
 public:
-    explicit MainSchemaManager(ECDbCR ecdb, BeMutex& mutex) : TableSpaceSchemaManager(ecdb, DbTableSpace::Main()), m_mutex(mutex), m_systemSchemaHelper(ecdb), m_vsm(ecdb), m_schemaSync(const_cast<ECDbR>(ecdb)) {}
+    explicit MainSchemaManager(ECDbCR ecdb, BeMutex& mutex) : TableSpaceSchemaManager(ecdb, DbTableSpace::Main()), m_mutex(mutex), m_systemSchemaHelper(ecdb), m_vsm(ecdb), m_schemaSync(const_cast<ECDbR>(ecdb)) {
+        Unfreeze();
+    }
     ~MainSchemaManager() {}
     /* ====================== */
     BentleyStatus CreateOrUpdateRequiredTables() const;
@@ -231,6 +240,8 @@ public:
     SchemaChangeEvent& OnBeforeSchemaChanges() const { return m_onBeforeSchemaChanged;}
     SchemaChangeEvent& OnAfterSchemaChanges() const { return m_onAfterSchemaCHanged;};
     ECDbSystemSchemaHelper const& GetSystemSchemaHelper() const { return m_systemSchemaHelper; }
+    void Freeze(Utf8CP reason = nullptr) const;
+    void Unfreeze() const;
     };
 
 //=======================================================================================

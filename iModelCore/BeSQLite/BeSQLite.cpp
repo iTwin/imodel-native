@@ -1010,6 +1010,33 @@ static int nocaseCollatingFuncLatin1(void *pCtx, int nLeft, const void *zLeft, i
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+static int authorizerCallback(void* pCtx,int action,const char* arg3,const char* arg4,const char* arg5,const char* arg6) {
+  auto authorizer = ((DbFile*)pCtx)->GetAuthorizer();
+  auto sqlDb = ((DbFile*)pCtx)->GetSqlDb();
+  if (authorizer != nullptr) {
+    DbAuthorizerContext ctx ((DbAuthorizerActionCodes)action, arg3, arg4, arg5, arg6);
+    authorizer(ctx);
+    return (int)ctx.GetReturnCode();
+  } else {
+    sqlite3_set_authorizer(sqlDb, nullptr, nullptr);
+    return SQLITE_OK;
+  }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DbFile::SetAuthorizer(DbAuthorizerCallback authorizer) const {
+    m_authorizer = authorizer;
+    if (m_authorizer != nullptr) {
+        return (DbResult)sqlite3_set_authorizer(const_cast<SqlDbP>(m_sqlDb), authorizerCallback, (void*)this);
+    }
+    return (DbResult)sqlite3_set_authorizer(m_sqlDb, nullptr, nullptr);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DbFile::SetNoCaseCollation(NoCaseCollation col) {
     auto mutex = sqlite3_db_mutex(m_sqlDb);
     sqlite3_mutex_enter(mutex);

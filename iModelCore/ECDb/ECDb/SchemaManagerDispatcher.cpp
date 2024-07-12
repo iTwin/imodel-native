@@ -1013,6 +1013,11 @@ DropSchemaResult MainSchemaManager::DropSchema(Utf8StringCR name, SchemaImportTo
 +---------------+---------------+---------------+---------------+---------------+------*/
 DropSchemaResult MainSchemaManager::DropSchemas(bvector<Utf8String> schemaNames, SchemaImportToken const* schemaImportToken, bool logIssue) const
     {
+    if (m_schemaFreezeInfo.m_isFrozen){
+        m_schemaFreezeInfo.m_reportError();
+        return DropSchemaResult::ErrorDbIsReadonly;
+    }
+
     ECDB_PERF_LOG_SCOPE("Drop multiple schemas");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::DropSchemas");
     OnBeforeSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
@@ -1079,6 +1084,11 @@ DropSchemaResult MainSchemaManager::DropSchemas(bvector<Utf8String> schemaNames,
 //+---------------+---------------+---------------+---------------+---------------+------
 SchemaImportResult MainSchemaManager::ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaManager::SchemaImportOptions options, SchemaImportToken const* token, SchemaSync::SyncDbUri schemaSync) const
     {
+    if (m_schemaFreezeInfo.m_isFrozen){
+        m_schemaFreezeInfo.m_reportError();
+        return SchemaImportResult::ERROR_READONLY;
+    }
+
     ECDB_PERF_LOG_SCOPE("Schema import");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::ImportSchemas");
     OnBeforeSchemaChanges().RaiseEvent(m_ecdb, SchemaChangeType::SchemaImport);
@@ -1095,7 +1105,7 @@ SchemaImportResult MainSchemaManager::ImportSchemas(bvector<ECN::ECSchemaCP> con
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 void MainSchemaManager::ResetIds(bvector<ECN::ECSchemaCP> const& schemas) const {
-    // We remove temprory information required by ecdb on schema
+    // We remove temporary information required by ecdb on schema
     auto cache = ECN::ECSchemaCache::Create();
     for (auto schema: schemas)
         cache->AddSchema(*const_cast<ECN::ECSchemaP>(schema));
@@ -2445,5 +2455,63 @@ DbResult ECDbModule::_OnRegister() {
         return BE_SQLITE_ERROR;
     }
     return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void MainSchemaManager::Freeze(Utf8CP reason) const {
+    BeMutexHolder _v(m_mutex);
+    if (m_ecdb.IsReadonly()) {
+        return;
+    }
+
+    if (m_schemaFreezeInfo.m_isFrozen) {
+        if (reason) {
+            m_schemaFreezeInfo.m_reason = reason;
+        }
+        return;
+    }
+    LOG.infov("Freezing ECDb schemas for current session. (%s)", reason ? reason : "");
+    m_schemaFreezeInfo.m_isFrozen = true;
+    m_schemaFreezeInfo.m_reason.AssignOrClear(reason);
+    m_schemaFreezeInfo.m_reportError = [&]() {
+        m_ecdb.GetImpl().Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECDbIssue,
+            ECDbIssueId::ECDb_0687,
+            "ECDb schema is frozen, no changes can be made to schema in any way. (%s)",
+            m_schemaFreezeInfo.m_reason.c_str());
+    };
+
+    m_ecdb.SetAuthorizer([&reportError = m_schemaFreezeInfo.m_reportError](DbAuthorizerContext& ctx) {
+        if (ctx.IsSchemaChange()) {
+            reportError();
+            ctx.Deny();
+            return;
+        }
+        if (ctx.GetActionCode() == DbAuthorizerActionCodes::Insert
+        || ctx.GetActionCode() == DbAuthorizerActionCodes::Delete
+        || ctx.GetActionCode() == DbAuthorizerActionCodes::Update) {
+            if (Utf8String(ctx.GetArg3()).StartsWithIAscii("ec_")){
+                reportError();
+                ctx.Deny();
+                return;
+            }
+        }
+    });
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void MainSchemaManager::Unfreeze() const {
+    BeMutexHolder _(m_mutex);
+    LOG.infov("Unfreezing ECDb schema for current session. (%s)", m_schemaFreezeInfo.m_reason.c_str());
+    m_schemaFreezeInfo.m_isFrozen = false;
+    m_schemaFreezeInfo.m_reason.clear();
+    m_schemaFreezeInfo.m_reportError = nullptr;
+    m_ecdb.SetAuthorizer(nullptr);
 }
 END_BENTLEY_SQLITE_EC_NAMESPACE

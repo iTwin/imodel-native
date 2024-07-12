@@ -375,6 +375,99 @@ enum DbProfileValues
     BEDB_SUPPORTED_VERSION_Sub2  = 0,
     };
 
+enum class DbAuthorizerReturnCodes {
+    Ok = 0,     /* Allow access */
+    Deny = 1,   /* Abort the SQL statement with an error */
+    Ignore = 2, /* Don't allow access, but don't generate an error */
+};
+
+enum class DbAuthorizerActionCodes {
+    CreateIndex = 1,
+    CreateTable = 2,
+    CreateTempIndex = 3,
+    CreateTempTable = 4,
+    CreateTempTrigger = 5,
+    CreateTempView = 6,
+    CreateTrigger = 7,
+    CreateView = 8,
+    Delete = 9,
+    DropIndex = 10,
+    DropTable = 11,
+    DropTempIndex = 12,
+    DropTempTable = 13,
+    DropTempTrigger = 14,
+    DropTempView = 15,
+    DropTrigger = 16,
+    DropView = 17,
+    Insert = 18,
+    Pragma = 19,
+    Read = 20,
+    Select = 21,
+    Transaction = 22,
+    Update = 23,
+    Attach = 24,
+    Detach = 25,
+    AlterTable = 26,
+    ReIndex = 27,
+    Analyze = 28,
+    CreateVTable = 29,
+    DropVTable = 30,
+    Function = 31,
+    SavePoint = 32,
+    Copy = 0,
+    Recursive = 33,
+};
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct DbAuthorizerContext final {
+private:
+    DbAuthorizerActionCodes m_actionCode;
+    DbAuthorizerReturnCodes m_returnCode;
+    Utf8CP m_arg3;
+    Utf8CP m_arg4;
+    Utf8CP m_arg5;
+    Utf8CP m_arg6;
+
+public:
+    DbAuthorizerContext(DbAuthorizerContext const&) = delete;
+    DbAuthorizerContext& operator=(DbAuthorizerContext const&) = delete;
+    DbAuthorizerContext(DbAuthorizerContext&&) = delete;
+    DbAuthorizerContext& operator=(DbAuthorizerContext&&) = delete;
+    DbAuthorizerContext(DbAuthorizerActionCodes actionCode, Utf8CP arg3, Utf8CP arg4, Utf8CP arg5, Utf8CP arg6):
+        m_actionCode(actionCode),
+        m_returnCode(DbAuthorizerReturnCodes::Ok),
+        m_arg3(arg3),
+        m_arg4(arg4),
+        m_arg5(arg5),
+        m_arg6(arg6) {}
+    void Ignore() { m_returnCode = DbAuthorizerReturnCodes::Ignore;}
+    void Deny(){ m_returnCode = DbAuthorizerReturnCodes::Deny;}
+    void Ok(){ m_returnCode = DbAuthorizerReturnCodes::Ok;}
+    DbAuthorizerReturnCodes GetReturnCode() const { return m_returnCode;}
+    DbAuthorizerActionCodes GetActionCode() const { return m_actionCode;}
+    Utf8CP GetArg3() const { return m_arg3;}
+    Utf8CP GetArg4() const { return m_arg4;}
+    Utf8CP GetArg5() const { return m_arg5;}
+    Utf8CP GetArg6() const { return m_arg6;}
+    bool IsSchemaChange() const {
+        return
+           m_actionCode == DbAuthorizerActionCodes::CreateIndex
+        || m_actionCode == DbAuthorizerActionCodes::CreateTable
+        || m_actionCode == DbAuthorizerActionCodes::CreateTrigger
+        || m_actionCode == DbAuthorizerActionCodes::CreateView
+        || m_actionCode == DbAuthorizerActionCodes::DropIndex
+        || m_actionCode == DbAuthorizerActionCodes::DropTable
+        || m_actionCode == DbAuthorizerActionCodes::DropTrigger
+        || m_actionCode == DbAuthorizerActionCodes::DropView
+        || m_actionCode == DbAuthorizerActionCodes::AlterTable
+        || m_actionCode == DbAuthorizerActionCodes::CreateVTable
+        || m_actionCode == DbAuthorizerActionCodes::DropVTable;
+    }
+};
+using DbAuthorizerCallback = std::function<void(DbAuthorizerContext&)>;
+
 //=======================================================================================
 // These constants define the current transaction state of a database file.
 // For more information see https://www.sqlite.org/c3ref/c_txn_none.html
@@ -2351,6 +2444,7 @@ struct DbFile : NonCopyableClass
     friend struct Db;
     friend struct Statement;
     friend struct Savepoint;
+    friend int authorizerCallback(void*, int, Utf8CP, Utf8CP, Utf8CP, Utf8CP);
 
 protected:
     typedef RefCountedPtr<struct ChangeTracker> ChangeTrackerPtr;
@@ -2382,6 +2476,7 @@ protected:
     BeBriefcaseId m_briefcaseId;
     StatementCache m_statements;
     NoCaseCollation m_noCaseCollation;
+    mutable DbAuthorizerCallback m_authorizer;
     DbTxns m_txns;
     std::unique_ptr<ScalarFunction> m_regexFunc, m_regexExtractFunc, m_base36Func;
     explicit DbFile(SqlDbP sqlDb, BusyRetry* retry, BeSQLiteTxnMode defaultTxnMode, std::optional<int> busyTimeout);
@@ -2404,6 +2499,7 @@ protected:
     Utf8String GetLastError(DbResult* lastResult) const;
     void SaveCachedBlvs(bool isCommit);
     DbResult SetNoCaseCollation(NoCaseCollation col);
+    DbResult SetAuthorizer(DbAuthorizerCallback authorizer) const;
     NoCaseCollation GetNoCaseCollation() const { return m_noCaseCollation; }
     BE_SQLITE_EXPORT DbResult SaveProperty(PropertySpecCR spec, Utf8CP strData, void const* value, uint32_t propsize, uint64_t majorId=0, uint64_t subId=0);
     BE_SQLITE_EXPORT bool HasProperty(PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
@@ -2424,7 +2520,7 @@ protected:
 public:
     Utf8String ExplainQuery(Utf8CP sql, bool explainPlan, bool suppressDiagnostics) const;
     int OnCommit();
-
+    DbAuthorizerCallback GetAuthorizer() { return m_authorizer; }
     bool CheckImplicitTxn() const {return m_allowImplicitTxns || m_txns.size() > 0;}
     SqlDbP GetSqlDb() const {return m_sqlDb;}
     BE_SQLITE_EXPORT DbTxnState GetTxnState(Utf8CP schema = nullptr) const;
@@ -3289,6 +3385,7 @@ public:
 
     BE_SQLITE_EXPORT static DbResult Deserialize(DbBuffer& buffer, DbR db, DbDeserializeOptions opts = DbDeserializeOptions::FreeOnClose, const char *zSchema = nullptr, std::function<void(DbR)> beforeDefaultTxnStarts = nullptr);
     BE_SQLITE_EXPORT DbResult SetNoCaseCollation(NoCaseCollation col) { return m_dbFile->SetNoCaseCollation(col); }
+    BE_SQLITE_EXPORT DbResult SetAuthorizer(DbAuthorizerCallback authorizer) const { return m_dbFile->SetAuthorizer(authorizer); }
     BE_SQLITE_EXPORT NoCaseCollation GetNoCaseCollation() const { return m_dbFile->GetNoCaseCollation(); }
 };
 

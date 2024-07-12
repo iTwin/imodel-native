@@ -20,6 +20,14 @@ enum class SchemaChangeType {
 //! Schema change event notify about event that led to schema change.
 using SchemaChangeEvent = BeEvent<ECDbCR,SchemaChangeType>;
 
+enum class FreezeOperations {
+    DropSchema = 8,   // Drop schema
+    ImportSchema = 4, // Import schema
+    SchemaSync = 3,   // Schema sync
+    EcTables = 2,     // Insert/Update/Delete rows in ec_* tables
+    DbSchema = 1,     // Create/Drop/Alter tables/indexes
+    All = DropSchema | ImportSchema | SchemaSync | EcTables | DbSchema,
+};
 //=======================================================================================
 //! @ingroup ECDbGroup
 // @bsiclass
@@ -38,7 +46,7 @@ struct SchemaSync final {
         ERROR_INVALID_SCHEMA_SYNC_DB,
         ERROR_INVALID_LOCAL_SYNC_DB,
         ERROR_READONLY,
-        ERROR_SCHEMA_SYNC_INFO_DONOT_MATCH,
+        ERROR_SCHEMA_SYNC_INFO_DONT_MATCH,
         ERROR_UNABLE_TO_ATTACH,
         ERROR_SYNC_SQL_SCHEMA,
     };
@@ -673,6 +681,13 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
 
         //! Called after any schema changes are applied or if apply process failed
         ECDB_EXPORT SchemaChangeEvent& OnAfterSchemaChanges() const;
+
+
+        //! Freeze schema changes for current connection
+        ECDB_EXPORT void Freeze(Utf8CP reason = nullptr) const;
+
+        //! Unfreeze schema changes for current connection
+        ECDB_EXPORT void Unfreeze() const;
 
 #if !defined (DOCUMENTATION_GENERATOR)
         //! Truncates and repopulates ECDb's cache tables.

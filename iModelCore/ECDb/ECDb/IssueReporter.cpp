@@ -695,6 +695,7 @@ IssueId ECDbIssueId::ECDb_0683 = IssueId("ECDb_0683");
 IssueId ECDbIssueId::ECDb_0684 = IssueId("ECDb_0684");
 IssueId ECDbIssueId::ECDb_0685 = IssueId("ECDb_0685");
 IssueId ECDbIssueId::ECDb_0686 = IssueId("ECDb_0686");
+IssueId ECDbIssueId::ECDb_0687 = IssueId("ECDb_0687");
 
 IssueId ECDbIssueId::ECDb_0700 = IssueId("ECDb_0700");
 IssueId ECDbIssueId::ECDb_0701 = IssueId("ECDb_0701");
@@ -801,7 +802,7 @@ void IssueDataSource::Report(ECN::IssueSeverity severity, ECN::IssueCategory cat
 cancel_callback_type IssueDataSource::AppendLogSink(IssueDataSource& source, Utf8CP loggerName) {
     NativeLogging::CategoryLogger logger(loggerName);
     return source.OnIssueReported().AddListener([=](ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message){
-        const auto loggerServerity = IssueDataSource::s_serverityMap [severity];
+        const auto loggerServerity = IssueDataSource::s_severityMap [severity];
         logger.message(loggerServerity, message);
     });
 }
@@ -809,7 +810,7 @@ cancel_callback_type IssueDataSource::AppendLogSink(IssueDataSource& source, Utf
 IssueDataSource::FilterScope::FilterScope(IssueDataSource const& source, filter_callback_t filterCallback ):m_source(source) { m_source.SetFilter(filterCallback); }
 IssueDataSource::FilterScope::~FilterScope(){ m_source.ClearFilter();}
 
-std::map<IssueSeverity,NativeLogging::SEVERITY> IssueDataSource::s_serverityMap = std::map<IssueSeverity,NativeLogging::SEVERITY> {
+std::map<IssueSeverity,NativeLogging::SEVERITY> IssueDataSource::s_severityMap = std::map<IssueSeverity,NativeLogging::SEVERITY> {
         {ECN::IssueSeverity::Info, NativeLogging::SEVERITY::LOG_INFO},
         {ECN::IssueSeverity::Warning, NativeLogging::SEVERITY::LOG_WARNING},
         {ECN::IssueSeverity::CriticalWarning, NativeLogging::SEVERITY::LOG_WARNING},
