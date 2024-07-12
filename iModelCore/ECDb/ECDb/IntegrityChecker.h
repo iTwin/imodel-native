@@ -44,7 +44,6 @@ private:
     bmap<Checks, Utf8CP> m_checkIdToName;
 
     DbResult GetTablePerHierarchyClasses(std::vector<ECClassId>&);
-    DbResult GetRootLinkTableRelationships(std::vector<ECClassId>&);
     DbResult GetNavigationProperties(std::map<ECN::ECClassId, std::vector<std::string>>&);
     DbResult GetMappedClasses(std::set<ECN::ECClassId>&);
 
@@ -87,6 +86,7 @@ public:
     DbResult CheckSchemaLoad(std::function<bool(Utf8CP)>);
 	// Callback(check-name, status)
     DbResult QuickCheck(Checks, std::function<void(Utf8CP, bool, BeDuration)>);
+    DbResult GetRootLinkTableRelationships(std::vector<ECClassId>&);
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
