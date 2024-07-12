@@ -462,11 +462,11 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         ECDB_EXPORT IECSqlValue const& GetValue(int columnIndex) const;
 
         //! Serialize ECSQL statement row to JSON
+        //! @param[out] outJson ECSQL statement row to Serialize as JSON
         //! @param[in] abbreviateBlobs abbreviate blobs as a Json string with info about the blob
         //! @param[in] classIdToClassNames write the fully qualified name of an ECClass into a JSON value: {schema name}.{class name}
         //! @param[in] useJsName use Js property name
         //! @param[in] includeMetaData include metadata in the JSON output
-        //! @param[out] outJson ECSQL statement row to Serialize as JSON
         //! @return BentleyStatus::Success or BentleyStatus::ERROR
         ECDB_EXPORT BentleyStatus ToRow(BeJsValue outJson, bool abbreviateBlobs, bool classIdToClassNames, bool useJsName, bool includeMetaData) const;
 

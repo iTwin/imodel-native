@@ -57,10 +57,6 @@ BentleyStatus ECSqlRowAdaptor::RenderRow(BeJsValue rowJson, IECSqlRow const& stm
                         memberName = ECN::ECJsonSystemNames::TargetId();
                     else if(extendTypeId == ExtendedTypeHelper::ExtendedType::TargetClassId && memberName.EqualsIAscii(ECDBSYS_PROP_TargetECClassId))
                         memberName = ECN::ECJsonSystemNames::TargetClassName();
-                    else if(extendTypeId == ExtendedTypeHelper::ExtendedType::NavId && memberName.EqualsIAscii(ECDBSYS_PROP_NavPropId))
-                        memberName = ECN::ECJsonSystemNames::Navigation::Id();
-                    else if(extendTypeId == ExtendedTypeHelper::ExtendedType::NavRelClassId && memberName.EqualsIAscii(ECDBSYS_PROP_NavPropRelECClassId))
-                        memberName = ECN::ECJsonSystemNames::Navigation::RelClassName();
                     else
                         ECN::ECJsonUtilities::LowerFirstChar(memberName);
                 } else {

@@ -134,14 +134,15 @@ BentleyStatus ECSqlStatement::ToRow(BeJsValue outJson, bool abbreviateBlobs, boo
     BeJsValue rowJson = outJson["data"];
     if (adaptor.RenderRow(rowJson, ECSqlStatementRow(*this)) != SUCCESS) {
         return BentleyStatus::ERROR;
-    } else {
-        if (includeMetaData) {
-            ECSqlRowProperty::List props;
-            adaptor.GetMetaData(props, *this);
-            BeJsValue metaJson = outJson["meta"];
-            props.ToJs(metaJson);
-        }
     }
+
+    if (includeMetaData) {
+        ECSqlRowProperty::List props;
+        adaptor.GetMetaData(props, *this);
+        BeJsValue metaJson = outJson["meta"];
+        props.ToJs(metaJson);
+    }
+
     return BentleyStatus::SUCCESS;
     }
 
