@@ -200,7 +200,7 @@ public:
     //! @name Methods for JSON values of the JsonCpp API
     //! @{
 
-    //! Writes the fully qualified name of an ECClass into a JSON value: {schema name}.{class name}
+    //! Writes the fully qualified name of an ECClass into a JSON value: &lt;schema name&gt;.&lt;class name&gt;
     //! @param[out] json JSON value
     //! @param[in] ecClass ECClass
     //! @return SUCCESS or ERROR
@@ -474,7 +474,7 @@ struct JsonECInstanceConverter final
         ~JsonECInstanceConverter() = delete;
 
         //JsonCpp
-        static BentleyStatus JsonToECInstance(ECN::IECInstanceR, BeJsConst, ECN::ECClassCR currentClass, Utf8StringCR currentAccessString, IECClassLocaterR, bool ignoreUnknownProperties = false, IECSchemaRemapperCP remapper = nullptr, std::function<bool(Utf8CP)> shouldSerializeProperty = nullptr);
+        static BentleyStatus JsonToECInstance(ECN::IECInstanceR, BeJsConst, ECN::ECClassCR currentClass, Utf8StringCR currentAccessString, IECClassLocaterR, bool ignoreUnknownProperties = false, IECSchemaRemapperCP remapper = nullptr, std::function<bool(Utf8CP)> shouldSerializeProperty = nullptr, bool isDeepNull = false);
         static BentleyStatus JsonToPrimitiveECValue(ECN::ECValueR value, BeJsConst json, ECN::PrimitiveType type, Utf8CP extendedTypeName);
         static BentleyStatus JsonToArrayECValue(ECN::IECInstanceR, BeJsConst, ECN::ArrayECPropertyCR, Utf8StringCR currentAccessString, IECClassLocaterR);
 

@@ -1474,22 +1474,6 @@ DbColumn* DbMappingManager::FkRelationships::CreateForeignKeyColumn(FkRelationsh
         return nullptr;
         }
 
-    //table owned by ECDb
-    if (fkColumn != nullptr)
-        {
-        ctx.Issues().ReportV(
-            IssueSeverity::Error,
-            IssueCategory::BusinessProperties,
-            IssueType::ECDbIssue,
-            ECDbIssueId::ECDb_0094,
-            "Failed to map ECRelationshipClass '%s'. ForeignKey column name '%s' is already used by another column in the table '%s'.",
-            mappingInfo.GetRelationshipClass().GetFullName(),
-            fkColInfo.GetFkColumnName().c_str(),
-            fkTable.GetName().c_str()
-        );
-        return nullptr;
-        }
-
     bool makeFkColNotNull = false;
     if (mappingInfo.IsPhysicalForeignKey())
         {

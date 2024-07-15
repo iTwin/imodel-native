@@ -414,62 +414,6 @@ struct QueryResponse : std::enable_shared_from_this<QueryResponse> {
         ECDB_EXPORT void virtual ToJs(BeJsValue& v, bool includeData) const;
 };
 
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
-struct IJsSerializable {
-    public:
-        ECDB_EXPORT virtual void ToJs(BeJsValue&) const = 0;
-        ECDB_EXPORT std::string Stringify(StringifyFormat format = StringifyFormat::Default) const;
-};
-
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
-struct QueryProperty final: IJsSerializable {
-    struct List final: public std::vector<QueryProperty>, IJsSerializable {
-        private:
-            QueryProperty const& GetPropertyInfo(std::string const& name) const;
-        public:
-            QueryProperty const& operator [](std::string const& name) const { return GetPropertyInfo(name);}
-            QueryProperty const& operator [](int index) const { return at(index); }
-            ECDB_EXPORT void ToJs(BeJsValue& val) const override;
-            ECDB_EXPORT void append(std::string className, std::string accessString, std::string jsonName, std::string name, std::string typeName, bool generated, std::string extendedType, int index);
-    };
-    private:
-        static constexpr auto JClass = "className";
-        static constexpr auto JAccessString = "accessString";
-        static constexpr auto JGenerated = "generated";
-        static constexpr auto JIndex = "index";
-        static constexpr auto JJsonName = "jsonName";
-        static constexpr auto JName = "name";
-        static constexpr auto JExtendedType = "extendedType";
-        static constexpr auto JType = "typeName";
-        std::string m_className;
-        std::string m_accessString;
-        std::string m_jsonName;
-        std::string m_name;
-        std::string m_typeName;
-        std::string m_extendedType;
-        bool m_isGenerated;
-        int  m_index;
-
-    public:
-        QueryProperty():m_index(-1), m_isGenerated(false){}
-        QueryProperty(std::string className, std::string accessString, std::string jsonName, std::string name, std::string typeName, bool generated, std::string extendedType, int index)
-            :m_index(index), m_extendedType(extendedType), m_className(className), m_accessString(accessString), m_jsonName(jsonName), m_name(name), m_typeName(typeName), m_isGenerated(generated){}
-        virtual ~QueryProperty(){}
-        std::string const& GetClassName() const { return m_className;}
-        std::string const& GetAccessString() const { return m_accessString;}
-        std::string const& GetJsonName() const { return m_jsonName;}
-        std::string const& GetName() const { return m_name;}
-        std::string const& GetTypeName() const { return m_typeName;}
-        std::string const& GetExtendedType() const { return m_extendedType;}
-        bool IsGenerated() const { return m_isGenerated;}
-        int GetIndex() const { return m_index;}
-        bool IsValid() const {return m_index >=0;}
-        ECDB_EXPORT void ToJs(BeJsValue& val) const override;
-};
 
 //=======================================================================================
 // @bsiclass
@@ -482,12 +426,12 @@ struct ECSqlResponse final : public QueryResponse{
         static constexpr auto JMeta = "meta";
         std::string m_dataJson;
         uint32_t m_rowCount;
-        QueryProperty::List m_properties;
+        ECSqlRowProperty::List m_properties;
     public:
-        ECSqlResponse(Stats stats, Status status, std::string error, std::string & data, QueryProperty::List& meta, uint32_t rowCount)
+        ECSqlResponse(Stats stats, Status status, std::string error, std::string & data, ECSqlRowProperty::List& meta, uint32_t rowCount)
             :QueryResponse(Kind::ECSql,stats, status, error), m_dataJson(std::move(data)), m_properties(std::move(meta)),m_rowCount(rowCount) {}
         virtual ~ECSqlResponse(){}
-        QueryProperty::List const& GetProperties() const { return m_properties; }
+        ECSqlRowProperty::List const& GetProperties() const { return m_properties; }
         std::string const& asJsonString() const {return m_dataJson; }
         uint32_t GetRowCount() const {return m_rowCount;}
         ECDB_EXPORT void virtual ToJs(BeJsValue& v, bool includeData) const override;
@@ -594,16 +538,16 @@ struct ECSqlReader {
         };
         private:
             Json::Value const& m_row;
-            QueryProperty::List const& m_columns;
+            ECSqlRowProperty::List const& m_columns;
             ECDB_EXPORT Json::Value const& GetValue(int index) const;
             ECDB_EXPORT Json::Value const& GetValue(std::string const& name) const;
         public:
-            Row(Json::Value const& row, QueryProperty::List const& cols):m_row(row), m_columns(cols){}
-            QueryProperty const& GetProperty(int index) const { return m_columns[index]; }
-            QueryProperty const& GetProperty(std::string const& name) const {return m_columns[name]; }
+            Row(Json::Value const& row, ECSqlRowProperty::List const& cols):m_row(row), m_columns(cols){}
+            ECSqlRowProperty const& GetProperty(int index) const { return m_columns[index]; }
+            ECSqlRowProperty const& GetProperty(std::string const& name) const {return m_columns[name]; }
             //=========
             Json::Value const& operator [] (std::string const& col) const { return GetValue(col);}
-            Json::Value const& operator [] (QueryProperty const& col) const { return GetValue(col.GetIndex());}
+            Json::Value const& operator [] (ECSqlRowProperty const& col) const { return GetValue(col.GetIndex());}
             Json::Value const& operator [] (int col) const { return GetValue(col); }
             //=========
             size_t Count() const { return m_columns.size();}
@@ -614,7 +558,7 @@ struct ECSqlReader {
         int64_t m_globalOffset;
         ECSqlParams m_args;
         Json::Value m_rows;
-        QueryProperty::List m_columns;
+        ECSqlRowProperty::List m_columns;
         std::string m_ecsql;
         bool m_done;
         Json::Value::ArrayIndex m_it;
@@ -623,7 +567,7 @@ struct ECSqlReader {
     public:
         ECDB_EXPORT ECSqlReader(ConcurrentQueryMgr& mgr, std::string ecsql, ECSqlParams const& args = ECSqlParams());
         ECSqlParams const& GetArgs() const {return m_args;}
-        QueryProperty::List const& GetColumns() const { return m_columns; }
+        ECSqlRowProperty::List const& GetColumns() const { return m_columns; }
         Row GetRow() const { return Row(m_rows[m_it],m_columns);}
         ECDB_EXPORT bool Next();
 };
