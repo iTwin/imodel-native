@@ -4643,6 +4643,80 @@ TEST_F(SchemaMergerTests, ChangeAbstractConstraint_InvalidCase)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, UnableToCopySchemaError)
+    {
+    // This test tries to provoke EC_0025 where a schema cannot be copied. In this case it's an old 2.0 schema with no abstract constraint, and the setup
+    // of constraint classes does not allow automatically setting the abstract constraint
+    // The test uses 2.0 schemas on purpose as they allow this sort of thing to happen
+
+    // Initialize two sets of schemas
+    bvector<Utf8CP> leftSchemasXml {
+      R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="Test1" nameSpacePrefix="ts" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECClass typeName="Foo" isDomainClass="True">
+                </ECClass>
+                <ECClass typeName="Bar" isDomainClass="True">
+                    <BaseClass>Foo</BaseClass>
+                </ECClass>
+            </ECSchema>)xml" };
+
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    bvector<Utf8CP> rightSchemasXml {
+      R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="Test1" nameSpacePrefix="ts" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECClass typeName="Foo" isDomainClass="True">
+                </ECClass>
+                <ECClass typeName="Bar" isDomainClass="True">
+                    <BaseClass>Foo</BaseClass>
+                </ECClass>
+            </ECSchema>)xml",
+      R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="Test2" nameSpacePrefix="ts" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECClass typeName="Foo" isDomainClass="True">
+                </ECClass>
+                <ECClass typeName="Bar" isDomainClass="True">
+                </ECClass>
+                <ECRelationshipClass typeName="RelationshipWithNoAbstractConstraint" isDomainClass="True" strength="referencing" strengthDirection="forward">
+                    <Source cardinality="(0,N)" polymorphic="false">
+                        <Class class="Foo" />
+                        <Class class="Bar" />
+                    </Source>
+                    <Target cardinality="(0,1)" polymorphic="false">
+                        <Class class="Foo" />
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>)xml" };
+
+    TestLogger logger;
+    LogCatcher catcher(logger);
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    using namespace NativeLogging;
+    logger.ValidateMessageAtIndex(2, SEVERITY::LOG_INFO,
+      "Abstract Constraint Violation (ResolveIssues: Yes): The Source-Constraint of 'Test2:RelationshipWithNoAbstractConstraint' does not contain or inherit an abstractConstraint attribute. It is a required attribute if there is more than one constraint class.");
+    logger.ValidateMessageAtIndex(3, SEVERITY::LOG_ERROR,
+      "Failed to find a common base class between the constraint classes of Source-Constraint on class 'Test2:RelationshipWithNoAbstractConstraint'");
+    logger.ValidateMessageAtIndex(4, SEVERITY::LOG_ERROR,
+      "Relationship Class Constraint Violation: Abstract Class Constraint validation failed for the 'Source' constraint of relationship 'Test2:RelationshipWithNoAbstractConstraint'");
+    logger.ValidateMessageAtIndex(5, SEVERITY::LOG_WARNING,
+      "ECSchemaXML for Test2 did not pass ECXml 3.1 validation, being downgraded to ECXml 3.0");
+    
+    SchemaMergeResult result;
+    TestIssueListener issues;
+    result.AddIssueListener(issues);
+    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+
+    // Compare issues
+    bvector<ReportedIssue> expectedIssues { ReportedIssue(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0025, "Schema 'Test2.01.00.01' from right side failed to be copied.") };
+    issues.CompareIssues(expectedIssues);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaMergerTests, ChangeStrength)
     {
     // Initialize two sets of schemas
@@ -5952,6 +6026,8 @@ TEST_F(SchemaMergerTests, UncleanSchemaGraphMergedWithReferences)
     bvector<Utf8String> expectedIssues { "Failed to find item with name MyCategory in right schema TestReference.01.00.07. This usually indicates a dirty schema graph where multiple memory references of the same schema with different contents are provided." };
     issues.CompareIssues(expectedIssues);
     }
+
+//25, 42 and 58
 
 END_BENTLEY_ECN_TEST_NAMESPACE
 
