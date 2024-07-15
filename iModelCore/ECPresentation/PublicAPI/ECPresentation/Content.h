@@ -1382,7 +1382,7 @@ public:
     //! Should content include images.
     bool ShowImages() const {return HasContentFlag(ContentFlags::ShowImages) && !HasContentFlag(ContentFlags::KeysOnly);}
     //! Should content include display labels.
-    bool ShowLabels() const {return !m_contentFlags || (!HasContentFlag(ContentFlags::KeysOnly) && HasContentFlag(ContentFlags::ShowLabels));}
+    bool ShowLabels() const {return HasContentFlag(ContentFlags::ShowLabels) && !HasContentFlag(ContentFlags::KeysOnly);}
     //! Should the content be merged into a single record.
     bool MergeResults() const {return HasContentFlag(ContentFlags::MergeResults);}
 #ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
