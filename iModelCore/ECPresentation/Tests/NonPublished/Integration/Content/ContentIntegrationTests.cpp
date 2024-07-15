@@ -17489,7 +17489,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, HandlesSelectedNodeLabelInC
     ASSERT_TRUE(descriptor.IsValid());
 
     ContentCPtr content = GetVerifiedContent(*descriptor);
-    RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{ b.get() }, *content);
+    RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{ b.get() }, *content, false, [](const auto&) { return "B"; });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -17842,6 +17842,7 @@ DEFINE_SCHEMA(GetContentForDisplayLabelGroupingNode, R"*(
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, GetContentForDisplayLabelGroupingNode)
     {
+    constexpr auto labelOverride = "label";
     ECClassCP classA = GetClass("A");
     ECClassCP classB = GetClass("B");
     ECClassCP classC = GetClass("C");
@@ -17857,7 +17858,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetContentForDisplayLabelGr
     rootRule->AddSpecification(*spec);
     rootRule->AddSpecification(*new CustomNodeSpecification(1, false, "type", "node", "", ""));
     rules->AddPresentationRule(*rootRule);
-    rules->AddPresentationRule(*new InstanceLabelOverride(1, false, classA->GetFullName(), { new InstanceLabelOverrideStringValueSpecification("label") }));
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, false, classA->GetFullName(), { new InstanceLabelOverrideStringValueSpecification(labelOverride) }));
     ContentRuleP contentRule = new ContentRule(Utf8PrintfString("SelectedNode.IsOfClass(\"B\", \"%s\")", classB->GetSchema().GetName().c_str()), 1, false);
     contentRule->AddSpecification(*new SelectedNodeInstancesSpecification());
     rules->AddPresentationRule(*contentRule);
@@ -17879,7 +17880,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetContentForDisplayLabelGr
     ASSERT_TRUE(content.IsValid());
 
     // validate content
-    RulesEngineTestHelpers::ValidateContentSet({ instanceB.get() }, *content);
+    RulesEngineTestHelpers::ValidateContentSet({ instanceB.get() }, *content, false, [=](const auto&) { return labelOverride; });
     }
 
 /*---------------------------------------------------------------------------------**//**

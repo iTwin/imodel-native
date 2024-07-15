@@ -525,7 +525,7 @@ static void ValidateContentSetItemPropertyFields(IECInstanceCR instance, Content
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesEngineTestHelpers::ValidateContentSetItem(IECInstanceCR instance, ContentSetItemCR item, ContentDescriptorCR descriptor, Utf8CP expectedLabel, Utf8CP expectedImageId)
+void RulesEngineTestHelpers::ValidateContentSetItem(IECInstanceCR instance, ContentSetItemCR item, ContentDescriptorCR descriptor, std::function<Utf8CP(rapidjson::Document const&)> expectedDisplayLabelFactory, Utf8CP expectedImageId)
     {
     rapidjson::Document json = item.AsJson();
     EXPECT_TRUE(json.IsObject());
@@ -536,14 +536,15 @@ void RulesEngineTestHelpers::ValidateContentSetItem(IECInstanceCR instance, Cont
     EXPECT_STREQ(instance.GetInstanceId().c_str(), keys[0]["ECInstanceId"].GetString());
 
     ASSERT_TRUE(json.HasMember("DisplayLabel"));
-    if (nullptr != expectedLabel)
+    decltype(auto) actualDisplayLabel = json["DisplayLabel"];
+    if (expectedDisplayLabelFactory)
         {
-        ASSERT_TRUE(json["DisplayLabel"].HasMember("DisplayValue"));
-        EXPECT_STREQ(expectedLabel, json["DisplayLabel"]["DisplayValue"].GetString());
+        ASSERT_TRUE(!actualDisplayLabel.ObjectEmpty() && actualDisplayLabel.HasMember("DisplayValue"));
+        EXPECT_STREQ(actualDisplayLabel["DisplayValue"].GetString(), expectedDisplayLabelFactory(json));
         }
-    else
+    else if (!actualDisplayLabel.ObjectEmpty())
         {
-        EXPECT_TRUE(!json["DisplayLabel"].IsObject() || json["DisplayLabel"].ObjectEmpty());
+        EXPECT_STREQ("@Presentation:label.notSpecified@", actualDisplayLabel["DisplayValue"].GetString());
         }
 
     ASSERT_TRUE(json.HasMember("ImageId"));
@@ -558,18 +559,18 @@ void RulesEngineTestHelpers::ValidateContentSetItem(IECInstanceCR instance, Cont
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP> instances, Content const& content, bool validateOrder)
+void RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP> instances, Content const& content, bool validateOrder, std::function<Utf8CP(rapidjson::Document const&)> expectedDisplayLabelFactory)
     {
     ValidateContentSet(ContainerHelpers::TransformContainer<bvector<InstanceInputAndResult>>(instances, [](auto const& resultInstance)
         {
         return InstanceInputAndResult(nullptr, resultInstance);
-        }), content, validateOrder);
+        }), content, validateOrder, std::move(expectedDisplayLabelFactory));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesEngineTestHelpers::ValidateContentSet(bvector<InstanceInputAndResult> instances, Content const& content, bool validateOrder)
+void RulesEngineTestHelpers::ValidateContentSet(bvector<InstanceInputAndResult> instances, Content const& content, bool validateOrder, std::function<Utf8CP(rapidjson::Document const&)> expectedDisplayLabelFactory)
     {
     DataContainer<ContentSetItemCPtr> contentSet = content.GetContentSet();
     ASSERT_EQ(instances.size(), contentSet.GetSize());
@@ -608,7 +609,7 @@ void RulesEngineTestHelpers::ValidateContentSet(bvector<InstanceInputAndResult> 
             }
 
         if (instance.m_result)
-            ValidateContentSetItem(*instance.m_result, *item, content.GetDescriptor());
+            ValidateContentSetItem(*instance.m_result, *item, content.GetDescriptor(), expectedDisplayLabelFactory);
         }
     }
 
