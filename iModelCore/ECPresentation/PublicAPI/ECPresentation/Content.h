@@ -99,7 +99,7 @@ struct ContentDisplayType
     //! Grid or table view content type. By default adds `ShowLabels` flag.
     ECPRESENTATION_EXPORT static const Utf8CP Grid;
 
-    //! Property pane content type. By default adds `MergeResults` flag.
+    //! Property pane content type. By default adds `MergeResults` and `ShowLabels` flag.
     ECPRESENTATION_EXPORT static const Utf8CP PropertyPane;
 
     //! List view content type. By default adds `NoFields`, `KeysOnly`, `ShowLabels` and `SkipInstancesCheck` flags.
@@ -1382,7 +1382,7 @@ public:
     //! Should content include images.
     bool ShowImages() const {return HasContentFlag(ContentFlags::ShowImages) && !HasContentFlag(ContentFlags::KeysOnly);}
     //! Should content include display labels.
-    bool ShowLabels() const {return HasContentFlag(ContentFlags::ShowLabels) && !HasContentFlag(ContentFlags::KeysOnly);}
+    bool ShowLabels() const {return !m_contentFlags || (!HasContentFlag(ContentFlags::KeysOnly) && HasContentFlag(ContentFlags::ShowLabels));}
     //! Should the content be merged into a single record.
     bool MergeResults() const {return HasContentFlag(ContentFlags::MergeResults);}
 #ifdef ENABLE_DEPRECATED_DISTINCT_VALUES_SUPPORT
@@ -1520,8 +1520,7 @@ struct ContentSetItem : RefCountedBase, RapidJsonExtendedDataHolder<>
         SERIALIZE_FieldPropertyInstanceKeys = 1 << 7,
         SERIALIZE_UsersExtendedData = 1 << 8,
         SERIALIZE_InputKeys     = 1 << 9,
-        SERIALIZE_Label         = 1 << 10,
-        SERIALIZE_All           = ((1 << 11) - 1),
+        SERIALIZE_All           = ((1 << 10) - 1),
         };
 
     //===================================================================================
