@@ -388,6 +388,7 @@ TEST_F(ProfileTestFixture, ImportRequiresVersionCustomAttribute)
         </ECSchema>)xml");
 
     TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
     ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema));
 
     ASSERT_FALSE(issueListener.IsEmpty()) << "Should raise an issue.";
@@ -404,6 +405,9 @@ TEST_F(ProfileTestFixture, InvalidImportRequiresVersionCustomAttribute)
     {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
 
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+
     { //no version property
     SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -417,7 +421,7 @@ TEST_F(ProfileTestFixture, InvalidImportRequiresVersionCustomAttribute)
         </ECEntityClass>
         </ECSchema>)xml");
 
-    TestIssueListener issueListener;
+    issueListener.ClearIssues();
     ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema));
 
     ASSERT_FALSE(issueListener.IsEmpty()) << "Should raise an issue.";
@@ -438,7 +442,7 @@ TEST_F(ProfileTestFixture, InvalidImportRequiresVersionCustomAttribute)
         </ECEntityClass>
         </ECSchema>)xml");
 
-    TestIssueListener issueListener;
+    issueListener.ClearIssues();
     ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema));
 
     ASSERT_FALSE(issueListener.IsEmpty()) << "Should raise an issue.";
@@ -517,6 +521,7 @@ TEST_F(ProfileTestFixture, ReferenceOlderSchemaWhenImportRestrictedNewerSchemaAl
         </ECSchema>)xml";
 
     TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
     EXPECT_EQ(SUCCESS, ImportSchema(SchemaItem(newSchemaStr)));
 
     EXPECT_TRUE(issueListener.IsEmpty()) << "No issues expected.";
@@ -529,6 +534,9 @@ TEST_F(ProfileTestFixture, ApplyImportRequiresVersionToExistingSchema)
     {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
 
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
+
     {
     SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="Schema1" alias="s1" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -538,6 +546,7 @@ TEST_F(ProfileTestFixture, ApplyImportRequiresVersionToExistingSchema)
         </ECSchema>)xml");
 
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
+    ASSERT_TRUE(issueListener.IsEmpty());
     }
 
     { //apply valid ImportRequiresVersion ca to existing schema
@@ -554,10 +563,10 @@ TEST_F(ProfileTestFixture, ApplyImportRequiresVersionToExistingSchema)
         </ECEntityClass>
         </ECSchema>)xml");
 
-    TestIssueListener issueListener;
+    issueListener.ClearIssues();
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
 
-    ASSERT_FALSE(issueListener.IsEmpty());
+    ASSERT_TRUE(issueListener.IsEmpty());
     }
 
     {  //apply valid ImportRequiresVersion ca to existing schema which evaluates to false
@@ -574,7 +583,7 @@ TEST_F(ProfileTestFixture, ApplyImportRequiresVersionToExistingSchema)
         </ECEntityClass>
         </ECSchema>)xml");
 
-    TestIssueListener issueListener;
+    issueListener.ClearIssues();
     ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema));
 
     ASSERT_FALSE(issueListener.IsEmpty()) << "Should raise an issue.";
@@ -609,6 +618,7 @@ TEST_F(ProfileTestFixture, UseRequiresVersionOnEntity)
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
 
     TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * from s1.Foo"));
@@ -646,6 +656,7 @@ TEST_F(ProfileTestFixture, TestUseRequiresVersionOnEntityPasses)
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
 
     TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * from s1.Foo"));
@@ -684,6 +695,7 @@ TEST_F(ProfileTestFixture, UseRequiresVersionOnEntityInherited)
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
 
     TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * from s1.Bar"));
@@ -724,6 +736,7 @@ TEST_F(ProfileTestFixture, UseRequiresVersionOnCA)
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
 
     TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * from s1.Foo"));
@@ -771,6 +784,7 @@ TEST_F(ProfileTestFixture, UseRequiresVersionOnCAIndirect)
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
 
     TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * from s1.MyEntity"));
@@ -822,6 +836,7 @@ TEST_F(ProfileTestFixture, UseRequiresVersionOnCAIndirectInherited)
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
 
     TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * from s1.MySubclass"));
@@ -841,6 +856,8 @@ TEST_F(ProfileTestFixture, ApplyUseRequiresVersionOnExistingCA)
     {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
 
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
 
     SchemaItem schema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="Schema1" alias="s1" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -867,8 +884,7 @@ TEST_F(ProfileTestFixture, ApplyUseRequiresVersionOnExistingCA)
 
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
     {
-    TestIssueListener issueListener;
-
+    issueListener.ClearIssues();
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * from s1.MySubclass"));
 
@@ -906,8 +922,7 @@ TEST_F(ProfileTestFixture, ApplyUseRequiresVersionOnExistingCA)
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema2));
 
     {
-    TestIssueListener issueListener;
-
+    issueListener.ClearIssues();
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * from s1.MySubclass"));
 

@@ -224,6 +224,7 @@ TEST_F(RelationshipMappingTestFixture, MoveNavUpInHierarchyRemoveOriginal)
         )xml", "01.00.01");
     SchemaItem schema2(schemaXml2);
     TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
     ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema2));
 
     ASSERT_FALSE(issueListener.IsEmpty()) << "Should raise an issue.";
@@ -309,6 +310,7 @@ TEST_F(RelationshipMappingTestFixture, MoveNavUpInHierarchyRemoveAndIgnore)
         )xml", "01.00.01");
     SchemaItem schema2(schemaXml2);
     TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
     ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema2, SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications));
 
     ASSERT_FALSE(issueListener.IsEmpty()) << "Should raise an issue.";
@@ -396,6 +398,7 @@ TEST_F(RelationshipMappingTestFixture, MoveNavUpInHierarchyAdjustOriginal)
         )xml", "01.00.01");
     SchemaItem schema2(schemaXml2);
     TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
     ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema2, SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues));
 
     ASSERT_FALSE(issueListener.IsEmpty()) << "Should raise an issue.";

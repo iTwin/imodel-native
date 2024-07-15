@@ -182,7 +182,7 @@ TEST_F(ClassViewsFixture, fail_when_view_reference_itself_directly_or_indirectly
         ASSERT_EQ(ERROR, ImportSchema(testSchema));
 
         bvector<Utf8String> expectedIssues { 
-          "Invalid View Class 'test_schema:SchemaView'. View query references itself recusively (test_schema:SchemaView -> test_schema:SchemaView)."
+          "Invalid View Class 'test_schema:SchemaView'. View query references itself recusively (test_schema:SchemaView -> test_schema:SchemaView).",
           "Invalid View Class 'test_schema:SchemaView'. View ECSQL failed to parse.",
           "Invalid view class 'test_schema:SchemaView'. Failed to prepare view query (SELECT cd.ECInstanceId, cd.ECClassId FROM ts.SchemaView)",
           "Total of 4 view classes were checked and 1 were found to be invalid.", 
@@ -219,7 +219,7 @@ TEST_F(ClassViewsFixture, fail_when_view_reference_itself_directly_or_indirectly
         ASSERT_EQ(ERROR, ImportSchema(testSchema));
 
         bvector<Utf8String> expectedIssues { 
-          "Invalid View Class 'test_schema:SchemaView'. View query references itself recusively (test_schema:SchemaView -> test_schema:ClassView -> test_schema:SchemaView)."
+          "Invalid View Class 'test_schema:SchemaView'. View query references itself recusively (test_schema:SchemaView -> test_schema:ClassView -> test_schema:SchemaView).",
           "Invalid View Class 'test_schema:ClassView'. View ECSQL failed to parse.",
           "Invalid View Class 'test_schema:SchemaView'. View ECSQL failed to parse.",
           "Invalid view class 'test_schema:ClassView'. Failed to prepare view query (SELECT cd.ECInstanceId, cd.ECClassId FROM ts.SchemaView)",

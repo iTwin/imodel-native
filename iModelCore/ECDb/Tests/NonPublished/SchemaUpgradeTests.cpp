@@ -231,7 +231,7 @@ TEST_F(SchemaUpgradeTestFixture, ValidateMapCheck_CheckForOrphanCustomAttributeI
         <ECSchema schemaName="TestSchema1" alias="ts1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"/>)xml";
 
     TestIssueListener issueListener;
-    m_ecdb.AddIssueissueListener(issueListener);
+    m_ecdb.AddIssueListener(issueListener);
 
     // this should fail and generate issue messages
     ASSERT_EQ(ERROR, ImportSchema(SchemaItem(testSchemaXml1)));

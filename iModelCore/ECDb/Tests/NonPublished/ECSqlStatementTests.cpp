@@ -7798,6 +7798,7 @@ TEST_F(ECSqlStatementTestFixture, IssueListener)
     ASSERT_EQ(SUCCESS, PopulateECDb(10));
 
     TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
     {
     ECSqlStatement stmt;
     ASSERT_TRUE(issueListener.IsEmpty()) << "new ECSqlStatement";

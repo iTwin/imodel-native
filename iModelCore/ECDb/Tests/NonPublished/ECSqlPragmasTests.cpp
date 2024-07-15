@@ -77,6 +77,8 @@ TEST_F(ECSqlPragmasTestFixture, parse_tree){
 
     if ("disable by default due to marked as experimental feature") {
         TestIssueListener issueListener;
+        m_ecdb.AddIssueListener(issueListener);
+
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus(BE_SQLITE_ERROR), stmt.Prepare(m_ecdb, R"x(
             PRAGMA parse_tree(
