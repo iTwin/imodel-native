@@ -6,6 +6,7 @@
 #include <Bentley/BeTest.h>
 #include <Bentley/BeFileName.h>
 #include "../ECObjectsTestPCH.h"
+#include <sstream>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -183,5 +184,47 @@ struct LogCatcher {
         NativeLogging::Logging::SetLogger(&m_previousLogger);
     }
 };
+
+//=======================================================================================
+//! Until destruction, captures log messages and redirects them to the TestLogger
+// @bsiclass
+//=======================================================================================
+struct ReportedIssue {
+    ECN::IssueSeverity severity;
+    ECN::IssueCategory category;
+    ECN::IssueType type;
+    ECN::IssueId id;
+    Utf8String message;
+
+    ReportedIssue(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message)
+        : severity(severity), category(category), type(type), id(id), message(message) {}
+};
+
+//=======================================================================================
+//! Until destruction, captures log messages and redirects them to the TestLogger
+// @bsiclass
+//=======================================================================================
+struct TestIssueListener : ECN::IIssueListener {
+    mutable std::vector<ReportedIssue> m_issues;
+
+    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override {
+        m_issues.emplace_back(severity, category, type, id, message);
+    }
+
+    void CompareIssues(bvector<Utf8String> const& expectedIssues);
+    void CompareIssues(const std::vector<ReportedIssue>& expectedIssues);
+};
+
+template <typename IssueReportedCallback = void(*)(IssueSeverity, IssueCategory, IssueType, IssueId, Utf8CP)>
+struct RelayIssueListener : public IIssueListener
+    {
+    IssueReportedCallback m_onIssueReported;
+    RelayIssueListener(IssueReportedCallback onIssueReported) : m_onIssueReported(onIssueReported) {}
+private:
+    virtual void _OnIssueReported(IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message) const override
+        {
+        m_onIssueReported(severity, category, type, id, message);
+        }
+    };
 
 END_BENTLEY_ECN_TEST_NAMESPACE

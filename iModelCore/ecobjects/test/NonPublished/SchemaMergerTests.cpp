@@ -15,15 +15,6 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct SchemaMergerTests : ECTestFixture
     {};
-struct MergerTestIssueListener : ECN::IIssueListener
-    {
-    mutable bvector<Utf8String> m_issues;
-
-    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override
-        {
-        m_issues.push_back(message);
-        }
-    };
 
 ECSchemaReadContextPtr InitializeReadContextWithAllSchemas(bvector<Utf8CP> const& schemasXml, bvector<ECSchemaCP>* loadedSchemas = nullptr)
     {
@@ -74,34 +65,10 @@ void CompareResults(bvector<Utf8CP> const& expectedSchemasXml, SchemaMergeResult
               }
             }
         }
-    
-
 
     ASSERT_EQ(false, changes.IsChanged()) << "Actual schemas did not match expected result";
     }
 
-void CompareIssues(bvector<Utf8String> const& expectedIssues, bvector<Utf8String> const& loggedIssues)
-    {
-    bool issuesAreTheSame = (expectedIssues == loggedIssues);
-    if(!issuesAreTheSame)
-        {
-        LOG.error("==================================================================================");
-        LOG.error("=Reported issues did not match expected result. Differences will be listed below.=");
-        LOG.error("==================================================================================");
-        LOG.error("EXPECTED:");
-        for(auto expected : expectedIssues)
-            {
-            LOG.errorv("    %s", expected.c_str());
-            }
-        LOG.error("ACTUAL:");
-        for(auto actual : loggedIssues)
-            {
-            LOG.errorv("    %s", actual.c_str());
-            }
-        }
-
-    ASSERT_TRUE(issuesAreTheSame) << "Logged issues did not match expected result";
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
@@ -767,13 +734,13 @@ TEST_F(SchemaMergerTests, EnumeratorDuplicateValues)
     
     //merge the schemas
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Enumeration 'MySchema:MyEnum' ends up having duplicate enumerator values after merge, which is not allowed. Name of new Enumerator: DifferentNameSameValue2" };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1285,13 +1252,13 @@ TEST_F(SchemaMergerTests, UpdateSystemOnUnit)
     
     //merge the schemas
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Unit 'MySchema:M' has its UnitSystem changed. This is not supported." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1326,13 +1293,13 @@ TEST_F(SchemaMergerTests, UpdatePhenomenonOnUnit)
     
     //merge the schemas
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Unit 'MySchema:M' has its Phenomenon changed. This is not supported." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1367,13 +1334,13 @@ TEST_F(SchemaMergerTests, UpdateDefinitionOnUnit)
     
     //merge the schemas
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Unit 'MySchema:M' has its Definition changed. This is not supported." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1408,13 +1375,13 @@ TEST_F(SchemaMergerTests, UpdateNumeratorOnUnit)
     
     //merge the schemas
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Unit 'MySchema:M' has its Numerator changed. This is not supported." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1449,13 +1416,13 @@ TEST_F(SchemaMergerTests, UpdateDenominatorOnUnit)
     
     //merge the schemas
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Unit 'MySchema:M' has its Denominator changed. This is not supported." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1490,13 +1457,13 @@ TEST_F(SchemaMergerTests, UpdateOffsetOnUnit)
     
     //merge the schemas
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Unit 'MySchema:M' has its Offset changed. This is not supported." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3271,13 +3238,13 @@ TEST_F(SchemaMergerTests, Property_ChangeType)
     
     {
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Property MySchema:MyEntity:A has its type changed."};
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
     }
     {
     SchemaMergeResult result;
@@ -3337,13 +3304,13 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_ChangePropertyToEnumeration)
     
     //merge the schemas
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Property MySchema:MyEntity:A has its type changed." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
     }
 
 
@@ -3379,13 +3346,13 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_PrimitiveAndArrayProperty)
     
     //merge the schemas
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Property MySchema:MyEntity:A has mismatching types between both sides." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3421,13 +3388,13 @@ TEST_F(SchemaMergerTests, SchemaItemNameConflict_Enumeration)
 
     //merge the schemas
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Another item with name MySchema:MyConflict already exists in the merged schema MySchema.01.00.01. RenameSchemaItemOnConflict is set to false." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
 
     //merge again with resolve conflict flag
     SchemaMergeResult result2;
@@ -3483,13 +3450,13 @@ TEST_F(SchemaMergerTests, SchemaItemNameConflict_PropertyCategory)
 
     //merge the schemas
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Another item with name MySchema:MyConflict already exists in the merged schema MySchema.01.00.01. RenameSchemaItemOnConflict is set to false." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
 
     //merge again with resolve conflict flag
     SchemaMergeResult result2;
@@ -3542,13 +3509,13 @@ TEST_F(SchemaMergerTests, SchemaItemNameConflict_Class)
 
     //merge the schemas
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Another item with name MySchema:MyConflict already exists in the merged schema MySchema.01.00.01. RenameSchemaItemOnConflict is set to false." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
 
     //merge again with resolve conflict flag
     SchemaMergeResult result2;
@@ -3603,18 +3570,18 @@ TEST_F(SchemaMergerTests, SchemaItemNameConflict_EntityAndStruct)
 
     //merge the schemas
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Cannot merge class MySchema:MyConflict because the type of class is different." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
 
 
     //merge the schemas
     SchemaMergeResult result2;
-    MergerTestIssueListener issues2;
+    TestIssueListener issues2;
     result2.AddIssueListener(issues2);
     SchemaMergeOptions options;
     options.SetRenameSchemaItemOnConflict(true);
@@ -3622,8 +3589,7 @@ TEST_F(SchemaMergerTests, SchemaItemNameConflict_EntityAndStruct)
 
     // Compare issues
     bvector<Utf8String> expectedIssues2 { "Cannot merge class MySchema:MyConflict because the type of class is different." };
-    CompareIssues(expectedIssues2, issues2.m_issues);
-
+    issues2.CompareIssues(expectedIssues2);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3664,13 +3630,13 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_DisconnectedClasses)
 
     //merge the schemas
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Failed to add property A to class MySchema:MyConflict because it conflicts with another property. RenamePropertyOnConflict flag is set to false." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
 
     //merge again, with resolve conflict flag set to true
     SchemaMergeResult result2;
@@ -3739,13 +3705,13 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_ConnectBaseClass)
     
     //merge the schemas
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "New base class MySchema:MyBase is incompatible with properties on MySchema:MyConflict or its derived classes." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3783,13 +3749,13 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_AddBaseClassWithIncomingProperty)
     
     //merge the schemas
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "New base class MySchema:MyBase is incompatible with properties on MySchema:MyConflict or its derived classes." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
 
     //merge again, with resolve conflict flag set to true
     SchemaMergeResult result2;
@@ -3835,13 +3801,13 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_AddDerivedClassWithIncomingProper
     
     //merge the schemas
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Failed to copy class MySchema:MyConflict into merged schema" }; //TODO: This needs a better check!
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
     //TODO: This scenario implicitly happens inside CopyClass() so it does not handle conflicts
     }
 
@@ -3879,13 +3845,13 @@ TEST_F(SchemaMergerTests, EnumerationTypeConflict)
     
     //merge the schemas
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Enumeration 'MySchema:MyEnum' has its Type changed. This is not supported." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3923,13 +3889,13 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_AddBaseProperty)
     
     //merge the schemas
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Failed to add property A to class MySchema:MyBase because it conflicts with another property. RenamePropertyOnConflict flag is set to false." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3967,13 +3933,13 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_AddDerivedProperty)
     
     //merge the schemas
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Failed to add property A to class MySchema:MyConflict because it conflicts with another property. RenamePropertyOnConflict flag is set to false." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
 
     //merge again, with resolve conflict flag set to true
     SchemaMergeResult result2;
@@ -4043,13 +4009,13 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_AddBaseProperty2Levels)
     
     //merge the schemas
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Failed to add property A to class MySchema:MyBaseBase because it conflicts with another property. RenamePropertyOnConflict flag is set to false." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
 
     //merge again, with resolve conflict flag set to true
     SchemaMergeResult result2;
@@ -4122,13 +4088,13 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_AddDerivedProperty2Levels)
     
     //merge the schemas
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Failed to add property A to class MySchema:MyConflict because it conflicts with another property. RenamePropertyOnConflict flag is set to false." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
 
 
     //merge again, with resolve conflict flag set to true
@@ -4213,13 +4179,13 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_AddBasePropertyInReferencedSchema
     
     //merge the schemas
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Failed to add property A to class MyBaseSchema:MyBase because it conflicts with another property. RenamePropertyOnConflict flag is set to false." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4270,13 +4236,13 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_AddDerivedPropertyForReferencedSc
     
     //merge the schemas
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Failed to add property A to class MySchema:MyConflict because it conflicts with another property. RenamePropertyOnConflict flag is set to false." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4311,13 +4277,13 @@ TEST_F(SchemaMergerTests, ChangePropertyFromBinaryToIGeometry)
     
     //merge the schemas
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Property MySchema:MyClass:A has its type changed." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
 
     //merge again, with keep left
     SchemaMergeResult result2;
@@ -4665,13 +4631,13 @@ TEST_F(SchemaMergerTests, ChangeAbstractConstraint_InvalidCase)
     bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
     
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Setting AbstractConstraint on MySchema:MyRelationshipClass failed. Was trying to set to MySchema:ABase2." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4986,13 +4952,13 @@ TEST_F(SchemaMergerTests, ChangeStrengthIllegal)
 
     {
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "The setter for StrengthType on item MySchema:ElementGroupsMembers returned an error." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
     }
     
     {
@@ -5478,7 +5444,7 @@ TEST_F(SchemaMergerTests, TestBaseClassAdditionAndRemoval)
 
   //merge the schemas
   SchemaMergeResult result;
-  MergerTestIssueListener issues;
+  TestIssueListener issues;
   result.AddIssueListener(issues);
   EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchema, rightSchema));
 
@@ -5661,14 +5627,14 @@ TEST_F(SchemaMergerTests, DuplicateSchemaNamesLeftMergeNoReferences)
     SchemaMergeOptions options;
     options.SetDoNotMergeReferences(true);
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "The schema name entry MyOtherSchema is non-unique in the left schema list. The schemas names are case-insensitive.",
                                          "The schema name entry MySchema is non-unique in the left schema list. The schemas names are case-insensitive." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -5727,14 +5693,14 @@ TEST_F(SchemaMergerTests, DuplicateSchemaNamesRightMergeNoReferences)
     SchemaMergeOptions options;
     options.SetDoNotMergeReferences(true);
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "The schema name entry MyOtherSchema is non-unique in the right schema list. The schemas names are case-insensitive.",
                                          "The schema name entry MySchema is non-unique in the right schema list. The schemas names are case-insensitive." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
     }
   
 /*---------------------------------------------------------------------------------------
@@ -5791,14 +5757,14 @@ TEST_F(SchemaMergerTests, DuplicateSchemaNamesLeftAndRightMergeNoReferences)
     SchemaMergeOptions options;
     options.SetDoNotMergeReferences(true);
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "The schema name entry myschema1 is non-unique in the left schema list. The schemas names are case-insensitive.", 
                                          "The schema name entry myschema2 is non-unique in the right schema list. The schemas names are case-insensitive." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -5978,13 +5944,13 @@ TEST_F(SchemaMergerTests, UncleanSchemaGraphMergedWithReferences)
 
     // Merge the schemas
     SchemaMergeResult result;
-    MergerTestIssueListener issues;
+    TestIssueListener issues;
     result.AddIssueListener(issues);
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
     bvector<Utf8String> expectedIssues { "Failed to find item with name MyCategory in right schema TestReference.01.00.07. This usually indicates a dirty schema graph where multiple memory references of the same schema with different contents are provided." };
-    CompareIssues(expectedIssues, issues.m_issues);
+    issues.CompareIssues(expectedIssues);
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
