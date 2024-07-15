@@ -44,7 +44,7 @@ TEST (Vu,ConvexParts)
             DPoint3d::From (f,e,0),
             DPoint3d::From (f,d,0),
             },
-            // Wow - exact duplicate of [2] -- parity cancels, convex expansion starts 
+            // Wow - exact duplicate of [2] -- parity cancels, convex expansion starts
             // somewhere that fortuitously floods it away.
         bvector<DPoint3d> {
             DPoint3d::From (d,b,0),
@@ -424,7 +424,7 @@ TEST(CurveVector, ChrisDFailure)
         double bx = ax;
         double ay = ax * 0.25;
         double by = ay;
-        if (true) // 
+        if (true) //
             {
             SaveAndRestoreCheckTransform  shifter1(0, range.YLength() * 20.0, 0.0);
             DRange2d chop;
@@ -436,7 +436,7 @@ TEST(CurveVector, ChrisDFailure)
                 -bx, -by, ax, ay, 0);
             Check::SaveTransformed(textBox);
 
-            
+
             for (auto degrees : { 0.0, 1.0, -5.0, 20.0, -40.0})
                 {
                 SaveAndRestoreCheckTransform shifter2(3.0 * range.XLength(), 0, 0);
@@ -519,7 +519,7 @@ TEST(CurveVector, OffsetXYThinSection)
             double bx = ax;
             double ay = ax * 0.25;
             double by = ay;
-            if (true) // 
+            if (true) //
                 {
                 SaveAndRestoreCheckTransform shifter1(0, range.YLength() * 20.0, 0.0);
                 DRange2d chop;

@@ -97,9 +97,9 @@ std::shared_ptr<CachedQueryAdaptor> QueryAdaptorCache::TryGet(Utf8CP ecsql, bool
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-QueryJsonAdaptor& CachedQueryAdaptor::GetJsonAdaptor() {
+ECSqlRowAdaptor& CachedQueryAdaptor::GetJsonAdaptor() {
     if (!m_adaptor) {
-         m_adaptor = std::unique_ptr<QueryJsonAdaptor>(new QueryJsonAdaptor(*m_stmt.GetECDb()));
+         m_adaptor = std::unique_ptr<ECSqlRowAdaptor>(new ECSqlRowAdaptor(*m_stmt.GetECDb()));
     }
     return *m_adaptor.get();
 }
@@ -145,10 +145,10 @@ void CachedConnection::SetRequest(std::unique_ptr<RunnableRequestBase> request) 
 void CachedConnection::InterruptIf(std::function<bool(RunnableRequestBase const&)> cb, bool cancel) {
     recursive_guard_t lock(m_mutexReq);
     if (m_request != nullptr) {
-        if (cancel) {
-            m_request->Cancel();
-        }
         if (cb(*m_request)) {
+            if (cancel) {
+                m_request->Cancel();
+            }
             Interrupt();
         }
     }
@@ -238,7 +238,8 @@ std::shared_ptr<CachedConnection> CachedConnection::Make(ConnectionCache& cache,
 void ConnectionCache::InterruptIf(std::function<bool(RunnableRequestBase const&)> predicate, bool cancel) {
     recursive_guard_t lock(m_mutex);
     for (auto& conn: m_conns) {
-        conn->InterruptIf(predicate, cancel);
+        if (conn != nullptr)
+            conn->InterruptIf(predicate, cancel);
     }
 }
 //---------------------------------------------------------------------------------------
@@ -452,7 +453,7 @@ QueryResponse::Ptr RunnableRequestBase::CreateBlobIOResponse(std::vector<uint8_t
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-QueryResponse::Ptr RunnableRequestBase::CreateECSqlResponse(std::string& resultJson, QueryProperty::List& meta, uint32_t rowCount, bool done) const {
+QueryResponse::Ptr RunnableRequestBase::CreateECSqlResponse(std::string& resultJson, ECSqlRowProperty::List& meta, uint32_t rowCount, bool done) const {
     const auto memUsed = (uint32_t)(resultJson.size());
     return std::make_shared<ECSqlResponse>(
         QueryResponse::Stats(GetCpuTime(), GetTotalTime(), memUsed,m_quota),
@@ -595,9 +596,9 @@ std::unique_ptr<RunnableRequestBase> RunnableRequestQueue::WaitForDequeue() {
 QueryQuota RunnableRequestQueue::AdjustQuota(QueryQuota const& requestedQuota) const {
     auto maxMem = requestedQuota.MaxMemoryAllowed();
     auto maxTime = requestedQuota.MaxTimeAllowed();
-    if (m_quota.MaxMemoryAllowed() < maxMem || maxMem <=0)
+    if (m_quota.MaxMemoryAllowed() < maxMem || maxMem <= 32000)
         maxMem = m_quota.MaxMemoryAllowed() ;
-    if (m_quota.MaxTimeAllowed() < maxTime || maxTime <= std::chrono::seconds(0))
+    if (m_quota.MaxTimeAllowed() < maxTime || maxTime <= std::chrono::seconds(10))
         maxTime = m_quota.MaxTimeAllowed();
 
     return QueryQuota(maxTime, maxMem);
@@ -891,8 +892,8 @@ void QueryHelper::BindLimits(ECSqlStatement& stmt, QueryLimit const& limit) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-QueryProperty const& QueryProperty::List::GetPropertyInfo(std::string const& name) const {
-    static QueryProperty kNull;
+ECSqlRowProperty const& ECSqlRowProperty::List::GetPropertyInfo(std::string const& name) const {
+    static ECSqlRowProperty kNull;
     for(auto& info: *this) {
         if (info.GetJsonName() == name)
             return this->at(info.GetIndex());
@@ -913,8 +914,8 @@ std::string IJsSerializable::Stringify(StringifyFormat format) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-QueryProperty::List QueryHelper::GetMetaInfo(CachedQueryAdaptor& adp, bool classIdToClassNames) {
-    QueryProperty::List props;
+ECSqlRowProperty::List QueryHelper::GetMetaInfo(CachedQueryAdaptor& adp, bool classIdToClassNames) {
+    ECSqlRowProperty::List props;
 
     return props;
 }
@@ -922,7 +923,7 @@ QueryProperty::List QueryHelper::GetMetaInfo(CachedQueryAdaptor& adp, bool class
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void QueryProperty::ToJs(BeJsValue& val) const {
+void ECSqlRowProperty::ToJs(BeJsValue& val) const {
     val.toObject();
     val[JClass]=m_className;
     val[JAccessString]=m_accessString;
@@ -937,7 +938,7 @@ void QueryProperty::ToJs(BeJsValue& val) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void QueryProperty::List::ToJs(BeJsValue& val) const {
+void ECSqlRowProperty::List::ToJs(BeJsValue& val) const {
     val.toArray();
     for(auto it = begin(); it != end(); ++it) {
         auto newEl = val.appendValue();
@@ -947,8 +948,8 @@ void QueryProperty::List::ToJs(BeJsValue& val) const {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void QueryProperty::List::append(std::string className, std::string accessString, std::string jsonName, std::string name, std::string typeName, bool generated, std::string extendedType, int index) {
-    emplace_back(QueryProperty(className, accessString, jsonName, name, typeName, generated, extendedType, index));
+void ECSqlRowProperty::List::append(std::string className, std::string accessString, std::string jsonName, std::string name, std::string typeName, bool generated, std::string extendedType, int index) {
+    emplace_back(ECSqlRowProperty(className, accessString, jsonName, name, typeName, generated, extendedType, index));
 }
 
 //---------------------------------------------------------------------------------------
@@ -996,7 +997,7 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
     const auto classIdToClassNames = request.GetConvertClassIdsToClassNames();
     auto& stmt = cachedAdaptor.GetStatement();
     auto& adaptor = cachedAdaptor.GetJsonAdaptor();
-    QueryProperty::List props;
+    ECSqlRowProperty::List props;
     if (includeMetaData) {
         adaptor.GetMetaData(props ,stmt);
     }
@@ -1110,7 +1111,7 @@ void QueryHelper::ReadBlob(ECDbCR conn, RunnableRequestBase& runnableRequest) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void QueryHelper::ExecutePing(Json::Value const& pingJson, RunnableRequestBase& runnableRequest) {
-    QueryProperty::List props;
+    ECSqlRowProperty::List props;
     props.append("", "", "id", "id", "long", false, "", 0);
 
     const auto maxMem = (int64_t)ConcurrentQueryMgr::GetConfig(runnableRequest.GetQueue().GetECDb()).GetQuota().MaxMemoryAllowed();
@@ -1299,13 +1300,25 @@ QueryMonitor::QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor,
                 return false;
             }, false);
 
-            std::this_thread::sleep_for(m_pollInterval);
+            std::unique_lock<std::mutex> lock(m_queryMonitorMutex);
+            m_queryMonitorCv.wait_for(lock,m_pollInterval,[&]{ return m_stop.load() == true; });
+            m_queryMonitorCv.notify_all();
             std::this_thread::yield();
         } while (m_stop.load() == false);
         log_trace("%s monitor stopped.", GetTimestamp().c_str());
     }, notifyThreadHasStarted.get());
     notifyThreadHasStarted->get_future().get();
     notifyThreadHasStarted = nullptr;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+QueryMonitor::~QueryMonitor() { 
+    m_stop.store(true); 
+    m_queryMonitorCv.notify_all();
+    if (m_thread.joinable()) 
+        m_thread.join();
 }
 
 //---------------------------------------------------------------------------------------
@@ -1543,7 +1556,7 @@ void ConcurrentQueryMgr::Shutdown(ECDbCR ecdb) {
 void QueryRequest::FromJs(BeJsConst const& val) {
     if (val.isObjectMember(JQuota)) {
         auto a = val[JQuota];
-        m_quota.FromJs(a);
+        m_quota = QueryQuota::FromJs(a);
     }
     if (val.isNumericMember(JPriority)) {
         m_priority = val[JPriority].asInt();

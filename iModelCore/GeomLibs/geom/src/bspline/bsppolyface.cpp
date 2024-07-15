@@ -137,7 +137,7 @@ struct MeshOutputHandler
 {
 virtual ~MeshOutputHandler (){}
 virtual StatusInt OutputQuadMesh(DPoint3dP points, DVec3dP normals, DPoint2dP params, int nu, int nv)  {return SUCCESS;}
-    
+
 virtual StatusInt OutputTriStrip(DPoint3dP points, DVec3dP normals, DPoint2dP params, int numPoints) {return SUCCESS;}
 
 
@@ -162,7 +162,7 @@ void ClearArrays ()
     m_normals.clear ();
     m_params.clear ();
     }
-    
+
 DVec3dP   GetNormalP () { return m_needNormals && m_normals.size () > 0 ? &m_normals[0] : NULL;}
 DPoint2dP GetParamP  () { return m_needParams && m_params.size () > 0 ? &m_params[0] : NULL;}
 DPoint3dP GetPointP  () { return m_points.size () > 0 ? &m_points[0] : NULL;}
@@ -177,22 +177,22 @@ void AddScaledParam (DPoint2dCR data)
     scaledData.y = data.y * m_paramScales.y;
     m_params.push_back (scaledData);
     }
-    
+
 StatusInt OutputQuadMeshFromArrays(int nu, int nv) {
     if (nu * nv != m_points.size ())
         return ERROR;
-    return OutputQuadMesh (GetPointP (), GetNormalP (), GetParamP (), nu, nv);    
+    return OutputQuadMesh (GetPointP (), GetNormalP (), GetParamP (), nu, nv);
     }
 
 StatusInt OutputTriStripFromArrays() {
     if (m_points.size () == 0)
         return SUCCESS;
-    return OutputTriStrip (GetPointP (), GetNormalP (), GetParamP (), (int) m_points.size ());    
+    return OutputTriStrip (GetPointP (), GetNormalP (), GetParamP (), (int) m_points.size ());
     }
 
 GridArrays m_grid;
 // ASSUME: m_parms is preloaded with proper count (and corresponsds to param range)
-// 
+//
 StatusInt EvaluateQuadGrid
 (
 MSBsplineSurface    *patchBezP,     /* => Bezier Patch */
@@ -349,7 +349,7 @@ struct BuilderParams
         }
 
     GridArrays grid;
-    
+
     void CorrectGridCounts (bool closedU, bool closedV);
     bool GetGridCounts (int i, int j, int &numU, int &numV, int &numLoU, int &numHiU, int &numLoV, int &numHiV)
         {
@@ -576,7 +576,7 @@ double globalRelTol
     DVec3d diagonal;
     range.InitFrom(pXYZ, numXYZ);
     diagonal.DifferenceOf (range.low, range.high);
-    maxDiagonal = diagonal.MaxAbs ();   // TODO: probably should be range.LargestCoordinate >= diagonal.MaxAbs 
+    maxDiagonal = diagonal.MaxAbs ();   // TODO: probably should be range.LargestCoordinate >= diagonal.MaxAbs
 
     if (absTol < sDefaultAbsTol)
         absTol = sDefaultAbsTol;
@@ -1344,7 +1344,7 @@ BuilderParams          *mpP                /* => mesh parameters */
         {
         *uNum = *vNum = 1;
         }
-        
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1464,7 +1464,7 @@ int &vCount
                   counts.vCounts.numLow, counts.vCounts.numHigh,
                                       &mpP->bezierSurfaces[j][i], mpP);
             mpP->bezierGridCounts.back ().push_back (counts);
-                
+
             }
         }
 
@@ -1764,7 +1764,7 @@ bvector<MeshRegion> &monotoneRegions
     touchHeader[1].clear ();
 
     status = SUCCESS;
-    intersectionP = NULL; 
+    intersectionP = NULL;
     monotoneRegions.clear ();
     for (bvector<MeshRegion>::const_iterator sourceRegion = inputRegions.begin ();
                 sourceRegion < inputRegions.end (); sourceRegion++)
@@ -2027,7 +2027,7 @@ bool                reverse
 
     if ( nU < 2 || nV < 2 )
         return SUCCESS;
-        
+
     mpP->handler.ClearArrays ();
 
     min.x = u0;
@@ -2108,7 +2108,7 @@ bool                reverse
     nV = (vMaxIndex - vMinIndex + 1);
 
     mpP->handler.ClearArrays ();
-    
+
     min.x = uMinIndex * deltaP->x;
     min.y = vMinIndex * deltaP->y;
 
@@ -2870,7 +2870,7 @@ int                 uNumSegs                   /* => number of U segments */
             points.push_back (slicePoints[index]);
 
         points.push_back (maxRightPoint);
-        
+
         if  ( alwaysUseOldMesher ||
               SUCCESS != (status = meshSimpleBezierRegion
                                         (
@@ -2909,10 +2909,10 @@ MSBsplineSurfaceCR      surface
     double              boundMin, boundMax;
     DPoint2d            *pnts, *pntP, *endP, minLeftPoint, maxLeftPoint,
                         minRightPoint, maxRightPoint;
-    
+
     bvector<DPoint2d*> slicePointers;
     bvector<DPoint2d> slicePoints;
-    bvector<DPoint2d>  points;  
+    bvector<DPoint2d>  points;
     pnts  = &boundary[0];
     nPnts = (int)boundary.size () - 1;
 
@@ -3138,7 +3138,7 @@ DPoint2d&           length
     int maxIndexI, maxIndexJ;
     bsppolyface_calculateParameterLengths (surface, length, maxIndexI, maxIndexJ);
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -4022,7 +4022,7 @@ DVec3dR momentxyz
     return stat;
     }
 
-bool MSBsplineSurface::ComputeSecondMomentAreaProducts(DMatrix4dR products, double relativeTolerancefForFacets, int numGauss, int &numEvaluations) const
+bool MSBsplineSurface::ComputeSecondMomentAreaProducts(DMatrix4dR products, double relativeToleranceForFacets, int numGauss, int &numEvaluations) const
     {
     SurfacePropertiesContext context(*this, true, false, numGauss);
     DRange3d range;
@@ -4031,7 +4031,7 @@ bool MSBsplineSurface::ComputeSecondMomentAreaProducts(DMatrix4dR products, doub
     auto options = IFacetOptions::Create();
     options->SetParamsRequired(true);
     GetPoleRange(range);
-    options->SetChordTolerance(tolerance = relativeTolerancefForFacets * range.low.Distance(range.high));
+    options->SetChordTolerance(tolerance = relativeToleranceForFacets * range.low.Distance(range.high));
 
     if (SUCCESS == meshSurface
         (

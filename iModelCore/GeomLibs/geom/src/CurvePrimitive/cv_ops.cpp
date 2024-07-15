@@ -154,7 +154,7 @@ static bool CompatibleBsplines(CurveVectorCR source, size_t indexA, size_t index
     bcurveB->FractionToPoint (startB, bcurveB->FractionToKnot (0.0));
     if (DPoint3dOps::AlmostEqual (endA, startB))
         return true;
-    return false;    
+    return false;
     }
 
 
@@ -283,7 +283,7 @@ void CurveVector::ConsolidateAdjacentPrimitives (bool doSimplifyLinestrings, boo
             else if (CompatiblePrimitiveRange (*this, baseIndex, CompatibleBsplines, blockBase, blockCount, hasWrap)
                 && blockCount > 1)
                 {
-                MSBsplineCurve baseBspline, nextBspline; 
+                MSBsplineCurve baseBspline, nextBspline;
                 baseBspline.CopyFrom (*at(blockBase)->GetBsplineCurveCP ());
                 for (size_t k = 1; k < blockCount; k++)
                     {
@@ -303,7 +303,7 @@ void CurveVector::ConsolidateAdjacentPrimitives (bool doSimplifyLinestrings, boo
                 {
                 if (NULL != (childVector = const_cast <CurveVectorP>(at(baseIndex)->GetChildCurveVectorCP ())))
                     {
-                    childVector->ConsolidateAdjacentPrimitives ();
+                    childVector->ConsolidateAdjacentPrimitives(false);  // we'll simplify all at once below
                     }
                 if (numCompressedPrimitives != baseIndex)
                     at(numCompressedPrimitives++) = at (baseIndex);
@@ -312,7 +312,7 @@ void CurveVector::ConsolidateAdjacentPrimitives (bool doSimplifyLinestrings, boo
                 baseIndex++;
                 }
             }
-        
+
         resize (numCompressedPrimitives);
         }
 
@@ -340,10 +340,10 @@ double tolerance
     {
     intersections.clear ();
     size_t nPrimitive = size ();
-    tolerance = ResolveTolerance (tolerance);    
+    tolerance = ResolveTolerance (tolerance);
     for (size_t iPrimitive = 0; iPrimitive < nPrimitive; iPrimitive++)
         at(iPrimitive)->AppendCurvePlaneIntersections (plane, intersections, tolerance);
-    
+
     }
 
 
@@ -640,7 +640,7 @@ bool GetNonZeroTangent (DVec3dR tangent, DVec3dCR derivative1, DVec3dCR derivati
 
 // Get ANY frame, but really try for one that is stable ...
 // EXCEPT -- if the very first one has cross product magnitude within crossFraction of best, take it . . . .
-// 
+//
 static bool GetStableFrameOnCurve(ICurvePrimitiveCR curve, TransformR frame, double crossFraction)
     {
     auto linestring = curve.GetLineStringCP ();
@@ -751,7 +751,7 @@ bool CurveVector::GetAnyFrenetFrame (TransformR frame, int searchPreference) con
                     orientation.SquareAndNormalizeColumns (orientation, 0, 2);
                     frame.InitFrom (orientation, xyz0);
                     return true;
-                    }                
+                    }
                 }
             else
                 {
@@ -762,7 +762,7 @@ bool CurveVector::GetAnyFrenetFrame (TransformR frame, int searchPreference) con
                 }
             }
         }
-    
+
     CurveVectorCP child;
     for (size_t i = 0, n = size (); i < n; i++)
         {
@@ -816,7 +816,7 @@ bool CurveVector::IsPlanarWithDefaultNormal (TransformR localToWorld, TransformR
         // "Usual case" --- nonzero in both x and y, zero in z ...
         if (!zeroX && !zeroY && zeroZ)
             return true;
-     
+
         // single line will fail to have a unique transform.  Try again using the given normal and the x axis ...
         if (!zeroX && zeroY && zeroZ)
             {

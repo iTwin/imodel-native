@@ -14,7 +14,7 @@ Individual entries are named thusly
  [ axx axy axz tx ]
  [ ayx ayy ayz ty ]
  [ azx azy azz tz ]
- 
+
 The leading a__ parts are called the "matrix" part, and the t_ parts are called the "translation" part.
 
 #endif
@@ -177,7 +177,7 @@ void InitFromRowValues
     double x10, double x11, double x12, double ty,
     double x20, double x21, double x22, double tz
     );
-    
+
 //flex|| origin and all vectors || || outTransform.InitFromOriginAndVectors (origin, xVector, yVector, zVector)    ||
 //! @description Returns a transformation with origin at origin, x-axis
 //! xVector, y-axis yVector, and z-axis zVector.
@@ -339,7 +339,7 @@ double          xAxisAngleRadians,
 double          xAxisLength,
 double          yAxisLength
 );
-    
+
 //!
 //! Sets this instance to a transformation in the xy-plane with origin at
 //! origin, x-axis xVector and y-axis yVector.
@@ -414,17 +414,17 @@ bool InitNormalizedFrameFromOriginXPointYPoint  (DPoint3dCR origin, DPoint3dCR x
 //! ALWAYS copy the data, even if final row has invalid data.
 //! @return false if 4th row is other than 0001
 //!
-bool InitFrom (DMatrix4dCR matrix); 
+bool InitFrom (DMatrix4dCR matrix);
 
-//! @description Returns a transformation in the xy-plane 
-//! with origin origin, axis axisId towards xPoint, and the other axis 
-//! perpendicular. 
-//! If normalize is false, both axes have length equal to the distance 
-//! between origin and xPoint. //! //! @param [in] origin The origin of coordinate system 
-//! @param [in] xPoint The target point of axis axisId of coordinate system 
-//! @param [in] axisId The axis (x=0, y=1) that points from origin to xPoint 
-//! @param [in] normalize true to have coordinate system normalized 
-//! 
+//! @description Returns a transformation in the xy-plane
+//! with origin origin, axis axisId towards xPoint, and the other axis
+//! perpendicular.
+//! If normalize is false, both axes have length equal to the distance
+//! between origin and xPoint. //! //! @param [in] origin The origin of coordinate system
+//! @param [in] xPoint The target point of axis axisId of coordinate system
+//! @param [in] axisId The axis (x=0, y=1) that points from origin to xPoint
+//! @param [in] normalize true to have coordinate system normalized
+//!
 void InitFrom2Points  (DPoint2dCR origin, DPoint2dCR xPoint, int axisId, bool normalize);
 
 //flex|| Square columns, make all match primary length. || outTrasnform.InitUniformScaleApproximation (transform, primaryAxis, secondaryAxis) || ||
@@ -437,7 +437,7 @@ void InitFrom2Points  (DPoint2dCR origin, DPoint2dCR xPoint, int axisId, bool no
 //! @param [in] secondaryAxis axis defining plane to be maintained.
 //!
 bool InitUniformScaleApproximation  (TransformCR transform, int primaryAxis, int secondaryAxis);
-    
+
 //flex|| True inverse transform || || outTransform.InverseOf (transform) || ValidatedInverse (); ||
 //!
 //! Sets this instance to the inverse transform of in.
@@ -460,7 +460,7 @@ bool InverseOf (TransformCR in);
 //! Symbolically, given transform [R t] return transform [Q Q*(-t)]
 //! where Q is the inverse of matrix R.
 //!
-//! @return 
+//! @return
 //!
 ValidatedTransform ValidatedInverse () const;
 
@@ -970,9 +970,9 @@ void SetFixedPoint (DPoint2dCR point);
 //! @param [in] index column index
 //!
 void GetMatrixColumn  (DVec3dR column, int index) const;
-DVec3d GetMatrixColumn 
+DVec3d GetMatrixColumn
 (
-int index       //!< [in] index of matrix column.(cyclic 012012) 
+int index       //!< [in] index of matrix column.(cyclic 012012)
 ) const;
 
 //!
@@ -1466,7 +1466,7 @@ bool IsRigidScale (double &scale) const;
 //! If source is NOT near to a rigid scale, return false and copy to the dest.
 //! If near an identity return identity.
 //! If nearly perpendicular with scales other than 1, clean preserving the length and direction of the primary axis.
-//! This is intended to be used with a crude (e.g. 1.0e-6) reltol to identify old DGN file matrices that are "dirty" by modern standards but were 
+//! This is intended to be used with a crude (e.g. 1.0e-6) reltol to identify old DGN file matrices that are "dirty" by modern standards but were
 //!   meant to be identity, rotation, or scaled rotations in the UOR era.
 //! @param [in] dest result
 //! @param [in] primaryAxis axis whose orientation and direction is preserved.

@@ -19,12 +19,12 @@ import type {
 } from "@itwin/core-bentley";
 import type {
   ChangesetIndexAndId, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps, ElementGraphicsRequestProps, ElementLoadProps, ElementProps,
-  FilePropertyProps, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
+  FilePropertyProps, FontId, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
   GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, IModelCoordinatesRequestProps,
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
   ModelProps, QueryQuota, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions,
 } from "@itwin/core-common";
-import type { Range3dProps } from "@itwin/core-geometry";
+import type { Range2dProps, Range3dProps } from "@itwin/core-geometry";
 
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-restricted-syntax */
@@ -53,7 +53,7 @@ export const NativeLoggerCategory = {
 /** @internal */
 export interface NativeLogger {
   readonly minLevel: LogLevel | undefined;
-  readonly categoryFilter: {[categoryName: string]: LogLevel};
+  readonly categoryFilter: Readonly<{[categoryName: string]: LogLevel | undefined}>;
   logTrace: (category: string, message: string) => void;
   logInfo: (category: string, message: string) => void;
   logWarning: (category: string, message: string) => void;
@@ -120,6 +120,13 @@ export class NativeLibrary {
     }
     return this._nativeLib;
   }
+}
+/** Use GetInstance() method
+ * @internal
+ */
+export const enum InstanceSerializationMethod {
+  JsonParse = 0,
+  BeJsNapi = 1
 }
 
 /** WAL checkpoint mode
@@ -369,6 +376,18 @@ export declare namespace IModelJsNative {
     diameter?: number;
   }
 
+  /**
+   * Represents the arguments for reading an instance.
+   */
+  interface InstanceArgs {
+    id: Id64String;
+    classId: Id64String;
+    serializationMethod: InstanceSerializationMethod;
+    abbreviateBlobs?: boolean;
+    classIdsToClassNames?: boolean;
+    useJsNames?: boolean;
+  }
+
   enum FontType { TrueType = 1, Rsc = 2, Shx = 3 }
 
   interface FontFaceProps {
@@ -487,14 +506,26 @@ export declare namespace IModelJsNative {
     status: IModelStatus;
   }
 
+  interface TextLayoutRangesProps {
+    layout: Range2dProps;
+    justification: Range2dProps;
+  }
+
+  enum TextEmphasis { None = 0, Bold = 1, Italic = 2, BoldItalic = Bold | Italic }
+
+  type NoCaseCollation = "ASCII" | "Latin1";
+
   /** The native object for a Briefcase. */
   class DgnDb implements IConcurrentQueryManager, SQLiteOps {
     constructor();
     public readonly cloudContainer?: CloudContainer;
+    public getNoCaseCollation(): NoCaseCollation;
+    public setNoCaseCollation(collation: NoCaseCollation): void;
     public schemaSyncSetDefaultUri(syncDbUri: string): void;
     public schemaSyncGetDefaultUri(): string;
-    public schemaSyncInit(syncDbUri: string): void;
+    public schemaSyncInit(syncDbUri: string, containerId: string, overrideContainer: boolean): void;
     public schemaSyncPull(syncDbUri?: string): void;
+    public schemaSyncPush(syncDbUri?: string): void;
     public schemaSyncEnabled(): boolean;
     public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
     public schemaSyncGetSyncDbInfo(syncDbUri: string): SchemaSyncDbInfo | undefined;
@@ -514,6 +545,7 @@ export declare namespace IModelJsNative {
     public closeFile(): void;
     public completeCreateChangeset(arg: { index: number }): void;
     public computeProjectExtents(wantFullExtents: boolean, wantOutlierIds: boolean): { extents: Range3dProps, fullExtents?: Range3dProps, outliers?: Id64Array };
+    public computeRangesForText(chars: string, fontId: FontId, bold: boolean, italic: boolean, widthFactor: number, height: number): TextLayoutRangesProps;
     public concurrentQueryExecute(request: DbRequest, onResponse: ConcurrentQuery.OnResponse): void;
     public concurrentQueryResetConfig(config?: QueryConfig): QueryConfig;
     public concurrentQueryShutdown(): void;
@@ -556,12 +588,14 @@ export declare namespace IModelJsNative {
     public getCurrentTxnId(): TxnIdString;
     public getECClassMetaData(schema: string, className: string): ErrorStatusOrResult<IModelStatus, string>;
     public getElement(opts: ElementLoadProps): ElementProps;
+    public executeSql(sql: string): DbResult;
     public getFilePath(): string; // full path of the DgnDb file
     public getGeoCoordinatesFromIModelCoordinates(points: GeoCoordinatesRequestProps): GeoCoordinatesResponseProps;
     public getGeometryContainment(props: object): Promise<GeometryContainmentResponseProps>;
     public getIModelCoordinatesFromGeoCoordinates(points: IModelCoordinatesRequestProps): IModelCoordinatesResponseProps;
     public getIModelId(): GuidString;
     public getIModelProps(): IModelProps;
+    public getInstance(args: InstanceArgs): { [key: string]: any };
     public getITwinId(): GuidString;
     public getLastError(): string;
     public getLastInsertRowId(): number;
@@ -645,7 +679,7 @@ export declare namespace IModelJsNative {
     public startCreateChangeset(): ChangesetFileProps;
     public startProfiler(scopeName?: string, scenarioName?: string, overrideFile?: boolean, computeExecutionPlan?: boolean): DbResult;
     public stopProfiler(): { rc: DbResult, elapsedTime?: number, scopeId?: number, fileName?: string };
-    public updateElement(elemProps: ElementProps): void;
+    public updateElement(elemProps: Partial<ElementProps>): void;
     public updateElementAspect(aspectProps: ElementAspectProps): void;
     public updateElementGeometryCache(props: object): Promise<any>;
     public updateIModelProps(props: IModelProps): void;
@@ -661,13 +695,15 @@ export declare namespace IModelJsNative {
     public setAutoCheckpointThreshold(frames: number): void;
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
+    public static zlibCompress(data: Uint8Array): Uint8Array;
+    public static zlibDecompress(data: Uint8Array, actualSize: number): Uint8Array;
   }
 
   /** The native object for GeoServices. */
   class GeoServices {
     constructor();
     public static getGeographicCRSInterpretation(props: GeographicCRSInterpretRequestProps): GeographicCRSInterpretResponseProps;
-
+    public static getListOfCRS(extent?: Range2dProps): Array<{ name: string, description: string, deprecated: boolean, crsExtent: Range2dProps }>;
   }
 
   /**
@@ -705,12 +741,14 @@ export declare namespace IModelJsNative {
     public dropSchema(schemaName: string): void;
     public schemaSyncSetDefaultUri(syncDbUri: string): void;
     public schemaSyncGetDefaultUri(): string;
-    public schemaSyncInit(syncDbUri: string): void;
+    public schemaSyncInit(syncDbUri: string, containerId: string, overrideContainer: boolean): void;
     public schemaSyncPull(syncDbUri: string | undefined): void;
+    public schemaSyncPush(syncDbUri: string | undefined): void;
     public schemaSyncEnabled(): boolean;
     public schemaSyncGetLocalDbInfo(): SchemaLocalDbInfo | undefined;
     public schemaSyncGetSyncDbInfo(): SchemaSyncDbInfo | undefined;
     public getFilePath(): string;
+    public getInstance(args: InstanceArgs): { [key: string]: any };
     public getSchemaProps(name: string): SchemaProps;
     public importSchema(schemaPathName: string): DbResult;
     public isOpen(): boolean;
@@ -732,7 +770,7 @@ export declare namespace IModelJsNative {
     public isOpen(): boolean;
     public closeDb(): void;
     public processChangesets(db: DgnDb, changesets: ChangesetFileProps[], rulesetId: string, filterSpatial?: boolean, wantParents?: boolean, wantPropertyChecksums?: boolean, rulesetDir?: string, tempDir?: string, wantChunkTraversal?: boolean): DbResult;
-    public processChangesetsAndRoll(dbFilename: string, dbGuid: string, changesets: ChangesetFileProps[], rulesetId: string, filterSpatial?: boolean, wantParents?: boolean, wantPropertyChecksums?: boolean, rulesetDir?: string, tempDir?: string, wantRelationshipCaching?: boolean, relationshipCacheSize?: number, wantChunkTraversal?: boolean): DbResult;
+    public processChangesetsAndRoll(dbFilename: string, dbGuid: string, changesets: ChangesetFileProps[], rulesetId: string, filterSpatial?: boolean, wantParents?: boolean, wantPropertyChecksums?: boolean, rulesetDir?: string, tempDir?: string, wantRelationshipCaching?: boolean, relationshipCacheSize?: number, wantChunkTraversal?: boolean, wantBoundingBoxes?: boolean): DbResult;
     public getChangedElements(startChangesetId: string, endChangesetId: string): ErrorStatusOrResult<IModelStatus, any>;
     public isProcessed(changesetId: string): boolean;
     public cleanCaches(): void;
@@ -1129,17 +1167,6 @@ export declare namespace IModelJsNative {
     public uploadChanges(): Promise<void>;
 
     /**
-     * Clean any unused deleted blocks from cloud storage. When a database is written, a subset of its blocks are replaced
-     * by new versions, sometimes leaving the originals unused. In this case, they are not deleted immediately.
-     * Instead, they are scheduled for deletion at some later time. Calling this method deletes all blocks in the cloud container
-     * for which the scheduled deletion time has passed.
-     * @param nSeconds Any block that was marked as unused before this number of seconds ago will be deleted. Specifying a non-zero
-     * value gives a period of time for other clients to refresh their manifests and stop using the now-garbage blocks. Otherwise they may get
-     * a 404 error. Default is 1 hour.
-     */
-    public cleanDeletedBlocks(nSeconds?: number): Promise<void>;
-
-    /**
      * Create a copy of an existing database within this CloudContainer with a new name.
      * @note CloudSqlite uses copy-on-write semantics for this operation. That is, this method merely makes a
      * new entry in the manifest with the new name that *shares* all of its blocks with the original database.
@@ -1147,8 +1174,8 @@ export declare namespace IModelJsNative {
      */
     public copyDatabase(dbName: string, toAlias: string): Promise<void>;
 
-    /** Remove a database from this CloudContainer.
-     * @see cleanDeletedBlocks
+    /** Remove a database from this CloudContainer, moving all of its no longer used blocks to the delete list in the manifest.
+     * @see [[CloudSqlite.CleanDeletedBlocksJob]] to actually delete the blocks from the delete list.
      */
     public deleteDatabase(dbName: string): Promise<void>;
 
@@ -1189,13 +1216,13 @@ export declare namespace IModelJsNative {
    * @note The transfer begins when the object is constructed, and the object remains alive during the upload/download operation.
    * It provides the Promise that is resolved when the operation completes or fails, and has methods to provide feedback for progress and to cancel the operation prematurely.
    */
-  class CloudDbTransfer {
+  class CancellableCloudSqliteJob {
     /** create an instance of a transfer. The operation begins immediately when the object is created.
      * @param direction either "upload" or "download"
      * @param container the container holding the database. Does *not* require that the container be connected to a CloudCache.
      * @param args The properties for the source and target of the transfer.
      */
-    constructor(direction: NativeCloudSqlite.TransferDirection, container: CloudContainer, args: NativeCloudSqlite.TransferDbProps);
+    constructor(direction: NativeCloudSqlite.TransferDirection | "cleanup", container: CloudContainer, args: NativeCloudSqlite.TransferDbProps | NativeCloudSqlite.CleanDeletedBlocksOptions);
 
     /** Cancel a currently pending transfer and cause the promise to be rejected with a Cancelled status.
      * @throws exception if the operation has already completed.
@@ -1205,6 +1232,12 @@ export declare namespace IModelJsNative {
      * @throws exception if the operation has already completed.
      */
     public getProgress(): { loaded: number, total: number };
+
+    /**
+     * Only applicable to cleanup jobs. Calling this in a download or upload job will also stop the job but without saving progress.
+     * During a cleanup job, if any blocks have been deleted, the job will stop and upload the manifest reflecting which blocks have been deleted.
+     */
+    public stopAndSaveProgress(): void;
 
     /** Promise that is resolved when the transfer completes, or is rejected if the transfer fails (or is cancelled.) */
     public promise: Promise<void>;
@@ -1344,38 +1377,29 @@ export declare namespace IModelJsNative {
     featureUserData?: FeatureUserDataKeyValuePair[];
   }
 
-  const enum DbChangeStage {
-    Old = 0,
-    New = 1,
-  }
-
-  const enum DbValueType {
-    IntegerVal = 1,
-    FloatVal = 2,
-    TextVal = 3,
-    BlobVal = 4,
-    NullVal = 5,
-  }
-
-  type ChangeValueType = Uint8Array | number | string | null | undefined;
-
   class ChangesetReader {
     public close(): void;
     public getColumnCount(): number;
-    public getColumnValue(col: number, stage: DbChangeStage): ChangeValueType;
-    public getColumnValueType(col: number, stage: DbChangeStage): DbValueType | undefined;
+    public getColumnValue(col: number, stage: number): Uint8Array | number | string | null | undefined;
+    public getColumnValueBinary(col: number, stage: number): Uint8Array | undefined;
+    public getColumnValueDouble(col: number, stage: number): number | undefined;
+    public getColumnValueId(col: number, stage: number): string | undefined;
+    public getColumnValueInteger(col: number, stage: number): number | undefined;
+    public getColumnValueText(col: number, stage: number): string | undefined;
+    public getColumnValueType(col: number, stage: number): number | undefined;
     public getDdlChanges(): string | undefined;
     public getOpCode(): DbOpcode;
-    public getPrimaryKeys(): ChangeValueType[];
-    public getRow(stage: DbChangeStage): ChangeValueType[];
+    public getPrimaryKeys(): (Uint8Array | number | string | null | undefined)[];
+    public getRow(stage: number): (Uint8Array | number | string | null | undefined)[];
     public getTableName(): string;
+    public hasRow(): boolean;
+    public isColumnValueNull(col: number, stage: number): boolean | undefined;
     public isIndirectChange(): boolean;
-    public isPrimaryKeyColumn(col: number): boolean;
+    public getPrimaryKeyColumnIndexes(): number[];
     public openFile(fileName: string, invert: boolean): void;
     public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean): void;
     public reset(): void;
     public step(): boolean;
-    public hasRow(): boolean;
   }
 
   class DisableNativeAssertions implements IDisposable {

@@ -249,7 +249,7 @@ protected:
     ECDB_EXPORT int _OnAddFunction(DbFunction&) const override;
     ECDB_EXPORT void _OnRemoveFunction(DbFunction&) const override;
     ECDB_EXPORT virtual DbResult _AfterSchemaChangeSetApplied() const;
-    ECDB_EXPORT virtual DbResult _AfterDataChangeSetApplied();
+    ECDB_EXPORT virtual DbResult _AfterDataChangeSetApplied(bool schemaChanged);
     //! Resets ECDb's ECInstanceId sequence to the current maximum ECInstanceId for the specified BriefcaseId.
     //! @param[in] briefcaseId BriefcaseId to which the sequence will be reset
     //! @param[in] ecClassIgnoreList List of ids of ECClasses whose ECInstanceIds should be ignored when
@@ -303,10 +303,10 @@ public:
     //         e.g. Remove a sql function or change required argument or format of its return value.
     //  Sub1:  Backward compatible change to 'Syntax'. For example adding new syntax/functions but not breaking any existing.
     //  Sub2:  Backward compatible change to 'Runtime'. For example adding a new sql function.
-    static BeVersion GetECSqlVersion() { return BeVersion(1, 2, 8, 1); }
+    static BeVersion GetECSqlVersion() { return BeVersion(1, 2, 11, 0); }
 
     //! Gets the current version of the ECDb profile
-    static ProfileVersion CurrentECDbProfileVersion() { return ProfileVersion(4, 0, 0, 4); }
+    static ProfileVersion CurrentECDbProfileVersion() { return ProfileVersion(4, 0, 0, 5); }
     //! Gets the minimum version of the ECDb profile for which in-situ upgrades are possible.
     //! Files with an older version cannot be upgraded in-situ.
     static ProfileVersion MinimumUpgradableECDbProfileVersion() { return ProfileVersion(4, 0, 0, 0); }
@@ -518,7 +518,7 @@ public:
     ECDB_EXPORT void RemoveECDbCacheClearListener(IECDbCacheClearListener&);
 
     BeSQLite::DbResult AfterSchemaChangeSetApplied() const { return _AfterSchemaChangeSetApplied(); }
-    BeSQLite::DbResult AfterDataChangeSetApplied() { return _AfterDataChangeSetApplied(); }
+    BeSQLite::DbResult AfterDataChangeSetApplied(bool schemaChanged) { return _AfterDataChangeSetApplied(schemaChanged); }
 
 #if !defined (DOCUMENTATION_GENERATOR)
     Impl& GetImpl() const;

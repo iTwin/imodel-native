@@ -10,7 +10,7 @@ FacetEdgeLocationDetail::FacetEdgeLocationDetail (size_t readIndex, double fract
     : m_readIndex (readIndex), m_fraction(fraction)
     {
     }
-    
+
 FacetEdgeLocationDetail::FacetEdgeLocationDetail ()
     : m_readIndex (SIZE_MAX), m_fraction(0.0)
     {
@@ -25,13 +25,13 @@ void FacetEdgeLocationDetailVector::Add (FacetEdgeLocationDetailCR data)
     {
     m_data.push_back (data);
     }
-    
-    
+
+
 size_t FacetEdgeLocationDetailVector::size () const
     {
     return m_data.size ();
     }
-    
+
 bool FacetEdgeLocationDetailVector::TryGet (size_t index, size_t &readIndex, double &fraction) const
     {
     if (index >= m_data.size ())

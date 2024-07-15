@@ -10,7 +10,7 @@ import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
 import { openDgnDb } from ".";
-import { IModelJsNative, SchemaWriteStatus } from "../NativeLibrary";
+import { IModelJsNative, InstanceSerializationMethod, SchemaWriteStatus } from "../NativeLibrary";
 import { copyFile, dbFileName, getAssetsDir, getOutputDir, iModelJsNative } from "./utils";
 
 // Crash reporting on linux is gated by the presence of this env variable.
@@ -30,6 +30,364 @@ describe("basic tests", () => {
     dgndb.closeFile();
     done();
   });
+  describe("getInstance()", () => {
+    const args = { id: "0x38", classId: "0xe7" };
+    /* eslint-disable @typescript-eslint/naming-convention */
+    const expected0 = {
+      ECInstanceId: "0x38",
+      ECClassId: "0xe7",
+      Model: {
+        Id: "0x1f",
+        RelECClassId: "0x40",
+      },
+      LastMod: "2017-07-25T20:44:59.926Z",
+      CodeSpec: {
+        Id: "0x1",
+        RelECClassId: "0x47",
+      },
+      CodeScope: {
+        Id: "0x1",
+        RelECClassId: "0x49",
+      },
+      Category: {
+        Id: "0x17",
+        RelECClassId: "0x8c",
+      },
+      InSpatialIndex: true,
+      Origin: {
+        X: 6.494445575423782,
+        Y: 19.89784647571006,
+        Z: 8.020100502512559,
+      },
+      Yaw: 25.949359512071446,
+      Pitch: 4.770832022195274e-15,
+      Roll: 114.7782627769506,
+      BBoxLow: {
+        X: -9.735928156263862,
+        Y: -9.735928156263864,
+        Z: -9.735928156263858,
+      },
+      BBoxHigh: {
+        X: 9.735928156263858,
+        Y: 9.73592815626386,
+        Z: 9.735928156263855,
+      },
+      GeometryStream: "{\"bytes\":203}",
+    };
+    const expected01 = {
+      ECInstanceId: "0x38",
+      ECClassId: "0xe7",
+      Model: {
+        Id: "0x1f",
+        RelECClassId: "0x40",
+      },
+      LastMod: "2017-07-25T20:44:59.926Z",
+      CodeSpec: {
+        Id: "0x1",
+        RelECClassId: "0x47",
+      },
+      CodeScope: {
+        Id: "0x1",
+        RelECClassId: "0x49",
+      },
+      Category: {
+        Id: "0x17",
+        RelECClassId: "0x8c",
+      },
+      InSpatialIndex: true,
+      Origin: {
+        X: 6.494445575423782,
+        Y: 19.89784647571006,
+        Z: 8.020100502512559,
+      },
+      Yaw: 25.949359512071446,
+      Pitch: 4.770832022195274e-15,
+      Roll: 114.7782627769506,
+      BBoxLow: {
+        X: -9.735928156263862,
+        Y: -9.735928156263864,
+        Z: -9.735928156263858,
+      },
+      BBoxHigh: {
+        X: 9.735928156263858,
+        Y: 9.73592815626386,
+        Z: 9.735928156263855,
+      },
+      GeometryStream: "encoding=base64;ywCAAjAABgAA+AAAAAEAAAAIDQgBAUAEAAAAMAAAABwAAAAYABQADAUeEQEIBgAHBRgBAQwBAQDwASQJAUALAAAAqAAAAGJnMDAwMWZiEAUXEAoADgAHBUIACgUQCAAHDAUIyAYAfAAEAAYAAAC8t0aTy3gjQNTy0dk2l6Q8BOGMD2d0zbxZPdLR+8bSvLS6W8O77KW8vQ0oBT8IANg8CQgg0LyQPKeSAhKeERAEPLoyKAAk4LwYLURU+yH5vwkIJAlAAQAAAAAAAAA=",
+    };
+    const expected02 = {
+      ECInstanceId: "0x38",
+      ECClassId: "0xe7",
+      Model: {
+        Id: "0x1f",
+        RelECClassId: "0x40",
+      },
+      LastMod: "2017-07-25T20:44:59.926Z",
+      CodeSpec: {
+        Id: "0x1",
+        RelECClassId: "0x47",
+      },
+      CodeScope: {
+        Id: "0x1",
+        RelECClassId: "0x49",
+      },
+      Category: {
+        Id: "0x17",
+        RelECClassId: "0x8c",
+      },
+      InSpatialIndex: true,
+      Origin: {
+        X: 6.494445575423782,
+        Y: 19.89784647571006,
+        Z: 8.020100502512559,
+      },
+      Yaw: 25.949359512071446,
+      Pitch: 4.770832022195274e-15,
+      Roll: 114.7782627769506,
+      BBoxLow: {
+        X: -9.735928156263862,
+        Y: -9.735928156263864,
+        Z: -9.735928156263858,
+      },
+      BBoxHigh: {
+        X: 9.735928156263858,
+        Y: 9.73592815626386,
+        Z: 9.735928156263855,
+      },
+      GeometryStream: new Uint8Array([203, 0, 128, 2, 48, 0, 6, 0, 0, 248, 0, 0, 0, 1, 0, 0, 0, 8, 13, 8, 1, 1, 64, 4, 0, 0, 0, 48, 0, 0, 0, 28, 0, 0, 0, 24, 0, 20, 0, 12, 5, 30, 17, 1, 8, 6, 0, 7, 5, 24, 1, 1, 12, 1, 1, 0, 240, 1, 36, 9, 1, 64, 11, 0, 0, 0, 168, 0, 0, 0, 98, 103, 48, 48, 48, 49, 102, 98, 16, 5, 23, 16, 10, 0, 14, 0, 7, 5, 66, 0, 10, 5, 16, 8, 0, 7, 12, 5, 8, 200, 6, 0, 124, 0, 4, 0, 6, 0, 0, 0, 188, 183, 70, 147, 203, 120, 35, 64, 212, 242, 209, 217, 54, 151, 164, 60, 4, 225, 140, 15, 103, 116, 205, 188, 89, 61, 210, 209, 251, 198, 210, 188, 180, 186, 91, 195, 187, 236, 165, 188, 189, 13, 40, 5, 63, 8, 0, 216, 60, 9, 8, 32, 208, 188, 144, 60, 167, 146, 2, 18, 158, 17, 16, 4, 60, 186, 50, 40, 0, 36, 224, 188, 24, 45, 68, 84, 251, 33, 249, 191, 9, 8, 36, 9, 64, 1, 0, 0, 0, 0, 0, 0, 0]),
+    };
+    /* eslint-enable @typescript-eslint/naming-convention */
+
+    const expected1 = {
+      id: "0x38",
+      className: "Generic.PhysicalObject",
+      model: {
+        id: "0x1f",
+        relClassName: "BisCore.ModelContainsElements",
+      },
+      lastMod: "2017-07-25T20:44:59.926Z",
+      codeSpec: {
+        id: "0x1",
+        relClassName: "BisCore.CodeSpecSpecifiesCode",
+      },
+      codeScope: {
+        id: "0x1",
+        relClassName: "BisCore.ElementScopesCode",
+      },
+      category: {
+        id: "0x17",
+        relClassName: "BisCore.GeometricElement3dIsInCategory",
+      },
+      inSpatialIndex: true,
+      origin: {
+        x: 6.494445575423782,
+        y: 19.89784647571006,
+        z: 8.020100502512559,
+      },
+      yaw: 25.949359512071446,
+      pitch: 4.770832022195274e-15,
+      roll: 114.7782627769506,
+      bBoxLow: {
+        x: -9.735928156263862,
+        y: -9.735928156263864,
+        z: -9.735928156263858,
+      },
+      bBoxHigh: {
+        x: 9.735928156263858,
+        y: 9.73592815626386,
+        z: 9.735928156263855,
+      },
+      geometryStream: "{\"bytes\":203}",
+    };
+
+    const expected11 = {
+      id: "0x38",
+      className: "Generic.PhysicalObject",
+      model: {
+        id: "0x1f",
+        relClassName: "BisCore.ModelContainsElements",
+      },
+      lastMod: "2017-07-25T20:44:59.926Z",
+      codeSpec: {
+        id: "0x1",
+        relClassName: "BisCore.CodeSpecSpecifiesCode",
+      },
+      codeScope: {
+        id: "0x1",
+        relClassName: "BisCore.ElementScopesCode",
+      },
+      category: {
+        id: "0x17",
+        relClassName: "BisCore.GeometricElement3dIsInCategory",
+      },
+      inSpatialIndex: true,
+      origin: {
+        x: 6.494445575423782,
+        y: 19.89784647571006,
+        z: 8.020100502512559,
+      },
+      yaw: 25.949359512071446,
+      pitch: 4.770832022195274e-15,
+      roll: 114.7782627769506,
+      bBoxLow: {
+        x: -9.735928156263862,
+        y: -9.735928156263864,
+        z: -9.735928156263858,
+      },
+      bBoxHigh: {
+        x: 9.735928156263858,
+        y: 9.73592815626386,
+        z: 9.735928156263855,
+      },
+      geometryStream: new Uint8Array([203, 0, 128, 2, 48, 0, 6, 0, 0, 248, 0, 0, 0, 1, 0, 0, 0, 8, 13, 8, 1, 1, 64, 4, 0, 0, 0, 48, 0, 0, 0, 28, 0, 0, 0, 24, 0, 20, 0, 12, 5, 30, 17, 1, 8, 6, 0, 7, 5, 24, 1, 1, 12, 1, 1, 0, 240, 1, 36, 9, 1, 64, 11, 0, 0, 0, 168, 0, 0, 0, 98, 103, 48, 48, 48, 49, 102, 98, 16, 5, 23, 16, 10, 0, 14, 0, 7, 5, 66, 0, 10, 5, 16, 8, 0, 7, 12, 5, 8, 200, 6, 0, 124, 0, 4, 0, 6, 0, 0, 0, 188, 183, 70, 147, 203, 120, 35, 64, 212, 242, 209, 217, 54, 151, 164, 60, 4, 225, 140, 15, 103, 116, 205, 188, 89, 61, 210, 209, 251, 198, 210, 188, 180, 186, 91, 195, 187, 236, 165, 188, 189, 13, 40, 5, 63, 8, 0, 216, 60, 9, 8, 32, 208, 188, 144, 60, 167, 146, 2, 18, 158, 17, 16, 4, 60, 186, 50, 40, 0, 36, 224, 188, 24, 45, 68, 84, 251, 33, 249, 191, 9, 8, 36, 9, 64, 1, 0, 0, 0, 0, 0, 0, 0]),
+    };
+    const expected12 = {
+      id: "0x38",
+      className: "Generic.PhysicalObject",
+      model: {
+        id: "0x1f",
+        relClassName: "BisCore.ModelContainsElements",
+      },
+      lastMod: "2017-07-25T20:44:59.926Z",
+      codeSpec: {
+        id: "0x1",
+        relClassName: "BisCore.CodeSpecSpecifiesCode",
+      },
+      codeScope: {
+        id: "0x1",
+        relClassName: "BisCore.ElementScopesCode",
+      },
+      category: {
+        id: "0x17",
+        relClassName: "BisCore.GeometricElement3dIsInCategory",
+      },
+      inSpatialIndex: true,
+      origin: {
+        x: 6.494445575423782,
+        y: 19.89784647571006,
+        z: 8.020100502512559,
+      },
+      yaw: 25.949359512071446,
+      pitch: 4.770832022195274e-15,
+      roll: 114.7782627769506,
+      bBoxLow: {
+        x: -9.735928156263862,
+        y: -9.735928156263864,
+        z: -9.735928156263858,
+      },
+      bBoxHigh: {
+        x: 9.735928156263858,
+        y: 9.73592815626386,
+        z: 9.735928156263855,
+      },
+      geometryStream: "encoding=base64;ywCAAjAABgAA+AAAAAEAAAAIDQgBAUAEAAAAMAAAABwAAAAYABQADAUeEQEIBgAHBRgBAQwBAQDwASQJAUALAAAAqAAAAGJnMDAwMWZiEAUXEAoADgAHBUIACgUQCAAHDAUIyAYAfAAEAAYAAAC8t0aTy3gjQNTy0dk2l6Q8BOGMD2d0zbxZPdLR+8bSvLS6W8O77KW8vQ0oBT8IANg8CQgg0LyQPKeSAhKeERAEPLoyKAAk4LwYLURU+yH5vwkIJAlAAQAAAAAAAAA=",
+    };
+    it("default format with JsonParse", () => {
+      const actual = dgndb.getInstance({
+        ...args,
+        serializationMethod: InstanceSerializationMethod.JsonParse,
+      });
+      assert.deepEqual(actual, expected0);
+    });
+    it("default format with BeJsNapi", () => {
+      const actual = dgndb.getInstance({
+        ...args,
+        serializationMethod: InstanceSerializationMethod.BeJsNapi,
+      });
+      assert.deepEqual(actual, expected0);
+    });
+    it("return blob with JsonParse", () => {
+      const actual = dgndb.getInstance({
+        ...args,
+        serializationMethod: InstanceSerializationMethod.JsonParse,
+        abbreviateBlobs: false,
+      });
+      assert.deepEqual(actual, expected01);
+    });
+    it("return blob with BeJsNapi", () => {
+      const actual = dgndb.getInstance({
+        ...args,
+        serializationMethod: InstanceSerializationMethod.BeJsNapi,
+        abbreviateBlobs: false,
+      });
+      assert.deepEqual(actual, expected02);
+    });
+    it("with useJsName using JsonParse ", () => {
+      const actual = dgndb.getInstance({
+        ...args,
+        serializationMethod: InstanceSerializationMethod.JsonParse,
+        useJsNames: true,
+        classIdsToClassNames: true,
+      });
+      assert.deepEqual(actual, expected1);
+    });
+    it("with useJsName using BeJsNapi ", () => {
+      const actual = dgndb.getInstance({
+        ...args,
+        serializationMethod: InstanceSerializationMethod.BeJsNapi,
+        useJsNames: true,
+        classIdsToClassNames: true,
+      });
+      assert.deepEqual(actual, expected1);
+    });
+    it("with useJsName & blob using JsonParse ", () => {
+      const actual = dgndb.getInstance({
+        ...args,
+        serializationMethod: InstanceSerializationMethod.JsonParse,
+        useJsNames: true,
+        classIdsToClassNames: true,
+        abbreviateBlobs: false,
+      });
+      assert.deepEqual(actual, expected12);
+    });
+    it("with useJsName & blob using BeJsNapi ", () => {
+      const actual = dgndb.getInstance({
+        ...args,
+        serializationMethod: InstanceSerializationMethod.BeJsNapi,
+        useJsNames: true,
+        classIdsToClassNames: true,
+        abbreviateBlobs: false,
+      });
+      assert.deepEqual(actual, expected11);
+    });
+  });
+  it("compress/decompress", () => {
+    const assertCompressAndThenDecompress = (sourceData: Uint8Array) => {
+      const compressData = iModelJsNative.DgnDb.zlibCompress(sourceData);
+      const decompressData = iModelJsNative.DgnDb.zlibDecompress(compressData, sourceData.length);
+      assert(compressData.length < decompressData.length);
+      assert.deepEqual(sourceData, decompressData);
+    };
+    // generate buffer with repeating byte where k is repeated n times.
+    const genBuff = (k: number, n: number) => {
+      return Uint8Array.from(Array.from({ length: n }, () => k));
+    };
+
+    assertCompressAndThenDecompress(genBuff(1, 1024));
+    assertCompressAndThenDecompress(genBuff(2, 1024));
+
+    const seedUri = path.join(getOutputDir(), "compress-decompress.bim");
+    if (fs.existsSync(seedUri)) {
+      fs.unlinkSync(seedUri);
+    }
+    const iModelDb = new iModelJsNative.DgnDb();
+    iModelDb.createIModel(seedUri, { rootSubject: { name: "test file" } });
+
+    const propData = genBuff(1, 1024);
+    iModelDb.saveFileProperty({ namespace: "test", name: "test" }, "hello", propData);
+    iModelDb.saveChanges();
+    const stmt = new iModelJsNative.SqliteStatement();
+    stmt.prepare(iModelDb, "SELECT [RawSize], [Data] FROM [be_Prop] WHERE [NameSpace] = 'test' AND [Name] = 'test'");
+    assert.equal(stmt.step(), DbResult.BE_SQLITE_ROW);
+    const rawSize = stmt.getValueInteger(0);
+    assert.notEqual(rawSize, 0);
+    const blob = stmt.getValueBlob(1);
+    stmt.dispose();
+    const propDecompressData = iModelJsNative.DgnDb.zlibDecompress(blob, rawSize);
+    assert.deepEqual(propData, propDecompressData);
+    iModelDb.saveChanges();
+    iModelDb.closeFile();
+  });
 
   it("schema synchronization", () => {
 
@@ -39,10 +397,10 @@ describe("basic tests", () => {
       }
       fs.copyFileSync(from, to);
     };
-    const getCheckSum = (db: IModelJsNative.ECDb | IModelJsNative.DgnDb, type: "ecdb_schema" | "ecdb_map"| "sqlite_schema") => {
+    const getCheckSum = (db: IModelJsNative.ECDb | IModelJsNative.DgnDb, type: "ecdb_schema" | "ecdb_map" | "sqlite_schema") => {
       const stmt = new iModelJsNative.ECSqlStatement();
       assert.equal(DbResult.BE_SQLITE_OK, stmt.prepare(db, `PRAGMA checksum(${type})`).status);
-      assert.equal(DbResult.BE_SQLITE_ROW,stmt.step());
+      assert.equal(DbResult.BE_SQLITE_ROW, stmt.step());
       const val = stmt.getValue(0).getString();
       assert.isNotEmpty(val);
       stmt.dispose();
@@ -70,18 +428,18 @@ describe("basic tests", () => {
     // create empty sync db.
     const syncDbUri = path.join(baseDir, "syncdb.ecdb");
     const syncDb = new iModelJsNative.ECDb();
-    let rc: DbResult = syncDb.createDb(syncDbUri);
+    const rc: DbResult = syncDb.createDb(syncDbUri);
     assert.equal(DbResult.BE_SQLITE_OK, rc);
     syncDb.saveChanges();
     syncDb.closeDb();
 
     // create seed file.
-    const seedUri= path.join(baseDir, "seed.bim");
+    const seedUri = path.join(baseDir, "seed.bim");
     const iModelDb = new iModelJsNative.DgnDb();
     iModelDb.createIModel(seedUri, { rootSubject: { name: "test file" } });
 
     // initialize sync db.
-    iModelDb.schemaSyncInit(syncDbUri);
+    iModelDb.schemaSyncInit(syncDbUri, "xxxxx", false);
     iModelDb.saveChanges();
     iModelDb.performCheckpoint();
 
@@ -89,7 +447,7 @@ describe("basic tests", () => {
     const sharedInfo = iModelDb.schemaSyncGetSyncDbInfo(syncDbUri);
     assert.equal(localInfo?.id, sharedInfo?.id);
     assert.equal(localInfo?.dataVer, sharedInfo?.dataVer);
-    assert.equal(localInfo?.dataVer, "0x2");
+    assert.equal(localInfo?.dataVer, "0x1");
     iModelDb.closeFile();
 
     // create first briefcase
@@ -119,8 +477,7 @@ describe("basic tests", () => {
             <ECProperty propertyName="p2" typeName="int" />
         </ECEntityClass>
     </ECSchema>`;
-    rc = b0.importXmlSchemas([schema1], { schemaSyncDbUri: syncDbUri });
-    assert.equal(DbResult.BE_SQLITE_OK, rc);
+    b0.importXmlSchemas([schema1], { schemaSyncDbUri: syncDbUri });
 
     const schema2 = `<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -133,8 +490,7 @@ describe("basic tests", () => {
           <ECProperty propertyName="p4" typeName="int" />
         </ECEntityClass>
     </ECSchema>`;
-    rc = b1.importXmlSchemas([schema2], { schemaSyncDbUri: syncDbUri });
-    assert.equal(DbResult.BE_SQLITE_OK, rc);
+    b1.importXmlSchemas([schema2], { schemaSyncDbUri: syncDbUri });
 
     b0.schemaSyncPull(syncDbUri);
 
@@ -163,8 +519,7 @@ describe("basic tests", () => {
           <ECProperty propertyName="p6" typeName="int" />
         </ECEntityClass>
     </ECSchema>`;
-    rc = b2.importXmlSchemas([schema3]);
-    assert.equal(DbResult.BE_SQLITE_OK, rc);
+    b2.importXmlSchemas([schema3]);
 
     b0.saveChanges();
     b1.saveChanges();
@@ -231,12 +586,33 @@ describe("basic tests", () => {
     let bisProps = db.getSchemaProps("BisCore");
     assert.isTrue(bisProps.version === "01.00.00");
     const schemaPath = path.join(iModelJsNative.DgnDb.getAssetsDir(), "ECSchemas/Domain/PresentationRules.ecschema.xml");
-    const result = db.importSchemas([schemaPath], { schemaLockHeld: false });
-    assert.isTrue(result === DbResult.BE_SQLITE_OK);
+    db.importSchemas([schemaPath], { schemaLockHeld: false });
 
     db.getSchemaProps("PresentationRules");
     bisProps = db.getSchemaProps("BisCore");
     assert.isTrue(bisProps.version >= "01.00.15"); // PR references 01.00.15+, so importing PR will cause it to upgrade.
+  });
+
+  it("testSchemaImport NoAdditionalRootEntityClasses", () => {
+    const writeDbFileName = copyFile("noAdditionalRootEntityClasses.bim", dbFileName);
+    // Without ProfileOptions.Upgrade, we get: Error | ECDb | Failed to import schema 'BisCore.01.00.15'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.
+    const db = openDgnDb(writeDbFileName, { profile: ProfileOptions.Upgrade, schemaLockHeld: false });
+    assert.isTrue(db !== undefined);
+    const bisProps = db.getSchemaProps("BisCore");
+    assert.isTrue(bisProps.version === "01.00.00");
+
+    const schema = `<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name='ECDbMap' version='02.00.03' alias='ecdbmap' />
+        <ECEntityClass typeName="NewRootClass" modifier="Abstract">
+            <ECProperty propertyName="Name" typeName="string" />
+        </ECEntityClass>
+    </ECSchema>`;
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    const BE_SQLITE_ERROR_SchemaUpgradeFailed = (DbResult.BE_SQLITE_IOERR | 19 << 24);
+    expect(() => db.importXmlSchemas([schema], { schemaLockHeld: false }))
+      .to.throw("Failed to import ECClass 'TestSchema:NewRootClass'. It violates against the 'No additional root entity classes' policy which means that all entity classes must subclass from classes defined in the ECSchema BisCore")
+      .property("errorNumber").equal(BE_SQLITE_ERROR_SchemaUpgradeFailed);
   });
 
   it("testSchemaImportPrefersExistingAndLocalOverStandard", () => {
@@ -248,8 +624,7 @@ describe("basic tests", () => {
     // BisCore will not be updated because Test only requests BisCore.01.00.00 which is already in the db
     // db has higher precedence than standard schema paths so BisCore from the db is used as the schema ref
     const bisProps = db.getSchemaProps("BisCore");
-    let result = db.importSchemas([test100Path], { schemaLockHeld: false });
-    assert.equal(result, DbResult.BE_SQLITE_OK);
+    db.importSchemas([test100Path], { schemaLockHeld: false });
     assert.equal(db.getSchemaProps("BisCore").version, bisProps.version, "BisCore after Test 1.0.0 import");
 
     const testRefProps = db.getSchemaProps("TestRef");
@@ -259,8 +634,7 @@ describe("basic tests", () => {
     // local directory has higher precedence than the db
     const subAssetsDir = path.join(assetsDir, "LocalReferences");
     const test101Path = path.join(subAssetsDir, "Test.01.00.01.ecschema.xml");
-    result = db.importSchemas([test101Path], { schemaLockHeld: false });
-    assert.equal(result, DbResult.BE_SQLITE_OK);
+    db.importSchemas([test101Path], { schemaLockHeld: false });
     assert.equal(db.getSchemaProps("TestRef").version, "01.00.01", "TestRef after Test 1.0.1 import");
   });
 
@@ -305,7 +679,7 @@ describe("basic tests", () => {
     }
     iModelJsNative.setCrashReporting({
       enableCrashDumps: true,
-      crashDir: __dirname,
+      crashDir: path.join(getOutputDir(), "crashdumps"),
       params: [
         { name: "foo", value: "bar" },
         { name: "foo2", value: "baz" },
@@ -335,9 +709,9 @@ describe("basic tests", () => {
 
     const db = new iModelJsNative.SQLiteDb();
     // rawSQLite being false causes us to look for the presence of be_prop table, which gives us SQLITE_NOTADB
-    expect(() => db.openDb(pathToDb, {openMode: OpenMode.ReadWrite})).to.throw("file is not a database");
+    expect(() => db.openDb(pathToDb, { openMode: OpenMode.ReadWrite })).to.throw("file is not a database");
     // rawSQLite being true skips be_prop check so we can open the database, but will fail later on if we step and prepare on the db.
-    expect(() => db.openDb(pathToDb, {openMode: OpenMode.ReadWrite, rawSQLite: true})).to.not.throw();
+    expect(() => db.openDb(pathToDb, { openMode: OpenMode.ReadWrite, rawSQLite: true })).to.not.throw();
     db.closeDb();
   });
 
@@ -553,20 +927,19 @@ describe("basic tests", () => {
     db.saveChanges();
 
     // import a schema with changes that only required SchemaLock
-    let rc = db.importXmlSchemas([generateSchema(20, 1)], { schemaLockHeld: false });
-    assert.equal(rc, DbResult.BE_SQLITE_OK);
+    db.importXmlSchemas([generateSchema(20, 1)], { schemaLockHeld: false });
     db.saveChanges();
 
     // eslint-disable-next-line @typescript-eslint/naming-convention
     const BE_SQLITE_ERROR_DataTransformRequired = (DbResult.BE_SQLITE_IOERR | 23 << 24);
 
     // import should fail when schemaLockHeld flag is set to false which will fail the operation if data transform is required.
-    rc = db.importXmlSchemas([generateSchema(20, 20)], { schemaLockHeld: false });
-    assert.equal(rc, BE_SQLITE_ERROR_DataTransformRequired);
+    expect(() => db.importXmlSchemas([generateSchema(20, 20)], { schemaLockHeld: false }))
+      .to.throw("Import ECSchema failed. Data transform is required which is rejected by default unless explicitly allowed.")
+      .property("errorNumber").equal(BE_SQLITE_ERROR_DataTransformRequired);
 
     // import should be successful when schemaLockHeld flag is set to true so it can transform data if required.
-    rc = db.importXmlSchemas([generateSchema(20, 20)], { schemaLockHeld: true });
-    assert.equal(rc, DbResult.BE_SQLITE_OK);
+    db.importXmlSchemas([generateSchema(20, 20)], { schemaLockHeld: true });
     db.saveChanges();
     db.closeFile();
   });
@@ -653,6 +1026,7 @@ describe("basic tests", () => {
     assert(result.result);
     const classMetaData = JSON.parse(result.result);
     expect(classMetaData).to.deep.equal({
+      classId: "0x44",
       ecclass: "BisCore:ISubModeledElement",
       description:
         "An interface which indicates that an Element can be broken down or described by a (sub) Model.  " +
@@ -764,8 +1138,7 @@ describe("basic tests", () => {
       assert.isTrue(db.isOpen());
 
       // importXmlSchemas expects schemas to be in dependency order
-      const rc = db.importXmlSchemas([ec3RefSchema, ec3SchemaXml], { schemaLockHeld: true });
-      assert.equal(rc, DbResult.BE_SQLITE_OK);
+      db.importXmlSchemas([ec3RefSchema, ec3SchemaXml], { schemaLockHeld: true });
       db.saveChanges();
 
       const refSchema: IModelJsNative.SchemaProps = db.getSchemaProps("TrapRef");
@@ -810,8 +1183,7 @@ describe("basic tests", () => {
       assert.isTrue(db !== undefined);
       assert.isTrue(db.isOpen());
 
-      const rc = db.importXmlSchemas(schemasWithUpdatedCA, { schemaLockHeld: true });
-      assert.equal(rc, DbResult.BE_SQLITE_OK);
+      db.importXmlSchemas(schemasWithUpdatedCA, { schemaLockHeld: true });
       db.saveChanges();
 
       const schema: IModelJsNative.SchemaProps = db.getSchemaProps("TestSchema");
@@ -911,8 +1283,7 @@ describe("basic tests", () => {
       assert.isTrue(db !== undefined);
       assert.isTrue(db.isOpen());
 
-      const rc = db.importXmlSchemas([ec3RefSchema, ec3SchemaXml], { schemaLockHeld: true });
-      assert.equal(rc, DbResult.BE_SQLITE_OK);
+      db.importXmlSchemas([ec3RefSchema, ec3SchemaXml], { schemaLockHeld: true });
       db.saveChanges();
 
       const refSchema: IModelJsNative.SchemaProps = db.getSchemaProps("TrapRef");
@@ -1006,7 +1377,7 @@ describe("basic tests", () => {
     assert.isTrue(testDb !== undefined);
 
     // Import the schema as ECXML 3.2 which has ECXml 3.2 unit LUMEN_PER_W
-    assert.equal(DbResult.BE_SQLITE_OK, testDb.importXmlSchemas([`<?xml version="1.0" encoding="UTF-8"?>
+    testDb.importXmlSchemas([`<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" displayLabel="TestSchema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
         <ECSchemaReference name="Formats" version="01.00.00" alias="f"/>
@@ -1021,7 +1392,7 @@ describe("basic tests", () => {
         </ECEntityClass>
         <KindOfQuantity typeName="TestKoq" displayLabel="TestKoq" persistenceUnit="u:LUMEN_PER_W" relativeError="10.763910416709722" presentationUnits="f:DefaultRealU[u:LUMEN_PER_W]"/>
         <PropertyCategory typeName="TestCategory" displayLabel="TestCategory" priority="200000"/>
-    </ECSchema>`]));
+    </ECSchema>`]);
 
     testDb.saveChanges();
 
@@ -1042,7 +1413,7 @@ describe("basic tests", () => {
     const propCatStr = `<PropertyCategory typeName="TestCategory" displayLabel="TestCategory" priority="200000"/>`;
 
     // Read the exported file to check if schema was serialized as ECXml 3.2
-    const exportedFileStr = fs.readFileSync(path.join(getOutputDir(), `ExportedTestSchema.ecschema.xml`), { encoding: "utf8"});
+    const exportedFileStr = fs.readFileSync(path.join(getOutputDir(), `ExportedTestSchema.ecschema.xml`), { encoding: "utf8" });
     assert.notEqual(exportedFileStr, undefined);
     expect(exportedFileStr.includes(`${xmlVersionStr}ECXML.3.2"`)).to.be.true;
     expect(exportedFileStr.includes(`${xmlVersionStr}ECXML.3.1"`)).to.be.false;
@@ -1073,5 +1444,45 @@ describe("basic tests", () => {
     expect(schemaXmlStr!.includes(propCatStr)).to.be.true;
 
     testDb.closeFile();
+  });
+  it("NoCaseCollation", async () => {
+    const pathToDb = path.join(getAssetsDir(), "test.bim");
+    const testFile = path.join(getAssetsDir(), "collation.bim");
+    if (fs.existsSync(testFile)) {
+      fs.unlinkSync(testFile);
+    }
+    fs.copyFileSync(pathToDb, testFile);
+
+    const db = new iModelJsNative.DgnDb();
+    db.openIModel(testFile, OpenMode.ReadWrite);
+    expect(db.getNoCaseCollation()).to.be.equals("ASCII");
+    const executeSql = (sql: string, cb: (stmt: IModelJsNative.SqliteStatement) => void) => {
+      const stmt = new iModelJsNative.SqliteStatement();
+      stmt.prepare(db, sql);
+      cb(stmt);
+      stmt.dispose();
+    };
+    db.saveChanges();
+    executeSql("CREATE TABLE [Foo]([Id] INTEGER PRIMARY KEY, [Name] TEXT UNIQUE COLLATE NOCASE);", (stmt) => {
+      expect(stmt.step()).equals(DbResult.BE_SQLITE_DONE);
+    });
+
+    db.saveChanges();
+    executeSql("INSERT INTO Foo(Name)VALUES('ÀÁÂÃÄÅ')", (stmt) => {
+      expect(stmt.step()).equals(DbResult.BE_SQLITE_DONE);
+    });
+    executeSql("INSERT INTO Foo(Name)VALUES('àáâãäå')", (stmt) => {
+      expect(stmt.step()).equals(DbResult.BE_SQLITE_DONE);
+    });
+    db.abandonChanges();
+    db.setNoCaseCollation("Latin1");
+
+    executeSql("INSERT INTO Foo(Name)VALUES('ÀÁÂÃÄÅ')", (stmt) => {
+      expect(stmt.step()).equals(DbResult.BE_SQLITE_DONE);
+    });
+    executeSql("INSERT INTO Foo(Name)VALUES('àáâãäå')", (stmt) => {
+      expect(stmt.step()).equals(DbResult.BE_SQLITE_CONSTRAINT_UNIQUE);
+    });
+    db.closeFile();
   });
 });

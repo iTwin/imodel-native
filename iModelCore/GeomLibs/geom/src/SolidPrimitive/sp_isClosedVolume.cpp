@@ -47,7 +47,7 @@ bool DgnExtrusionDetail::IsClosedVolume () const
     {
     return m_capped;
     }
-    
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod

@@ -85,7 +85,7 @@ void CurveCurveProcessor::Process (ICurvePrimitiveP curveA, ICurvePrimitiveP cur
     {
     ICurvePrimitive::CurvePrimitiveType typeA = curveA->GetCurvePrimitiveType ();
     ICurvePrimitive::CurvePrimitiveType typeB = curveB->GetCurvePrimitiveType ();
-    
+
     if (typeA == ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector)
         {
         CurveVectorCP vectorA = curveA->GetChildCurveVectorCP ();
@@ -132,7 +132,7 @@ void CurveCurveProcessor::Process (ICurvePrimitiveP curveA, ICurvePrimitiveP cur
                     if (NULL != curveB->GetProxyBsplineCurveCP ())
                         ProcessLineBspline (curveA, *curveA->GetLineCP (),curveB, false);
                     break;
-                    }                    
+                    }
                 }
             break;
 

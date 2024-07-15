@@ -1153,7 +1153,7 @@ SimpleBooleanMarkupContext                *pUserData
     return boolstat;
     }
 
-struct SimpleBooleanMarkupContext 
+struct SimpleBooleanMarkupContext
     {
     RGBoolSelect selectorAB;
     RGBoolSelect selectorC;
@@ -1163,9 +1163,9 @@ struct SimpleBooleanMarkupContext
     int         highestGroupB;
     int         countA;
     int         countB;
-    int         countC;     
+    int         countC;
     bool        reverseSense;   // reverse the sense of the tests.
-    
+
     SimpleBooleanMarkupContext (
             RGBoolSelect _selectorAB,
             RGBoolSelect _selectorC,
@@ -1184,7 +1184,7 @@ struct SimpleBooleanMarkupContext
     ~SimpleBooleanMarkupContext ()
         {
         }
-        
+
     bool IsValidGroupId (int g)
         {
         return g >= 0 && g < (int)groupParityArray.size ();
@@ -1214,7 +1214,7 @@ struct SimpleBooleanMarkupContext
         for (ptrdiff_t i = 0; i < numGroup; i++)
             groupParityArray.push_back (0);
         }
-        
+
 
 /*------------------------------------------------------------------*//**
 * Callback to handle face entry and exit.
@@ -1491,9 +1491,37 @@ MTG_MarkSet *pMarkSet
     }
 
 /*------------------------------------------------------------------*//**
+* Detect faces that can be ignored in region parity markup.
++---------------+---------------+---------------+---------------+------*/
+static bool markup_isMaskedNullFace(RG_Header* pRG, MTGNodeId nodeId, MTGMask mask)
+    {
+    if (pRG && pRG->pGraph)
+        {
+        if (jmdlRG_faceIsNull(pRG, nodeId))
+            return true; // an official null face
+
+        // unofficial null faces: 2-edge, 0-area faces with given mask
+        if (pRG->pGraph->HasMaskAt(nodeId, mask))
+            {
+            if (2 == pRG->pGraph->CountNodesAroundFace(nodeId))
+                {
+                double area = 0.0;
+                if (jmdlRG_getFaceSweepProperties(pRG, &area, nullptr, nullptr, nodeId))
+                    {
+                    // a 2-edge face with positive area (curved "banana" face) is not null
+                    if (0.0 == area)
+                        return true;
+                    }
+                }
+            }
+        }
+    return false;
+    }
+
+/*------------------------------------------------------------------*//**
 * Find the maximum group id in the graph.
 * Initialize parity array to zero for each group id from 0 to max.
-* @return false if there are edges with no groupid.
+* @return false if there are edge(s) in non-null face(s) with no groupid.
 * @bsimethod
 +---------------+---------------+---------------+---------------+------*/
 static bool        markup_initGroupParityArray
@@ -1520,7 +1548,7 @@ SimpleBooleanMarkupContext *pMarkup
                 if (groupId > maxGroupId)
                     maxGroupId = groupId;
                 }
-            else
+            else if (!markup_isMaskedNullFace(pRG, seedNodeId, RG_MTGMASK_NULL_FACE | RG_MTGMASK_GAP_MASK))
                 {
                 boolstat = false;
                 }
@@ -1581,7 +1609,7 @@ bool                reverseSense
     SimpleBooleanMarkupContext context (selectAB, selectC, pMarkSet, highestOperandA, highestOperandB, reverseSense);
     static bool    s_noisy = false;
     if (s_noisy)
-        jmdlRG_setNoisy (1000);  
+        jmdlRG_setNoisy (1000);
     bool    result = false;
 
     jmdlMTGMarkSet_empty (pMarkSet);
@@ -1604,10 +1632,10 @@ bool                reverseSense
     if (s_noisy)
         jmdlMTGGraph_printFaceLoopsExt (pRG->pGraph, (MTGNodeFunc)printNodeXY, pRG);
     if (s_noisy)
-        jmdlRG_setNoisy (0);          
+        jmdlRG_setNoisy (0);
     return result;
     }
-    
+
 Public bool     jmdlRG_collectBooleanFaces
 (
 RG_Header           *pRG,
@@ -1776,7 +1804,7 @@ bool    bIncludeMarkedSimpleLoops
 //! @param [inout] pMarkSet face set already accepted.   Flooding will not reenter these faces.  Flood faces are added to this set.
 //! @param [inout] addedNodes New nodes are added here.
 //! @param [in] seedNode
-void jmdlMTG_floodToBoundary (MTGGraph *graph, 
+void jmdlMTG_floodToBoundary (MTGGraph *graph,
 MTG_MarkSet &markset,
 MTGMask barrierMask,
 MTGNodeId seedNodeId

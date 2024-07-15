@@ -710,7 +710,7 @@ ChangesetPropsPtr JsInterop::GetChangesetProps(Utf8StringCR dbGuid, BeJsConst ar
     if (!changeSetPathname.DoesPathExist())
         ThrowJsException("changeset file not found");
 
-    ChangesetPropsPtr changeset = new ChangesetProps(arg["id"].asString(), arg["index"].asInt(), arg["parentId"].asString(), dbGuid, changeSetPathname);
+    ChangesetPropsPtr changeset = new ChangesetProps(arg["id"].asString(), arg["index"].asInt(), arg["parentId"].asString(), dbGuid, changeSetPathname, (ChangesetProps::ChangesetType)arg["changesType"].asInt());
 
     if (arg.isStringMember("pushDate"))
         changeset->SetDateTime(DateTime::FromString(arg["pushDate"].asString().c_str()));
@@ -917,6 +917,119 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
 
     return dgndb.SaveChanges();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Napi::Value JsInterop::GetInstance(ECDbR db, NapiInfoCR info) {
+    constexpr auto kUseJsName = "useJsNames";
+    constexpr auto kClassId = "classId";
+    constexpr auto kClassIdsToClassNames = "classIdsToClassNames";
+    constexpr auto kAbbreviateBlobs = "abbreviateBlobs";
+    constexpr auto kId = "id";
+    constexpr auto kSerializationMethod = "serializationMethod";
+    enum SerializationMethod {
+        JsonParse = 0,
+        BeJsNapi = 1
+    };
+
+    REQUIRE_ARGUMENT_ANY_OBJ(0, argsObj);
+    ECInstanceId instanceId;
+    ECClassId classId;
+    SerializationMethod serializationMethod = SerializationMethod::JsonParse;
+    auto abbreviateBlobs = true;
+    auto classIdsToClassNames = false;
+    auto useJsNames = false;
+
+    auto jsId = argsObj.Get(kId);
+    if (!jsId.IsString()) {
+        THROW_JS_EXCEPTION("'id' property is not optional and must be of type Id64String");
+    } else {
+        ECInstanceId::FromString(instanceId, jsId.ToString().Utf8Value().c_str());
+    }
+
+    auto jsClassId = argsObj.Get(kClassId);
+    if (!jsClassId.IsString()) {
+        THROW_JS_EXCEPTION("'classId' property is not optional and must be of type Id64String");
+    } else{
+        ECClassId::FromString(classId, jsClassId.ToString().Utf8Value().c_str());
+    }
+
+    auto jsSerializationMethod = argsObj.Get(kSerializationMethod);
+    if (jsSerializationMethod.IsNumber()) {
+        int method = jsSerializationMethod.ToNumber().Int32Value();
+        if (method == SerializationMethod::JsonParse || method == SerializationMethod::BeJsNapi) {
+            serializationMethod = static_cast<SerializationMethod>(method);
+        } else {
+            THROW_JS_EXCEPTION("'serializationMethod' property must be either 0 or 1");
+        }
+    }
+
+    auto jsAbbreviateBlobs = argsObj.Get(kAbbreviateBlobs);
+    if (jsAbbreviateBlobs.IsBoolean()) {
+        abbreviateBlobs = jsAbbreviateBlobs.ToBoolean().Value();
+    }
+
+    auto jsClassIdsToClassNames = argsObj.Get(kClassIdsToClassNames);
+    if (jsClassIdsToClassNames.IsBoolean()) {
+        classIdsToClassNames = jsClassIdsToClassNames.ToBoolean().Value();
+    }
+
+    auto jsUseJsNames = argsObj.Get(kUseJsName);
+    if (jsUseJsNames.IsBoolean()) {
+        useJsNames = jsUseJsNames.ToBoolean().Value();
+    }
+
+    if (!instanceId.IsValid()){
+        THROW_JS_EXCEPTION("Invalid instanceId");
+    }
+
+    if (!classId.IsValid()) {
+        THROW_JS_EXCEPTION("Invalid classId");
+    }
+
+    auto& instanceReader = db.GetInstanceReader();
+    InstanceReader::Options options;
+    options.SetForceSeek(true);
+    auto position = InstanceReader::Position{instanceId, classId, nullptr};
+    if (serializationMethod == SerializationMethod::JsonParse) {
+        Napi::Value val;
+        if (!instanceReader.Seek(position,
+            [&](InstanceReader::IRowContext const& row) {
+                InstanceReader::JsonParams params;
+                params.SetUseJsName(useJsNames);
+                params.SetAbbreviateBlobs(abbreviateBlobs);
+                params.SetClassIdToClassNames(classIdsToClassNames);
+                auto parse = Env().Global().Get("JSON").As<Napi::Object>().Get("parse").As<Napi::Function>();
+                auto obj = Napi::String::New(Env(), row.GetJson(params).Stringify());
+                val = parse({ obj });
+            },
+            options
+        )) {
+            THROW_JS_EXCEPTION("instance not found");
+        }
+        return val;
+    }
+    if (serializationMethod == SerializationMethod::BeJsNapi) {
+        BeJsNapiObject val(info.Env());
+        if (!instanceReader.Seek(position,
+            [&](InstanceReader::IRowContext const& row) {
+                ECSqlRowAdaptor adaptor(db);
+                adaptor.SetAbbreviateBlobs(abbreviateBlobs);
+                adaptor.SetConvertClassIdsToClassNames(classIdsToClassNames);
+                adaptor.UseJsNames(useJsNames);
+                if (ERROR == adaptor.RenderRow(val, row, false)) {
+                    THROW_JS_EXCEPTION("Failed to render instance");
+                }
+            },
+            options
+        )) {
+            THROW_JS_EXCEPTION("instance not found");
+        }
+        return val;
+    }
+    THROW_JS_EXCEPTION("unknown serialization method");
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -1277,21 +1390,6 @@ Napi::Value NativeChangeset::IsIndirectChange(Napi::Env env) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::IsPrimaryKeyColumn(Napi::Env env, int col) {
-    if (!HasRow()) {
-        BeNapi::ThrowJsException(env, "isPrimaryKeyColumn(): there is no current row.", (int) BE_SQLITE_ERROR);
-    }
-
-    if (!IsValidPrimaryKeyColumnIndex(col)) {
-        BeNapi::ThrowJsException(env, "isPrimaryKeyColumn(): invalid column index for primary key", (int) BE_SQLITE_ERROR);
-    }
-
-    return Napi::Boolean::New(env, m_primaryKeyColumns[col] == 1);
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::GetColumnCount(Napi::Env env) {
     if (!HasRow()) {
         BeNapi::ThrowJsException(env, "getColumnCount(): there is no current row.", (int) BE_SQLITE_ERROR);
@@ -1310,23 +1408,183 @@ Napi::Value NativeChangeset::GetHasRow(Napi::Env env) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value NativeChangeset::GetColumnValueType(Napi::Env env, int col, int target) {
-    if (HasRow()) {
-        // old value can be called by updated and deleted row.
-        if (target == 0 && m_opcode == DbOpcode::Insert)
-            return env.Undefined();
-
-        // new value can be called by updated and inserted row.
-        if (target != 0 && m_opcode == DbOpcode::Delete)
-            return env.Undefined();
-
-        auto val = target == 0 ? m_currentChange.GetOldValue(col) : m_currentChange.GetNewValue(col);
-        if (!val.IsValid()) {
-            return env.Undefined();
-        }
-        return Napi::Number::New(env, (int)val.GetValueType());
+Napi::Value NativeChangeset::GetColumnValueInteger(Napi::Env env, int col, int target){
+    if (!HasRow() || !(col >= 0 && col < m_columnCount) || (target != 0 && target != 1)) {
+        return env.Undefined();
     }
-    return env.Undefined();
+
+    // old value can be called by updated and deleted row.
+    if (target == 0 && m_opcode == DbOpcode::Insert)
+        return env.Undefined();
+
+    // new value can be called by updated and inserted row.
+    if (target != 0 && m_opcode == DbOpcode::Delete)
+        return env.Undefined();
+
+    auto val = target == 0 ? m_currentChange.GetOldValue(col) : m_currentChange.GetNewValue(col);
+    if (!val.IsValid()) {
+        return env.Undefined();
+    }
+
+    if (val.IsNull()) {
+        return env.Null();
+    }
+
+    return Napi::Number::New(env, static_cast<double>(val.GetValueInt64()));
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Napi::Value NativeChangeset::GetColumnValueId(Napi::Env env, int col, int target){
+    if (!HasRow() || !(col >= 0 && col < m_columnCount) || (target != 0 && target != 1)) {
+        return env.Undefined();
+    }
+
+    // old value can be called by updated and deleted row.
+    if (target == 0 && m_opcode == DbOpcode::Insert)
+        return env.Undefined();
+
+    // new value can be called by updated and inserted row.
+    if (target != 0 && m_opcode == DbOpcode::Delete)
+        return env.Undefined();
+
+    auto val = target == 0 ? m_currentChange.GetOldValue(col) : m_currentChange.GetNewValue(col);
+    if (!val.IsValid()) {
+        return env.Undefined();
+    }
+
+    if (val.IsNull()) {
+        return env.Null();
+    }
+
+    return Napi::String::New(env, BeInt64Id(val.GetValueUInt64()).ToHexStr());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Napi::Value NativeChangeset::GetColumnValueDouble(Napi::Env env, int col, int target){
+    if (!HasRow() || !(col >= 0 && col < m_columnCount) || (target != 0 && target != 1)) {
+        return env.Undefined();
+    }
+
+    // old value can be called by updated and deleted row.
+    if (target == 0 && m_opcode == DbOpcode::Insert)
+        return env.Undefined();
+
+    // new value can be called by updated and inserted row.
+    if (target != 0 && m_opcode == DbOpcode::Delete)
+        return env.Undefined();
+
+    auto val = target == 0 ? m_currentChange.GetOldValue(col) : m_currentChange.GetNewValue(col);
+    if (!val.IsValid()) {
+        return env.Undefined();
+    }
+
+    if (val.IsNull()) {
+        return env.Null();
+    }
+
+    return Napi::Number::New(env, val.GetValueDouble());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Napi::Value NativeChangeset::GetColumnValueText(Napi::Env env, int col, int target) {
+    if (!HasRow() || !(col >= 0 && col < m_columnCount) || (target != 0 && target != 1)) {
+        return env.Undefined();
+    }
+
+    // old value can be called by updated and deleted row.
+    if (target == 0 && m_opcode == DbOpcode::Insert)
+        return env.Undefined();
+
+    // new value can be called by updated and inserted row.
+    if (target != 0 && m_opcode == DbOpcode::Delete)
+        return env.Undefined();
+
+    auto val = target == 0 ? m_currentChange.GetOldValue(col) : m_currentChange.GetNewValue(col);
+    if (!val.IsValid()) {
+        return env.Undefined();
+    }
+
+    if (val.IsNull()) {
+        return env.Null();
+    }
+    return Napi::String::New(env, val.GetValueText());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Napi::Value NativeChangeset::GetColumnValueBinary(Napi::Env env, int col, int target) {
+    if (!HasRow() || !(col >= 0 && col < m_columnCount) || (target != 0 && target != 1)) {
+        return env.Undefined();
+    }
+
+    // old value can be called by updated and deleted row.
+    if (target == 0 && m_opcode == DbOpcode::Insert)
+        return env.Undefined();
+
+    // new value can be called by updated and inserted row.
+    if (target != 0 && m_opcode == DbOpcode::Delete)
+        return env.Undefined();
+
+    auto val = target == 0 ? m_currentChange.GetOldValue(col) : m_currentChange.GetNewValue(col);
+    if (!val.IsValid()) {
+        return env.Undefined();
+    }
+    auto nBytes = val.GetValueBytes();
+    auto blob = Napi::Uint8Array::New(env, nBytes);
+    memcpy(blob.Data(), val.GetValueBlob(), nBytes);
+    return blob;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Napi::Value NativeChangeset::IsColumnValueNull(Napi::Env env, int col, int target) {
+    if (!HasRow() || !(col >= 0 && col < m_columnCount) || (target != 0 && target != 1)) {
+        return env.Undefined();
+    }
+
+    // old value can be called by updated and deleted row.
+    if (target == 0 && m_opcode == DbOpcode::Insert)
+        return env.Undefined();
+
+    // new value can be called by updated and inserted row.
+    if (target != 0 && m_opcode == DbOpcode::Delete)
+        return env.Undefined();
+
+    auto val = target == 0 ? m_currentChange.GetOldValue(col) : m_currentChange.GetNewValue(col);
+    if (!val.IsValid()) {
+        return env.Undefined();
+    }
+    return Napi::Boolean::New(env, val.IsNull());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+Napi::Value NativeChangeset::GetColumnValueType(Napi::Env env, int col, int target) {
+    if (!HasRow() || !(col >= 0 && col < m_columnCount) || (target != 0 && target != 1)) {
+        return env.Undefined();
+    }
+    // old value can be called by updated and deleted row.
+    if (target == 0 && m_opcode == DbOpcode::Insert)
+        return env.Undefined();
+
+    // new value can be called by updated and inserted row.
+    if (target != 0 && m_opcode == DbOpcode::Delete)
+        return env.Undefined();
+
+    auto val = target == 0 ? m_currentChange.GetOldValue(col) : m_currentChange.GetNewValue(col);
+    if (!val.IsValid()) {
+        return env.Undefined();
+    }
+    return Napi::Number::New(env, (int)val.GetValueType());
 }
 
 //---------------------------------------------------------------------------------------
@@ -1347,22 +1605,23 @@ Napi::Value NativeChangeset::GetDdlChanges(Napi::Env env) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 Napi::Value NativeChangeset::GetColumnValue(Napi::Env env, int col, int target) {
-    if (HasRow()) {
-        // old value can be called by updated and deleted row.
-        if (target == 0 && m_opcode == DbOpcode::Insert)
-            return env.Undefined();
-
-        // new value can be called by updated and inserted row.
-        if (target != 0 && m_opcode == DbOpcode::Delete)
-            return env.Undefined();
-
-        auto val = target == 0 ? m_currentChange.GetOldValue(col) : m_currentChange.GetNewValue(col);
-        if (!val.IsValid()) {
-            return env.Undefined();
-        }
-        return SerializeValue(env, val);
+    if (!HasRow() || !(col >= 0 && col < m_columnCount) || (target != 0 && target != 1)) {
+        return env.Undefined();
     }
-    return env.Undefined();
+
+    // old value can be called by updated and deleted row.
+    if (target == 0 && m_opcode == DbOpcode::Insert)
+        return env.Undefined();
+
+    // new value can be called by updated and inserted row.
+    if (target != 0 && m_opcode == DbOpcode::Delete)
+        return env.Undefined();
+
+    auto val = target == 0 ? m_currentChange.GetOldValue(col) : m_currentChange.GetNewValue(col);
+    if (!val.IsValid()) {
+        return env.Undefined();
+    }
+    return SerializeValue(env, val);
 }
 
 //---------------------------------------------------------------------------------------

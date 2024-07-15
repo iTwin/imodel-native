@@ -186,9 +186,9 @@ MSInterpolationCurve    *pFitCurve
     StatusInt   status;
 
     if (SUCCESS != (status = bspcurv_c2CubicInterpolateCurveExt (pCurve, pFitCurve->fitPoints, NULL, pFitCurve->params.numPoints,
-                                                                 true, fc_epsilon, tan, 0 != pFitCurve->params.isPeriodic, 
-                                                                 0 != pFitCurve->params.isChordLenKnots, 
-                                                                 0 != pFitCurve->params.isColinearTangents, 
+                                                                 true, fc_epsilon, tan, 0 != pFitCurve->params.isPeriodic,
+                                                                 0 != pFitCurve->params.isChordLenKnots,
+                                                                 0 != pFitCurve->params.isColinearTangents,
                                                                  0 != pFitCurve->params.isChordLenTangents,
                                                                  0 != pFitCurve->params.isNaturalTangents)))
         return status;
@@ -308,7 +308,7 @@ MSInterpolationCurve  *outCurve
         points[1] = inCurve->endTangent;
         outCurve->startTangent = points[1];
         outCurve->endTangent = points[0];
-        
+
         BSIBaseGeom::Free (points);
         BSIBaseGeom::Free (knots);
         }
@@ -581,7 +581,7 @@ double          tolerance
             ICurvePrimitivePtr segmentPrim = ICurvePrimitive::CreateBsplineCurveSwapFromSource (segmentCurve);
             curves->Add (segmentPrim);
             }
-        else if (curveP) 
+        else if (curveP)
             {
             if (curveP->params.numPoles)
                 {
@@ -1063,7 +1063,7 @@ Public GEOMDLLIMPEXP int      bspcurv_helix
 MSBsplineCurve  *curve,                /* <= spiral bspline curve */
 double          iRad,                  /* => initial Radius */
 double          fRad,                  /* => final Radius */
-double          pitchValue,            /* => if valueIsHeight != 0, pitchValue is the axis advance per 360 degrees. 
+double          pitchValue,            /* => if valueIsHeight != 0, pitchValue is the axis advance per 360 degrees.
                                               if valueIsHeight == 0, pitchValue is the number of 360 degree turns in the distance from startCenter to endCenter */
 DPoint3d        *xAxisTargetPoint,
 DPoint3d        *axisStartPoint,

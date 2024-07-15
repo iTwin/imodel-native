@@ -22,7 +22,7 @@ USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
 // @param [in] z11 z coordinate of patch 11 point.
 // @param [in] u1 upper u to evaluate grid
 // @param [in] v1 upper v to evaluate grid.
-MSBsplineSurfacePtr HyperbolicGridSurface (size_t uOrder, size_t vOrder, size_t numI, size_t numJ, 
+MSBsplineSurfacePtr HyperbolicGridSurface (size_t uOrder, size_t vOrder, size_t numI, size_t numJ,
 double x11, double y11, double z11, double u1, double v1);
 
 // Return a 2x2 linear bspline surface with control points (000)(100)(010)(u1 v1 w1)
@@ -63,5 +63,5 @@ void SaveEdgeChains (PolyfaceHeaderR facets, bool showNoChainX);
 
 PolyfaceHeaderPtr DodecahedronMesh();
 PolyfaceHeaderPtr RhombicosidodecahedronMesh();
-PolyfaceHeaderPtr SphereMesh(DPoint3dCR origin, double radius, double radianAngle);
+PolyfaceHeaderPtr SphereMesh(DPoint3dCR origin, double radius, double radianAngle = msGeomConst_piOver12);
 PolyfaceHeaderPtr DiamondAndCircleParityRegionMesh(double diagonal, double diameter, IFacetOptionsP options = nullptr);

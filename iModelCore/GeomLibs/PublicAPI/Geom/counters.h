@@ -232,7 +232,7 @@ void Record (size_t value)
     else
         m_counter[value]++;
     }
-// Equivalent to 
+// Equivalent to
 void Record (ptrdiff_t value, size_t count)
     {
     if (value < 0)

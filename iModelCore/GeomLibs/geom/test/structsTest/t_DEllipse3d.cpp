@@ -19,7 +19,7 @@ bool SolveAlignedEllipseCenter (double x0, double y0, double x1, double y1, doub
     double uy = dy / d;
     double vx = - uy;   // perpendicular to unit bisector
     double vy = ux;
-    
+
     double e1 = 0.5 * d;
     if (e1 > 1.0)
         return false;
@@ -154,7 +154,7 @@ TEST (DEllipse3d, Init)
     pointArray[2] = vector90;
     ellipse0.Init (0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 0.7, 0.5);
     ellipse1 = DEllipse3d::FromXYMajorMinor (0.0, 0.0, 0.0, 1.0, 1.0, 0.4, 0.7, 0.5);
-    ellipse2.InitFromPoints (center0, vector0, vector90, 0.7, 0.5); 
+    ellipse2.InitFromPoints (center0, vector0, vector90, 0.7, 0.5);
     Check::True (ellipse3.InitFromPointsOnArc (start0, middle0, end0));
     Check::True (!(ellipse3.InitFromPointsOnArc (start0, start0, start0)));
     Check::True (ellipse4.InitArcFromPointTangentPoint (center0, vector2, start0));
@@ -376,7 +376,7 @@ TEST (DEllipse3d, FractionParameterToPoint)
     ellipse0.FractionParameterToDerivatives (point2, point3, point4, fraction0);
     ellipse0.Evaluate (point7, 2, theta);
     double theta1 = ellipse0.FractionToAngle (fraction0);
-    double determinant = ellipse0.DeterminantJXY (); 
+    double determinant = ellipse0.DeterminantJXY ();
     Check::Near (point1, point0);
     Check::Near (point1, point2);
     Check::Near (point5, point3);
@@ -705,7 +705,7 @@ TEST (DEllipse3d, ArcLength)
 TEST (DEllipse3d, ArcLengthVsBspline)
     {
     double r0 = 20.0;
-    
+
     for (double f : bvector<double> {0.1, 0.2, 0.4, 0.8, 1.0, 1.2, 1.4, 1.8, 2.0})
         {
         Check::StartScope ("fraction", f);
@@ -737,7 +737,7 @@ TEST (DEllipse3d, ArcLengthVsBspline)
 TEST (DEllipse3d, ArcLengthVsBsplineSubDivide)
     {
     double r0 = 20.0;
-    
+
     for (double f : bvector<double> {0.1, 0.2, 0.4, 0.8, 1.0, 1.2, 1.4, 1.8, 2.0})
         {
         Check::StartScope ("fraction", f);
@@ -1177,7 +1177,7 @@ TEST (DEllipse3d, ConstructXPointEdgePointEdgePointAxis)
     bvector<DEllipse3d> ellipse;
     DEllipse3d::Construct_XPoint_EdgePoint_EdgePoint_XRadius (
             ellipse, xPoint, edgePoint0, edgePoint1, a);
-    
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1239,7 +1239,7 @@ TEST (DEllipse3d, Init2)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST (DEllipse3d, Init3)
     {
-    
+
     DEllipse3d ellipse0 = DEllipse3d::FromPointsOnArc (
                 DPoint3d::From (1,2,3),
                 DPoint3d::From (4,0.3,1),
@@ -1259,7 +1259,7 @@ double theta1
     bvector<DEllipse3d> ellipse;
     bvector<double>    rayFraction;
     DPoint3d startA = DPoint3d::From (x0, y0, 0.0);
-    DVec3d tangentA = 
+    DVec3d tangentA =
           DVec3d::From (cos (theta0), sin(theta0), 0.0);
     DRay3d ray = DRay3d::FromOriginAndVector (
               DPoint3d::From (x1, y1, 0.0),
@@ -1308,7 +1308,7 @@ void testParallelLineLinePoint (DPoint3dCR pointA, DPoint3dCR pointB, double ang
     DPoint3d pointC;
     if (selectAB == 0)
         pointC = DPoint3d::FromSumOf (pointA, directionA, fraction);
-    else 
+    else
         pointC = DPoint3d::FromSumOf (pointB, directionB, fraction);
     DPoint3d tangentA[8], tangentB[8], tangentC[8];
     DPoint3d center[8];
@@ -1593,7 +1593,7 @@ bool IsEllipseCollapsedToLine (DEllipse3dCR ellipse, bvector<DPoint3d> &startExt
     majorMinorEllipse = DEllipse3d::FromCopyWithPositiveSweep (majorMinorEllispe);
     DRange2d localRange;
     localRange.Init ();
-    for (int step = -2; step < 
+    for (int step = -2; step <
 
     }
 #endif
@@ -1603,7 +1603,7 @@ bool IsEllipseCollapsedToLine (DEllipse3dCR ellipse, bvector<DPoint3d> &startExt
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DEllipse3d, ClassifyDegenerate)
     {
-    
+
     DSegment3d segment0X, segment0Y;
     DEllipse3d ellipse0 = DEllipse3d::From (0,0,0,    1,0,0,    0,0,0, Angle::DegreesToRadians (-45), Angle::DegreesToRadians (340));
     double d0 = ellipse0.GetMajorMinorRangeMidlines (segment0X, segment0Y);
@@ -1853,7 +1853,7 @@ TEST(DSpiral2D,ScaledTransform)
             1, 0, 0, 7,
             0, 0, 1, 0
             );
-            
+
     Transform rotate = Transform::FromLineAndRotationAngle (DPoint3d::From (1,1,0), DPoint3d::From (1,1,5), 0.4);
     Transform rotateAndScale;
     double s = 12.0;
@@ -2111,7 +2111,7 @@ TEST(DEllipse3d,PseudoOffsetConstruction)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(DEllipse3d,FromStartTangentNormalRadiusSweep)
     {
-    // Create short ellipses starting along x axis, with various combinations of 
+    // Create short ellipses starting along x axis, with various combinations of
     // sign of normal, radius, sweep
     for (double zSign: bvector<double>{1,-1})
         {
@@ -2132,9 +2132,9 @@ TEST(DEllipse3d,FromStartTangentNormalRadiusSweep)
                 Check::Print(radius, "radius");
                 Check::Print(sweep, "sweep");
                 Check::Print (arc.Value (), "arc");
-                Check::LessThanOrEqual (0, 
-                        radius * arc.Value ().vector0.TripleProduct (arc.Value ().vector90, normal) > 0.0,
-                        "Arc Frame is orientation follows radius, normal"
+                Check::LessThanOrEqual (0,
+                        radius * arc.Value ().vector0.TripleProduct (arc.Value ().vector90, normal),
+                        "Arc Frame orientation follows radius, normal"
                         );
                 Check::Near (sweep, arc.Value ().sweep, "sweep applied directly");
                 }
@@ -2246,7 +2246,7 @@ bool isCCW              // true for arc runnign CCW viewed from above.
     // Force the ellipse axes to be right handed when viewed from above the xy plane
     if (ellipseNormal.z < 0.0)
         arc = arc.FromNegateVector90 (arc);
-    // The short sweep may be going the opposite direction around the circle . . . . 
+    // The short sweep may be going the opposite direction around the circle . . . .
     // sign of sweep indicates whether the ellipse is ccw or cw
     bool isCCW0 = arc.sweep > 0;
     if (isCCW0 != isCCW)
@@ -2375,7 +2375,7 @@ TEST(DEllipse3d,SweepToPlane)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST(DEllipse3d, ArcLengthTolerance) 
+TEST(DEllipse3d, ArcLengthTolerance)
     {
     auto arc = DEllipse3d::From
         (
@@ -2508,15 +2508,15 @@ TEST(DEllipse3d,STurn)
 // This xml fragment is given (Scott Devoe, Oct 22 2017)
 // The code below makes an arc that matches.
 #ifdef RawXMLArcDefinitions
-<Curve rot="ccw" crvType="arc" radius="550.000000000" length="1558.934318418" chord="1087.052172758" dirStart="2.201767682562" dirEnd="5.650526956255" staStart="363.352882000"> 
-<Start code="PC"> 
- 1495977.055739300 556616.979535724 105.109956645 
-</Start> 
-<Center code="CC"> 
- 1496421.155911220 556941.440684858 0.000000000 
-</Center> 
-<End code="PT"> 
- 1496746.365793140 557384.992860710 124.597816952 
+<Curve rot="ccw" crvType="arc" radius="550.000000000" length="1558.934318418" chord="1087.052172758" dirStart="2.201767682562" dirEnd="5.650526956255" staStart="363.352882000">
+<Start code="PC">
+ 1495977.055739300 556616.979535724 105.109956645
+</Start>
+<Center code="CC">
+ 1496421.155911220 556941.440684858 0.000000000
+</Center>
+<End code="PT">
+ 1496746.365793140 557384.992860710 124.597816952
 </End>
 
 #endif
@@ -2624,7 +2624,7 @@ TEST(DEllipse3d,Circle_CCR)
 
     double rA = 1.0;
     double rB = 0.5;
-    double rC = 2.0;    
+    double rC = 2.0;
     for (double a : {0.75, 1.25, 1.50, 1.75, 4.0})
         {
         SaveAndRestoreCheckTransform shifter (10,0,0);
@@ -3273,7 +3273,7 @@ TEST(DEllipse3d,FlattenZ)
             SaveAndRestoreCheckTransform shifter2 (3,0,0);
             // make a tilted true circle
             auto arc = DEllipse3d::From (0,0,1,
-                            x0, y0, z0, 
+                            x0, y0, z0,
                             0, sqrt (x0 * x0 + z0 * z0), 0.0,
                             0.4, 6.0);
             Check::SaveTransformed (arc);
@@ -3288,7 +3288,7 @@ TEST(DEllipse3d,FlattenZ)
                 Check::SaveTransformed (DSegment3d::From (strokes.front (), strokes.front () - ticShift));
                 Check::SaveTransformed (DSegment3d::From (strokes.back (), strokes.back () + ticShift));
                 Check::SaveTransformed (strokes);
-        
+
                 Check::Shift (2 * xShift, 0, 0);
                 /* unused - auto arcB = */FlattenDEllipse3dZ (arc, strokes, false);
                 Check::SaveTransformed (DSegment3d::From (strokes.front (), strokes.front () - ticShift));

@@ -44,7 +44,7 @@ struct BSurfPatch
 
     // return estimates of how far interior control points are from midpoints of chords.
     // for each grid edge and diagonal, the deviation is point distance from chord midpoint, divided by shorter edge length, capped at 10.
-    // 
+    //
     GEOMDLLIMPEXP bool MidpointDeviations (double &uFraction, double &vFraction, double &twistFraction) const;
     };
 
@@ -186,31 +186,31 @@ struct GEOMDLLIMPEXP MSBsplineSurface
     int32_t             holeOrigin;     /* true: bounds trim surface; false: bounds enclose holes */
     int32_t             numBounds;
     BsurfBoundary       *boundaries;
-    
-    //! zero out the surface    
+
+    //! zero out the surface
     void Zero ();
-    
+
     //! Allocate memory arrays to match the current counts.
     MSBsplineStatus Allocate   ();
     //! Allocate uKnots.  Prior knot buffer is freed if present (do not call on pre-zeroed surface!!)
     MSBsplineStatus AllocateUKnots ();
     //! Allocate vKnots.  Prior knot buffer is freed if present (do not call on pre-zeroed surface!!)
     MSBsplineStatus AllocateVKnots ();
-    //! Free memory allocated for the poles, weights and knot vector of a B-spline surface. 
+    //! Free memory allocated for the poles, weights and knot vector of a B-spline surface.
     void            ReleaseMem ();
     //! Allocate memory for the B-spline surface and copies all data from the input B-spline surface.
     MSBsplineStatus CopyFrom (MSBsplineSurfaceCR source);
-    
+
     //! Returns a smart pointer to an MSBsplineSurface on the heap.
     static MSBsplineSurfacePtr CreatePtr ();
 
     //! Returns a smart pointer to an MSBsplineSurface on the heap.  Copy bits from instance, zero the instance.
     MSBsplineSurfacePtr CreateCapture ();
-    
+
     //! Copy bits into simple structure. Caller instance zeroed.
     void ExtractTo (MSBsplineSurfaceR dest);
-    
-    
+
+
     //! Clone as new refcounted pointer.
     MSBsplineSurfacePtr CreateCopyTransformed (TransformCR transform) const;
 
@@ -219,7 +219,7 @@ struct GEOMDLLIMPEXP MSBsplineSurface
             int  (*AllocateSurface)(MSBsplineSurface *),
             void (*FreeSurface)(MSBsplineSurface *)
             );
-    
+
     //! Return the knot values corresponding to fraction 0 and fraction 1 about given direction...
     void GetKnotRange (double &min, double &max, int direction) const;
     //! Return the knot value at a fractional parameter about given direction...
@@ -228,8 +228,8 @@ struct GEOMDLLIMPEXP MSBsplineSurface
     double KnotToFraction (double knot, int direction) const;
     //! Return the parameter region of the B-spline surface...
     void GetParameterRegion (double &uMin, double &uMax, double &vMin, double &vMax) const;
-    //! Add a given knot value to the B-spline surface in given direction. newMultiplicity is the desired final 
-    //! multiplicity of a knot that may already exist. 
+    //! Add a given knot value to the B-spline surface in given direction. newMultiplicity is the desired final
+    //! multiplicity of a knot that may already exist.
     MSBsplineStatus AddKnot (double unnormalizedKnotValue, int newMultiplicity, int direction);
 
     //! Compute blending functions at KNOT value (unnormalized)
@@ -244,7 +244,7 @@ struct GEOMDLLIMPEXP MSBsplineSurface
 
     //! Normalize knots to 01 (both directions)
     void NormalizeKnots ();
-    
+
     //! Add a uv polyline trim boundary.
     bool AddTrimBoundary (bvector<DPoint2d> const &uvPoints);
     //! Add a uv polyline trim boundary, using only xyz parts
@@ -265,11 +265,11 @@ struct GEOMDLLIMPEXP MSBsplineSurface
     MSBsplineStatus CopyClosed (MSBsplineSurfaceCR source, int edge);
     //! Create B-spline surface by reversing the given direction of surface.
     MSBsplineStatus CopyReversed (MSBsplineSurfaceCR source, int edge);
-    
-    //! @deprecated in 4.x. Use the const overload. 
+
+    //! @deprecated in 4.x. Use the const overload.
     void IsPhysicallyClosed (bool& uClosed, bool& vClosed);
-    //! Check whether the B-spline surface is physically closed in either parameter direction. A B-spline surface may be 
-    //! non-periodic, but still be closed in the v/u direction if its first and last rows/ columns of poles coincide. 
+    //! Check whether the B-spline surface is physically closed in either parameter direction. A B-spline surface may be
+    //! non-periodic, but still be closed in the v/u direction if its first and last rows/ columns of poles coincide.
     void IsPhysicallyClosed(bool& uClosed, bool& vClosed) const;
     //! Check whether the B-spline surface encloses a valid space.
     bool    IsSolid (double tolerance);
@@ -284,7 +284,7 @@ struct GEOMDLLIMPEXP MSBsplineSurface
     //! Check whether the u curves are all translations of the first u curve.
     //! (If this is true, the v curves are also translations of the first v curve0)
     //! @param [in] relativeTolerance tolerance as a fraction of the largest coordinate.
-    bool    IsBidirectionalTranslation(double relativeTolerance = 0.0) const;    
+    bool    IsBidirectionalTranslation(double relativeTolerance = 0.0) const;
 
     //! Get the resolution of the B-spline surface.
     double Resolution () const;
@@ -317,7 +317,7 @@ struct GEOMDLLIMPEXP MSBsplineSurface
     //! <li> For untrimmed surface, compute range of sampled beziers
     //! <li> For trimmed surface, compute range of a mesh that observses the trim boundaries.
     //! <li> Note that each of these paths (trimmed and untrimmed) of these involve sampled observations and may be small.
-    //! <li> scale around range center by (1.0+expansionfactor) 
+    //! <li> scale around range center by (1.0+expansionfactor)
     //! <li> optionally clip that back to the poleRange
     //! </ul>
     DRange3d TrimmedSurfaceRange
@@ -339,7 +339,7 @@ struct GEOMDLLIMPEXP MSBsplineSurface
     bool AreUKnotsValid (bool clampingRequired) const;
     bool AreVKnotsValid (bool clampingRequired) const;
 
-    
+
     //! return the product of u and v direction poles counts.
     size_t GetNumPoles () const;
     //! return the u direction pole count.
@@ -416,7 +416,7 @@ struct GEOMDLLIMPEXP MSBsplineSurface
     //! Copy all poles out into caller array.
     void GetPoles (bvector<DPoint3d> &outData) const;
     //! Copy all weights out into caller array.
-    void GetWeights (bvector<double> &outData) const;        
+    void GetWeights (bvector<double> &outData) const;
     //! Copy all poles out into caller array, dividing each by its weight
     void GetUnWeightedPoles (bvector<DPoint3d> &outData) const;
 
@@ -439,7 +439,7 @@ struct GEOMDLLIMPEXP MSBsplineSurface
     bool SetReWeightedPole (size_t index, DPoint3dCR value);
     bool SetReWeightedPole (size_t i, size_t j, DPoint3dCR value);
     bool SetReWeightedPole (int index, DPoint3dCR value);
-        
+
     //! set pole by index. returns false if index out of range.
     //! @DotNetMethodExclude
     bool SetPole (size_t index, double x, double y, double z);
@@ -452,24 +452,24 @@ struct GEOMDLLIMPEXP MSBsplineSurface
 
     //! set weight by index. returns false if any index out of range.
     //! @DotNetMethodExclude
-    bool SetWeights (size_t index, double const * value, size_t n);    
+    bool SetWeights (size_t index, double const * value, size_t n);
     //! set uKnotw by index. returns false if any index out of range.
     //! @DotNetMethodExclude
-    bool SetUKnots (size_t index, double const * value, size_t n);    
+    bool SetUKnots (size_t index, double const * value, size_t n);
     //! set vKnotw by index. returns false if any index out of range.
     //! @DotNetMethodExclude
-    bool SetVKnots (size_t index, double const * value, size_t n);    
+    bool SetVKnots (size_t index, double const * value, size_t n);
 
     //! if the surface is rational, divide (wx,wy,wz) style poles by the weights
     void UnWeightPoles ();
     //! if the surface is rational, multiply (wx,wy,wz) style poles by the weights
     void WeightPoles ();
 
-        
 
-    //! Check whether an edge of the surface degenerates to a single point. 
+
+    //! Check whether an edge of the surface degenerates to a single point.
     bool    IsDegenerateEdge (int edgeCode, double tolerance);
-    
+
     //! Calculate the point on the B-spline surface at the input u and v parameter values.
     void EvaluatePoint (DPoint3dR xyz, double u, double v) const;
 
@@ -478,7 +478,7 @@ struct GEOMDLLIMPEXP MSBsplineSurface
     //! @param [in] numVPoint number of points in v direction
     //! @param [out] uParams u-direction evaluation parameters.
     //! @param [out] vParams v-direction evaluation parameters.
-    //! @param [out] gridPoints 
+    //! @param [out] gridPoints
     void EvaluateUniformGrid (size_t numUPoint, size_t numVPoint, bvector<double> &uParams, bvector<double> &vParams, bvector<DPoint3d> &gridPoints) const;
 
     //! Compute a grid of points uniformly spaced in each parameter direction.
@@ -510,13 +510,13 @@ struct GEOMDLLIMPEXP MSBsplineSurface
     bool EvaluateNormalizedFrame(TransformR transform, double u, double v) const;
 
 
-    //! Calculate the point and its partial derivatives on the B-spline surface at the input u and v parameter values. 
+    //! Calculate the point and its partial derivatives on the B-spline surface at the input u and v parameter values.
     void EvaluatePoint (DPoint3dR xyz, DVec3dR dPdU, DVec3dR dPdV, double u, double v) const;
     //! Calculate the position and partial derivatives of a B-spline surface at a particular uv parameter value pair.
-    void EvaluateAllPartials (DPoint3dR xyz, DVec3dR dPdU, DVec3dR dPdV, 
+    void EvaluateAllPartials (DPoint3dR xyz, DVec3dR dPdU, DVec3dR dPdV,
                                 DVec3dR dPdUU, DVec3dR dPdVV, DVec3dR dPdUv,
                                     DVec3dR norm, double u, double v) const;
-    //! Evaluate the directions and curvatures (inverse radius)                                    
+    //! Evaluate the directions and curvatures (inverse radius)
     //! @return true if this is a nonsingular surface point.
     bool EvaluatePrincipalCurvature
         (
@@ -534,7 +534,7 @@ struct GEOMDLLIMPEXP MSBsplineSurface
     MSBsplineStatus CleanKnots ();
     //! Remove all removable knots with the tolerance constraint.
     MSBsplineStatus RemoveKnotsBounded (int dir, double tol);
-    
+
     //! Find closest point on surface
     void ClosestPoint (DPoint3dR surfacePoint, DPoint2dR surfaceUV, DPoint3dCR spacePoint) const;
 
@@ -552,7 +552,7 @@ struct GEOMDLLIMPEXP MSBsplineSurface
         (
         bvector<DPoint3d> const &pointVector,   //!< [in] control polygon coordinates
         bvector<double> const *weightVector,   //!< [in] optinal control polygon weightsweights
-        bvector<double> const *uKnotVector,   //!< [in] optional u direction knot vector 
+        bvector<double> const *uKnotVector,   //!< [in] optional u direction knot vector
         int uOrder,   //!< [in] order (one more than degree) in the u direction
         int numUPoints,   //!< [in] number of control points in the u direction
         bool uClosed,   //!< [in]  true if closed in the u direction
@@ -562,7 +562,7 @@ struct GEOMDLLIMPEXP MSBsplineSurface
         bool vClosed,   //!< [in] true if closed in the v direction
         bool inputPolesAlreadyWeighted   //!< [in] true if points are preweighted.  False if not.
         );
-        
+
     //! Create a linear sweep from a (single) base curve.
     //! Fails (i.e. returns NULL) if the primitive has children.
     //! @param [in] primitive base curve to be swept
@@ -702,9 +702,9 @@ struct GEOMDLLIMPEXP MSBsplineSurface
 
 
 
-    //! Scale and translate the parameter range of the surface and its boundary loops so all parameters are between 0 and 1. 
+    //! Scale and translate the parameter range of the surface and its boundary loops so all parameters are between 0 and 1.
     void NormalizeSurface ();
-    
+
 
     //! Compute uniformly spaced knots.
     //! This uses counts from params.
@@ -734,18 +734,18 @@ struct GEOMDLLIMPEXP MSBsplineSurface
 //! @param [in] tolerance used only when approxComp is true (can be 0.0 for precise compatibility).
 MSBsplineStatus InitLoftingSurface
 (
-bvector<MSBsplineCurvePtr> const &curves,        
-DVec3dP             pStartNormal,   
-DVec3dP             pEndNormal,     
-bool                approxComp,     
-bool                closed,         
-bool                smoothStart,    
-bool                smoothEnd,      
-bool                chordLength,    
-bool                applyComp,      
-double              tolerance       
+bvector<MSBsplineCurvePtr> const &curves,
+DVec3dP             pStartNormal,
+DVec3dP             pEndNormal,
+bool                approxComp,
+bool                closed,
+bool                smoothStart,
+bool                smoothEnd,
+bool                chordLength,
+bool                applyComp,
+double              tolerance
 );
-                                    
+
     //! Return the area, centroid, orientation, and principal moments, treating the surface as a shell.
     //! @param [out] area area
     //! @param [out] centroid centroid
@@ -757,7 +757,7 @@ double              tolerance
                                   DVec3dR centroid,
                                   RotMatrixR axes,
                                   DVec3dR momentxyz
-                                  ) const;                                    
+                                  ) const;
 
     //! Return the integrals of products of inertia [xx xy xz x; xy yy yz y; xz yz zz 1] * dA
     bool ComputeSecondMomentAreaProducts (DMatrix4dR products) const;
@@ -766,13 +766,13 @@ double              tolerance
     bool ComputeSecondMomentAreaProducts
         (
         DMatrix4dR products,
-        double relativeTolerancefForFacets,
+        double relativeToleranceForFacets,
         int numGauss,
         int &numEvaluations
-        ) const;      
+        ) const;
     bool GetPatchSupport (BSurfPatch& patchData, size_t uIndex, size_t vIndex) const;
     void FastIntersectRay (DRay3dCR ray, PatchRangeDataPtr& patchRangeData, bvector<double> &rayParameters, bvector<DPoint2d> &surfaceParameters, bvector<DPoint3d> &surfaceXYZ) const;
-    
+
 //! Intesect curve, with cached range data.
 void FastIntersectCurve
 (
@@ -783,8 +783,8 @@ bvector<CurveAndSolidLocationDetail> &curvePoints     //!< [out] hit points on c
 
 
     PatchRangeDataPtr ComputePatchRangeData() const;
-     
-                  
+
+
 
     //! Convert regions in the curve vector to trimmed bspline surfaces.
     //! @param [out] surfaces array to receive bspline surfaces.
@@ -806,7 +806,7 @@ bvector<CurveAndSolidLocationDetail> &curvePoints     //!< [out] hit points on c
     //! @remark The curves are returned as unstructured list -- no analysis of loop closure.
     //! @remark The tolerance is for curve to the points, NOT for surface tolerance.
     CurveVectorPtr GetUnstructuredBoundaryCurves (double tolerance, bool cubicFit) const;
-    
+
     //! Return the surface boundary, optionally in cubic spline fit (rather than just sampled points).
     //! The returned CurveVectorPtr is a BOUNDARY_TYPE_None.  It contains individual loops.
     //! @param tolerance tolerance for the cubic curve fit.
@@ -831,8 +831,8 @@ bvector<CurveAndSolidLocationDetail> &curvePoints     //!< [out] hit points on c
     DPoint2d GetBoundaryUV (int boundaryIndex, int pointIndex) const;
     //! guarded access to a single boundary uv.
     bool TryGetBoundaryUV (size_t boundaryIndex, size_t pointIndex, DPoint2dR uv) const;
-    bool TryGetBoundaryUV (int boundaryIndex, int pointIndex, DPoint2dR uv) const;    
-    
+    bool TryGetBoundaryUV (int boundaryIndex, int pointIndex, DPoint2dR uv) const;
+
     //! Return current uv boundary data.
     void GetUVBoundaryLoops (bvector< bvector<DPoint2d> > &uvBoundaries, bool addOuterLoopsIfActive) const;
     //! Return uv boundary data, optionally cleaned up by parity analysis.
@@ -845,6 +845,16 @@ bvector<CurveAndSolidLocationDetail> &curvePoints     //!< [out] hit points on c
 
     //! Delete previous trim and add new trim.
     void SetTrim (CurveVectorR curves);
+
+    //! Adjust stroked boundary loops of a closed B-spline surface by splitting them across a parametric seam, where
+    //! the knot space wraps around.
+    //! This method uses heuristics to detect a boundary loop that has successive points close to and on opposite
+    //! sides of a parametric seam. Such loops are reflected and split across the seam, resulting in multiple loops whose
+    //! union equates to the projection of a closed space curve onto the surface over its seam.
+    //! The surface's stroked boundary polygons are replaced, but all existing TrimCurves are removed.
+    //! @param [in] seamRelTol fraction of knot range to serve as relative tolerance for computing seam proximity. Pass nonpositive for default (0.01).
+    //! @return true if the operation succeeded or there are no boundaries; false if heuristics failed, in which case the instance is unchanged.
+    bool SplitStrokedBoundaryLoopsAtParametricSeams(double seamRelTol = -1.0);
 
     //! Copy poles from a row into a curve structure. index -1 is understood as "end"
     MSBsplineCurvePtr GetPolygonRowAsCurve (int index) const;
@@ -866,7 +876,7 @@ bvector<CurveAndSolidLocationDetail> &curvePoints     //!< [out] hit points on c
     void GetIsoVCurveSegments (double v, bvector<MSBsplineCurvePtr> &segments) const;
 
 
-    
+
     //! Collect intersections with a ray.
     void IntersectRay (
         bvector<DPoint3d> &intersectionPoints,  //!< returned intersection points
@@ -896,12 +906,10 @@ bvector<CurveAndSolidLocationDetail> &curvePoints     //!< [out] hit points on c
     bool IsSameStructure (MSBsplineSurfaceCR other) const;
     //! Compare all data.
     bool IsSameStructureAndGeometry (MSBsplineSurfaceCR other, double tolerance) const;
-    //! Dispatch to _IsValid(validator) virtual
-    //! <ul>
-    //! <li> Basic validation is "const".
-    //! <li> Future validators might do fixup, hence method is non-const.
-    //! </ul>
+    //! Confirm basic validity
     bool IsValidGeometry(GeometryValidatorPtr &validator) const;
+    //! Confirm basic validity using default validator
+    bool IsValidGeometry() const;
 
     }; //MSBsplineSurface
 

@@ -60,7 +60,7 @@ unsigned int readIndexLabel
     {
     // Build an MTG face loop for each face.
     // These loops have "exterior sides" that need to be eliminated.
-    // 
+    //
     bvector <EdgeSortIndices> sortArray;
     PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (source, true);
     visitor->SetNumWrap (1);
@@ -80,9 +80,9 @@ unsigned int readIndexLabel
             graph->SetLabel (rightNodeId, readIndexLabel, indexPosition[i+1]);
             }
         }
-        
+
     std::Sort (sortArray.begin (), sortArray.end (), cb_LessThan_EdgeSortIndices);
-    
+
 
     }
 #endif

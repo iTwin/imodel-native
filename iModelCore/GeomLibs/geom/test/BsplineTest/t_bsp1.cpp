@@ -14,7 +14,7 @@ void freeCurves (MSBsplineCurveP curves, int n)
         curves[i].ReleaseMem ();
     BSIBaseGeom::Free (curves);
     }
-    
+
 void freeSurfaces (MSBsplineSurfaceP surfaces, int n)
     {
     for (int i = 0; i < n; i++)
@@ -48,9 +48,9 @@ TEST(BsplineCurve,SegmentDisjoint)
     Check::Int (1, num1, "noop split");
     Check::Int (2, num2, "real split");
     freeCurves (split1, num1);
-    freeCurves (split2, num2);    
+    freeCurves (split2, num2);
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -85,14 +85,14 @@ TEST(BsplineSurface,SegmentDisjoint)
     freeSurfaces (split1, num1);
     freeSurfaces (split2, num2);
     freeSurfaces (split3, num3);
-    }    
+    }
 
 #ifdef CompileBoresite
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BsplineSurface,ImposeBoundary)
-    {    
+    {
     bvector<DPoint3d> surfacePoints;
     int numX = 11;
     int numY = 11;
@@ -123,7 +123,7 @@ TEST(BsplineSurface,ImposeBoundary)
                 "impose boundary completes");
     Check::Int (1, surface0->numBounds, "1 boundary created");
 
-    bsputil_free (imposedPoints);    
+    bsputil_free (imposedPoints);
     }
 #endif
 void PrintMinMaxRatio(int order, int numPoles, UsageSums &sums, char const *name)
@@ -382,7 +382,7 @@ bool IsFinalPointOfStringer (DPoint3dDoubleUVArrays const &data, size_t i)
     {
     if (i + 1 >=data.m_f.size ())
         return true;
-    if (data.m_f[i] != data.m_f[i + 1])   // patch break 
+    if (data.m_f[i] != data.m_f[i + 1])   // patch break
         return true;
     if (data.m_uv[i].x > data.m_uv[i + 1].x)   // u jumps back down to next stringer.
         return true;
@@ -500,7 +500,7 @@ TEST(MSBsplineSurface,ComputeSecondMomentAreaProducts)
                     );
                 Check::PushTolerance(ToleranceSelect_Loose);    // MacOS is within 1.0e-8 rel tol of x64
                 Check::Near(products, expectedProducts_x64, "SecondMomentAreaProducts are nearly the same");
-                Check::PopTolerance();                
+                Check::PopTolerance();
                 }
             }
         }
@@ -594,7 +594,7 @@ TEST(Spiral,OffsetConstruction0)
     DPoint3d piA, piB;
     double fiA, fiB;
     DRay3d::ClosestApproachUnboundedRayUnboundedRay (fiA, fiB, piA, piB, midray0, refray);
-    DrawLine (startRay0.origin, piB);       
+    DrawLine (startRay0.origin, piB);
     }
     Check::SaveTransformed (arc0);
     bvector<DPoint3d> refMarks;
@@ -639,7 +639,7 @@ TEST(Spiral,OffsetConstruction0)
         spiral2->FractionToPoint (0.0, start2);
         DrawLine (start2, start2 + 2.0 * DVec3d::UnitX ());
         shiftTransform.Multiply (arc2);
-        Check::SaveTransformed (*spiral2);    
+        Check::SaveTransformed (*spiral2);
         Check::SaveTransformed (arc2);
 
         DRay3d startRay2 = DRay3d::FromOriginAndVector (start2, DVec3d::UnitY ());
@@ -685,7 +685,7 @@ DEllipse3dR arc
     DVec3d crossVec = DVec3d::UnitZ () * ticLength;
     if (Check::True (
         DSpiral2dBase::LineSpiralArcSpiralLineTransition (xyz[0], xyz[2], xyz[1],
-                arcRadius, spiralLength, spiralLength, *spiralA, *spiralB, 
+                arcRadius, spiralLength, spiralLength, *spiralA, *spiralB,
                 xyzA, xyzB, xyzC, xyzD, arc
                 )))
         {
@@ -919,7 +919,7 @@ TEST(BsplineCurve, Fit1)
         };
     int order = 5;
     MSBsplineCurvePtr curveA = MSBsplineCurve::CreateFromPolesAndOrder (poles, nullptr, nullptr, order, false, false);
-    
+
     Check::SaveTransformed (curveA, true);
     Check::Shift (10, 0, 0);
     for (double tolerance : {1.0e-3, 1.0e-2, 1.0e-1})

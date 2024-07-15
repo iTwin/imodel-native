@@ -62,7 +62,7 @@ Public void startTag ();
 Public void endTag ();
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
     Print an OK message and increment the error count.
 ------------------------------------------------------------------------*/
 Public void recordOK
@@ -72,7 +72,7 @@ const char *pDescr
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
     Print an error message and increment the error count.
 ------------------------------------------------------------------------*/
 Public void recordERROR
@@ -82,7 +82,7 @@ const char *pDescr
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
    Compare the error count to an expected value.
    If it matches, zero out the error count.
    This is to be called just after having made "check" calls which intentionally exercise the
@@ -94,7 +94,7 @@ int numExpectedError
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print a bool    with prefix and suffix strings.
 ------------------------------------------------------------------------*/
 Public void printBool
@@ -105,7 +105,7 @@ Tag *pParent = NULL
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print Int with prefix and suffix strings.
 ------------------------------------------------------------------------*/
 Public void printInt
@@ -117,7 +117,7 @@ Tag *pParent = NULL
 
 /*---------------------------------------------------------------------*//**
 
-@description 
+@description
 ------------------------------------------------------------------------*/
 Public void printDatum
 (
@@ -128,7 +128,7 @@ Tag *pParent = NULL
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print double with prefix and suffix strings.
 ------------------------------------------------------------------------*/
 Public void printDouble
@@ -139,7 +139,7 @@ Tag *pParent = NULL
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print with prefix and suffix strings.
 ------------------------------------------------------------------------*/
 Public void printDVec2d
@@ -150,7 +150,7 @@ Tag *pParent = NULL
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print a DVec3d with prefix and suffix strings.
 ------------------------------------------------------------------------*/
 Public void printDVec3d
@@ -161,7 +161,7 @@ Tag *pParent = NULL
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare DPoint3d, xyz points.
 Announce result via recordOK or recordERROR.
 ------------------------------------------------------------------------*/
@@ -175,7 +175,7 @@ const char *pDescr
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare DVec3d, xyz points.
 Announce result via recordOK or recordERROR.
 ------------------------------------------------------------------------*/
@@ -189,7 +189,7 @@ const char *pDescr
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare two DVec3d's which are expected to agree.
 Announce result via recordOK or recordERROR.
 ------------------------------------------------------------------------*/
@@ -201,7 +201,7 @@ const char *pDescr
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare two DVec2d's which are expected to agree.
 Announce result via recordOK or recordERROR.
 ------------------------------------------------------------------------*/
@@ -214,7 +214,7 @@ const char *pDescr
 
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print a DPoint3d with prefix and suffix strings.
 ------------------------------------------------------------------------*/
 Public void printDPoint3d
@@ -225,7 +225,7 @@ Tag *pParent = NULL
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print a DPoint4d with prefix and suffix strings.
 ------------------------------------------------------------------------*/
 Public void printDPoint4d
@@ -237,7 +237,7 @@ Tag *pParent = NULL
 
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print GraphicsPoint content with prefix and suffix strings.
 ------------------------------------------------------------------------*/
 Public void printGraphicsPoint
@@ -248,7 +248,7 @@ Tag *pParent = NULL
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print Ellipse content with prefix and suffix strings.
 ------------------------------------------------------------------------*/
 Public void printDEllipse3d
@@ -259,7 +259,7 @@ Tag *pParent = NULL
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print plane content with prefix and suffix strings.
 ------------------------------------------------------------------------*/
 Public void printDPlane3d
@@ -270,7 +270,7 @@ Tag *pParent = NULL
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print DSegment3d content with prefix and suffix strings.
 ------------------------------------------------------------------------*/
 Public void printDSegment3d
@@ -281,7 +281,7 @@ Tag *pParent = NULL
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print a hex int as a tag with optional name attribute
 ------------------------------------------------------------------------*/
 Public void printHex
@@ -292,7 +292,7 @@ Tag *pParent = NULL
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare two DPoint3d's which are expected to agree.
 Announce result via recordOK or recordERROR.
 ------------------------------------------------------------------------*/
@@ -304,7 +304,7 @@ const char *pDescr
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare two DPoint2d's which are expected to agree.
 Announce result via recordOK or recordERROR.
 ------------------------------------------------------------------------*/
@@ -317,7 +317,7 @@ const char *pDescr
 
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare two DRange2d's which are expected to agree.
 Announce result via recordOK or recordERROR.
 ------------------------------------------------------------------------*/
@@ -329,7 +329,7 @@ char *pDescr
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare two DPlane3d's which are expected to agree.
 Announce result via recordOK or recordERROR.
 ------------------------------------------------------------------------*/
@@ -341,7 +341,7 @@ const char *pDescr
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Print a RotMatrix with prefix and suffix strings.
 ------------------------------------------------------------------------*/
 Public void printRotMatrix
@@ -352,7 +352,7 @@ Tag *pParent = NULL
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare two RotMatrix's which are expected to agree.
 Announce result via recordOK or recordERROR.
 ------------------------------------------------------------------------*/
@@ -364,7 +364,7 @@ const char *pDescr
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare two doubles which are expected to agree.
 @param pDescr IN message string.
 @param messageValue IN If this value is anything other than DBL_MAX,
@@ -381,7 +381,7 @@ double messageValue = DBL_MAX
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare two doubles where it is expected that a0 < a1, with toleranced equality case
 @param messageValue IN If this value is anything other than DBL_MAX,
       the pDecr string is used as a format string for sprintf, i.e.
@@ -396,7 +396,7 @@ double messageValue = DBL_MAX
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare two BoolInts which are expected to agree.
 Announce result via recordOK or recordERROR.
 ------------------------------------------------------------------------*/
@@ -408,7 +408,7 @@ const char *pDescr
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare two bools which are expected to agree.
 Announce result via startOK or startERROR.
 ------------------------------------------------------------------------*/
@@ -420,7 +420,7 @@ const char *pDescr
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Test a bool    expected to be true.
 Announce result via recordOK or recordERROR.
 ------------------------------------------------------------------------*/
@@ -432,7 +432,7 @@ double formatValue = DBL_MAX
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Test a bool    expected to be false
 Announce result via recordOK or recordERROR.
 ------------------------------------------------------------------------*/
@@ -445,7 +445,7 @@ double formatValue = DBL_MAX
 
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Compare two ints which are expected to agree.
 Announce result via recordOK or recordERROR.
 ------------------------------------------------------------------------*/
@@ -457,7 +457,7 @@ const char *pDescr
 );
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
 Test if an int is positive.
 Announce result via recordOK or recordERROR.
 ------------------------------------------------------------------------*/
@@ -469,7 +469,7 @@ const char *pDescr
 
 
 /*---------------------------------------------------------------------*//**
-@description 
+@description
     Output counts of OK, error messages.
     Optionally zero the counts.
 ------------------------------------------------------------------------*/
@@ -503,7 +503,7 @@ void emit (char *pName, DPoint3dCR point)
     {
     emitXYZ (pName, point.x, point.y, point.z);
     }
-    
+
 void emit (char *pName, DVec3dCR vector)
     {
     emitXYZ (pName, vector.x, vector.y, vector.z);
@@ -528,7 +528,7 @@ void emitIndent ()
     for (int i = 0; i < mIndent; i++)
         fprintf (mpFile, " ");
     }
-    
+
 void emitStart (char *pName, bool newLine = true)
     {
     if (newLine)
@@ -600,7 +600,7 @@ void circle (DPoint3dCR xyz, double radius)
     emitEnd ("placement");
     emitDouble ("radius", radius);
     emitEnd ("CircularDisk");
-    
+
     }
 
 void ellipse (DEllipse3d ellipse0)
@@ -620,27 +620,27 @@ void ellipse (DEllipse3d ellipse0)
     emitDouble ("radiusB", ellipse.vector90.magnitude ());
     emitDouble ("startAngle", bsiTrig_radiansToDegrees (ellipse.start));
     emitDouble ("sweepAngle", bsiTrig_radiansToDegrees (ellipse.sweep));
-    emitEnd ("EllipticArc");    
+    emitEnd ("EllipticArc");
     }
 
 
 void bezier (DPoint4dCP pX, int order)
     {
-    
+
     emitStart ("BsplineCurve");
     emitInt ("order", order);
     emitStart ("ListOfControlPoint");
     for (int i = 0; i < order; i++)
         emitXYZ ("xyz", pX[i].x, pX[i].y, pX[i].z);
     emitEnd   ("ListOfControlPoint");
-    
+
     emitStart ("ListOfWeight");
     for (int i = 0; i < order; i++)
-        emitDouble ("weight", pX[i].w);    
+        emitDouble ("weight", pX[i].w);
     emitEnd   ("ListOfWeight");
-    
+
     emitEnd ("BsplineCurve");
-    
+
     }
 
 
@@ -672,7 +672,7 @@ Tag (char const *pTagName)
     mFormat = 0;
     mpParent = NULL;
     }
-    
+
 Tag (char const *pTagName, char const *pNameAttr)
     {
     countTag (pTagName);
@@ -759,7 +759,7 @@ void Advance ()
         int depth = GetDepth ();
         fprintf (s_outfile, "\n");
         while (depth-- > 0)
-            fprintf(s_outfile, "  ");            
+            fprintf(s_outfile, "  ");
         }
     }
 void StartContentItem ()
@@ -787,7 +787,7 @@ void EmitCompleteTag (char const * pTagName, char const *pNameString, char const
     if (pContentString)
         fprintf (s_outfile, ">%s</%s>", pContentString, pTagName);
     else
-        fprintf (s_outfile, "/>");    
+        fprintf (s_outfile, "/>");
     }
 
 
@@ -981,7 +981,7 @@ void EmitIndent (int change)
     if (change > 0)
         mDepth++;
     }
-public: 
+public:
 void EmitColor (int value){}
 void EmitStyle (int value){}
 void EmitWeight (int value){}

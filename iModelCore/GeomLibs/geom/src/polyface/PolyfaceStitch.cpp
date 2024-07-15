@@ -214,20 +214,20 @@ bool PolyfaceHeader::MarkInvisibleEdges (double smoothAngle, DVec3dCP silhouette
         BlockedVectorInt    savedNormalIndex = NormalIndex ();
         BuildPerFaceNormals ();
         stat = halfEdges.MarkVisibility (smoothAngle, *this, silhouetteVector);
-        // Restore the originals . . 
+        // Restore the originals . .
         Normal () = savedNormals;
         NormalIndex () = savedNormalIndex;
         }
 
     return stat;
     }
-    
+
 //! Mark edges invisible (negative index) if multiple conditions are met:
 //  1) dihedral angle between normals is small
 //  2) the edge is a diagonal -- in each of its two incident facets it is at least edgeLengthFactor larger than any other edge.
 //  3) no more than maxPerFace edges in the facet.
 //! For typical use, maxPerFacet=3 and edgeLengthFactor = 1.001 restricts this to diagonals in quads.
-//! 
+//!
 bool PolyfaceHeader::MarkDiagonalEdgesInvisible
 (
 double smoothAngle,
@@ -260,7 +260,7 @@ uint32_t maxEdgesInFacet
         BlockedVectorInt    savedNormalIndex = NormalIndex();
         BuildPerFaceNormals();
         stat = halfEdges.MarkVisibility(smoothAngle, *this, nullptr);
-        // Restore the originals . . 
+        // Restore the originals . .
         Normal() = savedNormals;
         NormalIndex() = savedNormalIndex;
         }
@@ -277,7 +277,7 @@ bool PolyfaceHeader::MarkTopologicalBoundariesVisible (bool preserveOtherVisibil
     halfEdges.SortForEdgeMatching ();
     return halfEdges.MarkTopologicalBoundariesVisible (*this, preserveOtherVisibility);
     }
- 
+
 
 void PolyfaceHeader::MarkAllEdgesVisible ()
     {
@@ -288,7 +288,7 @@ void PolyfaceHeader::MarkAllEdgesVisible ()
     // (zeros and prior positives are unchanged ...)
     for (size_t i = 0, n = pointIndex.size (); i < n; i++)
         pointIndex[i] = abs (pointIndex[i]);
-    }    
+    }
 
 bool TryIsClosedByEdgePairingSpecialCase (PolyfaceQueryCR mesh, bool &isClosed)
     {
@@ -424,7 +424,7 @@ void ReverseHalfEdgeVerticesOneFace (Size2 readIndexRange)
 Size2 SectorReadIndexToFacetReadIndexRange (size_t sectorReadIndex)
     {
     auto numPerFacet = m_facets.GetNumPerFace ();
-    Size2 range (sectorReadIndex); 
+    Size2 range (sectorReadIndex);
     size_t numIndex = m_facets.PointIndex ().size ();
     if (numPerFacet > 1)
         {
@@ -636,7 +636,7 @@ bvector<size_t> m_facetReadIndices;    // scratch space to simplify reversal.
 // record the facet id in each half edge.
 // push SIZE_MAX on the m_readIndexSequence
 // record the (reversed) readIndex sequence in m_readIndexSequence.
-// 
+//
 void AssignIdAroundFacet (size_t seed, int id, bool saveToOutput)
     {
     // assign the count around the facet ..
@@ -704,7 +704,7 @@ bool Go ()
             for (size_t j = range.m_dataA; j < range.m_dataB; j++)
                 InsertHalfEdgeInHeap (j);
         }
-    
+
     size_t candidate;
     double edgeLength;
     int currentId = 0;

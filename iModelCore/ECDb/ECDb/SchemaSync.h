@@ -8,6 +8,11 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct SchemaSyncHelper final {
+    enum class ProfileKind {
+        BE,
+        EC,
+        DGN,
+    };
     using AliasMap = bmap<Utf8String, Utf8String, CompareIUtf8Ascii>;
     using StringList = bvector<Utf8String>;
     static constexpr auto ALIAS_SYNC_DB = "schema_sync_db";
@@ -27,6 +32,10 @@ struct SchemaSyncHelper final {
     static DbResult GetPrimaryKeyColumnNames(DbCR db, Utf8CP dbAlias, Utf8CP tableName, StringList& columnNames);
     static DbResult SyncData(ECDbR conn, StringList const& tables, Utf8CP sourceDbAlias, Utf8CP targetDbAlias);
     static DbResult SyncData(ECDbR conn, Utf8CP tableName, Utf8CP sourceDbAlias, Utf8CP targetDbAlias);
+    static PropertySpec GetPropertySpec(ProfileKind kind);
+    static ProfileVersion QueryProfileVersion(DbR db, ProfileKind kind);
+    static ProfileVersion QueryProfileVersion(SchemaSync::SyncDbUri syncDbUri, ProfileKind kind);
+    static DbResult SaveProfileVersion(SchemaSync::SyncDbUri syncDbUri, ProfileKind kind, ProfileVersion const& ver);
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -25,15 +25,15 @@ static GEOMDLLIMPEXP void Copy (bvector<T> *dest, bvector<T> const *source);
 
 static GEOMDLLIMPEXP void Copy (bvector<T> *dest, T const *source, size_t count);
 
-//! append contiguous points to the bvector<T>.  return first index 
+//! append contiguous points to the bvector<T>.  return first index
 
 static GEOMDLLIMPEXP size_t Append (bvector<T> *dest, T const *source, size_t count);
 
-//! append source to dest, return return first index 
+//! append source to dest, return return first index
 
 static GEOMDLLIMPEXP size_t Append (bvector<T> *dest, bvector<T> const *source);
 
-//! append source to dest, return first index 
+//! append source to dest, return first index
 static GEOMDLLIMPEXP size_t AppendPrefix(bvector<T> &dest, bvector<T> const &source, size_t n, bool reversed)
     {
     size_t firstIndex = dest.size ();
@@ -50,7 +50,7 @@ static GEOMDLLIMPEXP size_t AppendPrefix(bvector<T> &dest, bvector<T> const &sou
     return firstIndex;
     }
 
-//! size with pointer check 
+//! size with pointer check
 
 static GEOMDLLIMPEXP size_t Size (bvector<T> *dest);
 
@@ -65,10 +65,10 @@ static GEOMDLLIMPEXP void AppendDisconnect (bvector<T> *dest);
 // If already closed within tolerance, enforce exact-bitwise equality
 static GEOMDLLIMPEXP void AppendClosure (bvector<T> &dest, double tolerance = 1.0e-14);
 
-//! Set with checked array pointer and index 
+//! Set with checked array pointer and index
 static GEOMDLLIMPEXP bool Set (bvector<T> *dest, T const &data, size_t index);
 
-//! Get with checked array pointer and index 
+//! Get with checked array pointer and index
 static GEOMDLLIMPEXP bool Get (bvector<T> *dest, T &data, size_t index);
 
 //! Add uniformly spaced interpolated points between limits.
@@ -188,7 +188,7 @@ struct DPoint2dOps : VectorOps <DPoint2d>
 private: DPoint2dOps (){};
 public:
 
-//! append a point to the bvector<T> 
+//! append a point to the bvector<T>
 
 static GEOMDLLIMPEXP void AppendXY (bvector<DPoint2d> *dest, double x, double y);
 
@@ -265,7 +265,7 @@ struct DVec3dOps : VectorOps <DVec3d>
 private: DVec3dOps (){};
 public:
 
-//! append a point to the bvector<T> 
+//! append a point to the bvector<T>
 
 static GEOMDLLIMPEXP void AppendXYZ (bvector<DVec3d> *dest, double x, double y, double z = 0.0);
 
@@ -301,7 +301,7 @@ struct DVec2dOps : VectorOps <DVec2d>
 private: DVec2dOps (){};
 public:
 
-//! append a vector to the bvector<T> 
+//! append a vector to the bvector<T>
 
 static GEOMDLLIMPEXP void AppendXY (bvector<DVec2d> *dest, double x, double y);
 };
@@ -415,7 +415,7 @@ static GEOMDLLIMPEXP double Hypotenuse (double a, double b, double c);
 //! return sqrt (a^2 + b^2 + c^2 + d^2)
 static GEOMDLLIMPEXP double Hypotenuse (double a, double b, double c, double d);
 
-//! return determinant 
+//! return determinant
 static GEOMDLLIMPEXP double DeterminantXYXY (double x0, double y0, double x1, double y1);
 //! Attempt to divide {numerator/denominator}
 //! Return false if result is larger than 10 digits.
@@ -549,7 +549,7 @@ static GEOMDLLIMPEXP int TolerancedComparison (double a, double b);
 //! test knowing range 0..1 for values...
 static GEOMDLLIMPEXP bool ClearlyIncreasingFraction (double a, double b);
 
-//! test with tolerance for equality 
+//! test with tolerance for equality
 static GEOMDLLIMPEXP bool ClearlyIncreasing (double a, double b, double tol);
 
 static GEOMDLLIMPEXP double Sum (double *data, int n);
@@ -645,7 +645,7 @@ private:
     DPoint3dOps (); // No instances.
 public:
 
-//! append a point to the bvector<T> 
+//! append a point to the bvector<T>
 
 static GEOMDLLIMPEXP void AppendXYZ (bvector<DPoint3d> *dest, double x, double y, double z = 0.0);
 
@@ -951,7 +951,7 @@ public: static GEOMDLLIMPEXP double Length (bvector< bvector<DPoint3d> > const &
 //! return the total length of polylines, with worldToLocal applied to each vector.  Optionally add closure edge. to each
 public: static GEOMDLLIMPEXP double Length (RotMatrixCP worldToLocal, bvector<DPoint3d> const &xyz, bool addClosure = false);
 
-//! return statistical data (sum, min, max ..) for length of segments 
+//! return statistical data (sum, min, max ..) for length of segments
 public: static GEOMDLLIMPEXP UsageSums SumSegmentLengths (bvector<DPoint3d> const &xyz);
 
 //! return the total length of polyline with step index.  Optionally add closure edge.   Weights optional.
@@ -1014,7 +1014,7 @@ public: static GEOMDLLIMPEXP bool ClosestPointXY
 //! <li> The returned numEdge is ALWAYS the number of REAL edges in the polyline, i.e. (xyz.size () - 1)  It is NOT increased in the closure case.
 //! <li> Per usual polyline fraction convention, the global fraction step along an edge is ALWAYS (1.0 / numEdge))
 //! <li> This is NOT changed (e.g. to division by xyz.size ()) in the "closed" case.
-//! <li> The globalFraction for given edgeFraction within the edge from point i is (((i + edgeFraction) /numEdge) 
+//! <li> The globalFraction for given edgeFraction within the edge from point i is (((i + edgeFraction) /numEdge)
 //! <li> in the unclosed case
 //!   <ul>
 //!   <li> edgeIndex is in range (0 < edgeIndex < xyz.size () - 2)
@@ -1237,7 +1237,7 @@ public: static GEOMDLLIMPEXP void AddContinuationStartPoint (bvector<DPoint3d>&p
 public: static GEOMDLLIMPEXP bool AddStrokes
 (
 bvector <DPoint3d> const &points,
-bvector <DPoint3d> & strokes, 
+bvector <DPoint3d> & strokes,
 IFacetOptionsCR options,
 bool includeStartPoint = true,
 double startFraction = 0.0,
@@ -1247,7 +1247,7 @@ double endFraction = 1.0
 public: static GEOMDLLIMPEXP bool AddStrokes
 (
 DEllipse3dCR arc,
-bvector <DPoint3d> & strokes, 
+bvector <DPoint3d> & strokes,
 IFacetOptionsCR options,
 bool includeStartPoint = true,
 double startFraction = 0.0,
@@ -1261,7 +1261,7 @@ double endFraction = 1.0
 public: static GEOMDLLIMPEXP bool AddStrokes
 (
 bvector <DPoint3d> const &points,
-DPoint3dDoubleUVCurveArrays &strokes, 
+DPoint3dDoubleUVCurveArrays &strokes,
 IFacetOptionsCR options,
 double startFraction = 0.0,
 double endFraction = 1.0,
@@ -1491,24 +1491,23 @@ public: static GEOMDLLIMPEXP bool IsConvex (bvector<DPoint3d> const &xyz);
 
 
 //!
-//! Triangulate a single xy polygon.  Triangulation preserves original
-//!   indices.
-//! @param [out] pIndices array of indices.  Each face is added
+//! Triangulate a single xy polygon. Triangulation preserves original indices.
+//! @param [out] pIndices array of indices. Each face is added
 //!           as one-based indices, followed by a 0 (terminator).
 //!           Interior edges are optionally negated.
 //! @param [out] pExteriorLoopIndices array of indices of actual outer loops. (optional)
 //!           (These are clockwise loops as viewed.)
-//! @param [out] pXYZOut output points.  The first numPoint points are exactly
-//!           the input points.   If necessary and permitted, additional
-//!           xyz are added at crossings.  In the usual case in which crossings
+//! @param [out] pXYZOut output points. The first numPoint points are exactly
+//!           the input points. If necessary and permitted, additional
+//!           xyz are added at crossings. In the usual case in which crossings
 //!           are not expected, this array may be NULL.
 //! @param [in] pXYZIn array of polygon points.
 //! @param [in] xyTolerance tolerance for short edges on input polygon.
 //! @param [in] maxPerFace number of edges allowed per face.
 //! @param [in] signedOneBasedIndices if true, output indices are 1 based, with 0 as separator.
-//!           If false, indices are zero based wtih -1 as separator.
-//! @param [in] addVerticesAtCrossings true if new coorinates can be added to pXYZOut
-//! @return false if nonsimple polygon.
+//!           If false, indices are zero based with -1 as separator.
+//! @param [in] addVerticesAtCrossings true if new coordinates can be added to pXYZOut
+//! @return `false` if non-simple polygon. Outputs are invalid if return is `false`.
 //!
 public:
 static GEOMDLLIMPEXP bool FixupAndTriangulateLoopsXY
@@ -1517,10 +1516,10 @@ bvector<int>        *pIndices,
 bvector<int>        *pExteriorLoopIndices,
 bvector<DPoint3d>   *pXYZOut,
 bvector<DPoint3d>   *pXYZIn,
-double                  xyTolerance,
-int                     maxPerFace,
-bool                    signedOneBasedIndices,
-bool                    addVerticesAtCrossings
+double              xyTolerance,
+int                 maxPerFace,
+bool                signedOneBasedIndices,
+bool                addVerticesAtCrossings
 );
 
 //!
@@ -1806,7 +1805,7 @@ public: static GEOMDLLIMPEXP bool SecondAreaMomentProducts (bvector<DPoint3d> co
 //! @param [in] ray search ray.
 //! @param [out] xyz hit point.
 //! @param [out] triangleFractions barycentric coordinates within triangle.
-//! @param [out] rayFraction coordinate along ray 
+//! @param [out] rayFraction coordinate along ray
 //! @param [out] edgeBaseIndex base index of far edge of triangle.
 public: static GEOMDLLIMPEXP bool PickTriangleFromStart
     (
@@ -1841,7 +1840,7 @@ public: static GEOMDLLIMPEXP bool PickTriangleFromStart
 //! Collect data for a polygon crossing a plane.
 //! The "trueCrossing" data is always guaranteed to have an even number of entries.
 //! @param [in] points polygon points.  (Start end repeat NOT expected)
-//! @param [in] plane 
+//! @param [in] plane
 //! @param [in] touchTolerance tolerance for detecting touches.
 //! @param [out] trueCrossings array with an entry for each place that there is a true upwards or downwards crossing.
 //!<pre>
@@ -1851,8 +1850,8 @@ public: static GEOMDLLIMPEXP bool PickTriangleFromStart
 //!<li>An "on" vertex with adjacent vertices on opposites sides appears with fraction 0 for the outgoing edge.
 //!<li>If one or more segments are "on" and have prior and following vertices on opposite sides, the "crossing"
 //!    is recorded as the final "on" vertex.
-//!</ul> 
-//!</pre>   
+//!</ul>
+//!</pre>
 //! @param [out] touchData optional details about exact "on" points.   The tolerance is used for recording this points.
 //! @param [out] altitudeLimits min and max signed altitudes.
 //! @return
@@ -1936,7 +1935,7 @@ public: static GEOMDLLIMPEXP bool SymmetryAxesXY (RotMatrixR matrix, bvector<DPo
 //! Phase 3 searches can alter the internal structure of the vector but do not change final representatives.
 //!<code>
 //! clusterData.clear ();
-//! 
+//!
 //! for (...)
 //!     {
 //!     .... index = UnionFind::NewClusterIndex (clusterData);
@@ -2179,7 +2178,7 @@ bool operator == (DoubleEndedQueue<T> const &other) const
 //! <li>m_heap[i] always has smaller value than either of its children.
 //! <li>This relationship guarantees that overally cost of inserting and removing n values (with arbitrary ordering of insert and remove) is O(n * log(n))
 //! </ul>
-//!</ul> 
+//!</ul>
 template <typename T>
 struct MinimumValuePriorityQueue
     {
@@ -2300,7 +2299,7 @@ DPoint3dDoubleArrays (){}
 
 //! Append to each array
 GEOMDLLIMPEXP void AppendXF (DPoint3dCR xyz, double f);
-//! Append xyz to its array, 
+//! Append xyz to its array,
 //! If there are prior fractions, add deltaF to the last.
 //! If not, make the begin () fraction 0.0;
 GEOMDLLIMPEXP void AppendXdeltaF (DPoint3dCR xyz, double deltaF);
@@ -2458,7 +2457,7 @@ GEOMDLLIMPEXP void InsertPointsInPolyline (bvector<DPoint3d> const &source, bvec
 //! Usage cycle:
 //!  <ul>
 //!  <li>(once per cycle) Zero()
-//!  <li>(many times) add points by any combination of 
+//!  <li>(many times) add points by any combination of
 //!     <ul>
 //!     <li> one point at a time:   AddWeighted (DPoint3dCR xyz, double w)
 //!     <li> array with unit weight: AddUnitWeight (bvector<DPoint3d> const &data)

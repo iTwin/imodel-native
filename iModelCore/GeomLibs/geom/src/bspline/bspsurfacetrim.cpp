@@ -394,7 +394,7 @@ void AppendFractions (double a0, double a1, bvector<double> const &aBreaks)
         {
         double da = a1 - a0;
         double dsda;
-        
+
         if (DoubleOps::SafeDivide (dsda, 1.0, da, 0.0))
             {
             for (double a : aBreaks)
@@ -431,7 +431,7 @@ void AnalyzeSegment (DPoint3dCR xyz0, DPoint3dCR xyz1)
     m_xyz0 = xyz0;
     m_xyz1 = xyz1;
 
-    // clamp x and y to (possibly non-normalized!) u- and v-knot ranges 
+    // clamp x and y to (possibly non-normalized!) u- and v-knot ranges
     DRange1d uKnotRange, vKnotRange;
     m_uKnotData.GetActiveKnotRange(uKnotRange.low, uKnotRange.high);
     m_vKnotData.GetActiveKnotRange(vKnotRange.low, vKnotRange.high);
@@ -456,7 +456,7 @@ void AnalyzeSegment (DPoint3dCR xyz0, DPoint3dCR xyz1)
             m_segmentFractions[numAccept++] = a = m_segmentFractions[i];
             }
         }
-    // um .. push aside a final fraction "just before 1.0" 
+    // um .. push aside a final fraction "just before 1.0"
     m_segmentFractions.resize (numAccept);
     if (m_segmentFractions.back () < 1.0)
         m_segmentFractions.back () = 1.0;
@@ -507,7 +507,7 @@ SurfaceBreakContext &breakContext
         int numSeg = pCurve->params.numPoles - 1;
         if (pCurve->params.closed)
             numSeg++;
-         
+
         for (int i0 = 0; SUCCESS == status && i0 < numSeg; i0++)
             {
             int i1 = (i0 + 1) % pCurve->params.numPoles;
@@ -547,7 +547,7 @@ double param1                           // => end parameter on curve
     {
     SurfaceBreakContext breakContext;
     breakContext.AnnounceSurface (*pSurface);
-    
+
     return bspsurf_appendPCurveStrokes (*pCurvePoints, *pSurfacePoints, curveTol, surfaceTol, minPoints,
                 pCurve, pSurface, param0, param1, breakContext);
     }
@@ -1710,9 +1710,13 @@ CurveVectorPtr MSBsplineSurface::GetUVBoundaryCurves (bool addOuterLoopIfActive,
     {
     CurveVectorPtr out = CurveVector::Create (CurveVector::BOUNDARY_TYPE_ParityRegion);
     if (addOuterLoopIfActive && !holeOrigin)
+        {
+        DRange1d uRange, vRange;
+        GetParameterRegion(uRange.low, uRange.high, vRange.low, vRange.high);   // in case knots are not normalized
         out->push_back (
               ICurvePrimitive::CreateChildCurveVector (
-                CurveVector::CreateRectangle (0.0, 0.0, 1.0, 1.0, 0.0, CurveVector::BOUNDARY_TYPE_Outer)));
+                CurveVector::CreateRectangle (uRange.low, vRange.low, uRange.high, vRange.high, 0.0, CurveVector::BOUNDARY_TYPE_Outer)));
+        }
     for (int i = 0; i < numBounds; i++)
         {
         if (preferCurves && boundaries[i].pFirst != NULL)
@@ -1801,7 +1805,7 @@ void MSBsplineSurface::SetTrim (CurveVectorR curves)
                 TrimCurve *trimLoop = NULL;
                 CurveVectorCR loop = *loops[i];
                 for (size_t j = 0; j <  loop.size (); j++)
-                    {            
+                    {
                     MSBsplineCurve edgeCurve;
                     if (loop[j]->GetMSBsplineCurve (edgeCurve, 0.0, 1.0))
                         {
@@ -1830,14 +1834,14 @@ size_t MSBsplineSurface::GetNumPointsInBoundary (size_t boundaryIndex) const
         return boundaries[boundaryIndex].numPoints;
     return false;
     }
-    
+
 int MSBsplineSurface::GetIntNumPointsInBoundary (int boundaryIndex) const
     {
     if (boundaryIndex >= 0 && boundaryIndex < numBounds)
         return boundaries[boundaryIndex].numPoints;
     return false;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1903,5 +1907,209 @@ double MSBsplineSurface::BoundaryLoopArea (size_t boundaryIndex) const
         return 0.0;
     return PolygonOps::Area (boundaries[boundaryIndex].points, (size_t)boundaries[boundaryIndex].numPoints);
     }
+
+// Split stroked boundaries at parametric seams. TrimCurves are removed!
+class StrokedLoopSplitter
+    {
+    struct ClipShiftData
+        {
+        ConvexClipPlaneSet  m_clipper{};    // one of potentially 9 convex region clippers in parameter space, determined by wraparound u and/or v
+        double              m_uShift{0};    // shift in u-coordinate to apply after clipping
+        double              m_vShift{0};    // shift in v-coordinate to apply after clipping
+        ClipShiftData(ConvexClipPlaneSetCR clipper, double uShift = 0.0, double vShift = 0.0): m_clipper(clipper), m_uShift(uShift), m_vShift(vShift) {}
+        };
+
+    MSBsplineSurfaceR m_surface;
+    DRange1d m_uRange;
+    DRange1d m_vRange;
+    bool m_uClosed;
+    bool m_vClosed;
+    bvector<ClipShiftData> m_clipRegions;
+    double m_seamRelTol;
+    static constexpr double s_defaultSeamRelTol = 0.01;    // same as default curveTol in bspsurf_restrokeTrimLoops
+
+    void InitClipRegions()
+        {
+        DRange3d uvRange = DRange3d::From(m_uRange.low, m_vRange.low, 0, m_uRange.high, m_vRange.high, 0);
+        ClipPlane toUp(DVec3d::From(0, 1), m_vRange.high);
+        ClipPlane toDown(DVec3d::From(0, -1), -m_vRange.low);
+        ClipPlane toLeft(DVec3d::From(-1, 0), -m_uRange.low);
+        ClipPlane toRight(DVec3d::From(1, 0), m_uRange.high);
+
+        // always clip to parametric range
+        ConvexClipPlaneSet center{ConvexClipPlaneSet::FromXYBox(m_uRange.low, m_vRange.low, m_uRange.high, m_vRange.high)};
+        m_clipRegions.push_back(ClipShiftData(center));
+
+        // clip in quadrants beyond the parametric range if periodic
+        if (m_uClosed && m_vClosed)
+            {
+            ConvexClipPlaneSet northwest;
+            northwest.push_back(toUp);
+            northwest.push_back(toLeft);
+            m_clipRegions.push_back(ClipShiftData(northwest, m_uRange.Length(), -m_vRange.Length()));
+
+            ConvexClipPlaneSet northeast;
+            northeast.push_back(toUp);
+            northeast.push_back(toRight);
+            m_clipRegions.push_back(ClipShiftData(northeast, -m_uRange.Length(), -m_vRange.Length()));
+
+            ConvexClipPlaneSet southwest;
+            southwest.push_back(toDown);
+            southwest.push_back(toLeft);
+            m_clipRegions.push_back(ClipShiftData(southwest, m_uRange.Length(), m_vRange.Length()));
+
+            ConvexClipPlaneSet southeast;
+            southeast.push_back(toDown);
+            southeast.push_back(toRight);
+            m_clipRegions.push_back(ClipShiftData(southeast, -m_uRange.Length(), m_vRange.Length()));
+            }
+        if (m_uClosed)
+            {
+            ConvexClipPlaneSet west(uvRange, false, false, true, true, false, false);
+            west.push_back(toLeft);
+            m_clipRegions.push_back(ClipShiftData(west, m_uRange.Length(), 0));
+
+            ConvexClipPlaneSet east(uvRange, false, false, true, true, false, false);
+            east.push_back(toRight);
+            m_clipRegions.push_back(ClipShiftData(east, -m_uRange.Length(), 0));
+            }
+        if (m_vClosed)
+            {
+            ConvexClipPlaneSet north(uvRange, true, true, false, false, false, false);
+            north.push_back(toUp);
+            m_clipRegions.push_back(ClipShiftData(north, 0, -m_vRange.Length()));
+
+            ConvexClipPlaneSet south(uvRange, true, true, false, false, false, false);
+            south.push_back(toDown);
+            m_clipRegions.push_back(ClipShiftData(south, 0, m_vRange.Length()));
+            }
+        }
+
+    // HEURISTIC: if a boundary segment starts and ends close to different sides of the seam,
+    // we ASSUME it traverses the period the wrong (long) way, and shift its end point to the
+    // adjacent period. The resulting segment crosses the seam.
+    void ShiftLoopInPlace(bvector<DPoint2d>& polygon)
+        {
+        auto ShiftLoopToOneSideOfSeam = [&](bool uSeam, DRange1dCR paramRange, double seamTol) -> void
+            {
+            int uvSelect = uSeam ? BSSURF_U : BSSURF_V;
+            bool applyShift = false;
+            double shiftSign = 1.0;
+            double prevCoord = polygon[0].GetComponent(uvSelect);  // first point determines period for the rest of the polygon
+            for (size_t i = 1; i < polygon.size(); ++i)
+                {
+                double coord = polygon[i].GetComponent(uvSelect);
+                if (fabs(prevCoord - paramRange.low) <= seamTol && fabs(coord - paramRange.high) <= seamTol)
+                    {
+                    applyShift = !applyShift;
+                    shiftSign = -1.0;
+                    }
+                else if (fabs(prevCoord - paramRange.high) <= seamTol && fabs(coord - paramRange.low) <= seamTol)
+                    {
+                    applyShift = !applyShift;
+                    shiftSign = 1.0;
+                    }
+                if (applyShift)
+                    polygon[i].SetComponent(coord + shiftSign * paramRange.Length(), uvSelect);
+                prevCoord = coord;  // original value
+                }
+            };
+
+        if (m_uClosed)
+            ShiftLoopToOneSideOfSeam(true, m_uRange, m_seamRelTol * m_uRange.Length());
+        if (m_vClosed)
+            ShiftLoopToOneSideOfSeam(false, m_vRange, m_seamRelTol * m_vRange.Length());
+        }
+
+    CurveVectorPtr SplitShiftedLoopThenUnshift(bvector<DPoint2d>& polygon)
+        {
+        CurveVectorPtr result = CurveVector::Create(CurveVector::BOUNDARY_TYPE_UnionRegion);
+        auto shiftedLoop = CurveVector::CreateLinear(polygon.data(), polygon.size(), CurveVector::BOUNDARY_TYPE_Outer);
+        for (auto const& clipRegion : m_clipRegions)
+            {
+            bvector<CurveVectorPtr> clippedLoops;
+            ClipPlaneSet(clipRegion.m_clipper).ClipCurveVector(*shiftedLoop, clippedLoops);
+            for (auto& clippedLoop : clippedLoops)
+                {
+                clippedLoop->TransformInPlace(Transform::From(clipRegion.m_uShift, clipRegion.m_vShift, 0));
+                result->Add(clippedLoop);
+                }
+            }
+        result->FlattenNestedUnionRegions();
+        return result;
+        }
+
+    CurveVectorPtr SplitStrokedLoop(BsurfBoundaryCR boundary)
+        {
+        bvector<DPoint2d> polygon(boundary.points, boundary.points + boundary.numPoints);
+        if (polygon.empty())
+            return nullptr;
+        if (!polygon.front().AlmostEqual(polygon.back()))
+            polygon.push_back(polygon.front()); // ensure closure
+        if (polygon.size() < 4)
+            return nullptr;
+        ShiftLoopInPlace(polygon);
+        return SplitShiftedLoopThenUnshift(polygon);
+        }
+
+public:
+    StrokedLoopSplitter(MSBsplineSurfaceR surface, double seamRelTol): m_surface(surface)
+        {
+        m_seamRelTol = (0.0 < seamRelTol && seamRelTol < 1.0) ? seamRelTol : s_defaultSeamRelTol;
+        surface.GetParameterRegion(m_uRange.low, m_uRange.high, m_vRange.low, m_vRange.high);
+        m_uClosed = !!surface.uParams.closed;
+        m_vClosed = !!surface.vParams.closed;
+        InitClipRegions();
+        }
+
+    bool SplitStrokedLoops()
+        {
+        if (!m_surface.numBounds)
+            return true;
+
+        double fullArea = m_uRange.Length() * m_vRange.Length(); 
+        double areaTol = fullArea * 4 * m_seamRelTol * (1 - m_seamRelTol);  // area of margin
+        bool hasOuterBoundary = m_surface.IsOuterBoundaryActive();
+        auto numInnerBoundary = m_surface.numBounds;
+
+        CurveVectorPtr newLoops = CurveVector::Create(CurveVector::BOUNDARY_TYPE_UnionRegion);
+        for (int32_t i = 0; i < m_surface.numBounds; ++i)
+            {
+            // avoid the full range rectangle
+            double loopArea = m_surface.BoundaryLoopArea(i);
+            if (DoubleOps::AlmostEqual(loopArea, fullArea, areaTol))
+                {
+                hasOuterBoundary = true;
+                --numInnerBoundary;
+                continue;
+                }
+
+            CurveVectorPtr splitLoop = SplitStrokedLoop(m_surface.boundaries[i]);
+            if (splitLoop.IsValid())
+                newLoops->Add(splitLoop);
+            }
+
+        if (newLoops->size() < (size_t) numInnerBoundary)
+            {
+            BeAssert(!"inner loop count is not expected to decrease");
+            return false;
+            }
+
+        newLoops->FlattenNestedUnionRegions();
+        newLoops->ConsolidateAdjacentPrimitives(false);   // so that we don't re-stroke
+        m_surface.SetTrim(*newLoops);
+        m_surface.SetOuterBoundaryActive(hasOuterBoundary);
+        return true;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool MSBsplineSurface::SplitStrokedBoundaryLoopsAtParametricSeams(double seamRelTol)
+    {
+    return StrokedLoopSplitter(*this, seamRelTol).SplitStrokedLoops();
+    }
+
 
 END_BENTLEY_GEOMETRY_NAMESPACE

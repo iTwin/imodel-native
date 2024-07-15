@@ -32,6 +32,6 @@ BEGTEST_ADDITIONAL_HFILES = \
     $(_MakefilePath)src/VuSpringModel.h
 %include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
 
-# Deliver 
+# Deliver
 $(BuildContext)Delivery/UnitTests/Objects/$(TestDir) : ${o}
     $(LinkFirstDepToFirstTargetAsDirectory)

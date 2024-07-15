@@ -369,9 +369,9 @@ static bool ValidIndex (size_t index, bvector<T> const &data, char const*pString
     }
 
 static bool LessThanOrEqual (double a, double b, char const*pString = nullptr);
+static bool LessThanOrEqual(size_t a, size_t b, char const* pString = nullptr);
 
-// test if distances increase
-// 
+// Test if distances increase
 static bool ValidateDistances
 (
 bvector<PathLocationDetailPair> const &data,
@@ -380,9 +380,11 @@ DRange1dCR validInternalDistances0, // range of allowed gaps within pair with ta
 DRange1dCR validInternalDistances1 // range of allowed gaps within pair with tagA nonzero
 );
 
-
 static bool Size (size_t a, size_t b, char const*pName = NULL);
 static bool Ptrdiff (ptrdiff_t a, ptrdiff_t b, char const*pName = NULL);
+
+// Test if object is nullptr
+static bool IsNull(void* object, char const *pString = nullptr);
 
 template<typename T>
 static bool Near (bvector<T> &a, bvector<T> &b, char const*pName = NULL)
@@ -426,11 +428,13 @@ static void SaveTransformed(ICurvePrimitiveCR data);
 static void SaveTransformed(PolyfaceHeaderCR data);
 static void SaveTransformed(PolyfaceHeaderPtr &data);
 static void SaveTransformed(ISolidPrimitiveCR data);
+static void SaveTransformed (bvector<DPoint2d> const &data, bool addClosure = false);
 static void SaveTransformed (bvector<DPoint3d> const &data, bool addClosure = false);
 static void SaveTransformed (bvector<DPoint4d> const &data);
 static void SaveTransformedMarkers (bvector<DPoint3d> const &data, double markerSize);
 static void SaveTransformedMarker (DPoint3dCR data, double markerSize = 0.1);
 static void SaveTransformed (DPoint3dCP pData, size_t n);
+static void SaveTransformed (bvector<bvector<DPoint2d>> const &data);
 static void SaveTransformed (bvector<bvector<DPoint3d>> const &data);
 static void SaveTransformed (bvector<DTriangle3d> const &data, bool closed = true);
 static void SaveTransformed (bvector<DSegment3d> const &data);
@@ -584,7 +588,7 @@ void DoShift (DVec3dCR vector, bool resetBaseTransform = false)
                             }
                             );
         Check::SaveTransformed (*box);
-        }    
+        }
     if (resetBaseTransform)
         {
         Check::SetTransform (m_baseTransform);

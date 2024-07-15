@@ -580,6 +580,12 @@ struct EcefLocation
     }
     // Constructor to compute ECEF location from an cartographic origin
     DGNPLATFORM_EXPORT EcefLocation(GeoPointCR originLL, DPoint3dCR originIn, GeoCoordinates::BaseGCSCP GCS);
+    DGNPLATFORM_EXPORT Transform ComputeTransform();
+    //! Convert a geographic point to an ECEF (Earth-Centered, Earth-Fixed) location.
+    //! @param[in] origin The origin geographic point, specified using lat/long coordinates in radians.
+    //! @param[in] point An offset point (optional).
+    //! @return The ECEF location corresponding to the geographic point; returned object will have been marked invalid in case of failure.
+    DGNPLATFORM_EXPORT static EcefLocation FromGeographic(GeoPointCR origin, DPoint3dCP point);
 };
 
 //! Source of DgnGeoLocation.GetProjectExtents

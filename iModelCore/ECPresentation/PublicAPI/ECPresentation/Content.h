@@ -1103,7 +1103,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
     {
     private:
         RelatedClassPath m_pathFromSelectClassToContentClass;
-        std::unordered_set<ECClassCP> m_actualSourceClasses;
+        std::unique_ptr<std::unordered_set<ECClassCP>> m_actualSourceClasses;
         RelationshipMeaning m_relationshipMeaning;
         bool m_isRelationshipField;
         Utf8String m_specificationIdentifier;
@@ -1132,7 +1132,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
             {}
         RelatedContentField(RelatedContentField const& other)
             : NestedContentField(other), m_pathFromSelectClassToContentClass(other.m_pathFromSelectClassToContentClass), m_relationshipMeaning(other.m_relationshipMeaning),
-            m_isRelationshipField(other.m_isRelationshipField), m_actualSourceClasses(other.m_actualSourceClasses)
+            m_isRelationshipField(other.m_isRelationshipField), m_actualSourceClasses(other.m_actualSourceClasses ? std::make_unique<std::unordered_set<ECClassCP>>(*other.m_actualSourceClasses) : nullptr)
             {}
         RelatedContentField(RelatedContentField&& other)
             : NestedContentField(std::move(other)), m_pathFromSelectClassToContentClass(std::move(other.m_pathFromSelectClassToContentClass)), m_relationshipMeaning(other.m_relationshipMeaning),
@@ -1145,9 +1145,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         void SetPathFromSelectToContentClass(RelatedClassPath path) {m_pathFromSelectClassToContentClass = path;}
 
         //! Actual source subclasses of source in 'path from select to content class'
-        std::unordered_set<ECClassCP> const& GetActualSourceClasses() const {return m_actualSourceClasses;}
-        std::unordered_set<ECClassCP>& GetActualSourceClasses() {return m_actualSourceClasses;}
-        void SetActualSourceClasses(std::unordered_set<ECClassCP> classes) {m_actualSourceClasses = classes;}
+        std::unordered_set<ECClassCP> const* GetActualSourceClasses() const {return m_actualSourceClasses.get();}
+        std::unordered_set<ECClassCP>* GetActualSourceClasses() {return m_actualSourceClasses.get();}
+        void SetActualSourceClasses(std::unique_ptr<std::unordered_set<ECClassCP>> classes) {m_actualSourceClasses = std::move(classes);}
 
         void SetRelationshipMeaning(RelationshipMeaning relationshipMeaning) {m_relationshipMeaning = relationshipMeaning;}
         RelationshipMeaning GetRelationshipMeaning() const {return m_relationshipMeaning;}

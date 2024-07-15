@@ -44,7 +44,7 @@ SolidLocationDetail::SolidLocationDetail (int parentId, double s, DPoint3dCR xyz
     m_parameter = s;
     m_xyz = xyz;
     }
-    
+
 //! Constructor with m_parameter and point.
 SolidLocationDetail::SolidLocationDetail (int parentId, double s, DPoint3dCR xyz, double u, double v, DVec3dCR uDirection, DVec3dCR vDirection)
     {
@@ -56,7 +56,7 @@ SolidLocationDetail::SolidLocationDetail (int parentId, double s, DPoint3dCR xyz
     m_vParameter = v;
     m_uDirection = uDirection;
     m_vDirection = vDirection;
-    }    
+    }
 //! Set all face selectors
 void SolidLocationDetail::SetFaceIndices (ptrdiff_t id0, ptrdiff_t id1, ptrdiff_t id2)
     {

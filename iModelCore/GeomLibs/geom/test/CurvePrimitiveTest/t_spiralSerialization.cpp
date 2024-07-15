@@ -10,7 +10,7 @@ USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
 bool ReadDgnjsGeometry(bvector<IGeometryPtr> &geometry, size_t minGeometry, WCharCP nameA, WCharCP nameB, WCharCP nameC);
 void DoRoundTrip(IGeometryPtr g0, bool emitGeometry, int serializerSelect);
 
-static const WCharCP s_alexGSpirals[] = 
+static const WCharCP s_alexGSpirals[] =
     {
     L"sine.imjs"
     /* ,

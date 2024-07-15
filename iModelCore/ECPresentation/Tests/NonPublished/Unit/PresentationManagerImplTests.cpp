@@ -21,7 +21,7 @@ struct RulesDrivenECPresentationManagerImplTests : ECPresentationTest
     std::shared_ptr<TestConnectionManager> m_connections;
     IConnectionPtr m_connection;
     RulesDrivenECPresentationManagerImpl* m_impl;
-    TestCategorySupplier m_categorySupplier;
+    std::shared_ptr<TestCategorySupplier> m_categorySupplier;
     TestRuleSetLocaterPtr m_locater;
 
     static void SetUpTestCase();
@@ -30,7 +30,7 @@ struct RulesDrivenECPresentationManagerImplTests : ECPresentationTest
     virtual void TearDown() override;
 
     RulesDrivenECPresentationManagerImplTests()
-        : m_categorySupplier(ContentDescriptor::Category("cat", "cat", "descr", 1))
+        : m_categorySupplier(std::make_shared<TestCategorySupplier>(ContentDescriptor::Category("cat", "cat", "descr", 1)))
         {}
     };
 ECDbTestProject* RulesDrivenECPresentationManagerImplTests::s_project = nullptr;
@@ -71,7 +71,7 @@ void RulesDrivenECPresentationManagerImplTests::SetUp()
     RulesDrivenECPresentationManagerImpl::Params params(RulesEngineTestHelpers::GetPaths(BeTest::GetHost()));
     params.SetConnections(m_connections);
     params.SetCachingParams(cachingParams);
-    params.SetCategorySupplier(&m_categorySupplier);
+    params.SetCategorySupplier(m_categorySupplier);
     m_impl = new RulesDrivenECPresentationManagerImpl(params);
 
     m_impl->GetLocaters().RegisterLocater(*m_locater);

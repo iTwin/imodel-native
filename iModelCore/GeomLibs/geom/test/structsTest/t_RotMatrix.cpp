@@ -577,7 +577,7 @@ void TestMultiplication (RotMatrixCR A, double x, double y, double z)
     int numXa = sizeof(Xa) / sizeof (X);
     DPoint2d AYa [10];
     DPoint3d AXa [10], AX0a [10], ATTXa[10];
-    
+
     A.Multiply (AYa, Ya, numXa);
     A.Multiply (AXa, Xa, numXa);
     A.Multiply (AX0a, X0a, numXa);
@@ -635,7 +635,7 @@ void TestMultiplication (RotMatrixCR A, double x, double y, double z)
     Check::Near (CX, CXw1_inplace_array);
     Check::Near (CXw1_inplace, CX);
     Transform CT = Transform::From (AT, translation);   // Transposing the rotmatrix part of transform is strange, but the method is there.
-#ifdef MultiplyTranspose    
+#ifdef MultiplyTranspose
     DPoint3d CTX, CTX_components, CTX_inplace;
     CT.MultiplyTranspose (&CTX, &X, 1);
     CTX_inplace = X; CT.MultiplyTranspose (CTX_inplace);
@@ -669,7 +669,7 @@ void TestMultiplication (RotMatrixCR A, double x, double y, double z)
         CXa_inplace[i] = Xa[i];
         CTXa_Transpose_inplace[i] = Xa[i];
         }
-    
+
     C.Multiply (CXa_inplace, numXa);
     C.Multiply (CXa, Xa, numXa);
 //    CT.MultiplyTranspose (CTXa_Transpose_inplace, numXa);
@@ -725,7 +725,7 @@ TEST (MatrixAndTransform, ProductA)
     matrixA.Multiply (ABX);
     matrixAB.Multiply (CX, X);
     Check::Near (ABX, CX);
-    
+
     Check::Near (matrixA.Determinant () * matrixB.Determinant (), matrixAB.Determinant ());
 
     RotMatrix matrixABC, matrixAB_C;
@@ -743,7 +743,7 @@ TEST (MatrixAndTransform, ProductA)
     matrix_AA_B.InitProduct (transform_AA, matrixB);
     Check::Near (matrixAB, matrix_A_BB);
     Check::Near (matrixAB, matrix_AA_B);
-    
+
     Transform transform_AA_BB, transform_A0_BB, transform_AA_B0, transform_A_BB, transform_AA_B;
     transform_AA_BB.InitProduct (transform_AA, transform_BB);
 
@@ -798,7 +798,7 @@ void CheckOrthogonalizeColumns(RotMatrixCR A)
 void CheckOrthogonalFactors (RotMatrixCR A)
     {
     CheckOrthogonalizeColumns (A);
-    CheckSVD (A);    
+    CheckSVD (A);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -823,7 +823,7 @@ TEST(RotMatrix,OrthogonalFactors)
             0,3,0,
             0,0,4
             ));
-    
+
     CheckOrthogonalFactors (
         RotMatrix::FromRowValues (
             2,1,-1,
@@ -864,7 +864,7 @@ bool VerifyCleanup (RotMatrixCR A, int axis,  bool expectCleanup)
                 return false;
             else if (s <= 0 && !negB.IsRigidScale (B1, sB))
                 return false;
-                
+
             double d0, d1;
             double e0, e1;
             AtB.DiagonalSignedRange (d0, d1);
@@ -882,7 +882,7 @@ bool VerifyCleanup (RotMatrixCR A, int axis,  bool expectCleanup)
         }
     if (expectCleanup)
         return false;
-    
+
     return A.IsEqual (B, 1.0e-16);
     }
 
@@ -926,7 +926,7 @@ TEST(RotMatrix, InitWithRigidScaleCleanup)
         Check::True (VerifyCleanup (I, axis, true), "Identity cleanup");
         Check::True (VerifyShifts (I, axis, safeShift, true), "Identity safe shifts");
         Check::True (VerifyShifts (I, axis, bigShift, false), "Identity big shifts");
-        
+
         RotMatrix Q = RotMatrix::FromVectorAndRotationAngle (DVec3d::From (1,2,3), 0.2);
         Check::True (VerifyCleanup (Q, axis, true), "rotation cleanup");
         Check::True (VerifyShifts (Q, axis, safeShift, true), "rotation safe shifts");
@@ -935,7 +935,7 @@ TEST(RotMatrix, InitWithRigidScaleCleanup)
         double a = 1.2;
         double b0 = 1.2 + safeShift;
         double b1 = 1.2 + bigShift;
-        
+
         RotMatrix Qs = Q;
         Qs.ScaleColumns (a, a, a);
         Check::True (VerifyCleanup (Qs, axis, true), "scaled rotation cleanup");
@@ -957,7 +957,7 @@ TEST(RotMatrix, InitWithRigidScaleCleanup)
 
     Check::EndScope ();
     }
-    
+
 
 RotMatrix MakePermutation (int ix, int iy, int iz, double x, double y, double z)
     {
@@ -1024,7 +1024,7 @@ TEST (RotMatrix, IsNearSignedPermutation)
         VerifyPermutation (ix, iy, iz, -1,1,-1);
 
         VerifyPermutation (ix, iy, iz, -1,-1,-1);
-        }    
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1047,8 +1047,8 @@ TEST(RotMatrix, EpsilonCase1)
             }
         }
     }
-    
-    
+
+
 double det (double a, double b, double c, double d)
     {
     return a * d - b * c;
@@ -1078,7 +1078,7 @@ TEST(Eigen, Solve2x2)
     CheckEig2x2 (4, 2, 2, 4);
     CheckEig2x2 (4, 1, 2, 4);
     }
-    
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -1092,7 +1092,7 @@ TEST(RotMatrix,RepeatRotate)
     //printf (" PI %.17g    cos(PI)=%.17g   sin(PI)=%.17g\n", PI, cos(PI), sin(PI));
     /* iteration rotate */
     for(count=0 ; count < 100 ; count++)
-        {              
+        {
         /* matrix for multiply */
         incrementalRotation.InitIdentity ();
         incrementalRotation.InitFromPrincipleAxisRotations (incrementalRotation, PI, PI, PI);
@@ -1106,7 +1106,7 @@ TEST(RotMatrix,RepeatRotate)
 
 
 }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1325,7 +1325,7 @@ TEST(RotMatrix,GyroData)
         G0.Transpose ();
         G1.Transpose ();
         }
-    
+
     VerifyNearRigid (G0, "G0");
     VerifyNearRigid (G1, "G1");
 
@@ -1351,7 +1351,7 @@ TEST(RotMatrix,GyroData)
     Check::True (V0_screenToModel.IsRigid ());
     RotMatrix V0_modelToScreen = RotMatrix::FromTransposeOf (V0_screenToModel);
 
-    auto DeltaH  = H1T * H0;   // composite matrices 
+    auto DeltaH  = H1T * H0;   // composite matrices
     auto DeltaG = RotMatrix::FromTransposeOf (G1) * G0;
 
     VerifyNearRigid (DeltaG, "DeltaG");
@@ -1399,7 +1399,7 @@ TEST(RotMatrix,FromCrossVector)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST(RotMatrix, TriangularMatrix) 
+TEST(RotMatrix, TriangularMatrix)
     {
     RotMatrix triangularMatrix = RotMatrix::FromRowValues(-4, 2, 1, 8, 7, 2, -12, 4, -5);
     Check::ExactDouble(2, triangularMatrix.UpperTriangleMaxAbs());
@@ -1486,7 +1486,7 @@ TEST(RotMatrix,IsRigidSignedScale)
         CheckMatrixRigid (matrix4, s < 0.0, true, s);
         // Note: this sequence tests 0 and 1 sign flips.  2 and 3 gets caught when the bvector has the negative
         }
-    
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -1512,7 +1512,7 @@ TEST(RotMatrix, FromQuaternion)
 
     double quanternion[4];
     rotQuaternion.GetQuaternion(quanternion, false);
-    
+
     RotMatrix rotQuaternion2 = RotMatrix::FromQuaternion(quanternion);
     rotQuaternion2.Multiply(subjectPointCpy);
 
@@ -1544,7 +1544,7 @@ TEST(RotMatrix, RotTransformOnPointArray)
     rotMat.SolveArray(outPointsVec, inPointsVec);
     DPoint3d testOut;
 
-    for (size_t i = 0; i < 4; i++) 
+    for (size_t i = 0; i < 4; i++)
         {
         rotMat.Solve(testOut, inPoints[i]);
         Check::Near(testOut, outPoints[i]);
@@ -1715,7 +1715,7 @@ TEST(RotMatrix, NavigationMatrix)
     Transform transformA, transformB;
     NavigateMotion__GenerateRotationTransform_fromDgnPlatform (transformA, yawRate, pitchRate, eyePoint, viewRotation, time);
     NavigateMotion__GenerateRotationTransform_forImodelJS(transformB, yawRate, pitchRate, eyePoint, viewRotation, time);
-    Check::Near (transformA, transformB, "NavigateMotion__GenerateRotationTransform_forImodelJS"); 
+    Check::Near (transformA, transformB, "NavigateMotion__GenerateRotationTransform_forImodelJS");
 
     Check::Print (transformA, "NavigateMotion__GenerateRotationTransform_fromDgnPlatform");
     Check::Print (transformB, "NavigateMotion__GenerateRotationTransform_forImodelJS");
@@ -1753,17 +1753,17 @@ TEST(RotMatrix, NearRigidFromIFC)
         0,                      0,                          0.00010000000000071528);
     RotMatrix v8ToDgnDbMatrix;
     v8ToDgnDbMatrix.InitProduct(conversionScale, currentTransform);
-    
+
     // existing behavior uses historically tight tolerance
     testMatrix(v8ToDgnDbMatrix, s_defaultTol);
     Check::False(isOrtho, "IsOrthonormal returns false with default tolerance");
     Check::False(hasUniformScale, "IsRigidSignedScale returns false with default tolerance");
-    
+
     // new overload allows caller to pass looser tolerance
     testMatrix(v8ToDgnDbMatrix, s_looseTol);
     Check::True(isOrtho, "IsOrthonormal returns true with looser tolerance");
     Check::True(hasUniformScale, "IsRigidSignedScale returns true with looser tolerance");
-    
+
     // test old v. new scale uniformity test
     double minScale, maxScale;
     conversionScale.DiagonalAbsRange(minScale, maxScale);

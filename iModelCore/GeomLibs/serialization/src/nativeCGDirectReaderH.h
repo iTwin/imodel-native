@@ -1859,7 +1859,7 @@ bool ReadITransitionSpiral (TSource const &value, IGeometryPtr &result)
         flags.startRadius_defined = ReadTagdouble (value, "startRadius", detail.startRadius);
         flags.endBearing_defined = ReadTagAngle (value, "endBearing", detail.endBearing);   // optional !!!
         flags.length_defined= ReadTagdouble (value, "length", detail.length);        // optional !!!
-        flags.endRadius_defined = ReadTagdouble (value, "endRadius", detail.endRadius);    
+        flags.endRadius_defined = ReadTagdouble (value, "endRadius", detail.endRadius);
         flags.activeStartFraction_defined = ReadTagdouble (value, "activeStartFraction", detail.activeStartFraction);
         flags.activeEndFraction_defined = ReadTagdouble (value, "activeEndFraction", detail.activeEndFraction);
         flags.geometry_defined = ReadTag_AnyGeometry (value, "geometry", detail.geometry);

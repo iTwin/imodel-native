@@ -2,7 +2,6 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-#include <BeJsonCpp/BeJsonUtilities.h>
 #include <bentley/bvector.h>
 #include <Bentley/WString.h>
 
@@ -16,7 +15,7 @@ Utf8String propertyName;    // ??? can this be some other property reference tha
 };
 class CompareJson
 {
-// QUESTION: should path positions be stored in 
+// QUESTION: should path positions be stored in
 bvector<JsonPathPosition> m_pathA;  // complete path from root of A to current leaf
 bvector<JsonPathPosition> m_pathB;  // complete path from root of B to current leaf.
 double m_relTol;

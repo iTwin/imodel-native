@@ -435,7 +435,7 @@ double       offsetDistance     /* => SIGNED offset. Positive is outward. */
             {
             if (DoubleOps::AlmostEqualFraction (cutFraction[i-1], cutFraction[i]))
                 continue;
-            ICurvePrimitivePtr prim = 
+            ICurvePrimitivePtr prim =
                 bspconv_appendOffsetEllipseSegmentToCurveChain (pEllipse, cutFraction[i-1], cutFraction[i],
                                 offsetDistance, sMaxStep, bClosed);
             if (prim.IsValid ())
@@ -635,7 +635,7 @@ MSBsplineCurvePtr MSBsplineSurface::GetIsoVCurve (double v) const
     {
     bvector<DPoint3d> vPoles;
     bvector<double> vWeights;
-    
+
     bvector<DPoint3d> newPoles;
     bvector<double> newWeights;
 
@@ -955,7 +955,7 @@ CurveVectorPtr MSBsplineSurface::GetUnstructuredBoundaryCurves (double tolerance
         return parent;
     return NULL;
     }
-   
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -986,7 +986,7 @@ MSBsplineCurvePtr MSBsplineSurface::GetPolygonRowAsCurve (int index) const
     return curve.CreateCapture ();
     }
 
-    
+
 
 MSBsplineCurvePtr MSBsplineSurface::GetPolygonColumnAsCurve (int index) const
     {

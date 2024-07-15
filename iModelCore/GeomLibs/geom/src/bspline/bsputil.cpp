@@ -445,7 +445,7 @@ bool MSBsplineCurve::AlmostEqual (MSBsplineCurveCR other, double tolerance) cons
         {
         if (tolerance <= 0.0)
             tolerance = 0.5 * (Resolution() + other.Resolution());
-            
+
         if (this->HasWeights())
             {
             for (int i=0; i<this->GetNumPoles(); i++)
@@ -1735,11 +1735,14 @@ double          *interiorKnots      /* => interior knots (if nonuniform) */
     memcpy (knotVector, interiorKnots, (params->numPoles + params->order) * sizeof (double));
     return SUCCESS;
     }
+
+// avoid optimization bug
 static void mapDoubles(double *data, int n, double origin, double factor)
     {
     for (int i = 0; i < n; i++)
         data[i] = (data[i] - origin) * factor;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1759,20 +1762,23 @@ int             closed
     numKnots = bspknot_numberKnots (numPoles, order, closed);
     root = knotVector[order-1];
 
+    // Succeed on more inputs by employing the tighter static minimum tolerance used in
+    // bspknot_knotTolerance to compute knotTol. Thus segmentCurve(0, u) succeeds with
+    // mgds_fc_nearZero < knotTol = 6.67e-11 < u = 7.0e-11 = divisor < KNOT_TOLERANCE_BASIS
     divisor = (closed ? knotVector[numPoles+order-1] : knotVector[numPoles]) - root;
-    if (fabs (divisor) < KNOT_TOLERANCE_BASIS)
+    if (fabs (divisor) < mgds_fc_nearZero)  // previously KNOT_TOLERANCE_BASIS
         return MDLERR_BADPARAMETER;
-        //  The one-by-one loop below the mapDoubles is optimized (?) to
-        // a blocks of 8, then 4, then 2, then 1 (in order to use special register blocks?)
-        // In addition to the blocking effect, the optimization did some blocks as the division
-        // and some as multiplication by reciprocal.
-        // This produced "last bit" differences so that 3 consecutive identical inputs
-        // (with one in an early block, 2 in a later block) led to output values (a,b,b) where
-        // b is slightly less than a.
-        //
+
+    // The one-by-one loop below the mapDoubles is optimized (?) to
+    // a blocks of 8, then 4, then 2, then 1 (in order to use special register blocks?)
+    // In addition to the blocking effect, the optimization did some blocks as the division
+    // and some as multiplication by reciprocal.
+    // This produced "last bit" differences so that 3 consecutive identical inputs
+    // (with one in an early block, 2 in a later block) led to output values (a,b,b) where
+    // b is slightly less than a.
     mapDoubles(knotVector, numKnots, root, 1.0 / divisor);
-//    for (i=0, kP0=knotVector; i < numKnots; i++, kP0++)
-//        *kP0 = (*kP0 - root) / divisor;
+    // for (i=0, kP0=knotVector; i < numKnots; i++, kP0++)
+    //     *kP0 = (*kP0 - root) / divisor;
 
     /* Note...This shouldn't be necessary, but PC cant seem to divide a number by
        itself (due to different precision of double on FPU stack) and get 1.0 */

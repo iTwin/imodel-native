@@ -33,10 +33,10 @@ struct BezierTriangleDPoint3d
 	//! Construct empy n-order triangle
 	BezierTriangleDPoint3d (int order);
     public:
-    
+
     // STANDARD CONSTRUCTORS
-    
-	//! @description Construct an empty (degree==-1) triangle structure.  
+
+	//! @description Construct an empty (degree==-1) triangle structure.
     GEOMDLLIMPEXP BezierTriangleDPoint3d ();
 	//! @description Construct a single point triangle.
 	//! @param [in] xyz The single point
@@ -79,7 +79,7 @@ struct BezierTriangleDPoint3d
 	//! @param [in] points The array of vectors
 	//! @param [in] size The size of the array
 	GEOMDLLIMPEXP BezierTriangleDPoint3d (DVec3d *points, int size);
- 
+
 	//! @description Gives the order of the triangle
 	//! @return The order of the triangle
     int GEOMDLLIMPEXP GetOrder () const;
@@ -118,11 +118,11 @@ struct BezierTriangleDPoint3d
 	//! @param [in] i The index number of the point
 	//! @param [in] scale The number by which to multiply the pole's values
 	void GEOMDLLIMPEXP ScalePole (int i, double scale);
-	
+
 	//! @description Sets all entries of triangle equal to zero
 	void GEOMDLLIMPEXP Zero ();
 
-	//! @description Raises the order of the triangle by one 
+	//! @description Raises the order of the triangle by one
 	//! @return The new raised-order triangle
 	BezierTriangleDPoint3d GEOMDLLIMPEXP RaiseOrder () const;
 
@@ -179,7 +179,7 @@ struct BezierTriangleDPoint3d
 	//! @param [in] v The v-parameter for evaluation
 	//! @return The desired point in Cartesian coordinates
 	DPoint3d GEOMDLLIMPEXP EvaluateDirect (double u, double v) const;
-	
+
 	//! @description Compute Cartesian coordinates of a point in the triangle given Barycentric coordinates
 	//! @description Uses algorithm to compute basis functions
 	//! @param [in] u The u-parameter for evaluation
@@ -227,14 +227,14 @@ struct BezierTriangleDPoint3d
 	//! @param [out] dXdu The array derivatives wrt u
 	//! @param [out] dXdv The array derivatives wrt v
 	void ComputeBasisFunctions (double u, double v, double *values, double *dXdu, double *dXdv) const;
-	
+
 	//! @description Compute basis functions for triangle
 	//! @description Uses algorithm to compute basis functions
 	//! @param [in] u The u-parameter for evaluation
 	//! @param [in] v The v-parameter for evaluation
 	//! @param [out] values The array of basis functions
 	void GEOMDLLIMPEXP ComputeBasisFunctionsCompact (double u, double v, double *values) const;
-	
+
 	//! @description Compute basis functions for triangle and their derivatives
 	//! @description Uses algorithm to compute basis functions
 	//! @param [in] u The u-parameter for evaluation
@@ -244,7 +244,7 @@ struct BezierTriangleDPoint3d
 	//! @param [out] dXdv The array derivatives wrt v
 	void GEOMDLLIMPEXP ComputeBasisFunctionsCompact (double u, double v, double *values, double *ddu, double *ddv) const;
 
-	//! @description Run the de Casteljau subdivision on the triangle 
+	//! @description Run the de Casteljau subdivision on the triangle
 	//! @description This is inplace and reduces the degree
 	//! @param [in] u The u-parameter for evaluation
 	//! @param [in] v The v-parameter for evaluation
@@ -257,8 +257,8 @@ struct BezierTriangleDPoint3d
 	//! @param [out] right The right triangle produced
 	//! @param [out] left The left triangle produced
 	void GEOMDLLIMPEXP LayerTriangles (double u, double v, BezierTriangleDPoint3dR bottom, BezierTriangleDPoint3dR right, BezierTriangleDPoint3dR left);
-	
-	//! @description Using the de Casteljau algorithm, compute Cartesian coordinates of a point in the 
+
+	//! @description Using the de Casteljau algorithm, compute Cartesian coordinates of a point in the
 	//! @description triangle given Barycentric coordinates.
 	//! @param [in] u The u-parameter for evaluation
 	//! @param [in] v The v-parameter for evaluation
@@ -303,7 +303,7 @@ struct BezierTriangleDPoint3d
     int GEOMDLLIMPEXP SetControlPoints (bvector<DPoint3d> const &controlPoints);
 
     // SMART POINTER CONSTRUCTORS
-    
+
 
     //! @description Construct a linear triangle.
 	//! @param [in] xyz00 The bottom left point
@@ -341,7 +341,7 @@ struct BezierTriangleDPoint3d
     static GEOMDLLIMPEXP BezierTriangleDPoint3dPtr Create (bvector<DPoint3d> const &controlPoints);
 
     //! Create order 0.
-    static GEOMDLLIMPEXP BezierTriangleDPoint3dPtr Create ();   
+    static GEOMDLLIMPEXP BezierTriangleDPoint3dPtr Create ();
     }; // BezierTriangleDPoint3d
 
 
@@ -439,9 +439,9 @@ struct BezierCurveDPoint3d
 	//! Construct empy n-order curve
 	BezierCurveDPoint3d (int order);
     public:
-    
+
     // STANDARD CONSTRUCTORS
-    
+
     //! @description Construct an empty curve
     GEOMDLLIMPEXP BezierCurveDPoint3d ();
     //! @description Construct a single point curve
@@ -479,7 +479,7 @@ struct BezierCurveDPoint3d
 	//! @param [in] points The array of vectors
 	//! @param [in] size The size of the array
 	GEOMDLLIMPEXP BezierCurveDPoint3d (DVec3d *points, int size);
-    
+
 	//! @description Gives the order of the curve
 	//! @return The order of the curve
     int GEOMDLLIMPEXP GetOrder () const;
@@ -508,10 +508,10 @@ struct BezierCurveDPoint3d
 	//! @param [in] xyz The new point value
 	void GEOMDLLIMPEXP SetPole (int i, DPoint3dCR xyz);
 
-	//! @description Raises the order of the curve by one 
+	//! @description Raises the order of the curve by one
 	//! @return The new raised-order curve
 	BezierCurveDPoint3d GEOMDLLIMPEXP RaiseOrder () const;
-	
+
 	//! @description Raises the order of the curve by an integer
 	//! @param [in] order The number by which to raise the order
 	//! @return The new raised-order curve
@@ -534,7 +534,7 @@ struct BezierCurveDPoint3d
     //! @description Construct from 0, 1, 2, 3, 4, or 5 control points of (empty, constant, linear, quadratic, cubic, quartic) curve
 	//! @param [in] controlPoints The points from which to create the curve
     GEOMDLLIMPEXP BezierCurveDPoint3d (bvector<DPoint3d> const &controlPoints);
-	
+
 	//! @description Compute Cartesian coordinates of a point in the curve given parametric coordinates
 	//! @description Uses precalculated basis functions
 	//! @param [in] u The u-parameter for evaluation
@@ -575,13 +575,13 @@ struct BezierCurveDPoint3d
 	//! @param [out] values The array of basis functions
 	//! @param [out] dXdu The array derivatives wrt u
 	void ComputeBasisFunctions (double u, double *values, double *dXdu) const;
-	
+
 	//! @description Compute basis functions for curve
 	//! @description Uses algorithm to compute basis functions
 	//! @param [in] u The u-parameter for evaluation
 	//! @param [out] values The array of basis functions
 	void GEOMDLLIMPEXP ComputeBasisFunctionsCompact (double u, double *values) const;
-	
+
 	//! @description Compute basis functions for curve and their derivatives
 	//! @description Uses algorithm to compute basis functions
 	//! @param [in] u The u-parameter for evaluation
@@ -597,7 +597,7 @@ struct BezierCurveDPoint3d
     //! @description Construct from 0, 1, 2, 3, 4, or 5 control points of (empty, constant, linear, quadratic, cubic, quartic) curve
 	//! @param [in] controlPoints The points from which to create the curve
     //! @return the order actually installed
-    int GEOMDLLIMPEXP SetControlPoints (bvector<DPoint3d> const &controlPoints);   
+    int GEOMDLLIMPEXP SetControlPoints (bvector<DPoint3d> const &controlPoints);
 
 	//! Evaluate at u,v and return the point.
     //DPoint3d GEOMDLLIMPEXP Evaluate (double u, double v) const;
@@ -616,7 +616,7 @@ DPoint3d AddScaled (DPoint3dCP points, double *scales, size_t n)
 		xyz.y += points[i].y * scales[i];
 		xyz.z += points[i].z * scales[i];
 		}
-	return xyz;	
+	return xyz;
 	}
 
 DPoint3d Scale (DPoint3d point, double scale)
@@ -626,7 +626,7 @@ DPoint3d Scale (DPoint3d point, double scale)
 	xyz.x = point.x * scale;
 	xyz.y = point.y * scale;
 	xyz.z = point.z * scale;
-	return xyz;	
+	return xyz;
 	}
 
 static int s_fact [5] =
@@ -666,7 +666,7 @@ static int s_trinomial [5][5][5] =
         },
         {   // DEGREE 4
             {1,4,6,4,1},
-            {4,12,12,4,0},  
+            {4,12,12,4,0},
             {6,12,6,0,0},
             {4,4,0,0,0},
             {1,0,0,0,0},
@@ -1330,7 +1330,7 @@ double TrinomialCoefficientCalcC (int n, int i, int j, int k)
 		return s_fact[n]/(s_fact[i]*s_fact[j]*s_fact[k]);
 		}
 	else
-		return 0;	
+		return 0;
 	}
 
 double TrinomialCoefficient (int n, int i, int j, int k)
@@ -1534,7 +1534,7 @@ bool BezierTriangleDPoint3d::TryGetPole (int i, int j, DPoint3dR xyz) const
 
 		xyz = GetPole (pn);
 		return true;
-		} 
+		}
 	else
 		{
 		return false;
@@ -1723,7 +1723,7 @@ void BezierTriangleDPoint3d::ComputeBasisFunctions (double u, double v, double *
 		double w = 1.0 - u - v;
 		values[0] = w*w;
 		values[1] = 2*u*w;
-		values[2] = u*u; 
+		values[2] = u*u;
 		values[3] = 2*v*w;
 		values[4] = 2*u*v;
 		values[5] = v*v;
@@ -1803,7 +1803,7 @@ void BezierTriangleDPoint3d::ComputeBasisFunctions (double u, double v, double *
 
 		values[0] = w*w;
 		values[1] = 2*u*w;
-		values[2] = u*u; 
+		values[2] = u*u;
 		values[3] = 2*v*w;
 		values[4] = 2*u*v;
 		values[5] = v*v;
@@ -1956,7 +1956,7 @@ DPoint3d BezierTriangleDPoint3d::EvaluateDirectCompact (double u, double v) cons
 		{
 		return DPoint3d::From (0,0,0);
 		}
-	
+
 	}
 
 void BezierTriangleDPoint3d::EvaluateDirectCompact (double u, double v, DPoint3dR xyz, DVec3dR dXdu, DVec3dR dXdv) const
@@ -1976,7 +1976,7 @@ void BezierTriangleDPoint3d::EvaluateDirectCompact (double u, double v, DPoint3d
 		dXdu = DVec3d::FromStartEnd (DPoint3d::From (0,0,0), DPoint3d::From (0,0,0));
 		dXdv = DVec3d::FromStartEnd (DPoint3d::From (0,0,0), DPoint3d::From (0,0,0));
 		}
-	
+
 	}
 
 //! direction=0 when in direction u, and 1 when in direction of v
@@ -2036,16 +2036,16 @@ BezierTriangleDPoint3d BezierTriangleDPoint3d::EvaluateDirectionalDifference (in
 	}
 
 void BezierTriangleDPoint3d::ComputeBasisFunctionsCompact (double u, double v, double *values) const
-        { 
+        {
 		if (m_order>0)
 			{
-			double w = 1.0 - u - v; 
+			double w = 1.0 - u - v;
 			int n = m_order - 1;
-			int m = n; 
-			int q = 0;     
-			int mp = (m_order*(m_order+1))/2 - 1; 
+			int m = n;
+			int q = 0;
+			int mp = (m_order*(m_order+1))/2 - 1;
 			double valPower [3][5];
-	
+
 			for (int w=0; w<3; w++)
 				{
 				valPower[w][0] = 1;
@@ -2058,16 +2058,16 @@ void BezierTriangleDPoint3d::ComputeBasisFunctionsCompact (double u, double v, d
 				valPower[2][p+1]= valPower[2][p]*w;
 				}
 
-			for (;m>-1; m--) 
-				{ 
-				for (int j=0; j<m_order-m; j++) 
-					{ 
-					int k = n - m - j; 
-					//values[mp-q] = TrinomialCoefficient(n,m,j,k)*valPower[1][m]*valPower[2][j]*valPower[0][k]; 
+			for (;m>-1; m--)
+				{
+				for (int j=0; j<m_order-m; j++)
+					{
+					int k = n - m - j;
+					//values[mp-q] = TrinomialCoefficient(n,m,j,k)*valPower[1][m]*valPower[2][j]*valPower[0][k];
 					values[mp-q] = s_trinomial[n][m][j]*valPower[1][m]*valPower[2][j]*valPower[0][k];
-					q++; 
-					} 
-				} 
+					q++;
+					}
+				}
 				}
 			else
 				{
@@ -2078,13 +2078,13 @@ void BezierTriangleDPoint3d::ComputeBasisFunctionsCompact (double u, double v, d
         {
 		if (m_order>0)
 			{
-			double w = 1.0 - u - v; 
+			double w = 1.0 - u - v;
 			int n = m_order - 1;
-			int m = n; 
-			int q = 1;     
-			int np = (m_order*(m_order+1))/2; 
+			int m = n;
+			int q = 1;
+			int np = (m_order*(m_order+1))/2;
 			double valPower [3][5];
-	
+
 			for (int w=0; w<3; w++)
 				{
 				valPower[w][0] = 1;
@@ -2097,19 +2097,19 @@ void BezierTriangleDPoint3d::ComputeBasisFunctionsCompact (double u, double v, d
 				valPower[2][p+1]= valPower[2][p]*w;
 				}
 
-			for (;m>-1; m--) 
-				{ 
-				for (int j=0; j<m_order - m; j++) 
-					{ 
-					int k = n - m - j; 
-					//values[np-q] = TrinomialCoefficient(n,m,j,k)*valPower[1][m]*valPower[2][j]*valPower[0][k]; 
+			for (;m>-1; m--)
+				{
+				for (int j=0; j<m_order - m; j++)
+					{
+					int k = n - m - j;
+					//values[np-q] = TrinomialCoefficient(n,m,j,k)*valPower[1][m]*valPower[2][j]*valPower[0][k];
 					values[np-q] = s_trinomial[n][m][j]*valPower[1][m]*valPower[2][j]*valPower[0][k];
 					ddu[np-q] = n*(TrinomialCoefficientC(n-1,m,j,k-1)*valPower[1][m]*valPower[2][j]*valPower[0][k-1] -  TrinomialCoefficientC(n-1,m,j-1,k)*valPower[1][m]*valPower[2][j-1]*valPower[0][k]);
 					ddv[np-q] = n*(TrinomialCoefficientC(n-1,m-1,j,k)*valPower[1][m-1]*valPower[2][j]*valPower[0][k] -  TrinomialCoefficientC(n-1,m,j-1,k)*valPower[1][m]*valPower[2][j-1]*valPower[0][k]);
-					q++; 
-					} 
-				} 
-			} 
+					q++;
+					}
+				}
+			}
 		else
 			{
 			}
@@ -2127,7 +2127,7 @@ void BezierTriangleDPoint3d::InplaceDeCasteljauLayer (double u, double v)
 	int i1 = m_order;
 	int k = 0;
 	for (;m > 0;i0=i1,i1+=m,m--)
-		{		
+		{
 		for (int j=0; j < m; j++)
 			{
 			points[0] = m_controlPoints[i0+j];
@@ -2145,8 +2145,8 @@ void BezierTriangleDPoint3d::LayerTriangles (double u, double v, BezierTriangleD
 	int n = m_order;
 	int k = 0;
 
-	bottom.m_order = 
-		right.m_order = 
+	bottom.m_order =
+		right.m_order =
 			left.m_order = n;
 
 	BezierTriangleDPoint3d workTriangle = *this;
@@ -2159,12 +2159,12 @@ void BezierTriangleDPoint3d::LayerTriangles (double u, double v, BezierTriangleD
 			right.m_controlPoints[k] = workTriangle.m_controlPoints[s_edgePoints[q][1][j]];
 			left.m_controlPoints[k] = workTriangle.m_controlPoints[s_edgePoints[q][2][j]];
 			k++;
-			}		
+			}
 		workTriangle.InplaceDeCasteljauLayer (u, v);
 		}
 
-	bottom.m_controlPoints[k] = 
-		right.m_controlPoints[k] = 
+	bottom.m_controlPoints[k] =
+		right.m_controlPoints[k] =
 			left.m_controlPoints[k] = workTriangle.m_controlPoints[0];
 	}
 
@@ -2183,7 +2183,7 @@ DPoint3d BezierTriangleDPoint3d::LayerTrianglesEvaluate (double u, double v) con
 	scales[0] = 1.0 - u - v;
 	scales[1] = u;
 	scales[2] = v;
-	
+
 	for (int i=0; i<3; i++)
 		{
 		points[i] = workTriangle.m_controlPoints[i];
@@ -2208,7 +2208,7 @@ void BezierTriangleDPoint3d::LayerTrianglesEvaluate (double u, double v, DPoint3
 	scales[0] = 1.0 - u - v;
 	scales[1] = u;
 	scales[2] = v;
-	
+
 	for (int i=0; i<3; i++)
 		{
 		points[i] = workTriangle.m_controlPoints[i];
@@ -2248,7 +2248,7 @@ void BezierTriangleDPoint3d::ComputeWeighedChildTriangle (BezierTriangleDPoint3d
 			 child.m_controlPoints[childIndex].x += m_controlPoints[parentIndex].x * w;
 			 child.m_controlPoints[childIndex].y += m_controlPoints[parentIndex].y * w;
 			 child.m_controlPoints[childIndex].z += m_controlPoints[parentIndex].z * w;
-#else 
+#else
 			 child.AddToPole(childIndex, m_controlPoints[parentIndex],w);
 #endif
              }
@@ -2360,7 +2360,7 @@ BezierTriangleD AddScaledBez (BezierTriangleDCP points, double *scales, size_t n
 			}
 		}
 	bez.SetOrder(points[0].GetOrder ());
-	return bez;	
+	return bez;
 	}
 
 
@@ -2413,7 +2413,7 @@ void BezierTriangleOfTriangles::InplaceDeCasteljauLayer (double u, double v)
 	int i1 = m_order;
 	int k = 0;
 	for (;m > 0;i0=i1,i1+=m,m--)
-		{		
+		{
 		for (int j=0; j < m; j++)
 			{
 			points[0] = m_triangles[i0+j];
@@ -2433,8 +2433,8 @@ void BezierTriangleOfTriangles::LayerTriangles (double u, double v, BezierTriang
 	int n = m_order;
 	int k = 0;
 
-	bottom.m_order = 
-		right.m_order = 
+	bottom.m_order =
+		right.m_order =
 			left.m_order = n;
 
 	BezierTriangleOfTriangles workTriangle = *this;
@@ -2451,12 +2451,12 @@ void BezierTriangleOfTriangles::LayerTriangles (double u, double v, BezierTriang
 			right.m_triangles[k] = workTriangle.m_triangles[s_edgePoints[q][1][j]];
 			left.m_triangles[k] = workTriangle.m_triangles[s_edgePoints[q][2][j]];
 			k++;
-			}		
+			}
 		workTriangle.InplaceDeCasteljauLayer (u, v);
 		}
 
-	bottom.m_triangles[k] = 
-		right.m_triangles[k] = 
+	bottom.m_triangles[k] =
+		right.m_triangles[k] =
 			left.m_triangles[k] = workTriangle.m_triangles[0];
 	}
 
@@ -2674,7 +2674,7 @@ void BezierCurveDPoint3d::ComputeBasisFunctions (double u, double *values) const
 		{
 		values[0] = v*v;
 		values[1] = 2*u*v;
-		values[2] = u*u; 
+		values[2] = u*u;
 		}
 	else if (m_order == 4)
 		{
@@ -2717,7 +2717,7 @@ void BezierCurveDPoint3d::ComputeBasisFunctions (double u, double *values, doubl
 		{
 		values[0] = v*v;
 		values[1] = 2*u*v;
-		values[2] = u*u; 
+		values[2] = u*u;
 
 		ddu[0] = -2*v;
 		ddu[1] = 2*v - 2*u;
@@ -2773,7 +2773,7 @@ DPoint3d BezierCurveDPoint3d::EvaluateDirectCompact (double u) const
 	else
 		{
 		return DPoint3d::From (0,0,0);
-		}	
+		}
 	}
 
 void BezierCurveDPoint3d::EvaluateDirectCompact (double u, DPoint3dR xyz, DVec3dR dXdu) const
@@ -2793,7 +2793,7 @@ void BezierCurveDPoint3d::EvaluateDirectCompact (double u, DPoint3dR xyz, DVec3d
 	}
 
 void BezierCurveDPoint3d::ComputeBasisFunctionsCompact (double u, double *values) const
-        { 
+        {
 		if (m_order>0)
 			{
 			double v = 1.0 - u;
@@ -2802,7 +2802,7 @@ void BezierCurveDPoint3d::ComputeBasisFunctionsCompact (double u, double *values
 
 			valPower[0][0] =
 				valPower[1][0] = 1;
-	
+
 			for (int p=0; p<n; p++)
 				{
 				valPower[0][p+1]= valPower[0][p]*u;
@@ -2830,7 +2830,7 @@ void BezierCurveDPoint3d::ComputeBasisFunctionsCompact (double u, double *values
 
 			valPower[0][0] =
 				valPower[1][0] = 1;
-	
+
 			for (int p=0; p<n; p++)
 				{
 				valPower[0][p+1]= valPower[0][p]*u;

@@ -236,7 +236,7 @@ bool    suppressTrivialFaces
     // The sign flip is the result of a vertex cluster perturbation in this sliver face. In this function, we previously
     // looked only for faces with area less than zero; now we employ a very conservative tolerance to catch such sign flips.
     // Motivation: static abstol in vu_triangulateXYPolygonExt2 is 1.0e-14, which yields minimum triangle size ~1.0e-28.
-    // Any smaller face succumbs to vertex clustering or edge splitting and becomes trivial (face loop size 2). 
+    // Any smaller face succumbs to vertex clustering or edge splitting and becomes trivial (face loop size 2).
     static double s_maxAreaExteriorFace = 1.0e-28;
 
     double area;

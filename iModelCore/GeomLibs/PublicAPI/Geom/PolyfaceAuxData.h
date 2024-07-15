@@ -17,7 +17,7 @@ DEFINE_REF_COUNTED_PTR(PolyfaceAuxData);
 //=======================================================================================
 // @bsiclass
 //! Represents a single channel of auxilliary polyface data.  A channel would represent
-//! either scalar data with a single value per vertex data such as temperature or stress 
+//! either scalar data with a single value per vertex data such as temperature or stress
 //! or vector data such as displacement with 3 values per vertex.
 //! Multiple instances of the channel data may be included included at varying input
 //! values (such as time for an animation).
@@ -33,11 +33,11 @@ template <typename T_Data>  struct T_PolyfaceAuxChannel : RefCountedBase
         Distance    = 1,
         Vector      = 2,
         Covector    = 3,
-        Point       = 4, 
+        Point       = 4,
         };
 
     struct Data : RefCountedBase
-        { 
+        {
         friend T_PolyfaceAuxChannel;
 
         private:
@@ -78,21 +78,21 @@ template <typename T_Data>  struct T_PolyfaceAuxChannel : RefCountedBase
     Utf8StringCR                GetName() const             { return m_name; }                                                                  //! Return the data name.
     Utf8StringCR                GetInputName() const        { return m_inputName; }                                                             //! Return the input name.
     bvector<DataPtr> const&     GetData() const             { return m_data; }                                                                  //! Return reference to the data.
-    bool                        IsScalar() const            { return DataType::Scalar == m_dataType || DataType::Distance == m_dataType; }      //! Return true if scalar data (1 value per vertex).
+    bool                        IsScalar() const            { return IsScalar(m_dataType); }                                                    //! Return true if scalar data (1 value per vertex).
     size_t                      GetValueCount() const       { return m_data.empty() ? 0 : m_data.front()->GetValueCount() / GetBlockSize(); }   //! Return the number of values.
-    size_t                      GetBlockSize() const        { return m_dataType < Vector ? 1 : 3; }                                             //! Return the number of values per vertex.
+    size_t                      GetBlockSize() const        { return GetBlockSize(m_dataType); }                                                //! Return the number of values per vertex.
 
         //! Append data from channel input at index.
     void AppendDataByIndex(T_PolyfaceAuxChannel const& input, size_t index)
         {
-        for (size_t i=0; i<this->m_data.size(); i++)  
+        for (size_t i=0; i<this->m_data.size(); i++)
             for (size_t k = 0, blockSize = GetBlockSize(); k<blockSize; k++)
                 this->m_data.at(i)->m_values.push_back(input.m_data.at(i)->m_values.at(index * blockSize + k));
         }
         //! Append data from channel input interpolated between index and nextIndex at value t.
     void AppendInterpolatedData(T_PolyfaceAuxChannel const& input, size_t index, size_t nextIndex, double t)
         {
-        for (size_t i=0; i<this->m_data.size(); i++)  
+        for (size_t i=0; i<this->m_data.size(); i++)
             {
             for (size_t k = 0, blockSize = GetBlockSize(); k<blockSize; k++)
                 {
@@ -124,8 +124,20 @@ template <typename T_Data>  struct T_PolyfaceAuxChannel : RefCountedBase
         for (auto& data : GetData())
             for (auto value : data->GetValues())
                 range.Extend((double) value);
-        
+
         return range;
+        }
+
+    //! True if the data type is 1-dimensional.
+    static bool IsScalar(DataType dataType)
+        {
+        return dataType == DataType::Scalar || dataType == DataType::Distance;
+        }
+
+    //! The dimension (1D or 3D) of each datum of a PolyfaceAuxChannel of the given type.
+    static size_t GetBlockSize(DataType dataType)
+        {
+        return IsScalar(dataType) ? 1 : 3;
         }
     };
 
@@ -138,22 +150,23 @@ DEFINE_REF_COUNTED_PTR(PolyfaceAuxChannel);
 
 //=======================================================================================
 // @bsiclass
-//! PolyfaceAuxData represents one or more channel of auxiliary, per vertex data for a 
-//! polyface.  Each channel contains a scalar or vector for each vertex that may represent 
+//! PolyfaceAuxData represents one or more channel of auxiliary, per vertex data for a
+//! polyface.  Each channel contains a scalar or vector for each vertex that may represent
 //! analysis or measured results such as temperature, stress or displacement.
 //! PolyfaceAuxData may be added to an existing polyface with PolyfaceVectors::SetAuxData.
-//! it is up to the caller to ensure that the Auxiliary data matches the polyface. 
+//! it is up to the caller to ensure that the Auxiliary data matches the polyface.
 //! i.e. same number of faces, vertices etc.
-//! Each PolyfaceAuxData contains a single index array that represents the indices for 
-//! all channels.
+//! Each PolyfaceAuxData contains a single index array that represents the indices for
+//! all channels. This index array must have the same length and structure as the Polyface
+//! vertex index array.
 //=======================================================================================
 struct PolyfaceAuxData : RefCountedBase
 {
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Channels);
 
-    
+
     //! PolyfaceAuxData::Channels represents an array of auxiliary channels for a polyface.
-    struct Channels : bvector<PolyfaceAuxChannelPtr> 
+    struct Channels : bvector<PolyfaceAuxChannelPtr>
         {
         size_t                              GetValueCount() const  { return empty() ? 0 : front()->GetValueCount(); }
         GEOMDLLIMPEXP void                  AppendInterpolatedData(ChannelsCR input, size_t index, size_t iNext, double t);
@@ -163,14 +176,14 @@ struct PolyfaceAuxData : RefCountedBase
 
     private:
     bvector<int32_t>         m_indices;
-    Channels                 m_channels; 
+    Channels                 m_channels;
 
     public:
 
     bvector<int32_t> const&                 GetIndices() const          { return m_indices; }          //! Return the indices for all channels of the PolyfaceAuxData.
     bvector<int32_t>&                       GetIndices()                { return m_indices; }          //! Return the indices for all channels of the PolyfaceAuxData.
     ChannelsCR                              GetChannels() const         { return m_channels; }         //! Return constant reference to the channels.
-    ChannelsR                               GetChannels()               { return m_channels; }         //! return refernce to the channels.         
+    ChannelsR                               GetChannels()               { return m_channels; }         //! return refernce to the channels.
     GEOMDLLIMPEXP PolyfaceAuxChannelCPtr    GetChannel(Utf8CP name) const;
 
                                             PolyfaceAuxData() { }                                      //! Constructor for empty PolyfaceAuxData.
@@ -181,7 +194,7 @@ struct PolyfaceAuxData : RefCountedBase
     PolyfaceAuxDataPtr                      CreateForVisitor() const;                                  //! Create a new PolyfaceAuxData appropriate for use by a PolyfaceVisitor.
     void                                    AdvanceVisitorToNextFace(PolyfaceAuxDataCR parent, uint32_t i0, uint32_t numItem, uint32_t numWrap);  //! Advance PolyfaceAuxData for visitor to next face.
 
-    GEOMDLLIMPEXP void                      Transform(TransformCR transform);                          //! Transform all channels.  This will apply scale to distance channels and transform vector channels appropriately. 
+    GEOMDLLIMPEXP void                      Transform(TransformCR transform);                          //! Transform all channels.  This will apply scale to distance channels and transform vector channels appropriately.
     GEOMDLLIMPEXP void                      AppendDataByIndex(ChannelsCR input, size_t index);
                   void                      AddIndexTerminator() { m_indices.push_back(0); }
 

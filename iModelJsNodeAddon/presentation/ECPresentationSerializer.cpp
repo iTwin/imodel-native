@@ -289,8 +289,11 @@ void IModelJsECPresentationSerializer::_AsJson(ContextR ctx, ContentDescriptor::
     nestedContentBaseJson.AddMember("relationshipMeaning", rapidjson::StringRef(ParseRelationshipMeaning(relatedContentField.GetRelationshipMeaning())), nestedContentBaseJson.GetAllocator());
 
     rapidjson::Value actualSourceClassIdsJson(rapidjson::kArrayType);
-    for (auto const& actualSourceClass : relatedContentField.GetActualSourceClasses())
-        actualSourceClassIdsJson.PushBack(IModelJsECPresentationSerializer::_AsJson(ctx, actualSourceClass->GetId(), &nestedContentBaseJson.GetAllocator()), nestedContentBaseJson.GetAllocator());
+    if (relatedContentField.GetActualSourceClasses())
+        {
+        for (auto const& actualSourceClass : *relatedContentField.GetActualSourceClasses())
+            actualSourceClassIdsJson.PushBack(IModelJsECPresentationSerializer::_AsJson(ctx, actualSourceClass->GetId(), &nestedContentBaseJson.GetAllocator()), nestedContentBaseJson.GetAllocator());
+        }
     nestedContentBaseJson.AddMember("actualPrimaryClassIds", actualSourceClassIdsJson, nestedContentBaseJson.GetAllocator());
     }
 
@@ -993,6 +996,9 @@ ECInstancesNodeKeyPtr IModelJsECPresentationSerializer::_GetECInstanceNodeKeyFro
         json["instanceKeys"].ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst instanceKeyJson)
             {
             ECClassCP ecClass = GetClassFromFullName(connection, instanceKeyJson["className"]);
+            if (!ecClass)
+                return false;
+
             ECInstanceId instanceId(instanceKeyJson["id"].GetUInt64());
             instanceKeys.push_back(ECClassInstanceKey(ecClass, instanceId));
             return false;
@@ -1017,6 +1023,9 @@ ECClassGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetECClassGroupingN
     {
     uint64_t groupedInstancesCount = json["groupedInstancesCount"].GetUInt64();
     ECClassCP ecClass = GetClassFromFullName(connection, json["className"]);
+    if (!ecClass)
+        return nullptr;
+
     ECClassGroupingNodeKeyPtr key = ECClassGroupingNodeKey::Create(*ecClass, false, "", ParseNodeKeyHashPath(json["pathFromRoot"]), groupedInstancesCount);
     key->SetInstanceKeysSelectQuery(GetPresentationQueryFromJson(json["instanceKeysSelectQuery"]));
     return key;
@@ -1045,6 +1054,9 @@ ECPropertyGroupingNodeKeyPtr IModelJsECPresentationSerializer::_GetECPropertyGro
     {
     uint64_t groupedInstancesCount = json["groupedInstancesCount"].GetUInt64();
     ECClassCP ecClass = GetClassFromFullName(connection, json["className"]);
+    if (!ecClass)
+        return nullptr;
+
     Utf8String propertyName = json["propertyName"].asString();
     rapidjson::Document groupingValues;
     if (json.isMember("groupingValues"))
@@ -1677,7 +1689,13 @@ KeySetPtr IModelJsECPresentationSerializer::GetKeySetFromJson(IConnectionCR conn
         {
         json["nodeKeys"].ForEachArrayMember([&](BeJsConst::ArrayIndex, BeJsConst nodeKeyJson)
             {
-            nodeKeys.insert(NavNodeKey::FromJson(connection, nodeKeyJson));
+            auto key = NavNodeKey::FromJson(connection, nodeKeyJson);
+            if (key.IsNull())
+                {
+                DIAGNOSTICS_LOG(DiagnosticsCategory::Default, NativeLogging::LOG_INFO, NativeLogging::LOG_ERROR, Utf8PrintfString("Failed to parse NavNode key from given JSON: `%s`", nodeKeyJson.Stringify().c_str()));
+                return false;
+                }
+            nodeKeys.insert(key);
             return false;
             });
         }

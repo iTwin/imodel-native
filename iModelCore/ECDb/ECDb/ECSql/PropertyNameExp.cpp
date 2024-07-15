@@ -55,14 +55,14 @@ void ExtractInstanceValueExp::_ToJson(BeJsValue val, JsonFormat const&) const {
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-PropertyNameExp::PropertyNameExp(PropertyPath const& propPath) : ValueExp(Type::PropertyName),m_ecsqlPropertyPath(propPath), m_propertyPath(propPath), m_classRefExp(nullptr), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty()), m_sourceType(SourceType::ECSql),m_property(nullptr)
+PropertyNameExp::PropertyNameExp(PropertyPath const& propPath) : ValueExp(Type::PropertyName),m_originalPropertyPath(propPath), m_resolvedPropertyPath(propPath), m_classRefExp(nullptr), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty()), m_sourceType(SourceType::ECSql),m_property(nullptr)
     {}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 PropertyNameExp::PropertyNameExp(PropertyPath const& propPath, RangeClassRefExp const& classRefExp, ECN::ECPropertyCR property)
-    : ValueExp(Type::PropertyName), m_propertyPath(propPath),m_ecsqlPropertyPath(propPath), m_classRefExp(&classRefExp), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty()), m_sourceType(SourceType::ECSql),m_property(&property){
+    : ValueExp(Type::PropertyName), m_resolvedPropertyPath(propPath),m_originalPropertyPath(propPath), m_classRefExp(&classRefExp), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty()), m_sourceType(SourceType::ECSql),m_property(&property){
 
     }
 
@@ -73,11 +73,11 @@ PropertyNameExp::PropertyNameExp(ECSqlParseContext const& ctx, RangeClassRefExp 
     : ValueExp(Type::PropertyName), m_className(classRefExp.GetAlias()), m_classRefExp(&classRefExp), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty()), m_sourceType(SourceType::SubQuery),m_property(nullptr) {
     Utf8String alias = derivedPropExp.GetAliasRecursively();
     if (!alias.empty()) {
-        m_propertyPath.Push(alias);
+        m_resolvedPropertyPath.Push(alias);
     }else if (derivedPropExp.GetExpression()->GetType() == Exp::Type::PropertyName) {
-        m_propertyPath = derivedPropExp.GetExpression()->GetAs<PropertyNameExp>().GetPropertyPath();
+        m_resolvedPropertyPath = derivedPropExp.GetExpression()->GetAs<PropertyNameExp>().GetResolvedPropertyPath();
     } else {
-        m_propertyPath.Push(derivedPropExp.GetName());
+        m_resolvedPropertyPath.Push(derivedPropExp.GetName());
     }
     SetPropertyRef(derivedPropExp);
 }
@@ -97,8 +97,8 @@ ECN::ECPropertyCP PropertyNameExp::GetVirtualProperty() const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 bool PropertyNameExp::IsWildCard() const {
-    if (m_propertyPath.Size() == 1)  {
-        return Exp::IsAsteriskToken(m_propertyPath[0].GetName());
+    if (m_resolvedPropertyPath.Size() == 1)  {
+        return Exp::IsAsteriskToken(m_resolvedPropertyPath[0].GetName());
     }
     return false;
 }
@@ -108,8 +108,8 @@ bool PropertyNameExp::IsWildCard() const {
 PropertyNameExp::PropertyNameExp(ECSqlParseContext const& ctx, Utf8StringCR propertyName, RangeClassRefExp const& classRefExp, ClassMap const& classMap)
     : ValueExp(Type::PropertyName), m_className(classRefExp.GetAlias()), m_classRefExp(&classRefExp), m_sysPropInfo(&ECSqlSystemPropertyInfo::NoSystemProperty()), m_sourceType(SourceType::ClassRef),m_property(nullptr)
     {
-    m_propertyPath.Push(propertyName);
-    if (m_propertyPath.Resolve(classMap) != SUCCESS)
+    m_resolvedPropertyPath.Push(propertyName);
+    if (m_resolvedPropertyPath.Resolve(classMap) != SUCCESS)
         {
         BeAssert(false && "Must always resolve correctly");
         }
@@ -131,7 +131,7 @@ Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ct
     }
 
     //After children have been finalized
-    if (!IsPropertyRef() && !m_propertyPath.IsResolved()) {
+    if (!IsPropertyRef() && !m_resolvedPropertyPath.IsResolved()) {
         BeAssert(false && "PropertyNameExp property path is expected to be resolved at end of parsing.");
         return FinalizeParseStatus::Error;
     }
@@ -175,8 +175,8 @@ BentleyStatus PropertyNameExp::ResolveUnionOrderByArg(ECSqlParseContext& ctx)
     BeAssert(ctx.CurrentArg()->GetType() == ECSqlParseContext::ParseArg::Type::UnionOrderBy);
     ECSqlParseContext::UnionOrderByArg const* arg = static_cast<ECSqlParseContext::UnionOrderByArg const*>(ctx.CurrentArg());
 
-    Utf8StringCR firstPropPathEntry = m_propertyPath[0].GetName();
-    Utf8CP secondPropPathEntry = m_propertyPath.Size() > 1 ? m_propertyPath[1].GetName().c_str() : nullptr;
+    Utf8StringCR firstPropPathEntry = m_resolvedPropertyPath[0].GetName();
+    Utf8CP secondPropPathEntry = m_resolvedPropertyPath.Size() > 1 ? m_resolvedPropertyPath[1].GetName().c_str() : nullptr;
     for (SingleSelectStatementExp const* selectExp : arg->GetUnionClauses())
         for (Exp const* dpExp : selectExp->GetSelection()->GetChildren())
             {
@@ -196,19 +196,19 @@ BentleyStatus PropertyNameExp::ResolveUnionOrderByArg(ECSqlParseContext& ctx)
                     }
                 else
                     {
-                    if (m_propertyPath.ToString(false, false).EqualsI(propertyNameExp.GetPropertyPath().ToString(false, false)))
+                    if (m_resolvedPropertyPath.ToString(false, false).EqualsI(propertyNameExp.GetResolvedPropertyPath().ToString(false, false)))
                         {
                         SetPropertyRef(derivedPropertyExp);
                         return SUCCESS;
                         }
 
-                    if (m_propertyPath.ToString(false, false).EqualsI(GetPropertyPath().ToString(false, false)))
+                    if (m_resolvedPropertyPath.ToString(false, false).EqualsI(GetResolvedPropertyPath().ToString(false, false)))
                         {
                         SetPropertyRef(derivedPropertyExp);
                         return SUCCESS;
                         }
 
-                    if (m_propertyPath.ToString(false, false).EqualsI(propertyMap->GetAccessString()))
+                    if (m_resolvedPropertyPath.ToString(false, false).EqualsI(propertyMap->GetAccessString()))
                         {
                         SetPropertyRef(derivedPropertyExp);
                         return SUCCESS;
@@ -241,11 +241,11 @@ BentleyStatus PropertyNameExp::ResolveLocalRef(ECSqlParseContext& ctx) {
         return SUCCESS;
 
     PropertyMatchOptions options;
-    PropertyMatchResult result = GetClassRefExp()->FindProperty(ctx, m_propertyPath, options);
+    PropertyMatchResult result = GetClassRefExp()->FindProperty(ctx, m_resolvedPropertyPath, options);
     if (result.isValid()) {
         if (result.GetPropertyMap() != nullptr) {
-                m_propertyPath = result.ResolvedPath();
-                BeAssert(m_propertyPath.IsResolved() && "Programmer Error: Unable to resolve path");
+                m_resolvedPropertyPath = result.ResolvedPath();
+                BeAssert(m_resolvedPropertyPath.IsResolved() && "Programmer Error: Unable to resolve path");
         } else if (result.IsDerivedProperty()) {
             SetPropertyRef(*result.GetDerivedProperty());
             auto effectivePath = result.ResolvedPath();
@@ -254,10 +254,10 @@ BentleyStatus PropertyNameExp::ResolveLocalRef(ECSqlParseContext& ctx) {
                     BeAssert(false && "Programmer Error: Unable to resolve path");
                 }
             } else {
-                m_propertyPath = effectivePath;
+                m_resolvedPropertyPath = effectivePath;
             }
         } else {
-            m_propertyPath = result.ResolvedPath();
+            m_resolvedPropertyPath = result.ResolvedPath();
             SetVirtualProperty(*result.GetProperty());
         }
         return SUCCESS;
@@ -309,7 +309,7 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
         return rangeClasses;
     }();
 
-    BeAssert(!m_propertyPath.IsEmpty());
+    BeAssert(!m_resolvedPropertyPath.IsEmpty());
 
     std::vector<PropertyMatchResult> matchProps;
     auto hasBetterSolution = [](std::vector<PropertyMatchResult> const &matches, PropertyMatchResult const& newSolution) {
@@ -352,7 +352,7 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
     for (RangeClassInfo const &rangeClassInfo : rangeClasses) {
         PropertyMatchOptions options;
         options.SetRangeInfo(rangeClassInfo);
-        PropertyMatchResult rc = rangeClassInfo.GetExp().FindProperty(ctx, m_propertyPath, options);
+        PropertyMatchResult rc = rangeClassInfo.GetExp().FindProperty(ctx, m_resolvedPropertyPath, options);
         if (rc.isValid()) {
             if (rc.IsDerivedProperty()) {
                 // make sure non-cyclic
@@ -379,11 +379,24 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
                     break;
             }
         }
-     }
+    }
 
     if (matchProps.empty()) {
+        // Check if a column alias is being used within the select
+        if (auto parentSelect = FindParent(Exp::Type::SingleSelect); parentSelect != nullptr)
+            {
+            for (const auto dpExp : parentSelect->GetAsCP<SingleSelectStatementExp>()->GetSelection()->GetChildren())
+                {
+                const auto& derivedPropertyExp = dpExp->GetAs<DerivedPropertyExp>();
+                if (derivedPropertyExp.GetColumnAlias().EqualsI(GetPropertyName()))
+                    {
+                    SetPropertyRef(derivedPropertyExp);
+                    return SUCCESS;
+                    }
+                }
+            }
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0565,
-            "No property or enumeration found for expression '%s'.", m_propertyPath.ToString().c_str());
+            "No property or enumeration found for expression '%s'.", m_resolvedPropertyPath.ToString().c_str());
         return ERROR;
     }
 
@@ -391,7 +404,7 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
     const auto inherited = matchProps.size() - local;
     if (!(local == 1 || inherited == 1)) {
         ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0566,
-            "Expression '%s' in ECSQL statement is ambiguous.", m_propertyPath.ToString().c_str());
+            "Expression '%s' in ECSQL statement is ambiguous.", m_resolvedPropertyPath.ToString().c_str());
         return ERROR;
     }
 
@@ -399,21 +412,21 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
     SetClassRefExp(match.Options().GetRangeInfo().GetExp());
     if (match.IsPropertyMap()) {
         // resolved already
-        m_propertyPath = match.ResolvedPath();
-        BeAssert(m_propertyPath.IsResolved()); // this should be already resolved
+        m_resolvedPropertyPath = match.ResolvedPath();
+        BeAssert(m_resolvedPropertyPath.IsResolved()); // this should be already resolved
 
     } else if (match.IsDerivedProperty()) {
         SetPropertyRef(*match.GetDerivedProperty());
         // Property path is not resolved
-        m_propertyPath = match.ResolvedPath();
+        m_resolvedPropertyPath = match.ResolvedPath();
         if (!GetPropertyRef()->IsComputedExp() && GetPropertyRef()->TryGetVirtualProperty() == nullptr) {
-            if ( !GetPropertyRef()->TryResolvePath(m_propertyPath)) {
+            if ( !GetPropertyRef()->TryResolvePath(m_resolvedPropertyPath)) {
                 BeAssert(false && "Programmer Error: Unable to resolve path");
             }
         }
     } else {
         // property def table viewow
-        m_propertyPath = match.ResolvedPath();
+        m_resolvedPropertyPath = match.ResolvedPath();
         SetVirtualProperty(*match.GetProperty());
     }
 
@@ -479,7 +492,7 @@ PropertyMap const* PropertyNameExp::GetPropertyMap() const
         case Exp::Type::ClassName:
             {
             ClassNameExp const& classNameExp = classRefExp->GetAs<ClassNameExp>();
-            propertyMap = classNameExp.GetInfo().GetMap().GetPropertyMaps().Find(GetPropertyPath().ToString(false).c_str());
+            propertyMap = classNameExp.GetInfo().GetMap().GetPropertyMaps().Find(GetResolvedPropertyPath().ToString(false).c_str());
             break;
             }
 
@@ -487,7 +500,7 @@ PropertyMap const* PropertyNameExp::GetPropertyMap() const
             {
             PropertyNameExp::PropertyRef const* propertyRef = GetPropertyRef();
             BeAssert(propertyRef != nullptr);
-            propertyMap = propertyRef->TryGetPropertyMap(GetPropertyPath());
+            propertyMap = propertyRef->TryGetPropertyMap(GetResolvedPropertyPath());
             if (propertyMap == nullptr) {
                 BeAssert(propertyMap != nullptr && "Exp of a derived prop exp referenced from a sub query ref is expected to always be a prop name exp");
             }
@@ -528,9 +541,9 @@ void PropertyNameExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
     val.SetEmptyObject();
     val["id"] = "PropertyNameExp";
     Utf8String path;
-    path.append(m_ecsqlPropertyPath.ToString(false, false, true));
+    path.append(m_originalPropertyPath.ToString(false, false, true));
     if (path.empty()) {
-        path.append(m_propertyPath.ToString(false, false, true));
+        path.append(m_resolvedPropertyPath.ToString(false, false, true));
     }
     val["path"] = path;
 }
@@ -547,7 +560,7 @@ void PropertyNameExp::_ToECSql(ECSqlRenderContext& ctx) const
         else
             ctx.AppendToECSql(m_className).AppendToECSql(".");
     }
-    ctx.AppendToECSql(m_propertyPath.ToString(true, false, true));
+    ctx.AppendToECSql(m_resolvedPropertyPath.ToString(true, false, true));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -565,7 +578,7 @@ Utf8String PropertyNameExp::_ToString() const
 //+---------------+---------------+---------------+---------------+---------------+--------
 bool PropertyNameExp::PropertyRef::ReferToAlias() const
     {
-    return this->LinkedTo().GetColumnAlias().Equals(m_owner->GetPropertyPath()[0].GetName());
+    return this->LinkedTo().GetColumnAlias().Equals(m_owner->GetResolvedPropertyPath()[0].GetName());
     }
 
 //-----------------------------------------------------------------------------------------
@@ -662,7 +675,7 @@ PropertyMap const * PropertyNameExp::PropertyRef::TryGetPropertyMap(PropertyPath
 //+---------------+---------------+---------------+---------------+---------------+--------
 PropertyMap const * PropertyNameExp::PropertyRef::TryGetPropertyMap() const
     {
-    return TryGetPropertyMap(m_owner->GetPropertyPath());
+    return TryGetPropertyMap(m_owner->GetResolvedPropertyPath());
     }
 //-----------------------------------------------------------------------------------------
 // @bsimethod

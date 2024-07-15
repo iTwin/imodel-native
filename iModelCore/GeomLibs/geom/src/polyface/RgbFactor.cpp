@@ -63,7 +63,7 @@ int32_t RgbFactor::ToIntColor () const
     pByte[1] = (uint8_t) (green * scale + 0.5);
     pByte[2] = (uint8_t) (blue  * scale + 0.5);
 
-    return intColor; 
+    return intColor;
     }
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod

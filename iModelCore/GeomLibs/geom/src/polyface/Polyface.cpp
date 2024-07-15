@@ -204,7 +204,7 @@ bool PolyfaceHeader::ConvertToVariableSizeSignedOneBasedIndexedFaceLoops ()
         m_meshStyle = MESH_ELM_STYLE_INDEXED_FACE_LOOPS;
         //ConvertTableColorToColorIndices ();
         }
-    
+
     return stat;
     }
 
@@ -264,7 +264,7 @@ bool &colorsAreBySector
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-PolyfaceHeader::PolyfaceHeader() 
+PolyfaceHeader::PolyfaceHeader()
     {
     ClearTags (0, MESH_ELM_STYLE_INDEXED_FACE_LOOPS);
     SetNumPerRow (0);
@@ -330,6 +330,18 @@ PolyfaceHeaderPtr PolyfaceHeader::CreateIndexedMesh (int numPerFace, bvector<DPo
     return mesh;
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+PolyfaceHeaderPtr PolyfaceHeader::CreateIndexedMeshSwap(int numPerFace, bvector<DPoint3d>& points, bvector<int>& pointIndices)
+    {
+    auto mesh = numPerFace > 1 ? CreateFixedBlockIndexed(numPerFace) : CreateVariableSizeIndexed();
+    mesh->Point().swap(points);
+    mesh->PointIndex().swap(pointIndices);
+    mesh->Point().SetActive(true);
+    mesh->PointIndex().SetActive(true);
+    return mesh;
+    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -338,7 +350,7 @@ PolyfaceHeaderPtr PolyfaceHeader::CreateFixedBlockCoordinates (int numPerBlock)
     {
     if (numPerBlock < 3 || numPerBlock > 4)
         return NULL;
-     
+
 
     PolyfaceHeaderP header = new PolyfaceHeader ();
     header->ClearTags (numPerBlock,
@@ -361,7 +373,7 @@ PolyfaceHeaderPtr PolyfaceHeader::CreateQuadGrid (int numPerRow)
     header->ClearTags (4, MESH_ELM_STYLE_QUAD_GRID);
     header->PointIndex ().SetActive (false);
     header->Point ().SetStructsPerRow (numPerRow);
-    header->SetNumPerRow (numPerRow);    
+    header->SetNumPerRow (numPerRow);
     return header;
     }
 
@@ -397,8 +409,6 @@ void PushTriangle(bvector<int> &indices, int i0, int i1, int i2)
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
-Triangulate faces.
-@return SUCCESS if all faces triangulated.
 +--------------------------------------------------------------------------------------*/
 bool PolyfaceHeader::Triangulate (size_t maxEdge)
     {
@@ -406,8 +416,6 @@ bool PolyfaceHeader::Triangulate (size_t maxEdge)
     }
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
-Triangulate faces.
-@return SUCCESS if all faces triangulated.
 +--------------------------------------------------------------------------------------*/
 bool PolyfaceHeader::Triangulate (size_t maxEdge, bool hideNewEdges, IPolyfaceVisitorFilter *tester)
     {
@@ -445,13 +453,11 @@ bool PolyfaceHeader::Triangulate (size_t maxEdge, bool hideNewEdges, IPolyfaceVi
                 triangulateThisFacet = false;       // It's planar and low edge count.  Nothing to do.
             }
 
-        if (    !triangulateThisFacet
-            &&  facePoints.size () <= (size_t) maxEdge + 1
-            )
+        if (!triangulateThisFacet)
             {
             for (ptrdiff_t i = 0, n = facePoints.size () - 1; i < n; i++)
                 newIndices.push_back ((int)i + 1);  // one based loop.
-            newIndices.push_back (0);   
+            newIndices.push_back (0);
             }
         else if (facePoints.size () == 4)   // Triangle with closure point
             {
@@ -486,7 +492,6 @@ bool PolyfaceHeader::Triangulate (size_t maxEdge, bool hideNewEdges, IPolyfaceVi
             errors++;
             continue;
             }
-
 
         size_t n = newIndices.size ();
         // Prevalidate all indices ...
@@ -551,7 +556,7 @@ bool PolyfaceHeader::Triangulate (size_t maxEdge, bool hideNewEdges, IPolyfaceVi
                 if (m_colorIndex.Active ())
                     {
                     if ((size_t)k0 < visitor->ClientColorIndex ().size ())
-                        { 
+                        {
                         indices->m_colorIndex.push_back (1 + visitor->ClientColorIndex() [k0]);
                         }
                     else
@@ -563,10 +568,10 @@ bool PolyfaceHeader::Triangulate (size_t maxEdge, bool hideNewEdges, IPolyfaceVi
                     }
                 if (m_faceIndex.Active ())
                     indices->m_faceIndex.push_back (1 + visitor->ClientFaceIndex() [k0]);
-                
+
                 if (m_auxData.IsValid() && nullptr != visitor->GetClientAuxIndexCP())
                     auxIndices.push_back(1 + visitor->GetClientAuxIndexCP()[k0]);
-                    
+
                 }
             }
         }
@@ -594,8 +599,6 @@ bool PolyfaceHeader::Triangulate (size_t maxEdge, bool hideNewEdges, IPolyfaceVi
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
-Triangulate faces.
-@return SUCCESS if all faces triangulated.
 +--------------------------------------------------------------------------------------*/
 BentleyStatus PolyfaceHeader::Triangulate ()
     {
@@ -614,7 +617,7 @@ static void CopyAndPad (bvector<int> &data, size_t destIndex, size_t sourceIndex
     for (size_t i = numCopy; i < padTo; i++)
         data[destIndex + i] = 0;
     }
-    
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -665,7 +668,7 @@ bool PolyfaceHeader::CompactIndexArrays ()
                 CopyAndPad (colorIndex, numOut, readIndex, numThisFace, newNumPerFace);
             if (faceIndexActive)
                 CopyAndPad (faceIndex, numOut, readIndex, numThisFace, newNumPerFace);
-            numOut += newNumPerFace;            
+            numOut += newNumPerFace;
             }
 
         pointIndex.resize (numOut);
@@ -684,7 +687,7 @@ bool PolyfaceHeader::CompactIndexArrays ()
     }
 
 
-//! Apply a transform to all coordinates of an array of meshes. Optionally reverse index order (to maintain cross product relationships) 
+//! Apply a transform to all coordinates of an array of meshes. Optionally reverse index order (to maintain cross product relationships)
 void PolyfaceHeader::Transform
 (
 bvector<PolyfaceHeaderPtr> &data,
@@ -712,7 +715,7 @@ bool        reverseIndicesIfMirrored
 
     matrix.InitFrom (transform);
 
-    double      determinant = matrix.Determinant ();    
+    double      determinant = matrix.Determinant ();
     bool reverseIndices = reverseIndicesIfMirrored && determinant < 0.0;
 
     size_t numPoint = Point ().size ();
@@ -733,7 +736,7 @@ bool        reverseIndicesIfMirrored
         }
 
     if (reverseIndices)
-        ReverseIndicesAllFaces (false, true, true, BlockedVectorInt::ForcePositive);        
+        ReverseIndicesAllFaces (false, true, true, BlockedVectorInt::ForcePositive);
 
     double  transformScale = pow (fabs (determinant), 1.0 / 3.0) * (determinant >= 0.0 ? 1.0 : -1.0);
     for (size_t i=0; i<m_faceData.size(); i++)
@@ -796,10 +799,10 @@ void PolyfaceHeader::CopyFrom (PolyfaceQueryCR source)
     CopyAndActivate <int>(m_paramIndex,     source.GetParamIndexCP (),  source.GetPointIndexCount ());
     CopyAndActivate <int>(m_colorIndex,     source.GetColorIndexCP (),  source.GetPointIndexCount ());
     CopyAndActivate <int>(m_faceIndex,      source.GetFaceIndexCP (),   source.GetPointIndexCount ());
-   
+
 
     CopyAndActivate <PolyfaceEdgeChain> (m_edgeChain,   source.GetEdgeChainCP (),      source.GetEdgeChainCount ());
-    
+
     m_point.SetStructsPerRow (numPerRow);
     m_normal.SetStructsPerRow (numPerRow);
     m_param.SetStructsPerRow (numPerRow);
@@ -851,12 +854,18 @@ void PolyfaceHeader::ReplicateMissingIndexArrays ()
         }
     }
 
-PolyfaceHeaderPtr PolyfaceQuery::CloneAsVariableSizeIndexed (PolyfaceQueryCR source) const
+PolyfaceHeaderPtr PolyfaceQuery::CloneAsVariableSizeIndexed() const
     {
-    PolyfaceHeaderPtr clone = PolyfaceHeader::CreateVariableSizeIndexed ();
-    clone->CopyFrom (source);
-    clone->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops ();
+    PolyfaceHeaderPtr clone = PolyfaceHeader::CreateVariableSizeIndexed();
+    clone->CopyFrom(*this);
+    clone->ConvertToVariableSizeSignedOneBasedIndexedFaceLoops();
     return clone;
+    }
+
+// Deprecated 5/2024 because instance is unused
+PolyfaceHeaderPtr PolyfaceQuery::CloneAsVariableSizeIndexed(PolyfaceQueryCR source) const
+    {
+    return source.CloneAsVariableSizeIndexed();
     }
 
 PolyfaceHeaderPtr PolyfaceQuery::Clone () const
@@ -865,7 +874,7 @@ PolyfaceHeaderPtr PolyfaceQuery::Clone () const
     clone->CopyFrom (*this);
     return clone;
     }
-  
+
 
 template <typename T>
 static bool IsCompatibleActiveState (bool active, T const *source, size_t count)
@@ -1035,8 +1044,8 @@ bool   &hasNonConvexFacets
             if (minPerLoop == 3 && maxPerLoop == 3)
                 return true;
             }
-        } 
-    return false;    
+        }
+    return false;
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -1086,7 +1095,7 @@ bool   &hasNonConvexFaces
             if (numEdge == 4 && IsDegenerateQuad (indices[0], indices[1], indices[2], indices[3]))
                 //abs(indices[0], abs[indices[1], abs[indices[2], abs[indices[3]))
                 {
-                
+
                 }
             else if (PolygonOps::CoordinateFrame (&point, localToWorld, worldToLocal))
                 {
@@ -1218,7 +1227,7 @@ bool reverseXYZ
         {
         if (compressNormal)
             {
-            // We will always reference the last entry ... 
+            // We will always reference the last entry ...
             //   sometimes "last" is as of input time, sometimes its a new push.
             if (m_normal.size () == 0 || !normal.IsEqual (m_normal.back ()))
                 m_normal.push_back (normal);
@@ -1328,7 +1337,7 @@ static void ReassignIndices (bvector<int> &polyfaceIndices, bvector<size_t>&oldI
 template<typename T>
 bool RemoveUnusedSignedOneBased
 (
-bvector<int> &indices, 
+bvector<int> &indices,
 bvector<T> &data,
 bvector<size_t> &oldDataToNewData,
 bvector<T> &newData
@@ -1490,7 +1499,7 @@ void    PolyfaceHeader::SetNewFaceData (FacetFaceData* faceDataP, size_t endInde
         faceData = *faceDataP;
 
     // If parameter range is provided (as by the polyface planeset clipper then
-    // use it. 
+    // use it.
     bool       setParamRange = faceData.m_paramRange.IsNull() && NULL != GetParamCP();
 
     PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*this, true);
@@ -1524,8 +1533,8 @@ BlockedVectorDPoint3dR              PolyfaceHeader::Point ()            { return
 BlockedVectorDPoint2dR              PolyfaceHeader::Param ()            { return m_param;}
 BlockedVectorDVec3dR                PolyfaceHeader::Normal ()           { return m_normal;}
 BlockedVectorUInt32R                PolyfaceHeader::IntColor ()         { return m_intColor;}
-BlockedVector<FacetFaceData>&       PolyfaceHeader::FaceData ()         { return m_faceData; } 
-BlockedVector<PolyfaceEdgeChain>&   PolyfaceHeader::EdgeChain ()        { return m_edgeChain; } 
+BlockedVector<FacetFaceData>&       PolyfaceHeader::FaceData ()         { return m_faceData; }
+BlockedVector<PolyfaceEdgeChain>&   PolyfaceHeader::EdgeChain ()        { return m_edgeChain; }
 PolyfaceAuxDataPtr&                 PolyfaceHeader::AuxData()           { return m_auxData; }
 
 /*--------------------------------------------------------------------------------**//**
@@ -1534,7 +1543,7 @@ PolyfaceAuxDataPtr&                 PolyfaceHeader::AuxData()           { return
 void PolyfaceHeader::ClearTags (uint32_t numPerFace, uint32_t meshStyle)
     {
     SetNumPerFace (numPerFace);
-    SetTwoSided (true);
+    SetTwoSided (true); // This was a mistake, but we are stuck with it.
     SetMeshStyle (meshStyle);
     bool activePointIndex = meshStyle == MESH_ELM_STYLE_INDEXED_FACE_LOOPS;
     uint32_t b = numPerFace > 1 ? numPerFace : 1;
@@ -1636,13 +1645,13 @@ void PolyfaceHeader::ActivateVectorsForIndexingCR (PolyfaceQueryCR source)
         {
         Normal ().SetActive (true);
         NormalIndex ().SetActive (true);
-        }    
+        }
 
     if (source.GetParamCP () != NULL)
         {
         Param ().SetActive (true);
         ParamIndex ().SetActive (true);
-        }    
+        }
 
     if (source.GetIntColorCP () != NULL)
         {
@@ -1775,7 +1784,7 @@ void  PolyfaceHeader::NormalizeParameters ()
         }
     for (auto& faceData : m_faceData)
         faceData.m_paramRange = DRange2d::From(0.0, 0.0, 1.0, 1.0);
-    
+
     }
 
 
