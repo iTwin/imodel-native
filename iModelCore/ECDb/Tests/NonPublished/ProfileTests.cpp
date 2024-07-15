@@ -387,11 +387,11 @@ TEST_F(ProfileTestFixture, ImportRequiresVersionCustomAttribute)
         </ECEntityClass>
         </ECSchema>)xml");
 
-    ECIssueListener issueListener(m_ecdb);
+    TestIssueListener issueListener;
     ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema));
-    auto lastIssue = issueListener.GetIssue();
-    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
-    ASSERT_STREQ(Utf8PrintfString("ECSchema Schema1.01.00.01 requires ECDb version 999.9.9.9, but the current runtime version is only %s.", m_ecdb.GetECDbProfileVersion().ToString().c_str()).c_str(), lastIssue.message.c_str());
+
+    ASSERT_FALSE(issueListener.IsEmpty()) << "Should raise an issue.";
+    ASSERT_STREQ(Utf8PrintfString("ECSchema Schema1.01.00.01 requires ECDb version 999.9.9.9, but the current runtime version is only %s.", m_ecdb.GetECDbProfileVersion().ToString().c_str()).c_str(), issueListener.GetLastMessage().c_str());
     }
 
     CloseECDb();
@@ -417,11 +417,11 @@ TEST_F(ProfileTestFixture, InvalidImportRequiresVersionCustomAttribute)
         </ECEntityClass>
         </ECSchema>)xml");
 
-    ECIssueListener issueListener(m_ecdb);
+    TestIssueListener issueListener;
     ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema));
-    auto lastIssue = issueListener.GetIssue();
-    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
-    ASSERT_STREQ("ECSchema Schema1.01.00.01 has a ImportRequiresVersion custom attribute with a missing or invalid ECDbRuntimeVersion property.", lastIssue.message.c_str());
+
+    ASSERT_FALSE(issueListener.IsEmpty()) << "Should raise an issue.";
+    ASSERT_STREQ("ECSchema Schema1.01.00.01 has a ImportRequiresVersion custom attribute with a missing or invalid ECDbRuntimeVersion property.", issueListener.GetLastMessage().c_str());
     }
 
     { //invalid version property
@@ -438,11 +438,11 @@ TEST_F(ProfileTestFixture, InvalidImportRequiresVersionCustomAttribute)
         </ECEntityClass>
         </ECSchema>)xml");
 
-    ECIssueListener issueListener(m_ecdb);
+    TestIssueListener issueListener;
     ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema));
-    auto lastIssue = issueListener.GetIssue();
-    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
-    ASSERT_STREQ("ECSchema Schema1.01.00.01 has a ImportRequiresVersion custom attribute with a missing or invalid ECDbRuntimeVersion property.", lastIssue.message.c_str());
+
+    ASSERT_FALSE(issueListener.IsEmpty()) << "Should raise an issue.";
+    ASSERT_STREQ("ECSchema Schema1.01.00.01 has a ImportRequiresVersion custom attribute with a missing or invalid ECDbRuntimeVersion property.", issueListener.GetLastMessage().c_str());
     }
 
     CloseECDb();
@@ -516,11 +516,10 @@ TEST_F(ProfileTestFixture, ReferenceOlderSchemaWhenImportRestrictedNewerSchemaAl
             </ECEntityClass>
         </ECSchema>)xml";
 
-    ECIssueListener issueListener(m_ecdb);
+    TestIssueListener issueListener;
     EXPECT_EQ(SUCCESS, ImportSchema(SchemaItem(newSchemaStr)));
-    const auto lastIssue = issueListener.GetIssue();
-    EXPECT_FALSE(lastIssue.has_value()) << "No issues expected.";
-    EXPECT_STRNE(lastIssue.message.c_str(), Utf8PrintfString("ECSchema TestBaseSchema.01.00.01 requires ECDb version %s, but the current runtime version is only %s.", nextVersion.c_str(), currVersion.ToString().c_str()).c_str());
+
+    EXPECT_TRUE(issueListener.IsEmpty()) << "No issues expected.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -555,10 +554,10 @@ TEST_F(ProfileTestFixture, ApplyImportRequiresVersionToExistingSchema)
         </ECEntityClass>
         </ECSchema>)xml");
 
-    ECIssueListener issueListener(m_ecdb);
+    TestIssueListener issueListener;
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
-    auto lastIssue = issueListener.GetIssue();
-    ASSERT_FALSE(lastIssue.has_value());
+
+    ASSERT_FALSE(issueListener.IsEmpty());
     }
 
     {  //apply valid ImportRequiresVersion ca to existing schema which evaluates to false
@@ -575,11 +574,11 @@ TEST_F(ProfileTestFixture, ApplyImportRequiresVersionToExistingSchema)
         </ECEntityClass>
         </ECSchema>)xml");
 
-    ECIssueListener issueListener(m_ecdb);
+    TestIssueListener issueListener;
     ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema));
-    auto lastIssue = issueListener.GetIssue();
-    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
-    ASSERT_STREQ(Utf8PrintfString("ECSchema Schema1.01.00.03 requires ECDb version 999.9.9.9, but the current runtime version is only %s.", m_ecdb.GetECDbProfileVersion().ToString().c_str()).c_str(), lastIssue.message.c_str());
+
+    ASSERT_FALSE(issueListener.IsEmpty()) << "Should raise an issue.";
+    ASSERT_STREQ(Utf8PrintfString("ECSchema Schema1.01.00.03 requires ECDb version 999.9.9.9, but the current runtime version is only %s.", m_ecdb.GetECDbProfileVersion().ToString().c_str()).c_str(), issueListener.GetLastMessage().c_str());
     }
 
     CloseECDb();
@@ -609,14 +608,13 @@ TEST_F(ProfileTestFixture, UseRequiresVersionOnEntity)
     
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
 
-    ECIssueListener issueListener(m_ecdb);
+    TestIssueListener issueListener;
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * from s1.Foo"));
 
-    auto lastIssue = issueListener.GetIssue();
-    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
-    ASSERT_STREQ("Invalid ECClass in ECSQL: Cannot use ECClass 'Schema1:Foo' because it requires a newer version of ECDb.", lastIssue.message.c_str());
+    ASSERT_FALSE(issueListener.IsEmpty()) << "Should raise an issue.";
+    ASSERT_STREQ("Invalid ECClass in ECSQL: Cannot use ECClass 'Schema1:Foo' because it requires a newer version of ECDb.", issueListener.GetLastMessage().c_str());
     }
 
     CloseECDb();
@@ -647,13 +645,12 @@ TEST_F(ProfileTestFixture, TestUseRequiresVersionOnEntityPasses)
     
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
 
-    ECIssueListener issueListener(m_ecdb);
+    TestIssueListener issueListener;
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * from s1.Foo"));
 
-    auto lastIssue = issueListener.GetIssue();
-    ASSERT_FALSE(lastIssue.has_value()) << "Should not raise an issue.";
+    ASSERT_TRUE(issueListener.IsEmpty()) << "Should not raise an issue.";
     }
 
     CloseECDb();
@@ -686,14 +683,13 @@ TEST_F(ProfileTestFixture, UseRequiresVersionOnEntityInherited)
     
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
 
-    ECIssueListener issueListener(m_ecdb);
+    TestIssueListener issueListener;
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * from s1.Bar"));
 
-    auto lastIssue = issueListener.GetIssue();
-    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
-    ASSERT_STREQ("Invalid ECClass in ECSQL: Cannot use ECClass 'Schema1:Bar' because it requires a newer version of ECDb.", lastIssue.message.c_str());
+    ASSERT_FALSE(issueListener.IsEmpty()) << "Should raise an issue.";
+    ASSERT_STREQ("Invalid ECClass in ECSQL: Cannot use ECClass 'Schema1:Bar' because it requires a newer version of ECDb.", issueListener.GetLastMessage().c_str());
     }
 
     CloseECDb();
@@ -727,14 +723,13 @@ TEST_F(ProfileTestFixture, UseRequiresVersionOnCA)
     
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
 
-    ECIssueListener issueListener(m_ecdb);
+    TestIssueListener issueListener;
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * from s1.Foo"));
 
-    auto lastIssue = issueListener.GetIssue();
-    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
-    ASSERT_STREQ("Invalid ECClass in ECSQL: Cannot use ECClass 'Schema1:Foo' because it requires a newer version of ECDb.", lastIssue.message.c_str());
+    ASSERT_FALSE(issueListener.IsEmpty()) << "Should raise an issue.";
+    ASSERT_STREQ("Invalid ECClass in ECSQL: Cannot use ECClass 'Schema1:Foo' because it requires a newer version of ECDb.", issueListener.GetLastMessage().c_str());
     }
 
     CloseECDb();
@@ -775,14 +770,13 @@ TEST_F(ProfileTestFixture, UseRequiresVersionOnCAIndirect)
     
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
 
-    ECIssueListener issueListener(m_ecdb);
+    TestIssueListener issueListener;
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * from s1.MyEntity"));
 
-    auto lastIssue = issueListener.GetIssue();
-    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
-    ASSERT_STREQ("Invalid ECClass in ECSQL: Cannot use ECClass 'Schema1:MyEntity' because it requires a newer version of ECDb.", lastIssue.message.c_str());
+    ASSERT_FALSE(issueListener.IsEmpty()) << "Should raise an issue.";
+    ASSERT_STREQ("Invalid ECClass in ECSQL: Cannot use ECClass 'Schema1:MyEntity' because it requires a newer version of ECDb.", issueListener.GetLastMessage().c_str());
     }
 
     CloseECDb();
@@ -827,14 +821,13 @@ TEST_F(ProfileTestFixture, UseRequiresVersionOnCAIndirectInherited)
     
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
 
-    ECIssueListener issueListener(m_ecdb);
+    TestIssueListener issueListener;
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * from s1.MySubclass"));
 
-    auto lastIssue = issueListener.GetIssue();
-    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
-    ASSERT_STREQ("Invalid ECClass in ECSQL: Cannot use ECClass 'Schema1:MySubclass' because it requires a newer version of ECDb.", lastIssue.message.c_str());
+    ASSERT_FALSE(issueListener.IsEmpty()) << "Should raise an issue.";
+    ASSERT_STREQ("Invalid ECClass in ECSQL: Cannot use ECClass 'Schema1:MySubclass' because it requires a newer version of ECDb.", issueListener.GetLastMessage().c_str());
     }
 
     CloseECDb();
@@ -874,13 +867,12 @@ TEST_F(ProfileTestFixture, ApplyUseRequiresVersionOnExistingCA)
 
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema));
     {
-    ECIssueListener issueListener(m_ecdb);
+    TestIssueListener issueListener;
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * from s1.MySubclass"));
 
-    auto lastIssue = issueListener.GetIssue();
-    ASSERT_FALSE(lastIssue.has_value()) << "Should not raise an issue.";
+    ASSERT_TRUE(issueListener.IsEmpty()) << "Should not raise an issue.";
     }
     
     SchemaItem schema2(R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -914,14 +906,13 @@ TEST_F(ProfileTestFixture, ApplyUseRequiresVersionOnExistingCA)
     ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema2));
 
     {
-    ECIssueListener issueListener(m_ecdb);
+    TestIssueListener issueListener;
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * from s1.MySubclass"));
 
-    auto lastIssue = issueListener.GetIssue();
-    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
-    ASSERT_STREQ("Invalid ECClass in ECSQL: Cannot use ECClass 'Schema1:MySubclass' because it requires a newer version of ECDb.", lastIssue.message.c_str());
+    ASSERT_FALSE(issueListener.IsEmpty()) << "Should raise an issue.";
+    ASSERT_STREQ("Invalid ECClass in ECSQL: Cannot use ECClass 'Schema1:MySubclass' because it requires a newer version of ECDb.", issueListener.GetLastMessage().c_str());
     }
 
     CloseECDb();

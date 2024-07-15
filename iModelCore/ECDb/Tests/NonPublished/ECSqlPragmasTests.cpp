@@ -76,15 +76,14 @@ TEST_F(ECSqlPragmasTestFixture, parse_tree){
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("parse_tree.ecdb"));
 
     if ("disable by default due to marked as experimental feature") {
-        ECIssueListener issueListener(m_ecdb);
+        TestIssueListener issueListener;
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus(BE_SQLITE_ERROR), stmt.Prepare(m_ecdb, R"x(
             PRAGMA parse_tree(
                 "SELECT * FROM meta.ECClassDef WHERE Name='Element'"
             ))x"));
-        auto issue = issueListener.GetIssue();
-        ASSERT_EQ(issue.has_value(), true);
-        ASSERT_STREQ(issue.message.c_str(), "'PRAGMA parse_tree' is experimental feature and disabled by default.");
+        ASSERT_FALSE(issueListener.IsEmpty());
+        ASSERT_STREQ(issueListener.GetLastMessage().c_str(), "'PRAGMA parse_tree' is experimental feature and disabled by default.");
     }
 
     auto beautify = [](Utf8CP str) -> Utf8String {
@@ -94,7 +93,6 @@ TEST_F(ECSqlPragmasTestFixture, parse_tree){
     };
 
     if ("enable using ECSQLOPTIONS") {
-        ECIssueListener issueListener(m_ecdb);
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"x(
             PRAGMA parse_tree("SELECT * FROM meta.ECClassDef WHERE Name='Element'") ECSQLOPTIONS enable_experimental_features

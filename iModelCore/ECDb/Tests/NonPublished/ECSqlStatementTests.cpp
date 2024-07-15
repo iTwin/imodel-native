@@ -119,14 +119,7 @@ TEST_F(ECSqlStatementTestFixture, CTECrash) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, DisableFunction) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("disabledFunc.ecdb"));
-    struct IssueListener: ECN::IIssueListener {
-        mutable bvector<Utf8String> m_issues;
-        void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override {
-            m_issues.push_back(message);
-        }
-        Utf8String const& GetLastError() const { return m_issues.back();}
-    };
-    IssueListener listener;
+    TestIssueListener listener;
     m_ecdb.AddIssueListener(listener);
 
     auto getExpectedErrorMessage =[](Utf8String functionName) -> Utf8String {
@@ -137,14 +130,14 @@ TEST_F(ECSqlStatementTestFixture, DisableFunction) {
 
         //TEST A - Just prepare ecsql as is to verify it can be prepared.
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << "ECSQL should succeed without disabling the function"
-            << "\nECDb (err)" << listener.GetLastError().c_str();
+            << "\nECDb (err)" << listener.GetLastMessage().c_str();
         stmt.Finalize();
 
         //TEST B - Disable function and prepare the ecsql, with expectation that it will fail and puts out a expected error message.
         m_ecdb.GetECSqlConfig().GetDisableFunctions().Add(disableFunc);
         ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql.c_str())) << "ECSQL should now fail when function is disabled";
         Utf8String erroMessageExpected = getExpectedErrorMessage(functionNameInECSql);
-        ASSERT_STREQ(listener.GetLastError().c_str(), erroMessageExpected.c_str()) << "Perpare should fail with expected error message";
+        ASSERT_STREQ(listener.GetLastMessage().c_str(), erroMessageExpected.c_str()) << "Perpare should fail with expected error message";
         stmt.Finalize();
 
         //TEST C - ReEnable the function and reprepare the ecsql and expect it to be successful
@@ -7802,36 +7795,33 @@ TEST_F(ECSqlStatementTestFixture, Finalize)
 TEST_F(ECSqlStatementTestFixture, IssueListener)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
-    ASSERT_EQ(SUCCESS, PopulateECDb( 10));
+    ASSERT_EQ(SUCCESS, PopulateECDb(10));
 
+    TestIssueListener issueListener;
     {
-    ECIssueListener issueListener(m_ecdb);
     ECSqlStatement stmt;
-    ASSERT_FALSE(issueListener.GetIssue().has_value()) << "new ECSqlStatement";
+    ASSERT_TRUE(issueListener.IsEmpty()) << "new ECSqlStatement";
 
     auto stat = stmt.Prepare(m_ecdb, "SELECT * FROM ecsql.P WHERE I = ?");
     ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation for a valid ECSQL failed.";
-    ASSERT_FALSE(issueListener.GetIssue().has_value()) << "After successful call to Prepare.";
+    ASSERT_TRUE(issueListener.IsEmpty()) << "After successful call to Prepare.";
     }
 
     {
-    ECIssueListener issueListener(m_ecdb);
-
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM blablabla")) << "Preparation for an invalid ECSQL succeeded unexpectedly.";
 
-    ECDbIssue lastIssue = issueListener.GetIssue();
-    ASSERT_TRUE(lastIssue.has_value()) << "After preparing invalid ECSQL.";
-    ASSERT_STREQ("Invalid ECSQL class expression 'blablabla': Valid syntax: [<table space>.]<schema name or alias>.<class name>[.function call]", lastIssue.message.c_str());
+    ASSERT_FALSE(issueListener.IsEmpty()) << "After preparing invalid ECSQL.";
+    ASSERT_STREQ("Invalid ECSQL class expression 'blablabla': Valid syntax: [<table space>.]<schema name or alias>.<class name>[.function call]", issueListener.GetLastMessage().c_str());
+    issueListener.ClearIssues();
 
     stmt.Finalize();
-    ASSERT_FALSE(issueListener.GetIssue().has_value()) << "After successful call to Finalize";
+    ASSERT_TRUE(issueListener.IsEmpty()) << "After successful call to Finalize";
 
     //now reprepare with valid ECSQL
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ecsql.P")) << "Preparation for a valid ECSQL failed.";
-    ASSERT_FALSE(issueListener.GetIssue().has_value()) << "After successful call to Prepare";
+    ASSERT_TRUE(issueListener.IsEmpty()) << "After successful call to Prepare";
     }
-
     }
 
 
