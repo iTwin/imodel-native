@@ -26,61 +26,52 @@ struct TokenizeIdModule : ECDbModule {
                 Delimiter =2,
             };
             private:
-                int64_t m_iRowid = 0;
                 Utf8String m_text;
-                Utf8String m_delimiter = ",";
-                bvector<int64_t> m_idSet;
-
+                bvector<int64_t> m_idVector;
+                bvector<int64_t>::iterator m_index;
             public:
                 TokenizeIdCursor(TokenizeIdTable& vt): ECDbCursor(vt){}
-                bool Eof() final { return m_iRowid < 1 || m_iRowid > (int64_t)m_idSet.size() ; }
+                bool Eof() final { return m_index == m_idVector.end(); }
                 DbResult Next() final {
-                    ++m_iRowid;
+                    ++m_index;
                     return BE_SQLITE_OK;
                 }
-                DbResult GetColumn(int i, Context& ctx) final {
-                    Utf8CP x = 0;
-                    switch( (Columns)i ){
-                        case Columns::Text:
-                            x = m_text.c_str(); 
-                            ctx.SetResultText(x, (int)strlen(x), Context::CopyData::Yes);
-                            break;
-                        case Columns::Delimiter: 
-                            x = m_delimiter.c_str(); 
-                            ctx.SetResultText(x, (int)strlen(x), Context::CopyData::Yes);
-                            break;
-                        default: 
-                            ctx.SetResultInt64(m_idSet[m_iRowid - 1]);
-                            break;
-                    }  
+                DbResult GetColumn(int i, Context& ctx) final {     
+                    ctx.SetResultInt64(*m_index);
                     return BE_SQLITE_OK;
                 }
                 DbResult GetRowId(int64_t& rowId) final {
-                    rowId = m_iRowid;
+                    rowId = *m_index;
                     return BE_SQLITE_OK;
                 }
                 DbResult Filter(int idxNum, const char *idxStr, int argc, DbValue* argv) final {
                     int i = 0;
-                    bvector<Utf8String> hexIds;
+                    bset<int64_t> uniqueIds;
 
-                    if( idxNum & 1 ){
+                    if (idxNum & 1)
+                    {
                         m_text = argv[i++].GetValueText();
-                    }else{
+                    }
+                    else
+                    {
                         m_text = "";
                     }
 
-                    hexIds.clear();
+                    // Parse String to Js Document and iterate through the array and insert int hex ids as int64 in uniqueIds set.
                     BeJsDocument doc;
-                    doc.Parse(m_text);
-                    m_text.ReplaceAll("[","");
-                    m_text.ReplaceAll("]","");
-                    BeStringUtilities::ParseArguments(hexIds,m_text.c_str(),m_delimiter.c_str());
+                    doc.Parse(m_text.c_str());
+                    doc.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst k1)
+                                           {
+                        uniqueIds.insert(k1.asInt64());
+                        return false; });
 
-                    for (int j = 0;j<hexIds.size();j++) {
-                        m_idSet.push_back(BeStringUtilities::ParseHex(hexIds[j].c_str()));
+                    // Iterate through the uniqueids bset and store the ids in bvector
+                    for (bset<int64_t>::iterator it = uniqueIds.begin(); it != uniqueIds.end(); it++)
+                    {
+                        m_idVector.push_back(*it);
                     }
 
-                    m_iRowid = 1;
+                    m_index = m_idVector.begin();
                     return BE_SQLITE_OK;
                 }
         };
@@ -145,7 +136,7 @@ struct TokenizeIdModule : ECDbModule {
         TokenizeIdModule(ECDbR db): ECDbModule(
             db,
             "IdSet",
-            "CREATE TABLE x(id,buffer hidden,delimiter hidden)",
+            "CREATE TABLE x(id,buffer hidden)",
             R"xml(<?xml version="1.0" encoding="utf-8" ?>
             <ECSchema
                     schemaName="test"
@@ -160,7 +151,7 @@ struct TokenizeIdModule : ECDbModule {
                     <ECCustomAttributes>
                         <VirtualType xmlns="ECDbVirtual.01.00.00"/>
                     </ECCustomAttributes>
-                    <ECProperty propertyName="id"  typeName="string"/>
+                    <ECProperty propertyName="id"  typeName="int"/>
                 </ECEntityClass>
             </ECSchema>)xml") {}
         DbResult Connect(DbVirtualTable*& out, Config& conf, int argc, const char* const* argv) final {
@@ -174,29 +165,28 @@ struct TokenizeIdModule : ECDbModule {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbIdSetTests, TokenizeIdsTest) {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("vtab1212.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("idSet.ecdb"));
     (new TokenizeIdModule(m_ecdb))->Register();
-    
-    std::vector<Utf8String> hexIds = std::vector<Utf8String>{"0x1", "0x2", "0x3","0x4","0x5","0x6", "0x7", "0x8","0x9","0xA"};
-    Utf8String jsonArrayString = "[";
-    int k=0;
-    for (k;k<hexIds.size()-1;k++)
-    {
-        jsonArrayString += (hexIds[k] + ",");
-    }   
-    jsonArrayString += (hexIds[k] + "]");
 
+    std::vector<Utf8String> hexIds = std::vector<Utf8String>{"0x1", "0x2", "0x3", "4", "5"};
+    Utf8String jsonArrayString = "[";
+    int k = 0;
+    for (k; k < hexIds.size() - 1; k++)
+    {
+        jsonArrayString += ("\"" + hexIds[k] + "\", ");
+    }
+    jsonArrayString += ("\"" + hexIds[k] + "\"]");
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
-    stmt.BindText(1, jsonArrayString.c_str(),IECSqlBinder::MakeCopy::No);
-    
+    stmt.BindText(1, jsonArrayString.c_str(), IECSqlBinder::MakeCopy::No);
+
     int i = 0;
-    while(stmt.Step() == BE_SQLITE_ROW) {
+    while (stmt.Step() == BE_SQLITE_ROW)
+    {
         ASSERT_EQ(BeStringUtilities::ParseHex(hexIds[i++].c_str()), stmt.GetValueInt64(0));
     }
     ASSERT_EQ(i, hexIds.size());
-    
 }
 
 END_ECDBUNITTESTS_NAMESPACE
