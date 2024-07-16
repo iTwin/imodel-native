@@ -6187,7 +6187,5 @@ TEST_F(SchemaMergerTests, UncleanSchemaGraphMergedWithReferences)
     issues.CompareIssues(expectedIssues);
     }
 
-//25, 42 and 58
-
 END_BENTLEY_ECN_TEST_NAMESPACE
 
