@@ -186,7 +186,7 @@ struct LogCatcher {
 };
 
 //=======================================================================================
-//! Until destruction, captures log messages and redirects them to the TestLogger
+//! Wraps a single reported issue in issue listener
 // @bsiclass
 //=======================================================================================
 struct ReportedIssue {
@@ -201,7 +201,7 @@ struct ReportedIssue {
 };
 
 //=======================================================================================
-//! Until destruction, captures log messages and redirects them to the TestLogger
+//! Issue listener which can be used in tests to collect sent issues
 // @bsiclass
 //=======================================================================================
 struct TestIssueListener : ECN::IIssueListener {
