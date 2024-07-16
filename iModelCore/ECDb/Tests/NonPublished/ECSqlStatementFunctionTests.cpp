@@ -270,6 +270,9 @@ TEST_F(ECSqlStatementFunctionTestFixture, InstanceOfFunc)
             {"SELECT COUNT(*) FROM ecsql.THBase t WHERE ec_instanceof(ec_classname(t.ECClassId), ec_classid('ECSqlTest:TH3'))", 15 },
             {"SELECT COUNT(*) FROM ecsql.THBase t WHERE ec_instanceof(ec_classname(t.ECClassId), ec_classid('ECSqlTest:TH2'))", 20 },
             {"SELECT COUNT(*) FROM ecsql.THBase t WHERE ec_instanceof(ec_classname(t.ECClassId), ec_classid('ECSqlTest:TH1'))", 25 },
+            {R"sql(SELECT COUNT(*) FROM ecsql.THBase t WHERE ec_instanceof(ec_classname(printf('%.*c', 515, 'A', 'x')), ec_classid('ECSqlTest:TH1')))sql", 0 },
+            {R"sql(SELECT COUNT(*) FROM ecsql.THBase t WHERE ec_instanceof(printf('%.*c', 515, 'B', 'x'), ec_classid('ECSqlTest:TH1')))sql", 0 },
+            {R"sql(SELECT COUNT(*) FROM ecsql.THBase t WHERE ec_instanceof(printf('%.*c', 515, 'C', 'x'), printf('%.*c', 515, 'D', 'x')))sql", 0 },
     };
     for (std::pair<Utf8CP, int> const& kvPair : testDataset)
         {
@@ -346,7 +349,14 @@ TEST_F(ECSqlStatementFunctionTestFixture, ClassIdFunc)
         {"VALUES(ec_classid('ecsql1'    , 'TH5' ))", noClassId  },
         {"VALUES(ec_classid('ECSqlTest2', 'TH5' ))", noClassId  },
         {"VALUES(ec_classid(NULL, 'TH5'         ))", noClassId  },            
-        {"VALUES(ec_classid(NULL, NULL          ))", noClassId  },            
+        {"VALUES(ec_classid(NULL, NULL          ))", noClassId  },
+        {"VALUES(ec_classid('ECSqlTest,TH5'     ))", noClassId },
+        {"VALUES(ec_classid('ECSqlTestTH5:'     ))", noClassId },
+        {"VALUES(ec_classid('ECSqlTest:', 'TH5' ))", noClassId },
+        {"VALUES(ec_classid('ECSqlTest.', 'TH5' ))", noClassId },
+        {"VALUES(ec_classid('ECSqlTestTH5.'     ))", noClassId },
+        {"VALUES(ec_classid('ECSqlTest:TH5','TH5'))", noClassId },
+        {R"sql(VALUES(ec_classid(printf('%.*c', 515, 'A', 'x'))))sql", noClassId  },
     };
     for (std::pair<Utf8CP, ECN::ECClassId> const& kvPair : testDataset)
         {
