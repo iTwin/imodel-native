@@ -6,6 +6,7 @@
 
 #include "ECDbTests.h"
 #include "TestHelper.h"
+#include <sstream>
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
