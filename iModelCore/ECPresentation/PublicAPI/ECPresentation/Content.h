@@ -99,7 +99,7 @@ struct ContentDisplayType
     //! Grid or table view content type. By default adds `ShowLabels` flag.
     ECPRESENTATION_EXPORT static const Utf8CP Grid;
 
-    //! Property pane content type. By default adds `MergeResults` and `ShowLabels` flag.
+    //! Property pane content type. By default adds `MergeResults` flag.
     ECPRESENTATION_EXPORT static const Utf8CP PropertyPane;
 
     //! List view content type. By default adds `NoFields`, `KeysOnly`, `ShowLabels` and `SkipInstancesCheck` flags.

@@ -17489,7 +17489,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, HandlesSelectedNodeLabelInC
     ASSERT_TRUE(descriptor.IsValid());
 
     ContentCPtr content = GetVerifiedContent(*descriptor);
-    RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{ b.get() }, *content, false, [](const auto&) { return "B"; });
+    RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP>{ b.get() }, *content);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -17880,7 +17880,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetContentForDisplayLabelGr
     ASSERT_TRUE(content.IsValid());
 
     // validate content
-    RulesEngineTestHelpers::ValidateContentSet({ instanceB.get() }, *content, false, [=](auto const&) { return labelOverride; });
+    RulesEngineTestHelpers::ValidateContentSet({ instanceB.get() }, *content);
     }
 
 /*---------------------------------------------------------------------------------**//**

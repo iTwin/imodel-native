@@ -51,7 +51,7 @@ int ContentSpecificationsHandler::GetDefaultContentFlags(Utf8CP displayType, Con
     if (DISPLAY_TYPES_EQUAL(ContentDisplayType::Grid, displayType))
         flags |= ENUM_FLAG(ContentFlags::ShowLabels);
     else if (DISPLAY_TYPES_EQUAL(ContentDisplayType::PropertyPane, displayType))
-        flags |= ENUM_FLAG(ContentFlags::MergeResults) | ENUM_FLAG(ContentFlags::ShowLabels);
+        flags |= ENUM_FLAG(ContentFlags::MergeResults);
     else if (DISPLAY_TYPES_EQUAL(ContentDisplayType::Graphics, displayType))
         flags |= ENUM_FLAG(ContentFlags::NoFields) | ENUM_FLAG(ContentFlags::KeysOnly) | ENUM_FLAG(ContentFlags::SkipInstancesCheck);
     else if (DISPLAY_TYPES_EQUAL(ContentDisplayType::List, displayType))
