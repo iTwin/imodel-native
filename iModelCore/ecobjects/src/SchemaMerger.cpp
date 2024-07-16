@@ -5,6 +5,7 @@
 #include "ECObjectsPch.h"
 #include <ECObjects/SchemaMerger.h>
 #include <ECObjects/SchemaConflictHelper.h>
+#include <sstream>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -829,24 +830,63 @@ BentleyStatus SchemaMerger::MergeProperty(SchemaMergeResult& result, ECPropertyP
         propertyChange->IsPrimitiveArray().IsChanged() ||
         propertyChange->IsNavigation().IsChanged())
         {
+        auto boolToString = [](const Nullable<bool>& value) -> std::string
+            {
+            if (value.IsNull())
+                return "undefined";
+            else
+                return value.Value() ? "true" : "false";
+            };
+
+        std::stringstream changeDetails;
+
+        auto logChange = [&changeDetails, &boolToString](BooleanChange const& change, Utf8CP label)
+            {
+            if(!change.IsChanged())
+                return;
+
+            changeDetails << label;
+            changeDetails << " changed from ";
+            changeDetails << boolToString(change.GetOld());
+            changeDetails << " to ";
+            changeDetails << boolToString(change.GetNew());
+            changeDetails << " ";
+            };
+        
+        logChange(propertyChange->IsPrimitive(), "IsPrimitive");
+        logChange(propertyChange->IsStruct(), "IsStruct");
+        logChange(propertyChange->IsStructArray(), "IsStructArray");
+        logChange(propertyChange->IsPrimitiveArray(), "IsPrimitiveArray");
+        logChange(propertyChange->IsNavigation(), "IsNavigation");
+
         result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0042,
-            "Property %s has mismatching types between both sides.", key.c_str());
+            "Property %s is of a different kind between both sides. %s", key.c_str(), changeDetails.str().c_str());
         return BentleyStatus::ERROR;
         }
     
     if(propertyChange->TypeName().IsChanged())
         {
         //TODO: ExtendedTypeName, Enumeration
+        auto nullableToString = [](const Nullable<Utf8String>& value) -> Utf8String
+            {
+            if (value.IsNull())
+                return "undefined";
+            else
+                return value.Value();
+            };
+
         if(!options.GetIgnoreIncompatiblePropertyTypeChanges())
             {
             result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0043,
-                "Property %s has its type changed.", key.c_str());
+                "Property %s has its type changed from %s to %s.", key.c_str(),
+                nullableToString(propertyChange->TypeName().GetOld()).c_str(), nullableToString(propertyChange->TypeName().GetNew()).c_str());;
             return BentleyStatus::ERROR;
             }
         else
             {
             result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0058,
-                "Ignoring invalid property type change on %s because IgnoreIncompatiblePropertyTypeChanges has been set.", key.c_str());
+                "Ignoring invalid property type change on %s (from %s to %s) because IgnoreIncompatiblePropertyTypeChanges has been set.",
+                key.c_str(), nullableToString(propertyChange->TypeName().GetOld()).c_str(), nullableToString(propertyChange->TypeName().GetNew()).c_str());;
             }
         }
 

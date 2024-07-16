@@ -3243,11 +3243,13 @@ TEST_F(SchemaMergerTests, Property_ChangeType)
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
-    bvector<Utf8String> expectedIssues { "Property MySchema:MyEntity:A has its type changed."};
+    bvector<ReportedIssue> expectedIssues { ReportedIssue(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0043, "Property MySchema:MyEntity:A has its type changed from string to int.")};
     issues.CompareIssues(expectedIssues);
     }
     {
     SchemaMergeResult result;
+    TestIssueListener issues;
+    result.AddIssueListener(issues);
     SchemaMergeOptions options;
     options.SetIgnoreIncompatiblePropertyTypeChanges(true);
     EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, options));
@@ -3264,6 +3266,9 @@ TEST_F(SchemaMergerTests, Property_ChangeType)
     };
 
     CompareResults(expectedSchemasXml, result);
+    // Compare issues
+    bvector<ReportedIssue> expectedIssues { ReportedIssue(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0058, "Ignoring invalid property type change on MySchema:MyEntity:A (from string to int) because IgnoreIncompatiblePropertyTypeChanges has been set.")};
+    issues.CompareIssues(expectedIssues);
     }
     }
 
@@ -3309,7 +3314,7 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_ChangePropertyToEnumeration)
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
-    bvector<Utf8String> expectedIssues { "Property MySchema:MyEntity:A has its type changed." };
+    bvector<Utf8String> expectedIssues { "Property MySchema:MyEntity:A has its type changed from int to MyEnum." };
     issues.CompareIssues(expectedIssues);
     }
 
@@ -3351,7 +3356,7 @@ TEST_F(SchemaMergerTests, PropertyNameConflict_PrimitiveAndArrayProperty)
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
-    bvector<Utf8String> expectedIssues { "Property MySchema:MyEntity:A has mismatching types between both sides." };
+    bvector<Utf8String> expectedIssues { "Property MySchema:MyEntity:A is of a different kind between both sides. IsPrimitive changed from true to false IsPrimitiveArray changed from false to true " };
     issues.CompareIssues(expectedIssues);
     }
 
@@ -4282,7 +4287,7 @@ TEST_F(SchemaMergerTests, ChangePropertyFromBinaryToIGeometry)
     EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
 
     // Compare issues
-    bvector<Utf8String> expectedIssues { "Property MySchema:MyClass:A has its type changed." };
+    bvector<Utf8String> expectedIssues { "Property MySchema:MyClass:A has its type changed from binary to Bentley.Geometry.Common.IGeometry." };
     issues.CompareIssues(expectedIssues);
 
     //merge again, with keep left
@@ -4643,7 +4648,7 @@ TEST_F(SchemaMergerTests, ChangeAbstractConstraint_InvalidCase)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaMergerTests, UnableToCopySchemaError)
+TEST_F(SchemaMergerTests, UnableToFindAbstractConstraint)
     {
     // This test tries to provoke EC_0025 where a schema cannot be copied. In this case it's an old 2.0 schema with no abstract constraint, and the setup
     // of constraint classes does not allow automatically setting the abstract constraint
@@ -4711,6 +4716,161 @@ TEST_F(SchemaMergerTests, UnableToCopySchemaError)
 
     // Compare issues
     bvector<ReportedIssue> expectedIssues { ReportedIssue(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0025, "Schema 'Test2.01.00.01' from right side failed to be copied.") };
+    issues.CompareIssues(expectedIssues);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, RelationshipConstraintNotCompatibleProblem)
+    {
+    // This test tries to provoke EC_0024 when ECRelationshipConstraint::AddClass is called with no abstract constraint set
+    // Apparently we fail to record a meaningful error in this case
+
+    // Initialize two sets of schemas
+    bvector<Utf8CP> leftSchemasXml {
+      R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="Test2" nameSpacePrefix="ts" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECClass typeName="Orange" isDomainClass="True" />
+                <ECClass typeName="Apple" isDomainClass="True" />
+                <ECClass typeName="Lemon" isDomainClass="True" />
+                <ECRelationshipClass typeName="MyRelationshipClass" isDomainClass="True" strength="referencing" strengthDirection="forward">
+                    <Source cardinality="(0,N)" polymorphic="false">
+                        <Class class="Apple" />
+                    </Source>
+                    <Target cardinality="(0,1)" polymorphic="false">
+                        <Class class="Apple" />
+                        <ECClass typeName="Orange" isDomainClass="True" />
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>)xml"
+    };
+
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    bvector<Utf8CP> rightSchemasXml {
+      R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="Test2" nameSpacePrefix="ts" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECClass typeName="Orange" isDomainClass="True" />
+                <ECClass typeName="Apple" isDomainClass="True" />
+                <ECClass typeName="Lemon" isDomainClass="True" />
+                <ECRelationshipClass typeName="MyRelationshipClass" isDomainClass="True" strength="referencing" strengthDirection="forward">
+                    <Source cardinality="(0,N)" polymorphic="false">
+                        <Class class="Apple" />
+                    </Source>
+                    <Target cardinality="(0,1)" polymorphic="false">
+                        <Class class="Apple" />
+                        <Class class="Orange" />
+                        <Class class="Lemon" />
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>)xml" };
+
+    TestLogger logger;
+    LogCatcher catcher(logger);
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    using namespace NativeLogging;
+    logger.ValidateMessageAtIndex(2, SEVERITY::LOG_INFO,
+      "Abstract Constraint Violation (ResolveIssues: Yes): The Target-Constraint of 'Test2:MyRelationshipClass' does not contain or inherit an abstractConstraint attribute. It is a required attribute if there is more than one constraint class.");
+    logger.ValidateMessageAtIndex(3, SEVERITY::LOG_ERROR,
+      "Failed to find a common base class between the constraint classes of Target-Constraint on class 'Test2:MyRelationshipClass'");
+    logger.ValidateMessageAtIndex(4, SEVERITY::LOG_ERROR,
+      "Relationship Class Constraint Violation: Abstract Class Constraint validation failed for the 'Source' constraint of relationship 'Test2:MyRelationshipClass'");
+    logger.ValidateMessageAtIndex(5, SEVERITY::LOG_WARNING,
+      "ECSchemaXML for Test2 did not pass ECXml 3.1 validation, being downgraded to ECXml 3.0");
+    
+    SchemaMergeResult result;
+    TestIssueListener issues;
+    result.AddIssueListener(issues);
+    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+
+    // Compare issues
+    bvector<ReportedIssue> expectedIssues { ReportedIssue(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0024, "Setting ConstraintClass on Test2:MyRelationshipClass failed. Was trying to set to Test2:Lemon.") };
+    issues.CompareIssues(expectedIssues);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, RelationshipConstraintOnLeftSchema)
+    {
+    // This test attempts to reproduce a case where left and right have an identical relationship but CopyClass failed with few details
+
+    bvector<Utf8CP> leftSchemasXml {
+      R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="Test2" nameSpacePrefix="ts" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECClass typeName="JOINT" isDomainClass="True" />
+                <ECClass typeName="WELD" isDomainClass="True">
+                    <BaseClass>FASTENER</BaseClass>
+                </ECClass>
+                <ECClass typeName="FASTENER" isDomainClass="True" />
+                <ECClass typeName="BOLT" isDomainClass="True">
+                    <BaseClass>FASTENER</BaseClass>
+                </ECClass>
+                <ECRelationshipClass typeName="JOINT_HAS_FASTENER" description="" displayLabel="Joint Has Fastener" isStruct="false" isDomainClass="true" isCustomAttributeClass="false" strength="referencing"
+                  strengthDirection="forward">
+                  <Source cardinality="(0,N)" roleLabel="Joint has Fastener" polymorphic="true">
+                      <Class class="JOINT" />
+                  </Source>
+                  <Target cardinality="(0,N)" roleLabel="Joint has Fastener (reversed)" polymorphic="true">
+                      <Class class="WELD" />
+                      <Class class="FASTENER" />
+                      <Class class="BOLT" />
+                  </Target>
+              </ECRelationshipClass>
+            </ECSchema>)xml"
+    };
+
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    bvector<Utf8CP> rightSchemasXml{
+      R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="Test2" nameSpacePrefix="ts" version="01.02" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECClass typeName="JOINT" isDomainClass="True" />
+                <ECClass typeName="WELD" isDomainClass="True">
+                    <BaseClass>FASTENER</BaseClass>
+                </ECClass>
+                <ECClass typeName="FASTENER" isDomainClass="True" />
+                <ECClass typeName="BOLT" isDomainClass="True">
+                    <BaseClass>FASTENER</BaseClass>
+                </ECClass>
+                <ECClass typeName="PIPE" isDomainClass="True" />
+                <ECRelationshipClass typeName="JOINT_HAS_FASTENER" description="" displayLabel="Joint Has Fastener" isStruct="false" isDomainClass="true" isCustomAttributeClass="false" strength="referencing"
+                  strengthDirection="forward">
+                  <Source cardinality="(0,N)" roleLabel="Joint has Fastener" polymorphic="true">
+                      <Class class="JOINT" />
+                  </Source>
+                  <Target cardinality="(0,N)" roleLabel="Joint has Fastener (reversed)" polymorphic="true">
+                      <Class class="WELD" />
+                      <Class class="FASTENER" />
+                      <Class class="BOLT" />
+                  </Target>
+              </ECRelationshipClass>
+            </ECSchema>)xml"
+    };
+
+    TestLogger logger;
+    LogCatcher catcher(logger);
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    using namespace NativeLogging;
+    logger.ValidateMessageAtIndex(1, SEVERITY::LOG_INFO,
+      "Abstract Constraint Violation (ResolveIssues: Yes): The Target-Constraint of 'Test2:JOINT_HAS_FASTENER' does not contain or inherit an abstractConstraint attribute. It is a required attribute if there is more than one constraint class.");
+    logger.ValidateMessageAtIndex(2, SEVERITY::LOG_INFO,
+      "The abstractConstraint attribute of Target-Constraint on class 'Test2:JOINT_HAS_FASTENER' has been set to the class 'Test2:FASTENER' since it is a common base class of all shared constraint classes.");
+    
+    SchemaMergeResult result;
+    TestIssueListener issues;
+    result.AddIssueListener(issues);
+    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+
+    // Compare issues
+    bvector<ReportedIssue> expectedIssues { };
     issues.CompareIssues(expectedIssues);
     }
 
