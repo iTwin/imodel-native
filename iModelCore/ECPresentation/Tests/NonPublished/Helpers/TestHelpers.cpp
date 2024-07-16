@@ -536,11 +536,11 @@ void RulesEngineTestHelpers::ValidateContentSetItem(IECInstanceCR instance, Cont
     EXPECT_STREQ(instance.GetInstanceId().c_str(), keys[0]["ECInstanceId"].GetString());
 
     ASSERT_TRUE(json.HasMember("DisplayLabel"));
-    decltype(auto) actualDisplayLabel = json["DisplayLabel"];
+    auto const& actualDisplayLabel = json["DisplayLabel"];
     if (expectedDisplayLabelFactory)
         {
         ASSERT_TRUE(!actualDisplayLabel.ObjectEmpty() && actualDisplayLabel.HasMember("DisplayValue"));
-        EXPECT_STREQ(actualDisplayLabel["DisplayValue"].GetString(), expectedDisplayLabelFactory(json));
+        EXPECT_STREQ(expectedDisplayLabelFactory(json), actualDisplayLabel["DisplayValue"].GetString());
         }
     else if (!actualDisplayLabel.ObjectEmpty())
         {

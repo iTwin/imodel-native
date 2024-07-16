@@ -17842,7 +17842,7 @@ DEFINE_SCHEMA(GetContentForDisplayLabelGroupingNode, R"*(
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, GetContentForDisplayLabelGroupingNode)
     {
-    constexpr auto labelOverride = "label";
+    Utf8CP labelOverride = "label";
     ECClassCP classA = GetClass("A");
     ECClassCP classB = GetClass("B");
     ECClassCP classC = GetClass("C");
@@ -17880,7 +17880,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetContentForDisplayLabelGr
     ASSERT_TRUE(content.IsValid());
 
     // validate content
-    RulesEngineTestHelpers::ValidateContentSet({ instanceB.get() }, *content, false, [=](const auto&) { return labelOverride; });
+    RulesEngineTestHelpers::ValidateContentSet({ instanceB.get() }, *content, false, [=](auto const&) { return labelOverride; });
     }
 
 /*---------------------------------------------------------------------------------**//**
