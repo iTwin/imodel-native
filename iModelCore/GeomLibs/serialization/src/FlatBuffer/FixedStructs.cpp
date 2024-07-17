@@ -1686,7 +1686,7 @@ static ICurvePrimitivePtr ReadCurvePrimitive (const BGFB::VariantGeometry * fbGe
             auto fbKnots = fbInterpolationCurve->knots ();
             auto fbStartTangent = fbInterpolationCurve->startTangent ();
             auto fbEndTangent = fbInterpolationCurve->endTangent ();
-            if (!fbFitPoints || !fbKnots)
+            if (!fbFitPoints)
                 return nullptr;
             int numPoles = fbFitPoints->Length() / 3;
             DPoint3dCP pFitPoints = numPoles > 0 ? (DPoint3dCP)fbFitPoints->GetStructFromOffset(0) : nullptr;
@@ -1699,7 +1699,7 @@ static ICurvePrimitivePtr ReadCurvePrimitive (const BGFB::VariantGeometry * fbGe
             if (nullptr != fbEndTangent)
                 endTangent = DVec3d::From (fbEndTangent->x (), fbEndTangent->y (), fbEndTangent->z ());
 
-            int numKnots = fbKnots->Length ();
+            int numKnots = fbKnots ? fbKnots->Length() : 0;
             double const * pKnots = numKnots > 0 ? (double const*)fbKnots->GetStructFromOffset(0) : nullptr;
 
             MSInterpolationCurve curve;

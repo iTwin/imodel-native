@@ -5384,7 +5384,7 @@ Utf8CP BeSQLiteLib::GetErrorName(DbResult code) {
         case BE_SQLITE_ERROR_ProfileTooNewForReadWrite:   return "BE_SQLITE_ERROR_ProfileTooNewForReadWrite";
         case BE_SQLITE_ERROR_ProfileTooNew:               return "BE_SQLITE_ERROR_ProfileTooNew";
         case BE_SQLITE_ERROR_ChangeTrackError:            return "BE_SQLITE_ERROR_ChangeTrackError";
-        case BE_SQLITE_ERROR_InvalidChangeSetVersion:      return "BE_SQLITE_ERROR_InvalidChangeSetVersion";
+        case BE_SQLITE_ERROR_InvalidChangeSetVersion:     return "BE_SQLITE_ERROR_InvalidChangeSetVersion";
         case BE_SQLITE_ERROR_SchemaUpgradeRequired:       return "BE_SQLITE_ERROR_SchemaUpgradeRequired";
         case BE_SQLITE_ERROR_SchemaTooNew:                return "BE_SQLITE_ERROR_SchemaTooNew";
         case BE_SQLITE_ERROR_SchemaTooOld:                return "BE_SQLITE_ERROR_SchemaTooOld";

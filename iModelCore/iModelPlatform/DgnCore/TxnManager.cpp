@@ -957,7 +957,7 @@ void TxnManager::ReverseChangeset(ChangesetPropsCR changeset) {
     if (result != BE_SQLITE_OK)
         m_dgndb.ThrowException("Error applying changeset", (int) ChangesetStatus::ApplyError);
 
-    SaveParentChangeset(changeset.GetParentId(), -1);
+    SaveParentChangeset(changeset.GetParentId(), changeset.GetChangesetIndex() - 1);
 
     result = m_dgndb.SaveChanges();
     if (BE_SQLITE_OK != result)
