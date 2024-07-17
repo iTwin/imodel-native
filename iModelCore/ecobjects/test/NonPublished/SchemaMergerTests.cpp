@@ -10,15 +10,18 @@
 #include <Bentley/BeDirectoryIterator.h>
 
 USING_NAMESPACE_BENTLEY_EC
+using namespace NativeLogging;
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct SchemaMergerTests : ECTestFixture
     {};
 
-ECSchemaReadContextPtr InitializeReadContextWithAllSchemas(bvector<Utf8CP> const& schemasXml, bvector<ECSchemaCP>* loadedSchemas = nullptr)
+ECSchemaReadContextPtr InitializeReadContextWithAllSchemas(bvector<Utf8CP> const& schemasXml, bvector<ECSchemaCP>* loadedSchemas = nullptr, bool skipValidation = false)
     {
     ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
+    if(skipValidation)
+      readContext->SetSkipValidation(true);
 
     for (auto schemaXml : schemasXml)
         {
@@ -4699,7 +4702,6 @@ TEST_F(SchemaMergerTests, UnableToFindAbstractConstraint)
     ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
     bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
 
-    using namespace NativeLogging;
     logger.ValidateMessageAtIndex(2, SEVERITY::LOG_INFO,
       "Abstract Constraint Violation (ResolveIssues: Yes): The Source-Constraint of 'Test2:RelationshipWithNoAbstractConstraint' does not contain or inherit an abstractConstraint attribute. It is a required attribute if there is more than one constraint class.");
     logger.ValidateMessageAtIndex(3, SEVERITY::LOG_ERROR,
@@ -4772,7 +4774,6 @@ TEST_F(SchemaMergerTests, RelationshipConstraintNotCompatibleProblem)
     ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
     bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
 
-    using namespace NativeLogging;
     logger.ValidateMessageAtIndex(2, SEVERITY::LOG_INFO,
       "Abstract Constraint Violation (ResolveIssues: Yes): The Target-Constraint of 'Test2:MyRelationshipClass' does not contain or inherit an abstractConstraint attribute. It is a required attribute if there is more than one constraint class.");
     logger.ValidateMessageAtIndex(3, SEVERITY::LOG_ERROR,
@@ -4824,8 +4825,9 @@ TEST_F(SchemaMergerTests, RelationshipConstraintOnLeftSchema)
             </ECSchema>)xml"
     };
 
-    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml);
-    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+    bvector<ECN::ECSchemaCP> leftSchemas;
+    // We have to skip validation for this test, as validation would either fix the problem or log errors.
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas(leftSchemasXml, &leftSchemas, true);
 
     bvector<Utf8CP> rightSchemasXml{
       R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -4855,22 +4857,28 @@ TEST_F(SchemaMergerTests, RelationshipConstraintOnLeftSchema)
 
     TestLogger logger;
     LogCatcher catcher(logger);
-    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml);
-    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+    bvector<ECN::ECSchemaCP> rightSchemas;
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas(rightSchemasXml, &rightSchemas, true);
 
-    using namespace NativeLogging;
-    logger.ValidateMessageAtIndex(1, SEVERITY::LOG_INFO,
-      "Abstract Constraint Violation (ResolveIssues: Yes): The Target-Constraint of 'Test2:JOINT_HAS_FASTENER' does not contain or inherit an abstractConstraint attribute. It is a required attribute if there is more than one constraint class.");
-    logger.ValidateMessageAtIndex(2, SEVERITY::LOG_INFO,
-      "The abstractConstraint attribute of Target-Constraint on class 'Test2:JOINT_HAS_FASTENER' has been set to the class 'Test2:FASTENER' since it is a common base class of all shared constraint classes.");
+    logger.ValidateMessageAtIndex(1, SEVERITY::LOG_DEBUG,
+      "Skipping validation for 'Test2.01.00.02' because the read context has skip validation property set to true");
     
     SchemaMergeResult result;
     TestIssueListener issues;
     result.AddIssueListener(issues);
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    logger.Clear();
+    EXPECT_EQ(BentleyStatus::ERROR, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+
+    logger.ValidateMessageAtIndex(0, SEVERITY::LOG_ERROR,
+      "Cannot add class Test2:FASTENER to target-constraint on Test2:JOINT_HAS_FASTENER. There is no abstract constraint defined, so adding this class would render the schema invalid.");
+    logger.ValidateMessageAtIndex(1, SEVERITY::LOG_ERROR,
+      "Failed to copy class Test2:JOINT_HAS_FASTENER to schema Test2.01.00.01");
+    logger.ValidateMessageAtIndex(2, SEVERITY::LOG_ERROR,
+      "Schema 'Test2.01.00.01' from left side failed to be copied.");
 
     // Compare issues
-    bvector<ReportedIssue> expectedIssues { };
+    bvector<ReportedIssue> expectedIssues { ReportedIssue(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema,
+      ECIssueId::EC_0025, "Schema 'Test2.01.00.01' from left side failed to be copied.") };
     issues.CompareIssues(expectedIssues);
     }
 

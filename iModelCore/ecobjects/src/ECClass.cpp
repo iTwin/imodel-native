@@ -3527,7 +3527,11 @@ ECObjectsStatus ECRelationshipConstraint::AddClass(ECClassCR classConstraint)
     if (m_verify)
         {
         if (m_constraintClasses.size() == 1 && !IsAbstractConstraintDefined())
+            {
+            LOG.errorv("Cannot add class %s to %s-constraint on %s. There is no abstract constraint defined, so adding this class would render the schema invalid.",
+                classConstraint.GetFullName(), m_isSource ? "source" : "target", m_relClass->GetFullName());
             return ECObjectsStatus::RelationshipConstraintsNotCompatible;
+            }
 
         ECObjectsStatus validationStatus = ValidateClassConstraint(classConstraint);
         if (validationStatus != ECObjectsStatus::Success)
