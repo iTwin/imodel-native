@@ -10,7 +10,8 @@ USING_NAMESPACE_BENTLEY_EC;
 //========================================================================================
 // @bsiclass
 //========================================================================================
-struct LinkTableRelationshipTests : public DgnDbTestFixture {};
+struct LinkTableRelationshipTests : public DgnDbTestFixture
+{};
 
 //---------------------------------------------------------------------------------------
 // @bsimethod

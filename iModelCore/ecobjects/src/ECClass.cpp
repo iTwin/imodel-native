@@ -2929,15 +2929,15 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECClassCP a
         if (m_constraintClasses.size() == 0)
             return ECObjectsStatus::Success;
 
-        LOG.messagev(resolveIssues? NativeLogging::SEVERITY::LOG_INFO : NativeLogging::SEVERITY::LOG_ERROR,
-            "Abstract Constraint Violation: The %s-Constraint of '%s' does not contain or inherit an %s attribute. It is a required attribute if there is more than one constraint class for EC3.1 or higher.",
-                (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(), ABSTRACTCONSTRAINT_ATTRIBUTE);
-
-        if (resolveIssues)
+        if (m_constraintClasses.size() > 1)
             {
-            // Attempt to resolve the issue by finding a common base class between all constraint classes
-            if (m_constraintClasses.size() > 1)
+            LOG.messagev(resolveIssues ? NativeLogging::SEVERITY::LOG_INFO : NativeLogging::SEVERITY::LOG_ERROR,
+                "Abstract Constraint Violation (ResolveIssues: %s): The %s-Constraint of '%s' does not contain or inherit an %s attribute. It is a required attribute if there is more than one constraint class.",
+                resolveIssues ? "Yes" : "No" ,(m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(), ABSTRACTCONSTRAINT_ATTRIBUTE);
+
+            if (resolveIssues)
                 {
+                // Attempt to resolve the issue by finding a common base class between all constraint classes
                 ECEntityClassCP commonClass = nullptr;
                 ECClass::FindCommonBaseClass(commonClass, m_constraintClasses[0]->GetEntityClassCP(), GetConstraintClasses());
 
@@ -2946,14 +2946,14 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECClassCP a
                     if (ECObjectsStatus::Success == SetAbstractConstraint(*commonClass))
                         {
                         LOG.infov("The %s attribute of %s-Constraint on class '%s' has been set to the class '%s' since it is a common base class of all shared constraint classes.",
-                                     ABSTRACTCONSTRAINT_ATTRIBUTE, (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT,
-                                     m_relClass->GetFullName(), m_abstractConstraint->GetFullName());
+                            ABSTRACTCONSTRAINT_ATTRIBUTE, (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT,
+                            m_relClass->GetFullName(), m_abstractConstraint->GetFullName());
                         return ECObjectsStatus::Success;
                         }
                     }
                 else
                     LOG.errorv("Failed to find a common base class between the constraint classes of %s-Constraint on class '%s'",
-                                (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
+                        (m_isSource) ? ECXML_SOURCECONSTRAINT_ELEMENT : ECXML_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
                 }
             }
 
@@ -3527,7 +3527,11 @@ ECObjectsStatus ECRelationshipConstraint::AddClass(ECClassCR classConstraint)
     if (m_verify)
         {
         if (m_constraintClasses.size() == 1 && !IsAbstractConstraintDefined())
+            {
+            LOG.errorv("Cannot add class %s to %s-constraint on %s. There is no abstract constraint defined, so adding this class would render the schema invalid.",
+                classConstraint.GetFullName(), m_isSource ? "source" : "target", m_relClass->GetFullName());
             return ECObjectsStatus::RelationshipConstraintsNotCompatible;
+            }
 
         ECObjectsStatus validationStatus = ValidateClassConstraint(classConstraint);
         if (validationStatus != ECObjectsStatus::Success)
