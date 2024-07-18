@@ -6,7 +6,7 @@
 import { assert, expect } from "chai";
 import { DbResult, Guid, GuidString, Id64Array, Id64String } from "@itwin/core-bentley";
 import { type ModelGeometryChangesProps, type RelatedElementProps, type RelationshipProps, type SubjectProps, mapNativeElementProps } from "@itwin/core-common";
-import { IModelJsNative } from "../NativeLibrary";
+import { IModelJsNative, InstanceSerializationMethod } from "../NativeLibrary";
 import { copyFile, dbFileName } from "./utils";
 import { openDgnDb } from "./index";
 
@@ -128,12 +128,12 @@ function makeEDE(sourceId: Id64String, targetId: Id64String): ElementDrivesEleme
 
 function getElement(dgnDb: IModelJsNative.DgnDb, elid: Id64String) {
   const statement = new IModelJsNative.ECSqlStatement();
-  statement.prepare(dgnDb, `SELECT $ FROM Bis.Element WHERE ECInstanceId=? OPTIONS USE_JS_PROP_NAMES`);
+  statement.prepare(dgnDb, `SELECT ECClassId FROM Bis.Element WHERE ECInstanceId=?`);
   statement.getBinder(1).bindId(elid);
   expect(statement.step()).eq(DbResult.BE_SQLITE_ROW);
-  const nativeElementProps = statement.getValue(0).getString();
+  const classId = statement.getValue(0).getId();
   statement.dispose();
-  return mapNativeElementProps(JSON.parse(nativeElementProps));
+  return mapNativeElementProps(dgnDb.getInstance({ id: elid, classId, serializationMethod: InstanceSerializationMethod.BeJsNapi, useJsNames: true, classIdsToClassNames: true, abbreviateBlobs: false }));
 }
 
 function updateElement(db1: IModelJsNative.DgnDb, elid: Id64String, newLabel: string) {

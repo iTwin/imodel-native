@@ -9,7 +9,7 @@ import { getOutputDir, iModelJsNative } from "./utils";
 import { DbResult, Guid, Id64String, OpenMode } from "@itwin/core-bentley";
 import { Code, ElementProps, mapNativeElementProps } from "@itwin/core-common";
 import { clearRegistry, loadMetaData } from "./loadMetaData";
-import { IModelJsNative } from "../NativeLibrary";
+import { IModelJsNative, InstanceSerializationMethod } from "../NativeLibrary";
 
 const testSchemaXmlV10 = `<?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="Test" alias="test" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -72,12 +72,12 @@ const testInformationRecordElementV11: ElementProps & { property1: string, prope
 
 function getElement(db: IModelJsNative.DgnDb, elid: Id64String) {
   const statement = new IModelJsNative.ECSqlStatement();
-  statement.prepare(db, `SELECT $ FROM Bis.Element WHERE ECInstanceId=? OPTIONS USE_JS_PROP_NAMES`);
+  statement.prepare(db, `SELECT ECClassId FROM Bis.Element WHERE ECInstanceId=?`);
   statement.getBinder(1).bindId(elid);
   expect(statement.step()).eq(DbResult.BE_SQLITE_ROW);
-  const nativeElementProps = statement.getValue(0).getString();
+  const classId = statement.getValue(0).getId();
   statement.dispose();
-  return mapNativeElementProps(JSON.parse(nativeElementProps));
+  return mapNativeElementProps(db.getInstance({ id: elid, classId, serializationMethod: InstanceSerializationMethod.BeJsNapi, useJsNames: true, classIdsToClassNames: true, abbreviateBlobs: false }));
 }
 
 describe("ImportSchema", () => {
