@@ -3193,7 +3193,7 @@ TEST_F(SchemaManagerTests, SchemaWithChangesButSameVersionTest)
         "<?xml version='1.0' encoding='utf-8' ?>"
         "<ECSchema schemaName='std' nameSpacePrefix='std' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='Foo' >"
-        "       <ECProperty propertyName='Test' typeName='string' />"
+        "       <ECProperty propertyName='Test1' typeName='string' />"
         "   </ECEntityClass>"
         "</ECSchema>";
 
@@ -3213,10 +3213,14 @@ TEST_F(SchemaManagerTests, SchemaWithChangesButSameVersionTest)
     ASSERT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString(originalSchema, originalSchemaXml, *readContext1));
     ASSERT_EQ(BentleyStatus::SUCCESS, m_ecdb.Schemas().ImportSchemas(readContext1->GetCache().GetSchemas()));
 
+    TestLogger logger;
+    LogCatcher logCatcher(logger);
+
     ECSchemaPtr changedSchema;
     ECSchemaReadContextPtr readContext2 = ECSchemaReadContext::CreateContext();
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(changedSchema, changedSchemaXml, *readContext2));
-    ASSERT_EQ(BentleyStatus::ERROR, m_ecdb.Schemas().ImportSchemas(readContext2->GetCache().GetSchemas()));
+    ASSERT_EQ(BentleyStatus::SUCCESS, m_ecdb.Schemas().ImportSchemas(readContext2->GetCache().GetSchemas()));
+    ASSERT_STREQ("ECSchema import has failed. Schema std has new changes, but the schema version is not incremented.", logger.GetLastMessage(NativeLogging::LOG_ERROR)->second.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
