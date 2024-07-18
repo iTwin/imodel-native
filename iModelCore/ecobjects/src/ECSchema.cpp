@@ -1634,6 +1634,7 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
 
                 if (ECObjectsStatus::Success != status)
                     {
+                    LOG.errorv("Failed to copy class %s to schema %s", sourceClass.GetFullName(), GetFullSchemaName().c_str());
                     DeleteClass(*newRelationshipClass);
                     newRelationshipClass = nullptr;
                     }
