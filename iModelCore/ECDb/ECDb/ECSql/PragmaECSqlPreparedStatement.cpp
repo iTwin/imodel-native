@@ -76,7 +76,7 @@ Utf8CP PragmaManager::Handler::GetTypeString() const {
 BeJsValue StaticPragmaResult::AppendRow() {
     BeMutexHolder lock(GetMutex());
     if (GetColumnCount() ==0) {
-        throw std::runtime_error("now columns added");
+        throw std::runtime_error("no columns added");
     }
     return m_doc.appendArray();
 }
