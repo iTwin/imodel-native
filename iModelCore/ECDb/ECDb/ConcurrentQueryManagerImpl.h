@@ -208,10 +208,11 @@ struct RunnableRequestBase {
         std::atomic_bool m_cancelled;
         uint32_t m_executorId;
         uint32_t m_connId;
+        bool m_interrupted;
         virtual void _SetResponse(QueryResponse::Ptr response) = 0;
     public:
         RunnableRequestBase(RunnableRequestQueue& queue, QueryRequest::Ptr request, QueryQuota quota, uint32_t id)
-            :m_queue(queue), m_request(std::move(request)), m_id(id), m_isCompleted(false),m_dequeuedOn(0s),
+            :m_queue(queue), m_request(std::move(request)), m_id(id), m_isCompleted(false),m_dequeuedOn(0s),m_interrupted(false),
              m_quota(quota), m_submittedOn(std::chrono::steady_clock::now()), m_cancelled(false), m_executorId(0), m_connId(0){}
         virtual ~RunnableRequestBase(){}
         QueryRequest const& GetRequest() const {return *m_request;}
@@ -219,16 +220,18 @@ struct RunnableRequestBase {
         void SetResponse(QueryResponse::Ptr response);
         bool IsCompleted() const {return m_isCompleted; }
         RunnableRequestQueue& GetQueue() { return m_queue;}
+        bool IsInterrupted() const { return m_interrupted; }
         void Cancel() { m_cancelled.store(true); }
         bool IsReady() const { return GetTotalTime() > m_request->GetDelay(); }
         bool IsCancelled () const {return m_cancelled.load(); }
         bool IsTimeExceeded() const { return m_quota.MaxTimeAllowed() == 0s ? false : std::chrono::duration_cast<std::chrono::seconds>(GetTotalTime()) >  m_quota.MaxTimeAllowed();}
         bool IsMemoryExceeded(std::string const& result) const { return m_quota.MaxMemoryAllowed() == 0 ? false : result.size() > m_quota.MaxMemoryAllowed(); }
         bool IsTimeOrMemoryExceeded(std::string const& result) const { return IsTimeExceeded() || IsMemoryExceeded(result);}
+        void Interrupt(CachedConnection& conn);
         void OnDequeued()  { m_dequeuedOn = std::chrono::steady_clock::now(); }
         uint32_t GetExecutorId() const {return m_executorId; }
         uint32_t GetConnectionId() const {return m_connId; }
-        void SetExecutorContext(uint32_t executorId, uint32_t connId) { m_executorId = executorId;  m_connId= connId;}
+        void SetExecutorContext(uint32_t executorId, uint32_t connId) { m_executorId = executorId;  m_connId = connId;}
         std::chrono::milliseconds GetTotalTime() const { return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - m_submittedOn);}
         std::chrono::microseconds GetCpuTime() const { return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - m_dequeuedOn) ;}
         QueryResponse::Ptr CreateErrorResponse(QueryResponse::Status status, std::string error) const;
