@@ -465,5 +465,100 @@ bool ECTestUtility::CompareECInstances(ECN::IECInstanceCR expected, ECN::IECInst
     return CompareProperties(actual, *propertyValuesExpected);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestIssueListener::CompareIssues(bvector<Utf8String> const& expectedIssues)
+    {
+    bvector<Utf8String> loggedMessages;
+    for (const auto& issue : m_issues) {
+        loggedMessages.push_back(issue.message);
+        }
+
+    bool issuesAreTheSame = (expectedIssues == loggedMessages);
+    if(!issuesAreTheSame)
+        {
+        LOG.error("==================================================================================");
+        LOG.error("=Reported issues did not match expected result. Differences will be listed below.=");
+        LOG.error("==================================================================================");
+        LOG.error("EXPECTED:");
+        for(auto expected : expectedIssues)
+            {
+            LOG.errorv("    %s", expected.c_str());
+            }
+        LOG.error("ACTUAL:");
+        for(auto actual : loggedMessages)
+            {
+            LOG.errorv("    %s", actual.c_str());
+            }
+        }
+
+    ASSERT_TRUE(issuesAreTheSame) << "Logged issues did not match expected result";
+    }
+
+Utf8CP severityToString(IssueSeverity severity)
+    {
+    switch (severity)
+        {
+        case IssueSeverity::Info:
+            return "Info";
+        case IssueSeverity::Warning:
+            return "Warning";
+        case IssueSeverity::CriticalWarning:
+            return "CriticalWarning";
+        case IssueSeverity::Error:
+            return "Error";
+        case IssueSeverity::Fatal:
+            return "Fatal";
+        default:
+            return "Unknown";
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestIssueListener::CompareIssues(const std::vector<ReportedIssue>& expectedIssues)
+    {
+    std::vector<std::string> loggedIssueDetails;
+    for (const auto& issue : m_issues) {
+        std::stringstream ss;
+        ss << "Severity: " << severityToString(issue.severity) << ", "
+           << "Category: " << issue.category.m_stringId << ", "
+           << "Type: " << issue.type.m_stringId << ", "
+           << "ID: " << issue.id.m_issueId << ", "
+           << "Message: " << issue.message;
+        loggedIssueDetails.push_back(ss.str());
+        }
+
+    std::vector<std::string> expectedIssueDetails;
+    for (const auto& expected : expectedIssues) {
+        std::stringstream ss;
+        ss << "Severity: " << severityToString(expected.severity) << ", "
+           << "Category: " << expected.category.m_stringId << ", "
+           << "Type: " << expected.type.m_stringId << ", "
+           << "ID: " << expected.id.m_issueId << ", "
+           << "Message: " << expected.message;
+        expectedIssueDetails.push_back(ss.str());
+        }
+
+    bool issuesAreTheSame = (expectedIssueDetails == loggedIssueDetails);
+    if (!issuesAreTheSame) {
+        LOG.error("==================================================================================");
+        LOG.error("= Detailed reported issues did not match expected result. Differences listed below. =");
+        LOG.error("==================================================================================");
+        LOG.error("EXPECTED:");
+        for (const auto& expected : expectedIssueDetails) {
+            LOG.errorv("    %s", expected.c_str());
+            }
+        LOG.error("ACTUAL:");
+        for (const auto& actual : loggedIssueDetails) {
+            LOG.errorv("    %s", actual.c_str());
+            }
+        }
+
+    ASSERT_TRUE(issuesAreTheSame) << "Detailed logged issues did not match expected result";
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE
 
