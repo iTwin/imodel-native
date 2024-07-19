@@ -3191,7 +3191,7 @@ TEST_F(SchemaManagerTests, SchemaWithChangesButSameVersionTest)
     {
     Utf8CP originalSchemaXml =
         "<?xml version='1.0' encoding='utf-8' ?>"
-        "<ECSchema schemaName='std' nameSpacePrefix='std' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "<ECSchema schemaName='std' alias='std' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
         "   <ECEntityClass typeName='Foo' >"
         "       <ECProperty propertyName='Test1' typeName='string' />"
         "   </ECEntityClass>"
@@ -3199,7 +3199,7 @@ TEST_F(SchemaManagerTests, SchemaWithChangesButSameVersionTest)
 
     Utf8CP changedSchemaXml =
         "<?xml version='1.0' encoding='utf-8' ?>"
-        "<ECSchema schemaName='std' nameSpacePrefix='std' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "<ECSchema schemaName='std' alias='std' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
         "   <ECEntityClass typeName='Foo' >"
         "       <ECProperty propertyName='Test1' typeName='string' />"
         "       <ECProperty propertyName='Test2' typeName='string' />"
