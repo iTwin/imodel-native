@@ -208,7 +208,7 @@ struct RunnableRequestBase {
         std::atomic_bool m_cancelled;
         uint32_t m_executorId;
         uint32_t m_connId;
-        bool m_interrupted;
+        std::atomic_bool m_interrupted;
         virtual void _SetResponse(QueryResponse::Ptr response) = 0;
     public:
         RunnableRequestBase(RunnableRequestQueue& queue, QueryRequest::Ptr request, QueryQuota quota, uint32_t id)
