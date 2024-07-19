@@ -286,6 +286,11 @@ BentleyStatus SchemaWriter::ImportSchema(Context& ctx, ECN::ECSchemaCR ecSchema)
                 {
                 if (schema->GetName().Equals(schemaChange->GetChangeName()))
                     {
+                    if (!schema->IsDynamicSchema() && !schemaChange->VersionWrite().IsChanged() && !schemaChange->VersionRead().IsChanged() && !schemaChange->VersionMinor().IsChanged())
+                        {
+                        LOG.errorv("ECSchema import has failed. Schema %s has new changes, but the schema version is not incremented.", schema->GetName().c_str());
+                        }
+
                     existingSchema = schema;
                     break;
                     }
