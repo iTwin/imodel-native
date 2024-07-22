@@ -615,7 +615,7 @@ describe("basic tests", () => {
       .property("errorNumber").equal(BE_SQLITE_ERROR_SchemaUpgradeFailed);
   });
 
-  it("testSchemaImportPrefersExistingAndLocalOverStandard", () => {
+  it("testSchemaImport PrefersExistingAndLocalOverStandard", () => {
     const testFileName = copyFile("testSchemaImportPrefersExistingOverStandard.bim", dbFileName);
     const db = openDgnDb(testFileName);
     const assetsDir = path.join(getAssetsDir(), "ImportSchemaTests");
@@ -636,6 +636,26 @@ describe("basic tests", () => {
     const test101Path = path.join(subAssetsDir, "Test.01.00.01.ecschema.xml");
     db.importSchemas([test101Path], { schemaLockHeld: false });
     assert.equal(db.getSchemaProps("TestRef").version, "01.00.01", "TestRef after Test 1.0.1 import");
+  });
+
+  it("testSchemaImport ErrorWhenXmlIsIllFormed", async () => {
+    const writeDbFileName = copyFile("errorWhenXmlIsIllFormed.bim", dbFileName);
+    // Without ProfileOptions.Upgrade, we get: Error | ECDb | Failed to import schema 'BisCore.01.00.15'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.
+    const db = openDgnDb(writeDbFileName, { profile: ProfileOptions.Upgrade, schemaLockHeld: false });
+    assert.isTrue(db !== undefined);
+    const bisProps = db.getSchemaProps("BisCore");
+    assert.isTrue(bisProps.version === "01.00.00");
+
+    const schema = `<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema schemaName="DrainageTemp" alias="DrainageTemp" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+      <ECSchemaReference name="BisCore" version="01.00.10" alias="bis" />
+      <ECEntityClass typeName="Manhole" displayLabel="Manhole">
+        <BaseClass>bis:GeometricElement3d</BaseClass>
+      <ECEntityClass>
+    </ECSchema>`;
+    expect(() => db.importXmlSchemas([schema], { schemaLockHeld: false }))
+      .to.throw("Failed to import schemas")
+      .property("errorNumber").equal(DbResult.BE_SQLITE_ERROR);
   });
 
   it("testSchemaExport", () => {

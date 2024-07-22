@@ -905,7 +905,8 @@ DbResult JsInterop::ImportSchemas(DgnDbR dgndb, bvector<Utf8String> const& schem
         if (SchemaReadStatus::Success != schemaStatus)
             return BE_SQLITE_ERROR;
 
-        schemas.push_back(schema.get());
+        if (schema.IsValid())
+            schemas.push_back(schema.get());
         }
 
     if (0 == schemas.size())
