@@ -1,6 +1,6 @@
 /*---------------------------------------------------------------------------------------------
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See COPYRIGHT.md in the repository root for full copyright notice.
+* See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include "ECSql/NativeSqlBuilder.h"
@@ -209,7 +209,7 @@ bool ClassViews::IsValid(ECN::ECClassCR viewClass, ECDbCR conn){
             const auto isSys = colInfo.IsSystemProperty();
             auto colName =  sysProp->GetName(); //Selecting any value as ECInstanceId or ECClassId is allowed
             if(colName.EqualsI(ECDBSYS_PROP_ECInstanceId)) {
-                if(!colInfo.GetDataType().IsPrimitive() || 
+                if(!colInfo.GetDataType().IsPrimitive() ||
                     (colInfo.GetDataType().GetPrimitiveType() != PrimitiveType::PRIMITIVETYPE_Long &&
                      colInfo.GetDataType().GetPrimitiveType() != PrimitiveType::PRIMITIVETYPE_Integer)) {
                     conn.GetImpl().Issues().ReportV(
@@ -224,7 +224,7 @@ bool ClassViews::IsValid(ECN::ECClassCR viewClass, ECDbCR conn){
             }
 
             if(colName.EqualsI(ECDBSYS_PROP_ECClassId)) {
-                if(!colInfo.GetDataType().IsPrimitive() || 
+                if(!colInfo.GetDataType().IsPrimitive() ||
                     (colInfo.GetDataType().GetPrimitiveType() != PrimitiveType::PRIMITIVETYPE_Long &&
                      colInfo.GetDataType().GetPrimitiveType() != PrimitiveType::PRIMITIVETYPE_Integer)) {
                     conn.GetImpl().Issues().ReportV(
