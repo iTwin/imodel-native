@@ -994,15 +994,44 @@ DbResult IntegrityChecker::CheckClassIds(std::function<bool(Utf8CP, ECInstanceId
 				m_lastError = "failed to prepared ecsql for nav prop integrity check";
 				return BE_SQLITE_ERROR;
 			}
-			while((rc = stmt.Step()) == BE_SQLITE_ROW) {
-				if (!callback(
-					classCP->GetFullName(),
-					stmt.GetValueId<ECInstanceId>(0),
-					stmt.GetValueId<ECClassId>(1), "joined")) {
+			auto classIsValid = true;
+			while(stmt.Step() == BE_SQLITE_ROW)
+				{
+				if (!callback(classCP->GetFullName(), stmt.GetValueId<ECInstanceId>(0), stmt.GetValueId<ECClassId>(1), "joined"))
 					return BE_SQLITE_OK;
+				classIsValid = false;
 				}
-			}
-		}
+
+			if (classIsValid)
+				{
+				// Check missing child rows from BisCore:Element
+				ECSqlStatement getChildTablesStmt;
+				if (ECSqlStatus::Success != getChildTablesStmt.Prepare(m_conn, SqlPrintfString("select distinct ECClassId from %s", classCP->GetECSqlName().c_str()).GetUtf8CP()))
+					{
+					m_lastError = "Failed to prepare ecsql for classid integrity check";
+					return BE_SQLITE_ERROR;
+					}
+				while (getChildTablesStmt.Step() == BE_SQLITE_ROW)
+					{
+					if (const auto joinedClassCP = m_conn.Schemas().GetClass(getChildTablesStmt.GetValueId<ECClassId>(0)); joinedClassCP != nullptr)
+						{
+						const auto joinedClassId = joinedClassCP->GetId().ToHexStr();
+						ECSqlStatement getMissingRowsStmt;
+						if (ECSqlStatus::Success != getMissingRowsStmt.Prepare(m_conn, SqlPrintfString("select ECInstanceId from bis.Element where ECClassId=%s and ECInstanceId not in (select ECInstanceId from %s where ECClassId=%s)",
+							joinedClassId.c_str(), classCP->GetECSqlName().c_str(), joinedClassId.c_str()).GetUtf8CP()))
+							{
+							m_lastError = "Failed to prepare ecsql for classid integrity check";
+							return BE_SQLITE_ERROR;
+							}
+						while(getMissingRowsStmt.Step() == BE_SQLITE_ROW)
+							{
+							if (!callback("BisCore:Element", getMissingRowsStmt.GetValueId<ECInstanceId>(0), classId, "joined"))
+								return BE_SQLITE_OK;
+							}
+						}
+					}
+				}
+		}	
 	}
 
 	//OVERFLOW table 3

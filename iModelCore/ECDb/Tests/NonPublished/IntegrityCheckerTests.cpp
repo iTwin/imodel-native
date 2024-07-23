@@ -444,10 +444,11 @@ TEST_F(IntegrityCheckerFixture, check_class_ids) {
 
     auto executeTest = [&]() {
         ASSERT_STREQ(ParseJSON("[]").c_str(), runCheck(m_ecdb).c_str()) << "expect this to pass";
-        m_ecdb.ExecuteSql("UPDATE bis_Element                 SET ECClassId = 0x3e8 WHERE        Id = 0x20");
-        m_ecdb.ExecuteSql("UPDATE bis_GeometricElement3d      SET ECClassId = 0x3e8 WHERE ElementId = 0x3B");
-        m_ecdb.ExecuteSql("UPDATE bis_ElementRefersToElements SET ECClassId = 0x3e8 WHERE        Id = 0x0e");
-        m_ecdb.ExecuteSql("UPDATE bis_Model                   SET ECClassId = 0x3e8 WHERE        Id = 0x24");
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE bis_Element                 SET ECClassId = 0x3e8 WHERE        Id = 0x20"));
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE bis_GeometricElement3d      SET ECClassId = 0x3e8 WHERE ElementId = 0x3B"));
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE bis_ElementRefersToElements SET ECClassId = 0x3e8 WHERE        Id = 0x0e"));
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE bis_Model                   SET ECClassId = 0x3e8 WHERE        Id = 0x24"));
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, m_ecdb.ExecuteSql("UPDATE bis_InformationReferenceElement SET ECClassId = 0xA9 WHERE ElementId = 0x1D"));
         auto expectedJSON = R"json(
             [
                 {
@@ -476,6 +477,13 @@ TEST_F(IntegrityCheckerFixture, check_class_ids) {
                     "class": "BisCore:GeometricElement3d",
                     "id": "0x3b",
                     "class_id": "0x3e8",
+                    "type": "joined"
+                },
+                {
+                    "sno": 5,
+                    "class": "BisCore:Element",
+                    "id": "0x1d",
+                    "class_id": "0x85",
                     "type": "joined"
                 }
             ]
