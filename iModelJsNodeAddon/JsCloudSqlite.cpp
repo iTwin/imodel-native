@@ -11,7 +11,6 @@ namespace IModelJsNative {
 enum : uint64_t {
     SECONDS_PER_MINUTE = 60,
     SECONDS_PER_HOUR = SECONDS_PER_MINUTE * 60,
-    FIVE_SECONDS = 5,
 };
 
 /** adapted from sqlite code */
@@ -203,7 +202,6 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         auto lockedByGuid = lockedBy[JSON_NAME(guid)].asString();
         auto expiresAt = DateTime::FromString(lockedBy[JSON_NAME(expires)].asString());
         auto lockedByUser = lockedBy[JSON_NAME(user)].asString();
-
         // check if it's the same guid  
         if (lockedByGuid != m_cache->m_guid) {
             // another user grabbed the write lock after the current user's write lock expiration time, disable current user from operating
@@ -213,7 +211,6 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
                 ResumeWriteLock();
             }
         }
-        
     }
 
     void CallJsMemberFunc(Utf8CP funcName, std::vector<napi_value> const& args) {
@@ -592,7 +589,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         m_containerDb.TryExecuteSql("BEGIN");
         CheckLock(); // throws if already locked by another user
 
-        m_lockExpireSeconds = std::min((int) (12*SECONDS_PER_HOUR), std::max((int)FIVE_SECONDS, m_lockExpireSeconds));
+        m_lockExpireSeconds = std::min((int) (12*SECONDS_PER_HOUR), std::max(5*((int)SECONDS_PER_MINUTE), m_lockExpireSeconds));
         BeJsDocument lockedBy;
         lockedBy[JSON_NAME(guid)] = m_cache->m_guid;
         lockedBy[JSON_NAME(user)] = user;
