@@ -12,7 +12,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlPrepareContext::ECSqlPrepareContext(IECSqlPreparedStatement& stmt, Db const& dataSourceECDb, IssueDataSource const& issues) : m_ecdb(stmt.GetECDb()), m_dataSourceECDb(dataSourceECDb), m_issues(issues)
+ECSqlPrepareContext::ECSqlPrepareContext(IECSqlPreparedStatement& stmt, Db const& dataSourceECDb, IssueDataSource const& issue, DbPrepareOptions opts)
+    : m_ecdb(stmt.GetECDb()), m_dataSourceECDb(dataSourceECDb), m_issues(issue), m_prepareOpts(opts)
     {
     if (!stmt.IsCompoundStatement() && stmt.GetType() != ECSqlType::Pragma)
         {
