@@ -11,6 +11,7 @@ namespace IModelJsNative {
 enum : uint64_t {
     SECONDS_PER_MINUTE = 60,
     SECONDS_PER_HOUR = SECONDS_PER_MINUTE * 60,
+    FIVE_SECONDS = 5,
 };
 
 /** adapted from sqlite code */
@@ -206,29 +207,9 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         // check if it's the same guid  
         if (lockedByGuid != m_cache->m_guid) {
             // another user grabbed the write lock after the current user's write lock expiration time, disable current user from operating
-            BeNapi::ThrowJsException(Env(), "container is currently locked by another user");
+            BeNapi::ThrowJsException(Env(), Utf8PrintfString("Container [%s] is currently locked by another user.", m_containerId.c_str()).c_str());
         } else {
             if (DateTime::CompareResult::EarlierThan == DateTime::Compare(expiresAt, GetServerTime())) {
-                // no other users grab the write lock even after current write lock expiration time
-                // re-grab the write lock for the current user
-                // m_lockExpireSeconds = std::min((int) (12*SECONDS_PER_HOUR), std::max((int)SECONDS_PER_HOUR, m_lockExpireSeconds));
-                // BeJsDocument lockedByUpdate;
-                // lockedByUpdate[JSON_NAME(guid)] = lockedByGuid;
-                // lockedByUpdate[JSON_NAME(user)] = lockedByUser;
-                // lockedByUpdate[JSON_NAME(expires)] = GetServerDateString(m_lockExpireSeconds * 1000);
-                // Statement stmt;
-                // auto rc = stmt.Prepare(m_containerDb, "REPLACE INTO bcv_kv(value,name) VALUES(?,?)");
-                // BeAssert(rc == BE_SQLITE_OK);
-                // stmt.BindText(1, lockedByUpdate.Stringify(), Statement::MakeCopy::Yes);
-                // stmt.BindText(2, writeLockName, Statement::MakeCopy::No);   
-                // rc = stmt.Step();
-                // if (rc == BE_SQLITE_DONE)
-                //     rc = m_containerDb.TryExecuteSql("COMMIT");
-                // if (rc != BE_SQLITE_OK) {
-                //     if (rc == BE_SQLITE_IOERR_AUTH)
-                //         BeNapi::ThrowJsException(Env(), "not authorized to obtain write lock", BE_SQLITE_AUTH);
-                //     BeNapi::ThrowJsException(Env(), "cannot obtain write lock", rc);
-                // }
                 ResumeWriteLock();
             }
         }
@@ -296,7 +277,6 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
     }
 
     Napi::Value UploadChanges(NapiInfoCR info) {
-        // RequireWriteLock();
         CheckWriteLockHeldByCurrentUser();
         return QueueWorker(info, [=]() { return CloudContainer::UploadChanges(); });
     }
@@ -612,8 +592,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         m_containerDb.TryExecuteSql("BEGIN");
         CheckLock(); // throws if already locked by another user
 
-        // m_lockExpireSeconds = std::min((int) (12*SECONDS_PER_HOUR), std::max((int)SECONDS_PER_HOUR, m_lockExpireSeconds));
-        m_lockExpireSeconds = 5;
+        m_lockExpireSeconds = std::min((int) (12*SECONDS_PER_HOUR), std::max((int)FIVE_SECONDS, m_lockExpireSeconds));
         BeJsDocument lockedBy;
         lockedBy[JSON_NAME(guid)] = m_cache->m_guid;
         lockedBy[JSON_NAME(user)] = user;
