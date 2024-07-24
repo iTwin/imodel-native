@@ -5,6 +5,7 @@
 #include <ECPresentationPch.h>
 #include "ContentQueryContracts.h"
 #include "../Shared/Queries/CustomFunctions.h"
+#include "../Shared/Queries/QueryBuilderHelpers.h"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -55,9 +56,9 @@ Utf8CP ContentQueryContract::InputECInstanceKeysFieldName = "/InputECInstanceKey
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentQueryContract::ContentQueryContract(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const& queryInfo,
+ContentQueryContract::ContentQueryContract(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const& queryInfo, ECSchemaHelper const& schemaHelper, IRulesPreprocessor& rulesPreprocessor,
     PresentationQueryContractFieldPtr displayLabelField, bvector<RelatedClassPath> relatedInstancePaths, bool skipCompositePropertyFields, bool skipXToManyRelatedContentFields)
-    : PresentationQueryContract(id), m_descriptor(&descriptor), m_class(ecClass), m_relationshipClass(nullptr), m_queryInfo(queryInfo), m_displayLabelField(displayLabelField),
+    : PresentationQueryContract(id), m_descriptor(&descriptor), m_class(ecClass), m_relationshipClass(nullptr), m_queryInfo(queryInfo), m_schemaHelper(schemaHelper), m_rulesPreprocessor(rulesPreprocessor), m_displayLabelField(displayLabelField),
     m_relatedInstancePaths(std::move(relatedInstancePaths)), m_skipCompositePropertyFields(skipCompositePropertyFields), m_skipXToManyRelatedContentFields(skipXToManyRelatedContentFields)
     {}
 
@@ -344,16 +345,28 @@ bool ContentQueryContract::CreateContractFields(bvector<PresentationQueryContrac
 
             auto relatedContentField = descriptorField->AsNestedContentField()->AsRelatedContentField();
             Utf8PrintfString keyFieldName("/key/%s", relatedContentField->GetUniqueName().c_str());
+            Utf8PrintfString displayLabelFieldName("/DisplayLabel/%s", relatedContentField->GetUniqueName().c_str());
             bvector<PresentationQueryContractFieldCPtr> nestedContractFields;
             if (CreateContractFields(nestedContractFields, relatedContentField->GetFields(), relatedContentField))
                 {
-                contractFields.push_back(CreateInstanceKeyField(keyFieldName.c_str(),
-                    relatedContentField->IsRelationshipField() ? relatedContentField->GetRelationshipClassAlias().c_str() : relatedContentField->GetContentClassAlias().c_str(), ECClassId()));
+                auto [ecClass, alias] = relatedContentField->IsRelationshipField()
+                    ? std::pair{&relatedContentField->GetRelationshipClass(), relatedContentField->GetRelationshipClassAlias().c_str()}
+                    : std::pair{&relatedContentField->GetContentClass(), relatedContentField->GetContentClassAlias().c_str()};
+
+                contractFields.push_back(CreateInstanceKeyField(keyFieldName.c_str(), alias, {}));
+
+                auto const labelOverrideValuesList = QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(m_schemaHelper, m_rulesPreprocessor.GetInstanceLabelOverrides(), *ecClass);
+                contractFields.push_back(QueryBuilderHelpers::CreateDisplayLabelField(
+                    displayLabelFieldName.c_str(), m_schemaHelper, SelectClass{*ecClass, alias},
+                    PresentationQueryContractSimpleField::Create("/RelatedFieldClassId/", Utf8PrintfString("[%s].[ECClassId]", alias), false),
+                    PresentationQueryContractSimpleField::Create("/RelatedFieldInstanceId/", Utf8PrintfString("[%s].[ECInstanceId]", alias), false),
+                    m_relatedInstancePaths, labelOverrideValuesList));
                 didCreateNonNullField = true;
                 }
             else
                 {
-                contractFields.push_back(CreateInstanceKeyField(keyFieldName.c_str(), nullptr, ECClassId()));
+                contractFields.push_back(CreateInstanceKeyField(keyFieldName.c_str(), nullptr, {}));
+                contractFields.push_back(PresentationQueryContractSimpleField::Create(displayLabelFieldName.c_str(), "CAST(null AS TEXT)"));
                 }
             ContainerHelpers::Push(contractFields, nestedContractFields);
             }

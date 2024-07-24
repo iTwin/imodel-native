@@ -25,6 +25,12 @@ struct ContentQueryResultsReaderTests : QueryExecutorTests
         {
         return ContentDescriptor::Create(*m_connection, *m_ruleset, RulesetVariables(), *NavNodeKeyListContainer::Create(), ContentDisplayType::Undefined, contentFlags, contentFlags);
         }
+    
+    ContentQueryContractPtr CreateContract(uint64_t id, ContentDescriptorPtr descriptor, ECClassCP ecClass, ComplexQueryBuilderPtr queryInfo,
+        bool skipCompositePropertyFields = false, bool skipXToManyRelatedContentFields = false) const
+        {
+        return ContentQueryContract::Create(id, *descriptor, ecClass, *queryInfo, *m_schemaHelper, *m_rulesPreprocessor, nullptr, {}, skipCompositePropertyFields, skipXToManyRelatedContentFields);
+        }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -44,12 +50,12 @@ TEST_F(ContentQueryResultsReaderTests, HandlesUnionSelectionFromClassWithPointPr
 
     SelectClass<ECClass> selectClass1(*classH, "h", false);
     ComplexQueryBuilderPtr q1 = ComplexQueryBuilder::Create();
-    q1->SelectContract(*ContentQueryContract::Create(1, *descriptor, classH, *q1, nullptr, {}, false, false), "h");
+    q1->SelectContract(*CreateContract(1, descriptor, classH, q1), "h");
     q1->From(selectClass1);
 
     SelectClass<ECClass> selectClass2(*classE, "e", false);
     ComplexQueryBuilderPtr q2 = ComplexQueryBuilder::Create();
-    q2->SelectContract(*ContentQueryContract::Create(2, *descriptor, classE, *q2, nullptr, {}, false, false), "e");
+    q2->SelectContract(*CreateContract(2, descriptor, classE, q2), "e");
     q2->From(selectClass2);
 
     UnionQueryBuilderPtr query = UnionQueryBuilder::Create({q1, q2});
@@ -94,7 +100,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingFromOneClass)
     AddField(*descriptor, *m_gadgetClass, ContentDescriptor::Property("gadget", *m_gadgetClass, *m_gadgetClass->GetPropertyP("Description")->GetAsPrimitiveProperty()));
 
     ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
-    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_gadgetClass, *query, nullptr, {}, false, false), "gadget");
+    query->SelectContract(*CreateContract(1, descriptor, m_gadgetClass, query), "gadget");
     query->From(*m_gadgetClass, false, "gadget");
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
@@ -162,11 +168,11 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingFromMultipleClasses)
     innerDescriptor->AddRootField(*f2);
 
     ComplexQueryBuilderPtr q1 = ComplexQueryBuilder::Create();
-    q1->SelectContract(*ContentQueryContract::Create(1, *innerDescriptor, m_gadgetClass, *q1, nullptr, {}, false, false), "gadget");
+    q1->SelectContract(*CreateContract(1, innerDescriptor, m_gadgetClass, q1, false, false), "gadget");
     q1->From(*m_gadgetClass, false, "gadget");
 
     ComplexQueryBuilderPtr q2 = ComplexQueryBuilder::Create();
-    q2->SelectContract(*ContentQueryContract::Create(2, *innerDescriptor, m_widgetClass, *q2, nullptr, {}, false, false), "widget");
+    q2->SelectContract(*CreateContract(2, innerDescriptor, m_widgetClass, q2, false, false), "widget");
     q2->From(*m_widgetClass, false, "widget");
 
     ContentDescriptorPtr outerDescriptor = ContentDescriptor::Create(*innerDescriptor, (int)ContentFlags::MergeResults);
@@ -177,7 +183,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingFromMultipleClasses)
         }
 
     ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
-    query->SelectContract(*ContentQueryContract::Create(0, *outerDescriptor, nullptr, *query, nullptr, {}, false, false));
+    query->SelectContract(*CreateContract(0, outerDescriptor, nullptr, query));
     query->From(*UnionQueryBuilder::Create({q1, q2}));
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
@@ -233,7 +239,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesStructProperties)
     AddField(*descriptor, *classI, ContentDescriptor::Property("this", *classI, *classI->GetPropertyP("StructProperty")));
 
     ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
-    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, classI, *query, nullptr, {}, false), "this");
+    query->SelectContract(*CreateContract(1, descriptor, classI, query, false, true), "this");
     query->From(*classI, false, "this");
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
@@ -301,7 +307,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesArrayProperties)
     AddField(*descriptor, *classR, ContentDescriptor::Property("this", *classR, *classR->GetPropertyP("StructsArray")));
 
     ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
-    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, classR, *query, nullptr, {}, false), "this");
+    query->SelectContract(*CreateContract(1, descriptor, classR, query, false, true), "this");
     query->From(*classR, false, "this");
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
@@ -358,7 +364,7 @@ TEST_F(ContentQueryResultsReaderTests, SelectsRelatedProperties)
         }));
 
     ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
-    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_gadgetClass, *query, nullptr, {}, false, false), "this");
+    query->SelectContract(*CreateContract(1, descriptor, m_gadgetClass, query), "this");
     query->From(*m_gadgetClass, false, "this");
     query->Join(relatedPropertyPath);
 
@@ -374,6 +380,11 @@ TEST_F(ContentQueryResultsReaderTests, SelectsRelatedProperties)
     expectedValues.Parse(Utf8PrintfString(R"({
         "gadget_MyID_unique_property_name": "Test Gadget",
         "widget_related_content_unique_field_name": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "widget_MyID_unique_property_name": "Test Widget"
@@ -424,7 +435,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfRelatedProperties)
         }));
 
     ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
-    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_gadgetClass, *query, nullptr, {}, false, false), "this");
+    query->SelectContract(*CreateContract(1, descriptor, m_gadgetClass, query), "this");
     query->From(*m_gadgetClass, false, "this");
     query->Join(relatedPropertyPath);
 
@@ -440,6 +451,11 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfRelatedProperties)
     expectedValues.Parse(Utf8PrintfString(R"({
         "gadget_MyID_unique_property_name": "Test Gadget",
         "widget_related_content_unique_field_name": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}, {"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "widget_MyID_unique_property_name": null
@@ -491,7 +507,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfRelatedPropertiesO
         }));
 
     ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
-    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_gadgetClass, *query, nullptr, {}, false, false), "this");
+    query->SelectContract(*CreateContract(1, descriptor, m_gadgetClass, query), "this");
     query->From(*m_gadgetClass, false, "this");
     query->Join(relatedPropertyPath);
 
@@ -507,6 +523,11 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfRelatedPropertiesO
     expectedValues.Parse(Utf8PrintfString(R"({
         "gadget_MyID_unique_property_name": "Test Gadget",
         "widget_related_content_unique_field_name": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "widget_MyID_unique_property_name": "Test Widget"
@@ -554,7 +575,7 @@ TEST_F(ContentQueryResultsReaderTests, SelectsOneToManyRelatedProperties)
         }));
 
     ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
-    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query, nullptr, {}, false, false), "this");
+    query->SelectContract(*CreateContract(1, descriptor, m_widgetClass, query), "this");
     query->From(*m_widgetClass, false, "this");
     query->Join(relatedPropertyPath);
 
@@ -570,6 +591,11 @@ TEST_F(ContentQueryResultsReaderTests, SelectsOneToManyRelatedProperties)
     expectedValues.Parse(Utf8PrintfString(R"({
         "widget_MyID_unique_property_name": "Test Widget",
         "gadget_related_content_unique_field_name": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "gadget_MyID_unique_property_name": "Test Gadget 1"
@@ -579,6 +605,11 @@ TEST_F(ContentQueryResultsReaderTests, SelectsOneToManyRelatedProperties)
                 },
             "MergedFieldNames": []
         }, {
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "gadget_MyID_unique_property_name": "Test Gadget 2"
@@ -628,7 +659,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
         }));
 
     ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
-    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query, nullptr, {}, false, false), "this");
+    query->SelectContract(*CreateContract(1, descriptor, m_widgetClass, query), "this");
     query->From(*m_widgetClass, false, "this");
     query->Join(relatedPropertyPath);
 
@@ -644,6 +675,11 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
     expectedValues.Parse(Utf8PrintfString(R"({
         "widget_MyID_unique_property_name": null,
         "gadget_related_content_unique_field_name": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}, {"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "gadget_MyID_unique_property_name": "Test Gadget"
@@ -695,7 +731,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
         }));
 
     ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
-    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query, nullptr, {}, false, false), "this");
+    query->SelectContract(*CreateContract(1, descriptor, m_widgetClass, query), "this");
     query->From(*m_widgetClass, false, "this");
     query->Join(relatedPropertyPath);
 
@@ -711,6 +747,11 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
     expectedValues.Parse(Utf8PrintfString(R"({
         "widget_MyID_unique_property_name": null,
         "gadget_related_content_unique_field_name": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}, {"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "gadget_MyID_unique_property_name": null
@@ -767,7 +808,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
         }));
 
     ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
-    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query, nullptr, {}, false, false), "this");
+    query->SelectContract(*CreateContract(1, descriptor, m_widgetClass, query), "this");
     query->From(*m_widgetClass, false, "this");
     query->Join(relatedPropertyPath);
 
@@ -836,7 +877,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
         }));
 
     ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
-    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query, nullptr, {}, false, false), "this");
+    query->SelectContract(*CreateContract(1, descriptor, m_widgetClass, query), "this");
     query->From(*m_widgetClass, false, "this");
     query->Join(relatedPropertyPath);
 
@@ -905,7 +946,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
         }));
 
     ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
-    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query, nullptr, {}, false, false), "this");
+    query->SelectContract(*CreateContract(1, descriptor, m_widgetClass, query), "this");
     query->From(*m_widgetClass, false, "this");
     query->Join(relatedPropertyPath);
 
@@ -986,7 +1027,7 @@ TEST_F(ContentQueryResultsReaderTests, SelectsOneToManyRelatedProperties_DeepTre
         }));
 
     ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
-    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query, nullptr, {}, false, false), "this");
+    query->SelectContract(*CreateContract(1, descriptor, m_widgetClass, query), "this");
     query->From(*m_widgetClass, false, "this");
     query->Join({relWG, relGS});
 
@@ -1002,10 +1043,20 @@ TEST_F(ContentQueryResultsReaderTests, SelectsOneToManyRelatedProperties_DeepTre
     expectedValues.Parse(Utf8PrintfString(R"({
         "widget_MyID_unique_property_name": "Test Widget",
         "gadget_related_content_unique_field_name": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "gadget_MyID_unique_property_name": "Test Gadget 1",
                 "sprocket_related_content_unique_field_name": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
                         "sprocket_MyID_unique_property_name": "Test Sprocket 1.1"
@@ -1015,6 +1066,11 @@ TEST_F(ContentQueryResultsReaderTests, SelectsOneToManyRelatedProperties_DeepTre
                         },
                     "MergedFieldNames": []
                     }, {
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
                         "sprocket_MyID_unique_property_name": "Test Sprocket 1.2"
@@ -1039,10 +1095,20 @@ TEST_F(ContentQueryResultsReaderTests, SelectsOneToManyRelatedProperties_DeepTre
                 },
             "MergedFieldNames": []
         }, {
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "gadget_MyID_unique_property_name": "Test Gadget 2",
                 "sprocket_related_content_unique_field_name": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
                         "sprocket_MyID_unique_property_name": "Test Sprocket 2.1"
@@ -1052,6 +1118,11 @@ TEST_F(ContentQueryResultsReaderTests, SelectsOneToManyRelatedProperties_DeepTre
                         },
                     "MergedFieldNames": []
                     }, {
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
                         "sprocket_MyID_unique_property_name": "Test Sprocket 2.2"
@@ -1133,7 +1204,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
         }));
 
     ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
-    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query, nullptr, {}, false, false), "this");
+    query->SelectContract(*CreateContract(1, descriptor, m_widgetClass, query), "this");
     query->From(*m_widgetClass, false, "this");
     query->Join({relWG, relGS});
 
@@ -1149,10 +1220,20 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
     expectedValues.Parse(Utf8PrintfString(R"({
         "widget_MyID_unique_property_name": "Test Widget",
         "gadget_related_content_unique_field_name": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}, {"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "gadget_MyID_unique_property_name": null,
                 "sprocket_related_content_unique_field_name": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}, {"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
                         "sprocket_MyID_unique_property_name": "Test Sprocket"
@@ -1226,7 +1307,7 @@ TEST_F(ContentQueryResultsReaderTests, SelectsOneToManyRelatedProperties_Diamond
         }));
 
     ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
-    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query, nullptr, {}, false, false), "this");
+    query->SelectContract(*CreateContract(1, descriptor, m_widgetClass, query), "this");
     query->From(*m_widgetClass, false, "this");
     query->Join({relWG, relGW});
     query->Where("this.ECInstanceId = ?", {std::make_shared<BoundQueryId>(widget1->GetInstanceId())});
@@ -1243,10 +1324,20 @@ TEST_F(ContentQueryResultsReaderTests, SelectsOneToManyRelatedProperties_Diamond
     expectedValues.Parse(Utf8PrintfString(R"({
         "widget_MyID_unique_property_name_1": "Test Widget 1",
         "gadget_related_content_unique_field_name": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "gadget_MyID_unique_property_name": "Test Gadget 1",
                 "widget_related_content_unique_field_name": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
                         "widget_MyID_unique_property_name_2": "Test Widget 2"
@@ -1267,10 +1358,20 @@ TEST_F(ContentQueryResultsReaderTests, SelectsOneToManyRelatedProperties_Diamond
                 },
             "MergedFieldNames": []
         }, {
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "gadget_MyID_unique_property_name": "Test Gadget 2",
                 "widget_related_content_unique_field_name": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
                         "widget_MyID_unique_property_name_2": "Test Widget 2"
@@ -1346,7 +1447,7 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
         }));
 
     ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
-    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query, nullptr, {}, false, false), "this");
+    query->SelectContract(*CreateContract(1, descriptor, m_widgetClass, query), "this");
     query->From(*m_widgetClass, false, "this");
     query->Join({relWG, relGW});
     query->Where("this.ECInstanceId = ?", {std::make_shared<BoundQueryId>(widget1->GetInstanceId())});
@@ -1363,10 +1464,20 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
     expectedValues.Parse(Utf8PrintfString(R"({
         "widget_MyID_unique_property_name_1": "Test Widget 1",
         "gadget_related_content_unique_field_name": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "gadget_MyID_unique_property_name": "Test Gadget 1",
                 "widget_related_content_unique_field_name": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
                         "widget_MyID_unique_property_name_2": "Test Widget 2"
@@ -1387,10 +1498,20 @@ TEST_F(ContentQueryResultsReaderTests, HandlesResultsMergingOfOneToManyRelatedPr
                 },
             "MergedFieldNames": []
         }, {
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "gadget_MyID_unique_property_name": "Test Gadget 2",
                 "widget_related_content_unique_field_name": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
                         "widget_MyID_unique_property_name_2": "Test Widget 2"
@@ -1456,12 +1577,12 @@ TEST_F(ContentQueryResultsReaderTests, SelectsRelatedPropertiesFromOnlySingleCla
         }));
 
     ComplexQueryBuilderPtr query1 = ComplexQueryBuilder::Create();
-    query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &classE, *query1, nullptr), "this");
+    query1->SelectContract(*CreateContract(1, descriptor, &classE, query1, true, true), "this");
     query1->From(classE, false, "this");
     query1->Join(relatedPropertyPath);
 
     ComplexQueryBuilderPtr query2 = ComplexQueryBuilder::Create();
-    query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &classF, *query2, nullptr), "this");
+    query2->SelectContract(*CreateContract(2, descriptor, &classF, query2, true, true), "this");
     query2->From(classF, false, "this");
 
     UnionQueryBuilderPtr query = UnionQueryBuilder::Create({query1, query2});
@@ -1478,6 +1599,11 @@ TEST_F(ContentQueryResultsReaderTests, SelectsRelatedPropertiesFromOnlySingleCla
     expectedValues.Parse(Utf8PrintfString(R"({
         "ClassE_IntProperty_unique_property_name": 11,
         "classD_related_content_unique_field_name": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "classD_StringProperty_unique_property_name": "D Property"
@@ -1536,7 +1662,7 @@ TEST_F(ContentQueryResultsReaderTests, UsesSuppliedECPropertyFormatterToFormatPr
     AddField(*descriptor, *m_widgetClass, ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("DoubleProperty")->GetAsPrimitiveProperty()));
 
     ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
-    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query, nullptr, {}, false, false), "widget");
+    query->SelectContract(*CreateContract(1, descriptor, m_widgetClass, query), "widget");
     query->From(*m_widgetClass, false, "widget");
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,
@@ -1579,7 +1705,7 @@ TEST_F(ContentQueryResultsReaderTests, DoesntIncludeFieldPropertyValueInstanceKe
     AddField(*descriptor, *m_widgetClass, ContentDescriptor::Property("widget", *m_widgetClass, *m_widgetClass->GetPropertyP("MyID")->GetAsPrimitiveProperty()));
 
     ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
-    query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_widgetClass, *query, nullptr, {}, false, false), "widget");
+    query->SelectContract(*CreateContract(1, descriptor, m_widgetClass, query), "widget");
     query->From(*m_widgetClass, false, "widget");
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr,

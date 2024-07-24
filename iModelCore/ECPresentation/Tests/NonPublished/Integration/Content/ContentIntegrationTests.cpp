@@ -6155,9 +6155,19 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
                         "%s": "C2"
@@ -16197,6 +16207,11 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "Test"
@@ -16450,6 +16465,11 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": {

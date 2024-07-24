@@ -150,7 +150,8 @@ static void SkipValues(int& sqlColumnIndex, bvector<ContentDescriptor::Field*> c
             if (!contract.ShouldHandleRelatedContentField(relatedContentField))
                 continue; // don't increase sqlColumnIndex even for this field
 
-            SkipValues(sqlColumnIndex, relatedContentField.GetFields(), contract);
+            // Skip display label column 
+            SkipValues(++sqlColumnIndex, relatedContentField.GetFields(), contract);
             }
 
         if (contract.ShouldSkipCompositePropertyFields() && field->IsPropertiesField() && field->AsPropertiesField()->IsCompositePropertiesField())
@@ -195,13 +196,20 @@ static void ReadValues(ContentItemBuilder& item, int& sqlColumnIndex, ECSqlState
                 if (statement.IsValueNull(sqlColumnIndex))
                     {
                     item.AddEmptyNestedContentValue(fieldName.c_str());
-                    SkipValues(++sqlColumnIndex, relatedContentField.GetFields(), contract);
+                    // Skip instance key and display label columns
+                    sqlColumnIndex += 2;
+                    SkipValues(sqlColumnIndex, relatedContentField.GetFields(), contract);
                     }
                 else
                     {
                     ECInstanceKey relatedInstanceKey = ValueHelpers::GetECInstanceKeyFromJsonString(statement.GetValueText(sqlColumnIndex++));
                     ContentItemBuilder* existingNestedContentItem = item.GetNestedContentValue(fieldName.c_str(), relatedInstanceKey);
-                    ReadValues(existingNestedContentItem ? *existingNestedContentItem : item.AddNestedContentValue(fieldName.c_str(), relatedInstanceKey), sqlColumnIndex, statement,
+                    ContentItemBuilder& nestedItem = existingNestedContentItem ? *existingNestedContentItem : item.AddNestedContentValue(fieldName.c_str(), relatedInstanceKey);
+                    if (statement.IsValueNull(sqlColumnIndex))
+                        ++sqlColumnIndex;
+                    else
+                        nestedItem.SetLabel(*LabelDefinition::FromString(statement.GetValueText(sqlColumnIndex++)));
+                    ReadValues(nestedItem, sqlColumnIndex, statement,
                         relatedContentField.GetFields(), contract, readLabels, nullptr == existingNestedContentItem);
                     }
                 }

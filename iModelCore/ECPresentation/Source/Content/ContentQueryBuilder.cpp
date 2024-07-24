@@ -330,9 +330,8 @@ ContentQueryContractPtr ContentQueryBuilder::CreateContract(ContentDescriptorCR 
         displayLabelField = QueryBuilderHelpers::CreateDisplayLabelField(descriptor.GetDisplayLabelField()->GetUniqueName().c_str(), m_params.GetSchemaHelper(), selectInfo.GetSelectClass(),
             nullptr, nullptr, selectInfo.GetRelatedInstancePaths(), labelOverrideValuesList);
         }
-
-    return ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectInfo.GetSelectClass().GetClass(),
-        queryInfo, displayLabelField, selectInfo.GetRelatedInstancePaths(), m_params.ShouldSkipCompositePropertyFields(), m_params.ShouldSkipXToManyRelatedContentFields());
+    return ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectInfo.GetSelectClass().GetClass(), queryInfo, m_params.GetSchemaHelper(), m_params.GetRulesPreprocessor(),
+        displayLabelField, selectInfo.GetRelatedInstancePaths(), m_params.ShouldSkipCompositePropertyFields(), m_params.ShouldSkipXToManyRelatedContentFields());
     }
 
 /*---------------------------------------------------------------------------------**//**
