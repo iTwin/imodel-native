@@ -1,6 +1,6 @@
 /*---------------------------------------------------------------------------------------------
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See COPYRIGHT.md in the repository root for full copyright notice.
+* See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 #include <regex>
@@ -9,27 +9,6 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 struct ClassViewsFixture : public ECDbTestFixture {};
-
-struct TestIssueListener: ECN::IIssueListener {
-    mutable std::vector<Utf8String> m_issues;
-    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId issueId, Utf8CP message) const override {
-        m_issues.push_back(message);
-    }
-    Utf8String const& GetLastError() const { return m_issues.back();}
-    Utf8String PopLastError() {
-        Utf8String str = m_issues.back();
-        m_issues.pop_back();
-        return str;
-    }
-    void Dump (Utf8CP listenerName) {
-        Utf8String cppCode;
-        for(auto it = m_issues.rbegin(); it != m_issues.rend(); ++it) {
-            cppCode.append(Utf8PrintfString("ASSERT_STREQ(\"%s\", %s.PopLastError().c_str());\r\n", (*it).c_str(), listenerName));
-        }
-        printf("%s", cppCode.c_str());
-    }
-    void Reset() { m_issues.clear(); }
-};
 
 struct GetDbValueFunc final : ScalarFunction {
   private:
@@ -158,6 +137,7 @@ TEST_F(ClassViewsFixture, return_nav_prop_from_view_query) {
 
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("test.ecdb"));
     ASSERT_EQ(SUCCESS, ImportSchema(testSchema));
+
     if (true){
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.ClassDefView"));
@@ -198,12 +178,16 @@ TEST_F(ClassViewsFixture, fail_when_view_reference_itself_directly_or_indirectly
             </ECEntityClass>
         </ECSchema>)xml");
 
-        listener.Reset();
+        listener.ClearIssues();
         ASSERT_EQ(ERROR, ImportSchema(testSchema));
-        ASSERT_STREQ("Total of 4 view classes were checked and 1 were found to be invalid.", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid view class 'test_schema:SchemaView'. Failed to prepare view query (SELECT cd.ECInstanceId, cd.ECClassId FROM ts.SchemaView)", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid View Class 'test_schema:SchemaView'. View ECSQL failed to parse.", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid View Class 'test_schema:SchemaView'. View query references itself recusively (test_schema:SchemaView -> test_schema:SchemaView).", listener.PopLastError().c_str());
+
+        bvector<Utf8String> expectedIssues {
+          "Invalid View Class 'test_schema:SchemaView'. View query references itself recusively (test_schema:SchemaView -> test_schema:SchemaView).",
+          "Invalid View Class 'test_schema:SchemaView'. View ECSQL failed to parse.",
+          "Invalid view class 'test_schema:SchemaView'. Failed to prepare view query (SELECT cd.ECInstanceId, cd.ECClassId FROM ts.SchemaView)",
+          "Total of 4 view classes were checked and 1 were found to be invalid.",
+        };
+        listener.CompareIssues(expectedIssues);
         m_ecdb.AbandonChanges();
     }
 
@@ -231,17 +215,21 @@ TEST_F(ClassViewsFixture, fail_when_view_reference_itself_directly_or_indirectly
             </ECEntityClass>
         </ECSchema>)xml");
 
-        listener.Reset();
+        listener.ClearIssues();
         ASSERT_EQ(ERROR, ImportSchema(testSchema));
-        ASSERT_STREQ("Total of 5 view classes were checked and 2 were found to be invalid.", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid view class 'test_schema:SchemaView'. Failed to prepare view query (SELECT cd.ECInstanceId, cd.ECClassId FROM ts.ClassView)", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid View Class 'test_schema:ClassView'. View ECSQL failed to parse.", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid View Class 'test_schema:SchemaView'. View ECSQL failed to parse.", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid View Class 'test_schema:ClassView'. View query references itself recusively (test_schema:ClassView -> test_schema:SchemaView -> test_schema:ClassView).", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid view class 'test_schema:ClassView'. Failed to prepare view query (SELECT cd.ECInstanceId, cd.ECClassId FROM ts.SchemaView)", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid View Class 'test_schema:SchemaView'. View ECSQL failed to parse.", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid View Class 'test_schema:ClassView'. View ECSQL failed to parse.", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid View Class 'test_schema:SchemaView'. View query references itself recusively (test_schema:SchemaView -> test_schema:ClassView -> test_schema:SchemaView).", listener.PopLastError().c_str());
+
+        bvector<Utf8String> expectedIssues {
+          "Invalid View Class 'test_schema:SchemaView'. View query references itself recusively (test_schema:SchemaView -> test_schema:ClassView -> test_schema:SchemaView).",
+          "Invalid View Class 'test_schema:ClassView'. View ECSQL failed to parse.",
+          "Invalid View Class 'test_schema:SchemaView'. View ECSQL failed to parse.",
+          "Invalid view class 'test_schema:ClassView'. Failed to prepare view query (SELECT cd.ECInstanceId, cd.ECClassId FROM ts.SchemaView)",
+          "Invalid View Class 'test_schema:ClassView'. View query references itself recusively (test_schema:ClassView -> test_schema:SchemaView -> test_schema:ClassView).",
+          "Invalid View Class 'test_schema:SchemaView'. View ECSQL failed to parse.",
+          "Invalid View Class 'test_schema:ClassView'. View ECSQL failed to parse.",
+          "Invalid view class 'test_schema:SchemaView'. Failed to prepare view query (SELECT cd.ECInstanceId, cd.ECClassId FROM ts.ClassView)",
+          "Total of 5 view classes were checked and 2 were found to be invalid.",
+        };
+        listener.CompareIssues(expectedIssues);
         m_ecdb.AbandonChanges();
     }
     if ("indirect cyclic dependent view") {
@@ -275,24 +263,28 @@ TEST_F(ClassViewsFixture, fail_when_view_reference_itself_directly_or_indirectly
             </ECEntityClass>
         </ECSchema>)xml");
 
-        listener.Reset();
+        listener.ClearIssues();
         ASSERT_EQ(ERROR, ImportSchema(testSchema));
-        ASSERT_STREQ("Total of 6 view classes were checked and 3 were found to be invalid.", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid view class 'test_schema:View3'. Failed to prepare view query (SELECT cd.ECInstanceId, cd.ECClassId FROM ts.View1)", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid View Class 'test_schema:View1'. View ECSQL failed to parse.", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid View Class 'test_schema:View2'. View ECSQL failed to parse.", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid View Class 'test_schema:View3'. View ECSQL failed to parse.", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid View Class 'test_schema:View1'. View query references itself recusively (test_schema:View1 -> test_schema:View2 -> test_schema:View3 -> test_schema:View1).", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid view class 'test_schema:View2'. Failed to prepare view query (SELECT cd.ECInstanceId, cd.ECClassId FROM ts.View3)", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid View Class 'test_schema:View3'. View ECSQL failed to parse.", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid View Class 'test_schema:View1'. View ECSQL failed to parse.", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid View Class 'test_schema:View2'. View ECSQL failed to parse.", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid View Class 'test_schema:View3'. View query references itself recusively (test_schema:View3 -> test_schema:View1 -> test_schema:View2 -> test_schema:View3).", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid view class 'test_schema:View1'. Failed to prepare view query (SELECT cd.ECInstanceId, cd.ECClassId FROM ts.View2)", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid View Class 'test_schema:View2'. View ECSQL failed to parse.", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid View Class 'test_schema:View3'. View ECSQL failed to parse.", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid View Class 'test_schema:View1'. View ECSQL failed to parse.", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid View Class 'test_schema:View2'. View query references itself recusively (test_schema:View2 -> test_schema:View3 -> test_schema:View1 -> test_schema:View2).", listener.PopLastError().c_str());
+
+        bvector<Utf8String> expectedIssues {
+          "Invalid View Class 'test_schema:View2'. View query references itself recusively (test_schema:View2 -> test_schema:View3 -> test_schema:View1 -> test_schema:View2).",
+          "Invalid View Class 'test_schema:View1'. View ECSQL failed to parse.",
+          "Invalid View Class 'test_schema:View3'. View ECSQL failed to parse.",
+          "Invalid View Class 'test_schema:View2'. View ECSQL failed to parse.",
+          "Invalid view class 'test_schema:View1'. Failed to prepare view query (SELECT cd.ECInstanceId, cd.ECClassId FROM ts.View2)",
+          "Invalid View Class 'test_schema:View3'. View query references itself recusively (test_schema:View3 -> test_schema:View1 -> test_schema:View2 -> test_schema:View3).",
+          "Invalid View Class 'test_schema:View2'. View ECSQL failed to parse.",
+          "Invalid View Class 'test_schema:View1'. View ECSQL failed to parse.",
+          "Invalid View Class 'test_schema:View3'. View ECSQL failed to parse.",
+          "Invalid view class 'test_schema:View2'. Failed to prepare view query (SELECT cd.ECInstanceId, cd.ECClassId FROM ts.View3)",
+          "Invalid View Class 'test_schema:View1'. View query references itself recusively (test_schema:View1 -> test_schema:View2 -> test_schema:View3 -> test_schema:View1).",
+          "Invalid View Class 'test_schema:View3'. View ECSQL failed to parse.",
+          "Invalid View Class 'test_schema:View2'. View ECSQL failed to parse.",
+          "Invalid View Class 'test_schema:View1'. View ECSQL failed to parse.",
+          "Invalid view class 'test_schema:View3'. Failed to prepare view query (SELECT cd.ECInstanceId, cd.ECClassId FROM ts.View1)",
+          "Total of 6 view classes were checked and 3 were found to be invalid.",
+        };
+        listener.CompareIssues(expectedIssues);
     }
 }
 /*---------------------------------------------------------------------------------**//**
@@ -340,11 +332,13 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
             </ECEntityClass>
         </ECSchema>)xml");
 
-        listener.Reset();
+        listener.ClearIssues();
         ASSERT_EQ(SUCCESS, ImportSchema(testSchema));
+
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.P_View"));
         ASSERT_EQ(stmt.GetColumnCount(), 11);
+        ASSERT_TRUE(listener.IsEmpty());
         m_ecdb.AbandonChanges();
     }
     if ("view class has property missing in view query") {
@@ -371,10 +365,14 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
             </ECEntityClass>
         </ECSchema>)xml");
 
-        listener.Reset();
+        listener.ClearIssues();
         ASSERT_EQ(ERROR, ImportSchema(testSchema));
-        ASSERT_STREQ("Total of 4 view classes were checked and 1 were found to be invalid.", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid view class 'test_schema:P_View'. View class has property 'doubleProp' which is not returned by view query.", listener.PopLastError().c_str());
+
+        bvector<Utf8String> expectedIssues {
+          "Invalid view class 'test_schema:P_View'. View class has property 'doubleProp' which is not returned by view query.",
+          "Total of 4 view classes were checked and 1 were found to be invalid.",
+        };
+        listener.CompareIssues(expectedIssues);
         m_ecdb.AbandonChanges();
     }
     if ("view class has property that has different type then returned by query") {
@@ -402,11 +400,14 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
             </ECEntityClass>
         </ECSchema>)xml");
 
-        listener.Reset();
+        listener.ClearIssues();
         ASSERT_EQ(ERROR, ImportSchema(testSchema));
-        ASSERT_STREQ("Total of 4 view classes were checked and 1 were found to be invalid.", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid view class 'test_schema:P_View'. View class property 'doubleProp' type does not match the type returned by view query ('string' <> 'double').", listener.PopLastError().c_str());
-        listener.Dump("listener");
+
+        bvector<Utf8String> expectedIssues {
+          "Invalid view class 'test_schema:P_View'. View class property 'doubleProp' type does not match the type returned by view query ('string' <> 'double').",
+          "Total of 4 view classes were checked and 1 were found to be invalid.",
+        };
+        listener.CompareIssues(expectedIssues);
         m_ecdb.AbandonChanges();
     }
     if ("query return data property that is not present in view class") {
@@ -433,11 +434,14 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
             </ECEntityClass>
         </ECSchema>)xml");
 
-        listener.Reset();
+        listener.ClearIssues();
         ASSERT_EQ(ERROR, ImportSchema(testSchema));
-        ASSERT_STREQ("Total of 4 view classes were checked and 1 were found to be invalid.", listener.PopLastError().c_str());
-        ASSERT_STREQ("Invalid view class 'test_schema:P_View'. View query returns property 'doubleProp' which not defined in view class or is a invalid system property.", listener.PopLastError().c_str());
-        listener.Dump("listener");
+
+        bvector<Utf8String> expectedIssues {
+          "Invalid view class 'test_schema:P_View'. View query returns property 'doubleProp' which not defined in view class or is a invalid system property.",
+          "Total of 4 view classes were checked and 1 were found to be invalid.",
+        };
+        listener.CompareIssues(expectedIssues);
         m_ecdb.AbandonChanges();
     }
     if ("system properties must be returned by view query for entity class") {
@@ -465,8 +469,9 @@ TEST_F(ClassViewsFixture, all_specified_view_properties_must_return_by_view_quer
             </ECEntityClass>
         </ECSchema>)xml");
 
-        listener.Reset();
+        listener.ClearIssues();
         ASSERT_EQ(SUCCESS, ImportSchema(testSchema));
+
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId FROM ts.P_View"));
         ASSERT_EQ(stmt.GetColumnCount(), 2);
@@ -1622,9 +1627,8 @@ TEST_F(ClassViewsFixture, ExistingViewsWithNoAdditionalRootEntityClasses)  {
 
     TestIssueListener listener;
     m_ecdb.AddIssueListener(listener);
-    listener.Reset();
     ASSERT_EQ(ERROR, ImportSchema(testSchema3));
-    ASSERT_STREQ("Failed to import ECClass 'TestSchema3:NewRootClass'. It violates against the 'No additional root entity classes' policy which means that all entity classes must subclass from classes defined in the ECSchema RootSchema", listener.GetLastError().c_str());
+    ASSERT_STREQ("Failed to import ECClass 'TestSchema3:NewRootClass'. It violates against the 'No additional root entity classes' policy which means that all entity classes must subclass from classes defined in the ECSchema RootSchema", listener.GetLastMessage().c_str());
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1646,7 +1650,7 @@ TEST_F(ClassViewsFixture, update_views_in_dynamic_schema) {
           <ECCustomAttributes>
               <QueryView>xmlns="ECDbMap.02.00.04">
                   <Query>
-                  SELECT *, ec_classid('TestSchema', 'Animals') as ECClassId FROM(SELECT 1 as ECInstanceId, 'dog' as Name 
+                  SELECT *, ec_classid('TestSchema', 'Animals') as ECClassId FROM(SELECT 1 as ECInstanceId, 'dog' as Name
                   UNION SELECT 2 as ECInstanceId, 'cat' as NAME)
                   </Query>
               </QueryView>
@@ -1678,8 +1682,8 @@ TEST_F(ClassViewsFixture, update_views_in_dynamic_schema) {
           <ECCustomAttributes>
               <QueryView>xmlns="ECDbMap.02.00.04">
                   <Query>
-                  SELECT *, ec_classid('TestSchema', 'Animals') as ECClassId FROM(SELECT 1 as ECInstanceId, 'dog' as Name 
-                  UNION SELECT 2 as ECInstanceId, 'cat' as NAME 
+                  SELECT *, ec_classid('TestSchema', 'Animals') as ECClassId FROM(SELECT 1 as ECInstanceId, 'dog' as Name
+                  UNION SELECT 2 as ECInstanceId, 'cat' as NAME
                   UNION SELECT 3 as ECInstanceId, 'elephant' as NAME)
                   </Query>
               </QueryView>
@@ -1728,7 +1732,7 @@ TEST_F(ClassViewsFixture, update_views_in_dynamic_schema_cte) {
   </ECSchema>)xml");
 
   ASSERT_EQ(BE_SQLITE_OK, SetupECDbForCurrentTest());
-  ASSERT_EQ(SUCCESS, ImportSchema(testSchema)); 
+  ASSERT_EQ(SUCCESS, ImportSchema(testSchema));
 
   { //Select count of animals
   ECSqlStatement stmt;
@@ -1759,7 +1763,7 @@ TEST_F(ClassViewsFixture, update_views_in_dynamic_schema_cte) {
       </ECEntityClass>
   </ECSchema>)xml");
 
-  ASSERT_EQ(SUCCESS, ImportSchema(testSchema2)); 
+  ASSERT_EQ(SUCCESS, ImportSchema(testSchema2));
 
   { //Select count of animals
   ECSqlStatement stmt;
@@ -1869,7 +1873,6 @@ TEST_F(ClassViewsFixture, ViewRequiresClassIdAndInstanceId) {
 
     TestIssueListener listener;
     m_ecdb.AddIssueListener(listener);
-    listener.Reset();
 
     std::string pattern = "Total of \\d+ view classes were checked and 1 were found to be invalid.";
     std::regex firstErrorRegex(pattern);
@@ -1878,38 +1881,42 @@ TEST_F(ClassViewsFixture, ViewRequiresClassIdAndInstanceId) {
     Utf8PrintfString xml(schemaTemplate, 2, "SELECT f.ECClassId, f.Name [MyName] FROM ts.Fruit f");
     SchemaItem invalidItem(xml);
     ASSERT_EQ(ERROR, ImportSchema(invalidItem));
-    ASSERT_TRUE(std::regex_match(listener.PopLastError().c_str(), firstErrorRegex));
-    ASSERT_STREQ("Invalid view class 'TestSchema:FruitView'. View query must return ECInstanceId.", listener.PopLastError().c_str());
+
+    ASSERT_STREQ("Invalid view class 'TestSchema:FruitView'. View query must return ECInstanceId.", listener.m_issues[0].message.c_str());
+    ASSERT_TRUE(std::regex_match(listener.m_issues[1].message.c_str(), firstErrorRegex));
     }
 
-    listener.Reset();
+    listener.ClearIssues();
 
     { //no ECClassId
     Utf8PrintfString xml(schemaTemplate, 3, "SELECT f.ECInstanceId, f.Name [MyName] FROM ts.Fruit f");
     SchemaItem invalidItem(xml);
     ASSERT_EQ(ERROR, ImportSchema(invalidItem));
-    ASSERT_TRUE(std::regex_match(listener.PopLastError().c_str(), firstErrorRegex));
-    ASSERT_STREQ("Invalid view class 'TestSchema:FruitView'. View query must return ECClassId.", listener.PopLastError().c_str());
+
+    ASSERT_STREQ("Invalid view class 'TestSchema:FruitView'. View query must return ECClassId.", listener.m_issues[0].message.c_str());
+    ASSERT_TRUE(std::regex_match(listener.m_issues[1].message.c_str(), firstErrorRegex));
     }
 
-    listener.Reset();
+    listener.ClearIssues();
 
     { //string as classId
     Utf8PrintfString xml(schemaTemplate, 4, "SELECT 'FruitView' as ECClassId, f.ECInstanceId, f.Name [MyName] FROM ts.Fruit f");
     SchemaItem invalidItem(xml);
     ASSERT_EQ(ERROR, ImportSchema(invalidItem));
-    ASSERT_TRUE(std::regex_match(listener.PopLastError().c_str(), firstErrorRegex));
-    ASSERT_STREQ("Invalid view class 'TestSchema:FruitView'. ECClassId must be a primitive integer or long.", listener.PopLastError().c_str());
+
+    ASSERT_STREQ("Invalid view class 'TestSchema:FruitView'. ECClassId must be a primitive integer or long.", listener.m_issues[0].message.c_str());
+    ASSERT_TRUE(std::regex_match(listener.m_issues[1].message.c_str(), firstErrorRegex));
     }
 
-    listener.Reset();
+    listener.ClearIssues();
 
     { //string as instanceId
     Utf8PrintfString xml(schemaTemplate, 5, "SELECT f.ECClassId, 'FruitView' as ECInstanceId, f.Name [MyName] FROM ts.Fruit f");
     SchemaItem invalidItem(xml);
     ASSERT_EQ(ERROR, ImportSchema(invalidItem));
-    ASSERT_TRUE(std::regex_match(listener.PopLastError().c_str(), firstErrorRegex));
-    ASSERT_STREQ("Invalid view class 'TestSchema:FruitView'. ECInstanceId must be a primitive integer or long.", listener.PopLastError().c_str());
+
+    ASSERT_STREQ("Invalid view class 'TestSchema:FruitView'. ECInstanceId must be a primitive integer or long.", listener.m_issues[0].message.c_str());
+    ASSERT_TRUE(std::regex_match(listener.m_issues[1].message.c_str(), firstErrorRegex));
     }
 }
 
@@ -2000,12 +2007,12 @@ TEST_F(ClassViewsFixture, ViewColumnInfoTests) {
       ECSqlColumnInfo::RootClass const& rootClass = colInfo.GetRootClass();
       ASSERT_STREQ(expectedRootClassName, rootClass.GetClass().GetName().c_str());
     };
-    
+
     { //Direct query from DirectView
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, MyName FROM ts.DirectView"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    
+
     verifyColumnInfo(stmt.GetColumnInfo(0),
         false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
         PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
@@ -2019,7 +2026,7 @@ TEST_F(ClassViewsFixture, ViewColumnInfoTests) {
         "ECClassId", "ClassECSqlSystemProperties", //Property
         "ECClassId", "ClassECSqlSystemProperties", //OriginProperty
         "ECClassId", "DirectView"); //PropertyPath, RootClass
-    
+
     verifyColumnInfo(stmt.GetColumnInfo(2),
         false, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
         PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
@@ -2034,7 +2041,7 @@ TEST_F(ClassViewsFixture, ViewColumnInfoTests) {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT MyName as TheName FROM ts.DirectView"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    
+
     verifyColumnInfo(stmt.GetColumnInfo(0),
         true, false, false, //IsGeneratedProperty, IsDynamic, IsSystemProperty
         PrimitiveType::PRIMITIVETYPE_String, ValueKind::VALUEKIND_Primitive,
@@ -2044,12 +2051,12 @@ TEST_F(ClassViewsFixture, ViewColumnInfoTests) {
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
-  
+
     { //Direct query from StaticDataView
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, MyName FROM ts.StaticDataView"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    
+
     verifyColumnInfo(stmt.GetColumnInfo(0),
         false, false, true, //IsGeneratedProperty, IsDynamic, IsSystemProperty
         PrimitiveType::PRIMITIVETYPE_Long, ValueKind::VALUEKIND_Primitive,
@@ -2121,21 +2128,21 @@ TEST_F(ClassViewsFixture, PrepareViewQueries) {
     { //Prepare a part of a generated query from presentation which failed before a fix
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"(
-      SELECT 
-              *, 
-              [/ECClassId/], COUNT (1) AS [/DisplayLabel/], 
+      SELECT
+              *,
+              [/ECClassId/], COUNT (1) AS [/DisplayLabel/],
               COUNT (1) AS [/GroupedInstancesCount/]
       FROM   (
-              SELECT 
-                      1 AS [/ContractId/], 
-                      '8d9264940cc956fe67aa84eb699bbea8' AS [/SpecificationIdentifier/], 
-                      [this].[ECClassId] AS [/ECClassId/], 
+              SELECT
+                      1 AS [/ContractId/],
+                      '8d9264940cc956fe67aa84eb699bbea8' AS [/SpecificationIdentifier/],
+                      [this].[ECClassId] AS [/ECClassId/],
                       FALSE AS [/IsClassPolymorphic/]
               FROM   [meta].[PropertyCustomAttribute] [this]
       GROUP  BY
-                [/ContractId/], 
-                [/SpecificationIdentifier/], 
-                [/ECClassId/], 
+                [/ContractId/],
+                [/SpecificationIdentifier/],
+                [/ECClassId/],
                 [/IsClassPolymorphic/])
       )"));
     }
@@ -2145,27 +2152,27 @@ TEST_F(ClassViewsFixture, PrepareViewQueries) {
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"(
       SELECT NULL AS [NodeIdentifier]
       FROM   (SELECT *
-        FROM   (SELECT 
-                        *, 
-                        [/ECClassId/], COUNT (1) AS [/DisplayLabel/], 
+        FROM   (SELECT
+                        *,
+                        [/ECClassId/], COUNT (1) AS [/DisplayLabel/],
                         COUNT (1) AS [/GroupedInstancesCount/]
-                FROM   (SELECT 
-                                1 AS [/ContractId/], 
-                                '8d9264940cc956fe67aa84eb699bbea8' AS [/SpecificationIdentifier/], 
-                                [this].[ECClassId] AS [/ECClassId/], 
+                FROM   (SELECT
+                                1 AS [/ContractId/],
+                                '8d9264940cc956fe67aa84eb699bbea8' AS [/SpecificationIdentifier/],
+                                [this].[ECClassId] AS [/ECClassId/],
                                 FALSE AS [/IsClassPolymorphic/]
                         FROM   [meta].[PropertyCustomAttribute] [this]
                         UNION ALL
-                        SELECT 
-                                1 AS [/ContractId/], 
-                                '8d9264940cc956fe67aa84eb699bbea8' AS [/SpecificationIdentifier/], 
-                                [this].[ECClassId] AS [/ECClassId/], 
+                        SELECT
+                                1 AS [/ContractId/],
+                                '8d9264940cc956fe67aa84eb699bbea8' AS [/SpecificationIdentifier/],
+                                [this].[ECClassId] AS [/ECClassId/],
                                 FALSE AS [/IsClassPolymorphic/]
                         FROM   [meta].[SchemaCustomAttribute] [this])
                 GROUP  BY
-                          [/ContractId/], 
-                          [/SpecificationIdentifier/], 
-                          [/ECClassId/], 
+                          [/ContractId/],
+                          [/SpecificationIdentifier/],
+                          [/ECClassId/],
                           [/IsClassPolymorphic/])
         ORDER  BY
                   [/DisplayLabel/])
