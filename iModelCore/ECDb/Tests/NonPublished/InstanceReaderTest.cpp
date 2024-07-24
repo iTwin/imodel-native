@@ -2807,13 +2807,13 @@ TEST_F(InstanceReaderFixture, InstanceReaderForceSeek) {
 TEST_F(InstanceReaderFixture, ArraysStoreNullValues) {
     // Setup test db
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ArraysStoreNullValues.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECStructClass typeName="StructClass" modifier="None">
                 <ECProperty propertyName="DoubleProp" typeName="double" />
                 <ECProperty propertyName="StringProp" typeName="string" />
             </ECStructClass>
             <ECEntityClass typeName="TestClass" modifier="None">
-                    <ECStructArrayProperty propertyName="structArrayProp" typeName="StructClass" minOccurs="0" maxOccurs="unbounded" />
+                <ECStructArrayProperty propertyName="structArrayProp" typeName="StructClass" minOccurs="0" maxOccurs="unbounded" />
                 <ECArrayProperty propertyName="intArrayProp" typeName="int" />
             </ECEntityClass>
         </ECSchema>
