@@ -50,6 +50,7 @@ NumericFormatSpec::NumericFormatSpec()
     , m_minWidth(FormatConstant::DefaultMinWidth())
     , m_stationSize(0)
     , m_scientificType(ScientificType::Normalized)
+    , m_advancedFormattingScenario(AdvancedFormattingScenario::None)
     {
     }
 
@@ -225,6 +226,7 @@ bool NumericFormatSpec::IsIdentical(NumericFormatSpecCR other) const
     if (m_stationSize != other.m_stationSize) return false;
     if (m_scientificType != other.m_scientificType) return false;
     if (m_minWidth != other.m_minWidth) return false;
+    if (m_advancedFormattingScenario != other.m_advancedFormattingScenario) return false;
 
     return true;
     }

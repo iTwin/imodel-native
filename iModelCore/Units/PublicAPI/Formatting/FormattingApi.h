@@ -89,6 +89,7 @@ private:
     double              m_roundFactor;
     PresentationType    m_presentationType;      // Decimal, Fractional, Scientific, Station
     ScientificType      m_scientificType;
+    AdvancedFormattingScenario m_advancedFormattingScenario; //None, Bearing
     SignOption          m_signOption;            // NoSign, OnlyNegative, SignAlways, NegativeParentheses
     FormatTraits        m_formatTraits;          // NoZeroes, TrailingZeroes, BothZeroes
     DecimalPrecision    m_decPrecision;          // Precision0...12
@@ -188,6 +189,9 @@ public:
 
     void SetScientificType(ScientificType type) {m_scientificType = type;}
     ScientificType GetScientificType() const {return m_scientificType;}
+
+    void SetAdvancedFormattingScenario(AdvancedFormattingScenario scenario) {m_advancedFormattingScenario = scenario;}
+    AdvancedFormattingScenario GetAdvancedFormattingScenario() const {return m_advancedFormattingScenario;}
 
     void SetPrecision(FractionalPrecision precision) {m_explicitlyDefinedPrecision = true; m_fractPrecision = precision; }
     void SetPrecision(DecimalPrecision precision) {m_explicitlyDefinedPrecision = true; m_decPrecision = precision;}
@@ -381,9 +385,11 @@ private:
     double m_ratio[indxSub] = {0};
     bool m_includeZero = true; // TODO: Not currently used in the formatting code, needs to be fixed.
     bool m_explicitlyDefinedSpacer = false;
-    Utf8String m_spacer = FormatConstant::DefaultSpacer();
+    Utf8String m_spacer = FormatConstant::DefaultSpacer(); //this is used between value and UOM if a label is shown
     FormatProblemDetail m_problem;
     bvector<UnitProxy> mutable m_proxys;
+    Utf8String m_separator = FormatConstant::DefaultSeparator();
+    bool m_explicitlyDefinedSeparator = false;
 
     //! Returns the unit ratio of upper/lower.
     //! Lower may be set to nullptr, indicating the lower unit is not set on the CVS.
@@ -468,6 +474,11 @@ public:
     Utf8String SetSpacer(Utf8CP spacer) {m_explicitlyDefinedSpacer = true; return m_spacer = spacer;}
     Utf8String GetSpacer() const {return m_spacer;} //!< Get the spacer used in between each segment value and its uom label of a composite value string.
     bool HasSpacer() const {return m_explicitlyDefinedSpacer;} //!< Returns whether a spacer has been explicitly set.
+
+    //! Set the string that will be used to separate the composite values
+    Utf8String SetSeparator(Utf8CP separator) {m_explicitlyDefinedSeparator = true; return m_separator = separator;}
+    Utf8String GetSeparator() const {return m_separator;} //!< Get the separator used to separate the composite values
+    bool HasSeparator() const {return m_explicitlyDefinedSeparator;} //!< Returns whether a separator has been explicitly set.
 
     //! Sets whether a segment of the composite value will be serialized to the resulting string if it evaluates to zero.
     bool SetIncludeZero(bool incl) {return m_includeZero = incl;}

@@ -6,6 +6,8 @@
 #include <Formatting/FormattingApi.h>
 #include "../../PrivateAPI/Formatting/FormattingParsing.h"
 #include <regex>
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
@@ -165,6 +167,61 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
     if (nullptr == fmtP)
         return "";
 
+    Utf8String prefix("");
+    Utf8String suffix("");
+
+    if (fmtP->GetAdvancedFormattingScenario() == AdvancedFormattingScenario::Bearing)
+        {
+        double magnitude = temp.GetMagnitude();
+        auto* unit = temp.GetUnit();
+        if(!unit->GetPhenomenon()->IsAngle())
+            {
+            LOG.errorv("Invalid unit for bearing format. Phenomenon must be 'Angle' Unit used: %s", unit->GetName().c_str());
+            return "";
+            }
+
+        double fullCircle = 2 * M_PI;
+        if (unit->GetName().EqualsI("ARC_DEG"))
+            fullCircle = 360;
+        else if (!unit->GetName().EqualsI("RAD"))
+            {
+            LOG.errorv("Unsupported unit for bearing format: %s", unit->GetName().c_str());
+            return "";
+            }
+
+        while (magnitude >= fullCircle) //Strip anything that goes around more than once
+            magnitude -= fullCircle;
+
+        double quarterCircle = fullCircle / 4;
+        int quadrant = 0;
+        while (magnitude > quarterCircle)
+            {
+            magnitude -= quarterCircle;
+            quadrant++;
+            }
+
+        // Quadrants are
+        // 3 0
+        // 2 1
+        // For quadrants 1 and 3 we have to subtract the angle from 90 degrees because they go counter clockwise
+        if(quadrant == 1 || quadrant == 3)
+            magnitude = quarterCircle - magnitude;
+
+        if(quadrant == 0 || quadrant == 3)
+            prefix = "N";
+
+        if(quadrant == 1 || quadrant == 2)
+            prefix = "S";
+
+        if(quadrant == 0 || quadrant == 1)
+            suffix = "E";
+
+        if(quadrant == 2 || quadrant == 3)
+            suffix = "W";
+
+        temp = BEU::Quantity(magnitude, *temp.GetUnit());
+        }
+
     if (HasComposite())  // procesing composite parts
         {
         CompositeValueSpecCP compS = GetCompositeSpec();
@@ -172,6 +229,10 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
         Utf8String uomSeparator;
         if (compS->HasSpacer())
             uomSeparator = compS->GetSpacer();
+
+        Utf8String compSeparator;
+        if (compS->HasSeparator())
+            compSeparator = compS->GetSeparator();
 
         // if the composite was auto created just to provide an override label for the numeric format then use the specified UomSeparator.
         if (!HasExplicitlyDefinedComposite())
@@ -184,6 +245,12 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
         NumericFormatSpec fmtI;
         fmtI.SetPrecision(DecimalPrecision::Precision0);
         fmtI.SetKeepSingleZero(false);
+        if(fmtP->GetAdvancedFormattingScenario() == AdvancedFormattingScenario::Bearing)
+            { // we may want to apply these for any format, but especially for bearing
+            fmtI.SetKeepSingleZero(fmtP->IsKeepSingleZero());
+            fmtI.SetMinWidth(fmtP->GetMinWidth());
+            fmtI.SetKeepDecimalPoint(fmtP->IsKeepDecimalPoint());
+            }
 
         switch (compS->GetUnitCount())
             {
@@ -202,7 +269,7 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
                 midT = fmtP->Format(dval.GetMiddle());
                 if (fmtP->IsShowUnitLabel())
                     midT = Utils::AppendUnitName(midT.c_str(), compS->GetMiddleLabel().c_str(), spacer);
-                majT += " " + midT;
+                majT += compSeparator + midT;
                 break;
 
             case 3:
@@ -215,7 +282,7 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
                 minT = fmtP->Format(dval.GetMinor());
                 if (fmtP->IsShowUnitLabel())
                     minT = Utils::AppendUnitName(minT.c_str(), compS->GetMinorLabel().c_str(), spacer);
-                majT += " " + midT + " " + minT;
+                majT += compSeparator + midT + compSeparator + minT;
                 break;
 
             case 4:
@@ -231,7 +298,7 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
                 subT = fmtP->Format(dval.GetSub());
                 if (fmtP->IsShowUnitLabel())
                     subT = Utils::AppendUnitName(subT.c_str(), compS->GetSubLabel().c_str(), spacer);
-                majT += midT + " " + minT + " " + subT;
+                majT += midT + compSeparator + minT + compSeparator + subT;
                 break;
             }
         }
@@ -240,6 +307,11 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
         majT = fmtP->Format(temp.GetMagnitude());
         if (fmtP->IsShowUnitLabel())
            majT = Utils::AppendUnitName(majT.c_str(), uomLabel, (nullptr == space) ? fmtP->GetUomSeparator() : space);
+        }
+
+    if (fmtP->GetAdvancedFormattingScenario() == AdvancedFormattingScenario::Bearing)
+        {
+        majT = prefix + majT + suffix;
         }
     return majT;
     }

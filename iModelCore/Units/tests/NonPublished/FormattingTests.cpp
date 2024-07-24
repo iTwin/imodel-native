@@ -1542,8 +1542,8 @@ TEST_F(FormattingTestFixture, FormatsUsingDefaultNumericFormatSpecWhenItsNotSet)
     EXPECT_STREQ("1500.5 M", fmtSpec.FormatQuantity(quantity).c_str());
     }
 
-TEST_F(FormattingTestFixture, FormatRadianToBearing) {
-    struct TestData {
+struct BearingTestData 
+    {
     double angleDegree;
     double angleRadian;
     std::string bearingDDMMSS; //degrees minutes seconds
@@ -1552,33 +1552,60 @@ TEST_F(FormattingTestFixture, FormatRadianToBearing) {
     std::string northAzimuthDecimal;
     };
 
-    std::vector<TestData> testData = {
+TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
+    //We're inputting both degrees and radians by value here instead of converting them
+    //To reflect the fact that we mostly store our data in radians, but degrees are easier to look at for tests
+    //We run the test with both input values to ensure that the conversion is working correctly
+    std::vector<BearingTestData> testData = {
         //DEG,    RAD,                 BEAR DDMMSS    BEAR         AZI DDMMSS  AZI
-        {0.0,     M_PI * 0.0,          "N00:00:00E",  "N00.000°E", "00:00:00", "0.000"},
-        {5.0,     M_PI / 36,           "N05:00:00E",  "N05.000°E", "05:00:00", "5.000"},
+        {0.0,     M_PI * 0.0,          "N00:00:00E",  "N00.000°E", "00:00:00", "00.000"},
+        {5.0,     M_PI / 36,           "N05:00:00E",  "N05.000°E", "05:00:00", "05.000"},
         {45.0,    M_PI / 4,            "N45:00:00E",  "N45.000°E", "45:00:00", "45.000"},
-        {45.5028, M_PI / 4 + 0.0001,   "N45:30:10E",  "N45.503°E", "45:30:10", "45.503"},
+        {45.5028, M_PI * 0.25279333,   "N45:30:10E",  "N45.503°E", "45:30:10", "45.503"},
         {90.0,    M_PI / 2,            "N90:00:00E",  "N90.000°E", "90:00:00", "90.000"},
         {135.0,   M_PI * 3 / 4,        "S45:00:00E",  "S45.000°E", "135:00:00", "135.000"},
         {180.0,   M_PI,                "S00:00:00E",  "S00.000°E", "180:00:00", "180.000"},
         {225.0,   M_PI * 5 / 4,        "S45:00:00W",  "S45.000°W", "225:00:00", "225.000"},
-        {234.4972, M_PI * 1.3027622 ,  "S54:29:50W",  "S54.497°W", "234:29:50", "234.497"},
+        {234.4972, M_PI * 1.3027622,   "S54:29:50W",  "S54.497°W", "234:29:50", "234.497"},
         {270.0,   M_PI * 3 / 2,        "S90:00:00W",  "S90.000°W", "270:00:00", "270.000"},
         {315.0,   M_PI * 7 / 4,        "N45:00:00W",  "N45.000°W", "315:00:00", "315.000"},
-        {360.0,   M_PI * 2,            "N00:00:00E",  "N00.000°E", "360:00:00", "360.000"},
+        {360.0,   M_PI * 2,            "N00:00:00E",  "N00.000°E", "00:00:00", "00.000"},
         {412.0,   M_PI * 103 / 45,     "N52:00:00E",  "N52.000°E", "52:00:00", "52.000"},
         {470.0,   M_PI * 47 / 18,      "S70:00:00E",  "S70.000°E", "110:00:00", "110.000"},
         {580.0,   M_PI * 29 / 9,       "S40:00:00W",  "S40.000°W", "40:00:00", "40.000"},
         {640.0,   M_PI * 16 / 5,       "N80:00:00W",  "N80.000°W", "80:00:00", "80.000"},
     };
 
-    // Add more test data as needed
-     
-    
-    // Assuming bearings are expressed in degrees for this test
-    EXPECT_STREQ("N5:34:34E", bearingValue, tolerance);
+    auto unitDegree = s_unitsContext->LookupUnit("ARC_DEG");
+    auto unitRadian = s_unitsContext->LookupUnit("RAD");
+    //auto unitMinute = s_unitsContext->LookupUnit("ARC_MINUTE");
+    //auto unitSecond = s_unitsContext->LookupUnit("ARC_SECOND");
 
-    // Add more test cases as necessary
+    NumericFormatSpec spec;
+    spec.SetAdvancedFormattingScenario(AdvancedFormattingScenario::Bearing);
+    spec.SetMinWidth(2);
+    spec.SetPrecision(DecimalPrecision::Precision0);
+    spec.SetKeepDecimalPoint(false);
+    Format bearingDMS(spec);
+    bearingDMS.SetSuppressUnitLabel();
+    auto comp = CompositeValueSpec(*s_unitsContext->LookupUnit("ARC_DEG"), *s_unitsContext->LookupUnit("ARC_MINUTE"), *s_unitsContext->LookupUnit("ARC_SECOND"));
+    comp.SetSeparator(":");
+    bearingDMS.SetCompositeSpec(comp);
+    EXPECT_FALSE(bearingDMS.IsProblem());
+
+    for(auto& row : testData)
+        {
+        Units::Quantity degree(row.angleDegree, *unitDegree);
+        Units::Quantity radian(row.angleRadian, *unitRadian);
+
+        //make sure the provided radian and degree values are roughly the same
+        auto degConverted = radian.ConvertTo(unitDegree);
+        ASSERT_TRUE(degree.IsClose(degConverted, 0.001)) << "Conversion from degree to radian returns unexpected result";
+        Utf8String resultDeg = bearingDMS.FormatQuantity(degree);
+        Utf8String resultRad = bearingDMS.FormatQuantity(radian);
+        ASSERT_STREQ(resultDeg.c_str(), resultRad.c_str());
+        ASSERT_STREQ(row.bearingDDMMSS.c_str(), resultDeg.c_str());
+        }
 }
 
 END_BENTLEY_FORMATTEST_NAMESPACE

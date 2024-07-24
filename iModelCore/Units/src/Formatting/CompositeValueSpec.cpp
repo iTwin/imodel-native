@@ -126,6 +126,8 @@ CompositeValueSpec::CompositeValueSpec(CompositeValueSpecCR other)
     , m_spacer(other.m_spacer)
     , m_problem(other.m_problem)
     , m_proxys(other.m_proxys)
+    , m_separator(other.m_separator)
+    , m_explicitlyDefinedSeparator(other.m_explicitlyDefinedSeparator)
     {
     memcpy(m_ratio, other.m_ratio, sizeof(m_ratio));
     }

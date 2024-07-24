@@ -29,7 +29,7 @@ enum class SignOption
 //=======================================================================================
 enum class PresentationType
     {
-    Decimal,
+    Decimal,// 
     Fractional,
     Scientific, // scientific with 1 digit presenting the integer part
     Station,
@@ -42,6 +42,15 @@ enum class ScientificType
     {
     Normalized,
     ZeroNormalized,
+    };
+
+//=======================================================================================
+// @bsienum
+//=======================================================================================
+enum class AdvancedFormattingScenario
+    {
+    None,
+    Bearing //Formats as a bearing angle (e.g. N54:29:50W). Value must be of phenomenon type angle.
     };
 
 //=======================================================================================
@@ -324,6 +333,7 @@ public:
     static Utf8Char const DefaultStationSeparator() {return '+';}
     static int const DefaultMinWidth() { return 0; }
     static Utf8String const DefaultSpacer() {return " ";}
+    static Utf8String const DefaultSeparator() {return " ";}
 
     // FPN prefix stands for FormatParameterName
     static Utf8String FPN_NoSign() { return "NoSign"; }
