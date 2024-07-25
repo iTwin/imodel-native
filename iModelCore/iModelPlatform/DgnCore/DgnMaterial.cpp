@@ -16,6 +16,33 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+void RenderMaterial::_OnLoadedJsonProperties()
+    {
+        BeJsValue materialAssets = GetMaterialAssetsR();
+        if (materialAssets.hasMember("renderMaterial") && materialAssets["renderMaterial"].hasMember("Map"))
+            {
+            BeJsValue map = materialAssets["renderMaterial"]["Map"];
+            BeJsDocument mapToModify;
+            mapToModify.toObject();
+            map.ForEachProperty([&](Utf8CP memberName, BeJsConst memberJson)
+                {
+                if (memberJson.isNumericMember("TextureId")) 
+                    {
+                    // Fix IDs that were previously stored as 64-bit integers rather than as ID strings.
+                    int textureId = memberJson["TextureId"].GetInt();
+                    BeInt64Id id(textureId);
+                    Utf8String hexStr = id.ToHexStr();
+                    mapToModify[memberName]["TextureId"] = hexStr.c_str();
+                    }
+                return false;
+                });
+            if (mapToModify.size() > 0)
+                map.From(mapToModify);
+            }
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus RenderMaterial::_OnDelete() const
     {
     // can only be deleted through a purge operation
