@@ -784,7 +784,7 @@ private:
         if (propertyType == PRIMITIVETYPE_Point3d || propertyType == PRIMITIVETYPE_Point2d)
             propertyValueField = QueryContractHelpers::CreatePointAsJsonStringSelectField(propertyName, prefix, (propertyType == PRIMITIVETYPE_Point2d) ? 2 : 3);
         else
-            propertyValueField = PresentationQueryContractSimpleField::Create("/PropertyValue/", propertyName.c_str()).get();
+            propertyValueField = PresentationQueryContractSimpleField::Create("/PropertyValue/", Utf8PrintfString("[%s].[%s]", prefix.c_str(), propertyName.c_str()), false);
 
         return PresentationQueryContractFunctionField::Create("/PropertyValue/", FUNCTION_NAME_GetECPropertyValueLabel,
             {
@@ -953,6 +953,43 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+static PresentationQueryContractFieldPtr ApplyLabelOverrides(auto fallbackLabelFactory, Utf8CP name, ECSchemaHelper const& schemaHelper, SelectClass<ECClass> const& selectClass,
+    PresentationQueryContractFieldCPtr classIdField, PresentationQueryContractFieldCPtr instanceIdField, bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs,
+    bvector<ECInstanceKey> const& labelRequestsStack)
+    {
+    if (labelOverrideValueSpecs.empty())
+        return fallbackLabelFactory();
+
+    InstanceLabelOverrideSelectFieldsBuilder builder(schemaHelper, selectClass, *instanceIdField, *classIdField, labelRequestsStack);
+    for (InstanceLabelOverrideValueSpecification const* spec : labelOverrideValueSpecs)
+        {
+        spec->Accept(builder);
+        if (builder.DefinitelyHasValue())
+            break;
+        }
+
+    if (builder.GetSelectFields().empty())
+        return fallbackLabelFactory();
+
+    if (builder.GetSelectFields().size() == 1 && builder.DefinitelyHasValue())
+        {
+        auto labelField = builder.GetSelectFields().front();
+        labelField->SetName(name);
+        return labelField;
+        }
+
+    RefCountedPtr<PresentationQueryContractFunctionField> coalesceField = PresentationQueryContractFunctionField::Create(name,
+        "COALESCE", ContainerHelpers::TransformContainer<bvector<PresentationQueryContractFieldCPtr>>(builder.GetSelectFields()));
+
+    if (!builder.DefinitelyHasValue())
+        coalesceField->GetFunctionParameters().push_back(fallbackLabelFactory());
+
+    return coalesceField;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 PresentationQueryContractFieldPtr QueryBuilderHelpers::CreateDisplayLabelField(Utf8CP name, ECSchemaHelper const& schemaHelper, SelectClass<ECClass> const& selectClass,
     PresentationQueryContractFieldCPtr classIdField, PresentationQueryContractFieldCPtr instanceIdField, bvector<RelatedClassPath> const& relatedInstancePaths,
     bvector<InstanceLabelOverrideValueSpecification const*> const& labelOverrideValueSpecs, bvector<ECInstanceKey> const& labelRequestsStack)
@@ -966,45 +1003,28 @@ PresentationQueryContractFieldPtr QueryBuilderHelpers::CreateDisplayLabelField(U
     Utf8CP labelClause = nullptr != labelProperty ? labelProperty->GetName().c_str() : "''";
     RefCountedPtr<PresentationQueryContractSimpleField> defaultPropertyValueField = PresentationQueryContractSimpleField::Create(nullptr, labelClause);
 
-    PresentationQueryContractFieldPtr labelField = PresentationQueryContractFunctionField::Create(name, FUNCTION_NAME_GetECInstanceDisplayLabel,
+    auto labelField = ApplyLabelOverrides([&]
         {
-        classIdField,
-        instanceIdField,
-        defaultPropertyValueField,
-        PresentationQueryContract::CreateRelatedInstanceInfoField(relatedInstancePaths),
-        });
-
-    if (!labelOverrideValueSpecs.empty())
-        {
-        auto fallback = labelField;
-
-        InstanceLabelOverrideSelectFieldsBuilder builder(schemaHelper, selectClass, *instanceIdField, *classIdField, labelRequestsStack);
-        for (InstanceLabelOverrideValueSpecification const* spec : labelOverrideValueSpecs)
+        return PresentationQueryContractFunctionField::Create(name, FUNCTION_NAME_GetECInstanceDisplayLabel,
             {
-            spec->Accept(builder);
-            if (builder.DefinitelyHasValue())
-                break;
-            }
+            classIdField,
+            instanceIdField,
+            defaultPropertyValueField,
+            PresentationQueryContract::CreateRelatedInstanceInfoField(relatedInstancePaths),
+            });
+        }, name, schemaHelper, selectClass, classIdField, instanceIdField, labelOverrideValueSpecs, labelRequestsStack);
 
-        if (builder.GetSelectFields().empty())
-            return labelField;
-
-        if (builder.GetSelectFields().size() == 1 && builder.DefinitelyHasValue())
-            {
-            labelField = builder.GetSelectFields().front();
-            labelField->SetName(name);
-            return labelField;
-            }
-
-        RefCountedPtr<PresentationQueryContractFunctionField> coalesceField = PresentationQueryContractFunctionField::Create(name,
-            "COALESCE", ContainerHelpers::TransformContainer<bvector<PresentationQueryContractFieldCPtr>>(builder.GetSelectFields()));
-
-        if (!builder.DefinitelyHasValue())
-            coalesceField->GetFunctionParameters().push_back(labelField);
-
-        labelField = coalesceField;
-        }
-
+    // If class ID select clause results in NULL (i.e. when class ID is taken from a joined table with no overlaps), then label query might fail.
+    // NOTE: It's assumed that class ID field and instance ID fields are non-null constants or they're properties of the same instance that will both be defined or NULL.
+    // This should result into the following clause:
+    // IIF(classId IS NULL, CAST(NULL AS TEXT), ...)
+    static auto const SimpleField = [](Utf8String clause) { return PresentationQueryContractSimpleField::Create("", clause, false); };
+    labelField = PresentationQueryContractFunctionField::Create(
+        name, "IIF",
+            {PresentationQueryContractBinaryOpField::Create("", "IS", classIdField, SimpleField("NULL")),
+            SimpleField("CAST(NULL AS TEXT)"),
+            std::move(labelField)});
+    
     labelField->SetGroupingClause(CreateDisplayLabelValueClause(labelField->GetName()));
     labelField->SetResultType(PresentationQueryFieldType::LabelDefinition);
     return labelField;
