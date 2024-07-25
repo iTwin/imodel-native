@@ -1572,8 +1572,8 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
         {360.0,   M_PI * 2,            "N00:00:00E",  "N00.000°E", "00:00:00", "00.000"},
         {412.0,   M_PI * 103 / 45,     "N52:00:00E",  "N52.000°E", "52:00:00", "52.000"},
         {470.0,   M_PI * 47 / 18,      "S70:00:00E",  "S70.000°E", "110:00:00", "110.000"},
-        {580.0,   M_PI * 29 / 9,       "S40:00:00W",  "S40.000°W", "40:00:00", "40.000"},
-        {640.0,   M_PI * 32 / 9,       "N80:00:00W",  "N80.000°W", "80:00:00", "80.000"},
+        {580.0,   M_PI * 29 / 9,       "S40:00:00W",  "S40.000°W", "220:00:00", "220.000"},
+        {640.0,   M_PI * 32 / 9,       "N80:00:00W",  "N80.000°W", "280:00:00", "280.000"},
     };
 
     auto unitDegree = s_unitsContext->LookupUnit("ARC_DEG");
@@ -1604,6 +1604,29 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
     Format bearing(bearingSpec);
     EXPECT_FALSE(bearing.IsProblem());
 
+    
+    NumericFormatSpec azimuthDMSSpec;
+    azimuthDMSSpec.SetAdvancedFormattingScenario(AdvancedFormattingScenario::NorthAzimuth);
+    azimuthDMSSpec.SetMinWidth(2);
+    azimuthDMSSpec.SetPrecision(DecimalPrecision::Precision0);
+    azimuthDMSSpec.SetKeepDecimalPoint(false);
+    Format azimuthDMS(azimuthDMSSpec);
+    azimuthDMS.SetSuppressUnitLabel();
+    auto azimuthDMScomp = CompositeValueSpec(*s_unitsContext->LookupUnit("ARC_DEG"), *s_unitsContext->LookupUnit("ARC_MINUTE"), *s_unitsContext->LookupUnit("ARC_SECOND"));
+    azimuthDMScomp.SetSeparator(":");
+    azimuthDMS.SetCompositeSpec(azimuthDMScomp);
+    EXPECT_FALSE(azimuthDMS.IsProblem());
+
+    NumericFormatSpec azimuthSpec;
+    azimuthSpec.SetAdvancedFormattingScenario(AdvancedFormattingScenario::NorthAzimuth);
+    azimuthSpec.SetMinWidth(6);
+    azimuthSpec.SetPrecision(DecimalPrecision::Precision3);
+    azimuthSpec.SetKeepDecimalPoint(true);
+    azimuthSpec.SetKeepTrailingZeroes(true);
+    azimuthSpec.SetKeepSingleZero(true);
+    Format azimuth(azimuthSpec);
+    EXPECT_FALSE(azimuth.IsProblem());
+
 
     for(auto& row : testData)
         {
@@ -1622,6 +1645,16 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
         Utf8String bearingDecimalFromRad = bearing.FormatQuantity(radian, s_unitsContext->LookupUnit("ARC_DEG"), "", "°");
         ASSERT_STREQ(bearingDecimalFromDeg.c_str(), bearingDecimalFromRad.c_str());
         ASSERT_STREQ(row.bearingDecimal.c_str(), bearingDecimalFromDeg.c_str());
+
+        Utf8String azimuthDMSFromDeg = azimuthDMS.FormatQuantity(degree);
+        Utf8String azimuthDMSFromRad = azimuthDMS.FormatQuantity(radian);
+        ASSERT_STREQ(azimuthDMSFromDeg.c_str(), azimuthDMSFromRad.c_str());
+        ASSERT_STREQ(row.northAzimuthDMS.c_str(), azimuthDMSFromDeg.c_str());
+
+        Utf8String azimuthDecimalFromDeg = azimuth.FormatQuantity(degree);
+        Utf8String azimuthDecimalFromRad = azimuth.FormatQuantity(radian, s_unitsContext->LookupUnit("ARC_DEG"));
+        ASSERT_STREQ(azimuthDecimalFromDeg.c_str(), azimuthDecimalFromRad.c_str());
+        ASSERT_STREQ(row.northAzimuthDecimal.c_str(), azimuthDecimalFromDeg.c_str());
         }
 }
 

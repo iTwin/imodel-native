@@ -171,6 +171,7 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
     Utf8String suffix("");
 
     bool isBearingAngle = fmtP->GetAdvancedFormattingScenario() == AdvancedFormattingScenario::Bearing;
+    bool isNorthAzimuth = fmtP->GetAdvancedFormattingScenario() == AdvancedFormattingScenario::NorthAzimuth;
     if (isBearingAngle)
         {
         double magnitude = temp.GetMagnitude();
@@ -223,6 +224,33 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
         temp = BEU::Quantity(magnitude, *temp.GetUnit());
         }
 
+    if (isNorthAzimuth)
+        {
+        //For now, half of this block is redundant with bearing, but azimuth has some more variants which we may want to support, like South azimuth or a displacement angle
+        //Also, counter-clockwise azimuth may be necessary at some point.
+        double magnitude = temp.GetMagnitude();
+        auto* unit = temp.GetUnit();
+        if(!unit->GetPhenomenon()->IsAngle())
+            {
+            LOG.errorv("Invalid unit for azimuth format. Phenomenon must be 'Angle' Unit used: %s", unit->GetName().c_str());
+            return "";
+            }
+
+        double fullCircle = 2 * M_PI;
+        if (unit->GetName().EqualsI("ARC_DEG"))
+            fullCircle = 360;
+        else if (!unit->GetName().EqualsI("RAD"))
+            {
+            LOG.errorv("Unsupported unit for azimuth format: %s", unit->GetName().c_str());
+            return "";
+            }
+
+        while (magnitude >= fullCircle) //Strip anything that goes around more than once
+            magnitude -= fullCircle;
+
+        temp = BEU::Quantity(magnitude, *temp.GetUnit());
+        }
+
     if (HasComposite())  // procesing composite parts
         {
         CompositeValueSpecCP compS = GetCompositeSpec();
@@ -246,7 +274,7 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
         NumericFormatSpec fmtI;
         fmtI.SetPrecision(DecimalPrecision::Precision0);
         fmtI.SetKeepSingleZero(false);
-        if(isBearingAngle)
+        if(isBearingAngle || isNorthAzimuth)
             { // we may want to apply these for any format, but especially for bearing
             fmtI.SetKeepSingleZero(fmtP->IsKeepSingleZero());
             fmtI.SetMinWidth(fmtP->GetMinWidth());
