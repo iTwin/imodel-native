@@ -22,21 +22,17 @@ void RenderMaterial::_OnLoadedJsonProperties()
         if (materialAssets.hasMember("renderMaterial") && materialAssets["renderMaterial"].hasMember("Map"))
             {
             BeJsValue map = materialAssets["renderMaterial"]["Map"];
-            BeJsDocument mapToModify;
-            mapToModify.toObject();
             map.ForEachProperty([&](Utf8CP memberName, BeJsConst memberJson)
                 {
                 if (memberJson.isNumericMember("TextureId")) 
                     {
                     // Fix IDs that were previously stored as 64-bit integers rather than as ID strings.
-                    auto textureId = memberJson["TextureId"].GetId64<DgnTextureId>;
-                    mapToModify[memberName]["TextureId"] = textureId;
-
+                    auto textureId = memberJson["TextureId"].GetId64<DgnTextureId>();
+                    auto textureIdJson = map[memberName]["TextureId"];
+                    (BeJsValue&) textureIdJson = textureId;
                     }
                 return false;
                 });
-            if (mapToModify.size() > 0)
-                map.From(mapToModify);
             }
     }
 /*---------------------------------------------------------------------------------**//**
