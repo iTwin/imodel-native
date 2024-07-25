@@ -264,6 +264,24 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
     if (DgnDbStatus::Success != el->_LoadFromDb())
         return nullptr;
 
+    if (elHandler->GetClassName().Equals("RenderMaterial")) {
+        if (el->m_jsonProps.hasMember("materialAssets") && el->m_jsonProps["materialAssets"].hasMember("renderMaterial") && el->m_jsonProps["materialAssets"]["renderMaterial"].hasMember("Map")) {
+            BeJsValue map = el->m_jsonProps["materialAssets"]["renderMaterial"]["Map"];
+            BeJsDocument mapToModify;
+            mapToModify.toObject();
+            map.ForEachProperty([&](Utf8CP memberName, BeJsConst memberJson) {
+                if (memberJson.isNumericMember("TextureId")) {
+                    int textureId = memberJson["TextureId"].GetInt();
+                    BeInt64Id id(textureId);
+                    Utf8String hexStr = id.ToHexStr();
+                    mapToModify[memberName]["TextureId"] = hexStr.c_str();
+                }
+                return false;
+            });
+            map.From(mapToModify);
+        }
+    }
+
     el->_OnLoadedJsonProperties();
 
     if (makePersistent) {
