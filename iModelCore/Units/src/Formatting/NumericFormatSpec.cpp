@@ -51,6 +51,10 @@ NumericFormatSpec::NumericFormatSpec()
     , m_stationSize(0)
     , m_scientificType(ScientificType::Normalized)
     , m_advancedFormattingScenario(AdvancedFormattingScenario::None)
+    , m_northLabel("N")
+    , m_southLabel("S")
+    , m_eastLabel("E")
+    , m_westLabel("W")
     {
     }
 

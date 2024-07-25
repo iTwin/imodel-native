@@ -104,6 +104,10 @@ private:
                                                  // a number of or integer part of a real is shorter and needs to be augmented by
                                                  // insignificant zeroes. Blanks are not considered because aligning text
                                                  // with the boundaries of a virtual box is the responsibility of annotation layer.
+    Utf8String          m_northLabel;            //Used to represent north
+    Utf8String          m_southLabel;            //Used to represent south
+    Utf8String          m_eastLabel;             //Used to represent east
+    Utf8String          m_westLabel;             //Used to represent west
 
     double EffectiveRoundFactor(double rnd) const { return FormatConstant::IsIgnored(rnd) ? m_roundFactor : rnd; }
 
@@ -219,6 +223,15 @@ public:
     void SetStationSeparator(Utf8Char sep) {m_explicitlyDefinedStatSeparator = true; m_statSeparator = sep;}
     Utf8Char GetStationSeparator() const {return m_statSeparator;}
     bool HasStationSeparator() const {return m_explicitlyDefinedStatSeparator;}
+
+    void SetNorthLabel(Utf8StringCR label) {m_northLabel = label;}
+    Utf8String GetNorthLabel() const {return m_northLabel;}
+    void SetSouthLabel(Utf8StringCR label) {m_southLabel = label;}
+    Utf8String GetSouthLabel() const {return m_southLabel;}
+    void SetEastLabel(Utf8StringCR label) {m_eastLabel = label;}
+    Utf8String GetEastLabel() const {return m_eastLabel;}
+    void SetWestLabel(Utf8StringCR label) {m_westLabel = label;}
+    Utf8String GetWestLabel() const {return m_westLabel;}
 
     //======================================
     // Format Traits Bit Setters/Getters

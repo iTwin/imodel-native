@@ -1546,9 +1546,9 @@ struct BearingTestData
     {
     double angleDegree;
     double angleRadian;
-    std::string bearingDDMMSS; //degrees minutes seconds
+    std::string bearingDMS; //degrees minutes seconds
     std::string bearingDecimal;
-    std::string northAzimuthDDMMSS; //degrees minutes seconds
+    std::string northAzimuthDMS; //degrees minutes seconds
     std::string northAzimuthDecimal;
     };
 
@@ -1557,7 +1557,7 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
     //To reflect the fact that we mostly store our data in radians, but degrees are easier to look at for tests
     //We run the test with both input values to ensure that the conversion is working correctly
     std::vector<BearingTestData> testData = {
-        //DEG,    RAD,                 BEAR DDMMSS    BEAR         AZI DDMMSS  AZI
+        //DEG,    RAD,                 BEAR DMS       BEAR         AZI DMS     AZI
         {0.0,     M_PI * 0.0,          "N00:00:00E",  "N00.000°E", "00:00:00", "00.000"},
         {5.0,     M_PI / 36,           "N05:00:00E",  "N05.000°E", "05:00:00", "05.000"},
         {45.0,    M_PI / 4,            "N45:00:00E",  "N45.000°E", "45:00:00", "45.000"},
@@ -1581,17 +1581,29 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
     //auto unitMinute = s_unitsContext->LookupUnit("ARC_MINUTE");
     //auto unitSecond = s_unitsContext->LookupUnit("ARC_SECOND");
 
-    NumericFormatSpec spec;
-    spec.SetAdvancedFormattingScenario(AdvancedFormattingScenario::Bearing);
-    spec.SetMinWidth(2);
-    spec.SetPrecision(DecimalPrecision::Precision0);
-    spec.SetKeepDecimalPoint(false);
-    Format bearingDMS(spec);
+    NumericFormatSpec bearingDMSSpec;
+    bearingDMSSpec.SetAdvancedFormattingScenario(AdvancedFormattingScenario::Bearing);
+    bearingDMSSpec.SetMinWidth(2);
+    bearingDMSSpec.SetPrecision(DecimalPrecision::Precision0);
+    bearingDMSSpec.SetKeepDecimalPoint(false);
+    Format bearingDMS(bearingDMSSpec);
     bearingDMS.SetSuppressUnitLabel();
-    auto comp = CompositeValueSpec(*s_unitsContext->LookupUnit("ARC_DEG"), *s_unitsContext->LookupUnit("ARC_MINUTE"), *s_unitsContext->LookupUnit("ARC_SECOND"));
-    comp.SetSeparator(":");
-    bearingDMS.SetCompositeSpec(comp);
+    auto bearingDMScomp = CompositeValueSpec(*s_unitsContext->LookupUnit("ARC_DEG"), *s_unitsContext->LookupUnit("ARC_MINUTE"), *s_unitsContext->LookupUnit("ARC_SECOND"));
+    bearingDMScomp.SetSeparator(":");
+    bearingDMS.SetCompositeSpec(bearingDMScomp);
     EXPECT_FALSE(bearingDMS.IsProblem());
+
+    NumericFormatSpec bearingSpec;
+    bearingSpec.SetAdvancedFormattingScenario(AdvancedFormattingScenario::Bearing);
+    bearingSpec.SetMinWidth(6);
+    bearingSpec.SetPrecision(DecimalPrecision::Precision3);
+    bearingSpec.SetKeepDecimalPoint(true);
+    bearingSpec.SetKeepTrailingZeroes(true);
+    bearingSpec.SetKeepSingleZero(true);
+    bearingSpec.SetShowUnitLabel(true);
+    Format bearing(bearingSpec);
+    EXPECT_FALSE(bearing.IsProblem());
+
 
     for(auto& row : testData)
         {
@@ -1600,11 +1612,16 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
 
         //make sure the provided radian and degree values are roughly the same
         auto degConverted = radian.ConvertTo(unitDegree);
-        ASSERT_TRUE(degree.IsClose(degConverted, 0.001)) << "Conversion from degree to radian returns unexpected result";
-        Utf8String resultDeg = bearingDMS.FormatQuantity(degree);
-        Utf8String resultRad = bearingDMS.FormatQuantity(radian);
-        ASSERT_STREQ(resultDeg.c_str(), resultRad.c_str());
-        ASSERT_STREQ(row.bearingDDMMSS.c_str(), resultDeg.c_str());
+        ASSERT_TRUE(degree.IsClose(degConverted, 0.001)) << "Comparison between provided degree and radian seems off.";
+        Utf8String bearingDMSFromDeg = bearingDMS.FormatQuantity(degree);
+        Utf8String bearingDMSFromRad = bearingDMS.FormatQuantity(radian);
+        ASSERT_STREQ(bearingDMSFromDeg.c_str(), bearingDMSFromRad.c_str());
+        ASSERT_STREQ(row.bearingDMS.c_str(), bearingDMSFromDeg.c_str());
+
+        Utf8String bearingDecimalFromDeg = bearing.FormatQuantity(degree, nullptr, "", "°");
+        Utf8String bearingDecimalFromRad = bearing.FormatQuantity(radian, s_unitsContext->LookupUnit("ARC_DEG"), "", "°");
+        ASSERT_STREQ(bearingDecimalFromDeg.c_str(), bearingDecimalFromRad.c_str());
+        ASSERT_STREQ(row.bearingDecimal.c_str(), bearingDecimalFromDeg.c_str());
         }
 }
 

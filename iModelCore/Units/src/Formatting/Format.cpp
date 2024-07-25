@@ -170,7 +170,8 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
     Utf8String prefix("");
     Utf8String suffix("");
 
-    if (fmtP->GetAdvancedFormattingScenario() == AdvancedFormattingScenario::Bearing)
+    bool isBearingAngle = fmtP->GetAdvancedFormattingScenario() == AdvancedFormattingScenario::Bearing;
+    if (isBearingAngle)
         {
         double magnitude = temp.GetMagnitude();
         auto* unit = temp.GetUnit();
@@ -208,16 +209,16 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
             magnitude = quarterCircle - magnitude;
 
         if(quadrant == 0 || quadrant == 3)
-            prefix = "N";
+            prefix = fmtP->GetNorthLabel();
 
         if(quadrant == 1 || quadrant == 2)
-            prefix = "S";
+            prefix = fmtP->GetSouthLabel();
 
         if(quadrant == 0 || quadrant == 1)
-            suffix = "E";
+            suffix = fmtP->GetEastLabel();
 
         if(quadrant == 2 || quadrant == 3)
-            suffix = "W";
+            suffix = fmtP->GetWestLabel();
 
         temp = BEU::Quantity(magnitude, *temp.GetUnit());
         }
@@ -245,7 +246,7 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
         NumericFormatSpec fmtI;
         fmtI.SetPrecision(DecimalPrecision::Precision0);
         fmtI.SetKeepSingleZero(false);
-        if(fmtP->GetAdvancedFormattingScenario() == AdvancedFormattingScenario::Bearing)
+        if(isBearingAngle)
             { // we may want to apply these for any format, but especially for bearing
             fmtI.SetKeepSingleZero(fmtP->IsKeepSingleZero());
             fmtI.SetMinWidth(fmtP->GetMinWidth());
@@ -310,9 +311,8 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
         }
 
     if (fmtP->GetAdvancedFormattingScenario() == AdvancedFormattingScenario::Bearing)
-        {
         majT = prefix + majT + suffix;
-        }
+
     return majT;
     }
 
