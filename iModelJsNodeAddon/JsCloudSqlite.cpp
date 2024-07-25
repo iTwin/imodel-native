@@ -194,16 +194,16 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         BeJsDocument lockedBy;
         ReadWriteLock(lockedBy);
         auto lockedByGuid = lockedBy[JSON_NAME(guid)].asString();
-        auto expiresAt = DateTime::FromString(lockedBy[JSON_NAME(expires)].asString());
-        auto lockedByUser = lockedBy[JSON_NAME(user)].asString();
         // check if it's the same guid  
         if (lockedByGuid != m_cache->m_guid) {
             // another user grabbed the write lock after the current user's write lock expiration time, disable current user from operating
             BeNapi::ThrowJsException(Env(), Utf8PrintfString("Container [%s] is currently locked by another user.", m_containerId.c_str()).c_str());
         } else {
-            if (DateTime::CompareResult::EarlierThan == DateTime::Compare(expiresAt, GetServerTime())) {
-                ResumeWriteLock();
-            }
+            // Refresh the write lock for the current user no matter if the write lock expires
+            // 1. If the write lock expires, refresh it for the current user to operate further actions
+            // 2. If not, also refresh it in case the current user's write lock is about to expire when they call operations that require write lock to be present, and somehow expires during the operations
+            ResumeWriteLock();
+
         }
     }
 
