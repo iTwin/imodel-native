@@ -191,12 +191,6 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
 
     void RequireWriteLock() {
         RequireConnected();
-        if (!m_writeLockHeld)
-            BeNapi::ThrowJsException(Env(), Utf8PrintfString("container [%s] is not locked for write access", m_containerId.c_str()).c_str());
-    }
-
-    void CheckWriteLockHeldByCurrentUser() {
-        RequireConnected();
         BeJsDocument lockedBy;
         ReadWriteLock(lockedBy);
         auto lockedByGuid = lockedBy[JSON_NAME(guid)].asString();
@@ -274,7 +268,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
     }
 
     Napi::Value UploadChanges(NapiInfoCR info) {
-        CheckWriteLockHeldByCurrentUser();
+        RequireWriteLock();
         return QueueWorker(info, [=]() { return CloudContainer::UploadChanges(); });
     }
 
