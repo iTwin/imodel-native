@@ -29,10 +29,9 @@ void RenderMaterial::_OnLoadedJsonProperties()
                 if (memberJson.isNumericMember("TextureId")) 
                     {
                     // Fix IDs that were previously stored as 64-bit integers rather than as ID strings.
-                    int textureId = memberJson["TextureId"].GetInt();
-                    BeInt64Id id(textureId);
-                    Utf8String hexStr = id.ToHexStr();
-                    mapToModify[memberName]["TextureId"] = hexStr.c_str();
+                    auto textureId = memberJson["TextureId"].GetId64<DgnTextureId>;
+                    mapToModify[memberName]["TextureId"] = textureId;
+
                     }
                 return false;
                 });
