@@ -51,7 +51,7 @@ enum class AdvancedFormattingScenario
     {
     None,
     Bearing, //Formats as a bearing angle (e.g. N54:29:50W). Value must be of phenomenon type angle.
-    NorthAzimuth, //Formats as a north azimuth angle (e.g. 54:29:50). Value must be of phenomenon type angle.
+    Azimuth, //Formats as an azimuth angle (e.g. 54:29:50). Value must be of phenomenon type angle.
     };
 
 //=======================================================================================

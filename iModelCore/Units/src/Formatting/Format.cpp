@@ -8,6 +8,7 @@
 #include <regex>
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <optional>
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
@@ -150,6 +151,95 @@ bool Format::IsIdentical(FormatCR other) const
     return true;
     }
 
+BentleyStatus TryGetPerigon(Utf8StringCR unitName, double& value)
+    {
+    if (unitName.EqualsI("ARC_DEG"))
+        {
+        value = 360.0;
+        return BentleyStatus::SUCCESS;
+        }
+    else if (unitName == "RAD") 
+        {
+        value = 2 * M_PI;
+        return BentleyStatus::SUCCESS;
+        }
+
+    return BentleyStatus::ERROR;
+    }
+
+BentleyStatus NormalizeAngle(BEU::Quantity& quantity, Utf8CP operationName, double& perigon)
+    {
+    BEU::UnitCP unit = quantity.GetUnit();
+    if (!unit->GetPhenomenon()->IsAngle())
+        {
+        LOG.errorv("Invalid unit for %s format. Phenomenon must be 'Angle'. Unit used: %s", operationName, unit->GetName().c_str());
+        return BentleyStatus::ERROR;
+        }
+
+    if(TryGetPerigon(unit->GetName(), perigon) != BentleyStatus::SUCCESS)
+        {
+        LOG.errorv("Unsupported unit for %s format: %s", operationName, unit->GetName().c_str());
+        return BentleyStatus::ERROR;
+        }
+
+    double magnitude = fmod(quantity.GetMagnitude(), perigon); // Strip anything that goes around more than once
+    
+    if(magnitude < 0) //If the value is negative, representing a counter-clockwise angle, we want to normalize it to a positive angle
+        magnitude += perigon;
+
+    quantity = BEU::Quantity(magnitude, *unit);
+    return BentleyStatus::SUCCESS;
+    }
+
+BentleyStatus ProcessBearingAndAzimuth(NumericFormatSpecCP fmtP, BEU::Quantity& temp, std::string& prefix, std::string& suffix, AdvancedFormattingScenario scenario)
+    {
+    if(scenario != AdvancedFormattingScenario::Bearing && scenario != AdvancedFormattingScenario::Azimuth)
+        return BentleyStatus::ERROR;
+
+    double perigon;
+    if (NormalizeAngle(temp, scenario == AdvancedFormattingScenario::Bearing ? "bearing" : "azimuth", perigon) != BentleyStatus::SUCCESS)
+        return BentleyStatus::ERROR;
+
+    double magnitude = temp.GetMagnitude();
+    if (scenario == AdvancedFormattingScenario::Bearing)
+        {
+        double rightAngle = perigon / 4;
+        int quadrant = 0;
+        while (magnitude > rightAngle) {
+            magnitude -= rightAngle;
+            quadrant++;
+        }
+
+        // Quadrants are
+        // 3 0
+        // 2 1
+        // For quadrants 1 and 3 we have to subtract the angle from 90 degrees because they go counter clockwise
+        if (quadrant == 1 || quadrant == 3)
+            magnitude = rightAngle - magnitude;
+
+        if (quadrant == 0 || quadrant == 3)
+            prefix = fmtP->GetNorthLabel();
+
+        if (quadrant == 1 || quadrant == 2)
+            prefix = fmtP->GetSouthLabel();
+
+        if (quadrant == 0 || quadrant == 1)
+            suffix = fmtP->GetEastLabel();
+
+        if (quadrant == 2 || quadrant == 3)
+            suffix = fmtP->GetWestLabel();
+
+        temp = BEU::Quantity(magnitude, *temp.GetUnit());
+    }
+
+    if (scenario == AdvancedFormattingScenario::Azimuth) {
+        // use the azimuth base to adjust magnitude
+        //Need an additional field for azimuth cardinal base and baseValue
+    }
+
+    return BentleyStatus::SUCCESS;
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -169,86 +259,13 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
 
     Utf8String prefix("");
     Utf8String suffix("");
-
-    bool isBearingAngle = fmtP->GetAdvancedFormattingScenario() == AdvancedFormattingScenario::Bearing;
-    bool isNorthAzimuth = fmtP->GetAdvancedFormattingScenario() == AdvancedFormattingScenario::NorthAzimuth;
-    if (isBearingAngle)
+    bool additionalFormatting = false;
+    if (fmtP->GetAdvancedFormattingScenario() == AdvancedFormattingScenario::Bearing || fmtP->GetAdvancedFormattingScenario() == AdvancedFormattingScenario::Azimuth)
         {
-        double magnitude = temp.GetMagnitude();
-        auto* unit = temp.GetUnit();
-        if(!unit->GetPhenomenon()->IsAngle())
-            {
-            LOG.errorv("Invalid unit for bearing format. Phenomenon must be 'Angle' Unit used: %s", unit->GetName().c_str());
+        if (ProcessBearingAndAzimuth(fmtP, temp, prefix, suffix, fmtP->GetAdvancedFormattingScenario()) != BentleyStatus::SUCCESS)
             return "";
-            }
 
-        double fullCircle = 2 * M_PI;
-        if (unit->GetName().EqualsI("ARC_DEG"))
-            fullCircle = 360;
-        else if (!unit->GetName().EqualsI("RAD"))
-            {
-            LOG.errorv("Unsupported unit for bearing format: %s", unit->GetName().c_str());
-            return "";
-            }
-
-        while (magnitude >= fullCircle) //Strip anything that goes around more than once
-            magnitude -= fullCircle;
-
-        double quarterCircle = fullCircle / 4;
-        int quadrant = 0;
-        while (magnitude > quarterCircle)
-            {
-            magnitude -= quarterCircle;
-            quadrant++;
-            }
-
-        // Quadrants are
-        // 3 0
-        // 2 1
-        // For quadrants 1 and 3 we have to subtract the angle from 90 degrees because they go counter clockwise
-        if(quadrant == 1 || quadrant == 3)
-            magnitude = quarterCircle - magnitude;
-
-        if(quadrant == 0 || quadrant == 3)
-            prefix = fmtP->GetNorthLabel();
-
-        if(quadrant == 1 || quadrant == 2)
-            prefix = fmtP->GetSouthLabel();
-
-        if(quadrant == 0 || quadrant == 1)
-            suffix = fmtP->GetEastLabel();
-
-        if(quadrant == 2 || quadrant == 3)
-            suffix = fmtP->GetWestLabel();
-
-        temp = BEU::Quantity(magnitude, *temp.GetUnit());
-        }
-
-    if (isNorthAzimuth)
-        {
-        //For now, half of this block is redundant with bearing, but azimuth has some more variants which we may want to support, like South azimuth or a displacement angle
-        //Also, counter-clockwise azimuth may be necessary at some point.
-        double magnitude = temp.GetMagnitude();
-        auto* unit = temp.GetUnit();
-        if(!unit->GetPhenomenon()->IsAngle())
-            {
-            LOG.errorv("Invalid unit for azimuth format. Phenomenon must be 'Angle' Unit used: %s", unit->GetName().c_str());
-            return "";
-            }
-
-        double fullCircle = 2 * M_PI;
-        if (unit->GetName().EqualsI("ARC_DEG"))
-            fullCircle = 360;
-        else if (!unit->GetName().EqualsI("RAD"))
-            {
-            LOG.errorv("Unsupported unit for azimuth format: %s", unit->GetName().c_str());
-            return "";
-            }
-
-        while (magnitude >= fullCircle) //Strip anything that goes around more than once
-            magnitude -= fullCircle;
-
-        temp = BEU::Quantity(magnitude, *temp.GetUnit());
+        additionalFormatting = true;
         }
 
     if (HasComposite())  // procesing composite parts
@@ -274,7 +291,7 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
         NumericFormatSpec fmtI;
         fmtI.SetPrecision(DecimalPrecision::Precision0);
         fmtI.SetKeepSingleZero(false);
-        if(isBearingAngle || isNorthAzimuth)
+        if(additionalFormatting)
             { // we may want to apply these for any format, but especially for bearing
             fmtI.SetKeepSingleZero(fmtP->IsKeepSingleZero());
             fmtI.SetMinWidth(fmtP->GetMinWidth());
@@ -338,7 +355,7 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
            majT = Utils::AppendUnitName(majT.c_str(), uomLabel, (nullptr == space) ? fmtP->GetUomSeparator() : space);
         }
 
-    if (fmtP->GetAdvancedFormattingScenario() == AdvancedFormattingScenario::Bearing)
+    if (additionalFormatting)
         majT = prefix + majT + suffix;
 
     return majT;

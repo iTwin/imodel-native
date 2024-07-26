@@ -1606,7 +1606,7 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
 
     
     NumericFormatSpec azimuthDMSSpec;
-    azimuthDMSSpec.SetAdvancedFormattingScenario(AdvancedFormattingScenario::NorthAzimuth);
+    azimuthDMSSpec.SetAdvancedFormattingScenario(AdvancedFormattingScenario::Azimuth);
     azimuthDMSSpec.SetMinWidth(2);
     azimuthDMSSpec.SetPrecision(DecimalPrecision::Precision0);
     azimuthDMSSpec.SetKeepDecimalPoint(false);
@@ -1618,7 +1618,7 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
     EXPECT_FALSE(azimuthDMS.IsProblem());
 
     NumericFormatSpec azimuthSpec;
-    azimuthSpec.SetAdvancedFormattingScenario(AdvancedFormattingScenario::NorthAzimuth);
+    azimuthSpec.SetAdvancedFormattingScenario(AdvancedFormattingScenario::Azimuth);
     azimuthSpec.SetMinWidth(6);
     azimuthSpec.SetPrecision(DecimalPrecision::Precision3);
     azimuthSpec.SetKeepDecimalPoint(true);
