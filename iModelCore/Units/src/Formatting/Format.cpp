@@ -275,16 +275,14 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
         if (compS->HasSpacer())
             uomSeparator = compS->GetSpacer();
 
-        Utf8String compSeparator;
-        if (compS->HasSeparator())
-            compSeparator = compS->GetSeparator();
-
         // if the composite was auto created just to provide an override label for the numeric format then use the specified UomSeparator.
         if (!HasExplicitlyDefinedComposite())
             uomSeparator = fmtP->GetUomSeparator();
 
         // if caller explicity defines space parameter when calling this method use it, else use what is defined in format specification
         Utf8CP spacer = Utf8String::IsNullOrEmpty(space) ? uomSeparator.c_str() : space;
+        
+        Utf8String compSeparator = compS->GetSeparator(); // for this we do not care if it's explicitly defined or not, always get the value
 
         // for all parts but the last one we need to format an integer
         NumericFormatSpec fmtI;
