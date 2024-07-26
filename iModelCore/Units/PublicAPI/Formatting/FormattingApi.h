@@ -89,7 +89,10 @@ private:
     double              m_roundFactor;
     PresentationType    m_presentationType;      // Decimal, Fractional, Scientific, Station
     ScientificType      m_scientificType;
-    AdvancedFormattingScenario m_advancedFormattingScenario; //None, Bearing
+    AdvancedFormattingScenario m_advancedFormattingScenario; //None, Bearing, Azimuth
+    CardinalDirection   m_cardinalDirection;     // North, South, East, West
+    double              m_azimuthBaseOffset;     // The base offset for azimuths in degrees (?) from the cardinal direction.
+
     SignOption          m_signOption;            // NoSign, OnlyNegative, SignAlways, NegativeParentheses
     FormatTraits        m_formatTraits;          // NoZeroes, TrailingZeroes, BothZeroes
     DecimalPrecision    m_decPrecision;          // Precision0...12
@@ -108,6 +111,7 @@ private:
     Utf8String          m_southLabel;            //Used to represent south
     Utf8String          m_eastLabel;             //Used to represent east
     Utf8String          m_westLabel;             //Used to represent west
+    bool                m_counterClockwiseAngle; //Used to represent angles that are measured counter-clockwise
 
     double EffectiveRoundFactor(double rnd) const { return FormatConstant::IsIgnored(rnd) ? m_roundFactor : rnd; }
 
@@ -196,6 +200,18 @@ public:
 
     void SetAdvancedFormattingScenario(AdvancedFormattingScenario scenario) {m_advancedFormattingScenario = scenario;}
     AdvancedFormattingScenario GetAdvancedFormattingScenario() const {return m_advancedFormattingScenario;}
+
+    //Sets the cardinal direction used for azimuths
+    void SetCardinalDirection(CardinalDirection dir) {m_cardinalDirection = dir;}
+    CardinalDirection GetCardinalDirection() const {return m_cardinalDirection;}
+
+    //Sets the base offset for azimuths in degrees (?) from the cardinal direction.
+    void SetAzimuthBaseOffset(double offset) {m_azimuthBaseOffset = offset;}
+    double GetAzimuthBaseOffset() const {return m_azimuthBaseOffset;}
+
+    //Sets angle formatting to be counter clockwise, affects azimuths
+    void SetCounterClockwiseAngle(bool setTo) {m_counterClockwiseAngle = setTo;}
+    bool IsCounterClockwiseAngle() const {return m_counterClockwiseAngle;}
 
     void SetPrecision(FractionalPrecision precision) {m_explicitlyDefinedPrecision = true; m_fractPrecision = precision; }
     void SetPrecision(DecimalPrecision precision) {m_explicitlyDefinedPrecision = true; m_decPrecision = precision;}
