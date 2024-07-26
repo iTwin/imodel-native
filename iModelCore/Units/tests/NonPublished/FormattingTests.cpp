@@ -1658,4 +1658,51 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
         }
 }
 
+TEST_F(FormattingTestFixture, AzimuthWithVariousBases) {
+    auto unitDegree = s_unitsContext->LookupUnit("ARC_DEG");
+
+    auto formatAzimuth = [&unitDegree](double value, CardinalDirection direction = CardinalDirection::North, double baseOffset = 0.0, bool counterClockwise = false)
+        {
+        NumericFormatSpec azimuthSpec;
+        azimuthSpec.SetAdvancedFormattingScenario(AdvancedFormattingScenario::Azimuth);
+        azimuthSpec.SetMinWidth(4);
+        azimuthSpec.SetPrecision(DecimalPrecision::Precision1);
+        azimuthSpec.SetKeepDecimalPoint(true);
+        azimuthSpec.SetKeepTrailingZeroes(true);
+        azimuthSpec.SetKeepSingleZero(true);
+        azimuthSpec.SetShowUnitLabel(true);
+        azimuthSpec.SetCardinalDirection(direction);
+        azimuthSpec.SetAzimuthBaseOffset(baseOffset);
+        azimuthSpec.SetCounterClockwiseAngle(counterClockwise);
+        Format azimuth(azimuthSpec);
+        auto azimuthComp = CompositeValueSpec(*unitDegree);
+        azimuthComp.SetMajorLabel("°");
+        azimuthComp.SetSpacer("");
+        azimuth.SetCompositeSpec(azimuthComp);
+
+        Units::Quantity degree(value, *unitDegree);
+        Utf8String result = azimuth.FormatQuantity(degree);
+        return result;
+        };
+
+    ASSERT_STREQ("00.0°", formatAzimuth(0.0).c_str());
+    ASSERT_STREQ("180.0°", formatAzimuth(0.0, CardinalDirection::South).c_str());
+    ASSERT_STREQ("175.0°", formatAzimuth(0.0, CardinalDirection::South, 5.0).c_str());
+    ASSERT_STREQ("185.0°", formatAzimuth(0.0, CardinalDirection::South, 5.0, true).c_str());
+    ASSERT_STREQ("265.0°", formatAzimuth(0.0, CardinalDirection::East, 5.0).c_str());
+    ASSERT_STREQ("275.0°", formatAzimuth(0.0, CardinalDirection::East, -5.0).c_str());
+    ASSERT_STREQ("00.0°", formatAzimuth(0.0, CardinalDirection::West, 90.0).c_str());
+    ASSERT_STREQ("90.0°", formatAzimuth(0.0, CardinalDirection::South, 90.0).c_str());
+    ASSERT_STREQ("270.0°", formatAzimuth(0.0, CardinalDirection::South, 90.0,true).c_str());
+    ASSERT_STREQ("90.0°", formatAzimuth(90.0).c_str());
+    ASSERT_STREQ("270.0°", formatAzimuth(90.0, CardinalDirection::South).c_str());
+    ASSERT_STREQ("265.0°", formatAzimuth(90.0, CardinalDirection::South, 5.0).c_str());
+    ASSERT_STREQ("95.0°", formatAzimuth(90.0, CardinalDirection::South, 5.0, true).c_str());
+    ASSERT_STREQ("355.0°", formatAzimuth(90.0, CardinalDirection::East, 5.0).c_str());
+    ASSERT_STREQ("05.0°", formatAzimuth(90.0, CardinalDirection::East, -5.0).c_str());
+    ASSERT_STREQ("90.0°", formatAzimuth(90.0, CardinalDirection::West, 90.0).c_str());
+    ASSERT_STREQ("180.0°", formatAzimuth(90.0, CardinalDirection::South, 90.0).c_str());
+    ASSERT_STREQ("180.0°", formatAzimuth(90.0, CardinalDirection::South, 90.0,true).c_str());
+}
+
 END_BENTLEY_FORMATTEST_NAMESPACE
