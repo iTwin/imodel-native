@@ -232,8 +232,31 @@ BentleyStatus ProcessBearingAndAzimuth(NumericFormatSpecCP fmtP, BEU::Quantity& 
     }
 
     if (scenario == AdvancedFormattingScenario::Azimuth) {
-        // use the azimuth base to adjust magnitude
-        //Need an additional field for azimuth cardinal base and baseValue
+        double azimuthBase(0.0);
+        auto cardinal = fmtP->GetCardinalDirection();
+        if(cardinal == CardinalDirection::East)
+            azimuthBase += perigon / 4;
+        else if(cardinal == CardinalDirection::South)
+            azimuthBase += perigon / 2;
+        else if(cardinal == CardinalDirection::West)
+            azimuthBase += 3 * perigon / 4;
+
+        //TODO: we assume the base offset is in degrees, but we cannot be sure what our base unit is....
+        azimuthBase += fmtP->GetAzimuthBaseOffset();
+        if(azimuthBase == 0.0)
+            return BentleyStatus::SUCCESS; //no conversion necessary with a north base
+
+        magnitude -= azimuthBase;
+        while(magnitude < 0)
+            magnitude += perigon;
+        
+        while(magnitude > perigon)
+            magnitude -= perigon;
+
+        if(fmtP->IsCounterClockwiseAngle())
+            magnitude = perigon - magnitude;
+
+        temp = BEU::Quantity(magnitude, *temp.GetUnit());
     }
 
     return BentleyStatus::SUCCESS;
