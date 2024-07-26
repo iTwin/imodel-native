@@ -8,7 +8,6 @@
 #include <regex>
 #define _USE_MATH_DEFINES
 #include <math.h>
-#include <optional>
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
