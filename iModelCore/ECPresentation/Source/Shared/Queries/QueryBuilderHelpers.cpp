@@ -1000,8 +1000,13 @@ PresentationQueryContractFieldPtr QueryBuilderHelpers::CreateDisplayLabelField(U
         instanceIdField = PresentationQueryContractSimpleField::Create("/ECInstanceId/", "ECInstanceId");
 
     ECPropertyCP labelProperty = selectClass.GetClass().GetInstanceLabelProperty();
-    Utf8CP labelClause = nullptr != labelProperty ? labelProperty->GetName().c_str() : "''";
-    RefCountedPtr<PresentationQueryContractSimpleField> defaultPropertyValueField = PresentationQueryContractSimpleField::Create(nullptr, labelClause);
+    Utf8String labelClause;
+    if (labelProperty)
+        labelClause = Utf8PrintfString("[%s].[%s]", selectClass.GetAlias().c_str(), labelProperty->GetName().c_str());
+    else
+        labelClause = "''";
+
+    auto defaultPropertyValueField = PresentationQueryContractSimpleField::Create(nullptr, {std::move(labelClause)}, false);
 
     auto labelField = ApplyLabelOverrides([&]
         {
