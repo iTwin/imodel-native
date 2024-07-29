@@ -195,7 +195,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         ReadWriteLock(lockedBy);
         auto lockedByGuid = lockedBy[JSON_NAME(guid)].asString();
         // check if it's the same guid  
-        if (lockedByGuid != m_cache->m_guid) {
+        if (!lockedByGuid.Equals(m_cache->m_guid)) {
             // another user grabbed the write lock after the current user's write lock expiration time, disable current user from operating
             BeNapi::ThrowJsException(Env(), Utf8PrintfString("Container [%s] is currently locked by another user.", m_containerId.c_str()).c_str());
         } else {
@@ -234,7 +234,10 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
 
         if (m_writeable) {
             ResumeWriteLock(); // see if we are re-attaching and previously had the write lock.
-            if (!m_writeLockHeld && HasLocalChanges())
+            BeJsDocument lockedBy;
+            ReadWriteLock(lockedBy);
+            auto lockedByGuid = lockedBy[JSON_NAME(guid)].asString();
+            if ((!lockedByGuid.Equals(m_cache->m_guid) || !m_writeLockHeld) && HasLocalChanges())
                 AbandonChanges(info); // we lost the write lock, we have no choice but to abandon all local changes.
         }
 
