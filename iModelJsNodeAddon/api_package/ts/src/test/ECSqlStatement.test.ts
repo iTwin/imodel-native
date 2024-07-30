@@ -8,7 +8,6 @@ import * as fs from "fs-extra";
 import * as path from "path";
 import { DbResult, Guid } from "@itwin/core-bentley";
 import { QueryRowFormat } from "@itwin/core-common";
-import { Range3d } from "@itwin/core-geometry";
 import { IModelJsNative } from "../NativeLibrary";
 import { getOutputDir, iModelJsNative } from "./utils";
 
@@ -52,12 +51,12 @@ describe("ECSqlStatement", () => {
     return ecdb;
   }
 
-  function formatCurrentRow(currentResp: any, rowFormat: QueryRowFormat = QueryRowFormat.UseECSqlPropertyNames): any {
+  function formatCurrentRow(resp: any, meta: any, rowFormat: QueryRowFormat = QueryRowFormat.UseECSqlPropertyNames): any {
     const formattedRow = {};
     const uniqueNames = new Map<string, number>();
-    for (const prop of currentResp.meta) {
+    for (const prop of meta) {
       const propName = rowFormat === QueryRowFormat.UseJsPropertyNames ? prop.jsonName : prop.name;
-      const val = currentResp.data[prop.index];
+      const val = resp[prop.index];
       if (typeof val !== "undefined" && val !== null) {
         let uniquePropName = propName;
         if (uniqueNames.has(propName)) {
@@ -108,71 +107,19 @@ describe("ECSqlStatement", () => {
     stmt.prepare(db, "SELECT D,I,L,S FROM Test.Foo WHERE ECInstanceId=?");
     stmt.getBinder(1).bindId(id);
     assert.equal(stmt.step(), DbResult.BE_SQLITE_ROW);
-    const args = { abbreviateBlobs: false, convertClassIdsToClassNames: true, rowFormat: QueryRowFormat.UseJsPropertyNames, includeMetaData: true };
+    const args = { classIdsToClassNames: true, rowFormat: QueryRowFormat.UseJsPropertyNames };
     const resp = stmt.toRow(args);
-    const row = formatCurrentRow(resp, args.rowFormat);
+    const meta = stmt.getMetadata();
+    const row = formatCurrentRow(resp.data, meta.meta, args.rowFormat);
     assert.equal(row.d, doubleVal);
     assert.equal(row.i, 3);
     assert.equal(row.l, 3);
     assert.equal(row.s, "3.5");
   });
 
-  it("should handle abbreviateBlobs option correctly when toRow is called", async () => {
-    const testRange = new Range3d(1.2, 2.3, 3.4, 4.5, 5.6, 6.7);
-    const blobVal = new Uint8Array(testRange.toFloat64Array().buffer);
-    const abbreviatedBlobVal = `{"bytes":${ blobVal.byteLength }}`;
+  it("should handle classIdsToClassNames option correctly when toRow is called", async () => {
     const boolVal: boolean = true;
-
-    db = createECDb(outDir, "abbreviateBlobs.ecdb",
-      `<ECSchema schemaName="Test" alias="test" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-      <ECEntityClass typeName="Foo" modifier="Sealed">
-        <ECProperty propertyName="Bl" typeName="binary"/>
-        <ECProperty propertyName="Bo" typeName="boolean"/>
-      </ECEntityClass>
-      </ECSchema>`);
-    assert.isTrue(db.isOpen());
-
-    stmt.prepare(db, "INSERT INTO test.Foo(Bl,Bo) VALUES(?,?)");
-    stmt.getBinder(1).bindBlob(blobVal);
-    stmt.getBinder(2).bindBoolean(boolVal);
-    const res = stmt.stepForInsert();
-    assert.equal(res.status, DbResult.BE_SQLITE_DONE);
-    const id = res.id;
-    stmt.clearBindings();
-    stmt.dispose();
-
-    stmt.prepare(db, "SELECT ECInstanceId, ECClassId, Bl, Bo FROM test.Foo WHERE ECInstanceId=?");
-    stmt.getBinder(1).bindId(id);
-    assert.equal(stmt.step(), DbResult.BE_SQLITE_ROW);
-    {
-      const args = { convertClassIdsToClassNames: true, rowFormat: QueryRowFormat.UseJsPropertyNames, includeMetaData: true };
-      expect(() => stmt.toRow(args)).to.throw("abbreviateBlobs argument missing");
-    }
-
-    {
-      const args = { abbreviateBlobs: false, convertClassIdsToClassNames: true, rowFormat: QueryRowFormat.UseJsPropertyNames, includeMetaData: true };
-      const resp = stmt.toRow(args);
-      const row = formatCurrentRow(resp, args.rowFormat);
-      assert.equal(row.id, id);
-      assert.equal(row.className, "Test.Foo");
-      assert.deepEqual(row.bl, blobVal);
-      assert.equal(row.bo, boolVal);
-    }
-
-    {
-      const args = { abbreviateBlobs: true, convertClassIdsToClassNames: true, rowFormat: QueryRowFormat.UseJsPropertyNames, includeMetaData: true };
-      const resp = stmt.toRow(args);
-      const row = formatCurrentRow(resp, args.rowFormat);
-      assert.equal(row.id, id);
-      assert.equal(row.className, "Test.Foo");
-      assert.deepEqual(row.bl, abbreviatedBlobVal);
-      assert.equal(row.bo, boolVal);
-    }
-  });
-
-  it("should handle convertClassIdsToClassNames option correctly when toRow is called", async () => {
-    const boolVal: boolean = true;
-    db = createECDb(outDir, "convertClassIdsToClassNames.ecdb",
+    db = createECDb(outDir, "classIdsToClassNames.ecdb",
       `<ECSchema schemaName="Test" alias="test" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
       <ECEntityClass typeName="Foo" modifier="Sealed">
         <ECProperty propertyName="B0" typeName="boolean"/>
@@ -192,23 +139,25 @@ describe("ECSqlStatement", () => {
     stmt.getBinder(1).bindId(id);
     assert.equal(stmt.step(), DbResult.BE_SQLITE_ROW);
     {
-      const args = { abbreviateBlobs: false, rowFormat: QueryRowFormat.UseJsPropertyNames, includeMetaData: true };
-      expect(() => stmt.toRow(args)).to.throw("convertClassIdsToClassNames argument missing");
+      const args = { rowFormat: QueryRowFormat.UseJsPropertyNames };
+      expect(() => stmt.toRow(args)).to.throw("classIdsToClassNames argument missing");
     }
 
     {
-      const args = { abbreviateBlobs: false, convertClassIdsToClassNames: false, rowFormat: QueryRowFormat.UseJsPropertyNames, includeMetaData: true };
+      const args = { classIdsToClassNames: false, rowFormat: QueryRowFormat.UseJsPropertyNames };
       const resp = stmt.toRow(args);
-      const row = formatCurrentRow(resp, args.rowFormat);
+      const meta = stmt.getMetadata();
+      const row = formatCurrentRow(resp.data, meta.meta, args.rowFormat);
       assert.equal(row.id, id);
       assert.equal(row.className, "0x58");
       assert.equal(row.b0, boolVal);
     }
 
     {
-      const args = { abbreviateBlobs: false, convertClassIdsToClassNames: true, rowFormat: QueryRowFormat.UseJsPropertyNames, includeMetaData: true };
+      const args = { classIdsToClassNames: true, rowFormat: QueryRowFormat.UseJsPropertyNames };
       const resp = stmt.toRow(args);
-      const row = formatCurrentRow(resp, args.rowFormat);
+      const meta = stmt.getMetadata();
+      const row = formatCurrentRow(resp.data, meta.meta, args.rowFormat);
       assert.equal(row.id, id);
       assert.equal(row.className, "Test.Foo");
       assert.equal(row.b0, boolVal);
@@ -237,32 +186,34 @@ describe("ECSqlStatement", () => {
     stmt.getBinder(1).bindId(id);
     assert.equal(stmt.step(), DbResult.BE_SQLITE_ROW);
     {
-      const args = { abbreviateBlobs: false, convertClassIdsToClassNames: false, includeMetaData: true };
+      const args = { classIdsToClassNames: false };
       expect(() => stmt.toRow(args)).to.throw("rowFormat argument missing");
     }
 
     {
-      const args = { abbreviateBlobs: false, convertClassIdsToClassNames: true, rowFormat: QueryRowFormat.UseJsPropertyNames, includeMetaData: true };
+      const args = { classIdsToClassNames: true, rowFormat: QueryRowFormat.UseJsPropertyNames };
       const resp = stmt.toRow(args);
-      const row = formatCurrentRow(resp, args.rowFormat);
+      const meta = stmt.getMetadata();
+      const row = formatCurrentRow(resp.data, meta.meta, args.rowFormat);
       assert.equal(row.id, id);
       assert.equal(row.className, "Test.Foo");
       assert.equal(row.b0, boolVal);
     }
 
     {
-      const args = { abbreviateBlobs: false, convertClassIdsToClassNames: true, rowFormat: QueryRowFormat.UseECSqlPropertyNames, includeMetaData: true };
+      const args = { classIdsToClassNames: true, rowFormat: QueryRowFormat.UseECSqlPropertyNames };
       const resp = stmt.toRow(args);
-      const row = formatCurrentRow(resp, args.rowFormat);
+      const meta = stmt.getMetadata();
+      const row = formatCurrentRow(resp.data, meta.meta, args.rowFormat);
       assert.equal(row.ECInstanceId, id);
       assert.equal(row.ECClassId, "Test.Foo");
       assert.equal(row.B0, boolVal);
     }
   });
 
-  it("should handle includeMetaData option correctly when toRow is called", () => {
+  it("should return correct row metadata when getMetadata is called after statement is prepared and executed", () => {
     const boolVal: boolean = true;
-    db = createECDb(outDir, "includeMetaData.ecdb",
+    db = createECDb(outDir, "metaData.ecdb",
       `<ECSchema schemaName="Test" alias="test" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
       <ECEntityClass typeName="Foo" modifier="Sealed">
         <ECProperty propertyName="B0" typeName="boolean"/>
@@ -281,32 +232,15 @@ describe("ECSqlStatement", () => {
     stmt.prepare(db, "SELECT ECInstanceId, ECClassId, B0 FROM test.Foo WHERE ECInstanceId=?");
     stmt.getBinder(1).bindId(id);
     assert.equal(stmt.step(), DbResult.BE_SQLITE_ROW);
-    {
-      const args = { abbreviateBlobs: false, convertClassIdsToClassNames: false, rowFormat: QueryRowFormat.UseJsPropertyNames };
-      expect(() => stmt.toRow(args)).to.throw("includeMetaData argument missing");
-    }
 
-    {
-      const expectedResp = {
-        data: ["0x1", "Test.Foo", true],
-      };
-      const args = { abbreviateBlobs: false, convertClassIdsToClassNames: true, rowFormat: QueryRowFormat.UseJsPropertyNames, includeMetaData: false };
-      const resp = stmt.toRow(args);
-      assert.deepEqual(resp, expectedResp);
-    }
-
-    {
-      const expectedResp = {
-        data: ["0x1", "Test.Foo", true],
-        meta: [
-          { className: "", accessString: "ECInstanceId", generated: false, index: 0, jsonName: "id", name: "ECInstanceId", extendedType: "Id", typeName: "long" },
-          { className: "", accessString: "ECClassId", generated: false, index: 1, jsonName: "className", name: "ECClassId", extendedType: "ClassId", typeName: "long" },
-          { className: "Test:Foo", accessString: "B0", generated: false, index: 2, jsonName: "b0", name: "B0", extendedType: "", typeName: "boolean" },
-        ],
-      };
-      const args = { abbreviateBlobs: false, convertClassIdsToClassNames: true, rowFormat: QueryRowFormat.UseECSqlPropertyNames, includeMetaData: true };
-      const resp = stmt.toRow(args);
-      assert.deepEqual(resp, expectedResp);
-    }
+    const expectedMeta = {
+      meta: [
+        { className: "", accessString: "ECInstanceId", generated: false, index: 0, jsonName: "id", name: "ECInstanceId", extendedType: "Id", typeName: "long" },
+        { className: "", accessString: "ECClassId", generated: false, index: 1, jsonName: "className", name: "ECClassId", extendedType: "ClassId", typeName: "long" },
+        { className: "Test:Foo", accessString: "B0", generated: false, index: 2, jsonName: "b0", name: "B0", extendedType: "", typeName: "boolean" },
+      ],
+    };
+    const meta = stmt.getMetadata();
+    assert.deepEqual(meta, expectedMeta);
   });
 });
