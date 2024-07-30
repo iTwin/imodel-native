@@ -330,7 +330,18 @@ ContentQueryContractPtr ContentQueryBuilder::CreateContract(ContentDescriptorCR 
         displayLabelField = QueryBuilderHelpers::CreateDisplayLabelField(descriptor.GetDisplayLabelField()->GetUniqueName().c_str(), m_params.GetSchemaHelper(), selectInfo.GetSelectClass(),
             nullptr, nullptr, selectInfo.GetRelatedInstancePaths(), labelOverrideValuesList);
         }
-    return ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectInfo.GetSelectClass().GetClass(), queryInfo, m_params.GetSchemaHelper(), m_params.GetRulesPreprocessor(),
+
+    auto relatedInstanceDisplayLabelFieldFactory = [&](Utf8CP fieldName, SelectClass<ECClass> const& selectClass)
+        {
+        auto const labelOverrideValuesList = QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(m_params.GetSchemaHelper(), m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(), selectClass.GetClass());
+        return QueryBuilderHelpers::CreateDisplayLabelField(
+            fieldName, m_params.GetSchemaHelper(), selectClass,
+            PresentationQueryContractSimpleField::Create("/RelatedFieldClassId/", Utf8PrintfString("[%s].[ECClassId]", selectClass.GetAlias().c_str()), false),
+            PresentationQueryContractSimpleField::Create("/RelatedFieldInstanceId/", Utf8PrintfString("[%s].[ECInstanceId]", selectClass.GetAlias().c_str()), false),
+            selectInfo.GetRelatedInstancePaths(), labelOverrideValuesList);
+        };
+
+    return ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectInfo.GetSelectClass().GetClass(), queryInfo, std::move(relatedInstanceDisplayLabelFieldFactory),
         displayLabelField, selectInfo.GetRelatedInstancePaths(), m_params.ShouldSkipCompositePropertyFields(), m_params.ShouldSkipXToManyRelatedContentFields());
     }
 

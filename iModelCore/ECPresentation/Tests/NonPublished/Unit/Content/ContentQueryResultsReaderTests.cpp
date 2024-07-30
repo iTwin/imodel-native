@@ -29,7 +29,15 @@ struct ContentQueryResultsReaderTests : QueryExecutorTests
     ContentQueryContractPtr CreateContract(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, ComplexQueryBuilderR queryInfo,
         bool skipCompositePropertyFields = false, bool skipXToManyRelatedContentFields = false) const
         {
-        return ContentQueryContract::Create(id, descriptor, ecClass, queryInfo, *m_schemaHelper, *m_rulesPreprocessor, nullptr, {}, skipCompositePropertyFields, skipXToManyRelatedContentFields);
+        return ContentQueryContract::Create(id, descriptor, ecClass, queryInfo,
+            [](auto fieldName, auto const&)
+                {
+                return PresentationQueryContractSimpleField::Create(fieldName,
+                    Utf8PrintfString(R"('{ "DisplayValue": "%s", "TypeName": "string", "RawValue": "%s" }')",
+                        CommonStrings::LABEL_NOTSPECIFIED, CommonStrings::LABEL_NOTSPECIFIED),
+                    false);
+                },
+            nullptr, {}, skipCompositePropertyFields, skipXToManyRelatedContentFields);
         }
     };
 

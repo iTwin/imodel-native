@@ -56,9 +56,9 @@ Utf8CP ContentQueryContract::InputECInstanceKeysFieldName = "/InputECInstanceKey
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentQueryContract::ContentQueryContract(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const& queryInfo, ECSchemaHelper const& schemaHelper, IRulesPreprocessor& rulesPreprocessor,
+ContentQueryContract::ContentQueryContract(uint64_t id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const& queryInfo, RelatedInstanceDisplayLabelFieldFactory displayLabelFieldFactory,
     PresentationQueryContractFieldPtr displayLabelField, bvector<RelatedClassPath> relatedInstancePaths, bool skipCompositePropertyFields, bool skipXToManyRelatedContentFields)
-    : PresentationQueryContract(id), m_descriptor(&descriptor), m_class(ecClass), m_relationshipClass(nullptr), m_queryInfo(queryInfo), m_schemaHelper(schemaHelper), m_rulesPreprocessor(rulesPreprocessor), m_displayLabelField(displayLabelField),
+    : PresentationQueryContract(id), m_descriptor(&descriptor), m_class(ecClass), m_relationshipClass(nullptr), m_queryInfo(queryInfo), m_relatedInstanceDisplayLabelFieldFactory(std::move(displayLabelFieldFactory)), m_displayLabelField(displayLabelField),
     m_relatedInstancePaths(std::move(relatedInstancePaths)), m_skipCompositePropertyFields(skipCompositePropertyFields), m_skipXToManyRelatedContentFields(skipXToManyRelatedContentFields)
     {}
 
@@ -349,18 +349,12 @@ bool ContentQueryContract::CreateContractFields(bvector<PresentationQueryContrac
             bvector<PresentationQueryContractFieldCPtr> nestedContractFields;
             if (CreateContractFields(nestedContractFields, relatedContentField->GetFields(), relatedContentField))
                 {
-                auto [ecClass, alias] = relatedContentField->IsRelationshipField()
-                    ? std::pair{&relatedContentField->GetRelationshipClass(), relatedContentField->GetRelationshipClassAlias().c_str()}
-                    : std::pair{&relatedContentField->GetContentClass(), relatedContentField->GetContentClassAlias().c_str()};
+                auto selectClass = relatedContentField->IsRelationshipField()
+                    ? SelectClass{relatedContentField->GetRelationshipClass(), relatedContentField->GetRelationshipClassAlias()}
+                    : SelectClass{relatedContentField->GetContentClass(), relatedContentField->GetContentClassAlias()};
 
-                contractFields.push_back(CreateInstanceKeyField(keyFieldName.c_str(), alias, {}));
-
-                auto const labelOverrideValuesList = QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(m_schemaHelper, m_rulesPreprocessor.GetInstanceLabelOverrides(), *ecClass);
-                contractFields.push_back(QueryBuilderHelpers::CreateDisplayLabelField(
-                    displayLabelFieldName.c_str(), m_schemaHelper, SelectClass{*ecClass, alias},
-                    PresentationQueryContractSimpleField::Create("/RelatedFieldClassId/", Utf8PrintfString("[%s].[ECClassId]", alias), false),
-                    PresentationQueryContractSimpleField::Create("/RelatedFieldInstanceId/", Utf8PrintfString("[%s].[ECInstanceId]", alias), false),
-                    m_relatedInstancePaths, labelOverrideValuesList));
+                contractFields.push_back(CreateInstanceKeyField(keyFieldName.c_str(), selectClass.GetAlias().c_str(), {}));
+                contractFields.push_back(m_relatedInstanceDisplayLabelFieldFactory(displayLabelFieldName.c_str(), selectClass));
                 didCreateNonNullField = true;
                 }
             else
