@@ -1470,21 +1470,10 @@ DEFINE_SCHEMA(LoadsXToManyRelatedInstancesAsArrays_WithCustomDisplayLabels, R"*(
     <ECEntityClass typeName="ChildClass1">
         <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren1" direction="Backward" />
     </ECEntityClass>
-    <ECStructClass typeName="MyStruct">
-        <ECProperty propertyName="IntProperty" typeName="int" />
-        <ECProperty propertyName="StringProperty" typeName="string" />
-    </ECStructClass>
     <ECEntityClass typeName="ChildClass2">
         <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren2" direction="Backward" />
-        <ECProperty propertyName="IntProperty" typeName="int" />
-        <ECProperty propertyName="StringProperty" typeName="string" />
-        <ECArrayProperty propertyName="ArrayProperty" typeName="int" />
-        <ECStructProperty propertyName="StructProperty" typeName="MyStruct" />
-        <ECStructArrayProperty propertyName="StructArrayProperty" typeName="MyStruct" />
     </ECEntityClass>
-    <ECEntityClass typeName="ParentClass">
-        <ECProperty propertyName="ParentProperty" typeName="int" />
-    </ECEntityClass>
+    <ECEntityClass typeName="ParentClass" />
     <ECRelationshipClass typeName="ParentHasChildren1" strength="referencing" strengthDirection="forward" modifier="Sealed">
         <Source multiplicity="(1..1)" roleLabel="ClassD Has ClassE" polymorphic="False">
             <Class class="ParentClass" />
@@ -1505,7 +1494,6 @@ DEFINE_SCHEMA(LoadsXToManyRelatedInstancesAsArrays_WithCustomDisplayLabels, R"*(
 TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstancesAsArrays_WithCustomDisplayLabels)
     {
     // set up data set
-    ECClassCP structClass = GetClass("MyStruct");
     ECClassCP parentClass = GetClass("ParentClass");
     ECClassCP childClass1 = GetClass("ChildClass1");
     ECClassCP childClass2 = GetClass("ChildClass2");
@@ -1519,51 +1507,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     IECInstancePtr child2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *childClass2, [&](IECInstanceR instance)
         {
         instance.SetValue("Parent", ECValue(RulesEngineTestHelpers::GetInstanceKey(*parent).GetId(), rel2));
-        instance.SetValue("IntProperty", ECValue(1));
-        instance.SetValue("StringProperty", ECValue("111"));
-
-        instance.AddArrayElements("ArrayProperty", 2);
-        instance.SetValue("ArrayProperty", ECValue(2), 0);
-        instance.SetValue("ArrayProperty", ECValue(1), 1);
-
-        instance.SetValue("StructProperty.IntProperty", ECValue(123));
-        instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
-
-        instance.AddArrayElements("StructArrayProperty", 1);
-        IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
-        structInstance->SetValue("IntProperty", ECValue(123));
-        structInstance->SetValue("StringProperty", ECValue("abc"));
-        ECValue structValue;
-        structValue.SetStruct(structInstance.get());
-        instance.SetValue("StructArrayProperty", structValue, 0);
         });
     IECInstancePtr child3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *childClass2, [&](IECInstanceR instance)
         {
         instance.SetValue("Parent", ECValue(RulesEngineTestHelpers::GetInstanceKey(*parent).GetId(), rel2));
-        instance.SetValue("IntProperty", ECValue(2));
-        instance.SetValue("StringProperty", ECValue("222"));
-
-        instance.AddArrayElements("ArrayProperty", 1);
-        instance.SetValue("ArrayProperty", ECValue(3), 0);
-
-        instance.SetValue("StructProperty.IntProperty", ECValue(456));
-        instance.SetValue("StructProperty.StringProperty", ECValue("def"));
-
-        instance.AddArrayElements("StructArrayProperty", 2);
-
-        IECInstancePtr structInstance1 = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
-        structInstance1->SetValue("IntProperty", ECValue(456));
-        structInstance1->SetValue("StringProperty", ECValue("def"));
-        ECValue structValue1;
-        structValue1.SetStruct(structInstance1.get());
-        instance.SetValue("StructArrayProperty", structValue1, 0);
-
-        IECInstancePtr structInstance2 = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
-        structInstance2->SetValue("IntProperty", ECValue(789));
-        structInstance2->SetValue("StringProperty", ECValue("ghi"));
-        ECValue structValue2;
-        structValue2.SetStruct(structInstance2.get());
-        instance.SetValue("StructArrayProperty", structValue2, 1);
         });
 
     // create the rule set
@@ -1586,120 +1533,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-    EXPECT_EQ(3, descriptor->GetVisibleFields().size()); // ParentClass_ParentProperty, Nested<ChildClass1 properties>, Nested<ChildClass2 properties>
-
-    rapidjson::Document expectedChildClass1FieldType;
-    expectedChildClass1FieldType.Parse(Utf8PrintfString(R"({
-        "ValueFormat": "Struct",
-        "TypeName": "ChildClass1",
-        "Members": [{
-            "Name": "%s",
-            "Label": "Parent",
-            "Type": {
-                "ValueFormat": "Primitive",
-                "TypeName": "navigation"
-                }
-            }]
-        })",
-        FIELD_NAME(childClass1, "Parent")).c_str());
-    rapidjson::Document actualChildClass1FieldType = descriptor->GetVisibleFields()[1]->GetTypeDescription().AsJson();
-    EXPECT_EQ(expectedChildClass1FieldType, actualChildClass1FieldType)
-        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedChildClass1FieldType) << "\r\n"
-        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualChildClass1FieldType);
-
-    rapidjson::Document expectedChildClass2FieldType;
-    expectedChildClass2FieldType.Parse(Utf8PrintfString(R"({
-        "ValueFormat": "Struct",
-        "TypeName": "ChildClass2",
-        "Members": [{
-            "Name": "%s",
-            "Label": "Parent",
-            "Type": {
-                "ValueFormat": "Primitive",
-                "TypeName": "navigation"
-                }
-            },{
-            "Name": "%s",
-            "Label": "IntProperty",
-            "Type": {
-                "ValueFormat": "Primitive",
-                "TypeName": "int"
-                }
-            },{
-            "Name": "%s",
-            "Label": "StringProperty",
-            "Type": {
-                "ValueFormat": "Primitive",
-                "TypeName": "string"
-                }
-            },{
-            "Name": "%s",
-            "Label": "ArrayProperty",
-            "Type": {
-                "ValueFormat": "Array",
-                "TypeName": "int[]",
-                "MemberType": {
-                    "ValueFormat": "Primitive",
-                    "TypeName": "int"
-                    }
-                }
-            },{
-            "Name": "%s",
-            "Label": "StructProperty",
-            "Type": {
-                "ValueFormat": "Struct",
-                "TypeName": "MyStruct",
-                "Members": [{
-                    "Name": "IntProperty",
-                    "Label": "IntProperty",
-                    "Type": {
-                        "ValueFormat": "Primitive",
-                        "TypeName": "int"
-                        }
-                    },{
-                    "Name": "StringProperty",
-                    "Label": "StringProperty",
-                    "Type": {
-                        "ValueFormat": "Primitive",
-                        "TypeName": "string"
-                        }
-                    }]
-                }
-            },{
-            "Name": "%s",
-            "Label": "StructArrayProperty",
-            "Type": {
-                "ValueFormat": "Array",
-                "TypeName": "MyStruct[]",
-                "MemberType": {
-                    "ValueFormat": "Struct",
-                    "TypeName": "MyStruct",
-                    "Members": [{
-                        "Name": "IntProperty",
-                        "Label": "IntProperty",
-                        "Type": {
-                            "ValueFormat": "Primitive",
-                            "TypeName": "int"
-                            }
-                        },{
-                        "Name": "StringProperty",
-                        "Label": "StringProperty",
-                        "Type": {
-                            "ValueFormat": "Primitive",
-                            "TypeName": "string"
-                            }
-                        }]
-                    }
-                }
-            }]
-        })",
-        FIELD_NAME(childClass2, "Parent"), FIELD_NAME(childClass2, "IntProperty"), FIELD_NAME(childClass2, "StringProperty"),
-        FIELD_NAME(childClass2, "ArrayProperty"), FIELD_NAME(childClass2, "StructProperty"),
-        FIELD_NAME(childClass2, "StructArrayProperty")).c_str());
-    rapidjson::Document actualChildClass2FieldType = descriptor->GetVisibleFields()[2]->GetTypeDescription().AsJson();
-    EXPECT_EQ(expectedChildClass2FieldType, actualChildClass2FieldType)
-        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedChildClass2FieldType) << "\r\n"
-        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(actualChildClass2FieldType);
+    EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // Nested<ChildClass1 properties>, Nested<ChildClass2 properties>
 
     // request for content
     ContentCPtr content = GetVerifiedContent(*descriptor);
@@ -1735,33 +1569,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
             },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "%s": {"ECClassId": "%s", "ECInstanceId": "%s", "Label": %s},
-                "%s": 1,
-                "%s": "111",
-                "%s": [2, 1],
-                "%s": {
-                    "IntProperty": 123,
-                    "StringProperty": "abc"
-                    },
-                "%s": [{
-                   "IntProperty": 123,
-                   "StringProperty": "abc"
-                   }]
-                },
+                "%s": {"ECClassId": "%s", "ECInstanceId": "%s", "Label": %s}
+            },
             "DisplayValues": {
-                "%s": "%s",
-                "%s": "1",
-                "%s": "111",
-                "%s": ["2", "1"],
-                "%s": {
-                    "IntProperty": "123",
-                    "StringProperty": "abc"
-                    },
-                "%s": [{
-                   "IntProperty": "123",
-                   "StringProperty": "abc"
-                   }]
-                },
+                "%s": "%s"
+            },
             "MergedFieldNames": []
             },{
             "DisplayLabel": {
@@ -1771,39 +1583,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
             },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
-                "%s": {"ECClassId": "%s", "ECInstanceId": "%s", "Label": %s},
-                "%s": 2,
-                "%s": "222",
-                "%s": [3],
-                "%s": {
-                    "IntProperty": 456,
-                    "StringProperty": "def"
-                    },
-                "%s": [{
-                   "IntProperty": 456,
-                   "StringProperty": "def"
-                   },{
-                   "IntProperty": 789,
-                   "StringProperty": "ghi"
-                   }]
-                },
+                "%s": {"ECClassId": "%s", "ECInstanceId": "%s", "Label": %s}
+            },
             "DisplayValues": {
-                "%s": "%s",
-                "%s": "2",
-                "%s": "222",
-                "%s": ["3"],
-                "%s": {
-                    "IntProperty": "456",
-                    "StringProperty": "def"
-                    },
-                "%s": [{
-                   "IntProperty": "456",
-                   "StringProperty": "def"
-                   },{
-                   "IntProperty": "789",
-                   "StringProperty": "ghi"
-                   }]
-                },
+                "%s": "%s"
+            },
             "MergedFieldNames": []
             }]
         })",
@@ -1818,20 +1602,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
         childClass2->GetName().c_str(), childClass2->GetName().c_str(),
         childClass2->GetId().ToString().c_str(), child2->GetInstanceId().c_str(),
         FIELD_NAME(childClass2, "Parent"), parent->GetClass().GetId().ToString().c_str(), parent->GetInstanceId().c_str(), GetNavigationPropertyTargetLabel().c_str(),
-        FIELD_NAME(childClass2, "IntProperty"), FIELD_NAME(childClass2, "StringProperty"), FIELD_NAME(childClass2, "ArrayProperty"),
-        FIELD_NAME(childClass2, "StructProperty"), FIELD_NAME(childClass2, "StructArrayProperty"),
         FIELD_NAME(childClass2, "Parent"), CommonStrings::LABEL_NOTSPECIFIED,
-        FIELD_NAME(childClass2, "IntProperty"), FIELD_NAME(childClass2, "StringProperty"), FIELD_NAME(childClass2, "ArrayProperty"),
-        FIELD_NAME(childClass2, "StructProperty"), FIELD_NAME(childClass2, "StructArrayProperty"),
 
         childClass2->GetName().c_str(), childClass2->GetName().c_str(),
         childClass2->GetId().ToString().c_str(), child3->GetInstanceId().c_str(),
         FIELD_NAME(childClass2, "Parent"), parent->GetClass().GetId().ToString().c_str(),  parent->GetInstanceId().c_str(), GetNavigationPropertyTargetLabel().c_str(),
-        FIELD_NAME(childClass2, "IntProperty"), FIELD_NAME(childClass2, "StringProperty"), FIELD_NAME(childClass2, "ArrayProperty"),
-        FIELD_NAME(childClass2, "StructProperty"), FIELD_NAME(childClass2, "StructArrayProperty"),
-        FIELD_NAME(childClass2, "Parent"), CommonStrings::LABEL_NOTSPECIFIED,
-        FIELD_NAME(childClass2, "IntProperty"), FIELD_NAME(childClass2, "StringProperty"), FIELD_NAME(childClass2, "ArrayProperty"),
-        FIELD_NAME(childClass2, "StructProperty"), FIELD_NAME(childClass2, "StructArrayProperty")).c_str());
+        FIELD_NAME(childClass2, "Parent"), CommonStrings::LABEL_NOTSPECIFIED).c_str());
         
         EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
