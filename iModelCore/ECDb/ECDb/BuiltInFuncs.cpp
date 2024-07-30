@@ -113,6 +113,7 @@ void ExtractPropFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
 
         InstanceReader::JsonParams params;
         params.SetUseJsName(jsonFlags & InstanceReader::FLAGS_UseJsPropertyNames);
+        params.SetClassIdToClassNames(jsonFlags & InstanceReader::FLAGS_UseJsPropertyNames);
         params.SetAbbreviateBlobs(!(jsonFlags & InstanceReader::FLAGS_DoNotTruncateBlobs));
 
         const auto json = row.GetJson(params).Stringify();
@@ -157,6 +158,7 @@ void ExtractInstFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args) {
 
     InstanceReader::JsonParams params;
     params.SetUseJsName(jsonFlags & InstanceReader::FLAGS_UseJsPropertyNames);
+    params.SetClassIdToClassNames(jsonFlags & InstanceReader::FLAGS_UseJsPropertyNames);
     params.SetAbbreviateBlobs(!(jsonFlags & InstanceReader::FLAGS_DoNotTruncateBlobs));
 
     auto setResult = [&](InstanceReader::IRowContext const& row){
