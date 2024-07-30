@@ -87,6 +87,8 @@ protected:
     virtual bool GetBoolean(bool defVal) const = 0;
     virtual int32_t GetInt(int32_t defVal) const = 0;
     virtual uint32_t GetUInt(uint32_t defVal) const = 0;
+    virtual int64_t GetInt64(int64_t defVal) const = 0;
+    virtual uint64_t GetUInt64(uint64_t defVal) const = 0;
     Utf8CP GetBase64Data() const {
         if (!isString())
             return nullptr;
@@ -271,16 +273,9 @@ public:
             Utf8String::Sscanf_safe(str, fmt, &val);
             return val;
         }
-        if (isNumeric()) {
-            // Casting a double to a uint produces undefined results while casting a double to int is well defined.
-            // Similarly, casting int to uint is well defined.
-            // On ARM casting a negative double to uint results in 0.
-            // On Intel, casting a negative double to uint produces the same result as below.
-            return uint64_t(int64_t(GetDouble((double)defVal)));
-        }
-
-        return defVal;
+        return m_val->GetUInt64(defVal);
     }
+
     // get this value as an BeInt64Id instance.
     template <class T>
     T GetId64() const {
@@ -668,6 +663,8 @@ private:
     virtual bool GetBoolean(bool defVal) const override { return m_value.asBool(defVal); }
     virtual int32_t GetInt(int32_t defVal) const override { return m_value.asInt(defVal); }
     virtual uint32_t GetUInt(uint32_t defVal) const override { return m_value.asUInt(defVal); }
+    virtual int64_t GetInt64(int64_t defVal) const override { return m_value.asInt64(defVal); }
+    virtual uint64_t GetUInt64(uint64_t defVal) const override { return m_value.asUInt64(defVal); }
     virtual bool ForEachProperty(std::function<bool(Utf8CP name, BeJsConst)> fn) const override {
         if (m_value.isObject()) {
             auto end = ConstValue().end();
@@ -834,6 +831,8 @@ private:
     }
     virtual int32_t GetInt(int32_t defVal) const override { return isNumeric() ? m_value->GetInt() : defVal; }
     virtual uint32_t GetUInt(uint32_t defVal) const override { return isNumeric() ? m_value->GetUint() : defVal; }
+    virtual int64_t GetInt64(int64_t defVal) const override { return isNumeric() ? m_value->GetInt64() : defVal; }
+    virtual uint64_t GetUInt64(uint64_t defVal) const override { return isNumeric() ? m_value->GetUint64() : defVal; }
     virtual bool ForEachProperty(std::function<bool(Utf8CP name, BeJsConst)> fn) const override {
         if (isObject()) {
             auto obj = m_value->GetObj();

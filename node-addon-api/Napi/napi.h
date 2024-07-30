@@ -131,6 +131,22 @@ protected:
     virtual bool GetBoolean(bool defVal) const override { return isNull() ? defVal : m_napiVal.ToBoolean(); }
     virtual int32_t GetInt(int32_t defVal) const override { return isNumeric() ? m_napiVal.ToNumber() : defVal; }
     virtual uint32_t GetUInt(uint32_t defVal) const override { return isNumeric() ? m_napiVal.ToNumber() : defVal; }
+    virtual int64_t GetInt64(int64_t defVal) const override {
+        if (isNumeric()) {
+            double number = m_napiVal.ToNumber();
+            if (number >= std::numeric_limits<int64_t>::min() && number <= std::numeric_limits<int64_t>::max())
+                return static_cast<int64_t>(number);
+        }
+        return defVal;
+    }
+    virtual uint64_t GetUInt64(uint64_t defVal) const override { 
+        if (isNumeric()) {
+            double number = m_napiVal.ToNumber();
+            if (number >= std::numeric_limits<uint64_t>::min() && number <= std::numeric_limits<uint64_t>::max())
+                return static_cast<uint64_t>(number);
+        }
+        return defVal;
+    }
     virtual BentleyStatus GetBinary(std::vector<Byte>& dest) const override {
         dest.clear();
         if (m_napiVal.IsTypedArray()) {
