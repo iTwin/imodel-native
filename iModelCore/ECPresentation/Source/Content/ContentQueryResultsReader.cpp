@@ -151,7 +151,9 @@ static void SkipValues(int& sqlColumnIndex, bvector<ContentDescriptor::Field*> c
                 continue; // don't increase sqlColumnIndex even for this field
 
             // Skip display label column 
-            SkipValues(++sqlColumnIndex, relatedContentField.GetFields(), contract);
+            ++sqlColumnIndex;
+            // Skip related content select fields
+            SkipValues(sqlColumnIndex, relatedContentField.GetFields(), contract);
             }
 
         if (contract.ShouldSkipCompositePropertyFields() && field->IsPropertiesField() && field->AsPropertiesField()->IsCompositePropertiesField())
