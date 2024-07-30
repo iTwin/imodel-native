@@ -1023,11 +1023,11 @@ PresentationQueryContractFieldPtr QueryBuilderHelpers::CreateDisplayLabelField(U
     // NOTE: It's assumed that class ID field and instance ID fields are non-null constants or they're properties of the same instance that will both be defined or NULL.
     // This should result into the following clause:
     // IIF(classId IS NULL, CAST(NULL AS TEXT), ...)
-    static auto const SimpleField = [](Utf8String clause) { return PresentationQueryContractSimpleField::Create("", clause, false); };
+    static auto const CreateSimpleField = [](Utf8String clause) { return PresentationQueryContractSimpleField::Create("", clause, false); };
     labelField = PresentationQueryContractFunctionField::Create(
         name, "IIF",
-            {PresentationQueryContractBinaryOpField::Create("", "IS", classIdField, SimpleField("NULL")),
-            SimpleField("CAST(NULL AS TEXT)"),
+            {PresentationQueryContractBinaryOpField::Create("", "IS", classIdField, CreateSimpleField("NULL")),
+            CreateSimpleField("CAST(NULL AS TEXT)"),
             std::move(labelField)});
     
     labelField->SetGroupingClause(CreateDisplayLabelValueClause(labelField->GetName()));
