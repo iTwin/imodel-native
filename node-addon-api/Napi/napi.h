@@ -134,7 +134,7 @@ protected:
     virtual int64_t GetInt64(int64_t defVal) const override {
         if (isNumeric()) {
             double number = m_napiVal.ToNumber();
-            if (number >= std::numeric_limits<int64_t>::min() && number <= std::numeric_limits<int64_t>::max())
+            if (number >= std::numeric_limits<int64_t>::min() && number <= std::numeric_limits<int64_t>::max()) 
                 return static_cast<int64_t>(number);
         }
         return defVal;
@@ -142,8 +142,13 @@ protected:
     virtual uint64_t GetUInt64(uint64_t defVal) const override { 
         if (isNumeric()) {
             double number = m_napiVal.ToNumber();
-            if (number >= std::numeric_limits<uint64_t>::min() && number <= std::numeric_limits<uint64_t>::max())
-                return static_cast<uint64_t>(number);
+            if (number >= std::numeric_limits<uint64_t>::min() && number <= std::numeric_limits<uint64_t>::max()) {
+                // Casting a double to a uint produces undefined results while casting a double to int is well defined.
+                // Similarly, casting int to uint is well defined.
+                // On ARM casting a negative double to uint results in 0.
+                // On Intel, casting a negative double to uint produces the same result as below.
+                return uint64_t(int64_t(number));
+            }
         }
         return defVal;
     }
