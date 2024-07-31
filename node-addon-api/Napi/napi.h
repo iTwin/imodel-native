@@ -16,6 +16,9 @@
 
 BEGIN_BENTLEY_NAMESPACE
 
+constexpr double JS_MAX_SAFE_INTEGER = 9007199254740991.0;
+constexpr double JS_MIN_SAFE_INTEGER = -9007199254740991.0;
+
 struct BeNapi {
 public:
     [[noreturn]] static void ThrowJsException(Napi::Env env, Utf8CP str, int errorNumber) {
@@ -134,7 +137,7 @@ protected:
     virtual int64_t GetInt64(int64_t defVal) const override {
         if (isNumeric()) {
             double number = m_napiVal.ToNumber();
-            if (number >= std::numeric_limits<int64_t>::min() && number <= std::numeric_limits<int64_t>::max()) 
+            if (number >= JS_MIN_SAFE_INTEGER && number <= JS_MAX_SAFE_INTEGER) 
                 return static_cast<int64_t>(number);
         }
         return defVal;
@@ -142,7 +145,7 @@ protected:
     virtual uint64_t GetUInt64(uint64_t defVal) const override { 
         if (isNumeric()) {
             double number = m_napiVal.ToNumber();
-            if (number >= std::numeric_limits<uint64_t>::min() && number <= std::numeric_limits<uint64_t>::max()) {
+            if (number >= 0 && number <= JS_MAX_SAFE_INTEGER) {
                 // Casting a double to a uint produces undefined results while casting a double to int is well defined.
                 // Similarly, casting int to uint is well defined.
                 // On ARM casting a negative double to uint results in 0.
