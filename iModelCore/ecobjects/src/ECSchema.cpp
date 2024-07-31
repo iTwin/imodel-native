@@ -2942,14 +2942,21 @@ static ECSchemaPtr ParseHeaderAndLocateSchema(WCharCP schemaXmlFile, ECSchemaRea
     {
         BeAssert(s_noAssert);
         LOG.errorv ("Error loading XML file %ls: %s (error at char %d)", schemaXmlFile, result.description(), result.offset);
+        if (outStatus != nullptr)
+            *outStatus = SchemaReadStatus::FailedToParseXml;
         return nullptr;
     }
 
     SchemaKey searchKey;
     uint32_t ecXmlMajorVersion, ecXmlMinorVersion;
     pugi::xml_node schemaNode;
-    if (SchemaReadStatus::Success != SchemaXmlReader::ReadSchemaStub(searchKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc))
+    const auto status = SchemaXmlReader::ReadSchemaStub(searchKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc);
+    if (SchemaReadStatus::Success != status)
+        {
+        if (outStatus != nullptr)
+            *outStatus = status;
         return nullptr;
+        }
 
     ECSchemaPtr schema = schemaContext.LocateSchema(searchKey, matchType);
     if (!schema.IsValid())
