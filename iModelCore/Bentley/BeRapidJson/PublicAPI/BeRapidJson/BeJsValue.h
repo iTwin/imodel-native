@@ -18,6 +18,8 @@
 #include <Bentley/Base64Utilities.h>
 #include <BeRapidJson/BeRapidJson.h>
 #include <json/json.h>
+#include <limits>
+#include <cmath>
 
 namespace Napi {
 class Value;
@@ -269,6 +271,10 @@ public:
         if (isString()) {
             uint64_t val = defVal;
             auto str = ToUtf8CP();
+            if (str[0] == '-') // negative numbers are not valid
+                return defVal;
+            if (strchr(str, '.') != nullptr) // decimal numbers are not valid
+                return defVal;
             auto fmt = (str[0] == '0' && (str[1] == 'X' || str[1] == 'x')) ? "%" SCNx64 : "%" SCNu64;
             Utf8String::Sscanf_safe(str, fmt, &val);
             return val;
@@ -832,7 +838,27 @@ private:
     virtual int32_t GetInt(int32_t defVal) const override { return isNumeric() ? m_value->GetInt() : defVal; }
     virtual uint32_t GetUInt(uint32_t defVal) const override { return isNumeric() ? m_value->GetUint() : defVal; }
     virtual int64_t GetInt64(int64_t defVal) const override { return isNumeric() ? m_value->GetInt64() : defVal; }
-    virtual uint64_t GetUInt64(uint64_t defVal) const override { return isNumeric() ? m_value->GetUint64() : defVal; }
+    virtual uint64_t GetUInt64(uint64_t defVal) const override { 
+        if (m_value->IsDouble() && IsLosslessUint64(m_value->GetDouble())) {
+            return static_cast<uint64_t>(m_value->GetDouble());
+        }
+        if (m_value->IsFloat() && IsLosslessUint64(m_value->GetFloat())) {
+            return static_cast<uint64_t>(m_value->GetFloat());
+        }
+        return m_value->IsUint64() ? m_value->GetUint64() : defVal; 
+    }
+    bool IsLosslessUint64(double d) const {
+        if (d < 0.0 || d > static_cast<double>(std::numeric_limits<uint64_t>::max())) {
+            return false;
+        }
+        return d == std::floor(d);
+    }
+    bool IsLosslessUint64(float f) const {
+        if (f < 0.0 || f > static_cast<float>(std::numeric_limits<uint64_t>::max())) {
+            return false;
+        }
+        return f == std::floor(f);
+    }
     virtual bool ForEachProperty(std::function<bool(Utf8CP name, BeJsConst)> fn) const override {
         if (isObject()) {
             auto obj = m_value->GetObj();
