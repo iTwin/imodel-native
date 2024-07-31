@@ -333,12 +333,7 @@ ContentQueryContractPtr ContentQueryBuilder::CreateContract(ContentDescriptorCR 
 
     auto relatedInstanceDisplayLabelFieldFactory = [&](Utf8CP fieldName, SelectClass<ECClass> const& selectClass)
         {
-        auto const labelOverrideValuesList = QueryBuilderHelpers::GetInstanceLabelOverrideSpecsForClass(m_params.GetSchemaHelper(), m_params.GetRulesPreprocessor().GetInstanceLabelOverrides(), selectClass.GetClass());
-        return QueryBuilderHelpers::CreateDisplayLabelField(
-            fieldName, m_params.GetSchemaHelper(), selectClass,
-            PresentationQueryContractSimpleField::Create("/RelatedFieldClassId/", Utf8PrintfString("[%s].[ECClassId]", selectClass.GetAlias().c_str()), false),
-            PresentationQueryContractSimpleField::Create("/RelatedFieldInstanceId/", Utf8PrintfString("[%s].[ECInstanceId]", selectClass.GetAlias().c_str()), false),
-            selectInfo.GetRelatedInstancePaths(), labelOverrideValuesList);
+        return QueryBuilderHelpers::CreateRelatedInstanceDisplayLabelField(fieldName, m_params.GetSchemaHelper(), selectClass, selectInfo.GetRelatedInstancePaths(), m_params.GetRulesPreprocessor().GetInstanceLabelOverrides());
         };
 
     return ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectInfo.GetSelectClass().GetClass(), queryInfo, std::move(relatedInstanceDisplayLabelFieldFactory),

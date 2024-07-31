@@ -152,11 +152,7 @@ ContentQueryContractPtr ContentQueryBuilderTests::CreateQueryContract(int id, Co
     {
     auto relatedInstanceDisplayLabelFieldFactory = [&, relatedInstancePaths](Utf8CP fieldName, SelectClass<ECClass> const& selectClass)
         {
-        return QueryBuilderHelpers::CreateDisplayLabelField(
-            fieldName, *m_schemaHelper, selectClass,
-            PresentationQueryContractSimpleField::Create("/RelatedFieldClassId/", Utf8PrintfString("[%s].[ECClassId]", selectClass.GetAlias().c_str()), false),
-            PresentationQueryContractSimpleField::Create("/RelatedFieldInstanceId/", Utf8PrintfString("[%s].[ECInstanceId]", selectClass.GetAlias().c_str()), false),
-            relatedInstancePaths, {});
+        return QueryBuilderHelpers::CreateRelatedInstanceDisplayLabelField(fieldName, *m_schemaHelper, selectClass, relatedInstancePaths, m_rulesPreprocessor->GetInstanceLabelOverrides());
         };
 
     auto contract = ContentQueryContract::Create(id, descriptor, ecClass, queryInfo, relatedInstanceDisplayLabelFieldFactory, displayLabelField, relatedInstancePaths, false, false);

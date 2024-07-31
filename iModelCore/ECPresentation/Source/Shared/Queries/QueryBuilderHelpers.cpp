@@ -1019,20 +1019,31 @@ PresentationQueryContractFieldPtr QueryBuilderHelpers::CreateDisplayLabelField(U
             });
         }, name, schemaHelper, selectClass, classIdField, instanceIdField, labelOverrideValueSpecs, labelRequestsStack);
 
-    // If class ID select clause results in NULL (i.e. when class ID is taken from a joined table with no overlaps), then label query might fail.
-    // NOTE: It's assumed that class ID field and instance ID fields are non-null constants or they're properties of the same instance that will both be defined or NULL.
-    // This should result into the following clause:
-    // IIF(classId IS NULL, CAST(NULL AS TEXT), ...)
-    static auto const CreateSimpleField = [](Utf8String clause) { return PresentationQueryContractSimpleField::Create("", clause, false); };
-    labelField = PresentationQueryContractFunctionField::Create(
-        name, "IIF",
-            {PresentationQueryContractBinaryOpField::Create("", "IS", classIdField, CreateSimpleField("NULL")),
-            CreateSimpleField("CAST(NULL AS TEXT)"),
-            std::move(labelField)});
-    
     labelField->SetGroupingClause(CreateDisplayLabelValueClause(labelField->GetName()));
     labelField->SetResultType(PresentationQueryFieldType::LabelDefinition);
     return labelField;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+PresentationQueryContractFieldPtr QueryBuilderHelpers::CreateRelatedInstanceDisplayLabelField(Utf8CP fieldName, ECSchemaHelper const& schemaHelper, SelectClass<ECClass> const& selectClass, 
+    bvector<RelatedClassPath> const& relatedInstancePaths,  bvector<InstanceLabelOverrideCP> const& instanceLabelOverrides)
+    {
+    auto const labelOverrideValueSpecs = GetInstanceLabelOverrideSpecsForClass(schemaHelper, instanceLabelOverrides, selectClass.GetClass());
+    auto classIdField = PresentationQueryContractSimpleField::Create("/RelatedFieldClassId/", Utf8PrintfString("[%s].[ECClassId]", selectClass.GetAlias().c_str()), false);
+    auto instanceIdField = PresentationQueryContractSimpleField::Create("/RelatedFieldClassId/", Utf8PrintfString("[%s].[ECClassId]", selectClass.GetAlias().c_str()), false);
+    auto labelField = CreateDisplayLabelField(fieldName, schemaHelper, selectClass, classIdField, instanceIdField, relatedInstancePaths, labelOverrideValueSpecs);
+
+    // If instance ID select clause results in NULL (i.e. when instance ID is taken from a joined table with no overlaps), then GetDisplayLabel() or other SQL functions might fail.
+    // This should result into the following clause:
+    // IIF(instanceId IS NULL, CAST(NULL AS TEXT), ...)
+    static auto const CreateSimpleField = [](Utf8String clause) { return PresentationQueryContractSimpleField::Create("", clause, false); };
+    return PresentationQueryContractFunctionField::Create(
+        fieldName, "IIF",
+            {PresentationQueryContractBinaryOpField::Create("", "IS", instanceIdField, CreateSimpleField("NULL")),
+            CreateSimpleField("CAST(NULL AS TEXT)"),
+            std::move(labelField)});
     }
 
 /*---------------------------------------------------------------------------------**//**
