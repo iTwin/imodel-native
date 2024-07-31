@@ -372,7 +372,7 @@ public:
     //! Converts an id from a JSON value to a BeInt64Id
     //! @remarks The JSON must contain the Id value in one of the formats of BentleyApi::ECN::ECJsonInt64Format.
     //! @param[in] json JSON value containing the id
-    //! @return Resulting BeInt64Id. In case of error, an int64 < 0, a float, a double, or a json string with '-' or '.' an invalid BeInt64Id will be returned.
+    //! @return Resulting BeInt64Id. In case of error, an int64 < 0, a double/float that cannot be converted losslessly to uint64, or a json string with '-' or '.' an invalid BeInt64Id will be returned.
     template<class TBeInt64Id>
     static TBeInt64Id JsonToId(RapidJsonValueCR json)
         {
