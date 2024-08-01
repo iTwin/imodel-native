@@ -3387,6 +3387,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedContentF
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{
                 "ECClassId": "%s",
                 "ECInstanceId": "%s"
@@ -3399,6 +3404,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedContentF
             },
             "MergedFieldNames": []
         }, {
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{
                 "ECClassId": "%s",
                 "ECInstanceId": "%s"
