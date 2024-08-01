@@ -996,6 +996,7 @@ GEOMDLLIMPEXP bool GetBreakFraction (size_t breakFractioniIndex, double &fractio
 //! Move a fraction to the nearest break fraction.
 GEOMDLLIMPEXP bool AdjustFractionToBreakFraction (double fraction, Rounding::RoundingMode mode, size_t &breakIndex, double &adjustedFraction) const;
 //! Initialize an MSBsplineCurve form of the curve.
+//! Caller is responsible for calling curve.ReleaseMem() if and only if this method returns true.
 GEOMDLLIMPEXP bool GetMSBsplineCurve (MSBsplineCurveR curve, double fraction0 = 0.0, double fraction1 = 1.0) const;
 //! Clone as bspline.  Return nullptr if unable to clone as curve.
 GEOMDLLIMPEXP ICurvePrimitivePtr CloneAsBspline (double fraction0 = 0.0, double fraction1 = 1.0) const;
