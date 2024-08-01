@@ -1015,9 +1015,9 @@ Napi::Value JsInterop::GetInstance(ECDbR db, NapiInfoCR info) {
         if (!instanceReader.Seek(position,
             [&](InstanceReader::IRowContext const& row) {
                 ECSqlRowAdaptor adaptor(db);
-                adaptor.GetOptions().SetAbbreviateBlobs(abbreviateBlobs);
-                adaptor.GetOptions().SetConvertClassIdsToClassNames(classIdsToClassNames);
-                adaptor.GetOptions().UseJsNames(useJsNames);
+                adaptor.SetAbbreviateBlobs(abbreviateBlobs);
+                adaptor.SetConvertClassIdsToClassNames(classIdsToClassNames);
+                adaptor.UseJsNames(useJsNames);
                 if (ERROR == adaptor.RenderRow(val, row, false)) {
                     THROW_JS_EXCEPTION("Failed to render instance");
                 }
