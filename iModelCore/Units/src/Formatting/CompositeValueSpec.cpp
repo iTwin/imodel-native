@@ -19,6 +19,7 @@ CompositeValueSpec::CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middle
     : m_includeZero(true)
     , m_explicitlyDefinedSpacer(false)
     , m_spacer(FormatConstant::DefaultSpacer())
+    , m_separator(FormatConstant::DefaultSeparator())
     , m_ratio {0}
     {
     size_t unitCount = (nullptr != majorUnit)

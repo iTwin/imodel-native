@@ -190,17 +190,18 @@ BentleyStatus NormalizeAngle(BEU::Quantity& quantity, Utf8CP operationName, doub
     return BentleyStatus::SUCCESS;
     }
 
-BentleyStatus ProcessBearingAndAzimuth(NumericFormatSpecCP fmtP, BEU::Quantity& temp, std::string& prefix, std::string& suffix, AdvancedFormattingScenario scenario)
+BentleyStatus ProcessBearingAndAzimuth(NumericFormatSpecCP fmtP, BEU::Quantity& temp, std::string& prefix, std::string& suffix)
     {
-    if(scenario != AdvancedFormattingScenario::Bearing && scenario != AdvancedFormattingScenario::Azimuth)
+    auto type = fmtP->GetPresentationType();
+    if(type != PresentationType::Bearing && type != PresentationType::Azimuth)
         return BentleyStatus::ERROR;
 
     double perigon;
-    if (NormalizeAngle(temp, scenario == AdvancedFormattingScenario::Bearing ? "bearing" : "azimuth", perigon) != BentleyStatus::SUCCESS)
+    if (NormalizeAngle(temp, type == PresentationType::Bearing ? "bearing" : "azimuth", perigon) != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
 
     double magnitude = temp.GetMagnitude();
-    if (scenario == AdvancedFormattingScenario::Bearing)
+    if (type == PresentationType::Bearing)
         {
         double rightAngle = perigon / 4;
         int quadrant = 0;
@@ -231,18 +232,8 @@ BentleyStatus ProcessBearingAndAzimuth(NumericFormatSpecCP fmtP, BEU::Quantity& 
         temp = BEU::Quantity(magnitude, *temp.GetUnit());
     }
 
-    if (scenario == AdvancedFormattingScenario::Azimuth) {
-        double azimuthBase(0.0);
-        auto cardinal = fmtP->GetCardinalDirection();
-        if(cardinal == CardinalDirection::East)
-            azimuthBase += perigon / 4;
-        else if(cardinal == CardinalDirection::South)
-            azimuthBase += perigon / 2;
-        else if(cardinal == CardinalDirection::West)
-            azimuthBase += 3 * perigon / 4;
-
-        //TODO: we assume the base offset is in degrees, but we cannot be sure what our base unit is....
-        azimuthBase += fmtP->GetAzimuthBaseOffset();
+    if (type == PresentationType::Azimuth) {
+        double azimuthBase(fmtP->GetAzimuthBase());
         if(azimuthBase == 0.0)
             return BentleyStatus::SUCCESS; //no conversion necessary with a north base
 
@@ -282,9 +273,9 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
     Utf8String prefix("");
     Utf8String suffix("");
     bool additionalFormatting = false;
-    if (fmtP->GetAdvancedFormattingScenario() == AdvancedFormattingScenario::Bearing || fmtP->GetAdvancedFormattingScenario() == AdvancedFormattingScenario::Azimuth)
+    if (fmtP->GetPresentationType() == PresentationType::Bearing || fmtP->GetPresentationType() == PresentationType::Azimuth)
         {
-        if (ProcessBearingAndAzimuth(fmtP, temp, prefix, suffix, fmtP->GetAdvancedFormattingScenario()) != BentleyStatus::SUCCESS)
+        if (ProcessBearingAndAzimuth(fmtP, temp, prefix, suffix) != BentleyStatus::SUCCESS)
             return "";
 
         additionalFormatting = true;

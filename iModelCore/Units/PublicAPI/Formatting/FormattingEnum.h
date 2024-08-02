@@ -32,7 +32,9 @@ enum class PresentationType
     Decimal,// 
     Fractional,
     Scientific, // scientific with 1 digit presenting the integer part
-    Station,
+    Station, // Civil Engineering Stationing (ie 1+00)
+    Bearing, // Bearing angle e.g. N05:00:00E. Requires provided quantities to be of the angle phenomenon
+    Azimuth, // Azimuth angle e.g. 45°30'00". Requires provided quantities to be of the angle phenomenon
     };
 
 //=======================================================================================
@@ -47,41 +49,21 @@ enum class ScientificType
 //=======================================================================================
 // @bsienum
 //=======================================================================================
-enum class AdvancedFormattingScenario
-    {
-    None,
-    Bearing, //Formats as a bearing angle (e.g. N54:29:50W). Value must be of phenomenon type angle.
-    Azimuth, //Formats as an azimuth angle (e.g. 54:29:50). Value must be of phenomenon type angle.
-    };
-
-//=======================================================================================
-// @bsienum
-//=======================================================================================
-enum class CardinalDirection
-    {
-    North,
-    South,
-    East,
-    West,
-    };
-
-//=======================================================================================
-// @bsienum
-//=======================================================================================
 enum class FormatTraits : int32_t
-    {
-    None             = 0x000,
-    TrailingZeroes   = 0x001, //!< Indicates that one or more insignificant zeroes are to be added after the last digit of the fraction.
-    KeepSingleZero   = 0x002, //!< Indicates that the fractional part of the number is required when the fraction is zero.
-    ZeroEmpty        = 0x004, //!< Indicates that zero value should be presented by an empty string.
-    KeepDecimalPoint = 0x008, //!< Indicates that the decimal point is should be presented when the fraction is zero.
-    ApplyRounding    = 0x010, //!< Use the rounding factor.
-    FractionDash     = 0x020, //!< Use a dash between integer and fraction instead of a space: 3-1/4 rather than 3 1/4.
-    ShowUnitLabel    = 0x040, //!< Indicates that the numeric expression should be followed by the unit name.
-    PrependUnitLabel = 0x080, //!< Indicates the position of the Unit name shifts from the right side of the value to the left.
-    Use1000Separator = 0x100, //!< Indicates that thousands in the integer part of the number should be separated by a special char (. or,).
-    ExponenentOnlyNegative = 0x200, //!< Indicates that if an exponent value is positive to not include a +. By default a sign, + or -, is always shown.
-    };
+{
+    None                    = 0b000000000000,
+    TrailingZeroes          = 0b000000000001, //!< Indicates that one or more insignificant zeroes are to be added after the last digit of the fraction.
+    KeepSingleZero          = 0b000000000010, //!< Indicates that the fractional part of the number is required when the fraction is zero.
+    ZeroEmpty               = 0b000000000100, //!< Indicates that zero value should be presented by an empty string.
+    KeepDecimalPoint        = 0b000000001000, //!< Indicates that the decimal point is should be presented when the fraction is zero.
+    ApplyRounding           = 0b000000010000, //!< Use the rounding factor.
+    FractionDash            = 0b000000100000, //!< Use a dash between integer and fraction instead of a space: 3-1/4 rather than 3 1/4.
+    ShowUnitLabel           = 0b000001000000, //!< Indicates that the numeric expression should be followed by the unit name.
+    PrependUnitLabel        = 0b000010000000, //!< Indicates the position of the Unit name shifts from the right side of the value to the left.
+    Use1000Separator        = 0b000100000000, //!< Indicates that thousands in the integer part of the number should be separated by a special char (. or,).
+    ExponenentOnlyNegative  = 0b001000000000, //!< Indicates that if an exponent value is positive to not include a +. By default a sign, + or -, is always shown.
+    CounterClockwiseAngle   = 0b010000000000, //!< Indicates the use of a counter clockwise angles. Affects Azimuth only.
+};
 
 //=======================================================================================
 //! Number of points after decimal point given significance in the scientific notation

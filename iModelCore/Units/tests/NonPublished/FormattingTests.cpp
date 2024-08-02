@@ -7,6 +7,7 @@
 #include "../TestFixture/FormattingTestFixture.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <iostream>
 
 USING_BENTLEY_FORMATTING
 BEGIN_BENTLEY_FORMATTEST_NAMESPACE
@@ -1587,14 +1588,20 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
     bearingDMSSpec.SetPrecision(DecimalPrecision::Precision0);
     bearingDMSSpec.SetKeepDecimalPoint(false);
     Format bearingDMS(bearingDMSSpec);
+    bearingDMSSpec.SetPresentationType(PresentationType::Bearing);
     bearingDMS.SetSuppressUnitLabel();
     auto bearingDMScomp = CompositeValueSpec(*s_unitsContext->LookupUnit("ARC_DEG"), *s_unitsContext->LookupUnit("ARC_MINUTE"), *s_unitsContext->LookupUnit("ARC_SECOND"));
     bearingDMScomp.SetSeparator(":");
     bearingDMS.SetCompositeSpec(bearingDMScomp);
     EXPECT_FALSE(bearingDMS.IsProblem());
+    Json::Value basicJson;
+    bearingDMS.ToJson(BeJsValue(basicJson), false);
+    Utf8String json = basicJson.ToString();
+    EXPECT_FALSE(json.empty());
+    printf("Bearing DMS: %s\n", json.c_str());
 
     NumericFormatSpec bearingSpec;
-    bearingSpec.SetAdvancedFormattingScenario(AdvancedFormattingScenario::Bearing);
+    bearingSpec.SetPresentationType(PresentationType::Bearing);
     bearingSpec.SetMinWidth(6);
     bearingSpec.SetPrecision(DecimalPrecision::Precision3);
     bearingSpec.SetKeepDecimalPoint(true);
@@ -1602,11 +1609,18 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
     bearingSpec.SetKeepSingleZero(true);
     bearingSpec.SetShowUnitLabel(true);
     Format bearing(bearingSpec);
+    auto bearingComp = CompositeValueSpec(*s_unitsContext->LookupUnit("ARC_DEG"));
+    bearingComp.SetMajorLabel("°");
+    bearing.SetCompositeSpec(bearingComp);
     EXPECT_FALSE(bearing.IsProblem());
-
+    basicJson.clear();
+    bearing.ToJson(BeJsValue(basicJson), false);
+    json = basicJson.ToString();
+    EXPECT_FALSE(json.empty());
+    printf("Bearing Decimal: %s\n", json.c_str());
     
     NumericFormatSpec azimuthDMSSpec;
-    azimuthDMSSpec.SetAdvancedFormattingScenario(AdvancedFormattingScenario::Azimuth);
+    azimuthDMSSpec.SetPresentationType(PresentationType::Azimuth);
     azimuthDMSSpec.SetMinWidth(2);
     azimuthDMSSpec.SetPrecision(DecimalPrecision::Precision0);
     azimuthDMSSpec.SetKeepDecimalPoint(false);
@@ -1616,17 +1630,28 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
     azimuthDMScomp.SetSeparator(":");
     azimuthDMS.SetCompositeSpec(azimuthDMScomp);
     EXPECT_FALSE(azimuthDMS.IsProblem());
+    basicJson.clear();
+    azimuthDMS.ToJson(BeJsValue(basicJson), false);
+    json = basicJson.ToString();
+    EXPECT_FALSE(json.empty());
+    printf("Azimuth DMS: %s\n", json.c_str());
 
     NumericFormatSpec azimuthSpec;
-    azimuthSpec.SetAdvancedFormattingScenario(AdvancedFormattingScenario::Azimuth);
+    azimuthSpec.SetPresentationType(PresentationType::Azimuth);
     azimuthSpec.SetMinWidth(6);
     azimuthSpec.SetPrecision(DecimalPrecision::Precision3);
     azimuthSpec.SetKeepDecimalPoint(true);
     azimuthSpec.SetKeepTrailingZeroes(true);
     azimuthSpec.SetKeepSingleZero(true);
     Format azimuth(azimuthSpec);
+    auto azimuthComp = CompositeValueSpec(*s_unitsContext->LookupUnit("ARC_DEG"));
+    azimuth.SetCompositeSpec(azimuthComp);
     EXPECT_FALSE(azimuth.IsProblem());
-
+    basicJson.clear();
+    azimuth.ToJson(BeJsValue(basicJson), false);
+    json = basicJson.ToString();
+    EXPECT_FALSE(json.empty());
+    printf("Azimuth Decimal: %s\n", json.c_str());
 
     for(auto& row : testData)
         {
@@ -1641,8 +1666,8 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
         ASSERT_STREQ(bearingDMSFromDeg.c_str(), bearingDMSFromRad.c_str());
         ASSERT_STREQ(row.bearingDMS.c_str(), bearingDMSFromDeg.c_str());
 
-        Utf8String bearingDecimalFromDeg = bearing.FormatQuantity(degree, nullptr, "", "°");
-        Utf8String bearingDecimalFromRad = bearing.FormatQuantity(radian, s_unitsContext->LookupUnit("ARC_DEG"), "", "°");
+        Utf8String bearingDecimalFromDeg = bearing.FormatQuantity(degree);
+        Utf8String bearingDecimalFromRad = bearing.FormatQuantity(radian);
         ASSERT_STREQ(bearingDecimalFromDeg.c_str(), bearingDecimalFromRad.c_str());
         ASSERT_STREQ(row.bearingDecimal.c_str(), bearingDecimalFromDeg.c_str());
 
@@ -1652,7 +1677,7 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
         ASSERT_STREQ(row.northAzimuthDMS.c_str(), azimuthDMSFromDeg.c_str());
 
         Utf8String azimuthDecimalFromDeg = azimuth.FormatQuantity(degree);
-        Utf8String azimuthDecimalFromRad = azimuth.FormatQuantity(radian, s_unitsContext->LookupUnit("ARC_DEG"));
+        Utf8String azimuthDecimalFromRad = azimuth.FormatQuantity(radian);
         ASSERT_STREQ(azimuthDecimalFromDeg.c_str(), azimuthDecimalFromRad.c_str());
         ASSERT_STREQ(row.northAzimuthDecimal.c_str(), azimuthDecimalFromDeg.c_str());
         }
