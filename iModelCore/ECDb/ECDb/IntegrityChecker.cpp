@@ -1002,7 +1002,7 @@ DbResult IntegrityChecker::CheckClassIds(std::function<bool(Utf8CP, ECInstanceId
 					return BE_SQLITE_OK;
 				}
 			}
-		}	
+		}
 	}
 
 	//OVERFLOW table 3
