@@ -504,6 +504,8 @@ DbResult PragmaIntegrityCheck::Read(PragmaManager::RowSet& rowSet, ECDbCR ecdb, 
 			rc = CheckEcProfile(checker, *result, ecdb); break;
 		case IntegrityChecker::Checks::CheckSchemaLoad:
 			rc = CheckSchemaLoad(checker, *result, ecdb); break;
+		case IntegrityChecker::Checks::CheckMissingChildRows:
+			rc = CheckMissingChildRows(checker, *result, ecdb); break;
 		default:
 			rc = CheckAll(checker, *result, ecdb);
 		};
@@ -711,6 +713,28 @@ DbResult PragmaIntegrityCheck::CheckClassIds(IntegrityChecker& checker, StaticPr
 	result.FreezeSchemaChanges();
 	int rowCount = 1;
 	return checker.CheckClassIds([&](Utf8CP name, ECInstanceId id, ECN::ECClassId classId, Utf8CP type) {
+		auto row = result.AppendRow();
+		row.appendValue() = rowCount++;
+		row.appendValue() = name;
+		row.appendValue() = id.ToHexStr();
+		row.appendValue() = classId.ToHexStr();
+		row.appendValue() = type;
+		return true;
+	});
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult PragmaIntegrityCheck::CheckMissingChildRows(IntegrityChecker& checker, StaticPragmaResult& result, ECDbCR ecdb) {
+	result.AppendProperty("sno", PRIMITIVETYPE_Integer);
+	result.AppendProperty("class", PRIMITIVETYPE_String);
+	result.AppendProperty("id", PRIMITIVETYPE_String);
+	result.AppendProperty("class_id", PRIMITIVETYPE_String);
+	result.AppendProperty("MissingRowInTables", PRIMITIVETYPE_String);
+	result.FreezeSchemaChanges();
+	int rowCount = 1;
+	return checker.CheckMissingChildRows([&](Utf8CP name, ECInstanceId id, ECN::ECClassId classId, Utf8CP type) {
 		auto row = result.AppendRow();
 		row.appendValue() = rowCount++;
 		row.appendValue() = name;
