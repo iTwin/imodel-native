@@ -51,18 +51,18 @@ enum class ScientificType
 //=======================================================================================
 enum class FormatTraits : int32_t
 {
-    None                    = 0b000000000000,
-    TrailingZeroes          = 0b000000000001, //!< Indicates that one or more insignificant zeroes are to be added after the last digit of the fraction.
-    KeepSingleZero          = 0b000000000010, //!< Indicates that the fractional part of the number is required when the fraction is zero.
-    ZeroEmpty               = 0b000000000100, //!< Indicates that zero value should be presented by an empty string.
-    KeepDecimalPoint        = 0b000000001000, //!< Indicates that the decimal point is should be presented when the fraction is zero.
-    ApplyRounding           = 0b000000010000, //!< Use the rounding factor.
-    FractionDash            = 0b000000100000, //!< Use a dash between integer and fraction instead of a space: 3-1/4 rather than 3 1/4.
-    ShowUnitLabel           = 0b000001000000, //!< Indicates that the numeric expression should be followed by the unit name.
-    PrependUnitLabel        = 0b000010000000, //!< Indicates the position of the Unit name shifts from the right side of the value to the left.
-    Use1000Separator        = 0b000100000000, //!< Indicates that thousands in the integer part of the number should be separated by a special char (. or,).
-    ExponenentOnlyNegative  = 0b001000000000, //!< Indicates that if an exponent value is positive to not include a +. By default a sign, + or -, is always shown.
-    CounterClockwiseAngle   = 0b010000000000, //!< Indicates the use of a counter clockwise angles. Affects Azimuth only.
+    None                    = 0,
+    TrailingZeroes          = 1 << 0, //!< Indicates that one or more insignificant zeroes are to be added after the last digit of the fraction.
+    KeepSingleZero          = 1 << 1, //!< Indicates that the fractional part of the number is required when the fraction is zero.
+    ZeroEmpty               = 1 << 2, //!< Indicates that zero value should be presented by an empty string.
+    KeepDecimalPoint        = 1 << 3, //!< Indicates that the decimal point is should be presented when the fraction is zero.
+    ApplyRounding           = 1 << 4, //!< Use the rounding factor.
+    FractionDash            = 1 << 5, //!< Use a dash between integer and fraction instead of a space: 3-1/4 rather than 3 1/4.
+    ShowUnitLabel           = 1 << 6, //!< Indicates that the numeric expression should be followed by the unit name.
+    PrependUnitLabel        = 1 << 7, //!< Indicates the position of the Unit name shifts from the right side of the value to the left.
+    Use1000Separator        = 1 << 8, //!< Indicates that thousands in the integer part of the number should be separated by a special char (. or,).
+    ExponenentOnlyNegative  = 1 << 9, //!< Indicates that if an exponent value is positive to not include a +. By default a sign, + or -, is always shown.
+    CounterClockwiseAngle   = 1 << 10, //!< Indicates the use of a counter clockwise angles. Affects Azimuth only.
 };
 
 //=======================================================================================
