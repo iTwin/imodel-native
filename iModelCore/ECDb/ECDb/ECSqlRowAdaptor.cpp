@@ -173,7 +173,7 @@ BentleyStatus ECSqlRowAdaptor::RenderLong(BeJsValue out, IECSqlValue const& in, 
                 return SUCCESS;
             }
             if (m_options.m_classIdToClassNames && !prop->GetIsDisplayLabelDefined()) {
-                auto classCP = m_ecdb.Schemas().GetClass(id);
+                auto classCP = m_ecdb.Schemas().GetClass(id, in.GetColumnInfo().GetRootClass().GetTableSpace().c_str());
                 if (classCP != nullptr) {
                     ECN::ECJsonUtilities::ClassNameToJson(out, *classCP);
                     return SUCCESS;
@@ -289,7 +289,7 @@ BentleyStatus ECSqlRowAdaptor::RenderNavigationProperty(BeJsValue out, IECSqlVal
     if (!relClassIdVal.IsNull()) {
         if (m_options.m_classIdToClassNames) {
             const auto classId = relClassIdVal.GetId<ECN::ECClassId>();
-            auto classCP = m_ecdb.Schemas().GetClass(classId);
+            auto classCP = m_ecdb.Schemas().GetClass(classId, in.GetColumnInfo().GetRootClass().GetTableSpace().c_str());
             if (classCP != nullptr) {
                 ECN::ECJsonUtilities::ClassNameToJson(out[jsClassId], *classCP);
                 return SUCCESS;
