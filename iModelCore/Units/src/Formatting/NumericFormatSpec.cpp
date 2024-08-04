@@ -50,14 +50,11 @@ NumericFormatSpec::NumericFormatSpec()
     , m_minWidth(FormatConstant::DefaultMinWidth())
     , m_stationSize(0)
     , m_scientificType(ScientificType::Normalized)
-    , m_advancedFormattingScenario(AdvancedFormattingScenario::None)
     , m_northLabel("N")
     , m_southLabel("S")
     , m_eastLabel("E")
     , m_westLabel("W")
-    , m_cardinalDirection(CardinalDirection::North)
-    , m_azimuthBaseOffset(0.0)
-    , m_counterClockwiseAngle(false)
+    , m_azimuthBase(0.0)
     {
     }
 
@@ -233,14 +230,11 @@ bool NumericFormatSpec::IsIdentical(NumericFormatSpecCR other) const
     if (m_stationSize != other.m_stationSize) return false;
     if (m_scientificType != other.m_scientificType) return false;
     if (m_minWidth != other.m_minWidth) return false;
-    if (m_advancedFormattingScenario != other.m_advancedFormattingScenario) return false;
-    if (m_cardinalDirection != other.m_cardinalDirection) return false;
-    if (m_azimuthBaseOffset != other.m_azimuthBaseOffset) return false;
+    if (m_azimuthBase != other.m_azimuthBase) return false;
     if (m_northLabel != other.m_northLabel) return false;
     if (m_southLabel != other.m_southLabel) return false;
     if (m_eastLabel != other.m_eastLabel) return false;
     if (m_westLabel != other.m_westLabel) return false;
-    if (m_counterClockwiseAngle != other.m_counterClockwiseAngle) return false;
 
     return true;
     }
@@ -741,7 +735,8 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
         sign = (m_signOption == SignOption::NegativeParentheses) ? '(' : '-';
         }
     bool sci = ((dval > 1.0e12) ||m_presentationType == PresentationType::Scientific);
-    bool decimal = (sci || m_presentationType == PresentationType::Decimal);
+    bool decimal = (sci || m_presentationType == PresentationType::Decimal ||
+                    m_presentationType == PresentationType::Bearing || m_presentationType == PresentationType::Azimuth);
     bool fractional = (!decimal && m_presentationType == PresentationType::Fractional);
     bool stops = m_presentationType == PresentationType::Station;
 

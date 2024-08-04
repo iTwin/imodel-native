@@ -15,7 +15,7 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
 Format::Format(FormatCR other)
-    : m_specType(other.m_specType), m_explicitlyDefinedComposite(false), m_problem(other.m_problem), m_alternativeFormats(other.m_alternativeFormats)
+    : m_specType(other.m_specType), m_explicitlyDefinedComposite(false), m_problem(other.m_problem)
     {
     if (other.HasNumeric())
         SetNumericSpec(other.m_numericSpec);
@@ -27,7 +27,7 @@ Format::Format(FormatCR other)
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
 Format::Format(NumericFormatSpecCR numSpec)
-    : m_specType(FormatSpecType::None), m_explicitlyDefinedComposite(false), m_numericSpec(numSpec), m_problem(FormatProblemCode::NoProblems), m_alternativeFormats()
+    : m_specType(FormatSpecType::None), m_explicitlyDefinedComposite(false), m_numericSpec(numSpec), m_problem(FormatProblemCode::NoProblems)
     {}
 
 //---------------------------------------------------------------------------------------
