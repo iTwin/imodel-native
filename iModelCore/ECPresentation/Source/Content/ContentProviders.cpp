@@ -141,7 +141,7 @@ static int GetSerializationFlags(bool isRelated, bool isMerged, ContentRequest r
     if (ContentRequest::DisplayValues == req)
         return ContentSetItem::SERIALIZE_DisplayValues;
 
-    return ContentSetItem::SERIALIZE_PrimaryKeys | ContentSetItem::SERIALIZE_Values | ContentSetItem::SERIALIZE_DisplayValues | ContentSetItem::SERIALIZE_MergedFieldNames;
+    return ContentSetItem::SERIALIZE_PrimaryKeys | ContentSetItem::SERIALIZE_Values | ContentSetItem::SERIALIZE_DisplayValues | ContentSetItem::SERIALIZE_MergedFieldNames | ContentSetItem::SERIALIZE_DisplayLabel;
     }
 
 /*---------------------------------------------------------------------------------**//**
