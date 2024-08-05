@@ -129,9 +129,9 @@ struct RulesEngineTestHelpers
     static PresentationQueryBuilderPtr CreateQuery(PresentationQueryContract const&, bset<ECN::ECClassCP>, bool polymorphic, Utf8CP alias, ComplexQueryHandler handler = nullptr);
     static PresentationQueryBuilderPtr CreateQuery(PresentationQueryContract const&, bvector<ECN::ECClassCP>, bool polymorphic, Utf8CP alias, ComplexQueryHandler handler = nullptr);
 
-    static void ValidateContentSetItem(ECN::IECInstanceCR instance, ContentSetItemCR item, ContentDescriptorCR descriptor, Utf8CP expectedLabel = nullptr, Utf8CP expectedImageId = nullptr);
-    static void ValidateContentSet(bvector<ECN::IECInstanceCP> instances, Content const& content, bool validateOrder = false);
-    static void ValidateContentSet(bvector<InstanceInputAndResult> instances, Content const& content, bool validateOrder = false);
+    static void ValidateContentSetItem(ECN::IECInstanceCR instance, ContentSetItemCR item, ContentDescriptorCR descriptor, std::function<Utf8CP(rapidjson::Document const&)> expectedDisplayLabelFactory = {}, Utf8CP expectedImageId = nullptr);
+    static void ValidateContentSet(bvector<ECN::IECInstanceCP> instances, Content const& content, bool validateOrder = false, std::function<Utf8CP(rapidjson::Document const&)> expectedDisplayLabelFactory = {});
+    static void ValidateContentSet(bvector<InstanceInputAndResult> instances, Content const& content, bool validateOrder = false, std::function<Utf8CP(rapidjson::Document const&)> expectedDisplayLabelFactory = {});
     static void ValidateNodesPagination(std::function<NodesResponse(PageOptionsCR)> getter, bvector<NavNodeCPtr> const& expectedNodes);
     static void ValidateNodeInstances(ECDbCR, NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances);
     static void ValidateNodeInstances(INodeInstanceKeysProvider const&, NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances);

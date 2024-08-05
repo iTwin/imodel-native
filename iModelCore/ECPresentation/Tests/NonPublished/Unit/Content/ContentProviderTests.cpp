@@ -351,7 +351,7 @@ TEST_F (ContentProviderTests, CreatesLabelWhenSpecified)
 
     ContentSetItemPtr item;
     ASSERT_TRUE(provider->GetContentSetItem(item, 0));
-    RulesEngineTestHelpers::ValidateContentSetItem(*instance, *item, *descriptor, "Test MyID");
+    RulesEngineTestHelpers::ValidateContentSetItem(*instance, *item, *descriptor, [](const auto&) { return "Test MyID"; });
     }
 
 /*---------------------------------------------------------------------------------**//**
