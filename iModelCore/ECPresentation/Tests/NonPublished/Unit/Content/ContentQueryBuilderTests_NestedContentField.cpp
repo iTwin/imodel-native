@@ -38,14 +38,16 @@ TEST_F (ContentQueryBuilderTests, RelatedContentField_WithSingleStepRelationship
     auto querySet = GetQueryBuilder().CreateQuerySet(field);
     ValidateQueries(querySet, [&]()
         {
-        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Undefined, 0);
-        descriptor->AddSelectClass(SelectClassInfo(*classB, RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), true), "");
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Undefined, (int)ContentFlags::ShowLabels);
+        const auto classBAlias = RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0);
+        const SelectClassInfo selectClassInfo(*classB, classBAlias, true);
+        descriptor->AddSelectClass(selectClassInfo, "");
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0));
-        AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), *classB, *classB->GetPropertyP("PropB")));
+        AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty(classBAlias, *classB, *classB->GetPropertyP("PropB")));
 
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
-        query->SelectContract(*CreateQueryContract(1, *descriptor, classB, *query), RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0).c_str());
-        query->From(*classB, true, RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0).c_str());
+        query->SelectContract(*CreateQueryContract(1, *descriptor, classB, *query, CreateDisplayLabelField(selectClassInfo.GetSelectClass())), classBAlias.c_str());
+        query->From(*classB, true, classBAlias.c_str());
         query->Join(RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), false, SelectClass<ECClass>(*classA, "related", true), false));
         return query;
         });
@@ -101,14 +103,16 @@ TEST_F (ContentQueryBuilderTests, RelatedContentField_WithMultiStepRelationshipP
     auto querySet = GetQueryBuilder().CreateQuerySet(field);
     ValidateQueries(querySet, [&]()
         {
-        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Undefined, 0);
-        descriptor->AddSelectClass(SelectClassInfo(*classC, RULES_ENGINE_RELATED_CLASS_ALIAS(*classC, 0), true), "");
+        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Undefined, (int)ContentFlags::ShowLabels);
+        const auto classCAlias = RULES_ENGINE_RELATED_CLASS_ALIAS(*classC, 0);
+        const SelectClassInfo selectClassInfo(*classC, classCAlias, true);
+        descriptor->AddSelectClass(selectClassInfo, "");
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0));
-        AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classC, 0), *classC, *classC->GetPropertyP("PropC")));
+        AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty(classCAlias, *classC, *classC->GetPropertyP("PropC")));
 
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
-        query->SelectContract(*CreateQueryContract(1, *descriptor, classC, *query), RULES_ENGINE_RELATED_CLASS_ALIAS(*classC, 0).c_str());
-        query->From(*classC, true, RULES_ENGINE_RELATED_CLASS_ALIAS(*classC, 0).c_str());
+        query->SelectContract(*CreateQueryContract(1, *descriptor, classC, *query, CreateDisplayLabelField(selectClassInfo.GetSelectClass())), classCAlias.c_str());
+        query->From(*classC, true, classCAlias.c_str());
 
         RelatedClassPath path = {
             RelatedClass(*classC, SelectClass<ECRelationshipClass>(*relBC, RULES_ENGINE_RELATED_CLASS_ALIAS(*relBC, 0)), false, SelectClass<ECClass>(*classB, RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), true), false),
@@ -175,22 +179,22 @@ TEST_F (ContentQueryBuilderTests, RelatedContentField_WithNestedContentFields)
         {
         RelatedClassPath bTocPath{ RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relBC, RULES_ENGINE_RELATED_CLASS_ALIAS(*relBC, 0)), true, SelectClass<ECClass>(*classC, RULES_ENGINE_RELATED_CLASS_ALIAS(*classC, 0), false)) };
 
-        ContentDescriptorPtr descriptor = GetEmptyContentDescriptor(ContentDisplayType::Undefined, 0);
-        descriptor->AddSelectClass(SelectClassInfo(*classB, RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), true)
-            .SetRelatedPropertyPaths({bTocPath}), "");
+        const auto descriptor = GetEmptyContentDescriptor(ContentDisplayType::Undefined, (int)ContentFlags::ShowLabels);
+        const auto classBAlias = RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0);
+        const auto selectClassInfo = SelectClassInfo(*classB, classBAlias, true).SetRelatedPropertyPaths({bTocPath});
+        descriptor->AddSelectClass(selectClassInfo, "");
 
         auto customCategory = std::make_shared<ContentDescriptor::Category>("name", "label", "", 1);
-
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0));
-        AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, ContentDescriptor::Property(RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0), *classB, *classB->GetPropertyP("PropB")));
+        AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, ContentDescriptor::Property(classBAlias, *classB, *classB->GetPropertyP("PropB")));
         AddField(*descriptor, *new ContentDescriptor::RelatedContentField(customCategory, "classC_field_name", "classC_field_label", bTocPath,
             {
             CreatePropertiesField(customCategory, CreateProperty(RULES_ENGINE_RELATED_CLASS_ALIAS(*classC, 0), *classC, *classC->GetPropertyP("PropC")))
             }));
 
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
-        query->SelectContract(*CreateQueryContract(1, *descriptor, classB, *query), RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0).c_str());
-        query->From(*classB, true, RULES_ENGINE_RELATED_CLASS_ALIAS(*classB, 0).c_str());
+        query->SelectContract(*CreateQueryContract(1, *descriptor, classB, *query, CreateDisplayLabelField(selectClassInfo.GetSelectClass())), classBAlias.c_str());
+        query->From(*classB, true, classBAlias.c_str());
         query->Join(bTocPath);
         query->Join(RelatedClass(*classB, SelectClass<ECRelationshipClass>(*relAB, RULES_ENGINE_RELATED_CLASS_ALIAS(*relAB, 0)), false, SelectClass<ECClass>(*classA, "related", true), false));
         return query;

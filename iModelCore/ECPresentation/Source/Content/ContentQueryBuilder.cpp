@@ -331,8 +331,13 @@ ContentQueryContractPtr ContentQueryBuilder::CreateContract(ContentDescriptorCR 
             nullptr, nullptr, selectInfo.GetRelatedInstancePaths(), labelOverrideValuesList);
         }
 
-    return ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectInfo.GetSelectClass().GetClass(),
-        queryInfo, displayLabelField, selectInfo.GetRelatedInstancePaths(), m_params.ShouldSkipCompositePropertyFields(), m_params.ShouldSkipXToManyRelatedContentFields());
+    auto relatedInstanceDisplayLabelFieldFactory = [&](Utf8CP fieldName, SelectClass<ECClass> const& selectClass)
+        {
+        return QueryBuilderHelpers::CreateRelatedInstanceDisplayLabelField(fieldName, m_params.GetSchemaHelper(), selectClass, selectInfo.GetRelatedInstancePaths(), m_params.GetRulesPreprocessor().GetInstanceLabelOverrides());
+        };
+
+    return ContentQueryContract::Create(++m_contractIdsCounter, descriptor, &selectInfo.GetSelectClass().GetClass(), queryInfo, std::move(relatedInstanceDisplayLabelFieldFactory),
+        displayLabelField, selectInfo.GetRelatedInstancePaths(), m_params.ShouldSkipCompositePropertyFields(), m_params.ShouldSkipXToManyRelatedContentFields());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -542,6 +547,7 @@ QuerySet ContentQueryBuilder::CreateQuerySet(ContentDescriptor::NestedContentFie
     ContentDescriptorBuilder::Context descriptorContext(m_params.GetSchemaHelper(), m_params.GetConnections(), m_params.GetConnection(), m_params.GetCancellationToken(), m_params.GetRulesPreprocessor(), m_params.GetRuleset(),
         ContentDisplayType::Undefined, m_params.GetRulesetVariables(), m_params.GetCategorySupplier(), m_params.GetPropertyFormatter(), ECPresentation::UnitSystem::Undefined,
         *NavNodeKeyListContainer::Create(), nullptr, m_params.GetUsedVariablesListener(), nullptr);
+    descriptorContext.SetContentFlagsCalculator([](int flags) { return flags | static_cast<int>(ContentFlags::ShowLabels); });
     ContentDescriptorPtr descriptor = ContentDescriptorBuilder(descriptorContext).CreateDescriptor(contentField);
     if (!descriptor.IsValid())
         {
