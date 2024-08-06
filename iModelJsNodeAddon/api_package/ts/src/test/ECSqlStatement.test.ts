@@ -144,13 +144,33 @@ describe("ECSqlStatement", () => {
     }
 
     {
+      const args = { classIdsToClassNames: false, rowFormat: QueryRowFormat.UseECSqlPropertyNames };
+      const resp = stmt.toRow(args);
+      const meta = stmt.getMetadata();
+      const row = formatCurrentRow(resp.data, meta.meta, args.rowFormat);
+      assert.equal(row.ECInstanceId, id);
+      assert.equal(row.ECClassId, "0x58");
+      assert.equal(row.B0, boolVal);
+    }
+
+    {
       const args = { classIdsToClassNames: false, rowFormat: QueryRowFormat.UseJsPropertyNames };
       const resp = stmt.toRow(args);
       const meta = stmt.getMetadata();
       const row = formatCurrentRow(resp.data, meta.meta, args.rowFormat);
       assert.equal(row.id, id);
-      assert.equal(row.className, "0x58");
+      assert.equal(row.className, "Test.Foo");
       assert.equal(row.b0, boolVal);
+    }
+
+    {
+      const args = { classIdsToClassNames: true, rowFormat: QueryRowFormat.UseECSqlPropertyNames };
+      const resp = stmt.toRow(args);
+      const meta = stmt.getMetadata();
+      const row = formatCurrentRow(resp.data, meta.meta, args.rowFormat);
+      assert.equal(row.ECInstanceId, id);
+      assert.equal(row.ECClassId, "Test.Foo");
+      assert.equal(row.B0, boolVal);
     }
 
     {
