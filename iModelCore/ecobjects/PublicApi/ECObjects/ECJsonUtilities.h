@@ -398,7 +398,6 @@ public:
         if (stringCheckFailed || json.IsFloat() || json.IsDouble() || SUCCESS != JsonToInt64(val, json) || val < 0)
             {
             TBeInt64Id invalidId;
-            invalidId.Invalidate();
             return invalidId;
             }
         return TBeInt64Id((uint64_t) val);
