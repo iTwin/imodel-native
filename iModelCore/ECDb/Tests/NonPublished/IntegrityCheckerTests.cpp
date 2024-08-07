@@ -489,6 +489,70 @@ TEST_F(IntegrityCheckerFixture, check_class_ids) {
     ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
     executeTest();
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IntegrityCheckerFixture, check_missing_child_rows) {
+    auto runCheck = [&](ECDbCR db) -> Utf8String {
+        BeJsDocument out;
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check(check_missing_child_rows)"));
+        EXPECT_EQ(5, stmt.GetColumnCount());
+        EXPECT_STRCASEEQ("sno", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("class", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("id", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("class_id", stmt.GetColumnInfo(3).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("MissingRowInTables", stmt.GetColumnInfo(4).GetProperty()->GetName().c_str());
+        EXPECT_EQ(PRIMITIVETYPE_Integer, stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(2).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(3).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(4).GetDataType().GetPrimitiveType());
+
+        out.SetEmptyArray();
+        while (stmt.Step() == BE_SQLITE_ROW) {
+            auto row = out.appendObject();
+            row["sno"] = stmt.GetValueInt(0);
+            row["class"] = stmt.GetValueText(1);
+            row["id"] = stmt.GetValueText(2);
+            row["class_id"] = stmt.GetValueText(3);
+            row["MissingRowInTables"] = stmt.GetValueText(4);
+        }
+        return out.Stringify(StringifyFormat::Indented);
+    };
+
+    auto executeTest = [&]() {
+        ASSERT_STREQ(ParseJSON("[]").c_str(), runCheck(m_ecdb).c_str()) << "expect this to pass";
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, m_ecdb.ExecuteSql("DELETE FROM bis_InformationReferenceElement WHERE ElementId = 0x1D"));
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, m_ecdb.ExecuteSql("DELETE FROM bis_GeometricElement3d WHERE ElementId = 0x3B"));
+        auto expectedJSON = R"json(
+            [
+               {
+                  "sno": 1,
+                  "class": "BisCore:Element",
+                  "id": "0x1d",
+                  "class_id": "0xce",
+                  "MissingRowInTables": "bis_InformationReferenceElement"
+               },
+                {
+                   "sno": 2,
+                   "class": "BisCore:Element",
+                   "id": "0x3b",
+                   "class_id": "0xe7",
+                   "MissingRowInTables": "bis_GeometricElement3d"
+                }
+            ]
+        )json";
+        ASSERT_STREQ(ParseJSON(expectedJSON).c_str(), runCheck(m_ecdb).c_str()) << "Failed for " << m_ecdb.GetDbFileName();
+        m_ecdb.AbandonChanges();
+    };
+
+    ASSERT_EQ(BE_SQLITE_OK, OpenCopyOfDataFile("test.bim", "test.bim", Db::OpenMode::ReadWrite));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
+    executeTest();
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
