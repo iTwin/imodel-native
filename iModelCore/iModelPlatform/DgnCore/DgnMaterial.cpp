@@ -33,7 +33,7 @@ void RenderMaterial::_OnLoadedJsonProperties()
                     (BeJsValue&) textureIdJson = textureId;
                     if (!textureId.IsValid())
                         {
-                        LOG.warningv("RenderMaterialId: %lld, had a TextureId %s which was converted to an invalid id.", GetElementId().GetValue(), textureIdAsStringForLogging.c_str());
+                        LOG.warningv("RenderMaterialId: %s, had a TextureId %s which was converted to an invalid id.", GetElementId().ToHexStr().c_str(), textureIdAsStringForLogging.c_str());
                         BeAssert(false && "RenderMaterial had a textureId that we converted to invalid.");
                         }
                     }
