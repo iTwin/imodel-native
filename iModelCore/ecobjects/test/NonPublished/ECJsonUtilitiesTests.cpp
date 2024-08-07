@@ -115,7 +115,8 @@ TEST_F(ECJsonUtilitiesTestFixture, JsonToId)
     ASSERT_EQ(SUCCESS, ParseJson(rapidJson, jsonStr));
     EXPECT_EQ(BeInt64Id(UINT64_C(1099511627775)), ECJsonUtilities::JsonToId<BeInt64Id>(rapidJson)) << jsonStr;
 
-    jsonStr = R"json("-10")json";  // Not a valid value for an Id, but failing the method is not worth the overhead. So the test documents the behavior of the API
+    jsonStr = R"json("-10")json";  // Negative numbers are invalid Ids.
+
     ASSERT_EQ(SUCCESS, ParseJson(jsonDoc, jsonStr));
     EXPECT_EQ(BeInt64Id(0), ECJsonUtilities::JsonToId<BeInt64Id>(jsonDoc)) << jsonStr;
 
