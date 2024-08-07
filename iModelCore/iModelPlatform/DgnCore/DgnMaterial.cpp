@@ -27,9 +27,15 @@ void RenderMaterial::_OnLoadedJsonProperties()
                 if (memberJson.isNumericMember("TextureId")) 
                     {
                     // Fix IDs that were previously stored as 64-bit integers rather than as ID strings.
+                    auto textureIdAsStringForLogging = memberJson["TextureId"].Stringify();
                     auto textureId = memberJson["TextureId"].GetId64<DgnTextureId>();
                     auto textureIdJson = map[memberName]["TextureId"];
                     (BeJsValue&) textureIdJson = textureId;
+                    if (!textureId.IsValid())
+                        {
+                        LOG.warningv("RenderMaterialId: %lld, had a TextureId %s which was converted to an invalid id.", GetElementId().GetValue(), textureIdAsStringForLogging.c_str());
+                        BeAssert(false && "RenderMaterial had a textureId that we converted to invalid.");
+                        }
                     }
                 return false;
                 });
