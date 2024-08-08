@@ -875,7 +875,7 @@ SchemaReadStatus ECProperty::_ReadXml (pugi::xml_node propertyNode, ECSchemaRead
                 GetClass().GetFullName(),
                 GetName().c_str());
 
-            return SchemaReadStatus::InvalidECSchemaXml;
+            return SchemaReadStatus::Success;
             }
 
         SetCategory(propertyCategory);
