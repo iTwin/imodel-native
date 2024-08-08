@@ -5,6 +5,9 @@
 
 #include "../FormattingTestsPch.h"
 #include "../TestFixture/FormattingTestFixture.h"
+#define _USE_MATH_DEFINES
+#include <math.h>
+#include <iostream>
 
 USING_BENTLEY_FORMATTING
 BEGIN_BENTLEY_FORMATTEST_NAMESPACE
@@ -1487,8 +1490,7 @@ TEST_F(FormattingTestFixture, LargeNumbers)
     EXPECT_STREQ("-3.048e+31", spec.Format(-3.0479999999999998e+31).c_str());
     EXPECT_STREQ("-3.048e+35", spec.Format(-3.0479999999999998e+35).c_str());
     }
-
-
+    
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
@@ -1540,5 +1542,200 @@ TEST_F(FormattingTestFixture, FormatsUsingDefaultNumericFormatSpecWhenItsNotSet)
     Units::Quantity quantity(1500.5, *compSpec.GetMajorUnit());
     EXPECT_STREQ("1500.5 M", fmtSpec.FormatQuantity(quantity).c_str());
     }
+
+struct BearingTestData 
+    {
+    double angleDegree;
+    std::string bearingDMS; //degrees minutes seconds
+    std::string bearingDMSWithLabel;
+    std::string bearingDecimal;
+    std::string northAzimuthDMS; //degrees minutes seconds
+    std::string northAzimuthDecimal;
+    };
+
+double DegreesToRadians(double degrees)
+    {
+    return degrees * (M_PI / 180.0);
+    };
+
+TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
+    
+    //We're inputting both degrees and radians by value here instead of converting them
+    //To reflect the fact that we mostly store our data in radians, but degrees are easier to look at for tests
+    //We run the test with both input values to ensure that the conversion is working correctly
+    std::vector<BearingTestData> testData = {
+        //DEG,    BEAR DMS      WITH LABEL        BEAR         AZI DMS     AZI
+        {0.0,     "N00:00:00E", "N00°00'00\"E", "N00.000°E", "00:00:00", "00.000"},
+        {5.0,     "N05:00:00E", "N05°00'00\"E", "N05.000°E", "05:00:00", "05.000"},
+        {45.0,    "N45:00:00E", "N45°00'00\"E", "N45.000°E", "45:00:00", "45.000"},
+        {45.5028, "N45:30:10E", "N45°30'10\"E", "N45.503°E", "45:30:10", "45.503"},
+        {90.0,    "N90:00:00E", "N90°00'00\"E", "N90.000°E", "90:00:00", "90.000"},
+        {135.0,   "S45:00:00E", "S45°00'00\"E", "S45.000°E", "135:00:00", "135.000"},
+        {180.0,   "S00:00:00E", "S00°00'00\"E", "S00.000°E", "180:00:00", "180.000"},
+        {225.0,   "S45:00:00W", "S45°00'00\"W", "S45.000°W", "225:00:00", "225.000"},
+        {234.4972,"S54:29:50W", "S54°29'50\"W", "S54.497°W", "234:29:50", "234.497"},
+        {270.0,   "S90:00:00W", "S90°00'00\"W", "S90.000°W", "270:00:00", "270.000"},
+        {315.0,   "N45:00:00W", "N45°00'00\"W", "N45.000°W", "315:00:00", "315.000"},
+        {360.0,   "N00:00:00E", "N00°00'00\"E", "N00.000°E", "00:00:00", "00.000"},
+        {412.0,   "N52:00:00E", "N52°00'00\"E", "N52.000°E", "52:00:00", "52.000"},
+        {470.0,   "S70:00:00E", "S70°00'00\"E", "S70.000°E", "110:00:00", "110.000"},
+        {580.0,   "S40:00:00W", "S40°00'00\"W", "S40.000°W", "220:00:00", "220.000"},
+        {640.0,   "N80:00:00W", "N80°00'00\"W", "N80.000°W", "280:00:00", "280.000"},
+    };
+
+    auto unitDegree = s_unitsContext->LookupUnit("ARC_DEG");
+    auto unitRadian = s_unitsContext->LookupUnit("RAD");
+    //auto unitMinute = s_unitsContext->LookupUnit("ARC_MINUTE");
+    //auto unitSecond = s_unitsContext->LookupUnit("ARC_SECOND");
+
+    NumericFormatSpec bearingDMSSpec;
+    bearingDMSSpec.SetMinWidth(2);
+    bearingDMSSpec.SetPrecision(DecimalPrecision::Precision0);
+    bearingDMSSpec.SetKeepDecimalPoint(false);
+    bearingDMSSpec.SetPresentationType(PresentationType::Bearing);
+    Format bearingDMS(bearingDMSSpec);
+    bearingDMS.SetSuppressUnitLabel();
+    auto bearingDMScomp = CompositeValueSpec(*s_unitsContext->LookupUnit("ARC_DEG"), *s_unitsContext->LookupUnit("ARC_MINUTE"), *s_unitsContext->LookupUnit("ARC_SECOND"));
+    bearingDMScomp.SetSeparator(":");
+    bearingDMS.SetCompositeSpec(bearingDMScomp);
+    EXPECT_FALSE(bearingDMS.IsProblem());
+    /*Json::Value basicJson;
+    bearingDMS.ToJson(BeJsValue(basicJson), false);
+    Utf8String json = basicJson.ToString();
+    EXPECT_FALSE(json.empty());
+    printf("Bearing DMS: %s\n", json.c_str());*/
+
+    NumericFormatSpec bearingDMSWithLabelSpec;
+    bearingDMSWithLabelSpec.SetMinWidth(2);
+    bearingDMSWithLabelSpec.SetPrecision(DecimalPrecision::Precision0);
+    bearingDMSWithLabelSpec.SetKeepDecimalPoint(false);
+    bearingDMSWithLabelSpec.SetPresentationType(PresentationType::Bearing);
+    bearingDMSWithLabelSpec.SetShowUnitLabel(true);
+    Format bearingDMSWithLabel(bearingDMSWithLabelSpec);
+    auto bearingDMSWithLabelComp = CompositeValueSpec(*s_unitsContext->LookupUnit("ARC_DEG"), *s_unitsContext->LookupUnit("ARC_MINUTE"), *s_unitsContext->LookupUnit("ARC_SECOND"));
+    bearingDMSWithLabelComp.SetMajorLabel("°");
+    bearingDMSWithLabelComp.SetMiddleLabel("'");
+    bearingDMSWithLabelComp.SetMinorLabel("\"");
+    bearingDMSWithLabelComp.SetSeparator("");
+    bearingDMSWithLabel.SetCompositeSpec(bearingDMSWithLabelComp);
+    EXPECT_FALSE(bearingDMSWithLabel.IsProblem());
+
+    NumericFormatSpec bearingSpec;
+    bearingSpec.SetPresentationType(PresentationType::Bearing);
+    bearingSpec.SetMinWidth(6);
+    bearingSpec.SetPrecision(DecimalPrecision::Precision3);
+    bearingSpec.SetKeepDecimalPoint(true);
+    bearingSpec.SetKeepTrailingZeroes(true);
+    bearingSpec.SetKeepSingleZero(true);
+    bearingSpec.SetShowUnitLabel(true);
+    Format bearing(bearingSpec);
+    auto bearingComp = CompositeValueSpec(*s_unitsContext->LookupUnit("ARC_DEG"));
+    bearingComp.SetMajorLabel("°");
+    bearingComp.SetSpacer("");
+    bearing.SetCompositeSpec(bearingComp);
+    EXPECT_FALSE(bearing.IsProblem());
+    
+    NumericFormatSpec azimuthDMSSpec;
+    azimuthDMSSpec.SetPresentationType(PresentationType::Azimuth);
+    azimuthDMSSpec.SetMinWidth(2);
+    azimuthDMSSpec.SetPrecision(DecimalPrecision::Precision0);
+    azimuthDMSSpec.SetKeepDecimalPoint(false);
+    Format azimuthDMS(azimuthDMSSpec);
+    azimuthDMS.SetSuppressUnitLabel();
+    auto azimuthDMScomp = CompositeValueSpec(*s_unitsContext->LookupUnit("ARC_DEG"), *s_unitsContext->LookupUnit("ARC_MINUTE"), *s_unitsContext->LookupUnit("ARC_SECOND"));
+    azimuthDMScomp.SetSeparator(":");
+    azimuthDMS.SetCompositeSpec(azimuthDMScomp);
+    EXPECT_FALSE(azimuthDMS.IsProblem());
+
+    NumericFormatSpec azimuthSpec;
+    azimuthSpec.SetPresentationType(PresentationType::Azimuth);
+    azimuthSpec.SetMinWidth(6);
+    azimuthSpec.SetPrecision(DecimalPrecision::Precision3);
+    azimuthSpec.SetKeepDecimalPoint(true);
+    azimuthSpec.SetKeepTrailingZeroes(true);
+    azimuthSpec.SetKeepSingleZero(true);
+    Format azimuth(azimuthSpec);
+    auto azimuthComp = CompositeValueSpec(*s_unitsContext->LookupUnit("ARC_DEG"));
+    azimuth.SetCompositeSpec(azimuthComp);
+    EXPECT_FALSE(azimuth.IsProblem());
+
+    for(auto& row : testData)
+        {
+        Units::Quantity degree(row.angleDegree, *unitDegree);
+        Units::Quantity radian(DegreesToRadians(row.angleDegree), *unitRadian);
+
+        //make sure the provided radian and degree values are roughly the same
+        auto degConverted = radian.ConvertTo(unitDegree);
+        ASSERT_TRUE(degree.IsClose(degConverted, 0.001)) << "Comparison between provided degree and radian seems off.";
+        Utf8String bearingDMSFromDeg = bearingDMS.FormatQuantity(degree);
+        Utf8String bearingDMSFromRad = bearingDMS.FormatQuantity(radian);
+        ASSERT_STREQ(bearingDMSFromDeg.c_str(), bearingDMSFromRad.c_str());
+        ASSERT_STREQ(row.bearingDMS.c_str(), bearingDMSFromDeg.c_str());
+
+        Utf8String bearingDMSWithLabelFromDeg = bearingDMSWithLabel.FormatQuantity(degree);
+        Utf8String bearingDMSWithLabelFromRad = bearingDMSWithLabel.FormatQuantity(radian);
+        ASSERT_STREQ(bearingDMSWithLabelFromDeg.c_str(), bearingDMSWithLabelFromRad.c_str());
+        ASSERT_STREQ(row.bearingDMSWithLabel.c_str(), bearingDMSWithLabelFromDeg.c_str());
+
+        Utf8String bearingDecimalFromDeg = bearing.FormatQuantity(degree);
+        Utf8String bearingDecimalFromRad = bearing.FormatQuantity(radian);
+        ASSERT_STREQ(bearingDecimalFromDeg.c_str(), bearingDecimalFromRad.c_str());
+        ASSERT_STREQ(row.bearingDecimal.c_str(), bearingDecimalFromDeg.c_str());
+
+        Utf8String azimuthDMSFromDeg = azimuthDMS.FormatQuantity(degree);
+        Utf8String azimuthDMSFromRad = azimuthDMS.FormatQuantity(radian);
+        ASSERT_STREQ(azimuthDMSFromDeg.c_str(), azimuthDMSFromRad.c_str());
+        ASSERT_STREQ(row.northAzimuthDMS.c_str(), azimuthDMSFromDeg.c_str());
+
+        Utf8String azimuthDecimalFromDeg = azimuth.FormatQuantity(degree);
+        Utf8String azimuthDecimalFromRad = azimuth.FormatQuantity(radian);
+        ASSERT_STREQ(azimuthDecimalFromDeg.c_str(), azimuthDecimalFromRad.c_str());
+        ASSERT_STREQ(row.northAzimuthDecimal.c_str(), azimuthDecimalFromDeg.c_str());
+        }
+}
+
+TEST_F(FormattingTestFixture, AzimuthWithVariousBases) {
+    auto unitDegree = s_unitsContext->LookupUnit("ARC_DEG");
+
+    auto formatAzimuth = [&unitDegree](double value, double baseOffsetInDeg = 0.0, bool counterClockwise = false)
+        {
+        NumericFormatSpec azimuthSpec;
+        azimuthSpec.SetPresentationType(PresentationType::Azimuth);
+        azimuthSpec.SetMinWidth(4);
+        azimuthSpec.SetPrecision(DecimalPrecision::Precision1);
+        azimuthSpec.SetKeepDecimalPoint(true);
+        azimuthSpec.SetKeepTrailingZeroes(true);
+        azimuthSpec.SetKeepSingleZero(true);
+        azimuthSpec.SetShowUnitLabel(true);
+        azimuthSpec.SetAzimuthBase(DegreesToRadians(baseOffsetInDeg));
+        azimuthSpec.SetCounterClockwiseAngle(counterClockwise);
+        Format azimuth(azimuthSpec);
+        auto azimuthComp = CompositeValueSpec(*unitDegree);
+        azimuthComp.SetMajorLabel("°");
+        azimuthComp.SetSpacer("");
+        azimuth.SetCompositeSpec(azimuthComp);
+
+        Units::Quantity degree(value, *unitDegree);
+        Utf8String result = azimuth.FormatQuantity(degree);
+        return result;
+        };
+
+    ASSERT_STREQ("00.0°", formatAzimuth(0.0).c_str());
+    ASSERT_STREQ("180.0°", formatAzimuth(0.0, 180.0).c_str());
+    ASSERT_STREQ("175.0°", formatAzimuth(0.0, 185.0).c_str());
+    ASSERT_STREQ("185.0°", formatAzimuth(0.0, 185, true).c_str());
+    ASSERT_STREQ("265.0°", formatAzimuth(0.0, 95.0).c_str());
+    ASSERT_STREQ("275.0°", formatAzimuth(0.0, 85.0).c_str());
+    ASSERT_STREQ("90.0°", formatAzimuth(0.0, 270.0).c_str());
+    ASSERT_STREQ("270.0°", formatAzimuth(0.0, 270.0 ,true).c_str());
+    ASSERT_STREQ("90.0°", formatAzimuth(90.0).c_str());
+    ASSERT_STREQ("270.0°", formatAzimuth(90.0, 180.0).c_str());
+    ASSERT_STREQ("265.0°", formatAzimuth(90.0, 185.0).c_str());
+    ASSERT_STREQ("95.0°", formatAzimuth(90.0, 185.0, true).c_str());
+    ASSERT_STREQ("355.0°", formatAzimuth(90.0, 95.0).c_str());
+    ASSERT_STREQ("05.0°", formatAzimuth(90.0, 85.0).c_str());
+    ASSERT_STREQ("180.0°", formatAzimuth(90.0, 270.0).c_str());
+    ASSERT_STREQ("180.0°", formatAzimuth(90.0, 270.0,true).c_str());
+}
 
 END_BENTLEY_FORMATTEST_NAMESPACE

@@ -29,10 +29,12 @@ enum class SignOption
 //=======================================================================================
 enum class PresentationType
     {
-    Decimal,
+    Decimal,// 
     Fractional,
     Scientific, // scientific with 1 digit presenting the integer part
-    Station,
+    Station, // Civil Engineering Stationing (ie 1+00)
+    Bearing, // Bearing angle e.g. N05:00:00E. Requires provided quantities to be of the angle phenomenon
+    Azimuth, // Azimuth angle e.g. 45°30'00". Requires provided quantities to be of the angle phenomenon
     };
 
 //=======================================================================================
@@ -48,19 +50,20 @@ enum class ScientificType
 // @bsienum
 //=======================================================================================
 enum class FormatTraits : int32_t
-    {
-    None             = 0x000,
-    TrailingZeroes   = 0x001, //!< Indicates that one or more insignificant zeroes are to be added after the last digit of the fraction.
-    KeepSingleZero   = 0x002, //!< Indicates that the fractional part of the number is required when the fraction is zero.
-    ZeroEmpty        = 0x004, //!< Indicates that zero value should be presented by an empty string.
-    KeepDecimalPoint = 0x008, //!< Indicates that the decimal point is should be presented when the fraction is zero.
-    ApplyRounding    = 0x010, //!< Use the rounding factor.
-    FractionDash     = 0x020, //!< Use a dash between integer and fraction instead of a space: 3-1/4 rather than 3 1/4.
-    ShowUnitLabel    = 0x040, //!< Indicates that the numeric expression should be followed by the unit name.
-    PrependUnitLabel = 0x080, //!< Indicates the position of the Unit name shifts from the right side of the value to the left.
-    Use1000Separator = 0x100, //!< Indicates that thousands in the integer part of the number should be separated by a special char (. or,).
-    ExponenentOnlyNegative = 0x200, //!< Indicates that if an exponent value is positive to not include a +. By default a sign, + or -, is always shown.
-    };
+{
+    None                    = 0,
+    TrailingZeroes          = 1 << 0, //!< Indicates that one or more insignificant zeroes are to be added after the last digit of the fraction.
+    KeepSingleZero          = 1 << 1, //!< Indicates that the fractional part of the number is required when the fraction is zero.
+    ZeroEmpty               = 1 << 2, //!< Indicates that zero value should be presented by an empty string.
+    KeepDecimalPoint        = 1 << 3, //!< Indicates that the decimal point is should be presented when the fraction is zero.
+    ApplyRounding           = 1 << 4, //!< Use the rounding factor.
+    FractionDash            = 1 << 5, //!< Use a dash between integer and fraction instead of a space: 3-1/4 rather than 3 1/4.
+    ShowUnitLabel           = 1 << 6, //!< Indicates that the numeric expression should be followed by the unit name.
+    PrependUnitLabel        = 1 << 7, //!< Indicates the position of the Unit name shifts from the right side of the value to the left.
+    Use1000Separator        = 1 << 8, //!< Indicates that thousands in the integer part of the number should be separated by a special char (. or,).
+    ExponenentOnlyNegative  = 1 << 9, //!< Indicates that if an exponent value is positive to not include a +. By default a sign, + or -, is always shown.
+    CounterClockwiseAngle   = 1 << 10, //!< Indicates the use of a counter clockwise angles. Affects Azimuth only.
+};
 
 //=======================================================================================
 //! Number of points after decimal point given significance in the scientific notation
@@ -231,6 +234,15 @@ enum class FormatSpecialCodes
     };
 
 //=======================================================================================
+// @bsienum
+//=======================================================================================
+enum class AlternativeFormatComparison
+    {
+    GreaterThan,
+    LessThan
+    };
+
+//=======================================================================================
 //! @bsistruct
 //=======================================================================================
 struct FormatProblemDetail
@@ -315,6 +327,7 @@ public:
     static Utf8Char const DefaultStationSeparator() {return '+';}
     static int const DefaultMinWidth() { return 0; }
     static Utf8String const DefaultSpacer() {return " ";}
+    static Utf8String const DefaultSeparator() {return " ";}
 
     // FPN prefix stands for FormatParameterName
     static Utf8String FPN_NoSign() { return "NoSign"; }
