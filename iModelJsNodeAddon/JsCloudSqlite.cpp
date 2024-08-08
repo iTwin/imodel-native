@@ -191,8 +191,20 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
 
     void RequireWriteLock() {
         RequireConnected();
-        if (!m_writeLockHeld)
-            BeNapi::ThrowJsException(Env(), Utf8PrintfString("container [%s] is not locked for write access", m_containerId.c_str()).c_str());
+        BeJsDocument lockedBy;
+        ReadWriteLock(lockedBy);
+        auto lockedByGuid = lockedBy[JSON_NAME(guid)].asString();
+        // check if it's the same guid  
+        if (!lockedByGuid.Equals(m_cache->m_guid)) {
+            // another user grabbed the write lock after the current user's write lock expiration time, disable current user from operating
+            BeNapi::ThrowJsException(Env(), Utf8PrintfString("Container [%s] is currently locked by another user.", m_containerId.c_str()).c_str());
+        } else {
+            // Refresh the write lock for the current user no matter if the write lock expires
+            // 1. If the write lock expires, refresh it for the current user to operate further actions
+            // 2. If not, also refresh it in case the current user's write lock is about to expire when they call operations that require write lock to be present, and somehow expires during the operations
+            ResumeWriteLock();
+
+        }
     }
 
     void CallJsMemberFunc(Utf8CP funcName, std::vector<napi_value> const& args) {
@@ -222,7 +234,10 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
 
         if (m_writeable) {
             ResumeWriteLock(); // see if we are re-attaching and previously had the write lock.
-            if (!m_writeLockHeld && HasLocalChanges())
+            BeJsDocument lockedBy;
+            ReadWriteLock(lockedBy);
+            auto lockedByGuid = lockedBy[JSON_NAME(guid)].asString();
+            if ((!lockedByGuid.Equals(m_cache->m_guid) || !m_writeLockHeld) && HasLocalChanges())
                 AbandonChanges(info); // we lost the write lock, we have no choice but to abandon all local changes.
         }
 
@@ -571,7 +586,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         m_containerDb.TryExecuteSql("BEGIN");
         CheckLock(); // throws if already locked by another user
 
-        m_lockExpireSeconds = std::min((int) (12*SECONDS_PER_HOUR), std::max((int)SECONDS_PER_HOUR, m_lockExpireSeconds));
+        m_lockExpireSeconds = std::min((int) (12*SECONDS_PER_HOUR), std::max(5*((int)SECONDS_PER_MINUTE), m_lockExpireSeconds));
         BeJsDocument lockedBy;
         lockedBy[JSON_NAME(guid)] = m_cache->m_guid;
         lockedBy[JSON_NAME(user)] = user;
