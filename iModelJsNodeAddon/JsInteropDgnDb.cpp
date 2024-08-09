@@ -31,7 +31,6 @@ BE_JSON_NAME(minOccurs)
 BE_JSON_NAME(minimumLength)
 BE_JSON_NAME(minimumValue)
 BE_JSON_NAME(modifier)
-BE_JSON_NAME(onlyBaseProperties)
 BE_JSON_NAME(primitiveType)
 BE_JSON_NAME(properties)
 BE_JSON_NAME(readOnly)
@@ -300,39 +299,6 @@ DgnDbStatus JsInterop::GetSchemaItem(BeJsValue mjson, DgnDbR dgndb, Utf8CP schem
         }
 
     return DgnDbStatus::NotFound;    // This is not an exception. It just returns an empty result.
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-DgnDbStatus JsInterop::GetElement(BeJsValue elementJson, DgnDbR dgndb, Napi::Object obj) {
-    BeJsConst inOpts(obj);
-    DgnElementCPtr elem;
-    DgnElementId eid = inOpts[json_id()].GetId64<DgnElementId>();
-
-    if (!eid.IsValid()) {
-        auto fedJson = inOpts[json_federationGuid()];
-        if (fedJson.isString()) {
-            BeGuid federationGuid;
-            federationGuid.FromString(fedJson.asCString());
-            elem = dgndb.Elements().QueryElementByFederationGuid(federationGuid);
-        } else {
-            eid = dgndb.Elements().QueryElementIdByCode(DgnCode::FromJson(inOpts[json_code()], dgndb, false));
-        }
-    }
-
-    if (!elem.IsValid())
-        elem = dgndb.Elements().GetElement(eid);
-
-    if (!elem.IsValid())
-        return DgnDbStatus::NotFound;
-
-    // if they only want base properties, don't bother calling virtual function
-    if (inOpts[json_onlyBaseProperties()].asBool())
-        elem->ToBaseJson(elementJson);
-    else
-        elem->ToJson(elementJson, inOpts);
-    return DgnDbStatus::Success;
 }
 
 struct SetNapiObjOnElement {

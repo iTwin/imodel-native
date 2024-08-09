@@ -1238,15 +1238,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return worker->Queue();  // Schema serialization happens in another thread
     }
 
-    Napi::Value GetElement(NapiInfoCR info) {
-        REQUIRE_ARGUMENT_ANY_OBJ(0, opts);
-        BeJsNapiObject jsValue(Env());
-        auto status = JsInterop::GetElement(jsValue, GetOpenedDb(info), opts);
-        if (DgnDbStatus::Success != status)
-            BeNapi::ThrowJsException(Env(), "error reading element", (int)status);
-        return jsValue;
-    }
-
     Napi::Value GetModel(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, opts);
         BeJsNapiObject modelJson(Env());
@@ -2710,7 +2701,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("getCurrentChangeset", &NativeDgnDb::GetCurrentChangeset),
             InstanceMethod("getCurrentTxnId", &NativeDgnDb::GetCurrentTxnId),
             InstanceMethod("getECClassMetaData", &NativeDgnDb::GetECClassMetaData),
-            InstanceMethod("getElement", &NativeDgnDb::GetElement),
             InstanceMethod("getInstance", &NativeDgnDb::GetInstance),
             InstanceMethod("executeSql", &NativeDgnDb::ExecuteSql),
             InstanceMethod("getFilePath", &NativeDgnDb::GetFilePath),
