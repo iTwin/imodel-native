@@ -4521,7 +4521,9 @@ public:
             InstanceMethod("stepForInsertAsync", &NativeECSqlStatement::StepForInsertAsync),
             InstanceMethod("getColumnCount", &NativeECSqlStatement::GetColumnCount),
             InstanceMethod("getValue", &NativeECSqlStatement::GetValue),
-            InstanceMethod("getNativeSql", &NativeECSqlStatement::GetNativeSql)
+            InstanceMethod("getNativeSql", &NativeECSqlStatement::GetNativeSql),
+            InstanceMethod("toRow", &NativeECSqlStatement::ToRow),
+            InstanceMethod("getMetadata", &NativeECSqlStatement::GetMetadata)
         });
 
         exports.Set("ECSqlStatement", t);
@@ -4656,6 +4658,44 @@ public:
             THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
 
         return Napi::String::New(Env(), m_stmt.GetNativeSql());
+    }
+
+    Napi::Value ToRow(NapiInfoCR info) {
+        if (!m_stmt.IsPrepared())
+            THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
+
+        REQUIRE_ARGUMENT_ANY_OBJ(0, optObj);
+        BeJsValue opts(optObj);
+        if (!opts.isBoolMember("classIdsToClassNames"))
+            BeNapi::ThrowJsException(info.Env(), "classIdsToClassNames argument missing");
+        if (!opts.isNumericMember("rowFormat"))
+            BeNapi::ThrowJsException(info.Env(), "rowFormat argument missing");
+
+        ECSqlRowAdaptor adaptor(*m_stmt.GetECDb());
+        adaptor.GetOptions().FromJson(opts);
+        adaptor.GetOptions().SetAbbreviateBlobs(false);
+
+        BeJsNapiObject out(info.Env());
+        BeJsValue rowJson = out["data"];
+        if (adaptor.RenderRow(rowJson, ECSqlStatementRow(m_stmt)) != SUCCESS)
+            BeNapi::ThrowJsException(info.Env(), "Failed to render row", BE_SQLITE_ERROR);
+
+        return out;
+    }
+
+    Napi::Value GetMetadata(NapiInfoCR info) {
+        if (!m_stmt.IsPrepared())
+            THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
+
+        ECSqlRowAdaptor adaptor(*m_stmt.GetECDb());
+        ECSqlRowProperty::List props;
+        adaptor.GetMetaData(props, m_stmt);
+
+        BeJsNapiObject out(info.Env());
+        BeJsValue metaJson = out["meta"];
+        props.ToJs(metaJson);
+
+        return out;
     }
 
     static DbResult ToDbResult(ECSqlStatus status) {
