@@ -328,10 +328,13 @@ BentleyStatus ECSqlRowAdaptor::RenderPrimitiveArrayProperty(BeJsValue out, IECSq
     out.SetEmptyArray();
     auto elementType  = in.GetColumnInfo().GetProperty()->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
     for (IECSqlValue const& arrayElementValue : in.GetArrayIterable()) {
-        if (arrayElementValue.IsNull())
+        BeJsValue outValue = out.appendValue();
+        if (arrayElementValue.IsNull()) {    
+            outValue.SetNull();
             continue;
+        }
 
-        if (SUCCESS != RenderPrimitiveProperty(out.appendValue(), arrayElementValue, &elementType))
+        if (SUCCESS != RenderPrimitiveProperty(outValue, arrayElementValue, &elementType))
             return ERROR;
     }
     return SUCCESS;
@@ -342,10 +345,13 @@ BentleyStatus ECSqlRowAdaptor::RenderPrimitiveArrayProperty(BeJsValue out, IECSq
 BentleyStatus ECSqlRowAdaptor::RenderStructArrayProperty(BeJsValue out, IECSqlValue const& in) const {
     out.SetEmptyArray();
     for (IECSqlValue const& arrayElementValue : in.GetArrayIterable()) {
-        if (arrayElementValue.IsNull())
+        BeJsValue outValue = out.appendValue();
+        if (arrayElementValue.IsNull()) {    
+            outValue.SetNull();
             continue;
+        }
 
-        if (SUCCESS != RenderStructProperty(out.appendValue(), arrayElementValue))
+        if (SUCCESS != RenderStructProperty(outValue, arrayElementValue))
             return ERROR;
     }
     return SUCCESS;
