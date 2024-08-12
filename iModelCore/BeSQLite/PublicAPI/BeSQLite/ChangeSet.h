@@ -55,18 +55,48 @@ public:
         using difference_type=std::ptrdiff_t;
         using pointer=Change const*;
         using reference=Change const&;
+        struct ArrayView {
+            private:
+                Byte const* m_data;
+                int m_size;
+            public:
+                ArrayView(Byte const* data, int size) : m_data(data), m_size(size) {}
+                bool operator[](int i) const {
+                    if (i < 0 || i >= m_size) return false;
+                    if(m_data == nullptr) return false;
+                    return !m_data[i];
+                };
+                int Length() const { return m_size; }
+        };
 
     private:
         bool m_isValid;
         mutable SqlChangesetIterP m_iter;
-
+        mutable Utf8String m_tableName;
+        mutable DbOpcode m_opcode;
+        mutable int m_indirect;
+        mutable int m_nCols;
+        mutable Byte* m_primaryKeyColumns;
+        mutable int m_primaryKeyColumnsCount;
+        mutable int m_foreignKeyConflicts;
         Utf8String FormatChange(Db const& db, Utf8CP tableName, DbOpcode opcode, int indirect, int detailLevel) const;
+        void LoadOperation() const;
 
     public:
-        Change(SqlChangesetIterP iter, bool isValid) {
-            m_iter = iter;
-            m_isValid = isValid;
-        }
+        BE_SQLITE_EXPORT Change(SqlChangesetIterP iter, bool isValid);
+        Utf8StringCR GetTableName() const { return m_tableName; }
+        DbOpcode GetOpcode() const { return m_opcode; }
+        bool IsDirect() const { return !m_indirect; }
+        bool IsUpdate() const { return m_opcode == DbOpcode::Update; }
+        bool IsInsert() const { return m_opcode == DbOpcode::Insert; }
+        bool IsDelete() const { return m_opcode == DbOpcode::Delete; }
+        bool IsIndirect() const { return m_indirect; }
+        int GetColumnCount() const { return m_nCols; }
+        int GetForeignKeyConflicts() const { return m_foreignKeyConflicts; }
+        int GetPrimaryKeyColumnCount() const { return m_primaryKeyColumnsCount; }
+        BE_SQLITE_EXPORT bool IsPrimaryKeyColumn(int colNum) const;
+
+
         //! get the "operation" that happened to this row.
         //! @param[out] tableName the name of the table to which the change was made. Changes within a ChangeSet are always
         //! sorted by table. So, all of the changes for a given table will appear in order before any changes to another table.
@@ -75,17 +105,6 @@ public:
         //! @param[out] opcode the opcode of the change. One of SQLITE_INSERT, SQLITE_DELETE, or SQLITE_UPDATE.
         //! @param[out] indirect true if the change was an indirect change.
         BE_SQLITE_EXPORT DbResult GetOperation(Utf8CP* tableName, int* nCols, DbOpcode* opcode, int* indirect) const;
-
-        bool IsIndirect() const
-            {
-            int indirect;
-            Utf8CP tableName;
-            int nCols;
-            DbOpcode opcode;
-            auto rc = GetOperation(&tableName, &nCols, &opcode, &indirect);
-            BeAssert(BE_SQLITE_OK == rc);
-            return BE_SQLITE_OK == rc && 0 != indirect;
-            }
 
         //! get the columns that form the primary key for the changed row.
         BE_SQLITE_EXPORT DbResult GetPrimaryKeyColumns(Byte** cols, int* nCols) const;
