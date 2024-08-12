@@ -736,7 +736,11 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
         }
     bool sci = ((dval > 1.0e12) ||m_presentationType == PresentationType::Scientific);
     bool decimal = (sci || m_presentationType == PresentationType::Decimal ||
-                    m_presentationType == PresentationType::Bearing || m_presentationType == PresentationType::Azimuth);
+                    m_presentationType == PresentationType::Bearing || 
+                    m_presentationType == PresentationType::Azimuth || 
+                    m_presentationType == PresentationType::FractionalRatio ||
+                    m_presentationType == PresentationType::IntegerRatio
+                    );
     bool fractional = (!decimal && m_presentationType == PresentationType::Fractional);
     bool stops = m_presentationType == PresentationType::Station;
 
@@ -958,5 +962,58 @@ double NumericFormatSpec::RoundDouble(double dval, double roundTo)
     rnd = ival * roundTo;
     return (dval < 0.0) ? -rnd : rnd;
     }
+
+Utf8String NumericFormatSpec::FormatToFractionalRatio(double dval, Utf8String unitName) const{
+    // static char buffer[50];^M
+    // if (val == 0.0){^M
+    //     std::snprintf(buffer, sizeof(buffer), "0:1");^M
+    //     return buffer;^M
+    // }^M
+    // int precision = 3;^M
+    // double precisionMul = std::pow(10, precision);^M
+    // double reciprocal = 1.0 / val;^M
+    // // if (IsApplyRounding() || !FormatConstant::IsIgnored(m_roundFactor))^M
+    // //     dval = (dval, EffectiveRoundFactor(m_roundFactor));^M
+    // // std::snprintf(buffer, sizeof(buffer), "1:%.1f", roundedReciprocal);^M
+    // return buffer;^M
+
+
+    double reciprocal = 1.0 / dval;
+    if (unitName == "VERTICAL_PER_HORIZONTAL")
+        return "1:" + Format(reciprocal);
+    else if (unitName == "HORIZONTAL_PER_VERTICAL")
+        return Format(reciprocal) + ":1";
+
+    return ""; // TODO: Naron - what if it's not one of the two?
+}
+
+Utf8String NumericFormatSpec::FormatToIntegerRatio(double dval, Utf8String unitName) const{
+
+    double reciprocal = 1.0 / dval;
+
+    double precisionFactor = GetDecimalPrecisionFactor();
+
+    int numerator = static_cast<int>(reciprocal * precisionFactor);
+    int denominator = static_cast<int>(precisionFactor);
+
+    // int gcd = std::gcd(numerator, denominator);^M
+    int a = numerator;
+    int b = denominator;
+    while (b != 0) {
+        int temp = b;
+        b = a % b;
+        a = temp;
+    }
+    
+    numerator /= a;
+    denominator /= a;
+
+    if (unitName == "VERTICAL_PER_HORIZONTAL")
+        return std::to_string(numerator) + ":" + std::to_string(denominator);
+    else if (unitName == "HORIZONTAL_PER_VERTICAL")
+        return std::to_string(denominator) + ":" + std::to_string(numerator);
+
+    return ""; // TODO: Naron - what if it's not one of the two?
+}
 
 END_BENTLEY_FORMATTING_NAMESPACE

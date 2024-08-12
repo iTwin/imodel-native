@@ -1738,4 +1738,48 @@ TEST_F(FormattingTestFixture, AzimuthWithVariousBases) {
     ASSERT_STREQ("180.0°", formatAzimuth(90.0, 270.0,true).c_str());
 }
 
+TEST_F(FormattingTestFixture, FormatDoubleToRatio)
+    {
+    // Fractional Ratio
+    {
+    NumericFormatSpec fractionalRatioSpec;
+    fractionalRatioSpec.SetPresentationType(PresentationType::FractionalRatio);
+    fractionalRatioSpec.SetPrecision(DecimalPrecision::Precision3);
+
+    // fractionalRatioSpec.SetRoundingFactor(0.05);
+
+    Format fractionalRatioFormat(fractionalRatioSpec);
+
+    auto horizontalPerVertical = s_unitsContext->LookupUnit("VERTICAL_PER_HORIZONTAL");
+    auto unitDegree = s_unitsContext->LookupUnit("ARC_DEG");
+    Units::Quantity quantity(0.0, *horizontalPerVertical);
+    ASSERT_STREQ("0:1", fractionalRatioFormat.FormatQuantity(quantity).c_str());
+
+    Units::Quantity quantity2(1.0, *unitDegree);
+    ASSERT_STREQ("1:1", fractionalRatioFormat.FormatQuantity(quantity2).c_str());
+
+    Units::Quantity quantity3(2.0, *s_unitsContext->LookupUnit("NONE"));
+    ASSERT_STREQ("0.5:1", fractionalRatioFormat.FormatQuantity(quantity3).c_str());
+
+    Units::Quantity quantity4(0.5, *s_unitsContext->LookupUnit("NONE"));
+    ASSERT_STREQ("2:1", fractionalRatioFormat.FormatQuantity(quantity4).c_str());
+
+    Units::Quantity quantity5(0.333, *s_unitsContext->LookupUnit("NONE"));
+    ASSERT_STREQ("3.003:1", fractionalRatioFormat.FormatQuantity(quantity5).c_str());
+
+    Units::Quantity quantity6(0.3333, *s_unitsContext->LookupUnit("NONE"));
+    ASSERT_STREQ("3:1", fractionalRatioFormat.FormatQuantity(quantity6).c_str());
+
+
+    // EXPECT_STREQ("0:1", fractionalRatioFormat.ConvertToFractionalRatio(1.0)); 
+    // EXPECT_STREQ("1:1", fractionalRatioFormat.ConvertToFractionalRatio(1.0)); 
+    // EXPECT_STREQ("1:2", fractionalRatioFormat.ConvertToFractionalRatio(0.5));
+    // // EXPECT_STREQ("3.5/1", fractionalRatioFormat.ConvertToFractionalRatio(0.2857));
+    // // EXPECT_STREQ("/1", fractionalRatioFormat.ConvertToFractionalRatio(0.333));
+    // // EXPECT_STREQ("1/3", fractionalRatioFormat.ConvertToFractionalRatio(0.3333));
+
+    }
+    }
+
+
 END_BENTLEY_FORMATTEST_NAMESPACE

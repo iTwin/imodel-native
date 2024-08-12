@@ -281,6 +281,20 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
         additionalFormatting = true;
         }
 
+    if (fmtP->GetPresentationType() == PresentationType::FractionalRatio || fmtP->GetPresentationType() == PresentationType::IntegerRatio)
+        {
+        double dval = temp.GetMagnitude();
+        BEU::UnitCP unit = qty.GetUnit();
+        // if unit->GetName == "VERTICAL_PER_HORIZONTAL";
+        
+        // if (dval == 0.0)
+        //     return "0:1"; // TODO <Naron>: check whether formatsTraits should be applied here^M
+        if (fmtP->GetPresentationType() == PresentationType::FractionalRatio)
+            majT = fmtP->FormatToFractionalRatio(dval, unit->GetName());
+        
+        return fmtP->FormatToIntegerRatio(dval, unit->GetName()); // TODO <Naron>: temporary, probably wanna add units along majT
+        }
+
     if (HasComposite())  // procesing composite parts
         {
         CompositeValueSpecCP compS = GetCompositeSpec();

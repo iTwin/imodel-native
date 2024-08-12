@@ -26,6 +26,7 @@ static Utf8CP const FORCE = "FORCE";
 static Utf8CP const WORK = "WORK";
 static Utf8CP const LENGTH_RATIO = "LENGTH_RATIO";
 static Utf8CP const METRIC_PREFIX = "METRIC_PREFIX";
+static Utf8CP const SLOPE = "SLOPE";
 
 static double const PI = 3.1415926535897932384626433832795;
 
@@ -86,6 +87,9 @@ void UnitsTestFixture::FillRegistry(UnitRegistry* registry)
     registry->AddUnit(FORCE, SI, "N", "KG*M*S(-2)");
 
     registry->AddUnit(WORK, SI, "J", "N*M");
+
+    registry->AddUnit(SLOPE, INTERNATIONAL, "VERTICAL_PER_HORIZONTAL", "M_PER_M");
+    registry->AddInvertedUnit("VERTICAL_PER_HORIZONTAL", "HORIZONTAL_PER_VERTICAL", INTERNATIONAL);
     }
 
 //----------------------------------------------------------------------------------------
