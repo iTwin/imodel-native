@@ -1738,48 +1738,87 @@ TEST_F(FormattingTestFixture, AzimuthWithVariousBases) {
     ASSERT_STREQ("180.0°", formatAzimuth(90.0, 270.0,true).c_str());
 }
 
-TEST_F(FormattingTestFixture, FormatDoubleToRatio)
+TEST_F(FormattingTestFixture, FormatDoubleToFractionalRatio){
+    auto formatFractionalRatio = [](double value, Units::UnitCP unit) -> Utf8String
     {
-    // Fractional Ratio
+        NumericFormatSpec fractionalRatioSpec;
+        fractionalRatioSpec.SetPresentationType(PresentationType::FractionalRatio);
+        fractionalRatioSpec.SetPrecision(DecimalPrecision::Precision3);
+
+        Format fractionalRatioFormat(fractionalRatioSpec);
+
+        Units::Quantity quantity(value, *unit);
+        return fractionalRatioFormat.FormatQuantity(quantity);
+    };
+
+    // Vertical per Horizontal
     {
-    NumericFormatSpec fractionalRatioSpec;
-    fractionalRatioSpec.SetPresentationType(PresentationType::FractionalRatio);
-    fractionalRatioSpec.SetPrecision(DecimalPrecision::Precision3);
+        auto verticalPerHorizontalUnit = s_unitsContext->LookupUnit("VERTICAL_PER_HORIZONTAL");
 
-    // fractionalRatioSpec.SetRoundingFactor(0.05);
-
-    Format fractionalRatioFormat(fractionalRatioSpec);
-
-    auto horizontalPerVertical = s_unitsContext->LookupUnit("VERTICAL_PER_HORIZONTAL");
-    auto unitDegree = s_unitsContext->LookupUnit("ARC_DEG");
-    Units::Quantity quantity(0.0, *horizontalPerVertical);
-    ASSERT_STREQ("0:1", fractionalRatioFormat.FormatQuantity(quantity).c_str());
-
-    Units::Quantity quantity2(1.0, *unitDegree);
-    ASSERT_STREQ("1:1", fractionalRatioFormat.FormatQuantity(quantity2).c_str());
-
-    Units::Quantity quantity3(2.0, *s_unitsContext->LookupUnit("NONE"));
-    ASSERT_STREQ("0.5:1", fractionalRatioFormat.FormatQuantity(quantity3).c_str());
-
-    Units::Quantity quantity4(0.5, *s_unitsContext->LookupUnit("NONE"));
-    ASSERT_STREQ("2:1", fractionalRatioFormat.FormatQuantity(quantity4).c_str());
-
-    Units::Quantity quantity5(0.333, *s_unitsContext->LookupUnit("NONE"));
-    ASSERT_STREQ("3.003:1", fractionalRatioFormat.FormatQuantity(quantity5).c_str());
-
-    Units::Quantity quantity6(0.3333, *s_unitsContext->LookupUnit("NONE"));
-    ASSERT_STREQ("3:1", fractionalRatioFormat.FormatQuantity(quantity6).c_str());
-
-
-    // EXPECT_STREQ("0:1", fractionalRatioFormat.ConvertToFractionalRatio(1.0)); 
-    // EXPECT_STREQ("1:1", fractionalRatioFormat.ConvertToFractionalRatio(1.0)); 
-    // EXPECT_STREQ("1:2", fractionalRatioFormat.ConvertToFractionalRatio(0.5));
-    // // EXPECT_STREQ("3.5/1", fractionalRatioFormat.ConvertToFractionalRatio(0.2857));
-    // // EXPECT_STREQ("/1", fractionalRatioFormat.ConvertToFractionalRatio(0.333));
-    // // EXPECT_STREQ("1/3", fractionalRatioFormat.ConvertToFractionalRatio(0.3333));
-
+        ASSERT_STREQ("0:1", formatFractionalRatio(0.0, verticalPerHorizontalUnit).c_str());
+        ASSERT_STREQ("1:1", formatFractionalRatio(1.0, verticalPerHorizontalUnit).c_str());
+        ASSERT_STREQ("1:0.5", formatFractionalRatio(2.0, verticalPerHorizontalUnit).c_str());
+        ASSERT_STREQ("1:2", formatFractionalRatio(0.5, verticalPerHorizontalUnit).c_str());
+        ASSERT_STREQ("1:3.003", formatFractionalRatio(0.333, verticalPerHorizontalUnit).c_str());
+        ASSERT_STREQ("1:3", formatFractionalRatio(0.3333, verticalPerHorizontalUnit).c_str());
+        ASSERT_STREQ("1:3.5", formatFractionalRatio(0.2857, verticalPerHorizontalUnit).c_str());
     }
+
+    // Horizontal per Vertical
+    {
+        auto horizontalPerVerticalUnit = s_unitsContext->LookupUnit("HORIZONTAL_PER_VERTICAL");
+
+        ASSERT_STREQ("1:0", formatFractionalRatio(0.0, horizontalPerVerticalUnit).c_str());
+        ASSERT_STREQ("1:1", formatFractionalRatio(1.0, horizontalPerVerticalUnit).c_str());
+        ASSERT_STREQ("0.5:1", formatFractionalRatio(2.0, horizontalPerVerticalUnit).c_str());
+        ASSERT_STREQ("2:1", formatFractionalRatio(0.5, horizontalPerVerticalUnit).c_str());
+        ASSERT_STREQ("3.003:1", formatFractionalRatio(0.333, horizontalPerVerticalUnit).c_str());
+        ASSERT_STREQ("3:1", formatFractionalRatio(0.3333, horizontalPerVerticalUnit).c_str());
+        ASSERT_STREQ("3.5:1", formatFractionalRatio(0.2857, horizontalPerVerticalUnit).c_str());
     }
+}
+
+
+
+TEST_F(FormattingTestFixture, FormatDoubleToIntegerRatio){
+    auto formatIntegerRatio = [](double value, Units::UnitCP unit) -> Utf8String
+        {
+            NumericFormatSpec integerRatioSpec;
+            integerRatioSpec.SetPresentationType(PresentationType::IntegerRatio);
+            integerRatioSpec.SetPrecision(DecimalPrecision::Precision3);
+
+            Format integerRatioFormat(integerRatioSpec);
+
+            Units::Quantity quantity(value, *unit);
+            return integerRatioFormat.FormatQuantity(quantity);
+        };
+
+    // Vertical per Horizontal
+    {
+        auto verticalPerHorizontalUnit = s_unitsContext->LookupUnit("VERTICAL_PER_HORIZONTAL");
+
+        ASSERT_STREQ("0:1", formatIntegerRatio(0.0, verticalPerHorizontalUnit).c_str());
+        ASSERT_STREQ("1:1", formatIntegerRatio(1.0, verticalPerHorizontalUnit).c_str());
+        ASSERT_STREQ("2:1", formatIntegerRatio(2.0, verticalPerHorizontalUnit).c_str());
+        ASSERT_STREQ("1:2", formatIntegerRatio(0.5, verticalPerHorizontalUnit).c_str());
+        ASSERT_STREQ("1000:3003", formatIntegerRatio(0.333, verticalPerHorizontalUnit).c_str());
+        ASSERT_STREQ("1:3", formatIntegerRatio(0.3333, verticalPerHorizontalUnit).c_str());
+        ASSERT_STREQ("2:7", formatIntegerRatio(0.2857, verticalPerHorizontalUnit).c_str());
+    }
+
+    // Horizontal per Vertical
+    {
+        auto horizontalPerVerticalUnit = s_unitsContext->LookupUnit("HORIZONTAL_PER_VERTICAL");
+
+        ASSERT_STREQ("1:0", formatIntegerRatio(0.0, horizontalPerVerticalUnit).c_str());
+        ASSERT_STREQ("1:1", formatIntegerRatio(1.0, horizontalPerVerticalUnit).c_str());
+        ASSERT_STREQ("1:2", formatIntegerRatio(2.0, horizontalPerVerticalUnit).c_str());
+        ASSERT_STREQ("2:1", formatIntegerRatio(0.5, horizontalPerVerticalUnit).c_str());
+        ASSERT_STREQ("3003:1000", formatIntegerRatio(0.333, horizontalPerVerticalUnit).c_str());
+        ASSERT_STREQ("3:1", formatIntegerRatio(0.3333, horizontalPerVerticalUnit).c_str());
+        ASSERT_STREQ("7:2", formatIntegerRatio(0.2857, horizontalPerVerticalUnit).c_str());
+    }
+}
 
 
 END_BENTLEY_FORMATTEST_NAMESPACE

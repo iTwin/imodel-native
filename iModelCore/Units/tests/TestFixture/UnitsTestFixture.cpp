@@ -52,6 +52,7 @@ void UnitsTestFixture::FillRegistry(UnitRegistry* registry)
     registry->AddPhenomenon(ACCELERATION, "LENGTH*TIME(-2)");
     registry->AddPhenomenon(FORCE, "MASS*ACCELERATION");
     registry->AddPhenomenon(WORK, "FORCE*LENGTH");
+    registry->AddPhenomenon(SLOPE, "LENGTH*LENGTH(-1)");
 
     registry->AddUnit(LENGTH, SI, "M", "M", 1, 1, 0);
     registry->AddUnit(MASS, SI, "KG", "KG", 1, 1, 0);

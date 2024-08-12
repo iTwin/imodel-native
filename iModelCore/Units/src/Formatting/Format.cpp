@@ -285,14 +285,17 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
         {
         double dval = temp.GetMagnitude();
         BEU::UnitCP unit = qty.GetUnit();
-        // if unit->GetName == "VERTICAL_PER_HORIZONTAL";
-        
-        // if (dval == 0.0)
-        //     return "0:1"; // TODO <Naron>: check whether formatsTraits should be applied here^M
+
+        if (dval == 0)
+            if (unit->GetName() == "VERTICAL_PER_HORIZONTAL")
+                return "0:1";
+            else if (unit->GetName() == "HORIZONTAL_PER_VERTICAL")
+                return "1:0";
+                
         if (fmtP->GetPresentationType() == PresentationType::FractionalRatio)
-            majT = fmtP->FormatToFractionalRatio(dval, unit->GetName());
-        
-        return fmtP->FormatToIntegerRatio(dval, unit->GetName()); // TODO <Naron>: temporary, probably wanna add units along majT
+            return fmtP->FormatToFractionalRatio(dval, unit->GetName());
+        else
+            return fmtP->FormatToIntegerRatio(dval, unit->GetName());
         }
 
     if (HasComposite())  // procesing composite parts

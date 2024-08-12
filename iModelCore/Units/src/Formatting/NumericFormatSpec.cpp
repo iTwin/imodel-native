@@ -963,33 +963,22 @@ double NumericFormatSpec::RoundDouble(double dval, double roundTo)
     return (dval < 0.0) ? -rnd : rnd;
     }
 
-Utf8String NumericFormatSpec::FormatToFractionalRatio(double dval, Utf8String unitName) const{
-    // static char buffer[50];^M
-    // if (val == 0.0){^M
-    //     std::snprintf(buffer, sizeof(buffer), "0:1");^M
-    //     return buffer;^M
-    // }^M
-    // int precision = 3;^M
-    // double precisionMul = std::pow(10, precision);^M
-    // double reciprocal = 1.0 / val;^M
-    // // if (IsApplyRounding() || !FormatConstant::IsIgnored(m_roundFactor))^M
-    // //     dval = (dval, EffectiveRoundFactor(m_roundFactor));^M
-    // // std::snprintf(buffer, sizeof(buffer), "1:%.1f", roundedReciprocal);^M
-    // return buffer;^M
-
-
+Utf8String NumericFormatSpec::FormatToFractionalRatio(double dval, Utf8String unitName) const
+{
     double reciprocal = 1.0 / dval;
-    if (unitName == "VERTICAL_PER_HORIZONTAL")
-        return "1:" + Format(reciprocal);
-    else if (unitName == "HORIZONTAL_PER_VERTICAL")
-        return Format(reciprocal) + ":1";
 
-    return ""; // TODO: Naron - what if it's not one of the two?
+    Utf8String result;
+    if (unitName == "VERTICAL_PER_HORIZONTAL")
+        result = "1:" + Format(reciprocal);
+    else if (unitName == "HORIZONTAL_PER_VERTICAL")
+        result = Format(reciprocal) + ":1";
+        
+    return result;
 }
 
-Utf8String NumericFormatSpec::FormatToIntegerRatio(double dval, Utf8String unitName) const{
-
-    double reciprocal = 1.0 / dval;
+Utf8String NumericFormatSpec::FormatToIntegerRatio(double dval, Utf8String unitName) const
+{
+    double reciprocal = reciprocal = 1.0 / dval;
 
     double precisionFactor = GetDecimalPrecisionFactor();
 
@@ -1009,11 +998,11 @@ Utf8String NumericFormatSpec::FormatToIntegerRatio(double dval, Utf8String unitN
     denominator /= a;
 
     if (unitName == "VERTICAL_PER_HORIZONTAL")
-        return std::to_string(numerator) + ":" + std::to_string(denominator);
+        return Format(denominator) + ":" + Format(numerator);
     else if (unitName == "HORIZONTAL_PER_VERTICAL")
-        return std::to_string(denominator) + ":" + std::to_string(numerator);
+        return Format(numerator) + ":" + Format(denominator);
 
-    return ""; // TODO: Naron - what if it's not one of the two?
+    return ""; 
 }
 
 END_BENTLEY_FORMATTING_NAMESPACE
