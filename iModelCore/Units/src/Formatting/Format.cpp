@@ -190,17 +190,17 @@ BentleyStatus NormalizeAngle(BEU::Quantity& quantity, Utf8CP operationName, doub
     return BentleyStatus::SUCCESS;
     }
 
-BentleyStatus ProcessBearingAndAzimuth(NumericFormatSpecCP fmtP, BEU::Quantity& temp, std::string& prefix, std::string& suffix)
+BentleyStatus ProcessBearingAndAzimuth(NumericFormatSpecCP fmtP, BEU::Quantity& quantity, std::string& prefix, std::string& suffix)
     {
     auto type = fmtP->GetPresentationType();
     if(type != PresentationType::Bearing && type != PresentationType::Azimuth)
         return BentleyStatus::ERROR;
 
     double perigon;
-    if (NormalizeAngle(temp, type == PresentationType::Bearing ? "bearing" : "azimuth", perigon) != BentleyStatus::SUCCESS)
+    if (NormalizeAngle(quantity, type == PresentationType::Bearing ? "bearing" : "azimuth", perigon) != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
 
-    double magnitude = temp.GetMagnitude();
+    double magnitude = quantity.GetMagnitude();
     if (type == PresentationType::Bearing)
         {
         double rightAngle = perigon / 4;
@@ -229,7 +229,7 @@ BentleyStatus ProcessBearingAndAzimuth(NumericFormatSpecCP fmtP, BEU::Quantity& 
         if (quadrant == 2 || quadrant == 3)
             suffix = fmtP->GetWestLabel();
 
-        temp = BEU::Quantity(magnitude, *temp.GetUnit());
+        quantity = BEU::Quantity(magnitude, *quantity.GetUnit());
     }
 
     if (type == PresentationType::Azimuth) {
@@ -247,7 +247,7 @@ BentleyStatus ProcessBearingAndAzimuth(NumericFormatSpecCP fmtP, BEU::Quantity& 
         if(fmtP->IsCounterClockwiseAngle())
             magnitude = perigon - magnitude;
 
-        temp = BEU::Quantity(magnitude, *temp.GetUnit());
+        quantity = BEU::Quantity(magnitude, *quantity.GetUnit());
     }
 
     return BentleyStatus::SUCCESS;

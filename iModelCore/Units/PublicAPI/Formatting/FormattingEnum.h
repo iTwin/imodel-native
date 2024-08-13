@@ -63,6 +63,7 @@ enum class FormatTraits : int32_t
     Use1000Separator        = 1 << 8, //!< Indicates that thousands in the integer part of the number should be separated by a special char (. or,).
     ExponenentOnlyNegative  = 1 << 9, //!< Indicates that if an exponent value is positive to not include a +. By default a sign, + or -, is always shown.
     CounterClockwiseAngle   = 1 << 10, //!< Indicates the use of a counter clockwise angles. Affects Azimuth only.
+    OmitAngleOnCardinalBearing = 1 << 11, //!< Causes the angle on a bearing to be omitted where possible e.g. N45°E turns into NE. And N0°E turns into N.
 };
 
 //=======================================================================================
