@@ -294,9 +294,8 @@ public:
     void SetCounterClockwiseAngle(bool setTo) { SetTraitsBit(FormatTraits::CounterClockwiseAngle, setTo);}
     bool IsCounterClockwiseAngle() const {return GetTraitBit(FormatTraits::CounterClockwiseAngle);}
 
-    // TODO - Naron: this should be somewhere else?
-    Utf8String FormatToFractionalRatio(double dval, Utf8String unitName) const;
-    Utf8String FormatToIntegerRatio(double dval, Utf8String unitName) const;
+    Utf8String FormatToFractionalRatio(double dval) const;
+    Utf8String FormatToIntegerRatio(double dval) const;
 
     //======================================
     // Formatting Methods

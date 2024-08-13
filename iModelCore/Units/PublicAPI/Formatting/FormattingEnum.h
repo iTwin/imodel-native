@@ -35,8 +35,8 @@ enum class PresentationType
     Station, // Civil Engineering Stationing (ie 1+00)
     Bearing, // Bearing angle e.g. N05:00:00E. Requires provided quantities to be of the angle phenomenon
     Azimuth, // Azimuth angle e.g. 45°30'00". Requires provided quantities to be of the angle phenomenon
-    FractionalRatio,
-    IntegerRatio,
+    FractionalRatio, // Fractional ratio e.g. 0.3:1. Requires provided quantities to be of the slope phenomenon
+    IntegerRatio, // Integer ratio e.g. 3:10. Requires provided quantities to be of the slope phenomenon
     };
 
 //=======================================================================================

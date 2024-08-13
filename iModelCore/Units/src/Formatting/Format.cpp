@@ -284,18 +284,10 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
     if (fmtP->GetPresentationType() == PresentationType::FractionalRatio || fmtP->GetPresentationType() == PresentationType::IntegerRatio)
         {
         double dval = temp.GetMagnitude();
-        BEU::UnitCP unit = qty.GetUnit();
-
-        if (dval == 0)
-            if (unit->GetName() == "VERTICAL_PER_HORIZONTAL")
-                return "0:1";
-            else if (unit->GetName() == "HORIZONTAL_PER_VERTICAL")
-                return "1:0";
-                
         if (fmtP->GetPresentationType() == PresentationType::FractionalRatio)
-            return fmtP->FormatToFractionalRatio(dval, unit->GetName());
+            return fmtP->FormatToFractionalRatio(dval);
         else
-            return fmtP->FormatToIntegerRatio(dval, unit->GetName());
+            return fmtP->FormatToIntegerRatio(dval);
         }
 
     if (HasComposite())  // procesing composite parts

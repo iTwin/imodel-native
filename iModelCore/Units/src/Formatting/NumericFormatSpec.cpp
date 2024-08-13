@@ -963,29 +963,32 @@ double NumericFormatSpec::RoundDouble(double dval, double roundTo)
     return (dval < 0.0) ? -rnd : rnd;
     }
 
-Utf8String NumericFormatSpec::FormatToFractionalRatio(double dval, Utf8String unitName) const
-{
-    double reciprocal = 1.0 / dval;
-
-    Utf8String result;
-    if (unitName == "VERTICAL_PER_HORIZONTAL")
-        result = "1:" + Format(reciprocal);
-    else if (unitName == "HORIZONTAL_PER_VERTICAL")
-        result = Format(reciprocal) + ":1";
+Utf8String NumericFormatSpec::FormatToFractionalRatio(double dval) const
+{   
+    double reciprocal;
+    if (dval == 0.0)
+        reciprocal = 0.0;
+    else
+        reciprocal = 1.0 / dval;
         
-    return result;
+    return "1:" + Format(reciprocal);
 }
 
-Utf8String NumericFormatSpec::FormatToIntegerRatio(double dval, Utf8String unitName) const
+Utf8String NumericFormatSpec::FormatToIntegerRatio(double dval) const
 {
-    double reciprocal = reciprocal = 1.0 / dval;
+    double reciprocal;
+    if (dval == 0.0)
+        reciprocal = 0.0;
+    else
+        reciprocal = 1.0 / dval;
 
     double precisionFactor = GetDecimalPrecisionFactor();
+    reciprocal = RoundDouble(reciprocal, 1/precisionFactor);
 
     int numerator = static_cast<int>(reciprocal * precisionFactor);
     int denominator = static_cast<int>(precisionFactor);
 
-    // int gcd = std::gcd(numerator, denominator);^M
+    // int gcd = std::gcd(numerator, denominator);
     int a = numerator;
     int b = denominator;
     while (b != 0) {
@@ -997,12 +1000,7 @@ Utf8String NumericFormatSpec::FormatToIntegerRatio(double dval, Utf8String unitN
     numerator /= a;
     denominator /= a;
 
-    if (unitName == "VERTICAL_PER_HORIZONTAL")
-        return Format(denominator) + ":" + Format(numerator);
-    else if (unitName == "HORIZONTAL_PER_VERTICAL")
-        return Format(numerator) + ":" + Format(denominator);
-
-    return ""; 
+    return Format(denominator) + ":" + Format(numerator);
 }
 
 END_BENTLEY_FORMATTING_NAMESPACE
