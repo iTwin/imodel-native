@@ -396,8 +396,9 @@ struct SubqueryExp final : QueryExp
         PropertyMatchResult _FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const override;
         SelectClauseExp const* _GetSelection() const override;
     public:
-        explicit SubqueryExp(std::unique_ptr<SelectStatementExp>);
-        SelectStatementExp const* GetQuery() const;
+        explicit SubqueryExp(std::unique_ptr<Exp>);
+        template<typename T>
+        T const* GetQuery() const;
     };
 
 
@@ -464,7 +465,10 @@ struct SubqueryRefExp final : RangeClassRefExp
 	    PropertyMatchResult _FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const override {
             PropertyMatchOptions overrideOptions = options;
             overrideOptions.SetAlias(GetAlias().c_str());
-            return GetSubquery()->GetQuery()->FindProperty(ctx, propertyPath, overrideOptions);
+            SelectStatementExp const* selectSubQuery = GetSubquery()->GetQuery<SelectStatementExp>();
+            if(selectSubQuery != nullptr)
+                return selectSubQuery->FindProperty(ctx, propertyPath, overrideOptions);
+            return PropertyMatchResult::NotFound();
             }
         void _OnAliasChanged() override {
             if( auto view = GetViewClassP()) {

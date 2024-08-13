@@ -1091,7 +1091,7 @@ void SingleSelectStatementExp::_ToECSql(ECSqlRenderContext& ctx) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SubqueryExp::SubqueryExp(std::unique_ptr<SelectStatementExp> selectExp) : QueryExp(Type::Subquery)
+SubqueryExp::SubqueryExp(std::unique_ptr<Exp> selectExp) : QueryExp(Type::Subquery)
     {
     AddChild(std::move(selectExp));
     }
@@ -1100,18 +1100,34 @@ SubqueryExp::SubqueryExp(std::unique_ptr<SelectStatementExp> selectExp) : QueryE
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 PropertyMatchResult SubqueryExp::_FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const {
-    return GetQuery()->FindProperty(ctx, propertyPath, options);
+    SelectStatementExp const* stm = GetQuery<SelectStatementExp>();
+    if(stm != nullptr)
+        return stm->FindProperty(ctx, propertyPath, options);
+    return PropertyMatchResult::NotFound();
 }
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SelectClauseExp const* SubqueryExp::_GetSelection() const { return GetQuery()->GetSelection(); }
+SelectClauseExp const* SubqueryExp::_GetSelection() const { 
+    SelectStatementExp const* stm = GetQuery<SelectStatementExp>();
+    if(stm != nullptr)
+        return stm->GetSelection(); 
+    return NULL;
+    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SelectStatementExp const* SubqueryExp::GetQuery() const { return GetChild<SelectStatementExp>(0); }
-
+template<typename T>
+T const* SubqueryExp::GetQuery() const { 
+    auto child = GetChild<Exp>(0);
+    if(child != nullptr && dynamic_cast<T const*> (child) != nullptr)
+        return static_cast<T const*>(child);
+    return nullptr; 
+    }
+template CommonTableExp const* SubqueryExp::GetQuery<CommonTableExp>() const;
+template SelectStatementExp const* SubqueryExp::GetQuery<SelectStatementExp>() const;
+template Exp const* SubqueryExp::GetQuery<Exp>() const;
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1119,13 +1135,13 @@ void SubqueryExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
     //! ITWINJS_PARSE_TREE: SubqueryExp
     val.SetEmptyObject();
     val["id"] = "SubqueryExp";
-    GetQuery()->ToJson(val["query"], fmt);
+    GetQuery<Exp>()->ToJson(val["query"], fmt);
 }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void SubqueryExp::_ToECSql(ECSqlRenderContext& ctx) const { ctx.AppendToECSql(*GetQuery()); }
+void SubqueryExp::_ToECSql(ECSqlRenderContext& ctx) const { ctx.AppendToECSql(*GetQuery<Exp>()); }
 
 //****************************** SubqueryRefExp *****************************************
 //-----------------------------------------------------------------------------------------

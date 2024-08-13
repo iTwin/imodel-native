@@ -177,6 +177,14 @@ TEST_F(ECSqlSelectPrepareTests, CorrelatedSubqueries)
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.PSA psa1 WHERE UNIQUE(SELECT 1 FROM ecsql.PSA WHERE ECInstanceId = psa1.ECInstanceId)"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM ecsql.PSA psa1 WHERE NOT UNIQUE(SELECT 1 FROM ecsql.PSA WHERE ECInstanceId = psa1.ECInstanceId)"));
     }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlSelectPrepareTests, NewTestsAdded)
+    {
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT COUNT(*) FROM (WITH el (Id,classId) AS (SELECT ECInstanceId, ECClassId FROM bis.Element) SELECT * FROM el)"));
+    }
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
