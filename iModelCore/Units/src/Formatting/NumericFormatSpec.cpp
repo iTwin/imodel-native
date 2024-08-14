@@ -963,24 +963,24 @@ double NumericFormatSpec::RoundDouble(double dval, double roundTo)
     return (dval < 0.0) ? -rnd : rnd;
     }
 
-Utf8String NumericFormatSpec::FormatToFractionalRatio(double dval) const
+Utf8String NumericFormatSpec::FormatToFractionalRatio(double value) const
 {   
     double reciprocal;
-    if (dval == 0.0)
+    if (value == 0.0)
         reciprocal = 0.0;
     else
-        reciprocal = 1.0 / dval;
+        reciprocal = 1.0 / value;
         
     return "1:" + Format(reciprocal);
 }
 
-Utf8String NumericFormatSpec::FormatToIntegerRatio(double dval) const
+Utf8String NumericFormatSpec::FormatToIntegerRatio(double value) const
 {
     double reciprocal;
-    if (dval == 0.0)
+    if (value == 0.0)
         reciprocal = 0.0;
     else
-        reciprocal = 1.0 / dval;
+        reciprocal = 1.0 / value;
 
     double precisionFactor = GetDecimalPrecisionFactor();
     reciprocal = RoundDouble(reciprocal, 1/precisionFactor);

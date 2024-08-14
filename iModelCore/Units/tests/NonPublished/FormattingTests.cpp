@@ -1739,48 +1739,54 @@ TEST_F(FormattingTestFixture, AzimuthWithVariousBases) {
 }
 
 TEST_F(FormattingTestFixture, DoubleToRatio){
-    auto formatDoubleToRatio = [](double value, Units::UnitCP unit, PresentationType type, DecimalPrecision precision = DecimalPrecision::Precision3) -> Utf8String
-        {
-            NumericFormatSpec integerRatioSpec;
-            integerRatioSpec.SetPresentationType(type);
-            integerRatioSpec.SetPrecision(precision);
-
-            Format integerRatioFormat(integerRatioSpec);
-
-            Units::Quantity quantity(value, *unit);
-            return integerRatioFormat.FormatQuantity(quantity);
-        };
-
+    auto formatDoubleToRatio = [](double value, PresentationType type, DecimalPrecision precision) -> Utf8String
     {
-        auto verticalPerHorizontalUnit = s_unitsContext->LookupUnit("VERTICAL_PER_HORIZONTAL");
+        NumericFormatSpec integerRatioSpec;
+        integerRatioSpec.SetPresentationType(type);
+        integerRatioSpec.SetPrecision(precision);
 
-        ASSERT_STREQ("1:0", formatDoubleToRatio(0.0, verticalPerHorizontalUnit, PresentationType::FractionalRatio).c_str()); // special case
-        ASSERT_STREQ("1:1", formatDoubleToRatio(1.0, verticalPerHorizontalUnit, PresentationType::FractionalRatio).c_str());
-        ASSERT_STREQ("1:0.5", formatDoubleToRatio(2.0, verticalPerHorizontalUnit, PresentationType::FractionalRatio).c_str());
-        ASSERT_STREQ("1:2", formatDoubleToRatio(0.5, verticalPerHorizontalUnit, PresentationType::FractionalRatio).c_str());
-        ASSERT_STREQ("1:3.003", formatDoubleToRatio(0.333, verticalPerHorizontalUnit, PresentationType::FractionalRatio).c_str());
-        ASSERT_STREQ("1:3", formatDoubleToRatio(0.3333, verticalPerHorizontalUnit, PresentationType::FractionalRatio).c_str());
-        ASSERT_STREQ("1:3.5", formatDoubleToRatio(0.2857, verticalPerHorizontalUnit, PresentationType::FractionalRatio).c_str());
-        ASSERT_STREQ("1:4", formatDoubleToRatio(0.25, verticalPerHorizontalUnit, PresentationType::FractionalRatio).c_str());
-        ASSERT_STREQ("1:1.5", formatDoubleToRatio(0.6667, verticalPerHorizontalUnit, PresentationType::FractionalRatio).c_str());
+        Format integerRatioFormat(integerRatioSpec);
 
-        ASSERT_STREQ("1:0", formatDoubleToRatio(3, verticalPerHorizontalUnit, PresentationType::FractionalRatio, DecimalPrecision::Precision0).c_str());
-        ASSERT_STREQ("1:0.3", formatDoubleToRatio(3, verticalPerHorizontalUnit, PresentationType::FractionalRatio, DecimalPrecision::Precision1).c_str());
-        ASSERT_STREQ("1:0.33", formatDoubleToRatio(3, verticalPerHorizontalUnit, PresentationType::FractionalRatio, DecimalPrecision::Precision2).c_str());
+        Units::Quantity quantity(value, *s_unitsContext->LookupUnit("VERTICAL_PER_HORIZONTAL"));
+        return integerRatioFormat.FormatQuantity(quantity);
+    };
+
+    // Fractional Ratio
+    auto testFormatDoubleToFracRatio = [formatDoubleToRatio](double value, const char* expected, DecimalPrecision precision = DecimalPrecision::Precision3)
+    {
+        EXPECT_STREQ(expected, formatDoubleToRatio(value, PresentationType::FractionalRatio, precision).c_str());
+    };
+    {
+        testFormatDoubleToFracRatio(0.0, "1:0");
+        testFormatDoubleToFracRatio(1.0, "1:1");
+        testFormatDoubleToFracRatio(2.0, "1:0.5");
+        testFormatDoubleToFracRatio(0.5, "1:2");
+        testFormatDoubleToFracRatio(0.333, "1:3.003");
+        testFormatDoubleToFracRatio(0.3333, "1:3");
+        testFormatDoubleToFracRatio(0.2857, "1:3.5");
+        testFormatDoubleToFracRatio(0.25, "1:4");
+        testFormatDoubleToFracRatio(0.6667, "1:1.5");
+
+        testFormatDoubleToFracRatio(3, "1:0", DecimalPrecision::Precision0);
+        testFormatDoubleToFracRatio(3, "1:0.3", DecimalPrecision::Precision1);
+        testFormatDoubleToFracRatio(3, "1:0.33", DecimalPrecision::Precision2);
     }
 
+    // Integer Ratio
+    auto testFormatDoubleToIntRatio = [formatDoubleToRatio](double value, const char* expected, DecimalPrecision precision = DecimalPrecision::Precision3)
     {
-        auto verticalPerHorizontalUnit = s_unitsContext->LookupUnit("VERTICAL_PER_HORIZONTAL");
-
-        ASSERT_STREQ("1:0", formatDoubleToRatio(0.0, verticalPerHorizontalUnit, PresentationType::IntegerRatio).c_str()); // special case
-        ASSERT_STREQ("1:1", formatDoubleToRatio(1.0, verticalPerHorizontalUnit, PresentationType::IntegerRatio).c_str());
-        ASSERT_STREQ("2:1", formatDoubleToRatio(2.0, verticalPerHorizontalUnit, PresentationType::IntegerRatio).c_str());
-        ASSERT_STREQ("1:2", formatDoubleToRatio(0.5, verticalPerHorizontalUnit, PresentationType::IntegerRatio).c_str());
-        ASSERT_STREQ("1000:3003", formatDoubleToRatio(0.333, verticalPerHorizontalUnit, PresentationType::IntegerRatio).c_str());
-        ASSERT_STREQ("1:3", formatDoubleToRatio(0.3333, verticalPerHorizontalUnit, PresentationType::IntegerRatio).c_str());
-        ASSERT_STREQ("2:7", formatDoubleToRatio(0.2857, verticalPerHorizontalUnit, PresentationType::IntegerRatio).c_str());
-        ASSERT_STREQ("1:4", formatDoubleToRatio(0.25, verticalPerHorizontalUnit, PresentationType::IntegerRatio).c_str());
-        ASSERT_STREQ("2:3", formatDoubleToRatio(0.6667, verticalPerHorizontalUnit, PresentationType::IntegerRatio).c_str());
+        EXPECT_STREQ(expected, formatDoubleToRatio(value, PresentationType::IntegerRatio, precision).c_str());
+    };
+    {
+        testFormatDoubleToIntRatio(0.0, "1:0"); // special case
+        testFormatDoubleToIntRatio(1.0, "1:1");
+        testFormatDoubleToIntRatio(2.0, "2:1");
+        testFormatDoubleToIntRatio(0.5, "1:2");
+        testFormatDoubleToIntRatio(0.333, "1000:3003");
+        testFormatDoubleToIntRatio(0.3333, "1:3");
+        testFormatDoubleToIntRatio(0.2857, "2:7");
+        testFormatDoubleToIntRatio(0.25, "1:4");
+        testFormatDoubleToIntRatio(0.6667, "2:3");
     }
 }
 

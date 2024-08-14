@@ -281,15 +281,11 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
         additionalFormatting = true;
         }
 
-    if (fmtP->GetPresentationType() == PresentationType::FractionalRatio || fmtP->GetPresentationType() == PresentationType::IntegerRatio)
-        {
-        double dval = temp.GetMagnitude();
-        if (fmtP->GetPresentationType() == PresentationType::FractionalRatio)
-            return fmtP->FormatToFractionalRatio(dval);
-        else
-            return fmtP->FormatToIntegerRatio(dval);
-        }
-
+    if (fmtP->GetPresentationType() == PresentationType::FractionalRatio)
+        return fmtP->FormatToFractionalRatio(temp.GetMagnitude());
+    if (fmtP->GetPresentationType() == PresentationType::IntegerRatio)
+        return fmtP->FormatToIntegerRatio(temp.GetMagnitude());
+    
     if (HasComposite())  // procesing composite parts
         {
         CompositeValueSpecCP compS = GetCompositeSpec();
