@@ -206,6 +206,144 @@ TEST_F(CommonTableExpTestFixture, MetaQuery) {
         ASSERT_STREQ("a_prop,aa_prop,aaa_prop,aab_prop,ab_prop,aba_prop,abb_prop", stmt.GetValueText(0));
     }
 }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, MetaQueryWithinSubquery) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("cte_test_meta.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema' alias='ts' version='10.10.10' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='A' >
+            <ECProperty propertyName="a_prop" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName='AA' >
+            <BaseClass>A</BaseClass>
+            <ECProperty propertyName="aa_prop" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName='AB' >
+            <BaseClass>A</BaseClass>
+            <ECProperty propertyName="ab_prop" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName='AAA' >
+            <BaseClass>AA</BaseClass>
+            <ECProperty propertyName="aaa_prop" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName='AAB' >
+            <BaseClass>AA</BaseClass>
+            <ECProperty propertyName="aab_prop" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName='ABA' >
+            <BaseClass>AB</BaseClass>
+            <ECProperty propertyName="aba_prop" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName='ABB' >
+            <BaseClass>AB</BaseClass>
+            <ECProperty propertyName="abb_prop" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName='B' >
+            <ECProperty propertyName="b_prop" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName='BA' >
+            <BaseClass>B</BaseClass>
+            <ECProperty propertyName="ba_prop" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName='BB' >
+            <BaseClass>B</BaseClass>
+            <ECProperty propertyName="bb_prop" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName='BAA' >
+            <BaseClass>BA</BaseClass>
+            <ECProperty propertyName="baa_prop" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName='BAB' >
+            <BaseClass>BA</BaseClass>
+            <ECProperty propertyName="bab_prop" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName='BBA' >
+            <BaseClass>BB</BaseClass>
+            <ECProperty propertyName="bba_prop" typeName="string" />
+        </ECEntityClass>
+        <ECEntityClass typeName='BBB' >
+        <BaseClass>BB</BaseClass>
+            <ECProperty propertyName="bbb_prop" typeName="string" />
+        </ECEntityClass>
+   </ECSchema>)xml")));
+    if (true) {
+        auto query = R"(SELECT aPath FROM(
+            WITH RECURSIVE
+                base_classes (aId, aParentId, aPath, aDepth) AS (
+                    SELECT c.ECInstanceId, null, c.Name, 0  FROM meta.ECClassDef c WHERE c.Name='A'
+                    UNION ALL
+                    SELECT c.ECInstanceId, cbc.TargetECInstanceId, aPath || '/' || c.Name, aDepth + 1
+                        FROM meta.ECClassDef c
+                            JOIN meta.ClassHasBaseClasses cbc ON cbc.SourceECInstanceId = c.ECInstanceId
+                            JOIN base_classes  ON aId = cbc.TargetECInstanceId
+                    ORDER BY 1
+                )
+            SELECT aId, aParentId, aDepth, aPath  from base_classes
+        ))";
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
+        ASSERT_STREQ("aPath", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        /*
+        aId aParentId aDepth aPath
+        --- --------- ------ --------
+        73    (null) 0      A
+        74        73 1      A/AA
+        75        74 2      A/AA/AAA
+        76        74 2      A/AA/AAB
+        77        73 1      A/AB
+        78        77 2      A/AB/ABA
+        79        77 2      A/AB/ABB
+        */
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("A", stmt.GetValueText(0)) << "aPath";
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("A/AA", stmt.GetValueText(0)) << "aPath";
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("A/AA/AAA", stmt.GetValueText(0)) << "aPath";
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("A/AA/AAB", stmt.GetValueText(0)) << "aPath";
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("A/AB", stmt.GetValueText(0)) << "aPath";
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("A/AB/ABA", stmt.GetValueText(0)) << "aPath";
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("A/AB/ABB", stmt.GetValueText(0)) << "aPath";
+
+    }
+
+    // get all property in for a given class
+    if (true) {
+        auto query = R"(SELECT * FROM(
+            WITH RECURSIVE
+                base_classes (aId, aParentId, aPath, aDepth) AS (
+                    SELECT c.ECInstanceId, null, c.Name, 0  FROM meta.ECClassDef c WHERE c.Name=?
+                    UNION ALL
+                    SELECT c.ECInstanceId, cbc.TargetECInstanceId, aPath || '/' || c.Name, aDepth + 1
+                        FROM meta.ECClassDef c
+                            JOIN meta.ClassHasBaseClasses cbc ON cbc.SourceECInstanceId = c.ECInstanceId
+                            JOIN base_classes  ON aId = cbc.TargetECInstanceId
+                    ORDER BY 1
+                )
+            SELECT group_concat( DISTINCT p.Name)  from base_classes join meta.ECPropertyDef p on p.Class.id = aId
+        ))";
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
+        stmt.BindText(1, "A", IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("a_prop,aa_prop,aaa_prop,aab_prop,ab_prop,aba_prop,abb_prop", stmt.GetValueText(0));
+    }
+}
  //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -409,6 +547,471 @@ TEST_F(CommonTableExpTestFixture, RecursiveQuery) {
         ASSERT_STREQ("Book/SciFi/Book1", stmt.GetValueText(3)) << "aPath";
     }
 }
+
+ //---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, RecursiveQueryWithinSubQuery) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("cte_test.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema' alias='ts' version='10.10.10' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='Element' >
+            <ECProperty propertyName="Subject" typeName="string" description="" />
+            <ECNavigationProperty propertyName="Parent" description="" relationshipName="ElementOwnsChildElements" direction="backward">
+                <ECCustomAttributes>
+                   <HiddenProperty xmlns="CoreCustomAttributes.01.00.03"/>
+                   <ForeignKeyConstraint xmlns="ECDbMap.02.00.00">
+                        <OnDeleteAction>NoAction</OnDeleteAction>
+                   </ForeignKeyConstraint>
+                </ECCustomAttributes>
+            </ECNavigationProperty>
+        </ECEntityClass>
+        <ECRelationshipClass typeName="ElementOwnsChildElements" description="" modifier="None" strength="embedding">
+            <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
+                <Class class="Element"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
+                <Class class="Element"/>
+            </Target>
+        </ECRelationshipClass>
+    </ECSchema>)xml")));
+
+    ECSqlStatementCache cache(20);
+    auto relClassId = m_ecdb.Schemas().GetClassId("TestSchema", "ElementOwnsChildElements");
+
+    auto findElementBySubject = [&](BeInt64Id parentId, Utf8CP subject) {
+        auto stmt = parentId.IsValid() ? cache.GetPreparedStatement(m_ecdb, "SELECT  ECInstanceId FROM ts.Element WHERE Parent.Id = ? AND Subject = ?") : cache.GetPreparedStatement(m_ecdb, "SELECT  ECInstanceId FROM ts.Element WHERE Parent.Id IS NULL AND Subject = ?");
+        if (parentId.IsValid()) {
+            stmt->BindId(1, BeInt64Id(parentId));
+            stmt->BindText(2, subject, IECSqlBinder::MakeCopy::No);
+        } else {
+            stmt->BindText(1, subject, IECSqlBinder::MakeCopy::No);
+        }
+
+        if (BE_SQLITE_ROW == stmt->Step()) {
+            return stmt->GetValueId<BeInt64Id>(0);
+        }
+        return BeInt64Id(0);
+    };
+
+    auto addElement = [&](Utf8CP subject, BeInt64Id parentId) {
+        auto subjectId = findElementBySubject(parentId, subject);
+        if (subjectId.IsValid()) {
+            return subjectId;
+        }
+
+        auto stmt = cache.GetPreparedStatement(m_ecdb, "INSERT INTO ts.Element(Parent, Subject) VALUES(?, ?)");
+        if (parentId.IsValid()) {
+            stmt->BindNavigationValue(1, parentId, relClassId);
+        }
+
+        stmt->BindText(2, subject, IECSqlBinder::MakeCopy::No);
+        ECInstanceKey key;
+        if (stmt->Step(key) != BE_SQLITE_DONE) {
+            return BeInt64Id(0);
+        }
+
+        return (BeInt64Id)key.GetInstanceId();
+    };
+
+    auto addElementPath = [&](Utf8CP path, Utf8CP delimiter = "/") {
+        bvector<Utf8String> subjects;
+        BeStringUtilities::Split(path, delimiter, subjects);
+        BeInt64Id parentId(0);
+        for(auto& subject : subjects) {
+            parentId = addElement(subject.c_str(), parentId);
+        }
+        return parentId;
+    };
+
+    addElementPath("Drive/Document/Doc1");
+    addElementPath("Drive/Document/Doc2");
+    addElementPath("Drive/Document/Doc3");
+    addElementPath("Drive/Pictures/Pic1");
+    addElementPath("Drive/Pictures/Pic2");
+    addElementPath("Book/SciFi/Book1");
+
+/*
+    Id Subject  ParentId Depth
+    -- -------- -------- ------
+     1 Drive      (null)  0
+     2 Document        1  1
+     3 Doc1            2  2
+     4 Doc2            2  2
+     5 Doc3            2  2
+     6 Pictures        1  1
+     7 Pic1            6  2
+     8 Pic2            6  2
+     9 Book       (null)  0
+    10 SciFi           9  1
+    11 Book1          10  2
+*/
+    if (true) {
+        auto query = R"(SELECT aParentId FROM(
+            WITH RECURSIVE
+                cnt (aId, aParentId, aPath, aDepth) AS (
+                    SELECT ECInstanceId, Parent.Id, Subject, 0 FROM ts.Element WHERE ECInstanceId = 1
+                    UNION ALL
+                    SELECT ECInstanceId, Parent.Id, aPath || '/' || Subject, aDepth + 1 FROM ts.Element, cnt WHERE Parent.Id = cnt.aId
+                    ORDER BY 1
+                )
+            SELECT aId, aParentId, aDepth, aPath  from cnt
+        ))";
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
+        ASSERT_STREQ("aParentId", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.IsValueNull(0)) << "aParentId";
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(0)) << "aParentId";
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(2, stmt.GetValueInt(0)) << "aParentId";
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(2, stmt.GetValueInt(0)) << "aParentId";
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(2, stmt.GetValueInt(0)) << "aParentId";
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(0)) << "aParentId";
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(6, stmt.GetValueInt(0)) << "aParentId";
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(6, stmt.GetValueInt(0)) << "aParentId";
+    }
+    if (true) {
+        auto query = R"(SELECT aDepth FROM(
+            WITH RECURSIVE
+                cnt (aId, aParentId, aPath, aDepth) AS (
+                    SELECT ECInstanceId, Parent.Id, Subject, 0 FROM ts.Element WHERE ECInstanceId = 9
+                    UNION ALL
+                    SELECT ECInstanceId, Parent.Id, aPath || '/' || Subject, aDepth + 1 FROM ts.Element, cnt WHERE Parent.Id = cnt.aId
+                    ORDER BY 1
+                )
+            SELECT aId, aParentId, aDepth, aPath  from cnt
+        ))";
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
+        ASSERT_STREQ("aDepth", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(0, stmt.GetValueInt(0)) << "aDepth";
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(0)) << "aDepth";
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(2, stmt.GetValueInt(0)) << "aDepth";
+    }
+    if (true) {
+        auto query = R"(SELECT DISTINCT aDepth FROM(
+            WITH RECURSIVE
+                cnt (aId, aParentId, aPath, aDepth) AS (
+                    SELECT ECInstanceId, Parent.Id, Subject, 0 FROM ts.Element WHERE ECInstanceId = 9
+                    UNION ALL
+                    SELECT ECInstanceId, Parent.Id, aPath || '/' || Subject, aDepth + 1 FROM ts.Element, cnt WHERE Parent.Id = cnt.aId
+                    ORDER BY 1
+                )
+            SELECT aId, aParentId, aDepth, aPath  from cnt
+        ))";
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
+        ASSERT_STREQ("aDepth", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(0, stmt.GetValueInt(0)) << "aDepth";
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(0)) << "aDepth";
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(2, stmt.GetValueInt(0)) << "aDepth";
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, SqliteExampleWithinSubquery) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("cte_syntax.ecdb"));
+    // FROM ONLY cnt should fail.
+    // x in following has to be primitive value
+    if (true) {
+        auto query = R"(SELECT x FROM(
+            WITH RECURSIVE
+                cnt (x,y) AS (
+                    SELECT 100, 200
+                    UNION ALL
+                    SELECT x+1, 200 FROM cnt WHERE x<210
+                )
+            SELECT * from cnt
+        ))";
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
+        ASSERT_STREQ("x", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+
+
+        for (int i = 100; i < 210; ++i)  {
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            ASSERT_EQ(i, stmt.GetValueInt(0));
+        }
+    }
+    if (true) {
+        auto query = R"(SELECT COUNT(x) FROM(
+            WITH RECURSIVE
+                cnt (x,y) AS (
+                    SELECT 100, 200
+                    UNION ALL
+                    SELECT x+1, 200 FROM cnt WHERE x<210
+                )
+            SELECT * from cnt
+        ))";
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
+        ASSERT_STREQ("COUNT([x])", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(111, stmt.GetValueInt(0));
+    }
+    if (true) {
+        auto query = R"(SELECT x FROM(
+            WITH RECURSIVE
+                cnt (x) AS (
+                    VALUES(100)
+                    UNION ALL
+                    SELECT x+1 FROM cnt WHERE x<210
+                )
+            SELECT x from cnt
+        ))";
+
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
+        for (int i = 100; i < 210; ++i)  {
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            ASSERT_EQ(i, stmt.GetValueInt(0));
+        }
+    }
+    if (true) {
+        auto query = R"(SELECT y FROM(
+            WITH
+                cnt (x,y) AS (
+                    SELECT 100, 200
+                )
+            SELECT * from cnt
+        ))";
+
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
+        ASSERT_STREQ("y", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(200, stmt.GetValueInt(0));
+    }
+    if (true) {
+        auto query = R"(SELECT y,b FROM(
+            WITH
+                cte_1 (x,y) AS (
+                    SELECT 100, 200
+                ),
+                cte_2 (a,b) AS (
+                    SELECT 100, 400
+                )
+            SELECT * from cte_1, cte_2 where cte_1.x=cte_2.a
+        ))";
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
+        ASSERT_STREQ("y", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("b", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(200, stmt.GetValueInt(0));
+        ASSERT_EQ(400, stmt.GetValueInt(1));
+    }
+    if (true) {
+        auto query = R"(SELECT y,b FROM(
+            WITH
+                cte_1 (x,y) AS (
+                    SELECT 100, 200
+                ),
+                cte_2 (a,b) AS (
+                    SELECT 100, 400
+                )
+            SELECT * from cte_1 aa, cte_2 bb where aa.x=bb.a
+        ))";
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
+        ASSERT_STREQ("y", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("b", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(200, stmt.GetValueInt(0));
+        ASSERT_EQ(400, stmt.GetValueInt(1));
+    }
+
+   if (true) {
+        auto query = R"(SELECT * FROM(
+            WITH
+               cte_1 (a,b,c) AS (
+                    SELECT 100, 400
+                )
+            SELECT * from cte_1
+        ))";
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, query));
+   }
+   if (true) {
+        auto query = R"(SELECT * FROM(
+            WITH
+               cte_1 (a,a) AS (
+                    SELECT 100, 400
+                )
+            SELECT * from cte_1
+        ))";
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, query));
+   }
+   if (true) {
+        auto query = R"(SELECT * FROM(
+            WITH
+               cte_1 (a,b) AS (
+                    SELECT 100, 400, 300
+                )
+            SELECT * from cte_1
+        ))";
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, query));
+   }
+   if (true) {
+        auto query = R"(SELECT * FROM(
+            WITH
+               cte_1 (a,b,c) AS (
+                    SELECT 100, 400, 300
+                ),
+               cte_1 (a,b,c) AS (
+                    SELECT 100, 400, 300
+                )
+            SELECT * from cte_1
+        ))";
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, query));
+   }
+    {
+    // Test Case 1 : CTE with one bind parameter
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, R"(SELECT * FROM(
+        WITH RECURSIVE
+            cte (x) AS (
+                VALUES(:test1)
+                UNION ALL
+                SELECT x + 1 FROM cte WHERE x < 30)
+        SELECT x from cte))"));
+
+    EXPECT_STREQ("x", statement.GetColumnInfo(0).GetProperty()->GetName().c_str());
+    EXPECT_TRUE(statement.GetColumnInfo(0).GetDataType().IsPrimitive());
+    EXPECT_EQ(statement.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Double);
+
+    statement.BindInt(1, 1);
+    for (auto i = 1; i <= 30; ++i)
+        {
+        EXPECT_EQ(BE_SQLITE_ROW, statement.Step());
+        EXPECT_EQ(i, statement.GetValueInt(0));
+        }
+    statement.Finalize();
+    }
+    {
+    // Test Case 2 : CTE with 2 bind parameters
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, R"(SELECT y FROM(
+        WITH RECURSIVE
+            cte (x, y) AS (
+                VALUES(:test1, :test2)
+                UNION ALL
+                SELECT x + 1, y + 2 FROM cte WHERE x < 4 and y < 6)
+        SELECT * from cte))"));
+
+    EXPECT_STREQ("y", statement.GetColumnInfo(0).GetProperty()->GetName().c_str());
+
+    EXPECT_TRUE(statement.GetColumnInfo(0).GetDataType().IsPrimitive());
+    EXPECT_EQ(statement.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Double);
+
+    statement.BindInt(1, 1);
+    statement.BindInt(2, 2);
+    for (const auto& testValues : std::vector<int> {2, 4, 6})
+        {
+        EXPECT_EQ(BE_SQLITE_ROW, statement.Step());
+        EXPECT_EQ(testValues, statement.GetValueInt(0));
+        }
+    statement.Finalize();
+    }
+    {
+    // Test Case 3 : CTE with 1 bind parameters and 1 literal
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, R"(SELECT x FROM(
+        WITH RECURSIVE
+            cte (x, y) AS (
+                VALUES(:test1, 200)
+                UNION ALL
+                SELECT x + 1, y FROM cte WHERE x < 3)
+        SELECT * from cte))"));
+
+    EXPECT_STREQ("x", statement.GetColumnInfo(0).GetProperty()->GetName().c_str());
+
+    EXPECT_TRUE(statement.GetColumnInfo(0).GetDataType().IsPrimitive());
+    EXPECT_EQ(statement.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Double);
+
+    statement.BindInt(1, 1);
+    for (const auto& testValues : std::vector<int>{1, 2, 3})
+        {
+        EXPECT_EQ(BE_SQLITE_ROW, statement.Step());
+        EXPECT_EQ(testValues, statement.GetValueInt(0));
+        }
+    statement.Finalize();
+    }
+    {
+    // Test Case 4 : CTE with one bind parameter
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, R"(SELECT * FROM(
+        WITH RECURSIVE
+            cte (x) AS (
+                SELECT ECInstanceId FROM meta.ECSchemaDef WHERE ECInstanceId = :test1
+                UNION ALL
+                SELECT x + 1 FROM cte WHERE x < 3)
+        SELECT x from cte))"));
+
+    EXPECT_STREQ("x", statement.GetColumnInfo(0).GetProperty()->GetName().c_str());
+    EXPECT_TRUE(statement.GetColumnInfo(0).GetDataType().IsPrimitive());
+    EXPECT_EQ(statement.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Long);
+
+    statement.BindInt(1, 1);
+    for (auto i = 1; i <= 3; ++i)
+        {
+        EXPECT_EQ(BE_SQLITE_ROW, statement.Step());
+        EXPECT_EQ(i, statement.GetValueInt(0));
+        }
+    statement.Finalize();
+    }
+}
+
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------

@@ -462,14 +462,7 @@ struct SubqueryRefExp final : RangeClassRefExp
     friend struct ECSqlParser;
     private:
         Utf8StringCR _GetId() const override { return GetAlias(); }
-	    PropertyMatchResult _FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const override {
-            PropertyMatchOptions overrideOptions = options;
-            overrideOptions.SetAlias(GetAlias().c_str());
-            SelectStatementExp const* selectSubQuery = GetSubquery()->GetQuery<SelectStatementExp>();
-            if(selectSubQuery != nullptr)
-                return selectSubQuery->FindProperty(ctx, propertyPath, overrideOptions);
-            return PropertyMatchResult::NotFound();
-            }
+	    PropertyMatchResult _FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const override;
         void _OnAliasChanged() override {
             if( auto view = GetViewClassP()) {
                 view->SetAlias(GetAlias());

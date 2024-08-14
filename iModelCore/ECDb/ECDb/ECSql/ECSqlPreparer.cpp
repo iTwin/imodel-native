@@ -105,103 +105,102 @@ ECSqlStatus ECSqlExpPreparer::PrepareAllOrAnyExp(ECSqlPrepareContext& ctx, AllOr
     ctx.GetSqlBuilder().Append("EXISTS").AppendParenLeft();
 
     SelectStatementExp const* selectSubquery = (exp.GetSubquery())->GetQuery<SelectStatementExp>();
+    CommonTableExp const* cteSubquery = (exp.GetSubquery())->GetQuery<CommonTableExp>();
     if(selectSubquery != nullptr){
         ECSqlStatus stat = ECSqlSelectPreparer::Prepare(ctx, *selectSubquery);
         if (stat != ECSqlStatus::Success)
             return stat;
-
-        // Subquery insertion
-        SingleSelectStatementExp const& subquerySelect = selectSubquery->GetFirstStatement();
-        NativeSqlBuilder queryToReplace;
-        NativeSqlBuilder allOrAnyQuery;
-        bool trailingParen = false;
-        if (subquerySelect.GetWhere() == nullptr)
-            {
-            ECSqlSelectPreparer::PreparePartial(queryToReplace, ctx, *selectSubquery);
-
-            if (FromExp const* fromExp = subquerySelect.GetFrom())
-                {
-                queryToReplace.AppendSpace().Append("FROM").AppendSpace();
-                bool isFirstItem = true;
-                for (Exp const* classRefExp : fromExp->GetChildren())
-                    {
-                    if (!isFirstItem)
-                        queryToReplace.AppendComma();
-                    PrepareClassRefExp(queryToReplace, ctx, classRefExp->GetAs<ClassRefExp>());
-                    isFirstItem = false;
-                    }
-                }
-
-            allOrAnyQuery.Append(queryToReplace).AppendSpace().Append("WHERE").AppendSpace();
-            }
-        else
-            {
-            NativeSqlBuilder insert;
-            ECSqlExpPreparer::PrepareSearchConditionExp(insert, ctx, *subquerySelect.GetWhere()->GetSearchConditionExp());
-
-            queryToReplace.Append("WHERE").AppendSpace();
-            allOrAnyQuery.Append(queryToReplace).AppendParenLeft().Append(insert).AppendParenRight().AppendSpace().Append("AND").AppendSpace().AppendParenLeft();
-            queryToReplace.Append(insert);
-            trailingParen = true;
-            }
-
-        NativeSqlBuilder::List nativeSqlSnippets;
-        stat = PrepareValueExp(nativeSqlSnippets, ctx, *exp.GetOperand());
-        if (stat != ECSqlStatus::Success)
-            return stat;
-
-        BeAssert(nativeSqlSnippets.size() == 1);
-        NativeSqlBuilder operand = nativeSqlSnippets.at(0);
-
-        bool isFirstItem = true;
-        switch (type)
-            {
-            case SqlCompareListType::All:
-                for (Exp const* childExp : subquerySelect.GetSelection()->GetChildren())
-                    {
-                    if (!isFirstItem)
-                        allOrAnyQuery.AppendSpace().Append("AND").AppendSpace();
-
-                    allOrAnyQuery.Append(childExp->ToECSql()).AppendSpace();
-                    if (op == BooleanSqlOperator::EqualTo)
-                        allOrAnyQuery.Append(ExpHelper::ToSql(BooleanSqlOperator::NotEqualTo));
-                    else if (op == BooleanSqlOperator::NotEqualTo)
-                        allOrAnyQuery.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo));
-                    else
-                        allOrAnyQuery.Append(ExpHelper::ToSql(op));
-                    allOrAnyQuery.AppendSpace().Append(operand);
-                    isFirstItem = false;
-                    }
-                if (trailingParen)
-                    allOrAnyQuery.AppendParenRight();
-                break;
-            case SqlCompareListType::Any:
-            case SqlCompareListType::Some:
-                for (Exp const* childExp : subquerySelect.GetSelection()->GetChildren())
-                    {
-                    if (!isFirstItem)
-                        allOrAnyQuery.AppendSpace().Append("OR").AppendSpace();
-
-                    allOrAnyQuery.Append(operand).AppendSpace().Append(ExpHelper::ToSql(op)).AppendSpace().Append(childExp->ToECSql());
-                    isFirstItem = false;
-                    }
-                if (trailingParen)
-                    allOrAnyQuery.AppendParenRight();
-                break;
-            default:
-                BeAssert(false && "Unhandled SqlCompareListType case.");
-                return ECSqlStatus::Error;
-            }
-
-        ctx.GetSqlBuilder().Replace(queryToReplace.GetSql().c_str(), allOrAnyQuery.GetSql().c_str()).AppendParenRight();
-        return ECSqlStatus::Success;
     }
-    CommonTableExp const* cteSubquery = (exp.GetSubquery())->GetQuery<CommonTableExp>();
     if(cteSubquery != nullptr){
         ECSqlStatus stat = ECSqlSelectPreparer::Prepare(ctx, *selectSubquery);
-        return stat;
+        if (stat != ECSqlStatus::Success)
+            return stat;
     }
-    return ECSqlStatus::InvalidECSql;
+    // Subquery insertion
+    SingleSelectStatementExp const& subquerySelect = selectSubquery != nullptr ? selectSubquery->GetFirstStatement() : (cteSubquery->GetQuery())->GetFirstStatement();
+    NativeSqlBuilder queryToReplace;
+    NativeSqlBuilder allOrAnyQuery;
+    bool trailingParen = false;
+    if (subquerySelect.GetWhere() == nullptr)
+        {
+        ECSqlSelectPreparer::PreparePartial(queryToReplace, ctx, *selectSubquery);
+
+        if (FromExp const* fromExp = subquerySelect.GetFrom())
+            {
+            queryToReplace.AppendSpace().Append("FROM").AppendSpace();
+            bool isFirstItem = true;
+            for (Exp const* classRefExp : fromExp->GetChildren())
+                {
+                if (!isFirstItem)
+                    queryToReplace.AppendComma();
+                PrepareClassRefExp(queryToReplace, ctx, classRefExp->GetAs<ClassRefExp>());
+                isFirstItem = false;
+                }
+            }
+
+        allOrAnyQuery.Append(queryToReplace).AppendSpace().Append("WHERE").AppendSpace();
+        }
+    else
+        {
+        NativeSqlBuilder insert;
+        ECSqlExpPreparer::PrepareSearchConditionExp(insert, ctx, *subquerySelect.GetWhere()->GetSearchConditionExp());
+
+        queryToReplace.Append("WHERE").AppendSpace();
+        allOrAnyQuery.Append(queryToReplace).AppendParenLeft().Append(insert).AppendParenRight().AppendSpace().Append("AND").AppendSpace().AppendParenLeft();
+        queryToReplace.Append(insert);
+        trailingParen = true;
+        }
+
+    NativeSqlBuilder::List nativeSqlSnippets;
+    ECSqlStatus stat = PrepareValueExp(nativeSqlSnippets, ctx, *exp.GetOperand());
+    if (stat != ECSqlStatus::Success)
+        return stat;
+
+    BeAssert(nativeSqlSnippets.size() == 1);
+    NativeSqlBuilder operand = nativeSqlSnippets.at(0);
+
+    bool isFirstItem = true;
+    switch (type)
+        {
+        case SqlCompareListType::All:
+            for (Exp const* childExp : subquerySelect.GetSelection()->GetChildren())
+                {
+                if (!isFirstItem)
+                    allOrAnyQuery.AppendSpace().Append("AND").AppendSpace();
+
+                allOrAnyQuery.Append(childExp->ToECSql()).AppendSpace();
+                if (op == BooleanSqlOperator::EqualTo)
+                    allOrAnyQuery.Append(ExpHelper::ToSql(BooleanSqlOperator::NotEqualTo));
+                else if (op == BooleanSqlOperator::NotEqualTo)
+                    allOrAnyQuery.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo));
+                else
+                    allOrAnyQuery.Append(ExpHelper::ToSql(op));
+                allOrAnyQuery.AppendSpace().Append(operand);
+                isFirstItem = false;
+                }
+            if (trailingParen)
+                allOrAnyQuery.AppendParenRight();
+            break;
+        case SqlCompareListType::Any:
+        case SqlCompareListType::Some:
+            for (Exp const* childExp : subquerySelect.GetSelection()->GetChildren())
+                {
+                if (!isFirstItem)
+                    allOrAnyQuery.AppendSpace().Append("OR").AppendSpace();
+
+                allOrAnyQuery.Append(operand).AppendSpace().Append(ExpHelper::ToSql(op)).AppendSpace().Append(childExp->ToECSql());
+                isFirstItem = false;
+                }
+            if (trailingParen)
+                allOrAnyQuery.AppendParenRight();
+            break;
+        default:
+            BeAssert(false && "Unhandled SqlCompareListType case.");
+            return ECSqlStatus::Error;
+        }
+
+    ctx.GetSqlBuilder().Replace(queryToReplace.GetSql().c_str(), allOrAnyQuery.GetSql().c_str()).AppendParenRight();
+    return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------

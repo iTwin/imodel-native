@@ -183,8 +183,10 @@ TEST_F(ECSqlSelectPrepareTests, CorrelatedSubqueries)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlSelectPrepareTests, NewTestsAdded)
     {
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT COUNT(*) FROM (WITH el (Id,classId) AS (SELECT ECInstanceId, ECClassId FROM bis.Element) SELECT * FROM el)"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT x FROM(WITH RECURSIVE cnt (x,y) AS ( SELECT 100, 200 UNION ALL SELECT x+1, 200 FROM cnt WHERE x<210) SELECT * from cnt)"));
     }
+    
+
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
