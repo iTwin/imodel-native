@@ -106,24 +106,41 @@ ECSqlStatus ECSqlExpPreparer::PrepareAllOrAnyExp(ECSqlPrepareContext& ctx, AllOr
 
     SelectStatementExp const* selectSubquery = (exp.GetSubquery())->GetQuery<SelectStatementExp>();
     CommonTableExp const* cteSubquery = (exp.GetSubquery())->GetQuery<CommonTableExp>();
-    if(selectSubquery != nullptr){
+    if(selectSubquery != nullptr)
+        {
         ECSqlStatus stat = ECSqlSelectPreparer::Prepare(ctx, *selectSubquery);
         if (stat != ECSqlStatus::Success)
             return stat;
-    }
-    if(cteSubquery != nullptr){
-        ECSqlStatus stat = ECSqlSelectPreparer::Prepare(ctx, *selectSubquery);
+
+        // Subquery insertion begins
+        return InsertSubquery(ctx, exp, *selectSubquery, type, op);
+        // Subquery insertion ends
+        }
+    if(cteSubquery != nullptr)
+        {
+        ECSqlStatus stat = ECSqlSelectPreparer::Prepare(ctx, *cteSubquery);
         if (stat != ECSqlStatus::Success)
             return stat;
+        // Subquery insertion begins
+        return InsertSubquery(ctx, exp, *(cteSubquery->GetQuery()), type, op);
+        // Subquery insertion ends
+        }
+    return ECSqlStatus::InvalidECSql;
     }
-    // Subquery insertion
-    SingleSelectStatementExp const& subquerySelect = selectSubquery != nullptr ? selectSubquery->GetFirstStatement() : (cteSubquery->GetQuery())->GetFirstStatement();
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+ECSqlStatus ECSqlExpPreparer::InsertSubquery(ECSqlPrepareContext& ctx, AllOrAnyExp const& exp, SelectStatementExp const& selectSubquery, SqlCompareListType const& type, BooleanSqlOperator const& op)
+    {
+    SingleSelectStatementExp const& subquerySelect = selectSubquery.GetFirstStatement();
     NativeSqlBuilder queryToReplace;
     NativeSqlBuilder allOrAnyQuery;
     bool trailingParen = false;
     if (subquerySelect.GetWhere() == nullptr)
         {
-        ECSqlSelectPreparer::PreparePartial(queryToReplace, ctx, *selectSubquery);
+        ECSqlSelectPreparer::PreparePartial(queryToReplace, ctx, selectSubquery);
 
         if (FromExp const* fromExp = subquerySelect.GetFrom())
             {
@@ -202,7 +219,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareAllOrAnyExp(ECSqlPrepareContext& ctx, AllOr
     ctx.GetSqlBuilder().Replace(queryToReplace.GetSql().c_str(), allOrAnyQuery.GetSql().c_str()).AppendParenRight();
     return ECSqlStatus::Success;
     }
-
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------

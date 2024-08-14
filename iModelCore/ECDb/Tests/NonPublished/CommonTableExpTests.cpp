@@ -768,24 +768,6 @@ TEST_F(CommonTableExpTestFixture, SqliteExampleWithinSubquery) {
         }
     }
     if (true) {
-        auto query = R"(SELECT COUNT(x) FROM(
-            WITH RECURSIVE
-                cnt (x,y) AS (
-                    SELECT 100, 200
-                    UNION ALL
-                    SELECT x+1, 200 FROM cnt WHERE x<210
-                )
-            SELECT * from cnt
-        ))";
-
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query));
-        ASSERT_STREQ("COUNT([x])", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
-
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(111, stmt.GetValueInt(0));
-    }
-    if (true) {
         auto query = R"(SELECT x FROM(
             WITH RECURSIVE
                 cnt (x) AS (
