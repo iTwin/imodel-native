@@ -72,7 +72,17 @@ private:
         public:
             FixtureECDb() : ECDb(), m_testHelper(*this) {}
             ~FixtureECDb() {}
+            void UsingSavepointWithCommit(std::function<void()> func){
+                Savepoint sp(*this,"");
+                func();
+                sp.Commit();
+            }
 
+            void UsingSavepointWithCancel(std::function<void()> func){
+                Savepoint sp(*this,"");
+                func();
+                sp.Cancel();
+            }
             TestHelper const& GetTestHelper() const { return m_testHelper; }
         };
 
