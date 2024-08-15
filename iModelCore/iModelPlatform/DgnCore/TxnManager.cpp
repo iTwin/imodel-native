@@ -518,12 +518,12 @@ void TxnManager::OnValidateChanges(ChangeStreamCR changeStream) {
 
         DbResult rc = change.GetOperation(&tableName, &nCols, &opcode, &indirect);
         if (rc != BE_SQLITE_OK) {
-            LOG.error("invalid change in changset");
+            LOG.error("invalid change in changeset");
             BeAssert(false && "invalid change in changeset");
             continue;
         }
 
-        if (0 != strcmp(currTable.c_str(), tableName)) { // changes within a changeset are grouped by table
+        if (0 != BeStringUtilities::StricmpAscii(currTable.c_str(), tableName)) { // changes within a changeset are grouped by table
             currTable = tableName;
             txnTable = FindTxnTable(tableName);
         }
@@ -574,7 +574,7 @@ void TxnManager::OnChangeSetApplied(ChangeStreamCR changeStream, bool invert) {
         BeAssert(rc == BE_SQLITE_OK);
         UNUSED_VARIABLE(rc);
 
-        if (0 != strcmp(currTable.c_str(), tableName)) { // changes within a changeset are grouped by table
+        if (0 != BeStringUtilities::StricmpAscii(currTable.c_str(), tableName)) { // changes within a changeset are grouped by table
             currTable = tableName;
             txnTable = FindTxnTable(tableName);
         }
@@ -949,7 +949,7 @@ void TxnManager::ReverseChangeset(ChangesetPropsCR changeset) {
     if (changeset.ContainsDdlChanges(m_dgndb))
         m_dgndb.ThrowException("Cannot reverse a changeset containing schema changes", (int) ChangesetStatus::ReverseOrReinstateSchemaChanges);
 
-    ChangesetFileReader changeStream(changeset.GetFileName(), m_dgndb);
+    ChangesetFileReader changeStream(changeset.GetFileName(), &m_dgndb);
 
     // Skip the entire schema change set when reversing or reinstating - DDL and
     // the meta-data changes. Reversing meta data changes cause conflicts
@@ -981,7 +981,7 @@ ChangesetStatus TxnManager::MergeChangeset(ChangesetPropsCR changeset) {
     if (GetParentChangesetId() != changeset.GetParentId())
         m_dgndb.ThrowException("changeset out of order", (int) ChangesetStatus::ParentMismatch);
 
-    ChangesetFileReader changeStream(changeset.GetFileName(), m_dgndb);
+    ChangesetFileReader changeStream(changeset.GetFileName(), &m_dgndb);
 
     const bool containsDDLChanges = changeset.ContainsDdlChanges(m_dgndb);
 
