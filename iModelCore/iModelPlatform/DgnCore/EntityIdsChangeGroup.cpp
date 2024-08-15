@@ -75,7 +75,7 @@ DgnDbStatus EntityIdsChangeGroup::ExtractChangedInstanceIdsFromChangeSets(DgnDbR
 
     for (const auto& changeSetFile : changeSetFiles)
         {
-        ChangesetFileReader changeSetReader(changeSetFile, db);
+        ChangesetFileReader changeSetReader(changeSetFile, &db);
         // changeSetReader.Dump("ExtractChangedInstanceIdsFromChangeSet", db);
         ChangedIdsIterator changeIter(db, changeSetReader);
         for (const auto& changeEntry : changeIter)
