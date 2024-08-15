@@ -23,7 +23,7 @@ struct GeometryBuilderTests : public DgnDbTestFixture
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static RenderMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, WCharCP pngFileName, RenderingAsset::TextureMap::Units unitMode)
+static RenderMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, WCharCP pngFileName, RenderingAsset::TextureMap::Units unitMode, bool addTextureId)
     {
     RgbFactor red = { 1.0, 0.0, 0.0};
     uint32_t width, height;
@@ -68,7 +68,8 @@ static RenderMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName
     BeJsDocument mapsMap;
 
     auto patternMap = mapsMap[RENDER_MATERIAL_MAP_Pattern];
-    patternMap[RENDER_MATERIAL_TextureId]        = textureId.ToHexStr();
+    if (addTextureId)
+        patternMap[RENDER_MATERIAL_TextureId]        = textureId.ToHexStr();
     patternMap[RENDER_MATERIAL_PatternScaleMode] = (int) unitMode;
     patternMap[RENDER_MATERIAL_PatternMapping]   = (int) Render::TextureMapping::Mode::Parametric;
 
@@ -116,6 +117,25 @@ static void appendGeometry(DPoint3dR origin, GeometryBuilderR builder)
     origin.x += 4.0;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(GeometryBuilderTests, CreateMaterialWithoutTextureId)
+    {
+    SetupSeedProject();
+
+    BeFileName textureImage;
+    ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(textureImage, L"TextureImage.png", L"GeometryBuilderTests\\TextureImage.png", __FILE__));
+
+    auto materialId = createTexturedMaterial(*m_db, "Parametric Texture", textureImage.c_str(), RenderingAsset::TextureMap::Units::Relative, false);
+    RenderMaterialCPtr matElem = RenderMaterial::Get(*m_db, materialId);
+
+    RenderingAsset asset = matElem->GetRenderingAsset();
+    auto const& patternMap = asset.GetPatternMap();
+    ASSERT_EQ(false, patternMap.GetTextureId().IsValid());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -135,13 +155,13 @@ TEST_F(GeometryBuilderTests, CreateElementWithMaterials)
 
     Render::GeometryParams elemDisplayParams;
     elemDisplayParams.SetCategoryId(m_defaultCategoryId);
-    elemDisplayParams.SetMaterialId(createTexturedMaterial(*m_db, "Parametric Texture", textureImage.c_str(), RenderingAsset::TextureMap::Units::Relative));
+    elemDisplayParams.SetMaterialId(createTexturedMaterial(*m_db, "Parametric Texture", textureImage.c_str(), RenderingAsset::TextureMap::Units::Relative, true));
     EXPECT_TRUE( builder->Append(elemDisplayParams));
 
     DPoint3d origin = DPoint3d::FromZero();
     appendGeometry(origin, *builder);
 
-    elemDisplayParams.SetMaterialId(createTexturedMaterial(*m_db, "Meter Texture", textureImage.c_str() , RenderingAsset::TextureMap::Units::Meters));
+    elemDisplayParams.SetMaterialId(createTexturedMaterial(*m_db, "Meter Texture", textureImage.c_str() , RenderingAsset::TextureMap::Units::Meters, true));
     EXPECT_TRUE( builder->Append(elemDisplayParams));
 
     appendGeometry(origin, *builder);
