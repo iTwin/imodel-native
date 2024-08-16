@@ -1093,9 +1093,9 @@ void SingleSelectStatementExp::_ToECSql(ECSqlRenderContext& ctx) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SubqueryExp::SubqueryExp(std::unique_ptr<Exp> selectExp) : QueryExp(Type::Subquery)
+SubqueryExp::SubqueryExp(std::unique_ptr<Exp> exp) : QueryExp(Type::Subquery)
     {
-    AddChild(std::move(selectExp));
+    AddChild(std::move(exp));
     }
 
 //-----------------------------------------------------------------------------------------
