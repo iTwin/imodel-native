@@ -1148,10 +1148,10 @@ void SubqueryExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
     val["id"] = "SubqueryExp";
     SelectStatementExp const* stm = GetQuery<SelectStatementExp>();
     if(stm != nullptr)
-        stm->ToJson(val, fmt);
+        stm->ToJson(val["query"], fmt);
     CommonTableExp const* stmcte = GetQuery<CommonTableExp>();
     if(stmcte != nullptr)
-        stmcte->ToJson(val, fmt);
+        stmcte->ToJson(val["query"], fmt);
 }
 
 //-----------------------------------------------------------------------------------------
