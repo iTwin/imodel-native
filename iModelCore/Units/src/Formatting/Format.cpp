@@ -281,15 +281,13 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
         additionalFormatting = true;
         }
 
-    if (fmtP->GetPresentationType() == PresentationType::FractionalRatio)
-        return fmtP->FormatToFractionalRatio(temp.GetMagnitude());
-    if (fmtP->GetPresentationType() == PresentationType::IntegerRatio)
-        return fmtP->FormatToIntegerRatio(temp.GetMagnitude());
-    
     if (HasComposite())  // procesing composite parts
         {
         CompositeValueSpecCP compS = GetCompositeSpec();
         auto dval = compS->DecomposeValue(temp.GetMagnitude(), temp.GetUnit());
+        if (fmtP->GetPresentationType() == PresentationType::Ratio)//TODO-Naron: since ratio dont have multiple units, can just return here? double check with Rob
+            return fmtP->FormatToRatio(dval.GetMajor());
+
         Utf8String uomSeparator;
         if (compS->HasSpacer())
             uomSeparator = compS->GetSpacer();

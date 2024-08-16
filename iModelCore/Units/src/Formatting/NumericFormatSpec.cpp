@@ -55,6 +55,7 @@ NumericFormatSpec::NumericFormatSpec()
     , m_eastLabel("E")
     , m_westLabel("W")
     , m_azimuthBase(0.0)
+    , m_ratioMode(FormatConstant::DefaultRatioMode())
     {
     }
 
@@ -153,7 +154,8 @@ bool NumericFormatSpec::FromJson(NumericFormatSpecR out, JsonValueCR jval)
             }
         else if (BeStringUtilities::StricmpAscii(paramName, json_formatTraits()) == 0)
             spec.SetFormatTraits(val); //Handles both string and array
-        }
+            }
+        // TODO - Naron: add the ratio here
     out = spec;
     return true;
     }
@@ -738,8 +740,7 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
     bool decimal = (sci || m_presentationType == PresentationType::Decimal ||
                     m_presentationType == PresentationType::Bearing || 
                     m_presentationType == PresentationType::Azimuth || 
-                    m_presentationType == PresentationType::FractionalRatio ||
-                    m_presentationType == PresentationType::IntegerRatio
+                    m_presentationType == PresentationType::Ratio 
                     );
     bool fractional = (!decimal && m_presentationType == PresentationType::Fractional);
     bool stops = m_presentationType == PresentationType::Station;
@@ -963,44 +964,47 @@ double NumericFormatSpec::RoundDouble(double dval, double roundTo)
     return (dval < 0.0) ? -rnd : rnd;
     }
 
-Utf8String NumericFormatSpec::FormatToFractionalRatio(double value) const
-{   
+Utf8String NumericFormatSpec::FormatToRatio(double value) const
+{
     double reciprocal;
-    if (value == 0.0)
+    if (value == 0)
         reciprocal = 0.0;
     else
         reciprocal = 1.0 / value;
         
-    return "1:" + Format(reciprocal);
-}
+    switch (m_ratioMode){
+        case (RatioMode::OneToN): return "1:" + Format(reciprocal);
+        case (RatioMode::NToOne): return Format(value) + ":1";
+        case (RatioMode::ValueBased):
+            if (value > 1)
+                return Format(value) + ":1";
+            else
+                return "1:" + Format(reciprocal);
+        case (RatioMode::UseGreatestCommonDivisor):
+        {
+            double precisionFactor = GetDecimalPrecisionFactor();
+            reciprocal = RoundDouble(reciprocal, 1/precisionFactor);
 
-Utf8String NumericFormatSpec::FormatToIntegerRatio(double value) const
-{
-    double reciprocal;
-    if (value == 0.0)
-        reciprocal = 0.0;
-    else
-        reciprocal = 1.0 / value;
+            int numerator = static_cast<int>(reciprocal * precisionFactor);
+            int denominator = static_cast<int>(precisionFactor);
 
-    double precisionFactor = GetDecimalPrecisionFactor();
-    reciprocal = RoundDouble(reciprocal, 1/precisionFactor);
+            // int gcd = std::gcd(numerator, denominator);
+            int a = numerator;
+            int b = denominator;
+            while (b != 0) {
+                int temp = b;
+                b = a % b;
+                a = temp;
+            }
+            numerator /= a;
+            denominator /= a;
 
-    int numerator = static_cast<int>(reciprocal * precisionFactor);
-    int denominator = static_cast<int>(precisionFactor);
-
-    // int gcd = std::gcd(numerator, denominator);
-    int a = numerator;
-    int b = denominator;
-    while (b != 0) {
-        int temp = b;
-        b = a % b;
-        a = temp;
+            return Format(denominator) + ":" + Format(numerator);
+        }
+        default:
+            return "Invalid Ratio Mode"; // TODO - <Naron>: what should be the default return value?
     }
-    
-    numerator /= a;
-    denominator /= a;
-
-    return Format(denominator) + ":" + Format(numerator);
 }
+
 
 END_BENTLEY_FORMATTING_NAMESPACE

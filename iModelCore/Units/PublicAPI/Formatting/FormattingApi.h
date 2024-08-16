@@ -87,6 +87,7 @@ private:
     uint8_t m_explicitlyDefinedStatSeparator:1;
     double              m_roundFactor;
     PresentationType    m_presentationType;      // Decimal, Fractional, Scientific, Station
+    RatioMode           m_ratioMode;
     ScientificType      m_scientificType;
     double              m_azimuthBase;     // The base offset for azimuths in radians from north clockwise
 
@@ -234,6 +235,8 @@ public:
     void SetWestLabel(Utf8StringCR label) {m_westLabel = label;}
     Utf8String GetWestLabel() const {return m_westLabel;}
 
+    void SetRatioMode(RatioMode ratioMode) {m_ratioMode = ratioMode;}
+
     //======================================
     // Format Traits Bit Setters/Getters
     //======================================
@@ -294,8 +297,9 @@ public:
     void SetCounterClockwiseAngle(bool setTo) { SetTraitsBit(FormatTraits::CounterClockwiseAngle, setTo);}
     bool IsCounterClockwiseAngle() const {return GetTraitBit(FormatTraits::CounterClockwiseAngle);}
 
-    Utf8String FormatToFractionalRatio(double dval) const;
-    Utf8String FormatToIntegerRatio(double dval) const;
+    // Utf8String FormatToFractionalRatio(double dval) const;
+    // Utf8String FormatToIntegerRatio(double dval) const;
+    Utf8String FormatToRatio(double value) const;
 
     //======================================
     // Formatting Methods

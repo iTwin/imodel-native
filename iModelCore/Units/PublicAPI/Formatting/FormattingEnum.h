@@ -35,8 +35,7 @@ enum class PresentationType
     Station, // Civil Engineering Stationing (ie 1+00)
     Bearing, // Bearing angle e.g. N05:00:00E. Requires provided quantities to be of the angle phenomenon
     Azimuth, // Azimuth angle e.g. 45°30'00". Requires provided quantities to be of the angle phenomenon
-    FractionalRatio, // Fractional ratio e.g. 0.3:1. Requires provided quantities to be of the slope phenomenon
-    IntegerRatio, // Integer ratio e.g. 3:10. Requires provided quantities to be of the slope phenomenon
+    Ratio, // indicates the size compairson between two numbers. Eg. 1:2 or 0.3:1
     };
 
 //=======================================================================================
@@ -244,6 +243,14 @@ enum class AlternativeFormatComparison
     LessThan
     };
 
+enum class RatioMode
+    {
+    OneToN, // 1 on the left side of the colon
+    NToOne, // 1 on the right side of the colon
+    ValueBased, // the lesser value scales to 1. e.g. 0.5 -> 2:1 | 2 -> 1:2
+    UseGreatestCommonDivisor, // scales to the greatest common divisor, integer ratio. e.g. 3:10
+    };
+
 //=======================================================================================
 //! @bsistruct
 //=======================================================================================
@@ -330,6 +337,7 @@ public:
     static int const DefaultMinWidth() { return 0; }
     static Utf8String const DefaultSpacer() {return " ";}
     static Utf8String const DefaultSeparator() {return " ";}
+    static RatioMode const DefaultRatioMode() {return RatioMode::OneToN;}
 
     // FPN prefix stands for FormatParameterName
     static Utf8String FPN_NoSign() { return "NoSign"; }

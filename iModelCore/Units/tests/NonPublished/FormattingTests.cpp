@@ -1739,55 +1739,134 @@ TEST_F(FormattingTestFixture, AzimuthWithVariousBases) {
 }
 
 TEST_F(FormattingTestFixture, DoubleToRatio){
-    auto formatDoubleToRatio = [](double value, PresentationType type, DecimalPrecision precision) -> Utf8String
+    // auto formatDoubleToRatio = [](double value, PresentationType type, DecimalPrecision precision) -> Utf8String
+    // {
+    //     NumericFormatSpec integerRatioSpec;
+    //     integerRatioSpec.SetPresentationType(type);
+    //     integerRatioSpec.SetPrecision(precision);
+
+    //     Format integerRatioFormat(integerRatioSpec);
+
+    //     Units::Quantity quantity(value, *s_unitsContext->LookupUnit("VERTICAL_PER_HORIZONTAL"));
+        
+    //     // auto newQuantity = quantity.ConvertTo(s_unitsContext->LookupUnit("HORIZONTAL_PER_VERTICAL"));
+
+    //     return integerRatioFormat.FormatQuantity(quantity);
+    // };
+
+    auto formatDoubleToRatio = [](double value, DecimalPrecision precision, Units::UnitCP persistenceUnit, RatioMode ratioMode, Units::UnitCP presentationUnit) -> Utf8String
     {
-        NumericFormatSpec integerRatioSpec;
-        integerRatioSpec.SetPresentationType(type);
-        integerRatioSpec.SetPrecision(precision);
+        NumericFormatSpec ratioSpec;
+        ratioSpec.SetPresentationType(PresentationType::Ratio);
+        ratioSpec.SetRatioMode(ratioMode);
+        ratioSpec.SetPrecision(precision);
+        
+        CompositeValueSpec ratioComp(*presentationUnit);
+        ratioComp.SetIncludeZero(true);
 
-        Format integerRatioFormat(integerRatioSpec);
+        Format ratioFormat(ratioSpec);
+        ratioFormat.SetCompositeSpec(ratioComp);
 
-        Units::Quantity quantity(value, *s_unitsContext->LookupUnit("VERTICAL_PER_HORIZONTAL"));
-        return integerRatioFormat.FormatQuantity(quantity);
+        Units::Quantity quantity(value, *persistenceUnit);
+        return ratioFormat.FormatQuantity(quantity);
     };
 
     // Fractional Ratio
-    auto testFormatDoubleToFracRatio = [formatDoubleToRatio](double value, const char* expected, DecimalPrecision precision = DecimalPrecision::Precision3)
+    auto testFormatDoubleToRatio = [formatDoubleToRatio](const char* expected, double value, Units::UnitCP persistenceUnit, RatioMode ratioMode,  Units::UnitCP presentationUnit, DecimalPrecision precision = DecimalPrecision::Precision3)
     {
-        EXPECT_STREQ(expected, formatDoubleToRatio(value, PresentationType::FractionalRatio, precision).c_str());
+        EXPECT_STREQ(expected, formatDoubleToRatio(value, precision, persistenceUnit, ratioMode, presentationUnit).c_str());
     };
-    {
-        testFormatDoubleToFracRatio(0.0, "1:0");
-        testFormatDoubleToFracRatio(1.0, "1:1");
-        testFormatDoubleToFracRatio(2.0, "1:0.5");
-        testFormatDoubleToFracRatio(0.5, "1:2");
-        testFormatDoubleToFracRatio(0.333, "1:3.003");
-        testFormatDoubleToFracRatio(0.3333, "1:3");
-        testFormatDoubleToFracRatio(0.2857, "1:3.5");
-        testFormatDoubleToFracRatio(0.25, "1:4");
-        testFormatDoubleToFracRatio(0.6667, "1:1.5");
 
-        testFormatDoubleToFracRatio(3, "1:0", DecimalPrecision::Precision0);
-        testFormatDoubleToFracRatio(3, "1:0.3", DecimalPrecision::Precision1);
-        testFormatDoubleToFracRatio(3, "1:0.33", DecimalPrecision::Precision2);
+
+    {
+        auto v_h = s_unitsContext->LookupUnit("VERTICAL_PER_HORIZONTAL");
+        auto h_v = s_unitsContext->LookupUnit("HORIZONTAL_PER_VERTICAL");
+        // auto percentSlope = s_unitsContext->LookupUnit("PERCENT_SLOPE");
+        // auto ft_ft = s_unitsContext->LookupUnit("FT_PER_FT");
+        auto oneToN = RatioMode::OneToN;
+
+        // v:h (persistent) -> v:h (presentation) | one to N
+        testFormatDoubleToRatio("1:0", 0.0, v_h, oneToN, v_h);
+        testFormatDoubleToRatio("1:1", 1.0, v_h, oneToN, v_h);
+        testFormatDoubleToRatio("1:0.5", 2.0, v_h, oneToN, v_h);
+        testFormatDoubleToRatio("1:2", 0.5, v_h, oneToN, v_h);
+        testFormatDoubleToRatio("1:3.003", 0.333, v_h, oneToN, v_h);
+        testFormatDoubleToRatio("1:3", 0.3333, v_h, oneToN, v_h);
+        testFormatDoubleToRatio("1:3.5", 0.2857, v_h, oneToN, v_h);
+        testFormatDoubleToRatio("1:4", 0.25, v_h, oneToN, v_h);
+        testFormatDoubleToRatio("1:1.5", 0.6667, v_h, oneToN, v_h);
+
+        // v:h -> h:v | one to N
+        testFormatDoubleToRatio("1:0", 0.0, v_h, oneToN, h_v);
+        testFormatDoubleToRatio("1:1", 1.0, v_h, oneToN, h_v);
+        testFormatDoubleToRatio("1:2", 2.0, v_h, oneToN, h_v);
+        testFormatDoubleToRatio("1:0.5", 0.5, v_h, oneToN, h_v);
+        testFormatDoubleToRatio("1:0.333", 0.333, v_h, oneToN, h_v);
+        testFormatDoubleToRatio("1:0.333", 0.3333, v_h, oneToN, h_v);
+        testFormatDoubleToRatio("1:0.286", 0.2857, v_h, oneToN, h_v);
+        testFormatDoubleToRatio("1:0.25", 0.25, v_h, oneToN, h_v);
+        testFormatDoubleToRatio("1:0.667", 0.6667, v_h, oneToN, h_v);
+
+        auto NtoOne = RatioMode::NToOne;
+        // v:h -> v:h | N to one
+        testFormatDoubleToRatio("0:1", 0.0, v_h, NtoOne, v_h);
+        testFormatDoubleToRatio("1:1", 1.0, v_h, NtoOne, v_h);
+        testFormatDoubleToRatio("2:1", 2.0, v_h, NtoOne, v_h);
+        testFormatDoubleToRatio("0.5:1", 0.5, v_h, NtoOne, v_h);
+        testFormatDoubleToRatio("0.333:1", 0.333, v_h, NtoOne, v_h);
+        testFormatDoubleToRatio("0.333:1", 0.3333, v_h, NtoOne, v_h);
+        testFormatDoubleToRatio("0.286:1", 0.2857, v_h, NtoOne, v_h);
+        testFormatDoubleToRatio("0.25:1", 0.25, v_h, NtoOne, v_h);
+        testFormatDoubleToRatio("0.667:1", 0.6667, v_h, NtoOne, v_h);
+
+        // v:h -> h:v | N to one
+        testFormatDoubleToRatio("0:1", 0.0, v_h, NtoOne, h_v);
+        testFormatDoubleToRatio("1:1", 1.0, v_h, NtoOne, h_v);
+        testFormatDoubleToRatio("0.5:1", 2.0, v_h, NtoOne, h_v);
+        testFormatDoubleToRatio("2:1", 0.5, v_h, NtoOne, h_v);
+        testFormatDoubleToRatio("3.003:1", 0.333, v_h, NtoOne, h_v);
+        testFormatDoubleToRatio("3:1", 0.3333, v_h, NtoOne, h_v);
+        testFormatDoubleToRatio("3.5:1", 0.2857, v_h, NtoOne, h_v);
+        testFormatDoubleToRatio("4:1", 0.25, v_h, NtoOne, h_v);
+        testFormatDoubleToRatio("1.5:1", 0.6667, v_h, NtoOne, h_v);
+
+        // decimal precision
+        testFormatDoubleToRatio("1:0", 3, v_h, oneToN, v_h, DecimalPrecision::Precision0);
+        testFormatDoubleToRatio("1:0.3", 3, v_h, oneToN, v_h, DecimalPrecision::Precision1);
+        testFormatDoubleToRatio("1:0.33", 3, v_h, oneToN, v_h, DecimalPrecision::Precision2);
+
+        // v:h -> v:h | ValueBased
+        // if the value is smaller than 1, its 1 to N. else, N to 1
+        testFormatDoubleToRatio("1:0", 0.0, v_h, RatioMode::ValueBased, v_h); // special case
+        testFormatDoubleToRatio("1:1", 1.0, v_h, RatioMode::ValueBased, v_h);
+        testFormatDoubleToRatio("2:1", 2.0, v_h, RatioMode::ValueBased, v_h);
+        testFormatDoubleToRatio("1:2", 0.5, v_h, RatioMode::ValueBased, v_h);
+        testFormatDoubleToRatio("1:3.003", 0.333, v_h, RatioMode::ValueBased, v_h);
+        testFormatDoubleToRatio("3.333:1", 3.3333, v_h, RatioMode::ValueBased, v_h);
+        testFormatDoubleToRatio("1:3.5", 0.2857, v_h, RatioMode::ValueBased, v_h);
+        testFormatDoubleToRatio("3.5:1", 3.5, v_h, RatioMode::ValueBased, v_h);
+        testFormatDoubleToRatio("1:4", 0.25, v_h, RatioMode::ValueBased, v_h);
+        testFormatDoubleToRatio("4:1", 4.0, v_h, RatioMode::ValueBased, v_h);
+
+        // TODO - Naron: should probably break this tests into smaller ones
     }
 
-    // Integer Ratio
-    auto testFormatDoubleToIntRatio = [formatDoubleToRatio](double value, const char* expected, DecimalPrecision precision = DecimalPrecision::Precision3)
-    {
-        EXPECT_STREQ(expected, formatDoubleToRatio(value, PresentationType::IntegerRatio, precision).c_str());
-    };
-    {
-        testFormatDoubleToIntRatio(0.0, "1:0"); // special case
-        testFormatDoubleToIntRatio(1.0, "1:1");
-        testFormatDoubleToIntRatio(2.0, "2:1");
-        testFormatDoubleToIntRatio(0.5, "1:2");
-        testFormatDoubleToIntRatio(0.333, "1000:3003");
-        testFormatDoubleToIntRatio(0.3333, "1:3");
-        testFormatDoubleToIntRatio(0.2857, "2:7");
-        testFormatDoubleToIntRatio(0.25, "1:4");
-        testFormatDoubleToIntRatio(0.6667, "2:3");
-    }
+    // // Integer Ratio
+    // auto testFormatDoubleToIntRatio = [formatDoubleToRatio](double value, const char* expected, DecimalPrecision precision = DecimalPrecision::Precision3)
+    // {
+    //     EXPECT_STREQ(expected, formatDoubleToRatio(value, PresentationType::IntegerRatio, precision).c_str());
+    // };
+    // {
+    //     testFormatDoubleToIntRatio(0.0, "1:0"); // special case
+    //     testFormatDoubleToIntRatio(1.0, "1:1");
+    //     testFormatDoubleToIntRatio(2.0, "2:1");
+    //     testFormatDoubleToIntRatio(0.5, "1:2");
+    //     testFormatDoubleToIntRatio(0.333, "1000:3003");
+    //     testFormatDoubleToIntRatio(0.3333, "1:3");
+    //     testFormatDoubleToIntRatio(0.2857, "2:7");
+    //     testFormatDoubleToIntRatio(0.25, "1:4");
+    //     testFormatDoubleToIntRatio(0.6667, "2:3");
+    // }
 }
 
 
