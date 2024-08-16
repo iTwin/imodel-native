@@ -139,7 +139,9 @@ DbResult ChangesetFileWriter::_Append(Byte const* pData, int nData) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 ChangeSet::ConflictResolution ChangesetFileWriter::_OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) {
-    iter.Dump(m_db, false, 1);
+    if (m_db) {
+        iter.Dump(*m_db, false, 1);
+    }
     BeAssert(false);
     return ChangeSet::ConflictResolution::Abort;
 }
@@ -166,7 +168,7 @@ DbResult ChangesetFileWriter::WritePrefix() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ChangesetFileWriter::ChangesetFileWriter(BeFileNameCR pathname, bool containsEcSchemaChanges, DdlChangesCR ddlChanges, Db const &dgnDb, BeSQLite::LzmaEncoder::LzmaParams const &lzmaParams) : m_pathname(pathname), m_prefix(""), m_db(dgnDb), m_outLzmaFileStream(nullptr), m_lzmaEncoder(lzmaParams) {
+ChangesetFileWriter::ChangesetFileWriter(BeFileNameCR pathname, bool containsEcSchemaChanges, DdlChangesCR ddlChanges, Db const *dgnDb, BeSQLite::LzmaEncoder::LzmaParams const &lzmaParams) : m_pathname(pathname), m_prefix(""), m_db(dgnDb), m_outLzmaFileStream(nullptr), m_lzmaEncoder(lzmaParams) {
     m_prefix = "";
     if (!containsEcSchemaChanges && ddlChanges._IsEmpty())
         return;
@@ -336,13 +338,17 @@ BeSQLite::ChangeSet::ConflictResolution ChangesetFileReaderBase::_OnConflict(BeS
     }
     if (ChangeSet::ConflictCause::Constraint == cause) {
         LOG.errorv("Unexpected Constraint conflict - opcode=%d, table=%s", opcode, tableName);
-        iter.Dump(GetDb(), false, 1);
+        if (auto db = GetDb()) {
+            iter.Dump(*db, false, 1);
+        }
         return ChangeSet::ConflictResolution::Abort;
     }
 
     // All other conflicts
     LOG.errorv("Unexpected conflict - opcode=%d, cause=%d, table=%s", opcode, cause, tableName);
-    iter.Dump(GetDb(), false, 1);
+    if (auto db = GetDb()) {
+        iter.Dump(*db, false, 1);
+    }
     return ChangeSet::ConflictResolution::Abort;
 }
 
@@ -883,8 +889,7 @@ BentleyStatus RevisionUtility::ComputeStatistics(Utf8CP changesetFile, bool addP
     {
     BeFileName input;
     input.AppendUtf8(changesetFile);
-    Db unused;
-    ChangesetFileReaderBase reader({input}, unused);
+    ChangesetFileReaderBase reader({input});
     auto stats = ChangesetStatistics::Create();
     Utf8String changesetId = GetChangesetId(input);
     for( const auto& change : reader.GetChanges())
@@ -996,8 +1001,8 @@ BentleyStatus RevisionUtility::DumpChangesetToDb(Utf8CP changesetFile, Utf8CP db
     if (changesetId == 0)
         return ERROR;
 
-    Db unused;
-    ChangesetFileReaderBase reader({input}, unused);
+
+    ChangesetFileReaderBase reader({input});
     auto stats = ChangesetStatistics::Create();
     DbValue defaultVal(nullptr);
     for( const auto& change : reader.GetChanges())

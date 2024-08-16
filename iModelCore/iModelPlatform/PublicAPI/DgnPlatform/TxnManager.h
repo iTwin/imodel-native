@@ -1025,11 +1025,11 @@ struct ChangesetProps : RefCountedBase {
 struct EXPORT_VTABLE_ATTRIBUTE ChangesetFileReader : BeSQLite::ChangesetFileReaderBase {
 private:
     DGNPLATFORM_EXPORT BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause, BeSQLite::Changes::Change iter) override;
-    DgnDbR m_dgndb;
+    DgnDb* m_dgndb;
     Utf8String m_lastErrorMessage;
 
 public:
-    ChangesetFileReader(BeFileNameCR pathname, DgnDbR dgndb) : BeSQLite::ChangesetFileReaderBase({pathname}, dgndb), m_dgndb(dgndb) {}
+    ChangesetFileReader(BeFileNameCR pathname, DgnDb* dgndb = nullptr) : BeSQLite::ChangesetFileReaderBase({pathname}, dgndb), m_dgndb(dgndb) {}
     Utf8StringCR GetLastErrorMessage() const { return m_lastErrorMessage; }
     void ClearLastErrorMessage() { m_lastErrorMessage.clear(); }
 };
