@@ -427,6 +427,7 @@ static void SaveTransformed(CurveVectorPtr &data);
 static void SaveTransformed(ICurvePrimitiveCR data);
 static void SaveTransformed(PolyfaceHeaderCR data);
 static void SaveTransformed(PolyfaceHeaderPtr &data);
+static void SaveTransformed(ISolidPrimitivePtr& data);
 static void SaveTransformed(ISolidPrimitiveCR data);
 static void SaveTransformed (bvector<DPoint2d> const &data, bool addClosure = false);
 static void SaveTransformed (bvector<DPoint3d> const &data, bool addClosure = false);

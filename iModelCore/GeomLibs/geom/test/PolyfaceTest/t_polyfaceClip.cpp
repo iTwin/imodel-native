@@ -2,10 +2,11 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-#include "testHarness.h"
 #include <stdio.h>
+#include "testHarness.h"
+#include <GeomSerialization/GeomLibsJsonSerialization.h>
 
-// Return coordianates for a rectangle with corners x0,y0 and x1,y1, with interiorFlags all false.
+// Return coordinates for a rectangle with corners x0,y0 and x1,y1, with interiorFlags all false.
 void MakeRectangle (double x0, double y0, double x1, double y1, double z, bvector<DPoint3d> &points, bvector<BoolTypeForVector> &interiorFlags)
     {
     points = bvector<DPoint3d>
@@ -1034,4 +1035,50 @@ TEST(geomodeler, Clip)
             }
         }
     Check::ClearGeometry("Polyface.geomodelerClip");
+    }
+
+TEST(PolyfaceClip, ClipConeMesh)
+    {
+    // import cone
+    static Utf8Chars s_input(u8R"foo([{"cylinder":{"capped":false,"end":[1116.5833333333335,449.01041666666680,14.583333333333284],"radius":1.0416666666666672,"start":[1116.5833333333335,428.01041666666680,14.583333333333284]}}])foo");
+    bvector<IGeometryPtr> geometry;
+    Check::True(IModelJson::TryIModelJsonStringToGeometry(&s_input, geometry), "converted json");
+    Check::True(geometry.size() >= 1, "converted at least one geometry");
+    Check::True(geometry[0].IsValid(), "converted geometry is valid");
+    Check::True(geometry[0]->GetAsISolidPrimitive().IsValid(), "converted geometry is a solid primitive");
+    Check::True(SolidPrimitiveType_DgnCone == geometry[0]->GetAsISolidPrimitive()->GetSolidPrimitiveType(), "converted geometry is a cone");
+    auto cone = geometry[0]->GetAsISolidPrimitive();
+    Check::SaveTransformed(cone);
+
+    double chordTolerance = 0.1; // 0.0024660693027594815;
+
+    // mesh the cone
+    IFacetOptionsPtr options = IFacetOptions::Create();
+    options->SetChordTolerance(chordTolerance);
+    options->SetAngleTolerance(msGeomConst_piOver2);
+    options->SetMaxPerFace(100);
+    options->SetConvexFacetsRequired(true);
+    options->SetCurvedSurfaceMaxPerFace(3);
+    IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create(*options);
+    Check::True(builder->AddSolidPrimitive(*cone), "meshed the cone");
+    auto mesh = builder->GetClientMeshPtr();
+    Check::True(mesh.IsValid() && mesh->HasFacets(), "mesh has facets");
+    Check::SaveTransformed(mesh);
+
+    // generate clipper
+    DRange3d range; // the cone is axis-aligned, so this is tight
+    Check::True(cone->GetRange(range), "computed cone range");
+    range.ScaleAboutCenter(range, 1.1);     // expand range box away from the cone
+    range.low.y += range.YLength() / 2;     // clip off the cone front half
+    range.high.z -= range.ZLength() / 2;    // clip off the cone top half
+    auto clipper = ClipPlaneSet::ClipPlaneSet(ConvexClipPlaneSet::ConvexClipPlaneSet(range));
+    Check::SaveTransformedEdges(range);
+
+    // clip the cone
+    bvector<bvector<DPoint3d>> lineStrings;
+    auto defaultColinearEdgeTol = ValidatedDouble(-1);  // 2.47e-5
+    ClipPlaneSet::ClipPlaneSetSectionPolyface(*mesh, clipper, nullptr, &lineStrings, defaultColinearEdgeTol);
+    Check::SaveTransformed(lineStrings);
+
+    Check::ClearGeometry("PolyfaceClip.ClipConeMesh");
     }
