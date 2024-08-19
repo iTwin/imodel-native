@@ -105,7 +105,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareAllOrAnyExp(ECSqlPrepareContext& ctx, AllOr
     ctx.GetSqlBuilder().Append("EXISTS").AppendParenLeft();
 
     SelectStatementExp const* selectSubquery = (exp.GetSubquery())->GetQuery<SelectStatementExp>();
-    CommonTableExp const* cteSubquery = (exp.GetSubquery())->GetQuery<CommonTableExp>();
     if(selectSubquery != nullptr)
         {
         ECSqlStatus stat = ECSqlSelectPreparer::Prepare(ctx, *selectSubquery);
@@ -116,6 +115,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareAllOrAnyExp(ECSqlPrepareContext& ctx, AllOr
         return InsertSubquery(ctx, exp, *selectSubquery, type, op);
         // Subquery insertion ends
         }
+    CommonTableExp const* cteSubquery = (exp.GetSubquery())->GetQuery<CommonTableExp>();
     if(cteSubquery != nullptr)
         {
         ECSqlStatus stat = ECSqlSelectPreparer::Prepare(ctx, *cteSubquery);
@@ -1535,10 +1535,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryExp(ECSqlPrepareContext& ctx, Subqu
     {
     ctx.GetSqlBuilder().AppendParenLeft();
     SelectStatementExp const* selectSubquery =  exp.GetQuery<SelectStatementExp>();
-    CommonTableExp const* cteSubquery =  exp.GetQuery<CommonTableExp>();
     ECSqlStatus stat;
     if(selectSubquery != nullptr)
         stat = ECSqlSelectPreparer::Prepare(ctx, *selectSubquery);
+    CommonTableExp const* cteSubquery =  exp.GetQuery<CommonTableExp>();
     if(cteSubquery != nullptr)
         stat = ECSqlSelectPreparer::Prepare(ctx, *cteSubquery);
     ctx.GetSqlBuilder().AppendParenRight();
@@ -1577,13 +1577,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryTestExp(NativeSqlBuilder::List& nat
     nativeSqlBuilder.AppendParenLeft();
     ctx.GetSqlBuilder().Push();
     SelectStatementExp const* selectSubquery =  exp.GetSubquery()->GetQuery<SelectStatementExp>();
-    CommonTableExp const* cteSubquery =  exp.GetSubquery()->GetQuery<CommonTableExp>();
     ECSqlStatus status;
     if(selectSubquery != nullptr){
         status = ECSqlSelectPreparer::Prepare(ctx, *selectSubquery);
         if (!status.IsSuccess())
             return status;
     }
+    CommonTableExp const* cteSubquery =  exp.GetSubquery()->GetQuery<CommonTableExp>();
     if(cteSubquery != nullptr){
         status = ECSqlSelectPreparer::Prepare(ctx, *cteSubquery);
         if (!status.IsSuccess())

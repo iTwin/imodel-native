@@ -205,69 +205,6 @@ TEST_F(CommonTableExpTestFixture, MetaQuery) {
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_STREQ("a_prop,aa_prop,aaa_prop,aab_prop,ab_prop,aba_prop,abb_prop", stmt.GetValueText(0));
     }
-}
-
-//---------------------------------------------------------------------------------------
-// @bsiclass
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(CommonTableExpTestFixture, MetaQueryWithinSubquery) {
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("subquery_cte_test_meta.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
-    <ECSchema schemaName='TestSchema' alias='ts' version='10.10.10' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
-        <ECEntityClass typeName='A' >
-            <ECProperty propertyName="a_prop" typeName="string" />
-        </ECEntityClass>
-        <ECEntityClass typeName='AA' >
-            <BaseClass>A</BaseClass>
-            <ECProperty propertyName="aa_prop" typeName="string" />
-        </ECEntityClass>
-        <ECEntityClass typeName='AB' >
-            <BaseClass>A</BaseClass>
-            <ECProperty propertyName="ab_prop" typeName="string" />
-        </ECEntityClass>
-        <ECEntityClass typeName='AAA' >
-            <BaseClass>AA</BaseClass>
-            <ECProperty propertyName="aaa_prop" typeName="string" />
-        </ECEntityClass>
-        <ECEntityClass typeName='AAB' >
-            <BaseClass>AA</BaseClass>
-            <ECProperty propertyName="aab_prop" typeName="string" />
-        </ECEntityClass>
-        <ECEntityClass typeName='ABA' >
-            <BaseClass>AB</BaseClass>
-            <ECProperty propertyName="aba_prop" typeName="string" />
-        </ECEntityClass>
-        <ECEntityClass typeName='ABB' >
-            <BaseClass>AB</BaseClass>
-            <ECProperty propertyName="abb_prop" typeName="string" />
-        </ECEntityClass>
-        <ECEntityClass typeName='B' >
-            <ECProperty propertyName="b_prop" typeName="string" />
-        </ECEntityClass>
-        <ECEntityClass typeName='BA' >
-            <BaseClass>B</BaseClass>
-            <ECProperty propertyName="ba_prop" typeName="string" />
-        </ECEntityClass>
-        <ECEntityClass typeName='BB' >
-            <BaseClass>B</BaseClass>
-            <ECProperty propertyName="bb_prop" typeName="string" />
-        </ECEntityClass>
-        <ECEntityClass typeName='BAA' >
-            <BaseClass>BA</BaseClass>
-            <ECProperty propertyName="baa_prop" typeName="string" />
-        </ECEntityClass>
-        <ECEntityClass typeName='BAB' >
-            <BaseClass>BA</BaseClass>
-            <ECProperty propertyName="bab_prop" typeName="string" />
-        </ECEntityClass>
-        <ECEntityClass typeName='BBA' >
-            <BaseClass>BB</BaseClass>
-            <ECProperty propertyName="bba_prop" typeName="string" />
-        </ECEntityClass>
-        <ECEntityClass typeName='BBB' >
-        <BaseClass>BB</BaseClass>
-            <ECProperty propertyName="bbb_prop" typeName="string" />
-        </ECEntityClass>
-   </ECSchema>)xml")));
     if (true) {
         auto query = R"(SELECT aPath FROM(
             WITH RECURSIVE
@@ -344,6 +281,7 @@ TEST_F(CommonTableExpTestFixture, MetaQueryWithinSubquery) {
         ASSERT_STREQ("a_prop,aa_prop,aaa_prop,aab_prop,ab_prop,aba_prop,abb_prop", stmt.GetValueText(0));
     }
 }
+
  //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
