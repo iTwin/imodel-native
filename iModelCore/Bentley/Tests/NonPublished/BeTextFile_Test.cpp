@@ -75,11 +75,11 @@ struct BeTextFileTests : public testing::Test
             }
         void CloseFiles()
             {
-            if(m_fileReadPtr != NULL)
+            if(m_fileReadPtr != nullptr)
                 m_fileReadPtr -> Close();
-            if(m_fileWritePtr != NULL)
+            if(m_fileWritePtr != nullptr)
                 m_fileWritePtr -> Close();
-            if(m_fileAppendPtr != NULL)
+            if(m_fileAppendPtr != nullptr)
                 m_fileAppendPtr -> Close();
             }
         //---------------------------------------------------------------------------------------
@@ -307,7 +307,7 @@ TEST_F(BeTextFileTests, ChangePointerAndWriteToFile)
         //Open file
         m_fileWritePtr =    BeTextFile::Open(status, m_fileWriteName.GetName(), TextFileOpenType::Write, TextFileOptions::None, encoding);
         //Check if file was opened
-        ASSERT_TRUE(m_fileWritePtr != NULL)<<"Failed to open file as write, used encoding: "<<EncodeOptionToString(encoding);
+        ASSERT_TRUE(m_fileWritePtr != nullptr)<<"Failed to open file as write, used encoding: "<<EncodeOptionToString(encoding);
         EXPECT_TRUE(BeFileStatus::Success == status);
         //Write to file
         TextFileWriteStatus writeStatus;

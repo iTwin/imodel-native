@@ -105,10 +105,13 @@ void ExerciseSingleSheetCutFill (PolyfaceHeaderPtr dtm, PolyfaceHeaderPtr road, 
         {
         PolyfaceHeaderPtr m1;
         PolyfaceQuery::HealVerticalPanels (*m, true, false, m1);
-        auto v = m1->ValidatedVolume ();
-        fillVolume2 += v;
-        if (!v.IsValid ())
+        if (m1.IsValid ())
+            {
+            auto v = m1->ValidatedVolume ();
             fillVolume2 += v;
+            if (!v.IsValid ())
+                fillVolume2 += v;
+            }
         }
     for (auto &m : cut2)
         {
