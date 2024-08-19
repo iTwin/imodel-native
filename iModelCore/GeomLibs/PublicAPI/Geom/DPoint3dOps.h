@@ -1279,9 +1279,9 @@ double endFraction = 1.0
 
 //! Inplace compression of points to eliminate colinear points.
 //! @param [in,out] points points to compress
-//! @param [in] absTol absolute tolerance
+//! @param [in] absTol maximum chord height distance of a point to eliminate, or negative to compute a default (1.0e-12 times the largest point coordinate).
 //! @param [in] eliminateOverdraw if false, a 180 turn point is included in the output.  If true, the doubled line due to the
-//!     180 degree turn is elmiinated.  (Hence the range of the compressed polygon can be smaller)
+//!     180 degree turn is eliminated.  (Hence the range of the compressed polygon can be smaller)
 //! @param [in] closed If false, the first point always remains even if it is "within" colinear first and last segments.
 //!       If true, this point can be eliminated.
 //! @param [in] xyOnly if true, use only xy coordinates in comparisons.

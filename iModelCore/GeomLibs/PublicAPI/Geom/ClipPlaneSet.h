@@ -493,31 +493,33 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
         PolyfaceHeaderPtr *outside
         );
 
-    //! Clip a polyface to a  positive ClipPlaneSet, producing only faces and linework
-    //! on the cuts.
+    //! Clip a polyface to a positive ClipPlaneSet, producing only facets and linework on the cut planes.
     //! @param polyface [in] polyface to test
     //! @param clipSet [in] the positive clip set
-    //! @param cutSections [out] (optional) cut faces
-    //! @param linestrings [out] (optional) raw linestrings at the cuts
-    //! @param colinearEdgeTolearnce tolerance for optional step to eliminate colinear edges along the cut boundaries.
-    //!     (internal triangularization of larger planar facets commonly creates numerous vertices to remove)
+    //! @param cutSections [out] (optional) triangulations of sections that are closed loops
+    //! @param lineStrings [out] (optional) raw section line strings
+    //! @param colinearEdgeTolerance [in] maximum chord height distance of a redundant output point
+    //! to be removed. Internal triangulation of larger planar facets can create numerous redundant vertices between
+    //! colinear cut boundary edges. Pass a tiny distance so as not to change the shape of the cut boundaries. Pass
+    //! a negative value to compute a default distance (1.0e-12 times the largest point coordinate). Pass an invalid
+    //! object to skip colinear edge removal altogether.
     GEOMDLLIMPEXP void static ClipPlaneSetSectionPolyface
         (
         PolyfaceQueryCR polyface,
         ClipPlaneSetCR clipSet,
         PolyfaceHeaderPtr *cutSections,
-        bvector<bvector<DPoint3d>> *linestrings,
+        bvector<bvector<DPoint3d>> *lineStrings,
         ValidatedDouble &colinearEdgeTolerance
         );
     //! Return the edges of intersection between a polyface and a clipSet.
     //! <ul>
-    //! <li> (Unlike ClipPlaneSetSectionPolyface) This is appropriate whether or not the polyface is closed.
+    //! <li> This is appropriate whether or not the polyface is closed.
     //! </ul>
     GEOMDLLIMPEXP void static ClipPlaneSetPolyfaceIntersectionEdges
         (
         PolyfaceQueryCR polyface,
         ClipPlaneSetCR clipSet,
-        bvector<bvector<DPoint3d>> &linestrings
+        bvector<bvector<DPoint3d>> &lineStrings
         );
 
     //! Clip a polyface to a swept polygon.  This produces side faces where the sweep makes a closed cut.
