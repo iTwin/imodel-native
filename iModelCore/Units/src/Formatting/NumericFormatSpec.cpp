@@ -55,7 +55,7 @@ NumericFormatSpec::NumericFormatSpec()
     , m_eastLabel("E")
     , m_westLabel("W")
     , m_azimuthBase(0.0)
-    , m_ratioMode(FormatConstant::DefaultRatioMode())
+    , m_ratioType(FormatConstant::DefaultRatioType())
     {
     }
 
@@ -154,8 +154,13 @@ bool NumericFormatSpec::FromJson(NumericFormatSpecR out, JsonValueCR jval)
             }
         else if (BeStringUtilities::StricmpAscii(paramName, json_formatTraits()) == 0)
             spec.SetFormatTraits(val); //Handles both string and array
+        else if (BeStringUtilities::StricmpAscii(paramName, json_ratioType()) == 0)
+            {
+            RatioType mode;
+            Utils::ParseRatioType(mode, val.asCString());
+            spec.SetRatioType(mode);
             }
-        // TODO - Naron: add the ratio here
+        }
     out = spec;
     return true;
     }
@@ -170,7 +175,11 @@ bool NumericFormatSpec::ToJson(BeJsValue out, bool verbose) const
     // Always show ScientificType if the type is Scientific.
     if (PresentationType::Scientific == GetPresentationType())
         out[json_scientificType()] = Utils::GetScientificTypeString(GetScientificType());
-
+    
+    // always show RatioType if presentation type is ratio
+    if (PresentationType::Ratio == GetPresentationType())
+        out[json_ratioType()] = Utils::GetRatioTypeString(GetRatioType());
+        
     if (PresentationType::Station == GetPresentationType())
         {
         // Always serialize offsetSize for station.
@@ -972,15 +981,15 @@ Utf8String NumericFormatSpec::FormatToRatio(double value) const
     else
         reciprocal = 1.0 / value;
         
-    switch (m_ratioMode){
-        case (RatioMode::OneToN): return "1:" + Format(reciprocal);
-        case (RatioMode::NToOne): return Format(value) + ":1";
-        case (RatioMode::ValueBased):
+    switch (m_ratioType){
+        case (RatioType::OneToN): return "1:" + Format(reciprocal);
+        case (RatioType::NToOne): return Format(value) + ":1";
+        case (RatioType::ValueBased):
             if (value > 1)
                 return Format(value) + ":1";
             else
                 return "1:" + Format(reciprocal);
-        case (RatioMode::UseGreatestCommonDivisor):
+        case (RatioType::UseGreatestCommonDivisor):
         {
             double precisionFactor = GetDecimalPrecisionFactor();
             reciprocal = RoundDouble(reciprocal, 1/precisionFactor);
@@ -1001,9 +1010,9 @@ Utf8String NumericFormatSpec::FormatToRatio(double value) const
 
             return Format(denominator) + ":" + Format(numerator);
         }
-        default:
-            return "Invalid Ratio Mode"; // TODO - <Naron>: what should be the default return value?
     }
+
+    return "";
 }
 
 

@@ -243,7 +243,7 @@ enum class AlternativeFormatComparison
     LessThan
     };
 
-enum class RatioMode
+enum class RatioType
     {
     OneToN, // 1 on the left side of the colon
     NToOne, // 1 on the right side of the colon
@@ -303,6 +303,9 @@ struct Utils
     //! Parses the provided string into a SignOption.
     //! @return True if successfully parsed into a SignOption. Otherwise, false.
     UNITS_EXPORT static bool ParsePresentationType(PresentationType& type, Utf8CP typeString);
+
+    UNITS_EXPORT static bool ParseRatioType(RatioType& mode, Utf8CP modeString);
+    UNITS_EXPORT static Utf8String GetRatioTypeString(RatioType mode);
     
     UNITS_EXPORT static bool FractionalPrecisionByDenominator(FractionalPrecision& out, const int32_t prec);
     UNITS_EXPORT static int32_t FractionalPrecisionDenominator(FractionalPrecision prec);
@@ -337,7 +340,7 @@ public:
     static int const DefaultMinWidth() { return 0; }
     static Utf8String const DefaultSpacer() {return " ";}
     static Utf8String const DefaultSeparator() {return " ";}
-    static RatioMode const DefaultRatioMode() {return RatioMode::OneToN;}
+    static RatioType const DefaultRatioType() {return RatioType::ValueBased;} // TBD
 
     // FPN prefix stands for FormatParameterName
     static Utf8String FPN_NoSign() { return "NoSign"; }
@@ -352,6 +355,12 @@ public:
     static Utf8String FPN_Fractional() { return "Fractional"; }
     static Utf8String FPN_Scientific() { return "Scientific"; }
     static Utf8String FPN_Station() {return "Station";}
+    static Utf8String FPN_Ratio() {return "Ratio";}
+
+    static Utf8String FPN_RatioOneToN() { return "OneToN"; }
+    static Utf8String FPN_RatioNToOne() { return "NToOne"; }
+    static Utf8String FPN_RatioValueBased() { return "ValueBased"; }
+    static Utf8String FPN_RatioUseGreatestCommonDivisor() { return "UseGreatestCommonDivisor"; }
 
     static Utf8String FPN_TrailZeroes() {return "TrailZeroes";}
     static Utf8String FPN_LeadZeroes() {return "LeadZeroes";}

@@ -279,6 +279,7 @@ Utf8String Utils::GetPresentationTypeString(PresentationType type)
         case PresentationType::Fractional: return FormatConstant::FPN_Fractional();
         case PresentationType::Scientific: return FormatConstant::FPN_Scientific();
         case PresentationType::Station: return FormatConstant::FPN_Station();
+        case PresentationType::Ratio: return FormatConstant::FPN_Ratio();
         default:
         case PresentationType::Decimal: return FormatConstant::FPN_Decimal();
         }
@@ -298,9 +299,47 @@ bool Utils::ParsePresentationType(PresentationType& type, Utf8CP name)
         type = PresentationType::Scientific;
     else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Station().c_str()) == 0) 
         type = PresentationType::Station;
+    else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Ratio().c_str()) == 0) 
+        type = PresentationType::Ratio;
     else
         return false;
 
+    return true;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod
+//----------------------------------------------------------------------------------------
+// static
+Utf8String Utils::GetRatioTypeString(RatioType mode)
+    {
+    switch (mode)
+        {
+        case RatioType::OneToN: return FormatConstant::FPN_RatioOneToN();
+        case RatioType::NToOne: return FormatConstant::FPN_RatioNToOne();
+        case RatioType::ValueBased: return FormatConstant::FPN_RatioValueBased();
+        case RatioType::UseGreatestCommonDivisor: return FormatConstant::FPN_RatioUseGreatestCommonDivisor();
+        }
+    return "";
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod
+//----------------------------------------------------------------------------------------
+// static
+bool Utils::ParseRatioType(RatioType& mode, Utf8CP name)
+    {
+    if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_RatioOneToN().c_str()) == 0) 
+        mode = RatioType::OneToN;
+    else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_RatioNToOne().c_str()) == 0) 
+        mode = RatioType::NToOne;
+    else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_RatioValueBased().c_str()) == 0) 
+        mode = RatioType::ValueBased;
+    else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_RatioUseGreatestCommonDivisor().c_str()) == 0) 
+        mode = RatioType::UseGreatestCommonDivisor;
+    else
+        return false;
+    
     return true;
     }
 

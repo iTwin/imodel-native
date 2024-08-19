@@ -31,6 +31,7 @@ BE_JSON_NAME(uomSeparator)
 BE_JSON_NAME(stationSeparator)
 BE_JSON_NAME(stationOffsetSize)
 BE_JSON_NAME(minWidth)
+BE_JSON_NAME(ratioType)
 
 // Format Traits
 BE_JSON_NAME(trailZeroes)
@@ -87,7 +88,7 @@ private:
     uint8_t m_explicitlyDefinedStatSeparator:1;
     double              m_roundFactor;
     PresentationType    m_presentationType;      // Decimal, Fractional, Scientific, Station
-    RatioMode           m_ratioMode;
+    RatioType           m_ratioType;        // OneToN, NToOne, ValueBased, UseGreatestCommonDivisor
     ScientificType      m_scientificType;
     double              m_azimuthBase;     // The base offset for azimuths in radians from north clockwise
 
@@ -235,8 +236,9 @@ public:
     void SetWestLabel(Utf8StringCR label) {m_westLabel = label;}
     Utf8String GetWestLabel() const {return m_westLabel;}
 
-    void SetRatioMode(RatioMode ratioMode) {m_ratioMode = ratioMode;}
-
+    void SetRatioType(RatioType ratioType) {m_ratioType = ratioType;}
+    RatioType GetRatioType() const {return m_ratioType;}
+    
     //======================================
     // Format Traits Bit Setters/Getters
     //======================================
