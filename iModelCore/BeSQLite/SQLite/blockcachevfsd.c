@@ -816,7 +816,7 @@ static int filesCb(void *pApp, int rc, char *z){
   }else{
     fatal_error("error (%d) - %s", rc, z);
   }
-  return rc;
+  return SQLITE_OK;
 }
 
 /*
