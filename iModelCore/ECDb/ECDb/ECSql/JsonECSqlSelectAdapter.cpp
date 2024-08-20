@@ -502,10 +502,14 @@ BentleyStatus AdapterHelper::PrimitiveArrayToJson(BeJsValue jsonValue, IECSqlVal
     jsonValue.SetEmptyArray();
     for (IECSqlValue const& arrayElementValue : ecsqlValue.GetArrayIterable())
         {
+        BeJsValue arrayElementJsonValue = jsonValue.appendValue();
         if (arrayElementValue.IsNull())
+            {
+            arrayElementJsonValue.SetNull();
             continue;
+            }
 
-        if (SUCCESS != PrimitiveToJson(jsonValue.appendValue(), arrayElementValue, arrayElementType, formatOptions, abbreviateBlobs))
+        if (SUCCESS != PrimitiveToJson(arrayElementJsonValue, arrayElementValue, arrayElementType, formatOptions, abbreviateBlobs))
             return ERROR;
         }
 
@@ -520,7 +524,14 @@ BentleyStatus AdapterHelper::StructArrayToJson(BeJsValue jsonValue, IECSqlValue 
     jsonValue.SetEmptyArray();
     for (IECSqlValue const& arrayElementValue : ecsqlValue.GetArrayIterable())
         {
-        if (SUCCESS != StructToJson(jsonValue.appendValue(), arrayElementValue, schemaManager, formatOptions))
+        BeJsValue arrayElementJsonValue = jsonValue.appendValue();
+        if (arrayElementValue.IsNull())
+            {
+            arrayElementJsonValue.SetNull();
+            continue;
+            }
+
+        if (SUCCESS != StructToJson(arrayElementJsonValue, arrayElementValue, schemaManager, formatOptions))
             return ERROR;
         }
 
