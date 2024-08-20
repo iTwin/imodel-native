@@ -110,7 +110,7 @@ void ExerciseSingleSheetCutFill (PolyfaceHeaderPtr dtm, PolyfaceHeaderPtr road, 
             auto v = m1->ValidatedVolume ();
             fillVolume2 += v;
             if (!v.IsValid ())
-                fillVolume2 += v;
+                ++errors;
             }
         }
     for (auto &m : cut2)
@@ -122,7 +122,7 @@ void ExerciseSingleSheetCutFill (PolyfaceHeaderPtr dtm, PolyfaceHeaderPtr road, 
             auto v = m1->ValidatedVolume ();
             cutVolume2 += v;
             if (!v.IsValid ())
-                cutVolume2 += v;
+                ++errors;
             }
         }
 
