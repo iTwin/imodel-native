@@ -810,12 +810,13 @@ static int main_copy(int argc, char **argv){
   return rc;
 }
 
-static void filesCb(void *pApp, int rc, char *z){
+static int filesCb(void *pApp, int rc, char *z){
   if( rc==SQLITE_OK ){
     if( z ) printf("%s\n", z);
   }else{
     fatal_error("error (%d) - %s", rc, z);
   }
+  return SQLITE_OK;
 }
 
 /*

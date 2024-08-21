@@ -2697,6 +2697,15 @@ BentleyStatus ECSqlParser::ParseSubquery(std::unique_ptr<SubqueryExp>& exp, OSQL
 
         exp = std::make_unique<SubqueryExp>(std::move(compound_select));
         }
+    else if(SQL_ISRULE(queryExpNode, cte))
+        {
+        //select_statement
+        std::unique_ptr<CommonTableExp> cte = nullptr;
+        if (SUCCESS != ParseCTE(cte, queryExpNode))
+            return ERROR;
+
+        exp = std::make_unique<SubqueryExp>(std::move(cte));
+        }
 
     OSQLParseNode const* valuesCommalistNode = parseNode->getChild(2/*values_commalist*/);
     if (SQL_ISRULE(valuesCommalistNode, values_commalist))

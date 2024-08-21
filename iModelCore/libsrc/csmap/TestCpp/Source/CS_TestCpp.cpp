@@ -977,7 +977,7 @@ printf ("CrtDbgFlag = %x.\n",_CrtSetDbgFlag (_CRTDBG_REPORT_FLAG));
 	cmGetNameMapperPtr (true);
 
 	// Release the EPSG database memory.
-	if (KcsEpsgDataSetV6Ptr != NULL)
+	if (KcsEpsgDataSetV6Ptr != nullptr)
 	{
 		delete KcsEpsgDataSetV6Ptr;
 		KcsEpsgDataSetV6Ptr = NULL;

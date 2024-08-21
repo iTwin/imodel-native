@@ -903,7 +903,7 @@ TEST_F(GetSetCustomHandledProprty, GeometryPart)
     if (true)
     {
     DgnGeometryPartPtr geomPartPtr = DgnGeometryPart::Create(m_db->GetDictionaryModel(), "Test-GeomPart");
-    EXPECT_TRUE(geomPartPtr != NULL);
+    EXPECT_TRUE(geomPartPtr != nullptr);
     GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(*m_db, false);
     EXPECT_EQ(SUCCESS, builder->Finish(*geomPartPtr));
     ASSERT_EQ(DgnDbStatus::Success, geomPartPtr->GetPropertyIndex(gindex, "GeometryStream"));

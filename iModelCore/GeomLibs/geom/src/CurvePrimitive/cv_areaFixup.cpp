@@ -51,7 +51,7 @@ void AddTo(CurveVectorR vector) { vector.push_back (m_loop);}
 void EnforceLoopOrientationAndType(double s)
     {
     CurveVectorPtr loop = m_loop->GetChildCurveVectorP();
-    if (loop != NULL)
+    if (loop != nullptr)
         {
         if (m_area * s < 0.0 && loop->size () > 0)
             {
@@ -90,7 +90,7 @@ bool FixupParityStructure(CurveVectorR allLoops)
     for (size_t index = 0; index < allLoops.size (); index++)
         {
         CurveVectorCP childVector = allLoops[index]->GetChildCurveVectorCP ();
-        if (childVector == NULL)
+        if (childVector == nullptr)
             return false;
         CurveVector::BoundaryType childType;
         if  (!  ( allLoops.GetChildBoundaryType (index, childType)
@@ -211,7 +211,7 @@ bool CurveVector::FixupXYOuterInner (bool fullGeometryCheck)
         for (size_t i = 0, n = size (); i < n; i++)
             {
             CurveVectorP childVector = const_cast<CurveVectorP>(at(i)->GetChildCurveVectorCP ());
-            if (childVector == NULL)
+            if (childVector == nullptr)
                 return false;
             if (!childVector->FixupXYOuterInner (fullGeometryCheck))
                 return false;
