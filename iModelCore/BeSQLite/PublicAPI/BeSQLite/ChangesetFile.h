@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_NAMESPACE
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ChangesetFileReaderBase : ChangeStream {
 private:
-    Db const& m_db; // Used only for debugging
+    Db const* m_db; // Used only for debugging
     bvector<BeFileName> m_files;
 
     struct Reader : Changes::Reader {
@@ -46,8 +46,8 @@ public:
     bool _IsEmpty() const override { return m_files.size() == 0; }
     RefCountedPtr<Reader> MakeReader() const { return new Reader(*this); }
     RefCountedPtr<Changes::Reader> _GetReader() const override { return MakeReader(); }
-    ChangesetFileReaderBase(bvector<BeFileName> const& files, Db const& db) : m_files(files), m_db(db) {}
-    Db const& GetDb() const { return m_db; }
+    ChangesetFileReaderBase(bvector<BeFileName> const& files, Db const* db = nullptr) : m_files(files), m_db(db) {}
+    Db const* GetDb() const { return m_db; }
 };
 
 //=======================================================================================
@@ -60,7 +60,7 @@ private:
     BeFileName m_pathname;
     BeFileLzmaOutStream* m_outLzmaFileStream;
     Utf8String m_prefix;
-    Db const& m_db; // Only for debugging
+    Db const* m_db; // Only for debugging
 
     DbResult StartOutput();
     BE_SQLITE_EXPORT void FinishOutput();
@@ -72,7 +72,7 @@ private:
     BE_SQLITE_EXPORT ChangeSet::ConflictResolution _OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) override;
 
 public:
-    BE_SQLITE_EXPORT ChangesetFileWriter(BeFileNameCR pathname, bool containsEcSchemaChanges, DdlChangesCR ddlChanges, Db const&,
+    BE_SQLITE_EXPORT ChangesetFileWriter(BeFileNameCR pathname, bool containsEcSchemaChanges, DdlChangesCR ddlChanges, Db const*,
                                          BeSQLite::LzmaEncoder::LzmaParams const& lzmaParams = BeSQLite::LzmaEncoder::LzmaParams());
     BE_SQLITE_EXPORT DbResult Initialize();
     ~ChangesetFileWriter() { FinishOutput(); }

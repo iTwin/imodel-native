@@ -1399,9 +1399,11 @@ export declare namespace IModelJsNative {
     public isIndirectChange(): boolean;
     public getPrimaryKeyColumnIndexes(): number[];
     public openFile(fileName: string, invert: boolean): void;
+    public openGroup(fileName: string[], invert: boolean): void;
     public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean): void;
     public reset(): void;
     public step(): boolean;
+    public writeToFile(fileName: string, containsSchemaChanges: boolean, overrideFile: boolean): void;
   }
 
   class DisableNativeAssertions implements IDisposable {

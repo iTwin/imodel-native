@@ -1251,6 +1251,13 @@ subquery:
             $$->append($2);
             $$->append($3 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
+    |   '(' cte ')'
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($2);
+            $$->append($3 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
+        }
     ;
 
     /* scalar expressions */

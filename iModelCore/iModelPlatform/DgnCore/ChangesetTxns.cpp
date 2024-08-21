@@ -32,6 +32,11 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 // @bsimethod
 //---------------------------------------------------------------------------------------
 ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter) {
+    if (!m_dgndb){
+        BeAssert(false && "DgnDb is not set");
+        return ChangeSet::ConflictResolution::Abort;
+    }
+
     Utf8CP tableNameP = nullptr;
     int nCols, indirect;
     DbOpcode opcode;
@@ -41,7 +46,7 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
     Utf8String tableName;
     tableName.AssignOrClear(tableNameP);
 
-    const auto jsIModelDb = m_dgndb.GetJsIModelDb();
+    const auto jsIModelDb = m_dgndb->GetJsIModelDb();
     if (nullptr != jsIModelDb) {
         const auto jsDgnDb = jsIModelDb->Value();
         const auto env = jsDgnDb.Env();
@@ -176,7 +181,7 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
                 return Napi::Number::New(env, val.GetValueDouble());
             }));
             arg.Set("dump", Napi::Function::New(env, [&](const Napi::CallbackInfo&) -> void {
-                iter.Dump(m_dgndb, false, 1);
+                iter.Dump(*m_dgndb, false, 1);
             }));
             arg.Set("setLastError", Napi::Function::New(env, [&](const Napi::CallbackInfo& info) -> void {
                 if (info.Length() != 1)
@@ -220,11 +225,11 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
         * is passed ApplyChangeset(). The flag will disable CASCADE action and treat
         * them as CASCADE NONE resulting in conflict handler been called.
         */
-        if (!m_dgndb.Txns().HasPendingTxns()) {
+        if (!m_dgndb->Txns().HasPendingTxns()) {
             // This changeset is bad. However, it is already in the timeline. We must allow services such as
             // checkpoint-creation, change history, and other apps to apply any changeset that is in the timeline.
             LOG.warning("UPDATE/DELETE before value do not match with one in db or CASCADE action was triggered.");
-            iter.Dump(m_dgndb, false, 1);
+            iter.Dump(*m_dgndb, false, 1);
         } else {
             if (tableName.StartsWithIAscii("ec_")) {
                 return ChangeSet::ConflictResolution::Skip;
@@ -239,7 +244,7 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
 
             m_lastErrorMessage = "UPDATE/DELETE before value do not match with one in db or CASCADE action was triggered.";
             LOG.fatal(m_lastErrorMessage.c_str());
-            iter.Dump(m_dgndb, false, 1);
+            iter.Dump(*m_dgndb, false, 1);
             return ChangeSet::ConflictResolution::Abort;
         }
     }
@@ -248,18 +253,18 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
         // From the SQLite docs: "CHANGESET_CONFLICT is passed as the second argument to the conflict handler while processing an INSERT change if the operation would result in duplicate primary key values."
         // This is always a fatal error - it can happen only if the app started with a briefcase that is behind the tip and then uses the same primary key values (e.g., ElementIds)
         // that have already been used by some other app using the SAME briefcase ID that recently pushed changes. That can happen only if the app makes changes without first pulling and acquiring locks.
-        if (!m_dgndb.Txns().HasPendingTxns()) {
+        if (!m_dgndb->Txns().HasPendingTxns()) {
             // This changeset is bad. However, it is already in the timeline. We must allow services such as
             // checkpoint-creation, change history, and other apps to apply any changeset that is in the timeline.
             LOG.warning("PRIMARY KEY INSERT CONFLICT - resolved by replacing the existing row with the incoming row");
-            iter.Dump(m_dgndb, false, 1);
+            iter.Dump(*m_dgndb, false, 1);
         } else {
             if (tableName.StartsWithIAscii("ec_")) {
                 return ChangeSet::ConflictResolution::Skip;
             }
             m_lastErrorMessage = "PRIMARY KEY INSERT CONFLICT - rejecting this changeset";
             LOG.fatal(m_lastErrorMessage.c_str());
-            iter.Dump(m_dgndb, false, 1);
+            iter.Dump(*m_dgndb, false, 1);
             return ChangeSet::ConflictResolution::Abort;
         }
     }
@@ -274,7 +279,7 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
         uint64_t notUsed;
         // Note: There is no performance implication of follow code as it happen toward end of
         // apply_changeset only once so we be querying value for 'DebugAllowFkViolations' only once.
-        if (m_dgndb.QueryBriefcaseLocalValue(notUsed, "DebugAllowFkViolations") == BE_SQLITE_ROW) {
+        if (m_dgndb->QueryBriefcaseLocalValue(notUsed, "DebugAllowFkViolations") == BE_SQLITE_ROW) {
             LOG.errorv("Detected %d foreign key conflicts in changeset. Continuing merge as 'DebugAllowFkViolations' flag is set. Run 'PRAGMA foreign_key_check' to get list of violations.", nConflicts);
             return ChangeSet::ConflictResolution::Skip;
         } else {
@@ -297,7 +302,7 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
         if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO)) {
             LOG.infov("------------------------------------------------------------------");
             LOG.infov("Conflict detected - Cause: %s", ChangeSet::InterpretConflictCause(cause, 1));
-            iter.Dump(m_dgndb, false, 1);
+            iter.Dump(*m_dgndb, false, 1);
         }
 
         LOG.warning("Constraint conflict handled by rejecting incoming change. Constraint conflicts are NOT expected. These happen most often when two clients both insert elements with the same code. That indicates a bug in the client or the code server.");
@@ -328,7 +333,7 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO)) {
         LOG.infov("------------------------------------------------------------------");
         LOG.infov("Conflict detected - Cause: %s", ChangeSet::InterpretConflictCause(cause, 1));
-        iter.Dump(m_dgndb, false, 1);
+        iter.Dump(*m_dgndb, false, 1);
         LOG.infov("Conflicting resolved by replacing the existing entry with the change");
     }
     return ChangeSet::ConflictResolution::Replace;
@@ -397,7 +402,7 @@ public:
     // @bsimethod
     //---------------------------------------------------------------------------------------
     static Utf8String GenerateId(Utf8StringCR parentRevId, BeFileNameCR changesetFile, DgnDbR dgndb) {
-        ChangesetFileReader fs(changesetFile, dgndb);
+        ChangesetFileReader fs(changesetFile, &dgndb);
 
         ChangesetIdGenerator idGen;
         idGen.AddStringToHash(parentRevId);
@@ -433,7 +438,7 @@ void ChangesetProps::Dump(DgnDbR dgndb) const {
     LOG.infov("File: %ls", m_fileName.GetNameUtf8().c_str());
     LOG.infov("DateTime: %s", m_dateTime.ToString().c_str());
 
-    ChangesetFileReader reader(m_fileName, dgndb);
+    ChangesetFileReader reader(m_fileName, &dgndb);
 
     bool containsSchemaChanges;
     DdlChanges ddlChanges;
@@ -468,7 +473,7 @@ void ChangesetProps::ValidateContent(DgnDbR dgndb) const {
  * determine whether the Changeset has schema changes.
  */
 bool ChangesetProps::ContainsDdlChanges(DgnDbR dgndb) const {
-    ChangesetFileReader changeStream(m_fileName, dgndb);
+    ChangesetFileReader changeStream(m_fileName, &dgndb);
     bool containsSchemaChanges;
     DdlChanges ddlChanges;
     DbResult result = changeStream.MakeReader()->GetSchemaChanges(containsSchemaChanges, ddlChanges);
@@ -630,7 +635,7 @@ struct ChangeStreamQueueConsumer : ChangeStream {
  * into a file about to become a changeset file.
  */
 void TxnManager::WriteChangesToFile(BeFileNameCR pathname, DdlChangesCR ddlChanges, ChangeGroupCR dataChangeGroup, Rebaser* rebaser) {
-    ChangesetFileWriter writer(pathname, dataChangeGroup.ContainsEcSchemaChanges(), ddlChanges, m_dgndb);
+    ChangesetFileWriter writer(pathname, dataChangeGroup.ContainsEcSchemaChanges(), ddlChanges, &m_dgndb);
 
     if (BE_SQLITE_OK !=  writer.Initialize())
         m_dgndb.ThrowException("unable to initialize change writer", (int) ChangesetStatus::FileWriteError);

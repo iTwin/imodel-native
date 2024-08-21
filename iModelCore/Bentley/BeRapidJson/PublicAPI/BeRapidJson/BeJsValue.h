@@ -268,6 +268,8 @@ public:
     }
     // get this value as an uint64_t, if possible. Otherwise return defVal.
     uint64_t GetUInt64(uint64_t defVal = 0) const {
+        if (isNull())
+            return defVal;
         if (isString()) {
             uint64_t val = defVal;
             auto str = ToUtf8CP();

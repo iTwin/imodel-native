@@ -2246,7 +2246,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         REQUIRE_ARGUMENT_OBJ(0, NativeECDb, changeCacheECDb);
         REQUIRE_ARGUMENT_STRING(1, changesetFilePathStr);
         BeFileName changesetFilePath(changesetFilePathStr.c_str(), true);
-        ChangesetFileReader changeStream(changesetFilePath, db);
+        ChangesetFileReader changeStream(changesetFilePath, &db);
         PERFLOG_START("iModelJsNative", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
         ECInstanceKey changeSummaryKey;
         if (SUCCESS != ECDb::ExtractChangeSummary(changeSummaryKey, changeCacheECDb->GetECDb(), GetOpenedDb(info), ChangeSetArg(changeStream)))
@@ -4352,6 +4352,8 @@ public:
           InstanceMethod("isIndirectChange", &NativeChangesetReader::IsIndirectChange),
           InstanceMethod("getPrimaryKeyColumnIndexes", &NativeChangesetReader::GetPrimaryKeyColumnIndexes),
           InstanceMethod("openFile", &NativeChangesetReader::OpenFile),
+          InstanceMethod("openGroup", &NativeChangesetReader::OpenGroup),
+          InstanceMethod("writeToFile", &NativeChangesetReader::WriteToFile),
           InstanceMethod("openLocalChanges", &NativeChangesetReader::OpenLocalChanges),
           InstanceMethod("reset", &NativeChangesetReader::Reset),
           InstanceMethod("step", &NativeChangesetReader::Step),
@@ -4442,6 +4444,19 @@ public:
         REQUIRE_ARGUMENT_STRING(0, fileName);
         REQUIRE_ARGUMENT_BOOL(1, invert);
         m_changeset.OpenFile(Env(), fileName.c_str(), invert);
+        }
+    void OpenGroup(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, fileNames);
+        REQUIRE_ARGUMENT_BOOL(1, invert);
+        m_changeset.OpenGroup(Env(), fileNames, invert);
+        }
+    void WriteToFile(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, fileName);
+        REQUIRE_ARGUMENT_BOOL(1, containsSchemaChanges);
+        REQUIRE_ARGUMENT_BOOL(2, overrideFile);
+        m_changeset.WriteToFile(Env(), fileName, containsSchemaChanges, overrideFile);
         }
     void OpenLocalChanges(NapiInfoCR info)
         {
