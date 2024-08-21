@@ -300,64 +300,71 @@ CompositeValueSpec::CompositeValue CompositeValueSpec::DecomposeValue(double dva
     double majorSub = 0.0;
     double middleSub = 0.0;
 
-    if (!IsProblem())  // don't try to decompose if the spec is not valid
+    if (IsProblem())  // don't try to decompose if the spec is not valid
         {
-        if (!BEU::Unit::AreCompatible(uom, smallest))
-            {
-            cv.UpdateProblemCode(FormatProblemCode::CVS_UncomparableUnits);
-            }
-        else
-            {
-            BEU::Quantity smallQ;
-            if (nullptr != uom) // we need to convert the given value to the smallest units
-                {
-                BEU::Quantity qty = BEU::Quantity(dval, *uom);
-                smallQ = qty.ConvertTo(smallest);
-                }
-            else
-                smallQ = BEU::Quantity(dval, *smallest);
-
-            if (smallQ.GetMagnitude() < 0.0)
-                {
-                cv.SetNegative();
-                }
-            double absSmallQ = abs(smallQ.GetMagnitude());
-
-            switch (GetUnitCount())
-                {
-                case 1: // smallQ already has the converted value
-                    cv.SetMajor(absSmallQ);
-                    break;
-                case 2:
-                    cv.SetMajor(floor(absSmallQ/ (double)m_ratio[indxMajor]));
-                    cv.SetMiddle(absSmallQ - cv.GetMajor() * (double)m_ratio[indxMajor]);
-                    break;
-                case 3:
-                    majorMinor = (double)(m_ratio[indxMajor] * m_ratio[indxMiddle]);
-                    cv.SetMajor(floor((absSmallQ + FormatConstant::FPV_RoundFactor()) / majorMinor));
-                    rem = absSmallQ - cv.GetMajor() * majorMinor;
-                    cv.SetMiddle(floor((rem + FormatConstant::FPV_RoundFactor()) / (double)m_ratio[indxMiddle]));
-                    cv.SetMinor(rem - cv.GetMiddle() * (double)m_ratio[indxMiddle]);
-                    break;
-                case 4:
-                    majorSub = (double)(m_ratio[indxMajor] * m_ratio[indxMiddle] * m_ratio[indxMinor]);
-                    middleSub = (double)(m_ratio[indxMiddle] * m_ratio[indxMinor]);
-                    cv.SetMajor(floor((absSmallQ + FormatConstant::FPV_RoundFactor()) / majorSub));
-                    rem = absSmallQ - cv.GetMajor() * majorSub;
-                    cv.SetMiddle(floor((rem + FormatConstant::FPV_RoundFactor()) / middleSub));
-                    rem -= cv.GetMiddle() * middleSub;
-                    cv.SetMinor(floor((rem + FormatConstant::FPV_RoundFactor()) /(double)m_ratio[indxMinor]));
-                    cv.SetSub(rem - cv.GetMinor() * (double)m_ratio[indxMinor]);
-                    break;
-                default:
-                    break;
-                }
-            if (cv.GetIsNegative())
-                {
-                cv.SetMajor(cv.GetMajor() * -1);
-                }
-            }
+        return cv;
         }
+    if (!BEU::Unit::AreCompatible(uom, smallest))
+        {
+        cv.UpdateProblemCode(FormatProblemCode::CVS_UncomparableUnits);
+        return cv;
+        }
+
+    BEU::Quantity smallQ;
+    if (nullptr != uom) // we need to convert the given value to the smallest units
+        {
+        BEU::Quantity qty = BEU::Quantity(dval, *uom);
+        smallQ = qty.ConvertTo(smallest);
+        }
+    else
+        smallQ = BEU::Quantity(dval, *smallest);
+
+    if (!smallQ.IsValid())
+        {
+        cv.UpdateProblemCode(FormatProblemCode::QT_ConversionFailed);
+        return cv;
+        }
+
+    if (smallQ.GetMagnitude() < 0.0)
+        {
+        cv.SetNegative();
+        }
+    double absSmallQ = abs(smallQ.GetMagnitude());
+
+    switch (GetUnitCount())
+        {
+        case 1: // smallQ already has the converted value
+            cv.SetMajor(absSmallQ);
+            break;
+        case 2:
+            cv.SetMajor(floor(absSmallQ/ (double)m_ratio[indxMajor]));
+            cv.SetMiddle(absSmallQ - cv.GetMajor() * (double)m_ratio[indxMajor]);
+            break;
+        case 3:
+            majorMinor = (double)(m_ratio[indxMajor] * m_ratio[indxMiddle]);
+            cv.SetMajor(floor((absSmallQ + FormatConstant::FPV_RoundFactor()) / majorMinor));
+            rem = absSmallQ - cv.GetMajor() * majorMinor;
+            cv.SetMiddle(floor((rem + FormatConstant::FPV_RoundFactor()) / (double)m_ratio[indxMiddle]));
+            cv.SetMinor(rem - cv.GetMiddle() * (double)m_ratio[indxMiddle]);
+            break;
+        case 4:
+            majorSub = (double)(m_ratio[indxMajor] * m_ratio[indxMiddle] * m_ratio[indxMinor]);
+            middleSub = (double)(m_ratio[indxMiddle] * m_ratio[indxMinor]);
+            cv.SetMajor(floor((absSmallQ + FormatConstant::FPV_RoundFactor()) / majorSub));
+            rem = absSmallQ - cv.GetMajor() * majorSub;
+            cv.SetMiddle(floor((rem + FormatConstant::FPV_RoundFactor()) / middleSub));
+            rem -= cv.GetMiddle() * middleSub;
+            cv.SetMinor(floor((rem + FormatConstant::FPV_RoundFactor()) /(double)m_ratio[indxMinor]));
+            cv.SetSub(rem - cv.GetMinor() * (double)m_ratio[indxMinor]);
+            break;
+        default:
+            break;
+        }
+    if (cv.GetIsNegative())
+        {
+        cv.SetMajor(cv.GetMajor() * -1);
+        }
+
     return cv;
     }
 

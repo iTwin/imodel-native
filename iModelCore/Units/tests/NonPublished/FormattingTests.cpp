@@ -1772,6 +1772,8 @@ TEST_F(FormattingTestFixture, DoubleToRatio){
     auto valueBased = RatioType::ValueBased;
     auto useGreatestCommonDivisor = RatioType::UseGreatestCommonDivisor;
 
+    testFormatDoubleToRatio("1:0", 0.0, h_v, oneToN, v_h);
+
     // v:h (persistent) -> v:h (presentation) | one to N
     {
     testFormatDoubleToRatio("1:0", 0.0, v_h, oneToN, v_h);

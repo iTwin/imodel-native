@@ -487,6 +487,7 @@ Utf8String FormatProblemDetail::GetProblemDescription() const
         case FormatProblemCode::QT_InvalidMidLowUnits: return "Middle and Low units are not comparable";
         case FormatProblemCode::QT_InvalidUnitCombination: return "Invalid Unit combination ";
         case FormatProblemCode::QT_InvalidSyntax: return "Invalid syntax of KOQ"; 
+        case FormatProblemCode::QT_ConversionFailed: return "Failed to convert value to target unit. Possible reasons include divide by zero or not comparable units."; 
         case FormatProblemCode::FUS_InvalidSyntax: return "Invalid syntax of FUS";
         case FormatProblemCode::NFS_Undefined: return "Numeric Format is not defined";
         case FormatProblemCode::NFS_InvalidSpecName: return "Invalid Numeric Format name";

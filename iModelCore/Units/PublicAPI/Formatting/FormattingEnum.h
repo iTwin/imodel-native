@@ -143,6 +143,7 @@ enum class FormatProblemCode
     QT_InvalidMidLowUnits = 20104,
     QT_InvalidUnitCombination = 20105,
     QT_InvalidSyntax = 20106,
+    QT_ConversionFailed = 20107,
     FUS_InvalidSyntax = 20151,
     NFS_Undefined = 20160,
     NFS_InvalidSpecName = 20161,
