@@ -1225,6 +1225,30 @@ TEST_F(CommonTableExpTestFixture, SqliteExample) {
         }
     statement.Finalize();
     }
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, R"(
+        WITH cte AS (
+                SELECT * FROM meta.ECSchemaDef )
+        SELECT ECInstanceId from cte)"));
+
+    EXPECT_STREQ("ECInstanceId", statement.GetColumnInfo(0).GetProperty()->GetName().c_str());
+    EXPECT_TRUE(statement.GetColumnInfo(0).GetDataType().IsPrimitive());
+    EXPECT_EQ(statement.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Long);
+    statement.Finalize();
+    }
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, R"(
+        WITH cte AS (
+                SELECT ECInstanceId a FROM meta.ECSchemaDef )
+        SELECT a from cte)"));
+
+    EXPECT_STREQ("a", statement.GetColumnInfo(0).GetProperty()->GetName().c_str());
+    EXPECT_TRUE(statement.GetColumnInfo(0).GetDataType().IsPrimitive());
+    EXPECT_EQ(statement.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Long);
+    statement.Finalize();
+    }
 }
 
 //---------------------------------------------------------------------------------------

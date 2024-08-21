@@ -104,6 +104,42 @@ Utf8String DerivedPropertyExp::GetName() const {
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+void DerivedPropertyExp::GetColumnNames(std::vector<RangeClassInfo> const& rangeClassRefs, ECSqlParseContext const& ctx, std::vector<Utf8String>& columnNames) const {
+    Utf8String columnAlias = GetAliasRecursively();
+    if (!columnAlias.empty()){
+        columnNames.push_back(columnAlias);
+        return;
+    }
+
+    if (GetExpression()->GetType() == Exp::Type::PropertyName) {
+        PropertyNameExp const& propertyNameExp = GetExpression()->GetAs<PropertyNameExp>();
+        PropertyPath resolvedPath = propertyNameExp.GetResolvedPropertyPath();
+        if(Exp::IsAsteriskToken(propertyNameExp.GetPropertyName())){
+            _GetColumnNamesForAsteriskExp(rangeClassRefs, ctx, columnNames);
+            return;
+        }
+        if(resolvedPath.Size() == 1){
+            if(Exp::IsAsteriskToken(resolvedPath.Last().GetName())){
+            _GetColumnNamesForAsteriskExp(rangeClassRefs, ctx, columnNames);
+            return;
+            }
+        }
+        resolvedPath.Size() == 1 ? columnNames.push_back(resolvedPath.First().GetName()) : columnNames.push_back(resolvedPath.Last().GetName());
+        return;
+    }
+
+    if (GetExpression()->GetType() == Exp::Type::NavValueCreationFunc) {
+        NavValueCreationFuncExp const& navValueCreationFuncExp = GetExpression()->GetAs<NavValueCreationFuncExp>();
+        PropertyPath resolvedPath = navValueCreationFuncExp.GetPropertyNameExp()->GetResolvedPropertyPath();
+        resolvedPath.Size() == 1 ? columnNames.push_back(resolvedPath.First().GetName()) : columnNames.push_back(resolvedPath.Last().GetName());
+        return;
+    }
+
+    columnNames.push_back(GetExpression()->ToECSql());
+}
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 Utf8String DerivedPropertyExp::GetAliasRecursively() const {
     Utf8StringCR columnAlias = m_columnAlias;
     if (!columnAlias.empty())
@@ -147,6 +183,17 @@ void DerivedPropertyExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
     GetExpression()->ToJson(val["exp"], fmt);
     if (!m_columnAlias.empty())
         val["alias"] = m_columnAlias;
+}
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void DerivedPropertyExp::_GetColumnNamesForAsteriskExp(std::vector<RangeClassInfo> const& rangeClassRefs, ECSqlParseContext const& ctx, std::vector<Utf8String>& columnNames) const {
+    std::vector<std::unique_ptr<DerivedPropertyExp>> derivedPropExpList;
+    for (RangeClassInfo const& classRef : rangeClassRefs)
+        classRef.GetExp().ExpandSelectAsterisk(derivedPropExpList, ctx);
+    for(std::unique_ptr<DerivedPropertyExp> const& prop: derivedPropExpList)
+        (*prop).GetColumnNames(rangeClassRefs, ctx, columnNames);
 }
 
 //-----------------------------------------------------------------------------------------

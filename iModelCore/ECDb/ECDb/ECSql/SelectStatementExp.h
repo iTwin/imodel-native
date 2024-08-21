@@ -58,12 +58,14 @@ struct DerivedPropertyExp final : Exp
         void _ToECSql(ECSqlRenderContext&) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
         Utf8String _ToString() const override { Utf8String str("DerivedProperty [Column alias: "); str.append(m_columnAlias).append("]"); return str; }
+        void _GetColumnNamesForAsteriskExp(std::vector<RangeClassInfo> const&, ECSqlParseContext const&, std::vector<Utf8String>&) const;
 
     public:
         DerivedPropertyExp(std::unique_ptr<ValueExp> valueExp, Utf8CP columnAlias);
 
         ValueExp const* GetExpression() const { return GetChild<ValueExp>(0); }
         Utf8String GetName() const;
+        void GetColumnNames(std::vector<RangeClassInfo> const&, ECSqlParseContext const&, std::vector<Utf8String>&) const;
 
         Utf8StringCR GetColumnAlias() const;
         Utf8StringCR GetCteColumnName() const { return m_cteColumnName; }

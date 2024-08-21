@@ -153,27 +153,58 @@ BentleyStatus ECSqlParser::ParseCTEBlock(std::unique_ptr<CommonTableBlockExp>& e
     if (!SQL_ISRULE(parseNode, cte_table_name))
         return ERROR;
 
-    auto blockName = parseNode->getChild(0)->getTokenValue();
-    auto pColumnList = parseNode->getChild(2);
-    auto pSelectStmt = parseNode->getChild(6);
+    if(parseNode->count() == 8)
+        {
+        auto blockName = parseNode->getChild(0)->getTokenValue();
+        auto pColumnList = parseNode->getChild(2);
+        auto pSelectStmt = parseNode->getChild(6);
 
-    // Grab column names in block definition
-    std::vector<Utf8String> columns;
-    for (size_t i = 0; i < pColumnList->count(); ++i) {
-        columns.push_back(pColumnList->getChild(i)->getTokenValue());
-    }
+        // Grab column names in block definition
+        std::vector<Utf8String> columns;
+        for (size_t i = 0; i < pColumnList->count(); ++i) {
+            columns.push_back(pColumnList->getChild(i)->getTokenValue());
+        }
 
-    std::unique_ptr<SelectStatementExp> selectStmt;
-    if (SUCCESS != ParseSelectStatement(selectStmt, *pSelectStmt))
-        return ERROR;
+        std::unique_ptr<SelectStatementExp> selectStmt;
+        if (SUCCESS != ParseSelectStatement(selectStmt, *pSelectStmt))
+            return ERROR;
 
-    /* Defered test
-    if (selectStmt->GetSelection()->GetChildrenCount() != columns.size()) {
-        error
-    }
-    */
-    exp = std::make_unique<CommonTableBlockExp>(blockName.c_str(), columns, std::move(selectStmt));
-    return SUCCESS;
+        /* Defered test
+        if (selectStmt->GetSelection()->GetChildrenCount() != columns.size()) {
+            error
+        }
+        */
+        exp = std::make_unique<CommonTableBlockExp>(blockName.c_str(), columns, std::move(selectStmt));
+        return SUCCESS;
+        }
+
+    if(parseNode->count() == 5)
+        {
+        auto blockName = parseNode->getChild(0)->getTokenValue();
+        auto pSelectStmt = parseNode->getChild(3);
+
+        std::unique_ptr<SelectStatementExp> selectStmt;
+        if (SUCCESS != ParseSelectStatement(selectStmt, *pSelectStmt))
+            return ERROR;
+
+        size_t columnsSize = selectStmt->GetFirstStatement().GetSelection()->GetChildrenCount();
+        std::vector<RangeClassInfo> rangeClassRefs;
+        selectStmt->GetFirstStatement().GetFrom()->FindRangeClassRefs(rangeClassRefs, RangeClassInfo::Scope::Local);
+        // Grab column names in block definition
+        std::vector<Utf8String> columns;
+        for (size_t i = 0; i < columnsSize; ++i) {
+            selectStmt->GetFirstStatement().GetSelection()->GetChildren().Get<DerivedPropertyExp>(i)->GetColumnNames(rangeClassRefs, *m_context, columns);
+        }
+        /* Defered test
+        if (selectStmt->GetSelection()->GetChildrenCount() != columns.size()) {
+            error
+        }
+        */
+        exp = std::make_unique<CommonTableBlockExp>(blockName.c_str(), columns, std::move(selectStmt));
+        return SUCCESS;
+        }
+    BeAssert(false && "Invalid grammar. Expecting CTE block with eight child nodes or exactly five child nodes.");
+    return ERROR;
 }
 
 //-----------------------------------------------------------------------------------------
