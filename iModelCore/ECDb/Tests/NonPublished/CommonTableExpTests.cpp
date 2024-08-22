@@ -1225,30 +1225,6 @@ TEST_F(CommonTableExpTestFixture, SqliteExample) {
         }
     statement.Finalize();
     }
-    {
-    ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, R"(
-        WITH cte AS (
-                SELECT * FROM meta.ECSchemaDef )
-        SELECT ECInstanceId from cte)"));
-
-    EXPECT_STREQ("ECInstanceId", statement.GetColumnInfo(0).GetProperty()->GetName().c_str());
-    EXPECT_TRUE(statement.GetColumnInfo(0).GetDataType().IsPrimitive());
-    EXPECT_EQ(statement.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Long);
-    statement.Finalize();
-    }
-    {
-    ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, R"(
-        WITH cte AS (
-                SELECT ECInstanceId a FROM meta.ECSchemaDef )
-        SELECT a from cte)"));
-
-    EXPECT_STREQ("a", statement.GetColumnInfo(0).GetProperty()->GetName().c_str());
-    EXPECT_TRUE(statement.GetColumnInfo(0).GetDataType().IsPrimitive());
-    EXPECT_EQ(statement.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Long);
-    statement.Finalize();
-    }
 }
 
 //---------------------------------------------------------------------------------------
@@ -1638,6 +1614,70 @@ TEST_F(CommonTableExpTestFixture, Invalid_SQL_Tests) {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql));
     }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, CTEWithoutColumnName) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("InvalidCTETestsDb.ecdb"));
+
+    if ("using_asterisk") {
+        ECSqlStatement statement;
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, R"(
+            WITH cte AS (
+                    SELECT * FROM meta.ECSchemaDef )
+            SELECT ECInstanceId from cte)"));
+
+        EXPECT_STREQ("ECInstanceId", statement.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        EXPECT_TRUE(statement.GetColumnInfo(0).GetDataType().IsPrimitive());
+        EXPECT_EQ(statement.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Long);
+        statement.Finalize();
+    }
+    if ("using_alias") {
+        ECSqlStatement statement;
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, R"(
+            WITH cte AS (
+                    SELECT ECInstanceId a FROM meta.ECSchemaDef )
+            SELECT a from cte)"));
+
+        EXPECT_STREQ("a", statement.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        EXPECT_TRUE(statement.GetColumnInfo(0).GetDataType().IsPrimitive());
+        EXPECT_EQ(statement.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Long);
+        statement.Finalize();
+    }
+    if ("using_table_alias") {
+        ECSqlStatement statement;
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, R"(
+            WITH cte AS (
+                    SELECT a.ECInstanceId FROM meta.ECSchemaDef a)
+            SELECT ECInstanceId from cte)"));
+
+        EXPECT_STREQ("ECInstanceId", statement.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        EXPECT_TRUE(statement.GetColumnInfo(0).GetDataType().IsPrimitive());
+        EXPECT_EQ(statement.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Long);
+        statement.Finalize();
+    }
+    if ("using_asterisk_for_both_select_exps") {
+        ECSqlStatement statement;
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, R"(
+            SELECT * FROM meta.ECClassDef)"));
+
+        EXPECT_STREQ("ECInstanceId", statement.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        EXPECT_TRUE(statement.GetColumnInfo(0).GetDataType().IsPrimitive());
+        EXPECT_EQ(statement.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Long);
+        statement.Finalize();
+    }
+    // if ("using_asterisk_for_both_select_exps") {
+    //     ECSqlStatement statement;
+    //     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, R"(
+    //         WITH c AS (SELECT * FROM meta.ECClassDef) SELECT * FROM c)"));
+
+    //     EXPECT_STREQ("ECInstanceId", statement.GetColumnInfo(0).GetProperty()->GetName().c_str());
+    //     EXPECT_TRUE(statement.GetColumnInfo(0).GetDataType().IsPrimitive());
+    //     EXPECT_EQ(statement.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Long);
+    //     statement.Finalize();
+    // }
 }
 
 END_ECDBUNITTESTS_NAMESPACE

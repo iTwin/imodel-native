@@ -114,28 +114,46 @@ void DerivedPropertyExp::GetColumnNames(std::vector<RangeClassInfo> const& range
     if (GetExpression()->GetType() == Exp::Type::PropertyName) {
         PropertyNameExp const& propertyNameExp = GetExpression()->GetAs<PropertyNameExp>();
         PropertyPath resolvedPath = propertyNameExp.GetResolvedPropertyPath();
-        if(Exp::IsAsteriskToken(propertyNameExp.GetPropertyName())){
-            _GetColumnNamesForAsteriskExp(rangeClassRefs, ctx, columnNames);
-            return;
-        }
         if(resolvedPath.Size() == 1){
-            if(Exp::IsAsteriskToken(resolvedPath.Last().GetName())){
+            if(Exp::IsAsteriskToken(resolvedPath[0].GetName())){
             _GetColumnNamesForAsteriskExp(rangeClassRefs, ctx, columnNames);
             return;
             }
+            columnNames.push_back(resolvedPath[0].GetName());
+            return;
         }
-        resolvedPath.Size() == 1 ? columnNames.push_back(resolvedPath.First().GetName()) : columnNames.push_back(resolvedPath.Last().GetName());
+        if(resolvedPath.Size() == 2){
+            if(Exp::IsAsteriskToken(resolvedPath[1].GetName())){
+            _GetColumnNamesForAsteriskExp(rangeClassRefs, ctx, columnNames);
+            return;
+            }
+            columnNames.push_back(resolvedPath[1].GetName());
+            return;
+        }
         return;
     }
 
     if (GetExpression()->GetType() == Exp::Type::NavValueCreationFunc) {
         NavValueCreationFuncExp const& navValueCreationFuncExp = GetExpression()->GetAs<NavValueCreationFuncExp>();
         PropertyPath resolvedPath = navValueCreationFuncExp.GetPropertyNameExp()->GetResolvedPropertyPath();
-        resolvedPath.Size() == 1 ? columnNames.push_back(resolvedPath.First().GetName()) : columnNames.push_back(resolvedPath.Last().GetName());
+        if(resolvedPath.Size() == 1){
+            if(Exp::IsAsteriskToken(resolvedPath[0].GetName())){
+            _GetColumnNamesForAsteriskExp(rangeClassRefs, ctx, columnNames);
+            return;
+            }
+            columnNames.push_back(resolvedPath[0].GetName());
+            return;
+        }
+        if(resolvedPath.Size() == 2){
+            if(Exp::IsAsteriskToken(resolvedPath[1].GetName())){
+            _GetColumnNamesForAsteriskExp(rangeClassRefs, ctx, columnNames);
+            return;
+            }
+            columnNames.push_back(resolvedPath[1].GetName());
+            return;
+        }
         return;
     }
-
-    columnNames.push_back(GetExpression()->ToECSql());
 }
 //-----------------------------------------------------------------------------------------
 // @bsimethod
