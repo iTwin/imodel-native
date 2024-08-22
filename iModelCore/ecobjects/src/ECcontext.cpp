@@ -319,6 +319,8 @@ public:
         {
         return key.Matches(m_key, matchType) ? &m_schema : nullptr;
         }
+
+    virtual bool IsSchemaToBePruned(SchemaKeyCR key) const { return false; }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -356,6 +358,15 @@ public:
             (*m_foundSchema) = schema;
 
         return schema.get();
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual bool IsSchemaToBePruned(SchemaKeyCR key) const
+        {
+        const auto& schemasToPrune = m_schemaReadContext.GetSchemasToPrune();
+        return std::find(schemasToPrune.begin(), schemasToPrune.end(), key.GetName()) != schemasToPrune.end();
         }
     };
 
@@ -404,7 +415,7 @@ public:
         if (it != references.end())
             return it->second.get();
 
-        if (m_schemaContext.GetSchemasToPrune().end() != std::find(m_schemaContext.GetSchemasToPrune().begin(), m_schemaContext.GetSchemasToPrune().end(), key.GetName()))
+        if (IsSchemaToBePruned(key))
             {
             LOG.infov("Skipping loading of the custom attribute because its schema %s is being pruned.", key.GetFullSchemaName().c_str());
             return nullptr;
@@ -418,6 +429,15 @@ public:
             return schemaFromContext.get();
 
         return nullptr;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual bool IsSchemaToBePruned(SchemaKeyCR key) const
+        {
+        const auto& schemasToPrune = m_schemaContext.GetSchemasToPrune();
+        return std::find(schemasToPrune.begin(), schemasToPrune.end(), key.GetName()) != schemasToPrune.end();
         }
     };
 

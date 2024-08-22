@@ -2687,14 +2687,22 @@ struct  InstanceXmlReader
                 return InstanceReadStatus::ECSchemaNotFound;
                 }
 
+            // do not search for the class if its schema is going to be pruned.
+            SchemaKey key;
+            ECObjectsStatus schemaNameParseStatus;
+            if (ECObjectsStatus::Success == (schemaNameParseStatus = SchemaKey::ParseSchemaFullName(key, m_fullSchemaName.c_str())) && m_context.IsSchemaToBePruned(key))
+                {
+                LOG.debugv("Skipping finding of the class '%s' because its schema '%s' is being pruned", m_className.c_str(), m_fullSchemaName.c_str());
+                return InstanceReadStatus::ECClassNotFound;
+                }
+
             // see if we can find the class from the schema.
             m_context.ResolveSerializedClassName(m_className, *schema);
             ECClassCP    foundClass;
             if (NULL == (foundClass = schema->GetClassCP(m_className.c_str())))
                 {
                 ECSchemaReferenceListCR refList = schema->GetReferencedSchemas();
-                SchemaKey key;
-                if (ECObjectsStatus::Success == SchemaKey::ParseSchemaFullName(key, m_fullSchemaName.c_str()))
+                if (ECObjectsStatus::Success == schemaNameParseStatus)
                     {
                     ECSchemaReferenceList::const_iterator schemaIterator = refList.find(key);
                     if (schemaIterator != refList.end())
