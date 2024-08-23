@@ -728,7 +728,7 @@ GEOMDLLIMPEXP size_t                        GetParamCount () const;
 //! Return the number of colors.
 GEOMDLLIMPEXP size_t                        GetColorCount () const;
 //! Return the number of faces.  Note that this is not a "facet" count -- many facets can reference the same
-//! containing face in the parent geometry.
+//! containing face in the parent geometry. For facet count, use GetNumFacet.
 GEOMDLLIMPEXP size_t                        GetFaceCount () const;
 //! Return the number of point indices.
 GEOMDLLIMPEXP size_t                        GetPointIndexCount () const;
@@ -1479,8 +1479,8 @@ MeshAnnotationVector &description    //!< array to receive error descriptions.
 GEOMDLLIMPEXP bool HasIndexErrors () const;
 
 //! Return blocks of read indices for grouping components with vertex connectivity
+//! @param [in] connectivityType 0 for vertex connectivity, 1 for connectivity across any edge (no visibility test), 2 for invisible edge connectivity (any shared visible edge is a barrier)
 //! @param [out] blockedReadIndexArray read indices for individual faces, separated by (-1).
-//! @param [in] connectivityType 0 for vertex connectivity, 1 for edge connectivity, 2 for connectity across non-drawn edges
 GEOMDLLIMPEXP bool PartitionByConnectivity (int connectivityType, bvector<ptrdiff_t> &blockedReadIndexArray) const;
 
 //! Spread data from this mesh to many new meshes according to partition.  This method is to be used following
@@ -2548,10 +2548,12 @@ GEOMDLLIMPEXP bool AddPolygon (bvector<DPoint3d> const &xyz, bvector<DVec3d> con
 //! Add a polygon directly to the arrays.  Indices created as needed.
 //! Interpolate (if active) params, normals, and colors with barycentric mapping from visitor.
 GEOMDLLIMPEXP bool AddPolygon(bvector<DPoint3d> const &xyz, PolyfaceVisitorR visitor, IndexedParameterMap const &mapping);
-//! Add a polygon with linear mapping to parameter space
-//! If compressNormal is true, the normal is compared to the most recent normal
-//!     and that index is reused when identical normal index.
+//! Add a polygon, with linear mapping to parameter space.
+//! If compressNormal is true, the normal is compared to the most recent normal, and when identical, its index is reused.
 GEOMDLLIMPEXP bool AddPolygon(bvector<DPoint3d> const &xyz, TransformCR worldToParameterSpace, DVec3dCR normal, bool compressNormal, bool reverseXYZ);
+//! Add an indexed polygon, with linear mapping to parameter space.
+//! If compressNormal is true, the normal is compared to the most recent normal, and when identical, its index is reused.
+GEOMDLLIMPEXP bool AddPolygon(bvector<DPoint3d> const& xyz, bvector<int> const& signedOneBasedIndices, TransformCR worldToParameterSpace, DVec3dCR normal, bool compressNormal, bool reverse);
 
 //! Sweep the existing mesh promote to a solid
 //! @returns false if the input mesh has inconsistent visibility -- i.e. side or mixture of forward and back facing facets.
@@ -3767,7 +3769,9 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 |   MESH_ELM_STYLE_INDEXED_FACE_LOOPS                                   |
 |       The mesh consists of an array of vertex coordinates and an      |
 |       array of indices into the vertex coordinate array.  Each face   |
-|       appears as a row of indices in the index matrix.                |
+|       appears as a row of signed 1-based indices in the index matrix. |
+|       These face loops have fixed-size blocking, or variable-sized    |
+|       blocking terminated by a zero.                                  |
 |   MESH_ELM_STYLE_POINT_CLOUD                                          |
 |       The mesh consists of a single array of (unblocked) coordinates. |
 |       (No connectivity stored.)                                       |
@@ -3786,6 +3790,13 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 |   MESH_ELM_STYLE_QUAD_GRID                                            |
 |       The mesh consists of a simple grid of points, to be formed into |
 |       quads.                                                          |
+|   MESH_ELM_STYLE_LARGE_MESH                                           |
+|       Abandoned. Do not use.                                          |
+|   MESH_ELM_STYLE_QVXLARGE_TRI_MESH                                    |
+|       The mesh consists of an array of vertex coordinates and an      |
+|       array of indices into the vertex coordinate array. Each face    |
+|       is a triangle appearing as three 0-based indices. This style    |
+|       of mesh is not persisted.                                       |
 |                                                                       |
 +----------------------------------------------------------------------*/
 #define MESH_ELM_STYLE_INDEXED_FACE_LOOPS       1
@@ -3795,6 +3806,7 @@ END_BENTLEY_GEOMETRY_NAMESPACE
 #define MESH_ELM_STYLE_TRIANGLE_GRID            5
 #define MESH_ELM_STYLE_QUAD_GRID                6
 #define MESH_ELM_STYLE_LARGE_MESH               7
+#define MESH_ELM_STYLE_QVXLARGE_TRI_MESH        8
 
 /*----------------------------------------------------------------------+
 |                                                                       |

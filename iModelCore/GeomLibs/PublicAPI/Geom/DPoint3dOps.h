@@ -1282,10 +1282,11 @@ double endFraction = 1.0
 //! @param [in] absTol maximum chord height distance of a point to eliminate, or negative to compute a default (1.0e-12 times the largest point coordinate).
 //! @param [in] eliminateOverdraw if false, a 180 turn point is included in the output.  If true, the doubled line due to the
 //!     180 degree turn is eliminated.  (Hence the range of the compressed polygon can be smaller)
-//! @param [in] closed If false, the first point always remains even if it is "within" colinear first and last segments.
+//! @param [in] wrap If false, the first point always remains even if it is "within" colinear first and last segments.
 //!       If true, this point can be eliminated.
 //! @param [in] xyOnly if true, use only xy coordinates in comparisons.
-public: static GEOMDLLIMPEXP void CompressColinearPoints (bvector<DPoint3d> &points, double absTol, bool eliminateOverdraw, bool closed, bool xyOnly = false);
+public: static GEOMDLLIMPEXP void CompressColinearPoints (bvector<DPoint3d> &points, double absTol, bool eliminateOverdraw, bool wrap, bool xyOnly = false);
+
 //! Simultaneously eliminate points from arrays pointsA and pointsB.
 //! <ul>
 //! <li> If pointsA and pointsB to do not have matched point counts return with no action.
@@ -1297,10 +1298,10 @@ public: static GEOMDLLIMPEXP void CompressColinearPoints (bvector<DPoint3d> &poi
 //! </ul>
 //! @param [in,out] pointsA points to compress
 //! @param [in,out] pointsB points to compress
-//! @param [in] absTol absolute tolerance
+//! @param [in] absTol maximum chord height distance of a point to eliminate, or negative to compute a default (1.0e-12 times the largest point coordinate).
 //! @param [in] eliminateOverdraw if false, a 180 turn point is included in the output.  If true, the doubled line due to the
-//!     180 degree turn is elmiinated.  (Hence the range of the compressed polygon can be smaller)
-//! @param [in] closed If false, the first point always remains even if it is "within" colinear first and last segments.
+//!     180 degree turn is eliminated.  (Hence the range of the compressed polygon can be smaller)
+//! @param [in] wrap If false, the first point always remains even if it is "within" colinear first and last segments.
 //!       If true, this point can be eliminated.
 //! @param [in] xyOnly if true, use only xy coordinates in comparisons.
 public: static GEOMDLLIMPEXP void CompressPairedColinearPoints
@@ -1548,6 +1549,31 @@ TransformCR             worldToLocal,
 bvector<DPoint3d>   *pXYZIn,
 double                  xyTolerance,
 bool                    bSignedOneBasedIndices
+);
+
+//!
+//! Triangulate space polygons projected into a caller-supplied coordinate frame.
+//! @param [out] triangleIndices output index array of triangles, formatted as per signedOneBasedIndices.
+//! @param [out] exteriorLoopIndices (optional) output index array for each exterior loop, formatted as per signedOneBasedIndices.
+//! @param [out] xyzOut array of output points, with additional points at self-intersections
+//! @param [in] localToWorld local to world transformation, applied to output
+//! @param [in] worldToLocal world to local transformation, applied to copy of input before triangulation
+//! @param [in] loops array of input polygons in world coordinates
+//! @param [in] xyTolerance tolerance for short edges on input polygon
+//! @param [in] signedOneBasedIndices if false, output indices are 0-based and separated by -1. If true, indices are 1-based with
+//! interior edges negated, and 0 is the separator.
+//! @return false if nonsimple polygon.
+//!
+static GEOMDLLIMPEXP bool FixupAndTriangulateProjectedLoops
+(
+bvector<int>& triangleIndices,
+bvector<int>* exteriorLoopIndices,
+bvector<DPoint3d>& xyzOut,
+TransformCR localToWorld,
+TransformCR worldToLocal,
+bvector<bvector<DPoint3d>> const& loops,
+double xyTolerance,
+bool signedOneBasedIndices
 );
 
 //! <ul>
