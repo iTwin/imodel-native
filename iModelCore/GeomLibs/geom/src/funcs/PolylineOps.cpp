@@ -1456,7 +1456,7 @@ bool xyOnly
     // The lastAcceptedPoint is NOT the last point.
     // The last point has NOT been accepted ...
 
-    if (   wrap)
+    if (wrap)
         {
         double d0 = points[n - 1].DistanceSquared(points[0]);
         if (d0 <= tol2 && numAccepted > 1

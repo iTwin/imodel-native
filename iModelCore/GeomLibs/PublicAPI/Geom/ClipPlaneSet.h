@@ -451,13 +451,16 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
     //! <ul>
     //! <li> [inside, keepPolyfaceInsideParts, keepCutFacesWithInside] controls return of mesh for "inside and on" the clipper
     //! <li> [outside, keepPolyfaceOutsideParts, keepCutFacesWithOutside] controls return of mesh for "outside and on" the clipper
-    //! <li> cutEdges controls return of simple intersection edges between the polyface and the clip.
     //! </ul>
     //! @param polyface [in] polyface to test
     //! @param clipSet [in] the positive clip set
-    //! @param constructNewFacetsOnClipSetPlanes [in] true to construct new faces where clip planes are inside the facet.
     //! @param inside [out] (optional) "inside" parts
+    //! @param keepPolyfaceInsideParts whether the returned "inside" mesh includes polyface facets inside the clip set
+    //! @param keepCutFacesWithInside whether the returned "inside" mesh includes new facets on the planes of the clip set
     //! @param outside [out] (optional) "outside" parts
+    //! @param keepPolyfaceOutsideParts whether the returned "outside" mesh includes polyface facets outside the clip set
+    //! @param keepCutFacesWithOutside whether the returned "outside" mesh includes new facets on the planes of the clip set
+    //! @param cutEdges unimplemented. Pass nullptr.
     GEOMDLLIMPEXP void static ClipPlaneSetIntersectPolyface
         (
         PolyfaceQueryCR polyface,
@@ -477,7 +480,6 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
     //! <ul>
     //! <li> inside selection:   inside, true, constructNewFacetsOnClipSetPlanes
     //! <li> outside selection: outside, true, constructNewFacetsOnClipSetPlanes
-    //! <li> cutEdges: nullptr
     //! </ul>
     //! @param polyface [in] polyface to test
     //! @param clipSet [in] the positive clip set
@@ -493,16 +495,20 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
         PolyfaceHeaderPtr *outside
         );
 
-    //! Clip a polyface to a positive ClipPlaneSet, producing only facets and linework on the cut planes.
-    //! @param polyface [in] polyface to test
+    //! Clip a closed polyface to a positive ClipPlaneSet, producing only facets and linework on the cut planes.
+    //! @param polyface [in] polyface to test. For best results, this mesh should be closed; otherwise extraneous
+    //! facets/lines may be present in output.
     //! @param clipSet [in] the positive clip set
-    //! @param cutSections [out] (optional) triangulations of sections that are closed loops
-    //! @param lineStrings [out] (optional) raw section line strings
+    //! @param cutSections [out] (optional) triangulations of sections that are closed loops. Edges added by
+    //! triangulation are marked invisible.
+    //! @param lineStrings [out] (optional) raw section line strings. Closed sections will remain closed when clipped
+    //! by other planes in the clip set.
     //! @param colinearEdgeTolerance [in] maximum chord height distance of a redundant output point
     //! to be removed. Internal triangulation of larger planar facets can create numerous redundant vertices between
     //! colinear cut boundary edges. Pass a tiny distance so as not to change the shape of the cut boundaries. Pass
     //! a negative value to compute a default distance (1.0e-12 times the largest point coordinate). Pass an invalid
     //! object to skip colinear edge removal altogether.
+    //! @see ClipPlaneSetPolyfaceIntersectionEdges
     GEOMDLLIMPEXP void static ClipPlaneSetSectionPolyface
         (
         PolyfaceQueryCR polyface,
@@ -511,10 +517,12 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
         bvector<bvector<DPoint3d>> *lineStrings,
         ValidatedDouble &colinearEdgeTolerance
         );
+
     //! Return the edges of intersection between a polyface and a clipSet.
-    //! <ul>
-    //! <li> This is appropriate whether or not the polyface is closed.
-    //! </ul>
+    //! @param polyface [in] polyface to test, does NOT have to be closed.
+    //! @param clipSet [in] the positive clip set
+    //! @param lineStrings [out] raw section line strings.
+    //! @see ClipPlaneSetSectionPolyface
     GEOMDLLIMPEXP void static ClipPlaneSetPolyfaceIntersectionEdges
         (
         PolyfaceQueryCR polyface,
@@ -533,7 +541,7 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
     GEOMDLLIMPEXP void static SweptPolygonClipPolyface
         (
         PolyfaceQueryCR polyface,
-        bvector<DPoint3d> &polygon,
+        bvector<DPoint3d> const& polygon,
         DVec3dCR sweepDirection,
         bool constructNewFacetsOnClipSetPlanes,
         PolyfaceHeaderPtr *inside,
