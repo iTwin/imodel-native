@@ -41,8 +41,8 @@
 int jsonquoted(const char *in, size_t len,
                struct curlx_dynbuf *out, bool lowercase)
 {
-  const char *i = in;
-  const char *in_end = &in[len];
+  const unsigned char *i = (unsigned char *)in;
+  const unsigned char *in_end = &i[len];
   CURLcode result = CURLE_OK;
 
   for(; (i < in_end) && !result; i++) {
@@ -72,9 +72,9 @@ int jsonquoted(const char *in, size_t len,
       if(*i < 32)
         result = curlx_dyn_addf(out, "\\u%04x", *i);
       else {
-        char o = *i;
+        char o = (char)*i;
         if(lowercase && (o >= 'A' && o <= 'Z'))
-          /* do not use tolower() since that's locale specific */
+          /* do not use tolower() since that is locale specific */
           o |= ('a' - 'A');
         result = curlx_dyn_addn(out, &o, 1);
       }
@@ -101,13 +101,14 @@ void jsonWriteString(FILE *stream, const char *in, bool lowercase)
 }
 
 void ourWriteOutJSON(FILE *stream, const struct writeoutvar mappings[],
+                     size_t nentries,
                      struct per_transfer *per, CURLcode per_result)
 {
-  int i;
+  size_t i;
 
   fputs("{", stream);
 
-  for(i = 0; mappings[i].name != NULL; i++) {
+  for(i = 0; i < nentries; i++) {
     if(mappings[i].writefunc &&
        mappings[i].writefunc(stream, &mappings[i], per, per_result, true))
       fputs(",", stream);
