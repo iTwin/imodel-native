@@ -2689,8 +2689,8 @@ struct  InstanceXmlReader
 
             // do not search for the class if its schema is going to be pruned.
             SchemaKey key;
-            ECObjectsStatus schemaNameParseStatus;
-            if (ECObjectsStatus::Success == (schemaNameParseStatus = SchemaKey::ParseSchemaFullName(key, m_fullSchemaName.c_str())) && m_context.IsSchemaToBePruned(key))
+            ECObjectsStatus schemaNameParseStatus = SchemaKey::ParseSchemaFullName(key, m_fullSchemaName.c_str());
+            if (ECObjectsStatus::Success == schemaNameParseStatus && m_context.IsSchemaToBePruned(key))
                 {
                 LOG.debugv("Skipping finding of the class '%s' because its schema '%s' is being pruned", m_className.c_str(), m_fullSchemaName.c_str());
                 return InstanceReadStatus::ECClassNotFound;
