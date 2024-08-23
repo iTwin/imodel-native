@@ -32,10 +32,6 @@
 #ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif
-#ifdef HAVE_ARC4RANDOM
-/* Some platforms might have the prototype missing (ubuntu + libressl) */
-uint32_t arc4random(void);
-#endif
 
 #include <curl/curl.h>
 #include "urldata.h"
@@ -50,9 +46,10 @@ uint32_t arc4random(void);
 #include "curl_memory.h"
 #include "memdebug.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 
-#if defined(_WIN32_WINNT) && _WIN32_WINNT >= 0x600
+#if defined(_WIN32_WINNT) && _WIN32_WINNT >= 0x600 && \
+  !defined(CURL_WINDOWS_APP)
 #  define HAVE_WIN_BCRYPTGENRANDOM
 #  include <bcrypt.h>
 #  ifdef _MSC_VER
@@ -105,12 +102,11 @@ CURLcode Curl_win32_random(unsigned char *entropy, size_t length)
 
 static CURLcode randit(struct Curl_easy *data, unsigned int *rnd)
 {
-  unsigned int r;
   CURLcode result = CURLE_OK;
   static unsigned int randseed;
   static bool seeded = FALSE;
 
-#ifdef CURLDEBUG
+#ifdef DEBUGBUILD
   char *force_entropy = getenv("CURL_ENTROPY");
   if(force_entropy) {
     if(!seeded) {
@@ -138,7 +134,7 @@ static CURLcode randit(struct Curl_easy *data, unsigned int *rnd)
 
   /* ---- non-cryptographic version following ---- */
 
-#ifdef WIN32
+#ifdef _WIN32
   if(!seeded) {
     result = Curl_win32_random((unsigned char *)rnd, sizeof(*rnd));
     if(result != CURLE_NOT_BUILT_IN)
@@ -146,14 +142,16 @@ static CURLcode randit(struct Curl_easy *data, unsigned int *rnd)
   }
 #endif
 
-#ifdef HAVE_ARC4RANDOM
-  *rnd = (unsigned int)arc4random();
-  return CURLE_OK;
+#if defined(HAVE_ARC4RANDOM) && !defined(USE_OPENSSL)
+  if(!seeded) {
+    *rnd = (unsigned int)arc4random();
+    return CURLE_OK;
+  }
 #endif
 
-#if defined(RANDOM_FILE) && !defined(WIN32)
+#if defined(RANDOM_FILE) && !defined(_WIN32)
   if(!seeded) {
-    /* if there's a random file to read a seed from, use it */
+    /* if there is a random file to read a seed from, use it */
     int fd = open(RANDOM_FILE, O_RDONLY);
     if(fd > -1) {
       /* read random data into the randseed variable */
@@ -175,9 +173,12 @@ static CURLcode randit(struct Curl_easy *data, unsigned int *rnd)
     seeded = TRUE;
   }
 
-  /* Return an unsigned 32-bit pseudo-random number. */
-  r = randseed = randseed * 1103515245 + 12345;
-  *rnd = (r << 16) | ((r >> 16) & 0xFFFF);
+  {
+    unsigned int r;
+    /* Return an unsigned 32-bit pseudo-random number. */
+    r = randseed = randseed * 1103515245 + 12345;
+    *rnd = (r << 16) | ((r >> 16) & 0xFFFF);
+  }
   return CURLE_OK;
 }
 
@@ -201,7 +202,7 @@ CURLcode Curl_rand(struct Curl_easy *data, unsigned char *rnd, size_t num)
 {
   CURLcode result = CURLE_BAD_FUNCTION_ARGUMENT;
 
-  DEBUGASSERT(num > 0);
+  DEBUGASSERT(num);
 
   while(num) {
     unsigned int r;
@@ -241,9 +242,11 @@ CURLcode Curl_rand_hex(struct Curl_easy *data, unsigned char *rnd,
   memset(buffer, 0, sizeof(buffer));
 #endif
 
-  if((num/2 >= sizeof(buffer)) || !(num&1))
+  if((num/2 >= sizeof(buffer)) || !(num&1)) {
     /* make sure it fits in the local buffer and that it is an odd number! */
+    DEBUGF(infof(data, "invalid buffer size with Curl_rand_hex"));
     return CURLE_BAD_FUNCTION_ARGUMENT;
+  }
 
   num--; /* save one for null-termination */
 
@@ -267,7 +270,7 @@ CURLcode Curl_rand_alnum(struct Curl_easy *data, unsigned char *rnd,
                          size_t num)
 {
   CURLcode result = CURLE_OK;
-  const int alnumspace = sizeof(alnum) - 1;
+  const unsigned int alnumspace = sizeof(alnum) - 1;
   unsigned int r;
   DEBUGASSERT(num > 1);
 
@@ -280,7 +283,7 @@ CURLcode Curl_rand_alnum(struct Curl_easy *data, unsigned char *rnd,
         return result;
     } while(r >= (UINT_MAX - UINT_MAX % alnumspace));
 
-    *rnd++ = alnum[r % alnumspace];
+    *rnd++ = (unsigned char)alnum[r % alnumspace];
     num--;
   }
   *rnd = 0;
