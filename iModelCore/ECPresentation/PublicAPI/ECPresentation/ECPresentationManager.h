@@ -257,9 +257,9 @@ struct ECPresentationManager : public NonCopyableClass
         CachingParams m_cachingParams;
         MultiThreadingParams m_multiThreadingParams;
         ContentCachingParams m_contentCachingParams;
-        IJsonLocalState* m_localState;
-        IECPropertyFormatter const* m_propertyFormatter;
-        IPropertyCategorySupplier const* m_categorySupplier;
+        std::shared_ptr<IJsonLocalState> m_localState;
+        std::shared_ptr<IECPropertyFormatter const> m_propertyFormatter;
+        std::shared_ptr<IPropertyCategorySupplier const> m_categorySupplier;
         bvector<std::shared_ptr<ECInstanceChangeEventSource>> m_ecInstanceChangeEventSources;
         bvector<std::shared_ptr<IUpdateRecordsHandler>> m_updateRecordsHandlers;
     public:
@@ -284,12 +284,12 @@ struct ECPresentationManager : public NonCopyableClass
         void SetConnections(std::shared_ptr<IConnectionManager> connections) {m_connections = connections;}
         std::shared_ptr<IConnectionManager> GetConnections() const {return m_connections;}
 
-        IJsonLocalState* GetLocalState() const {return m_localState;}
-        void SetLocalState(IJsonLocalState* localState) {m_localState = localState;}
-        IECPropertyFormatter const* GetECPropertyFormatter() const {return m_propertyFormatter;}
-        void SetECPropertyFormatter(IECPropertyFormatter const* formatter) {m_propertyFormatter = formatter;}
-        IPropertyCategorySupplier const* GetCategorySupplier() const {return m_categorySupplier;}
-        void SetCategorySupplier(IPropertyCategorySupplier const* supplier) {m_categorySupplier = supplier;}
+        std::shared_ptr<IJsonLocalState> GetLocalState() const {return m_localState;}
+        void SetLocalState(std::shared_ptr<IJsonLocalState> localState) {m_localState = localState;}
+        std::shared_ptr<IECPropertyFormatter const> GetECPropertyFormatter() const {return m_propertyFormatter;}
+        void SetECPropertyFormatter(std::shared_ptr<IECPropertyFormatter const> formatter) {m_propertyFormatter = formatter;}
+        std::shared_ptr<IPropertyCategorySupplier const> GetCategorySupplier() const {return m_categorySupplier;}
+        void SetCategorySupplier(std::shared_ptr<IPropertyCategorySupplier const> supplier) {m_categorySupplier = supplier;}
         bvector<std::shared_ptr<ECInstanceChangeEventSource>> const& GetECInstanceChangeEventSources() const {return m_ecInstanceChangeEventSources;}
         void SetECInstanceChangeEventSources(bvector<std::shared_ptr<ECInstanceChangeEventSource>> sources) {m_ecInstanceChangeEventSources = sources;}
         bvector<std::shared_ptr<IUpdateRecordsHandler>> const& GetUpdateRecordsHandlers() const {return m_updateRecordsHandlers;}

@@ -303,7 +303,7 @@ TEST_F(RevisionTestFixture, Workflow)
 
         ChangesetPropsPtr revision = CreateRevision(Utf8PrintfString("-cst%d", revNum).c_str());
         ASSERT_TRUE(revision.IsValid());
-        ASSERT_FALSE(revision->ContainsSchemaChanges(*m_db));
+        ASSERT_FALSE(revision->ContainsDdlChanges(*m_db));
 
         revisions.push_back(revision);
         }
@@ -350,7 +350,7 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
 
     ChangesetPropsPtr revision1 = CreateRevision("-cs2");
     ASSERT_TRUE(revision1.IsValid());
-    ASSERT_FALSE(revision1->ContainsSchemaChanges(*m_db));
+    ASSERT_FALSE(revision1->ContainsDdlChanges(*m_db));
 
     // Create Revision 2 after deleting the same element
     DgnElementCPtr el = m_db->Elements().Get<DgnElement>(elementId);
@@ -362,7 +362,7 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
 
     ChangesetPropsPtr revision2 = CreateRevision("-cs3");
     ASSERT_TRUE(revision2.IsValid());
-    ASSERT_FALSE(revision2->ContainsSchemaChanges(*m_db));
+    ASSERT_FALSE(revision2->ContainsDdlChanges(*m_db));
 
     // Create Revision 3 deleting the test model (the API causes Elements to get deleted)
     RestoreTestFile();
@@ -374,7 +374,7 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
 
     ChangesetPropsPtr revision3 = CreateRevision("-cs4");
     ASSERT_TRUE(revision3.IsValid());
-    ASSERT_FALSE(revision3->ContainsSchemaChanges(*m_db));
+    ASSERT_FALSE(revision3->ContainsDdlChanges(*m_db));
 
     ChangesetStatus revStatus;
 
@@ -1552,10 +1552,10 @@ TEST_F(RevisionTestFixture, IterateOverRedundantSchemaChange)
 
     // ignore the initial revision since it will have a bunch of inserted stuff for setup purposes that we're not trying to iterate over
     //RevisionChangesFileReader reader1(revisionPtrs[0]->GetRevisionChangesFile(), *m_db);
-    ChangesetFileReader reader2(revisionPtrs[1]->GetFileName(), *m_db);
-    ChangesetFileReader reader3(revisionPtrs[2]->GetFileName(), *m_db);
-    ChangesetFileReader reader4(revisionPtrs[3]->GetFileName(), *m_db);
-    ChangesetFileReader reader5(revisionPtrs[4]->GetFileName(), *m_db);
+    ChangesetFileReader reader2(revisionPtrs[1]->GetFileName(), m_db.get());
+    ChangesetFileReader reader3(revisionPtrs[2]->GetFileName(), m_db.get());
+    ChangesetFileReader reader4(revisionPtrs[3]->GetFileName(), m_db.get());
+    ChangesetFileReader reader5(revisionPtrs[4]->GetFileName(), m_db.get());
     // this pointer array compensates for a lack of copy or move constructors which make this type difficult to put in STL containers
     std::array<ChangesetFileReader*, revisionPtrs.size() - 1> revisionReaders { &reader2, &reader3, &reader4, &reader5  };
 

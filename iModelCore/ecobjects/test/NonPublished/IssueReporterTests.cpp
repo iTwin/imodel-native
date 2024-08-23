@@ -13,24 +13,11 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct IssueReporterTests : ECTestFixture {};
 
-template <typename IssueReportedCallback = void(*)(IssueSeverity, IssueCategory, IssueType, IssueId, Utf8CP)>
-struct TestIssueListener : public IIssueListener
-    {
-    IssueReportedCallback m_onIssueReported;
-    TestIssueListener(IssueReportedCallback onIssueReported) : m_onIssueReported(onIssueReported) {}
-private:
-    virtual void _OnIssueReported(IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message) const override
-        {
-        m_onIssueReported(severity, category, type, id, message);
-        }
-    };
-
 namespace
     {
     template <typename F>
-    TestIssueListener<F> MakeTestIssueListener(F&& f) { return TestIssueListener<F>(std::forward<F>(f)); }
+    RelayIssueListener<F> MakeRelayIssueListener(F&& f) { return RelayIssueListener<F>(std::forward<F>(f)); }
     }
-
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
@@ -38,7 +25,7 @@ namespace
 TEST_F(IssueReporterTests, SchemaXmlReaderCantResolveSchemaReference)
     {
     int testListenerReportCount = 0;
-    auto testListener = MakeTestIssueListener([&](IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message){
+    auto testListener = MakeRelayIssueListener([&](IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message){
         ++testListenerReportCount;
     });
 
@@ -72,7 +59,7 @@ TEST_F(IssueReporterTests, SchemaConverterClassMapBadMapStrategyReported)
     int testListenerReportCount = 0;
     Utf8String lastReportMessage = "";
     IssueId lastIssueId = IssueId("");
-    auto testListener = MakeTestIssueListener([&](IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message){
+    auto testListener = MakeRelayIssueListener([&](IssueSeverity severity, IssueCategory category, IssueType type, IssueId id, Utf8CP message){
         lastReportMessage = message;
         lastIssueId = id;
         ++testListenerReportCount;

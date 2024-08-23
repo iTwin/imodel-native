@@ -46,12 +46,17 @@ PragmaManager& ECDb::Impl::GetPragmaManager() const
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
-ECDb::Impl::Impl(ECDbR ecdb) : m_ecdb(ecdb), m_profileManager(ecdb), m_changeManager(ecdb), m_sqliteStatementCache(50, &m_mutex), m_idSequenceManager(ecdb, bvector<Utf8CP>(1, "ec_instanceidsequence"))
-    {
+ECDb::Impl::Impl(ECDbR ecdb) :
+    m_ecdb(ecdb),
+    m_profileManager(ecdb),
+    m_changeManager(ecdb),
+    m_sqliteStatementCache(50, &m_mutex),
+    m_idSequenceManager(ecdb, bvector<Utf8CP>(1, "ec_instanceidsequence")),
+    m_disableDDLTracking(false) {
     m_schemaManager = std::make_unique<SchemaManager>(ecdb, m_mutex);
     // set default logger
     IssueDataSource::AppendLogSink(m_issueReporter, "ECDb");
-    }
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
@@ -115,7 +120,7 @@ bool IdFactory::Reset() const {
     m_relationshipConstraintIdSeq = IdSequence::Create(m_ecdb, TABLE_RelationshipConstraint, COL_DEFAULTNAME_Id);
     m_relationshipConstraintClassIdSeq = IdSequence::Create(m_ecdb, TABLE_RelationshipConstraintClass, COL_DEFAULTNAME_Id);
     m_schemaIdSeq = IdSequence::Create(m_ecdb, TABLE_Schema, COL_DEFAULTNAME_Id);
-    m_schemaReferencIdSeq = IdSequence::Create(m_ecdb, TABLE_SchemaReference, COL_DEFAULTNAME_Id);
+    m_schemaReferenceIdSeq = IdSequence::Create(m_ecdb, TABLE_SchemaReference, COL_DEFAULTNAME_Id);
     m_tableIdSeq = IdSequence::Create(m_ecdb, TABLE_Table, COL_DEFAULTNAME_Id);
     m_unitIdSeq = IdSequence::Create(m_ecdb, TABLE_Unit, COL_DEFAULTNAME_Id);
     m_unitSystemIdSeq = IdSequence::Create(m_ecdb, TABLE_UnitSystem, COL_DEFAULTNAME_Id);
@@ -144,7 +149,7 @@ bool IdFactory::IsValid() const {
         m_relationshipConstraintIdSeq != nullptr &&
         m_relationshipConstraintClassIdSeq != nullptr &&
         m_schemaIdSeq != nullptr &&
-        m_schemaReferencIdSeq != nullptr &&
+        m_schemaReferenceIdSeq != nullptr &&
         m_tableIdSeq != nullptr &&
         m_unitIdSeq != nullptr &&
         m_unitSystemIdSeq != nullptr;
@@ -233,7 +238,18 @@ void ECDb::Impl::OnInit() const
     RegisterECSqlPragmas();
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDb::Impl::ExecuteDDL(Utf8CP ddl) const {
+    if (m_disableDDLTracking) {
+        // execute SQL track data changes only so DDL will skip through
+        return m_ecdb.ExecuteSql(ddl);
+    }
 
+    // track data and DDL changes.
+    return m_ecdb.ExecuteDdl(ddl);
+}
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+------
@@ -246,6 +262,7 @@ void ECDb::Impl::RegisterECSqlPragmas() const
     GetPragmaManager().Register(PragmaIntegrityCheck::Create());
     GetPragmaManager().Register(PragmaExperimentalFeatures::Create());
     GetPragmaManager().Register(PragmaParseTree::Create());
+    GetPragmaManager().Register(PragmaPurgeOrphanRelationships::Create());
     }
 
 //--------------------------------------------------------------------------------------

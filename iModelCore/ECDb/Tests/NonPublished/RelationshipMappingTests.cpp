@@ -223,11 +223,12 @@ TEST_F(RelationshipMappingTestFixture, MoveNavUpInHierarchyRemoveOriginal)
         </ECRelationshipClass>
         )xml", "01.00.01");
     SchemaItem schema2(schemaXml2);
-    ECIssueListener issueListener(m_ecdb);
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
     ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema2));
-    auto lastIssue = issueListener.GetIssue();
-    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
-    ASSERT_STREQ("ECSchema Upgrade failed. ECClass TestSchema:MaterialProfile: Deleting Navigation ECProperty 'Material' from an ECClass is not supported.", lastIssue.message.c_str());
+
+    ASSERT_FALSE(issueListener.IsEmpty()) << "Should raise an issue.";
+    ASSERT_STREQ("ECSchema Upgrade failed. ECClass TestSchema:MaterialProfile: Deleting Navigation ECProperty 'Material' from an ECClass is not supported.", issueListener.GetLastMessage().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -308,11 +309,12 @@ TEST_F(RelationshipMappingTestFixture, MoveNavUpInHierarchyRemoveAndIgnore)
         </ECRelationshipClass>
         )xml", "01.00.01");
     SchemaItem schema2(schemaXml2);
-    ECIssueListener issueListener(m_ecdb);
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
     ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema2, SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications));
-    auto lastIssue = issueListener.GetIssue();
-    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
-    ASSERT_STREQ("ECSchema Upgrade failed. ECClass TestSchema:MaterialProfile: Deleting Navigation ECProperty 'Material' from an ECClass is not supported.", lastIssue.message.c_str());
+
+    ASSERT_FALSE(issueListener.IsEmpty()) << "Should raise an issue.";
+    ASSERT_STREQ("ECSchema Upgrade failed. ECClass TestSchema:MaterialProfile: Deleting Navigation ECProperty 'Material' from an ECClass is not supported.", issueListener.GetLastMessage().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -395,11 +397,12 @@ TEST_F(RelationshipMappingTestFixture, MoveNavUpInHierarchyAdjustOriginal)
         </ECRelationshipClass>
         )xml", "01.00.01");
     SchemaItem schema2(schemaXml2);
-    ECIssueListener issueListener(m_ecdb);
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
     ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema2, SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues));
-    auto lastIssue = issueListener.GetIssue();
-    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
-    ASSERT_STREQ("ECSchema Upgrade failed. ECProperty TestSchema:MaterialProfile.Material: Changing the 'Relationship' for a Navigation ECProperty is not supported.", lastIssue.message.c_str());
+
+    ASSERT_FALSE(issueListener.IsEmpty()) << "Should raise an issue.";
+    ASSERT_STREQ("ECSchema Upgrade failed. ECProperty TestSchema:MaterialProfile.Material: Changing the 'Relationship' for a Navigation ECProperty is not supported.", issueListener.GetLastMessage().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -577,27 +580,22 @@ TEST_F(RelationshipMappingTestFixture, SpatialAnalysisMapProblemWithoutSharedCol
         )xml");
     SchemaItem schema1(schemaXml1);
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
-    ECIssueListener issueListener(m_ecdb);
-    ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema1));
-    auto lastIssue = issueListener.GetIssue();
-    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
-    ASSERT_STREQ("Failed to map ECRelationshipClass 'TestSchema:MaterialProfileDefinitionRefersToPhysicalMaterial'. ForeignKey column name 'MaterialId' is already used by another column in the table 'ts_BaseTPHNonShared'.", lastIssue.message.c_str());
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema1));
 
-    //Uncomment this part once we start supporting the scenario
-    /*ECInstanceKey materialKey;
+    ECInstanceKey materialKey;
     ECClassId relClassId = m_ecdb.Schemas().GetClassId("TestSchema", "MaterialProfileDefinitionRefersToPhysicalMaterial");
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Material(PropMaterial,PropElement,PropBaseTPH) VALUES('1PropMaterial','1PropElement','1PropBaseTPH')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Material(PropMaterial,PropBaseTPH) VALUES('1PropMaterial','1PropBaseTPH')"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(materialKey));
     }
 
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.MaterialProfile(PropMaterialProfile,PropMaterialProfileDefinition,PropElement,PropBaseTPH,Material) VALUES('2PropMaterialProfile','2PropMaterialProfileDefinition','2PropElement','2PropBaseTPH',?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.MaterialProfile(PropMaterialProfile,PropMaterialProfileDefinition,PropBaseTPH,Material) VALUES('2PropMaterialProfile','2PropMaterialProfileDefinition','2PropBaseTPH',?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, materialKey.GetInstanceId(), relClassId));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    }*/
+    }
     }
 
 //---------------------------------------------------------------------------------------
@@ -731,13 +729,143 @@ TEST_F(RelationshipMappingTestFixture, ManyFKRelsWithSameName)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(RelationshipMappingTestFixture, FKRelsWithDifferentNotNullConstraints)
+TEST_F(RelationshipMappingTestFixture, ManyFKRelsWithSameNameWithoutSharedColumns)
     {
-    // This test attempts to produce a problem where 2 nav props of the same name go into the same table (BaseTPH)
+    // Mimics the test above but without Sharing Columns
+    Utf8String schemaXml1 = ConstructTestSchema(R"xml(
+        <ECEntityClass typeName="BaseTPHNonShared" modifier="Abstract">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+            </ECCustomAttributes>
+            <ECProperty propertyName="PropBaseTPH" typeName="string"/>
+        </ECEntityClass>
+
+        <ECEntityClass typeName="Material" modifier="Sealed">
+            <BaseClass>BaseTPHNonShared</BaseClass>
+            <ECProperty propertyName="PropMaterial" typeName="string"/>
+        </ECEntityClass>
+
+        <ECEntityClass typeName="SealedEntity1" modifier="Sealed">
+            <BaseClass>BaseTPHNonShared</BaseClass>
+            <ECProperty propertyName="PropSealedEntity1" typeName="string" />
+            <ECNavigationProperty propertyName="NavProp" relationshipName="SealedEntity1RefersToMaterial" direction="Forward" />
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="SealedEntity1RefersToMaterial" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+            <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                <Class class="SealedEntity1" />
+            </Source>
+            <Target multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="true">
+                <Class class="Material"/>
+            </Target>
+        </ECRelationshipClass>
+
+        <ECEntityClass typeName="SealedEntity2" modifier="Sealed">
+            <BaseClass>BaseTPHNonShared</BaseClass>
+            <ECProperty propertyName="PropSealedEntity2" typeName="string" />
+            <ECNavigationProperty propertyName="NavProp" relationshipName="SealedEntity2RefersToMaterial" direction="Forward" />
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="SealedEntity2RefersToMaterial" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+            <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                <Class class="SealedEntity2" />
+            </Source>
+            <Target multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="true">
+                <Class class="Material"/>
+            </Target>
+        </ECRelationshipClass>
+
+        <ECEntityClass typeName="NonSealedEntity1">
+            <BaseClass>BaseTPHNonShared</BaseClass>
+            <ECProperty propertyName="PropNonSealedEntity1" typeName="string"/>
+            <ECNavigationProperty propertyName="NavProp" relationshipName="NonSealedEntity1RefersToMaterial" direction="Forward" />
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="NonSealedEntity1RefersToMaterial" strength="referencing" strengthDirection="Forward" modifier="None">
+            <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                <Class class="NonSealedEntity1" />
+            </Source>
+            <Target multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="true">
+                <Class class="Material"/>
+            </Target>
+        </ECRelationshipClass>
+
+        <ECEntityClass typeName="NonSealedEntity2">
+            <BaseClass>BaseTPHNonShared</BaseClass>
+            <ECProperty propertyName="PropNonSealedEntity2" typeName="string"/>
+            <ECNavigationProperty propertyName="NavProp" relationshipName="NonSealedEntity2RefersToMaterial" direction="Forward" />
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="NonSealedEntity2RefersToMaterial" strength="referencing" strengthDirection="Forward" modifier="None">
+            <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                <Class class="NonSealedEntity2" />
+            </Source>
+            <Target multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="true">
+                <Class class="Material"/>
+            </Target>
+        </ECRelationshipClass>
+        )xml");
+    SchemaItem schema1(schemaXml1);
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDbForCurrentTest(schema1));
+
+    std::vector<ECInstanceKey> materialKeys(4);
+    auto insertMaterial = [&](int index)
+        {
+        ECSqlStatement stmt;
+        Utf8PrintfString sql("INSERT INTO ts.Material(PropMaterial,PropBaseTPH) VALUES('%dPropMaterial','%dPropBaseTPH')", index, index, index);
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql.c_str()));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(materialKeys[index]));
+        };
+    
+    for(int i = 0; i < 4; i++)
+    {
+    insertMaterial(i);
+    }
+
+    std::vector<ECInstanceKey> elementKeys(4);
+    auto insertElement = [&](int index, Utf8CP className)
+        {
+        ECClassId relClassId = m_ecdb.Schemas().GetClassId("TestSchema", Utf8PrintfString("%sRefersToMaterial", className));
+        ECSqlStatement stmt;
+        Utf8PrintfString sql("INSERT INTO ts.%s(Prop%s,PropBaseTPH,NavProp) VALUES('%d%s','%dPropBaseTPH',?)", className, className, index+4, className, index+4, index+4);
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, sql.c_str()));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, materialKeys[index].GetInstanceId(), relClassId));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(elementKeys[index]));
+        };
+
+    insertElement(0, "SealedEntity1");
+    insertElement(1, "SealedEntity2");
+    insertElement(2, "NonSealedEntity1");
+    insertElement(3, "NonSealedEntity2");
+
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropSealedEntity1, PropBaseTPH, NavProp FROM ts.SealedEntity1");
+    ASSERT_EQ(JsonValue(R"json([{"PropSealedEntity1":"4SealedEntity1", "PropBaseTPH": "4PropBaseTPH", "NavProp": {"id":"0x1","relClassName":"TestSchema.SealedEntity1RefersToMaterial"}}])json"),result) << "Verify inserted SealedEntity1 instances";
+    }
+
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropSealedEntity2, PropBaseTPH, NavProp FROM ts.SealedEntity2");
+    ASSERT_EQ(JsonValue(R"json([{"PropSealedEntity2":"5SealedEntity2", "PropBaseTPH": "5PropBaseTPH", "NavProp": {"id":"0x2","relClassName":"TestSchema.SealedEntity2RefersToMaterial"}}])json"),result) << "Verify inserted SealedEntity2 instances";
+    }
+
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropNonSealedEntity1, PropBaseTPH, NavProp FROM ts.NonSealedEntity1");
+    ASSERT_EQ(JsonValue(R"json([{"PropNonSealedEntity1":"6NonSealedEntity1", "PropBaseTPH": "6PropBaseTPH", "NavProp": {"id":"0x3","relClassName":"TestSchema.NonSealedEntity1RefersToMaterial"}}])json"),result) << "Verify inserted NonSealedEntity1 instances";
+    }
+
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropNonSealedEntity2, PropBaseTPH, NavProp FROM ts.NonSealedEntity2");
+    ASSERT_EQ(JsonValue(R"json([{"PropNonSealedEntity2":"7NonSealedEntity2", "PropBaseTPH": "7PropBaseTPH", "NavProp": {"id":"0x4","relClassName":"TestSchema.NonSealedEntity2RefersToMaterial"}}])json"),result) << "Verify inserted NonSealedEntity2 instances";
+    }
+    }
+
+TEST_F(RelationshipMappingTestFixture, FKRelsWithSameNameButDifferentNotNullConstraints)
+    {
+    // This test attempts to produce a problem where 2 nav props of the same name go into the same table (BaseTPH) and share a column.
     // However, the nav props differ in their "not null" constraint on the RelClassId column. Which could in theory end up producing an inconsistent constraint.
-    // In reality, this schema cannot be imported because it refuses to re-use the existing ForeignKey column.
-    // If this test ever starts to fail, we probably started supporting the scenario and should pick up checking if the constraint works as expected.
-    // DbMappingManager.cpp Line 1269: call to SetNotNullConstraint()
+    // As the property has base ECClasses mapped to the same table, the not null constraint gets ignored.
     Utf8String schemaXml1 = ConstructTestSchema(R"xml(
         <ECEntityClass typeName="Material" modifier="Sealed">
             <BaseClass>Element</BaseClass>
@@ -747,18 +875,100 @@ TEST_F(RelationshipMappingTestFixture, FKRelsWithDifferentNotNullConstraints)
         <ECEntityClass typeName="SealedEntity1" modifier="Sealed">
             <BaseClass>Element</BaseClass>
             <ECProperty propertyName="PropSealedEntity1" typeName="string" />
-            <ECNavigationProperty propertyName="NavProp" relationshipName="MaterialOwnsSealedEntity1" direction="Backward">
-                <ECCustomAttributes>
-                    <ForeignKeyConstraint xmlns="ECDbMap.02.00.00">
-                        <OnDeleteAction>Cascade</OnDeleteAction>
-                    </ForeignKeyConstraint>
-                </ECCustomAttributes>
-            </ECNavigationProperty>
+            <ECNavigationProperty propertyName="NavProp" relationshipName="MaterialOwnsSealedEntity1" direction="Forward"/>
         </ECEntityClass>
 
-        <ECRelationshipClass typeName="MaterialOwnsSealedEntity1" strength="embedding" modifier="Sealed">
+        <ECRelationshipClass typeName="MaterialOwnsSealedEntity1" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+            <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="false">
+                <Class class="SealedEntity1" />
+            </Source>
+            <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
+                <Class class="Material"/>
+            </Target>
+        </ECRelationshipClass>
+
+        <ECEntityClass typeName="SealedEntity2" modifier="Sealed">
+            <BaseClass>Element</BaseClass>
+            <ECProperty propertyName="PropSealedEntity2" typeName="string" />
+            <ECNavigationProperty propertyName="NavProp" relationshipName="SealedEntity2RefersToMaterial" direction="Backward"/>
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="SealedEntity2RefersToMaterial" strength="embedding" modifier="Sealed">
             <Source multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="false">
                 <Class class="Material"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="refers to" polymorphic="false">
+                <Class class="SealedEntity2" />
+            </Target>
+        </ECRelationshipClass>
+        )xml");
+    SchemaItem schema1(schemaXml1);
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema1));
+
+    ECInstanceKey materialKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Material(PropMaterial,PropElement,PropBaseTPH) VALUES('1PropMaterial','1PropElement','1PropBaseTPH')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(materialKey));  // Insert should succeed even when NavProp is null
+    }
+
+    {
+    ECSqlStatement stmt;
+    ECClassId relClassId = m_ecdb.Schemas().GetClassId("TestSchema", "MaterialOwnsSealedEntity1");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.SealedEntity1(PropSealedEntity1,PropElement,PropBaseTPH,NavProp) VALUES('1PropSealedEntity1','1PropElement','1PropBaseTPH',?)"));
+    stmt.BindNavigationValue(1, materialKey.GetInstanceId(), relClassId);
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    {
+    ECSqlStatement stmt;
+    ECClassId relClassId = m_ecdb.Schemas().GetClassId("TestSchema", "SealedEntity2RefersToMaterial");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.SealedEntity2(PropSealedEntity2,PropElement,PropBaseTPH,NavProp) VALUES('1PropSealedEntity2','2PropElement','2PropBaseTPH',?)"));
+    stmt.BindNavigationValue(1, materialKey.GetInstanceId(), relClassId);
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropBaseTPH, PropElement, PropSealedEntity1, NavProp FROM ts.SealedEntity1");
+    ASSERT_EQ(JsonValue(R"json([{"PropBaseTPH":"1PropBaseTPH", "PropElement": "1PropElement", "PropSealedEntity1": "1PropSealedEntity1", "NavProp": {"id":"0x1","relClassName":"TestSchema.MaterialOwnsSealedEntity1"}}])json"),result);
+    }
+    {
+    auto result = GetHelper().ExecuteSelectECSql("SELECT PropBaseTPH, PropElement, PropSealedEntity2, NavProp FROM ts.SealedEntity2");
+    ASSERT_EQ(JsonValue(R"json([{"PropBaseTPH":"2PropBaseTPH", "PropElement": "2PropElement", "PropSealedEntity2": "1PropSealedEntity2", "NavProp": {"id":"0x1","relClassName":"TestSchema.SealedEntity2RefersToMaterial"}}])json"),result);
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RelationshipMappingTestFixture, FKRelsWithDifferentNotNullConstraintsWithoutSharedColumns)
+    {
+    // This test attempts to produce a problem where 2 nav props of the same name go into the same table (BaseTPH) but without sharing columns
+    // However, the nav props differ in their "not null" constraint on the RelClassId column. Which could in theory end up producing an inconsistent constraint.
+    // As the property has base ECClasses mapped to the same table, the not null constraint gets ignored.
+    Utf8String schemaXml1 = ConstructTestSchema(R"xml(
+        <ECEntityClass typeName="BaseTPHNonShared" modifier="Abstract">
+            <ECCustomAttributes>
+              <ClassMap xmlns="ECDbMap.02.00.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+              </ClassMap>
+            </ECCustomAttributes>
+            <ECProperty propertyName="PropBaseTPH" typeName="string"/>
+        </ECEntityClass>
+
+        <ECEntityClass typeName="Material" modifier="Sealed">
+            <BaseClass>BaseTPHNonShared</BaseClass>
+            <ECProperty propertyName="PropMaterial" typeName="string"/>
+        </ECEntityClass>
+
+        <ECEntityClass typeName="SealedEntity1" modifier="Sealed">
+            <BaseClass>BaseTPHNonShared</BaseClass>
+            <ECProperty propertyName="PropSealedEntity1" typeName="string" />
+            <ECNavigationProperty propertyName="NavProp" relationshipName="MaterialOwnsSealedEntity1" direction="Backward" />
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="MaterialOwnsSealedEntity1" strength="referencing" modifier="Sealed">
+            <Source multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="false">
+                <Class class="BaseTPHNonShared"/>
             </Source>
             <Target multiplicity="(0..*)" roleLabel="refers to" polymorphic="false">
                 <Class class="SealedEntity1" />
@@ -766,27 +976,114 @@ TEST_F(RelationshipMappingTestFixture, FKRelsWithDifferentNotNullConstraints)
         </ECRelationshipClass>
 
         <ECEntityClass typeName="SealedEntity2" modifier="Sealed">
-            <BaseClass>Element</BaseClass>
+            <BaseClass>BaseTPHNonShared</BaseClass>
             <ECProperty propertyName="PropSealedEntity2" typeName="string" />
-            <ECNavigationProperty propertyName="NavProp" relationshipName="SealedEntity2RefersToMaterial" direction="Forward" />
+            <ECNavigationProperty propertyName="NavProp" relationshipName="SealedEntity2RefersToMaterial" direction="Backward" />
         </ECEntityClass>
 
-        <ECRelationshipClass typeName="SealedEntity2RefersToMaterial" strength="referencing" strengthDirection="Forward" modifier="Sealed">
-            <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="false">
-                <Class class="SealedEntity2" />
+        <ECRelationshipClass typeName="SealedEntity2RefersToMaterial" strength="embedding" modifier="Sealed">
+            <Source multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="false">
+                <Class class="BaseTPHNonShared"/>
             </Source>
-            <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
-                <Class class="Material"/>
+            <Target multiplicity="(0..*)" roleLabel="refers to" polymorphic="false">
+                <Class class="SealedEntity2" />
             </Target>
         </ECRelationshipClass>
         )xml");
     SchemaItem schema1(schemaXml1);
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
-    ECIssueListener issueListener(m_ecdb);
-    ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema1));
-    auto lastIssue = issueListener.GetIssue();
-    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
-    ASSERT_STREQ("Failed to map ECRelationshipClass 'TestSchema:SealedEntity2RefersToMaterial'. ForeignKey column name 'NavPropId' is already used by another column in the table 'ts_BaseTPH'.", lastIssue.message.c_str());
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schema1));
+
+    ECInstanceKey materialKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Material(PropMaterial,PropBaseTPH) VALUES('1PropMaterial','1PropBaseTPH')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(materialKey));  // Insert should succeed even when NavProp is null
+    }
+
+    {
+    ECSqlStatement stmt;
+    ECClassId relClassId = m_ecdb.Schemas().GetClassId("TestSchema", "MaterialOwnsSealedEntity1");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.SealedEntity1(PropSealedEntity1,PropBaseTPH,NavProp) VALUES('1PropSealedEntity1','1PropBaseTPH',?)"));
+    stmt.BindNavigationValue(1, materialKey.GetInstanceId(), relClassId);
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    {
+    ECSqlStatement stmt;
+    ECClassId relClassId = m_ecdb.Schemas().GetClassId("TestSchema", "SealedEntity2RefersToMaterial");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.SealedEntity2(PropSealedEntity2,PropBaseTPH,NavProp) VALUES('1PropSealedEntity2','2PropBaseTPH',?)"));
+    stmt.BindNavigationValue(1, materialKey.GetInstanceId(), relClassId);
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "delete from ts.Material"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    }
+
+TEST_F(RelationshipMappingTestFixture, IdenticalFKRelsWithDifferentConstraints)
+    {
+    // This test attempts to produce a problem where 2 nav props of the same name go into the same table (BaseTPH) and share a column.
+    // The nav props have different on delete and on update constraints.
+    // We end up creating 2 fks each with their own on delete and on update constraints.
+    // However, only one version of the constraints is enforced which is the one that was added last (alphabetically the last relationship class added to the map)
+
+    auto schemaXml = SchemaItem(ConstructTestSchema(R"xml(
+        <ECEntityClass typeName="Material" modifier="Sealed">
+            <BaseClass>Element</BaseClass>
+            <ECProperty propertyName="PropMaterial" typeName="string"/>
+        </ECEntityClass>
+
+        <ECEntityClass typeName="SealedEntity1" modifier="Sealed">
+            <BaseClass>Element</BaseClass>
+            <ECProperty propertyName="PropSealedEntity1" typeName="string" />
+            <ECNavigationProperty propertyName="NavProp" relationshipName="MaterialOwnsSealedEntity1" direction="Forward">
+                <ECCustomAttributes>
+                    <ForeignKeyConstraint xmlns="ECDbMap.2.0.0">
+                        <OnDeleteAction>Restrict</OnDeleteAction>
+                    </ForeignKeyConstraint>
+                </ECCustomAttributes>
+            </ECNavigationProperty>
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="MaterialOwnsSealedEntity1" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+            <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="false">
+                <Class class="SealedEntity1" />
+            </Source>
+            <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
+                <Class class="Material"/>
+            </Target>
+        </ECRelationshipClass>
+
+        <ECEntityClass typeName="SealedEntity2" modifier="Sealed">
+            <BaseClass>Element</BaseClass>
+            <ECProperty propertyName="PropSealedEntity2" typeName="string" />
+            <ECNavigationProperty propertyName="NavProp" relationshipName="SealedEntity2RefersToMaterial" direction="Backward">
+                <ECCustomAttributes>
+                    <ForeignKeyConstraint xmlns="ECDbMap.2.0.0">
+                        <OnDeleteAction>Cascade</OnDeleteAction>
+                    </ForeignKeyConstraint>
+                </ECCustomAttributes>
+            </ECNavigationProperty>
+        </ECEntityClass>
+
+        <ECRelationshipClass typeName="SealedEntity2RefersToMaterial" strength="embedding" modifier="Sealed">
+            <Source multiplicity="(1..1)" roleLabel="is referenced by" polymorphic="false">
+                <Class class="Material"/>
+            </Source>
+            <Target multiplicity="(0..*)" roleLabel="refers to" polymorphic="false">
+                <Class class="SealedEntity2" />
+            </Target>
+        </ECRelationshipClass>
+        )xml"));
+    
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
+    ASSERT_EQ(BentleyStatus::SUCCESS, ImportSchema(schemaXml));
+
+    EXPECT_STREQ(GetHelper().GetDdl("ts_BaseTPH").c_str(), "CREATE TABLE [ts_BaseTPH]([Id] INTEGER PRIMARY KEY, [ECClassId] INTEGER NOT NULL, [ps1] BLOB, [ps2] BLOB, [ps3] BLOB, [NavPropId] INTEGER, "
+        "FOREIGN KEY([NavPropId]) REFERENCES [ts_BaseTPH]([Id]) ON DELETE RESTRICT, FOREIGN KEY([NavPropId]) REFERENCES [ts_BaseTPH]([Id]) ON DELETE CASCADE)");
     }
 
 //---------------------------------------------------------------------------------------

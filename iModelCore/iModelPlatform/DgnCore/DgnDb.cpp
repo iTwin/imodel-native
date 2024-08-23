@@ -263,7 +263,10 @@ DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
             schemaImportOptions = SchemaManager::SchemaImportOptions::AllowDataTransformDuringSchemaUpgrade;
             }
 
+        Schemas().GetSchemaSync().DisableSchemaSync();
         status = Domains().UpgradeSchemas(schemasToImport, domainsToImport, schemaImportOptions);
+        Schemas().GetSchemaSync().ReEnableSchemaSync();
+
         return SchemaStatusToDbResult(status, true /*=isUpgrade*/);
     }
 
@@ -271,7 +274,13 @@ DbResult DgnDb::InitializeSchemas(Db::OpenParams const& params)
 // @bsimethod
 //--------------------------------------------------------------------------------------
 DgnDb::PullResult DgnDb::PullSchemaChanges(SyncDbUri uri) {
-    return Schemas().GetSchemaSync().Pull(uri, GetSchemaImportToken());
+    auto rc = Schemas().GetSchemaSync().Pull(uri, GetSchemaImportToken());
+    if (rc == PullResult::OK) {
+        if (Schemas().GetSchemaSync().GetModifiedRowCount()>0) {
+            this->Txns().SetHasEcSchemaChanges(true);
+        }
+    }
+    return rc;
 }
 
 //--------------------------------------------------------------------------------------
@@ -382,9 +391,9 @@ DbResult DgnDb::_AfterSchemaChangeSetApplied() const {
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-DbResult DgnDb::_AfterDataChangeSetApplied()
+DbResult DgnDb::_AfterDataChangeSetApplied(bool schemaChanged)
     {
-    DbResult result = T_Super::_AfterDataChangeSetApplied();
+    DbResult result = T_Super::_AfterDataChangeSetApplied(schemaChanged);
     if (result != BE_SQLITE_OK)
         return result;
 

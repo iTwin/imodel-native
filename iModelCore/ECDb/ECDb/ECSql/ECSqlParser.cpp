@@ -840,8 +840,8 @@ BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLPa
 
     if (lhsExp->GetType() == Exp::Type::PropertyName) {
         auto lhsPropExp = lhsExp->GetAsCP<PropertyNameExp>();
-        if (InstanceValueExp::IsInstancePath(lhsPropExp->GetPropertyPath())) {
-            if (!InstanceValueExp::IsValidSourcePath(lhsPropExp->GetPropertyPath())) {
+        if (InstanceValueExp::IsInstancePath(lhsPropExp->GetResolvedPropertyPath())) {
+            if (!InstanceValueExp::IsValidSourcePath(lhsPropExp->GetResolvedPropertyPath())) {
                 Issues().Report(
                     IssueSeverity::Error,
                     IssueCategory::BusinessProperties,
@@ -851,7 +851,7 @@ BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLPa
                 return ERROR;
             }
             if (!isExtractProp) {
-                exp = std::make_unique<ExtractInstanceValueExp>(lhsPropExp->GetPropertyPath());
+                exp = std::make_unique<ExtractInstanceValueExp>(lhsPropExp->GetResolvedPropertyPath());
                 return SUCCESS;
             } else {
                 std::unique_ptr<ValueExp> rhsExp;
@@ -870,11 +870,11 @@ BentleyStatus ECSqlParser::ParseColumnRef(std::unique_ptr<ValueExp>& exp, OSQLPa
                 }
 
                 auto rhsPropExp = rhsExp->GetAsCP<PropertyNameExp>();
-                exp = std::make_unique<ExtractPropertyValueExp>(lhsPropExp->GetPropertyPath(), rhsPropExp->GetPropertyPath(), isOptionalProp);
+                exp = std::make_unique<ExtractPropertyValueExp>(lhsPropExp->GetResolvedPropertyPath(), rhsPropExp->GetResolvedPropertyPath(), isOptionalProp);
                 return SUCCESS;
             }
         } else {
-            if (lhsPropExp->GetPropertyPath().Last().GetName().EndsWith("?")) {
+            if (lhsPropExp->GetResolvedPropertyPath().Last().GetName().EndsWith("?")) {
                 Issues().Report(
                     IssueSeverity::Error,
                     IssueCategory::BusinessProperties,
@@ -2697,6 +2697,15 @@ BentleyStatus ECSqlParser::ParseSubquery(std::unique_ptr<SubqueryExp>& exp, OSQL
 
         exp = std::make_unique<SubqueryExp>(std::move(compound_select));
         }
+    else if(SQL_ISRULE(queryExpNode, cte))
+        {
+        //select_statement
+        std::unique_ptr<CommonTableExp> cte = nullptr;
+        if (SUCCESS != ParseCTE(cte, queryExpNode))
+            return ERROR;
+
+        exp = std::make_unique<SubqueryExp>(std::move(cte));
+        }
 
     OSQLParseNode const* valuesCommalistNode = parseNode->getChild(2/*values_commalist*/);
     if (SQL_ISRULE(valuesCommalistNode, values_commalist))
@@ -4277,10 +4286,10 @@ BentleyStatus ECSqlParser::ParseNavValueCreationFuncExp(std::unique_ptr<NavValue
     if (derivedPropertyExp->GetExpression()->GetType() != Exp::Type::PropertyName) // NAVIGATION_VALUE function should accept only PropertyName
         return ERROR;
 
-    if (derivedPropertyExp->GetExpression()->GetAs<PropertyNameExp>().GetPropertyPath().Size() != 3)
+    if (derivedPropertyExp->GetExpression()->GetAs<PropertyNameExp>().GetResolvedPropertyPath().Size() != 3)
         return ERROR;
 
-    PropertyPath propPath = derivedPropertyExp->GetExpression()->GetAs<PropertyNameExp>().GetPropertyPath();
+    PropertyPath propPath = derivedPropertyExp->GetExpression()->GetAs<PropertyNameExp>().GetResolvedPropertyPath();
 
     ClassMap const* classMap = m_context->GetECDb().Schemas().GetDispatcher().GetClassMap(propPath[0].GetName(), propPath[1].GetName(), SchemaLookupMode::AutoDetect, nullptr);
 

@@ -355,6 +355,9 @@ enum class SchemaSourceType {
     XmlString
 };
 
+enum class TextEmphasis { None, Bold, Italic, BoldItalic };
+ENUM_IS_FLAGS(TextEmphasis);
+
 struct JsInterop {
     [[noreturn]] static void throwSqlResult(Utf8CP msg, Utf8CP fileName, DbResult result) {
         BeNapi::ThrowJsException(Env(), Utf8PrintfString("%s [%s]: %s", msg, fileName, BeSQLiteLib::GetErrorString(result)).c_str(), result);
@@ -411,6 +414,7 @@ struct JsInterop {
     BE_JSON_NAME(data)
     BE_JSON_NAME(date)
     BE_JSON_NAME(dbName)
+    BE_JSON_NAME(debugLogging)
     BE_JSON_NAME(defaultTxn)
     BE_JSON_NAME(description)
     BE_JSON_NAME(ecefLocation)
@@ -421,6 +425,7 @@ struct JsInterop {
     BE_JSON_NAME(face)
     BE_JSON_NAME(fileExt)
     BE_JSON_NAME(fileName)
+    BE_JSON_NAME(findOrphanedBlocks)
     BE_JSON_NAME(finishedAtOrAfterTime)
     BE_JSON_NAME(fonts)
     BE_JSON_NAME(forceUseId)
@@ -440,6 +445,7 @@ struct JsInterop {
     BE_JSON_NAME(name)
     BE_JSON_NAME(namespace)
     BE_JSON_NAME(nRequests)
+    BE_JSON_NAME(nSeconds)
     BE_JSON_NAME(numBytes)
     BE_JSON_NAME(offset)
     BE_JSON_NAME(openMode)
@@ -527,6 +533,7 @@ public:
     static DgnDbStatus QueryDefinitionElementUsage(BeJsValue usageInfo, DgnDbR db, bvector<Utf8String> const& idStringArray);
     static void UpdateProjectExtents(DgnDbR dgndb, BeJsConst newExtents);
     static void UpdateIModelProps(DgnDbR dgndb, BeJsConst);
+    static Napi::Value GetInstance(ECDbR db, NapiInfoCR info);
 
     static DbResult CreateECDb(ECDbR, BeFileNameCR pathname);
     static DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenParams const&);
@@ -567,6 +574,7 @@ public:
 
     static void FormatCurrentTime(char* buf, size_t maxbuf);
 
+    static void ComputeRangeForText(BeJsValue result, DgnDbR db, Utf8StringCR text, FontId fontId, TextEmphasis emphasis, double widthFactor, double height);
     static void AddCrashReportDgnDb(Dgn::DgnDbR);
     static void RemoveCrashReportDgnDb(Dgn::DgnDbR);
 
@@ -603,9 +611,18 @@ public:
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
+struct CRSListResponseProps
+    {
+    Utf8String m_name;
+    Utf8String m_description;
+    bool m_deprecated;
+    DRange2d m_crsExtent;
+    };
+
 struct GeoServicesInterop
 {
     static BentleyStatus GetGeographicCRSInterpretation(BeJsValue, BeJsConst);
+    static bvector<CRSListResponseProps> GetListOfCRS(DRange2dCP extent);
 };
 
 //=======================================================================================
@@ -617,7 +634,6 @@ struct NativeChangeset {
         bool m_invert;
         Byte* m_primaryKeyColumns;
         Changes::Change m_currentChange;
-        Db m_unusedDb;
         DbOpcode m_opcode;
         int m_columnCount;
         int m_indirect;
@@ -625,6 +641,7 @@ struct NativeChangeset {
         int m_primaryKeyCount;
         std::unique_ptr<Changes> m_changes;
         std::unique_ptr<ChangeStream> m_changeStream;
+        std::unique_ptr<ChangeGroup> m_changeGroup;
         Utf8CP m_tableName;
         Utf8String m_ddl;
 
@@ -639,8 +656,10 @@ struct NativeChangeset {
         NativeChangeset():m_primaryKeyColumns(nullptr), m_tableName(nullptr), m_currentChange(nullptr, false), m_invert(false){}
         void OpenFile(Napi::Env env, Utf8StringCR changesetFile, bool invert);
         void OpenChangeStream(Napi::Env env, std::unique_ptr<ChangeStream>, bool invert);
+        void OpenGroup(Napi::Env env, T_Utf8StringVector const& changesetFiles, bool invert);
         void Close(Napi::Env env);
         void Reset(Napi::Env env);
+        void WriteToFile(Napi::Env env, Utf8String const& fileName, bool containChanges, bool override);
         Napi::Value GetHasRow(Napi::Env env);
         Napi::Value GetColumnCount(Napi::Env env);
         Napi::Value GetColumnValue(Napi::Env env, int col, int target);
@@ -652,8 +671,13 @@ struct NativeChangeset {
         Napi::Value GetRow(Napi::Env env, int target);
         Napi::Value GetTableName(Napi::Env env);
         Napi::Value IsIndirectChange(Napi::Env env);
-        Napi::Value IsPrimaryKeyColumn(Napi::Env env, int col);
         Napi::Value Step(Napi::Env env);
+        Napi::Value GetColumnValueId(Napi::Env env, int col, int target);
+        Napi::Value GetColumnValueInteger(Napi::Env env, int col, int target);
+        Napi::Value GetColumnValueDouble(Napi::Env env, int col, int target);
+        Napi::Value GetColumnValueText(Napi::Env env, int col, int target);
+        Napi::Value GetColumnValueBinary(Napi::Env env, int col, int target);
+        Napi::Value IsColumnValueNull(Napi::Env env, int col, int target);
 };
 
 //=======================================================================================

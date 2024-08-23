@@ -104,19 +104,43 @@ ECSqlStatus ECSqlExpPreparer::PrepareAllOrAnyExp(ECSqlPrepareContext& ctx, AllOr
 
     ctx.GetSqlBuilder().Append("EXISTS").AppendParenLeft();
 
-    SelectStatementExp const* subquery = (exp.GetSubquery())->GetQuery();
-    ECSqlStatus stat = ECSqlSelectPreparer::Prepare(ctx, *subquery);
-    if (stat != ECSqlStatus::Success)
-        return stat;
+    SelectStatementExp const* selectSubquery = (exp.GetSubquery())->GetQuery<SelectStatementExp>();
+    if(selectSubquery != nullptr)
+        {
+        ECSqlStatus stat = ECSqlSelectPreparer::Prepare(ctx, *selectSubquery);
+        if (stat != ECSqlStatus::Success)
+            return stat;
 
-    // Subquery insertion
-    SingleSelectStatementExp const& subquerySelect = subquery->GetFirstStatement();
+        // Subquery insertion begins
+        return InsertSubquery(ctx, exp, *selectSubquery, type, op);
+        // Subquery insertion ends
+        }
+    CommonTableExp const* cteSubquery = (exp.GetSubquery())->GetQuery<CommonTableExp>();
+    if(cteSubquery != nullptr)
+        {
+        ECSqlStatus stat = ECSqlSelectPreparer::Prepare(ctx, *cteSubquery);
+        if (stat != ECSqlStatus::Success)
+            return stat;
+        // Subquery insertion begins
+        return InsertSubquery(ctx, exp, *(cteSubquery->GetQuery()), type, op);
+        // Subquery insertion ends
+        }
+    return ECSqlStatus::InvalidECSql;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+ECSqlStatus ECSqlExpPreparer::InsertSubquery(ECSqlPrepareContext& ctx, AllOrAnyExp const& exp, SelectStatementExp const& selectSubquery, SqlCompareListType const& type, BooleanSqlOperator const& op)
+    {
+    SingleSelectStatementExp const& subquerySelect = selectSubquery.GetFirstStatement();
     NativeSqlBuilder queryToReplace;
     NativeSqlBuilder allOrAnyQuery;
     bool trailingParen = false;
     if (subquerySelect.GetWhere() == nullptr)
         {
-        ECSqlSelectPreparer::PreparePartial(queryToReplace, ctx, *subquery);
+        ECSqlSelectPreparer::PreparePartial(queryToReplace, ctx, selectSubquery);
 
         if (FromExp const* fromExp = subquerySelect.GetFrom())
             {
@@ -145,7 +169,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareAllOrAnyExp(ECSqlPrepareContext& ctx, AllOr
         }
 
     NativeSqlBuilder::List nativeSqlSnippets;
-    stat = PrepareValueExp(nativeSqlSnippets, ctx, *exp.GetOperand());
+    ECSqlStatus stat = PrepareValueExp(nativeSqlSnippets, ctx, *exp.GetOperand());
     if (stat != ECSqlStatus::Success)
         return stat;
 
@@ -195,7 +219,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareAllOrAnyExp(ECSqlPrepareContext& ctx, AllOr
     ctx.GetSqlBuilder().Replace(queryToReplace.GetSql().c_str(), allOrAnyQuery.GetSql().c_str()).AppendParenRight();
     return ECSqlStatus::Success;
     }
-
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -1511,7 +1534,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareSearchConditionExp(NativeSqlBuilder& native
 ECSqlStatus ECSqlExpPreparer::PrepareSubqueryExp(ECSqlPrepareContext& ctx, SubqueryExp const& exp)
     {
     ctx.GetSqlBuilder().AppendParenLeft();
-    ECSqlStatus stat = ECSqlSelectPreparer::Prepare(ctx, *exp.GetQuery());
+    SelectStatementExp const* selectSubquery =  exp.GetQuery<SelectStatementExp>();
+    ECSqlStatus stat;
+    if(selectSubquery != nullptr)
+        stat = ECSqlSelectPreparer::Prepare(ctx, *selectSubquery);
+    CommonTableExp const* cteSubquery =  exp.GetQuery<CommonTableExp>();
+    if(cteSubquery != nullptr)
+        stat = ECSqlSelectPreparer::Prepare(ctx, *cteSubquery);
     ctx.GetSqlBuilder().AppendParenRight();
     return stat;
     }
@@ -1547,10 +1576,19 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryTestExp(NativeSqlBuilder::List& nat
     nativeSqlBuilder.Append("EXISTS");
     nativeSqlBuilder.AppendParenLeft();
     ctx.GetSqlBuilder().Push();
-    ECSqlStatus status = ECSqlSelectPreparer::Prepare(ctx, *exp.GetSubquery()->GetQuery());
-    if (!status.IsSuccess())
-        return status;
-
+    SelectStatementExp const* selectSubquery =  exp.GetSubquery()->GetQuery<SelectStatementExp>();
+    ECSqlStatus status;
+    if(selectSubquery != nullptr){
+        status = ECSqlSelectPreparer::Prepare(ctx, *selectSubquery);
+        if (!status.IsSuccess())
+            return status;
+    }
+    CommonTableExp const* cteSubquery =  exp.GetSubquery()->GetQuery<CommonTableExp>();
+    if(cteSubquery != nullptr){
+        status = ECSqlSelectPreparer::Prepare(ctx, *cteSubquery);
+        if (!status.IsSuccess())
+            return status;
+    }
     nativeSqlBuilder.Append(ctx.GetSqlBuilder().Pop());
     nativeSqlBuilder.AppendParenRight();
     nativeSqlSnippets.push_back(nativeSqlBuilder);
@@ -2614,7 +2652,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareNavValueCreationFuncExp(NativeSqlBuilder::L
         .GetClass(
             exp.GetClassNameExp()->GetSchemaName(),
             exp.GetClassNameExp()->GetClassName()
-        )->GetPropertyP(exp.GetPropertyNameExp()->GetPropertyPath()[0].GetName());
+        )->GetPropertyP(exp.GetPropertyNameExp()->GetResolvedPropertyPath()[0].GetName());
 
     if (!property->GetIsNavigation())
         {

@@ -1198,11 +1198,9 @@ bool ICurvePrimitive::_GetMSBsplineCurve (MSBsplineCurveR curve, double fraction
         return SUCCESS == curve.CopySegment (*cp,
             cp->FractionToKnot (fractionA), cp->FractionToKnot (fractionB));
         }
-    curve.Zero ();
+    curve.Zero(); // in case caller (inadvisably) frees on failure
     return false;
     }
-
-
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod

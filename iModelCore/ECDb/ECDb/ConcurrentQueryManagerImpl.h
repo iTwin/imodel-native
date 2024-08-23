@@ -4,7 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECDb/ConcurrentQueryManager.h>
-#include "QueryJsonAdaptor.h"
 #include <queue>
 #include <map>
 #include <thread>
@@ -55,7 +54,7 @@ struct ErrorListenerScope final: ECN::IIssueListener {
 struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor> {
     private:
         ECSqlStatement m_stmt;
-        std::unique_ptr<QueryJsonAdaptor> m_adaptor;
+        std::unique_ptr<ECSqlRowAdaptor> m_adaptor;
         std::string m_cachedString;
         rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator> m_allocator;
         rapidjson::CrtAllocator m_stackAllocator;
@@ -65,7 +64,7 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
     public:
         CachedQueryAdaptor() :m_cachedJsonDoc(&m_allocator, 1024, &m_stackAllocator), m_usePrimaryConn(false) { m_cachedJsonDoc.SetArray(); }
         ECSqlStatement& GetStatement() { return m_stmt; }
-        QueryJsonAdaptor& GetJsonAdaptor();
+        ECSqlRowAdaptor& GetJsonAdaptor();
         rapidjson::Document& ClearAndGetCachedJsonDocument() { m_cachedJsonDoc.Clear(); m_allocator.Clear(); return m_cachedJsonDoc; }
         std::string& ClearAndGetCachedString() { m_cachedString.clear(); return m_cachedString; }
         bool GetUsePrimaryConn() const { return m_usePrimaryConn; }
@@ -78,17 +77,6 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
         }
 };
 
-//=======================================================================================
-//! @bsiclass
-//=======================================================================================
-struct ECSqlStatementRow : public IECSqlRow {
-    private:
-    ECSqlStatementCR m_stmt;
-    public:
-        ECSqlStatementRow(ECSqlStatement const& stmt):m_stmt(stmt){}
-        virtual int GetColumnCount() const override { return m_stmt.GetColumnCount(); }
-        virtual IECSqlValue const& GetValue(int columnIndex) const override { return m_stmt.GetValue(columnIndex);}
-};
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
@@ -220,10 +208,11 @@ struct RunnableRequestBase {
         std::atomic_bool m_cancelled;
         uint32_t m_executorId;
         uint32_t m_connId;
+        std::atomic_bool m_interrupted;
         virtual void _SetResponse(QueryResponse::Ptr response) = 0;
     public:
         RunnableRequestBase(RunnableRequestQueue& queue, QueryRequest::Ptr request, QueryQuota quota, uint32_t id)
-            :m_queue(queue), m_request(std::move(request)), m_id(id), m_isCompleted(false),m_dequeuedOn(0s),
+            :m_queue(queue), m_request(std::move(request)), m_id(id), m_isCompleted(false),m_dequeuedOn(0s),m_interrupted(false),
              m_quota(quota), m_submittedOn(std::chrono::steady_clock::now()), m_cancelled(false), m_executorId(0), m_connId(0){}
         virtual ~RunnableRequestBase(){}
         QueryRequest const& GetRequest() const {return *m_request;}
@@ -231,23 +220,25 @@ struct RunnableRequestBase {
         void SetResponse(QueryResponse::Ptr response);
         bool IsCompleted() const {return m_isCompleted; }
         RunnableRequestQueue& GetQueue() { return m_queue;}
+        bool IsInterrupted() const { return m_interrupted; }
         void Cancel() { m_cancelled.store(true); }
         bool IsReady() const { return GetTotalTime() > m_request->GetDelay(); }
         bool IsCancelled () const {return m_cancelled.load(); }
         bool IsTimeExceeded() const { return m_quota.MaxTimeAllowed() == 0s ? false : std::chrono::duration_cast<std::chrono::seconds>(GetTotalTime()) >  m_quota.MaxTimeAllowed();}
         bool IsMemoryExceeded(std::string const& result) const { return m_quota.MaxMemoryAllowed() == 0 ? false : result.size() > m_quota.MaxMemoryAllowed(); }
         bool IsTimeOrMemoryExceeded(std::string const& result) const { return IsTimeExceeded() || IsMemoryExceeded(result);}
+        void Interrupt(CachedConnection& conn);
         void OnDequeued()  { m_dequeuedOn = std::chrono::steady_clock::now(); }
         uint32_t GetExecutorId() const {return m_executorId; }
         uint32_t GetConnectionId() const {return m_connId; }
-        void SetExecutorContext(uint32_t executorId, uint32_t connId) { m_executorId = executorId;  m_connId= connId;}
+        void SetExecutorContext(uint32_t executorId, uint32_t connId) { m_executorId = executorId;  m_connId = connId;}
         std::chrono::milliseconds GetTotalTime() const { return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - m_submittedOn);}
         std::chrono::microseconds GetCpuTime() const { return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - m_dequeuedOn) ;}
         QueryResponse::Ptr CreateErrorResponse(QueryResponse::Status status, std::string error) const;
         QueryResponse::Ptr CreateTimeoutResponse() const;
         QueryResponse::Ptr CreateCancelResponse() const;
         QueryResponse::Ptr CreateBlobIOResponse(std::vector<uint8_t>& meta, bool done, uint32_t rawBlobSize) const;
-        QueryResponse::Ptr CreateECSqlResponse(std::string& result, QueryProperty::List& meta, uint32_t rowcount, bool done) const;
+        QueryResponse::Ptr CreateECSqlResponse(std::string& result, ECSqlRowProperty::List& meta, uint32_t rowcount, bool done) const;
         static QueryResponse::Ptr CreateQueueFullResponse() ;
 
 };
@@ -350,7 +341,7 @@ struct QueryHelper final {
     private:
         static std::string FormatQuery(const char* query);
         static void BindLimits(ECSqlStatement& stmt, QueryLimit const& limit);
-        static QueryProperty::List GetMetaInfo(CachedQueryAdaptor&,bool);
+        static ECSqlRowProperty::List GetMetaInfo(CachedQueryAdaptor&,bool);
         static void Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase& request);
         static void ReadBlob(ECDbCR conn, RunnableRequestBase& request);
         static void ExecutePing(Json::Value const& pingJson, RunnableRequestBase& runnableRequest);
@@ -377,6 +368,8 @@ struct QueryResponse::Future::Impl {
 struct QueryMonitor {
     private:
         std::thread m_thread;
+        std::condition_variable m_queryMonitorCv;
+        std::mutex m_queryMonitorMutex;
         std::atomic_bool m_stop;
         RunnableRequestQueue& m_queue;
         QueryExecutor& m_executor;
@@ -384,7 +377,7 @@ struct QueryMonitor {
         cancel_callback_type m_cancelBeforeSchemaChanges;
     public:
         QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor, std::chrono::milliseconds pollInterval = 1000ms);
-        ~QueryMonitor() { m_stop.store(true); if (m_thread.joinable()) m_thread.join(); }
+        ~QueryMonitor();
 };
 
 //=======================================================================================

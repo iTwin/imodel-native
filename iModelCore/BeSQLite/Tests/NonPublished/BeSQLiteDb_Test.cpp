@@ -1243,7 +1243,143 @@ struct MyChangeSet : ChangeSet
     {
     virtual ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) { BeAssert(false); return ConflictResolution::Abort; }
     };
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQLiteDbTests, ApplyTable_Filter) {
+    const auto kMainFile = "changeset.db";
+    auto cloneDb = [&](DbR from, DbR out, Utf8CP name) {
+        ASSERT_EQ (BE_SQLITE_OK, from.SaveChanges());
+        Utf8String fileName = from.GetDbFileName();
+        fileName.ReplaceAll(kMainFile, name);
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(BeFileName(m_db.GetDbFileName(), true), BeFileName(fileName.c_str(), true)));
+        ASSERT_EQ(BE_SQLITE_OK, out.OpenBeSQLiteDb(fileName.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite)));
+    };
 
+    SetupDb(WString(kMainFile, true).c_str());
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("CREATE TABLE ec_t1 (ID INTEGER PRIMARY KEY)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("CREATE TABLE t2 (ID INTEGER PRIMARY KEY)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("CREATE TABLE t3 (ID INTEGER PRIMARY KEY)"));
+    m_db.SaveChanges();
+
+    Db anotherDb;
+    cloneDb(m_db, anotherDb, "changeset2.db");
+
+    MyChangeTracker changeTracker(m_db);
+    changeTracker.EnableTracking(true);
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO ec_t1 (ID) values (NULL)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO t2 (ID) values (NULL)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO t3 (ID) values (NULL)"));
+    changeTracker.EnableTracking(false);
+
+    MyChangeSet cs;
+    cs.FromChangeTrack(changeTracker);
+    m_db.SaveChanges();
+
+    auto getRowCount = [&](DbR db, Utf8CP tableName) -> int {
+        Statement stmt;
+        EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(db, SqlPrintfString("SELECT COUNT(*) FROM %s", tableName)));
+        EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+        return stmt.GetValueInt(0);
+    };
+
+    ASSERT_EQ(BE_SQLITE_OK, cs.ApplyChanges(anotherDb, ApplyChangesArgs::Default().ApplyOnlySchemaChanges()));
+    ASSERT_EQ(1, getRowCount(anotherDb, "ec_t1"));
+    ASSERT_EQ(0, getRowCount(anotherDb, "t2"));
+    ASSERT_EQ(0, getRowCount(anotherDb, "t3"));
+
+    anotherDb.AbandonChanges();
+    ASSERT_EQ(BE_SQLITE_OK, cs.ApplyChanges(anotherDb, ApplyChangesArgs::Default().ApplyOnlyDataChanges()));
+    ASSERT_EQ(0, getRowCount(anotherDb, "ec_t1"));
+    ASSERT_EQ(1, getRowCount(anotherDb, "t2"));
+    ASSERT_EQ(1, getRowCount(anotherDb, "t3"));
+
+    anotherDb.AbandonChanges();
+    ASSERT_EQ(BE_SQLITE_OK, cs.ApplyChanges(anotherDb, ApplyChangesArgs::Default().ApplyAnyChanges()));
+    ASSERT_EQ(1, getRowCount(anotherDb, "ec_t1"));
+    ASSERT_EQ(1, getRowCount(anotherDb, "t2"));
+    ASSERT_EQ(1, getRowCount(anotherDb, "t3"));
+
+    anotherDb.SaveChanges();
+    m_db.SaveChanges();
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQLiteDbTests, ChangeGroup_Filter) {
+    SetupDb(L"changeset.db");
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("CREATE TABLE t1 (ID INTEGER PRIMARY KEY)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("CREATE TABLE t2 (ID INTEGER PRIMARY KEY)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("CREATE TABLE t3 (ID INTEGER PRIMARY KEY)"));
+
+    MyChangeTracker changeTracker(m_db);
+    changeTracker.EnableTracking(true);
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO t1 (ID) values (NULL)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO t2 (ID) values (NULL)"));
+    ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO t3 (ID) values (NULL)"));
+    changeTracker.EnableTracking(false);
+
+    auto getChangeTable = [&](Changes::Change const& change) -> Utf8String {
+        Utf8CP tableName;
+        int nCols;
+        DbOpcode opCode;
+        int  indirect;
+        EXPECT_EQ(BE_SQLITE_OK, change.GetOperation(&tableName, &nCols, &opCode, &indirect));
+        return Utf8String(tableName);
+    };
+    auto getChangeTables = [&](ChangeStream& changeset) -> std::vector<Utf8String> {
+        std::vector<Utf8String> tableNames;
+        for (auto change : changeset.GetChanges()) {
+            tableNames.push_back(getChangeTable(change));
+        }
+        return tableNames;
+    };
+
+    MyChangeSet cs;
+    cs.FromChangeTrack(changeTracker);
+    m_db.SaveChanges();
+
+    const auto tables = getChangeTables(cs);
+    ASSERT_EQ(3, tables.size());
+    ASSERT_STREQ("t1", tables[0].c_str());
+    ASSERT_STREQ("t2", tables[1].c_str());
+    ASSERT_STREQ("t3", tables[2].c_str());
+
+    // Filter changeset using ChangeGroup::FilterIf
+    ChangeGroup t1Group(m_db);
+    ASSERT_EQ(BE_SQLITE_OK, ChangeGroup::FilterIf(cs,
+        [&](Changes::Change const& change) {
+            return getChangeTable(change).EqualsIAscii("t1");
+        }, t1Group)
+    );
+    ChangeSet t1Changeset;
+    t1Changeset.FromChangeGroup(t1Group);
+    const auto t1Tables = getChangeTables(t1Changeset);
+    ASSERT_EQ(1, t1Tables.size());
+    ASSERT_STREQ("t1", t1Tables[0].c_str());
+
+    // Filter changeset using ChangeGroup::FilterIfElse
+    ChangeGroup t2Group(m_db);
+    ChangeGroup t1t3Group(m_db);
+    ASSERT_EQ(BE_SQLITE_OK, ChangeGroup::FilterIfElse(cs,
+        [&](Changes::Change const& change) {
+            return getChangeTable(change).EqualsIAscii("t2");
+        }, t2Group, t1t3Group)
+    );
+
+    ChangeSet t2Changeset;
+    t2Changeset.FromChangeGroup(t2Group);
+    const auto t2Tables = getChangeTables(t2Changeset);
+    ASSERT_EQ(1, t2Tables.size());
+    ASSERT_STREQ("t2", t2Tables[0].c_str());
+
+    ChangeSet t1t3Changeset;
+    t1t3Changeset.FromChangeGroup(t1t3Group);
+    const auto t1t3Tables = getChangeTables(t1t3Changeset);
+    ASSERT_EQ(2, t1t3Tables.size());
+    ASSERT_STREQ("t1", t1t3Tables[0].c_str());
+    ASSERT_STREQ("t3", t1t3Tables[1].c_str());
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -1696,4 +1832,125 @@ TEST_F (BeSQLiteDbTests, Limits)
     ASSERT_EQ(250000000, m_db.GetLimit(DbLimits::VdbeOp));
     ASSERT_EQ(0, m_db.GetLimit(DbLimits::WorkerThreads));
     m_db.AbandonChanges();
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+#if 0 // Require ICU
+TEST_F (BeSQLiteDbTests, icu_upper_lower_func) {
+
+    SetupDb (L"icu_case.db");
+    EXPECT_TRUE (m_db.IsDbOpen ());
+    auto toLower = [&](Utf8String str) {
+        auto stmt = m_db.GetCachedStatement("SELECT LOWER(?)");
+        stmt->BindText(1, str.c_str(), Statement::MakeCopy::Yes);
+        stmt->Step();
+        return Utf8String(stmt->GetValueText(0));
+    };
+    auto toUpper = [&](Utf8String str) {
+        auto stmt = m_db.GetCachedStatement("SELECT UPPER(?)");
+        stmt->BindText(1, str.c_str(), Statement::MakeCopy::Yes);
+        stmt->Step();
+        return Utf8String(stmt->GetValueText(0));
+    };
+
+    const Utf8String expectedUpper = "À Á Â Ã Ä Å Æ Ç È É Ê Ë Ì Í Î Ï Ð Ñ Ò Ó Ô Õ Ö × Ø Ù Ú Û Ü Ý Ÿ Þ ¡ ¢ £ ¤ ¥ ¦ § ¨ © ª « ¬ ­ ® ¯ ° ± ² ³ ´ Μ ¶ ¸ ¹ º » ¼ ½ ¾ ¿ Ƒ ·";
+    const Utf8String expectedLower = "à á â ã ä å æ ç è é ê ë ì í î ï ð ñ ò ó ô õ ö × ø ù ú û ü ý ÿ þ ¡ ¢ £ ¤ ¥ ¦ § ¨ © ª « ¬ ­ ® ¯ ° ± ² ³ ´ μ ¶ ¸ ¹ º » ¼ ½ ¾ ¿ ƒ ·";
+    const Utf8String actualUpper = toUpper(expectedLower);
+    const Utf8String actualLower = toLower(expectedUpper);
+
+    ASSERT_STREQ(expectedUpper.c_str(), actualUpper.c_str());
+    ASSERT_STREQ(expectedLower.c_str(), actualLower.c_str());
+    ASSERT_STREQ("SS", toUpper("ß").c_str());
+}
+#endif
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F (BeSQLiteDbTests, nocase_latin1_ascii_support)
+{
+    SetupDb (L"icu.db");
+    EXPECT_TRUE (m_db.IsDbOpen ());
+    auto setupTable = [&](Utf8CP tableName, Utf8CP collation) {
+        ASSERT_EQ(BE_SQLITE_OK, m_db.ExecuteDdl(SqlPrintfString("CREATE TABLE [%s](str TEXT UNIQUE COLLATE %s)", tableName, collation)));
+    };
+    auto insert = [&](Utf8CP tableName, Utf8CP str) {
+        auto stmt = m_db.GetCachedStatement(SqlPrintfString("INSERT INTO [%s](str) VALUES(?1)", tableName));
+        stmt->BindText(1, str, Statement::MakeCopy::Yes);
+        return stmt->Step();
+    };
+    auto countWhere = [&](Utf8CP tableName, Utf8CP str) {
+        auto stmt = m_db.GetCachedStatement(SqlPrintfString("SELECT COUNT(*) FROM %s WHERE str = ?", tableName));
+        stmt->BindText(1, str, Statement::MakeCopy::No);
+        if(stmt->Step() == BE_SQLITE_ROW){
+            return stmt->GetValueInt(0);
+        }
+        return -1;
+    };
+    auto countWhereWithoutIndex = [&](Utf8CP tableName, Utf8CP str) {
+        auto stmt = m_db.GetCachedStatement(SqlPrintfString("SELECT COUNT(*) FROM %s WHERE +str = ?", tableName));
+        stmt->BindText(1, str, Statement::MakeCopy::No);
+        if(stmt->Step() == BE_SQLITE_ROW){
+            return stmt->GetValueInt(0);
+        }
+        return -1;
+    };
+    auto reindex = [&](Utf8CP tableName) {
+        auto stmt = m_db.GetCachedStatement(SqlPrintfString("REINDEX %s", tableName));
+        return stmt->Step();
+    };
+    ASSERT_EQ(m_db.GetNoCaseCollation(), NoCaseCollation::ASCII);
+    setupTable("test1", "NOCASE");
+    ASSERT_EQ(BE_SQLITE_DONE, insert("test1", "ÀÁÂÃÄÅ"));
+    ASSERT_EQ(BE_SQLITE_DONE, insert("test1", "àáâãäå"));
+    ASSERT_EQ(BE_SQLITE_DONE, insert("test1", "ÀÁÂãäå"));
+    ASSERT_EQ(BE_SQLITE_DONE, insert("test1", "àáâÃÄÅ"));
+    ASSERT_EQ(BE_SQLITE_DONE, insert("test1", "aaaaaa"));
+
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, insert("test1", "ÀÁÂÃÄÅ"));
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, insert("test1", "àáâãäå"));
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, insert("test1", "AAAaaa"));
+    m_db.SaveChanges();
+
+    ASSERT_EQ(countWhere("test1", "ÀÁÂÃÄÅ"), 1);
+    ASSERT_EQ(countWhere("test1", "AAAAAA"), 1);
+    ASSERT_EQ(countWhere("test1", "àáâãäå"), 1);
+    ASSERT_EQ(countWhere("test1", "aaaaaa"), 1);
+    ASSERT_EQ(countWhere("test1", "AAAaaa"), 1);
+    ASSERT_EQ(countWhere("test1", "ÀÁÂãäå"), 1);
+
+    m_db.GetStatementCache().Empty();
+    ASSERT_EQ(m_db.SetNoCaseCollation(NoCaseCollation::Latin1), BE_SQLITE_OK);
+    ASSERT_EQ(m_db.GetNoCaseCollation(), NoCaseCollation::Latin1);
+    // with index we still going to get wrong answer after
+    // enabling Latin1 case insensitive with ignore accents
+    ASSERT_EQ(countWhere("test1", "ÀÁÂÃÄÅ"), 1);
+    ASSERT_EQ(countWhere("test1", "AAAAAA"), 1);
+    ASSERT_EQ(countWhere("test1", "àáâãäå"), 1);
+    ASSERT_EQ(countWhere("test1", "aaaaaa"), 1);
+    ASSERT_EQ(countWhere("test1", "AAAaaa"), 1);
+    ASSERT_EQ(countWhere("test1", "ÀÁÂãäå"), 1);
+
+    // without index count correlate with NOCASE
+    ASSERT_EQ(countWhereWithoutIndex("test1", "ÀÁÂÃÄÅ"), 5);
+    ASSERT_EQ(countWhereWithoutIndex("test1", "AAAAAA"), 5);
+    ASSERT_EQ(countWhereWithoutIndex("test1", "àáâãäå"), 5);
+    ASSERT_EQ(countWhereWithoutIndex("test1", "aaaaaa"), 5);
+    ASSERT_EQ(countWhereWithoutIndex("test1", "AAAaaa"), 5);
+    ASSERT_EQ(countWhereWithoutIndex("test1", "ÀÁÂãäå"), 5);
+
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, insert("test1", "aaaÃÄÅ"));
+
+    // index failed due to duplicate values
+    ASSERT_EQ(reindex("test1"), BE_SQLITE_CONSTRAINT_UNIQUE);
+
+    // switch back to ascii
+    m_db.GetStatementCache().Empty();
+    ASSERT_EQ(m_db.SetNoCaseCollation(NoCaseCollation::ASCII), BE_SQLITE_OK);
+    ASSERT_EQ(m_db.GetNoCaseCollation(), NoCaseCollation::ASCII);
+    ASSERT_EQ(BE_SQLITE_DONE, insert("test1", "ÀÁÂÃÄå"));
+    ASSERT_EQ(BE_SQLITE_DONE, insert("test1", "ÀÁâãÄÅ"));
+
+
+    m_db.SaveChanges();
 }

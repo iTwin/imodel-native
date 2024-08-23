@@ -52,7 +52,7 @@ void PresentationManagerIntegrationTests::_ConfigureManagerParams(ECPresentation
 #endif
     params.SetCachingParams(cachingParams);
     params.SetConnections(m_connectionManager);
-    params.SetLocalState(&m_localState);
+    params.SetLocalState(m_localState);
     }
 
 /*---------------------------------------------------------------------------------**//**

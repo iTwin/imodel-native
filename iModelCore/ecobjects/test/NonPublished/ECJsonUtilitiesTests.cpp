@@ -6,6 +6,8 @@
 #include "../TestFixture/TestFixture.h"
 #include <Bentley/BeId.h>
 #include <ostream>
+#include <limits>
+#include <type_traits>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -17,6 +19,40 @@ struct ECJsonUtilitiesTestFixture : ECTestFixture
 protected:
     static BentleyStatus ParseJson(BeJsDocument& json, Utf8StringCR jsonStr) { json.Parse(jsonStr); return json.hasParseError() ? ERROR : SUCCESS; }
     static BentleyStatus ParseJson(rapidjson::Document& json, Utf8StringCR jsonStr) { return json.Parse<0>(jsonStr.c_str()).HasParseError() ? ERROR : SUCCESS; }
+    template <typename T>
+    static void runTests(BeJsDocument& json, T placeholder)
+        {
+        json["test"] = static_cast<T>(2);
+        EXPECT_EQ(BeInt64Id(2), ECJsonUtilities::JsonToId<BeInt64Id>(json["test"]));
+        json["test"] = static_cast<T>(-1);
+        EXPECT_EQ(BeInt64Id(0), ECJsonUtilities::JsonToId<BeInt64Id>(json["test"]));
+
+        json["test"] = static_cast<T>(std::numeric_limits<T>::max());
+        // A max float / double is outside the range of a uint64, so we should get an invalid id.
+        if constexpr (std::is_same<T, double>::value || std::is_same<T, float>::value)
+            EXPECT_EQ(BeInt64Id(0), ECJsonUtilities::JsonToId<BeInt64Id>(json["test"]));
+        else 
+            EXPECT_EQ(BeInt64Id(std::numeric_limits<T>::max()), ECJsonUtilities::JsonToId<BeInt64Id>(json["test"]));
+        }
+    template <typename T>
+    static void runTests(rapidjson::Document& json, T placeholder)
+        {
+        json.SetObject();
+        json.AddMember("test", static_cast<T>(2), json.GetAllocator());
+        EXPECT_EQ(BeInt64Id(2), ECJsonUtilities::JsonToId<BeInt64Id>(json["test"]));
+        json.RemoveMember("test");
+        json.AddMember("test", static_cast<T>(-1), json.GetAllocator());
+        EXPECT_EQ(BeInt64Id(0), ECJsonUtilities::JsonToId<BeInt64Id>(json["test"]));
+        json.RemoveMember("test");
+
+        json.AddMember("test", static_cast<T>(std::numeric_limits<T>::max()), json.GetAllocator());
+        // A max float / double is outside the range of a uint64, so we should get an invalid id.
+        if constexpr (std::is_same<T, double>::value || std::is_same<T, float>::value)
+            EXPECT_EQ(BeInt64Id(0), ECJsonUtilities::JsonToId<BeInt64Id>(json["test"]));
+        else 
+            EXPECT_EQ(BeInt64Id(std::numeric_limits<T>::max()), ECJsonUtilities::JsonToId<BeInt64Id>(json["test"]));
+        json.SetNull();
+        }
     };
 
 //---------------------------------------------------------------------------------------
@@ -32,6 +68,16 @@ TEST_F(ECJsonUtilitiesTestFixture, JsonToId)
     BeJsDocument jsonDoc;
     rapidjson::Document rapidJson;
 
+    runTests(jsonDoc, int64_t(0));
+    runTests(jsonDoc, int32_t(0));
+    runTests(jsonDoc, double(0)); 
+    runTests(jsonDoc, float(0));
+
+    runTests(rapidJson, int64_t(0));
+    runTests(rapidJson, int32_t(0));
+    runTests(rapidJson, double(0));
+    runTests(rapidJson, float(0));
+
     //Ids formatted numerically in JSON
     Utf8CP jsonStr = "1234";
     ASSERT_EQ(SUCCESS, ParseJson(jsonDoc, jsonStr));
@@ -42,17 +88,17 @@ TEST_F(ECJsonUtilitiesTestFixture, JsonToId)
 
     jsonStr = "-10"; // Not a valid value for an Id, but failing the method is not worth the overhead. So the test documents the behavior of the API
     ASSERT_EQ(SUCCESS, ParseJson(jsonDoc, jsonStr));
-    EXPECT_EQ(BeInt64Id(uint64_t(-10)), ECJsonUtilities::JsonToId<BeInt64Id>(jsonDoc)) << jsonStr;
+    EXPECT_EQ(BeInt64Id(0), ECJsonUtilities::JsonToId<BeInt64Id>(jsonDoc)) << jsonStr;
 
     ASSERT_EQ(SUCCESS, ParseJson(rapidJson, jsonStr));
-    EXPECT_EQ(BeInt64Id(uint64_t(-10)), ECJsonUtilities::JsonToId<BeInt64Id>(rapidJson)) << jsonStr;
+    EXPECT_EQ(BeInt64Id(0), ECJsonUtilities::JsonToId<BeInt64Id>(rapidJson)) << jsonStr;
 
     jsonStr = "3.14";  // Not a valid value for an Id, but failing the method is not worth the overhead. So the test documents the behavior of the API
     ASSERT_EQ(SUCCESS, ParseJson(jsonDoc, jsonStr));
-    EXPECT_EQ(BeInt64Id(3), ECJsonUtilities::JsonToId<BeInt64Id>(jsonDoc)) << jsonStr << " floating numbers are rounded";
+    EXPECT_EQ(BeInt64Id(0), ECJsonUtilities::JsonToId<BeInt64Id>(jsonDoc)) << jsonStr << " floating numbers are given defaultValue of 0.";
 
     ASSERT_EQ(SUCCESS, ParseJson(rapidJson, jsonStr));
-    EXPECT_EQ(BeInt64Id(3), ECJsonUtilities::JsonToId<BeInt64Id>(rapidJson)) << jsonStr << " floating numbers are rounded";
+    EXPECT_EQ(BeInt64Id(0), ECJsonUtilities::JsonToId<BeInt64Id>(rapidJson)) << jsonStr << " floating numbers are given defaultValue of 0.";
 
     //Ids formatted as decimal strings in JSON
     jsonStr = R"json("1234")json";
@@ -69,19 +115,21 @@ TEST_F(ECJsonUtilitiesTestFixture, JsonToId)
     ASSERT_EQ(SUCCESS, ParseJson(rapidJson, jsonStr));
     EXPECT_EQ(BeInt64Id(UINT64_C(1099511627775)), ECJsonUtilities::JsonToId<BeInt64Id>(rapidJson)) << jsonStr;
 
-    jsonStr = R"json("-10")json";  // Not a valid value for an Id, but failing the method is not worth the overhead. So the test documents the behavior of the API
+    jsonStr = R"json("-10")json";  // Negative numbers are invalid Ids.
+
     ASSERT_EQ(SUCCESS, ParseJson(jsonDoc, jsonStr));
-    EXPECT_EQ(BeInt64Id(uint64_t(-10)), ECJsonUtilities::JsonToId<BeInt64Id>(jsonDoc)) << jsonStr;
+    EXPECT_EQ(BeInt64Id(0), ECJsonUtilities::JsonToId<BeInt64Id>(jsonDoc)) << jsonStr;
 
     ASSERT_EQ(SUCCESS, ParseJson(rapidJson, jsonStr));
-    EXPECT_EQ(BeInt64Id(uint64_t(-10)), ECJsonUtilities::JsonToId<BeInt64Id>(rapidJson)) << jsonStr;
+    EXPECT_EQ(BeInt64Id(0), ECJsonUtilities::JsonToId<BeInt64Id>(rapidJson)) << jsonStr;
 
-    jsonStr = R"json("3.14")json";  // Not a valid value for an Id, but failing the method is not worth the overhead. So the test documents the behavior of the API
+    jsonStr = R"json("3.14")json";  // Floating point numbers are invalid Ids.
+
     ASSERT_EQ(SUCCESS, ParseJson(jsonDoc, jsonStr));
-    EXPECT_EQ(BeInt64Id(3), ECJsonUtilities::JsonToId<BeInt64Id>(jsonDoc)) << jsonStr << " floating numbers are rounded";
+    EXPECT_EQ(BeInt64Id(0), ECJsonUtilities::JsonToId<BeInt64Id>(jsonDoc)) << jsonStr << " floating numbers are given defaultValue of 0.";
 
     ASSERT_EQ(SUCCESS, ParseJson(rapidJson, jsonStr));
-    EXPECT_EQ(BeInt64Id(3), ECJsonUtilities::JsonToId<BeInt64Id>(rapidJson)) << jsonStr << " floating numbers are rounded";
+    EXPECT_EQ(BeInt64Id(0), ECJsonUtilities::JsonToId<BeInt64Id>(rapidJson)) << jsonStr << " floating numbers are given defaultValue of 0.";
 
     //Ids formatted as hexadecimal strings in JSON
     jsonStr = R"json("0x123")json";
@@ -755,6 +803,14 @@ protected:
         ASSERT_EQ(ECObjectsStatus::Success, instance.GetValue(ecValue, accessString));
         ASSERT_TRUE(ecValue.IsNull());
         }
+
+    void AssertEmptyArray(IECInstanceCR instance, Utf8CP accessString)
+        {
+        ECValue ecValue;
+        ASSERT_EQ(ECObjectsStatus::Success, instance.GetValue(ecValue, accessString));
+        ASSERT_TRUE(ecValue.IsArray());
+        ASSERT_EQ(0, ecValue.GetArrayInfo().GetCount());
+        }
     };
 
 struct InSchemaClassLocater final : ECN::IECClassLocater
@@ -986,6 +1042,470 @@ TEST_F(JsonECInstanceConverterTestFixture, JsonToECInstance_Struct)
     AssertStringValue(*testInstance, "stringProperty", "S1");
     AssertDoubleValue(*testInstance, "testStruct.doubleProperty", 2.2);
     AssertStringValue(*testInstance, "testStruct.stringProperty", "S2");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(JsonECInstanceConverterTestFixture, JsonToECInstance_Struct_InitializedInstance)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "Schema", "sch", 1, 0, 0);
+    InSchemaClassLocater classLocater(*schema);
+
+    // construct struct instance
+    ECStructClassP structClass;
+        { 
+        PrimitiveECPropertyP doubleProperty;
+        PrimitiveECPropertyP stringProperty;
+        schema->CreateStructClass(structClass, "TestStruct");
+        structClass->CreatePrimitiveProperty(doubleProperty, "DoubleProperty", PRIMITIVETYPE_Double);
+        structClass->CreatePrimitiveProperty(stringProperty, "StringProperty", PRIMITIVETYPE_String);
+        }
+    IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    EXPECT_TRUE(structInstance.IsValid());
+    EXPECT_NE(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*structInstance, m_jsDoc, classLocater)); // expect error when not initialized
+    EXPECT_NE(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*structInstance, m_rapidJson, classLocater)); // expect error when not initialized
+
+    // Initialize the struct instance with initial data
+    ECValue ecValue;
+    ecValue.SetDouble(22.2);
+    (*structInstance).SetInternalValue("DoubleProperty", ecValue);
+    ecValue.SetUtf8CP("TS.S1-Init");
+    (*structInstance).SetInternalValue("StringProperty", ecValue);
+
+    // construct entity instance with a struct property
+    ECEntityClassP testClass;
+        {
+        StructECPropertyP structProperty;
+        PrimitiveECPropertyP doubleProperty;
+        PrimitiveECPropertyP stringProperty;
+        schema->CreateEntityClass(testClass, "TestClass");
+        testClass->CreateStructProperty(structProperty, "TestStruct", *structClass);
+        testClass->CreatePrimitiveProperty(doubleProperty, "DoubleProperty", PRIMITIVETYPE_Double);
+        testClass->CreatePrimitiveProperty(stringProperty, "StringProperty", PRIMITIVETYPE_String);
+        }
+    
+    IECInstancePtr testInstance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    EXPECT_TRUE(testInstance.IsValid());
+    EXPECT_NE(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_jsDoc, classLocater)); // expect error when not initialized
+    EXPECT_NE(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_rapidJson, classLocater)); // expect error when not initialized
+
+    // Initialize the test instance with initial data
+    ecValue.SetDouble(0.6);
+    (*testInstance).SetInternalValue("DoubleProperty", ecValue);
+    ecValue.SetUtf8CP("S1-Init");
+    (*testInstance).SetInternalValue("StringProperty", ecValue);
+    ecValue.SetDouble(22.2);
+    (*testInstance).SetInternalValue("TestStruct.DoubleProperty", ecValue);
+    ecValue.SetUtf8CP("TS.S1-Init");
+    (*testInstance).SetInternalValue("TestStruct.StringProperty", ecValue);
+
+    // Test for expected JSON parse errors
+    ParseJsonString(nullptr, ERROR);
+    ParseJsonString("", ERROR);
+    ParseJsonString("undefined", ERROR);
+
+    //-------------------------------------------------------------------------
+    // JSON --> struct instance tests
+    //-------------------------------------------------------------------------
+
+    ParseJsonString("null");
+    EXPECT_NE(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*structInstance, m_jsDoc, classLocater));
+    EXPECT_NE(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*structInstance, m_rapidJson, classLocater));
+
+    ParseJsonString("{}"); // properties should remain unchanged
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*structInstance, m_jsDoc, classLocater));
+    AssertDoubleValue(*structInstance, "doubleProperty", 22.2); 
+    AssertStringValue(*structInstance, "stringProperty", "TS.S1-Init");
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*structInstance, m_rapidJson, classLocater));
+    AssertDoubleValue(*structInstance, "doubleProperty", 22.2); 
+    AssertStringValue(*structInstance, "stringProperty", "TS.S1-Init");
+
+    ParseJsonString(Utf8Chars(u8R"*({ "doubleProperty": 22.3, "stringProperty": "TS.S1-New" })*"));
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*structInstance, m_jsDoc, classLocater));
+    AssertDoubleValue(*structInstance, "doubleProperty", 22.3);
+    AssertStringValue(*structInstance, "stringProperty", "TS.S1-New");
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*structInstance, m_rapidJson, classLocater));
+    AssertDoubleValue(*structInstance, "doubleProperty", 22.3);
+    AssertStringValue(*structInstance, "stringProperty", "TS.S1-New");
+
+    //-------------------------------------------------------------------------
+    // JSON --> entity instance with struct property tests
+    //-------------------------------------------------------------------------
+
+    ParseJsonString("null");
+    EXPECT_NE(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_jsDoc, classLocater));
+    EXPECT_NE(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_rapidJson, classLocater));
+
+    ParseJsonString("{}");
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_jsDoc, classLocater));
+    AssertDoubleValue(*testInstance, "doubleProperty", 0.6); 
+    AssertStringValue(*testInstance, "stringProperty", "S1-Init");
+    AssertDoubleValue(*testInstance, "testStruct.doubleProperty", 22.2);
+    AssertStringValue(*testInstance, "testStruct.stringProperty", "TS.S1-Init");
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_rapidJson, classLocater));
+    AssertDoubleValue(*testInstance, "doubleProperty", 0.6); 
+    AssertStringValue(*testInstance, "stringProperty", "S1-Init");
+    AssertDoubleValue(*testInstance, "testStruct.doubleProperty", 22.2);
+    AssertStringValue(*testInstance, "testStruct.stringProperty", "TS.S1-Init");
+
+    ParseJsonString(Utf8Chars(u8R"*({ "doubleProperty": null, "stringProperty": null })*"));
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_jsDoc, classLocater));
+    AssertNullValue(*testInstance, "doubleProperty");
+    AssertNullValue(*testInstance, "stringProperty");
+    AssertDoubleValue(*testInstance, "testStruct.doubleProperty", 22.2);
+    AssertStringValue(*testInstance, "testStruct.stringProperty", "TS.S1-Init");
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_rapidJson, classLocater));
+    AssertNullValue(*testInstance, "doubleProperty");
+    AssertNullValue(*testInstance, "stringProperty");
+    AssertDoubleValue(*testInstance, "testStruct.doubleProperty", 22.2);
+    AssertStringValue(*testInstance, "testStruct.stringProperty", "TS.S1-Init");
+
+    ParseJsonString(Utf8Chars(u8R"*({ "doubleProperty": 4.2, "stringProperty": "S1-new-new" })*"));
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_jsDoc, classLocater));
+    AssertDoubleValue(*testInstance, "doubleProperty", 4.2);
+    AssertStringValue(*testInstance, "stringProperty", "S1-new-new");
+    AssertDoubleValue(*testInstance, "testStruct.doubleProperty", 22.2);
+    AssertStringValue(*testInstance, "testStruct.stringProperty", "TS.S1-Init");
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_rapidJson, classLocater));
+    AssertDoubleValue(*testInstance, "doubleProperty", 4.2);
+    AssertStringValue(*testInstance, "stringProperty", "S1-new-new");
+    AssertDoubleValue(*testInstance, "testStruct.doubleProperty", 22.2);
+    AssertStringValue(*testInstance, "testStruct.stringProperty", "TS.S1-Init");
+
+    ParseJsonString(Utf8Chars(u8R"*({ "doubleProperty": 5.3, "stringProperty": "S1-new-new-new", "testStruct": null })*"));
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_jsDoc, classLocater));
+    AssertDoubleValue(*testInstance, "doubleProperty", 5.3);
+    AssertStringValue(*testInstance, "stringProperty", "S1-new-new-new");
+    AssertNullValue(*testInstance, "testStruct");
+    AssertNullValue(*testInstance, "testStruct.doubleProperty");
+    AssertNullValue(*testInstance, "testStruct.stringProperty");
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_rapidJson, classLocater));
+    AssertDoubleValue(*testInstance, "doubleProperty", 5.3);
+    AssertStringValue(*testInstance, "stringProperty", "S1-new-new-new");
+    AssertNullValue(*testInstance, "testStruct");
+    AssertNullValue(*testInstance, "testStruct.doubleProperty");
+    AssertNullValue(*testInstance, "testStruct.stringProperty");
+
+    ParseJsonString(Utf8Chars(u8R"*({ "doubleProperty": 111.1, "stringProperty": "S1", "testStruct": { "doubleProperty": 4.4, "stringProperty": "S2" } })*"));
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_jsDoc, classLocater));
+    AssertDoubleValue(*testInstance, "doubleProperty", 111.1);
+    AssertStringValue(*testInstance, "stringProperty", "S1");
+    AssertDoubleValue(*testInstance, "testStruct.doubleProperty", 4.4);
+    AssertStringValue(*testInstance, "testStruct.stringProperty", "S2");
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_rapidJson, classLocater));
+    AssertDoubleValue(*testInstance, "doubleProperty", 111.1);
+    AssertStringValue(*testInstance, "stringProperty", "S1");
+    AssertDoubleValue(*testInstance, "testStruct.doubleProperty", 4.4);
+    AssertStringValue(*testInstance, "testStruct.stringProperty", "S2");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(JsonECInstanceConverterTestFixture, JsonToECInstance_Array)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "Schema", "sch", 1, 0, 0);
+    InSchemaClassLocater classLocater(*schema);
+
+    // construct struct instance
+    ECStructClassP structClass;
+        { 
+        PrimitiveECPropertyP doubleProperty;
+        PrimitiveECPropertyP stringProperty;
+        schema->CreateStructClass(structClass, "TestStruct");
+        structClass->CreatePrimitiveProperty(doubleProperty, "DoubleProperty", PRIMITIVETYPE_Double);
+        structClass->CreatePrimitiveProperty(stringProperty, "StringProperty", PRIMITIVETYPE_String);
+        }
+
+    ECEntityClassP testClass;
+    PrimitiveArrayECPropertyP testIntegerArrayProperty;
+    StructArrayECPropertyP testStructArrayProperty;
+    schema->CreateEntityClass(testClass, "TestClass");
+    testClass->CreatePrimitiveArrayProperty(testIntegerArrayProperty, "IntArrayProp", PRIMITIVETYPE_Integer);
+    testClass->CreateStructArrayProperty(testStructArrayProperty, "StructArrayProp", *structClass);
+
+    IECInstancePtr testInstance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    EXPECT_TRUE(testInstance.IsValid());
+    EXPECT_NE(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_jsDoc, classLocater)); // expect error when not initialized
+    EXPECT_NE(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_rapidJson, classLocater)); // expect error when not initialized
+    
+    // Test for expected JSON parse errors
+    ParseJsonString(nullptr, ERROR);
+    ParseJsonString("", ERROR);
+    ParseJsonString("undefined", ERROR);
+
+    //-------------------------------------------------------------------------
+    // JSON --> entity instance with array property tests
+    //-------------------------------------------------------------------------
+
+    ParseJsonString("null");
+    EXPECT_NE(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_jsDoc, classLocater));
+    EXPECT_NE(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_rapidJson, classLocater));
+
+    ParseJsonString("{}");
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_jsDoc, classLocater));
+    AssertEmptyArray(*testInstance, "IntArrayProp");
+    AssertEmptyArray(*testInstance, "StructArrayProp");
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_rapidJson, classLocater));
+    AssertEmptyArray(*testInstance, "IntArrayProp");
+    AssertEmptyArray(*testInstance, "StructArrayProp");
+
+    ParseJsonString(Utf8Chars(u8R"*({ "IntArrayProp": null, "StructArrayProp": null })*"));
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_jsDoc, classLocater));
+    AssertEmptyArray(*testInstance, "IntArrayProp");
+    AssertEmptyArray(*testInstance, "StructArrayProp");
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_rapidJson, classLocater));
+    AssertEmptyArray(*testInstance, "IntArrayProp");
+    AssertEmptyArray(*testInstance, "StructArrayProp");
+
+    ParseJsonString(Utf8Chars(u8R"*({ "IntArrayProp": [], "StructArrayProp": [] })*"));
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_jsDoc, classLocater));
+    AssertEmptyArray(*testInstance, "IntArrayProp");
+    AssertEmptyArray(*testInstance, "StructArrayProp");
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_rapidJson, classLocater));
+    AssertEmptyArray(*testInstance, "IntArrayProp");
+    AssertEmptyArray(*testInstance, "StructArrayProp");
+
+    ParseJsonString(Utf8Chars(u8R"*({ "IntArrayProp": [4, 5, 6, 9, 12], "StructArrayProp": [{ "DoubleProperty": 3.41, "StringProperty": "NewVal1" }, { "DoubleProperty": 12.92, "StringProperty": null }] })*"));
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_jsDoc, classLocater));
+    {
+    ECValue intArrayProp;
+    ECValue structArrayProp;
+    IECInstancePtr structInst;
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp"));
+    ASSERT_EQ(intArrayProp.GetArrayInfo().GetCount(), 5);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp", 0));
+    ASSERT_EQ(intArrayProp.GetInteger(), 4);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp", 1));
+    ASSERT_EQ(intArrayProp.GetInteger(), 5);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp", 2));
+    ASSERT_EQ(intArrayProp.GetInteger(), 6);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp", 3));
+    ASSERT_EQ(intArrayProp.GetInteger(), 9);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp", 4));
+    ASSERT_EQ(intArrayProp.GetInteger(), 12);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(structArrayProp, "StructArrayProp"));
+    ASSERT_EQ(structArrayProp.GetArrayInfo().GetCount(), 2);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(structArrayProp, "StructArrayProp", 0));
+    structInst = structArrayProp.GetStruct();
+    AssertDoubleValue(*structInst, "DoubleProperty", 3.41);
+    AssertStringValue(*structInst, "StringProperty", "NewVal1");
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(structArrayProp, "StructArrayProp", 1));
+    structInst = structArrayProp.GetStruct();
+    AssertDoubleValue(*structInst, "DoubleProperty", 12.92);
+    AssertNullValue(*structInst, "StringProperty");
+    }
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_rapidJson, classLocater));
+    {
+    ECValue intArrayProp;
+    ECValue structArrayProp;
+    IECInstancePtr structInst;
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp"));
+    ASSERT_EQ(intArrayProp.GetArrayInfo().GetCount(), 5);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp", 0));
+    ASSERT_EQ(intArrayProp.GetInteger(), 4);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp", 1));
+    ASSERT_EQ(intArrayProp.GetInteger(), 5);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp", 2));
+    ASSERT_EQ(intArrayProp.GetInteger(), 6);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp", 3));
+    ASSERT_EQ(intArrayProp.GetInteger(), 9);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp", 4));
+    ASSERT_EQ(intArrayProp.GetInteger(), 12);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(structArrayProp, "StructArrayProp"));
+    ASSERT_EQ(structArrayProp.GetArrayInfo().GetCount(), 2);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(structArrayProp, "StructArrayProp", 0));
+    structInst = structArrayProp.GetStruct();
+    AssertDoubleValue(*structInst, "DoubleProperty", 3.41);
+    AssertStringValue(*structInst, "StringProperty", "NewVal1");
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(structArrayProp, "StructArrayProp", 1));
+    structInst = structArrayProp.GetStruct();
+    AssertDoubleValue(*structInst, "DoubleProperty", 12.92);
+    AssertNullValue(*structInst, "StringProperty");
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(JsonECInstanceConverterTestFixture, JsonToECInstance_Array_InitializedInstance)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "Schema", "sch", 1, 0, 0);
+    InSchemaClassLocater classLocater(*schema);
+
+    // construct struct instance
+    ECStructClassP structClass;
+        { 
+        PrimitiveECPropertyP doubleProperty;
+        PrimitiveECPropertyP stringProperty;
+        schema->CreateStructClass(structClass, "TestStruct");
+        structClass->CreatePrimitiveProperty(doubleProperty, "DoubleProperty", PRIMITIVETYPE_Double);
+        structClass->CreatePrimitiveProperty(stringProperty, "StringProperty", PRIMITIVETYPE_String);
+        }
+
+    ECEntityClassP testClass;
+    PrimitiveArrayECPropertyP testIntegerArrayProperty;
+    StructArrayECPropertyP testStructArrayProperty;
+    schema->CreateEntityClass(testClass, "TestClass");
+    testClass->CreatePrimitiveArrayProperty(testIntegerArrayProperty, "IntArrayProp", PRIMITIVETYPE_Integer);
+    testClass->CreateStructArrayProperty(testStructArrayProperty, "StructArrayProp", *structClass);
+    IECInstancePtr testInstance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    EXPECT_TRUE(testInstance.IsValid());
+    EXPECT_NE(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_jsDoc, classLocater)); // expect error when not initialized
+    EXPECT_NE(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_rapidJson, classLocater)); // expect error when not initialized
+
+    // Initialize the test instance with initial data
+    ECValue ecValue;
+    ecValue.SetInteger(9);
+    (*testInstance).AddArrayElements("IntArrayProp", 3);
+    (*testInstance).SetInternalValue("IntArrayProp", ecValue, 0);
+    ecValue.SetInteger(16);
+    (*testInstance).SetInternalValue("IntArrayProp", ecValue, 1);
+    ecValue.SetInteger(25);
+    (*testInstance).SetInternalValue("IntArrayProp", ecValue, 2);
+    
+    (*testInstance).AddArrayElements("StructArrayProp", 1);
+    IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    EXPECT_TRUE(structInstance.IsValid());
+    ecValue.SetDouble(22.2);
+    (*structInstance).SetInternalValue("DoubleProperty", ecValue);
+    ecValue.SetUtf8CP("TS1-Init");
+    (*structInstance).SetInternalValue("StringProperty", ecValue);
+    ecValue.SetStruct(structInstance.get());
+    (*testInstance).SetInternalValue("StructArrayProp", ecValue, 0);
+    
+    // Test for expected JSON parse errors
+    ParseJsonString(nullptr, ERROR);
+    ParseJsonString("", ERROR);
+    ParseJsonString("undefined", ERROR);
+
+    //-------------------------------------------------------------------------
+    // JSON --> entity instance with array property tests
+    //-------------------------------------------------------------------------
+
+    ParseJsonString("null");
+    EXPECT_NE(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_jsDoc, classLocater));
+    EXPECT_NE(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_rapidJson, classLocater));
+
+    ParseJsonString("{}");
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_jsDoc, classLocater));
+    {
+    ECValue intArrayProp;
+    ECValue structArrayProp;
+    IECInstancePtr structInst;
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp"));
+    ASSERT_EQ(intArrayProp.GetArrayInfo().GetCount(), 3);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp", 0));
+    ASSERT_EQ(intArrayProp.GetInteger(), 9);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp", 1));
+    ASSERT_EQ(intArrayProp.GetInteger(), 16);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp", 2));
+    ASSERT_EQ(intArrayProp.GetInteger(), 25);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(structArrayProp, "StructArrayProp"));
+    ASSERT_EQ(structArrayProp.GetArrayInfo().GetCount(), 1);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(structArrayProp, "StructArrayProp", 0));
+    structInst = structArrayProp.GetStruct();
+    AssertDoubleValue(*structInst, "DoubleProperty", 22.2);
+    AssertStringValue(*structInst, "StringProperty", "TS1-Init");
+    }
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_rapidJson, classLocater));
+    {
+    ECValue intArrayProp;
+    ECValue structArrayProp;
+    IECInstancePtr structInst;
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp"));
+    ASSERT_EQ(intArrayProp.GetArrayInfo().GetCount(), 3);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp", 0));
+    ASSERT_EQ(intArrayProp.GetInteger(), 9);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp", 1));
+    ASSERT_EQ(intArrayProp.GetInteger(), 16);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp", 2));
+    ASSERT_EQ(intArrayProp.GetInteger(), 25);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(structArrayProp, "StructArrayProp"));
+    ASSERT_EQ(structArrayProp.GetArrayInfo().GetCount(), 1);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(structArrayProp, "StructArrayProp", 0));
+    structInst = structArrayProp.GetStruct();
+    AssertDoubleValue(*structInst, "DoubleProperty", 22.2);
+    AssertStringValue(*structInst, "StringProperty", "TS1-Init");
+    }
+
+    ParseJsonString(Utf8Chars(u8R"*({ "IntArrayProp": null, "StructArrayProp": null })*"));
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_jsDoc, classLocater));
+    AssertEmptyArray(*testInstance, "IntArrayProp");
+    AssertEmptyArray(*testInstance, "StructArrayProp");
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_rapidJson, classLocater));
+    AssertEmptyArray(*testInstance, "IntArrayProp");
+    AssertEmptyArray(*testInstance, "StructArrayProp");
+    
+    ParseJsonString(Utf8Chars(u8R"*({ "IntArrayProp": [4, 5, 6, 9, 12], "StructArrayProp": [{ "DoubleProperty": 3.41, "StringProperty": "NewVal1" }, { "DoubleProperty": 12.92, "StringProperty": null }] })*"));
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_jsDoc, classLocater));
+    {
+    ECValue intArrayProp;
+    ECValue structArrayProp;
+    IECInstancePtr structInst;
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp"));
+    ASSERT_EQ(intArrayProp.GetArrayInfo().GetCount(), 5);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp", 0));
+    ASSERT_EQ(intArrayProp.GetInteger(), 4);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp", 1));
+    ASSERT_EQ(intArrayProp.GetInteger(), 5);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp", 2));
+    ASSERT_EQ(intArrayProp.GetInteger(), 6);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp", 3));
+    ASSERT_EQ(intArrayProp.GetInteger(), 9);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp", 4));
+    ASSERT_EQ(intArrayProp.GetInteger(), 12);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(structArrayProp, "StructArrayProp"));
+    ASSERT_EQ(structArrayProp.GetArrayInfo().GetCount(), 2);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(structArrayProp, "StructArrayProp", 0));
+    structInst = structArrayProp.GetStruct();
+    AssertDoubleValue(*structInst, "DoubleProperty", 3.41);
+    AssertStringValue(*structInst, "StringProperty", "NewVal1");
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(structArrayProp, "StructArrayProp", 1));
+    structInst = structArrayProp.GetStruct();
+    AssertDoubleValue(*structInst, "DoubleProperty", 12.92);
+    AssertNullValue(*structInst, "StringProperty");
+    }
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_rapidJson, classLocater));
+    {
+    ECValue intArrayProp;
+    ECValue structArrayProp;
+    IECInstancePtr structInst;
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp"));
+    ASSERT_EQ(intArrayProp.GetArrayInfo().GetCount(), 5);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp", 0));
+    ASSERT_EQ(intArrayProp.GetInteger(), 4);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp", 1));
+    ASSERT_EQ(intArrayProp.GetInteger(), 5);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp", 2));
+    ASSERT_EQ(intArrayProp.GetInteger(), 6);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp", 3));
+    ASSERT_EQ(intArrayProp.GetInteger(), 9);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(intArrayProp, "IntArrayProp", 4));
+    ASSERT_EQ(intArrayProp.GetInteger(), 12);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(structArrayProp, "StructArrayProp"));
+    ASSERT_EQ(structArrayProp.GetArrayInfo().GetCount(), 2);
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(structArrayProp, "StructArrayProp", 0));
+    structInst = structArrayProp.GetStruct();
+    AssertDoubleValue(*structInst, "DoubleProperty", 3.41);
+    AssertStringValue(*structInst, "StringProperty", "NewVal1");
+    ASSERT_EQ(ECObjectsStatus::Success, (*testInstance).GetValue(structArrayProp, "StructArrayProp", 1));
+    structInst = structArrayProp.GetStruct();
+    AssertDoubleValue(*structInst, "DoubleProperty", 12.92);
+    AssertNullValue(*structInst, "StringProperty");
+    }
+
+    ParseJsonString(Utf8Chars(u8R"*({ "IntArrayProp": [], "StructArrayProp": [] })*"));
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_jsDoc, classLocater));
+    AssertEmptyArray(*testInstance, "IntArrayProp");
+    AssertEmptyArray(*testInstance, "StructArrayProp");
+    EXPECT_EQ(SUCCESS, JsonECInstanceConverter::JsonToECInstance(*testInstance, m_rapidJson, classLocater));
+    AssertEmptyArray(*testInstance, "IntArrayProp");
+    AssertEmptyArray(*testInstance, "StructArrayProp");
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

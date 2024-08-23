@@ -1,6 +1,6 @@
 /*---------------------------------------------------------------------------------------------
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See COPYRIGHT.md in the repository root for full copyright notice.
+* See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 #include <sstream>
@@ -2734,6 +2734,71 @@ TEST_F(InstanceReaderFixture, nested_struct) {
         // actual.Parse(stmt.GetValueText(0));
         // EXPECT_STRCASEEQ(expected.Stringify(StringifyFormat::Indented).c_str(), actual.Stringify(StringifyFormat::Indented).c_str());
     }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, InstanceReaderForceSeek) {
+// Setup test db
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InstanceReaderForceSeek.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECStructClass typeName="StructProp" modifier="None">
+                <ECProperty propertyName="DoubleProp" typeName="double" />
+                <ECProperty propertyName="StringProp" typeName="string" />
+            </ECStructClass>
+            <ECEntityClass typeName="TestClass" modifier="None">
+                <ECStructProperty propertyName="StructProp" typeName="StructProp" />
+                <ECProperty propertyName="PrimitiveProp" typeName="double" />
+            </ECEntityClass>
+        </ECSchema>
+    )xml")));
+
+    // Insert initial values in test db
+    ECSqlStatement insertStatement;
+    ASSERT_EQ(ECSqlStatus::Success, insertStatement.Prepare(m_ecdb, "insert into ts.TestClass (StructProp, PrimitiveProp) values (?, ?)"));
+    auto& structInsert = insertStatement.GetBinder(1);
+    structInsert["DoubleProp"].BindDouble(15.25);
+    structInsert["StringProp"].BindText("InitialValue", IECSqlBinder::MakeCopy::No);
+    insertStatement.BindDouble(2, 15.65);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, insertStatement.Step(key));
+    m_ecdb.SaveChanges();
+
+    Utf8String classId = m_ecdb.Schemas().GetClassId("ts", "TestClass").ToHexStr();
+    Utf8PrintfString expectedPostInsert ("{\"ECInstanceId\":\"0x1\",\"ECClassId\":\"%s\",\"StructProp\":{\"DoubleProp\":15.25,\"StringProp\":\"InitialValue\"},\"PrimitiveProp\":15.65}", classId.c_str());
+
+    // Test for expected value and load same row and schema into InstanceReader
+    auto pos = InstanceReader::Position(key.GetInstanceId(), key.GetClassId());
+    ASSERT_EQ(true, m_ecdb.GetInstanceReader().Seek(pos, [&](InstanceReader::IRowContext const& row) {
+        EXPECT_STRCASEEQ(expectedPostInsert.c_str(), row.GetJson().Stringify().c_str());
+    }));
+
+    // Update initial values stored in test db
+    ECSqlStatement updateStatement;
+    ASSERT_EQ(ECSqlStatus::Success, updateStatement.Prepare(m_ecdb, "UPDATE ONLY ts.TestClass SET PrimitiveProp=?, StructProp=? WHERE ECInstanceId=?"));
+    updateStatement.BindDouble(1, 20.01);
+    auto& structUpdate = updateStatement.GetBinder(2);
+    structUpdate["DoubleProp"].BindDouble(9.10);
+    structUpdate["StringProp"].BindText("NewValue", IECSqlBinder::MakeCopy::No);
+    updateStatement.BindId(3, key.GetInstanceId());
+
+    ASSERT_EQ(BE_SQLITE_DONE, updateStatement.Step());
+    m_ecdb.SaveChanges();
+    Utf8PrintfString expectedPostUpdate ("{\"ECInstanceId\":\"0x1\",\"ECClassId\":\"%s\",\"StructProp\":{\"DoubleProp\":9.1,\"StringProp\":\"NewValue\"},\"PrimitiveProp\":20.01}", classId.c_str());
+
+    // Test for unchanged expected value after update due to same row and schema optimization
+    ASSERT_EQ(true, m_ecdb.GetInstanceReader().Seek(pos, [&](InstanceReader::IRowContext const& row) {
+        EXPECT_STRCASEEQ(expectedPostInsert.c_str(), row.GetJson().Stringify().c_str());
+    }));
+
+    // Test for updated expected value with force seek flag set to be toggled on
+    InstanceReader::Options opt;
+    opt.SetForceSeek(true);
+    ASSERT_EQ(true, m_ecdb.GetInstanceReader().Seek(pos, [&](InstanceReader::IRowContext const& row) {
+        EXPECT_STRCASEEQ(expectedPostUpdate.c_str(), row.GetJson().Stringify().c_str());
+    }, opt));
 }
 
 END_ECDBUNITTESTS_NAMESPACE

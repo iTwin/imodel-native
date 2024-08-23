@@ -6119,4 +6119,175 @@ TEST_F(RelationshipStrengthTestFixture, BackwardHoldingForwardEmbedding)
     ASSERT_TRUE(HasInstance(singleParent));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RelationshipStrengthTestFixture, PurgeOrphanLinkTableRelationships)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("PurgeOrphanRelationships.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="RelationshipStrengthTest" alias="rst" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+	        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Person" modifier="None">
+                <ECProperty propertyName="FirstName" typeName="string" displayLabel="First Name" readOnly="false"/>
+                <ECProperty propertyName="LastName" typeName="string" displayLabel="Last Name" readOnly="false"/>
+                <ECNavigationProperty propertyName="Parent1" relationshipName="SingleParentHasChildren" direction="Backward" >
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+                <ECNavigationProperty propertyName="Parent2" relationshipName="SingleParentHasChildren_backward" direction="Forward" >
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+                <ECNavigationProperty propertyName="Spouse1" relationshipName="ParentHasSpouse" direction="Backward" >
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+                <ECNavigationProperty propertyName="Spouse2" relationshipName="ParentHasSpouse_backward" direction="Forward" >
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="SingleParentHasChildren" modifier="Sealed" strength="embedding" strengthDirection="forward">
+                <Source multiplicity="(0..1)" roleLabel="Parent" polymorphic="true">
+                    <Class class="Person"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="Children" polymorphic="true">
+                    <Class class="Person"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="SingleParentHasChildren_backward" modifier="Sealed" strength="embedding" strengthDirection="backward">
+                <Source multiplicity="(0..*)" roleLabel="Children" polymorphic="true">
+                    <Class class="Person"/>
+                </Source>
+                <Target multiplicity="(0..1)" roleLabel="Single parent" polymorphic="true">
+                    <Class class="Person"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="ParentHasSpouse" modifier="Sealed" strength="referencing" strengthDirection="forward">
+                <Source multiplicity="(0..1)" roleLabel="Parent" polymorphic="true">
+                    <Class class="Person"/>
+                </Source>
+                <Target multiplicity="(0..1)" roleLabel="Spouse" polymorphic="true">
+                    <Class class="Person"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="ParentHasSpouse_backward" modifier="Sealed" strength="referencing" strengthDirection="backward">
+                <Source multiplicity="(0..1)" roleLabel="Parent" polymorphic="true">
+                    <Class class="Person"/>
+                </Source>
+                <Target multiplicity="(0..1)" roleLabel="Spouse" polymorphic="true">
+                    <Class class="Person"/>
+                </Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="ManyParentsHaveChildren" modifier="Sealed" strength="referencing" strengthDirection="forward">
+                <ECCustomAttributes>
+                    <LinkTableRelationshipMap xmlns="ECDbMap.02.00.00">
+                        <CreateForeignKeyConstraints>False</CreateForeignKeyConstraints>
+                    </LinkTableRelationshipMap>
+                </ECCustomAttributes>
+                <Source multiplicity="(1..*)" roleLabel="Parents" polymorphic="true">
+                    <Class class="Person"/>
+                </Source>
+                <Target multiplicity="(0..*)" roleLabel="Children" polymorphic="true">
+                    <Class class="Person"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>
+                )xml")));
+
+    /*
+     *          Create the following relationship hierarchy
+     *
+     * GrandParent1  <- ParentHasSpouse (REFERENCING) -> GrandParent2
+     *     |__________________________________________________|
+     *                             |
+     *                             | ManyParentsHaveChildren (REFERENCING)
+     *                             |
+     *                         SingleParent
+     *                             |
+     *                             | SingleParentHasChildren (EMBEDDING)
+     *      _______________________|__________________________
+     *     |                                                  |
+     *   Child1                                             Child2
+     *
+     */
+
+    const auto grandParent1 = InsertPerson("First", "GrandParent");
+    const auto grandParent2 = InsertPerson("Second", "GrandParent", ECInstanceId(), ECInstanceId(), grandParent1.GetInstanceId());
+    const auto singleParent = InsertPerson("Only", "SingleParent");
+
+    // Referencing relationship (GrandParent1, GrandParent2 -> SingleParent)
+    const auto grandParent1HasSingleParent = InsertLinkTableRelationship("RelationshipStrengthTest.ManyParentsHaveChildren", grandParent1, singleParent);
+    const auto grandParent2HasSingleParent = InsertLinkTableRelationship("RelationshipStrengthTest.ManyParentsHaveChildren", grandParent2, singleParent);
+
+    m_ecdb.SaveChanges();
+
+    //Verify instances before deletion
+    EXPECT_TRUE(IsNavigationPropertySet(grandParent2, "Spouse1"));
+    EXPECT_FALSE(IsNavigationPropertySet(grandParent2, "Spouse2"));
+
+    // Test 1: Delete GrandParent1
+    DeleteInstance(grandParent1);
+
+    /*
+    * Since the CA LinkTableRelationshipMap:CreateForeignKeyConstraints has been set to false, cascade deletes won't happen and orphaned relationships will exist.
+    * Validate grandParent1HasSingleParent still exist (orphaned relationships).
+    */
+    EXPECT_FALSE(HasInstance(grandParent1));
+    EXPECT_FALSE(IsNavigationPropertySet(grandParent2, "Spouse1"));
+    EXPECT_FALSE(IsNavigationPropertySet(grandParent2, "Spouse2"));
+    EXPECT_TRUE(HasInstance(grandParent1HasSingleParent));
+
+    // Validate singleParent is still around (referencing relationship with one parent remaining).
+    EXPECT_TRUE(HasInstance(singleParent));
+
+    // Run the purge_orphan_relationships pragma to delete orphaned relationships.
+    {
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA purge_orphan_relationships options enable_experimental_features"));
+    EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    m_ecdb.SaveChanges();
+
+    /*
+    * Validate grandParent1HasSpouse, grandParent2HasSpouse, grandParent1HasSingleParent have been deleted (orphaned relationships).
+    */
+    EXPECT_FALSE(HasInstance(grandParent1));
+    EXPECT_FALSE(IsNavigationPropertySet(grandParent2, "Spouse1"));
+    EXPECT_FALSE(IsNavigationPropertySet(grandParent2, "Spouse2"));
+    EXPECT_FALSE(HasInstance(grandParent1HasSingleParent));
+
+    // Validate singleParent is still around (referencing relationship with one parent remaining).
+    EXPECT_TRUE(HasInstance(singleParent));
+
+    // Test 2: Delete GrandParent2
+    DeleteInstance(grandParent2);
+
+    // Validate grandParent2HasSingleParent exists (orphaned relationship)
+    // Validate singeParent exists (held instance with no parents remaining)
+    EXPECT_FALSE(HasInstance(grandParent2));
+    EXPECT_TRUE(HasInstance(grandParent2HasSingleParent));
+    EXPECT_TRUE(HasInstance(singleParent));
+
+    // Run the purge_orphan_relationships pragma to delete orphaned relationships.
+    {
+    ECSqlStatement stmt;
+    EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "PRAGMA purge_orphan_relationships options enable_experimental_features"));
+    EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+
+    m_ecdb.SaveChanges();
+
+    // Validate grandParent2HasSingleParent has been deleted (orphaned relationship)
+    // Validate singeParent exists (held instance with no parents remaining)
+    EXPECT_FALSE(HasInstance(grandParent2));
+    EXPECT_FALSE(HasInstance(grandParent2HasSingleParent));
+    EXPECT_TRUE(HasInstance(singleParent));
+    }
+
 END_ECDBUNITTESTS_NAMESPACE

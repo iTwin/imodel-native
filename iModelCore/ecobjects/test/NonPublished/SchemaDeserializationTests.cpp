@@ -1573,35 +1573,56 @@ TEST_F(SchemaDeserializationTest, PruneSchemas)
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     ASSERT_TRUE(schema.IsValid());
 
-    auto const& refedSchemas = schema->GetReferencedSchemas();
-    EXPECT_TRUE(refedSchemas.end() == std::find_if(refedSchemas.begin(), refedSchemas.end(), [&](const auto& s) { return s.second->GetName().EqualsIAscii("BaseElementSchema");}))
-        << "invalid schema should no longer be referenced";
-    ASSERT_TRUE(nullptr != schema->GetClassCP("RelationshipWithBadConstraint"))
-        << "baseElem-referencing constraint should have been pruned";
-    EXPECT_EQ(nullptr, schema->GetClassCP("Foo")->GetPropertyP("Params"))
-        << "baseElem-referencing struct property should have been pruned";
-    EXPECT_EQ(nullptr, schema->GetClassCP("Foo")->GetPropertyP("TestPrimitiveArray"))
-        << "baseElem-referencing primitive array property should have been pruned";
-    EXPECT_EQ(nullptr, schema->GetClassCP("Foo")->GetPropertyP("TestStructArray"))
-        << "baseElem-referencing struct array property should have been pruned";
-    EXPECT_EQ(nullptr, schema->GetClassCP("Foo")->GetPropertyP("ToPruneRef"))
-        << "baseElem-referencing primitive property should have been pruned";
-    EXPECT_NE(nullptr, schema->GetClassCP("Foo")->GetPropertyP("NonExistentRef"))
-        << "invalid reference property should remain as string";
+    const auto& refedSchemas = schema->GetReferencedSchemas();
+    EXPECT_TRUE(refedSchemas.end() == std::find_if(refedSchemas.begin(), refedSchemas.end(), [&](const auto& s) { return s.second->GetName().EqualsIAscii("BaseElementSchema");})) << "invalid schema should no longer be referenced";
+    EXPECT_TRUE(refedSchemas.end() != std::find_if(refedSchemas.begin(), refedSchemas.end(), [&](const auto& s) { return s.second->GetName().EqualsIAscii("ValidRefSchema");})) << "invalid schema should no longer be referenced";
 
-    EXPECT_FALSE(schema->GetCustomAttributeContainer().GetCustomAttribute("ValidRefSchema", "TestCustomAttr1").IsValid())
-        << "custom attribute referencing baseElem should be pruned";
-    EXPECT_FALSE(schema->GetCustomAttributeContainer().GetCustomAttribute("ValidRefSchema", "TestCustomAttr2").IsValid())
-        << "custom attribute referencing non existent schema should be pruned";
-    EXPECT_TRUE(schema->GetCustomAttributeContainer().GetCustomAttribute("ValidRefSchema", "TestCustomAttr3").IsValid())
-        << "custom attribute referencing valid schema should be fine";
+    ASSERT_TRUE(nullptr != schema->GetClassCP("RelationshipWithBadConstraint")) << "baseElem-referencing constraint should have been pruned";
+    EXPECT_EQ(nullptr, schema->GetClassCP("Foo")->GetPropertyP("Params")) << "baseElem-referencing struct property should have been pruned";
+    EXPECT_EQ(nullptr, schema->GetClassCP("Foo")->GetPropertyP("TestPrimitiveArray")) << "baseElem-referencing primitive array property should have been pruned";
+    EXPECT_EQ(nullptr, schema->GetClassCP("Foo")->GetPropertyP("TestStructArray")) << "baseElem-referencing struct array property should have been pruned";
+    EXPECT_EQ(nullptr, schema->GetClassCP("Foo")->GetPropertyP("ToPruneRef")) << "baseElem-referencing primitive property should have been pruned";
+    EXPECT_NE(nullptr, schema->GetClassCP("Foo")->GetPropertyP("NonExistentRef")) << "invalid reference property should remain as string";
 
-    EXPECT_FALSE(schema->GetClassCP("Foo")->IsDefined("ValidRefSchema", "TestCustomAttr4)"))
-        << "custom attribute referencing baseElem should be pruned";
-    EXPECT_FALSE(schema->GetClassCP("Foo")->IsDefined("ValidRefSchema", "TestCustomAttr5"))
-        << "custom attribute referencing non existent schema should be pruned";
-    EXPECT_TRUE(schema->GetClassCP("Foo")->IsDefined("ValidRefSchema", "TestCustomAttr6"))
-        << "custom attribute referencing valid schema should be fine";
+    // Custom attribute referencing baseElem and non-existent schema should be pruned.
+    // Custom attribute referencing the valid schema should be fine.
+    for (const auto& [testCaseNumber, schemaName, customAttr, expectedResult] : std::vector<std::tuple<unsigned int, Utf8CP, Utf8CP, bool>>
+        {
+            { 1, "BaseElementSchema", "TestCustomAttr1", false },
+            { 2, "BaseElementSchema", "TestCustomAttr2", false },
+            { 3, "BaseElementSchema", "TestCustomAttr3", false },
+
+            { 4, "NonExistentRefSchema", "TestCustomAttr1", false },
+            { 5, "NonExistentRefSchema", "TestCustomAttr2", false },
+            { 6, "NonExistentRefSchema", "TestCustomAttr3", false },
+
+            { 7, "ValidRefSchema", "TestCustomAttr1", false },
+            { 8, "ValidRefSchema", "TestCustomAttr2", false },
+            { 9, "ValidRefSchema", "TestCustomAttr3", true },
+        })
+        {
+        EXPECT_EQ(expectedResult, schema->GetCustomAttributeContainer().GetCustomAttribute(schemaName, customAttr).IsValid()) << "Test case " << testCaseNumber << " failed.";
+        }
+
+    // Custom attribute referencing baseElem and non-existent schema should be pruned.
+    // Custom attribute referencing the valid schema should be fine.
+    for (const auto& [testCaseNumber, schemaName, customAttr, expectedResult] : std::vector<std::tuple<unsigned int, Utf8CP, Utf8CP, bool>>
+        {
+            { 1, "BaseElementSchema", "TestCustomAttr4", false },
+            { 2, "BaseElementSchema", "TestCustomAttr5", false },
+            { 3, "BaseElementSchema", "TestCustomAttr6", false },
+
+            { 4, "NonExistentRefSchema", "TestCustomAttr4", false },
+            { 5, "NonExistentRefSchema", "TestCustomAttr5", false },
+            { 6, "NonExistentRefSchema", "TestCustomAttr6", false },
+
+            { 7, "ValidRefSchema", "TestCustomAttr4", false },
+            { 8, "ValidRefSchema", "TestCustomAttr5", false },
+            { 9, "ValidRefSchema", "TestCustomAttr6", true },
+        })
+        {
+        EXPECT_EQ(expectedResult, schema->GetClassCP("Foo")->IsDefined(schemaName, customAttr)) << "Test case " << testCaseNumber << " failed.";
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -2378,6 +2399,44 @@ TEST_F (SchemaDeserializationTest, ECNameValidation_NonASCIICharsAreNotRemoved)
     removeControlChars("Здравствуйте");
     }
 
+
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (SchemaDeserializationTest, NonASCIICharsInSchemaPath)
+    {
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"Widgets.01.00.ecschema.xml").c_str(), *schemaContext);
+    EXPECT_EQ(SchemaReadStatus::Success, status);
+    VerifyWidgetsSchema(schema);
+
+    WString schemaDir = ECTestFixture::GetTempDataPath(L"");
+    schemaDir.AppendUtf8("こんにちは");
+    BeFileNameStatus::Success, BeFileName::CreateNewDirectory(schemaDir.c_str());
+    BeFileName::EmptyDirectory(schemaDir.c_str());
+
+    BeFileName schemaPath(schemaDir);
+    schemaPath.AppendToPath(L"Widgets.ecschema.xml");
+    SchemaWriteStatus status2 = schema->WriteToXmlFile(schemaPath.GetWCharCP());
+    EXPECT_EQ(SchemaWriteStatus::Success, status2);
+
+    ECSchemaPtr deserializedSchema;
+    schemaContext = ECSchemaReadContext::CreateContext();
+    status = ECSchema::ReadFromXmlFile(deserializedSchema, schemaPath.GetWCharCP(), *schemaContext);
+    EXPECT_EQ(SchemaReadStatus::Success, status);
+    VerifyWidgetsSchema(deserializedSchema);
+
+    schemaContext = ECSchemaReadContext::CreateContext(false, true);
+    schemaContext->AddSchemaPath(schemaDir.GetWCharCP());
+    ECSchemaPtr deserializedSchema2;
+    SchemaKey key = deserializedSchema->GetSchemaKey();
+    deserializedSchema2 = schemaContext->LocateSchema(key, SchemaMatchType::LatestReadCompatible);
+    EXPECT_TRUE(deserializedSchema2.IsValid());
+    VerifyWidgetsSchema(deserializedSchema2);
+    }
+
 //---------------------------------------------------------------------------------------
 //@bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -2637,6 +2696,93 @@ TEST_F(SchemaDeserializationTest, MissingBSCAReference)
         "</ECSchema>";
             
     EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, AbstractConstraintLogMessages)
+    {
+    {
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="Test" nameSpacePrefix="ts" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECClass typeName="Foo" isDomainClass="True">
+                </ECClass>
+                <ECClass typeName="Bar" isDomainClass="True">
+                    <BaseClass>Foo</BaseClass>
+                </ECClass>
+                <ECRelationshipClass typeName="RelationshipWithNoAbstractConstraint" isDomainClass="True" strength="referencing" strengthDirection="forward">
+                    <Source cardinality="(0,N)" polymorphic="false">
+                        <Class class="Foo" />
+                        <Class class="Bar" />
+                    </Source>
+                    <Target cardinality="(0,1)" polymorphic="false">
+                        <Class class="Foo" />
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>)xml";
+
+    TestLogger testLogger;
+    LogCatcher logCatcher(testLogger);
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(testLogger.ValidateMessageAtIndex(1, NativeLogging::SEVERITY::LOG_INFO, "Abstract Constraint Violation (ResolveIssues: Yes): The Source-Constraint of 'Test:RelationshipWithNoAbstractConstraint' does not contain or inherit an abstractConstraint attribute. It is a required attribute if there is more than one constraint class."));
+    }
+
+    {
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="Test" nameSpacePrefix="ts" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECClass typeName="Foo" isDomainClass="True">
+                </ECClass>
+                <ECRelationshipClass typeName="RelationshipWithNoAbstractConstraint" isDomainClass="True" strength="referencing" strengthDirection="forward">
+                    <Source cardinality="(0,N)" polymorphic="false">
+                        <Class class="Foo" />
+                    </Source>
+                    <Target cardinality="(0,1)" polymorphic="false">
+                        <Class class="Foo" />
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>)xml";
+
+    TestLogger testLogger;
+    LogCatcher logCatcher(testLogger);
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_EQ(nullptr, testLogger.GetLastMessage(NativeLogging::SEVERITY::LOG_INFO));
+    ASSERT_TRUE(testLogger.m_messages.size() == 1);
+    }
+
+    {
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEntityClass typeName="Foo">
+                </ECEntityClass>
+                <ECEntityClass typeName="Bar">
+                    <BaseClass>Foo</BaseClass>
+                </ECEntityClass>
+                <ECRelationshipClass typeName="RelationshipWithNoAbstractConstraint" modifier="Sealed" strength="referencing">
+                    <Source multiplicity="(0..1)" roleLabel="is extracted from" polymorphic="false">
+                        <Class class="Foo" />
+                        <Class class="Bar" />
+                    </Source>
+                    <Target multiplicity="(0..*)" roleLabel="refers to" polymorphic="false">
+                        <Class class="Foo" />
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>)xml";
+
+    TestLogger testLogger;
+    LogCatcher logCatcher(testLogger);
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(testLogger.m_messages.size() == 5);
+    ASSERT_TRUE(testLogger.ValidateMessageAtIndex(1, NativeLogging::SEVERITY::LOG_ERROR, "Abstract Constraint Violation (ResolveIssues: No): The Source-Constraint of 'TestSchema:RelationshipWithNoAbstractConstraint' does not contain or inherit an abstractConstraint attribute. It is a required attribute if there is more than one constraint class."));
+    }
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

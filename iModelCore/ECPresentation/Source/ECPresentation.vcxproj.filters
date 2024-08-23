@@ -264,9 +264,6 @@
     <ClInclude Include="Content\ContentProviders.h">
       <Filter>Source Files\Content</Filter>
     </ClInclude>
-    <ClInclude Include="Content\ContentQuery.h">
-      <Filter>Source Files\Content</Filter>
-    </ClInclude>
     <ClInclude Include="Content\ContentQueryBuilder.h">
       <Filter>Source Files\Content</Filter>
     </ClInclude>
@@ -453,9 +450,6 @@
       <Filter>Source Files\Content</Filter>
     </ClCompile>
     <ClCompile Include="Content\ContentProviders.cpp">
-      <Filter>Source Files\Content</Filter>
-    </ClCompile>
-    <ClCompile Include="Content\ContentQuery.cpp">
       <Filter>Source Files\Content</Filter>
     </ClCompile>
     <ClCompile Include="Content\ContentQueryBuilder.cpp">

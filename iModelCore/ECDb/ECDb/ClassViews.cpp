@@ -1,6 +1,6 @@
 /*---------------------------------------------------------------------------------------------
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See COPYRIGHT.md in the repository root for full copyright notice.
+* See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include "ECSql/NativeSqlBuilder.h"
@@ -134,14 +134,14 @@ bool ClassViews::IsValid(ECN::ECClassCR viewClass, ECDbCR conn){
         conn.GetImpl().Issues().ReportV(
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
-                IssueType::ECDbIssue, ECDbIssueId::ECDb_0702, "Invalid view class '%s'. 'View' customattribute must be applied to a 'Abstract' class.", viewClassName);
+                IssueType::ECDbIssue, ECDbIssueId::ECDb_0702, "Invalid view class '%s'. 'QueryView' customattribute must be applied to a 'Abstract' class.", viewClassName);
         return false;
     }
     if (viewClass.HasBaseClasses()) {
         conn.GetImpl().Issues().ReportV(
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
-                IssueType::ECDbIssue, ECDbIssueId::ECDb_0703, "Invalid view class '%s'. 'View' cannot be derived from another class", viewClassName);
+                IssueType::ECDbIssue, ECDbIssueId::ECDb_0703, "Invalid view class '%s'. 'QueryView' cannot be derived from another class", viewClassName);
         return false;
     }
     if (!conn.Schemas().GetDerivedClasses(viewClass).empty()) {
@@ -199,19 +199,70 @@ bool ClassViews::IsValid(ECN::ECClassCR viewClass, ECDbCR conn){
         viewClassProps.insert(viewClassProp->GetName());
     }
 
-    // system property beside data properties are allowed.
+    bool hasECInstanceId = false;
+    bool hasECClassId = false;
+    // check if non-data columns are valid
     for (auto i = 0; i < stmt.GetColumnCount(); ++i) {
-        const auto sysProp = stmt.GetColumnInfo(i).GetProperty();
+        const auto colInfo = stmt.GetColumnInfo(i);
+        const auto sysProp = colInfo.GetProperty();
         if (viewClassProps.find(sysProp->GetName()) == viewClassProps.end()) {
-            const auto isSys = stmt.GetColumnInfo(i).IsSystemProperty();
-            if (!isSys) {
-                conn.GetImpl().Issues().ReportV(
+            const auto isSys = colInfo.IsSystemProperty();
+            auto colName =  sysProp->GetName(); //Selecting any value as ECInstanceId or ECClassId is allowed
+            if(colName.EqualsI(ECDBSYS_PROP_ECInstanceId)) {
+                if(!colInfo.GetDataType().IsPrimitive() ||
+                    (colInfo.GetDataType().GetPrimitiveType() != PrimitiveType::PRIMITIVETYPE_Long &&
+                     colInfo.GetDataType().GetPrimitiveType() != PrimitiveType::PRIMITIVETYPE_Integer)) {
+                    conn.GetImpl().Issues().ReportV(
+                            IssueSeverity::Error,
+                            IssueCategory::BusinessProperties,
+                            IssueType::ECDbIssue, ECDbIssueId::ECDb_0725, "Invalid view class '%s'. ECInstanceId must be a primitive integer or long.", viewClassName);
+                    return false;
+                }
+
+                hasECInstanceId = true;
+                continue;
+            }
+
+            if(colName.EqualsI(ECDBSYS_PROP_ECClassId)) {
+                if(!colInfo.GetDataType().IsPrimitive() ||
+                    (colInfo.GetDataType().GetPrimitiveType() != PrimitiveType::PRIMITIVETYPE_Long &&
+                     colInfo.GetDataType().GetPrimitiveType() != PrimitiveType::PRIMITIVETYPE_Integer)) {
+                    conn.GetImpl().Issues().ReportV(
+                            IssueSeverity::Error,
+                            IssueCategory::BusinessProperties,
+                            IssueType::ECDbIssue, ECDbIssueId::ECDb_0726, "Invalid view class '%s'. ECClassId must be a primitive integer or long.", viewClassName);
+                    return false;
+                }
+                hasECClassId = true;
+                continue;
+            }
+
+            if (isSys) { //returning a system property is allowed
+                continue;
+            }
+
+            conn.GetImpl().Issues().ReportV(
                         IssueSeverity::Error,
                         IssueCategory::BusinessProperties,
-                        IssueType::ECDbIssue, ECDbIssueId::ECDb_0709, "Invalid view class '%s'. View query return property '%s' which not defined in view class or is a invalid system property.", viewClassName, sysProp->GetName().c_str());
-                return false;
-            }
+                        IssueType::ECDbIssue, ECDbIssueId::ECDb_0709, "Invalid view class '%s'. View query returns property '%s' which not defined in view class or is a invalid system property.", viewClassName, sysProp->GetName().c_str());
+            return false;
         }
+    }
+
+    if(!hasECInstanceId) {
+        conn.GetImpl().Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue, ECDbIssueId::ECDb_0727, "Invalid view class '%s'. View query must return ECInstanceId.", viewClassName);
+        return false;
+    }
+
+    if(!hasECClassId) {
+        conn.GetImpl().Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue, ECDbIssueId::ECDb_0728, "Invalid view class '%s'. View query must return ECClassId.", viewClassName);
+        return false;
     }
 
     return true;

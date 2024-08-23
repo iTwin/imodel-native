@@ -6155,9 +6155,19 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
                         "%s": "C2"
@@ -9977,7 +9987,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPrimitiveArrayProperty
     ASSERT_EQ(1, descriptor->GetVisibleFields().size());
     auto arrayField = descriptor->GetVisibleFields()[0]->AsPropertiesField()->AsArrayPropertiesField();
     ASSERT_TRUE(arrayField != nullptr);
-    
+
     rapidjson::Document expectedArrayFieldType;
     expectedArrayFieldType.Parse(Utf8PrintfString(R"({
         "ValueFormat": "Array",
@@ -12124,7 +12134,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructArrayPropertyVal
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues2) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson2["Values"]);
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -16033,14 +16043,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsCorrectContentWhenUs
 //=======================================================================================
 struct RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests : RulesDrivenECPresentationManagerContentTests
     {
-    StubPropertyFormatter m_propertyFormatter;
+    std::shared_ptr<StubPropertyFormatter> m_propertyFormatter;
     RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests()
-        : RulesDrivenECPresentationManagerContentTests(), m_propertyFormatter(true)
+        : RulesDrivenECPresentationManagerContentTests(), m_propertyFormatter(std::make_shared<StubPropertyFormatter>(true))
         {}
     virtual void _ConfigureManagerParams(ECPresentationManager::Params& params) override
         {
         RulesDrivenECPresentationManagerContentTests::_ConfigureManagerParams(params);
-        params.SetECPropertyFormatter(&m_propertyFormatter);
+        params.SetECPropertyFormatter(m_propertyFormatter);
         }
     };
 
@@ -16197,6 +16207,11 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "Test"
@@ -16450,6 +16465,11 @@ TEST_F(RulesDrivenECPresentationManagerContentWithCustomPropertyFormatterTests, 
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": {
@@ -17842,6 +17862,7 @@ DEFINE_SCHEMA(GetContentForDisplayLabelGroupingNode, R"*(
 )*");
 TEST_F(RulesDrivenECPresentationManagerContentTests, GetContentForDisplayLabelGroupingNode)
     {
+    Utf8CP labelOverride = "label";
     ECClassCP classA = GetClass("A");
     ECClassCP classB = GetClass("B");
     ECClassCP classC = GetClass("C");
@@ -17857,7 +17878,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetContentForDisplayLabelGr
     rootRule->AddSpecification(*spec);
     rootRule->AddSpecification(*new CustomNodeSpecification(1, false, "type", "node", "", ""));
     rules->AddPresentationRule(*rootRule);
-    rules->AddPresentationRule(*new InstanceLabelOverride(1, false, classA->GetFullName(), { new InstanceLabelOverrideStringValueSpecification("label") }));
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, false, classA->GetFullName(), { new InstanceLabelOverrideStringValueSpecification(labelOverride) }));
     ContentRuleP contentRule = new ContentRule(Utf8PrintfString("SelectedNode.IsOfClass(\"B\", \"%s\")", classB->GetSchema().GetName().c_str()), 1, false);
     contentRule->AddSpecification(*new SelectedNodeInstancesSpecification());
     rules->AddPresentationRule(*contentRule);

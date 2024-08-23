@@ -119,14 +119,7 @@ TEST_F(ECSqlStatementTestFixture, CTECrash) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, DisableFunction) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("disabledFunc.ecdb"));
-    struct IssueListener: ECN::IIssueListener {
-        mutable bvector<Utf8String> m_issues;
-        void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override {
-            m_issues.push_back(message);
-        }
-        Utf8String const& GetLastError() const { return m_issues.back();}
-    };
-    IssueListener listener;
+    TestIssueListener listener;
     m_ecdb.AddIssueListener(listener);
 
     auto getExpectedErrorMessage =[](Utf8String functionName) -> Utf8String {
@@ -137,14 +130,14 @@ TEST_F(ECSqlStatementTestFixture, DisableFunction) {
 
         //TEST A - Just prepare ecsql as is to verify it can be prepared.
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << "ECSQL should succeed without disabling the function"
-            << "\nECDb (err)" << listener.GetLastError().c_str();
+            << "\nECDb (err)" << listener.GetLastMessage().c_str();
         stmt.Finalize();
 
         //TEST B - Disable function and prepare the ecsql, with expectation that it will fail and puts out a expected error message.
         m_ecdb.GetECSqlConfig().GetDisableFunctions().Add(disableFunc);
         ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql.c_str())) << "ECSQL should now fail when function is disabled";
         Utf8String erroMessageExpected = getExpectedErrorMessage(functionNameInECSql);
-        ASSERT_STREQ(listener.GetLastError().c_str(), erroMessageExpected.c_str()) << "Perpare should fail with expected error message";
+        ASSERT_STREQ(listener.GetLastMessage().c_str(), erroMessageExpected.c_str()) << "Perpare should fail with expected error message";
         stmt.Finalize();
 
         //TEST C - ReEnable the function and reprepare the ecsql and expect it to be successful
@@ -7802,36 +7795,34 @@ TEST_F(ECSqlStatementTestFixture, Finalize)
 TEST_F(ECSqlStatementTestFixture, IssueListener)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ecsqlstatementtests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
-    ASSERT_EQ(SUCCESS, PopulateECDb( 10));
+    ASSERT_EQ(SUCCESS, PopulateECDb(10));
 
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
     {
-    ECIssueListener issueListener(m_ecdb);
     ECSqlStatement stmt;
-    ASSERT_FALSE(issueListener.GetIssue().has_value()) << "new ECSqlStatement";
+    ASSERT_TRUE(issueListener.IsEmpty()) << "new ECSqlStatement";
 
     auto stat = stmt.Prepare(m_ecdb, "SELECT * FROM ecsql.P WHERE I = ?");
     ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation for a valid ECSQL failed.";
-    ASSERT_FALSE(issueListener.GetIssue().has_value()) << "After successful call to Prepare.";
+    ASSERT_TRUE(issueListener.IsEmpty()) << "After successful call to Prepare.";
     }
 
     {
-    ECIssueListener issueListener(m_ecdb);
-
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM blablabla")) << "Preparation for an invalid ECSQL succeeded unexpectedly.";
 
-    ECDbIssue lastIssue = issueListener.GetIssue();
-    ASSERT_TRUE(lastIssue.has_value()) << "After preparing invalid ECSQL.";
-    ASSERT_STREQ("Invalid ECSQL class expression 'blablabla': Valid syntax: [<table space>.]<schema name or alias>.<class name>[.function call]", lastIssue.message.c_str());
+    ASSERT_FALSE(issueListener.IsEmpty()) << "After preparing invalid ECSQL.";
+    ASSERT_STREQ("Invalid ECSQL class expression 'blablabla': Valid syntax: [<table space>.]<schema name or alias>.<class name>[.function call]", issueListener.GetLastMessage().c_str());
+    issueListener.ClearIssues();
 
     stmt.Finalize();
-    ASSERT_FALSE(issueListener.GetIssue().has_value()) << "After successful call to Finalize";
+    ASSERT_TRUE(issueListener.IsEmpty()) << "After successful call to Finalize";
 
     //now reprepare with valid ECSQL
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ecsql.P")) << "Preparation for a valid ECSQL failed.";
-    ASSERT_FALSE(issueListener.GetIssue().has_value()) << "After successful call to Prepare";
+    ASSERT_TRUE(issueListener.IsEmpty()) << "After successful call to Prepare";
     }
-
     }
 
 
@@ -11799,5 +11790,445 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
             ])json");
         ASSERT_EQ(expected, GetHelper().ExecuteSelectECSql(ecsql));
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, UpdateToNullBinding)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ec_sql_update_to_null.ecdb", SchemaItem(R"xml(
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="TestClass" modifier="None">
+                <ECProperty propertyName="p2d" typeName="point2d"/>
+                <ECStructProperty propertyName="st" typeName="ComplexStruct"/>
+                <ECArrayProperty propertyName="array_i" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
+            </ECEntityClass>
+            <ECStructClass typeName="BasicStruct" modifier="None">
+                <ECProperty propertyName="i" typeName="int"/>
+                <ECProperty propertyName="b" typeName="boolean"/>
+            </ECStructClass>
+            <ECStructClass typeName="ComplexStruct" modifier="None">
+                <ECProperty propertyName="p2d" typeName="point2d"/>
+                <ECStructProperty propertyName="st" typeName="BasicStruct" />
+                <ECArrayProperty propertyName="array_i" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
+            </ECStructClass>
+        </ECSchema>
+    )xml")));
+
+    ///*** Insertable data
+    auto i = 123;
+    auto p2d = DPoint2d::From(23.22, 31.11);
+    auto st_p2d = DPoint2d::From(53.22, 31.11);
+    auto st_st_b = true;
+    auto st_st_i = 45;
+
+    //*** Update all values to null
+    {
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (p2d, st, array_i) VALUES (?,?,?)");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
+    stmt.BindPoint2d(1, p2d);
+    auto& st = stmt.GetBinder(2);
+    st["p2d"].BindPoint2d(st_p2d);
+    st["st"]["b"].BindBoolean(st_st_b);
+    st["st"]["i"].BindBoolean(st_st_i);
+    stmt.GetBinder(3).AddArrayElement().BindInt(i);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    Utf8String updateEcsql("UPDATE ONLY ts.TestClass SET p2d=?, st=?, array_i=? WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.c_str())) << updateEcsql.c_str();
+    for (int i = 1; i <= 3; ++i)
+        {
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindNull(i));
+        }
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, key.GetInstanceId()));
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    Utf8String selectEcsql("SELECT p2d, p2d.X, p2d.Y, st, array_i FROM ts.TestClass WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.c_str())) << selectEcsql.c_str();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    for (int i = 0; i < stmt.GetColumnCount(); ++i)
+        {
+        ASSERT_TRUE(stmt.IsValueNull(i)) << "no values bound to " << stmt.GetECSql();
+        }
+
+    const int expectedMembersCount = (int) m_ecdb.Schemas().GetClass("TestSchema", "ComplexStruct")->GetPropertyCount(true);
+    IECSqlValue const& structVal = stmt.GetValue(3);
+    int actualMembersCount = 0;
+    for (IECSqlValue const& memberVal : structVal.GetStructIterable())
+        {
+        actualMembersCount++;
+        ASSERT_TRUE(memberVal.IsNull());
+        }
+    ASSERT_EQ(expectedMembersCount, actualMembersCount);
+
+    IECSqlValue const& structArrayVal = stmt.GetValue(4);
+    ASSERT_EQ(0, structArrayVal.GetArrayLength());
+    }
+
+    //*** Update array to contain two null elements
+    {
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (array_i) VALUES (?)");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
+    stmt.GetBinder(1).AddArrayElement().BindInt(i);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    Utf8String updateEcsql("UPDATE ONLY ts.TestClass SET array_i=? WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.c_str())) << updateEcsql.c_str();
+    IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindNull());
+    ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindNull());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, key.GetInstanceId()));
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    Utf8String selectEcsql("SELECT array_i FROM ts.TestClass WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.c_str())) << selectEcsql.c_str();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+
+    IECSqlValue const& val = stmt.GetValue(0);
+    ASSERT_FALSE(val.IsNull()) << stmt.GetECSql();
+    ASSERT_EQ(2, val.GetArrayLength());
+    for (IECSqlValue const& elementVal : val.GetArrayIterable())
+        {
+        ASSERT_TRUE(elementVal.IsNull()) << stmt.GetECSql();
+
+        if (val.GetColumnInfo().GetDataType().IsStructArray())
+            {
+            for (IECSqlValue const& memberVal : elementVal.GetStructIterable())
+                {
+                ASSERT_TRUE(memberVal.IsNull());
+                }
+            }
+        }
+    }
+
+    // Update points to be partially unset
+    {
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (p2d, st) VALUES (?,?)");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
+    stmt.BindPoint2d(1, p2d);
+    auto& st = stmt.GetBinder(2);
+    st["p2d"].BindPoint2d(st_p2d);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    Utf8String updateEcsql("UPDATE ONLY ts.TestClass SET p2d.X=?, st.p2d.X=? WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.c_str())) << updateEcsql.c_str();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNull(1));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNull(2));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(3, key.GetInstanceId()));
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    Utf8String selectEcsql("SELECT p2d, p2d.X, p2d.Y, st.p2d, st.p2d.X, st.p2d.Y FROM ts.TestClass WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.c_str())) << selectEcsql.c_str();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+
+    std::set<Utf8String> nullItems { "p2d", "p2d.X", "st.p2d", "st.p2d.X" };
+    for (int i = 0; i < stmt.GetColumnCount(); i++)
+        {
+        IECSqlValue const& val = stmt.GetValue(i);
+        Utf8String propPath = val.GetColumnInfo().GetPropertyPath().ToString();
+        const bool expectedToBeNull = nullItems.find(propPath) != nullItems.end();
+        ASSERT_EQ(expectedToBeNull, val.IsNull()) << "Select clause item " << i << " in " << stmt.GetECSql();
+        }
+    }
+
+    //*** Update nested struct to be partially unset
+    {
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (st) VALUES (?)");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
+    auto& st = stmt.GetBinder(1);
+    st["st"]["b"].BindBoolean(st_st_b);
+    st["st"]["i"].BindBoolean(st_st_i);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    Utf8String updateEcsql("UPDATE ONLY ts.TestClass SET st=? WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.c_str())) << updateEcsql.c_str();
+
+    auto& elementBinder = stmt.GetBinder(1);
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["st"]["i"].BindNull()); // Set st.st.i = null
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["st"]["b"].BindBoolean(st_st_b)); // Set st.st.b = true, so that the whole structure doesn't become null
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, key.GetInstanceId()));
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    Utf8String selectEcsql("SELECT st FROM ts.TestClass WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.c_str())) << selectEcsql.c_str();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+
+    ASSERT_FALSE(stmt.IsValueNull(0));
+    IECSqlValue const& structVal = stmt.GetValue(0);
+    for (IECSqlValue const& memberVal : structVal.GetStructIterable())
+        {
+        if (memberVal.GetColumnInfo().GetProperty()->GetName().Equals("st"))
+            {
+            int memberCount = 0;
+            for (IECSqlValue const& nestedMemberVal : memberVal.GetStructIterable())
+                {
+                memberCount++;
+                if (nestedMemberVal.GetColumnInfo().GetProperty()->GetName().Equals("b"))
+                    ASSERT_FALSE(nestedMemberVal.IsNull());
+                else
+                    ASSERT_TRUE(nestedMemberVal.IsNull());
+                }
+            ASSERT_EQ((int) memberVal.GetColumnInfo().GetStructType()->GetPropertyCount(true), memberCount);
+            }
+        else
+            ASSERT_TRUE(memberVal.IsNull());
+        }
+    }
+
+    //*** Update nested struct to have all properties null
+    {
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (st) VALUES (?)");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
+    auto& st = stmt.GetBinder(1);
+    st["st"]["i"].BindInt(st_st_i);
+    st["st"]["b"].BindBoolean(st_st_b);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    Utf8String updateEcsql("UPDATE ONLY ts.TestClass SET st.p2d=?, st.st.i=?, st.st.b=? WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.c_str())) << updateEcsql.c_str();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).BindPoint2d(p2d)); // Make at least one arg in non-nested st not null.
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(2).BindNull());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(3).BindNull());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(4, key.GetInstanceId()));
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    Utf8String selectEcsql("SELECT st FROM ts.TestClass WHERE ECInstanceId=?");
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.c_str())) << selectEcsql.c_str();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+
+    ASSERT_FALSE(stmt.IsValueNull(0));
+    IECSqlValue const& structVal = stmt.GetValue(0);
+    for (IECSqlValue const& memberVal : structVal.GetStructIterable())
+        {
+        if (memberVal.GetColumnInfo().GetProperty()->GetName().Equals("p2d"))
+            ASSERT_FALSE(memberVal.IsNull());
+        else
+            ASSERT_TRUE(memberVal.IsNull()); // st will fall under this check
+        }
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, UpdateToNullInline)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ec_sql_update_to_null_inline.ecdb", SchemaItem(R"xml(
+        <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="TestClass" modifier="None">
+                <ECProperty propertyName="p2d" typeName="point2d"/>
+                <ECStructProperty propertyName="st" typeName="ComplexStruct"/>
+                <ECArrayProperty propertyName="array_i" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
+            </ECEntityClass>
+            <ECStructClass typeName="BasicStruct" modifier="None">
+                <ECProperty propertyName="i" typeName="int"/>
+                <ECProperty propertyName="b" typeName="boolean"/>
+            </ECStructClass>
+            <ECStructClass typeName="ComplexStruct" modifier="None">
+                <ECProperty propertyName="p2d" typeName="point2d"/>
+                <ECStructProperty propertyName="st" typeName="BasicStruct" />
+                <ECArrayProperty propertyName="array_i" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
+            </ECStructClass>
+        </ECSchema>
+    )xml")));
+
+    ///*** Insertable data
+    auto i = 123;
+    auto p2d = DPoint2d::From(23.22, 31.11);
+    auto st_p2d = DPoint2d::From(53.22, 31.11);
+    auto st_st_b = true;
+    auto st_st_i = 45;
+
+    //*** Update all values to null
+    {
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (p2d, st, array_i) VALUES (?,?,?)");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
+    stmt.BindPoint2d(1, p2d);
+    auto& st = stmt.GetBinder(2);
+    st["p2d"].BindPoint2d(st_p2d);
+    st["st"]["b"].BindBoolean(st_st_b);
+    st["st"]["i"].BindBoolean(st_st_i);
+    stmt.GetBinder(3).AddArrayElement().BindInt(i);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    SqlPrintfString updateEcsql("UPDATE ONLY ts.TestClass SET p2d=NULL, st=NULL, array_i=NULL WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.GetUtf8CP())) << updateEcsql.GetUtf8CP();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    SqlPrintfString selectEcsql("SELECT p2d, p2d.X, p2d.Y, st, array_i FROM ts.TestClass WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.GetUtf8CP())) << selectEcsql.GetUtf8CP();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    for (int i = 0; i < stmt.GetColumnCount(); ++i)
+        {
+        ASSERT_TRUE(stmt.IsValueNull(i)) << "no values bound to " << stmt.GetECSql();
+        }
+
+    const int expectedMembersCount = (int) m_ecdb.Schemas().GetClass("TestSchema", "ComplexStruct")->GetPropertyCount(true);
+    IECSqlValue const& structVal = stmt.GetValue(3);
+    int actualMembersCount = 0;
+    for (IECSqlValue const& memberVal : structVal.GetStructIterable())
+        {
+        actualMembersCount++;
+        ASSERT_TRUE(memberVal.IsNull());
+        }
+    ASSERT_EQ(expectedMembersCount, actualMembersCount);
+
+    IECSqlValue const& structArrayVal = stmt.GetValue(4);
+    ASSERT_EQ(0, structArrayVal.GetArrayLength());
+    }
+
+    // Update points to be partially unset
+    {
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (p2d, st) VALUES (?,?)");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
+    stmt.BindPoint2d(1, p2d);
+    auto& st = stmt.GetBinder(2);
+    st["p2d"].BindPoint2d(st_p2d);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    SqlPrintfString updateEcsql("UPDATE ONLY ts.TestClass SET p2d.X=NULL, st.p2d.X=NULL WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.GetUtf8CP())) << updateEcsql.GetUtf8CP();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    SqlPrintfString selectEcsql("SELECT p2d, p2d.X, p2d.Y, st.p2d, st.p2d.X, st.p2d.Y FROM ts.TestClass WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.GetUtf8CP())) << selectEcsql.GetUtf8CP();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+
+    std::set<Utf8String> nullItems { "p2d", "p2d.X", "st.p2d", "st.p2d.X" };
+    for (int i = 0; i < stmt.GetColumnCount(); i++)
+        {
+        IECSqlValue const& val = stmt.GetValue(i);
+        Utf8String propPath = val.GetColumnInfo().GetPropertyPath().ToString();
+        const bool expectedToBeNull = nullItems.find(propPath) != nullItems.end();
+        ASSERT_EQ(expectedToBeNull, val.IsNull()) << "Select clause item " << i << " in " << stmt.GetECSql();
+        }
+    }
+
+    //*** Update nested struct to be partially unset
+    {
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (st) VALUES (?)");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
+    
+    auto& st = stmt.GetBinder(1);
+    st["st"]["b"].BindBoolean(st_st_b);
+    st["st"]["i"].BindBoolean(st_st_i);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    SqlPrintfString updateEcsql("UPDATE ONLY ts.TestClass SET st.st.i=NULL, st.st.b=TRUE WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.GetUtf8CP())) << updateEcsql.GetUtf8CP();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    SqlPrintfString selectEcsql("SELECT st FROM ts.TestClass WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.GetUtf8CP())) << selectEcsql.GetUtf8CP();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+
+    ASSERT_FALSE(stmt.IsValueNull(0));
+    IECSqlValue const& structVal = stmt.GetValue(0);
+    for (IECSqlValue const& memberVal : structVal.GetStructIterable())
+        {
+        if (memberVal.GetColumnInfo().GetProperty()->GetName().Equals("st"))
+            {
+            int memberCount = 0;
+            for (IECSqlValue const& nestedMemberVal : memberVal.GetStructIterable())
+                {
+                memberCount++;
+                if (nestedMemberVal.GetColumnInfo().GetProperty()->GetName().Equals("b"))
+                    ASSERT_FALSE(nestedMemberVal.IsNull());
+                else
+                    ASSERT_TRUE(nestedMemberVal.IsNull());
+                }
+            ASSERT_EQ((int) memberVal.GetColumnInfo().GetStructType()->GetPropertyCount(true), memberCount);
+            }
+        else
+            ASSERT_TRUE(memberVal.IsNull());
+        }
+    }
+
+    //*** Update nested struct to have all properties null
+    {
+    Utf8String insertEcsql("INSERT INTO ts.TestClass (st) VALUES (?)");
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
+    
+    auto& st = stmt.GetBinder(1);
+    st["p2d"].BindPoint2d(p2d);
+    st["st"]["i"].BindInt(st_st_i);
+    st["st"]["b"].BindBoolean(st_st_b);
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    SqlPrintfString updateEcsql("UPDATE ONLY ts.TestClass SET st.st.i=NULL, st.st.b=NULL WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, updateEcsql.GetUtf8CP())) << updateEcsql.GetUtf8CP();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+
+    SqlPrintfString selectEcsql("SELECT st FROM ts.TestClass WHERE ECInstanceId=%s", key.GetInstanceId().ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectEcsql.GetUtf8CP())) << selectEcsql.GetUtf8CP();
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+
+    ASSERT_FALSE(stmt.IsValueNull(0));
+    IECSqlValue const& structVal = stmt.GetValue(0);
+    for (IECSqlValue const& memberVal : structVal.GetStructIterable())
+        {
+        if (memberVal.GetColumnInfo().GetProperty()->GetName().Equals("p2d"))
+            ASSERT_FALSE(memberVal.IsNull());
+        else
+            ASSERT_TRUE(memberVal.IsNull()); // st will fall under this check
+        }
+    }
     }
 END_ECDBUNITTESTS_NAMESPACE

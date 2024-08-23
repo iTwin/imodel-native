@@ -1634,6 +1634,7 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
 
                 if (ECObjectsStatus::Success != status)
                     {
+                    LOG.errorv("Failed to copy class %s to schema %s", sourceClass.GetFullName(), GetFullSchemaName().c_str());
                     DeleteClass(*newRelationshipClass);
                     newRelationshipClass = nullptr;
                     }
@@ -2470,6 +2471,18 @@ ECObjectsStatus ECSchema::AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR 
             }
         }
 
+    Utf8CP schemaName = refSchemaKey.GetName().c_str();
+    auto iter = std::find_if(m_refSchemaList.begin(), m_refSchemaList.end(), [&schemaName](const bpair<SchemaKey, ECSchemaPtr>& schemaPair) 
+        {
+        return BeStringUtilities::Stricmp(schemaName, schemaPair.first.GetName().c_str()) == 0;
+        });
+
+    if (iter != m_refSchemaList.end())
+        {
+        LOG.warningv("Schema %s is adding a reference to %s while it already references %s. For compatibility this is currently permitted but probably indicates a problem.",
+            this->GetFullSchemaName().c_str(), refSchema.GetFullSchemaName().c_str(), iter->second->GetFullSchemaName().c_str());
+        }
+
     m_refSchemaList[refSchemaKey] = &refSchema;
     // Check for recursion
     if (AddingSchemaCausedCycles ())
@@ -2929,14 +2942,21 @@ static ECSchemaPtr ParseHeaderAndLocateSchema(WCharCP schemaXmlFile, ECSchemaRea
     {
         BeAssert(s_noAssert);
         LOG.errorv ("Error loading XML file %ls: %s (error at char %d)", schemaXmlFile, result.description(), result.offset);
+        if (outStatus != nullptr)
+            *outStatus = SchemaReadStatus::FailedToParseXml;
         return nullptr;
     }
 
     SchemaKey searchKey;
     uint32_t ecXmlMajorVersion, ecXmlMinorVersion;
     pugi::xml_node schemaNode;
-    if (SchemaReadStatus::Success != SchemaXmlReader::ReadSchemaStub(searchKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc))
+    const auto status = SchemaXmlReader::ReadSchemaStub(searchKey, ecXmlMajorVersion, ecXmlMinorVersion, schemaNode, xmlDoc);
+    if (SchemaReadStatus::Success != status)
+        {
+        if (outStatus != nullptr)
+            *outStatus = status;
         return nullptr;
+        }
 
     ECSchemaPtr schema = schemaContext.LocateSchema(searchKey, matchType);
     if (!schema.IsValid())
@@ -3082,7 +3102,7 @@ void SearchPathSchemaFileLocater::AddCandidateNoExtensionSchema(bvector<Candidat
         return;
 
     pugi::xml_document xmlDoc;
-    pugi::xml_parse_result result = xmlDoc.load_file(schemaPathname.GetNameUtf8().c_str());
+    pugi::xml_parse_result result = xmlDoc.load_file(schemaPathname.GetWCharCP());
     if(!result)
     {
         BeAssert(s_noAssert);

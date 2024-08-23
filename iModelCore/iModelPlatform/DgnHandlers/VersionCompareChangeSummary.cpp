@@ -832,7 +832,7 @@ void RelatedPropertyPathExplorer::TraverseInChunks(bmap<ECInstanceKey,ECInstance
             }
 
         // Merge the found related keys to this instance
-		ECInstanceKeySet& keySet = output[originKey];
+        ECInstanceKeySet& keySet = output[originKey];
         for (auto const& key : currentIntermediaryKeys)
             keySet.insert(key);
         }
@@ -1325,8 +1325,8 @@ void    ChangedElementFinder::GetChangesType(ElementChangesType& changes, DgnMod
                 {
                 // Insert the changed property
                 // Compute checksums based on the bytes of the old and new values
-                uint32_t oldValueChecksum = m_wantChecksums ? computeHash(iter.GetOldValue()) : 0;
-                uint32_t newValueChecksum = m_wantChecksums ? computeHash(iter.GetNewValue()) : 0;
+                uint32_t oldValueChecksum = m_options.wantPropertyChecksums ? computeHash(iter.GetOldValue()) : 0;
+                uint32_t newValueChecksum = m_options.wantPropertyChecksums ? computeHash(iter.GetNewValue()) : 0;
                 // Add property with checksum
                 changes.AddProperty(str, oldValueChecksum, newValueChecksum);
                 changes.AddType(ElementChangesType::Type::Mask_Property);
@@ -1373,6 +1373,46 @@ void ChangedElementFinder::QueryRelatedInstanceModelIds(DgnDbR db)
         else
             VCLOG.warningv("Related instance key does not match changes map");
         }
+
+    stmt.Finalize();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChangedElementFinder::QueryMissingInstancesModelIds(DgnDbR db)
+    {
+    Utf8PrintfString ecsql("SELECT ECInstanceId, ECClassId, Model.Id FROM %s.%s WHERE InVirtualSet(?, ECInstanceId)", BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
+    ECSqlStatement stmt;
+    ECSqlStatus stmtresult = stmt.Prepare(db, ecsql.c_str());
+    if (!stmtresult.IsSuccess())
+        {
+        VCLOG.errorv("QueryRelatedInstanceModelIds: preparing statement for querying related instance model ids failed.");
+        return;
+        }
+
+    std::shared_ptr<BeSQLite::IdSet<ECInstanceId>> ids = std::make_shared<BeSQLite::IdSet<ECInstanceId>>();
+    for (auto const& related : m_changedInstances)
+        if (!related.second.m_modelId.IsValid())
+            ids->insert(related.first.GetInstanceId());
+
+    stmt.BindVirtualSet(1, ids);
+
+    bmap<ECInstanceId, RelationshipQueryResult> relationshipToValues;
+    while (stmt.Step() != DbResult::BE_SQLITE_DONE)
+        {
+        ECInstanceId instanceId = stmt.GetValueId<ECInstanceId>(0);
+        ECClassId classId = stmt.GetValueId<ECClassId>(1);
+        DgnModelId modelId = stmt.GetValueId<DgnModelId>(2);
+
+        ECInstanceKey key(classId, instanceId);
+        if (m_changedInstances.find(key) != m_changedInstances.end())
+            m_changedInstances[key].m_modelId = modelId;
+        else
+            VCLOG.warningv("Related instance key does not match changes map");
+        }
+
+    stmt.Finalize();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1380,11 +1420,26 @@ void ChangedElementFinder::QueryRelatedInstanceModelIds(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChangedElementFinder::ProcessInstance(DgnDbR db, DgnChangeSummary& changeSummary, ChangeSummary::Instance const& instance, RelatedInstanceFinder& finder)
     {
-    DbOpcode opcode = instance.GetDbOpcode();
-    DgnElementCPtr element = db.Elements().GetElement(DgnElementId(instance.GetInstanceId().GetValue()));
+    // Filter out relationship instances
+    ECClassCP classCP =  db.Schemas().GetClass(instance.GetClassId());
+    if (classCP->IsRelationshipClass())
+        return;
+
+    // Initial record, model id will be populated below
     ECInstanceKey key(instance.GetClassId(), instance.GetInstanceId());
-    GeometrySource3dCP source = element.IsValid() ? element->ToGeometrySource3d() : nullptr;
-    ChangedElementRecord info(opcode, instance.GetClassId(), element.IsValid() ? element->GetModelId() : DgnModelId(), nullptr != source ? source->CalculateRange3d() : AxisAlignedBox3d());
+    AxisAlignedBox3d bbox;
+    DgnModelId originalModelId;
+
+    // Load bounding boxes for changed models volumes if wanted
+    if (m_options.wantBoundingBoxes)
+        {
+        DgnElementCPtr element = db.Elements().GetElement(DgnElementId(instance.GetInstanceId().GetValue()));
+        GeometrySource3dCP source = element.IsValid() ? element->ToGeometrySource3d() : nullptr;
+        originalModelId = element.IsValid() ? element->GetModelId() : originalModelId;
+        bbox = source != nullptr ? source->CalculateRange3d() : bbox;
+        }
+
+    ChangedElementRecord info(instance.GetDbOpcode(), instance.GetClassId(), originalModelId, bbox);
 
     // Get type of change
     ElementChangesType changes;
@@ -1393,10 +1448,10 @@ void ChangedElementFinder::ProcessInstance(DgnDbR db, DgnChangeSummary& changeSu
     info.m_changes = changes;
 
     // Add parent key to the info object if it exists
-    if (m_wantParentKeys)
+    if (m_options.wantParents)
         info.m_parentKey = m_parentFinder.FindTopParentKey(db, changeSummary, key);
 
-    // Set model Id found in change summary if we don't have a valid one by now
+    // Set model Id found in change summary
     if (!info.m_modelId.IsValid())
         info.m_modelId = modelId;
 
@@ -1404,7 +1459,7 @@ void ChangedElementFinder::ProcessInstance(DgnDbR db, DgnChangeSummary& changeSu
     m_changedInstances[key] = info;
 
     // Find related instances via property paths if we don't want to use chunk traversal
-    if (!m_wantChunkTraversal)
+    if (!m_options.wantChunkTraversal)
         ProcessRelatedInstances(db, changeSummary, key, info, finder);
     }
 
@@ -1427,7 +1482,7 @@ void ChangedElementFinder::ProcessRelatedInstances(DgnDbR db, DgnChangeSummary& 
         // Mark that it has an indirect change
         targetRecord.m_changes.m_flags |= ElementChangesType::Mask_Indirect;
         // Find parent keys of the related instances
-        if (m_wantParentKeys)
+        if (m_options.wantParents)
             targetRecord.m_parentKey = m_parentFinder.FindTopParentKey(db, changeSummary, key);
         }
     }
@@ -1475,7 +1530,7 @@ void ChangedElementFinder::FindElementClassIds(bset<ECClassId>& classIds, DgnDbR
 RelatedInstanceFinder ChangedElementFinder::CreateRelatedInstanceFinder(DgnDbR db, DgnChangeSummary& changeSummary, RelatedPropertyPathCache& beforeStateCache)
     {
     // Related instance finder based on property paths and ECPresentation
-    RelationshipCachingOptions cachingOpts(!m_wantChunkTraversal && m_wantRelationshipCaching, m_relationshipCacheSize);
+    RelationshipCachingOptions cachingOpts(!m_options.wantChunkTraversal && m_options.wantRelationshipCaching, m_options.relationshipCacheSize);
     RelatedInstanceFinder relatedInstanceFinder(db, changeSummary, m_presentationManager, m_rulesetId, cachingOpts);
     relatedInstanceFinder.AddRelatedPropertyPaths(beforeStateCache);
     return relatedInstanceFinder;
@@ -1521,7 +1576,7 @@ void ChangedElementFinder::FindRelatedInstances(RelatedInstanceFinder& finder, D
             // Mark that it has an indirect change
             changeRecord.m_changes.m_flags |= ElementChangesType::Mask_Indirect;
             // Find parent keys of the related instances
-            if (m_wantParentKeys)
+            if (m_options.wantParents)
                 changeRecord.m_parentKey = m_parentFinder.FindTopParentKey(db, changeSummary, relatedKey);
             }
         }
@@ -1547,8 +1602,11 @@ StatusInt ChangedElementFinder::GetChangedElementsFromSummary(
     for (auto const& entry : changeSummary.MakeInstanceIterator())
         ProcessInstance(db, changeSummary, entry.GetInstance(), relatedInstanceFinder);
 
+    // Query any missing model ids
+    QueryMissingInstancesModelIds(db);
+
     // Find related instances using chunk traversal functionality
-    if (m_wantChunkTraversal)
+    if (m_options.wantChunkTraversal)
         FindRelatedInstances(relatedInstanceFinder, db, changeSummary);
 
     // Query related instances' model ids
@@ -1599,7 +1657,7 @@ VersionCompareChangeSummary::~VersionCompareChangeSummary()
     m_changedElements.clear();
 
     // Clean up target db temporary file if it was cloned to begin with
-    bool cloneDb = WantTargetState() && !m_wantBriefcaseRoll;
+    bool cloneDb = WantTargetState() && !m_options.wantBriefcaseRoll;
     BeFileName tempFileName = m_targetDb->GetFileName();
     // Close Db
     m_targetDb->CloseDb();
@@ -1663,10 +1721,10 @@ StatusInt    VersionCompareChangeSummary::ProcessChangesets()
 
     // Open Db file
     DbResult openStatus;
-	DgnDb::OpenParams params(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes);
+    DgnDb::OpenParams params(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes);
 
     // Clone the db if necessary
-    bool cloneDb = WantTargetState() && !m_wantBriefcaseRoll;
+    bool cloneDb = WantTargetState() && !m_options.wantBriefcaseRoll;
     m_targetDb = cloneDb
         ? CloneDb(m_dbFilename, m_tempLocation)
         : DgnDb::OpenIModelDb(&openStatus, m_dbFilename, params);
@@ -1682,7 +1740,7 @@ StatusInt    VersionCompareChangeSummary::ProcessChangesets()
         m_presentationManager.GetConnections().CreateConnection(*m_targetDb);
 
     // Element class to use as base class when finding changed elements
-    Utf8PrintfString elementClassFullName("%s.%s", BIS_ECSCHEMA_NAME, m_filterSpatial ? BIS_CLASS_SpatialElement : BIS_CLASS_Element);
+    Utf8PrintfString elementClassFullName("%s.%s", BIS_ECSCHEMA_NAME, m_options.filterSpatial ? BIS_CLASS_SpatialElement : BIS_CLASS_Element);
 
     // Construct change summaries
     for (ChangesetPropsPtr changeset : m_changesets)
@@ -1694,13 +1752,13 @@ StatusInt    VersionCompareChangeSummary::ProcessChangesets()
         VCLOG.infov("ProcessChangesets: Processing changeset %s", changeset->GetChangesetId().c_str());
         VCLOG.infov("ProcessChangesets: Caching deleted property paths");
         // Cache for property paths of the before-state to find relevant paths for deleted elements and relationships
-        RelatedPropertyPathCache beforeStateCache(m_presentationManager, m_rulesetId);
+        RelatedPropertyPathCache beforeStateCache(m_presentationManager, m_options.rulesetId);
         beforeStateCache.CachePaths(*m_targetDb, BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
 
         VCLOG.infov("ProcessChangesets: Cached %d deleted property paths", beforeStateCache.Get().size());
 
         // When going forwards, we may need to apply the changeset before we process it
-        if ((WantTargetState() || m_wantBriefcaseRoll) && m_targetDb->Txns().GetParentChangesetId().Equals(changeset->GetParentId()))
+        if ((WantTargetState() || m_options.wantBriefcaseRoll) && m_targetDb->Txns().GetParentChangesetId().Equals(changeset->GetParentId()))
             {
             VCLOG.infov("ProcessChangesets: Applying changeset");
             bvector<ChangesetPropsPtr> changesets;
@@ -1717,7 +1775,7 @@ StatusInt    VersionCompareChangeSummary::ProcessChangesets()
         // Create a summary with the current target db
         DgnChangeSummary changeSummary(*m_targetDb);
         // Put together the changeset
-        ChangesetFileReader fr (changeset->GetFileName(), *m_targetDb);
+        ChangesetFileReader fr (changeset->GetFileName(), m_targetDb.get());
         changeSummary.FromChangeSet(fr);
 
 // #define DUMP_CHANGE_SUMMARIES
@@ -1727,7 +1785,7 @@ StatusInt    VersionCompareChangeSummary::ProcessChangesets()
 
         VCLOG.infov("ProcessChangesets: Finding changed elements");
 
-        ChangedElementFinder finder(m_presentationManager, m_rulesetId, elementClassFullName, m_wantParentKeys, m_wantPropertyChecksums, m_wantRelationshipCaching, m_relationshipCacheSize, m_wantChunkTraversal);
+        ChangedElementFinder finder(m_options, elementClassFullName);
         bvector<ChangedElementInfo> changedElements;
         // Get changed elements for this changeset
         finder.GetChangedElementsFromSummary(changedElements, *m_targetDb, changeSummary, beforeStateCache);
@@ -1826,7 +1884,7 @@ StatusInt   VersionCompareChangeSummary::RollTargetDb(bvector<ChangesetPropsPtr>
     m_targetDb->CloseDb();
     // Re-open to apply changesets that contain schema changes
     BeSQLite::DbResult result;
-	DgnDb::OpenParams params(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes);
+    DgnDb::OpenParams params(DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes);
     params.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(changesetsCP, RevisionProcessOption::Merge);
     m_targetDb = DgnDb::OpenIModelDb(&result, filename, params);
     BeAssert(result == BeSQLite::BE_SQLITE_OK && m_targetDb.IsValid());
@@ -1939,8 +1997,11 @@ StatusInt   VersionCompareChangeSummary::SetChangesets(bvector<ChangesetPropsPtr
 VersionCompareChangeSummaryPtr  VersionCompareChangeSummary::Generate(BeFileName dbFilename, bvector<ChangesetPropsPtr>& changesets, ECPresentationManagerR presentationManager, Utf8StringCR rulesetId)
     {
     // Create the change summary
-    VersionCompareChangeSummaryPtr changeSummary = new VersionCompareChangeSummary(dbFilename, presentationManager);
-    changeSummary->m_rulesetId = rulesetId;
+    SummaryOptions options;
+    options.presentationManager = &presentationManager;
+    options.rulesetId = rulesetId;
+    VersionCompareChangeSummaryPtr changeSummary = new VersionCompareChangeSummary(dbFilename, options);
+
     // Set changesets and store all changed elements
     if (SUCCESS != changeSummary->SetChangesets(changesets))
         return nullptr;
@@ -1960,18 +2021,7 @@ VersionCompareChangeSummaryPtr  VersionCompareChangeSummary::Generate(BeFileName
         }
 
     // Create the change summary
-    VersionCompareChangeSummaryPtr changeSummary = new VersionCompareChangeSummary(dbFilename, *options.presentationManager);
-    changeSummary->m_filterSpatial = options.filterSpatial;
-    changeSummary->m_filterLastMod = options.filterLastMod;
-    changeSummary->m_rulesetId = options.rulesetId;
-    changeSummary->m_tempLocation = options.tempLocation;
-    changeSummary->m_wantTargetState = options.wantTargetState;
-    changeSummary->m_wantParentKeys = options.wantParents;
-    changeSummary->m_wantPropertyChecksums = options.wantPropertyChecksums;
-    changeSummary->m_wantBriefcaseRoll = options.wantBriefcaseRoll;
-    changeSummary->m_wantRelationshipCaching = options.wantRelationshipCaching;
-    changeSummary->m_relationshipCacheSize = options.relationshipCacheSize;
-    changeSummary->m_wantChunkTraversal = options.wantChunkTraversal;
+    VersionCompareChangeSummaryPtr changeSummary = new VersionCompareChangeSummary(dbFilename, options);
 
     // Set changesets and store all changed elements
     if (SUCCESS != changeSummary->SetChangesets(changesets))

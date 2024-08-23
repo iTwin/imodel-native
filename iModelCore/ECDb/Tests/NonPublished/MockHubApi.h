@@ -1,6 +1,6 @@
 /*---------------------------------------------------------------------------------------------
  * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
- * See COPYRIGHT.md in the repository root for full copyright notice.
+ * See LICENSE.md in the repository root for full copyright notice.
  *--------------------------------------------------------------------------------------------*/
 #pragma once
 
@@ -97,7 +97,7 @@ struct TrackedECDb : ECDb {
     private:
         std::unique_ptr<ECDbChangeTracker> m_tracker;
         ECDbHub* m_hub;
-        int m_changesetId = 0;
+        int m_changesetId = -1;
         void SetupTracker(std::unique_ptr<ECDbChangeTracker> tracker = nullptr);
         virtual void _OnDbClose() override;
         virtual DbResult _OnDbCreated(CreateParams const& params) override;

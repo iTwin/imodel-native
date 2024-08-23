@@ -171,6 +171,19 @@ private:
     static BentleyStatus PointCoordinateFromJson(double&, BeJsConst, Json::StaticString const& coordinateKey);
     static BentleyStatus PointCoordinateFromJson(double&, RapidJsonValueCR, Utf8CP coordinateKey);
 
+    static bool IsLosslessUint64(double d) {
+        if (d < 0.0 || d > static_cast<double>(std::numeric_limits<uint64_t>::max())) {
+            return false;
+        }
+        return d == std::floor(d);
+    }
+    static bool IsLosslessUint64(float f) {
+        if (f < 0.0 || f > static_cast<float>(std::numeric_limits<uint64_t>::max())) {
+            return false;
+        }
+        return f == std::floor(f);
+    }
+
 public:
     //! Generates the fully qualified name of an ECClass as used in the ECJSON format: &lt;schema name&gt;.&lt;class name&gt;
     //! @param[in] ecClass ECClass
@@ -200,7 +213,7 @@ public:
     //! @name Methods for JSON values of the JsonCpp API
     //! @{
 
-    //! Writes the fully qualified name of an ECClass into a JSON value: {schema name}.{class name}
+    //! Writes the fully qualified name of an ECClass into a JSON value: &lt;schema name&gt;.&lt;class name&gt;
     //! @param[out] json JSON value
     //! @param[in] ecClass ECClass
     //! @return SUCCESS or ERROR
@@ -359,18 +372,34 @@ public:
     //! Converts an id from a JSON value to a BeInt64Id
     //! @remarks The JSON must contain the Id value in one of the formats of BentleyApi::ECN::ECJsonInt64Format.
     //! @param[in] json JSON value containing the id
-    //! @return Resulting BeInt64Id. In case of error, an invalid BeInt64Id will be returned.
+    //! @return Resulting BeInt64Id. In case of error, an int64 < 0, a double/float that cannot be converted losslessly to uint64, or a json string with '-' or '.' an invalid BeInt64Id will be returned.
     template<class TBeInt64Id>
     static TBeInt64Id JsonToId(RapidJsonValueCR json)
         {
         int64_t val = 0;
-        if (SUCCESS != JsonToInt64(val, json))
+        bool stringCheckFailed = false;
+        if (json.IsString()) 
             {
-            TBeInt64Id invalidId;
-            invalidId.Invalidate();
-            return invalidId;
+            Utf8CP strVal = json.GetString();
+            if (strVal[0] == '-') // negative numbers are not valid
+                stringCheckFailed = true;
+            else if (strchr(strVal, '.') != nullptr) // decimal numbers are not valid
+                stringCheckFailed = true;
+            }
+        else if (json.IsFloat() && IsLosslessUint64(json.GetFloat())) 
+            {
+            return TBeInt64Id((uint64_t) json.GetFloat());
+            } 
+        else if (json.IsDouble() && IsLosslessUint64(json.GetDouble())) 
+            {
+            return TBeInt64Id((uint64_t) json.GetDouble());
             }
 
+        if (stringCheckFailed || json.IsFloat() || json.IsDouble() || SUCCESS != JsonToInt64(val, json) || val < 0)
+            {
+            TBeInt64Id invalidId;
+            return invalidId;
+            }
         return TBeInt64Id((uint64_t) val);
         }
 
@@ -474,7 +503,7 @@ struct JsonECInstanceConverter final
         ~JsonECInstanceConverter() = delete;
 
         //JsonCpp
-        static BentleyStatus JsonToECInstance(ECN::IECInstanceR, BeJsConst, ECN::ECClassCR currentClass, Utf8StringCR currentAccessString, IECClassLocaterR, bool ignoreUnknownProperties = false, IECSchemaRemapperCP remapper = nullptr, std::function<bool(Utf8CP)> shouldSerializeProperty = nullptr);
+        static BentleyStatus JsonToECInstance(ECN::IECInstanceR, BeJsConst, ECN::ECClassCR currentClass, Utf8StringCR currentAccessString, IECClassLocaterR, bool ignoreUnknownProperties = false, IECSchemaRemapperCP remapper = nullptr, std::function<bool(Utf8CP)> shouldSerializeProperty = nullptr, bool isDeepNull = false);
         static BentleyStatus JsonToPrimitiveECValue(ECN::ECValueR value, BeJsConst json, ECN::PrimitiveType type, Utf8CP extendedTypeName);
         static BentleyStatus JsonToArrayECValue(ECN::IECInstanceR, BeJsConst, ECN::ArrayECPropertyCR, Utf8StringCR currentAccessString, IECClassLocaterR);
 

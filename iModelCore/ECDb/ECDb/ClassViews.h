@@ -1,6 +1,6 @@
 /*---------------------------------------------------------------------------------------------
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See COPYRIGHT.md in the repository root for full copyright notice.
+* See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 #include "ECDbInternalTypes.h"
@@ -13,7 +13,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //======================================================================================
 struct ClassViews final {
     constexpr static char ViewSchemaName[] = "ECDbMap";
-    constexpr static char ViewClassName[] = "View";
+    constexpr static char ViewClassName[] = "QueryView";
     constexpr static char ViewClassQueryProp[] = "Query";
 
     static bool IsViewClass(ECN::ECClassCR viewClass);

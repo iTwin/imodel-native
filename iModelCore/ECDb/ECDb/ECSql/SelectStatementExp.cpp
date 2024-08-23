@@ -91,12 +91,12 @@ Utf8String DerivedPropertyExp::GetName() const {
 
     if (GetExpression()->GetType() == Exp::Type::PropertyName) {
         PropertyNameExp const& propertyNameExp = GetExpression()->GetAs<PropertyNameExp>();
-        return propertyNameExp.GetPropertyPath().ToString();
+        return propertyNameExp.GetResolvedPropertyPath().ToString();
     }
 
     if (GetExpression()->GetType() == Exp::Type::NavValueCreationFunc) {
         NavValueCreationFuncExp const& navValueCreationFuncExp = GetExpression()->GetAs<NavValueCreationFuncExp>();
-        return navValueCreationFuncExp.GetPropertyNameExp()->GetPropertyPath().ToString();
+        return navValueCreationFuncExp.GetPropertyNameExp()->GetResolvedPropertyPath().ToString();
     }
 
     return GetExpression()->ToECSql();
@@ -131,7 +131,7 @@ Utf8StringCR DerivedPropertyExp::GetColumnAlias() const
         {
         PropertyNameExp const& propertyNameExp = GetExpression()->GetAs<PropertyNameExp>();
         if (propertyNameExp.IsPropertyRef())
-            m_subQueryAlias =  propertyNameExp.GetPropertyPath().ToString();
+            m_subQueryAlias =  propertyNameExp.GetResolvedPropertyPath().ToString();
         }
 
     return m_columnAlias;
@@ -732,7 +732,7 @@ BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions(ECSqlParseContext cons
 
         //WIP_ECSQL: Why is the alias the first entry in the prop path? The alias should be the root class, but not an entry in the prop path
         //WIP_ECSQL: What about SELECT structProp.* from FOO?
-        PropertyPath const& propertyPath = innerExp.GetPropertyPath();
+        PropertyPath const& propertyPath = innerExp.GetResolvedPropertyPath();
         //case: SELECT a.* from FOO a
         if (propertyPath.Size() > 1 && Exp::IsAsteriskToken(propertyPath[1].GetName()))
             {
@@ -786,7 +786,9 @@ Exp::FinalizeParseStatus SelectClauseExp::_FinalizeParsing(ECSqlParseContext& ct
             {
             BeAssert(ctx.CurrentArg() != nullptr && "SelectClauseExp::_FinalizeParsing: ECSqlParseContext::GetFinalizeParseArgs is expected to return a RangeClassRefList.");
             BeAssert(ctx.CurrentArg()->GetType() == ECSqlParseContext::ParseArg::Type::RangeClass && "Expecting range class");
-            if (SUCCESS != ReplaceAsteriskExpressions(ctx, sel.GetFrom()->FindRangeClassRefExpressions()))
+            std::vector<RangeClassInfo> rangeClassRefs;
+            sel.GetFrom()->FindRangeClassRefs(rangeClassRefs, RangeClassInfo::Scope::Local);
+            if (SUCCESS != ReplaceAsteriskExpressions(ctx, rangeClassRefs))
                 {
                 ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0574, "Asterisk replacement in select clause failed unexpectedly.");
                 return FinalizeParseStatus::Error;
@@ -893,13 +895,13 @@ PropertyMatchResult SingleSelectStatementExp::_FindProperty(ECSqlParseContext& c
                     GetAs<NavValueCreationFuncExp>().GetPropertyNameExp() : nullptr;
             // Match alias or indirect
             const auto matchUserAlias = !derivedPropertyExp.GetColumnAlias().empty() && derivedPropertyExp.GetColumnAlias().EqualsIAscii(effectivePath.First().GetName());
-            const auto matchIndirect = derivedPropertyExp.GetColumnAlias().empty() && propertyNameExp != nullptr &&  propertyNameExp->GetPropertyPath().ToString().EqualsIAscii(effectivePath.First().GetName());
+            const auto matchIndirect = derivedPropertyExp.GetColumnAlias().empty() && propertyNameExp != nullptr &&  propertyNameExp->GetResolvedPropertyPath().ToString().EqualsIAscii(effectivePath.First().GetName());
 
             if (matchUserAlias || matchIndirect) {
                 if (effectivePath.Size() == 1) {
                     const auto isMatchIndirect = !matchUserAlias && matchIndirect;
                     if (isMatchIndirect && propertyNameExp->HasUserDefinedAlias()) {
-                        derivedPropertyExp.OverrideAlias(propertyNameExp->GetPropertyPath().ToString().c_str());
+                        derivedPropertyExp.OverrideAlias(propertyNameExp->GetResolvedPropertyPath().ToString().c_str());
                     }
                     return PropertyMatchResult(options, propertyPath, effectivePath, derivedPropertyExp, isMatchIndirect ? -1 : 0);
                 } else if (propertyNameExp != nullptr && propertyNameExp->GetClassRefExp() != nullptr) {
@@ -913,7 +915,7 @@ PropertyMatchResult SingleSelectStatementExp::_FindProperty(ECSqlParseContext& c
                 }
             }
             if (propertyNameExp != nullptr && propertyNameExp->GetClassRefExp() != nullptr) {
-                if (propertyNameExp->GetPropertyPath().First().GetName().EqualsIAscii(effectivePath.First().GetName())) {
+                if (propertyNameExp->GetResolvedPropertyPath().First().GetName().EqualsIAscii(effectivePath.First().GetName())) {
                     if (effectivePath.Size() == 1) {
                         return PropertyMatchResult(options, propertyPath, effectivePath, derivedPropertyExp, 0);
                     } else if (!propertyNameExp->IsPropertyFromCommonTableBlock() && propertyNameExp->GetPropertyMap() != nullptr) {
@@ -925,7 +927,7 @@ PropertyMatchResult SingleSelectStatementExp::_FindProperty(ECSqlParseContext& c
                             }
                         }
                     }
-                    if (propertyNameExp->GetPropertyPath().ToString().EqualsIAscii(effectivePath.ToString().c_str())) {
+                    if (propertyNameExp->GetResolvedPropertyPath().ToString().EqualsIAscii(effectivePath.ToString().c_str())) {
                         return PropertyMatchResult(options, propertyPath, effectivePath, derivedPropertyExp, -4);
                     }
                 }
@@ -1091,27 +1093,52 @@ void SingleSelectStatementExp::_ToECSql(ECSqlRenderContext& ctx) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SubqueryExp::SubqueryExp(std::unique_ptr<SelectStatementExp> selectExp) : QueryExp(Type::Subquery)
+SubqueryExp::SubqueryExp(std::unique_ptr<Exp> exp) : QueryExp(Type::Subquery)
     {
-    AddChild(std::move(selectExp));
+    AddChild(std::move(exp));
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 PropertyMatchResult SubqueryExp::_FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const {
-    return GetQuery()->FindProperty(ctx, propertyPath, options);
+    SelectStatementExp const* stm = GetQuery<SelectStatementExp>();
+    if(stm != nullptr)
+        return stm->FindProperty(ctx, propertyPath, options);
+    CommonTableExp const* stmcte = GetQuery<CommonTableExp>();
+    if(stmcte != nullptr){
+        auto selectStatementInsideCTE = stmcte->GetQuery();
+        return selectStatementInsideCTE->FindProperty(ctx,propertyPath,options);
+    }   
+    return PropertyMatchResult::NotFound();
 }
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SelectClauseExp const* SubqueryExp::_GetSelection() const { return GetQuery()->GetSelection(); }
+SelectClauseExp const* SubqueryExp::_GetSelection() const { 
+    SelectStatementExp const* stm = GetQuery<SelectStatementExp>();
+    if(stm != nullptr)
+        return stm->GetSelection();
+    CommonTableExp const* stmcte = GetQuery<CommonTableExp>();
+    if(stmcte != nullptr){
+        auto selectStatementInsideCTE = stmcte->GetQuery();
+        return selectStatementInsideCTE->GetSelection();
+    }
+    return NULL;  
+    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SelectStatementExp const* SubqueryExp::GetQuery() const { return GetChild<SelectStatementExp>(0); }
-
+template<typename T>
+T const* SubqueryExp::GetQuery() const { 
+    auto child = GetChild<Exp>(0);
+    if(child != nullptr && dynamic_cast<T const*> (child) != nullptr)
+        return static_cast<T const*>(child);
+    return nullptr; 
+    }
+template CommonTableExp const* SubqueryExp::GetQuery<CommonTableExp>() const;
+template SelectStatementExp const* SubqueryExp::GetQuery<SelectStatementExp>() const;
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1119,13 +1146,25 @@ void SubqueryExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
     //! ITWINJS_PARSE_TREE: SubqueryExp
     val.SetEmptyObject();
     val["id"] = "SubqueryExp";
-    GetQuery()->ToJson(val["query"], fmt);
+    SelectStatementExp const* stm = GetQuery<SelectStatementExp>();
+    if(stm != nullptr)
+        stm->ToJson(val["query"], fmt);
+    CommonTableExp const* stmcte = GetQuery<CommonTableExp>();
+    if(stmcte != nullptr)
+        stmcte->ToJson(val["query"], fmt);
 }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void SubqueryExp::_ToECSql(ECSqlRenderContext& ctx) const { ctx.AppendToECSql(*GetQuery()); }
+void SubqueryExp::_ToECSql(ECSqlRenderContext& ctx) const { 
+    SelectStatementExp const* stm = GetQuery<SelectStatementExp>();
+    if(stm != nullptr)
+        ctx.AppendToECSql(*stm); 
+    CommonTableExp const* stmcte = GetQuery<CommonTableExp>();
+    if(stmcte != nullptr)
+        ctx.AppendToECSql(*stmcte); 
+    }
 
 //****************************** SubqueryRefExp *****************************************
 //-----------------------------------------------------------------------------------------
@@ -1172,6 +1211,24 @@ void SubqueryRefExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPr
         std::unique_ptr<PropertyNameExp> propNameExp = std::make_unique<PropertyNameExp>(ctx, *this, selectClauseItemExp);
         expandedSelectClauseItemList.push_back(std::make_unique<DerivedPropertyExp>(std::move(propNameExp), nullptr));
         }
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+PropertyMatchResult SubqueryRefExp::_FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const
+    {
+        PropertyMatchOptions overrideOptions = options;
+        overrideOptions.SetAlias(GetAlias().c_str());
+        SelectStatementExp const* selectSubQuery = GetSubquery()->GetQuery<SelectStatementExp>();
+        if(selectSubQuery != nullptr)
+            return selectSubQuery->FindProperty(ctx, propertyPath, overrideOptions);
+        CommonTableExp const* stmcte = GetSubquery()->GetQuery<CommonTableExp>();
+        if(stmcte != nullptr){
+            auto selectStatementInsideCTE = stmcte->GetQuery();
+            return selectStatementInsideCTE->FindProperty(ctx,propertyPath,options);
+        }
+        return PropertyMatchResult::NotFound();
     }
 
 //-----------------------------------------------------------------------------------------

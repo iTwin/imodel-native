@@ -4,8 +4,21 @@ This document including important changes to syntax or file format.
 
 | Module  | Version   |
 | ------- | --------- |
-| Profile | `4.0.0.4` |
-| ECSQL   | `1.2.10.0` |
+| Profile | `4.0.0.5` |
+| ECSQL   | `1.2.12.0` |
+
+## `08/16/2024`: Add CTE support in subquery
+* ECSql version change `1.2.11.0` -> `1.2.12.0`.
+* Added supprt for use of WITH clause or CTE in subqueries.
+* Example: `SELECT COUNT(*) FROM (WITH el (Id, ClassId) AS ( SELECT ECInstanceId, ECClassId FROM bis.Element ) SELECT * FROM el)`
+
+## `07/11/2024`: Add PRAGMA purge_orphan_relationships
+
+* ECSql version change `1.2.10.0` -> `1.2.11.0`.
+* Added new command `PRAGMA purge_orphan_relationships` which will delete all orphaned instances in link table relationship tables.
+* The command requires neither any arguments nor any boolean assignments.
+* The use of this command in ECSQL requires either enabling experimental features globally with PRAGMA or specifying `OPTIONS ENABLE_EXPERIMENTAL_FEATURES` in the ecsql.
+* Example: `PRAGMA purge_orphan_relationships options enable_experimental_features`.
 
 ## `1/10/2024`: Add support for navigation value creation function
 
@@ -153,7 +166,7 @@ On the other hand, the following query makes `Foo` optional by adding `?` at the
 * Add support for RIGHT/FULL join.
   * Example: `SELECT $->name FROM meta.ECClassDef ECSQLOPTIONS enable_experimental_features`.
 
-## `8/9/2023`: Truncate BLob to {bytes:####} instead of a single byte via QueryJsonAdaptor
+## `8/9/2023`: Truncate BLob to {bytes:####} instead of a single byte via ECSqlRowAdaptor
 
 * This effect instance access and concurrent query.
 

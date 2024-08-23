@@ -20,5 +20,5 @@ always:
     ~mkdir $(TESTFILES_NUGET_DIR)
     ~mkdir $(TESTRUNNERS_NUGET_DIR)
     ~mkdir $(TESTFILES_DIR)
-    $(BBPYTHONCMD) Tests/DgnProject/Compatibility/CompatibilityRunner/PullNugets.py $(NUGET_SRC_DIR) $(ARTEFACTS_ROOTDIR) $(NUGET_DIR) $(SrcRoot)BentleyBuild/bentleybuild
+    $(BBPYTHONCMD) Tests/DgnProject/Compatibility/CompatibilityRunner/PullNugets.py $(NUGET_SRC_DIR) $(ARTEFACTS_ROOTDIR) $(NUGET_DIR) $(SrcRoot)BentleyBuild/bblib
     $(SrcRoot)bsicommon/build/CopyWithSymlinks.py $(NUGET_SRC_DIR) $(TESTRUNNERS_NUGET_DIR)

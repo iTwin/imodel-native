@@ -318,7 +318,7 @@ void SyncCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
 
     if (args[1].EqualsIAscii("init"))
         {
-        if (SchemaSync::Status::OK != session.GetFile().GetECDbHandle()->Schemas().GetSchemaSync().Init(SchemaSync::SyncDbUri(args[2].c_str())))
+        if (SchemaSync::Status::OK != session.GetFile().GetECDbHandle()->Schemas().GetSchemaSync().Init(SchemaSync::SyncDbUri(args[2].c_str()),"xxxx", false))
             {
             IModelConsole::WriteErrorLine("Failed to init : %s",args[2].c_str());
             }
@@ -919,7 +919,7 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
                 return;
                 }
 
-            Dgn::ChangesetFileReader changeStream(changesetFilePath, session.GetFile().GetAs<IModelFile>().GetDgnDbHandleR());
+            Dgn::ChangesetFileReader changeStream(changesetFilePath, &session.GetFile().GetAs<IModelFile>().GetDgnDbHandleR());
             PERFLOG_START("iModelConsole", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
             ECInstanceKey changeSummaryKey;
             if (session.GetFileR().GetECDbHandle()->ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeStream)) != SUCCESS)
@@ -991,7 +991,7 @@ void ChangeCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
             return;
             }
 
-        Dgn::ChangesetFileReader changeStream(changesetFilePath, session.GetFile().GetAs<IModelFile>().GetDgnDbHandleR());
+        Dgn::ChangesetFileReader changeStream(changesetFilePath, &session.GetFile().GetAs<IModelFile>().GetDgnDbHandleR());
         changeStream.Dump(Utf8String(changesetFilePath.GetFileNameWithoutExtension().c_str()).c_str(), session.GetFile().GetAs<IModelFile>().GetHandle());
         IModelConsole::WriteLine("Successfully logged the content of the changeset file. See logging category 'Changeset' in the iModelConsole logs.");
         return;

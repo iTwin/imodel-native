@@ -11,17 +11,7 @@ USING_NAMESPACE_BENTLEY_EC;
 // @bsiclass
 //========================================================================================
 struct LinkTableRelationshipTests : public DgnDbTestFixture
-{
-    struct TestIssueListener : ECN::IIssueListener
-    {
-    mutable bvector<Utf8String> m_issues;
-
-    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override
-        {
-        m_issues.push_back(message);
-        }
-    };
-};
+{};
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -69,27 +59,70 @@ TEST_F(LinkTableRelationshipTests, CRUD)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-TEST_F(LinkTableRelationshipTests, BisCore17ImportShouldFail)
+TEST_F(LinkTableRelationshipTests, TestBisCore17WithUpdatedSystemIndex)
     {
     SetupSeedProject();
     const auto bisCoreSchema = m_db->Schemas().GetSchema("BisCore");
-    ASSERT_EQ(bisCoreSchema->GetVersionRead(), 1U);
-    ASSERT_EQ(bisCoreSchema->GetVersionWrite(), 0U);
-    ASSERT_LT(bisCoreSchema->GetVersionMinor(), 17U);
+    ASSERT_GE(bisCoreSchema->GetVersionRead(), 1U);
+    ASSERT_GE(bisCoreSchema->GetVersionWrite(), 0U);
 
-    // Import new dummy BisCore which has the new DbIndex added to ElementRefersToElements
-    ECSchemaPtr schema = nullptr;
-    auto context = ECSchemaReadContext::CreateContext();
-    context->AddSchemaLocater(m_db->GetSchemaLocater());
-    auto bisCoreSchemaPath = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    bisCoreSchemaPath.AppendToPath(L"ECSchemas\\BisCoreDummy.01.00.17.ecschema.xml");
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(schema, bisCoreSchemaPath.GetName(), *context));
+    if (bisCoreSchema->GetVersionMinor() < 17U)
+        {
+        ECSchemaPtr schema = nullptr;
+        auto context = ECSchemaReadContext::CreateContext();
+        context->AddSchemaLocater(m_db->GetSchemaLocater());
+        auto bisCoreSchemaPath = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+        bisCoreSchemaPath.AppendToPath(L"ECSchemas\\BisCoreDummy.01.00.17.ecschema.xml");
+        EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(schema, bisCoreSchemaPath.GetName(), *context));
+        ASSERT_EQ(SchemaStatus::Success, m_db->ImportSchemas(context->GetCache().GetSchemas(), true));
+        }
 
-    TestIssueListener issueListener;
-    m_db->AddIssueListener(issueListener);
+    auto relationshipClass = m_db->Schemas().GetClass(BIS_ECSCHEMA_NAME, "CategorySelectorRefersToCategories")->GetRelationshipClassCP();
+    ASSERT_NE(nullptr, relationshipClass);
 
-    ASSERT_EQ(SchemaStatus::SchemaImportFailed, m_db->ImportSchemas(context->GetCache().GetSchemas(), true));
+    CategorySelectorPtr categorySelector = new CategorySelector(m_db->GetDictionaryModel(), "TestCategorySelector");
+    ASSERT_TRUE(categorySelector.IsValid());
+    ASSERT_TRUE(categorySelector->Insert().IsValid());
 
-    EXPECT_FALSE(issueListener.m_issues.empty());
-    EXPECT_STREQ(issueListener.m_issues.back().c_str(), Utf8PrintfString("ECSchema BisCore.01.00.17 requires ECDb version 4.0.0.5, but the current runtime version is only %s.", m_db->GetECDbProfileVersion().ToString().c_str()).c_str());
+    SpatialCategory category(m_db->GetDictionaryModel(), "TestCategory", DgnCategory::Rank::Application);
+    auto spatialCategory = category.Insert(DgnSubCategory::Appearance());
+    EXPECT_TRUE(spatialCategory.IsValid());
+
+    // Try to insert duplicate link table relationships with different MemberPriority values
+    // Should succeed
+    auto relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relationshipClass);
+    ASSERT_NE(nullptr, relationshipEnabler);
+
+    const bvector<int> expectedMemberPriorityValues = { 0, 1, 2, 3 };
+    ECInstanceKey relationshipInstanceKeys[5];
+    for (const auto& memberPriorityValue : expectedMemberPriorityValues)
+        {
+        IECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance();
+        ASSERT_NE(nullptr, relationshipInstance);
+
+        ECValue value;
+        value.SetInteger(memberPriorityValue);
+        relationshipInstance->SetValue("MemberPriority", value);
+
+        ASSERT_EQ(BE_SQLITE_OK, m_db->InsertLinkTableRelationship(relationshipInstanceKeys[memberPriorityValue], *relationshipClass, ECInstanceId(categorySelector->GetElementId().GetValue()), 
+            ECInstanceId(spatialCategory->GetCategoryId().GetValue()), relationshipInstance.get())) << "Failed when inserting element with member priority value " << memberPriorityValue << "\n";
+        }
+
+    // Check if the all valid relationships were inserted correctly
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(*m_db, "SELECT * FROM " BIS_SCHEMA("CategorySelectorRefersToCategories") " ORDER BY ECInstanceId"));
+    auto rowCount = 0;
+    
+    while (BE_SQLITE_ROW == statement.Step())
+        {
+        EXPECT_EQ(statement.GetValueId<ECInstanceId>(0), relationshipInstanceKeys[rowCount].GetInstanceId());
+        EXPECT_EQ(statement.GetValueId<ECClassId>(1), relationshipInstanceKeys[rowCount].GetClassId());
+        EXPECT_EQ(statement.GetValueInt(2), expectedMemberPriorityValues[rowCount]);
+        EXPECT_EQ(statement.GetValueId<DgnElementId>(3), categorySelector->GetElementId());
+        EXPECT_EQ(statement.GetValueId<DgnClassId>(4), categorySelector->GetElementClassId());
+        EXPECT_EQ(statement.GetValueId<DgnElementId>(5), spatialCategory->GetCategoryId());
+        EXPECT_EQ(statement.GetValueId<DgnElementId>(6), spatialCategory->GetElementClassId());
+        ++rowCount;
+        }
+    EXPECT_EQ(rowCount, expectedMemberPriorityValues.size());
     }
