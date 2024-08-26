@@ -44,7 +44,7 @@
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
-#ifdef WIN32
+#ifdef _WIN32
 #define OPENMODE S_IREAD | S_IWRITE
 #else
 #define OPENMODE S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH
@@ -57,22 +57,12 @@ bool tool_create_output_file(struct OutStruct *outs,
   struct GlobalConfig *global;
   FILE *file = NULL;
   char *fname = outs->filename;
-  char *aname = NULL;
   DEBUGASSERT(outs);
   DEBUGASSERT(config);
   global = config->global;
   if(!fname || !*fname) {
     warnf(global, "Remote filename has no length");
     return FALSE;
-  }
-
-  if(config->output_dir && outs->is_cd_filename) {
-    aname = aprintf("%s/%s", config->output_dir, fname);
-    if(!aname) {
-      errorf(global, "out of memory");
-      return FALSE;
-    }
-    fname = aname;
   }
 
   if(config->file_clobber_mode == CLOBBER_ALWAYS ||
@@ -85,7 +75,7 @@ bool tool_create_output_file(struct OutStruct *outs,
     int fd;
     do {
       fd = open(fname, O_CREAT | O_WRONLY | O_EXCL | O_BINARY, OPENMODE);
-      /* Keep retrying in the hope that it isn't interrupted sometime */
+      /* Keep retrying in the hope that it is not interrupted sometime */
     } while(fd == -1 && errno == EINTR);
     if(config->file_clobber_mode == CLOBBER_NEVER && fd == -1) {
       int next_num = 1;
@@ -94,27 +84,25 @@ bool tool_create_output_file(struct OutStruct *outs,
       char *newname;
       /* Guard against wraparound in new filename */
       if(newlen < len) {
-        free(aname);
         errorf(global, "overflow in filename generation");
         return FALSE;
       }
       newname = malloc(newlen);
       if(!newname) {
         errorf(global, "out of memory");
-        free(aname);
         return FALSE;
       }
       memcpy(newname, fname, len);
       newname[len] = '.';
-      while(fd == -1 && /* haven't successfully opened a file */
+      while(fd == -1 && /* have not successfully opened a file */
             (errno == EEXIST || errno == EISDIR) &&
             /* because we keep having files that already exist */
-            next_num < 100 /* and we haven't reached the retry limit */ ) {
+            next_num < 100 /* and we have not reached the retry limit */ ) {
         curlx_msnprintf(newname + len + 1, 12, "%d", next_num);
         next_num++;
         do {
           fd = open(newname, O_CREAT | O_WRONLY | O_EXCL | O_BINARY, OPENMODE);
-          /* Keep retrying in the hope that it isn't interrupted sometime */
+          /* Keep retrying in the hope that it is not interrupted sometime */
         } while(fd == -1 && errno == EINTR);
       }
       outs->filename = newname; /* remember the new one */
@@ -135,10 +123,8 @@ bool tool_create_output_file(struct OutStruct *outs,
   if(!file) {
     warnf(global, "Failed to open the file %s: %s", fname,
           strerror(errno));
-    free(aname);
     return FALSE;
   }
-  free(aname);
   outs->s_isreg = TRUE;
   outs->fopened = TRUE;
   outs->stream = file;
@@ -159,14 +145,14 @@ size_t tool_write_cb(char *buffer, size_t sz, size_t nmemb, void *userdata)
   struct OperationConfig *config = per->config;
   size_t bytes = sz * nmemb;
   bool is_tty = config->global->isatty;
-#ifdef WIN32
+#ifdef _WIN32
   CONSOLE_SCREEN_BUFFER_INFO console_info;
   intptr_t fhnd;
 #endif
 
 #ifdef DEBUGBUILD
   {
-    char *tty = curlx_getenv("CURL_ISATTY");
+    char *tty = curl_getenv("CURL_ISATTY");
     if(tty) {
       is_tty = TRUE;
       curl_free(tty);
@@ -231,13 +217,13 @@ size_t tool_write_cb(char *buffer, size_t sz, size_t nmemb, void *userdata)
     }
   }
 
-#ifdef WIN32
+#ifdef _WIN32
   fhnd = _get_osfhandle(fileno(outs->stream));
   /* if windows console then UTF-8 must be converted to UTF-16 */
   if(isatty(fileno(outs->stream)) &&
      GetConsoleScreenBufferInfo((HANDLE)fhnd, &console_info)) {
     wchar_t *wc_buf;
-    DWORD wc_len;
+    DWORD wc_len, chars_written;
     unsigned char *rbuf = (unsigned char *)buffer;
     DWORD rlen = (DWORD)bytes;
 
@@ -292,7 +278,7 @@ size_t tool_write_cb(char *buffer, size_t sz, size_t nmemb, void *userdata)
               (HANDLE) fhnd,
               prefix,
               prefix[1] ? 2 : 1,
-              NULL,
+              &chars_written,
               NULL)) {
             return CURL_WRITEFUNC_ERROR;
           }
@@ -332,7 +318,8 @@ size_t tool_write_cb(char *buffer, size_t sz, size_t nmemb, void *userdata)
 
     if(rlen) {
       /* calculate buffer size for wide characters */
-      wc_len = MultiByteToWideChar(CP_UTF8, 0, (LPCSTR)rbuf, rlen, NULL, 0);
+      wc_len = (DWORD)MultiByteToWideChar(CP_UTF8, 0, (LPCSTR)rbuf, (int)rlen,
+                                          NULL, 0);
       if(!wc_len)
         return CURL_WRITEFUNC_ERROR;
 
@@ -340,8 +327,8 @@ size_t tool_write_cb(char *buffer, size_t sz, size_t nmemb, void *userdata)
       if(!wc_buf)
         return CURL_WRITEFUNC_ERROR;
 
-      wc_len = MultiByteToWideChar(CP_UTF8, 0, (LPCSTR)rbuf, rlen, wc_buf,
-                                   wc_len);
+      wc_len = (DWORD)MultiByteToWideChar(CP_UTF8, 0, (LPCSTR)rbuf, (int)rlen,
+                                          wc_buf, (int)wc_len);
       if(!wc_len) {
         free(wc_buf);
         return CURL_WRITEFUNC_ERROR;
@@ -351,7 +338,7 @@ size_t tool_write_cb(char *buffer, size_t sz, size_t nmemb, void *userdata)
           (HANDLE) fhnd,
           wc_buf,
           wc_len,
-          NULL,
+          &chars_written,
           NULL)) {
         free(wc_buf);
         return CURL_WRITEFUNC_ERROR;
