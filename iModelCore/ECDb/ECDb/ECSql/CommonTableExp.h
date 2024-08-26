@@ -52,7 +52,8 @@ struct CommonTableBlockExp: RangeClassRefExp {
         void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
         PropertyMatchResult _FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const override;
 
-        bool ExpandDerivedProperties() const;
+        bool ExpandDerivedProperties(ECSqlParseContext&) const;
+        bool ExpandDerivedPropertiesForEmptyColumnList(ECSqlParseContext&) const;
 
     public:
         CommonTableBlockExp(Utf8CP name, std::vector<Utf8String> colList, std::unique_ptr<SelectStatementExp> stmt);
