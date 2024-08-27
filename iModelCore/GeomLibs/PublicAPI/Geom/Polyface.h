@@ -1011,7 +1011,7 @@ GEOMDLLIMPEXP bool IsFacetOrientationConsistent() const;
 //! @param [out] num4 Number of edges with 4 incident faces.
 //! @param [out] numMore Number of edges with 5 or more incident faces.
 //! @param [out] numCollapsed Number of polygon sides collapsed to points.
-//! @param [out] ignoreSliverFaces suppresses counting edges on sliver faces
+//! @param [in] ignoreSliverFaces suppresses counting edges on sliver faces
 //! @param [out] numWith0Visible number of edge clusters with none visible
 //! @param [out] numwith1OrMoreVisible number of edge clusters with 1 or more visible.
 //!
