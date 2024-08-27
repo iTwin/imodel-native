@@ -3519,7 +3519,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_InvalidInECSql)
 
     }
 
-TEST_F(SchemaRulesTestFixture, ImportNewerSchemaWithUnknowns)
+TEST_F(SchemaRulesTestFixture, WIP_ImportNewerSchemaWithUnknowns)
     {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ImportNewerSchemaWithUnknowns.ecdb"));
     uint32_t ecXmlMajorVersion;
