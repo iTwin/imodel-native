@@ -3518,4 +3518,137 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_InvalidInECSql)
     }
 
     }
+
+TEST_F(SchemaRulesTestFixture, ImportNewerSchemaWithUnknowns)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ImportNewerSchemaWithUnknowns.ecdb"));
+    uint32_t ecXmlMajorVersion;
+    uint32_t ecXmlMinorVersion;
+    ECSchema::ParseECVersion(ecXmlMajorVersion, ecXmlMinorVersion, ECVersion::Latest);
+
+    const auto newVersion = Utf8PrintfString("%d.%d", ecXmlMajorVersion, ++ecXmlMinorVersion);
+
+    Utf8CP schemaXml = R"xml(
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.%s">
+            %s
+        </ECSchema>)xml";
+
+        // New Primitive Type "unknownType"
+        // Should get defaulted to string
+        {
+        ASSERT_EQ(SUCCESS, GetHelper().ImportSchemas({SchemaItem(Utf8PrintfString(schemaXml, newVersion.c_str(), R"xml(
+            <ECEntityClass typeName="TestClass">
+                <ECProperty propertyName="UnknownTypeProperty" typeName="unknownType"/>
+                <ECArrayProperty propertyName="UnknownArrayProperty" typeName="unknownType"/>
+            </ECEntityClass>)xml"))}));
+        const auto schema = m_ecdb.Schemas().GetSchema("TestSchema");
+        ASSERT_NE(nullptr, schema);
+
+        const auto testClass = schema->GetClassCP("TestClass");
+        ASSERT_NE(nullptr, testClass);
+
+        const auto unknownTypeProperty = testClass->GetPropertyP("UnknownTypeProperty");
+        ASSERT_NE(nullptr, unknownTypeProperty);
+        EXPECT_TRUE(unknownTypeProperty->GetIsPrimitive());
+        EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, unknownTypeProperty->GetAsPrimitiveProperty()->GetType());
+        m_ecdb.AbandonChanges();
+        }
+
+        // New Enumeration BackingType "unknownType"
+        // Should get defaulted to string
+        {
+        ASSERT_EQ(SUCCESS, GetHelper().ImportSchemas({SchemaItem(Utf8PrintfString(schemaXml, newVersion.c_str(), R"xml(
+            <ECEnumeration typeName="TestEnumeration" backingTypeName="unknownType">
+                <ECEnumerator name="TestVal1" value="1" displayLabel="TestVal1" />
+                <ECEnumerator name="TestVal2" value="2" displayLabel="TestVal2" />
+            </ECEnumeration>)xml"))}));
+        const auto schema = m_ecdb.Schemas().GetSchema("TestSchema");
+        ASSERT_NE(nullptr, schema);
+        const auto testEnum = schema->GetEnumerationCP("TestEnumeration");
+        ASSERT_NE(nullptr, testEnum);
+        EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, testEnum->GetType());
+        m_ecdb.AbandonChanges();
+        }
+
+        // New class modifier "unknownType"
+        // Should get defaulted to "None"
+        {
+        ASSERT_EQ(SUCCESS, GetHelper().ImportSchemas({SchemaItem(Utf8PrintfString(schemaXml, newVersion.c_str(), R"xml(
+            <ECEntityClass typeName="TestClass" modifier="unknownType" />
+            )xml"))}));
+        const auto schema = m_ecdb.Schemas().GetSchema("TestSchema");
+        ASSERT_NE(nullptr, schema);
+        const auto testClass = schema->GetClassCP("TestClass");
+        ASSERT_NE(nullptr, testClass);
+        EXPECT_EQ(ECClassModifier::None, testClass->GetClassModifier());
+        m_ecdb.AbandonChanges();
+        }
+
+        // New property kind "UnknownKind"
+        // The property should get dropped from the class
+        {
+        ASSERT_EQ(SUCCESS, GetHelper().ImportSchemas({SchemaItem(Utf8PrintfString(schemaXml, newVersion.c_str(), R"xml(
+            <ECEntityClass typeName="TestClass">
+                <UnknownKind propertyName="NewProperty" />
+            </ECEntityClass>)xml"))}));
+        const auto schema = m_ecdb.Schemas().GetSchema("TestSchema");
+        ASSERT_NE(nullptr, schema);
+        const auto testClass = schema->GetClassCP("TestClass");
+        ASSERT_NE(nullptr, testClass);
+        EXPECT_EQ(nullptr, testClass->GetPropertyP("NewProperty"));
+        EXPECT_EQ(0, testClass->GetPropertyCount());
+        m_ecdb.AbandonChanges();
+        }
+
+        // New strength type "BiDirectional"
+        // Should get defaulted to "Referencing"
+        {
+        ASSERT_EQ(SUCCESS, GetHelper().ImportSchemas({SchemaItem(Utf8PrintfString(schemaXml, newVersion.c_str(), R"xml(
+            <ECEntityClass typeName="Source"/>
+            <ECEntityClass typeName="Target"/>
+
+            <ECRelationshipClass typeName="TestRelationship" modifier="Lol" direction="forward" strength="BiDirectional">
+                <Source multiplicity="(1..1)" roleLabel="likes" polymorphic="False">
+                    <Class class="Source" />
+                </Source>
+                <Target multiplicity="(1..1)" roleLabel="is liked by" polymorphic="True">
+                    <Class class="Target" />
+                </Target>
+            </ECRelationshipClass>)xml"))}));
+        const auto schema = m_ecdb.Schemas().GetSchema("TestSchema");
+        ASSERT_NE(nullptr, schema);
+        const auto testClass = schema->GetClassCP("TestRelationship");
+        ASSERT_NE(nullptr, testClass);
+        
+        EXPECT_TRUE(testClass->IsRelationshipClass());
+        EXPECT_EQ(ECClassModifier::None, testClass->GetRelationshipClassCP()->GetClassModifier());
+        EXPECT_EQ(StrengthType::Referencing, testClass->GetRelationshipClassCP()->GetStrength());
+        m_ecdb.AbandonChanges();
+        }
+
+        // New schema item type "UnknownClass"
+        // The schema item should be ignored
+        {
+        ASSERT_EQ(SUCCESS, GetHelper().ImportSchemas({SchemaItem(Utf8PrintfString(schemaXml, newVersion.c_str(), R"xml(
+            <UnknownClass typeName="TestUnknownClass" unknownAttribute="lol"/>
+            )xml"))}));
+        const auto schema = m_ecdb.Schemas().GetSchema("TestSchema");
+        ASSERT_NE(nullptr, schema);
+        m_ecdb.AbandonChanges();
+        }
+
+        // New schema attribute "unknownAttribute"
+        // The attribute should be ignored
+        {
+        ASSERT_EQ(SUCCESS, GetHelper().ImportSchemas({SchemaItem(Utf8PrintfString(schemaXml, newVersion.c_str(), R"xml(
+            <ECEntityClass typeName="TestUnknownClass" unknownAttribute="lol"/>
+            )xml"))}));
+        const auto schema = m_ecdb.Schemas().GetSchema("TestSchema");
+        ASSERT_NE(nullptr, schema);
+        const auto testClass = schema->GetClassCP("TestUnknownClass");
+        ASSERT_NE(nullptr, testClass);
+        m_ecdb.AbandonChanges();
+        }
+    }
+
 END_ECDBUNITTESTS_NAMESPACE
