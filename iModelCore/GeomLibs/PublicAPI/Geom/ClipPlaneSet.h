@@ -541,7 +541,7 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
     GEOMDLLIMPEXP void static SweptPolygonClipPolyface
         (
         PolyfaceQueryCR polyface,
-        bvector<DPoint3d> & polygon,
+        bvector<DPoint3d> &polygon,
         DVec3dCR sweepDirection,
         bool constructNewFacetsOnClipSetPlanes,
         PolyfaceHeaderPtr *inside,
