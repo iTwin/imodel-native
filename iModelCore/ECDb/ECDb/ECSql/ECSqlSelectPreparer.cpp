@@ -368,7 +368,7 @@ ECSqlStatus ECSqlSelectPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::Lis
             resultSet.push_back(snippet.GetSql());
             }
         }
-    if (ctx.GetCurrentScope().IsRootScope())
+    if (ctx.GetCurrentScope().IsRootScope() && ctx.GetCreateField())
         {
         ctx.GetCurrentScopeR().IncrementNativeSqlSelectClauseColumnCount(nativeSqlSnippets.size() - snippetCountBefore);
         if (exp.GetExpression()->GetType() == Exp::Type::NavValueCreationFunc ||

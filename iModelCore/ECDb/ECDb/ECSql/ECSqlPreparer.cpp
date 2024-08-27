@@ -180,12 +180,25 @@ ECSqlStatus ECSqlExpPreparer::InsertSubquery(ECSqlPrepareContext& ctx, AllOrAnyE
     switch (type)
         {
         case SqlCompareListType::All:
+            {
+            
             for (Exp const* childExp : subquerySelect.GetSelection()->GetChildren())
                 {
                 if (!isFirstItem)
                     allOrAnyQuery.AppendSpace().Append("AND").AppendSpace();
 
-                allOrAnyQuery.Append(childExp->ToECSql()).AppendSpace();
+                NativeSqlBuilder::List selectClauseItemNativeSqlSnippets;
+                ctx.SetCreateField(false);
+                ECSqlStatus stat = ECSqlSelectPreparer::PrepareDerivedPropertyExp(selectClauseItemNativeSqlSnippets, ctx, childExp->GetAs<DerivedPropertyExp>(), 1);
+                ctx.SetCreateField(true);
+                if (stat != ECSqlStatus::Success)
+                    return stat;
+                if(selectClauseItemNativeSqlSnippets.size() == 0)
+                {
+                    BeAssert(false && "Failed to prepare derived property expression of the select statement for the final WHERE check inside ALL");
+                    return ECSqlStatus::Error;
+                }
+                allOrAnyQuery.Append(selectClauseItemNativeSqlSnippets[0]).AppendSpace();
                 if (op == BooleanSqlOperator::EqualTo)
                     allOrAnyQuery.Append(ExpHelper::ToSql(BooleanSqlOperator::NotEqualTo));
                 else if (op == BooleanSqlOperator::NotEqualTo)
@@ -198,19 +211,34 @@ ECSqlStatus ECSqlExpPreparer::InsertSubquery(ECSqlPrepareContext& ctx, AllOrAnyE
             if (trailingParen)
                 allOrAnyQuery.AppendParenRight();
             break;
+            }
+            
         case SqlCompareListType::Any:
         case SqlCompareListType::Some:
+            {
             for (Exp const* childExp : subquerySelect.GetSelection()->GetChildren())
                 {
                 if (!isFirstItem)
                     allOrAnyQuery.AppendSpace().Append("OR").AppendSpace();
 
-                allOrAnyQuery.Append(operand).AppendSpace().Append(ExpHelper::ToSql(op)).AppendSpace().Append(childExp->ToECSql());
+                NativeSqlBuilder::List selectClauseItemNativeSqlSnippets;
+                ctx.SetCreateField(false);
+                ECSqlStatus stat = ECSqlSelectPreparer::PrepareDerivedPropertyExp(selectClauseItemNativeSqlSnippets, ctx, childExp->GetAs<DerivedPropertyExp>(),1);
+                ctx.SetCreateField(true);
+                if (stat != ECSqlStatus::Success)
+                    return stat;
+                if(selectClauseItemNativeSqlSnippets.size() == 0)
+                {
+                    BeAssert(false && "Failed to prepare derived property expression of the select statement ffor the final WHERE check inside ANY or SOME");
+                    return ECSqlStatus::Error;
+                }
+                allOrAnyQuery.Append(operand).AppendSpace().Append(ExpHelper::ToSql(op)).AppendSpace().Append(selectClauseItemNativeSqlSnippets[0]);
                 isFirstItem = false;
                 }
             if (trailingParen)
                 allOrAnyQuery.AppendParenRight();
             break;
+            }
         default:
             BeAssert(false && "Unhandled SqlCompareListType case.");
             return ECSqlStatus::Error;
@@ -2701,7 +2729,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareNavValueCreationFuncExp(NativeSqlBuilder::L
     NativeSqlBuilder relECClassIdBuilder;
     NativeSqlBuilder::List idNativeSql;
     NativeSqlBuilder::List relECClassIdNativeSql;
-    if (ctx.GetCurrentScope().IsRootScope())
+    if (ctx.GetCurrentScope().IsRootScope() && ctx.GetCreateField())
         ECSqlFieldFactory::CreateField(ctx, exp.GetColumnRefExp(), ctx.GetCurrentScope().GetNativeSqlSelectClauseColumnCount());
 
     auto stat = PrepareValueExp(idNativeSql, ctx, *exp.GetIdArgExp());
