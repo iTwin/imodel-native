@@ -1216,7 +1216,7 @@ bool reverse
     size_t n = signedOneBasedIndices.size();
     while (n > 1 && signedOneBasedIndices[n - 1] == 0)
         --n; // strip off trailing pad/terminator
-    while (n > 1 && signedOneBasedIndices[n - 1] == signedOneBasedIndices[0])
+    while (n > 1 && abs(signedOneBasedIndices[n - 1]) == abs(signedOneBasedIndices[0]))
         --n; // strip off trailing duplicate
     if (n < 3)
         return false;
