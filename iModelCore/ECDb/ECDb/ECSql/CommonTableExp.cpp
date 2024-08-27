@@ -39,6 +39,13 @@ CommonTableBlockExp::CommonTableBlockExp(Utf8CP name, std::vector<Utf8String> co
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
+CommonTableBlockExp::CommonTableBlockExp(Utf8CP name, std::unique_ptr<SelectStatementExp> stmt)
+    :RangeClassRefExp(Exp::Type::CommonTableBlock, PolymorphicInfo::Only()), m_name(name), m_deferredExpand(true) {
+    AddChild(std::move(stmt));
+}
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
 bool CommonTableBlockExp::ExpandDerivedProperties(ECSqlParseContext& ctx) const {
     if(m_columnList.size() == 0)
         return ExpandDerivedPropertiesForEmptyColumnList(ctx);

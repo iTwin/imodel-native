@@ -497,15 +497,6 @@ PropertyMap const* PropertyNameExp::GetPropertyMap() const
             }
 
         case Exp::Type::SubqueryRef:
-            {
-            PropertyNameExp::PropertyRef const* propertyRef = GetPropertyRef();
-            BeAssert(propertyRef != nullptr);
-            propertyMap = propertyRef->TryGetPropertyMap(GetResolvedPropertyPath());
-            if (propertyMap == nullptr) {
-                BeAssert(propertyMap != nullptr && "Exp of a derived prop exp referenced from a sub query ref is expected to always be a prop name exp");
-            }
-            break;
-            }
         case Exp::Type::CommonTableBlock:
             {
             PropertyNameExp::PropertyRef const* propertyRef = GetPropertyRef();
@@ -518,6 +509,18 @@ PropertyMap const* PropertyNameExp::GetPropertyMap() const
             }
         case Exp::Type::CommonTableBlockName :
             {
+            CommonTableBlockNameExp const& cteBlockNameExp = classRefExp->GetAs<CommonTableBlockNameExp>();
+            CommonTableBlockExp const* cteBlock = cteBlockNameExp.GetBlock();
+            if(cteBlock != nullptr && cteBlock->GetColumns().size() == 0)
+                {
+                PropertyNameExp::PropertyRef const* propertyRef = GetPropertyRef();
+                BeAssert(propertyRef != nullptr);
+                propertyMap = propertyRef->TryGetPropertyMap(GetResolvedPropertyPath());
+                if (propertyMap == nullptr) {
+                    BeAssert(propertyMap != nullptr && "Exp of a derived prop exp referenced from a sub query ref is expected to always be a prop name exp");
+                }
+                break;
+                }
             return nullptr;
             }
         default:

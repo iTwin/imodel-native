@@ -57,6 +57,7 @@ struct CommonTableBlockExp: RangeClassRefExp {
 
     public:
         CommonTableBlockExp(Utf8CP name, std::vector<Utf8String> colList, std::unique_ptr<SelectStatementExp> stmt);
+        CommonTableBlockExp(Utf8CP name, std::unique_ptr<SelectStatementExp> stmt);
         SelectStatementExp const *GetQuery() const { return GetChild<SelectStatementExp>(0);}
         Utf8StringCR GetName() const { return m_name; }
         ECSqlTypeInfo FindType(Utf8StringCR cl) const;

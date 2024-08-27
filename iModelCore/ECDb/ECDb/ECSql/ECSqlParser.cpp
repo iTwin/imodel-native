@@ -189,8 +189,7 @@ BentleyStatus ECSqlParser::ParseCTEBlock(std::unique_ptr<CommonTableBlockExp>& e
         if (SUCCESS != ParseSelectStatement(selectStmt, *pSelectStmt))
             return ERROR;
         
-        std::vector<Utf8String> columns;
-        exp = std::make_unique<CommonTableBlockExp>(blockName.c_str(), columns, std::move(selectStmt));
+        exp = std::make_unique<CommonTableBlockExp>(blockName.c_str(), std::move(selectStmt));
         return SUCCESS;
     }
     return ERROR;

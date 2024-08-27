@@ -1594,14 +1594,127 @@ TEST_F(CommonTableExpTestFixture, CTE_Subquery_Tests) {
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, CTE_Without_Columns_Subquery_Tests) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("CTEWithoutColumnsSubqueryTests.ecdb"));
+
+    if ("simple_select_cte_without_columns_subquery_SOME") {
+        auto ecsql = R"(select * from meta.ECClassDef where ECInstanceId >= SOME(with a AS (select ECClassId from meta.ECPropertyDef) select * from a))";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(stmt.GetNativeSql(),"SELECT [ECClassDef].[ECInstanceId],[ECClassDef].[ECClassId],[ECClassDef].[SchemaId],[ECClassDef].[SchemaRelECClassId],[ECClassDef].[Name],[ECClassDef].[DisplayLabel],[ECClassDef].[Description],[ECClassDef].[Type],[ECClassDef].[Modifier],[ECClassDef].[CustomAttributeContainerType],[ECClassDef].[RelationshipStrength],[ECClassDef].[RelationshipStrengthDirection] FROM (SELECT [Id] ECInstanceId,37 ECClassId,[SchemaId],(CASE WHEN [SchemaId] IS NULL THEN NULL ELSE 38 END) [SchemaRelECClassId],[Name],[DisplayLabel],[Description],[Type],[Modifier],[CustomAttributeContainerType],[RelationshipStrength],[RelationshipStrengthDirection] FROM [main].[ec_Class]) [ECClassDef] WHERE EXISTS(WITH a AS (SELECT [ECPropertyDef].[ECClassId] [K0] FROM (SELECT [Id] ECInstanceId,44 ECClassId FROM [main].[ec_Property]) [ECPropertyDef])\nSELECT [K0] FROM a WHERE [ECClassDef].[ECInstanceId] >= [K0])" );
+    }
+    if ("simple_select_cte_without_columns_subquery_ALL") {
+        auto ecsql = R"(select * from meta.ECClassDef where ECInstanceId >= ALL(with a AS (select ECClassId from meta.ECPropertyDef) select * from a))";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(stmt.GetNativeSql(),"SELECT [ECClassDef].[ECInstanceId],[ECClassDef].[ECClassId],[ECClassDef].[SchemaId],[ECClassDef].[SchemaRelECClassId],[ECClassDef].[Name],[ECClassDef].[DisplayLabel],[ECClassDef].[Description],[ECClassDef].[Type],[ECClassDef].[Modifier],[ECClassDef].[CustomAttributeContainerType],[ECClassDef].[RelationshipStrength],[ECClassDef].[RelationshipStrengthDirection] FROM (SELECT [Id] ECInstanceId,37 ECClassId,[SchemaId],(CASE WHEN [SchemaId] IS NULL THEN NULL ELSE 38 END) [SchemaRelECClassId],[Name],[DisplayLabel],[Description],[Type],[Modifier],[CustomAttributeContainerType],[RelationshipStrength],[RelationshipStrengthDirection] FROM [main].[ec_Class]) [ECClassDef] WHERE NOT EXISTS(WITH a AS (SELECT [ECPropertyDef].[ECClassId] [K0] FROM (SELECT [Id] ECInstanceId,44 ECClassId FROM [main].[ec_Property]) [ECPropertyDef])\nSELECT [K0] FROM a WHERE [K0] >= [ECClassDef].[ECInstanceId])" );
+    }
+    if ("simple_select_cte_without_columns_subquery_ANY") {
+        auto ecsql = R"(select * from meta.ECClassDef where ECInstanceId >= ANY(with a AS (select * from meta.ClassHasBaseClasses) select * from a))";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(stmt.GetNativeSql(),"SELECT [ECClassDef].[ECInstanceId],[ECClassDef].[ECClassId],[ECClassDef].[SchemaId],[ECClassDef].[SchemaRelECClassId],[ECClassDef].[Name],[ECClassDef].[DisplayLabel],[ECClassDef].[Description],[ECClassDef].[Type],[ECClassDef].[Modifier],[ECClassDef].[CustomAttributeContainerType],[ECClassDef].[RelationshipStrength],[ECClassDef].[RelationshipStrengthDirection] FROM (SELECT [Id] ECInstanceId,37 ECClassId,[SchemaId],(CASE WHEN [SchemaId] IS NULL THEN NULL ELSE 38 END) [SchemaRelECClassId],[Name],[DisplayLabel],[Description],[Type],[Modifier],[CustomAttributeContainerType],[RelationshipStrength],[RelationshipStrengthDirection] FROM [main].[ec_Class]) [ECClassDef] WHERE EXISTS(WITH a AS (SELECT [ClassHasBaseClasses].[ECInstanceId] [K0],[ClassHasBaseClasses].[ECClassId] [K1],[ClassHasBaseClasses].[Ordinal] [K2],[ClassHasBaseClasses].[SourceECInstanceId] [K3],[ClassHasBaseClasses].[SourceECClassId] [K4],[ClassHasBaseClasses].[TargetECInstanceId] [K5],[ClassHasBaseClasses].[TargetECClassId] [K6] FROM (SELECT [ec_ClassHasBaseClasses].[Id] [ECInstanceId],42 [ECClassId],[ec_ClassHasBaseClasses].[ClassId] [SourceECInstanceId],37 [SourceECClassId],[ec_ClassHasBaseClasses].[BaseClassId] [TargetECInstanceId],37 [TargetECClassId],[Ordinal] FROM [main].[ec_ClassHasBaseClasses]) [ClassHasBaseClasses])\nSELECT [K0],[K1],[K2],[K3],[K4],[K5],[K6] FROM a WHERE [ECClassDef].[ECInstanceId] >= [K0] OR [ECClassDef].[ECInstanceId] >= [K1] OR [ECClassDef].[ECInstanceId] >= [K2] OR [ECClassDef].[ECInstanceId] >= [K3] OR [ECClassDef].[ECInstanceId] >= [K4] OR [ECClassDef].[ECInstanceId] >= [K5] OR [ECClassDef].[ECInstanceId] >= [K6])" );
+    }
+    if ("simple_select_subquery") {
+        auto ecsql = R"(
+            select * from meta.ECClassDef where ECInstanceId >= SOME(select ECClassId from meta.ECPropertyDef)
+        )";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(stmt.GetNativeSql(),"SELECT [ECClassDef].[ECInstanceId],[ECClassDef].[ECClassId],[ECClassDef].[SchemaId],[ECClassDef].[SchemaRelECClassId],[ECClassDef].[Name],[ECClassDef].[DisplayLabel],[ECClassDef].[Description],[ECClassDef].[Type],[ECClassDef].[Modifier],[ECClassDef].[CustomAttributeContainerType],[ECClassDef].[RelationshipStrength],[ECClassDef].[RelationshipStrengthDirection] FROM (SELECT [Id] ECInstanceId,37 ECClassId,[SchemaId],(CASE WHEN [SchemaId] IS NULL THEN NULL ELSE 38 END) [SchemaRelECClassId],[Name],[DisplayLabel],[Description],[Type],[Modifier],[CustomAttributeContainerType],[RelationshipStrength],[RelationshipStrengthDirection] FROM [main].[ec_Class]) [ECClassDef] WHERE EXISTS(SELECT [ECPropertyDef].[ECClassId] FROM (SELECT [Id] ECInstanceId,44 ECClassId FROM [main].[ec_Property]) [ECPropertyDef] WHERE [ECClassDef].[ECInstanceId] >= [ECPropertyDef].[ECClassId])");
+    }
+    if ("checking_result_equality_between_simple_select_and_cte_without_columns_in_subquery") {
+        auto ecsqlSelect = R"(select * from meta.ECClassDef where ECInstanceId >= SOME(with a AS (select ECClassId from meta.ECPropertyDef) select * from a))";
+        ECSqlStatement stmtSelect;
+        ASSERT_EQ(ECSqlStatus::Success, stmtSelect.Prepare(m_ecdb, ecsqlSelect));
+
+        auto ecsqlCTE = R"(
+            select * from meta.ECClassDef where ECInstanceId >= SOME(select ECClassId from meta.ECPropertyDef)
+        )";
+        ECSqlStatement stmtCTE;
+        ASSERT_EQ(ECSqlStatus::Success, stmtCTE.Prepare(m_ecdb, ecsqlCTE));
+        EXPECT_STREQ(stmtCTE.GetColumnInfo(0).GetProperty()->GetName().c_str(), stmtSelect.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        EXPECT_STREQ(stmtCTE.GetColumnInfo(1).GetProperty()->GetName().c_str(), stmtSelect.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmtCTE.Step());
+        ASSERT_EQ(BE_SQLITE_ROW, stmtSelect.Step());
+        ASSERT_EQ(stmtSelect.GetValueInt(0), stmtCTE.GetValueInt(0));
+        ASSERT_EQ(stmtSelect.GetValueInt(1), stmtCTE.GetValueInt(1));
+    }
+    if ("simple_select_cte_without_columns_subquery_with_alias") {
+        auto ecsql = R"(select a.ECInstanceId from meta.ECClassDef a where a.ECInstanceId >= ALL(with a as (select a.ECClassId from meta.ECPropertyDef a) select ECClassId from a))";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(stmt.GetNativeSql(),"SELECT [a].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,37 ECClassId FROM [main].[ec_Class]) [a] WHERE NOT EXISTS(WITH a AS (SELECT [a].[ECClassId] [K0] FROM (SELECT [Id] ECInstanceId,44 ECClassId FROM [main].[ec_Property]) [a])\nSELECT [K0] FROM a WHERE [K0] >= [a].[ECInstanceId])" );
+    }
+    if ("checking_result_equality_between_simple_select_and_cte_without_columns_in_subquery_for_multiple_column_checks") {
+        auto ecsqlCTE = R"(select * from meta.ECClassDef where ECInstanceId >= ALL(with a AS (select * from meta.ClassHasBaseClasses) select * from a))";
+        ECSqlStatement stmtCTE;
+        ASSERT_EQ(ECSqlStatus::Success, stmtCTE.Prepare(m_ecdb, ecsqlCTE));
+
+        auto ecsqlSelect = R"(
+            select * from meta.ECClassDef where ECInstanceId >= ALL(select * from meta.ClassHasBaseClasses)
+        )";
+        ECSqlStatement  stmtSelect;
+        ASSERT_EQ(ECSqlStatus::Success,  stmtSelect.Prepare(m_ecdb, ecsqlSelect));
+        EXPECT_STREQ(stmtCTE.GetColumnInfo(0).GetProperty()->GetName().c_str(), stmtSelect.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        EXPECT_STREQ(stmtCTE.GetColumnInfo(1).GetProperty()->GetName().c_str(), stmtSelect.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmtCTE.Step());
+        ASSERT_EQ(BE_SQLITE_ROW, stmtSelect.Step());
+        ASSERT_EQ(stmtSelect.GetValueInt(0), stmtCTE.GetValueInt(0));
+        ASSERT_EQ(stmtSelect.GetValueInt(1), stmtCTE.GetValueInt(1));
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CommonTableExpTestFixture, CTE_Without_SubColumns) {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("CTEWithoutSubColumns.ecdb"));
+
+    if ("simple_select_cte") {
+        auto ecsql = R"(with cte as (select * from meta.ECClassDef) select * from cte)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(stmt.GetNativeSql(),"WITH cte AS (SELECT [ECClassDef].[ECInstanceId] [K0],[ECClassDef].[ECClassId] [K1],[ECClassDef].[SchemaId] [K2_0],[ECClassDef].[SchemaRelECClassId] [K2_1],[ECClassDef].[Name] [K3],[ECClassDef].[DisplayLabel] [K4],[ECClassDef].[Description] [K5],[ECClassDef].[Type] [K6],[ECClassDef].[Modifier] [K7],[ECClassDef].[CustomAttributeContainerType] [K8],[ECClassDef].[RelationshipStrength] [K9],[ECClassDef].[RelationshipStrengthDirection] [K10] FROM (SELECT [Id] ECInstanceId,37 ECClassId,[SchemaId],(CASE WHEN [SchemaId] IS NULL THEN NULL ELSE 38 END) [SchemaRelECClassId],[Name],[DisplayLabel],[Description],[Type],[Modifier],[CustomAttributeContainerType],[RelationshipStrength],[RelationshipStrengthDirection] FROM [main].[ec_Class]) [ECClassDef])\nSELECT [K0],[K1],[K2_0],[K2_1],[K3],[K4],[K5],[K6],[K7],[K8],[K9],[K10] FROM cte" );
+    }
+    if ("simple_select_cte_for_PropertyDef") {
+        auto ecsql = R"(with cte as (select * from meta.ECPropertyDef) select * from cte)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(stmt.GetNativeSql(),"WITH cte AS (SELECT [ECPropertyDef].[ECInstanceId] [K0],[ECPropertyDef].[ECClassId] [K1],[ECPropertyDef].[ClassId] [K2_0],[ECPropertyDef].[ClassRelECClassId] [K2_1],[ECPropertyDef].[Name] [K3],[ECPropertyDef].[DisplayLabel] [K4],[ECPropertyDef].[Description] [K5],[ECPropertyDef].[IsReadonly] [K6],[ECPropertyDef].[Priority] [K7],[ECPropertyDef].[Ordinal] [K8],[ECPropertyDef].[Kind] [K9],[ECPropertyDef].[PrimitiveType] [K10],[ECPropertyDef].[PrimitiveTypeMinLength] [K11],[ECPropertyDef].[PrimitiveTypeMaxLength] [K12],[ECPropertyDef].[PrimitiveTypeMinValue] [K13],[ECPropertyDef].[PrimitiveTypeMaxValue] [K14],[ECPropertyDef].[EnumerationId] [K15_0],[ECPropertyDef].[EnumerationRelECClassId] [K15_1],[ECPropertyDef].[ExtendedTypeName] [K16],[ECPropertyDef].[StructClassId] [K17_0],[ECPropertyDef].[StructClassRelECClassId] [K17_1],[ECPropertyDef].[KindOfQuantityId] [K18_0],[ECPropertyDef].[KindOfQuantityRelECClassId] [K18_1],[ECPropertyDef].[CategoryId] [K19_0],[ECPropertyDef].[CategoryRelECClassId] [K19_1],[ECPropertyDef].[ArrayMinOccurs] [K20],[ECPropertyDef].[ArrayMaxOccurs] [K21],[ECPropertyDef].[NavigationRelationshipClassId] [K22_0],[ECPropertyDef].[NavigationRelationshipClassRelECClassId] [K22_1],[ECPropertyDef].[NavigationDirection] [K23] FROM (SELECT [Id] ECInstanceId,44 ECClassId,[ClassId],(CASE WHEN [ClassId] IS NULL THEN NULL ELSE 43 END) [ClassRelECClassId],[Name],[DisplayLabel],[Description],[IsReadonly],[Priority],[Ordinal],[Kind],[PrimitiveType],[PrimitiveTypeMinLength],[PrimitiveTypeMaxLength],[PrimitiveTypeMinValue],[PrimitiveTypeMaxValue],[EnumerationId],(CASE WHEN [EnumerationId] IS NULL THEN NULL ELSE 45 END) [EnumerationRelECClassId],[ExtendedTypeName],[StructClassId],(CASE WHEN [StructClassId] IS NULL THEN NULL ELSE 49 END) [StructClassRelECClassId],[KindOfQuantityId],(CASE WHEN [KindOfQuantityId] IS NULL THEN NULL ELSE 50 END) [KindOfQuantityRelECClassId],[CategoryId],(CASE WHEN [CategoryId] IS NULL THEN NULL ELSE 53 END) [CategoryRelECClassId],[ArrayMinOccurs],[ArrayMaxOccurs],[NavigationRelationshipClassId],(CASE WHEN [NavigationRelationshipClassId] IS NULL THEN NULL ELSE 56 END) [NavigationRelationshipClassRelECClassId],[NavigationDirection] FROM [main].[ec_Property]) [ECPropertyDef])\nSELECT [K0],[K1],[K2_0],[K2_1],[K3],[K4],[K5],[K6],[K7],[K8],[K9],[K10],[K11],[K12],[K13],[K14],[K15_0],[K15_1],[K16],[K17_0],[K17_1],[K18_0],[K18_1],[K19_0],[K19_1],[K20],[K21],[K22_0],[K22_1],[K23] FROM cte" );
+    }
+    if ("simple_select_cte_with_single_selection") {
+        auto ecsql = R"(with cte as (select * from meta.ECClassDef) select ECInstanceId from cte)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(stmt.GetNativeSql(),"WITH cte AS (SELECT [ECClassDef].[ECInstanceId] [K0],[ECClassDef].[ECClassId],[ECClassDef].[SchemaId],[ECClassDef].[SchemaRelECClassId],[ECClassDef].[Name],[ECClassDef].[DisplayLabel],[ECClassDef].[Description],[ECClassDef].[Type],[ECClassDef].[Modifier],[ECClassDef].[CustomAttributeContainerType],[ECClassDef].[RelationshipStrength],[ECClassDef].[RelationshipStrengthDirection] FROM (SELECT [Id] ECInstanceId,37 ECClassId,[SchemaId],(CASE WHEN [SchemaId] IS NULL THEN NULL ELSE 38 END) [SchemaRelECClassId],[Name],[DisplayLabel],[Description],[Type],[Modifier],[CustomAttributeContainerType],[RelationshipStrength],[RelationshipStrengthDirection] FROM [main].[ec_Class]) [ECClassDef])\nSELECT [K0] FROM cte" );
+    }
+    if ("simple_select_cte_with_composite_selection") {
+        auto ecsql = R"(with cte as (select * from meta.ECClassDef) select Schema from cte)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(stmt.GetNativeSql(),"WITH cte AS (SELECT [ECClassDef].[ECInstanceId],[ECClassDef].[ECClassId],[ECClassDef].[SchemaId] [K0_0],[ECClassDef].[SchemaRelECClassId] [K0_1],[ECClassDef].[Name],[ECClassDef].[DisplayLabel],[ECClassDef].[Description],[ECClassDef].[Type],[ECClassDef].[Modifier],[ECClassDef].[CustomAttributeContainerType],[ECClassDef].[RelationshipStrength],[ECClassDef].[RelationshipStrengthDirection] FROM (SELECT [Id] ECInstanceId,37 ECClassId,[SchemaId],(CASE WHEN [SchemaId] IS NULL THEN NULL ELSE 38 END) [SchemaRelECClassId],[Name],[DisplayLabel],[Description],[Type],[Modifier],[CustomAttributeContainerType],[RelationshipStrength],[RelationshipStrengthDirection] FROM [main].[ec_Class]) [ECClassDef])\nSELECT [K0_0],[K0_1] FROM cte" );
+    }
+    if ("multiple_cte_blocks_without_columns") {
+        auto ecsql = R"(with a AS (select * from meta.ClassHasBaseClasses), b AS (select * from meta.ClassHasBaseClasses) select * from a,b)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(stmt.GetNativeSql(),"WITH a AS (SELECT [ClassHasBaseClasses].[ECInstanceId] [K0],[ClassHasBaseClasses].[ECClassId] [K1],[ClassHasBaseClasses].[Ordinal] [K2],[ClassHasBaseClasses].[SourceECInstanceId] [K3],[ClassHasBaseClasses].[SourceECClassId] [K4],[ClassHasBaseClasses].[TargetECInstanceId] [K5],[ClassHasBaseClasses].[TargetECClassId] [K6] FROM (SELECT [ec_ClassHasBaseClasses].[Id] [ECInstanceId],42 [ECClassId],[ec_ClassHasBaseClasses].[ClassId] [SourceECInstanceId],37 [SourceECClassId],[ec_ClassHasBaseClasses].[BaseClassId] [TargetECInstanceId],37 [TargetECClassId],[Ordinal] FROM [main].[ec_ClassHasBaseClasses]) [ClassHasBaseClasses]),b AS (SELECT [ClassHasBaseClasses].[ECInstanceId] [K7],[ClassHasBaseClasses].[ECClassId] [K8],[ClassHasBaseClasses].[Ordinal] [K9],[ClassHasBaseClasses].[SourceECInstanceId] [K10],[ClassHasBaseClasses].[SourceECClassId] [K11],[ClassHasBaseClasses].[TargetECInstanceId] [K12],[ClassHasBaseClasses].[TargetECClassId] [K13] FROM (SELECT [ec_ClassHasBaseClasses].[Id] [ECInstanceId],42 [ECClassId],[ec_ClassHasBaseClasses].[ClassId] [SourceECInstanceId],37 [SourceECClassId],[ec_ClassHasBaseClasses].[BaseClassId] [TargetECInstanceId],37 [TargetECClassId],[Ordinal] FROM [main].[ec_ClassHasBaseClasses]) [ClassHasBaseClasses])\nSELECT [K0],[K1],[K2],[K3],[K4],[K5],[K6],[K7],[K8],[K9],[K10],[K11],[K12],[K13] FROM a,b" );
+    }
+    if ("multiple_cte_blocks_with_columns_&_without_columns") {
+        auto ecsql = R"(with a AS (select * from meta.ClassHasBaseClasses), b(a,b,c,d,e,f,g) AS (select * from meta.ClassHasBaseClasses) select * from a,b)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(stmt.GetNativeSql(),"WITH a AS (SELECT [ClassHasBaseClasses].[ECInstanceId] [K0],[ClassHasBaseClasses].[ECClassId] [K1],[ClassHasBaseClasses].[Ordinal] [K2],[ClassHasBaseClasses].[SourceECInstanceId] [K3],[ClassHasBaseClasses].[SourceECClassId] [K4],[ClassHasBaseClasses].[TargetECInstanceId] [K5],[ClassHasBaseClasses].[TargetECClassId] [K6] FROM (SELECT [ec_ClassHasBaseClasses].[Id] [ECInstanceId],42 [ECClassId],[ec_ClassHasBaseClasses].[ClassId] [SourceECInstanceId],37 [SourceECClassId],[ec_ClassHasBaseClasses].[BaseClassId] [TargetECInstanceId],37 [TargetECClassId],[Ordinal] FROM [main].[ec_ClassHasBaseClasses]) [ClassHasBaseClasses]),b(a,b,c,d,e,f,g) AS (SELECT [ClassHasBaseClasses].[ECInstanceId],[ClassHasBaseClasses].[ECClassId],[ClassHasBaseClasses].[Ordinal],[ClassHasBaseClasses].[SourceECInstanceId],[ClassHasBaseClasses].[SourceECClassId],[ClassHasBaseClasses].[TargetECInstanceId],[ClassHasBaseClasses].[TargetECClassId] FROM (SELECT [ec_ClassHasBaseClasses].[Id] [ECInstanceId],42 [ECClassId],[ec_ClassHasBaseClasses].[ClassId] [SourceECInstanceId],37 [SourceECClassId],[ec_ClassHasBaseClasses].[BaseClassId] [TargetECInstanceId],37 [TargetECClassId],[Ordinal] FROM [main].[ec_ClassHasBaseClasses]) [ClassHasBaseClasses])\nSELECT [K0],[K1],[K2],[K3],[K4],[K5],[K6],b.a,b.b,b.c,b.d,b.e,b.f,b.g FROM a,b" );
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(CommonTableExpTestFixture, Invalid_SQL_Tests) {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("InvalidCTETestsDb.ecdb"));
 
-    if ("mismatch_in_column_types_for_condition_checking_of_simple_select") {
-        auto ecsql = R"(select a.ECInstanceId from meta.ECClassDef a where ECInstanceId >= SOME(select * from meta.ECPropertyDef) LIMIT 1)";
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql));
-    }
     if ("mismatch_in_columns_within_CTE") {
         auto ecsql = R"(select * from meta.ECClassDef where 
         ECInstanceId >= SOME(with a(ECClassId) AS (select * from meta.ECPropertyDef) select * from a) 
@@ -1611,6 +1724,11 @@ TEST_F(CommonTableExpTestFixture, Invalid_SQL_Tests) {
     }
     if ("mismatch_in_number_of_columns_CTE") {
         auto ecsql = R"(select * from meta.ECClassDef where ECInstanceId >= ALL(with a(a,b,c,d) AS (select * from meta.ClassHasBaseClasses) select * from a) LIMIT 1)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql));
+    }
+    if ("testing_recursive_without_columns_cte") {
+        auto ecsql = R"(with recursive a AS (select * from meta.ClassHasBaseClasses) select * from a)";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, ecsql));
     }
