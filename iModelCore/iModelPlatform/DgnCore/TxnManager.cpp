@@ -997,7 +997,6 @@ void TxnManager::RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesetP
 
     Utf8String currentChangesetId = GetParentChangesetId();
     for(auto& changesetProp : changesetProps) {
-        const auto containsSchemaChanges = changesetProp->ContainsEcChanges() || changesetProp->ContainsDdlChanges(m_dgndb);
         changesetProp->ValidateContent(m_dgndb);
         ChangesetFileReader changeStream(changesetProp->GetFileName(), &m_dgndb);
         if (currentChangesetId != changesetProp->GetChangesetId()) {
