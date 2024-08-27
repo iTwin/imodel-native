@@ -497,11 +497,11 @@ struct  ClipPlaneSet :  bvector <ConvexClipPlaneSet>
 
     //! Clip a closed polyface to a positive ClipPlaneSet, producing only facets and linework on the cut planes.
     //! @param polyface [in] polyface to test. For best results, this mesh should be closed; otherwise extraneous
-    //! facets/lines may be present in output.
+    //! facets/lines may be present in output, as all sections are assumed to be closed.
     //! @param clipSet [in] the positive clip set
-    //! @param cutSections [out] (optional) triangulations of sections that are closed loops. Edges added by
-    //! triangulation are marked invisible.
-    //! @param lineStrings [out] (optional) raw section line strings. Closed sections will remain closed when clipped
+    //! @param cutSections [out] (optional) triangulations of (closed) sections. Edges added by triangulation are
+    //! marked invisible.
+    //! @param lineStrings [out] (optional) raw section line strings. Section closure is preserved under clipping
     //! by other planes in the clip set.
     //! @param colinearEdgeTolerance [in] maximum chord height distance of a redundant output point
     //! to be removed. Internal triangulation of larger planar facets can create numerous redundant vertices between
