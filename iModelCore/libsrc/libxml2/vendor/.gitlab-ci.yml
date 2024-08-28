@@ -12,6 +12,12 @@
 gcc:
   extends: .test
   variables:
+    CFLAGS: "-O2"
+
+gcc:c89:
+  extends: .test
+  variables:
+    CONFIG: "--without-python"
     CFLAGS: "-O2 -std=c89 -D_XOPEN_SOURCE=700"
 
 gcc:minimum:
@@ -19,12 +25,6 @@ gcc:minimum:
   variables:
     BASE_CONFIG: "--with-minimum"
     CFLAGS: "-O2"
-
-gcc:python3:
-  extends: .test
-  variables:
-    CFLAGS: "-O2"
-    PYTHON: "/usr/bin/python3"
 
 gcc:static:
   extends: .test
@@ -58,6 +58,8 @@ clang:msan:
     - win32-ps
   variables:
     BASE_CONFIG: "--with-ftp --with-legacy --with-xptr-locs"
+    # Disabled for now, see #658
+    CONFIG: "--without-python"
     CHERE_INVOKING: "yes"
   before_script:
     - $Env:Path="C:\msys64\usr\bin;$Env:Path"
