@@ -497,18 +497,32 @@ PropertyMap const* PropertyNameExp::GetPropertyMap() const
             }
 
         case Exp::Type::SubqueryRef:
-        case Exp::Type::CommonTableBlock:
-            { 
-            /*// This block is added because if the cte block has no columns we treat the select statement inside cte block just as a subquery of 
-            outer cte select statement and we pass the classref as CommonTableBlockExp,
-             the classref stays as CommonTableBlockExp if we "select *" in outer select statement
-             Ex- with cte as (select * from meta.ECClassDef) select * from cte*/ 
+            {  
             PropertyNameExp::PropertyRef const* propertyRef = GetPropertyRef();
             BeAssert(propertyRef != nullptr);
             propertyMap = propertyRef->TryGetPropertyMap(GetResolvedPropertyPath());
             if (propertyMap == nullptr) {
                 BeAssert(propertyMap != nullptr && "Exp of a derived prop exp referenced from a sub query ref is expected to always be a prop name exp");
             }
+            break;
+            }
+        case Exp::Type::CommonTableBlock:
+            { 
+            /*// This block is added because if the cte block has no columns we treat the select statement inside cte block just as a subquery of 
+            outer cte select statement and we pass the classref as CommonTableBlockExp,
+             the classref stays as CommonTableBlockExp if we "select *" in outer select statement
+             Ex- with cte as (select * from meta.ECClassDef) select * from cte*/
+            CommonTableBlockExp const& cteBlockExp = classRefExp->GetAs<CommonTableBlockExp>();  
+            if(cteBlockExp.GetColumns().size() == 0)
+                {
+                PropertyNameExp::PropertyRef const* propertyRef = GetPropertyRef();
+                BeAssert(propertyRef != nullptr);
+                propertyMap = propertyRef->TryGetPropertyMap(GetResolvedPropertyPath());
+                if (propertyMap == nullptr) 
+                    {
+                    BeAssert(propertyMap != nullptr && "Exp of a derived prop exp referenced from a sub query ref is expected to always be a prop name exp");
+                    }
+                }
             break;
             }
         case Exp::Type::CommonTableBlockName :
