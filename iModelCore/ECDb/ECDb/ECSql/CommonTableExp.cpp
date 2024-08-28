@@ -91,7 +91,7 @@ bool CommonTableBlockExp::ExpandDerivedPropertiesForEmptyColumnList(ECSqlParseCo
     for (Exp const* expr : GetQuery()->GetSelection()->GetChildren())
         {
         DerivedPropertyExp const& selectClauseItemExp = expr->GetAs<DerivedPropertyExp>();
-        std::unique_ptr<PropertyNameExp> propNameExp = std::make_unique<PropertyNameExp>(ctx, *this, selectClauseItemExp);
+        std::unique_ptr<PropertyNameExp> propNameExp = std::make_unique<PropertyNameExp>(ctx, *this, selectClauseItemExp); // we here set the clasref as CommonTableBlockExp
         const_cast<CommonTableBlockExp*>(this)->AddChild(std::make_unique<DerivedPropertyExp>(std::move(propNameExp), nullptr));
         }
     m_deferredExpand = false;
@@ -215,7 +215,7 @@ void CommonTableBlockExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<Deri
         for (Exp const* expr : GetQuery()->GetSelection()->GetChildren())
         {
         DerivedPropertyExp const& selectClauseItemExp = expr->GetAs<DerivedPropertyExp>();
-        std::unique_ptr<PropertyNameExp> propNameExp = std::make_unique<PropertyNameExp>(ctx, *this, selectClauseItemExp);
+        std::unique_ptr<PropertyNameExp> propNameExp = std::make_unique<PropertyNameExp>(ctx, *this, selectClauseItemExp); // we here set the clasref as CommonTableBlockExp
         expandedSelectClauseItemList.push_back(std::make_unique<DerivedPropertyExp>(std::move(propNameExp), nullptr));
         }
     }

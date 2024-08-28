@@ -498,7 +498,11 @@ PropertyMap const* PropertyNameExp::GetPropertyMap() const
 
         case Exp::Type::SubqueryRef:
         case Exp::Type::CommonTableBlock:
-            {
+            { 
+            /*// This block is added because if the cte block has no columns we treat the select statement inside cte block just as a subquery of 
+            outer cte select statement and we pass the classref as CommonTableBlockExp,
+             the classref stays as CommonTableBlockExp if we "select *" in outer select statement
+             Ex- with cte as (select * from meta.ECClassDef) select * from cte*/ 
             PropertyNameExp::PropertyRef const* propertyRef = GetPropertyRef();
             BeAssert(propertyRef != nullptr);
             propertyMap = propertyRef->TryGetPropertyMap(GetResolvedPropertyPath());
@@ -509,6 +513,10 @@ PropertyMap const* PropertyNameExp::GetPropertyMap() const
             }
         case Exp::Type::CommonTableBlockName :
             {
+            /*// This block is added because if the cte block has no columns we treat the select statement inside cte block just as a subquery of 
+            outer cte select statement and we pass the classref as CommonTableBlockExp,
+             the classref becomes as CommonTableBlockNameExp if we "select <column>" in outer select statement
+             Ex- with cte as (select * from meta.ECClassDef) select ECInstanceId from cte*/ 
             CommonTableBlockNameExp const& cteBlockNameExp = classRefExp->GetAs<CommonTableBlockNameExp>();
             CommonTableBlockExp const* cteBlock = cteBlockNameExp.GetBlock();
             if(cteBlock != nullptr && cteBlock->GetColumns().size() == 0)
@@ -521,7 +529,7 @@ PropertyMap const* PropertyNameExp::GetPropertyMap() const
                 }
                 break;
                 }
-            return nullptr;
+            return nullptr; // This block returns nullptr for proper alias referencing if the cte block has columns
             }
         default:
                 BeAssert(false && "Unhandled ClassRefExp subtype. This code needs to be adjusted.");
