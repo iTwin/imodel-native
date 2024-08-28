@@ -2700,7 +2700,7 @@ struct  InstanceXmlReader
 
             if (ECObjectsStatus::PruneSchema == schemaStatus)
                 {
-                LOG.infov("Skipping finding of the class '%s' because its schema '%s' is being pruned", m_className.c_str(), m_fullSchemaName.c_str());
+                LOG.infov("Skipping finding of the class '%s' because its schema '%s' is being pruned.", m_className.c_str(), m_fullSchemaName.c_str());
                 return InstanceReadStatus::ECSchemaNotFound;
                 }
 
