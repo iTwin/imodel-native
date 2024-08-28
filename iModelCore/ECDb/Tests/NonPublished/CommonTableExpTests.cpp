@@ -1707,6 +1707,18 @@ TEST_F(CommonTableExpTestFixture, CTE_Without_SubColumns) {
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
         ASSERT_STREQ(stmt.GetNativeSql(),"WITH a AS (SELECT [ClassHasBaseClasses].[ECInstanceId] [K0],[ClassHasBaseClasses].[ECClassId] [K1],[ClassHasBaseClasses].[Ordinal] [K2],[ClassHasBaseClasses].[SourceECInstanceId] [K3],[ClassHasBaseClasses].[SourceECClassId] [K4],[ClassHasBaseClasses].[TargetECInstanceId] [K5],[ClassHasBaseClasses].[TargetECClassId] [K6] FROM (SELECT [ec_ClassHasBaseClasses].[Id] [ECInstanceId],42 [ECClassId],[ec_ClassHasBaseClasses].[ClassId] [SourceECInstanceId],37 [SourceECClassId],[ec_ClassHasBaseClasses].[BaseClassId] [TargetECInstanceId],37 [TargetECClassId],[Ordinal] FROM [main].[ec_ClassHasBaseClasses]) [ClassHasBaseClasses]),b(a,b,c,d,e,f,g) AS (SELECT [ClassHasBaseClasses].[ECInstanceId],[ClassHasBaseClasses].[ECClassId],[ClassHasBaseClasses].[Ordinal],[ClassHasBaseClasses].[SourceECInstanceId],[ClassHasBaseClasses].[SourceECClassId],[ClassHasBaseClasses].[TargetECInstanceId],[ClassHasBaseClasses].[TargetECClassId] FROM (SELECT [ec_ClassHasBaseClasses].[Id] [ECInstanceId],42 [ECClassId],[ec_ClassHasBaseClasses].[ClassId] [SourceECInstanceId],37 [SourceECClassId],[ec_ClassHasBaseClasses].[BaseClassId] [TargetECInstanceId],37 [TargetECClassId],[Ordinal] FROM [main].[ec_ClassHasBaseClasses]) [ClassHasBaseClasses])\nSELECT [K0],[K1],[K2],[K3],[K4],[K5],[K6],b.a,b.b,b.c,b.d,b.e,b.f,b.g FROM a,b" );
     }
+    if ("alias_cte_without_subColumns") {
+        auto ecsql = R"(with cte0 as ( select 100,200) select * from (select * from cte0 c0))";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(stmt.GetNativeSql(),"WITH cte0 AS (SELECT 100 [K0],200 [K1])\nSELECT [K2],[K3] FROM (SELECT [K0] [K2],[K1] [K3] FROM cte0 c0)" );
+    }
+    if ("alias_cte_without_subColumns_column_alias") {
+        auto ecsql = R"(with cte0 as ( select 100 a,200 b) select * from (select * from cte0 c0 where c0.a = 100 and c0.b = 200))";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_STREQ(stmt.GetNativeSql(),"WITH cte0 AS (SELECT 100 [a],200 [b])\nSELECT [K2],[K3] FROM (SELECT [a] [K2],[b] [K3] FROM cte0 c0 WHERE c0.a=100 AND c0.b=200)" );
+    }
 }
 
 //---------------------------------------------------------------------------------------
