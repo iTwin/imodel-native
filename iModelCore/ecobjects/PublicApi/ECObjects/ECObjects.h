@@ -191,6 +191,8 @@ enum class ECObjectsStatus
     InvalidConstantUnit,
     ClassTypeNotCorrect,
     InvalidUnit,
+    PruneSchema,
+    IncompatibleVersion,
     };
 
 //! Result status for deserializing an ECSchema from Xml

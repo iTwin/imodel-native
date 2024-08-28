@@ -238,7 +238,7 @@ protected:
     //! The default implementation calls GetDefaultStandaloneEnabler() on the ecClass
     ECOBJECTS_EXPORT virtual IECInstancePtr _CreateStandaloneInstance (ECClassCR ecClass);
 
-    virtual ECSchemaCP _FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType) const = 0;
+    virtual ECObjectsStatus _FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType, ECSchemaCP& schema) const = 0;
 
 public:
     PrimitiveType   GetSerializedPrimitiveType (PrimitiveECPropertyCR ecprop) const {return m_typeResolver != nullptr ? m_typeResolver->_ResolvePrimitiveType (ecprop) : ecprop.GetType();}
@@ -252,7 +252,7 @@ public:
     void            ResolveSerializedPropertyName (Utf8StringR name, ECClassCR ecClass) const {if (nullptr != m_schemaRemapper) m_schemaRemapper->ResolvePropertyName (name, ecClass); }
     void            ResolveSerializedClassName (Utf8StringR name, ECSchemaCR schema) const    {if (nullptr != m_schemaRemapper) m_schemaRemapper->ResolveClassName (name, schema); }
 
-    ECSchemaCP FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType) const;
+    ECObjectsStatus FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType, ECSchemaCP& schema) const;
 
     IECInstancePtr CreateStandaloneInstance(ECClassCR ecClass);
 
