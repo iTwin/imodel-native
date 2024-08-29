@@ -22,7 +22,9 @@ enum class UnitsProblemCode
     NoProblem = 0,
     UncomparableUnits = 31,     //!< Units provided on the argument list are not comparable
     InvalidUnitName = 32,       //!< Not-recognizd unit name or unit is not associated with a Phenomenon
-    InvertingZero = 33
+    InvertingZero = 33,         //!< Attempting to invert a zero value
+    UnspecifiedProblem = 34,    //!< A problem occurred but the cause is not specified
+    NaN = 35,                   //!< A value is NaN
     };
 
 enum class ComparisonCode

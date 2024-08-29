@@ -53,6 +53,7 @@ Quantity::Quantity(QuantityCR rhs)
     m_unit = rhs.m_unit;
     m_magnitude = rhs.m_magnitude;
     m_tolerance = rhs.m_tolerance;
+    m_problemCode = rhs.m_problemCode;
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -101,7 +102,7 @@ Quantity Quantity::ConvertTo(UnitCP unit) const
 
     UnitsProblemCode prob = GetConvertedMagnitude(newValue, unit);
     if(UnitsProblemCode::NoProblem != prob)
-        return Quantity(); // when impossible to convert - return invalid quantity
+        return Quantity(prob); // when impossible to convert - return invalid quantity
 
     return Quantity(newValue, *unit);
     }
