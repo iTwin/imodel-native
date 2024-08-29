@@ -512,16 +512,16 @@ BentleyStatus ECSqlParser::ParseInsertStatement(std::unique_ptr<InsertStatementE
     insertExp = nullptr;
     //insert does not support polymorphic classes. Passing false therefore.
     std::unique_ptr<ClassNameExp> classNameExp = nullptr;
-    BentleyStatus stat = ParseTableNode(classNameExp, *parseNode.getChild(2), ECSqlType::Insert, PolymorphicInfo::Only());
+    BentleyStatus stat = ParseTableNode(classNameExp, parseNode.count() == 6 ? *parseNode.getChild(3) : *parseNode.getChild(2), ECSqlType::Insert, PolymorphicInfo::Only());
     if (SUCCESS != stat)
         return stat;
 
     std::unique_ptr<PropertyNameListExp> insertPropertyNameListExp = nullptr;
-    stat = ParseOptColumnRefCommalist(insertPropertyNameListExp, parseNode.getChild(3));
+    stat = ParseOptColumnRefCommalist(insertPropertyNameListExp, parseNode.count() == 6 ? parseNode.getChild(4) : parseNode.getChild(3));
     if (SUCCESS != stat)
         return stat;
 
-    OSQLParseNode const* valuesOrQuerySpecNode = parseNode.getChild(4);
+    OSQLParseNode const* valuesOrQuerySpecNode = parseNode.count() == 6 ? parseNode.getChild(5) : parseNode.getChild(4);
     if (valuesOrQuerySpecNode == nullptr)
         {
         BeAssert(false);

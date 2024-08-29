@@ -569,6 +569,14 @@ insert_statement:
             $$->append($3);
             $$->append($4);
             $$->append($5);}
+        |   SQL_TOKEN_INSERT SQL_TOKEN_INTO SQL_TOKEN_ONLY table_node opt_column_ref_commalist values_or_query_spec
+            {$$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+            $$->append($3);
+            $$->append($4);
+            $$->append($5);
+            $$->append($6);}
     ;
 
 values_commalist:
