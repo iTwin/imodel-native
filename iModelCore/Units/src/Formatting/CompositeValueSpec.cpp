@@ -321,7 +321,10 @@ CompositeValueSpec::CompositeValue CompositeValueSpec::DecomposeValue(double dva
 
     if (!smallQ.IsValid())
         {
-        cv.UpdateProblemCode(FormatProblemCode::QT_ConversionFailed);
+        if (smallQ.GetProblemCode() == BEU::UnitsProblemCode::InvertingZero)
+            cv.UpdateProblemCode(FormatProblemCode::QT_InvertingZero);
+        else
+            cv.UpdateProblemCode(FormatProblemCode::QT_ConversionFailed);
         return cv;
         }
 

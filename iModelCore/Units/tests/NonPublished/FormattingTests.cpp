@@ -1787,7 +1787,6 @@ TEST_F(FormattingTestFixture, DoubleToRatio){
 
     // v:h (persistent) -> v:h (presentation) | one to N
     {
-    testFormatDoubleToRatio("1:0", 0.0004, v_h, oneToN, v_h);
     testFormatDoubleToRatio("1:1", 1.0, v_h, oneToN, v_h);
     testFormatDoubleToRatio("1:0.5", 2.0, v_h, oneToN, v_h);
     testFormatDoubleToRatio("1:2", 0.5, v_h, oneToN, v_h);
@@ -1839,12 +1838,17 @@ TEST_F(FormattingTestFixture, DoubleToRatio){
     testFormatDoubleToRatio("1:0", 3, v_h, oneToN, v_h, DecimalPrecision::Precision0);
     testFormatDoubleToRatio("1:0.3", 3, v_h, oneToN, v_h, DecimalPrecision::Precision1);
     testFormatDoubleToRatio("1:0.33", 3, v_h, oneToN, v_h, DecimalPrecision::Precision2);
+
+    testFormatDoubleToRatio("0:1", 0.0004, v_h, oneToN, v_h, DecimalPrecision::Precision3);
+    testFormatDoubleToRatio("1:2500", 0.0004, v_h, oneToN, v_h, DecimalPrecision::Precision4);
+
+    testFormatDoubleToRatio("1:0", 0.0004, v_h, oneToN, h_v, DecimalPrecision::Precision3);
+    testFormatDoubleToRatio("1:0.0004", 0.0004, v_h, oneToN, h_v, DecimalPrecision::Precision4);
     }
 
     // v:h -> v:h | ValueBased
     // if the value is smaller than 1, its 1 to N. else, N to 1
     {
-    testFormatDoubleToRatio("1:0", 0.0, v_h, valueBased, v_h); // special case
     testFormatDoubleToRatio("1:1", 1.0, v_h, valueBased, v_h);
     testFormatDoubleToRatio("2:1", 2.0, v_h, valueBased, v_h);
     testFormatDoubleToRatio("1:2", 0.5, v_h, valueBased, v_h);
@@ -1858,7 +1862,6 @@ TEST_F(FormattingTestFixture, DoubleToRatio){
 
     // v:h -> v:h | UseGreatestCommonDivisor
     {
-    testFormatDoubleToRatio("1:0", 0.0, v_h, useGreatestCommonDivisor, v_h); // special case
     testFormatDoubleToRatio("1:1", 1.0, v_h, useGreatestCommonDivisor, v_h);
     testFormatDoubleToRatio("2:1", 2.0, v_h, useGreatestCommonDivisor, v_h);
     testFormatDoubleToRatio("1:2", 0.5, v_h, useGreatestCommonDivisor, v_h);

@@ -144,6 +144,7 @@ enum class FormatProblemCode
     QT_InvalidUnitCombination = 20105,
     QT_InvalidSyntax = 20106,
     QT_ConversionFailed = 20107,
+    QT_InvertingZero = 20108,
     FUS_InvalidSyntax = 20151,
     NFS_Undefined = 20160,
     NFS_InvalidSpecName = 20161,

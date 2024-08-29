@@ -285,8 +285,11 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
         {
         CompositeValueSpecCP compS = GetCompositeSpec();
         auto dval = compS->DecomposeValue(temp.GetMagnitude(), temp.GetUnit());
-        if(dval.IsProblem())
+        if(dval.IsProblem()){
+           if (fmtP->GetPresentationType() == PresentationType::Ratio && dval.GetProblemCode() == FormatProblemCode::QT_InvertingZero)
+                return "1:0"; // special case for ratio
             return "";
+        }
 
         if (fmtP->GetPresentationType() == PresentationType::Ratio)
             return fmtP->FormatToRatio(dval.GetMajor());

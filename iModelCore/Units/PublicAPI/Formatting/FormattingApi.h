@@ -299,8 +299,6 @@ public:
     void SetCounterClockwiseAngle(bool setTo) { SetTraitsBit(FormatTraits::CounterClockwiseAngle, setTo);}
     bool IsCounterClockwiseAngle() const {return GetTraitBit(FormatTraits::CounterClockwiseAngle);}
 
-    // Utf8String FormatToFractionalRatio(double dval) const;
-    // Utf8String FormatToIntegerRatio(double dval) const;
     Utf8String FormatToRatio(double value) const;
 
     //======================================
@@ -402,6 +400,7 @@ private:
 
         bool UpdateProblemCode(FormatProblemCode code) { return m_problem.UpdateProblemCode(code); }
         bool IsProblem() const {return m_problem.IsProblem();}
+        FormatProblemCode GetProblemCode() const {return m_problem.GetProblemCode();}
     };
 
     static size_t const indxMajor  = 0;
