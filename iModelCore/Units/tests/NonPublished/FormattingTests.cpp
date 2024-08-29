@@ -1772,11 +1772,22 @@ TEST_F(FormattingTestFixture, DoubleToRatio){
     auto valueBased = RatioType::ValueBased;
     auto useGreatestCommonDivisor = RatioType::UseGreatestCommonDivisor;
 
-    testFormatDoubleToRatio("1:0", 0.0, h_v, oneToN, v_h);
+    // corner cases, input vaue is 0
+    {
+    auto ratioTypes = {RatioType::OneToN, RatioType::NToOne, RatioType::ValueBased, RatioType::UseGreatestCommonDivisor};
+
+    for (const auto& ratioType : ratioTypes) 
+        {
+        testFormatDoubleToRatio("0:1", 0.0, v_h, ratioType, v_h);
+        testFormatDoubleToRatio("0:1", 0.0, h_v, ratioType, h_v);
+        testFormatDoubleToRatio("1:0", 0.0, v_h, ratioType, h_v);
+        testFormatDoubleToRatio("1:0", 0.0, h_v, ratioType, v_h);
+        }
+    }
 
     // v:h (persistent) -> v:h (presentation) | one to N
     {
-    testFormatDoubleToRatio("1:0", 0.0, v_h, oneToN, v_h);
+    testFormatDoubleToRatio("1:0", 0.0004, v_h, oneToN, v_h);
     testFormatDoubleToRatio("1:1", 1.0, v_h, oneToN, v_h);
     testFormatDoubleToRatio("1:0.5", 2.0, v_h, oneToN, v_h);
     testFormatDoubleToRatio("1:2", 0.5, v_h, oneToN, v_h);
@@ -1789,7 +1800,6 @@ TEST_F(FormattingTestFixture, DoubleToRatio){
 
     // v:h -> h:v | one to N
     {
-    testFormatDoubleToRatio("1:0", 0.0, v_h, oneToN, h_v);
     testFormatDoubleToRatio("1:1", 1.0, v_h, oneToN, h_v);
     testFormatDoubleToRatio("1:2", 2.0, v_h, oneToN, h_v);
     testFormatDoubleToRatio("1:0.5", 0.5, v_h, oneToN, h_v);
@@ -1802,7 +1812,6 @@ TEST_F(FormattingTestFixture, DoubleToRatio){
 
     // v:h -> v:h | N to one
     {
-    testFormatDoubleToRatio("0:1", 0.0, v_h, NtoOne, v_h);
     testFormatDoubleToRatio("1:1", 1.0, v_h, NtoOne, v_h);
     testFormatDoubleToRatio("2:1", 2.0, v_h, NtoOne, v_h);
     testFormatDoubleToRatio("0.5:1", 0.5, v_h, NtoOne, v_h);
@@ -1815,7 +1824,6 @@ TEST_F(FormattingTestFixture, DoubleToRatio){
 
     // v:h -> h:v | N to one
     {
-    testFormatDoubleToRatio("0:1", 0.0, v_h, NtoOne, h_v);
     testFormatDoubleToRatio("1:1", 1.0, v_h, NtoOne, h_v);
     testFormatDoubleToRatio("0.5:1", 2.0, v_h, NtoOne, h_v);
     testFormatDoubleToRatio("2:1", 0.5, v_h, NtoOne, h_v);

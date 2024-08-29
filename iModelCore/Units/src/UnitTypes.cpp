@@ -231,7 +231,7 @@ UnitsProblemCode Unit::Convert(double& converted, double value, UnitCP toUnit) c
 
     double temp;
     UnitsProblemCode prob;
-    if (IsInvertedUnit())
+    if (IsInvertedUnit() || toUnit->IsInvertedUnit())
         {
         if (IsNegligible(value))
             {

@@ -977,7 +977,7 @@ Utf8String NumericFormatSpec::FormatToRatio(double value) const
 {
     double reciprocal;
     if (value == 0)
-        reciprocal = 0.0;
+        return "0:1";
     else
         reciprocal = 1.0 / value;
         
