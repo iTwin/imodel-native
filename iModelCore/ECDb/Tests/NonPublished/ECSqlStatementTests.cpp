@@ -1415,51 +1415,6 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
             }
         }
 
-        //*** array with two null elements and insert with only
-    for (Utf8CP testClassName : testClassNames)
-        {
-        Utf8String ecsql;
-        ecsql.Sprintf("INSERT INTO ONLY ts.%s(L_Array, Struct.l_array, Struct.struct_array, Struct_Array) "
-                      "VALUES(?,?,?,?)", testClassName);
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql.c_str();
-
-        for (int i = 1; i <= 4; i++)
-            {
-            IECSqlBinder& arrayBinder = stmt.GetBinder(i);
-            ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindNull());
-            ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindNull());
-            }
-
-        ECInstanceKey key;
-        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
-        stmt.Finalize();
-
-        ecsql.Sprintf("SELECT L_Array, Struct.l_array, Struct.struct_array, Struct_Array FROM ts.%s WHERE ECInstanceId=%s",
-                      testClassName, key.GetInstanceId().ToString().c_str());
-
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql.c_str())) << ecsql.c_str();
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
-        for (int i = 0; i < stmt.GetColumnCount(); i++)
-            {
-            IECSqlValue const& val = stmt.GetValue(i);
-            ASSERT_FALSE(val.IsNull()) << i << " " << stmt.GetECSql();
-            ASSERT_EQ(2, val.GetArrayLength());
-            for (IECSqlValue const& elementVal : val.GetArrayIterable())
-                {
-                ASSERT_TRUE(elementVal.IsNull()) << i << " " << stmt.GetECSql();
-
-                if (val.GetColumnInfo().GetDataType().IsStructArray())
-                    {
-                    for (IECSqlValue const& memberVal : elementVal.GetStructIterable())
-                        {
-                        ASSERT_TRUE(memberVal.IsNull());
-                        }
-                    }
-                }
-            }
-        }
-
     //*** nested struct array being null
     for (Utf8CP testClassName : testClassNames)
         {
@@ -3036,86 +2991,6 @@ TEST_F(ECSqlStatementTestFixture, StructArrayUnsetMembers)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsitest
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, StructArrayUnsetMembersWithInsertUsingOnly)
-    {
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("StructArrayUnsetMembersWithInsertUsingOnly.ecdb", SchemaItem(
-        R"xml(<?xml version="1.0" encoding="utf-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-          <ECEntityClass typeName="MyClass">
-                <ECStructArrayProperty propertyName="Locations" typeName="LocationStruct"/>
-          </ECEntityClass>
-          <ECStructClass typeName="LocationStruct">
-                <ECProperty propertyName="Street" typeName="string"/>
-                <ECStructProperty propertyName="City" typeName="CityStruct"/>
-          </ECStructClass>
-         <ECStructClass typeName="CityStruct">
-               <ECProperty propertyName="Name" typeName="string"/>
-               <ECProperty propertyName="State" typeName="string"/>
-               <ECProperty propertyName="Country" typeName="string"/>
-               <ECProperty propertyName="Zip" typeName="int"/>
-         </ECStructClass>
-        </ECSchema>
-        )xml")));
-
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ONLY ts.MyClass(Locations) VALUES(?)"));
-    IECSqlBinder& structArrayBinder = stmt.GetBinder(1);
-    //first element: don't bind anything
-    structArrayBinder.AddArrayElement();
-
-    {
-    //call BindNull on element
-    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
-    ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindNull());
-    }
-
-    {
-    //bind to prim member in element
-    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
-    ASSERT_EQ(ECSqlStatus::Success, elementBinder["Street"].BindText("mainstreet", IECSqlBinder::MakeCopy::No));
-    }
-
-    {
-    //bind null to prim member in element
-    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
-    ASSERT_EQ(ECSqlStatus::Success, elementBinder["Street"].BindNull());
-    }
-
-    {
-    //call BindNull on struct member in element
-    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
-    ASSERT_EQ(ECSqlStatus::Success, elementBinder["City"].BindNull());
-    }
-
-    {
-    //call BindNull on prim and struct member in element
-    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
-    ASSERT_EQ(ECSqlStatus::Success, elementBinder["Street"].BindNull());
-    ASSERT_EQ(ECSqlStatus::Success, elementBinder["City"].BindNull());
-    }
-
-    {
-    //bind to prim member in struct member in element
-    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
-    ASSERT_EQ(ECSqlStatus::Success, elementBinder["City"]["Zip"].BindInt(34000));
-    }
-
-    ECInstanceKey key;
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
-    stmt.Finalize();
-
-    Statement validateStmt;
-    ASSERT_EQ(BE_SQLITE_OK, validateStmt.Prepare(m_ecdb, "SELECT Locations FROM ts_MyClass WHERE Id=?"));
-    ASSERT_EQ(BE_SQLITE_OK, validateStmt.BindId(1, key.GetInstanceId()));
-    ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());
-    Utf8String actualJson(validateStmt.GetValueText(0));
-    actualJson.ReplaceAll(" ", "");
-    ASSERT_STRCASEEQ(R"json([null,null,{"Street":"mainstreet"},{"Street":null},{"City":null},{"Street":null,"City":null},{"City":{"Zip":34000}}])json", actualJson.c_str());
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, DateTimeCast)
@@ -3470,30 +3345,6 @@ TEST_F(ECSqlStatementTestFixture, Coalesce)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECSqlStatementTestFixture, CoalesceWithInsertUsingOnly)
-    {
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("CoalesceWithInsertUsingOnly.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
-
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ONLY ecsql.P(I,S) VALUES(22, null)"));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ONLY ecsql.P(I,S) VALUES(null, 'Foo')"));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
-    stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT I,COALESCE(I,S) FROM ecsql.P"));
-    while (stmt.Step() == BE_SQLITE_ROW)
-        {
-        if (stmt.IsValueNull(0))
-            ASSERT_STREQ("Foo", stmt.GetValueText(1));
-        else
-            ASSERT_EQ(22, stmt.GetValueInt(1));
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementTestFixture, NestedSelectStatementsTests)
     {
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.00.ecschema.xml")));
@@ -3627,32 +3478,6 @@ TEST_F(ECSqlStatementTestFixture, ParametersInNestedSelectStatement)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
     }
 
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, InsertUsingOnlyAndAll)
-    {
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InsertUsingOnlyAndAll.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
-
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ONLY ecsql.PSA(L,I) VALUES(33,123)"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ONLY ecsql.PSA(L,I) VALUES(123456789,123)"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ONLY ecsql.PSA(L,I) VALUES(123456789,124)"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ONLY ecsql.PSA(L,I) VALUES(4444,123)"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ONLY ecsql.P(I) VALUES(123)"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ONLY ecsql.P(I) VALUES(124)"));
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ONLY ecsql.P(I) VALUES(123)"));
-    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteECSql("INSERT INTO ALL ecsql.P(I) VALUES(123)"));
-
-
-    {
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT count(*) FROM ecsql.PSA WHERE L=123456789 AND I IN (SELECT I FROM ecsql.P WHERE I=123)"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
-    ASSERT_EQ(1, stmt.GetValueInt(0)) << stmt.GetECSql();
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
-    }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -12780,6 +12605,137 @@ TEST_F(ECSqlStatementTestFixture, InsertWithOnlyWithoutPropClause)
                                                                        fileInfoKey.GetInstanceId().GetValue(), fileInfoKey.GetClassId().GetValue()).c_str()));
     }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECSqlStatementTestFixture, CoalesceWithInsertUsingOnly)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("CoalesceWithInsertUsingOnly.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ONLY ecsql.P(I,S) VALUES(22, null)"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ONLY ecsql.P(I,S) VALUES(null, 'Foo')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT I,COALESCE(I,S) FROM ecsql.P"));
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        if (stmt.IsValueNull(0))
+            ASSERT_STREQ("Foo", stmt.GetValueText(1));
+        else
+            ASSERT_EQ(22, stmt.GetValueInt(1));
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsitest
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, StructArrayUnsetMembersWithInsertUsingOnly)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("StructArrayUnsetMembersWithInsertUsingOnly.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+          <ECEntityClass typeName="MyClass">
+                <ECStructArrayProperty propertyName="Locations" typeName="LocationStruct"/>
+          </ECEntityClass>
+          <ECStructClass typeName="LocationStruct">
+                <ECProperty propertyName="Street" typeName="string"/>
+                <ECStructProperty propertyName="City" typeName="CityStruct"/>
+          </ECStructClass>
+         <ECStructClass typeName="CityStruct">
+               <ECProperty propertyName="Name" typeName="string"/>
+               <ECProperty propertyName="State" typeName="string"/>
+               <ECProperty propertyName="Country" typeName="string"/>
+               <ECProperty propertyName="Zip" typeName="int"/>
+         </ECStructClass>
+        </ECSchema>
+        )xml")));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ONLY ts.MyClass(Locations) VALUES(?)"));
+    IECSqlBinder& structArrayBinder = stmt.GetBinder(1);
+    //first element: don't bind anything
+    structArrayBinder.AddArrayElement();
+
+    {
+    //call BindNull on element
+    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindNull());
+    }
+
+    {
+    //bind to prim member in element
+    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["Street"].BindText("mainstreet", IECSqlBinder::MakeCopy::No));
+    }
+
+    {
+    //bind null to prim member in element
+    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["Street"].BindNull());
+    }
+
+    {
+    //call BindNull on struct member in element
+    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["City"].BindNull());
+    }
+
+    {
+    //call BindNull on prim and struct member in element
+    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["Street"].BindNull());
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["City"].BindNull());
+    }
+
+    {
+    //bind to prim member in struct member in element
+    IECSqlBinder& elementBinder = structArrayBinder.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, elementBinder["City"]["Zip"].BindInt(34000));
+    }
+
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
+    stmt.Finalize();
+
+    Statement validateStmt;
+    ASSERT_EQ(BE_SQLITE_OK, validateStmt.Prepare(m_ecdb, "SELECT Locations FROM ts_MyClass WHERE Id=?"));
+    ASSERT_EQ(BE_SQLITE_OK, validateStmt.BindId(1, key.GetInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, validateStmt.Step());
+    Utf8String actualJson(validateStmt.GetValueText(0));
+    actualJson.ReplaceAll(" ", "");
+    ASSERT_STRCASEEQ(R"json([null,null,{"Street":"mainstreet"},{"Street":null},{"City":null},{"Street":null,"City":null},{"City":{"Zip":34000}}])json", actualJson.c_str());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, InsertUsingOnlyAndAll)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("InsertUsingOnlyAndAll.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ONLY ecsql.PSA(L,I) VALUES(33,123)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ONLY ecsql.PSA(L,I) VALUES(123456789,123)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ONLY ecsql.PSA(L,I) VALUES(123456789,124)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ONLY ecsql.PSA(L,I) VALUES(4444,123)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ONLY ecsql.P(I) VALUES(123)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ONLY ecsql.P(I) VALUES(124)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteECSql("INSERT INTO ONLY ecsql.P(I) VALUES(123)"));
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteECSql("INSERT INTO ALL ecsql.P(I) VALUES(123)"));
+
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT count(*) FROM ecsql.PSA WHERE L=123456789 AND I IN (SELECT I FROM ecsql.P WHERE I=123)"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(1, stmt.GetValueInt(0)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    }
+    }
+
 
 
 END_ECDBUNITTESTS_NAMESPACE
