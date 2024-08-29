@@ -324,8 +324,6 @@ public:
             }
         return ECObjectsStatus::SchemaNotFound;
         }
-
-    virtual bool IsSchemaToBePruned(SchemaKeyCR key) const { return false; }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -364,15 +362,6 @@ public:
 
         schema = schemaPtr.get();
         return ECObjectsStatus::Success;
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual bool IsSchemaToBePruned(SchemaKeyCR key) const
-        {
-        const auto& schemasToPrune = m_schemaReadContext.GetSchemasToPrune();
-        return std::find(schemasToPrune.begin(), schemasToPrune.end(), key.GetName()) != schemasToPrune.end();
         }
     };
 
@@ -425,10 +414,10 @@ public:
             return ECObjectsStatus::Success;
             }
 
-        if (IsSchemaToBePruned(key))
+        if (m_schemaContext.GetSchemasToPrune().end() != std::find(m_schemaContext.GetSchemasToPrune().begin(), m_schemaContext.GetSchemasToPrune().end(), key.GetName()))
             {
-            LOG.infov("Skipping loading of the custom attribute because its schema %s is being pruned.", key.GetFullSchemaName().c_str());
-            return ECObjectsStatus::PruneSchema;
+            LOG.debugv("Skipping loading of the custom attribute because its schema %s is being pruned.", key.GetFullSchemaName().c_str());
+            return ECObjectsStatus::SchemaIsPruned;
             }
 
         LOG.errorv("CustomAttributeInstanceReadContext - Custom attribute schema %s not found in referenced schemas of %s. Trying fallback mechanism.", key.GetFullSchemaName().c_str(), m_containerSchema.GetFullSchemaName().c_str());
@@ -442,15 +431,6 @@ public:
             }
 
         return ECObjectsStatus::SchemaNotFound;
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    virtual bool IsSchemaToBePruned(SchemaKeyCR key) const
-        {
-        const auto& schemasToPrune = m_schemaContext.GetSchemasToPrune();
-        return std::find(schemasToPrune.begin(), schemasToPrune.end(), key.GetName()) != schemasToPrune.end();
         }
     };
 

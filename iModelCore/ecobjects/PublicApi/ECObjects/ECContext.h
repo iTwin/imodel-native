@@ -259,9 +259,6 @@ public:
     ECSchemaCR GetFallBackSchema() {return m_fallBackSchema;}
 
     IssueReporter& Issues() { return m_issueReporter; }
-
-    virtual bool IsSchemaToBePruned(SchemaKeyCR key) const = 0;
-
 public:
     //! - For use when the caller knows the schema of the instance he is deserializing.
     ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext(ECSchemaCR, IStandaloneEnablerLocaterP = nullptr, IPrimitiveTypeResolver const* typeResolver = nullptr);

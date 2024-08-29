@@ -1705,9 +1705,8 @@ TEST_F(SchemaDeserializationTest, DoNotSearchClassFromPrunedSchemas)
     ASSERT_TRUE(schema.IsValid());
 
     ASSERT_TRUE(testLogger.m_messages.size() == 4);
-    ASSERT_TRUE(testLogger.ValidateMessageAtIndex(1, NativeLogging::SEVERITY::LOG_INFO, "Skipping loading of the custom attribute because its schema RefSchema.01.00.00 is being pruned."));
-    ASSERT_TRUE(testLogger.ValidateMessageAtIndex(2, NativeLogging::SEVERITY::LOG_INFO, "Skipping finding of the class 'TestCustomAttr' because its schema 'RefSchema.01.00.00' is being pruned."));
-
+    ASSERT_TRUE(testLogger.ValidateMessageAtIndex(1, NativeLogging::SEVERITY::LOG_DEBUG, "Skipping loading of the custom attribute because its schema RefSchema.01.00.00 is being pruned."));
+    ASSERT_TRUE(testLogger.ValidateMessageAtIndex(2, NativeLogging::SEVERITY::LOG_DEBUG, "Skipping finding of the class 'TestCustomAttr' because its schema 'RefSchema.01.00.00' is being pruned."));
     }
 
 //---------------------------------------------------------------------------------------

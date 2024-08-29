@@ -191,7 +191,7 @@ enum class ECObjectsStatus
     InvalidConstantUnit,
     ClassTypeNotCorrect,
     InvalidUnit,
-    PruneSchema,
+    SchemaIsPruned,
     IncompatibleVersion,
     };
 
@@ -264,6 +264,7 @@ enum class InstanceReadStatus
     CommentOnly,
     PropertyNotFound,
     BadNavigationValue,
+    ECSchemaPruned,
     };
 
 //! Result status of writing an IECInstance to Xml
