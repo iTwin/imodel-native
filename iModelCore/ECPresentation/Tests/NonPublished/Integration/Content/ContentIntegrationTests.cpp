@@ -6583,7 +6583,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(ContentRelatedInstancesSpecification_GetsRelatedForwardLabelThroughCalculatedProperty, R"*(
+DEFINE_SCHEMA(ContentRelatedInstancesSpecification_GetsRelatedLabelForwardThroughCalculatedProperty, R"*(
     <ECEntityClass typeName="A">
         <ECProperty propertyName="UserLabel" typeName="string" />
     </ECEntityClass>
@@ -6649,7 +6649,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(ContentRelatedInstancesSpecification_GetsRelatedBackwardLabelThroughCalculatedProperty, R"*(
+DEFINE_SCHEMA(ContentRelatedInstancesSpecification_GetsRelatedLabelBackwardThroughCalculatedProperty, R"*(
     <ECEntityClass typeName="A">
         <ECProperty propertyName="UserLabel" typeName="string" />
     </ECEntityClass>
