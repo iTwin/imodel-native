@@ -1839,11 +1839,11 @@ TEST_F(FormattingTestFixture, DoubleToRatio){
     testFormatDoubleToRatio("1:0.3", 3, v_h, oneToN, v_h, DecimalPrecision::Precision1);
     testFormatDoubleToRatio("1:0.33", 3, v_h, oneToN, v_h, DecimalPrecision::Precision2);
 
-    testFormatDoubleToRatio("0:1", 0.0004, v_h, oneToN, v_h, DecimalPrecision::Precision3);
-    testFormatDoubleToRatio("1:2500", 0.0004, v_h, oneToN, v_h, DecimalPrecision::Precision4);
+    testFormatDoubleToRatio("1:2500", 0.0004, v_h, oneToN, v_h, DecimalPrecision::Precision3);
 
     testFormatDoubleToRatio("1:0", 0.0004, v_h, oneToN, h_v, DecimalPrecision::Precision3);
     testFormatDoubleToRatio("1:0.0004", 0.0004, v_h, oneToN, h_v, DecimalPrecision::Precision4);
+    testFormatDoubleToRatio("1:-0.0004", -0.0004, v_h, oneToN, h_v, DecimalPrecision::Precision4);
     }
 
     // v:h -> v:h | ValueBased
@@ -1870,6 +1870,24 @@ TEST_F(FormattingTestFixture, DoubleToRatio){
     testFormatDoubleToRatio("2:7", 0.2857, v_h, useGreatestCommonDivisor, v_h);
     testFormatDoubleToRatio("1:4", 0.25, v_h, useGreatestCommonDivisor, v_h);
     testFormatDoubleToRatio("2:3", 0.6667, v_h, useGreatestCommonDivisor, v_h);
+    }
+
+    // negative values
+    {
+    testFormatDoubleToRatio("-1:1", -1.0, v_h, NtoOne, v_h);
+    testFormatDoubleToRatio("1:-1", -1.0, v_h, valueBased, v_h);
+
+    testFormatDoubleToRatio("-0.5:1", -0.5, v_h, NtoOne, v_h);
+    testFormatDoubleToRatio("1:-0.5", -0.5, v_h, valueBased, v_h);
+
+    testFormatDoubleToRatio("-2:1", -2, v_h, NtoOne, h_v);
+    testFormatDoubleToRatio("-2:1", -2, v_h, valueBased, h_v);
+    }
+
+    // really large/small numbers
+    {
+    testFormatDoubleToRatio("0:1", 0.00000001, v_h, NtoOne, v_h);
+
     }
 }
 

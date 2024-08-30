@@ -976,9 +976,8 @@ double NumericFormatSpec::RoundDouble(double dval, double roundTo)
 Utf8String NumericFormatSpec::FormatToRatio(double value) const
 {
     double reciprocal;
-    double precisionFactor = GetDecimalPrecisionFactor();
 
-    if (std::abs(value) < 1/precisionFactor) 
+    if (value == 0) 
         return "0:1";
     else
         reciprocal = 1.0 / value;
@@ -987,12 +986,13 @@ Utf8String NumericFormatSpec::FormatToRatio(double value) const
         case (RatioType::OneToN): return "1:" + Format(reciprocal);
         case (RatioType::NToOne): return Format(value) + ":1";
         case (RatioType::ValueBased):
-            if (value > 1)
+            if (std::abs(value) > 1)
                 return Format(value) + ":1";
             else
                 return "1:" + Format(reciprocal);
         case (RatioType::UseGreatestCommonDivisor):
         {
+            double precisionFactor = GetDecimalPrecisionFactor();
             reciprocal = RoundDouble(reciprocal, 1/precisionFactor);
 
             int numerator = static_cast<int>(reciprocal * precisionFactor);
