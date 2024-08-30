@@ -259,7 +259,7 @@ public:
     UnitCP MultiplyUnit(UnitCR rhs) const;
     UnitCP DivideUnit(UnitCR rhs) const;
 
-    static bool IsNegligible(double dval) {return (1.0e-16 > dval);}
+    static bool IsNegligible(double dval) {return (1.0e-16 > std::abs(dval));}
     //! Returns true if the input units are the same; otherwise, false or if one or both are null.
     static bool AreEqual(UnitCP unitA, UnitCP unitB) {return nullptr == unitA || nullptr == unitB ? false : unitA->GetName().EqualsI(unitB->GetName().c_str());}
     //! Returns true if the input units belong to the same phenomenon, false if not or one or both are null.
