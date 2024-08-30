@@ -1865,11 +1865,11 @@ TEST_F(FormattingTestFixture, DoubleToRatio){
     testFormatDoubleToRatio("1:1", 1.0, v_h, useGreatestCommonDivisor, v_h);
     testFormatDoubleToRatio("2:1", 2.0, v_h, useGreatestCommonDivisor, v_h);
     testFormatDoubleToRatio("1:2", 0.5, v_h, useGreatestCommonDivisor, v_h);
-    testFormatDoubleToRatio("1000:3003", 0.333, v_h, useGreatestCommonDivisor, v_h);
-    testFormatDoubleToRatio("1:3", 0.3333, v_h, useGreatestCommonDivisor, v_h);
-    testFormatDoubleToRatio("2:7", 0.2857, v_h, useGreatestCommonDivisor, v_h);
+    testFormatDoubleToRatio("333:1000", 0.333, v_h, useGreatestCommonDivisor, v_h);
+    testFormatDoubleToRatio("333:1000", 0.3333, v_h, useGreatestCommonDivisor, v_h);
+    testFormatDoubleToRatio("143:500", 0.2857, v_h, useGreatestCommonDivisor, v_h);
     testFormatDoubleToRatio("1:4", 0.25, v_h, useGreatestCommonDivisor, v_h);
-    testFormatDoubleToRatio("2:3", 0.6667, v_h, useGreatestCommonDivisor, v_h);
+    testFormatDoubleToRatio("667:1000", 0.6667, v_h, useGreatestCommonDivisor, v_h);
     }
 
     // negative values
@@ -1878,16 +1878,29 @@ TEST_F(FormattingTestFixture, DoubleToRatio){
     testFormatDoubleToRatio("1:-1", -1.0, v_h, valueBased, v_h);
 
     testFormatDoubleToRatio("-0.5:1", -0.5, v_h, NtoOne, v_h);
-    testFormatDoubleToRatio("1:-0.5", -0.5, v_h, valueBased, v_h);
+    testFormatDoubleToRatio("1:-2", -0.5, v_h, valueBased, v_h);
 
-    testFormatDoubleToRatio("-2:1", -2, v_h, NtoOne, h_v);
-    testFormatDoubleToRatio("-2:1", -2, v_h, valueBased, h_v);
+    testFormatDoubleToRatio("-0.5:1", -2, v_h, NtoOne, h_v);
+    testFormatDoubleToRatio("1:-2", -2, v_h, valueBased, h_v);
     }
 
     // really large/small numbers
     {
     testFormatDoubleToRatio("0:1", 0.00000001, v_h, NtoOne, v_h);
+    testFormatDoubleToRatio("100000000:1", 0.00000001, v_h, NtoOne, h_v);
 
+    testFormatDoubleToRatio("100000000:1", 100000000, v_h, NtoOne, v_h);
+    testFormatDoubleToRatio("0:1", 100000000, v_h, NtoOne, h_v);
+    }
+
+    // irrational numbers
+    {
+    testFormatDoubleToRatio("0.143:1", 1.0/7, v_h, NtoOne, v_h);
+    testFormatDoubleToRatio("1:7", 1.0/7, v_h, oneToN, v_h);
+    testFormatDoubleToRatio("0.286:1", 2.0/7, v_h, NtoOne, v_h);
+    
+    testFormatDoubleToRatio("143:500", 2.0/7, v_h, useGreatestCommonDivisor, v_h); // loose precision from 0.28571428571 to 0.286
+    testFormatDoubleToRatio("7:2", 2.0/7, v_h, useGreatestCommonDivisor, h_v); // didnt loose much precision from 3.50000000005 to 3.5
     }
 }
 

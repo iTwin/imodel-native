@@ -249,7 +249,7 @@ enum class RatioType
     {
     OneToN, // 1 on the left side of the colon
     NToOne, // 1 on the right side of the colon
-    ValueBased, // the lesser value scales to 1. e.g. 0.5 -> 2:1 | 2 -> 1:2
+    ValueBased, // if abs value is greater than 1, 1 is on left. If abs value is less than 1, 1 is on right
     UseGreatestCommonDivisor, // scales to the greatest common divisor, integer ratio. e.g. 3:10
     };
 

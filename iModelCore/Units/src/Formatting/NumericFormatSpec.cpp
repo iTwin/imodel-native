@@ -993,9 +993,9 @@ Utf8String NumericFormatSpec::FormatToRatio(double value) const
         case (RatioType::UseGreatestCommonDivisor):
         {
             double precisionFactor = GetDecimalPrecisionFactor();
-            reciprocal = RoundDouble(reciprocal, 1/precisionFactor);
+            value = RoundDouble(value, 1/precisionFactor);
 
-            int numerator = static_cast<int>(reciprocal * precisionFactor);
+            int numerator = static_cast<int>(value * precisionFactor);
             int denominator = static_cast<int>(precisionFactor);
 
             // int gcd = std::gcd(numerator, denominator);
@@ -1009,7 +1009,7 @@ Utf8String NumericFormatSpec::FormatToRatio(double value) const
             numerator /= a;
             denominator /= a;
 
-            return Format(denominator) + ":" + Format(numerator);
+            return Format(numerator) + ":" + Format(denominator);
         }
     }
 
