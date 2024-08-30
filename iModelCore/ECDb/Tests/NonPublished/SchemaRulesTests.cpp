@@ -3519,135 +3519,92 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_InvalidInECSql)
 
     }
 
-TEST_F(SchemaRulesTestFixture, WIP_ImportNewerSchemaWithUnknowns)
+TEST_F(SchemaRulesTestFixture, ImportSchemaWithNewerECXmlVersions)
     {
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ImportNewerSchemaWithUnknowns.ecdb"));
-    uint32_t ecXmlMajorVersion;
-    uint32_t ecXmlMinorVersion;
-    ECSchema::ParseECVersion(ecXmlMajorVersion, ecXmlMinorVersion, ECVersion::Latest);
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ImportSchemaWithNewerECXmlVersions.ecdb"));
 
-    const auto newVersion = Utf8PrintfString("%d.%d", ecXmlMajorVersion, ++ecXmlMinorVersion);
+    const auto xmlSchema = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.%d.%d"/>)xml";
 
-    Utf8CP schemaXml = R"xml(
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.%s">
-            %s
-        </ECSchema>)xml";
+    unsigned int ecXmlMajorVersion;
+    unsigned int ecXmlMinorVersion;
+    EXPECT_EQ(ECObjectsStatus::Success, ECSchema::ParseECVersion(ecXmlMajorVersion, ecXmlMinorVersion, ECVersion::Latest));
 
-        // New Primitive Type "unknownType"
-        // Should get defaulted to string
+    // Test current and possible future ECXML versions
+    for (const auto& [testCaseNumber, majorVersion, minorVersion, deserializationStatus, importStatus] : std::vector<std::tuple<unsigned int, unsigned int, unsigned int, bool, bool>>
         {
-        ASSERT_EQ(SUCCESS, GetHelper().ImportSchemas({SchemaItem(Utf8PrintfString(schemaXml, newVersion.c_str(), R"xml(
-            <ECEntityClass typeName="TestClass">
-                <ECProperty propertyName="UnknownTypeProperty" typeName="unknownType"/>
-                <ECArrayProperty propertyName="UnknownArrayProperty" typeName="unknownType"/>
-            </ECEntityClass>)xml"))}));
-        const auto schema = m_ecdb.Schemas().GetSchema("TestSchema");
-        ASSERT_NE(nullptr, schema);
+        { 1, ecXmlMajorVersion, ecXmlMinorVersion, true, true },
+        { 2, ecXmlMajorVersion, ecXmlMinorVersion + 1U, true, false },  // Should be able to deserialize and fail to import
+        { 3, ecXmlMajorVersion + 1U, ecXmlMinorVersion, false, false },  // Major version change not supported. Should fail to deserialze and import
+        { 4, ecXmlMajorVersion + 1U, ecXmlMinorVersion + 1U, false, false },  // Major version change not supported. Should fail to deserialze and import
+        })
+        {
+        ECSchemaPtr schema;
+        const auto context = ECSchemaReadContext::CreateContext();
 
-        const auto testClass = schema->GetClassCP("TestClass");
-        ASSERT_NE(nullptr, testClass);
+        // Schema should always be deserialized successfully irrespective of the ECXml version
+        EXPECT_EQ(deserializationStatus, SchemaReadStatus::Success == ECSchema::ReadFromXmlString(schema, Utf8PrintfString(xmlSchema, majorVersion, minorVersion).c_str(), *context)) << "Test case number " << testCaseNumber << " failed.";
+        EXPECT_EQ(deserializationStatus, schema.IsValid()) << "Test case number: " << testCaseNumber << " failed.";
 
-        const auto unknownTypeProperty = testClass->GetPropertyP("UnknownTypeProperty");
-        ASSERT_NE(nullptr, unknownTypeProperty);
-        EXPECT_TRUE(unknownTypeProperty->GetIsPrimitive());
-        EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, unknownTypeProperty->GetAsPrimitiveProperty()->GetType());
+        // Schema import should fail when ECXml version of the schema is greater than the current version that the ECDb supports
+        EXPECT_EQ(importStatus, m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()) == SchemaImportResult::OK) << "Test case number " << testCaseNumber << " failed.";
+        if (importStatus)
+            EXPECT_NE(nullptr, m_ecdb.Schemas().GetSchema("TestSchema")) << "Test case number " << testCaseNumber << " failed.";
         m_ecdb.AbandonChanges();
+
+        // Serialization should not be allowed for schemas with ecxml versions greater than the current version that the ECDb supports
+        if (schema.IsValid())
+            {
+            Utf8String serializedXml;
+            schema->WriteToXmlString(serializedXml);
+            EXPECT_EQ(importStatus, !Utf8String::IsNullOrEmpty(serializedXml.c_str())) << "Test case number " << testCaseNumber << " failed.";
+            }
         }
 
-        // New Enumeration BackingType "unknownType"
-        // Should get defaulted to string
+        // Try importing 2 schemas where one has a greater ECXml version
+        // We expect the import to fail for both schemas
         {
-        ASSERT_EQ(SUCCESS, GetHelper().ImportSchemas({SchemaItem(Utf8PrintfString(schemaXml, newVersion.c_str(), R"xml(
-            <ECEnumeration typeName="TestEnumeration" backingTypeName="unknownType">
-                <ECEnumerator name="TestVal1" value="1" displayLabel="TestVal1" />
-                <ECEnumerator name="TestVal2" value="2" displayLabel="TestVal2" />
-            </ECEnumeration>)xml"))}));
-        const auto schema = m_ecdb.Schemas().GetSchema("TestSchema");
-        ASSERT_NE(nullptr, schema);
-        const auto testEnum = schema->GetEnumerationCP("TestEnumeration");
-        ASSERT_NE(nullptr, testEnum);
-        EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, testEnum->GetType());
-        m_ecdb.AbandonChanges();
+        ECSchemaPtr schemaPtr;
+        ECSchemaPtr anotherSchemaPtr;
+        const auto context = ECSchemaReadContext::CreateContext();
+
+        // Schema should always be deserialized successfully irrespective of the ECXml version
+        EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemaPtr, Utf8PrintfString(xmlSchema, ecXmlMajorVersion, ecXmlMinorVersion).c_str(), *context));
+        EXPECT_TRUE(schemaPtr.IsValid());
+
+        EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(anotherSchemaPtr, Utf8PrintfString(R"xml(
+            <ECSchema schemaName="AnotherTestSchema" alias="another_ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.%d.%d"/>)xml", ecXmlMajorVersion, ecXmlMinorVersion + 1U).c_str(), *context));
+        EXPECT_TRUE(anotherSchemaPtr.IsValid());
+
+        EXPECT_EQ(SchemaImportResult::ERROR, m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()));
+        EXPECT_EQ(nullptr, m_ecdb.Schemas().GetSchema("TestSchema"));
+        EXPECT_EQ(nullptr, m_ecdb.Schemas().GetSchema("AnotherTestSchema"));
         }
 
-        // New class modifier "unknownType"
-        // Should get defaulted to "None"
+        // Do a schema upgrade for "TestSchema" using a greater ECXml version
         {
-        ASSERT_EQ(SUCCESS, GetHelper().ImportSchemas({SchemaItem(Utf8PrintfString(schemaXml, newVersion.c_str(), R"xml(
-            <ECEntityClass typeName="TestClass" modifier="unknownType" />
-            )xml"))}));
-        const auto schema = m_ecdb.Schemas().GetSchema("TestSchema");
-        ASSERT_NE(nullptr, schema);
-        const auto testClass = schema->GetClassCP("TestClass");
-        ASSERT_NE(nullptr, testClass);
-        EXPECT_EQ(ECClassModifier::None, testClass->GetClassModifier());
-        m_ecdb.AbandonChanges();
-        }
+        const auto xmlSchema = Utf8PrintfString(R"xml(<ECSchema schemaName="TestSchema" alias="another_ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.%d.%d"/>)xml", ecXmlMajorVersion, ecXmlMinorVersion);
+        const auto updatedXmlSchema = Utf8PrintfString(R"xml(
+            <ECSchema schemaName="TestSchema" alias="another_ts" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.%d.%d">
+                <ECEntityClass typeName="NewClass" >
+                    <NewFeature propertyName="NotYet" unknownAttribute="TooSoon" />
+                </ECEntityClass>
+            </ECSchema>)xml", ecXmlMajorVersion, ecXmlMinorVersion + 1U);
 
-        // New property kind "UnknownKind"
-        // The property should get dropped from the class
-        {
-        ASSERT_EQ(SUCCESS, GetHelper().ImportSchemas({SchemaItem(Utf8PrintfString(schemaXml, newVersion.c_str(), R"xml(
-            <ECEntityClass typeName="TestClass">
-                <UnknownKind propertyName="NewProperty" />
-            </ECEntityClass>)xml"))}));
-        const auto schema = m_ecdb.Schemas().GetSchema("TestSchema");
-        ASSERT_NE(nullptr, schema);
-        const auto testClass = schema->GetClassCP("TestClass");
-        ASSERT_NE(nullptr, testClass);
-        EXPECT_EQ(nullptr, testClass->GetPropertyP("NewProperty"));
-        EXPECT_EQ(0, testClass->GetPropertyCount());
-        m_ecdb.AbandonChanges();
-        }
+        ECSchemaPtr schemaPtr;
+        const auto context = ECSchemaReadContext::CreateContext();
+        EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemaPtr, xmlSchema.c_str(), *context));
+        EXPECT_TRUE(schemaPtr.IsValid());
 
-        // New strength type "BiDirectional"
-        // Should get defaulted to "Referencing"
-        {
-        ASSERT_EQ(SUCCESS, GetHelper().ImportSchemas({SchemaItem(Utf8PrintfString(schemaXml, newVersion.c_str(), R"xml(
-            <ECEntityClass typeName="Source"/>
-            <ECEntityClass typeName="Target"/>
+        EXPECT_EQ(SchemaImportResult::OK, m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()));
+        EXPECT_NE(nullptr, m_ecdb.Schemas().GetSchema("TestSchema"));
 
-            <ECRelationshipClass typeName="TestRelationship" modifier="Lol" direction="forward" strength="BiDirectional">
-                <Source multiplicity="(1..1)" roleLabel="likes" polymorphic="False">
-                    <Class class="Source" />
-                </Source>
-                <Target multiplicity="(1..1)" roleLabel="is liked by" polymorphic="True">
-                    <Class class="Target" />
-                </Target>
-            </ECRelationshipClass>)xml"))}));
-        const auto schema = m_ecdb.Schemas().GetSchema("TestSchema");
-        ASSERT_NE(nullptr, schema);
-        const auto testClass = schema->GetClassCP("TestRelationship");
-        ASSERT_NE(nullptr, testClass);
-        
-        EXPECT_TRUE(testClass->IsRelationshipClass());
-        EXPECT_EQ(ECClassModifier::None, testClass->GetRelationshipClassCP()->GetClassModifier());
-        EXPECT_EQ(StrengthType::Referencing, testClass->GetRelationshipClassCP()->GetStrength());
-        m_ecdb.AbandonChanges();
-        }
+        EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schemaPtr, updatedXmlSchema.c_str(), *context));
+        EXPECT_TRUE(schemaPtr.IsValid());
 
-        // New schema item type "UnknownClass"
-        // The schema item should be ignored
-        {
-        ASSERT_EQ(SUCCESS, GetHelper().ImportSchemas({SchemaItem(Utf8PrintfString(schemaXml, newVersion.c_str(), R"xml(
-            <UnknownClass typeName="TestUnknownClass" unknownAttribute="lol"/>
-            )xml"))}));
+        EXPECT_EQ(SchemaImportResult::ERROR, m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()));
         const auto schema = m_ecdb.Schemas().GetSchema("TestSchema");
-        ASSERT_NE(nullptr, schema);
-        m_ecdb.AbandonChanges();
-        }
-
-        // New schema attribute "unknownAttribute"
-        // The attribute should be ignored
-        {
-        ASSERT_EQ(SUCCESS, GetHelper().ImportSchemas({SchemaItem(Utf8PrintfString(schemaXml, newVersion.c_str(), R"xml(
-            <ECEntityClass typeName="TestUnknownClass" unknownAttribute="lol"/>
-            )xml"))}));
-        const auto schema = m_ecdb.Schemas().GetSchema("TestSchema");
-        ASSERT_NE(nullptr, schema);
-        const auto testClass = schema->GetClassCP("TestUnknownClass");
-        ASSERT_NE(nullptr, testClass);
-        m_ecdb.AbandonChanges();
+        EXPECT_NE(nullptr, schema);
+        EXPECT_STREQ("1.0.0", Utf8PrintfString("%d.%d.%d", schema->GetVersionRead(), schema->GetVersionWrite(), schema->GetVersionMinor()).c_str());
         }
     }
 
