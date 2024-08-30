@@ -11615,6 +11615,7 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
         ASSERT_STREQ(expectedSql.c_str(), stmt.GetNativeSql());
 
         auto expected = JsonValue(R"json([{"1":1},{"1":1},{"1":1},{"1":1},{"1":1}])json");
@@ -11629,6 +11630,7 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
         "WHERE EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary] FROM [main].[ts_SomeEntity]) [SomeEntity] WHERE [SomeEntity].[Primary] = [SomeEntity].[Secondary])", classId, classId);
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(6, stmt.GetColumnCount());
         ASSERT_STREQ(expectedSql.c_str(), stmt.GetNativeSql());
 
         auto expected = JsonValue(R"json([
@@ -11648,6 +11650,7 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(6, stmt.GetColumnCount());
         ASSERT_STREQ(expectedSql.c_str(), stmt.GetNativeSql());
 
         auto expected = JsonValue(R"json([
@@ -11668,6 +11671,7 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(6, stmt.GetColumnCount());
         ASSERT_STREQ(expectedSql.c_str(), stmt.GetNativeSql());
 
         auto expected = JsonValue(R"json([
@@ -11689,6 +11693,7 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(6, stmt.GetColumnCount());
         ASSERT_STREQ(expectedSql.c_str(), stmt.GetNativeSql());
 
         auto expected = JsonValue(R"json([
@@ -11710,6 +11715,7 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(6, stmt.GetColumnCount());
         ASSERT_STREQ(expectedSql.c_str(), stmt.GetNativeSql());
 
         auto expected = JsonValue(R"json([
@@ -11729,6 +11735,7 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(6, stmt.GetColumnCount());
         ASSERT_STREQ(expectedSql.c_str(), stmt.GetNativeSql());
 
         auto expected = JsonValue(R"json([
@@ -11750,6 +11757,7 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(6, stmt.GetColumnCount());
         ASSERT_STREQ(expectedSql.c_str(), stmt.GetNativeSql());
 
         auto expected = JsonValue(R"json([{"Name":"...","Primary":1230.0,"Random":1,"Secondary":10.0,"className":"TestSchema.SomeEntity","id":"0x3"}])json");
@@ -11766,6 +11774,7 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(6, stmt.GetColumnCount());
         ASSERT_STREQ(expectedSql.c_str(), stmt.GetNativeSql());
 
         auto expected = JsonValue(R"json([
@@ -11787,6 +11796,7 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
 
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(6, stmt.GetColumnCount());
         ASSERT_STREQ(expectedSql.c_str(), stmt.GetNativeSql());
 
         auto expected = JsonValue(R"json([

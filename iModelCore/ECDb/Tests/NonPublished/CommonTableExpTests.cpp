@@ -1602,12 +1602,15 @@ TEST_F(CommonTableExpTestFixture, CTE_Without_Columns_Subquery_Tests) {
         auto ecsqlSelect = R"(select * from meta.ECClassDef where ECInstanceId >= SOME(with a AS (select ECClassId from meta.ECPropertyDef) select * from a))";
         ECSqlStatement stmtSelect;
         ASSERT_EQ(ECSqlStatus::Success, stmtSelect.Prepare(m_ecdb, ecsqlSelect));
+        ASSERT_EQ(11, stmtSelect.GetColumnCount());
+        
 
         auto ecsqlCTE = R"(
             select * from meta.ECClassDef where ECInstanceId >= SOME(select ECClassId from meta.ECPropertyDef)
         )";
         ECSqlStatement stmtCTE;
         ASSERT_EQ(ECSqlStatus::Success, stmtCTE.Prepare(m_ecdb, ecsqlCTE));
+        ASSERT_EQ(11, stmtCTE.GetColumnCount());
         EXPECT_STREQ(stmtCTE.GetColumnInfo(0).GetProperty()->GetName().c_str(), stmtSelect.GetColumnInfo(0).GetProperty()->GetName().c_str());
         EXPECT_STREQ(stmtCTE.GetColumnInfo(1).GetProperty()->GetName().c_str(), stmtSelect.GetColumnInfo(1).GetProperty()->GetName().c_str());
         ASSERT_EQ(BE_SQLITE_ROW, stmtCTE.Step());
@@ -1619,12 +1622,14 @@ TEST_F(CommonTableExpTestFixture, CTE_Without_Columns_Subquery_Tests) {
         auto ecsqlCTE = R"(select * from meta.ECClassDef where ECInstanceId >= ALL(with a AS (select * from meta.ClassHasBaseClasses) select * from a))";
         ECSqlStatement stmtCTE;
         ASSERT_EQ(ECSqlStatus::Success, stmtCTE.Prepare(m_ecdb, ecsqlCTE));
+        ASSERT_EQ(11, stmtCTE.GetColumnCount());
 
         auto ecsqlSelect = R"(
             select * from meta.ECClassDef where ECInstanceId >= ALL(select * from meta.ClassHasBaseClasses)
         )";
         ECSqlStatement  stmtSelect;
         ASSERT_EQ(ECSqlStatus::Success,  stmtSelect.Prepare(m_ecdb, ecsqlSelect));
+        ASSERT_EQ(11, stmtSelect.GetColumnCount());
         EXPECT_STREQ(stmtCTE.GetColumnInfo(0).GetProperty()->GetName().c_str(), stmtSelect.GetColumnInfo(0).GetProperty()->GetName().c_str());
         EXPECT_STREQ(stmtCTE.GetColumnInfo(1).GetProperty()->GetName().c_str(), stmtSelect.GetColumnInfo(1).GetProperty()->GetName().c_str());
         ASSERT_EQ(BE_SQLITE_ROW, stmtCTE.Step());
@@ -1736,6 +1741,7 @@ TEST_F(CommonTableExpTestFixture, CTE_Without_SubColumns) {
         auto ecsql = R"(with cte as (select * from ts.Element) select * from cte)";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(4, stmt.GetColumnCount());
         ASSERT_STREQ("ECInstanceId", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
         ASSERT_STREQ("ECClassId", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
         ASSERT_STREQ("Subject", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
@@ -1751,6 +1757,7 @@ TEST_F(CommonTableExpTestFixture, CTE_Without_SubColumns) {
         auto ecsql = R"(with cte as (select Subject, Parent.Id PiD from ts.Element) select * from cte)";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(2, stmt.GetColumnCount());
         ASSERT_STREQ("Subject", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
         ASSERT_STREQ("PiD", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
@@ -1767,6 +1774,7 @@ TEST_F(CommonTableExpTestFixture, CTE_Without_SubColumns) {
         auto ecsql = R"(with cte as (select * from ts.Element) select Subject, Parent.Id pId from cte)";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(2, stmt.GetColumnCount());
         ASSERT_STREQ("Subject", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
         ASSERT_STREQ("pId", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
@@ -1783,6 +1791,7 @@ TEST_F(CommonTableExpTestFixture, CTE_Without_SubColumns) {
         auto ecsql = R"(with a AS (select * from ts.Element), b AS (select Parent.Id pId from ts.Element) select a.ECInstanceId, Subject, pId from a,b)";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(3, stmt.GetColumnCount());
         ASSERT_STREQ("ECInstanceId", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
         ASSERT_STREQ("Subject", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
         ASSERT_STREQ("pId", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
@@ -1803,6 +1812,7 @@ TEST_F(CommonTableExpTestFixture, CTE_Without_SubColumns) {
         auto ecsql = R"(with a AS (select * from ts.Element), b(Id) AS (select Parent.Id from ts.Element) select ECInstanceId, Subject, Id pId from a,b)";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(3, stmt.GetColumnCount());
         ASSERT_STREQ("ECInstanceId", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
         ASSERT_STREQ("Subject", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
         ASSERT_STREQ("pId", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
@@ -1823,6 +1833,7 @@ TEST_F(CommonTableExpTestFixture, CTE_Without_SubColumns) {
         auto ecsql = R"(with a AS (select * from ts.Element), b(ECInstanceId) AS (select Parent.Id from ts.Element) select a.ECInstanceId, Subject, b.ECInstanceId pId from a,b)";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(3, stmt.GetColumnCount());
         ASSERT_STREQ("ECInstanceId", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
         ASSERT_STREQ("Subject", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
         ASSERT_STREQ("pId", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
@@ -1843,6 +1854,7 @@ TEST_F(CommonTableExpTestFixture, CTE_Without_SubColumns) {
         auto ecsql = R"(with cte0 as ( select 100,200) select * from (select * from cte0 c0))";
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(2, stmt.GetColumnCount());
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(100, stmt.GetValueInt(0));
         ASSERT_EQ(200, stmt.GetValueInt(1));
@@ -1851,10 +1863,12 @@ TEST_F(CommonTableExpTestFixture, CTE_Without_SubColumns) {
         auto ecsqlalias_1 = R"(with cte0 as ( select 100 a,200 b) select * from (select * from cte0 c0 where c0.a = 100 and c0.b = 200))";
         ECSqlStatement stmt_alias_1;
         ASSERT_EQ(ECSqlStatus::Success, stmt_alias_1.Prepare(m_ecdb, ecsqlalias_1));
+        ASSERT_EQ(2, stmt_alias_1.GetColumnCount());
 
         auto ecsqlalias_2 = R"(with cte0 as ( select 100 a,200 b) select * from (select * from cte0 where cte0.a = 100 and b = 200))";
         ECSqlStatement stmt_alias_2;
         ASSERT_EQ(ECSqlStatus::Success, stmt_alias_2.Prepare(m_ecdb, ecsqlalias_2));
+        ASSERT_EQ(2, stmt_alias_2.GetColumnCount());
 
         ASSERT_STREQ(stmt_alias_1.GetColumnInfo(0).GetProperty()->GetName().c_str(), stmt_alias_2.GetColumnInfo(0).GetProperty()->GetName().c_str());
         ASSERT_STREQ(stmt_alias_1.GetColumnInfo(1).GetProperty()->GetName().c_str(), stmt_alias_2.GetColumnInfo(1).GetProperty()->GetName().c_str());
