@@ -259,6 +259,10 @@ void CommonTableBlockExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<Deri
 //+---------------+---------------+---------------+---------------+---------------+--------
 PropertyMatchResult CommonTableBlockExp::_FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const {
     if(m_columnList.size() == 0){
+        /*This is added because for cte blocks without columns we treat the block select statement as a subquery
+            now if the cte block name has alias then that alias is respected otherwise the cte block name
+            itself can also be used while referencing properties in outside select statement.
+            ex:- with cte as (select * from meta.ECClassDef) select cte.ECInstanceId from cte;*/
         if(Utf8String::IsNullOrEmpty(options.GetAlias().c_str()))
         {
             PropertyMatchOptions overrideOptions = options;
