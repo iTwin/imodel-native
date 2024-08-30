@@ -259,6 +259,12 @@ void CommonTableBlockExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<Deri
 //+---------------+---------------+---------------+---------------+---------------+--------
 PropertyMatchResult CommonTableBlockExp::_FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const {
     if(m_columnList.size() == 0){
+        if(Utf8String::IsNullOrEmpty(options.GetAlias().c_str()))
+        {
+            PropertyMatchOptions overrideOptions = options;
+            overrideOptions.SetAlias(m_name.c_str());
+            return GetQuery()->FindProperty(ctx, propertyPath, overrideOptions);
+        }
         return GetQuery()->FindProperty(ctx, propertyPath, options);
     }
     if (!ExpandDerivedProperties(ctx)) {
