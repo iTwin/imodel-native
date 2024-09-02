@@ -22,7 +22,7 @@ TEST_F(ContentModifierTests, CopyConstructorCopiesProperties)
     // Create modifier1
     ContentModifier modifier1("TestSchema", "TestClassName");
     modifier1.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RelationshipClassName", "RelatedClassNames", "Properties", RelationshipMeaning::RelatedInstance));
-    modifier1.AddCalculatedProperty(*new CalculatedPropertiesSpecification("label", 0, "Value"));
+    modifier1.AddCalculatedProperty(*new CalculatedPropertiesSpecification("label", 0, Utf8String("Value")));
     modifier1.AddPropertyOverride(*new PropertySpecification("property", 123, "", nullptr, nullptr));
     modifier1.AddPropertyCategory(*new PropertyCategorySpecification());
 
@@ -140,8 +140,7 @@ TEST_F(ContentModifierTests, WriteToJson)
         "class": {"schemaName": "schema", "className": "class"},
         "requiredSchemas": [{"name": "TestSchema"}],
         "calculatedProperties": [{
-            "label": "",
-            "value": ""
+            "label": ""
         }],
         "relatedProperties": [{
             "properties": "_none_"
@@ -214,7 +213,7 @@ TEST_F(ContentModifierTests, WriteToXml)
 
     ContentModifier modifier("SchemaName", "ClassName");
     modifier.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RelationshipClassName", "RelatedClassNames", "Properties", RelationshipMeaning::RelatedInstance));
-    modifier.AddCalculatedProperty(*new CalculatedPropertiesSpecification("label", 0, "Value"));
+    modifier.AddCalculatedProperty(*new CalculatedPropertiesSpecification("label", 0, Utf8String("Value")));
     modifier.WriteXml(xml->GetRootElement());
 
     static Utf8CP expected = ""

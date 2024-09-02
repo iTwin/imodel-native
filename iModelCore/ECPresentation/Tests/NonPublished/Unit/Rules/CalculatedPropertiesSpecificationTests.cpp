@@ -72,7 +72,7 @@ TEST_F(CalculatedPropertiesSpecificationTests, LoadsFromJson)
     CalculatedPropertiesSpecification spec;
     EXPECT_TRUE(spec.ReadJson(json));
     EXPECT_STREQ("calculated property", spec.GetLabel().c_str());
-    EXPECT_STREQ("calculated value", spec.GetValue().c_str());
+    EXPECT_STREQ("calculated value", spec.GetValue().Value().c_str());
     EXPECT_STREQ("custom renderer", spec.GetRenderer()->GetRendererName().c_str());
     EXPECT_STREQ("custom editor", spec.GetEditor()->GetEditorName().c_str());
     EXPECT_STREQ("categoryId", spec.GetCategoryId()->AsIdIdentifier()->GetCategoryId().c_str());
@@ -94,7 +94,7 @@ TEST_F(CalculatedPropertiesSpecificationTests, LoadsFromJsonWithDefaultValues)
     CalculatedPropertiesSpecification spec;
     EXPECT_TRUE(spec.ReadJson(json));
     EXPECT_STREQ("calculated property", spec.GetLabel().c_str());
-    EXPECT_STREQ("calculated value", spec.GetValue().c_str());
+    EXPECT_STREQ("calculated value", spec.GetValue().Value().c_str());
     EXPECT_EQ(nullptr, spec.GetRenderer());
     EXPECT_EQ(nullptr, spec.GetEditor());
     EXPECT_EQ(nullptr, spec.GetCategoryId());

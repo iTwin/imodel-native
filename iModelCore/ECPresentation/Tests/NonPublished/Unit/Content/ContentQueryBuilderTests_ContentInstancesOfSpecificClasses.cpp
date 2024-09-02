@@ -126,8 +126,8 @@ TEST_F(ContentQueryBuilderTests, ContentInstacesOfSpecificClasses_ReturnsQueryWi
     {
     ECClassCP classA = GetECClass("A");
     ContentInstancesOfSpecificClassesSpecification spec(1, false, "", {CreateMultiSchemaClass({classA}, false)}, {}, false);
-    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label_1", 1200, "\"Value\" & 1"));
-    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label_2", 1500, "this.Prop & \"Test\""));
+    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label_1", 1200, Utf8String("\"Value\" & 1")));
+    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label_2", 1500, Utf8String("this.Prop & \"Test\"")));
 
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());
@@ -140,8 +140,8 @@ TEST_F(ContentQueryBuilderTests, ContentInstacesOfSpecificClasses_ReturnsQueryWi
 
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("Prop")));
-        AddField(*descriptor, *new ContentDescriptor::CalculatedPropertyField(DEFAULT_CONTENT_FIELD_CATEGORY, "Label_1", "CalculatedProperty_0", "\"Value\" & 1", nullptr, 1200));
-        AddField(*descriptor, *new ContentDescriptor::CalculatedPropertyField(DEFAULT_CONTENT_FIELD_CATEGORY, "Label_2", "CalculatedProperty_1", "this.Prop & \"Test\"", nullptr, 1500));
+        AddField(*descriptor, *new ContentDescriptor::CalculatedPropertyField(DEFAULT_CONTENT_FIELD_CATEGORY, "Label_1", "CalculatedProperty_0", Utf8String("\"Value\" & 1"), nullptr, 1200));
+        AddField(*descriptor, *new ContentDescriptor::CalculatedPropertyField(DEFAULT_CONTENT_FIELD_CATEGORY, "Label_2", "CalculatedProperty_1", Utf8String("this.Prop & \"Test\""), nullptr, 1500));
 
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query), "this");

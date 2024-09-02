@@ -65,13 +65,22 @@ ContentQueryContract::ContentQueryContract(uint64_t id, ContentDescriptorCR desc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQueryContractFieldCPtr ContentQueryContract::GetCalculatedPropertyField(Utf8StringCR calculatedFieldName, Utf8StringCR calculatedPropertyValue, Utf8StringCR prefix) const
+PresentationQueryContractFieldCPtr ContentQueryContract::GetCalculatedPropertyField(Utf8StringCR calculatedFieldName, Nullable<Utf8String> calculatedPropertyValue, Utf8StringCR prefix) const
     {
-    Utf8String value = "'";
-    value += calculatedPropertyValue;
-    value += "'";
-    PresentationQueryContractFieldPtr field = PresentationQueryContractFunctionField::Create(calculatedFieldName.c_str(), FUNCTION_NAME_EvaluateECExpression,
+    PresentationQueryContractFieldPtr field;
+    if (calculatedPropertyValue.IsValid())
+        {
+        Utf8String value = "'";
+        value += calculatedPropertyValue.Value();
+        value += "'";
+        field = PresentationQueryContractFunctionField::Create(calculatedFieldName.c_str(), FUNCTION_NAME_EvaluateECExpression,
         CreateFieldsList("ECClassId", "ECInstanceId", value), true);
+        } 
+    else 
+        {
+        field = PresentationQueryContractSimpleField::Create(calculatedFieldName.c_str(), "CAST(null AS TEXT)", false);
+        }
+
     field->SetPrefixOverride(prefix);
     return field;
     }

@@ -3137,11 +3137,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     ContentRuleP rule = new ContentRule("", 1, false);
     ContentSpecificationP specification = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
-    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("instance id", 1000, "this.ECInstanceId"));
-    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("class id", 1000, "this.ECClassId"));
-    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label1", 1000, "\"Value\""));
-    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1100, "1+2"));
-    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label3", 1200, "this.Property"));
+    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("instance id", 1000, Utf8String("this.ECInstanceId")));
+    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("class id", 1000, Utf8String("this.ECClassId")));
+    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label1", 1000, Utf8String("\"Value\"")));
+    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1100, Utf8String("1+2")));
+    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label3", 1200, Utf8String("this.Property")));
     rule->AddSpecification(*specification);
     rules->AddPresentationRule(*rule);
 
@@ -3168,11 +3168,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     EXPECT_EQ(1100, descriptor->GetVisibleFields()[4]->GetPriority());
     EXPECT_EQ(1200, descriptor->GetVisibleFields()[5]->GetPriority());
 
-    EXPECT_STREQ("this.ECInstanceId", descriptor->GetVisibleFields()[1]->AsCalculatedPropertyField()->GetValueExpression().c_str());
-    EXPECT_STREQ("this.ECClassId", descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetValueExpression().c_str());
-    EXPECT_STREQ("\"Value\"", descriptor->GetVisibleFields()[3]->AsCalculatedPropertyField()->GetValueExpression().c_str());
-    EXPECT_STREQ("1+2", descriptor->GetVisibleFields()[4]->AsCalculatedPropertyField()->GetValueExpression().c_str());
-    EXPECT_STREQ("this.Property", descriptor->GetVisibleFields()[5]->AsCalculatedPropertyField()->GetValueExpression().c_str());
+    EXPECT_STREQ("this.ECInstanceId", descriptor->GetVisibleFields()[1]->AsCalculatedPropertyField()->GetValueExpression().Value().c_str());
+    EXPECT_STREQ("this.ECClassId", descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetValueExpression().Value().c_str());
+    EXPECT_STREQ("\"Value\"", descriptor->GetVisibleFields()[3]->AsCalculatedPropertyField()->GetValueExpression().Value().c_str());
+    EXPECT_STREQ("1+2", descriptor->GetVisibleFields()[4]->AsCalculatedPropertyField()->GetValueExpression().Value().c_str());
+    EXPECT_STREQ("this.Property", descriptor->GetVisibleFields()[5]->AsCalculatedPropertyField()->GetValueExpression().Value().c_str());
 
     // request for content
     ContentCPtr content = GetVerifiedContent(*descriptor);
@@ -3230,7 +3230,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CalculatedPropertiesSpecifi
 
     ContentModifierP modifier = new ContentModifier(GetSchema()->GetName().c_str(), "B");
     rules->AddPresentationRule(*modifier);
-    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label", 900, "this.PropertyB"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label", 900, Utf8String("this.PropertyB")));
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *input)));
@@ -5673,7 +5673,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     ContentModifierP modifier = new ContentModifier(GetSchema()->GetName(), "B");
     rules->AddPresentationRule(*modifier);
-    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, "this.SharedProperty",
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, Utf8String("this.SharedProperty"),
         new CustomRendererSpecification("Test renderer"), new PropertyEditorSpecification("Test editor")));
 
     // validate descriptor
@@ -5762,7 +5762,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     ContentModifierP modifier = new ContentModifier(GetSchema()->GetName().c_str(), "D");
     rules->AddPresentationRule(*modifier);
-    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, "this.Property"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, Utf8String("this.Property")));
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
@@ -5836,7 +5836,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     ContentModifierP modifier = new ContentModifier(GetSchema()->GetName(), "Derived2");
     rules->AddPresentationRule(*modifier);
-    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, "this.Property & this.Property2"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, Utf8String("this.Property & this.Property2")));
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
@@ -5930,11 +5930,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
         }), { new PropertySpecification("*") }, RelationshipMeaning::RelatedInstance));
 
     ContentModifierP calculatedPropertiesModifierApplyOnNestedB = new ContentModifier(GetSchema()->GetName(), classB->GetName());
-    calculatedPropertiesModifierApplyOnNestedB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("labelB", 1000, "this.PropertyB"));
+    calculatedPropertiesModifierApplyOnNestedB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("labelB", 1000, Utf8String("this.PropertyB")));
     calculatedPropertiesModifierApplyOnNestedB->SetPriority(2);
 
     ContentModifierP calculatedPropertiesModifierApplyOnNestedC = new ContentModifier(GetSchema()->GetName(), classC->GetName());
-    calculatedPropertiesModifierApplyOnNestedC->AddCalculatedProperty(*new CalculatedPropertiesSpecification("labelC", 1000, "this.PropertyC", new CustomRendererSpecification("Test renderer"), new PropertyEditorSpecification("Test editor")));
+    calculatedPropertiesModifierApplyOnNestedC->AddCalculatedProperty(*new CalculatedPropertiesSpecification("labelC", 1000, Utf8String("this.PropertyC"), new CustomRendererSpecification("Test renderer"), new PropertyEditorSpecification("Test editor")));
     calculatedPropertiesModifierApplyOnNestedC->SetApplyOnNestedContent(true);
     calculatedPropertiesModifierApplyOnNestedC->SetPriority(3);
 
@@ -6420,7 +6420,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     spec->AddRelatedProperty(*instanceRelatedPropSpec);
 
     ContentModifierP calculatedPropertiesOnB = new ContentModifier(GetSchema()->GetName(), classB->GetName());
-    calculatedPropertiesOnB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("labelB", 1000, "10*10"));
+    calculatedPropertiesOnB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("labelB", 1000, Utf8String("10*10")));
     calculatedPropertiesOnB->SetApplyOnNestedContent(true);
 
     rules->AddPresentationRule(*contentRule);
@@ -6491,7 +6491,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
 
     ContentModifierP modifier = new ContentModifier(GetSchema()->GetName(), "A");
     rules->AddPresentationRule(*modifier);
-    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, "this.SharedProperty"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, Utf8String("this.SharedProperty")));
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *input)));
@@ -6771,7 +6771,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
 
     ContentModifierP modifier = new ContentModifier(GetSchema()->GetName(), "C");
     rules->AddPresentationRule(*modifier);
-    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label", 900, "this.PropertyC"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label", 900, Utf8String("this.PropertyC")));
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *input)));
@@ -6850,7 +6850,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
 
     ContentModifierP modifier = new ContentModifier(GetSchema()->GetName(), "NonExistingClass"); // There is no such class in database
     rules->AddPresentationRule(*modifier);
-    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label", 900, "this.PropertyB"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label", 900, Utf8String("this.PropertyB")));
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *input)));
@@ -6907,7 +6907,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Cont
 
     ContentModifierP modifier = new ContentModifier(GetSchema()->GetName(), "A");
     rules->AddPresentationRule(*modifier);
-    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, "this.Property"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, Utf8String("this.Property")));
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *input)));
@@ -17569,7 +17569,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DoesNotUseContentModifiersT
 
     ContentModifier* modifier = new ContentModifier(elementClass->GetSchema().GetName(), elementClass->GetName());
     modifier->AddRequiredSchemaSpecification(*new RequiredSchemaSpecification("this schema doesn't exist"));
-    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("custom property", 1, "\"calculated value\""));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("custom property", 1, Utf8String("\"calculated value\"")));
     rules->AddPresentationRule(*modifier);
 
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
