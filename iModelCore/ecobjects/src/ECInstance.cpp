@@ -2692,16 +2692,16 @@ struct  InstanceXmlReader
                 schema = &(m_context.GetFallBackSchema());
             }
 
-            if (NULL == schema)
-                {
-                LOG.errorv("Failed to locate ECSchema %s", m_fullSchemaName.c_str());
-                return InstanceReadStatus::ECSchemaNotFound;
-                }
-
             if (ECObjectsStatus::SchemaIsPruned == schemaStatus)
                 {
                 LOG.debugv("Skipping finding of the class '%s' because its schema '%s' is being pruned.", m_className.c_str(), m_fullSchemaName.c_str());
                 return InstanceReadStatus::ECSchemaPruned;
+                }
+
+            if (NULL == schema)
+                {
+                LOG.errorv("Failed to locate ECSchema %s", m_fullSchemaName.c_str());
+                return InstanceReadStatus::ECSchemaNotFound;
                 }
 
             // see if we can find the class from the schema.
@@ -4465,6 +4465,10 @@ bool IECInstance::SaveOnlyLoadedPropertiesToXml() const
 ECObjectsStatus ECInstanceReadContext::FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType, ECSchemaCP& schema) const
     {
     ECObjectsStatus status = _FindSchemaCP(key, matchType, schema);
+
+    if (ECObjectsStatus::SchemaIsPruned == status)
+        return status;
+
     if (ECObjectsStatus::Success != status)
         schema = &m_fallBackSchema;
 
