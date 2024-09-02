@@ -312,6 +312,7 @@ struct SingleSelectStatementExp final : QueryExp
         bool IsRowConstructor() const { return m_fromClauseIndex == UNSET_CHILDINDEX;}
 
         SqlSetQuantifier GetSelectionType() const { return m_selectionType; }
+        PropertyMatchResult FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const {return _FindProperty(ctx, propertyPath, options);}
         FromExp const* GetFrom() const
             {
             if (m_fromClauseIndex < 0)
