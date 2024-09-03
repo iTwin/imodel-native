@@ -6583,7 +6583,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(ContentRelatedInstancesSpecification_GetsRelatedLabelForwardThroughCalculatedProperty, R"*(
+DEFINE_SCHEMA(ContentInstancesOfSpecificClassesSpecification_GetsRelatedLabelForwardThroughCalculatedProperty, R"*(
     <ECEntityClass typeName="A">
         <ECProperty propertyName="UserLabel" typeName="string" />
     </ECEntityClass>
@@ -6599,7 +6599,7 @@ DEFINE_SCHEMA(ContentRelatedInstancesSpecification_GetsRelatedLabelForwardThroug
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpecification_GetsRelatedLabelForwardThroughCalculatedProperty)
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClassesSpecification_GetsRelatedLabelForwardThroughCalculatedProperty)
     {
     ECClassCP classA = GetClass("A");
     ECClassCP classB = GetClass("B");
@@ -6618,10 +6618,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Backward, relationshipAHasB->GetFullName(), classA->GetFullName()));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), true, false));
     rules->AddPresentationRule(*rule);
-    rules->AddPresentationRule(*new LabelOverride(Utf8PrintfString("ThisNode.IsInstanceNode ANDALSO this.IsOfClass(\"%s\",\"%s\")", classB->GetName().c_str(), GetSchema()->GetName().c_str()),
-        1, "this.UserLabel", ""));
+    rules->AddPresentationRule(*new InstanceLabelOverride(0, false, classB->GetFullName(), "UserLabel"));
 
     ContentModifierP modifier = new ContentModifier(GetSchema()->GetName(), "A");
     rules->AddPresentationRule(*modifier);
@@ -6649,7 +6648,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(ContentRelatedInstancesSpecification_GetsRelatedLabelBackwardThroughCalculatedProperty, R"*(
+DEFINE_SCHEMA(ContentInstancesOfSpecificClassesSpecification_GetsRelatedLabelBackwardThroughCalculatedProperty, R"*(
     <ECEntityClass typeName="A">
         <ECProperty propertyName="UserLabel" typeName="string" />
     </ECEntityClass>
@@ -6665,7 +6664,7 @@ DEFINE_SCHEMA(ContentRelatedInstancesSpecification_GetsRelatedLabelBackwardThrou
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpecification_GetsRelatedLabelBackwardThroughCalculatedProperty)
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClassesSpecification_GetsRelatedLabelBackwardThroughCalculatedProperty)
     {
     ECClassCP classA = GetClass("A");
     ECClassCP classB = GetClass("B");
@@ -6684,10 +6683,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Forward, relationshipAHasB->GetFullName(), classB->GetFullName()));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classB->GetFullName(), true, false));
     rules->AddPresentationRule(*rule);
-    rules->AddPresentationRule(*new LabelOverride(Utf8PrintfString("ThisNode.IsInstanceNode ANDALSO this.IsOfClass(\"%s\",\"%s\")", classA->GetName().c_str(), GetSchema()->GetName().c_str()),
-        1, "this.UserLabel", ""));
+    rules->AddPresentationRule(*new InstanceLabelOverride(0, false, classA->GetFullName(), "UserLabel"));
 
     ContentModifierP modifier = new ContentModifier(GetSchema()->GetName(), "B");
     rules->AddPresentationRule(*modifier);
