@@ -362,6 +362,15 @@ cte_table_name:
             $$->append($7);
             $$->append($8 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
         }
+    |   SQL_TOKEN_NAME SQL_TOKEN_AS '(' select_statement ')'
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+            $$->append($3 = CREATE_NODE("(", SQL_NODE_PUNCTUATION));
+            $$->append($4);
+            $$->append($5 = CREATE_NODE(")", SQL_NODE_PUNCTUATION));
+        }
 
 cte_block_list:
     cte_block_list ',' cte_table_name
@@ -560,6 +569,14 @@ insert_statement:
             $$->append($3);
             $$->append($4);
             $$->append($5);}
+        |   SQL_TOKEN_INSERT SQL_TOKEN_INTO SQL_TOKEN_ONLY table_node opt_column_ref_commalist values_or_query_spec
+            {$$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+            $$->append($3);
+            $$->append($4);
+            $$->append($5);
+            $$->append($6);}
     ;
 
 values_commalist:

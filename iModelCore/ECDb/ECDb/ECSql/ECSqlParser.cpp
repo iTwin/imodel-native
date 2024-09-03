@@ -148,32 +148,51 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql, IssueDataSour
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus ECSqlParser::ParseCTEBlock(std::unique_ptr<CommonTableBlockExp>& exp, OSQLParseNode const* parseNode) const {
+BentleyStatus ECSqlParser::ParseCTEBlock(std::unique_ptr<CommonTableBlockExp>& exp, OSQLParseNode const* parseNode, bool const& isRecursive) const {
     BeAssert(parseNode != nullptr);
     if (!SQL_ISRULE(parseNode, cte_table_name))
         return ERROR;
 
-    auto blockName = parseNode->getChild(0)->getTokenValue();
-    auto pColumnList = parseNode->getChild(2);
-    auto pSelectStmt = parseNode->getChild(6);
+    if(parseNode->count() == 8)
+    {
+        auto blockName = parseNode->getChild(0)->getTokenValue();
+        auto pColumnList = parseNode->getChild(2);
+        auto pSelectStmt = parseNode->getChild(6);
 
-    // Grab column names in block definition
-    std::vector<Utf8String> columns;
-    for (size_t i = 0; i < pColumnList->count(); ++i) {
-        columns.push_back(pColumnList->getChild(i)->getTokenValue());
+        std::unique_ptr<SelectStatementExp> selectStmt;
+        if (SUCCESS != ParseSelectStatement(selectStmt, *pSelectStmt))
+            return ERROR;
+        // Grab column names in block definition
+        std::vector<Utf8String> columns;
+        for (size_t i = 0; i < pColumnList->count(); ++i) {
+            columns.push_back(pColumnList->getChild(i)->getTokenValue());
+        }
+
+        if(columns.size() == 0)
+            return ERROR;
+        /* Defered test
+        if (selectStmt->GetSelection()->GetChildrenCount() != columns.size()) {
+            error
+        }
+        */
+        exp = std::make_unique<CommonTableBlockExp>(blockName.c_str(), columns, std::move(selectStmt));
+        return SUCCESS;
     }
+    if(parseNode->count() == 5)
+    {
+        if(isRecursive)
+            return ERROR;
+        auto blockName = parseNode->getChild(0)->getTokenValue();
+        auto pSelectStmt = parseNode->getChild(3);
 
-    std::unique_ptr<SelectStatementExp> selectStmt;
-    if (SUCCESS != ParseSelectStatement(selectStmt, *pSelectStmt))
-        return ERROR;
-
-    /* Defered test
-    if (selectStmt->GetSelection()->GetChildrenCount() != columns.size()) {
-        error
+        std::unique_ptr<SelectStatementExp> selectStmt;
+        if (SUCCESS != ParseSelectStatement(selectStmt, *pSelectStmt))
+            return ERROR;
+        
+        exp = std::make_unique<CommonTableBlockExp>(blockName.c_str(), std::move(selectStmt));
+        return SUCCESS;
     }
-    */
-    exp = std::make_unique<CommonTableBlockExp>(blockName.c_str(), columns, std::move(selectStmt));
-    return SUCCESS;
+    return ERROR;
 }
 
 //-----------------------------------------------------------------------------------------
@@ -191,7 +210,7 @@ BentleyStatus ECSqlParser::ParseCTE(std::unique_ptr<CommonTableExp>& exp, OSQLPa
     std::vector<std::unique_ptr<CommonTableBlockExp>> blockList;
     for (size_t i=0; i< pCteBlockList->count(); ++i) {
         std::unique_ptr<CommonTableBlockExp> cteBlock;
-        if (SUCCESS != ParseCTEBlock(cteBlock, pCteBlockList->getChild(i)))
+        if (SUCCESS != ParseCTEBlock(cteBlock, pCteBlockList->getChild(i), recursive))
             return ERROR;
 
         blockList.push_back(std::move(cteBlock));
@@ -493,16 +512,16 @@ BentleyStatus ECSqlParser::ParseInsertStatement(std::unique_ptr<InsertStatementE
     insertExp = nullptr;
     //insert does not support polymorphic classes. Passing false therefore.
     std::unique_ptr<ClassNameExp> classNameExp = nullptr;
-    BentleyStatus stat = ParseTableNode(classNameExp, *parseNode.getChild(2), ECSqlType::Insert, PolymorphicInfo::Only());
+    BentleyStatus stat = ParseTableNode(classNameExp, parseNode.count() == 6 ? *parseNode.getChild(3) : *parseNode.getChild(2), ECSqlType::Insert, PolymorphicInfo::Only());
     if (SUCCESS != stat)
         return stat;
 
     std::unique_ptr<PropertyNameListExp> insertPropertyNameListExp = nullptr;
-    stat = ParseOptColumnRefCommalist(insertPropertyNameListExp, parseNode.getChild(3));
+    stat = ParseOptColumnRefCommalist(insertPropertyNameListExp, parseNode.count() == 6 ? parseNode.getChild(4) : parseNode.getChild(3));
     if (SUCCESS != stat)
         return stat;
 
-    OSQLParseNode const* valuesOrQuerySpecNode = parseNode.getChild(4);
+    OSQLParseNode const* valuesOrQuerySpecNode = parseNode.count() == 6 ? parseNode.getChild(5) : parseNode.getChild(4);
     if (valuesOrQuerySpecNode == nullptr)
         {
         BeAssert(false);
