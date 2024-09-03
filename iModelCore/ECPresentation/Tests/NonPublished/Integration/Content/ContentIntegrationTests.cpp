@@ -3168,11 +3168,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     EXPECT_EQ(1100, descriptor->GetVisibleFields()[4]->GetPriority());
     EXPECT_EQ(1200, descriptor->GetVisibleFields()[5]->GetPriority());
 
-    EXPECT_STREQ("this.ECInstanceId", descriptor->GetVisibleFields()[1]->AsCalculatedPropertyField()->GetValueExpression().c_str());
-    EXPECT_STREQ("this.ECClassId", descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetValueExpression().c_str());
-    EXPECT_STREQ("\"Value\"", descriptor->GetVisibleFields()[3]->AsCalculatedPropertyField()->GetValueExpression().c_str());
-    EXPECT_STREQ("1+2", descriptor->GetVisibleFields()[4]->AsCalculatedPropertyField()->GetValueExpression().c_str());
-    EXPECT_STREQ("this.Property", descriptor->GetVisibleFields()[5]->AsCalculatedPropertyField()->GetValueExpression().c_str());
+    EXPECT_STREQ("this.ECInstanceId", descriptor->GetVisibleFields()[1]->AsCalculatedPropertyField()->GetValueExpression().Value().c_str());
+    EXPECT_STREQ("this.ECClassId", descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetValueExpression().Value().c_str());
+    EXPECT_STREQ("\"Value\"", descriptor->GetVisibleFields()[3]->AsCalculatedPropertyField()->GetValueExpression().Value().c_str());
+    EXPECT_STREQ("1+2", descriptor->GetVisibleFields()[4]->AsCalculatedPropertyField()->GetValueExpression().Value().c_str());
+    EXPECT_STREQ("this.Property", descriptor->GetVisibleFields()[5]->AsCalculatedPropertyField()->GetValueExpression().Value().c_str());
 
     // request for content
     ContentCPtr content = GetVerifiedContent(*descriptor);

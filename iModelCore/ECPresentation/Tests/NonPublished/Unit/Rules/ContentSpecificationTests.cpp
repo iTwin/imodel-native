@@ -224,7 +224,7 @@ TEST_F(ContentSpecificationsTests, LoadFromXml_NoCalculatedPropertiesLoadedWhenL
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ContentSpecificationsTests, LoadFromXml_NoCalculatedPropertiesLoadedWhenValueForCalculatedPropertyIsNotSpecified)
+TEST_F(ContentSpecificationsTests, LoadFromXml_CalculatedPropertiesLoadedWhenValueForCalculatedPropertyIsNotSpecified)
     {
     static Utf8CP xmlString = R"(
         <TestSpecification Priority="123" ShowImages="true">
@@ -239,7 +239,7 @@ TEST_F(ContentSpecificationsTests, LoadFromXml_NoCalculatedPropertiesLoadedWhenV
 
     TestContentSpecification spec;
     EXPECT_TRUE(spec.ReadXml(xml->GetRootElement()));
-    EXPECT_EQ(0, spec.GetCalculatedProperties().size());
+    EXPECT_EQ(1, spec.GetCalculatedProperties().size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -300,7 +300,7 @@ TEST_F(ContentSpecificationsTests, CopiedSpecificationHasSameNestedSpecification
     EXPECT_EQ(1, spec1.GetPropertyOverrides().size());
     EXPECT_EQ(1, spec1.GetPropertyCategories().size());
 
-    // Create spec2 via copy consstructor
+    // Create spec2 via copy constructor
     TestContentSpecification spec2(spec1);
 
     // Validate spec2
