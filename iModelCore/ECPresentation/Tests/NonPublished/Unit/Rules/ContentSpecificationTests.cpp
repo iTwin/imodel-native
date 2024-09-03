@@ -110,7 +110,7 @@ TEST_F(ContentSpecificationsTests, WriteToJson)
     TestContentSpecification spec;
     spec.SetShowImages(true);
     spec.SetOnlyIfNotHandled(true);
-    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("label", 456, "value"));
+    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("label", 456, Utf8String("value")));
     spec.AddPropertyCategory(*new PropertyCategorySpecification("category id", "category label"));
     spec.AddPropertyOverride(*new PropertySpecification("prop1", 456, "", nullptr, nullptr));
     spec.AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Both, "s1:c1", "s2:c2", "alias", true));
@@ -257,8 +257,8 @@ TEST_F(ContentSpecificationsTests, WritesToXml)
     spec.SetOnlyIfNotHandled(true);
     spec.AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, "RelationshipClassName",
         "RelatedClassNames", "Properties", RelationshipMeaning::SameInstance));
-    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label1", 123, "Expression1"));
-    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label2", 456, "Expression2"));
+    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label1", 123, Utf8String("Expression1")));
+    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label2", 456, Utf8String("Expression2")));
     spec.AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Both, "TestRelName", "TestClassName", "TestAlias"));
     spec.WriteXml(xml->GetRootElement());
 
@@ -290,7 +290,7 @@ TEST_F(ContentSpecificationsTests, CopiedSpecificationHasSameNestedSpecification
         "RelatedClassNames", "Properties", RelationshipMeaning::SameInstance));
     spec1.AddPropertyCategory(*new PropertyCategorySpecification());
     spec1.AddPropertyOverride(*new PropertySpecification("Property1", 132, "", nullptr, nullptr));
-    spec1.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label1", 123, "Expression1"));
+    spec1.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label1", 123, Utf8String("Expression1")));
 
     // Validate spec1
     EXPECT_TRUE(spec1.GetShowImages());

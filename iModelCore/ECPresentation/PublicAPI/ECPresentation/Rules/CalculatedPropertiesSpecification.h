@@ -38,7 +38,7 @@ protected:
 
 public:
     CalculatedPropertiesSpecification() : m_renderer(nullptr), m_editor(nullptr) {}
-    CalculatedPropertiesSpecification(Utf8String label, int priority, Utf8String value, CustomRendererSpecificationP rendererOverride = nullptr,
+    CalculatedPropertiesSpecification(Utf8String label, int priority, Nullable<Utf8String> value, CustomRendererSpecificationP rendererOverride = nullptr,
         PropertyEditorSpecificationP editorOverride = nullptr, std::unique_ptr<PropertyCategoryIdentifier> categoryId = nullptr)
         : PrioritizedPresentationKey(priority), m_label(label), m_value(value), m_renderer(rendererOverride),
         m_editor(editorOverride), m_categoryId(std::move(categoryId))
