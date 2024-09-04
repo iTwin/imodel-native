@@ -1,6 +1,6 @@
-﻿  BentleyBuild, version 3.1 Rev: 1dca3ce  2024-08-22  [master]
+﻿  BentleyBuild, version 3.1 Rev: 336650e  2024-08-30  [master]
   Python version 3.11.4
-  [Rebuild] Tue Sep 03 2024 10:22:30
+  [Rebuild] Wed Sep 04 2024 17:14:40
   Using BuildStrategy: imodel-native-internal:build/strategies/iModelJsNodeAddon.Dev
   Full BuildStrategy: iModelJsNodeAddon.Dev (resolved: imodel-native-internal:build/strategies/iModelJsNodeAddon.Dev)
   Starting at Part: iModelJsNodeAddon:iModelJsNodeAddon.Dev
@@ -20,13 +20,14 @@
   
   Running parts (1 remain): ['ECPresentation:ECPresentation-PublicAPI']          
   Waiting for part(s) ['ECPresentation:ECPresentation-PublicAPI'] for 1 second...
+  Waiting for part(s) ['ECPresentation:ECPresentation-PublicAPI'] for 2 second...
   Output from part ECPresentation:ECPresentation-PublicAPI
   ______________________________________________________________________________________________________________
   Building ECPresentation:ECPresentation-PublicAPI (x64) 
   
   C:\iTwin\my-cospace\repos\imodel-native\src\toolcache\bmake_x64.10.1.0-57\BentleyBuildMake.exe C:\iTwin\my-cospace\repos\imodel-native\src\imodel-native\iModelCore\ECPresentation\Prewire.mke
   BentleyBuildMake Utility. Version 10.01.00.57, Jan 29 2024
-  Tue Sep  3 10:22:30 2024
+  Wed Sep  4 17:14:41 2024
   
   
   
@@ -34,8 +35,10 @@
   fp options -fp:precise
   
   ***Already Symlinked directory [C:\iTwin\my-cospace\repos\imodel-native\out\Winx64\BuildContexts\ECPresentation\PublicAPI\ECPresentation ==> C:\iTwin\my-cospace\repos\imodel-native\src\imodel-native\iModelCore\ECPresentation\PublicAPI\ECPresentation]
-  Tue Sep  3 10:22:32 2024, elapsed time: 0:02
+  Wed Sep  4 17:14:43 2024, elapsed time: 0:02
   
+  Waiting for part(s) to finish: ['ECPresentation:ECPresentation-Library']  fo...
+  Waiting for part(s) to finish: ['ECPresentation:ECPresentation-Library']  fo...
   Waiting for part(s) to finish: ['ECPresentation:ECPresentation-Library']  fo...
   Waiting for part(s) to finish: ['ECPresentation:ECPresentation-Library']  fo...
   Waiting for part(s) to finish: ['ECPresentation:ECPresentation-Library']  fo...
@@ -46,7 +49,7 @@
   
   C:\iTwin\my-cospace\repos\imodel-native\src\toolcache\bmake_x64.10.1.0-57\BentleyBuildMake.exe C:\iTwin\my-cospace\repos\imodel-native\src\imodel-native\iModelCore\ECPresentation\ECPresentation.mke
   BentleyBuildMake Utility. Version 10.01.00.57, Jan 29 2024
-  Tue Sep  3 10:22:32 2024
+  Wed Sep  4 17:14:43 2024
   
   
   
@@ -55,13 +58,13 @@
   
   BentleyBuildMake  -dArgumentsMki=C:\iTwin\my-cospace\repos\imodel-native\out\Winx64\build\ECPresentation\ECPresentation-Library\Pch\PchArgsECPresentationPch.mki C:\iTwin\my-cospace\repos\imodel-native\src\bsicommon\sharedmki\PreCompileHeader.mke
   BentleyBuildMake Utility. Version 10.01.00.57, Jan 29 2024
-  Tue Sep  3 10:22:33 2024
+  Wed Sep  4 17:14:46 2024
   
   
   
   
   fp options -fp:precise
-  Tue Sep  3 10:22:35 2024, elapsed time: 0:03
+  Wed Sep  4 17:14:49 2024, elapsed time: 0:06
   
   Built 2 of 2 items
   
@@ -71,4 +74,4 @@
   ========================================
   
   
-  [Rebuild] Tue Sep 03 2024 10:22:35, elapsed time: 00:00:05
+  [Rebuild] Wed Sep 04 2024 17:14:49, elapsed time: 00:00:09

@@ -126,8 +126,8 @@ TEST_F(ContentQueryBuilderTests, ContentInstacesOfSpecificClasses_ReturnsQueryWi
     {
     ECClassCP classA = GetECClass("A");
     ContentInstancesOfSpecificClassesSpecification spec(1, false, "", {CreateMultiSchemaClass({classA}, false)}, {}, false);
-    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label_1", 1200, Utf8String("\"Value\" & 1")));
-    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label_2", 1500, Utf8String("this.Prop & \"Test\"")));
+    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label_1", 1200, "\"Value\" & 1"));
+    spec.AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label_2", 1500, "this.Prop & \"Test\""));
 
     ContentDescriptorCPtr descriptor = GetDescriptorBuilder().CreateDescriptor(spec);
     ASSERT_TRUE(descriptor.IsValid());

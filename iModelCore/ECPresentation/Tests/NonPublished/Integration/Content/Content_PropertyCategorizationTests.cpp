@@ -472,7 +472,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Calc
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
-    spec->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, Utf8String("")));
+    spec->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, ""));
     contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
@@ -499,7 +499,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Calc
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
-    spec->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, Utf8String(""), nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("doesnt-exist")));
+    spec->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("doesnt-exist")));
     contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
@@ -526,7 +526,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Calc
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
-    spec->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, Utf8String(""), nullptr, nullptr, PropertyCategoryIdentifier::CreateForDefaultParent()));
+    spec->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForDefaultParent()));
     contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
@@ -553,7 +553,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Calc
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
-    spec->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, Utf8String(""), nullptr, nullptr, PropertyCategoryIdentifier::CreateForRoot()));
+    spec->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForRoot()));
     contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
@@ -581,7 +581,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Calc
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
     spec->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom"));
-    spec->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, Utf8String(""), nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom")));
+    spec->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom")));
     contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
@@ -609,7 +609,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Calc
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
     spec->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom", "", 1000, false, nullptr, PropertyCategoryIdentifier::CreateForDefaultParent()));
-    spec->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, Utf8String(""), nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom")));
+    spec->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom")));
     contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
@@ -637,7 +637,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Calc
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecificationP spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
     spec->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom", "", 1000, false, nullptr, PropertyCategoryIdentifier::CreateForRoot()));
-    spec->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, Utf8String(""), nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom")));
+    spec->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom")));
     contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
@@ -1132,7 +1132,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Same
     rules->AddPresentationRule(*modifierA);
 
     ContentModifierP modifierB = new ContentModifier(classB->GetSchema().GetName(), classB->GetName());
-    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, Utf8String("")));
+    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, ""));
     modifierB->SetApplyOnNestedContent(true);
     rules->AddPresentationRule(*modifierB);
 
@@ -1185,7 +1185,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Same
     rules->AddPresentationRule(*modifierA);
 
     ContentModifierP modifierB = new ContentModifier(classB->GetSchema().GetName(), classB->GetName());
-    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, Utf8String(""), nullptr, nullptr, PropertyCategoryIdentifier::CreateForDefaultParent()));
+    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForDefaultParent()));
     modifierB->SetApplyOnNestedContent(true);
     rules->AddPresentationRule(*modifierB);
 
@@ -1237,7 +1237,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Same
     rules->AddPresentationRule(*modifierA);
 
     ContentModifierP modifierB = new ContentModifier(classB->GetSchema().GetName(), classB->GetName());
-    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, Utf8String(""), nullptr, nullptr, PropertyCategoryIdentifier::CreateForRoot()));
+    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForRoot()));
     modifierB->SetApplyOnNestedContent(true);
     rules->AddPresentationRule(*modifierB);
 
@@ -1290,7 +1290,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Same
 
     ContentModifierP modifierB = new ContentModifier(classB->GetSchema().GetName(), classB->GetName());
     modifierB->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom"));
-    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, Utf8String(""), nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom")));
+    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom")));
     modifierB->SetApplyOnNestedContent(true);
     rules->AddPresentationRule(*modifierB);
 
@@ -1343,7 +1343,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Same
 
     ContentModifierP modifierB = new ContentModifier(classB->GetSchema().GetName(), classB->GetName());
     modifierB->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom"));
-    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, Utf8String(""), nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom", true)));
+    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom", true)));
     modifierB->SetApplyOnNestedContent(true);
     rules->AddPresentationRule(*modifierB);
 
@@ -1396,7 +1396,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Same
 
     ContentModifierP modifierB = new ContentModifier(classB->GetSchema().GetName(), classB->GetName());
     modifierB->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom", "", 1000, false, nullptr, PropertyCategoryIdentifier::CreateForDefaultParent()));
-    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, Utf8String(""), nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom")));
+    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom")));
     modifierB->SetApplyOnNestedContent(true);
     rules->AddPresentationRule(*modifierB);
 
@@ -1449,7 +1449,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Same
 
     ContentModifierP modifierB = new ContentModifier(classB->GetSchema().GetName(), classB->GetName());
     modifierB->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom", "", 1000, false, nullptr, PropertyCategoryIdentifier::CreateForRoot()));
-    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, Utf8String(""), nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom")));
+    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom")));
     modifierB->SetApplyOnNestedContent(true);
     rules->AddPresentationRule(*modifierB);
 
@@ -1849,7 +1849,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Rela
     rules->AddPresentationRule(*modifierA);
 
     ContentModifierP modifierB = new ContentModifier(classB->GetSchema().GetName(), classB->GetName());
-    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, Utf8String("")));
+    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, ""));
     modifierB->SetApplyOnNestedContent(true);
     rules->AddPresentationRule(*modifierB);
 
@@ -1902,7 +1902,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Rela
     rules->AddPresentationRule(*modifierA);
 
     ContentModifierP modifierB = new ContentModifier(classB->GetSchema().GetName(), classB->GetName());
-    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, Utf8String(""), nullptr, nullptr, PropertyCategoryIdentifier::CreateForDefaultParent()));
+    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForDefaultParent()));
     modifierB->SetApplyOnNestedContent(true);
     rules->AddPresentationRule(*modifierB);
 
@@ -1954,7 +1954,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Rela
     rules->AddPresentationRule(*modifierA);
 
     ContentModifierP modifierB = new ContentModifier(classB->GetSchema().GetName(), classB->GetName());
-    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, Utf8String(""), nullptr, nullptr, PropertyCategoryIdentifier::CreateForRoot()));
+    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForRoot()));
     modifierB->SetApplyOnNestedContent(true);
     rules->AddPresentationRule(*modifierB);
 
@@ -2007,7 +2007,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Rela
 
     ContentModifierP modifierB = new ContentModifier(classB->GetSchema().GetName(), classB->GetName());
     modifierB->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom"));
-    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, Utf8String(""), nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom")));
+    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom")));
     modifierB->SetApplyOnNestedContent(true);
     rules->AddPresentationRule(*modifierB);
 
@@ -2060,7 +2060,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Rela
 
     ContentModifierP modifierB = new ContentModifier(classB->GetSchema().GetName(), classB->GetName());
     modifierB->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom"));
-    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, Utf8String(""), nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom", true)));
+    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000,"", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom", true)));
     modifierB->SetApplyOnNestedContent(true);
     rules->AddPresentationRule(*modifierB);
 
@@ -2113,7 +2113,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Rela
 
     ContentModifierP modifierB = new ContentModifier(classB->GetSchema().GetName(), classB->GetName());
     modifierB->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom", "", 1000, false, nullptr, PropertyCategoryIdentifier::CreateForDefaultParent()));
-    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, Utf8String(""), nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom")));
+    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom")));
     modifierB->SetApplyOnNestedContent(true);
     rules->AddPresentationRule(*modifierB);
 
@@ -2167,7 +2167,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategorization_Rela
 
     ContentModifierP modifierB = new ContentModifier(classB->GetSchema().GetName(), classB->GetName());
     modifierB->AddPropertyCategory(*new PropertyCategorySpecification("custom", "Custom", "", 1000, false, nullptr, PropertyCategoryIdentifier::CreateForRoot()));
-    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, Utf8String(""), nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom")));
+    modifierB->AddCalculatedProperty(*new CalculatedPropertiesSpecification("CalculatedProp", 1000, "", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("custom")));
     modifierB->SetApplyOnNestedContent(true);
     rules->AddPresentationRule(*modifierB);
 
@@ -4813,7 +4813,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_Po
     rules->AddPresentationRule(*categoriesModifier);
 
     ContentModifierP contentModifier = new ContentModifier(derivedClass->GetSchema().GetName(), derivedClass->GetName());
-    contentModifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("Calculated", 1, Utf8String("123"), nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("my_category")));
+    contentModifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("Calculated", 1, "123", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("my_category")));
     rules->AddPresentationRule(*contentModifier);
 
     // validate descriptor
@@ -5178,7 +5178,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PropertyCategoryOverride_Ca
     ContentRuleP contentRule = new ContentRule("", 1, false);
     ContentInstancesOfSpecificClassesSpecification* spec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
     spec->AddPropertyOverride(*new PropertySpecification("UserLabel", 1, "", PropertyCategoryIdentifier::CreateForId("category-id")));
-    spec->AddCalculatedProperty(*new CalculatedPropertiesSpecification("a", 1, Utf8String("2"), nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("category-id")));
+    spec->AddCalculatedProperty(*new CalculatedPropertiesSpecification("a", 1,"2", nullptr, nullptr, PropertyCategoryIdentifier::CreateForId("category-id")));
     contentRule->AddSpecification(*spec);
     rules->AddPresentationRule(*contentRule);
 
@@ -5962,7 +5962,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CategorizesCalculatedProper
     rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false));
 
     ContentModifierP modifier = new ContentModifier(GetSchema()->GetName(), classA->GetName());
-    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label", 1000, Utf8String("123")));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("Label", 1000, "123"));
     rules->AddPresentationRule(*modifier);
 
     // request content

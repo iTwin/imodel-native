@@ -185,16 +185,16 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DEPRECATED_GetDistinctValue
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP contentRule = new ContentRule("", 1, false);
-    CalculatedPropertiesSpecification* calcProp1 = new CalculatedPropertiesSpecification("MyCalculatedProperty", 1000, Utf8String("this.Property+\"Calculated\""));
+    CalculatedPropertiesSpecification* calcProp1 = new CalculatedPropertiesSpecification("MyCalculatedProperty", 1000, "this.Property+\"Calculated\"");
     ContentInstancesOfSpecificClassesSpecification* specificSpec = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
     specificSpec->AddCalculatedProperty(*calcProp1);
     contentRule->AddSpecification(*specificSpec);
-    CalculatedPropertiesSpecification* calcProp2 = new CalculatedPropertiesSpecification("MyCalculatedProperty", 1000, Utf8String("this.Property+\"Calculated\""));
+    CalculatedPropertiesSpecification* calcProp2 = new CalculatedPropertiesSpecification("MyCalculatedProperty", 1000, "this.Property+\"Calculated\"");
     ContentRelatedInstancesSpecification* relatedSpec = new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection::RequiredRelationDirection_Both, relBA->GetFullName(), classA->GetFullName());
     relatedSpec->AddCalculatedProperty(*calcProp2);
     contentRule->AddSpecification(*relatedSpec);
     SelectedNodeInstancesSpecification* selectedSpec = new SelectedNodeInstancesSpecification();
-    CalculatedPropertiesSpecification* calcProp3 = new CalculatedPropertiesSpecification("MyCalculatedProperty", 1000, Utf8String("this.Property+\"Calculated\""));
+    CalculatedPropertiesSpecification* calcProp3 = new CalculatedPropertiesSpecification("MyCalculatedProperty", 1000, "this.Property+\"Calculated\"");
     selectedSpec->AddCalculatedProperty(*calcProp3);
     contentRule->AddSpecification(*selectedSpec);
 
@@ -432,7 +432,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, GetDistinctCalculatedValues
     rules->AddPresentationRule(*contentRule);
 
     ContentModifierP modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
-    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("Area", 1000, Utf8String("this.Width * this.Length")));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("Area", 1000, "this.Width * this.Length"));
     rules->AddPresentationRule(*modifier);
 
     // get distinct values
