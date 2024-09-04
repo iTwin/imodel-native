@@ -3137,7 +3137,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     ContentRuleP rule = new ContentRule("", 1, false);
     ContentSpecificationP specification = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
-    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("instance id", 1000,"this.ECInstanceId"));
+    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("instance id", 1000, "this.ECInstanceId"));
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("class id", 1000, "this.ECClassId"));
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label1", 1000, "\"Value\""));
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1100, "1+2"));
@@ -5299,7 +5299,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
 
     ContentModifierP modifier = new ContentModifier(GetSchema()->GetName(), "Derived2");
     rules->AddPresentationRule(*modifier);
-    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200,"this.Property & this.Property2"));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1200, "this.Property & this.Property2"));
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
@@ -15507,7 +15507,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DoesNotUseContentModifiersT
 
     ContentModifier* modifier = new ContentModifier(elementClass->GetSchema().GetName(), elementClass->GetName());
     modifier->AddRequiredSchemaSpecification(*new RequiredSchemaSpecification("this schema doesn't exist"));
-    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("custom property", 1, Utf8String("\"calculated value\"")));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("custom property", 1, "\"calculated value\""));
     rules->AddPresentationRule(*modifier);
 
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
