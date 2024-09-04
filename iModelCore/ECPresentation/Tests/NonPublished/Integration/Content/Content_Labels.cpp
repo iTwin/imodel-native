@@ -2118,3 +2118,61 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsDisplayLabelOfMultip
     // verify
     EXPECT_STREQ(CommonStrings::LABEL_MULTIPLEINSTANCES, label->GetDisplayValue().c_str());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ReturnsNotSpecifiedDisplayLabelForInstanceWithNonPrimitiveNameProperty, R"*(
+    <ECEntityClass typeName="Element">
+        <ECArrayProperty propertyName="Name" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsNotSpecifiedDisplayLabelForInstanceWithNonPrimitiveNameProperty)
+    {
+    // set up data set
+    ECClassCP elementClass = GetClass("Element");
+    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("Name", 2);
+        instance.SetValue("Name", ECValue("A"), 0);
+        instance.SetValue("Name", ECValue("B"), 1);
+        });
+
+    // create key
+    ECInstanceKey key(elementClass->GetId(), RulesEngineTestHelpers::GetInstanceKey(*element).GetId());
+
+    // get label
+    LabelDefinitionCPtr label = GetValidatedResponse(m_manager->GetDisplayLabel(AsyncECInstanceDisplayLabelRequestParams::Create(s_project->GetECDb(), key)));
+
+    // verify
+    EXPECT_STREQ(CommonStrings::LABEL_NOTSPECIFIED, label->GetDisplayValue().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ReturnsNotSpecifiedDisplayLabelForInstanceWithNonPrimitiveDisplayLabelProperty, R"*(
+    <ECEntityClass typeName="Element">
+        <ECArrayProperty propertyName="DisplayLabel" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, ReturnsNotSpecifiedDisplayLabelForInstanceWithNonPrimitiveDisplayLabelProperty)
+    {
+    // set up data set
+    ECClassCP elementClass = GetClass("Element");
+    IECInstancePtr element = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass, [](IECInstanceR instance)
+        {
+        instance.AddArrayElements("DisplayLabel", 2);
+        instance.SetValue("DisplayLabel", ECValue("A"), 0);
+        instance.SetValue("DisplayLabel", ECValue("B"), 1);
+        });
+
+    // create key
+    ECInstanceKey key(elementClass->GetId(), RulesEngineTestHelpers::GetInstanceKey(*element).GetId());
+
+    // get label
+    LabelDefinitionCPtr label = GetValidatedResponse(m_manager->GetDisplayLabel(AsyncECInstanceDisplayLabelRequestParams::Create(s_project->GetECDb(), key)));
+
+    // verify
+    EXPECT_STREQ(CommonStrings::LABEL_NOTSPECIFIED, label->GetDisplayValue().c_str());
+    }
