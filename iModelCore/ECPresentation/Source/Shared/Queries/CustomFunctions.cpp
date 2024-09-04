@@ -451,13 +451,6 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
             ECExpressionsCache noCache;
             if (ECExpressionsHelper(noCache).EvaluateECExpression(value, expression, *expressionContext) && value.IsPrimitive() && value.ConvertPrimitiveToString(expressionResult))
                 {
-                LabelDefinitionPtr labelDefinition = LabelDefinition::FromString(expressionResult.c_str());
-                if (labelDefinition->IsDefinitionValid())
-                    {
-                    Utf8StringCR labelRef = labelDefinition->GetDisplayValue();
-                    expressionResult = labelRef;
-                    }
-
                 if (nullptr != GetContext().GetUsedClassesListener())
                     {
                     UsedClassesHelper::NotifyListenerWithUsedClasses(*GetContext().GetUsedClassesListener(),
