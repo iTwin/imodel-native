@@ -373,7 +373,10 @@ private:
 
             if (BE_SQLITE_ROW == QueryExecutorHelper::Step(stmt))
                 {
-                evalResult.InitECValue() = ECValue(stmt.GetValueText(0));
+                LabelDefinitionPtr labelDefinition = LabelDefinition::FromString(stmt.GetValueText(0));
+                Utf8String expressionResult = labelDefinition->GetDisplayValue();
+                evalResult.InitECValue() = ECValue(expressionResult.c_str());
+                
                 ECEXPRESSIONS_EVALUATE_LOG(LOG_TRACE, Utf8PrintfString("ECInstanceMethodSymbolsProvider::GetRelatedDisplayLabel: Result: %s", evalResult.ToString().c_str()).c_str());
                 return ExpressionStatus::Success;
                 }

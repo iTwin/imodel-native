@@ -6583,7 +6583,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(ContentRelatedInstancesSpecification_GetsRelatedLabelForwardThroughCalculatedProperty, R"*(
+DEFINE_SCHEMA(ContentInstancesOfSpecificClassesSpecification_GetsRelatedLabelForwardThroughCalculatedProperty, R"*(
     <ECEntityClass typeName="A">
         <ECProperty propertyName="UserLabel" typeName="string" />
     </ECEntityClass>
@@ -6599,7 +6599,7 @@ DEFINE_SCHEMA(ContentRelatedInstancesSpecification_GetsRelatedLabelForwardThroug
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpecification_GetsRelatedLabelForwardThroughCalculatedProperty)
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClassesSpecification_GetsRelatedLabelForwardThroughCalculatedProperty)
     {
     ECClassCP classA = GetClass("A");
     ECClassCP classB = GetClass("B");
@@ -6618,10 +6618,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Backward, relationshipAHasB->GetFullName(), classA->GetFullName()));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), true, false));
     rules->AddPresentationRule(*rule);
-    rules->AddPresentationRule(*new LabelOverride(Utf8PrintfString("ThisNode.IsInstanceNode ANDALSO this.IsOfClass(\"%s\",\"%s\")", classB->GetName().c_str(), GetSchema()->GetName().c_str()),
-        1, "this.UserLabel", ""));
+    rules->AddPresentationRule(*new InstanceLabelOverride(0, false, classB->GetFullName(), "UserLabel"));
 
     ContentModifierP modifier = new ContentModifier(GetSchema()->GetName(), "A");
     rules->AddPresentationRule(*modifier);
@@ -6649,7 +6648,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-DEFINE_SCHEMA(ContentRelatedInstancesSpecification_GetsRelatedLabelBackwardThroughCalculatedProperty, R"*(
+DEFINE_SCHEMA(ContentInstancesOfSpecificClassesSpecification_GetsRelatedLabelWithAppendedValueThroughCalculatedProperty, R"*(
     <ECEntityClass typeName="A">
         <ECProperty propertyName="UserLabel" typeName="string" />
     </ECEntityClass>
@@ -6665,7 +6664,72 @@ DEFINE_SCHEMA(ContentRelatedInstancesSpecification_GetsRelatedLabelBackwardThrou
         </Target>
     </ECRelationshipClass>
 )*");
-TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpecification_GetsRelatedLabelBackwardThroughCalculatedProperty)
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClassesSpecification_GetsRelatedLabelWithAppendedValueThroughCalculatedProperty)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECRelationshipClassCP relationshipAHasB = GetClass("A_Has_B")->GetRelationshipClassCP();
+
+    // insert some instances
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance){instance.SetValue("UserLabel", ECValue("A_UserLabel")); });
+    IECInstancePtr instanceB = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance){instance.SetValue("UserLabel", ECValue("B_UserLabel")); });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relationshipAHasB, *instanceA, *instanceB);
+
+    // set up input
+    KeySetPtr input = KeySet::Create(*instanceB);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), true, false));
+    rules->AddPresentationRule(*rule);
+    rules->AddPresentationRule(*new InstanceLabelOverride(0, false, classB->GetFullName(), "UserLabel"));
+
+    ContentModifierP modifier = new ContentModifier(GetSchema()->GetName(), "A");
+    rules->AddPresentationRule(*modifier);
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label", 1200, Utf8PrintfString("this.GetRelatedDisplayLabel(\"%s\", \"Forward\", \"%s\") & \"_AppendedValue\"", relationshipAHasB->GetFullName(), classB->GetFullName())));
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *input)));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(2, descriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
+    RapidJsonValueCR jsonValues = jsonDoc["Values"];
+    EXPECT_STREQ("A_UserLabel", jsonValues[FIELD_NAME(classA, "UserLabel")].GetString());
+    EXPECT_STREQ("B_UserLabel_AppendedValue", jsonValues["CalculatedProperty_0"].GetString());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ContentInstancesOfSpecificClassesSpecification_GetsRelatedLabelBackwardThroughCalculatedProperty, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="UserLabel" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_Has_B" strength="embedding" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="contains" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is contained by" polymorphic="true">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClassesSpecification_GetsRelatedLabelBackwardThroughCalculatedProperty)
     {
     ECClassCP classA = GetClass("A");
     ECClassCP classB = GetClass("B");
@@ -6684,10 +6748,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentRelatedInstancesSpec
     m_locater->AddRuleSet(*rules);
 
     ContentRuleP rule = new ContentRule("", 1, false);
-    rule->AddSpecification(*new ContentRelatedInstancesSpecification(1, 0, false, "", RequiredRelationDirection_Forward, relationshipAHasB->GetFullName(), classB->GetFullName()));
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classB->GetFullName(), true, false));
     rules->AddPresentationRule(*rule);
-    rules->AddPresentationRule(*new LabelOverride(Utf8PrintfString("ThisNode.IsInstanceNode ANDALSO this.IsOfClass(\"%s\",\"%s\")", classA->GetName().c_str(), GetSchema()->GetName().c_str()),
-        1, "this.UserLabel", ""));
+    rules->AddPresentationRule(*new InstanceLabelOverride(0, false, classA->GetFullName(), "UserLabel"));
 
     ContentModifierP modifier = new ContentModifier(GetSchema()->GetName(), "B");
     rules->AddPresentationRule(*modifier);
