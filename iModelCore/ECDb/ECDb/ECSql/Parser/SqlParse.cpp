@@ -204,6 +204,7 @@ namespace connectivity
                             {OSQLParseNode::opt_member_function_args, "opt_member_function_args"},
                             {OSQLParseNode::opt_null_order, "opt_null_order"},
                             {OSQLParseNode::opt_only, "opt_only"},
+                            {OSQLParseNode::opt_only_all, "opt_only_all"},
                             {OSQLParseNode::opt_order_by_clause, "opt_order_by_clause"},
                             {OSQLParseNode::opt_pragma_for, "opt_pragma_for"},
                             {OSQLParseNode::opt_pragma_func, "opt_pragma_func"},
