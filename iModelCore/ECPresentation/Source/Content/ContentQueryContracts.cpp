@@ -65,7 +65,7 @@ ContentQueryContract::ContentQueryContract(uint64_t id, ContentDescriptorCR desc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQueryContractFieldCPtr ContentQueryContract::GetCalculatedPropertyField(Utf8StringCR calculatedFieldName, Nullable<Utf8String> calculatedPropertyValue, Utf8StringCR prefix) const
+PresentationQueryContractFieldCPtr ContentQueryContract::GetCalculatedPropertyField(Utf8StringCR calculatedFieldName, Nullable<Utf8String> const& calculatedPropertyValue, Utf8StringCR prefix) const
     {
     PresentationQueryContractFieldPtr field;
     if (calculatedPropertyValue.IsValid())

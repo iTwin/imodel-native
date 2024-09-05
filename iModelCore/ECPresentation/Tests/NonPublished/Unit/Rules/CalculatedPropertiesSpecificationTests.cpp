@@ -166,7 +166,7 @@ TEST_F(CalculatedPropertiesSpecificationTests, ComputesCorrectHashes)
     EXPECT_STREQ(defaultSpec.GetHash().c_str(), specWithPropertyName.GetHash().c_str());
 
     CalculatedPropertiesSpecification specWithLabelOverride(defaultSpec);
-    specWithLabelOverride.SetValue(Utf8String("10"));
+    specWithLabelOverride.SetValue("10");
     EXPECT_STRNE(defaultSpec.GetHash().c_str(), specWithLabelOverride.GetHash().c_str());
     specWithLabelOverride.SetValue(nullptr);
     EXPECT_STREQ(defaultSpec.GetHash().c_str(), specWithLabelOverride.GetHash().c_str());

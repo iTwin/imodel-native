@@ -44,7 +44,7 @@ public:
         m_editor(editorOverride), m_categoryId(std::move(categoryId))
         {}
     CalculatedPropertiesSpecification(Utf8String label, int priority)
-        : PrioritizedPresentationKey(priority), m_label(label)
+        : PrioritizedPresentationKey(priority), m_label(label), m_value(nullptr)
         {}
     ECPRESENTATION_EXPORT CalculatedPropertiesSpecification(CalculatedPropertiesSpecification const& other);
     ECPRESENTATION_EXPORT CalculatedPropertiesSpecification(CalculatedPropertiesSpecification&& other);
@@ -56,7 +56,7 @@ public:
 
     //! Get property value expression.
     Nullable<Utf8String> GetValue() const {return m_value;}
-    void SetValue(Nullable<Utf8String> value) { m_value = value; InvalidateHash(); }
+    void SetValue(Utf8CP value) { m_value = value ? Utf8String(value) : nullptr; InvalidateHash(); }
 
     CustomRendererSpecificationCP GetRenderer() const { return m_renderer; }
     ECPRESENTATION_EXPORT void SetRenderer(CustomRendererSpecificationP renderer);

@@ -66,7 +66,7 @@ bool CalculatedPropertiesSpecification::_ReadXml(BeXmlNodeP xmlNode)
     if (BEXML_Success != xmlNode->GetContent(value) || value.empty())
         return true;
 
-    SetValue(value);
+    SetValue(value.c_str());
     return true;
     }
 
@@ -173,7 +173,7 @@ MD5 CalculatedPropertiesSpecification::_ComputeHash() const
     MD5 md5 = T_Super::_ComputeHash();
     if (!m_label.empty())
         ADD_STR_VALUE_TO_HASH(md5, CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_LABEL, m_label);
-    if (m_value.IsValid())
+    if (m_value.IsValid() && !m_value.Value().empty())
         ADD_STR_VALUE_TO_HASH(md5, CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_VALUE, m_value.Value());
     if (nullptr != m_renderer)
         ADD_STR_VALUE_TO_HASH(md5, CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_RENDERER, m_renderer->GetHash());
