@@ -2260,8 +2260,8 @@ TEST_F(ECSqlUpdatePrepareTests, Misc)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.PSA SET Dt = ?, L = ?"));
 
     // Class aliases
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.PSA t SET t.I = 124, t.L = 100000000000, t.D = -1.2345678, t.S = 'hello, world' WHERE t.D > 0.0")) << "Class alias are not allowed in SQLite, but ECSQL allows them. So test that ECDb properly omits them during preparation";
-    EXPECT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.PSA t SET t.Dt = ?, t.L = ?")) << "Class alias are not allowed in SQLite, but ECSQL allows them. So test that ECDb properly omits them during preparation";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PSA t SET t.I = 124, t.L = 100000000000, t.D = -1.2345678, t.S = 'hello, world' WHERE t.D > 0.0")) << "Class alias are not allowed in SQLite, but ECSQL allows them. So test that ECDb properly omits them during preparation";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PSA t SET t.Dt = ?, t.L = ?")) << "Class alias are not allowed in SQLite, but ECSQL allows them. So test that ECDb properly omits them during preparation";
 
     // Update ECInstanceId
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PSA SET ECInstanceId = -3, I = 123")) << "Updating ECInstanceId is not allowed";
