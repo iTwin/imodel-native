@@ -186,7 +186,7 @@ using namespace connectivity;
 %type <pParseNode> insert_statement values_or_query_spec values_commalist
 %type <pParseNode> opt_all_distinct
 %type <pParseNode> assignment_commalist assignment
-%type <pParseNode> update_statement_searched opt_where_clause
+%type <pParseNode> update_statement_searched opt_only_all opt_where_clause
 %type <pParseNode> single_select_statement selection table_exp from_clause table_ref_commalist table_ref
 %type <pParseNode> where_clause opt_group_by_clause opt_having_clause
 %type <pParseNode> search_condition predicate comparison_predicate comparison_predicate_part_2 between_predicate between_predicate_part_2
@@ -550,13 +550,14 @@ union_op:
 
 
 delete_statement_searched:
-        SQL_TOKEN_DELETE SQL_TOKEN_FROM table_ref opt_where_clause opt_ecsqloptions_clause
+        SQL_TOKEN_DELETE SQL_TOKEN_FROM opt_only_all table_node opt_where_clause opt_ecsqloptions_clause
             {$$ = SQL_NEW_RULE;
             $$->append($1);
             $$->append($2);
             $$->append($3);
             $$->append($4);
             $$->append($5);
+            $$->append($6);
             }
     ;
 
@@ -652,7 +653,7 @@ update_source:
         value_exp
     ;
 update_statement_searched:
-        SQL_TOKEN_UPDATE table_ref SQL_TOKEN_SET assignment_commalist opt_where_clause opt_ecsqloptions_clause
+        SQL_TOKEN_UPDATE opt_only_all table_node SQL_TOKEN_SET assignment_commalist opt_where_clause opt_ecsqloptions_clause
             {$$ = SQL_NEW_RULE;
             $$->append($1);
             $$->append($2);
@@ -660,6 +661,7 @@ update_statement_searched:
             $$->append($4);
             $$->append($5);
             $$->append($6);
+            $$->append($7);
             }
     ;
 
@@ -766,6 +768,19 @@ table_primary_as_range_column:
             $$->append($3);
         }
     ;
+
+opt_only_all:
+        /* empty */ {$$ = SQL_NEW_RULE;}
+    |    SQL_TOKEN_ONLY
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1 = CREATE_NODE("ONLY", SQL_NODE_NAME));
+        }
+    |    SQL_TOKEN_ALL
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1 = CREATE_NODE("ALL", SQL_NODE_NAME));
+        }
 
 opt_disqualify_polymorphic_constraint:
         /* empty */ {$$ = SQL_NEW_RULE;}
