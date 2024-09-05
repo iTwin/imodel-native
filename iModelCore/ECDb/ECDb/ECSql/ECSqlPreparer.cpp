@@ -188,7 +188,7 @@ ECSqlStatus ECSqlExpPreparer::InsertSubquery(ECSqlPrepareContext& ctx, AllOrAnyE
                     allOrAnyQuery.AppendSpace().Append("AND").AppendSpace();
 
                 NativeSqlBuilder::List selectClauseItemNativeSqlSnippets;
-                ctx.SetCreateField(false); // This is added so that when we create derived property expression from here we don't create additional fields for the select statement because in ANY or SOME we only need the fields for the first select statement not the second one
+                ctx.SetCreateField(false); // This is added so that when we create derived property expression from here we don't create additional fields for the select statement because in ALL we only need the fields for the first select statement not the second one
                 ECSqlStatus stat = ECSqlSelectPreparer::PrepareDerivedPropertyExp(selectClauseItemNativeSqlSnippets, ctx, childExp->GetAs<DerivedPropertyExp>(), 1);
                 ctx.SetCreateField(true); // The flag is reverted here
                 if (stat != ECSqlStatus::Success)
