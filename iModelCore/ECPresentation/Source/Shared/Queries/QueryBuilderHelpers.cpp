@@ -1001,7 +1001,7 @@ PresentationQueryContractFieldPtr QueryBuilderHelpers::CreateDisplayLabelField(U
 
     ECPropertyCP labelProperty = selectClass.GetClass().GetInstanceLabelProperty();
     Utf8String labelClause;
-    if (labelProperty)
+    if (labelProperty && labelProperty->GetIsPrimitive())
         labelClause = Utf8PrintfString("[%s].[%s]", selectClass.GetAlias().c_str(), labelProperty->GetName().c_str());
     else
         labelClause = "''";
@@ -1027,7 +1027,7 @@ PresentationQueryContractFieldPtr QueryBuilderHelpers::CreateDisplayLabelField(U
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQueryContractFieldPtr QueryBuilderHelpers::CreateRelatedInstanceDisplayLabelField(Utf8CP fieldName, ECSchemaHelper const& schemaHelper, SelectClass<ECClass> const& selectClass, 
+PresentationQueryContractFieldPtr QueryBuilderHelpers::CreateRelatedInstanceDisplayLabelField(Utf8CP fieldName, ECSchemaHelper const& schemaHelper, SelectClass<ECClass> const& selectClass,
     bvector<RelatedClassPath> const& relatedInstancePaths,  bvector<InstanceLabelOverrideCP> const& instanceLabelOverrides)
     {
     auto const labelOverrideValueSpecs = GetInstanceLabelOverrideSpecsForClass(schemaHelper, instanceLabelOverrides, selectClass.GetClass());

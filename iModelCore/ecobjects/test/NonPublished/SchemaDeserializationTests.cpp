@@ -1668,6 +1668,50 @@ TEST_F(SchemaDeserializationTest, PruneCAFromPrunedEC32Schemas)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, DoNotSearchClassFromPrunedSchemas)
+    {
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    context->GetSchemasToPrune() = bvector<Utf8String>{"RefSchema"};
+    context->SetResolveConflicts(true);
+
+    Utf8CP refSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="RefSchema" alias="rs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECCustomAttributeClass typeName="TestCustomAttr">
+                </ECCustomAttributeClass>
+            </ECSchema>)xml";
+
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="Test" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECSchemaReference name="RefSchema" version="01.00.00" alias="rs" />
+                <ECCustomAttributes>
+                    <TestCustomAttr xmlns="RefSchema.01.00.00" />
+                </ECCustomAttributes>
+            </ECSchema>)xml";
+
+    StringSchemaLocater locater;
+    locater.AddSchemaString(SchemaKey("RefSchema", 1, 0, 0), refSchemaXml);
+    locater.AddSchemaString(SchemaKey("Test", 1, 0, 1), schemaXml);
+    context->AddSchemaLocater(locater);
+
+    SchemaKey refSchemaKey("RefSchema", 1, 0, 0);
+    ECSchemaPtr refSchema = context->LocateSchema(refSchemaKey, SchemaMatchType::Latest);
+    ASSERT_TRUE(refSchema.IsValid());
+
+    TestLogger testLogger;
+    LogCatcher logCatcher(testLogger);
+
+    SchemaKey testKey("Test", 1, 0, 1);
+    ECSchemaPtr schema = context->LocateSchema(testKey, SchemaMatchType::Latest);
+    ASSERT_TRUE(schema.IsValid());
+
+    ASSERT_TRUE(testLogger.m_messages.size() == 4);
+    ASSERT_TRUE(testLogger.ValidateMessageAtIndex(1, NativeLogging::SEVERITY::LOG_DEBUG, "Skipping loading of the custom attribute because its schema RefSchema.01.00.00 is being pruned."));
+    ASSERT_TRUE(testLogger.ValidateMessageAtIndex(2, NativeLogging::SEVERITY::LOG_DEBUG, "Skipping finding of the class 'TestCustomAttr' because its schema 'RefSchema.01.00.00' is being pruned."));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaDeserializationTest, AliasesForPruneSchemasAreResetForEachSchema)
     {
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
