@@ -43,6 +43,9 @@ public:
         : PrioritizedPresentationKey(priority), m_label(label), m_value(value), m_renderer(rendererOverride),
         m_editor(editorOverride), m_categoryId(std::move(categoryId))
         {}
+    CalculatedPropertiesSpecification(Utf8String label, int priority)
+        : PrioritizedPresentationKey(priority), m_label(label)
+        {}
     ECPRESENTATION_EXPORT CalculatedPropertiesSpecification(CalculatedPropertiesSpecification const& other);
     ECPRESENTATION_EXPORT CalculatedPropertiesSpecification(CalculatedPropertiesSpecification&& other);
     ECPRESENTATION_EXPORT ~CalculatedPropertiesSpecification();

@@ -85,8 +85,7 @@ TEST_F(CalculatedPropertiesSpecificationTests, LoadsFromJson)
 TEST_F(CalculatedPropertiesSpecificationTests, LoadsFromJsonWithDefaultValues)
     {
     static Utf8CP jsonString = R"({
-        "label": "calculated property",
-        "value": "calculated value"
+        "label": "calculated property"
     })";
     BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
@@ -94,7 +93,7 @@ TEST_F(CalculatedPropertiesSpecificationTests, LoadsFromJsonWithDefaultValues)
     CalculatedPropertiesSpecification spec;
     EXPECT_TRUE(spec.ReadJson(json));
     EXPECT_STREQ("calculated property", spec.GetLabel().c_str());
-    EXPECT_STREQ("calculated value", spec.GetValue().Value().c_str());
+    EXPECT_EQ(nullptr, spec.GetValue());
     EXPECT_EQ(nullptr, spec.GetRenderer());
     EXPECT_EQ(nullptr, spec.GetEditor());
     EXPECT_EQ(nullptr, spec.GetCategoryId());
@@ -128,6 +127,21 @@ TEST_F(CalculatedPropertiesSpecificationTests, WriteToJson)
     })");
     EXPECT_TRUE(expected.isExactEqual(json));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CalculatedPropertiesSpecificationTests, WriteToJsonWithDefaultValues)
+    {
+    CalculatedPropertiesSpecification spec("custom label", 123);
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
+        "label": "custom label",
+        "priority": 123
+    })");
+    EXPECT_TRUE(expected.isExactEqual(json));
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass

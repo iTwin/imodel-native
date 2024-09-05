@@ -3142,37 +3142,42 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label1", 1000, "\"Value\""));
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1100, "1+2"));
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label3", 1200, "this.Property"));
+    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("noValueLabel", 1000));
     rule->AddSpecification(*specification);
     rules->AddPresentationRule(*rule);
 
     // validate descriptor
     ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
-    ASSERT_EQ(6, descriptor->GetVisibleFields().size());
+    ASSERT_EQ(7, descriptor->GetVisibleFields().size());
 
     ASSERT_TRUE(descriptor->GetVisibleFields()[1]->IsCalculatedPropertyField());
     ASSERT_TRUE(descriptor->GetVisibleFields()[2]->IsCalculatedPropertyField());
     ASSERT_TRUE(descriptor->GetVisibleFields()[3]->IsCalculatedPropertyField());
     ASSERT_TRUE(descriptor->GetVisibleFields()[4]->IsCalculatedPropertyField());
     ASSERT_TRUE(descriptor->GetVisibleFields()[5]->IsCalculatedPropertyField());
+    ASSERT_TRUE(descriptor->GetVisibleFields()[6]->IsCalculatedPropertyField());
 
     EXPECT_STREQ("instance id", descriptor->GetVisibleFields()[1]->AsCalculatedPropertyField()->GetLabel().c_str());
     EXPECT_STREQ("class id", descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetLabel().c_str());
     EXPECT_STREQ("label1", descriptor->GetVisibleFields()[3]->AsCalculatedPropertyField()->GetLabel().c_str());
     EXPECT_STREQ("label2", descriptor->GetVisibleFields()[4]->AsCalculatedPropertyField()->GetLabel().c_str());
     EXPECT_STREQ("label3", descriptor->GetVisibleFields()[5]->AsCalculatedPropertyField()->GetLabel().c_str());
+    EXPECT_STREQ("noValueLabel", descriptor->GetVisibleFields()[6]->AsCalculatedPropertyField()->GetLabel().c_str());
 
     EXPECT_EQ(1000, descriptor->GetVisibleFields()[1]->GetPriority());
     EXPECT_EQ(1000, descriptor->GetVisibleFields()[2]->GetPriority());
     EXPECT_EQ(1000, descriptor->GetVisibleFields()[3]->GetPriority());
     EXPECT_EQ(1100, descriptor->GetVisibleFields()[4]->GetPriority());
     EXPECT_EQ(1200, descriptor->GetVisibleFields()[5]->GetPriority());
+    EXPECT_EQ(1000, descriptor->GetVisibleFields()[6]->GetPriority());
 
     EXPECT_STREQ("this.ECInstanceId", descriptor->GetVisibleFields()[1]->AsCalculatedPropertyField()->GetValueExpression().Value().c_str());
     EXPECT_STREQ("this.ECClassId", descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetValueExpression().Value().c_str());
     EXPECT_STREQ("\"Value\"", descriptor->GetVisibleFields()[3]->AsCalculatedPropertyField()->GetValueExpression().Value().c_str());
     EXPECT_STREQ("1+2", descriptor->GetVisibleFields()[4]->AsCalculatedPropertyField()->GetValueExpression().Value().c_str());
     EXPECT_STREQ("this.Property", descriptor->GetVisibleFields()[5]->AsCalculatedPropertyField()->GetValueExpression().Value().c_str());
+    ASSERT_FALSE(descriptor->GetVisibleFields()[6]->AsCalculatedPropertyField()->GetValueExpression().IsValid());
 
     // request for content
     ContentCPtr content = GetVerifiedContent(*descriptor);
@@ -3189,6 +3194,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     EXPECT_STREQ("Value", jsonValues["CalculatedProperty_2"].GetString());
     EXPECT_STREQ("3", jsonValues["CalculatedProperty_3"].GetString());
     EXPECT_STREQ("Test", jsonValues["CalculatedProperty_4"].GetString());
+    EXPECT_FALSE(jsonValues.HasMember("CalculatedProperty_5"));
     }
 
 /*---------------------------------------------------------------------------------**//**
