@@ -9,10 +9,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-DeleteStatementExp::DeleteStatementExp(std::unique_ptr<ClassRefExp> classNameExp, std::unique_ptr<WhereExp> whereClauseExp, std::unique_ptr<OptionsExp> optionsClauseExp)
+DeleteStatementExp::DeleteStatementExp(std::unique_ptr<ClassNameExp> classNameExp, std::unique_ptr<WhereExp> whereClauseExp, std::unique_ptr<OptionsExp> optionsClauseExp)
     : Exp(Type::Delete), m_whereClauseIndex(UNSET_CHILDINDEX), m_optionsClauseIndex(UNSET_CHILDINDEX)
     {
-    BeAssert(classNameExp->GetType() == Exp::Type::ClassName);
     m_classNameExpIndex = AddChild(std::move(classNameExp));
 
     if (whereClauseExp != nullptr)

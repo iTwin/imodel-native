@@ -520,7 +520,7 @@ PropertyMap const* PropertyNameExp::GetPropertyMap() const
                 propertyMap = propertyRef->TryGetPropertyMap(GetResolvedPropertyPath());
                 if (propertyMap == nullptr) 
                     {
-                    BeAssert(propertyMap != nullptr && "Exp of a derived prop exp referenced from a sub query ref is expected to always be a prop name exp");
+                    BeAssert(propertyMap != nullptr && "Exp of a derived prop exp referenced from a common table block is expected to always be a prop name exp");
                     }
                 }
             break;
@@ -539,7 +539,7 @@ PropertyMap const* PropertyNameExp::GetPropertyMap() const
                 BeAssert(propertyRef != nullptr);
                 propertyMap = propertyRef->TryGetPropertyMap(GetResolvedPropertyPath());
                 if (propertyMap == nullptr) {
-                    BeAssert(propertyMap != nullptr && "Exp of a derived prop exp referenced from a sub query ref is expected to always be a prop name exp");
+                    BeAssert(propertyMap != nullptr && "Exp of a derived prop exp referenced from a common table block name is expected to always be a prop name exp");
                 }
                 break;
                 }
