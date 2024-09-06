@@ -56,7 +56,7 @@ public:
     void SetLabel(Utf8String label) { m_label = label; InvalidateHash(); }
 
     //! Get property value expression.
-    Nullable<Utf8String> GetValue() const {return m_value;}
+    Nullable<Utf8String> const& GetValue() const {return m_value;}
     void SetValue(Utf8CP value) { m_value = value ? Utf8String(value) : nullptr; InvalidateHash(); }
 
     CustomRendererSpecificationCP GetRenderer() const { return m_renderer; }

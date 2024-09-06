@@ -767,7 +767,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! @param[in] ecClass Entity class this field is intended for.
         //! @param[in] priority Field priority.
         CalculatedPropertyField(std::shared_ptr<Category const> category, Utf8String label, Utf8String name, Utf8CP valueExpression, ECClassCP ecClass, int priority = Property::DEFAULT_PRIORITY)
-            : Field(category, label), m_requestedName(name), m_valueExpression(valueExpression ? Utf8String(valueExpression) : nullptr), m_class(ecClass), m_priority(priority)
+        : Field(category, label), m_requestedName(name), m_valueExpression(valueExpression ? Nullable<Utf8String>(valueExpression) : Nullable<Utf8String>(nullptr)), m_class(ecClass), m_priority(priority)
             {}
 
         Utf8StringCR GetRequestedName() const {return m_requestedName;}
