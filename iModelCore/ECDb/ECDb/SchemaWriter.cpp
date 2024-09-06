@@ -5778,7 +5778,7 @@ BentleyStatus SchemaWriter::Context::PreprocessSchemas(bvector<ECN::ECSchemaCP>&
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
                 IssueType::ECDbIssue,
-                ECDbIssueId::ECDb_XXX1,
+                ECDbIssueId::ECDb_0734,
                 "Failed to import ECSchema %s. It has a higher ECXml version %s than the current version %s and may contain unknown elements which are not supported in this version of ECDb.",
                 schema->GetFullSchemaName().c_str(), schema->GetOriginalECXmlVersionAsString().c_str(), ECSchema::GetECVersionString(ECVersion::Latest));
             return ERROR;
