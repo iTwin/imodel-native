@@ -346,7 +346,7 @@ protected:
         RelatedClassPathCR pathFromSelectToPropertyClass, RelationshipMeaning relationshipMeaning)
         {
         ContentDescriptor::CalculatedPropertyField* field = new ContentDescriptor::CalculatedPropertyField(m_categoriesSupplier.GetCalculatedFieldCategory(ecClass, spec, pathFromSelectToPropertyClass, relationshipMeaning),
-            spec.GetLabel(), name, spec.GetValue(), ecClass, spec.GetPriority());
+            spec.GetLabel(), name, spec.GetValue().IsValid() ? spec.GetValue().Value().c_str() : nullptr, ecClass, spec.GetPriority());
 
         if (nullptr != spec.GetRenderer())
             field->SetRenderer(ContentFieldRenderer::FromSpec(*spec.GetRenderer()));

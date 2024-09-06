@@ -72,7 +72,7 @@ TEST_F(CalculatedPropertiesSpecificationTests, LoadsFromJson)
     CalculatedPropertiesSpecification spec;
     EXPECT_TRUE(spec.ReadJson(json));
     EXPECT_STREQ("calculated property", spec.GetLabel().c_str());
-    EXPECT_STREQ("calculated value", spec.GetValue().c_str());
+    EXPECT_STREQ("calculated value", spec.GetValue().Value().c_str());
     EXPECT_STREQ("custom renderer", spec.GetRenderer()->GetRendererName().c_str());
     EXPECT_STREQ("custom editor", spec.GetEditor()->GetEditorName().c_str());
     EXPECT_STREQ("categoryId", spec.GetCategoryId()->AsIdIdentifier()->GetCategoryId().c_str());
@@ -85,8 +85,7 @@ TEST_F(CalculatedPropertiesSpecificationTests, LoadsFromJson)
 TEST_F(CalculatedPropertiesSpecificationTests, LoadsFromJsonWithDefaultValues)
     {
     static Utf8CP jsonString = R"({
-        "label": "calculated property",
-        "value": "calculated value"
+        "label": "calculated property"
     })";
     BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
@@ -94,7 +93,7 @@ TEST_F(CalculatedPropertiesSpecificationTests, LoadsFromJsonWithDefaultValues)
     CalculatedPropertiesSpecification spec;
     EXPECT_TRUE(spec.ReadJson(json));
     EXPECT_STREQ("calculated property", spec.GetLabel().c_str());
-    EXPECT_STREQ("calculated value", spec.GetValue().c_str());
+    EXPECT_EQ(nullptr, spec.GetValue());
     EXPECT_EQ(nullptr, spec.GetRenderer());
     EXPECT_EQ(nullptr, spec.GetEditor());
     EXPECT_EQ(nullptr, spec.GetCategoryId());
@@ -130,6 +129,21 @@ TEST_F(CalculatedPropertiesSpecificationTests, WriteToJson)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CalculatedPropertiesSpecificationTests, WriteToJsonWithDefaultValues)
+    {
+    CalculatedPropertiesSpecification spec("custom label", 123);
+    BeJsDocument json = spec.WriteJson();
+    BeJsDocument expected(R"({
+        "label": "custom label",
+        "priority": 123
+    })");
+    EXPECT_TRUE(expected.isExactEqual(json));
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CalculatedPropertiesSpecificationTests, ComputesCorrectHashes)
@@ -154,7 +168,7 @@ TEST_F(CalculatedPropertiesSpecificationTests, ComputesCorrectHashes)
     CalculatedPropertiesSpecification specWithLabelOverride(defaultSpec);
     specWithLabelOverride.SetValue("10");
     EXPECT_STRNE(defaultSpec.GetHash().c_str(), specWithLabelOverride.GetHash().c_str());
-    specWithLabelOverride.SetValue("");
+    specWithLabelOverride.SetValue(nullptr);
     EXPECT_STREQ(defaultSpec.GetHash().c_str(), specWithLabelOverride.GetHash().c_str());
 
     CalculatedPropertiesSpecification specWithRendererOverride(defaultSpec);
