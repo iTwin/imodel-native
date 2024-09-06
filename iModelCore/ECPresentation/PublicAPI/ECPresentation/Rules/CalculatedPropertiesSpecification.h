@@ -19,7 +19,7 @@ struct CalculatedPropertiesSpecification : PrioritizedPresentationKey
 
 private:
     Utf8String m_label;
-    Utf8String m_value;
+    Nullable<Utf8String> m_value;
     CustomRendererSpecificationCP m_renderer;
     PropertyEditorSpecificationCP m_editor;
     std::unique_ptr<PropertyCategoryIdentifier> m_categoryId;
@@ -43,6 +43,10 @@ public:
         : PrioritizedPresentationKey(priority), m_label(label), m_value(value), m_renderer(rendererOverride),
         m_editor(editorOverride), m_categoryId(std::move(categoryId))
         {}
+    CalculatedPropertiesSpecification(Utf8String label, int priority)
+        : PrioritizedPresentationKey(priority), m_label(label), m_value(nullptr), m_renderer(nullptr),
+        m_editor(nullptr), m_categoryId(std::move(nullptr))
+        {}
     ECPRESENTATION_EXPORT CalculatedPropertiesSpecification(CalculatedPropertiesSpecification const& other);
     ECPRESENTATION_EXPORT CalculatedPropertiesSpecification(CalculatedPropertiesSpecification&& other);
     ECPRESENTATION_EXPORT ~CalculatedPropertiesSpecification();
@@ -52,8 +56,8 @@ public:
     void SetLabel(Utf8String label) { m_label = label; InvalidateHash(); }
 
     //! Get property value expression.
-    Utf8StringCR GetValue() const {return m_value;}
-    void SetValue(Utf8String value) { m_value = value; InvalidateHash(); }
+    Nullable<Utf8String> const& GetValue() const {return m_value;}
+    void SetValue(Utf8CP value) { m_value = value ? Utf8String(value) : nullptr; InvalidateHash(); }
 
     CustomRendererSpecificationCP GetRenderer() const { return m_renderer; }
     ECPRESENTATION_EXPORT void SetRenderer(CustomRendererSpecificationP renderer);

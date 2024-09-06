@@ -59,6 +59,7 @@ ClassNameExp const* TryGetOutmostView(PropertyNameExp const* propNameExp)
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
+// Before calling this method please do check a flag using ctx.GetCreateField() getter
 ECSqlStatus ECSqlFieldFactory::CreateField(ECSqlPrepareContext& ctx, DerivedPropertyExp const* derivedProperty, int startColumnIndex)
     {
     BeAssert(derivedProperty != nullptr && derivedProperty->IsComplete());

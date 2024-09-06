@@ -2586,28 +2586,34 @@ struct  InstanceXmlReader
         //-------------------------------------------------------------------------------------
         // @bsimethod
         //+---------------+---------------+---------------+---------------+---------------+----
-        ECSchemaCP GetSchema(Utf8String schemaName)
+        ECObjectsStatus GetSchema(Utf8String schemaName, ECSchemaCP& schema)
             {
             SchemaKey key;
-            if (ECObjectsStatus::Success != SchemaKey::ParseSchemaFullName(key, schemaName.c_str()))
-                return NULL;
+            ECObjectsStatus status = SchemaKey::ParseSchemaFullName(key, schemaName.c_str());
+            if (ECObjectsStatus::Success != status)
+                return status;
 
-            return m_context.FindSchemaCP(key, SchemaMatchType::LatestReadCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact
+            return m_context.FindSchemaCP(key, SchemaMatchType::LatestReadCompatible, schema);//Abeesh: Preserving old behavior. Ideally it should be exact
             }
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod
         +---------------+---------------+---------------+---------------+---------------+------*/
-        ECSchemaCP       GetSchema()
+        ECObjectsStatus GetSchema(ECSchemaCP& schema)
             {
             if (NULL != m_schema)
-                return m_schema;
+                {
+                schema = m_schema;
+                return ECObjectsStatus::Success;
+                }
 
             SchemaKey key;
-            if (ECObjectsStatus::Success != SchemaKey::ParseSchemaFullName(key, m_fullSchemaName.c_str()))
-                return NULL;
+            ECObjectsStatus status = SchemaKey::ParseSchemaFullName(key, m_fullSchemaName.c_str());
+            if (ECObjectsStatus::Success != status)
+                return status;
 
-            m_schema = m_context.FindSchemaCP(key, SchemaMatchType::LatestReadCompatible);//Abeesh: Preserving old behavior. Ideally it should be exact
-            return m_schema;
+            status = m_context.FindSchemaCP(key, SchemaMatchType::LatestReadCompatible, schema);//Abeesh: Preserving old behavior. Ideally it should be exact
+            m_schema = schema;
+            return status;
             }
 
         //-------------------------------------------------------------------------------------
@@ -2625,7 +2631,11 @@ struct  InstanceXmlReader
                 return nullptr;
                 }
 
-            ECSchemaCP constraintSchema = Utf8String::IsNullOrEmpty(constraintSchemaName.c_str()) ? defaultSchema : GetSchema(constraintSchemaName);
+            ECSchemaCP constraintSchema = Utf8String::IsNullOrEmpty(constraintSchemaName.c_str()) ? defaultSchema : nullptr;
+
+            if (nullptr == constraintSchema)
+                GetSchema(constraintSchemaName, constraintSchema);
+
             if (nullptr == constraintSchema)
                 {
                 LOG.errorv("Invalid ECSchemaXML: ECRelationshipConstraint contains a classname attribute with the alias '%s' that can not be resolved to a referenced schema.",
@@ -2668,6 +2678,7 @@ struct  InstanceXmlReader
         InstanceReadStatus      GetInstance(ECClassCP& ecClass, IECInstancePtr& ecInstance)
             {
             ECSchemaCP schema = NULL;
+            ECObjectsStatus schemaStatus = ECObjectsStatus::Success;
 
             // get the xmlns name, if there is one.
             {
@@ -2675,11 +2686,17 @@ struct  InstanceXmlReader
             if (xmlnsAttr && 0 != BeStringUtilities::Strnicmp(xmlnsAttr.as_string(), ECXML_URI, strlen(ECXML_URI)))
                 {
                 m_fullSchemaName = xmlnsAttr.as_string();
-                schema = GetSchema();
+                schemaStatus = GetSchema(schema);
                 }
             else
                 schema = &(m_context.GetFallBackSchema());
             }
+
+            if (ECObjectsStatus::SchemaIsPruned == schemaStatus)
+                {
+                LOG.debugv("Skipping finding of the class '%s' because its schema '%s' is being pruned.", m_className.c_str(), m_fullSchemaName.c_str());
+                return InstanceReadStatus::ECSchemaPruned;
+                }
 
             if (NULL == schema)
                 {
@@ -3549,7 +3566,8 @@ struct  InstanceXmlReader
             if (0 == strcmp(typeFound, expectedType->GetName().c_str()))
                 return expectedType;
 
-            ECSchemaCP  schema = GetSchema();
+            ECSchemaCP  schema = NULL;
+            GetSchema(schema);
             if (NULL == schema)
                 return NULL;
 
@@ -4444,13 +4462,17 @@ bool IECInstance::SaveOnlyLoadedPropertiesToXml() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCP ECInstanceReadContext::FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType) const
+ECObjectsStatus ECInstanceReadContext::FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType, ECSchemaCP& schema) const
     {
-    ECSchemaCP schema = _FindSchemaCP(key, matchType);
-    if (NULL != schema)
-        return schema;
+    ECObjectsStatus status = _FindSchemaCP(key, matchType, schema);
 
-    return &m_fallBackSchema;
+    if (ECObjectsStatus::SchemaIsPruned == status)
+        return status;
+
+    if (ECObjectsStatus::Success != status)
+        schema = &m_fallBackSchema;
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
