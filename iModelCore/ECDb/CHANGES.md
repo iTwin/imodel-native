@@ -5,11 +5,29 @@ This document including important changes to syntax or file format.
 | Module  | Version   |
 | ------- | --------- |
 | Profile | `4.0.0.5` |
-| ECSQL   | `1.2.12.0` |
+| ECSQL   | `2.0.0.0` |
+
+## ## `09/05/2024`: Remove class names ALIAS support and Disqualify_polymorphic_constraint(+) support in UPDATE & DELETE statements
+* ECSql version change `1.2.14.0` -> `2.0.0.0`.
+* Removed class names ALIAS support and Disqualify_polymorphic_constraint(+) support in UPDATE & DELETE statements
+* Example: `UPDATE ONLY ecsql.PSA t SET t.I = 124, t.L = 100000000000, t.D = -1.2345678, t.S = 'hello, world' WHERE t.D > 0.0`,
+           `UPDATE +ONLY ecsql.P SET I=10 WHERE LOWER(S) = UPPER(S)`. These statements will now result in InvalidECsql.
+* Example: `DELETE FROM ONLY ecsql.P t WHERE t.D > 0.0`, `DELETE FROM +ALL ecsql.PASpatial WHERE Geometry_Array IS NULL`. 
+            These statements will now result in InvalidECsql.
+
+## ## `08/30/2024`: Add support for CTE without columns
+* ECSql version change `1.2.13.0` -> `1.2.14.0`.
+* Added support for use of WITH clause or CTE without columns.
+* Example: `WITH el AS ( SELECT ECInstanceId, ECClassId FROM bis.Element ) SELECT * FROM el`
+
+## `08/29/2024`: Add support for INSERT statements with ONLY keyword
+* ECSql version change `1.2.12.0` -> `1.2.13.0`.
+* Added support for use of ONLY keyword in INSERT statements
+* Example: `INSERT INTO ONLY ts.A VALUES('A-1',100)`
 
 ## `08/16/2024`: Add CTE support in subquery
 * ECSql version change `1.2.11.0` -> `1.2.12.0`.
-* Added supprt for use of WITH clause or CTE in subqueries.
+* Added support for use of WITH clause or CTE in subqueries.
 * Example: `SELECT COUNT(*) FROM (WITH el (Id, ClassId) AS ( SELECT ECInstanceId, ECClassId FROM bis.Element ) SELECT * FROM el)`
 
 ## `07/11/2024`: Add PRAGMA purge_orphan_relationships
