@@ -12747,6 +12747,28 @@ TEST_F(ECSqlStatementTestFixture, InsertUsingOnlyAndAll)
     }
     }
 
-
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, TestsForBooleanExpInSelect)
+    {
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("CTEWithoutColumnsSubqueryTests.ecdb"));
+       {
+         ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select count(*)>1 from meta.ECClassDef"));
+        ASSERT_STREQ(stmt.GetNativeSql(), "SELECT COUNT(*)>1 FROM (SELECT [Id] ECInstanceId,37 ECClassId FROM [main].[ec_Class]) [ECClassDef]");
+       }
+       {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(S.ECInstanceId) > 1 count_for_instance_id FROM meta.ECClassDef S"));
+        ASSERT_STREQ(stmt.GetNativeSql(), "SELECT COUNT([S].[ECInstanceId])>1 [count_for_instance_id] FROM (SELECT [Id] ECInstanceId,37 ECClassId FROM [main].[ec_Class]) [S]");
+       }
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT p.ECInstanceId=k.s FROM meta.ECClassDef p, (SELECT 1 s) k"));
+        ASSERT_STREQ(stmt.GetNativeSql(), "SELECT [p].[ECInstanceId]=[K0] FROM (SELECT [Id] ECInstanceId,37 ECClassId FROM [main].[ec_Class]) [p],(SELECT 1 [K0]) [k]");
+        }
+       
+    }
 
 END_ECDBUNITTESTS_NAMESPACE

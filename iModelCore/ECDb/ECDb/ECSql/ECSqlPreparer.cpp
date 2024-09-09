@@ -2519,6 +2519,19 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp(NativeSqlBuilder::List& nativeSqlS
                 return PrepareWindowFunctionExp(nativeSqlSnippets, ctx, exp.GetAs<WindowFunctionExp>());
             case Exp::Type::NavValueCreationFunc:
                 return PrepareNavValueCreationFuncExp(nativeSqlSnippets, ctx, exp.GetAs<NavValueCreationFuncExp>());
+            case Exp::Type::AllOrAny:
+            case Exp::Type::BinaryBoolean:
+            case Exp::Type::BooleanFactor:
+            case Exp::Type::SubqueryTest:
+            case Exp::Type::UnaryPredicate:
+            {
+                NativeSqlBuilder booleanExp;
+                ECSqlStatus status = ECSqlExpPreparer::PrepareSearchConditionExp(booleanExp, ctx, exp.GetAs<BooleanExp>());
+                if(!status.IsSuccess())
+                    return status;
+                nativeSqlSnippets.push_back(booleanExp);
+                return ECSqlStatus::Success;
+            }
             default:
                 break;
             }

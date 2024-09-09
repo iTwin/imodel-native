@@ -375,10 +375,15 @@ BentleyStatus ECSqlParser::ParseDerivedColumn(std::unique_ptr<DerivedPropertyExp
     OSQLParseNode const* opt_as_clause = parseNode->getChild(1);
 
     std::unique_ptr<ValueExp> valExp = nullptr;
-    BentleyStatus stat = ParseValueExp(valExp, first);
+    BentleyStatus stat = ParseValueExp(valExp, first, true);
     if (stat != SUCCESS)
-        return stat;
-
+    {
+        std::unique_ptr<BooleanExp> boolValExp = nullptr;
+        BentleyStatus stat = ParseSearchCondition(boolValExp, first);
+        if (stat != SUCCESS)
+            return stat;
+        valExp = std::move(boolValExp);
+    }
     Utf8String columnAlias;
     if (opt_as_clause->count() > 0)
         columnAlias = opt_as_clause->getChild(1)->getTokenValue();
@@ -3381,7 +3386,8 @@ BentleyStatus ECSqlParser::ParseTypePredicate(std::unique_ptr<ValueExp>& valueEx
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParser::ParseValueExp(std::unique_ptr<ValueExp>& valueExp, OSQLParseNode const* parseNode) const
+// fromDerivedCol is a flag which signifies that the call is for Derived columns
+BentleyStatus ECSqlParser::ParseValueExp(std::unique_ptr<ValueExp>& valueExp, OSQLParseNode const* parseNode, bool fromDerivedCol) const
     {
     BeAssert(parseNode != nullptr);
     if (parseNode->isRule())
@@ -3437,7 +3443,8 @@ BentleyStatus ECSqlParser::ParseValueExp(std::unique_ptr<ValueExp>& valueExp, OS
                 case OSQLParseNode::value_creation_fct:
                     return ParseValueCreationFuncExp(valueExp, parseNode);
                 default:
-                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0493,
+                    if(!fromDerivedCol)
+                        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0493,
                         "ECSQL Parse error: Unsupported value_exp type: %d", (int) parseNode->getKnownRuleID());
                     return ERROR;
 
