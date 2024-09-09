@@ -246,12 +246,12 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
             {
             CacheSchemaElementWithUnknowns(TABLE_Class, ecClassId); // Schema is of a newer version and class contains new unknown features. Mark this class to not be loaded.
             m_cache.SetClassEntryToNull(ecClassId);
-            LOG.warningv("The ECClass %s.%s contains an ECClassType or ECClassModifier which is unsupported. The file might have been used with newer versions of the software. The class will not be loaded.",
+            LOG.warningv("The ECClass %s.%s contains an ECClassType or ECClassModifier which is unsupported. The schema uses a newer version of the standard than is known to the current software. The class will not be loaded.",
                    schema.GetName().c_str(), className);
             }
         else
             {
-            LOG.errorv("Failed to load ECClass %s.%s. Its ECClassType or ECClassModifier is unsupported. The file might have been used with newer versions of the software.",
+            LOG.errorv("Failed to load ECClass %s.%s. Its ECClassType or ECClassModifier is unsupported.",
                    schema.GetName().c_str(), className);
             }
         return nullptr;
@@ -307,12 +307,12 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
                     {
                     CacheSchemaElementWithUnknowns(TABLE_Class, ecClassId); // Schema is of a newer version and the relationship class contains new unknown features. Mark this class to not be loaded.
                     m_cache.SetClassEntryToNull(ecClassId);
-                    LOG.warningv("The ECRelationshipClass %s.%s has a StrengthType or ECRelatedInstanceDirection which is unsupported. The file might have been used with newer versions of the software. The class will not be loaded.",
+                    LOG.warningv("The ECRelationshipClass %s.%s has a StrengthType or ECRelatedInstanceDirection which is unsupported. The schema uses a newer version of the standard than is known to the current software. The class will not be loaded.",
                            schema.GetName().c_str(), className);
                     }
                 else
                     {
-                    LOG.errorv("Failed to load ECRelationshipClass %s.%s. Its StrengthType or ECRelatedInstanceDirection is unsupported. The file might have been used with newer versions of the software.",
+                    LOG.errorv("Failed to load ECRelationshipClass %s.%s. Its StrengthType or ECRelatedInstanceDirection is unsupported.",
                         schema.GetName().c_str(), className);
                     }
                 return nullptr;
@@ -957,7 +957,7 @@ BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationCP& ecEnum, Context& ct
 
     if (schemaKey->m_cachedSchema->OriginalECXmlVersionGreaterThan(ECVersion::Latest) && SchemaPersistenceHelper::ToPrimitiveType(underlyingType).IsNull())
         {
-        LOG.warningv("Failed to load ECEnumeration %s.%s. It contains an unsupported underlying type. The file might have been used with newer versions of the software. The ECEnumeration will be ignored.",
+        LOG.warningv("Failed to load ECEnumeration %s.%s. It contains an unsupported underlying type. The schema uses a newer version of the standard than is known to the current software. The ECEnumeration will be ignored.",
             schemaKey->m_cachedSchema->GetName().c_str(), enumName);
         CacheSchemaElementWithUnknowns(TABLE_Enumeration, enumId); // Schema is of a newer version and enum contains new unknown features. Mark this class to not be loaded
         return ERROR;
@@ -2032,13 +2032,13 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
                     {
                     if (ecClass.GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest)) // Ignore the unsupported ECProperty row only if the schema is newer than the current version
                         {
-                        LOG.warningv("The ECProperty %s.%s has an unsupported type of ECProperty. The file might have been used with newer versions of the software. The ECProperty will be ignored.",
+                        LOG.warningv("The ECProperty %s.%s has an unsupported type of ECProperty. The schema uses a newer version of the standard than is known to the current software. The ECProperty will be ignored.",
                                ecClass.GetFullName(), rowInfo.m_name.c_str());
                         continue;
                         }
                     else
                         {
-                        LOG.errorv("Failed to load ECProperty %s.%s. It is an unsupported type of ECProperty. The file might have been used with newer versions of the software.",
+                        LOG.errorv("Failed to load ECProperty %s.%s. It is an unsupported type of ECProperty.",
                                ecClass.GetFullName(), rowInfo.m_name.c_str());
                         }
                     return ERROR;
@@ -2066,11 +2066,11 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
                         {
                         if (ecClass.GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest)) // Ignore the unsupported ECProperty row only if the schema is newer than the current version
                             {
-                            LOG.warningv("The ECProperty %s.%s has an unsupported primitive data type. The file might have been used with newer versions of the software. The ECProperty will be ignored.",
+                            LOG.warningv("The ECProperty %s.%s has an unsupported primitive data type. The schema uses a newer version of the standard than is known to the current software. The ECProperty will be ignored.",
                                    ecClass.GetFullName(), rowInfo.m_name.c_str());
                             continue;
                             }
-                        LOG.errorv("Failed to load ECProperty %s.%s. It has an unsupported primitive data type. The file might have been used with newer versions of the software.",
+                        LOG.errorv("Failed to load ECProperty %s.%s. It has an unsupported primitive data type.",
                                    ecClass.GetFullName(), rowInfo.m_name.c_str());
                         return ERROR;
                         }
@@ -2161,13 +2161,13 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
                         {
                         if (ecClass.GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest)) // Ignore the unsupported ECProperty row only if the schema is newer than the current version
                             {
-                            LOG.warningv("The NavigationECProperty %s.%s has a relationship direction which is unsupported. The file might have been used with newer versions of the software. The property will not be loaded.",
+                            LOG.warningv("The NavigationECProperty %s.%s has a relationship direction which is unsupported. The schema uses a newer version of the standard than is known to the current software. The property will not be loaded.",
                                 ecClass.GetFullName(), rowInfo.m_name.c_str());
                             continue;
                             }
                         else
                             {
-                            LOG.errorv("Failed to load NavigationECProperty %s.%s. Its relationship direction is unsupported. The file might have been used with newer versions of the software.",
+                            LOG.errorv("Failed to load NavigationECProperty %s.%s. Its relationship direction is unsupported.",
                                 ecClass.GetFullName(), rowInfo.m_name.c_str());
                             }
                         return ERROR;
