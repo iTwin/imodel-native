@@ -375,6 +375,9 @@ BentleyStatus ECSqlParser::ParseDerivedColumn(std::unique_ptr<DerivedPropertyExp
     OSQLParseNode const* opt_as_clause = parseNode->getChild(1);
 
     std::unique_ptr<ValueExp> valExp = nullptr;
+    /* search_condition internally can have value_exp so first we check whether value_exp can be parsed
+        if not , we try search condition
+    */ 
     BentleyStatus stat = ParseValueExp(valExp, first, true);
     if (stat != SUCCESS)
     {
