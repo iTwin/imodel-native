@@ -377,16 +377,21 @@ BentleyStatus ECSqlParser::ParseDerivedColumn(std::unique_ptr<DerivedPropertyExp
     std::unique_ptr<ValueExp> valExp = nullptr;
     /* search_condition internally can have value_exp so first we check whether value_exp can be parsed
         if not , we try search condition
-    */ 
-    BentleyStatus stat = ParseValueExp(valExp, first, true);
-    if (stat != SUCCESS)
-    {
+    */
+   if(CheckIfKnownValueExpType(first))
+   {
+        BentleyStatus stat = ParseValueExp(valExp, first);
+        if (stat != SUCCESS)
+            return stat;
+   } 
+   else
+   {
         std::unique_ptr<BooleanExp> boolValExp = nullptr;
         BentleyStatus stat = ParseSearchCondition(boolValExp, first);
         if (stat != SUCCESS)
             return stat;
         valExp = std::move(boolValExp);
-    }
+   }
     Utf8String columnAlias;
     if (opt_as_clause->count() > 0)
         columnAlias = opt_as_clause->getChild(1)->getTokenValue();
@@ -3389,8 +3394,8 @@ BentleyStatus ECSqlParser::ParseTypePredicate(std::unique_ptr<ValueExp>& valueEx
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-// fromDerivedCol is a flag which signifies that the call is for Derived columns
-BentleyStatus ECSqlParser::ParseValueExp(std::unique_ptr<ValueExp>& valueExp, OSQLParseNode const* parseNode, bool fromDerivedCol) const
+/*Any case added here must also be added in CheckIfKnownValueExpType method*/
+BentleyStatus ECSqlParser::ParseValueExp(std::unique_ptr<ValueExp>& valueExp, OSQLParseNode const* parseNode) const
     {
     BeAssert(parseNode != nullptr);
     if (parseNode->isRule())
@@ -3446,9 +3451,8 @@ BentleyStatus ECSqlParser::ParseValueExp(std::unique_ptr<ValueExp>& valueExp, OS
                 case OSQLParseNode::value_creation_fct:
                     return ParseValueCreationFuncExp(valueExp, parseNode);
                 default:
-                    if(!fromDerivedCol)
-                        Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0493,
-                        "ECSQL Parse error: Unsupported value_exp type: %d", (int) parseNode->getKnownRuleID());
+                    Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0493,
+                    "ECSQL Parse error: Unsupported value_exp type: %d", (int) parseNode->getKnownRuleID());
                     return ERROR;
 
             };
@@ -3461,6 +3465,47 @@ BentleyStatus ECSqlParser::ParseValueExp(std::unique_ptr<ValueExp>& valueExp, OS
         return ERROR;
 
     return LiteralValueExp::Create(valueExp, *m_context, value.c_str(), dataType);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+/*This method is added for the purpose of checking whether a parseNode rule falls into any of the categories
+a ValueExp supports. This check helps us to know before hand that whether the value exp does not support a parseNode rule.
+If it does not support a parse node rule then while parsing derived column we can try to parse that node as a boolean exp*/
+bool ECSqlParser::CheckIfKnownValueExpType(OSQLParseNode const* parseNode) const
+    {
+    BeAssert(parseNode != nullptr);
+    if (parseNode->isRule())
+        {
+        switch (parseNode->getKnownRuleID())
+            {
+                case OSQLParseNode::cast_spec:
+                case OSQLParseNode::column_ref:
+                case OSQLParseNode::num_value_exp:
+                case OSQLParseNode::term_add_sub:
+                case OSQLParseNode::concatenation:
+                case OSQLParseNode::datetime_value_exp:
+                case OSQLParseNode::factor:
+                case OSQLParseNode::aggregate_fct:
+                case OSQLParseNode::fct_spec:
+                case OSQLParseNode::property_path:
+                case OSQLParseNode::term:
+                case OSQLParseNode::parameter:
+                case OSQLParseNode::searched_case:
+                case OSQLParseNode::iif_spec:
+                case OSQLParseNode::type_predicate:
+                case OSQLParseNode::subquery:
+                case OSQLParseNode::value_exp_primary:
+                case OSQLParseNode::window_function:
+                case OSQLParseNode::value_creation_fct:
+                    return true;
+                default:
+                    return false;
+
+            };
+        }
+    return true;
     }
 
 //-----------------------------------------------------------------------------------------

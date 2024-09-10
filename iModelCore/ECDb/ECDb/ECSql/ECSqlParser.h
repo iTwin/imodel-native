@@ -251,7 +251,7 @@ private:
     BentleyStatus ParseSetFct(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const&, Utf8StringCR functionName, bool isStandardSetFunction) const;
 
     BentleyStatus ParseUnaryPredicate(std::unique_ptr<BooleanExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseValueExp(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*, bool fromDerivedCol = false) const;
+    BentleyStatus ParseValueExp(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseValueExpCommalist(std::unique_ptr<ValueExpListExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseValueExpPrimary(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseValuesCommalist(std::unique_ptr<SelectStatementExp>&, connectivity::OSQLParseNode const&) const;
@@ -285,6 +285,8 @@ private:
     BentleyStatus ParseSecondWindowFrameBound(std::unique_ptr<SecondWindowFrameBoundExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseValueCreationFuncExp(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const *) const;
     BentleyStatus ParseNavValueCreationFuncExp(std::unique_ptr<NavValueCreationFuncExp>&, connectivity::OSQLParseNode const *) const;
+
+    bool CheckIfKnownValueExpType(connectivity::OSQLParseNode const*) const;
 
     static BentleyStatus ParsePolymorphicConstraint(PolymorphicInfo& constraint, connectivity::OSQLParseNode const* parseNode);
     static BentleyStatus ParseALLorONLY(PolymorphicInfo& constraint, connectivity::OSQLParseNode const* parseNode);

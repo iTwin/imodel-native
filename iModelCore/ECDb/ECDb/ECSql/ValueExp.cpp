@@ -250,7 +250,7 @@ Utf8String BinaryBooleanExp::_ToString() const
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 BooleanFactorExp::BooleanFactorExp(std::unique_ptr<BooleanExp> operand, bool notOperator)
-    : BooleanExp(Type::BooleanFactor), m_notOperator(notOperator)
+    : BooleanExp(Type::BooleanFactor, operand->IsConstant()), m_notOperator(notOperator)
     {
     m_operandExpIndex = AddChild(std::move(operand));
     }
@@ -307,7 +307,7 @@ Utf8String BooleanFactorExp::_ToString() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
-UnaryPredicateExp::UnaryPredicateExp(std::unique_ptr<ValueExp> booleanValueExp) : BooleanExp(Type::UnaryPredicate)
+UnaryPredicateExp::UnaryPredicateExp(std::unique_ptr<ValueExp> booleanValueExp) : BooleanExp(Type::UnaryPredicate, booleanValueExp->IsConstant())
     {
     m_booleanValueExpIndex = AddChild(std::move(booleanValueExp));
     }

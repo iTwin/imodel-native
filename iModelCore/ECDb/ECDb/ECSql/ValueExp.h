@@ -35,7 +35,7 @@ struct BooleanExp : ValueExp
     {
 protected:
     explicit BooleanExp(Type type) : ValueExp(type) { SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Boolean)); }
-
+    explicit BooleanExp(Type type, bool isConstant) : ValueExp(type, isConstant) { SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Boolean)); }
 public:
     virtual ~BooleanExp () {}
     };

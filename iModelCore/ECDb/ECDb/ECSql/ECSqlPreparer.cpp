@@ -2519,6 +2519,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp(NativeSqlBuilder::List& nativeSqlS
                 return PrepareWindowFunctionExp(nativeSqlSnippets, ctx, exp.GetAs<WindowFunctionExp>());
             case Exp::Type::NavValueCreationFunc:
                 return PrepareNavValueCreationFuncExp(nativeSqlSnippets, ctx, exp.GetAs<NavValueCreationFuncExp>());
+            //Boolean Exps
             case Exp::Type::AllOrAny:
             case Exp::Type::BinaryBoolean:
             case Exp::Type::BooleanFactor:

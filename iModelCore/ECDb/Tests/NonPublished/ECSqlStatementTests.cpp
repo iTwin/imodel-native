@@ -12752,23 +12752,197 @@ TEST_F(ECSqlStatementTestFixture, InsertUsingOnlyAndAll)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, TestsForBooleanExpInSelect)
     {
-        ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("CTEWithoutColumnsSubqueryTests.ecdb"));
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("Tests_for_bool_exp_in_select.ecdb"));
+
+        //Scalar Tests
        {
-         ECSqlStatement stmt;
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select 1>0"));
+        EXPECT_EQ(stmt.GetColumnCount(), 1);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.GetValueBoolean(0));
+       }
+       {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select 'ABCIFGQQ' LIKE '%IF%'"));
+        EXPECT_EQ(stmt.GetColumnCount(), 1);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.GetValueBoolean(0));
+       }
+       {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select 'ABCIFGQQ' IS NOT NULL"));
+        EXPECT_EQ(stmt.GetColumnCount(), 1);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.GetValueBoolean(0));
+       }
+       {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select 5 IN(2,7)"));
+        EXPECT_EQ(stmt.GetColumnCount(), 1);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(false, stmt.GetValueBoolean(0));
+       }
+       //value based tests
+       {
+        ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select count(*)>1 from meta.ECClassDef"));
-        ASSERT_STREQ(stmt.GetNativeSql(), "SELECT COUNT(*)>1 FROM (SELECT [Id] ECInstanceId,37 ECClassId FROM [main].[ec_Class]) [ECClassDef]");
+        EXPECT_EQ(stmt.GetColumnCount(), 1);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.GetValueBoolean(0));
        }
        {
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(S.ECInstanceId) > 1 count_for_instance_id FROM meta.ECClassDef S"));
-        ASSERT_STREQ(stmt.GetNativeSql(), "SELECT COUNT([S].[ECInstanceId])>1 [count_for_instance_id] FROM (SELECT [Id] ECInstanceId,37 ECClassId FROM [main].[ec_Class]) [S]");
+        EXPECT_EQ(stmt.GetColumnCount(), 1);
+        ASSERT_STREQ("count_for_instance_id", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.GetValueBoolean(0));
        }
         {
         ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT p.ECInstanceId=k.s FROM meta.ECClassDef p, (SELECT 1 s) k"));
-        ASSERT_STREQ(stmt.GetNativeSql(), "SELECT [p].[ECInstanceId]=[K0] FROM (SELECT [Id] ECInstanceId,37 ECClassId FROM [main].[ec_Class]) [p],(SELECT 1 [K0]) [k]");
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT p.ECInstanceId=k.s FROM meta.ECClassDef p, (SELECT 1 s) k limit 5"));
+        EXPECT_EQ(stmt.GetColumnCount(), 1);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        for(int i =0;i<4;i++)
+        {
+            ASSERT_EQ(false, stmt.GetValueBoolean(0));   
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         }
-       
+        ASSERT_EQ(true, stmt.GetValueBoolean(0));
+        }
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT DisplayLabel, DisplayLabel IS NULL displayLabelIsNull FROM meta.ECClassDef limit 4"));
+        EXPECT_EQ(stmt.GetColumnCount(), 2);
+        ASSERT_STREQ("DisplayLabel", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("displayLabelIsNull", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        for(int i =0;i<3;i++)
+            {
+            ASSERT_EQ(true, stmt.IsValueNull(0)); 
+            ASSERT_EQ(true, stmt.GetValueBoolean(1));   
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            }
+        ASSERT_EQ(false, stmt.IsValueNull(0)); 
+        ASSERT_EQ(false, stmt.GetValueBoolean(1));
+        }
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Description, Description IS NOT NULL DescriptionIsNotNull FROM meta.ECClassDef limit 4"));
+        EXPECT_EQ(stmt.GetColumnCount(), 2);
+        ASSERT_STREQ("Description", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("DescriptionIsNotNull", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.IsValueNull(0)); 
+        ASSERT_EQ(false, stmt.GetValueBoolean(1));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        for(int i =0;i<2;i++)
+            {
+            ASSERT_EQ(false, stmt.IsValueNull(0)); 
+            ASSERT_EQ(true, stmt.GetValueBoolean(1));   
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            }
+        }
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select Ordinal, Ordinal IN (1,2,3) OrdinalInRange from meta.ECPropertyDef limit 20"));
+        EXPECT_EQ(stmt.GetColumnCount(), 2);
+        ASSERT_STREQ("Ordinal", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("OrdinalInRange", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        for(int i =0;i<19;i++)
+            {
+            if(stmt.GetValueInt(0) == 0)
+                ASSERT_EQ(false, stmt.GetValueBoolean(1));
+            else
+                ASSERT_EQ(true, stmt.GetValueBoolean(1));
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            }
+        if(stmt.GetValueInt(0) == 0)
+             ASSERT_EQ(false, stmt.GetValueBoolean(1));
+        else
+            ASSERT_EQ(true, stmt.GetValueBoolean(1));
+        }
+       {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select Ordinal, Ordinal NOT IN (SELECT Ordinal from meta.ECPropertyDef) OrdinalInRange from meta.ECPropertyDef limit 20"));
+        EXPECT_EQ(stmt.GetColumnCount(), 2);
+        ASSERT_STREQ("Ordinal", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("OrdinalInRange", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        for(int i =0;i<19;i++)
+            {
+            ASSERT_EQ(false, stmt.GetValueBoolean(1));
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            }
+        ASSERT_EQ(false, stmt.GetValueBoolean(1));
+        }
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select Name, Name LIKE '%Info' PatternMatch from meta.ECSchemaDef"));
+        EXPECT_EQ(stmt.GetColumnCount(), 2);
+        ASSERT_STREQ("Name", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("PatternMatch", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        for(int i =0;i<4;i++)
+            {
+            if(i == 1)
+                ASSERT_EQ(true, stmt.GetValueBoolean(1));
+            else
+                ASSERT_EQ(false, stmt.GetValueBoolean(1));
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            }
+        ASSERT_EQ(false, stmt.GetValueBoolean(1));
+        }
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select Name, Name NOT LIKE 'ECDb%' PatternMatch from meta.ECSchemaDef"));
+        EXPECT_EQ(stmt.GetColumnCount(), 2);
+        ASSERT_STREQ("Name", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("PatternMatch", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        for(int i =0;i<4;i++)
+            {
+            if(i == 0)
+                ASSERT_EQ(true, stmt.GetValueBoolean(1));
+            else
+                ASSERT_EQ(false, stmt.GetValueBoolean(1));
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            }
+        ASSERT_EQ(false, stmt.GetValueBoolean(1));
+        }
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select Name, EXISTS (SELECT Name from meta.ECSchemaDef) Exist from meta.ECSchemaDef"));
+        EXPECT_EQ(stmt.GetColumnCount(), 2);
+        ASSERT_STREQ("Name", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("Exist", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        for(int i =0;i<4;i++)
+            {
+            ASSERT_EQ(true, stmt.GetValueBoolean(1));
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            }
+        ASSERT_EQ(true, stmt.GetValueBoolean(1));
+        }
+        // InvalidECSql Tests
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "select Name, UNIQUE(SELECT Name from meta.ECSchemaDef) PatternMatch from meta.ECSchemaDef"));
+        }
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "select Ordinal, Ordinal NOT IN (SELECT * from meta.ECPropertyDef) OrdinalInRange from meta.ECPropertyDef")) << "Subquery must return exactly one column";
+        }
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "select ECInstanceId > (select * from meta.ECClassDef) PatternMatch from meta.ECClassDef")) << "Subquery must return exactly one column";
+        }
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "select ECInstanceId IN (select * from meta.ECClassDef) PatternMatch from meta.ECClassDef")) << "Subquery must return exactly one column";
+        }
     }
 
 END_ECDBUNITTESTS_NAMESPACE
