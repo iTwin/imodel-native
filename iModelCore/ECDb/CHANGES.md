@@ -7,7 +7,7 @@ This document including important changes to syntax or file format.
 | Profile | `4.0.0.5` |
 | ECSQL   | `2.0.1.0` |
 
-## ## `09/05/2024`: Remove class names ALIAS support and Disqualify_polymorphic_constraint(+) support in UPDATE & DELETE statements
+## ## `09/05/2024`: Add support for boolean expressions in select clause of select statements
 * ECSql version change `2.0.0.0` -> `2.0.1.0`.
 * Added support for boolean expressions in select clause of select statements.
 * Example: `select count(*)>1 from meta.ECClassDef`,`SELECT p.ECInstanceId=k.s FROM test.Foo p, (SELECT 1 s) k`
