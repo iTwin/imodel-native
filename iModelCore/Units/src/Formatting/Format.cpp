@@ -200,10 +200,10 @@ BentleyStatus ProcessBearingAndAzimuth(NumericFormatSpecCP fmtP, BEU::Quantity& 
     if (NormalizeAngle(temp, type == PresentationType::Bearing ? "bearing" : "azimuth", perigon) != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
 
+    double rightAngle = perigon / 4;
     double magnitude = temp.GetMagnitude();
     if (type == PresentationType::Bearing)
         {
-        double rightAngle = perigon / 4;
         int quadrant = 0;
         while (magnitude > rightAngle) {
             magnitude -= rightAngle;
@@ -211,31 +211,42 @@ BentleyStatus ProcessBearingAndAzimuth(NumericFormatSpecCP fmtP, BEU::Quantity& 
         }
 
         // Quadrants are
-        // 3 0
-        // 2 1
+        // 1 0
+        // 2 3
         // For quadrants 1 and 3 we have to subtract the angle from 90 degrees because they go counter clockwise
-        if (quadrant == 1 || quadrant == 3)
+        if (quadrant == 0 || quadrant == 2)
             magnitude = rightAngle - magnitude;
 
-        if (quadrant == 0 || quadrant == 3)
+        if (quadrant == 0 || quadrant == 1)
             prefix = fmtP->GetNorthLabel();
 
-        if (quadrant == 1 || quadrant == 2)
+        if (quadrant == 2 || quadrant == 3)
             prefix = fmtP->GetSouthLabel();
 
-        if (quadrant == 0 || quadrant == 1)
+        if (quadrant == 0 || quadrant == 3)
             suffix = fmtP->GetEastLabel();
 
-        if (quadrant == 2 || quadrant == 3)
+        if (quadrant == 1 || quadrant == 2)
             suffix = fmtP->GetWestLabel();
+        
+        // special case, if in quadrant 2 and value is very small, turn suffix to E because S00:00:00E is preferred over S00:00:00W
+        if (quadrant == 2 && FormatConstant::IsNegligible(magnitude)){
+            // TODO: typescript side converted this to the smallst unit presented and used the prcision on it
+            suffix = fmtP->GetEastLabel();
+        }
 
         temp = BEU::Quantity(magnitude, *temp.GetUnit());
     }
 
     if (type == PresentationType::Azimuth) {
-        double azimuthBase(fmtP->GetAzimuthBase());
+        double azimuthBase = rightAngle;
+
+        if (!std::isnan(fmtP->GetAzimuthBase())) // TODO: this or use a flag?
+            azimuthBase = fmtP->GetAzimuthBase();
+            // TODO - convert azimuthBase to presistence unit
+
         if(azimuthBase == 0.0)
-            return BentleyStatus::SUCCESS; //no conversion necessary with a north base
+            return BentleyStatus::SUCCESS; //no conversion necessary with a east base
 
         magnitude -= azimuthBase;
         while(magnitude < 0)
@@ -244,7 +255,7 @@ BentleyStatus ProcessBearingAndAzimuth(NumericFormatSpecCP fmtP, BEU::Quantity& 
         while(magnitude > perigon)
             magnitude -= perigon;
 
-        if(fmtP->IsCounterClockwiseAngle())
+        if(!fmtP->IsCounterClockwiseAngle() && magnitude != 0.0)
             magnitude = perigon - magnitude;
 
         temp = BEU::Quantity(magnitude, *temp.GetUnit());

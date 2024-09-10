@@ -54,7 +54,7 @@ NumericFormatSpec::NumericFormatSpec()
     , m_southLabel("S")
     , m_eastLabel("E")
     , m_westLabel("W")
-    , m_azimuthBase(0.0)
+    , m_azimuthBase(std::numeric_limits<double>::quiet_NaN())
     , m_ratioType(FormatConstant::DefaultRatioType())
     {
     }
@@ -246,6 +246,7 @@ bool NumericFormatSpec::IsIdentical(NumericFormatSpecCR other) const
     if (m_southLabel != other.m_southLabel) return false;
     if (m_eastLabel != other.m_eastLabel) return false;
     if (m_westLabel != other.m_westLabel) return false;
+    if (m_ratioType != other.m_ratioType) return false;
 
     return true;
     }

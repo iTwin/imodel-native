@@ -1564,23 +1564,22 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
     //To reflect the fact that we mostly store our data in radians, but degrees are easier to look at for tests
     //We run the test with both input values to ensure that the conversion is working correctly
     std::vector<BearingTestData> testData = {
-        //DEG,    BEAR DMS      WITH LABEL        BEAR         AZI DMS     AZI
-        {0.0,     "N00:00:00E", "N00°00'00\"E", "N00.000°E", "00:00:00", "00.000"},
-        {5.0,     "N05:00:00E", "N05°00'00\"E", "N05.000°E", "05:00:00", "05.000"},
-        {45.0,    "N45:00:00E", "N45°00'00\"E", "N45.000°E", "45:00:00", "45.000"},
-        {45.5028, "N45:30:10E", "N45°30'10\"E", "N45.503°E", "45:30:10", "45.503"},
-        {90.0,    "N90:00:00E", "N90°00'00\"E", "N90.000°E", "90:00:00", "90.000"},
-        {135.0,   "S45:00:00E", "S45°00'00\"E", "S45.000°E", "135:00:00", "135.000"},
-        {180.0,   "S00:00:00E", "S00°00'00\"E", "S00.000°E", "180:00:00", "180.000"},
-        {225.0,   "S45:00:00W", "S45°00'00\"W", "S45.000°W", "225:00:00", "225.000"},
-        {234.4972,"S54:29:50W", "S54°29'50\"W", "S54.497°W", "234:29:50", "234.497"},
-        {270.0,   "S90:00:00W", "S90°00'00\"W", "S90.000°W", "270:00:00", "270.000"},
-        {315.0,   "N45:00:00W", "N45°00'00\"W", "N45.000°W", "315:00:00", "315.000"},
-        {360.0,   "N00:00:00E", "N00°00'00\"E", "N00.000°E", "00:00:00", "00.000"},
-        {412.0,   "N52:00:00E", "N52°00'00\"E", "N52.000°E", "52:00:00", "52.000"},
-        {470.0,   "S70:00:00E", "S70°00'00\"E", "S70.000°E", "110:00:00", "110.000"},
-        {580.0,   "S40:00:00W", "S40°00'00\"W", "S40.000°W", "220:00:00", "220.000"},
-        {640.0,   "N80:00:00W", "N80°00'00\"W", "N80.000°W", "280:00:00", "280.000"},
+        //DEG,      BEAR DMS      WITH LABEL     BEAR Decimal  AZI DMS     AZI
+        {90.0,     "N00:00:00E", "N00°00'00\"E", "N00.000°E", "00:00:00", "00.000"},
+        {85.0,     "N05:00:00E", "N05°00'00\"E", "N05.000°E", "05:00:00", "05.000"},
+        {45.0,     "N45:00:00E", "N45°00'00\"E", "N45.000°E", "45:00:00", "45.000"},
+        {44.4972,  "N45:30:10E", "N45°30'10\"E", "N45.503°E", "45:30:10", "45.503"},
+        {0.0,      "N90:00:00E", "N90°00'00\"E", "N90.000°E", "90:00:00", "90.000"},
+        {315.0,    "S45:00:00E", "S45°00'00\"E", "S45.000°E", "135:00:00", "135.000"},
+        {270.0,    "S00:00:00E", "S00°00'00\"E", "S00.000°E", "180:00:00", "180.000"},
+        {225.0,    "S45:00:00W", "S45°00'00\"W", "S45.000°W", "225:00:00", "225.000"},
+        {215.5028, "S54:29:50W", "S54°29'50\"W", "S54.497°W", "234:29:50", "234.497"},
+        {180.0,    "N90:00:00W", "N90°00'00\"W", "N90.000°W", "270:00:00", "270.000"},
+        {135.0,    "N45:00:00W", "N45°00'00\"W", "N45.000°W", "315:00:00", "315.000"},
+        {38.0,     "N52:00:00E", "N52°00'00\"E", "N52.000°E", "52:00:00", "52.000"},
+        {340.0,    "S70:00:00E", "S70°00'00\"E", "S70.000°E", "110:00:00", "110.000"},
+        {590.0,    "S40:00:00W", "S40°00'00\"W", "S40.000°W", "220:00:00", "220.000"},
+        {890.0,    "N80:00:00W", "N80°00'00\"W", "N80.000°W", "280:00:00", "280.000"},
     };
 
     auto unitDegree = s_unitsContext->LookupUnit("ARC_DEG");
@@ -1660,7 +1659,7 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
     EXPECT_FALSE(azimuth.IsProblem());
 
     for(auto& row : testData)
-        {
+        { 
         Units::Quantity degree(row.angleDegree, *unitDegree);
         Units::Quantity radian(DegreesToRadians(row.angleDegree), *unitRadian);
 
@@ -1898,7 +1897,6 @@ TEST_F(FormattingTestFixture, DoubleToRatio){
     testFormatDoubleToRatio("0.143:1", 1.0/7, v_h, NtoOne, v_h);
     testFormatDoubleToRatio("1:7", 1.0/7, v_h, oneToN, v_h);
     testFormatDoubleToRatio("0.286:1", 2.0/7, v_h, NtoOne, v_h);
-    
     testFormatDoubleToRatio("143:500", 2.0/7, v_h, useGreatestCommonDivisor, v_h); // loose precision from 0.28571428571 to 0.286
     testFormatDoubleToRatio("7:2", 2.0/7, v_h, useGreatestCommonDivisor, h_v); // didnt loose much precision from 3.50000000005 to 3.5
     }
