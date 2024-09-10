@@ -2574,7 +2574,26 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         if (ChangesetStatus::Success != stat)
             BeNapi::ThrowJsException(Env(), "error applying changeset", (int)stat);
     }
+    void RevertTimelineChanges(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        if (info.Length() < 1 || !info[0].IsArray()) {
+            THROW_JS_TYPE_EXCEPTION("Argument 0 must be an array of changesets props")
+        }
+        REQUIRE_ARGUMENT_BOOL(1, skipSchemaChanges);
 
+        std::vector<ChangesetPropsPtr> changesets;
+        Napi::Array arr = info[0].As<Napi::Array>();
+        for (uint32_t arrIndex = 0; arrIndex < arr.Length(); ++arrIndex) {
+            Napi::Value arrValue = arr[arrIndex];
+             if (arrValue.IsObject()) {
+                auto revision = JsInterop::GetChangesetProps(db.GetDbGuid().ToString(), arrValue);
+                changesets.push_back(revision);
+             } else {
+                THROW_JS_TYPE_EXCEPTION("Expect an object in the array")
+             }
+        }
+        db.Txns().RevertTimelineChanges(changesets, skipSchemaChanges);
+    }
     void ConcurrentQueryExecute(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
         REQUIRE_ARGUMENT_FUNCTION(1, callback);
@@ -2657,6 +2676,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("addChildPropagatesChangesToParentRelationship", &NativeDgnDb::AddChildPropagatesChangesToParentRelationship),
             InstanceMethod("addNewFont", &NativeDgnDb::AddNewFont),
             InstanceMethod("applyChangeset", &NativeDgnDb::ApplyChangeset),
+            InstanceMethod("revertTimelineChanges", &NativeDgnDb::RevertTimelineChanges),
             InstanceMethod("attachChangeCache", &NativeDgnDb::AttachChangeCache),
             InstanceMethod("beginMultiTxnOperation", &NativeDgnDb::BeginMultiTxnOperation),
             InstanceMethod("beginPurgeOperation", &NativeDgnDb::BeginPurgeOperation),
