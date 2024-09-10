@@ -12864,6 +12864,40 @@ TEST_F(ECSqlStatementTestFixture, TestsForBooleanExpInSelect)
         else
             ASSERT_EQ(true, stmt.GetValueBoolean(1));
         }
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select Ordinal, Ordinal IN (1,2,3) AND Ordinal NOT IN (0) OrdinalInRange from meta.ECPropertyDef limit 20"));
+        EXPECT_EQ(stmt.GetColumnCount(), 2);
+        ASSERT_STREQ("Ordinal", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("OrdinalInRange", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        for(int i =0;i<19;i++)
+            {
+            if(stmt.GetValueInt(0) == 0)
+                ASSERT_EQ(false, stmt.GetValueBoolean(1));
+            else
+                ASSERT_EQ(true, stmt.GetValueBoolean(1));
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            }
+        if(stmt.GetValueInt(0) == 0)
+             ASSERT_EQ(false, stmt.GetValueBoolean(1));
+        else
+            ASSERT_EQ(true, stmt.GetValueBoolean(1));
+        }
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select Ordinal, Ordinal IN (1,2,3) OR Ordinal IN (0) OrdinalInRange from meta.ECPropertyDef limit 20"));
+        EXPECT_EQ(stmt.GetColumnCount(), 2);
+        ASSERT_STREQ("Ordinal", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("OrdinalInRange", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        for(int i =0;i<19;i++)
+            {
+            ASSERT_EQ(true, stmt.GetValueBoolean(1));
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            }
+        ASSERT_EQ(true, stmt.GetValueBoolean(1));
+        }
        {
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select Ordinal, Ordinal NOT IN (SELECT Ordinal from meta.ECPropertyDef) OrdinalInRange from meta.ECPropertyDef limit 20"));

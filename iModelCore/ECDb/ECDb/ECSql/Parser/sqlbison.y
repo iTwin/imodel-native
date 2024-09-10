@@ -2386,13 +2386,7 @@ char_factor:
     ;
 
 derived_column:
-        value_exp as_clause
-        {
-            $$ = SQL_NEW_RULE;
-            $$->append($1);
-            $$->append($2);
-        }
-    |   search_condition as_clause
+        search_condition as_clause
         {
             $$ = SQL_NEW_RULE;
             $$->append($1);
