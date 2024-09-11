@@ -375,6 +375,7 @@ BentleyStatus ECSqlParser::ParseDerivedColumn(std::unique_ptr<DerivedPropertyExp
     OSQLParseNode const* opt_as_clause = parseNode->getChild(1);
 
     std::unique_ptr<ValueExp> valExp = nullptr;
+    std::unique_ptr<BooleanExp> boolExp = nullptr;
     /* search_condition internally can have value_exp so first we check whether value_exp can be parsed
         if not , we try search condition
     */
@@ -386,19 +387,19 @@ BentleyStatus ECSqlParser::ParseDerivedColumn(std::unique_ptr<DerivedPropertyExp
    } 
    else
    {
-        std::unique_ptr<BooleanExp> boolValExp = nullptr;
-        BentleyStatus stat = ParseSearchCondition(boolValExp, first);
+        BentleyStatus stat = ParseSearchCondition(boolExp, first);
         if (stat != SUCCESS)
             return stat;
-        valExp = std::move(boolValExp);
    }
     Utf8String columnAlias;
     if (opt_as_clause->count() > 0)
         columnAlias = opt_as_clause->getChild(1)->getTokenValue();
     else
         columnAlias = opt_as_clause->getTokenValue();
-
-    exp = std::make_unique<DerivedPropertyExp>(std::move(valExp), columnAlias.c_str());
+    if(valExp != nullptr)
+        exp = std::make_unique<DerivedPropertyExp>(std::move(valExp), columnAlias.c_str());
+    else
+        exp = std::make_unique<DerivedPropertyExp>(std::move(boolExp), columnAlias.c_str());
     return SUCCESS;
     }
 //****************** Parsing PRAGMA statement ***********************************
@@ -4375,13 +4376,13 @@ BentleyStatus ECSqlParser::ParseNavValueCreationFuncExp(std::unique_ptr<NavValue
     if (SUCCESS != ParseDerivedColumn(derivedPropertyExp, parseNode->getChild(2)))
         return ERROR;
 
-    if (derivedPropertyExp->GetExpression()->GetType() != Exp::Type::PropertyName) // NAVIGATION_VALUE function should accept only PropertyName
+    if (derivedPropertyExp->GetExpression<ComputedExp>()->GetType() != Exp::Type::PropertyName) // NAVIGATION_VALUE function should accept only PropertyName
         return ERROR;
 
-    if (derivedPropertyExp->GetExpression()->GetAs<PropertyNameExp>().GetResolvedPropertyPath().Size() != 3)
+    if (derivedPropertyExp->GetExpression<ComputedExp>()->GetAs<PropertyNameExp>().GetResolvedPropertyPath().Size() != 3)
         return ERROR;
 
-    PropertyPath propPath = derivedPropertyExp->GetExpression()->GetAs<PropertyNameExp>().GetResolvedPropertyPath();
+    PropertyPath propPath = derivedPropertyExp->GetExpression<ComputedExp>()->GetAs<PropertyNameExp>().GetResolvedPropertyPath();
 
     ClassMap const* classMap = m_context->GetECDb().Schemas().GetDispatcher().GetClassMap(propPath[0].GetName(), propPath[1].GetName(), SchemaLookupMode::AutoDetect, nullptr);
 

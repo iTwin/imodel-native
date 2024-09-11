@@ -74,8 +74,8 @@ PropertyNameExp::PropertyNameExp(ECSqlParseContext const& ctx, RangeClassRefExp 
     Utf8String alias = derivedPropExp.GetAliasRecursively();
     if (!alias.empty()) {
         m_resolvedPropertyPath.Push(alias);
-    }else if (derivedPropExp.GetExpression()->GetType() == Exp::Type::PropertyName) {
-        m_resolvedPropertyPath = derivedPropExp.GetExpression()->GetAs<PropertyNameExp>().GetResolvedPropertyPath();
+    }else if (derivedPropExp.GetExpression<ComputedExp>()->GetType() == Exp::Type::PropertyName) {
+        m_resolvedPropertyPath = derivedPropExp.GetExpression<ComputedExp>()->GetAs<PropertyNameExp>().GetResolvedPropertyPath();
     } else {
         m_resolvedPropertyPath.Push(derivedPropExp.GetName());
     }
@@ -149,7 +149,7 @@ Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ct
         } else if (PropertyMap const *resolvedMap = GetPropertyRef()->TryGetPropertyMap()) {
             SetTypeInfo(ECSqlTypeInfo(*resolvedMap));
         } else {
-            SetTypeInfo(derivedProperty.GetExpression()->GetTypeInfo());
+            SetTypeInfo(derivedProperty.GetExpression<ComputedExp>()->GetTypeInfo());
         }
     } else {
         SetTypeInfo(ECSqlTypeInfo(*GetPropertyMap()));
@@ -181,9 +181,9 @@ BentleyStatus PropertyNameExp::ResolveUnionOrderByArg(ECSqlParseContext& ctx)
         for (Exp const* dpExp : selectExp->GetSelection()->GetChildren())
             {
             DerivedPropertyExp const& derivedPropertyExp = dpExp->GetAs<DerivedPropertyExp>();
-            if (derivedPropertyExp.GetExpression()->GetType() == Exp::Type::PropertyName)
+            if (derivedPropertyExp.GetExpression<ComputedExp>()->GetType() == Exp::Type::PropertyName)
                 {
-                PropertyNameExp const& propertyNameExp = derivedPropertyExp.GetExpression()->GetAs<PropertyNameExp>();
+                PropertyNameExp const& propertyNameExp = derivedPropertyExp.GetExpression<ComputedExp>()->GetAs<PropertyNameExp>();
                 BeAssert(propertyNameExp.IsComplete());
                 PropertyMap const* propertyMap = propertyNameExp.GetPropertyMap();
                 if (secondPropPathEntry == nullptr)
@@ -356,7 +356,7 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
         if (rc.isValid()) {
             if (rc.IsDerivedProperty()) {
                 // make sure non-cyclic
-                auto exp = rc.GetDerivedProperty()->GetExpression();
+                auto exp = rc.GetDerivedProperty()->GetExpression<ComputedExp>();
                 if (exp->GetType() == Exp::Type::PropertyName) {
                     auto& propName = exp->GetAs<PropertyNameExp>();
                     if (!propName.IsPropertyRef()) {
@@ -455,7 +455,9 @@ bool PropertyNameExp::HasUserDefinedAlias() const {
         if (linkTo->IsComputed())
             return true;
 
-        auto& prop = linkTo->GetExpression()->GetAs<PropertyNameExp>();
+        if(linkTo->GetExpression<ComputedExp>()->GetType() != Exp::Type::PropertyName)
+            break;
+        auto& prop = linkTo->GetExpression<ComputedExp>()->GetAs<PropertyNameExp>();
         linkTo = prop.IsPropertyRef() ? &prop.GetPropertyRef()->LinkedTo() : nullptr;
     } while (linkTo != nullptr);
 
@@ -621,7 +623,7 @@ bool PropertyNameExp::PropertyRef::ReferToAlias() const
 //+---------------+---------------+---------------+---------------+---------------+--------
 bool PropertyNameExp::PropertyRef::IsComputedExp() const
     {
-    return this->GetEndPointDerivedProperty().GetExpression()->GetType() != Exp::Type::PropertyName;
+    return this->GetEndPointDerivedProperty().GetExpression<ComputedExp>()->GetType() != Exp::Type::PropertyName;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -652,10 +654,10 @@ bool PropertyNameExp::PropertyRef::TryResolvePath(PropertyPath &path) const
 //+---------------+---------------+---------------+---------------+---------------+--------
 ECN::ECPropertyCP PropertyNameExp::PropertyRef::TryGetVirtualProperty() const {
     DerivedPropertyExp const &next = LinkedTo();
-    if (next.GetExpression()->GetType() != Exp::Type::PropertyName)
+    if (next.GetExpression<ComputedExp>()->GetType() != Exp::Type::PropertyName)
         return nullptr;
 
-    PropertyNameExp const &exp = next.GetExpression()->GetAs<PropertyNameExp>();
+    PropertyNameExp const &exp = next.GetExpression<ComputedExp>()->GetAs<PropertyNameExp>();
     if (exp.IsPropertyRef())
         return exp.GetPropertyRef()->TryGetVirtualProperty();
 
@@ -670,10 +672,10 @@ PropertyMap const * PropertyNameExp::PropertyRef::TryGetPropertyMap(PropertyPath
         return m_cachedPropertyMap;
 
     DerivedPropertyExp const &next = LinkedTo();
-    if (next.GetExpression()->GetType() != Exp::Type::PropertyName && next.GetExpression()->GetType() != Exp::Type::NavValueCreationFunc)
+    if (next.GetExpression<ComputedExp>()->GetType() != Exp::Type::PropertyName && next.GetExpression<ComputedExp>()->GetType() != Exp::Type::NavValueCreationFunc)
         return nullptr;
 
-    PropertyNameExp const &exp = next.GetExpression()->GetType() == Exp::Type::PropertyName ? next.GetExpression()->GetAs<PropertyNameExp>() : *next.GetExpression()->GetAs<NavValueCreationFuncExp>().GetPropertyNameExp();
+    PropertyNameExp const &exp = next.GetExpression<ComputedExp>()->GetType() == Exp::Type::PropertyName ? next.GetExpression<ComputedExp>()->GetAs<PropertyNameExp>() : *next.GetExpression<ComputedExp>()->GetAs<NavValueCreationFuncExp>().GetPropertyNameExp();
     if (exp.IsPropertyRef())
         return exp.GetPropertyRef()->TryGetPropertyMap();
 
@@ -717,9 +719,9 @@ PropertyMap const * PropertyNameExp::PropertyRef::TryGetPropertyMap() const
 //+---------------+---------------+---------------+---------------+---------------+------
 DerivedPropertyExp const& PropertyNameExp::PropertyRef::GetEndPointDerivedProperty() const
     {
-    if (LinkedTo().GetExpression()->GetType() == Exp::Type::PropertyName)
+    if (LinkedTo().GetExpression<ComputedExp>()->GetType() == Exp::Type::PropertyName)
         {
-        PropertyNameExp const& next = LinkedTo().GetExpression()->GetAs<PropertyNameExp>();
+        PropertyNameExp const& next = LinkedTo().GetExpression<ComputedExp>()->GetAs<PropertyNameExp>();
         if (next.IsPropertyRef())
             return next.GetPropertyRef()->GetEndPointDerivedProperty();
         }
@@ -732,10 +734,10 @@ DerivedPropertyExp const& PropertyNameExp::PropertyRef::GetEndPointDerivedProper
 //+---------------+---------------+---------------+---------------+---------------+------
 bool PropertyNameExp::PropertyRef::IsPure() const
     {
-    if (!LinkedTo().GetColumnAlias().empty() || LinkedTo().GetExpression()->GetType() != Exp::Type::PropertyName)
+    if (!LinkedTo().GetColumnAlias().empty() || LinkedTo().GetExpression<ComputedExp>()->GetType() != Exp::Type::PropertyName)
         return false;
 
-    PropertyNameExp const& next = LinkedTo().GetExpression()->GetAs<PropertyNameExp>();
+    PropertyNameExp const& next = LinkedTo().GetExpression<ComputedExp>()->GetAs<PropertyNameExp>();
     if (next.IsPropertyRef())
         return next.GetPropertyRef()->IsPure();
 
