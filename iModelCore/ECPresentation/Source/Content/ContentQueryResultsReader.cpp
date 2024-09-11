@@ -235,8 +235,7 @@ static void ReadValues(ContentItemBuilder& item, int& sqlColumnIndex, ECSqlState
         else if (field->IsCalculatedPropertyField())
             {
             // if this is a calculated field, just append the value
-            Utf8CP value = statement.GetValueText(sqlColumnIndex);
-            item.AddValue(fieldName.c_str(), value, nullptr);
+            item.AddValue(fieldName.c_str(), statement.GetValue(sqlColumnIndex) , field->AsCalculatedPropertyField()->GetType());
             }
         else if (field->IsPropertiesField())
             {

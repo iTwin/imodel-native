@@ -6,6 +6,7 @@
 #include "ContentQueryContracts.h"
 #include "../Shared/Queries/CustomFunctions.h"
 #include "../Shared/Queries/QueryBuilderHelpers.h"
+#include "../Rules/PresentationRuleJsonConstants.h"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -65,16 +66,15 @@ ContentQueryContract::ContentQueryContract(uint64_t id, ContentDescriptorCR desc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQueryContractFieldCPtr ContentQueryContract::GetCalculatedPropertyField(Utf8StringCR calculatedFieldName, Nullable<Utf8String> const& calculatedPropertyValue, Utf8StringCR prefix) const
+PresentationQueryContractFieldCPtr ContentQueryContract::GetCalculatedPropertyField(Utf8StringCR calculatedFieldName, Nullable<Utf8String> const& calculatedPropertyValue, Utf8StringCR prefix, PrimitiveType type) const
     {
     PresentationQueryContractFieldPtr field;
     if (calculatedPropertyValue.IsValid())
         {
-        Utf8String value = "'";
-        value += calculatedPropertyValue.Value();
-        value += "'";
+        Utf8String value = "'" + calculatedPropertyValue.Value() + "'";
+        Utf8String fieldType = "'" + Utf8String(ValueHelpers::PrimitiveTypeAsString(type)) + "'";
         field = PresentationQueryContractFunctionField::Create(calculatedFieldName.c_str(), FUNCTION_NAME_EvaluateECExpression,
-        CreateFieldsList("ECClassId", "ECInstanceId", value), true);
+        CreateFieldsList("ECClassId", "ECInstanceId", value, fieldType), true);
         } 
     else 
         {
@@ -309,7 +309,7 @@ bool ContentQueryContract::CreateContractFields(bvector<PresentationQueryContrac
 
             if (nullptr == descriptorField->AsCalculatedPropertyField()->GetClass() || selectClass->Is(descriptorField->AsCalculatedPropertyField()->GetClass()))
                 {
-                contractField = GetCalculatedPropertyField(descriptorField->GetUniqueName(), descriptorField->AsCalculatedPropertyField()->GetValueExpression(), prefix);
+                contractField = GetCalculatedPropertyField(descriptorField->GetUniqueName(), descriptorField->AsCalculatedPropertyField()->GetValueExpression(), prefix, descriptorField->AsCalculatedPropertyField()->GetType());
                 didCreateNonNullField = true;
                 }
             else

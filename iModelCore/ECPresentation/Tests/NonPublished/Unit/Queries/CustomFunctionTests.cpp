@@ -235,8 +235,9 @@ TEST_F(CustomFunctionTests, EvaluateECExpression)
     ASSERT_EQ(BE_SQLITE_OK, updater.Update(*m_widgetInstance));
 
     ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, "this.MyID & \"Calculated_Label_\" & 2", IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(2, "string", IECSqlBinder::MakeCopy::No));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     ASSERT_STREQ("TestCalculated_Label_2", stmt.GetValueText(0));
     }

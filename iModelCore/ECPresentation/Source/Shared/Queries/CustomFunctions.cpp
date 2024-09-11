@@ -424,21 +424,30 @@ struct ECExpressionScalarCacheKey
 * - Expression
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScalarCacheKey, std::shared_ptr<Utf8String>>>
+struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScalarCacheKey, std::shared_ptr<ECValue>>>
     {
     EvaluateECExpressionScalar(CustomFunctionsManager const& manager)
-        : CachingScalarFunction(FUNCTION_NAME_EvaluateECExpression, 3, DbValueType::TextVal, manager)
+        : CachingScalarFunction(FUNCTION_NAME_EvaluateECExpression, 4, DbValueType::NullVal, manager)
         {}
     void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
-        ARGUMENTS_COUNT_PRECONDITION(3);
+        ARGUMENTS_COUNT_PRECONDITION(4);
 
         ECClassId classId = args[0].GetValueId<ECClassId>();
         ECInstanceId instanceId = args[1].GetValueId<ECInstanceId>();
         Utf8CP expression = args[2].GetValueText();
+        Utf8CP requestedTypeString = args[3].GetValueText();
         ECExpressionScalarCacheKey key = {classId, instanceId, expression};
 
         auto iter = GetCache().find(key);
+        PrimitiveType requestedTypePrimitive;
+        ECObjectsStatus parseStatus = ValueHelpers::ParsePrimitiveType(requestedTypePrimitive, requestedTypeString);
+        if (parseStatus != ECObjectsStatus::Success)
+            {
+            ctx.SetResultError(Utf8PrintfString("Could not parse provided type. `%s` is malformed.", requestedTypePrimitive).c_str());
+            return;
+            }
+
         if (GetCache().end() == iter)
             {
             NavNodePtr thisNode = GetContext().GetNodesFactory().CreateECInstanceNode(GetContext().GetConnection(), "", nullptr, classId, instanceId, *LabelDefinition::Create());
@@ -447,21 +456,51 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
             ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCalculatedPropertyContext(params);
 
             ECValue value;
-            Utf8String expressionResult;
             ECExpressionsCache noCache;
-            if (ECExpressionsHelper(noCache).EvaluateECExpression(value, expression, *expressionContext) && value.IsPrimitive() && value.ConvertPrimitiveToString(expressionResult))
-                {
-                if (nullptr != GetContext().GetUsedClassesListener())
-                    {
-                    UsedClassesHelper::NotifyListenerWithUsedClasses(*GetContext().GetUsedClassesListener(),
-                        GetContext().GetSchemaHelper(), expression);
-                    }
+            if (!ECExpressionsHelper(noCache).EvaluateECExpression(value, expression, *expressionContext) || !value.IsPrimitive() || !value.ConvertToPrimitiveType(requestedTypePrimitive))
+                {  
+                ctx.SetResultError(Utf8PrintfString("Calculated property evaluated to a type that is not Primitive").c_str());
+                return;
                 }
 
-            iter = GetCache().Insert(key, std::make_shared<Utf8String>(expressionResult)).first;
+            if (nullptr != GetContext().GetUsedClassesListener())
+                {
+                UsedClassesHelper::NotifyListenerWithUsedClasses(*GetContext().GetUsedClassesListener(),
+                    GetContext().GetSchemaHelper(), expression);
+                }
+
+            iter = GetCache().Insert(key, std::make_shared<ECValue>(value)).first;
             }
 
-        ctx.SetResultText(iter->second->c_str(), (int)iter->second->size(), BeSQLite::DbFunction::Context::CopyData::No);
+        double expressionResultJulianDay;
+        Utf8String expressionResultStr;
+
+        switch (requestedTypePrimitive)
+            {
+            case (PRIMITIVETYPE_String):
+                iter->second->ConvertPrimitiveToString(expressionResultStr);
+                ctx.SetResultText(expressionResultStr.c_str(), expressionResultStr.size(), BeSQLite::DbFunction::Context::CopyData::Yes);
+                break;
+            case (PRIMITIVETYPE_Integer):
+                ctx.SetResultInt(iter->second->GetInteger());
+                break;
+            case (PRIMITIVETYPE_Long):
+                ctx.SetResultInt64(iter->second->GetLong());
+                break;
+            case (PRIMITIVETYPE_Boolean):
+                ctx.SetResultInt(iter->second->GetBoolean());
+                break;
+            case (PRIMITIVETYPE_Double):
+                ctx.SetResultDouble(iter->second->GetDouble());
+                break;
+            case (PRIMITIVETYPE_DateTime):
+                iter->second->GetDateTime().ToJulianDay(expressionResultJulianDay);
+                ctx.SetResultDouble(expressionResultJulianDay);
+                break;
+            default:
+                ctx.SetResultError(Utf8PrintfString("Provided type `%s` is not supported", requestedTypePrimitive).c_str());
+                break;
+            }
         }
    };
 

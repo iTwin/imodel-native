@@ -7,6 +7,7 @@
 #include <ECPresentation/Rules/SpecificationVisitor.h>
 #include "ContentQueryBuilder.h"
 #include "PropertyInfoStore.h"
+#include "../Rules/PresentationRuleJsonConstants.h"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -345,8 +346,12 @@ protected:
     ContentDescriptor::CalculatedPropertyField* CreateCalculatedPropertyField(ECClassCP ecClass, Utf8StringCR name, CalculatedPropertiesSpecificationCR spec,
         RelatedClassPathCR pathFromSelectToPropertyClass, RelationshipMeaning relationshipMeaning)
         {
+        PrimitiveType primitiveType;
+        if (ECObjectsStatus::Success != ValueHelpers::ParsePrimitiveType(primitiveType, spec.GetType().IsValid() ? spec.GetType().Value().c_str() : EC_PRIMITIVE_TYPENAME_STRING))
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Provided type is not valid primitive type.");
+
         ContentDescriptor::CalculatedPropertyField* field = new ContentDescriptor::CalculatedPropertyField(m_categoriesSupplier.GetCalculatedFieldCategory(ecClass, spec, pathFromSelectToPropertyClass, relationshipMeaning),
-            spec.GetLabel(), name, spec.GetValue().IsValid() ? spec.GetValue().Value().c_str() : nullptr, ecClass, spec.GetPriority());
+            spec.GetLabel(), name, spec.GetValue().IsValid() ? spec.GetValue().Value().c_str() : nullptr, primitiveType, ecClass, spec.GetPriority());
 
         if (nullptr != spec.GetRenderer())
             field->SetRenderer(ContentFieldRenderer::FromSpec(*spec.GetRenderer()));

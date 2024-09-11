@@ -23,6 +23,7 @@ private:
     CustomRendererSpecificationCP m_renderer;
     PropertyEditorSpecificationCP m_editor;
     std::unique_ptr<PropertyCategoryIdentifier> m_categoryId;
+    Nullable<Utf8String> m_type;
 
 protected:
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
@@ -39,13 +40,13 @@ protected:
 public:
     CalculatedPropertiesSpecification() : m_renderer(nullptr), m_editor(nullptr) {}
     CalculatedPropertiesSpecification(Utf8String label, int priority, Utf8String value, CustomRendererSpecificationP rendererOverride = nullptr,
-        PropertyEditorSpecificationP editorOverride = nullptr, std::unique_ptr<PropertyCategoryIdentifier> categoryId = nullptr)
+        PropertyEditorSpecificationP editorOverride = nullptr, std::unique_ptr<PropertyCategoryIdentifier> categoryId = nullptr, Nullable<Utf8String> type = nullptr)
         : PrioritizedPresentationKey(priority), m_label(label), m_value(value), m_renderer(rendererOverride),
-        m_editor(editorOverride), m_categoryId(std::move(categoryId))
+        m_editor(editorOverride), m_categoryId(std::move(categoryId)), m_type(type)
         {}
-    CalculatedPropertiesSpecification(Utf8String label, int priority)
-        : PrioritizedPresentationKey(priority), m_label(label), m_value(nullptr), m_renderer(nullptr),
-        m_editor(nullptr), m_categoryId(std::move(nullptr))
+    CalculatedPropertiesSpecification(Utf8String label, int priority, Utf8CP value = nullptr, Utf8CP type = nullptr)
+        : PrioritizedPresentationKey(priority), m_label(label), m_value(value ? Nullable<Utf8String>(value) : Nullable<Utf8String>(nullptr)), m_renderer(nullptr),
+        m_editor(nullptr), m_categoryId(std::move(nullptr)), m_type(type ? Nullable<Utf8String>(type) : Nullable<Utf8String>(nullptr))
         {}
     ECPRESENTATION_EXPORT CalculatedPropertiesSpecification(CalculatedPropertiesSpecification const& other);
     ECPRESENTATION_EXPORT CalculatedPropertiesSpecification(CalculatedPropertiesSpecification&& other);
@@ -67,6 +68,9 @@ public:
 
     PropertyCategoryIdentifier const* GetCategoryId() const { return m_categoryId.get(); }
     void SetCategoryId(std::unique_ptr<PropertyCategoryIdentifier> categoryId) { m_categoryId = std::move(categoryId); InvalidateHash(); }
+
+    Nullable<Utf8String> const& GetType() const { return m_type; }
+    void SetType(Utf8CP type) { m_type = type ? Utf8String(type) : nullptr; InvalidateHash(); }
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

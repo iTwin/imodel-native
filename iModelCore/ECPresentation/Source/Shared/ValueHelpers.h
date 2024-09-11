@@ -27,6 +27,8 @@ public:
     static BentleyStatus GetEnumPropertyDisplayValue(Utf8StringR displayValue, ECN::ECPropertyCR prop, RapidJsonValueCR jsonValue);
     static BentleyStatus GetEnumPropertyDisplayValue(Utf8StringR displayValue, ECN::ECEnumerationCR enumeration, BeSQLite::DbValue const& dbValue);
 
+    static ECObjectsStatus ParsePrimitiveType(PrimitiveType&, Utf8StringCR);
+
     static DPoint2d GetPoint2dFromSqlValue(BeSQLite::EC::IECSqlValue const&);
     static DPoint2d GetPoint2dFromJson(RapidJsonValueCR);
     static DPoint2d GetPoint2dFromJsonString(Utf8CP);

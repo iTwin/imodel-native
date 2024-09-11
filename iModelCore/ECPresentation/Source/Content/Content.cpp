@@ -9,6 +9,7 @@
 #include "ContentHelpers.h"
 #include "../Shared/ValueHelpers.h"
 #include "../Shared/ECSchemaHelper.h"
+#include "../Rules/PresentationRuleJsonConstants.h"
 
 const int ContentDescriptor::Property::DEFAULT_PRIORITY = 0;
 
@@ -1038,7 +1039,11 @@ bvector<InstanceLabelOverrideCP> ContentDescriptor::DisplayLabelField::CloneLabe
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::CalculatedPropertyField::_CreateTypeDescription() const
     {
-    return new PrimitiveTypeDescription("string");
+    if (m_type == PRIMITIVETYPE_Point3d || m_type == PRIMITIVETYPE_Point2d ||
+        m_type == PRIMITIVETYPE_Binary || m_type == PRIMITIVETYPE_IGeometry)
+        return new PrimitiveTypeDescription(EC_PRIMITIVE_TYPENAME_STRING);
+
+    return new PrimitiveTypeDescription(ValueHelpers::PrimitiveTypeAsString(m_type));
     }
 
 /*---------------------------------------------------------------------------------**//**
