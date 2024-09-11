@@ -12746,6 +12746,74 @@ TEST_F(ECSqlStatementTestFixture, InsertUsingOnlyAndAll)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
     }
     }
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, ScalarTestsForBooleanExpInSelect)
+    {
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("Scalar_Tests_for_bool_exp_in_select.ecdb"));
+
+        //Scalar Tests
+       {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select 1>0"));
+        EXPECT_EQ(stmt.GetColumnCount(), 1);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.GetValueBoolean(0));
+       }
+       {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select 'ABCIFGQQ' LIKE '%IF%'"));
+        EXPECT_EQ(stmt.GetColumnCount(), 1);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.GetValueBoolean(0));
+       }
+       {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select 'ABCIFGQQ' IS NOT NULL"));
+        EXPECT_EQ(stmt.GetColumnCount(), 1);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.GetValueBoolean(0));
+       }
+       {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select 5 IN(2,7)"));
+        EXPECT_EQ(stmt.GetColumnCount(), 1);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(false, stmt.GetValueBoolean(0));
+       }
+       {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select (300 + 200) = 500"));
+        EXPECT_EQ(stmt.GetColumnCount(), 1);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.GetValueBoolean(0));
+       }
+       {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select 300/2 = 151"));
+        EXPECT_EQ(stmt.GetColumnCount(), 1);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(false, stmt.GetValueBoolean(0));
+       }
+       // InvalidECSql Tests
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "select 300 + (200 = 500)")) << "Syntax error";
+        }
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
@@ -12754,40 +12822,13 @@ TEST_F(ECSqlStatementTestFixture, TestsForBooleanExpInSelect)
     {
         ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("Tests_for_bool_exp_in_select.ecdb"));
 
-        //Scalar Tests
-       {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select 1>0"));
-        EXPECT_EQ(stmt.GetColumnCount(), 1);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(true, stmt.GetValueBoolean(0));
-       }
-       {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select 'ABCIFGQQ' LIKE '%IF%'"));
-        EXPECT_EQ(stmt.GetColumnCount(), 1);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(true, stmt.GetValueBoolean(0));
-       }
-       {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select 'ABCIFGQQ' IS NOT NULL"));
-        EXPECT_EQ(stmt.GetColumnCount(), 1);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(true, stmt.GetValueBoolean(0));
-       }
-       {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select 5 IN(2,7)"));
-        EXPECT_EQ(stmt.GetColumnCount(), 1);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(false, stmt.GetValueBoolean(0));
-       }
        //value based tests
        {
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select count(*)>1 from meta.ECClassDef"));
         EXPECT_EQ(stmt.GetColumnCount(), 1);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(true, stmt.GetValueBoolean(0));
        }
@@ -12795,6 +12836,8 @@ TEST_F(ECSqlStatementTestFixture, TestsForBooleanExpInSelect)
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(S.ECInstanceId) > 1 count_for_instance_id FROM meta.ECClassDef S"));
         EXPECT_EQ(stmt.GetColumnCount(), 1);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
         ASSERT_STREQ("count_for_instance_id", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(true, stmt.GetValueBoolean(0));
@@ -12803,6 +12846,8 @@ TEST_F(ECSqlStatementTestFixture, TestsForBooleanExpInSelect)
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT p.ECInstanceId=k.s FROM meta.ECClassDef p, (SELECT 1 s) k limit 5"));
         EXPECT_EQ(stmt.GetColumnCount(), 1);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         for(int i =0;i<4;i++)
         {
@@ -12817,6 +12862,8 @@ TEST_F(ECSqlStatementTestFixture, TestsForBooleanExpInSelect)
         EXPECT_EQ(stmt.GetColumnCount(), 2);
         ASSERT_STREQ("DisplayLabel", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
         ASSERT_STREQ("displayLabelIsNull", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().IsPrimitive(), true);
+        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         for(int i =0;i<3;i++)
             {
@@ -12833,6 +12880,8 @@ TEST_F(ECSqlStatementTestFixture, TestsForBooleanExpInSelect)
         EXPECT_EQ(stmt.GetColumnCount(), 2);
         ASSERT_STREQ("Description", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
         ASSERT_STREQ("DescriptionIsNotNull", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().IsPrimitive(), true);
+        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(true, stmt.IsValueNull(0)); 
         ASSERT_EQ(false, stmt.GetValueBoolean(1));
@@ -12850,6 +12899,8 @@ TEST_F(ECSqlStatementTestFixture, TestsForBooleanExpInSelect)
         EXPECT_EQ(stmt.GetColumnCount(), 2);
         ASSERT_STREQ("Ordinal", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
         ASSERT_STREQ("OrdinalInRange", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().IsPrimitive(), true);
+        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         for(int i =0;i<19;i++)
             {
@@ -12870,6 +12921,8 @@ TEST_F(ECSqlStatementTestFixture, TestsForBooleanExpInSelect)
         EXPECT_EQ(stmt.GetColumnCount(), 2);
         ASSERT_STREQ("Ordinal", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
         ASSERT_STREQ("OrdinalInRange", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().IsPrimitive(), true);
+        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         for(int i =0;i<19;i++)
             {
@@ -12890,6 +12943,8 @@ TEST_F(ECSqlStatementTestFixture, TestsForBooleanExpInSelect)
         EXPECT_EQ(stmt.GetColumnCount(), 2);
         ASSERT_STREQ("Ordinal", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
         ASSERT_STREQ("OrdinalInRange", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().IsPrimitive(), true);
+        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         for(int i =0;i<19;i++)
             {
@@ -12904,6 +12959,8 @@ TEST_F(ECSqlStatementTestFixture, TestsForBooleanExpInSelect)
         EXPECT_EQ(stmt.GetColumnCount(), 2);
         ASSERT_STREQ("Ordinal", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
         ASSERT_STREQ("OrdinalInRange", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().IsPrimitive(), true);
+        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         for(int i =0;i<19;i++)
             {
@@ -12918,6 +12975,8 @@ TEST_F(ECSqlStatementTestFixture, TestsForBooleanExpInSelect)
         EXPECT_EQ(stmt.GetColumnCount(), 2);
         ASSERT_STREQ("Name", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
         ASSERT_STREQ("PatternMatch", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().IsPrimitive(), true);
+        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         for(int i =0;i<4;i++)
             {
@@ -12935,6 +12994,8 @@ TEST_F(ECSqlStatementTestFixture, TestsForBooleanExpInSelect)
         EXPECT_EQ(stmt.GetColumnCount(), 2);
         ASSERT_STREQ("Name", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
         ASSERT_STREQ("PatternMatch", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().IsPrimitive(), true);
+        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         for(int i =0;i<4;i++)
             {
@@ -12952,6 +13013,8 @@ TEST_F(ECSqlStatementTestFixture, TestsForBooleanExpInSelect)
         EXPECT_EQ(stmt.GetColumnCount(), 2);
         ASSERT_STREQ("Name", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
         ASSERT_STREQ("Exist", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().IsPrimitive(), true);
+        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         for(int i =0;i<4;i++)
             {
@@ -12960,6 +13023,7 @@ TEST_F(ECSqlStatementTestFixture, TestsForBooleanExpInSelect)
             }
         ASSERT_EQ(true, stmt.GetValueBoolean(1));
         }
+        
         // InvalidECSql Tests
         {
         ECSqlStatement stmt;
