@@ -12858,6 +12858,40 @@ TEST_F(ECSqlStatementTestFixture, TestsForBooleanExpInSelect)
         }
         {
         ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select ECInstanceId >= ALL(with cte as(select ECClassId from meta.ECClassDef) select * from cte) from meta.ECClassDef limit 5"));
+        EXPECT_EQ(stmt.GetColumnCount(), 1);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        for(int i =0;i<4;i++)
+        {
+            if(i == 0)
+                ASSERT_EQ(false, stmt.GetValueBoolean(0));
+            else
+                ASSERT_EQ(true, stmt.GetValueBoolean(0));   
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        }
+        ASSERT_EQ(false, stmt.GetValueBoolean(0));
+        }
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select Name <= (select Name from meta.ECClassDef) from meta.ECClassDef limit 5"));
+        EXPECT_EQ(stmt.GetColumnCount(), 1);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        for(int i =0;i<4;i++)
+        {
+            if(i == 0)
+                ASSERT_EQ(true, stmt.GetValueBoolean(0));
+            else
+                ASSERT_EQ(false, stmt.GetValueBoolean(0));   
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        }
+        ASSERT_EQ(false, stmt.GetValueBoolean(0));
+        }
+        {
+        ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT DisplayLabel, DisplayLabel IS NULL displayLabelIsNull FROM meta.ECClassDef limit 4"));
         EXPECT_EQ(stmt.GetColumnCount(), 2);
         ASSERT_STREQ("DisplayLabel", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
