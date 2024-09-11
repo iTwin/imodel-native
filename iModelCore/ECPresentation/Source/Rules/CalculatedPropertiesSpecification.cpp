@@ -74,6 +74,7 @@ bool CalculatedPropertiesSpecification::_ReadXml(BeXmlNodeP xmlNode)
 
     SetType(type.c_str());
 
+    SetValue(value.c_str());
     return true;
     }
 
