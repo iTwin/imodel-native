@@ -534,6 +534,7 @@ export declare namespace IModelJsNative {
     public addChildPropagatesChangesToParentRelationship(schemaName: string, relClassName: string): BentleyStatus;
     public addNewFont(arg: { type: FontType, name: string }): number;
     public applyChangeset(changeSet: ChangesetFileProps): void;
+    public revertTimelineChanges(changeSet: ChangesetFileProps[], skipSchemaChanges: boolean): void;
     public attachChangeCache(changeCachePath: string): DbResult;
     public beginMultiTxnOperation(): DbResult;
     public beginPurgeOperation(): IModelStatus;
