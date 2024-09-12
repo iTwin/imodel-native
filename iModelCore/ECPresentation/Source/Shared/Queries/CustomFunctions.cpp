@@ -452,13 +452,13 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
             ECExpressionsCache noCache;
             if (!ECExpressionsHelper(noCache).EvaluateECExpression(value, expression, *expressionContext) || !value.IsPrimitive())
                 {  
-                ctx.SetResultError(Utf8PrintfString("Calculated property evaluated to a type that is not primitive").c_str());
+                ctx.SetResultError("Calculated property evaluated to a type that is not primitive");
                 return;
                 }
 
             if (!value.ConvertToPrimitiveType(requestedTypePrimitive))
                 {
-                ctx.SetResultError(Utf8PrintfString("Calculated property evaluated to a type that couldn't be converted to requested type").c_str());
+                ctx.SetResultError("Calculated property evaluated to a type that couldn't be converted to requested type");
                 return;
                 }
 
@@ -500,7 +500,7 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
                 break;
                 }
             default:
-                ctx.SetResultError(Utf8PrintfString("Provided type `%s` is not supported", requestedTypePrimitive).c_str());
+                ctx.SetResultError("Requested type is not supported");
                 break;
             }
         }
