@@ -347,8 +347,13 @@ protected:
         RelatedClassPathCR pathFromSelectToPropertyClass, RelationshipMeaning relationshipMeaning)
         {
         PrimitiveType primitiveType;
-        if (ECObjectsStatus::Success != ValueHelpers::ParsePrimitiveType(primitiveType, spec.GetType().IsValid() ? spec.GetType().Value().c_str() : EC_PRIMITIVE_TYPENAME_STRING))
-            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Provided type is not valid primitive type.");
+        if (spec.GetType().IsValid())
+            {
+            if (ECObjectsStatus::Success != ValueHelpers::ParsePrimitiveType(primitiveType, spec.GetType().Value()))
+                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Provided type is not valid primitive type for calculated fields.");
+            }
+        else
+            primitiveType = PRIMITIVETYPE_String;
 
         ContentDescriptor::CalculatedPropertyField* field = new ContentDescriptor::CalculatedPropertyField(m_categoriesSupplier.GetCalculatedFieldCategory(ecClass, spec, pathFromSelectToPropertyClass, relationshipMeaning),
             spec.GetLabel(), name, spec.GetValue().IsValid() ? spec.GetValue().Value().c_str() : nullptr, primitiveType, ecClass, spec.GetPriority());
