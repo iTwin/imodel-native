@@ -8,6 +8,7 @@
 #include "CommonToolsInternal.h"
 #include <ECPresentation/Rules/CommonTools.h>
 #include <ECPresentation/Rules/PresentationRules.h>
+#include "../Shared/ValueHelpers.h"
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 

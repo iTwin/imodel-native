@@ -258,18 +258,6 @@
 #define CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYID                   "categoryId"
 #define CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_TYPE                         "type"
 
-#define EC_PRIMITIVE_TYPENAME_BINARY                                                    "binary"
-#define EC_PRIMITIVE_TYPENAME_BOOLEAN                                                   "boolean"
-#define EC_PRIMITIVE_TYPENAME_BOOL                                                      "bool"
-#define EC_PRIMITIVE_TYPENAME_DATETIME                                                  "dateTime"
-#define EC_PRIMITIVE_TYPENAME_DOUBLE                                                    "double"
-#define EC_PRIMITIVE_TYPENAME_INTEGER                                                   "int"
-#define EC_PRIMITIVE_TYPENAME_LONG                                                      "long"
-#define EC_PRIMITIVE_TYPENAME_POINT2D                                                   "point2d"
-#define EC_PRIMITIVE_TYPENAME_POINT3D                                                   "point3d"
-#define EC_PRIMITIVE_TYPENAME_STRING                                                    "string"
-#define EC_PRIMITIVE_TYPENAME_IGEOMETRY                                                 "IGeometry"
-
 #define PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_NAME                                      "name"
 #define PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_OVERRIDESPRIORITY                         "overridesPriority"
 #define PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_LABELOVERRIDE                             "labelOverride"

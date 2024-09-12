@@ -7,7 +7,7 @@
 #include <ECPresentation/Rules/SpecificationVisitor.h>
 #include "ContentQueryBuilder.h"
 #include "PropertyInfoStore.h"
-#include "../Rules/PresentationRuleJsonConstants.h"
+#include "../Shared/ValueHelpers.h"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

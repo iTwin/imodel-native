@@ -9,7 +9,6 @@
 #include "ContentHelpers.h"
 #include "../Shared/ValueHelpers.h"
 #include "../Shared/ECSchemaHelper.h"
-#include "../Rules/PresentationRuleJsonConstants.h"
 
 const int ContentDescriptor::Property::DEFAULT_PRIORITY = 0;
 
