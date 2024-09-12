@@ -78,7 +78,7 @@ ECSqlStatus ECSqlFieldFactory::CreateField(ECSqlPrepareContext& ctx, DerivedProp
     ComputedExp const* computedExp = derivedProperty->GetExpression<ComputedExp>();
     PropertyNameExp const* propNameExp = nullptr;
     if (computedExp->GetType() == Exp::Type::PropertyName && !isDynamic)
-        propNameExp = derivedProperty->GetExpression<ComputedExp>()->GetAsCP<PropertyNameExp>();
+        propNameExp = computedExp->GetAsCP<PropertyNameExp>();
 
     ClassNameExp const* viewClassNameExp = TryGetOutmostView(propNameExp); //If we are in a view we have to resolve the propNameExp to the actual property in the view
     if (viewClassNameExp != nullptr && propNameExp != nullptr) {
