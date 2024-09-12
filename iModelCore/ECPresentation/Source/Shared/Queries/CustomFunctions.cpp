@@ -459,7 +459,8 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
             ECExpressionsCache noCache;
             if (!ECExpressionsHelper(noCache).EvaluateECExpression(value, expression, *expressionContext) || !value.IsPrimitive() || !value.ConvertToPrimitiveType(requestedTypePrimitive))
                 {  
-                ctx.SetResultError(Utf8PrintfString("Calculated property evaluated to a type that is not Primitive").c_str());
+                ctx.SetResultError(Utf8PrintfString("Calculated property evaluated to a type that is not primitive").c_str());
+
                 return;
                 }
 
