@@ -275,7 +275,7 @@ void ContentItemBuilder::AddNull(Utf8CP name, ECPropertyCP prop)
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentItemBuilder::AddValue(Utf8CP name, IECSqlValue const& value, PrimitiveType type)
+void ContentItemBuilder::AddValue(Utf8CP name, PrimitiveType type, IECSqlValue const& value)
     {
     if (BeforeAddValueStatus::Skip == _OnBeforeAddValue(name))
         return;

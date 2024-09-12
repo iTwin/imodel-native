@@ -72,9 +72,9 @@ PresentationQueryContractFieldCPtr ContentQueryContract::GetCalculatedPropertyFi
     if (calculatedPropertyValue.IsValid())
         {
         Utf8String value = "'" + calculatedPropertyValue.Value() + "'";
-        Utf8String fieldType = "'" + Utf8String(ValueHelpers::PrimitiveTypeAsString(type)) + "'";
+        Utf8String fieldType = std::to_string((int)type).c_str();
         field = PresentationQueryContractFunctionField::Create(calculatedFieldName.c_str(), FUNCTION_NAME_EvaluateECExpression,
-        CreateFieldsList("ECClassId", "ECInstanceId", value, fieldType), true);
+        CreateFieldsList("ECClassId", "ECInstanceId", value, fieldType));
         } 
     else 
         {

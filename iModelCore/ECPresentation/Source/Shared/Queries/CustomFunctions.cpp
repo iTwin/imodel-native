@@ -436,17 +436,10 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
         ECClassId classId = args[0].GetValueId<ECClassId>();
         ECInstanceId instanceId = args[1].GetValueId<ECInstanceId>();
         Utf8CP expression = args[2].GetValueText();
-        Utf8CP requestedTypeString = args[3].GetValueText();
+        PrimitiveType requestedTypePrimitive = (PrimitiveType)args[3].GetValueInt();
         ECExpressionScalarCacheKey key = {classId, instanceId, expression};
 
         auto iter = GetCache().find(key);
-        PrimitiveType requestedTypePrimitive;
-        BentleyStatus parseStatus = ValueHelpers::ParsePrimitiveType(requestedTypePrimitive, requestedTypeString);
-        if (parseStatus != BentleyStatus::SUCCESS)
-            {
-            ctx.SetResultError(Utf8PrintfString("Could not parse provided type. `%s` is malformed.", requestedTypePrimitive).c_str());
-            return;
-            }
 
         if (GetCache().end() == iter)
             {
