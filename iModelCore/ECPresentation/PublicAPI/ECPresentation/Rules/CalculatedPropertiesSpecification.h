@@ -40,9 +40,9 @@ protected:
 public:
     CalculatedPropertiesSpecification() : m_renderer(nullptr), m_editor(nullptr) {}
     CalculatedPropertiesSpecification(Utf8String label, int priority, Utf8String value, CustomRendererSpecificationP rendererOverride = nullptr,
-        PropertyEditorSpecificationP editorOverride = nullptr, std::unique_ptr<PropertyCategoryIdentifier> categoryId = nullptr, Nullable<Utf8String> type = nullptr)
+        PropertyEditorSpecificationP editorOverride = nullptr, std::unique_ptr<PropertyCategoryIdentifier> categoryId = nullptr)
         : PrioritizedPresentationKey(priority), m_label(label), m_value(value), m_renderer(rendererOverride),
-        m_editor(editorOverride), m_categoryId(std::move(categoryId)), m_type(type)
+        m_editor(editorOverride), m_categoryId(std::move(categoryId))
         {}
     CalculatedPropertiesSpecification(Utf8String label, int priority, Utf8CP value = nullptr, Utf8CP type = nullptr)
         : PrioritizedPresentationKey(priority), m_label(label), m_value(value ? Nullable<Utf8String>(value) : Nullable<Utf8String>(nullptr)), m_renderer(nullptr),
