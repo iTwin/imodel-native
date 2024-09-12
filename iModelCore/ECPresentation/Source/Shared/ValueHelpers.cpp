@@ -66,10 +66,10 @@ BentleyStatus ValueHelpers::GetEnumPropertyDisplayValue(Utf8StringR displayValue
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ValueHelpers::ParsePrimitiveType(PrimitiveType& primitiveType, Utf8StringCR typeName)
+BentleyStatus ValueHelpers::ParsePrimitiveType(PrimitiveType& primitiveType, Utf8StringCR typeName)
     {
     if (typeName.empty())
-        return ECObjectsStatus::ParseError;
+        return BentleyStatus::ERROR;
 
     if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_STRING))
         primitiveType = PRIMITIVETYPE_String;
@@ -94,9 +94,9 @@ ECObjectsStatus ValueHelpers::ParsePrimitiveType(PrimitiveType& primitiveType, U
     else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_IGEOMETRY))
         primitiveType = PRIMITIVETYPE_IGeometry;
     else
-        return ECObjectsStatus::ParseError;
+        return BentleyStatus::ERROR;
 
-    return ECObjectsStatus::Success;
+    return BentleyStatus::SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**

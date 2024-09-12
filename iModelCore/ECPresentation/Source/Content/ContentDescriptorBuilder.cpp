@@ -349,7 +349,7 @@ protected:
         PrimitiveType primitiveType;
         if (spec.GetType().IsValid())
             {
-            if (ECObjectsStatus::Success != ValueHelpers::ParsePrimitiveType(primitiveType, spec.GetType().Value()))
+            if (BentleyStatus::SUCCESS != ValueHelpers::ParsePrimitiveType(primitiveType, spec.GetType().Value()))
                 DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Provided type is not valid primitive type for calculated fields.");
             }
         else

@@ -441,8 +441,8 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
 
         auto iter = GetCache().find(key);
         PrimitiveType requestedTypePrimitive;
-        ECObjectsStatus parseStatus = ValueHelpers::ParsePrimitiveType(requestedTypePrimitive, requestedTypeString);
-        if (parseStatus != ECObjectsStatus::Success)
+        BentleyStatus parseStatus = ValueHelpers::ParsePrimitiveType(requestedTypePrimitive, requestedTypeString);
+        if (parseStatus != BentleyStatus::SUCCESS)
             {
             ctx.SetResultError(Utf8PrintfString("Could not parse provided type. `%s` is malformed.", requestedTypePrimitive).c_str());
             return;
