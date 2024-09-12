@@ -187,7 +187,6 @@
 #define CALCULATED_PROPERTIES_SPECIFICATION_XML_CHILD_NAME                            "Property"
 #define CALCULATED_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_LABEL                       "Label"
 #define CALCULATED_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_PRIORITY                    "Priority"
-#define CALCULATED_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_TYPE						  "Type"
 
 // Content: Property Editors
 #define PROPERTY_EDITORS_SPECIFICATION_XML_NODE_NAME                                  "PropertyEditors"

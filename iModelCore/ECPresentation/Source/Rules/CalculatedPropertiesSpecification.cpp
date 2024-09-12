@@ -67,14 +67,6 @@ bool CalculatedPropertiesSpecification::_ReadXml(BeXmlNodeP xmlNode)
         return true;
 
     SetValue(value.c_str());
-
-    Utf8String type;
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(type, CALCULATED_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_TYPE) || type.empty())
-        return true;
-
-    SetType(type.c_str());
-
-    SetValue(value.c_str());
     return true;
     }
 
