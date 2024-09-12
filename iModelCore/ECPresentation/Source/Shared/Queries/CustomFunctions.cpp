@@ -473,15 +473,15 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
             iter = GetCache().Insert(key, std::make_shared<ECValue>(value)).first;
             }
 
-        double expressionResultJulianDay;
-        Utf8String expressionResultStr;
-
         switch (requestedTypePrimitive)
             {
             case (PRIMITIVETYPE_String):
+                {
+                Utf8String expressionResultStr;
                 iter->second->ConvertPrimitiveToString(expressionResultStr);
                 ctx.SetResultText(expressionResultStr.c_str(), expressionResultStr.size(), BeSQLite::DbFunction::Context::CopyData::Yes);
                 break;
+                }
             case (PRIMITIVETYPE_Integer):
                 ctx.SetResultInt(iter->second->GetInteger());
                 break;
@@ -495,9 +495,12 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
                 ctx.SetResultDouble(iter->second->GetDouble());
                 break;
             case (PRIMITIVETYPE_DateTime):
+                {
+                double expressionResultJulianDay;
                 iter->second->GetDateTime().ToJulianDay(expressionResultJulianDay);
                 ctx.SetResultDouble(expressionResultJulianDay);
                 break;
+                }
             default:
                 ctx.SetResultError(Utf8PrintfString("Provided type `%s` is not supported", requestedTypePrimitive).c_str());
                 break;
