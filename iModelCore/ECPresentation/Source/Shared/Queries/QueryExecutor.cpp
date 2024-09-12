@@ -132,7 +132,7 @@ DbResult QueryExecutorHelper::Step(ECSqlStatement& statement)
         Utf8String lastError = statement.GetDataSourceDb()->GetLastError();
         if (!lastError.empty())
             {
-            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Encountered unexpected db result: %s code: %d", lastError.c_str(), (int)result));
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Encountered unexpected db result: %s, code: %d", lastError.c_str(), (int)result));
             }
         else
             {

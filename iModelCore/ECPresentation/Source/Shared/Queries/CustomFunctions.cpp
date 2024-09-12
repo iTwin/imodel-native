@@ -458,7 +458,7 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
 
             if (!value.ConvertToPrimitiveType(requestedTypePrimitive))
                 {
-                ctx.SetResultError(Utf8PrintfString("Calculated property couldn't be converted to requested type").c_str());
+                ctx.SetResultError(Utf8PrintfString("Calculated property evaluated to a type that couldn't be converted to requested type").c_str());
                 return;
                 }
 
