@@ -19,7 +19,7 @@ struct ECSqlFieldFactory final
         ECSqlFieldFactory() = delete;
         ~ECSqlFieldFactory() = delete;
 
-        static ECSqlStatus CreateField(ECSqlPrepareContext&, ECSqlSelectPreparedStatement&, int sqlColumnIndex, ECSqlColumnInfo const&, ValueExp const&);
+        static ECSqlStatus CreateField(ECSqlPrepareContext&, ECSqlSelectPreparedStatement&, int sqlColumnIndex, ECSqlColumnInfo const&, ComputedExp const&);
         static ECSqlStatus CreateNullField(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, ECSqlColumnInfo const&);
         static ECSqlStatus CreatePrimitiveField(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, ECSqlColumnInfo const&, ECN::PrimitiveType);
         static ECSqlStatus CreateStructField(std::unique_ptr<ECSqlField>&, int& sqlColumnIndex, ECSqlPrepareContext&, ECSqlColumnInfo const&, ECN::ECStructClassCR);
