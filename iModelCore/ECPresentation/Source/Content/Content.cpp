@@ -1038,11 +1038,23 @@ bvector<InstanceLabelOverrideCP> ContentDescriptor::DisplayLabelField::CloneLabe
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::CalculatedPropertyField::_CreateTypeDescription() const
     {
-    if (m_type == PRIMITIVETYPE_Point3d || m_type == PRIMITIVETYPE_Point2d ||
-        m_type == PRIMITIVETYPE_Binary || m_type == PRIMITIVETYPE_IGeometry)
-        return new PrimitiveTypeDescription(EC_PRIMITIVE_TYPENAME_STRING);
-
-    return new PrimitiveTypeDescription(ValueHelpers::PrimitiveTypeAsString(m_type));
+    switch (m_type)
+        {
+        case PRIMITIVETYPE_String:
+            return new PrimitiveTypeDescription(EC_PRIMITIVE_TYPENAME_STRING);
+        case PRIMITIVETYPE_Integer:
+            return new PrimitiveTypeDescription(EC_PRIMITIVE_TYPENAME_INTEGER);
+        case PRIMITIVETYPE_Boolean:
+            return new PrimitiveTypeDescription(EC_PRIMITIVE_TYPENAME_BOOLEAN);
+        case PRIMITIVETYPE_Long:
+            return new PrimitiveTypeDescription(EC_PRIMITIVE_TYPENAME_LONG);
+        case PRIMITIVETYPE_DateTime:
+            return new PrimitiveTypeDescription(EC_PRIMITIVE_TYPENAME_DATETIME);
+        case PRIMITIVETYPE_Double:
+            return new PrimitiveTypeDescription(EC_PRIMITIVE_TYPENAME_DOUBLE);
+        default:
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Unsupported primitive type provided");
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
