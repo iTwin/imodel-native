@@ -61,8 +61,10 @@ struct DerivedPropertyExp final : Exp
 
     public:
         DerivedPropertyExp(std::unique_ptr<ValueExp> valueExp, Utf8CP columnAlias);
+        DerivedPropertyExp(std::unique_ptr<BooleanExp> booleanExp, Utf8CP columnAlias);
 
-        ValueExp const* GetExpression() const { return GetChild<ValueExp>(0); }
+        template<typename T>
+        T const* GetExpression() const;
         Utf8String GetName() const;
 
         Utf8StringCR GetColumnAlias() const;

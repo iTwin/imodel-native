@@ -286,6 +286,8 @@ private:
     BentleyStatus ParseValueCreationFuncExp(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const *) const;
     BentleyStatus ParseNavValueCreationFuncExp(std::unique_ptr<NavValueCreationFuncExp>&, connectivity::OSQLParseNode const *) const;
 
+    bool CheckIfKnownValueExpType(connectivity::OSQLParseNode const*) const;
+
     static BentleyStatus ParsePolymorphicConstraint(PolymorphicInfo& constraint, connectivity::OSQLParseNode const* parseNode);
     static BentleyStatus ParseALLorONLY(PolymorphicInfo& constraint, connectivity::OSQLParseNode const* parseNode);
     IssueDataSource const& Issues() const { BeAssert(m_context != nullptr); return m_context->Issues(); }

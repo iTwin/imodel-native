@@ -240,7 +240,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
         return ECSqlStatus::Error;
         }
 
-    ValueExp const* referencedValueExp = referencedDerivedPropertyExp.GetExpression();
+    ComputedExp const* referencedValueExp = referencedDerivedPropertyExp.GetExpression<ComputedExp>();
     //1. Exp-> PropertyName    useSameColumnNames
     //2. Exp-> ValueExpr       useAlias
     //3. Exp-> ScalarQuery     useAlias
