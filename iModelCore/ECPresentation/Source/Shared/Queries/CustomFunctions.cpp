@@ -450,10 +450,15 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
 
             ECValue value;
             ECExpressionsCache noCache;
-            if (!ECExpressionsHelper(noCache).EvaluateECExpression(value, expression, *expressionContext) || !value.IsPrimitive() || !value.ConvertToPrimitiveType(requestedTypePrimitive))
+            if (!ECExpressionsHelper(noCache).EvaluateECExpression(value, expression, *expressionContext) || !value.IsPrimitive())
                 {  
                 ctx.SetResultError(Utf8PrintfString("Calculated property evaluated to a type that is not primitive").c_str());
+                return;
+                }
 
+            if (!value.ConvertToPrimitiveType(requestedTypePrimitive))
+                {
+                ctx.SetResultError(Utf8PrintfString("Calculated property couldn't be converted to requested type").c_str());
                 return;
                 }
 
