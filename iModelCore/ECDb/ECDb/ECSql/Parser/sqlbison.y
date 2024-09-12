@@ -2392,6 +2392,12 @@ derived_column:
             $$->append($1);
             $$->append($2);
         }
+    |    search_condition as_clause
+        {
+            $$ = SQL_NEW_RULE;
+            $$->append($1);
+            $$->append($2);
+        }
     ;
 
 
