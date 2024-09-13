@@ -87,7 +87,7 @@ T const* DerivedPropertyExp::GetExpression() const
         return static_cast<T const*>(child);
     return nullptr; 
     }
-// As DerivedPropertyExp can have children of one of these two type ValueExp or BooleanExp so only GetExpression<ValueExp> or GetExpression<BooleanExp> or GetExpression<ComputedExp> is allowed. DON'T USE ANYTHING ELSE.
+// As DerivedPropertyExp can have children of one of these two types ValueExp or BooleanExp so only GetExpression<ValueExp> or GetExpression<BooleanExp> or GetExpression<ComputedExp> is allowed. DON'T USE ANYTHING ELSE.
 template ComputedExp const* DerivedPropertyExp::GetExpression<ComputedExp>() const;
 template ValueExp const* DerivedPropertyExp::GetExpression<ValueExp>() const;
 template BooleanExp const* DerivedPropertyExp::GetExpression<BooleanExp>() const;
@@ -1173,7 +1173,7 @@ T const* SubqueryExp::GetQuery() const {
         return static_cast<T const*>(child);
     return nullptr; 
     }
-// As subquery can be one of these two type CommonTableExp or SelectStatementExp so only GetQuery<SelectStatementExp> or GetQuery<CommonTableExp> is allowed. DON'T USE ANYTHING ELSE.
+// As subquery can be one of these two types CommonTableExp or SelectStatementExp so only GetQuery<SelectStatementExp> or GetQuery<CommonTableExp> is allowed. DON'T USE ANYTHING ELSE.
 template CommonTableExp const* SubqueryExp::GetQuery<CommonTableExp>() const;
 template SelectStatementExp const* SubqueryExp::GetQuery<SelectStatementExp>() const;
 //-----------------------------------------------------------------------------------------
