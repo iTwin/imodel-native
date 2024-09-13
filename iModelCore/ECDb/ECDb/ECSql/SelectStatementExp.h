@@ -383,10 +383,12 @@ struct SingleSelectStatementExp final : QueryExp
         bool IsCoreSelect() const { return m_limitOffsetClauseIndex == UNSET_CHILDINDEX && m_optionsClauseIndex == UNSET_CHILDINDEX; }
     };
 
+
 //********* QueryExp subclasses ***************************
 //=======================================================================================
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
+struct CommonTableExp; // Forward Declared for SubqueryExp constructor
 struct SelectStatementExp;
 struct SubqueryExp final : QueryExp
     {
