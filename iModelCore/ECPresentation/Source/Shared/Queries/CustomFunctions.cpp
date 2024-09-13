@@ -414,8 +414,8 @@ struct ECExpressionScalarCacheKey
         {
         return m_classId < other.m_classId
             || m_classId == other.m_classId && m_instanceId < other.m_instanceId
-            || m_classId == other.m_classId && m_instanceId == other.m_instanceId && m_expression.CompareTo(other.m_expression) < 0
-            || m_classId == other.m_classId && m_instanceId == other.m_instanceId && m_expression.CompareTo(other.m_expression) == 0 && (int)m_type < (int)other.m_type;
+            || m_classId == other.m_classId && m_instanceId == other.m_instanceId && (int)m_type < (int)other.m_type
+            || m_classId == other.m_classId && m_instanceId == other.m_instanceId && (int)m_type == (int)other.m_type && m_expression.CompareTo(other.m_expression) < 0;
         }
     };
 
@@ -476,12 +476,8 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
         switch (requestedTypePrimitive)
             {
             case (PRIMITIVETYPE_String):
-                {
-                Utf8String expressionResultStr;
-                iter->second->ConvertPrimitiveToString(expressionResultStr);
-                ctx.SetResultText(expressionResultStr.c_str(), expressionResultStr.size(), BeSQLite::DbFunction::Context::CopyData::Yes);
+                ctx.SetResultText(iter->second->GetUtf8CP(), std::strlen(iter->second->GetUtf8CP()), BeSQLite::DbFunction::Context::CopyData::Yes);
                 break;
-                }
             case (PRIMITIVETYPE_Integer):
                 ctx.SetResultInt(iter->second->GetInteger());
                 break;

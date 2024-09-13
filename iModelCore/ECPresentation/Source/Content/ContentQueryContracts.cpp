@@ -6,7 +6,6 @@
 #include "ContentQueryContracts.h"
 #include "../Shared/Queries/CustomFunctions.h"
 #include "../Shared/Queries/QueryBuilderHelpers.h"
-#include "../Rules/PresentationRuleJsonConstants.h"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod

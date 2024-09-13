@@ -6,7 +6,6 @@
 #include <regex>
 #include "ContentItemBuilder.h"
 #include "../Shared/ValueHelpers.h"
-#include "../Rules/PresentationRuleJsonConstants.h"
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 

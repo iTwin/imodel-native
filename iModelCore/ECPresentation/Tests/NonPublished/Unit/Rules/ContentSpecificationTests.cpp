@@ -224,7 +224,7 @@ TEST_F(ContentSpecificationsTests, LoadFromXml_NoCalculatedPropertiesLoadedWhenL
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ContentSpecificationsTests, LoadFromXml_CalculatedPropertiesLoadedWhenValueForCalculatedPropertyIsNotSpecified)
+TEST_F(ContentSpecificationsTests, LoadFromXml_NoCalculatedPropertiesLoadedWhenValueForCalculatedPropertyIsNotSpecified)
     {
     static Utf8CP xmlString = R"(
         <TestSpecification Priority="123" ShowImages="true">

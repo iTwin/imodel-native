@@ -302,10 +302,9 @@ TEST_F(CustomFunctionTests, EvaluateECExpression)
     stmt.Finalize();
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, longExpression, IECSqlBinder::MakeCopy::No));
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_String));
-    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    //12345678987 requires 5 bytes to store data, int uses the right most 4 bytes, so the value becomes -539222901
-    ASSERT_EQ(-539222901, stmt.GetValueInt(0));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_Integer));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ERROR == stmt.Step());
+    ASSERT_STREQ(errorMessage, stmt.GetDataSourceDb()->GetLastError().c_str());
 
     stmt.Finalize();
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
