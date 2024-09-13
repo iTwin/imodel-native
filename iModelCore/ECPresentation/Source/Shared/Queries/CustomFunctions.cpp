@@ -409,11 +409,13 @@ struct ECExpressionScalarCacheKey
     ECClassId m_classId;
     ECInstanceId m_instanceId;
     Utf8String m_expression;
+    PrimitiveType m_type;
     bool operator<(ECExpressionScalarCacheKey const& other) const
         {
         return m_classId < other.m_classId
             || m_classId == other.m_classId && m_instanceId < other.m_instanceId
-            || m_classId == other.m_classId && m_instanceId == other.m_instanceId && m_expression.CompareTo(other.m_expression) < 0;
+            || m_classId == other.m_classId && m_instanceId == other.m_instanceId && m_expression.CompareTo(other.m_expression) < 0
+            || m_classId == other.m_classId && m_instanceId == other.m_instanceId && m_expression.CompareTo(other.m_expression) == 0 && (int)m_type < (int)other.m_type;
         }
     };
 
@@ -437,7 +439,7 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
         ECInstanceId instanceId = args[1].GetValueId<ECInstanceId>();
         Utf8CP expression = args[2].GetValueText();
         PrimitiveType requestedTypePrimitive = (PrimitiveType)args[3].GetValueInt();
-        ECExpressionScalarCacheKey key = {classId, instanceId, expression};
+        ECExpressionScalarCacheKey key = {classId, instanceId, expression, requestedTypePrimitive};
 
         auto iter = GetCache().find(key);
 
