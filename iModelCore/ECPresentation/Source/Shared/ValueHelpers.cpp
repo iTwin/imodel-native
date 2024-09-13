@@ -69,7 +69,7 @@ BentleyStatus ValueHelpers::GetEnumPropertyDisplayValue(Utf8StringR displayValue
 BentleyStatus ValueHelpers::ParsePrimitiveType(PrimitiveType& primitiveType, Utf8StringCR typeName)
     {
     if (typeName.empty())
-        return BentleyStatus::ERROR;
+        return ERROR;
 
     if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_STRING))
         primitiveType = PRIMITIVETYPE_String;
@@ -94,9 +94,9 @@ BentleyStatus ValueHelpers::ParsePrimitiveType(PrimitiveType& primitiveType, Utf
     else if (typeName.EqualsIAscii(EC_PRIMITIVE_TYPENAME_IGEOMETRY))
         primitiveType = PRIMITIVETYPE_IGeometry;
     else
-        return BentleyStatus::ERROR;
+        return ERROR;
 
-    return BentleyStatus::SUCCESS;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
