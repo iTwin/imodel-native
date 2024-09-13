@@ -332,6 +332,7 @@ ECSqlStatus ECSqlSelectPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::Lis
         }
     else
         {
+        // Either the DerivedPropertyExp will have a child of type ValueExp or BooleanExp 
         if(innerValueExp != nullptr)
             {
              ECSqlStatus status = ECSqlExpPreparer::PrepareValueExp(nativeSqlSnippets, ctx, *innerValueExp);
