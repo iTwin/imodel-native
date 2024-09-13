@@ -19,11 +19,11 @@ struct CalculatedPropertiesSpecification : PrioritizedPresentationKey
 
 private:
     Utf8String m_label;
-    Nullable<Utf8String> m_value;
+    Utf8String m_value;
     CustomRendererSpecificationCP m_renderer;
     PropertyEditorSpecificationCP m_editor;
     std::unique_ptr<PropertyCategoryIdentifier> m_categoryId;
-    Nullable<Utf8String> m_type;
+    Utf8String m_type;
 
 protected:
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
@@ -44,9 +44,9 @@ public:
         : PrioritizedPresentationKey(priority), m_label(label), m_value(value), m_renderer(rendererOverride),
         m_editor(editorOverride), m_categoryId(std::move(categoryId))
         {}
-    CalculatedPropertiesSpecification(Utf8String label, int priority, Utf8CP value = nullptr, Utf8CP type = nullptr)
-        : PrioritizedPresentationKey(priority), m_label(label), m_value(value ? Nullable<Utf8String>(value) : Nullable<Utf8String>(nullptr)), m_renderer(nullptr),
-        m_editor(nullptr), m_categoryId(std::move(nullptr)), m_type(type ? Nullable<Utf8String>(type) : Nullable<Utf8String>(nullptr))
+    CalculatedPropertiesSpecification(Utf8String label, int priority, Utf8String value, Utf8String type)
+        : PrioritizedPresentationKey(priority), m_label(label), m_value(value), m_renderer(nullptr),
+        m_editor(nullptr), m_categoryId(std::move(nullptr)), m_type(type)
         {}
     ECPRESENTATION_EXPORT CalculatedPropertiesSpecification(CalculatedPropertiesSpecification const& other);
     ECPRESENTATION_EXPORT CalculatedPropertiesSpecification(CalculatedPropertiesSpecification&& other);
@@ -57,8 +57,8 @@ public:
     void SetLabel(Utf8String label) { m_label = label; InvalidateHash(); }
 
     //! Get property value expression.
-    Nullable<Utf8String> const& GetValue() const {return m_value;}
-    void SetValue(Utf8CP value) { m_value = value ? Utf8String(value) : nullptr; InvalidateHash(); }
+    Utf8StringCR GetValue() const {return m_value;}
+    void SetValue(Utf8String value) { m_value = value; InvalidateHash(); }
 
     CustomRendererSpecificationCP GetRenderer() const { return m_renderer; }
     ECPRESENTATION_EXPORT void SetRenderer(CustomRendererSpecificationP renderer);
@@ -69,8 +69,8 @@ public:
     PropertyCategoryIdentifier const* GetCategoryId() const { return m_categoryId.get(); }
     void SetCategoryId(std::unique_ptr<PropertyCategoryIdentifier> categoryId) { m_categoryId = std::move(categoryId); InvalidateHash(); }
 
-    Nullable<Utf8String> const& GetType() const { return m_type; }
-    void SetType(Utf8CP type) { m_type = type ? Utf8String(type) : nullptr; InvalidateHash(); }
+    Utf8StringCR GetType() const { return m_type; }
+    void SetType(Utf8String type) { m_type = type; InvalidateHash(); }
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

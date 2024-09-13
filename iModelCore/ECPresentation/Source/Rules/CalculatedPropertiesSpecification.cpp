@@ -63,11 +63,9 @@ bool CalculatedPropertiesSpecification::_ReadXml(BeXmlNodeP xmlNode)
         return false;
         }
 
-    Utf8String value;
-    if (BEXML_Success != xmlNode->GetContent(value) || value.empty())
-        return true;
+    if (BEXML_Success != xmlNode->GetContent(m_value) || m_value.empty())
+        return false;
 
-    SetValue(value.c_str());
     return true;
     }
 
@@ -78,8 +76,8 @@ void CalculatedPropertiesSpecification::_WriteXml(BeXmlNodeP xmlNode) const
     {
     PrioritizedPresentationKey::_WriteXml(xmlNode);
     xmlNode->AddAttributeStringValue(CALCULATED_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_LABEL, m_label.c_str());
-    if (m_value.IsValid())
-        xmlNode->SetContentFast(m_value.Value().c_str());
+    if (!m_value.empty())
+        xmlNode->SetContentFast(m_value.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -99,11 +97,9 @@ bool CalculatedPropertiesSpecification::_ReadJson(BeJsConst json)
     m_label = json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_LABEL].asCString("");
     if (json.hasMember(CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_TYPE))
         m_type = json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_TYPE].asCString("");
-    else
-        m_type = nullptr;
 
-    bool typeHasIssues = m_type.IsValid() && m_type.Value() != EC_PRIMITIVE_TYPENAME_BOOLEAN && m_type.Value() != EC_PRIMITIVE_TYPENAME_BOOL && m_type.Value() != EC_PRIMITIVE_TYPENAME_STRING &&
-        m_type.Value() != EC_PRIMITIVE_TYPENAME_INTEGER && m_type.Value() != EC_PRIMITIVE_TYPENAME_LONG && m_type.Value() != EC_PRIMITIVE_TYPENAME_DATETIME && m_type.Value() != EC_PRIMITIVE_TYPENAME_DOUBLE;
+    bool typeHasIssues = !m_type.empty() && m_type != EC_PRIMITIVE_TYPENAME_BOOLEAN && m_type != EC_PRIMITIVE_TYPENAME_BOOL && m_type != EC_PRIMITIVE_TYPENAME_STRING &&
+        m_type != EC_PRIMITIVE_TYPENAME_INTEGER && m_type != EC_PRIMITIVE_TYPENAME_LONG && m_type != EC_PRIMITIVE_TYPENAME_DATETIME && m_type != EC_PRIMITIVE_TYPENAME_DOUBLE;
     bool hasIssues = false
         || CommonToolsInternal::CheckRuleIssue(m_label.empty(), _GetJsonElementType(), CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_LABEL, json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_LABEL], "non-empty string")
         || CommonToolsInternal::CheckRuleIssue(typeHasIssues, _GetJsonElementType(), CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_TYPE, json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_TYPE], "valid type");
@@ -112,8 +108,6 @@ bool CalculatedPropertiesSpecification::_ReadJson(BeJsConst json)
 
     if (json.hasMember(CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_VALUE))
         m_value = json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_VALUE].asCString("");
-    else
-        m_value = nullptr;
 
     if (json.hasMember(CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYID))
         m_categoryId = PropertyCategoryIdentifier::Create(json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYID]);
@@ -133,10 +127,10 @@ void CalculatedPropertiesSpecification::_WriteJson(BeJsValue json) const
     PrioritizedPresentationKey::_WriteJson(json);
     json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_LABEL] = m_label;
 
-    if (m_value.IsValid())
-        json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_VALUE] = m_value.Value();
-    if (m_type.IsValid())
-        json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_TYPE] = m_type.Value();
+    if (!m_value.empty())
+        json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_VALUE] = m_value;
+    if (!m_type.empty())
+        json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_TYPE] = m_type;
     if (nullptr != m_renderer)
         m_renderer->WriteJson(json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_RENDERER]);
     if (nullptr != m_editor)
@@ -183,10 +177,10 @@ MD5 CalculatedPropertiesSpecification::_ComputeHash() const
     MD5 md5 = T_Super::_ComputeHash();
     if (!m_label.empty())
         ADD_STR_VALUE_TO_HASH(md5, CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_LABEL, m_label);
-    if (m_value.IsValid() && !m_value.Value().empty())
-        ADD_STR_VALUE_TO_HASH(md5, CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_VALUE, m_value.Value());
-    if (m_type.IsValid() && !m_type.Value().empty())
-        ADD_STR_VALUE_TO_HASH(md5, CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_TYPE, m_type.Value());
+    if (!m_value.empty())
+        ADD_STR_VALUE_TO_HASH(md5, CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_VALUE, m_value);
+    if (!m_type.empty())
+        ADD_STR_VALUE_TO_HASH(md5, CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_TYPE, m_type);
     if (nullptr != m_renderer)
         ADD_STR_VALUE_TO_HASH(md5, CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_RENDERER, m_renderer->GetHash());
     if (nullptr != m_editor)

@@ -744,7 +744,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
     {
     private:
         int m_priority;
-        Nullable<Utf8String> m_valueExpression;
+        Utf8String m_valueExpression;
         ECClassCP m_class;
         Utf8String m_requestedName;
         PrimitiveType m_type;
@@ -767,15 +767,15 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! @param[in] valueExpression Value ECExpression.
         //! @param[in] ecClass Entity class this field is intended for.
         //! @param[in] priority Field priority.
-        CalculatedPropertyField(std::shared_ptr<Category const> category, Utf8String label, Utf8String name, Utf8CP valueExpression, PrimitiveType type, ECClassCP ecClass, int priority = Property::DEFAULT_PRIORITY)
-        : Field(category, label), m_requestedName(name), m_valueExpression(valueExpression ? Nullable<Utf8String>(valueExpression) : Nullable<Utf8String>(nullptr)), m_class(ecClass), m_priority(priority),
+        CalculatedPropertyField(std::shared_ptr<Category const> category, Utf8String label, Utf8String name, Utf8String valueExpression, PrimitiveType type, ECClassCP ecClass, int priority = Property::DEFAULT_PRIORITY)
+        : Field(category, label), m_requestedName(name), m_valueExpression(valueExpression), m_class(ecClass), m_priority(priority),
             m_type(type)
             {}
 
         Utf8StringCR GetRequestedName() const {return m_requestedName;}
 
         //! Get the ECExpression used to calculate field's value.
-        Nullable<Utf8String> const& GetValueExpression() const {return m_valueExpression;}
+        Utf8StringCR GetValueExpression() const {return m_valueExpression;}
 
         //! Get the ECExpression return type..
         PrimitiveType const GetType() const {return m_type;}

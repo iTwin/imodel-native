@@ -3144,7 +3144,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label1", 1000, "\"Value\""));
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1100, "1+2"));
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label3", 1200, "this.Property"));
-    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("noValueLabel", 1000));
+    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("noValueLabel", 1000, ""));
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("integerType", 1000, "2*3","int"));
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("booleanType", 1000, "2 > 3", "boolean"));
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("doubleType", 1000, "1/4", "double"));

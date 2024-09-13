@@ -66,12 +66,12 @@ ContentQueryContract::ContentQueryContract(uint64_t id, ContentDescriptorCR desc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQueryContractFieldCPtr ContentQueryContract::GetCalculatedPropertyField(Utf8StringCR calculatedFieldName, Nullable<Utf8String> const& calculatedPropertyValue, Utf8StringCR prefix, PrimitiveType type) const
+PresentationQueryContractFieldCPtr ContentQueryContract::GetCalculatedPropertyField(Utf8StringCR calculatedFieldName, Utf8StringCR calculatedPropertyValue, Utf8StringCR prefix, PrimitiveType type) const
     {
     PresentationQueryContractFieldPtr field;
-    if (calculatedPropertyValue.IsValid())
+    if (!calculatedPropertyValue.empty())
         {
-        Utf8String value = "'" + calculatedPropertyValue.Value() + "'";
+        Utf8String value = "'" + calculatedPropertyValue + "'";
         Utf8String fieldType = std::to_string((int)type).c_str();
         field = PresentationQueryContractFunctionField::Create(calculatedFieldName.c_str(), FUNCTION_NAME_EvaluateECExpression,
         CreateFieldsList("ECClassId", "ECInstanceId", value, fieldType));

@@ -225,7 +225,6 @@ TEST_F(CustomFunctionTests, GetECClassDisplayLabel_UsesLabelOverride)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CustomFunctionTests, EvaluateECExpression)
     {
-
     m_ruleset->AddPresentationRule(*new LabelOverride("ThisNode.ClassName = \"Widget\"", 1, "this.MyID", ""));
 
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, m_ruleset->GetRuleSetId(), *m_rulesPreprocessor, m_rulesetVariables, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
@@ -234,12 +233,272 @@ TEST_F(CustomFunctionTests, EvaluateECExpression)
     ECInstanceUpdater updater(GetDb(), *m_widgetInstance, nullptr);
     ASSERT_EQ(BE_SQLITE_OK, updater.Update(*m_widgetInstance));
 
+    Utf8CP dateTimeExpression = "@638616960000000000";
+    Utf8CP booleanExpression = "2 < 3";
+    Utf8CP intExpression = "1+3";
+    Utf8CP longExpression = "12345678987*1";
+    Utf8CP doubleExpression = "10/4";
+    Utf8CP stringExpression = "this.MyID & \"Calculated_Label_\" & 2";
+    Utf8CP errorMessage = "Calculated property evaluated to a type that couldn't be converted to requested type (BE_SQLITE_ERROR)";
+
+    // verify it works when converting to string
     ECSqlStatement stmt;
     ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, "this.MyID & \"Calculated_Label_\" & 2", IECSqlBinder::MakeCopy::No));
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(2, "string", IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, stringExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_String));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     ASSERT_STREQ("TestCalculated_Label_2", stmt.GetValueText(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, intExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_String));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    ASSERT_STREQ("4", stmt.GetValueText(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, longExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_String));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    ASSERT_STREQ("12345678987", stmt.GetValueText(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, booleanExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_String));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    ASSERT_STREQ("True", stmt.GetValueText(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, doubleExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_String));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    ASSERT_STREQ("2.5", stmt.GetValueText(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, dateTimeExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_String));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    ASSERT_STREQ("2024-09-12T00:00:00.000", stmt.GetValueText(0));
+
+    // verify it works when converting to int
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, stringExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_Integer));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ERROR == stmt.Step());
+    ASSERT_STREQ(errorMessage, stmt.GetDataSourceDb()->GetLastError().c_str());
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, intExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_Integer));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    ASSERT_EQ(4, stmt.GetValueInt(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, longExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_String));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    //12345678987 requires 5 bytes to store data, int uses the right most 4 bytes, so the value becomes -539222901
+    ASSERT_EQ(-539222901, stmt.GetValueInt(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, booleanExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_Integer));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, doubleExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_Integer));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    ASSERT_EQ(3, stmt.GetValueInt(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, dateTimeExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_Integer));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ERROR == stmt.Step());
+    ASSERT_STREQ(errorMessage, stmt.GetDataSourceDb()->GetLastError().c_str());
+
+    // verify it works when converting to long
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, stringExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_Long));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ERROR == stmt.Step());
+    ASSERT_STREQ(errorMessage, stmt.GetDataSourceDb()->GetLastError().c_str());
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, intExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_Long));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    ASSERT_EQ(4, stmt.GetValueInt64(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, longExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_Long));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    ASSERT_EQ(12345678987, stmt.GetValueInt64(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, booleanExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_Long));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueInt64(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, doubleExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_Long));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    ASSERT_EQ(3, stmt.GetValueInt64(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, dateTimeExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_Long));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ERROR == stmt.Step());
+    ASSERT_STREQ(errorMessage, stmt.GetDataSourceDb()->GetLastError().c_str());
+
+    // verify it works when converting to boolean
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, stringExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_Boolean));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ERROR == stmt.Step());
+    ASSERT_STREQ(errorMessage, stmt.GetDataSourceDb()->GetLastError().c_str());
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, intExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_Boolean));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    ASSERT_TRUE(stmt.GetValueBoolean(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, longExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_Boolean));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    ASSERT_TRUE(stmt.GetValueBoolean(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, booleanExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_Boolean));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    ASSERT_TRUE(stmt.GetValueBoolean(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, doubleExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_Boolean));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    ASSERT_TRUE(stmt.GetValueBoolean(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, dateTimeExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_Boolean));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ERROR == stmt.Step());
+    ASSERT_STREQ(errorMessage, stmt.GetDataSourceDb()->GetLastError().c_str());
+
+    // verify it works when converting to double
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, stringExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_Double));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ERROR == stmt.Step());
+    ASSERT_STREQ(errorMessage, stmt.GetDataSourceDb()->GetLastError().c_str());
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, intExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_Double));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    ASSERT_EQ(4, stmt.GetValueDouble(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, longExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_Double));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    ASSERT_EQ(12345678987, stmt.GetValueDouble(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, booleanExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_Double));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    ASSERT_EQ(1, stmt.GetValueDouble(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, doubleExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_Double));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    ASSERT_EQ(2.5, stmt.GetValueDouble(0));
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, dateTimeExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_Double));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ERROR == stmt.Step());
+    ASSERT_STREQ(errorMessage, stmt.GetDataSourceDb()->GetLastError().c_str());
+
+    // verify it works when converting to dateTime
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, stringExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_DateTime));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ERROR == stmt.Step());
+    ASSERT_STREQ(errorMessage, stmt.GetDataSourceDb()->GetLastError().c_str());
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, intExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_DateTime));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ERROR == stmt.Step());
+    ASSERT_STREQ(errorMessage, stmt.GetDataSourceDb()->GetLastError().c_str());
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, longExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_DateTime));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ERROR == stmt.Step());
+    ASSERT_STREQ(errorMessage, stmt.GetDataSourceDb()->GetLastError().c_str());
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, booleanExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_DateTime));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ERROR == stmt.Step());
+    ASSERT_STREQ(errorMessage, stmt.GetDataSourceDb()->GetLastError().c_str());
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, doubleExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_DateTime));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ERROR == stmt.Step());
+    ASSERT_STREQ(errorMessage, stmt.GetDataSourceDb()->GetLastError().c_str());
+
+    stmt.Finalize();
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT EvaluateECExpression(ECClassId, ECInstanceId, ?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, dateTimeExpression, IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(2, (int)PRIMITIVETYPE_DateTime));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    ASSERT_STREQ("2024-09-12T00:00:00.000", stmt.GetValueDateTime(0).ToString().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

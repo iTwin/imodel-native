@@ -73,8 +73,8 @@ TEST_F(CalculatedPropertiesSpecificationTests, LoadsFromJson)
     CalculatedPropertiesSpecification spec;
     EXPECT_TRUE(spec.ReadJson(json));
     EXPECT_STREQ("calculated property", spec.GetLabel().c_str());
-    EXPECT_STREQ("calculated value", spec.GetValue().Value().c_str());
-    EXPECT_STREQ("string", spec.GetType().Value().c_str());
+    EXPECT_STREQ("calculated value", spec.GetValue().c_str());
+    EXPECT_STREQ("string", spec.GetType().c_str());
     EXPECT_STREQ("custom renderer", spec.GetRenderer()->GetRendererName().c_str());
     EXPECT_STREQ("custom editor", spec.GetEditor()->GetEditorName().c_str());
     EXPECT_STREQ("categoryId", spec.GetCategoryId()->AsIdIdentifier()->GetCategoryId().c_str());
@@ -111,8 +111,8 @@ TEST_F(CalculatedPropertiesSpecificationTests, LoadsFromJsonWithDefaultValues)
     CalculatedPropertiesSpecification spec;
     EXPECT_TRUE(spec.ReadJson(json));
     EXPECT_STREQ("calculated property", spec.GetLabel().c_str());
-    EXPECT_EQ(nullptr, spec.GetValue());
-    EXPECT_EQ(nullptr, spec.GetType());
+    EXPECT_EQ("", spec.GetValue());
+    EXPECT_EQ("", spec.GetType());
     EXPECT_EQ(nullptr, spec.GetRenderer());
     EXPECT_EQ(nullptr, spec.GetEditor());
     EXPECT_EQ(nullptr, spec.GetCategoryId());
@@ -153,7 +153,7 @@ TEST_F(CalculatedPropertiesSpecificationTests, WriteToJson)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CalculatedPropertiesSpecificationTests, WriteToJsonWithDefaultValues)
     {
-    CalculatedPropertiesSpecification spec("custom label", 123);
+    CalculatedPropertiesSpecification spec("custom label", 123, "");
     BeJsDocument json = spec.WriteJson();
     BeJsDocument expected(R"({
         "label": "custom label",
@@ -188,13 +188,13 @@ TEST_F(CalculatedPropertiesSpecificationTests, ComputesCorrectHashes)
     CalculatedPropertiesSpecification specWithLabelOverride(defaultSpec);
     specWithLabelOverride.SetValue("10");
     EXPECT_STRNE(defaultSpec.GetHash().c_str(), specWithLabelOverride.GetHash().c_str());
-    specWithLabelOverride.SetValue(nullptr);
+    specWithLabelOverride.SetValue("");
     EXPECT_STREQ(defaultSpec.GetHash().c_str(), specWithLabelOverride.GetHash().c_str());
 
     CalculatedPropertiesSpecification specWithTypeOverride(defaultSpec);
     specWithTypeOverride.SetType("string");
     EXPECT_STRNE(defaultSpec.GetHash().c_str(), specWithTypeOverride.GetHash().c_str());
-    specWithTypeOverride.SetType(nullptr);
+    specWithTypeOverride.SetType("");
     EXPECT_STREQ(defaultSpec.GetHash().c_str(), specWithTypeOverride.GetHash().c_str());
 
     CalculatedPropertiesSpecification specWithRendererOverride(defaultSpec);

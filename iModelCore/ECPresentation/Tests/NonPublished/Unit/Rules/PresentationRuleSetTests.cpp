@@ -177,13 +177,13 @@ TEST_F(PresentationRuleSetTests, LoadsFromJsonString)
     CalculatedPropertiesSpecificationP specification1 = ruleSet->GetContentRules()[0]->GetSpecifications()[0]->GetCalculatedProperties()[0];
     EXPECT_EQ("Label1", specification1->GetLabel());
     EXPECT_EQ(1000, specification1->GetPriority());
-    EXPECT_EQ("Value1", specification1->GetValue().Value());
-    EXPECT_EQ("string", specification1->GetType().Value());
+    EXPECT_EQ("Value1", specification1->GetValue());
+    EXPECT_EQ("string", specification1->GetType());
     CalculatedPropertiesSpecificationP specification2 = ruleSet->GetContentRules()[0]->GetSpecifications()[0]->GetCalculatedProperties()[1];
     EXPECT_EQ("Label2", specification2->GetLabel());
     EXPECT_EQ(2000, specification2->GetPriority());
-    EXPECT_EQ("Value2", specification2->GetValue().Value());
-    EXPECT_FALSE(specification2->GetType().IsValid());
+    EXPECT_EQ("Value2", specification2->GetValue());
+    EXPECT_EQ("", specification2->GetType());
 
     ASSERT_EQ(2, ruleSet->GetContentRules().size());
     EXPECT_STREQ("ParentNode.IsClassNode", ruleSet->GetContentRules()[1]->GetCondition().c_str());
@@ -258,13 +258,13 @@ TEST_F(PresentationRuleSetTests, LoadsFromJsonValue)
     CalculatedPropertiesSpecificationP specification1 = ruleSet->GetContentRules()[0]->GetSpecifications()[0]->GetCalculatedProperties()[0];
     EXPECT_EQ("Label1", specification1->GetLabel());
     EXPECT_EQ(1000, specification1->GetPriority());
-    EXPECT_EQ("Value1", specification1->GetValue().Value());
-    EXPECT_EQ("string", specification1->GetType().Value());
+    EXPECT_EQ("Value1", specification1->GetValue());
+    EXPECT_EQ("string", specification1->GetType());
     CalculatedPropertiesSpecificationP specification2 = ruleSet->GetContentRules()[0]->GetSpecifications()[0]->GetCalculatedProperties()[1];
     EXPECT_EQ("Label2", specification2->GetLabel());
     EXPECT_EQ(2000, specification2->GetPriority());
-    EXPECT_EQ("Value2", specification2->GetValue().Value());
-    EXPECT_FALSE(specification2->GetType().IsValid());
+    EXPECT_EQ("Value2", specification2->GetValue());
+    EXPECT_EQ("", specification2->GetType());
 
     EXPECT_EQ(2, ruleSet->GetContentRules().size());
     EXPECT_STREQ("ParentNode.IsClassNode", ruleSet->GetContentRules()[1]->GetCondition().c_str());
@@ -442,11 +442,11 @@ TEST_F(PresentationRuleSetTests, LoadsFromXml)
     CalculatedPropertiesSpecificationP specification1 = ruleSet->GetContentRules()[0]->GetSpecifications()[0]->GetCalculatedProperties()[0];
     EXPECT_EQ("Label1", specification1->GetLabel());
     EXPECT_EQ(1000, specification1->GetPriority());
-    EXPECT_EQ("Value1", specification1->GetValue().Value());
+    EXPECT_EQ("Value1", specification1->GetValue());
     CalculatedPropertiesSpecificationP specification2 = ruleSet->GetContentRules()[0]->GetSpecifications()[0]->GetCalculatedProperties()[1];
     EXPECT_EQ("Label2", specification2->GetLabel());
     EXPECT_EQ(2000, specification2->GetPriority());
-    EXPECT_EQ("Value2", specification2->GetValue().Value());
+    EXPECT_EQ("Value2", specification2->GetValue());
     
     EXPECT_EQ(2, ruleSet->GetContentRules().size());
     EXPECT_STREQ("ParentNode.IsClassNode", ruleSet->GetContentRules()[1]->GetCondition().c_str());

@@ -239,7 +239,7 @@ TEST_F(ContentSpecificationsTests, LoadFromXml_CalculatedPropertiesLoadedWhenVal
 
     TestContentSpecification spec;
     EXPECT_TRUE(spec.ReadXml(xml->GetRootElement()));
-    EXPECT_EQ(1, spec.GetCalculatedProperties().size());
+    EXPECT_EQ(0, spec.GetCalculatedProperties().size());
     }
 
 /*---------------------------------------------------------------------------------**//**
