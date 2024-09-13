@@ -20,7 +20,7 @@ struct CalculatedPropertiesSpecificationTests : PresentationRulesTests
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CalculatedPropertiesSpecificationTests, CopyConstructor)
     {
-    CalculatedPropertiesSpecification source("a", 1, "1");
+    CalculatedPropertiesSpecification source("a", 1, "1", "string");
     source.SetEditor(new PropertyEditorSpecification());
     source.SetRenderer(new CustomRendererSpecification());
     source.SetCategoryId(PropertyCategoryIdentifier::CreateForId("a"));
@@ -37,7 +37,7 @@ TEST_F(CalculatedPropertiesSpecificationTests, CopyConstructor)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CalculatedPropertiesSpecificationTests, MoveConstructor)
     {
-    CalculatedPropertiesSpecification source("a", 1, "1");
+    CalculatedPropertiesSpecification source("a", 1, "1", "string");
     source.SetEditor(new PropertyEditorSpecification());
     source.SetRenderer(new CustomRendererSpecification());
     source.SetCategoryId(PropertyCategoryIdentifier::CreateForId("a"));
@@ -57,6 +57,7 @@ TEST_F(CalculatedPropertiesSpecificationTests, LoadsFromJson)
     static Utf8CP jsonString = R"({
         "label": "calculated property",
         "value": "calculated value",
+        "type": "string",
         "renderer": {
             "rendererName": "custom renderer"
         },
@@ -72,11 +73,28 @@ TEST_F(CalculatedPropertiesSpecificationTests, LoadsFromJson)
     CalculatedPropertiesSpecification spec;
     EXPECT_TRUE(spec.ReadJson(json));
     EXPECT_STREQ("calculated property", spec.GetLabel().c_str());
-    EXPECT_STREQ("calculated value", spec.GetValue().Value().c_str());
+    EXPECT_STREQ("calculated value", spec.GetValue().c_str());
+    EXPECT_STREQ("string", spec.GetType().c_str());
     EXPECT_STREQ("custom renderer", spec.GetRenderer()->GetRendererName().c_str());
     EXPECT_STREQ("custom editor", spec.GetEditor()->GetEditorName().c_str());
     EXPECT_STREQ("categoryId", spec.GetCategoryId()->AsIdIdentifier()->GetCategoryId().c_str());
     EXPECT_EQ(10, spec.GetPriority());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CalculatedPropertiesSpecificationTests, LoadFromJsonFailsWhenTypeIsNotSupported)
+    {
+    static Utf8CP jsonString = R"({
+        "label": "calculated property",
+        "type": "binary"
+    })";
+    BeJsDocument json(jsonString);
+    EXPECT_FALSE(json.isNull());
+
+    CalculatedPropertiesSpecification rule;
+    EXPECT_FALSE(rule.ReadJson(json));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -93,7 +111,8 @@ TEST_F(CalculatedPropertiesSpecificationTests, LoadsFromJsonWithDefaultValues)
     CalculatedPropertiesSpecification spec;
     EXPECT_TRUE(spec.ReadJson(json));
     EXPECT_STREQ("calculated property", spec.GetLabel().c_str());
-    EXPECT_EQ(nullptr, spec.GetValue());
+    EXPECT_EQ("", spec.GetValue());
+    EXPECT_EQ("", spec.GetType());
     EXPECT_EQ(nullptr, spec.GetRenderer());
     EXPECT_EQ(nullptr, spec.GetEditor());
     EXPECT_EQ(nullptr, spec.GetCategoryId());
@@ -105,7 +124,7 @@ TEST_F(CalculatedPropertiesSpecificationTests, LoadsFromJsonWithDefaultValues)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CalculatedPropertiesSpecificationTests, WriteToJson)
     {
-    CalculatedPropertiesSpecification spec("custom label", 123, "custom value");
+    CalculatedPropertiesSpecification spec("custom label", 123, "custom value", "string");
     spec.SetRenderer(new CustomRendererSpecification("custom renderer"));
     spec.SetEditor(new PropertyEditorSpecification("custom editor"));
     spec.SetCategoryId(PropertyCategoryIdentifier::CreateForId("category id"));
@@ -114,6 +133,7 @@ TEST_F(CalculatedPropertiesSpecificationTests, WriteToJson)
         "label": "custom label",
         "priority": 123,
         "value": "custom value",
+        "type": "string",
         "renderer": {
             "rendererName": "custom renderer"
         },
@@ -133,7 +153,7 @@ TEST_F(CalculatedPropertiesSpecificationTests, WriteToJson)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CalculatedPropertiesSpecificationTests, WriteToJsonWithDefaultValues)
     {
-    CalculatedPropertiesSpecification spec("custom label", 123);
+    CalculatedPropertiesSpecification spec("custom label", 123, "");
     BeJsDocument json = spec.WriteJson();
     BeJsDocument expected(R"({
         "label": "custom label",
@@ -168,8 +188,14 @@ TEST_F(CalculatedPropertiesSpecificationTests, ComputesCorrectHashes)
     CalculatedPropertiesSpecification specWithLabelOverride(defaultSpec);
     specWithLabelOverride.SetValue("10");
     EXPECT_STRNE(defaultSpec.GetHash().c_str(), specWithLabelOverride.GetHash().c_str());
-    specWithLabelOverride.SetValue(nullptr);
+    specWithLabelOverride.SetValue("");
     EXPECT_STREQ(defaultSpec.GetHash().c_str(), specWithLabelOverride.GetHash().c_str());
+
+    CalculatedPropertiesSpecification specWithTypeOverride(defaultSpec);
+    specWithTypeOverride.SetType("string");
+    EXPECT_STRNE(defaultSpec.GetHash().c_str(), specWithTypeOverride.GetHash().c_str());
+    specWithTypeOverride.SetType("");
+    EXPECT_STREQ(defaultSpec.GetHash().c_str(), specWithTypeOverride.GetHash().c_str());
 
     CalculatedPropertiesSpecification specWithRendererOverride(defaultSpec);
     specWithRendererOverride.SetRenderer(new CustomRendererSpecification());

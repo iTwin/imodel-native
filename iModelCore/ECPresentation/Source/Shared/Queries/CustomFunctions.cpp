@@ -409,11 +409,13 @@ struct ECExpressionScalarCacheKey
     ECClassId m_classId;
     ECInstanceId m_instanceId;
     Utf8String m_expression;
+    PrimitiveType m_type;
     bool operator<(ECExpressionScalarCacheKey const& other) const
         {
         return m_classId < other.m_classId
             || m_classId == other.m_classId && m_instanceId < other.m_instanceId
-            || m_classId == other.m_classId && m_instanceId == other.m_instanceId && m_expression.CompareTo(other.m_expression) < 0;
+            || m_classId == other.m_classId && m_instanceId == other.m_instanceId && (int)m_type < (int)other.m_type
+            || m_classId == other.m_classId && m_instanceId == other.m_instanceId && (int)m_type == (int)other.m_type && m_expression.CompareTo(other.m_expression) < 0;
         }
     };
 
@@ -424,21 +426,23 @@ struct ECExpressionScalarCacheKey
 * - Expression
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScalarCacheKey, std::shared_ptr<Utf8String>>>
+struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScalarCacheKey, std::shared_ptr<ECValue>>>
     {
     EvaluateECExpressionScalar(CustomFunctionsManager const& manager)
-        : CachingScalarFunction(FUNCTION_NAME_EvaluateECExpression, 3, DbValueType::TextVal, manager)
+        : CachingScalarFunction(FUNCTION_NAME_EvaluateECExpression, 4, DbValueType::NullVal, manager)
         {}
     void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
-        ARGUMENTS_COUNT_PRECONDITION(3);
+        ARGUMENTS_COUNT_PRECONDITION(4);
 
         ECClassId classId = args[0].GetValueId<ECClassId>();
         ECInstanceId instanceId = args[1].GetValueId<ECInstanceId>();
         Utf8CP expression = args[2].GetValueText();
-        ECExpressionScalarCacheKey key = {classId, instanceId, expression};
+        PrimitiveType requestedTypePrimitive = (PrimitiveType)args[3].GetValueInt();
+        ECExpressionScalarCacheKey key = {classId, instanceId, expression, requestedTypePrimitive};
 
         auto iter = GetCache().find(key);
+
         if (GetCache().end() == iter)
             {
             NavNodePtr thisNode = GetContext().GetNodesFactory().CreateECInstanceNode(GetContext().GetConnection(), "", nullptr, classId, instanceId, *LabelDefinition::Create());
@@ -447,21 +451,56 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
             ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCalculatedPropertyContext(params);
 
             ECValue value;
-            Utf8String expressionResult;
             ECExpressionsCache noCache;
-            if (ECExpressionsHelper(noCache).EvaluateECExpression(value, expression, *expressionContext) && value.IsPrimitive() && value.ConvertPrimitiveToString(expressionResult))
-                {
-                if (nullptr != GetContext().GetUsedClassesListener())
-                    {
-                    UsedClassesHelper::NotifyListenerWithUsedClasses(*GetContext().GetUsedClassesListener(),
-                        GetContext().GetSchemaHelper(), expression);
-                    }
+            if (!ECExpressionsHelper(noCache).EvaluateECExpression(value, expression, *expressionContext) || !value.IsPrimitive())
+                {  
+                ctx.SetResultError("Calculated property evaluated to a type that is not primitive");
+                return;
                 }
 
-            iter = GetCache().Insert(key, std::make_shared<Utf8String>(expressionResult)).first;
+            if (!value.ConvertToPrimitiveType(requestedTypePrimitive))
+                {
+                ctx.SetResultError("Calculated property evaluated to a type that couldn't be converted to requested type");
+                return;
+                }
+
+            if (nullptr != GetContext().GetUsedClassesListener())
+                {
+                UsedClassesHelper::NotifyListenerWithUsedClasses(*GetContext().GetUsedClassesListener(),
+                    GetContext().GetSchemaHelper(), expression);
+                }
+
+            iter = GetCache().Insert(key, std::make_shared<ECValue>(value)).first;
             }
 
-        ctx.SetResultText(iter->second->c_str(), (int)iter->second->size(), BeSQLite::DbFunction::Context::CopyData::No);
+        switch (requestedTypePrimitive)
+            {
+            case (PRIMITIVETYPE_String):
+                ctx.SetResultText(iter->second->GetUtf8CP(), std::strlen(iter->second->GetUtf8CP()), BeSQLite::DbFunction::Context::CopyData::Yes);
+                break;
+            case (PRIMITIVETYPE_Integer):
+                ctx.SetResultInt(iter->second->GetInteger());
+                break;
+            case (PRIMITIVETYPE_Long):
+                ctx.SetResultInt64(iter->second->GetLong());
+                break;
+            case (PRIMITIVETYPE_Boolean):
+                ctx.SetResultInt(iter->second->GetBoolean());
+                break;
+            case (PRIMITIVETYPE_Double):
+                ctx.SetResultDouble(iter->second->GetDouble());
+                break;
+            case (PRIMITIVETYPE_DateTime):
+                {
+                double expressionResultJulianDay;
+                iter->second->GetDateTime().ToJulianDay(expressionResultJulianDay);
+                ctx.SetResultDouble(expressionResultJulianDay);
+                break;
+                }
+            default:
+                ctx.SetResultError("Requested type is not supported");
+                break;
+            }
         }
    };
 
