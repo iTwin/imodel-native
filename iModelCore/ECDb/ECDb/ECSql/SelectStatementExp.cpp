@@ -87,6 +87,7 @@ T const* DerivedPropertyExp::GetExpression() const
         return static_cast<T const*>(child);
     return nullptr; 
     }
+// As DerivedPropertyExp can have children of one of these two type ValueExp or BooleanExp so only GetExpression<ValueExp> or GetExpression<BooleanExp> or GetExpression<ComputedExp> is allowed. DON'T USE ANYTHING ELSE.
 template ComputedExp const* DerivedPropertyExp::GetExpression() const;
 template ValueExp const* DerivedPropertyExp::GetExpression() const;
 template BooleanExp const* DerivedPropertyExp::GetExpression() const;
@@ -1120,7 +1121,15 @@ void SingleSelectStatementExp::_ToECSql(ECSqlRenderContext& ctx) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-SubqueryExp::SubqueryExp(std::unique_ptr<Exp> exp) : QueryExp(Type::Subquery)
+SubqueryExp::SubqueryExp(std::unique_ptr<SelectStatementExp> exp) : QueryExp(Type::Subquery)
+    {
+    AddChild(std::move(exp));
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+SubqueryExp::SubqueryExp(std::unique_ptr<CommonTableExp> exp) : QueryExp(Type::Subquery)
     {
     AddChild(std::move(exp));
     }
@@ -1164,6 +1173,7 @@ T const* SubqueryExp::GetQuery() const {
         return static_cast<T const*>(child);
     return nullptr; 
     }
+// As subquery can be one of these two type CommonTableExp or SelectStatementExp so only GetQuery<SelectStatementExp> or GetQuery<CommonTableExp> is allowed. DON'T USE ANYTHING ELSE.
 template CommonTableExp const* SubqueryExp::GetQuery<CommonTableExp>() const;
 template SelectStatementExp const* SubqueryExp::GetQuery<SelectStatementExp>() const;
 //-----------------------------------------------------------------------------------------
