@@ -12765,6 +12765,27 @@ TEST_F(ECSqlStatementTestFixture, ScalarTestsForBooleanExpInSelect)
        }
        {
         ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select 1 AND 1"));
+        EXPECT_EQ(stmt.GetColumnCount(), 1);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.GetValueBoolean(0));
+       }
+       {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 1 AND 1  AND 1 x, y FROM (SELECT 1 AND 1 y)"));
+        EXPECT_EQ(stmt.GetColumnCount(), 2);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
+        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().IsPrimitive(), true);
+        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(true, stmt.GetValueBoolean(0));
+        ASSERT_EQ(true, stmt.GetValueBoolean(1));
+       }
+       {
+        ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select 'ABCIFGQQ' LIKE '%IF%'"));
         EXPECT_EQ(stmt.GetColumnCount(), 1);
         EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
