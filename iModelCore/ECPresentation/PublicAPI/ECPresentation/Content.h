@@ -778,7 +778,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         Utf8StringCR GetValueExpression() const {return m_valueExpression;}
 
         //! Get the ECExpression return type..
-        PrimitiveType const GetType() const {return m_type;}
+        PrimitiveType GetType() const {return m_type;}
+
 
         //! Get the class this field is intended for.
         ECClassCP GetClass() const {return m_class;}
