@@ -12879,6 +12879,20 @@ TEST_F(ECSqlStatementTestFixture, TestsForBooleanExpInSelect)
         }
         {
         ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "with cte as(SELECT p.ECInstanceId=k.s FROM meta.ECClassDef p, (SELECT 1 s) k limit 5) select * from cte"));
+        EXPECT_EQ(stmt.GetColumnCount(), 1);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
+        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        for(int i =0;i<4;i++)
+        {
+            ASSERT_EQ(false, stmt.GetValueBoolean(0));   
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        }
+        ASSERT_EQ(true, stmt.GetValueBoolean(0));
+        }
+        {
+        ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select ECInstanceId >= ALL(with cte as(select ECClassId from meta.ECClassDef) select * from cte) from meta.ECClassDef limit 5"));
         EXPECT_EQ(stmt.GetColumnCount(), 1);
         EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
@@ -12951,6 +12965,28 @@ TEST_F(ECSqlStatementTestFixture, TestsForBooleanExpInSelect)
         {
         ECSqlStatement stmt;
         EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select Ordinal, Ordinal IN (1,2,3) OrdinalInRange from meta.ECPropertyDef limit 20"));
+        EXPECT_EQ(stmt.GetColumnCount(), 2);
+        ASSERT_STREQ("Ordinal", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("OrdinalInRange", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().IsPrimitive(), true);
+        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        for(int i =0;i<19;i++)
+            {
+            if(stmt.GetValueInt(0) == 0)
+                ASSERT_EQ(false, stmt.GetValueBoolean(1));
+            else
+                ASSERT_EQ(true, stmt.GetValueBoolean(1));
+            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+            }
+        if(stmt.GetValueInt(0) == 0)
+             ASSERT_EQ(false, stmt.GetValueBoolean(1));
+        else
+            ASSERT_EQ(true, stmt.GetValueBoolean(1));
+        }
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from(with cte as(select Ordinal, Ordinal IN (1,2,3) OrdinalInRange from meta.ECPropertyDef limit 20) select * from cte)"));
         EXPECT_EQ(stmt.GetColumnCount(), 2);
         ASSERT_STREQ("Ordinal", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
         ASSERT_STREQ("OrdinalInRange", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
