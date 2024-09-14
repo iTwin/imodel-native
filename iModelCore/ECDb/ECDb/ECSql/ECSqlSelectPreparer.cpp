@@ -339,13 +339,18 @@ ECSqlStatus ECSqlSelectPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::Lis
             if (!status.IsSuccess())
                 return status;   
             }
-        else
+        else if(innerBooleanExp != nullptr)
             {
             NativeSqlBuilder nativeSqlBuilder;
             ECSqlStatus status = ECSqlExpPreparer::PrepareSearchConditionExp(nativeSqlBuilder, ctx, *innerBooleanExp);
             if (!status.IsSuccess())
                 return status;
             nativeSqlSnippets.push_back(nativeSqlBuilder);
+            }
+        else
+            {
+            BeAssert(false && "ECSqlSelectPreparer::PrepareDerivedPropertyExp> Child of DerivedPropertyExp must be either ValueExp or BooleanExp.");
+            return ECSqlStatus::Error;
             }
         }
 

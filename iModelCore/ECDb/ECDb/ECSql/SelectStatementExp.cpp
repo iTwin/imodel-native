@@ -87,7 +87,7 @@ T const* DerivedPropertyExp::GetExpression() const
         return static_cast<T const*>(child);
     return nullptr; 
     }
-// As DerivedPropertyExp can have a child of one of these two types ValueExp or BooleanExp so only GetExpression<ValueExp> or GetExpression<BooleanExp> or GetExpression<ComputedExp> is allowed. DON'T USE EXPRESSIONS OF ANY OTHER TYPE WHILE CALLING GetExpression<>().
+// As DerivedPropertyExp can have a child of one of these two types ValueExp or BooleanExp so only GetExpression<ValueExp> or GetExpression<BooleanExp> or GetExpression<ComputedExp> is allowed. DON'T CALL GetExpression<>() WITH ANY OTHER TYPE.
 template ComputedExp const* DerivedPropertyExp::GetExpression<ComputedExp>() const;
 template ValueExp const* DerivedPropertyExp::GetExpression<ValueExp>() const;
 template BooleanExp const* DerivedPropertyExp::GetExpression<BooleanExp>() const;
@@ -1166,6 +1166,7 @@ SelectClauseExp const* SubqueryExp::_GetSelection() const {
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+// SubqueryExp constructor allows either SelectStatementExp or CommonTableExp both of which are children of Exp so GetQuery<Exp> will always give a valid pointer
 template<typename T>
 T const* SubqueryExp::GetQuery() const { 
     auto child = GetChild<Exp>(0);
@@ -1173,7 +1174,8 @@ T const* SubqueryExp::GetQuery() const {
         return static_cast<T const*>(child);
     return nullptr; 
     }
-// As SubqueryExp can have a child of one of these two types CommonTableExp or SelectStatementExp so only GetQuery<SelectStatementExp> or GetQuery<CommonTableExp> is allowed. DON'T USE EXPRESSIONS OF ANY OTHER TYPE WHILE CALLING GetQuery<>().
+// As SubqueryExp can have a child of one of these two types CommonTableExp or SelectStatementExp so only GetQuery<Exp> or GetQuery<SelectStatementExp> or GetQuery<CommonTableExp> is allowed. DON'T CALL GetQuery<>() WITH ANY OTHER TYPE.
+template Exp const* SubqueryExp::GetQuery<Exp>() const;
 template CommonTableExp const* SubqueryExp::GetQuery<CommonTableExp>() const;
 template SelectStatementExp const* SubqueryExp::GetQuery<SelectStatementExp>() const;
 //-----------------------------------------------------------------------------------------
@@ -1183,24 +1185,16 @@ void SubqueryExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
     //! ITWINJS_PARSE_TREE: SubqueryExp
     val.SetEmptyObject();
     val["id"] = "SubqueryExp";
-    SelectStatementExp const* stm = GetQuery<SelectStatementExp>();
-    if(stm != nullptr)
-        stm->ToJson(val["query"], fmt);
-    CommonTableExp const* stmcte = GetQuery<CommonTableExp>();
-    if(stmcte != nullptr)
-        stmcte->ToJson(val["query"], fmt);
+    Exp const* query = GetQuery<Exp>();
+    query->ToJson(val["query"], fmt);
 }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void SubqueryExp::_ToECSql(ECSqlRenderContext& ctx) const { 
-    SelectStatementExp const* stm = GetQuery<SelectStatementExp>();
-    if(stm != nullptr)
-        ctx.AppendToECSql(*stm); 
-    CommonTableExp const* stmcte = GetQuery<CommonTableExp>();
-    if(stmcte != nullptr)
-        ctx.AppendToECSql(*stmcte); 
+void SubqueryExp::_ToECSql(ECSqlRenderContext& ctx) const {
+    Exp const* query = GetQuery<Exp>(); 
+    ctx.AppendToECSql(*query); 
     }
 
 //****************************** SubqueryRefExp *****************************************

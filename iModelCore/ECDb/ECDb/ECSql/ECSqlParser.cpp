@@ -391,15 +391,19 @@ BentleyStatus ECSqlParser::ParseDerivedColumn(std::unique_ptr<DerivedPropertyExp
         if (stat != SUCCESS)
             return stat;
    }
+
     Utf8String columnAlias;
     if (opt_as_clause->count() > 0)
         columnAlias = opt_as_clause->getChild(1)->getTokenValue();
     else
         columnAlias = opt_as_clause->getTokenValue();
+   
     if(valExp != nullptr)
         exp = std::make_unique<DerivedPropertyExp>(std::move(valExp), columnAlias.c_str());
-    else
+    else if(boolExp != nullptr)
         exp = std::make_unique<DerivedPropertyExp>(std::move(boolExp), columnAlias.c_str());
+    else
+        return ERROR;
     return SUCCESS;
     }
 //****************** Parsing PRAGMA statement ***********************************
