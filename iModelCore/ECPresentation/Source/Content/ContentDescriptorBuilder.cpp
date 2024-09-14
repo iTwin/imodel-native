@@ -7,6 +7,7 @@
 #include <ECPresentation/Rules/SpecificationVisitor.h>
 #include "ContentQueryBuilder.h"
 #include "PropertyInfoStore.h"
+#include "../Shared/ValueHelpers.h"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -345,8 +346,17 @@ protected:
     ContentDescriptor::CalculatedPropertyField* CreateCalculatedPropertyField(ECClassCP ecClass, Utf8StringCR name, CalculatedPropertiesSpecificationCR spec,
         RelatedClassPathCR pathFromSelectToPropertyClass, RelationshipMeaning relationshipMeaning)
         {
+        PrimitiveType primitiveType;
+        if (!spec.GetType().empty())
+            {
+            if (BentleyStatus::SUCCESS != ValueHelpers::ParsePrimitiveType(primitiveType, spec.GetType()))
+                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Provided type is not valid primitive type for calculated fields.");
+            }
+        else
+            primitiveType = PRIMITIVETYPE_String;
+
         ContentDescriptor::CalculatedPropertyField* field = new ContentDescriptor::CalculatedPropertyField(m_categoriesSupplier.GetCalculatedFieldCategory(ecClass, spec, pathFromSelectToPropertyClass, relationshipMeaning),
-            spec.GetLabel(), name, spec.GetValue().IsValid() ? spec.GetValue().Value().c_str() : nullptr, ecClass, spec.GetPriority());
+            spec.GetLabel(), name, spec.GetValue(), primitiveType, ecClass, spec.GetPriority());
 
         if (nullptr != spec.GetRenderer())
             field->SetRenderer(ContentFieldRenderer::FromSpec(*spec.GetRenderer()));

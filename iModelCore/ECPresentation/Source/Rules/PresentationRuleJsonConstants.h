@@ -256,6 +256,7 @@
 #define CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_RENDERER                     "renderer"
 #define CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_EDITOR                       "editor"
 #define CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYID                   "categoryId"
+#define CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_TYPE                         "type"
 
 #define PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_NAME                                      "name"
 #define PROPERTY_SPECIFICATION_JSON_ATTRIBUTE_OVERRIDESPRIORITY                         "overridesPriority"
