@@ -1160,6 +1160,8 @@ SelectClauseExp const* SubqueryExp::_GetSelection() const {
         auto selectStatementInsideCTE = stmcte->GetQuery();
         return selectStatementInsideCTE->GetSelection();
     }
+    // This below code should never be reached by the control. Otherwise unexpected behaviour/ undefined behaviour/ crashes may occur
+    BeAssert(false && "SubqueryExp::_GetSelection> Reaching this code may lead to unexpected behaviour/ undefined behaviour/ crashes because child of SubqueryExp is expected to be either of type SelectStatementExp or CommonTableExp");
     return NULL;  
     }
 
