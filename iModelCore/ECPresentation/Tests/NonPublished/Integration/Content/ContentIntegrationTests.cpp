@@ -3260,7 +3260,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     ContentRuleP rule = new ContentRule("", 1, false);
     ContentSpecificationP specification = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("instance id", 1000, "this.ECInstanceId"));
-    auto specificationWithExtendedData = new CalculatedPropertiesSpecification("extendedData", 1000, "1+1");
+    auto specificationWithExtendedData = new CalculatedPropertiesSpecification("with extended data", 1000, "1+1");
     bmap<Utf8String, Utf8String> extendedData;
     extendedData.Insert("extendedDataStr", "\"val1\"");
     extendedData.Insert("extendedDataInt", "2+2");
@@ -3278,7 +3278,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     ASSERT_TRUE(descriptor->GetVisibleFields()[2]->IsCalculatedPropertyField());
 
     EXPECT_STREQ("instance id", descriptor->GetVisibleFields()[1]->AsCalculatedPropertyField()->GetLabel().c_str());
-    EXPECT_STREQ("extendedData", descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetLabel().c_str());
+    EXPECT_STREQ("with extended data", descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetLabel().c_str());
 
     ASSERT_TRUE(descriptor->GetVisibleFields()[1]->AsCalculatedPropertyField()->GetExtendedData().GetJson().IsObject());
     ASSERT_EQ(0, descriptor->GetVisibleFields()[1]->AsCalculatedPropertyField()->GetExtendedData().GetJson().MemberCount());

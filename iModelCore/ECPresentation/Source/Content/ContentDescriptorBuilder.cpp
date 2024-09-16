@@ -394,7 +394,6 @@ protected:
         ECExpressionContextsProvider::ContextParametersBase params(m_context.GetConnection(), m_context.GetRulesetVariables(), m_context.GetUsedVariablesListener());
         ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetRulesEngineRootContext(params);
 
-        ECValue value;
         ECExpressionsCache noCache;
         for (auto const& entry : spec.GetExtendedDataMap())
             {

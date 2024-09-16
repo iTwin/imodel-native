@@ -119,24 +119,24 @@ bool CalculatedPropertiesSpecification::_ReadJson(BeJsConst json)
     if (json.hasMember(CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_EDITOR))
         m_editor = CommonToolsInternal::LoadRuleFromJson<PropertyEditorSpecification>(json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_EDITOR]);
 
-    if (!json.hasMember(CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_EXTENDEDDATA))
-        return true;
-
-    BeJsConst itemsObject = json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_EXTENDEDDATA];
-    bool isItemsObjectValid = itemsObject.isObject() && !itemsObject.isNull();
-    if (CommonToolsInternal::CheckRuleIssue(!isItemsObjectValid, _GetJsonElementType(), CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_EXTENDEDDATA, json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_EXTENDEDDATA], "JSON object"))
-        return false;
-
-    json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_EXTENDEDDATA].ForEachProperty(
-        [&](Utf8CP name, BeJsConst value)
+    if (json.hasMember(CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_EXTENDEDDATA))
         {
-        if (CommonToolsInternal::CheckRuleIssue(!value.isString(), _GetJsonElementType(), Utf8PrintfString("value.items.%s", name).c_str(), value, "non-empty string"))
+        BeJsConst itemsObject = json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_EXTENDEDDATA];
+        bool isItemsObjectValid = itemsObject.isObject() && !itemsObject.isNull();
+        if (CommonToolsInternal::CheckRuleIssue(!isItemsObjectValid, _GetJsonElementType(), CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_EXTENDEDDATA, json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_EXTENDEDDATA], "JSON object"))
             return false;
 
-        m_extendedData.Insert(name, value.asCString());
-        return false;
+        json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_EXTENDEDDATA].ForEachProperty(
+            [&](Utf8CP name, BeJsConst value)
+            {
+            if (CommonToolsInternal::CheckRuleIssue(!value.isString(), _GetJsonElementType(), Utf8PrintfString("value.items.%s", name).c_str(), value, "non-empty string"))
+                return false;
+
+            m_extendedData.Insert(name, value.asCString());
+            return false;
+            }
+        );
         }
-    );
 
     return true;
     }
