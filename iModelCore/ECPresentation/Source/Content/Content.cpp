@@ -1425,6 +1425,12 @@ void ContentSetItem::AddUsersExtendedData(Utf8CP key, ECValueCR value)
     m_extendedData.AddMember(rapidjson::Value(key, m_extendedData.GetAllocator()), ValueHelpers::GetJsonFromECValue(value, "", &m_extendedData.GetAllocator()), m_extendedData.GetAllocator());
     }
 
+
+void ContentDescriptor::CalculatedPropertyField::AddExtendedData(Utf8CP key, ECValueCR value)
+    {
+    m_extendedData.AddMember(rapidjson::Value(key, m_extendedData.GetAllocator()), ValueHelpers::GetJsonFromECValue(value, "", &m_extendedData.GetAllocator()), m_extendedData.GetAllocator());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

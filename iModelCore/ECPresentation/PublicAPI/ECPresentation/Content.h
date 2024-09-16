@@ -748,6 +748,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         ECClassCP m_class;
         Utf8String m_requestedName;
         PrimitiveType m_type;
+        rapidjson::Document m_extendedData;
 
     protected:
         CalculatedPropertyField* _AsCalculatedPropertyField() override {return this;}
@@ -769,8 +770,15 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! @param[in] priority Field priority.
         CalculatedPropertyField(std::shared_ptr<Category const> category, Utf8String label, Utf8String name, Utf8String valueExpression, PrimitiveType type, ECClassCP ecClass, int priority = Property::DEFAULT_PRIORITY)
         : Field(category, label), m_requestedName(name), m_valueExpression(valueExpression), m_class(ecClass), m_priority(priority),
-            m_type(type)
+            m_type(type), m_extendedData(rapidjson::kObjectType)
             {}
+
+        //! Copy constructor.
+        CalculatedPropertyField(CalculatedPropertyField const& other)
+            : Field(other), m_priority(other.m_priority), m_valueExpression(other.m_valueExpression), m_class(other.m_class), m_requestedName(other.m_requestedName), m_type(other.m_type)
+            {
+            m_extendedData.CopyFrom(other.m_extendedData, m_extendedData.GetAllocator());
+            }
 
         Utf8StringCR GetRequestedName() const {return m_requestedName;}
 
@@ -786,6 +794,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
 
         //! Set the priority for this field.
         void SetPriority(int priority) {m_priority = priority;}
+
+        void AddExtendedData(Utf8CP key, ECValueCR value);
+
+        RapidJsonAccessor GetExtendedData() const { return RapidJsonAccessor(m_extendedData); }
     };
 
     struct ECArrayPropertiesField;

@@ -22,6 +22,9 @@ CalculatedPropertiesSpecification::CalculatedPropertiesSpecification(CalculatedP
     {
     if (other.m_categoryId)
         m_categoryId = other.m_categoryId->Clone();
+
+    if (other.m_extendedData.size() > 0)
+        m_extendedData = other.m_extendedData;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -116,6 +119,25 @@ bool CalculatedPropertiesSpecification::_ReadJson(BeJsConst json)
     if (json.hasMember(CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_EDITOR))
         m_editor = CommonToolsInternal::LoadRuleFromJson<PropertyEditorSpecification>(json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_EDITOR]);
 
+    if (!json.hasMember(CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_EXTENDEDDATA))
+        return true;
+
+    BeJsConst itemsObject = json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_EXTENDEDDATA];
+    bool isItemsObjectValid = itemsObject.isObject() && !itemsObject.isNull();
+    if (CommonToolsInternal::CheckRuleIssue(!isItemsObjectValid, _GetJsonElementType(), CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_EXTENDEDDATA, json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_EXTENDEDDATA], "JSON object"))
+        return false;
+
+    json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_EXTENDEDDATA].ForEachProperty(
+        [&](Utf8CP name, BeJsConst value)
+        {
+        if (CommonToolsInternal::CheckRuleIssue(!value.isString(), _GetJsonElementType(), Utf8PrintfString("value.items.%s", name).c_str(), value, "non-empty string"))
+            return false;
+
+        m_extendedData.Insert(name, value.asCString());
+        return false;
+        }
+    );
+
     return true;
     }
 
@@ -137,6 +159,9 @@ void CalculatedPropertiesSpecification::_WriteJson(BeJsValue json) const
         m_editor->WriteJson(json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_EDITOR]);
     if (nullptr != m_categoryId)
         m_categoryId->WriteJson(json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYID]);
+
+    for (auto entry : m_extendedData)
+        json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_EXTENDEDDATA][entry.first] = entry.second;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -187,5 +212,29 @@ MD5 CalculatedPropertiesSpecification::_ComputeHash() const
         ADD_STR_VALUE_TO_HASH(md5, CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_EDITOR, m_editor->GetHash());
     if (nullptr != m_categoryId)
         ADD_STR_VALUE_TO_HASH(md5, CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYID, m_categoryId->GetHash());
+
+    for (auto entry : m_extendedData)
+        {
+        md5.Add(entry.first.c_str(), entry.first.size());
+        md5.Add(entry.second.c_str(), entry.second.size());
+        }
     return md5;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void CalculatedPropertiesSpecification::SetExtendedDataMap(bmap<Utf8String, Utf8String> map)
+    {
+    m_extendedData = map;
+    InvalidateHash();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void CalculatedPropertiesSpecification::AddExtendedData(Utf8String key, Utf8String value)
+    {
+    m_extendedData.Insert(key, value);
+    InvalidateHash();
     }
