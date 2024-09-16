@@ -1726,13 +1726,18 @@ std::unique_ptr<ContentDescriptor::Category> DefaultCategorySupplier::_CreateECC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+std::unique_ptr<ContentDescriptor::Category> DefaultCategorySupplier::_CreatePropertyCategory(PropertyCategoryCR schemaCategory) const
+    {
+    return std::make_unique<ContentDescriptor::Category>(schemaCategory.GetName(), schemaCategory.GetDisplayLabel(),
+        schemaCategory.GetDescription(), schemaCategory.GetPriority());
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 std::unique_ptr<ContentDescriptor::Category> DefaultCategorySupplier::_CreatePropertyCategory(ECPropertyCR ecProperty) const
     {
     PropertyCategoryCP propertyCategory = ecProperty.GetCategory();
     if (nullptr != propertyCategory)
-        {
-        return std::make_unique<ContentDescriptor::Category>(propertyCategory->GetName(), propertyCategory->GetDisplayLabel(),
-            propertyCategory->GetDescription(), propertyCategory->GetPriority());
-        }
+        return CreatePropertyCategory(*propertyCategory);
     return nullptr;
     }

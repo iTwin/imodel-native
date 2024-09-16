@@ -1903,6 +1903,7 @@ struct IPropertyCategorySupplier
 protected:
     virtual std::unique_ptr<ContentDescriptor::Category> _CreateDefaultCategory() const = 0;
     virtual std::unique_ptr<ContentDescriptor::Category> _CreateECClassCategory(ECClassCR) const = 0;
+    virtual std::unique_ptr<ContentDescriptor::Category> _CreatePropertyCategory(PropertyCategoryCR) const = 0;
     virtual std::unique_ptr<ContentDescriptor::Category> _CreatePropertyCategory(ECPropertyCR) const = 0;
 
 public:
@@ -1913,6 +1914,9 @@ public:
 
     //! Called to create a category based on specific ECClass
     std::unique_ptr<ContentDescriptor::Category> CreateECClassCategory(ECClassCR ecClass) const {return _CreateECClassCategory(ecClass);}
+
+    //! Called to create a category based on a PropertyCategory in schema.
+    std::unique_ptr<ContentDescriptor::Category> CreatePropertyCategory(PropertyCategoryCR schemaCategory) const {return _CreatePropertyCategory(schemaCategory);}
 
     //! Called to create a category based on ECProperty's category. Should return invalid category if property is not categorized.
     std::unique_ptr<ContentDescriptor::Category> CreatePropertyCategory(ECPropertyCR ecProperty) const {return _CreatePropertyCategory(ecProperty);}
@@ -1930,6 +1934,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DefaultCategorySupplier : IPropertyCategorySuppli
 protected:
     ECPRESENTATION_EXPORT virtual std::unique_ptr<ContentDescriptor::Category> _CreateDefaultCategory() const override;
     ECPRESENTATION_EXPORT virtual std::unique_ptr<ContentDescriptor::Category> _CreateECClassCategory(ECClassCR) const override;
+    ECPRESENTATION_EXPORT virtual std::unique_ptr<ContentDescriptor::Category> _CreatePropertyCategory(PropertyCategoryCR) const override;
     ECPRESENTATION_EXPORT virtual std::unique_ptr<ContentDescriptor::Category> _CreatePropertyCategory(ECPropertyCR) const override;
 public:
     DefaultCategorySupplier() {}
