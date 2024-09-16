@@ -1252,16 +1252,10 @@ void SubqueryRefExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPr
 PropertyMatchResult SubqueryRefExp::_FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const
     {
         PropertyMatchOptions overrideOptions = options;
-        overrideOptions.SetAlias(GetAlias().c_str());
-        SelectStatementExp const* selectSubQuery = GetSubquery()->GetQuery<SelectStatementExp>();
-        if(selectSubQuery != nullptr)
-            return selectSubQuery->FindProperty(ctx, propertyPath, overrideOptions);
-        CommonTableExp const* stmcte = GetSubquery()->GetQuery<CommonTableExp>();
-        if(stmcte != nullptr){
-            auto selectStatementInsideCTE = stmcte->GetQuery();
-            return selectStatementInsideCTE->FindProperty(ctx,propertyPath,options);
-        }
-        return PropertyMatchResult::NotFound();
+        if (!Utf8String::IsNullOrEmpty(GetAlias().c_str()))
+            overrideOptions.SetAlias(GetAlias().c_str());
+        
+        return GetSubquery()->FindProperty(ctx, propertyPath, overrideOptions);
     }
 
 //-----------------------------------------------------------------------------------------
