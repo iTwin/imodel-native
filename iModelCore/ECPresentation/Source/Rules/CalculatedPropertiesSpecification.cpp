@@ -160,7 +160,7 @@ void CalculatedPropertiesSpecification::_WriteJson(BeJsValue json) const
     if (nullptr != m_categoryId)
         m_categoryId->WriteJson(json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYID]);
 
-    for (auto entry : m_extendedData)
+    for (auto const& entry : m_extendedData)
         json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_EXTENDEDDATA][entry.first] = entry.second;
     }
 
@@ -213,7 +213,7 @@ MD5 CalculatedPropertiesSpecification::_ComputeHash() const
     if (nullptr != m_categoryId)
         ADD_STR_VALUE_TO_HASH(md5, CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYID, m_categoryId->GetHash());
 
-    for (auto entry : m_extendedData)
+    for (auto const& entry : m_extendedData)
         {
         md5.Add(entry.first.c_str(), entry.first.size());
         md5.Add(entry.second.c_str(), entry.second.size());
