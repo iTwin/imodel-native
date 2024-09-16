@@ -126,6 +126,20 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
+    std::shared_ptr<ContentDescriptor::Category> ShareOrCreateCategory(ContentDescriptor::Category const& category, std::shared_ptr<ContentDescriptor::Category> parentCategory)
+        {
+        if (auto shared = GetSharedCategory(category.GetName().c_str(), parentCategory.get()))
+            return shared;
+
+        auto newCategory = std::make_shared<ContentDescriptor::Category>(category);
+        newCategory->SetParentCategory(parentCategory);
+        m_context.GetAllCategories().Insert(std::make_pair(newCategory->GetName(), newCategory->GetParentCategory()), newCategory);
+        return newCategory;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
     std::shared_ptr<ContentDescriptor::Category> PrepareCategoryForReturn(CategoryOverrideInfo const& overrideInfo)
         {
         std::shared_ptr<ContentDescriptor::Category> parentCategory = nullptr;
@@ -138,6 +152,7 @@ private:
                 parentCategory = GetRootCategory();
                 continue;
                 }
+
             if (categoryRef->IsDefaultParentCategoryRef())
                 {
                 DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Content, !parentCategory, Utf8PrintfString("Detected default parent category reference in categories "
@@ -145,18 +160,28 @@ private:
                 parentCategory = GetParentCategory(true);
                 continue;
                 }
-
-            auto const& category = categoryRef->AsConcreteCategoryRef()->GetCategory();
-            if (auto shared = GetSharedCategory(category.GetName().c_str(), parentCategory.get()))
+            
+            if (auto schemaCategoryRef = categoryRef->AsSchemaCategoryRef())
                 {
-                parentCategory = shared;
+                auto propertyCategory = m_context.GetDescriptorBuilderContext().GetSchemaHelper().GetECPropertyCategory(schemaCategoryRef->GetCategoryName().c_str());
+                if (!propertyCategory)
+                    {
+                    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Schema-based property category \"%s\" is referenced in presentation rules, but is not found in schema.", schemaCategoryRef->GetCategoryName().c_str()));
+                    continue;
+                    }
+                auto category = m_context.GetPropertyCategories().CreatePropertyCategory(*propertyCategory);
+                parentCategory = ShareOrCreateCategory(*category, parentCategory ? parentCategory : GetParentCategory(true));
                 continue;
                 }
 
-            auto newCategory = std::make_shared<ContentDescriptor::Category>(category);
-            newCategory->SetParentCategory(parentCategory);
-            m_context.GetAllCategories().Insert(std::make_pair(newCategory->GetName(), newCategory->GetParentCategory()), newCategory);
-            parentCategory = newCategory;
+            if (auto concreteCategoryRef = categoryRef->AsConcreteCategoryRef())
+                {
+                auto const& category = categoryRef->AsConcreteCategoryRef()->GetCategory();
+                parentCategory = ShareOrCreateCategory(category, parentCategory);
+                continue;
+                }
+
+            DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Content, false, "Unhandled category ref");
             }
         return parentCategory;
         }
