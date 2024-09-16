@@ -160,7 +160,7 @@ void CalculatedPropertiesSpecification::_WriteJson(BeJsValue json) const
     if (nullptr != m_categoryId)
         m_categoryId->WriteJson(json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_CATEGORYID]);
 
-    for (auto entry : m_extendedData)
+    for (auto const& entry : m_extendedData)
         json[CALCULATED_PROPERTIES_SPECIFICATION_JSON_ATTRIBUTE_EXTENDEDDATA][entry.first] = entry.second;
     }
 
