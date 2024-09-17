@@ -387,6 +387,22 @@ protected:
             field->SetRenderer(ContentFieldRenderer::FromSpec(*spec.GetRenderer()));
         if (nullptr != spec.GetEditor())
             field->SetEditor(ContentFieldEditor::FromSpec(*spec.GetEditor()));
+
+        if (spec.GetExtendedDataMap().size() == 0)
+            return field;
+
+        ECExpressionContextsProvider::ContextParametersBase params(m_context.GetConnection(), m_context.GetRulesetVariables(), m_context.GetUsedVariablesListener());
+        ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetRulesEngineRootContext(params);
+
+        ECExpressionsCache noCache;
+        for (auto const& entry : spec.GetExtendedDataMap())
+            {
+            Utf8StringCR key = entry.first;
+            Utf8StringCR expression = entry.second;
+            ECValue value;
+            if (ECExpressionsHelper(noCache).EvaluateECExpression(value, expression, *expressionContext))
+                field->AddExtendedData(key.c_str(), value);
+            }
         return field;
         }
 
