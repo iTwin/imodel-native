@@ -1695,8 +1695,9 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
 
 TEST_F(FormattingTestFixture, AzimuthWithVariousBases) {
     auto unitDegree = s_unitsContext->LookupUnit("ARC_DEG");
+    auto unitRadian = s_unitsContext->LookupUnit("RAD");
 
-    auto formatAzimuth = [&unitDegree](double value, double baseOffsetInDeg = 0.0, bool counterClockwise = false)
+    auto formatAzimuth = [&unitDegree, &unitRadian](double value, double baseOffsetInDeg = 0.0, bool counterClockwise = false)
         {
         NumericFormatSpec azimuthSpec;
         azimuthSpec.SetPresentationType(PresentationType::Azimuth);
@@ -1707,6 +1708,7 @@ TEST_F(FormattingTestFixture, AzimuthWithVariousBases) {
         azimuthSpec.SetKeepSingleZero(true);
         azimuthSpec.SetShowUnitLabel(true);
         azimuthSpec.SetAzimuthBase(DegreesToRadians(baseOffsetInDeg));
+        azimuthSpec.SetAzimuthBaseUnit(unitRadian);
         azimuthSpec.SetCounterClockwiseAngle(counterClockwise);
         Format azimuth(azimuthSpec);
         auto azimuthComp = CompositeValueSpec(*unitDegree);

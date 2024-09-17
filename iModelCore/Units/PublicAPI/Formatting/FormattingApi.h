@@ -86,11 +86,14 @@ private:
     uint8_t m_explicitlyDefinedThousandsSeparator:1;
     uint8_t m_explicitlyDefinedUOMSeparator:1;
     uint8_t m_explicitlyDefinedStatSeparator:1;
+    uint8_t m_explicitlyDefinedAzimuthBase:1;
+    uint8_t m_explicitlyDefinedAzimuthBaseUnit:1;
     double              m_roundFactor;
     PresentationType    m_presentationType;      // Decimal, Fractional, Scientific, Station
     RatioType           m_ratioType;        // OneToN, NToOne, ValueBased, UseGreatestCommonDivisor
     ScientificType      m_scientificType;
     double              m_azimuthBase;     // The base offset for azimuths in radians from north clockwise
+    BEU::UnitCP         m_azimuthBaseUnit; // The unit of the azimuth base
 
     SignOption          m_signOption;            // NoSign, OnlyNegative, SignAlways, NegativeParentheses
     FormatTraits        m_formatTraits;          // NoZeroes, TrailingZeroes, BothZeroes
@@ -197,8 +200,13 @@ public:
     ScientificType GetScientificType() const {return m_scientificType;}
 
     //Sets the azimuth base in radians from north clockwise
-    void SetAzimuthBase(double base) {m_azimuthBase = base;}
+    void SetAzimuthBase(double base) {m_explicitlyDefinedAzimuthBase = true; m_azimuthBase = base;}
+    bool HasAzimuthBase() const {return m_explicitlyDefinedAzimuthBase;}
     double GetAzimuthBase() const {return m_azimuthBase;}
+
+    void SetAzimuthBaseUnit(BEU::UnitCP unit){m_azimuthBaseUnit = unit;}
+    bool HasAzimuthBaseUnit() const {return m_explicitlyDefinedAzimuthBaseUnit;}
+    BEU::UnitCP GetAzimuthBaseUnit() const {return m_azimuthBaseUnit;}
 
     void SetPrecision(FractionalPrecision precision) {m_explicitlyDefinedPrecision = true; m_fractPrecision = precision; }
     void SetPrecision(DecimalPrecision precision) {m_explicitlyDefinedPrecision = true; m_decPrecision = precision;}

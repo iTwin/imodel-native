@@ -241,9 +241,19 @@ BentleyStatus ProcessBearingAndAzimuth(NumericFormatSpecCP fmtP, BEU::Quantity& 
     if (type == PresentationType::Azimuth) {
         double azimuthBase = rightAngle;
 
-        if (!std::isnan(fmtP->GetAzimuthBase())) // TODO: this or use a flag?
+        if (fmtP->HasAzimuthBase()) {
             azimuthBase = fmtP->GetAzimuthBase();
-            // TODO - convert azimuthBase to presistence unit
+            if (fmtP->HasAzimuthBaseUnit())
+            {
+                BEU::Quantity azimuthBaseQuantity(azimuthBase, *fmtP->GetAzimuthBaseUnit());
+                azimuthBaseQuantity.ConvertTo(temp.GetUnit());
+                azimuthBase = azimuthBaseQuantity.GetMagnitude();
+            } 
+            else 
+            {
+                return BentleyStatus::ERROR; // if the base is set, but base unit is missing
+            }
+        }
 
         if(azimuthBase == 0.0)
             return BentleyStatus::SUCCESS; //no conversion necessary with a east base

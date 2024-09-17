@@ -342,7 +342,7 @@ public:
     static int const DefaultMinWidth() { return 0; }
     static Utf8String const DefaultSpacer() {return " ";}
     static Utf8String const DefaultSeparator() {return " ";}
-    static RatioType const DefaultRatioType() {return RatioType::ValueBased;} // TBD
+    static RatioType const DefaultRatioType() {return RatioType::ValueBased;} 
 
     // FPN prefix stands for FormatParameterName
     static Utf8String FPN_NoSign() { return "NoSign"; }
