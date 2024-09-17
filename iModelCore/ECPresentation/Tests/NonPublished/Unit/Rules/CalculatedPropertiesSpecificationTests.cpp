@@ -65,7 +65,10 @@ TEST_F(CalculatedPropertiesSpecificationTests, LoadsFromJson)
             "editorName": "custom editor"
         },
         "categoryId": "categoryId",
-        "priority": 10
+        "priority": 10,
+        "extendedData": {
+            "extendedData1": "2+2"
+        }
     })";
     BeJsDocument json(jsonString);
     EXPECT_FALSE(json.isNull());
@@ -75,6 +78,7 @@ TEST_F(CalculatedPropertiesSpecificationTests, LoadsFromJson)
     EXPECT_STREQ("calculated property", spec.GetLabel().c_str());
     EXPECT_STREQ("calculated value", spec.GetValue().c_str());
     EXPECT_STREQ("string", spec.GetType().c_str());
+    EXPECT_STREQ("2+2", spec.GetExtendedDataMap().find("extendedData1")->second.c_str());
     EXPECT_STREQ("custom renderer", spec.GetRenderer()->GetRendererName().c_str());
     EXPECT_STREQ("custom editor", spec.GetEditor()->GetEditorName().c_str());
     EXPECT_STREQ("categoryId", spec.GetCategoryId()->AsIdIdentifier()->GetCategoryId().c_str());
@@ -116,6 +120,7 @@ TEST_F(CalculatedPropertiesSpecificationTests, LoadsFromJsonWithDefaultValues)
     EXPECT_EQ(nullptr, spec.GetRenderer());
     EXPECT_EQ(nullptr, spec.GetEditor());
     EXPECT_EQ(nullptr, spec.GetCategoryId());
+    EXPECT_FALSE(spec.GetExtendedDataMap().size() > 0);
     EXPECT_EQ(1000, spec.GetPriority());
     }
 
@@ -128,6 +133,7 @@ TEST_F(CalculatedPropertiesSpecificationTests, WriteToJson)
     spec.SetRenderer(new CustomRendererSpecification("custom renderer"));
     spec.SetEditor(new PropertyEditorSpecification("custom editor"));
     spec.SetCategoryId(PropertyCategoryIdentifier::CreateForId("category id"));
+    spec.AddExtendedData("extendedDataVal", "someValue");
     BeJsDocument json = spec.WriteJson();
     BeJsDocument expected(R"({
         "label": "custom label",
@@ -143,6 +149,9 @@ TEST_F(CalculatedPropertiesSpecificationTests, WriteToJson)
         "categoryId": {
             "type": "Id",
             "categoryId": "category id"
+        },
+        "extendedData": {
+            "extendedDataVal": "someValue"
         }
     })");
     EXPECT_TRUE(expected.isExactEqual(json));
@@ -196,6 +205,15 @@ TEST_F(CalculatedPropertiesSpecificationTests, ComputesCorrectHashes)
     EXPECT_STRNE(defaultSpec.GetHash().c_str(), specWithTypeOverride.GetHash().c_str());
     specWithTypeOverride.SetType("");
     EXPECT_STREQ(defaultSpec.GetHash().c_str(), specWithTypeOverride.GetHash().c_str());
+
+    CalculatedPropertiesSpecification specWithExtendedDataOverride(defaultSpec);
+    bmap<Utf8String, Utf8String> extendedData1;
+    extendedData1.Insert("extendedDataVal", "val1");
+    specWithExtendedDataOverride.SetExtendedDataMap(extendedData1);
+    EXPECT_STRNE(defaultSpec.GetHash().c_str(), specWithExtendedDataOverride.GetHash().c_str());
+    bmap<Utf8String, Utf8String> extendedData2;
+    specWithExtendedDataOverride.SetExtendedDataMap(extendedData2);
+    EXPECT_STREQ(defaultSpec.GetHash().c_str(), specWithExtendedDataOverride.GetHash().c_str());
 
     CalculatedPropertiesSpecification specWithRendererOverride(defaultSpec);
     specWithRendererOverride.SetRenderer(new CustomRendererSpecification());

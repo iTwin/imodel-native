@@ -24,6 +24,7 @@ private:
     PropertyEditorSpecificationCP m_editor;
     std::unique_ptr<PropertyCategoryIdentifier> m_categoryId;
     Utf8String m_type;
+    bmap<Utf8String, Utf8String> m_extendedData;
 
 protected:
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
@@ -71,6 +72,16 @@ public:
 
     Utf8StringCR GetType() const { return m_type; }
     void SetType(Utf8String type) { m_type = type; InvalidateHash(); }
+
+    //! Get key-value pairs for extended data value definitions in this rule
+    bmap<Utf8String, Utf8String> const& GetExtendedDataMap() const { return m_extendedData; }
+
+    //! Set key-value pairs for extended data value definitions in this rule
+    ECPRESENTATION_EXPORT void SetExtendedDataMap(bmap<Utf8String, Utf8String> map);
+
+    //! Set a single extended data value definition. The `key` property must be
+    //! unique. The `value` property is an ECExpression.
+    ECPRESENTATION_EXPORT void AddExtendedData(Utf8String key, Utf8String value);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE
