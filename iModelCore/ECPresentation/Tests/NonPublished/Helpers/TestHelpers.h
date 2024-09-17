@@ -288,6 +288,7 @@ struct TestCategorySupplier : IPropertyCategorySupplier
         {}
     virtual std::unique_ptr<ContentDescriptor::Category> _CreateDefaultCategory() const override { return std::make_unique<ContentDescriptor::Category>(*m_category); }
     virtual std::unique_ptr<ContentDescriptor::Category> _CreateECClassCategory(ECClassCR) const override { return std::make_unique<ContentDescriptor::Category>(*m_category); }
+    virtual std::unique_ptr<ContentDescriptor::Category> _CreatePropertyCategory(PropertyCategoryCR) const override { return std::make_unique<ContentDescriptor::Category>(*m_category); }
     virtual std::unique_ptr<ContentDescriptor::Category> _CreatePropertyCategory(ECPropertyCR) const override { return std::make_unique<ContentDescriptor::Category>(*m_category); }
     ContentDescriptor::Category const& GetUsedCategory() const {return *m_category;}
     void SetUsedCategory(std::unique_ptr<ContentDescriptor::Category>&& category)
