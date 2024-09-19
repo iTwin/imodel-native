@@ -1739,8 +1739,8 @@ TEST_F(FormattingTestFixture, AzimuthWithVariousBases) {
     ASSERT_STREQ("180.0°", formatAzimuth(90.0, 270.0,true).c_str());
 }
 
-TEST_F(FormattingTestFixture, DoubleToRatio){
-    auto formatDoubleToRatio = [](double value, DecimalPrecision precision, Units::UnitCP persistenceUnit, RatioType ratioType, Units::UnitCP presentationUnit) -> Utf8String
+TEST_F(FormattingTestFixture, FormatRatio){
+    auto formatRatioTest = [](const char* ratioString, double value, Units::UnitCP persistenceUnit, RatioType ratioType,  Units::UnitCP presentationUnit, DecimalPrecision precision = DecimalPrecision::Precision3)
     {
         NumericFormatSpec ratioSpec;
         ratioSpec.SetPresentationType(PresentationType::Ratio);
@@ -1754,14 +1754,15 @@ TEST_F(FormattingTestFixture, DoubleToRatio){
         ratioFormat.SetCompositeSpec(ratioComp);
 
         Units::Quantity quantity(value, *persistenceUnit);
-        return ratioFormat.FormatQuantity(quantity);
-    };
+        EXPECT_STREQ(ratioString, ratioFormat.FormatQuantity(quantity).c_str());
 
-    auto testFormatDoubleToRatio = [formatDoubleToRatio](const char* expected, double value, Units::UnitCP persistenceUnit, RatioType ratioType,  Units::UnitCP presentationUnit, DecimalPrecision precision = DecimalPrecision::Precision3)
-    {
-        EXPECT_STREQ(expected, formatDoubleToRatio(value, precision, persistenceUnit, ratioType, presentationUnit).c_str());
+        // parsing back to quantity
+        FormatProblemCode problemCode;
+        auto formatParsingSet = FormatParsingSet(ratioString, persistenceUnit, &ratioFormat);
+        BEU::Quantity qty = formatParsingSet.GetQuantity(&problemCode, &ratioFormat);
+        EXPECT_EQ(FormatProblemCode::NoProblems, problemCode); 
+        EXPECT_TRUE(quantity.IsClose(qty, 0.0001));
     };
-
 
     auto v_h = s_unitsContext->LookupUnit("VERTICAL_PER_HORIZONTAL");
     auto h_v = s_unitsContext->LookupUnit("HORIZONTAL_PER_VERTICAL");
@@ -1779,130 +1780,133 @@ TEST_F(FormattingTestFixture, DoubleToRatio){
 
     for (const auto& ratioType : ratioTypes) 
         {
-        testFormatDoubleToRatio("0:1", 0.0, v_h, ratioType, v_h);
-        testFormatDoubleToRatio("0:1", 0.0, h_v, ratioType, h_v);
-        testFormatDoubleToRatio("1:0", 0.0, v_h, ratioType, h_v);
-        testFormatDoubleToRatio("1:0", 0.0, h_v, ratioType, v_h);
+        formatRatioTest("0:1", 0.0, v_h, ratioType, v_h);
+        formatRatioTest("0:1", 0.0, h_v, ratioType, h_v);
+        formatRatioTest("1:0", 0.0, v_h, ratioType, h_v);
+        formatRatioTest("1:0", 0.0, h_v, ratioType, v_h);
         }
     }
 
     // v:h (persistent) -> v:h (presentation) | one to N
     {
-    testFormatDoubleToRatio("1:1", 1.0, v_h, oneToN, v_h);
-    testFormatDoubleToRatio("1:0.5", 2.0, v_h, oneToN, v_h);
-    testFormatDoubleToRatio("1:2", 0.5, v_h, oneToN, v_h);
-    testFormatDoubleToRatio("1:3.003", 0.333, v_h, oneToN, v_h);
-    testFormatDoubleToRatio("1:3", 0.3333, v_h, oneToN, v_h);
-    testFormatDoubleToRatio("1:3.5", 0.2857, v_h, oneToN, v_h);
-    testFormatDoubleToRatio("1:4", 0.25, v_h, oneToN, v_h);
-    testFormatDoubleToRatio("1:1.5", 0.6667, v_h, oneToN, v_h);
+    formatRatioTest("1:1", 1.0, v_h, oneToN, v_h);
+    formatRatioTest("1:0.5", 2.0, v_h, oneToN, v_h);
+    formatRatioTest("1:2", 0.5, v_h, oneToN, v_h);
+    formatRatioTest("1:3.003", 0.333, v_h, oneToN, v_h);
+    formatRatioTest("1:3", 0.3333, v_h, oneToN, v_h);
+    formatRatioTest("1:3.5", 0.2857, v_h, oneToN, v_h);
+    formatRatioTest("1:4", 0.25, v_h, oneToN, v_h);
+    formatRatioTest("1:1.5", 0.6667, v_h, oneToN, v_h);
     }
 
     // v:h -> h:v | one to N
     {
-    testFormatDoubleToRatio("1:1", 1.0, v_h, oneToN, h_v);
-    testFormatDoubleToRatio("1:2", 2.0, v_h, oneToN, h_v);
-    testFormatDoubleToRatio("1:0.5", 0.5, v_h, oneToN, h_v);
-    testFormatDoubleToRatio("1:0.333", 0.333, v_h, oneToN, h_v);
-    testFormatDoubleToRatio("1:0.333", 0.3333, v_h, oneToN, h_v);
-    testFormatDoubleToRatio("1:0.286", 0.2857, v_h, oneToN, h_v);
-    testFormatDoubleToRatio("1:0.25", 0.25, v_h, oneToN, h_v);
-    testFormatDoubleToRatio("1:0.667", 0.6667, v_h, oneToN, h_v);
+    formatRatioTest("1:1", 1.0, v_h, oneToN, h_v);
+    formatRatioTest("1:2", 2.0, v_h, oneToN, h_v);
+    formatRatioTest("1:0.5", 0.5, v_h, oneToN, h_v);
+    formatRatioTest("1:0.333", 0.333, v_h, oneToN, h_v);
+    formatRatioTest("1:0.333", 0.3333, v_h, oneToN, h_v);
+    formatRatioTest("1:0.286", 0.2857, v_h, oneToN, h_v);
+    formatRatioTest("1:0.25", 0.25, v_h, oneToN, h_v);
+    formatRatioTest("1:0.667", 0.6667, v_h, oneToN, h_v);
     }
 
     // v:h -> v:h | N to one
     {
-    testFormatDoubleToRatio("1:1", 1.0, v_h, NtoOne, v_h);
-    testFormatDoubleToRatio("2:1", 2.0, v_h, NtoOne, v_h);
-    testFormatDoubleToRatio("0.5:1", 0.5, v_h, NtoOne, v_h);
-    testFormatDoubleToRatio("0.333:1", 0.333, v_h, NtoOne, v_h);
-    testFormatDoubleToRatio("0.333:1", 0.3333, v_h, NtoOne, v_h);
-    testFormatDoubleToRatio("0.286:1", 0.2857, v_h, NtoOne, v_h);
-    testFormatDoubleToRatio("0.25:1", 0.25, v_h, NtoOne, v_h);
-    testFormatDoubleToRatio("0.667:1", 0.6667, v_h, NtoOne, v_h);
+    formatRatioTest("1:1", 1.0, v_h, NtoOne, v_h);
+    formatRatioTest("2:1", 2.0, v_h, NtoOne, v_h);
+    formatRatioTest("0.5:1", 0.5, v_h, NtoOne, v_h);
+    formatRatioTest("0.333:1", 0.333, v_h, NtoOne, v_h);
+    formatRatioTest("0.333:1", 0.3333, v_h, NtoOne, v_h);
+    formatRatioTest("0.286:1", 0.2857, v_h, NtoOne, v_h);
+    formatRatioTest("0.25:1", 0.25, v_h, NtoOne, v_h);
+    formatRatioTest("0.667:1", 0.6667, v_h, NtoOne, v_h);
     }
 
     // v:h -> h:v | N to one
     {
-    testFormatDoubleToRatio("1:1", 1.0, v_h, NtoOne, h_v);
-    testFormatDoubleToRatio("0.5:1", 2.0, v_h, NtoOne, h_v);
-    testFormatDoubleToRatio("2:1", 0.5, v_h, NtoOne, h_v);
-    testFormatDoubleToRatio("3.003:1", 0.333, v_h, NtoOne, h_v);
-    testFormatDoubleToRatio("3:1", 0.3333, v_h, NtoOne, h_v);
-    testFormatDoubleToRatio("3.5:1", 0.2857, v_h, NtoOne, h_v);
-    testFormatDoubleToRatio("4:1", 0.25, v_h, NtoOne, h_v);
-    testFormatDoubleToRatio("1.5:1", 0.6667, v_h, NtoOne, h_v);
+    formatRatioTest("1:1", 1.0, v_h, NtoOne, h_v);
+    formatRatioTest("0.5:1", 2.0, v_h, NtoOne, h_v);
+    formatRatioTest("2:1", 0.5, v_h, NtoOne, h_v);
+    formatRatioTest("3.003:1", 0.333, v_h, NtoOne, h_v);
+    formatRatioTest("3:1", 0.3333, v_h, NtoOne, h_v);
+    formatRatioTest("3.5:1", 0.2857, v_h, NtoOne, h_v);
+    formatRatioTest("4:1", 0.25, v_h, NtoOne, h_v);
+    formatRatioTest("1.5:1", 0.6667, v_h, NtoOne, h_v);
     }
 
     {
     // decimal precision
-    testFormatDoubleToRatio("1:0", 3, v_h, oneToN, v_h, DecimalPrecision::Precision0);
-    testFormatDoubleToRatio("1:0.3", 3, v_h, oneToN, v_h, DecimalPrecision::Precision1);
-    testFormatDoubleToRatio("1:0.33", 3, v_h, oneToN, v_h, DecimalPrecision::Precision2);
+    formatRatioTest("1:0", 3, v_h, oneToN, v_h, DecimalPrecision::Precision0);
+    formatRatioTest("1:0.3", 3, v_h, oneToN, v_h, DecimalPrecision::Precision1);
+    formatRatioTest("1:0.33", 3, v_h, oneToN, v_h, DecimalPrecision::Precision2);
 
-    testFormatDoubleToRatio("1:2500", 0.0004, v_h, oneToN, v_h, DecimalPrecision::Precision3);
+    formatRatioTest("1:2500", 0.0004, v_h, oneToN, v_h, DecimalPrecision::Precision3);
 
-    testFormatDoubleToRatio("1:0", 0.0004, v_h, oneToN, h_v, DecimalPrecision::Precision3);
-    testFormatDoubleToRatio("1:0.0004", 0.0004, v_h, oneToN, h_v, DecimalPrecision::Precision4);
-    testFormatDoubleToRatio("1:-0.0004", -0.0004, v_h, oneToN, h_v, DecimalPrecision::Precision4);
+    formatRatioTest("1:0", 0.0004, v_h, oneToN, h_v, DecimalPrecision::Precision3);
+    formatRatioTest("1:0.0004", 0.0004, v_h, oneToN, h_v, DecimalPrecision::Precision4);
+    formatRatioTest("1:-0.0004", -0.0004, v_h, oneToN, h_v, DecimalPrecision::Precision4);
     }
 
     // v:h -> v:h | ValueBased
     // if the value is smaller than 1, its 1 to N. else, N to 1
     {
-    testFormatDoubleToRatio("1:1", 1.0, v_h, valueBased, v_h);
-    testFormatDoubleToRatio("2:1", 2.0, v_h, valueBased, v_h);
-    testFormatDoubleToRatio("1:2", 0.5, v_h, valueBased, v_h);
-    testFormatDoubleToRatio("1:3.003", 0.333, v_h, valueBased, v_h);
-    testFormatDoubleToRatio("3.333:1", 3.3333, v_h, valueBased, v_h);
-    testFormatDoubleToRatio("1:3.5", 0.2857, v_h, valueBased, v_h);
-    testFormatDoubleToRatio("3.5:1", 3.5, v_h, valueBased, v_h);
-    testFormatDoubleToRatio("1:4", 0.25, v_h, valueBased, v_h);
-    testFormatDoubleToRatio("4:1", 4.0, v_h, valueBased, v_h);
+    formatRatioTest("1:1", 1.0, v_h, valueBased, v_h);
+    formatRatioTest("2:1", 2.0, v_h, valueBased, v_h);
+    formatRatioTest("1:2", 0.5, v_h, valueBased, v_h);
+    formatRatioTest("1:3.003", 0.333, v_h, valueBased, v_h);
+    formatRatioTest("3.333:1", 3.3333, v_h, valueBased, v_h);
+    formatRatioTest("1:3.5", 0.2857, v_h, valueBased, v_h);
+    formatRatioTest("3.5:1", 3.5, v_h, valueBased, v_h);
+    formatRatioTest("1:4", 0.25, v_h, valueBased, v_h);
+    formatRatioTest("4:1", 4.0, v_h, valueBased, v_h);
     }   
 
     // v:h -> v:h | UseGreatestCommonDivisor
     {
-    testFormatDoubleToRatio("1:1", 1.0, v_h, useGreatestCommonDivisor, v_h);
-    testFormatDoubleToRatio("2:1", 2.0, v_h, useGreatestCommonDivisor, v_h);
-    testFormatDoubleToRatio("1:2", 0.5, v_h, useGreatestCommonDivisor, v_h);
-    testFormatDoubleToRatio("333:1000", 0.333, v_h, useGreatestCommonDivisor, v_h);
-    testFormatDoubleToRatio("333:1000", 0.3333, v_h, useGreatestCommonDivisor, v_h);
-    testFormatDoubleToRatio("143:500", 0.2857, v_h, useGreatestCommonDivisor, v_h);
-    testFormatDoubleToRatio("1:4", 0.25, v_h, useGreatestCommonDivisor, v_h);
-    testFormatDoubleToRatio("667:1000", 0.6667, v_h, useGreatestCommonDivisor, v_h);
+    formatRatioTest("1:1", 1.0, v_h, useGreatestCommonDivisor, v_h);
+    formatRatioTest("2:1", 2.0, v_h, useGreatestCommonDivisor, v_h);
+    formatRatioTest("1:2", 0.5, v_h, useGreatestCommonDivisor, v_h);
+    formatRatioTest("333:1000", 0.333, v_h, useGreatestCommonDivisor, v_h);
+    formatRatioTest("333:1000", 0.3333, v_h, useGreatestCommonDivisor, v_h);
+    formatRatioTest("143:500", 0.2857, v_h, useGreatestCommonDivisor, v_h);
+    formatRatioTest("1:4", 0.25, v_h, useGreatestCommonDivisor, v_h);
+    formatRatioTest("667:1000", 0.6667, v_h, useGreatestCommonDivisor, v_h);
     }
 
     // negative values
     {
-    testFormatDoubleToRatio("-1:1", -1.0, v_h, NtoOne, v_h);
-    testFormatDoubleToRatio("1:-1", -1.0, v_h, valueBased, v_h);
+    formatRatioTest("-1:1", -1.0, v_h, NtoOne, v_h);
+    formatRatioTest("1:-1", -1.0, v_h, valueBased, v_h);
 
-    testFormatDoubleToRatio("-0.5:1", -0.5, v_h, NtoOne, v_h);
-    testFormatDoubleToRatio("1:-2", -0.5, v_h, valueBased, v_h);
+    formatRatioTest("-0.5:1", -0.5, v_h, NtoOne, v_h);
+    formatRatioTest("1:-2", -0.5, v_h, valueBased, v_h);
 
-    testFormatDoubleToRatio("-0.5:1", -2, v_h, NtoOne, h_v);
-    testFormatDoubleToRatio("1:-2", -2, v_h, valueBased, h_v);
+    formatRatioTest("-0.5:1", -2, v_h, NtoOne, h_v);
+    formatRatioTest("1:-2", -2, v_h, valueBased, h_v);
     }
 
     // really large/small numbers
     {
-    testFormatDoubleToRatio("0:1", 0.00000001, v_h, NtoOne, v_h);
-    testFormatDoubleToRatio("100000000:1", 0.00000001, v_h, NtoOne, h_v);
+    formatRatioTest("0:1", 0.00000001, v_h, NtoOne, v_h);
+    formatRatioTest("100000000:1", 0.00000001, v_h, NtoOne, h_v);
 
-    testFormatDoubleToRatio("100000000:1", 100000000, v_h, NtoOne, v_h);
-    testFormatDoubleToRatio("0:1", 100000000, v_h, NtoOne, h_v);
+    formatRatioTest("100000000:1", 100000000, v_h, NtoOne, v_h);
+    formatRatioTest("0:1", 100000000, v_h, NtoOne, h_v);
     }
 
     // irrational numbers
     {
-    testFormatDoubleToRatio("0.143:1", 1.0/7, v_h, NtoOne, v_h);
-    testFormatDoubleToRatio("1:7", 1.0/7, v_h, oneToN, v_h);
-    testFormatDoubleToRatio("0.286:1", 2.0/7, v_h, NtoOne, v_h);
-    testFormatDoubleToRatio("143:500", 2.0/7, v_h, useGreatestCommonDivisor, v_h); // loose precision from 0.28571428571 to 0.286
-    testFormatDoubleToRatio("7:2", 2.0/7, v_h, useGreatestCommonDivisor, h_v); // didnt loose much precision from 3.50000000005 to 3.5
+    formatRatioTest("0.143:1", 1.0/7, v_h, NtoOne, v_h);
+    formatRatioTest("1:7", 1.0/7, v_h, oneToN, v_h);
+    formatRatioTest("0.286:1", 2.0/7, v_h, NtoOne, v_h);
+    formatRatioTest("143:500", 2.0/7, v_h, useGreatestCommonDivisor, v_h); // loose precision from 0.28571428571 to 0.286
+    formatRatioTest("7:2", 2.0/7, v_h, useGreatestCommonDivisor, h_v); // didnt loose much precision from 3.50000000005 to 3.5
     }
 }
+
+// @TODO - <Naron>: there should be parseRatioString specific tests
+
 
 
 END_BENTLEY_FORMATTEST_NAMESPACE

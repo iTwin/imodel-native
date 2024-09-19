@@ -145,6 +145,8 @@ private:
     //! The input expression signature code mus be provided by the caller
     BEU::Quantity ComposeColonizedQuantity(Formatting::FormatSpecialCodes cod, FormatCP fusP = nullptr);
 
+    // parsing helper methods
+    BEU::Quantity ParseRatioFormat(FormatProblemCode* probCode = nullptr ,FormatCP fusP = nullptr);
 public:
     UNITS_EXPORT FormatParsingSet(Utf8CP input, BEU::UnitCP unit = nullptr, FormatCP format = nullptr, QuantityFormatting::UnitResolver* resolver = nullptr);
     bool HasProblem() const {return m_problem.IsProblem();}

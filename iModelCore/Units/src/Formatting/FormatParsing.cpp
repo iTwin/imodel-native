@@ -7,6 +7,8 @@
 #include "../../PrivateAPI/Formatting/FormattingParsing.h"
 #include "../../PrivateAPI/Formatting/NumericFormatUtils.h"
 #include <regex>
+#include <string>
+#include <sstream>
 
 #define MAX_PARSING_DIGITS 16
 
@@ -936,9 +938,13 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatC
 
     _Analysis_assume_(inputUnit != nullptr);
 
-    double sign = 1.0;
-
     m_problem.Reset();
+
+    if (format->GetPresentationType() == PresentationType::Ratio){
+        return ParseRatioFormat(probCode, format);
+    }
+
+    double sign = 1.0;
 
     Formatting::FormatSpecialCodes cod = Formatting::FormatConstant::ParsingPatternCode(sig.c_str());
     switch (cod)
@@ -1219,5 +1225,40 @@ BEU::Quantity  FormatParsingSet::ComposeColonizedQuantity(Formatting::FormatSpec
         }
     return qty;
     }
+
+
+BEU::Quantity FormatParsingSet::ParseRatioFormat(FormatProblemCode* probCode, FormatCP format)
+{
+    std::string instring(m_input);
+    std::istringstream iss(instring);
+    std::string part;
+
+    std::vector<std::string> parts;
+    while (std::getline(iss, part, ':')){
+        parts.push_back(part);
+    }
+
+    if (parts.size() > 2){
+        m_problem.UpdateProblemCode(FormatProblemCode::QT_InvalidRatioArgument); 
+        return BEU::Quantity();
+    }
+
+    double numerator;
+    try{
+        numerator = std::stod(parts[0]);
+    } catch (std::invalid_argument){
+        m_problem.UpdateProblemCode(FormatProblemCode::QT_InvalidRatioArgument);
+        return BEU::Quantity();
+    } catch (std::out_of_range){
+        m_problem.UpdateProblemCode(FormatProblemCode::QT_ValueOutOfRange);
+        return BEU::Quantity();
+    }
+
+
+
+
+
+    return BEU::Quantity();
+}
 
 END_BENTLEY_FORMATTING_NAMESPACE
