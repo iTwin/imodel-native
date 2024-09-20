@@ -567,7 +567,7 @@ DbResult    Statement::BindZeroBlob(int col, int size) {
 }
 DbResult    Statement::BindBlob(int col, void const* val, int size, MakeCopy makeCopy) {return (DbResult)sqlite3_bind_blob(m_stmt, col, val, size, makeCopy==MakeCopy::Yes ? SQLITE_TRANSIENT : SQLITE_STATIC);}
 DbResult    Statement::BindNull(int col) {return (DbResult)sqlite3_bind_null(m_stmt, col);}
-DbResult    Statement::BindVirtualSet(int col, VirtualSet const& intSet) {return BindInt64(col, (int64_t) &intSet);}
+DbResult    Statement::BindVirtualSet(int col, VirtualSet const& intSet) {return BindPointer(col, (VirtualSet*)&intSet, VIRTUAL_SET_PTR_BIND_NAME, nullptr); /*Type casting &intSet to "VirtualSet*" because &intSet gives us "const VirtualSet*" which is unassignable to type "void*" */}
 DbResult    Statement::BindDbValue(int col, struct DbValue const& dbVal) {return (DbResult) sqlite3_bind_value(m_stmt, col, dbVal.GetSqlValueP());}
 DbResult    Statement::BindPointer(int col, void* ptr, const char* name, void(*destroy)(void*))  {return (DbResult) sqlite3_bind_pointer(m_stmt, col, ptr, name, destroy);}
 
