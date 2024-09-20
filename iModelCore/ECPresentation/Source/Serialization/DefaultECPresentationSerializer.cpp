@@ -284,6 +284,9 @@ void DefaultECPresentationSerializer::_FieldAsJson(ContextR ctx, ContentDescript
 
     if (nullptr != field.GetEditor())
         fieldBaseJson.AddMember("Editor", field.GetEditor()->AsJson(ctx, &fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
+
+    if (field.IsCalculatedPropertyField() && field.AsCalculatedPropertyField()->GetExtendedData().GetJson().MemberCount() > 0)
+        fieldBaseJson.AddMember("ExtendedData", rapidjson::Value(field.AsCalculatedPropertyField()->GetExtendedData().GetJson(), fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
     }
 
 /*---------------------------------------------------------------------------------**//**
