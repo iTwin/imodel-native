@@ -216,6 +216,9 @@ void IModelJsECPresentationSerializer::_FieldAsJson(ContextR ctx, ContentDescrip
 
     if (nullptr != field.GetEditor())
         fieldBaseJson.AddMember("editor", field.GetEditor()->AsJson(ctx, &fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
+
+    if (field.IsCalculatedPropertyField() && field.AsCalculatedPropertyField()->GetExtendedData().GetJson().MemberCount() > 0)
+        fieldBaseJson.AddMember("extendedData", rapidjson::Value(field.AsCalculatedPropertyField()->GetExtendedData().GetJson(), fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
     }
 
 /*---------------------------------------------------------------------------------**//**
