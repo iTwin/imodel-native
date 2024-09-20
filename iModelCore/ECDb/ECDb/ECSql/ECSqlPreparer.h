@@ -35,7 +35,6 @@ struct ECSqlExpPreparer final
 
         static ECSqlStatus PrepareNullCastExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, CastExp const&);
         static BentleyStatus PrepareCastExpForPrimitive(Utf8StringR, ECN::PrimitiveType, Utf8StringCR castOperandSnippet);
-        static ECSqlStatus PrepareSearchConditionExp(NativeSqlBuilder&, ECSqlPrepareContext&, BooleanExp const& searchConditionExp);
         static void RemovePropertyRefs(ECSqlPrepareContext&, ClassRefExp const&, ClassMap const&);
         // query options
         static bool QueryOptionExperimentalFeaturesEnabled(ECDbCR db, ExpCR exp);
@@ -43,6 +42,7 @@ struct ECSqlExpPreparer final
 
     public:
         static ECSqlStatus PrepareAllOrAnyExp(ECSqlPrepareContext&, AllOrAnyExp const&);
+        static ECSqlStatus InsertSubquery(ECSqlPrepareContext&, AllOrAnyExp const&, SelectStatementExp const&, SqlCompareListType const&, BooleanSqlOperator const&);
         static ECSqlStatus PrepareBetweenRangeValueExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, BetweenRangeValueExp const&);
         static ECSqlStatus PrepareBinaryValueExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, BinaryValueExp const&);
         static ECSqlStatus PrepareBinaryBooleanExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, BinaryBooleanExp const&);
@@ -106,6 +106,7 @@ struct ECSqlExpPreparer final
         static ECSqlStatus PrepareExtractInstanceExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, ExtractInstanceValueExp const& exp);
         static ECSqlStatus PrepareNavValueCreationFuncExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, NavValueCreationFuncExp const& exp);
         static BooleanSqlOperator DetermineCompoundLogicalOpForCompoundExpressions(BooleanSqlOperator);
+        static ECSqlStatus PrepareSearchConditionExp(NativeSqlBuilder&, ECSqlPrepareContext&, BooleanExp const& searchConditionExp);
 
     };
 

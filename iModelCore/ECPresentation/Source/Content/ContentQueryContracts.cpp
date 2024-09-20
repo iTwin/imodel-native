@@ -65,13 +65,21 @@ ContentQueryContract::ContentQueryContract(uint64_t id, ContentDescriptorCR desc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQueryContractFieldCPtr ContentQueryContract::GetCalculatedPropertyField(Utf8StringCR calculatedFieldName, Utf8StringCR calculatedPropertyValue, Utf8StringCR prefix) const
+PresentationQueryContractFieldCPtr ContentQueryContract::GetCalculatedPropertyField(Utf8StringCR calculatedFieldName, Utf8StringCR calculatedPropertyValue, Utf8StringCR prefix, PrimitiveType type) const
     {
-    Utf8String value = "'";
-    value += calculatedPropertyValue;
-    value += "'";
-    PresentationQueryContractFieldPtr field = PresentationQueryContractFunctionField::Create(calculatedFieldName.c_str(), FUNCTION_NAME_EvaluateECExpression,
-        CreateFieldsList("ECClassId", "ECInstanceId", value), true);
+    PresentationQueryContractFieldPtr field;
+    if (!calculatedPropertyValue.empty())
+        {
+        Utf8String value = "'" + calculatedPropertyValue + "'";
+        Utf8PrintfString fieldType("%d", (int)type);
+        field = PresentationQueryContractFunctionField::Create(calculatedFieldName.c_str(), FUNCTION_NAME_EvaluateECExpression,
+        CreateFieldsList("ECClassId", "ECInstanceId", value, fieldType));
+        } 
+    else 
+        {
+        field = PresentationQueryContractSimpleField::Create(calculatedFieldName.c_str(), "CAST(null AS TEXT)", false);
+        }
+
     field->SetPrefixOverride(prefix);
     return field;
     }
@@ -300,7 +308,7 @@ bool ContentQueryContract::CreateContractFields(bvector<PresentationQueryContrac
 
             if (nullptr == descriptorField->AsCalculatedPropertyField()->GetClass() || selectClass->Is(descriptorField->AsCalculatedPropertyField()->GetClass()))
                 {
-                contractField = GetCalculatedPropertyField(descriptorField->GetUniqueName(), descriptorField->AsCalculatedPropertyField()->GetValueExpression(), prefix);
+                contractField = GetCalculatedPropertyField(descriptorField->GetUniqueName(), descriptorField->AsCalculatedPropertyField()->GetValueExpression(), prefix, descriptorField->AsCalculatedPropertyField()->GetType());
                 didCreateNonNullField = true;
                 }
             else

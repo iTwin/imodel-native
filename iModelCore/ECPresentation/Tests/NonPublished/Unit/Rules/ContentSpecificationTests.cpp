@@ -300,7 +300,7 @@ TEST_F(ContentSpecificationsTests, CopiedSpecificationHasSameNestedSpecification
     EXPECT_EQ(1, spec1.GetPropertyOverrides().size());
     EXPECT_EQ(1, spec1.GetPropertyCategories().size());
 
-    // Create spec2 via copy consstructor
+    // Create spec2 via copy constructor
     TestContentSpecification spec2(spec1);
 
     // Validate spec2

@@ -274,15 +274,22 @@ void ContentItemBuilder::AddNull(Utf8CP name, ECPropertyCP prop)
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentItemBuilder::AddValue(Utf8CP name, Utf8CP rawAndDisplayValue, ECPropertyCP prop)
+void ContentItemBuilder::AddValue(Utf8CP name, PrimitiveType type, IECSqlValue const& value)
     {
     if (BeforeAddValueStatus::Skip == _OnBeforeAddValue(name))
         return;
 
-    if (!rawAndDisplayValue)
-        AddNull(name, prop);
-    else 
-        _AddValue(name, rapidjson::Value(rawAndDisplayValue, m_values.second->GetAllocator()), rapidjson::Value(rawAndDisplayValue, m_displayValues.second->GetAllocator()), prop);
+    if (value.IsNull())
+        {
+        AddNull(name, nullptr);
+        return;
+        }
+
+    _AddValue(name,
+        ValueHelpers::GetJsonFromPrimitiveValue(type, nullptr, value, &m_values.second->GetAllocator()),
+        ValueHelpers::GetJsonFromPrimitiveValue(type, nullptr, value, &m_displayValues.second->GetAllocator()),
+        nullptr);
+        
     }
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod

@@ -2574,7 +2574,26 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         if (ChangesetStatus::Success != stat)
             BeNapi::ThrowJsException(Env(), "error applying changeset", (int)stat);
     }
+    void RevertTimelineChanges(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        if (info.Length() < 1 || !info[0].IsArray()) {
+            THROW_JS_TYPE_EXCEPTION("Argument 0 must be an array of changesets props")
+        }
+        REQUIRE_ARGUMENT_BOOL(1, skipSchemaChanges);
 
+        std::vector<ChangesetPropsPtr> changesets;
+        Napi::Array arr = info[0].As<Napi::Array>();
+        for (uint32_t arrIndex = 0; arrIndex < arr.Length(); ++arrIndex) {
+            Napi::Value arrValue = arr[arrIndex];
+             if (arrValue.IsObject()) {
+                auto revision = JsInterop::GetChangesetProps(db.GetDbGuid().ToString(), arrValue);
+                changesets.push_back(revision);
+             } else {
+                THROW_JS_TYPE_EXCEPTION("Expect an object in the array")
+             }
+        }
+        db.Txns().RevertTimelineChanges(changesets, skipSchemaChanges);
+    }
     void ConcurrentQueryExecute(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
         REQUIRE_ARGUMENT_FUNCTION(1, callback);
@@ -2657,6 +2676,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("addChildPropagatesChangesToParentRelationship", &NativeDgnDb::AddChildPropagatesChangesToParentRelationship),
             InstanceMethod("addNewFont", &NativeDgnDb::AddNewFont),
             InstanceMethod("applyChangeset", &NativeDgnDb::ApplyChangeset),
+            InstanceMethod("revertTimelineChanges", &NativeDgnDb::RevertTimelineChanges),
             InstanceMethod("attachChangeCache", &NativeDgnDb::AttachChangeCache),
             InstanceMethod("beginMultiTxnOperation", &NativeDgnDb::BeginMultiTxnOperation),
             InstanceMethod("beginPurgeOperation", &NativeDgnDb::BeginPurgeOperation),
@@ -4536,7 +4556,9 @@ public:
             InstanceMethod("stepForInsertAsync", &NativeECSqlStatement::StepForInsertAsync),
             InstanceMethod("getColumnCount", &NativeECSqlStatement::GetColumnCount),
             InstanceMethod("getValue", &NativeECSqlStatement::GetValue),
-            InstanceMethod("getNativeSql", &NativeECSqlStatement::GetNativeSql)
+            InstanceMethod("getNativeSql", &NativeECSqlStatement::GetNativeSql),
+            InstanceMethod("toRow", &NativeECSqlStatement::ToRow),
+            InstanceMethod("getMetadata", &NativeECSqlStatement::GetMetadata)
         });
 
         exports.Set("ECSqlStatement", t);
@@ -4671,6 +4693,44 @@ public:
             THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
 
         return Napi::String::New(Env(), m_stmt.GetNativeSql());
+    }
+
+    Napi::Value ToRow(NapiInfoCR info) {
+        if (!m_stmt.IsPrepared())
+            THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
+
+        REQUIRE_ARGUMENT_ANY_OBJ(0, optObj);
+        BeJsValue opts(optObj);
+        if (!opts.isBoolMember("classIdsToClassNames"))
+            BeNapi::ThrowJsException(info.Env(), "classIdsToClassNames argument missing");
+        if (!opts.isNumericMember("rowFormat"))
+            BeNapi::ThrowJsException(info.Env(), "rowFormat argument missing");
+
+        ECSqlRowAdaptor adaptor(*m_stmt.GetECDb());
+        adaptor.GetOptions().FromJson(opts);
+        adaptor.GetOptions().SetAbbreviateBlobs(false);
+
+        BeJsNapiObject out(info.Env());
+        BeJsValue rowJson = out["data"];
+        if (adaptor.RenderRow(rowJson, ECSqlStatementRow(m_stmt)) != SUCCESS)
+            BeNapi::ThrowJsException(info.Env(), "Failed to render row", BE_SQLITE_ERROR);
+
+        return out;
+    }
+
+    Napi::Value GetMetadata(NapiInfoCR info) {
+        if (!m_stmt.IsPrepared())
+            THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
+
+        ECSqlRowAdaptor adaptor(*m_stmt.GetECDb());
+        ECSqlRowProperty::List props;
+        adaptor.GetMetaData(props, m_stmt);
+
+        BeJsNapiObject out(info.Env());
+        BeJsValue metaJson = out["meta"];
+        props.ToJs(metaJson);
+
+        return out;
     }
 
     static DbResult ToDbResult(ECSqlStatus status) {

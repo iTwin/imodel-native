@@ -1012,9 +1012,9 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
     if (includeMetaData) {
         adaptor.GetMetaData(props ,stmt);
     }
-    adaptor.SetAbbreviateBlobs(abbreviateBlobs);
-    adaptor.SetConvertClassIdsToClassNames(classIdToClassNames);
-    adaptor.UseJsNames(request.GetValueFormat() == ECSqlRequest::ECSqlValueFormat::JsNames);
+    adaptor.GetOptions().SetAbbreviateBlobs(abbreviateBlobs);
+    adaptor.GetOptions().SetConvertClassIdsToClassNames(classIdToClassNames);
+    adaptor.GetOptions().UseJsNames(request.GetValueFormat() == ECSqlRequest::ECSqlValueFormat::JsNames);
     uint32_t row_count = 0;
     std::string& result = cachedAdaptor.ClearAndGetCachedString();
     result.reserve(QUERY_WORKER_RESULT_RESERVE_BYTES);

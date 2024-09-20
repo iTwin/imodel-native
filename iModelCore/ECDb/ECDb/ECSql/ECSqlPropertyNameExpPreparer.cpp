@@ -240,7 +240,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
         return ECSqlStatus::Error;
         }
 
-    ValueExp const* referencedValueExp = referencedDerivedPropertyExp.GetExpression();
+    ComputedExp const* referencedValueExp = referencedDerivedPropertyExp.GetExpression<ComputedExp>();
     //1. Exp-> PropertyName    useSameColumnNames
     //2. Exp-> ValueExpr       useAlias
     //3. Exp-> ScalarQuery     useAlias
@@ -384,7 +384,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                     }
 
                 nativeSqlSnippets = propertyRef->GetNativeSql();
-                if (ctx.GetCurrentScope().IsRootScope() && exp.GetParent()->GetType() == Exp::Type::DerivedProperty)
+                if (ctx.GetCurrentScope().IsRootScope() && exp.GetParent()->GetType() == Exp::Type::DerivedProperty && ctx.GetCreateField())
                     ECSqlFieldFactory::CreateField(ctx, exp.GetParent()->GetAsCP<DerivedPropertyExp>(), ctx.GetCurrentScope().GetNativeSqlSelectClauseColumnCount());
                 break;
                 }
