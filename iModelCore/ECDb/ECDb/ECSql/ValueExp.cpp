@@ -817,6 +817,21 @@ Exp::FinalizeParseStatus MemberFunctionCallExp::_FinalizeParsing(ECSqlParseConte
     if (mode == Exp::FinalizeParseMode::AfterFinalizingChildren)
         {
         if (this->m_tableValuedFunc) {
+            if(GetFunctionName().EqualsIAscii("IdSet"))
+            {
+                ValueExp const* argExp = GetArgument(0);
+                if(argExp == nullptr)
+                    return Exp::FinalizeParseStatus::Error;
+                ECSqlTypeInfo typeInfo = argExp->GetTypeInfo();
+                if (!typeInfo.IsPrimitive() && !typeInfo.IsUnset())
+                    return Exp::FinalizeParseStatus::Error;
+                if(typeInfo.IsPrimitive())
+                {
+                    ECN::PrimitiveType primitiveType = typeInfo.GetPrimitiveType();
+                    if(primitiveType != ECN::PrimitiveType::PRIMITIVETYPE_String)
+                        return Exp::FinalizeParseStatus::Error;
+                }
+            }
             return FinalizeParseStatus::Completed;
         }
         FunctionSignature const* funcSig = FunctionSignatureSet::GetInstance().Find(m_functionName.c_str());

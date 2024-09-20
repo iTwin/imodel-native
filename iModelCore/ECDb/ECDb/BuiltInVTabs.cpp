@@ -151,8 +151,175 @@ DbResult ClassPropsModule::Connect(DbVirtualTable*& out, Config& conf, int argc,
     return BE_SQLITE_OK;
 }
 
+/*IdSet Virtual Table*/
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult IdSetModule::IdSetTable::IdSetCursor::Next() {
+    ++m_index;
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult IdSetModule::IdSetTable::IdSetCursor::GetRowId(int64_t& rowId) {
+    rowId = (*m_index).GetValue();
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult IdSetModule::IdSetTable::IdSetCursor::GetColumn(int i, Context& ctx) {
+    ctx.SetResultInt64((*m_index).GetValue());
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *idxStr, int argc, DbValue* argv) {
+    int recompute = false;
+    if( idxNum & 1 ){
+        m_ArgType = argv[0].GetValueType();
+        if(m_ArgType == DbValueType::TextVal)
+        {
+            Utf8String valueGiven = argv[0].GetValueText();
+            if(valueGiven.EqualsIAscii(""))
+            {
+                Reset();
+            }
+            else if(!valueGiven.EqualsIAscii(m_text))
+            {
+                m_text = valueGiven;
+                recompute = true;
+            }
+        }
+        else if(m_ArgType == DbValueType::NullVal)
+        {
+            Reset();
+        }
+        else
+        {
+            IdSet<BeInt64Id>* valueGiven = (IdSet<BeInt64Id>*)argv[0].GetValuePointer("ID_SET_NAME");
+            if(valueGiven != m_virtualSetPtr)
+            {
+                m_virtualSetPtr = valueGiven;
+                recompute = true;
+            }
+        }
+    }else{
+        Reset();
+    }
+    if(recompute)
+    {
+        m_idSet.clear();
+        if(m_ArgType == DbValueType::TextVal && m_text.size() > 0)
+        {
+            // Parse String to Js Document and iterate through the array and insert int hex ids as int64 in uniqueIds set.
+            BeJsDocument doc(m_text.c_str());
+            doc.Stringify(StringifyFormat::Indented);
+            if(!doc.isArray())
+                return BE_SQLITE_ERROR;
+            doc.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst k1)
+                                {
+                                    if(k1.asUInt64(-1) != -1)
+                                        m_idSet.insert(BeInt64Id(k1.asUInt64(-1)));
+                                    return false; 
+                                });
+        }
+        else if(m_virtualSetPtr != nullptr)
+        {
+            m_idSet = *m_virtualSetPtr;
+        }
+        else
+        {
+            return BE_SQLITE_ERROR;
+        }
+    }
+    m_index = m_idSet.begin();
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void IdSetModule::IdSetTable::IdSetCursor::Reset() {
+    m_text = "";
+    m_virtualSetPtr = nullptr;
+    m_idSet.clear();
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult IdSetModule::IdSetTable::BestIndex(IndexInfo& indexInfo) {
+     int i, j;              /* Loop over constraints */
+    int idxNum = 0;        /* The query plan bitmask */
+    int unusableMask = 0;  /* Mask of unusable constraints */
+    int nArg = 0;          /* Number of arguments that seriesFilter() expects */
+    int aIdx[2];           /* Constraints on start, stop, and step */
+    const int SQLITE_SERIES_CONSTRAINT_VERIFY = 0;
+    aIdx[0] = aIdx[1] = -1;
+    int nConstraint = indexInfo.GetConstraintCount();
+
+    for(i=0; i<nConstraint; i++){
+        auto pConstraint = indexInfo.GetConstraint(i);
+        int iCol;    /* 0 for start, 1 for stop, 2 for step */
+        int iMask;   /* bitmask for those column */
+        if( pConstraint->GetColumn()< 0) continue;
+        iCol = pConstraint->GetColumn();
+        iMask = 1 << iCol;
+        if (!pConstraint->IsUsable()){
+            unusableMask |=  iMask;
+            continue;
+        } else if (pConstraint->GetOp() == IndexInfo::Operator::EQ ){
+            idxNum |= iMask;
+            aIdx[iCol] = i;
+        }
+    }
+    for( i = 0; i < 2; i++) {
+        if( (j = aIdx[i]) >= 0 ) {
+            indexInfo.GetConstraintUsage(j)->SetArgvIndex(++nArg);
+            indexInfo.GetConstraintUsage(j)->SetOmit(!SQLITE_SERIES_CONSTRAINT_VERIFY);
+        }
+    }
+
+    if ((unusableMask & ~idxNum)!=0 ){
+        return BE_SQLITE_CONSTRAINT;
+    }
+
+    indexInfo.SetEstimatedCost(2.0);
+    indexInfo.SetEstimatedRows(1000);
+    if( indexInfo.GetIndexOrderByCount() >= 1 && indexInfo.GetOrderBy(0)->GetColumn() == 0 ) {
+        if( indexInfo.GetOrderBy(0) ->GetDesc()){
+            idxNum |= 8;
+        } else {
+            idxNum |= 16;
+        }
+        indexInfo.SetOrderByConsumed(true);
+    }
+    indexInfo.SetIdxNum(idxNum);
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult IdSetModule::Connect(DbVirtualTable*& out, Config& conf, int argc, const char* const* argv) {
+    out = new IdSetTable(*this);
+    conf.SetTag(Config::Tags::Innocuous);
+    return BE_SQLITE_OK;
+}
+
 DbResult RegisterBuildInVTabs(ECDbR ecdb) {
-    auto rc = (new ClassPropsModule(ecdb))->Register();
-    return rc;
+    DbResult rc = (new ClassPropsModule(ecdb))->Register();
+    if(rc != BE_SQLITE_OK)
+        return rc;
+    rc = (new IdSetModule(ecdb))->Register();
+    if(rc != BE_SQLITE_OK)
+        return rc;
+    return BE_SQLITE_OK;
 }
 END_BENTLEY_SQLITE_EC_NAMESPACE
