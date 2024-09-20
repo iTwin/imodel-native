@@ -161,7 +161,7 @@ IECSqlBinder& VirtualSetBinder::_AddArrayElement()
 //---------------------------------------------------------------------------------------
 ECSqlStatus VirtualSetBinder::_BindVirtualSet(std::shared_ptr<VirtualSet> virtualSet)
     {
-    const DbResult sqliteStat = GetSqliteStatement().BindPointer(GetSqlParameterIndex(), virtualSet.get(), "VIRTUAL_SET_PTR", nullptr);
+    const DbResult sqliteStat = GetSqliteStatement().BindPointer(GetSqlParameterIndex(), virtualSet.get(), VIRTUAL_SET_PTR_BIND_NAME, nullptr);
     if (sqliteStat != BE_SQLITE_OK)
         return LogSqliteError(sqliteStat, Utf8PrintfString("Failed to bind pointer value %" PRIiPTR " to Id parameter.", virtualSet.get()).c_str());
 
