@@ -5272,7 +5272,7 @@ static void isInVirtualSet(sqlite3_context* ctx, int nArgs, sqlite3_value** args
         }
 
     // the first argument must be the set to test against.
-    VirtualSet const* vSet = (VirtualSet const*) sqlite3_value_int64(args[0]);
+    VirtualSet const* vSet = (VirtualSet const*) sqlite3_value_pointer("VIRTUAL_SET_PTR");
     if (nullptr==vSet)
         sqlite3_result_int(ctx, 0); //0 means false -> if no virtual set is bound, we treat it as binding an empty virtual set
     else

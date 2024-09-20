@@ -161,9 +161,9 @@ IECSqlBinder& VirtualSetBinder::_AddArrayElement()
 //---------------------------------------------------------------------------------------
 ECSqlStatus VirtualSetBinder::_BindVirtualSet(std::shared_ptr<VirtualSet> virtualSet)
     {
-    const DbResult sqliteStat = GetSqliteStatement().BindInt64(GetSqlParameterIndex(), (int64_t) virtualSet.get());
+    const DbResult sqliteStat = GetSqliteStatement().BindPointer(GetSqlParameterIndex(), virtualSet.get(), "VIRTUAL_SET_PTR", nullptr);
     if (sqliteStat != BE_SQLITE_OK)
-        return LogSqliteError(sqliteStat, Utf8PrintfString("Failed to bind Int64 value %" PRIi64 " to Id parameter.", virtualSet.get()).c_str());
+        return LogSqliteError(sqliteStat, Utf8PrintfString("Failed to bind pointer value %" PRIiPTR " to Id parameter.", virtualSet.get()).c_str());
 
     m_virtualSet = virtualSet;
     return ECSqlStatus::Success;
