@@ -1750,7 +1750,6 @@ bvector<bvector<DPoint3d>> *cutEdges    // unimplemented
         {
         // Each infinite plane of the clip plane set creates a section with the mesh,
         // and the sections are clipped by the other clip planes.
-        // unused - DRange3d range = polyface.PointRange ();
         bvector<DPoint3d> work;
         bvector<DPoint3d> clippedXYZ;
         for (auto &convexSet : clipSet)
@@ -1770,7 +1769,7 @@ bvector<bvector<DPoint3d>> *cutEdges    // unimplemented
                             for (auto &loop : region)
                                 {
                                 if (!loop.front().AlmostEqual(loop.back()))
-                                    continue;   // we can only triangulate loops
+                                    continue;   // we can only triangulate/clip loops
                                 convexSet.ConvexPolygonClip (loop, clippedXYZ, work, 1);
                                 if (clippedXYZ.size () > 0)
                                     clippedLoopsXYZ.push_back (clippedXYZ);
@@ -1786,9 +1785,9 @@ bvector<bvector<DPoint3d>> *cutEdges    // unimplemented
 
                             DVec3d normal0 = DVec3d::FromMatrixColumn (localToWorld, 2);
                             DVec3d normal1 = DVec3d::FromScale (normal0, -1.0);
-                            if (inside && inside->IsValid() && keepCutFacesWithInside)
+                            if (inside && keepCutFacesWithInside)
                                 AddTrianglesToMesh (*(*inside), triangleVertices, triangleIndices, worldToLocal, normal1, true, true);
-                            if (outside && outside->IsValid() && keepCutFacesWithOutside)
+                            if (outside && keepCutFacesWithOutside)
                                 AddTrianglesToMesh (*(*outside), triangleVertices, triangleIndices, worldToLocal, normal0, true, false);
                             }
                         }
