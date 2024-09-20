@@ -148,6 +148,7 @@ enum class FormatProblemCode
     QT_NoValueOrUnitFound = 20109,
     QT_InvalidRatioArgument = 20110,
     QT_ValueOutOfRange = 20111,
+    QT_MathematicOperationFoundButIsNotAllowed = 20112,
     FUS_InvalidSyntax = 20151,
     NFS_Undefined = 20160,
     NFS_InvalidSpecName = 20161,

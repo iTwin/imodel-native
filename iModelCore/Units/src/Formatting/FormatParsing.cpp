@@ -938,13 +938,12 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatC
 
     _Analysis_assume_(inputUnit != nullptr);
 
-    m_problem.Reset();
-
     if (format->GetPresentationType() == PresentationType::Ratio){
         return ParseRatioFormat(probCode, format);
     }
 
     double sign = 1.0;
+    m_problem.Reset();
 
     Formatting::FormatSpecialCodes cod = Formatting::FormatConstant::ParsingPatternCode(sig.c_str());
     switch (cod)
@@ -1229,6 +1228,11 @@ BEU::Quantity  FormatParsingSet::ComposeColonizedQuantity(Formatting::FormatSpec
 
 BEU::Quantity FormatParsingSet::ParseRatioFormat(FormatProblemCode* probCode, FormatCP format)
 {
+    if (m_input == nullptr || format->GetCompositeMajorUnit() == nullptr){
+        m_problem.UpdateProblemCode(FormatProblemCode::QT_NoValueOrUnitFound);
+        return BEU::Quantity();
+    }
+
     std::string instring(m_input);
     std::istringstream iss(instring);
     std::string part;
@@ -1238,14 +1242,26 @@ BEU::Quantity FormatParsingSet::ParseRatioFormat(FormatProblemCode* probCode, Fo
         parts.push_back(part);
     }
 
+    if (parts.size() == 0){
+        m_problem.UpdateProblemCode(FormatProblemCode::QT_NoValueOrUnitFound);
+        return BEU::Quantity();
+    }
+
     if (parts.size() > 2){
         m_problem.UpdateProblemCode(FormatProblemCode::QT_InvalidRatioArgument); 
         return BEU::Quantity();
     }
 
+    if (parts.size() == 1){
+        parts.push_back("1");
+    }
+
     double numerator;
+    double denominator;
+
     try{
         numerator = std::stod(parts[0]);
+        denominator = std::stod(parts[1]);
     } catch (std::invalid_argument){
         m_problem.UpdateProblemCode(FormatProblemCode::QT_InvalidRatioArgument);
         return BEU::Quantity();
@@ -1253,6 +1269,37 @@ BEU::Quantity FormatParsingSet::ParseRatioFormat(FormatProblemCode* probCode, Fo
         m_problem.UpdateProblemCode(FormatProblemCode::QT_ValueOutOfRange);
         return BEU::Quantity();
     }
+
+    BEU::UnitCP defaultUnit = format->GetCompositeMajorUnit(); 
+    // BEU::UnitCP outUnit = m_unit; 
+
+    BEU::Quantity converted;
+    BEU::Quantity zeroQty = BEU::Quantity(0, *defaultUnit); // temp qty to check invertingZero error on input "1:0" with invert units
+    if (denominator == 0){
+        converted = zeroQty.ConvertTo(m_unit);
+        if (converted.GetProblemCode() != BEU::UnitsProblemCode::InvertingZero){
+            return BEU::Quantity(0, *m_unit);
+        }
+        // for input of "N:0" without reversed unit
+        m_problem.UpdateProblemCode(FormatProblemCode::QT_MathematicOperationFoundButIsNotAllowed);
+        return BEU::Quantity();
+    }
+
+    BEU::Quantity qty = BEU::Quantity(numerator / denominator, *defaultUnit);
+    converted = qty.ConvertTo(m_unit);
+
+    // for input of "0:N" with reversed unit
+    if (converted.GetProblemCode() == BEU::UnitsProblemCode::InvertingZero){
+        m_problem.UpdateProblemCode(FormatProblemCode::QT_MathematicOperationFoundButIsNotAllowed);
+        return BEU::Quantity();
+    }
+
+    return converted;
+}
+
+
+
+
 
 
 
