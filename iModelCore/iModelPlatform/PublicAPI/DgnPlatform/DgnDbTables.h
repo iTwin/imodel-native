@@ -667,7 +667,7 @@ public:
     void SetProjectExtentsSource(ProjectExtentsSource source) const {m_extentSource = source;}
 
     //! Update the project extents for this BIM
-    DGNPLATFORM_EXPORT void SetProjectExtents(AxisAlignedBox3dCR newExtents);
+    DGNPLATFORM_EXPORT void SetProjectExtents(AxisAlignedBox3dCR newExtents, bool fromChangesetAppliedEvent);
 
     //! Reset the in-memory project extents to a null range. Strictly for tests.
     void ResetProjectExtents() {

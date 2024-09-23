@@ -531,7 +531,7 @@ public:
     static DgnDbStatus GetModel(Napi::Object results, DgnDbR db, BeJsConst inOpts);
     static void QueryModelExtents(BeJsValue extents, DgnDbR db, BeJsConst options);
     static DgnDbStatus QueryDefinitionElementUsage(BeJsValue usageInfo, DgnDbR db, bvector<Utf8String> const& idStringArray);
-    static void UpdateProjectExtents(DgnDbR dgndb, BeJsConst newExtents);
+    static void UpdateProjectExtents(DgnDbR dgndb, BeJsConst newExtents, bool fromChangesetAppliedEvent);
     static void UpdateIModelProps(DgnDbR dgndb, BeJsConst);
     static Napi::Value GetInstance(ECDbR db, NapiInfoCR info);
 

@@ -2341,7 +2341,8 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     void UpdateProjectExtents(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_STRING(0, newExtentsJson)
-        JsInterop::UpdateProjectExtents(GetOpenedDb(info), BeJsDocument(newExtentsJson));
+        REQUIRE_ARGUMENT_BOOL(1, fromChangesetAppliedEvent);
+        JsInterop::UpdateProjectExtents(GetOpenedDb(info), BeJsDocument(newExtentsJson), fromChangesetAppliedEvent);
         }
 
     Napi::Value GetCodeValueBehavior(NapiInfoCR info) {

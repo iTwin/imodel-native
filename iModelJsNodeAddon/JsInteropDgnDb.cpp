@@ -509,11 +509,20 @@ DgnDbStatus JsInterop::SimplifyElementGeometry(DgnDbR db, Napi::Object simplifyA
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsInterop::UpdateProjectExtents(DgnDbR dgndb, BeJsConst newExtents) {
+void JsInterop::UpdateProjectExtents(DgnDbR dgndb, BeJsConst newExtents, bool fromChangesetAppliedEvent) {
     auto& geolocation = dgndb.GeoLocation();
     AxisAlignedBox3d extents;
     extents.FromJson(newExtents);
-    geolocation.SetProjectExtents(extents);
+    if (fromChangesetAppliedEvent) {
+        // Check if our extents have actually changed. If not, return early.
+        if (geolocation.GetProjectExtents().IsEqual(extents))
+            return;
+        // set isValid to false so that we recalculate the ecefLocation in SetProjectExtents with these new extents.
+        auto ecefLocation = geolocation.GetEcefLocation();
+        ecefLocation.m_isValid = false;
+    }
+
+    geolocation.SetProjectExtents(extents, fromChangesetAppliedEvent);
     geolocation.Save();
 }
 
@@ -526,7 +535,7 @@ void JsInterop::UpdateIModelProps(DgnDbR dgndb, BeJsConst props) {
     if (!extJson.isNull()) {
         AxisAlignedBox3d extents;
         extents.FromJson(props[json_projectExtents()]);
-        geolocation.SetProjectExtents(extents);
+        geolocation.SetProjectExtents(extents, false);
     }
     auto orgJson = props[json_globalOrigin()];
     if (!orgJson.isNull())

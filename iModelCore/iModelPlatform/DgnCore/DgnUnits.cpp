@@ -460,7 +460,7 @@ void DgnGeoLocation::Save()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents)
+void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents, bool fromChangesetAppliedEvent)
     {
     DgnDb::VerifyClientThread();
 
@@ -476,9 +476,12 @@ void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents)
     // JsonCpp and RapidJson differ slightly in precision of floating point numbers.
     // Tile content Ids include a hash of the project extents.
     // Differing precision => different content Ids => invalidate every cached tile in existence.
-    Json::Value jsonObj;
-    BeJsGeomUtils::DRange3dToJson(jsonObj, m_extent);
-    m_dgndb.SavePropertyString(DgnProjectProperty::Extents(), jsonObj.ToString());
+    if (!fromChangesetAppliedEvent)
+        {
+        Json::Value jsonObj;
+        BeJsGeomUtils::DRange3dToJson(jsonObj, m_extent);
+        m_dgndb.SavePropertyString(DgnProjectProperty::Extents(), jsonObj.ToString());   
+        }
 
     if (!m_ecefLocation.m_isValid)
         {
@@ -499,7 +502,7 @@ void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnGeoLocation::InitializeProjectExtents(DRange3dP rangeWithOutliers, bvector<BeInt64Id>* elementOutliers)
     {
-    SetProjectExtents(ComputeProjectExtents(rangeWithOutliers, elementOutliers));
+    SetProjectExtents(ComputeProjectExtents(rangeWithOutliers, elementOutliers), false);
 
     // We need an immutable origin for Cesium tile publishing that will not
     // change when project extents change.   Set it here only.

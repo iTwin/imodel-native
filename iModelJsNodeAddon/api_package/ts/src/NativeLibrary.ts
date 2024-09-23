@@ -687,7 +687,8 @@ export declare namespace IModelJsNative {
     public updateLinkTableRelationship(props: RelationshipProps): DbResult;
     public updateModel(modelProps: ModelProps): void;
     public updateModelGeometryGuid(modelId: Id64String): IModelStatus;
-    public updateProjectExtents(newExtentsJson: string): void;
+    // fromChangesetAppliedEvent lets updateProjectExtents know that the extents are already stored in the iModel and do not need to be written to the database again.
+    public updateProjectExtents(newExtentsJson: string, fromChangesetAppliedEvent: boolean): void;
     public writeAffectedElementDependencyGraphToFile(dotFileName: string, changedElems: Id64Array): BentleyStatus;
     public writeFullElementDependencyGraphToFile(dotFileName: string): BentleyStatus;
     public vacuum(arg?: { pageSize?: number, into?: LocalFileName }): void;
