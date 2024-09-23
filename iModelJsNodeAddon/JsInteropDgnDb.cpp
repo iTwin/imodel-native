@@ -513,10 +513,10 @@ void JsInterop::UpdateProjectExtents(DgnDbR dgndb, BeJsConst newExtents, bool fr
     auto& geolocation = dgndb.GeoLocation();
     AxisAlignedBox3d extents;
     extents.FromJson(newExtents);
+    // Check if our extents have actually changed. If not, return early.
+    if (geolocation.GetProjectExtents().IsEqual(extents, 0.01))
+        return;
     if (fromChangesetAppliedEvent) {
-        // Check if our extents have actually changed. If not, return early.
-        if (geolocation.GetProjectExtents().IsEqual(extents))
-            return;
         // set isValid to false so that we recalculate the ecefLocation in SetProjectExtents with these new extents.
         auto ecefLocation = geolocation.GetEcefLocation();
         ecefLocation.m_isValid = false;
