@@ -1297,15 +1297,4 @@ BEU::Quantity FormatParsingSet::ParseRatioFormat(FormatProblemCode* probCode, Fo
     return converted;
 }
 
-
-
-
-
-
-
-
-
-    return BEU::Quantity();
-}
-
 END_BENTLEY_FORMATTING_NAMESPACE

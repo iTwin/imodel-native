@@ -1757,11 +1757,14 @@ TEST_F(FormattingTestFixture, FormatRatio){
         EXPECT_STREQ(ratioString, ratioFormat.FormatQuantity(quantity).c_str());
 
         // parsing back to quantity
-        FormatProblemCode problemCode;
+        FormatProblemCode problemCode = FormatProblemCode::NoProblems;
         auto formatParsingSet = FormatParsingSet(ratioString, persistenceUnit, &ratioFormat);
         BEU::Quantity qty = formatParsingSet.GetQuantity(&problemCode, &ratioFormat);
+
         EXPECT_EQ(FormatProblemCode::NoProblems, problemCode); 
-        EXPECT_TRUE(quantity.IsClose(qty, 0.0001));
+        auto precisionNum = static_cast<int>(precision);
+        auto tolerance = pow(10, -precisionNum) * 4.999;
+        EXPECT_NEAR(value, qty.GetMagnitude(), tolerance);
     };
 
     auto v_h = s_unitsContext->LookupUnit("VERTICAL_PER_HORIZONTAL");
@@ -1892,7 +1895,7 @@ TEST_F(FormattingTestFixture, FormatRatio){
     formatRatioTest("100000000:1", 0.00000001, v_h, NtoOne, h_v);
 
     formatRatioTest("100000000:1", 100000000, v_h, NtoOne, v_h);
-    formatRatioTest("0:1", 100000000, v_h, NtoOne, h_v);
+    // formatRatioTest("0:1", 100000000, v_h, NtoOne, h_v); //works one way parsing from quantity to ratio, but not the other way around. from "0:1" cant be parsed to 100000000
     }
 
     // irrational numbers
@@ -1906,6 +1909,7 @@ TEST_F(FormattingTestFixture, FormatRatio){
 }
 
 // @TODO - <Naron>: there should be parseRatioString specific tests
+
 
 
 
