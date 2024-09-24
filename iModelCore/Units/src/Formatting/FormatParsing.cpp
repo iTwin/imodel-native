@@ -939,7 +939,7 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatC
     _Analysis_assume_(inputUnit != nullptr);
 
     if (format->GetPresentationType() == PresentationType::Ratio){
-        return ParseRatioFormat(probCode, format);
+        return ParseRatioFormat(probCode, format, inputUnit);
     }
 
     double sign = 1.0;
@@ -1226,13 +1226,8 @@ BEU::Quantity  FormatParsingSet::ComposeColonizedQuantity(Formatting::FormatSpec
     }
 
 
-BEU::Quantity FormatParsingSet::ParseRatioFormat(FormatProblemCode* probCode, FormatCP format)
+BEU::Quantity FormatParsingSet::ParseRatioFormat(FormatProblemCode* probCode, FormatCP format, BEU::UnitCP inputUnit)
 {
-    if (m_input == nullptr || format->GetCompositeMajorUnit() == nullptr){
-        m_problem.UpdateProblemCode(FormatProblemCode::QT_NoValueOrUnitFound);
-        return BEU::Quantity();
-    }
-
     std::string instring(m_input);
     std::istringstream iss(instring);
     std::string part;
@@ -1243,15 +1238,14 @@ BEU::Quantity FormatParsingSet::ParseRatioFormat(FormatProblemCode* probCode, Fo
     }
 
     if (parts.size() == 0){
-        m_problem.UpdateProblemCode(FormatProblemCode::QT_NoValueOrUnitFound);
-        return BEU::Quantity();
+        return UpdateAndSetProblemCode(FormatProblemCode::QT_NoValueOrUnitFound, probCode);
     }
 
     if (parts.size() > 2){
-        m_problem.UpdateProblemCode(FormatProblemCode::QT_InvalidRatioArgument); 
-        return BEU::Quantity();
+        return UpdateAndSetProblemCode(FormatProblemCode::QT_InvalidRatioArgument, probCode);
     }
 
+    // for single number input. e.g. input of "30" will be converted to "30:1"
     if (parts.size() == 1){
         parts.push_back("1");
     }
@@ -1263,38 +1257,47 @@ BEU::Quantity FormatParsingSet::ParseRatioFormat(FormatProblemCode* probCode, Fo
         numerator = std::stod(parts[0]);
         denominator = std::stod(parts[1]);
     } catch (std::invalid_argument){
-        m_problem.UpdateProblemCode(FormatProblemCode::QT_InvalidRatioArgument);
-        return BEU::Quantity();
+        return UpdateAndSetProblemCode(FormatProblemCode::QT_InvalidRatioArgument, probCode);
     } catch (std::out_of_range){
-        m_problem.UpdateProblemCode(FormatProblemCode::QT_ValueOutOfRange);
-        return BEU::Quantity();
+        return UpdateAndSetProblemCode(FormatProblemCode::QT_ValueOutOfRange, probCode);
     }
 
-    BEU::UnitCP defaultUnit = format->GetCompositeMajorUnit(); 
-    // BEU::UnitCP outUnit = m_unit; 
+    if (m_unit == nullptr){
+        return UpdateAndSetProblemCode(FormatProblemCode::QT_NoValueOrUnitFound, probCode);
+    }
 
     BEU::Quantity converted;
-    BEU::Quantity zeroQty = BEU::Quantity(0, *defaultUnit); // temp qty to check invertingZero error on input "1:0" with invert units
+    BEU::Quantity zeroQty = BEU::Quantity(0, *inputUnit); // temp qty to check invertingZero error on input "1:0" with invert units
     if (denominator == 0){
         converted = zeroQty.ConvertTo(m_unit);
-        if (converted.GetProblemCode() != BEU::UnitsProblemCode::InvertingZero){
+        if (converted.GetProblemCode() == BEU::UnitsProblemCode::InvertingZero){
             return BEU::Quantity(0, *m_unit);
         }
         // for input of "N:0" without reversed unit
-        m_problem.UpdateProblemCode(FormatProblemCode::QT_MathematicOperationFoundButIsNotAllowed);
-        return BEU::Quantity();
+        return UpdateAndSetProblemCode(FormatProblemCode::QT_MathematicOperationFoundButIsNotAllowed, probCode);
     }
 
-    BEU::Quantity qty = BEU::Quantity(numerator / denominator, *defaultUnit);
+    BEU::Quantity qty = BEU::Quantity(numerator / denominator, *inputUnit);
     converted = qty.ConvertTo(m_unit);
 
     // for input of "0:N" with reversed unit
     if (converted.GetProblemCode() == BEU::UnitsProblemCode::InvertingZero){
-        m_problem.UpdateProblemCode(FormatProblemCode::QT_MathematicOperationFoundButIsNotAllowed);
-        return BEU::Quantity();
+        return UpdateAndSetProblemCode(FormatProblemCode::QT_MathematicOperationFoundButIsNotAllowed, probCode);
     }
 
     return converted;
 }
+
+
+BEU::Quantity FormatParsingSet::UpdateAndSetProblemCode(FormatProblemCode code, FormatProblemCode* probCode)
+{
+    m_problem.UpdateProblemCode(code);
+    if (probCode != nullptr) {
+        *probCode = m_problem.GetProblemCode();
+    }
+
+    return BEU::Quantity();
+}
+
 
 END_BENTLEY_FORMATTING_NAMESPACE

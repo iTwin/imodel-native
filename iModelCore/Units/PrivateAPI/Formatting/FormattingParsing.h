@@ -146,7 +146,9 @@ private:
     BEU::Quantity ComposeColonizedQuantity(Formatting::FormatSpecialCodes cod, FormatCP fusP = nullptr);
 
     // parsing helper methods
-    BEU::Quantity ParseRatioFormat(FormatProblemCode* probCode = nullptr ,FormatCP fusP = nullptr);
+    BEU::Quantity ParseRatioFormat(FormatProblemCode* probCode = nullptr ,FormatCP fusP = nullptr, BEU::UnitCP unit = nullptr);
+    BEU::Quantity UpdateAndSetProblemCode(FormatProblemCode code, FormatProblemCode* probCode);
+
 public:
     UNITS_EXPORT FormatParsingSet(Utf8CP input, BEU::UnitCP unit = nullptr, FormatCP format = nullptr, QuantityFormatting::UnitResolver* resolver = nullptr);
     bool HasProblem() const {return m_problem.IsProblem();}

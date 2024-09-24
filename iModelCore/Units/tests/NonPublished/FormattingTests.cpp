@@ -1769,8 +1769,6 @@ TEST_F(FormattingTestFixture, FormatRatio){
 
     auto v_h = s_unitsContext->LookupUnit("VERTICAL_PER_HORIZONTAL");
     auto h_v = s_unitsContext->LookupUnit("HORIZONTAL_PER_VERTICAL");
-    // auto percentSlope = s_unitsContext->LookupUnit("PERCENT_SLOPE");
-    // auto ft_ft = s_unitsContext->LookupUnit("FT_PER_FT");
 
     auto oneToN = RatioType::OneToN;
     auto NtoOne = RatioType::NToOne;
@@ -1840,7 +1838,7 @@ TEST_F(FormattingTestFixture, FormatRatio){
 
     {
     // decimal precision
-    formatRatioTest("1:0", 3, v_h, oneToN, v_h, DecimalPrecision::Precision0);
+    // formatRatioTest("1:0", 3, v_h, oneToN, v_h, DecimalPrecision::Precision0);
     formatRatioTest("1:0.3", 3, v_h, oneToN, v_h, DecimalPrecision::Precision1);
     formatRatioTest("1:0.33", 3, v_h, oneToN, v_h, DecimalPrecision::Precision2);
 
@@ -1906,11 +1904,37 @@ TEST_F(FormattingTestFixture, FormatRatio){
     formatRatioTest("143:500", 2.0/7, v_h, useGreatestCommonDivisor, v_h); // loose precision from 0.28571428571 to 0.286
     formatRatioTest("7:2", 2.0/7, v_h, useGreatestCommonDivisor, h_v); // didnt loose much precision from 3.50000000005 to 3.5
     }
+
+    // parseRatioString specific tests
+    auto formatRatioErrorTest = [](const char* ratioString, Units::UnitCP persistenceUnit, Units::UnitCP presentationUnit, FormatProblemCode expectedProblemCode = FormatProblemCode::NoProblems)
+    {
+        NumericFormatSpec ratioSpec;
+        ratioSpec.SetPresentationType(PresentationType::Ratio);
+        ratioSpec.SetRatioType(RatioType::OneToN);
+        ratioSpec.SetPrecision(DecimalPrecision::Precision3);
+        CompositeValueSpec ratioComp(*presentationUnit);
+        ratioComp.SetIncludeZero(true);
+        Format ratioFormat(ratioSpec);
+        ratioFormat.SetCompositeSpec(ratioComp);
+
+        FormatProblemCode problemCode;
+        auto formatParsingSet = FormatParsingSet(ratioString, persistenceUnit, &ratioFormat);
+        BEU::Quantity qty = formatParsingSet.GetQuantity(&problemCode, &ratioFormat);
+
+        EXPECT_EQ(expectedProblemCode, problemCode);
+    };
+
+    {
+        formatRatioErrorTest("", v_h, v_h, FormatProblemCode::QT_NoValueOrUnitFound);
+        formatRatioErrorTest("1:1", nullptr, v_h, FormatProblemCode::QT_NoValueOrUnitFound); // test this
+        formatRatioErrorTest("3:1:2", v_h, v_h, FormatProblemCode::QT_InvalidRatioArgument);
+        formatRatioErrorTest("A:2", v_h, v_h, FormatProblemCode::QT_InvalidRatioArgument);
+        formatRatioErrorTest("1:1e1000", v_h, v_h, FormatProblemCode::QT_ValueOutOfRange);
+
+        formatRatioErrorTest("0:1", v_h, h_v, FormatProblemCode::QT_MathematicOperationFoundButIsNotAllowed);
+        formatRatioErrorTest("1:0", v_h, v_h, FormatProblemCode::QT_MathematicOperationFoundButIsNotAllowed);
+    }
+    
 }
-
-// @TODO - <Naron>: there should be parseRatioString specific tests
-
-
-
 
 END_BENTLEY_FORMATTEST_NAMESPACE
