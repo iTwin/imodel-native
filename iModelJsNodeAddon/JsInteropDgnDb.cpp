@@ -513,7 +513,6 @@ void JsInterop::UpdateProjectExtents(DgnDbR dgndb, BeJsConst newExtents) {
     auto& geolocation = dgndb.GeoLocation();
     AxisAlignedBox3d extents;
     extents.FromJson(newExtents);
-
     geolocation.SetProjectExtents(extents);
     geolocation.Save();
 }

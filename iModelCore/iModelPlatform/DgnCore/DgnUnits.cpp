@@ -478,7 +478,7 @@ void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents)
     // Differing precision => different content Ids => invalidate every cached tile in existence.
     Json::Value jsonObj;
     BeJsGeomUtils::DRange3dToJson(jsonObj, m_extent);
-    m_dgndb.SavePropertyString(DgnProjectProperty::Extents(), jsonObj.ToString());   
+    m_dgndb.SavePropertyString(DgnProjectProperty::Extents(), jsonObj.ToString());
 
     if (!m_ecefLocation.m_isValid)
         {
