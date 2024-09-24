@@ -7,6 +7,9 @@
 #include <Bentley/BeTest.h>
 static double s_simpleZeroTol = 1.0e-12;
 
+bool Check::s_enableLongTests = false;
+void Check::SetEnableLongTests(bool enable) { s_enableLongTests = enable; }
+
 struct ScopedPrintState
 {
 int m_savedVolume;
@@ -1200,7 +1203,13 @@ void Check::Print (bvector<double> const &data, char const *name)
     printf (")\n");
     }
 
-
+void Check::Print (DRay3d const & data, char const *name)
+    {
+    printf ("(%s\n", name ? name : "ray");
+    printf (" (%s %g, %g, %g)\n", "origin", data.origin.x, data.origin.y, data.origin.z);
+    printf (" (%s %g, %g, %g)\n", "direction", data.direction.x, data.direction.y, data.direction.z);
+    printf (")\n");
+    }
 
 void Check::Print (DPoint3dCR data, char const *name)
     {

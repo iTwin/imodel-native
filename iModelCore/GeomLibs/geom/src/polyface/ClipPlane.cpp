@@ -367,7 +367,7 @@ void    ClipPlane::ConvexPolygonClipInPlace (bvector<DPoint3d> &xyz, bvector<DPo
         }
     if (onPlaneHandling != 0)
         {
-        double tol = Angle::SmallAngle () * (1.0 + fabs (m_distance));
+        double tol = Angle::SmallAngle () * (1.0 + fabs (m_distance)); // PPBase loosened to 1.0e-10 on 8/22
         if (range.High () < tol && range.Low () >= -tol)
             {
             // all "ON" -- last arg determines in or out ...

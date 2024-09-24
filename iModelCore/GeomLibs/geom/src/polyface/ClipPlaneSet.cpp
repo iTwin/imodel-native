@@ -1677,7 +1677,6 @@ PolyfaceHeaderPtr *inside,
 PolyfaceHeaderPtr *outside
 )
     {
-    bvector<BoolTypeForVector> interiorFlag; // empty ==> all active.
     ClipPlaneSet clipper = ClipPlaneSet::FromSweptPolygon (polygon.data (), polygon.size (), &sweepDirection);
     ClipPlaneSet::ClipPlaneSetIntersectPolyface (polyface, clipper, constructNewFacetsOnClipSetPlanes, inside, outside);
     }
