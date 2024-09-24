@@ -1597,8 +1597,9 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
 
     Napi::Value GetIModelProps(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
+        OPTIONAL_ARGUMENT_STRING(0, when);
         BeJsNapiObject props(Env());
-        JsInterop::GetIModelProps(props, db);
+        JsInterop::GetIModelProps(props, db, when);
         return props;
     }
 
@@ -2342,7 +2343,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         {
         REQUIRE_ARGUMENT_STRING(0, newExtentsJson)
         REQUIRE_ARGUMENT_BOOL(1, fromChangesetAppliedEvent);
-        JsInterop::UpdateProjectExtents(GetOpenedDb(info), BeJsDocument(newExtentsJson), fromChangesetAppliedEvent);
+        JsInterop::UpdateProjectExtents(GetOpenedDb(info), BeJsDocument(newExtentsJson));
         }
 
     Napi::Value GetCodeValueBehavior(NapiInfoCR info) {

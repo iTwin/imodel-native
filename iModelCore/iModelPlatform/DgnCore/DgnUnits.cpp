@@ -460,7 +460,7 @@ void DgnGeoLocation::Save()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents, bool fromChangesetAppliedEvent)
+void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents)
     {
     DgnDb::VerifyClientThread();
 
@@ -476,12 +476,9 @@ void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents, bool fromC
     // JsonCpp and RapidJson differ slightly in precision of floating point numbers.
     // Tile content Ids include a hash of the project extents.
     // Differing precision => different content Ids => invalidate every cached tile in existence.
-    if (!fromChangesetAppliedEvent)
-        {
-        Json::Value jsonObj;
-        BeJsGeomUtils::DRange3dToJson(jsonObj, m_extent);
-        m_dgndb.SavePropertyString(DgnProjectProperty::Extents(), jsonObj.ToString());   
-        }
+    Json::Value jsonObj;
+    BeJsGeomUtils::DRange3dToJson(jsonObj, m_extent);
+    m_dgndb.SavePropertyString(DgnProjectProperty::Extents(), jsonObj.ToString());   
 
     if (!m_ecefLocation.m_isValid)
         {
@@ -489,6 +486,14 @@ void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents, bool fromC
         Save();
         }
 
+    NotifyProjectExtentsChanged(newExtents);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnGeoLocation::NotifyProjectExtentsChanged(AxisAlignedBox3dCR newExtents) const
+    {
     for (auto const& kvp : m_dgndb.Models().GetLoadedModels())
         {
         auto spatialModel = kvp.second->ToSpatialModelP();
@@ -502,7 +507,7 @@ void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents, bool fromC
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnGeoLocation::InitializeProjectExtents(DRange3dP rangeWithOutliers, bvector<BeInt64Id>* elementOutliers)
     {
-    SetProjectExtents(ComputeProjectExtents(rangeWithOutliers, elementOutliers), false);
+    SetProjectExtents(ComputeProjectExtents(rangeWithOutliers, elementOutliers));
 
     // We need an immutable origin for Cesium tile publishing that will not
     // change when project extents change.   Set it here only.
@@ -550,8 +555,12 @@ void DgnGeoLocation::LoadProjectExtents() const
     // Differing precision => different content Ids => invalidate every cached tile in existence.
     Json::Value jsonObj;
     Utf8String value;
+    AxisAlignedBox3d extentsBeforeReadingFromDb = AxisAlignedBox3d(m_extent);
     if (BE_SQLITE_ROW == m_dgndb.QueryProperty(value, DgnProjectProperty::Extents()) && Json::Reader::Parse(value, jsonObj))
         BeJsGeomUtils::DRange3dFromJson(m_extent, jsonObj);
+
+    if (!extentsBeforeReadingFromDb.IsEqual(m_extent, DoubleOps::SmallMetricDistance()))
+        NotifyProjectExtentsChanged(m_extent);
 
     // if we can't get valid extents from the property, use default values
     if (m_extent.IsEmpty())
@@ -568,4 +577,13 @@ AxisAlignedBox3d DgnGeoLocation::GetProjectExtents() const
 
     return m_extent;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+AxisAlignedBox3d DgnGeoLocation::GetProjectExtents(Utf8StringCR when) const
+    {
+    if (m_extent.IsEmpty() || when.EqualsI("pullMerge"))
+        LoadProjectExtents();
 
+    return m_extent;
+    }

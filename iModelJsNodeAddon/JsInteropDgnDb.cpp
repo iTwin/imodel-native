@@ -509,22 +509,12 @@ DgnDbStatus JsInterop::SimplifyElementGeometry(DgnDbR db, Napi::Object simplifyA
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsInterop::UpdateProjectExtents(DgnDbR dgndb, BeJsConst newExtents, bool fromChangesetAppliedEvent) {
+void JsInterop::UpdateProjectExtents(DgnDbR dgndb, BeJsConst newExtents) {
     auto& geolocation = dgndb.GeoLocation();
     AxisAlignedBox3d extents;
     extents.FromJson(newExtents);
-    // Check if our extents have actually changed. If not, return early.
-    if (geolocation.GetProjectExtents().IsEqual(extents, DoubleOps::SmallMetricDistance()))
-        return;
-    if (fromChangesetAppliedEvent) {
-        // set isValid to false if theres a GCS so that we recalculate the ecefLocation in SetProjectExtents with these new extents.
-        if (geolocation.GetDgnGCS() != nullptr) {
-            auto ecefLocation = geolocation.GetEcefLocation();
-            ecefLocation.m_isValid = false;
-        }
-    }
 
-    geolocation.SetProjectExtents(extents, fromChangesetAppliedEvent);
+    geolocation.SetProjectExtents(extents);
     geolocation.Save();
 }
 
@@ -537,7 +527,7 @@ void JsInterop::UpdateIModelProps(DgnDbR dgndb, BeJsConst props) {
     if (!extJson.isNull()) {
         AxisAlignedBox3d extents;
         extents.FromJson(props[json_projectExtents()]);
-        geolocation.SetProjectExtents(extents, false);
+        geolocation.SetProjectExtents(extents);
     }
     auto orgJson = props[json_globalOrigin()];
     if (!orgJson.isNull())
@@ -1155,7 +1145,7 @@ GeoCoordinates::VertDatumCode GetEffectiveVerticalDatumCode(DgnGCSCR gcs)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void JsInterop::GetIModelProps(BeJsValue val, DgnDbCR dgndb) {
+void JsInterop::GetIModelProps(BeJsValue val, DgnDbCR dgndb, Utf8StringCR when) {
     // add the root subject, if available.
     auto rootSubject = dgndb.Elements().GetRootSubject();
     if (rootSubject.IsValid()) {
@@ -1169,7 +1159,7 @@ void JsInterop::GetIModelProps(BeJsValue val, DgnDbCR dgndb) {
     auto& geolocation = dgndb.GeoLocation();
 
     // add project extents
-     geolocation.GetProjectExtents().ToJson(val[json_projectExtents()]);
+    geolocation.GetProjectExtents(when).ToJson(val[json_projectExtents()]);
 
     // add global origin
     BeJsGeomUtils::DPoint3dToJson(val[json_globalOrigin()], geolocation.GetGlobalOrigin());

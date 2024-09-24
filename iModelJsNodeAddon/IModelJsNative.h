@@ -531,7 +531,7 @@ public:
     static DgnDbStatus GetModel(Napi::Object results, DgnDbR db, BeJsConst inOpts);
     static void QueryModelExtents(BeJsValue extents, DgnDbR db, BeJsConst options);
     static DgnDbStatus QueryDefinitionElementUsage(BeJsValue usageInfo, DgnDbR db, bvector<Utf8String> const& idStringArray);
-    static void UpdateProjectExtents(DgnDbR dgndb, BeJsConst newExtents, bool fromChangesetAppliedEvent);
+    static void UpdateProjectExtents(DgnDbR dgndb, BeJsConst newExtents);
     static void UpdateIModelProps(DgnDbR dgndb, BeJsConst);
     static Napi::Value GetInstance(ECDbR db, NapiInfoCR info);
 
@@ -550,7 +550,7 @@ public:
     static BentleyStatus GetGeoCoordsFromIModelCoords(BeJsValue, DgnDbR, BeJsConst);
     static BentleyStatus GetIModelCoordsFromGeoCoords(BeJsValue, DgnDbR, BeJsConst);
 
-    static void GetIModelProps(BeJsValue, DgnDbCR dgndb);
+    static void GetIModelProps(BeJsValue, DgnDbCR dgndb, Utf8StringCR when);
     static DgnElementIdSet FindGeometryPartReferences(bvector<Utf8String> const& partIds, bool is2d, DgnDbR db);
 
     static void ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object request, Napi::Function callback);

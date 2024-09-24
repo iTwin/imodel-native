@@ -467,7 +467,7 @@ DbResult DgnDb::InitializeDgnDb(CreateDgnDbParams const& params) {
     if (extents.IsNull())
         extents = m_geoLocation.GetDefaultProjectExtents();
 
-    m_geoLocation.SetProjectExtents(extents, false);
+    m_geoLocation.SetProjectExtents(extents);
     m_geoLocation.SetGlobalOrigin(params.m_globalOrigin);
     m_geoLocation.Save();
 
