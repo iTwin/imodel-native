@@ -211,8 +211,13 @@ DbResult SingleECSqlPreparedStatement::DoStep()
     if (SUCCESS != AssertIsValid())
         return BE_SQLITE_ERROR;
 
-    if (!m_parameterMap.OnBeforeStep().IsSuccess())
-        return BE_SQLITE_ERROR;
+    if(GetOnBeforeFirstStepNotCalled())
+    {
+        if (!m_parameterMap.OnBeforeStep().IsSuccess())
+            return BE_SQLITE_ERROR;
+        SetOnBeforeFirstStepNotCalled(false);
+    }
+    
 
     const DbResult nativeSqlStatus = m_sqliteStatement.Step();
 
@@ -264,6 +269,7 @@ ECSqlStatus SingleECSqlPreparedStatement::_Reset()
     if (nativeSqlStat != BE_SQLITE_OK)
         return ECSqlStatus(nativeSqlStat);
 
+    SetOnBeforeFirstStepNotCalled(true);
     return ECSqlStatus::Success;
     }
 

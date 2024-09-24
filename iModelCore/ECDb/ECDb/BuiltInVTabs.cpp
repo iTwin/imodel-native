@@ -165,7 +165,7 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Next() {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult IdSetModule::IdSetTable::IdSetCursor::GetRowId(int64_t& rowId) {
-    rowId = (*m_index).GetValue();
+    rowId = (*m_index);
     return BE_SQLITE_OK;
 }
 
@@ -173,7 +173,71 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::GetRowId(int64_t& rowId) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult IdSetModule::IdSetTable::IdSetCursor::GetColumn(int i, Context& ctx) {
-    ctx.SetResultInt64((*m_index).GetValue());
+    ctx.SetResultInt64((*m_index));
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult IdSetModule::IdSetTable::IdSetCursor::FilterJSONStringIntoArray(BeJsDocument& doc) {
+    doc.Stringify(StringifyFormat::Indented);
+    if(!doc.isArray())
+        return BE_SQLITE_ERROR;
+    bool flag = doc.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst k1)
+                                        {
+                                            if(BE_SQLITE_OK != FilterJSONBasedOnType(k1))
+                                                return true;
+                                            return false; 
+                                        });
+    if(flag)
+        return BE_SQLITE_ERROR;
+    return BE_SQLITE_OK;
+}
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DbResult IdSetModule::IdSetTable::IdSetCursor::FilterJSONBasedOnType(BeJsConst& val) {
+    if(val.isNull())
+    {
+        return BE_SQLITE_ERROR;
+    }
+    if(val.isNumeric())
+    {
+        if(val.asUInt64(-1) == -1)
+            return BE_SQLITE_ERROR;
+        else
+            m_idSet.insert(val.asUInt64(-1));
+    }
+    else if(val.isArray())
+    {
+        bool flag = val.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst k1)
+                                                {
+                                                    if(BE_SQLITE_OK != FilterJSONBasedOnType(k1))
+                                                        return true;
+                                                    return false; 
+                                                });
+        if(flag)
+            return BE_SQLITE_ERROR;
+    }
+    else if(val.isString())
+    {
+        if(val.asString().EqualsIAscii(""))
+            return BE_SQLITE_ERROR;
+        else if(val.asUInt64(-1) == -1)
+        {
+            BeJsDocument doc;
+            doc.Parse(val.asString());
+            if(FilterJSONStringIntoArray(doc) != BE_SQLITE_OK)
+                return BE_SQLITE_ERROR;
+        }
+        else
+           m_idSet.insert(val.asUInt64(-1));
+    }
+    else
+        return BE_SQLITE_ERROR;
     return BE_SQLITE_OK;
 }
 
@@ -197,18 +261,8 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *id
                 recompute = true;
             }
         }
-        else if(m_ArgType == DbValueType::NullVal)
-        {
+        else{
             Reset();
-        }
-        else
-        {
-            IdSet<BeInt64Id>* valueGiven = (IdSet<BeInt64Id>*)argv[0].GetValuePointer("ID_SET_NAME");
-            if(valueGiven != m_virtualSetPtr)
-            {
-                m_virtualSetPtr = valueGiven;
-                recompute = true;
-            }
         }
     }else{
         Reset();
@@ -218,24 +272,18 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *id
         m_idSet.clear();
         if(m_ArgType == DbValueType::TextVal && m_text.size() > 0)
         {
-            // Parse String to Js Document and iterate through the array and insert int hex ids as int64 in uniqueIds set.
-            BeJsDocument doc(m_text.c_str());
-            doc.Stringify(StringifyFormat::Indented);
-            if(!doc.isArray())
+            BeJsDocument doc;
+            doc.Parse(m_text.c_str());
+            
+            if(FilterJSONStringIntoArray(doc) != BE_SQLITE_OK)
+            {
+                Reset();
                 return BE_SQLITE_ERROR;
-            doc.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst k1)
-                                {
-                                    if(k1.asUInt64(-1) != -1)
-                                        m_idSet.insert(BeInt64Id(k1.asUInt64(-1)));
-                                    return false; 
-                                });
-        }
-        else if(m_virtualSetPtr != nullptr)
-        {
-            m_idSet = *m_virtualSetPtr;
+            }
         }
         else
         {
+            Reset();
             return BE_SQLITE_ERROR;
         }
     }
@@ -248,8 +296,8 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *id
 //---------------------------------------------------------------------------------------
 void IdSetModule::IdSetTable::IdSetCursor::Reset() {
     m_text = "";
-    m_virtualSetPtr = nullptr;
     m_idSet.clear();
+    m_index = m_idSet.begin();
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod

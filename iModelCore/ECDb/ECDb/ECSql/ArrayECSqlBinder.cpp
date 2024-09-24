@@ -4,7 +4,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-
+#include "iostream"
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -53,8 +53,10 @@ ECSqlStatus ArrayECSqlBinder::_OnBeforeStep()
     m_json.Accept(writer);
 
     Statement& sqliteStmt = GetSqliteStatement();
+    std::cout<< sqliteStmt.GetSql() << std::endl;
     BeAssert(GetMappedSqlParameterNames().size() == 1 && !GetMappedSqlParameterNames()[0].empty());
     const int sqlParamIx = sqliteStmt.GetParameterIndex(GetMappedSqlParameterNames()[0].c_str());
+    std::cout<< sqlParamIx << std::endl;
     const DbResult dbRes = sqliteStmt.BindText(sqlParamIx, jsonStr.GetString(), Statement::MakeCopy::Yes);
     if (BE_SQLITE_OK == dbRes)
         return ECSqlStatus::Success;

@@ -80,6 +80,7 @@ struct SingleECSqlPreparedStatement : IECSqlPreparedStatement
 private:
     mutable BeSQLite::Statement m_sqliteStatement;
     ECSqlParameterMap m_parameterMap;
+    bool m_onBeforeFirstStepNotCalled = true;
 
     IECSqlBinder& _GetBinder(int parameterIndex) const override;
     int _GetParameterIndex(Utf8CP parameterName) const override;
@@ -102,6 +103,8 @@ public:
     ECSqlParameterMap const& GetParameterMap() const { return m_parameterMap; }
     ECSqlParameterMap& GetParameterMapR() { return m_parameterMap; }
     BeSQLite::Statement& GetSqliteStatement() { return m_sqliteStatement; }
+    bool GetOnBeforeFirstStepNotCalled() { return m_onBeforeFirstStepNotCalled; }
+    void SetOnBeforeFirstStepNotCalled(bool val) { m_onBeforeFirstStepNotCalled = val; }
     };
 
 //=======================================================================================

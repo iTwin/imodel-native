@@ -49,9 +49,8 @@ struct IdSetModule : ECDbModule {
             
             private:
                 Utf8String m_text;
-                IdSet<BeInt64Id>* m_virtualSetPtr = nullptr;
-                IdSet<BeInt64Id> m_idSet;
-                IdSet<BeInt64Id>::const_iterator m_index;
+                bset<uint64_t> m_idSet;
+                bset<uint64_t>::iterator m_index;
                 DbValueType m_ArgType;
 
             public:
@@ -61,6 +60,8 @@ struct IdSetModule : ECDbModule {
                 DbResult GetColumn(int i, Context& ctx) final;
                 DbResult GetRowId(int64_t& rowId) final;
                 DbResult Filter(int idxNum, const char *idxStr, int argc, DbValue* argv) final;
+                DbResult FilterJSONBasedOnType(BeJsConst& val);
+                DbResult FilterJSONStringIntoArray(BeJsDocument& val);
                 void Reset();
         };
         public:

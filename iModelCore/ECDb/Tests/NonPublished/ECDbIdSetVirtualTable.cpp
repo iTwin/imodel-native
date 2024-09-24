@@ -42,6 +42,119 @@ struct ECDbIdSetVirtualTableTests : ECDbTestFixture {};
 //                     rowId = (*m_index).GetValue();
 //                     return BE_SQLITE_OK;
 //                 }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+// DbResult IdSetModule::IdSetTable::IdSetCursor::FilterRapidJSON(BeJsConst& val) {
+//     if(val.isNull())
+//     {
+//         return BE_SQLITE_ERROR;
+//     }
+//     if(val.isNumeric())
+//     {
+//         if(val.asUInt64(-1) == -1)
+//             return BE_SQLITE_ERROR;
+//         else
+//         {
+//             uint64_t id = val.asUInt64(-1);
+//             m_idSet.insert(id);
+//         }
+//     }
+//     else if(val.isArray())
+//     {
+//         bool flag = true;
+//         val.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst k1)
+//                                                 {
+//                                                     if(BE_SQLITE_OK != FilterRapidJSON(k1))
+//                                                         flag = true;
+//                                                     return false; 
+//                                                 });
+//         if(flag)
+//             return BE_SQLITE_ERROR;
+//     }
+//     else if(val.isString())
+//     {
+//         if(val.asUInt64(-1) == -1)
+//         {
+//             if(val.asString().EqualsIAscii(""))
+//                 return BE_SQLITE_ERROR;
+//             BeJsDocument doc;
+//             doc.Parse(val.asString());
+//             if(!doc.isArray())
+//                 return BE_SQLITE_ERROR;
+//             bool flag = false;
+//             doc.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst k1)
+//                                                 {
+//                                                     if(BE_SQLITE_OK != FilterRapidJSON(k1))
+//                                                         flag = true;
+//                                                     return false; 
+//                                                 });
+//             if(flag)
+//                 return BE_SQLITE_ERROR;
+//         }
+//         else
+//            m_idSet.insert(val.asUInt64(-1));
+//     }
+//     // switch(val.GetType())
+//     // {
+//     //     case rapidjson::Type::kArrayType:
+//     //         {
+//     //             for(rapidjson::Value& v: val.GetArray())
+//     //             {
+//     //                 DbResult res = FilterRapidJSON(v);
+//     //                 if(res != BE_SQLITE_OK)
+//     //                     return res;
+//     //             }
+//     //             break;
+//     //         }
+//     //     case rapidjson::Type::kNumberType:
+//     //             {
+//     //                 if(!val.IsUint64())
+//     //                     return BE_SQLITE_ERROR;
+//     //                 int64_t idVal = val.GetUint64();
+//     //                 m_idSet.insert(idVal);
+//     //                 break;
+//     //             }
+//     //     case rapidjson::Type::kStringType:
+//     //         {
+//     //             BeJsDocument d;
+//     //             d.Parse(val.GetString());
+//     //             d.Stringify(StringifyFormat::Indented);
+//     //             bool flag = false;
+//     //             if(d.isArray())
+//     //             {
+//     //                 d.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst k1)
+//     //                                             {
+//     //                                                 if(d.asUInt64(-1) == -1)
+//     //                                                     flag = true;
+//     //                                                 else
+//     //                                                     m_idSet.insert(k1.asUInt64());
+//     //                                                 return false; 
+//     //                                             });
+//     //                 if(flag)
+//     //                     return BE_SQLITE_ERROR;
+//     //             }
+//     //             else if(d.isString())
+//     //             {
+//     //                 if(d.asUInt64(-1) == -1)
+//     //                     return BE_SQLITE_ERROR;
+//     //                 else
+//     //                     m_idSet.insert(d.asUInt64());
+//     //             }
+//     //             else
+//     //                 return BE_SQLITE_ERROR;
+//     //             break;
+//     //         }
+//     //     case rapidjson::Type::kNullType:
+//     //         {
+//     //             break;
+//     //         }
+//     //     default:
+//     //         // We don't allow any other types here
+//     //         return BE_SQLITE_ERROR;
+//     // }
+//     return BE_SQLITE_OK;
+// }
 //                 DbResult Filter(int idxNum, const char *idxStr, int argc, DbValue* argv) final {
 //                     int i = 0;
 //                     int flag = false;
@@ -59,13 +172,13 @@ struct ECDbIdSetVirtualTableTests : ECDbTestFixture {};
 //                         if(m_text.size() > 0)
 //                         {
 //                             // Parse String to Js Document and iterate through the array and insert int hex ids as int64 in uniqueIds set.
-//                             BeJsDocument doc;
-//                             doc.Parse(m_text.c_str());
-//                             doc.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst k1)
-//                                                 {
-//                                 m_idSet.insert(BeInt64Id(k1.asUInt64()));
-//                                 return false; });
-//                         }
+                        //     BeJsDocument doc;
+                        //     doc.Parse(m_text.c_str());
+                        //     doc.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst k1)
+                        //                         {
+                        //         m_idSet.insert(BeInt64Id(k1.asUInt64()));
+                        //         return false; });
+                        // }
 //                         else if(virtualSetPtr != nullptr)
 //                         {
 //                             IdSet<BeInt64Id> virtualSet = *virtualSetPtr;
@@ -175,65 +288,6 @@ struct ECDbIdSetVirtualTableTests : ECDbTestFixture {};
 TEST_F(ECDbIdSetVirtualTableTests, IdSetModuleTest) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("vtab.ecdb"));
     {
-        std::vector<Utf8String> hexIds = std::vector<Utf8String>{"0x1", "0x2", "0x3", "4", "5"};
-        Utf8String jsonArrayString = "[";
-        int k = 0;
-        for (k; k < hexIds.size() - 1; k++)
-        {
-            jsonArrayString += ("\"" + hexIds[k] + "\", ");
-        }
-        jsonArrayString += ("\"" + hexIds[k] + "\"]");
-
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
-        stmt.BindText(1, jsonArrayString.c_str(), IECSqlBinder::MakeCopy::No);
-
-        int i = 0;
-        while (stmt.Step() == BE_SQLITE_ROW)
-        {
-            ASSERT_EQ(BeStringUtilities::ParseHex(hexIds[i++].c_str()), stmt.GetValueInt64(0));
-        }
-        ASSERT_EQ(i, hexIds.size());
-    }
-    {
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
-        stmt.BindText(1, "[1,2,3,4,5]", IECSqlBinder::MakeCopy::No);
-
-        int i = 0;
-        while (stmt.Step() == BE_SQLITE_ROW)
-        {
-            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
-        }
-        ASSERT_EQ(i, 5);
-    }
-    {
-        bvector<BeInt64Id> v;
-        v.push_back(BeInt64Id(1)); 
-        std::shared_ptr<IdSet<BeInt64Id>> seedIdSet = std::make_shared<IdSet<BeInt64Id>>();
-        for(auto id: v){
-            seedIdSet->insert(id);
-        }
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindVirtualSet(1, seedIdSet));
-        while (stmt.Step() == BE_SQLITE_ROW)
-        {
-            ASSERT_EQ(1, stmt.GetValueInt64(0));
-        } 
-    }
-    {
-        bvector<BeInt64Id> v;
-        v.push_back(BeInt64Id(1)); 
-        std::shared_ptr<ECInstanceIdSet> seedIdSet = std::make_shared<ECInstanceIdSet>();
-        for(auto id: v){
-            seedIdSet->insert(ECInstanceId(id));
-        }
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
-        ASSERT_EQ(ECSqlStatus::Error, stmt.BindVirtualSet(1, seedIdSet));
-    }
-    {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet('[1,2,3,4,5]')")));
 
@@ -243,6 +297,38 @@ TEST_F(ECDbIdSetVirtualTableTests, IdSetModuleTest) {
             ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
         }
         ASSERT_EQ(i, 5);
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+        ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText("[1,2,3,4,5]", IECSqlBinder::MakeCopy::No));
+
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+        {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+        }
+        ASSERT_EQ(i, 5);
+    }
+    {
+        std::vector<Utf8String> hexIds = std::vector<Utf8String>{"0x1", "0x2", "0x3", "4", "5"};
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(int i =0;i<hexIds.size();i++)
+        {
+            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+            ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText(hexIds[i].c_str(), IECSqlBinder::MakeCopy::No));
+        }
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+        {
+            ASSERT_EQ(BeStringUtilities::ParseHex(hexIds[i++].c_str()), stmt.GetValueInt64(0));
+        }
+        ASSERT_EQ(i, hexIds.size());
     }
     {
         ECSqlStatement stmt;
@@ -261,18 +347,14 @@ TEST_F(ECDbIdSetVirtualTableTests, IdSetModuleTest) {
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet('[0x1,0x2,\"3\",\"4\",\"5\"]')")));
 
         // Should fail while converting to json array because hex values with quotes are required
-        int i = 0;
-        while (stmt.Step() == BE_SQLITE_ROW)
-        {
-            ASSERT_EQ((1+i), stmt.GetValueInt64(0));
-            i++;
-        }
-        ASSERT_EQ(i, 0);
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
     }
     {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
-        stmt.BindText(1, "[1,\"2\",3, 4.0, 5.0]", IECSqlBinder::MakeCopy::No);
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+         ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText( "[1,\"2\",3, 4.0, 5.0]", IECSqlBinder::MakeCopy::No));
 
         int i = 0;
         while (stmt.Step() == BE_SQLITE_ROW)
@@ -285,30 +367,232 @@ TEST_F(ECDbIdSetVirtualTableTests, IdSetModuleTest) {
     {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
-        stmt.BindText(1, "[1,\"2\",3, 4.5, 5.6]", IECSqlBinder::MakeCopy::No);
-
-        // Will not take into account 4.5 and 5.6 because they are decimal values
-        int i = 0;
-        while (stmt.Step() == BE_SQLITE_ROW)
-        {
-            ASSERT_EQ((1+i), stmt.GetValueInt64(0));
-            i++;
-        }
-        ASSERT_EQ(i, 3);
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+        ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText( "[1,\"2\",3, 4.5, 5.6]", IECSqlBinder::MakeCopy::No));
+        
+        // Will not take into account 4.5 and 5.6 because they are decimal values so should fail
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
     }
     {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
         stmt.BindText(1, "[1,\"2\",3, \"Soham\"]", IECSqlBinder::MakeCopy::No);
 
-        // Will not take into account "Soham" because it is a string
+        // no binding as we use array ecsql binder so need to call AddArrayElement first
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
+
+        // no binding so no data
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+        ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText( "[1,\"2\",3, \"Soham\"]", IECSqlBinder::MakeCopy::No));
+
+        // Will not take into account "Soham" because it is a string so should fail
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+        ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText( "[1,\"2\",3]", IECSqlBinder::MakeCopy::No));
+        for(int i = 4;i<=10;i++)
+        {
+            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+            ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindInt(i));
+        }
+
         int i = 0;
         while (stmt.Step() == BE_SQLITE_ROW)
         {
             ASSERT_EQ((1+i), stmt.GetValueInt64(0));
             i++;
         }
-        ASSERT_EQ(i, 3);
+        ASSERT_EQ(i, 10);
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+        ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText( "[1,\"2\",3]", IECSqlBinder::MakeCopy::No));
+        for(int i = 4;i<=10;i++)
+        {
+            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+            ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindInt64(i));
+        }
+
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+        {
+            ASSERT_EQ((1+i), stmt.GetValueInt64(0));
+            i++;
+        }
+        ASSERT_EQ(i, 10);
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(int i = 1;i<=10;i++)
+        {
+            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+            ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindDouble(i));
+        }
+
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+        {
+            ASSERT_EQ((1+i), stmt.GetValueInt64(0));
+            i++;
+        }
+        ASSERT_EQ(i, 10);
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+        ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindNull());
+        for(int i = 1;i<=10;i++)
+        {
+            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+            ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindDouble(i));
+        }
+
+        // having null as an element so should fail
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+    }
+    {
+        DPoint2d pArrayOfST1_P2D[] = {DPoint2d::From(-21, 22.1),DPoint2d::From(-85.34, 35.36),DPoint2d::From(-31.34, 12.35)};
+        DPoint3d pArrayOfST1_P3D[] = {DPoint3d::From(-12.11, -74.1, 12.3),DPoint3d::From(-12.53, 21.76, -32.22),DPoint3d::From(-41.14, -22.45, -31.16)};
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(int i = 0;i<=2;i++)
+        {
+            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+            ASSERT_EQ(ECSqlStatus::Error, elementBinder.BindPoint2d(pArrayOfST1_P2D[i]));
+        }
+        for(int i = 0;i<=2;i++)
+        {
+            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+            ASSERT_EQ(ECSqlStatus::Error, elementBinder.BindPoint3d(pArrayOfST1_P3D[i]));
+        }
+
+        // EmptyArray is Binded
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+    }
+    {
+        DPoint2d pArrayOfST1_P2D[] = {DPoint2d::From(-21, 22.1),DPoint2d::From(-85.34, 35.36),DPoint2d::From(-31.34, 12.35)};
+        DPoint3d pArrayOfST1_P3D[] = {DPoint3d::From(-12.11, -74.1, 12.3),DPoint3d::From(-12.53, 21.76, -32.22),DPoint3d::From(-41.14, -22.45, -31.16)};
+        double pST1P_ST2P_D2 = 431231.3432;
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(int i = 0;i<=2;i++)
+        {
+            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+            ASSERT_EQ(ECSqlStatus::Error, elementBinder["D1"].BindDouble(pST1P_ST2P_D2));
+            ASSERT_EQ(ECSqlStatus::Error, elementBinder["P2D"].BindPoint2d(pArrayOfST1_P2D[i]));
+        }
+        for(int i = 0;i<=2;i++)
+        {
+            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+            ASSERT_EQ(ECSqlStatus::Error, elementBinder["D1"].BindDouble(pST1P_ST2P_D2));
+            ASSERT_EQ(ECSqlStatus::Error, elementBinder["P3D"].BindPoint3d(pArrayOfST1_P3D[i]));
+        }
+
+        // EmptyArray is Binded
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+    }
+    {
+        const std::vector<std::vector<uint8_t>> bi_array = {
+            {0x48, 0x65, 0x6},
+            {0x48, 0x65, 0x6},
+            {0x48, 0x65, 0x6}
+        };
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(auto& m : bi_array)
+            ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindBlob((void const*)&m[0], (int)m.size(), IECSqlBinder::MakeCopy::No));
+
+        // Binary is Binded
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+    }
+    {
+        const auto dt = DateTime(DateTime::Kind::Unspecified, 2017, 1, 17, 0, 0);
+        const auto dtUtc = DateTime(DateTime::Kind::Utc, 2018, 2, 17, 0, 0);
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(int i = 0;i<=1;i++)
+        {
+            ASSERT_EQ(ECSqlStatus::Error, arrayBinder.AddArrayElement().BindDateTime(dt));
+            ASSERT_EQ(ECSqlStatus::Error, arrayBinder.AddArrayElement().BindDateTime(dtUtc));
+        }
+
+        // EmptyArray is Binded
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+    }
+    {
+        auto geom = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(int i = 0;i<=1;i++)
+        {
+            ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindGeometry(*geom));
+        }
+
+        // Binary is Binded because BindGeometry internally calls 
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(int i = 0;i<=1;i++)
+        {
+            ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindText("Soham",IECSqlBinder::MakeCopy::No));
+        }
+
+        // ["Soham","Soham"] doesnot make sense
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(int i = 0;i<=1;i++)
+        {
+            ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindText("[Soham]",IECSqlBinder::MakeCopy::No));
+        }
+
+        // ["[Soham]","[Soham]"] doesnot make sense
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(int i = 0;i<=1;i++)
+        {
+            ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindText("[\"Soham\"]",IECSqlBinder::MakeCopy::No));
+        }
+
+        // ["[\"Soham\"]","[\"Soham\"]"] doesnot make sense
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
     }
 }
 

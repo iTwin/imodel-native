@@ -930,6 +930,11 @@ Utf8String MemberFunctionCallExp::_ToString() const
 //+---------------+---------------+---------------+---------------+---------------+------
 bool MemberFunctionCallExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const
     {
+    if(m_functionName.EqualsIAscii("IdSet"))
+    {
+        parameterExp.SetTargetExpInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Long, true));
+        return true;
+    }
     //we don't have metadata about function args, so use a default type if the arg is a parameter
     parameterExp.SetTargetExpInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Double));
     return true;
