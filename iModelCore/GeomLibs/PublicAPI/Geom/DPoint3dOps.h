@@ -902,7 +902,10 @@ static bool GEOMDLLIMPEXP InCircleXY(DPoint3d const &pointA, DPoint3d const &poi
 //! Short form of InCircleXY.  All parameters match, but this short form does not ahve the determinant and cross product return values.
 static bool GEOMDLLIMPEXP InCircleXY(DPoint3d const &pointA, DPoint3d const &pointB, DPoint3d const &pointC, DPoint3d const &pointD, bool onIsIn = true);
 
+//! @description return a tolerance as an absolute tolerance plus relative tolerance times largest xy-coordinate.
+static double GEOMDLLIMPEXP ToleranceXY (bvector<DPoint3d> const& data, double absTol, double relTol);
 };
+
 //! @description Operations in which an array of points is understood to be connected as a polyline (but not closed as a polygon).
 //! @ingroup BentleyGeom_Operations
 struct PolylineOps
