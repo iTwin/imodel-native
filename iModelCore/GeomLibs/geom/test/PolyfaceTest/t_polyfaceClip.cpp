@@ -1070,7 +1070,8 @@ TEST(PolyfaceClip, ClipConeMesh)
     range.ScaleAboutCenter(range, 1.1);     // expand range box away from the cone
     range.low.y += range.YLength() / 2;     // clip off the cone front half
     range.high.z -= range.ZLength() / 2;    // clip off the cone top half
-    auto clipper = ClipPlaneSet::ClipPlaneSet(ConvexClipPlaneSet::ConvexClipPlaneSet(range));
+    auto clip = ConvexClipPlaneSet::ConvexClipPlaneSet(range);
+    auto clipper = ClipPlaneSet::ClipPlaneSet(clip);
     Check::Size(clipper.size(), 1, "clip set has one set of planes");
     Check::Size(clipper[0].size(), 6, "first convex volume has 6 planes");
     int iVerticalPlane = -1;
