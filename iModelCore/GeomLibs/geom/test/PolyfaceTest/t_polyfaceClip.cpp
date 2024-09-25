@@ -2,10 +2,11 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-#include "testHarness.h"
 #include <stdio.h>
+#include "testHarness.h"
+#include <GeomSerialization/GeomLibsJsonSerialization.h>
 
-// Return coordianates for a rectangle with corners x0,y0 and x1,y1, with interiorFlags all false.
+// Return coordinates for a rectangle with corners x0,y0 and x1,y1, with interiorFlags all false.
 void MakeRectangle (double x0, double y0, double x1, double y1, double z, bvector<DPoint3d> &points, bvector<BoolTypeForVector> &interiorFlags)
     {
     points = bvector<DPoint3d>
@@ -1034,4 +1035,101 @@ TEST(geomodeler, Clip)
             }
         }
     Check::ClearGeometry("Polyface.geomodelerClip");
+    }
+
+TEST(PolyfaceClip, ClipConeMesh)
+    {
+    // import uncapped cone
+    static Utf8Chars s_input(u8R"foo([{"cylinder":{"capped":false,"end":[1116.5833333333335,449.01041666666680,14.583333333333284],"radius":1.0416666666666672,"start":[1116.5833333333335,428.01041666666680,14.583333333333284]}}])foo");
+    bvector<IGeometryPtr> geometry;
+    Check::True(IModelJson::TryIModelJsonStringToGeometry(&s_input, geometry), "converted json");
+    Check::True(geometry.size() >= 1, "converted at least one geometry");
+    Check::True(geometry[0].IsValid(), "converted geometry is valid");
+    Check::True(geometry[0]->GetAsISolidPrimitive().IsValid(), "converted geometry is a solid primitive");
+    Check::True(SolidPrimitiveType_DgnCone == geometry[0]->GetAsISolidPrimitive()->GetSolidPrimitiveType(), "converted geometry is a cone");
+    auto cone = geometry[0]->GetAsISolidPrimitive();
+
+    double chordTolerance = 0.0024660693027594815;
+
+    // mesh the cone
+    IFacetOptionsPtr options = IFacetOptions::Create();
+    options->SetChordTolerance(chordTolerance);
+    options->SetAngleTolerance(msGeomConst_piOver2);
+    options->SetMaxPerFace(100);
+    options->SetConvexFacetsRequired(true);
+    options->SetCurvedSurfaceMaxPerFace(3);
+    IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create(*options);
+    Check::True(builder->AddSolidPrimitive(*cone), "meshed the cone");
+    auto mesh = builder->GetClientMeshPtr();
+    Check::True(mesh.IsValid() && mesh->HasFacets(), "mesh has facets");
+    Check::SaveTransformed(mesh);
+
+    // generate clipper
+    DRange3d range; // the cone is axis-aligned, so this is tight
+    Check::True(cone->GetRange(range), "computed cone range");
+    range.ScaleAboutCenter(range, 1.1);     // expand range box away from the cone
+    range.low.y += range.YLength() / 2;     // clip off the cone front half
+    range.high.z -= range.ZLength() / 2;    // clip off the cone top half
+    ConvexClipPlaneSet clip(range);
+    ClipPlaneSet clipper(clip);
+    Check::Size(clipper.size(), 1, "clip set has one set of planes");
+    Check::Size(clipper[0].size(), 6, "first convex volume has 6 planes");
+    int iVerticalPlane = -1;
+    int iHorizontalPlane = -1;
+    for (int i = 0; i < 6; ++i) {
+        if (clipper[0][i].GetNormal().IsEqual(DVec3d::From(0, 1, 0)))
+            iVerticalPlane = i;
+        else if (clipper[0][i].GetNormal().IsEqual(DVec3d::From(0, 0, -1)))
+            iHorizontalPlane = i;
+    }
+    Check::True(iVerticalPlane > -1 && iHorizontalPlane > -1, "found expected planes of interest");
+
+    // clip the cone: not recommended on open meshes: these cutFacets are bogus!
+    auto defaultColinearEdgeTol = ValidatedDouble(2.47e-5);
+    PolyfaceHeaderPtr cutFacets;
+    ClipPlaneSet::ClipPlaneSetSectionPolyface(*mesh, clipper, &cutFacets, nullptr, defaultColinearEdgeTol);
+    Check::SaveTransformed(cutFacets);
+
+    // at least verify that the edges added by triangulation are hidden
+    size_t numHalfEdges = 0, numInteriorEdges = 0, numBoundaryEdges = 0, numDoubledEdges = 0, numTrebledEdges = 0, numQuadrupledEdges = 0, numQuintupledPlusEdges = 0, numDegenerateEdges = 0, numHiddenVertices = 0, numVisibleVertices = 0;
+    cutFacets->CountSharedEdges(numHalfEdges, numInteriorEdges, numBoundaryEdges, numDoubledEdges, numTrebledEdges, numQuadrupledEdges, numQuintupledPlusEdges, numDegenerateEdges, false, numHiddenVertices, numVisibleVertices);
+    size_t numVertices = 0, numFacets = 0, numQuads = 0, numTriangles = 0, numImplicitTriangles = 0, numVisibleEdges = 0, numHiddenEdges = 0;
+    cutFacets->CollectCounts(numVertices, numFacets, numQuads, numTriangles, numImplicitTriangles, numVisibleEdges, numHiddenEdges);
+    Check::Size(numBoundaryEdges, numVisibleEdges, "the only visible edges are those on the section boundary");
+    Check::Size(numImplicitTriangles, numFacets, "expect section facets are all triangles");
+
+    bvector<bvector<DPoint3d>> lineStrings;
+    ClipPlaneSet::ClipPlaneSetPolyfaceIntersectionEdges(*mesh, clipper, lineStrings);
+    Check::SaveTransformed(lineStrings);
+
+    // verify that ClipPlaneSetPolyfaceIntersectionEdges produces edges on both cutplanes
+    if (Check::Size(1, lineStrings.size(), "intersectEdges returned a single linestring"))
+        {
+        Transform l2w, w2l;
+        Check::False(CurveVector::CreateLinear(lineStrings[0])->IsPlanar(l2w, w2l, range), "cut edge linestring is not planar");
+        for (auto const& edgePt : lineStrings[0])
+            {
+            bool edgePtIsOnVerticalPlane = clipper[0][iVerticalPlane].IsPointOn(edgePt, Angle::SmallAngle());
+            bool edgePtIsOnHorizontalPlane = clipper[0][iHorizontalPlane].IsPointOn(edgePt, Angle::SmallAngle());
+            Check::True(edgePtIsOnHorizontalPlane || edgePtIsOnVerticalPlane, "linestring point is on vertical or horizontal cut plane");
+            }
+        }
+
+    // verify that ClipPlaneSetSectionPolyface and ClipPlaneSetPolyfaceIntersectionEdges produce the same points along the cut facets
+    for (size_t i = 0; i < cutFacets->GetPointCount(); ++i)
+        {
+        auto facetPt = cutFacets->GetPointCP()[i];
+        bool facetPtOnLineString = false;
+        for (auto const& edgePt : lineStrings[0])
+            {
+            if (facetPt.AlmostEqual(edgePt))
+                {
+                facetPtOnLineString = true;
+                break;
+                }
+            }
+        Check::True(facetPtOnLineString, "cut facet mesh points are on cut edge linestring");
+        }
+
+    Check::ClearGeometry("PolyfaceClip.ClipConeMesh");
     }
