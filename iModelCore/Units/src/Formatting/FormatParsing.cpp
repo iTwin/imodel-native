@@ -919,18 +919,7 @@ bool FormatParsingSet::ValidateParsingFUS(int reqUnitCount, FormatCP format)
 //----------------------------------------------------------------------------------------
 BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatCP format)
     {
-    BEU::Quantity qty = BEU::Quantity();
-    BEU::Quantity tmp = BEU::Quantity();
-    Utf8String sig = GetSignature(false);
-    // only a limited number of signatures will be recognized in this particular context
-    // reduced version: NN, NU, NFU, NUNU, NUNFU NUNUNU NUNUNFU
-    //        3 FT - NU
-    //      1/3 FT - FU
-    //  50+00.1    - NN (station)
-    BEU::UnitCP majP, midP;
-
     BEU::UnitCP inputUnit;
-
     if (nullptr != format && nullptr != format->GetCompositeMajorUnit())
         inputUnit = format->GetCompositeMajorUnit();
     else
@@ -938,97 +927,24 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatC
 
     _Analysis_assume_(inputUnit != nullptr);
 
+    if (format->GetPresentationType() == PresentationType::Bearing)
+        return ParseBearingFormat(probCode, format, inputUnit);
+
     if (format->GetPresentationType() == PresentationType::Ratio){
         return ParseRatioFormat(probCode, format, inputUnit);
     }
 
-    double sign = 1.0;
     m_problem.Reset();
 
+    Utf8String sig = GetSignature(false); // TODO-<Naron>: pass in presentation type here?
+    // only a limited number of signatures will be recognized in this particular context
+    // reduced version: NN, NU, NFU, NUNU, NUNFU NUNUNU NUNUNFU
+    //        3 FT - NU
+    //      1/3 FT - FU
+    //  50+00.1    - NN (station)
+
     Formatting::FormatSpecialCodes cod = Formatting::FormatConstant::ParsingPatternCode(sig.c_str());
-    switch (cod)
-        {
-        case Formatting::FormatSpecialCodes::SignatureN:
-        case Formatting::FormatSpecialCodes::SignatureF:
-            if (nullptr == inputUnit)
-                m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
-            qty = BEU::Quantity(m_segs[0].GetReal(), *inputUnit);
-            break;
-        case Formatting::FormatSpecialCodes::SignatureNF:
-            if (nullptr == inputUnit)
-                m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
-            sign = m_segs[0].GetSign();
-            qty = BEU::Quantity(m_segs[0].GetAbsReal() + m_segs[1].GetAbsReal(), *inputUnit);
-            qty.Scale(sign);
-            break;
-        case Formatting::FormatSpecialCodes::SignatureNN:
-            if (nullptr == format)
-                {
-                m_problem.UpdateProblemCode(FormatProblemCode::PS_MissingFUS);
-                }
-            else
-                {
-                if (format->GetPresentationType() == PresentationType::Station)
-                    qty = BEU::Quantity(m_segs[0].GetReal() * std::pow(10, format->GetNumericSpec()->GetStationOffsetSize()) + m_segs[1].GetReal(), *inputUnit);
-                else
-                    m_problem.UpdateProblemCode(FormatProblemCode::QT_InvalidSyntax);
-                }
-            break;
-        case Formatting::FormatSpecialCodes::SignatureNU:
-            majP = m_segs[1].GetUnit();
-            qty = BEU::Quantity(m_segs[0].GetReal(), *majP);
-            break;
-        case Formatting::FormatSpecialCodes::SignatureNFU:
-            sign = m_segs[0].GetSign();
-            majP = m_segs[2].GetUnit();
-            qty = BEU::Quantity(m_segs[0].GetAbsReal() + m_segs[1].GetAbsReal(), *majP);
-            break;
-        case Formatting::FormatSpecialCodes::SignatureNUNU:
-            sign = m_segs[0].GetSign();
-            majP = m_segs[1].GetUnit();
-            qty = BEU::Quantity(m_segs[0].GetAbsReal(), *majP);
-            midP = m_segs[3].GetUnit();
-            tmp = BEU::Quantity(m_segs[2].GetAbsReal(), *midP);
-            qty = qty.Add(tmp);
-            qty.Scale(sign);
-            break;
-        case Formatting::FormatSpecialCodes::SignatureNUNFU:
-            sign = m_segs[0].GetSign();
-            majP = m_segs[1].GetUnit();
-            qty = BEU::Quantity(m_segs[0].GetAbsReal(), *majP);
-            midP = m_segs[4].GetUnit();
-            tmp = BEU::Quantity(m_segs[2].GetAbsReal() + m_segs[3].GetAbsReal(), *midP);
-            qty = qty.Add(tmp);
-            qty.Scale(sign);
-            break;
-        case Formatting::FormatSpecialCodes::SignatureNUNUNU:
-            sign = m_segs[0].GetSign();
-            majP = m_segs[1].GetUnit();
-            qty = BEU::Quantity(m_segs[0].GetAbsReal(), *majP);
-            midP = m_segs[3].GetUnit();
-            tmp = BEU::Quantity(m_segs[2].GetAbsReal(), *midP);
-            qty = qty.Add(tmp);
-            midP = m_segs[5].GetUnit();
-            tmp = BEU::Quantity(m_segs[4].GetAbsReal(), *midP);
-            qty = qty.Add(tmp);
-            qty.Scale(sign);
-            break;
-        case Formatting::FormatSpecialCodes::SignatureNUNUNFU:
-            sign = m_segs[0].GetSign();
-            majP = m_segs[1].GetUnit();
-            qty = BEU::Quantity(m_segs[0].GetAbsReal(), *majP);
-            midP = m_segs[3].GetUnit();
-            tmp = BEU::Quantity(m_segs[2].GetAbsReal(), *midP);
-            qty = qty.Add(tmp);
-            midP = m_segs[6].GetUnit();
-            tmp = BEU::Quantity(m_segs[4].GetAbsReal() + m_segs[5].GetAbsReal(), *midP);
-            qty = qty.Add(tmp);
-            qty.Scale(sign);
-            break;
-        default:
-            qty = FormatParsingSet::ComposeColonizedQuantity(cod, format);
-            break;
-        }
+    BEU::Quantity qty = ParseAndProcessTokens(cod, format, inputUnit);
 
     if (!m_problem.IsProblem() && nullptr != inputUnit)
         qty = qty.ConvertTo(inputUnit);
@@ -1225,6 +1141,175 @@ BEU::Quantity  FormatParsingSet::ComposeColonizedQuantity(Formatting::FormatSpec
     return qty;
     }
 
+BEU::Quantity FormatParsingSet::ParseAndProcessTokens(Formatting::FormatSpecialCodes cod, FormatCP format, BEU::UnitCP inputUnit){
+
+    BEU::Quantity qty = BEU::Quantity();
+    BEU::Quantity tmp = BEU::Quantity();
+    BEU::UnitCP majP, midP;
+    double sign = 1.0;
+
+    switch (cod)
+        {
+        case Formatting::FormatSpecialCodes::SignatureN:
+        case Formatting::FormatSpecialCodes::SignatureF:
+            if (nullptr == inputUnit)
+                m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
+            qty = BEU::Quantity(m_segs[0].GetReal(), *inputUnit);
+            break;
+        case Formatting::FormatSpecialCodes::SignatureNF:
+            if (nullptr == inputUnit)
+                m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
+            sign = m_segs[0].GetSign();
+            qty = BEU::Quantity(m_segs[0].GetAbsReal() + m_segs[1].GetAbsReal(), *inputUnit);
+            qty.Scale(sign);
+            break;
+        case Formatting::FormatSpecialCodes::SignatureNN:
+            if (nullptr == format)
+                {
+                m_problem.UpdateProblemCode(FormatProblemCode::PS_MissingFUS);
+                }
+            else
+                {
+                if (format->GetPresentationType() == PresentationType::Station)
+                    qty = BEU::Quantity(m_segs[0].GetReal() * std::pow(10, format->GetNumericSpec()->GetStationOffsetSize()) + m_segs[1].GetReal(), *inputUnit);
+                else
+                    m_problem.UpdateProblemCode(FormatProblemCode::QT_InvalidSyntax);
+                }
+            break;
+        case Formatting::FormatSpecialCodes::SignatureNU:
+            majP = m_segs[1].GetUnit();
+            qty = BEU::Quantity(m_segs[0].GetReal(), *majP);
+            break;
+        case Formatting::FormatSpecialCodes::SignatureNFU:
+            sign = m_segs[0].GetSign();
+            majP = m_segs[2].GetUnit();
+            qty = BEU::Quantity(m_segs[0].GetAbsReal() + m_segs[1].GetAbsReal(), *majP);
+            break;
+        case Formatting::FormatSpecialCodes::SignatureNUNU:
+            sign = m_segs[0].GetSign();
+            majP = m_segs[1].GetUnit();
+            qty = BEU::Quantity(m_segs[0].GetAbsReal(), *majP);
+            midP = m_segs[3].GetUnit();
+            tmp = BEU::Quantity(m_segs[2].GetAbsReal(), *midP);
+            qty = qty.Add(tmp);
+            qty.Scale(sign);
+            break;
+        case Formatting::FormatSpecialCodes::SignatureNUNFU:
+            sign = m_segs[0].GetSign();
+            majP = m_segs[1].GetUnit();
+            qty = BEU::Quantity(m_segs[0].GetAbsReal(), *majP);
+            midP = m_segs[4].GetUnit();
+            tmp = BEU::Quantity(m_segs[2].GetAbsReal() + m_segs[3].GetAbsReal(), *midP);
+            qty = qty.Add(tmp);
+            qty.Scale(sign);
+            break;
+        case Formatting::FormatSpecialCodes::SignatureNUNUNU:
+            sign = m_segs[0].GetSign();
+            majP = m_segs[1].GetUnit();
+            qty = BEU::Quantity(m_segs[0].GetAbsReal(), *majP);
+            midP = m_segs[3].GetUnit();
+            tmp = BEU::Quantity(m_segs[2].GetAbsReal(), *midP);
+            qty = qty.Add(tmp);
+            midP = m_segs[5].GetUnit();
+            tmp = BEU::Quantity(m_segs[4].GetAbsReal(), *midP);
+            qty = qty.Add(tmp);
+            qty.Scale(sign);
+            break;
+        case Formatting::FormatSpecialCodes::SignatureNUNUNFU:
+            sign = m_segs[0].GetSign();
+            majP = m_segs[1].GetUnit();
+            qty = BEU::Quantity(m_segs[0].GetAbsReal(), *majP);
+            midP = m_segs[3].GetUnit();
+            tmp = BEU::Quantity(m_segs[2].GetAbsReal(), *midP);
+            qty = qty.Add(tmp);
+            midP = m_segs[6].GetUnit();
+            tmp = BEU::Quantity(m_segs[4].GetAbsReal() + m_segs[5].GetAbsReal(), *midP);
+            qty = qty.Add(tmp);
+            qty.Scale(sign);
+            break;
+        default:
+            qty = FormatParsingSet::ComposeColonizedQuantity(cod, format);
+            break;
+        }
+
+    return qty;
+}
+
+BEU::Quantity FormatParsingSet::ParseBearingFormat(FormatProblemCode* probCode, FormatCP format, BEU::UnitCP inputUnit)
+{
+    const std::string North = "N";
+    const std::string South = "S";
+    const std::string East = "E";
+    const std::string West = "W";
+
+    std::string matchedPrefix;
+    std::string matchedSuffix;
+    std::string inString(m_input);
+    
+    if (inString.empty()){
+        return UpdateAndSetProblemCode(FormatProblemCode::QT_NoValueOrUnitFound, probCode);
+    }
+
+    // check if input stirng begins with North or South, and strip it off
+    if(inString.compare(0, North.size(), North) == 0){
+        inString = inString.substr(North.length());
+        matchedPrefix = North;
+    } else if(inString.compare(0, South.size(), South) == 0){
+        inString = inString.substr(South.length());
+        matchedPrefix = South;
+    } 
+
+    // check if input stirng ends with East or West, and strip it off
+    if (inString.length() >= East.length() &&
+        inString.compare(inString.length() - East.length(), East.length(), East) == 0){
+        inString = inString.substr(0, inString.length() - East.length());
+        matchedSuffix = East;
+    } else if (inString.length() >= West.length() &&
+        inString.compare(inString.length() - West.length(), West.length(), West) == 0){
+        inString = inString.substr(0, inString.length() - West.length());
+        matchedSuffix = West;
+    }
+
+    // if both prefix and suffix are missing, return error
+    if (matchedPrefix.empty() && matchedSuffix.empty()){
+        return UpdateAndSetProblemCode(FormatProblemCode::QT_BearingPrefixOrSuffixMissing, probCode);
+    }
+
+    // Parse the remaining string to get the magnitude
+    BEU::Quantity qty = ParseAndProcessTokens(Formatting::FormatSpecialCodes::SignatureNCNCN, format, inputUnit);
+
+    if (m_problem.IsProblem()){
+        return UpdateAndSetProblemCode(FormatProblemCode::QT_ConversionFailed, probCode);
+    }
+
+    double perigon;
+    if (Format::NormalizeAngle(qty, "bearing", perigon) != BentleyStatus::SUCCESS){
+        return UpdateAndSetProblemCode(FormatProblemCode::QT_ConversionFailed, probCode); // TODO - Naron: not sure if this is the right prob code here
+    }
+    double rightAngle = perigon / 4;
+    double magnitude = qty.GetMagnitude();
+
+    if (matchedPrefix == North){
+        if (matchedSuffix == West){
+            magnitude = perigon - magnitude;
+        }
+    } else if (matchedPrefix == South){
+        if (matchedSuffix == West){
+            magnitude = (2 * rightAngle) + magnitude;
+        } else if (matchedSuffix == East){
+            magnitude = (2 * rightAngle) - magnitude;
+        }
+    }
+
+    qty = BEU::Quantity(magnitude, *inputUnit);
+    
+    BEU::Quantity converted = qty.ConvertTo(m_unit);
+    if (!converted.IsValid()){
+        return UpdateAndSetProblemCode(FormatProblemCode::QT_ConversionFailed, probCode);
+    }
+
+    return converted;
+}
 
 BEU::Quantity FormatParsingSet::ParseRatioFormat(FormatProblemCode* probCode, FormatCP format, BEU::UnitCP inputUnit)
 {

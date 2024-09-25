@@ -658,6 +658,8 @@ public:
 
     // Legacy Descriptor string
     UNITS_EXPORT static void ParseUnitFormatDescriptor(Utf8StringR unitName, Utf8StringR formatString, Utf8CP description);
+
+    BentleyStatus static NormalizeAngle(BEU::Quantity& quantity, Utf8CP operationName, double& perigon);
 };
 
 //=======================================================================================

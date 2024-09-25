@@ -144,9 +144,10 @@ private:
     //! Returns error codes when FUS does not match the expression.
     //! The input expression signature code mus be provided by the caller
     BEU::Quantity ComposeColonizedQuantity(Formatting::FormatSpecialCodes cod, FormatCP fusP = nullptr);
-
+    BEU::Quantity ParseAndProcessTokens(Formatting::FormatSpecialCodes cod, FormatCP fusp, BEU::UnitCP inputUnit);
     // parsing helper methods
-    BEU::Quantity ParseRatioFormat(FormatProblemCode* probCode = nullptr ,FormatCP fusP = nullptr, BEU::UnitCP unit = nullptr);
+    BEU::Quantity ParseBearingFormat(FormatProblemCode* probCode, FormatCP fusP, BEU::UnitCP unit);
+    BEU::Quantity ParseRatioFormat(FormatProblemCode* probCode,FormatCP fusP, BEU::UnitCP unit);
     BEU::Quantity UpdateAndSetProblemCode(FormatProblemCode code, FormatProblemCode* probCode);
 
 public:
