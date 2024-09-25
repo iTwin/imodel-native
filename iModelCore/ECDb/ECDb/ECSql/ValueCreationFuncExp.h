@@ -30,13 +30,13 @@ struct ValueCreationFuncExp : ValueExp
         ClassNameExp const* GetClassNameExp() const { return GetChild<ClassNameExp>(m_classNameExpIndex); }
         PropertyNameExp const* GetPropertyNameExp() const
             {
-            if (GetColumnRefExp()->GetExpression<ComputedExp>()->GetType() != Exp::Type::PropertyName)
+            if (GetColumnRefExp()->GetExpression()->GetType() != Exp::Type::PropertyName)
                 {
                 BeAssert(false && "ValueCreationFuncExp column ref expression should be type of PropertyName");
                 return nullptr;
                 }
     
-            return GetColumnRefExp()->GetExpression<ComputedExp>()->GetAsCP<PropertyNameExp>();
+            return GetColumnRefExp()->GetExpression()->GetAsCP<PropertyNameExp>();
             }
     };
 
