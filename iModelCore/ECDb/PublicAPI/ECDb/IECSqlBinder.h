@@ -10,6 +10,35 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct BinderInfo final
+    {
+    public:
+        enum class BinderType
+        {
+            ArrayECSqlBinderType,
+            IdECSqlBinderType,
+            VirtualSetECSqlBinderType,
+            NavigationPropertyECSqlBinderType,
+            PointECSqlBinderType,
+            PrimitiveECSqlBinderType,
+            StructECSqlBinderType,
+            JsonValueBinderType,
+            NoopECSqlBinderType,
+            ProxyECInstanceIdECSqlBinderType,
+            ProxyECSqlBinderType
+        };
+        
+    private:
+        BinderType m_binderType;
+    public:
+        BinderInfo(BinderType binderType) : m_binderType(binderType){}
+        BinderInfo::BinderType GetBinderType() const { return m_binderType; }
+    };
+
+
 
 //=======================================================================================
 //! IECSqlBinder is used to bind a value to a binding parameter in an ECSqlStatement.
@@ -55,6 +84,9 @@ private:
     virtual IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) = 0;
     virtual IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) = 0;
     virtual IECSqlBinder& _AddArrayElement() = 0;
+
+    virtual BinderInfo::BinderType _GetBinderType() = 0;
+
 
 protected:
 #if !defined (DOCUMENTATION_GENERATOR)
@@ -197,6 +229,10 @@ public:
     //! Adds a new array element to the array to be bound to the parameter.
     //! @return The binder for the new array element
     ECDB_EXPORT IECSqlBinder& AddArrayElement();
+
+    //! Adds a new array element to the array to be bound to the parameter.
+    //! @return The binder for the new array element
+    ECDB_EXPORT BinderInfo::BinderType GetBinderType();
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

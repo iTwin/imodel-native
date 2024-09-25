@@ -249,6 +249,11 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement
         //! @return Parameter binder
         ECDB_EXPORT IECSqlBinder& GetBinder(int parameterIndex);
 
+        //! Gets BinderType for the binder associated with the parameter at the specified index.
+        //! @param[in] parameterIndex Parameter index.
+        //! @return Parameter BinderType
+        ECDB_EXPORT BinderInfo::BinderType GetBinderType(int parameterIndex) { return GetBinder(parameterIndex).GetBinderType(); }
+
         //! Gets the parameter index for a named parameter. Will log an error if parameter not found.
         //!
         //! @e Example

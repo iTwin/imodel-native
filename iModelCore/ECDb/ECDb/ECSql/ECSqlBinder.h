@@ -58,14 +58,16 @@ struct ECSqlBinder : IECSqlBinder
         std::vector<Utf8String> m_mappedSqlParameterNames;
         bool m_hasToCallOnBeforeStep = false;
         bool m_hasToCallOnClearBindings = false;
+        BinderInfo m_binderInfo;
 
         virtual ECSqlStatus _OnBeforeStep() { return ECSqlStatus::Success; }
         virtual void _OnClearBindings() {}
+        BinderInfo::BinderType _GetBinderType() override { return m_binderInfo.GetBinderType(); };
 
     protected:
-        ECSqlBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, SqlParamNameGenerator&, int mappedSqlParameterCount, bool hasToCallOnBeforeStep, bool hasToCallOnClearBindings);
+        ECSqlBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, SqlParamNameGenerator&, int mappedSqlParameterCount, bool hasToCallOnBeforeStep, bool hasToCallOnClearBindings, BinderInfo::BinderType binderType);
         //! Use this ctor for compound binders where the mapped sql parameter count depends on its member binders
-        ECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& paramNameGen, bool hasToCallOnBeforeStep, bool hasToCallOnClearBindings) : ECSqlBinder(ctx, typeInfo, paramNameGen, -1, hasToCallOnBeforeStep, hasToCallOnClearBindings) {}
+        ECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& paramNameGen, bool hasToCallOnBeforeStep, bool hasToCallOnClearBindings, BinderInfo::BinderType binderType) : ECSqlBinder(ctx, typeInfo, paramNameGen, -1, hasToCallOnBeforeStep, hasToCallOnClearBindings, binderType) {}
 
         void AddChildMemberMappedSqlParameterIndices(ECSqlBinder const& memberBinder)
             {
@@ -86,6 +88,8 @@ struct ECSqlBinder : IECSqlBinder
         bool HasToCallOnClearBindings() const { return m_hasToCallOnClearBindings; }
 
         std::vector<Utf8String> const& GetMappedSqlParameterNames() const { return m_mappedSqlParameterNames; }
+
+        BinderInfo::BinderType GetBinderType() { return _GetBinderType(); } 
 
         ECSqlTypeInfo const& GetTypeInfo() const { return m_typeInfo; }
 

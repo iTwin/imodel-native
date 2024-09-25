@@ -53,7 +53,7 @@ struct PointECSqlBinder final : public ECSqlBinder
 
     public:
         PointECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, bool isPoint3d, SqlParamNameGenerator& paramNameGen)
-            : ECSqlBinder(ctx, typeInfo, paramNameGen, isPoint3d ? 3 : 2, false, false), m_isPoint3d(isPoint3d)
+            : ECSqlBinder(ctx, typeInfo, paramNameGen, isPoint3d ? 3 : 2, false, false, BinderInfo::BinderType::PointECSqlBinderType), m_isPoint3d(isPoint3d)
             {}
 
         ~PointECSqlBinder() {}

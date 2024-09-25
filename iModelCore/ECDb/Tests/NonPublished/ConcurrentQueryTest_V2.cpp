@@ -1055,6 +1055,29 @@ TEST_F(ConcurrentQueryFixture, BlobIO) {
     }
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConcurrentQueryFixture, ReaderBindingForIdSetVirtualTable) {
+
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ConcurrentQuery_Simple.ecdb"));
+
+    auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
+    BeIdSet idSet;
+    idSet.insert(BeInt64Id(10));
+    idSet.insert(BeInt64Id(20));
+    idSet.insert(BeInt64Id(30));
+    idSet.insert(BeInt64Id(40));
+    int vsRowCount = 0;
+
+    ECSqlReader  vsReaderIdSet(mgr, "select id from test.IdSet(?)",
+        ECSqlParams().BindIdSet(1, idSet));
+
+    while(vsReaderIdSet.Next()) {
+       vsRowCount++;
+    }
+    ASSERT_EQ(vsRowCount,4);
+}
 
 
 END_ECDBUNITTESTS_NAMESPACE

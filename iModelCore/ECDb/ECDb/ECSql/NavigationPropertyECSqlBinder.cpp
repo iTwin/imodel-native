@@ -11,7 +11,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod
 //---------------------------------------------------------------------------------------
 NavigationPropertyECSqlBinder::NavigationPropertyECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& ecsqlTypeInfo, SqlParamNameGenerator& paramNameGen)
-    : ECSqlBinder(ctx, ecsqlTypeInfo, paramNameGen, true, false)
+    : ECSqlBinder(ctx, ecsqlTypeInfo, paramNameGen, true, false, BinderInfo::BinderType::NavigationPropertyECSqlBinderType)
     {
     Initialize(ctx, paramNameGen);
     }

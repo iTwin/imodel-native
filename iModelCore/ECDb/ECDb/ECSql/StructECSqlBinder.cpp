@@ -10,7 +10,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod
 //---------------------------------------------------------------------------------------
 StructECSqlBinder::StructECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& ecsqlTypeInfo, SqlParamNameGenerator& paramNameGen)
-    : ECSqlBinder(ctx, ecsqlTypeInfo, paramNameGen, true, true)
+    : ECSqlBinder(ctx, ecsqlTypeInfo, paramNameGen, true, true, BinderInfo::BinderType::StructECSqlBinderType)
     {
     Initialize(ctx, paramNameGen);
     }

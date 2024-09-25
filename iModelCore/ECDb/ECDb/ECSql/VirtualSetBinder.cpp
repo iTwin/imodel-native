@@ -12,7 +12,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod
 //---------------------------------------------------------------------------------------
 VirtualSetBinder::VirtualSetBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& paramNameGen)
-    : ECSqlBinder(ctx, typeInfo, paramNameGen, 1, false, false)
+    : ECSqlBinder(ctx, typeInfo, paramNameGen, 1, false, false, BinderInfo::BinderType::VirtualSetECSqlBinderType)
     {}
 
 //---------------------------------------------------------------------------------------

@@ -10,8 +10,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlBinder::ECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& nameGen, int mappedSqlParameterCount, bool hasToCallOnBeforeStep, bool hasToCallOnClearBindings)
-    : m_preparedStatement(ctx.GetPreparedStatement()), m_typeInfo(typeInfo), m_hasToCallOnBeforeStep(hasToCallOnBeforeStep), m_hasToCallOnClearBindings(hasToCallOnClearBindings)
+ECSqlBinder::ECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& nameGen, int mappedSqlParameterCount, bool hasToCallOnBeforeStep, bool hasToCallOnClearBindings, BinderInfo::BinderType binderType)
+    : m_preparedStatement(ctx.GetPreparedStatement()), m_typeInfo(typeInfo), m_hasToCallOnBeforeStep(hasToCallOnBeforeStep), m_hasToCallOnClearBindings(hasToCallOnClearBindings), m_binderInfo(binderType)
     {
     for (int i = 0; i < mappedSqlParameterCount; i++)
         {

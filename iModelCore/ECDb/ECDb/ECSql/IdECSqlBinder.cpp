@@ -12,7 +12,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod
 //---------------------------------------------------------------------------------------
 IdECSqlBinder::IdECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, bool isNoop, SqlParamNameGenerator& paramNameGen)
-    : ECSqlBinder(ctx, typeInfo, paramNameGen, isNoop ? 0 : 1, false, false), m_isNoop(isNoop)
+    : ECSqlBinder(ctx, typeInfo, paramNameGen, isNoop ? 0 : 1, false, false,BinderInfo::BinderType::IdECSqlBinderType), m_isNoop(isNoop)
     {}
 
 //---------------------------------------------------------------------------------------

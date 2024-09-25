@@ -43,7 +43,7 @@ private:
         }
 
 public:
-    PrimitiveECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& paramNameGen) : ECSqlBinder(ctx, typeInfo, paramNameGen, 1, false, false) {}
+    PrimitiveECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& paramNameGen) : ECSqlBinder(ctx, typeInfo, paramNameGen, 1, false, false, BinderInfo::BinderType::PrimitiveECSqlBinderType) {}
     ~PrimitiveECSqlBinder() { OnClearBindings(); }
     };
 

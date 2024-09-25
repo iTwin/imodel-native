@@ -20,6 +20,7 @@ private:
         private:
             ECDb const* m_ecdb = nullptr;
             ECSqlTypeInfo m_typeInfo;
+            BinderInfo m_binderInfo;
 
             rapidjson::Value* m_json = nullptr;
             rapidjson::MemoryPoolAllocator<>* m_jsonAllocator = nullptr;
@@ -63,6 +64,8 @@ private:
             IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
 
             IECSqlBinder& _AddArrayElement() override;
+
+            BinderInfo::BinderType _GetBinderType() override;
 
         };
 

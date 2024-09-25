@@ -13,7 +13,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod
 //---------------------------------------------------------------------------------------
 ArrayECSqlBinder::ArrayECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& paramNameGen)
-    : ECSqlBinder(ctx, typeInfo, paramNameGen, 1, true, true)
+    : ECSqlBinder(ctx, typeInfo, paramNameGen, 1, true, true, BinderInfo::BinderType::ArrayECSqlBinderType)
     {
     BeAssert(GetTypeInfo().IsArray());
     Initialize();
@@ -70,7 +70,7 @@ ECSqlStatus ArrayECSqlBinder::_OnBeforeStep()
 // @bsimethod
 //---------------------------------------------------------------------------------------
 ArrayECSqlBinder::JsonValueBinder::JsonValueBinder(ECDbCR ecdb, ECSqlTypeInfo const& typeInfo, rapidjson::Value& json, rapidjson::MemoryPoolAllocator<>& jsonAllocator) 
-    : IECSqlBinder(), m_ecdb(&ecdb), m_typeInfo(typeInfo), m_json(&json), m_jsonAllocator(&jsonAllocator), m_currentArrayElementBinder(nullptr)
+    : m_ecdb(&ecdb), m_typeInfo(typeInfo), m_json(&json), m_jsonAllocator(&jsonAllocator), m_currentArrayElementBinder(nullptr), m_binderInfo(BinderInfo::BinderType::JsonValueBinderType)
     {
     BeAssert(m_json != nullptr);
     BeAssert(m_jsonAllocator != nullptr);
@@ -81,7 +81,7 @@ ArrayECSqlBinder::JsonValueBinder::JsonValueBinder(ECDbCR ecdb, ECSqlTypeInfo co
 // @bsimethod
 //---------------------------------------------------------------------------------------
 ArrayECSqlBinder::JsonValueBinder::JsonValueBinder(JsonValueBinder&& rhs)
-    : m_ecdb(std::move(rhs.m_ecdb)), m_typeInfo(std::move(rhs.m_typeInfo)), m_json(std::move(rhs.m_json)), m_jsonAllocator(std::move(rhs.m_jsonAllocator)), m_currentArrayElementBinder(std::move(rhs.m_currentArrayElementBinder))
+    : m_ecdb(std::move(rhs.m_ecdb)), m_typeInfo(std::move(rhs.m_typeInfo)), m_json(std::move(rhs.m_json)), m_jsonAllocator(std::move(rhs.m_jsonAllocator)), m_currentArrayElementBinder(std::move(rhs.m_currentArrayElementBinder)), m_binderInfo(std::move(rhs.m_binderInfo))
     {
     if (!rhs.m_structMemberBinders.empty())
         m_structMemberBinders = std::move(rhs.m_structMemberBinders);
@@ -581,6 +581,14 @@ ECSqlStatus ArrayECSqlBinder::JsonValueBinder::FailIfInvalid() const
         }
 
     return ECSqlStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BinderInfo::BinderType ArrayECSqlBinder::JsonValueBinder::_GetBinderType()
+    {
+        return m_binderInfo.GetBinderType();
     }
 
 

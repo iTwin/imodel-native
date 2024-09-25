@@ -1899,8 +1899,31 @@ bool ECSqlParams::TryBindTo(ECSqlStatement& stmt, std::string& err) const {
             case ECSqlParam::Type::Id:
                 st = stmt.BindId(index, param.GetValueId());  break;
             case ECSqlParam::Type::IdSet: {
-                std::shared_ptr<IdSet<BeInt64Id>> idSet = std::make_shared<IdSet<BeInt64Id>>(param.GetValueIdSet());
-                st = stmt.BindVirtualSet(index, idSet);
+                if(stmt.GetBinderType(index) == BinderInfo::BinderType::VirtualSetECSqlBinderType)
+                {
+                    std::shared_ptr<IdSet<BeInt64Id>> idSet = std::make_shared<IdSet<BeInt64Id>>(param.GetValueIdSet());
+                    st = stmt.BindVirtualSet(index, idSet);
+                }
+                else if(stmt.GetBinderType(index) == BinderInfo::BinderType::ArrayECSqlBinderType)
+                {
+                    IECSqlBinder& binder = stmt.GetBinder(index);
+                    IdSet<BeInt64Id> set(param.GetValueIdSet());
+                    for(auto& ids: set)
+                    {
+                        st = ids.IsValid() ? binder.AddArrayElement().BindInt64((int64_t) ids.GetValue()) : binder.AddArrayElement().BindNull();
+                        if(st != ECSqlStatus::Success)
+                        {
+                            err = SqlPrintfString("Failed to bind id '%s' while binding IdSet in IdSet VT", ids.ToHexStr().c_str()).GetUtf8CP();
+                            return false;
+                        }
+                    }
+                }
+                else
+                {
+                    err = "Unsuported binder type for IdSet";
+                    return false;
+                }
+                
                 break;
             }
             case ECSqlParam::Type::Integer:

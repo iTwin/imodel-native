@@ -152,4 +152,9 @@ IECSqlBinder& IECSqlBinder::operator[](ECN::ECPropertyId structMemberPropertyId)
 //---------------------------------------------------------------------------------------
 IECSqlBinder& IECSqlBinder::AddArrayElement() { return _AddArrayElement(); }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BinderInfo::BinderType IECSqlBinder::GetBinderType() { return _GetBinderType(); }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
