@@ -357,5 +357,4 @@ void UnaryPredicateExp::_ToECSql(ECSqlRenderContext& ctx) const
         ctx.AppendToECSql(")");
     }
 
-
 END_BENTLEY_SQLITE_EC_NAMESPACE

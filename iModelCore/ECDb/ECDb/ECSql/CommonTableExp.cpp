@@ -145,7 +145,7 @@ ECSqlTypeInfo CommonTableBlockExp::FindType (Utf8StringCR col) const {
         auto columnIdx = std::distance(m_columnList.begin(), it);
         auto singleStmtExp = GetQuery()->GetFlatListOfStatements();
         for (auto stmtIdx = 0; stmtIdx < singleStmtExp.size(); ++stmtIdx) {
-            auto typeInfo = singleStmtExp[stmtIdx]->GetSelection()->GetChildren().Get<DerivedPropertyExp>(columnIdx)->GetExpression<ComputedExp>()->GetTypeInfo();
+            auto typeInfo = singleStmtExp[stmtIdx]->GetSelection()->GetChildren().Get<DerivedPropertyExp>(columnIdx)->GetExpression()->GetTypeInfo();
             // try to find non-null type info
             if (resolvedTypeInfo.GetKind() == ECSqlTypeInfo::Kind::Unset || resolvedTypeInfo.IsNull() && !typeInfo.IsNull()) {
                 resolvedTypeInfo = typeInfo;
@@ -506,7 +506,7 @@ Exp::FinalizeParseStatus CommonTablePropertyNameExp::_FinalizeParsing(ECSqlParse
         return FinalizeParseStatus::NotCompleted;
 
     if (mode == Exp::FinalizeParseMode::AfterFinalizingChildren) {
-        if (auto targetTypeInfo = GetTarget().GetExpression<ComputedExp>()->GetTypeInfo(); !targetTypeInfo.IsNull() && !targetTypeInfo.IsUnset())
+        if (auto targetTypeInfo = GetTarget().GetExpression()->GetTypeInfo(); !targetTypeInfo.IsNull() && !targetTypeInfo.IsUnset())
             SetTypeInfo(targetTypeInfo);
         else {
             auto typeInfo = m_typeInfoCallBack(m_name);
