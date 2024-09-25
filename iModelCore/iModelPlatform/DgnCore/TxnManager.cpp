@@ -1022,7 +1022,7 @@ void TxnManager::RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesetP
             auto schemaApplyArgs = ApplyChangesArgs::Default()
                 .SetInvert(invert)
                 .SetIgnoreNoop(true)
-                .SetFkNoAction(false)
+                .SetFkNoAction(true)
                 .ApplyOnlySchemaChanges();
 
             m_dgndb.Schemas().OnBeforeSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
