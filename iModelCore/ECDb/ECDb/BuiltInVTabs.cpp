@@ -181,7 +181,6 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::GetColumn(int i, Context& ctx) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult IdSetModule::IdSetTable::IdSetCursor::FilterJSONStringIntoArray(BeJsDocument& doc) {
-    doc.Stringify(StringifyFormat::Indented);
     if(!doc.isArray())
         return BE_SQLITE_ERROR;
     bool flag = doc.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst k1)
@@ -204,35 +203,19 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::FilterJSONBasedOnType(BeJsConst& 
     {
         return BE_SQLITE_ERROR;
     }
-    if(val.isNumeric())
+    else if(val.isNumeric())
     {
         if(val.asUInt64(-1) == -1)
             return BE_SQLITE_ERROR;
         else
             m_idSet.insert(val.asUInt64(-1));
     }
-    else if(val.isArray())
-    {
-        bool flag = val.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst k1)
-                                                {
-                                                    if(BE_SQLITE_OK != FilterJSONBasedOnType(k1))
-                                                        return true;
-                                                    return false; 
-                                                });
-        if(flag)
-            return BE_SQLITE_ERROR;
-    }
     else if(val.isString())
     {
         if(val.asString().EqualsIAscii(""))
             return BE_SQLITE_ERROR;
         else if(val.asUInt64(-1) == -1)
-        {
-            BeJsDocument doc;
-            doc.Parse(val.asString());
-            if(FilterJSONStringIntoArray(doc) != BE_SQLITE_OK)
-                return BE_SQLITE_ERROR;
-        }
+            return BE_SQLITE_ERROR;
         else
            m_idSet.insert(val.asUInt64(-1));
     }
@@ -264,8 +247,6 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *id
         else{
             Reset();
         }
-    }else{
-        Reset();
     }
     if(recompute)
     {
@@ -278,13 +259,11 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *id
             if(FilterJSONStringIntoArray(doc) != BE_SQLITE_OK)
             {
                 Reset();
-                return BE_SQLITE_ERROR;
             }
         }
         else
         {
             Reset();
-            return BE_SQLITE_ERROR;
         }
     }
     m_index = m_idSet.begin();
@@ -297,7 +276,6 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *id
 void IdSetModule::IdSetTable::IdSetCursor::Reset() {
     m_text = "";
     m_idSet.clear();
-    m_index = m_idSet.begin();
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod

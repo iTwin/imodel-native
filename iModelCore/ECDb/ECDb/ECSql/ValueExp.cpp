@@ -821,15 +821,45 @@ Exp::FinalizeParseStatus MemberFunctionCallExp::_FinalizeParsing(ECSqlParseConte
             {
                 ValueExp const* argExp = GetArgument(0);
                 if(argExp == nullptr)
+                {
+                    ctx.Issues().ReportV(
+                        IssueSeverity::Error,
+                        IssueCategory::BusinessProperties,
+                        IssueType::ECSQL,
+                        ECDbIssueId::ECDb_0734,
+                        "There must have an argument for the function'%s'",
+                        m_functionName.c_str()
+                    );
                     return Exp::FinalizeParseStatus::Error;
+                }
                 ECSqlTypeInfo typeInfo = argExp->GetTypeInfo();
                 if (!typeInfo.IsPrimitive() && !typeInfo.IsUnset())
+                {
+                    ctx.Issues().ReportV(
+                        IssueSeverity::Error,
+                        IssueCategory::BusinessProperties,
+                        IssueType::ECSQL,
+                        ECDbIssueId::ECDb_0735,
+                        "The argument for the function '%s' can only be either a string literal or an unset parameter",
+                        m_functionName.c_str()
+                    );
                     return Exp::FinalizeParseStatus::Error;
+                }
                 if(typeInfo.IsPrimitive())
                 {
                     ECN::PrimitiveType primitiveType = typeInfo.GetPrimitiveType();
                     if(primitiveType != ECN::PrimitiveType::PRIMITIVETYPE_String)
+                    {
+                        ctx.Issues().ReportV(
+                            IssueSeverity::Error,
+                            IssueCategory::BusinessProperties,
+                            IssueType::ECSQL,
+                            ECDbIssueId::ECDb_0735,
+                            "The argument for the function '%s' can only be either a string literal or an unset parameter",
+                            m_functionName.c_str()
+                        );
                         return Exp::FinalizeParseStatus::Error;
+                    }
                 }
             }
             return FinalizeParseStatus::Completed;
@@ -932,7 +962,7 @@ bool MemberFunctionCallExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx
     {
     if(m_functionName.EqualsIAscii("IdSet"))
     {
-        parameterExp.SetTargetExpInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Long, true));
+        parameterExp.SetTargetExpInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Long, true, EXTENDEDTYPENAME_Id));
         return true;
     }
     //we don't have metadata about function args, so use a default type if the arg is a parameter

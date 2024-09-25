@@ -299,20 +299,6 @@ TEST_F(ECDbIdSetVirtualTableTests, IdSetModuleTest) {
         ASSERT_EQ(i, 5);
     }
     {
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
-        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
-        IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
-        ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText("[1,2,3,4,5]", IECSqlBinder::MakeCopy::No));
-
-        int i = 0;
-        while (stmt.Step() == BE_SQLITE_ROW)
-        {
-            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
-        }
-        ASSERT_EQ(i, 5);
-    }
-    {
         std::vector<Utf8String> hexIds = std::vector<Utf8String>{"0x1", "0x2", "0x3", "4", "5"};
 
         ECSqlStatement stmt;
@@ -346,16 +332,12 @@ TEST_F(ECDbIdSetVirtualTableTests, IdSetModuleTest) {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet('[0x1,0x2,\"3\",\"4\",\"5\"]')")));
 
-        // Should fail while converting to json array because hex values with quotes are required
-        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        // Should fail while converting to json array because hex values with quotes are required so should be empty table
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
-        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
-        IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
-         ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText( "[1,\"2\",3, 4.0, 5.0]", IECSqlBinder::MakeCopy::No));
-
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet('[1,\"2\",3, 4.0, 5.0]')")));
         int i = 0;
         while (stmt.Step() == BE_SQLITE_ROW)
         {
@@ -366,18 +348,15 @@ TEST_F(ECDbIdSetVirtualTableTests, IdSetModuleTest) {
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
-        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
-        IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
-        ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText( "[1,\"2\",3, 4.5, 5.6]", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet('[1,\"2\",3, 4.5, 5.6]')")));
         
-        // Will not take into account 4.5 and 5.6 because they are decimal values so should fail
-        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        // Will not take into account 4.5 and 5.6 because they are decimal values so should be empty table
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
     {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
-        stmt.BindText(1, "[1,\"2\",3, \"Soham\"]", IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(ECSqlStatus::Error,stmt.BindText(1, "[1,\"2\",3, \"abc\"]", IECSqlBinder::MakeCopy::No));
 
         // no binding as we use array ecsql binder so need to call AddArrayElement first
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
@@ -394,41 +373,19 @@ TEST_F(ECDbIdSetVirtualTableTests, IdSetModuleTest) {
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
         IECSqlBinder& arrayBinder = stmt.GetBinder(1);
         IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
-        ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText( "[1,\"2\",3, \"Soham\"]", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Error, elementBinder.BindText( "[1,\"2\",3, \"abc\"]", IECSqlBinder::MakeCopy::No));
 
-        // Will not take into account "Soham" because it is a string so should fail
-        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        // EmptyArray is Binded so should be empty table
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
     {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
         IECSqlBinder& arrayBinder = stmt.GetBinder(1);
-        IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
-        ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText( "[1,\"2\",3]", IECSqlBinder::MakeCopy::No));
-        for(int i = 4;i<=10;i++)
+        for(int i = 1;i<=10;i++)
         {
             IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
             ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindInt(i));
-        }
-
-        int i = 0;
-        while (stmt.Step() == BE_SQLITE_ROW)
-        {
-            ASSERT_EQ((1+i), stmt.GetValueInt64(0));
-            i++;
-        }
-        ASSERT_EQ(i, 10);
-    }
-    {
-        ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT id FROM test.IdSet(?)")));
-        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
-        IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
-        ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText( "[1,\"2\",3]", IECSqlBinder::MakeCopy::No));
-        for(int i = 4;i<=10;i++)
-        {
-            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
-            ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindInt64(i));
         }
 
         int i = 0;
@@ -469,8 +426,8 @@ TEST_F(ECDbIdSetVirtualTableTests, IdSetModuleTest) {
             ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindDouble(i));
         }
 
-        // having null as an element so should fail
-        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        // having null as an element so should be empty table
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
     {
         DPoint2d pArrayOfST1_P2D[] = {DPoint2d::From(-21, 22.1),DPoint2d::From(-85.34, 35.36),DPoint2d::From(-31.34, 12.35)};
@@ -489,8 +446,8 @@ TEST_F(ECDbIdSetVirtualTableTests, IdSetModuleTest) {
             ASSERT_EQ(ECSqlStatus::Error, elementBinder.BindPoint3d(pArrayOfST1_P3D[i]));
         }
 
-        // EmptyArray is Binded
-        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        // EmptyArray is Binded so should be empty table
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
     {
         DPoint2d pArrayOfST1_P2D[] = {DPoint2d::From(-21, 22.1),DPoint2d::From(-85.34, 35.36),DPoint2d::From(-31.34, 12.35)};
@@ -512,8 +469,8 @@ TEST_F(ECDbIdSetVirtualTableTests, IdSetModuleTest) {
             ASSERT_EQ(ECSqlStatus::Error, elementBinder["P3D"].BindPoint3d(pArrayOfST1_P3D[i]));
         }
 
-        // EmptyArray is Binded
-        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        // EmptyArray is Binded so should be empty table
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
     {
         const std::vector<std::vector<uint8_t>> bi_array = {
@@ -527,8 +484,8 @@ TEST_F(ECDbIdSetVirtualTableTests, IdSetModuleTest) {
         for(auto& m : bi_array)
             ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindBlob((void const*)&m[0], (int)m.size(), IECSqlBinder::MakeCopy::No));
 
-        // Binary is Binded
-        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        // Binary is Binded so should be empty table
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
     {
         const auto dt = DateTime(DateTime::Kind::Unspecified, 2017, 1, 17, 0, 0);
@@ -542,8 +499,8 @@ TEST_F(ECDbIdSetVirtualTableTests, IdSetModuleTest) {
             ASSERT_EQ(ECSqlStatus::Error, arrayBinder.AddArrayElement().BindDateTime(dtUtc));
         }
 
-        // EmptyArray is Binded
-        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        // EmptyArray is Binded so should be empty table
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
     {
         auto geom = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
@@ -555,8 +512,8 @@ TEST_F(ECDbIdSetVirtualTableTests, IdSetModuleTest) {
             ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindGeometry(*geom));
         }
 
-        // Binary is Binded because BindGeometry internally calls 
-        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        // Binary is Binded because BindGeometry internally calls so should be empty table 
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
     {
         ECSqlStatement stmt;
@@ -564,11 +521,11 @@ TEST_F(ECDbIdSetVirtualTableTests, IdSetModuleTest) {
         IECSqlBinder& arrayBinder = stmt.GetBinder(1);
         for(int i = 0;i<=1;i++)
         {
-            ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindText("Soham",IECSqlBinder::MakeCopy::No));
+            ASSERT_EQ(ECSqlStatus::Error, arrayBinder.AddArrayElement().BindText("ABC",IECSqlBinder::MakeCopy::No));
         }
 
-        // ["Soham","Soham"] doesnot make sense
-        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        // EmptyArray is Binded so should be empty table
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
     {
         ECSqlStatement stmt;
@@ -576,11 +533,11 @@ TEST_F(ECDbIdSetVirtualTableTests, IdSetModuleTest) {
         IECSqlBinder& arrayBinder = stmt.GetBinder(1);
         for(int i = 0;i<=1;i++)
         {
-            ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindText("[Soham]",IECSqlBinder::MakeCopy::No));
+            ASSERT_EQ(ECSqlStatus::Error, arrayBinder.AddArrayElement().BindText("[abc]",IECSqlBinder::MakeCopy::No));
         }
 
-        // ["[Soham]","[Soham]"] doesnot make sense
-        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        // EmptyArray is Binded so should be empty table
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
     {
         ECSqlStatement stmt;
@@ -588,11 +545,11 @@ TEST_F(ECDbIdSetVirtualTableTests, IdSetModuleTest) {
         IECSqlBinder& arrayBinder = stmt.GetBinder(1);
         for(int i = 0;i<=1;i++)
         {
-            ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindText("[\"Soham\"]",IECSqlBinder::MakeCopy::No));
+            ASSERT_EQ(ECSqlStatus::Error, arrayBinder.AddArrayElement().BindText("[\"abc\"]",IECSqlBinder::MakeCopy::No));
         }
 
-        // ["[\"Soham\"]","[\"Soham\"]"] doesnot make sense
-        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+        // EmptyArray is Binded so should be empty table
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
 }
 
