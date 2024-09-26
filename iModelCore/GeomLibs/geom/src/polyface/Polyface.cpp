@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
+#include <numeric>
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 
@@ -1198,30 +1199,58 @@ bool PolyfaceHeader::AddPolygon (DPoint3dCP xyz, size_t n, DVec3dCP normal, DPoi
 
     return true;
     }
-//! Add a polygon with linear mapping to parameter space
-//! If compressNormal is true, the normal is compared to the most recent normal
-//!     and that index is reused when identical.
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
 bool PolyfaceHeader::AddPolygon
 (
-bvector<DPoint3d> const &xyz,
+bvector<DPoint3d> const& xyz,
+bvector<int> const& signedOneBasedIndices,
 TransformCR worldToParameterSpace,
 DVec3dCR normal,
 bool compressNormal,
-bool reverseXYZ
+bool reverse
 )
     {
-    size_t n = xyz.size();
-    // Strip off trailing duplicates
-    while (n > 1 && xyz[n - 1].IsEqual(xyz[0]))
-        n--;
-    size_t basePointIndex = m_point.size();
-    size_t numIndex = 0, numPad = 0;
-    if (!GetIndexCounts(n, GetMeshStyle(), GetNumPerFace(), numIndex, numPad))
+    size_t n = signedOneBasedIndices.size();
+    while (n > 1 && signedOneBasedIndices[n - 1] == 0)
+        --n; // strip off trailing pad/terminator
+    while (n > 1 && abs(signedOneBasedIndices[n - 1]) == abs(signedOneBasedIndices[0]))
+        --n; // strip off trailing duplicate
+    if (n < 3)
         return false;
-    size_t pointIndex0 = m_point.size ();
-    m_pointIndex.AddSteppedBlock((int)basePointIndex + 1, 1, n, 0, numPad);
-    // produce reversal by flipping the points (indices go forward into the reversed points)
-    VectorOps<DPoint3d>::AppendPrefix (m_point, xyz, n, reverseXYZ);
+
+    size_t _ = 0, numPad = 0;
+    if (!GetIndexCounts(n, GetMeshStyle(), GetNumPerFace(), _, numPad))
+        return false;
+
+    int nInt = (int) n;
+    auto addIndexedVertex = [&](int iIndex) -> void {
+        int iMeshVertex0 = (int) m_point.size();
+        int iPolygonVertex0 = abs(signedOneBasedIndices[iIndex]) - 1;
+        int iSign = reverse ? (nInt - 1 + iIndex) % nInt : iIndex;
+        bool hideEdge = signedOneBasedIndices[iSign] < 0;
+        m_pointIndex.push_back(hideEdge ? -(1 + iMeshVertex0) : 1 + iMeshVertex0);
+        m_point.push_back(xyz[iPolygonVertex0]); // pushed at index iMeshVertex0
+    };
+
+    size_t basePointIndex = m_point.size();
+    if (m_pointIndex.Active())
+        {
+        if (reverse)
+            {
+            for (int i = nInt - 1; i >= 0; --i)
+                addIndexedVertex(i);
+            }
+        else
+            {
+            for (int i = 0; i < nInt; ++i)
+                addIndexedVertex(i);
+            }
+        for (size_t i = 0; i < numPad; i++)
+            m_pointIndex.push_back(0);
+        }
 
     if (m_normal.Active())
         {
@@ -1247,15 +1276,39 @@ bool reverseXYZ
         {
         size_t baseParamIndex = m_param.size();
         m_paramIndex.AddSequentialBlock((int)baseParamIndex + 1, n, 0, numPad);
-        // access points from m_point (rather than xyz) to get the reverse effects buried in AppendPrefix.
+        // access points from m_point (rather than xyz) to as they may have been reversed.
         for (size_t i = 0; i < n; i++)
             {
-            DPoint3d uvw = worldToParameterSpace * m_point[pointIndex0 + i];
+            DPoint3d uvw = worldToParameterSpace * m_point[basePointIndex + i];
             m_param.push_back(DPoint2d::From (uvw.x, uvw.y));
             }
         }
     return true;
     }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+bool PolyfaceHeader::AddPolygon
+(
+bvector<DPoint3d> const &xyz,
+TransformCR worldToParameterSpace,
+DVec3dCR normal,
+bool compressNormal,
+bool reverseXYZ
+)
+    {
+    size_t n = xyz.size();
+    // Strip off trailing duplicates
+    while (n > 1 && xyz[n - 1].IsEqual(xyz[0]))
+        n--;
+
+    bvector<int> oneBasedIndices(n);
+    std::iota(oneBasedIndices.begin(), oneBasedIndices.end(), 1);
+
+    return AddPolygon(xyz, oneBasedIndices, worldToParameterSpace, normal, compressNormal, reverseXYZ);
+    }
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
