@@ -375,35 +375,17 @@ BentleyStatus ECSqlParser::ParseDerivedColumn(std::unique_ptr<DerivedPropertyExp
     OSQLParseNode const* opt_as_clause = parseNode->getChild(1);
 
     std::unique_ptr<ValueExp> valExp = nullptr;
-    std::unique_ptr<BooleanExp> boolExp = nullptr;
-    /* search_condition internally can have value_exp so first we check whether value_exp can be parsed
-        if not , we try search condition
-    */
-   if(CheckIfKnownValueExpType(first))
-   {
-        BentleyStatus stat = ParseValueExp(valExp, first);
-        if (stat != SUCCESS)
-            return stat;
-   } 
-   else
-   {
-        BentleyStatus stat = ParseSearchCondition(boolExp, first);
-        if (stat != SUCCESS)
-            return stat;
-   }
+    BentleyStatus stat = ParseValueExp(valExp, first);
+    if (stat != SUCCESS)
+        return stat;
 
     Utf8String columnAlias;
     if (opt_as_clause->count() > 0)
         columnAlias = opt_as_clause->getChild(1)->getTokenValue();
     else
         columnAlias = opt_as_clause->getTokenValue();
-   
-    if(valExp != nullptr)
-        exp = std::make_unique<DerivedPropertyExp>(std::move(valExp), columnAlias.c_str());
-    else if(boolExp != nullptr)
-        exp = std::make_unique<DerivedPropertyExp>(std::move(boolExp), columnAlias.c_str());
-    else
-        return ERROR;
+
+    exp = std::make_unique<DerivedPropertyExp>(std::move(valExp), columnAlias.c_str());
     return SUCCESS;
     }
 //****************** Parsing PRAGMA statement ***********************************
@@ -3399,7 +3381,6 @@ BentleyStatus ECSqlParser::ParseTypePredicate(std::unique_ptr<ValueExp>& valueEx
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-/*Any case added here must also be added in CheckIfKnownValueExpType method*/
 BentleyStatus ECSqlParser::ParseValueExp(std::unique_ptr<ValueExp>& valueExp, OSQLParseNode const* parseNode) const
     {
     BeAssert(parseNode != nullptr);
@@ -3457,7 +3438,7 @@ BentleyStatus ECSqlParser::ParseValueExp(std::unique_ptr<ValueExp>& valueExp, OS
                     return ParseValueCreationFuncExp(valueExp, parseNode);
                 default:
                     Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0493,
-                    "ECSQL Parse error: Unsupported value_exp type: %d", (int) parseNode->getKnownRuleID());
+                        "ECSQL Parse error: Unsupported value_exp type: %d", (int) parseNode->getKnownRuleID());
                     return ERROR;
 
             };
@@ -3470,47 +3451,6 @@ BentleyStatus ECSqlParser::ParseValueExp(std::unique_ptr<ValueExp>& valueExp, OS
         return ERROR;
 
     return LiteralValueExp::Create(valueExp, *m_context, value.c_str(), dataType);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-/*This method is added for the purpose of checking whether a parseNode rule falls into any of the categories
-a ValueExp supports. This check helps us to know before hand that whether the value exp does not support a parseNode rule.
-If it does not support a parse node rule then while parsing derived column we can try to parse that node as a boolean exp*/
-bool ECSqlParser::CheckIfKnownValueExpType(OSQLParseNode const* parseNode) const
-    {
-    BeAssert(parseNode != nullptr);
-    if (parseNode->isRule())
-        {
-        switch (parseNode->getKnownRuleID())
-            {
-                case OSQLParseNode::cast_spec:
-                case OSQLParseNode::column_ref:
-                case OSQLParseNode::num_value_exp:
-                case OSQLParseNode::term_add_sub:
-                case OSQLParseNode::concatenation:
-                case OSQLParseNode::datetime_value_exp:
-                case OSQLParseNode::factor:
-                case OSQLParseNode::aggregate_fct:
-                case OSQLParseNode::fct_spec:
-                case OSQLParseNode::property_path:
-                case OSQLParseNode::term:
-                case OSQLParseNode::parameter:
-                case OSQLParseNode::searched_case:
-                case OSQLParseNode::iif_spec:
-                case OSQLParseNode::type_predicate:
-                case OSQLParseNode::subquery:
-                case OSQLParseNode::value_exp_primary:
-                case OSQLParseNode::window_function:
-                case OSQLParseNode::value_creation_fct:
-                    return true;
-                default:
-                    return false;
-
-            };
-        }
-    return true;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -4380,13 +4320,13 @@ BentleyStatus ECSqlParser::ParseNavValueCreationFuncExp(std::unique_ptr<NavValue
     if (SUCCESS != ParseDerivedColumn(derivedPropertyExp, parseNode->getChild(2)))
         return ERROR;
 
-    if (derivedPropertyExp->GetExpression<ComputedExp>()->GetType() != Exp::Type::PropertyName) // NAVIGATION_VALUE function should accept only PropertyName
+    if (derivedPropertyExp->GetExpression()->GetType() != Exp::Type::PropertyName) // NAVIGATION_VALUE function should accept only PropertyName
         return ERROR;
 
-    if (derivedPropertyExp->GetExpression<ComputedExp>()->GetAs<PropertyNameExp>().GetResolvedPropertyPath().Size() != 3)
+    if (derivedPropertyExp->GetExpression()->GetAs<PropertyNameExp>().GetResolvedPropertyPath().Size() != 3)
         return ERROR;
 
-    PropertyPath propPath = derivedPropertyExp->GetExpression<ComputedExp>()->GetAs<PropertyNameExp>().GetResolvedPropertyPath();
+    PropertyPath propPath = derivedPropertyExp->GetExpression()->GetAs<PropertyNameExp>().GetResolvedPropertyPath();
 
     ClassMap const* classMap = m_context->GetECDb().Schemas().GetDispatcher().GetClassMap(propPath[0].GetName(), propPath[1].GetName(), SchemaLookupMode::AutoDetect, nullptr);
 

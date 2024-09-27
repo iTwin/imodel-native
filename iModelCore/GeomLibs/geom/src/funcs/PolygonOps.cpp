@@ -725,6 +725,45 @@ bvector<DTriangle3d> &triangles
     return false;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PolygonOps::FixupAndTriangulateProjectedLoops
+(
+bvector<int>& triangleIndices,
+bvector<int>* exteriorLoopIndices,
+bvector<DPoint3d>& xyzOut,
+TransformCR localToWorld,
+TransformCR worldToLocal,
+bvector<bvector<DPoint3d>> const& loops,
+double xyTolerance,
+bool signedOneBasedIndices
+)
+    {
+    triangleIndices.clear();
+    if (exteriorLoopIndices)
+        exteriorLoopIndices->clear();
+    xyzOut.clear();
+
+    bvector<DPoint3d> packedLocalPoints;
+    DPoint3d disconnect;
+    disconnect.InitDisconnect();
+    for (auto const& loop : loops)
+        {
+        for (auto const& xyz : loop)
+            packedLocalPoints.push_back(worldToLocal * xyz);
+        packedLocalPoints.push_back(disconnect);
+        }
+    if (packedLocalPoints.size() < 4)
+        return false;
+
+    if (!FixupAndTriangulateLoopsXY(&triangleIndices, exteriorLoopIndices, &xyzOut, &packedLocalPoints, xyTolerance, 3, signedOneBasedIndices, true))
+        return false;
+
+    DPoint3dOps::Multiply(&xyzOut, localToWorld);
+    return true;
+    }
+
 bool PolygonOps::FixupAndTriangulateProjectedLoops
 (
 bvector<bvector<DPoint3d>> const &loops,

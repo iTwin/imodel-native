@@ -65,40 +65,14 @@ DerivedPropertyExp::DerivedPropertyExp(std::unique_ptr<ValueExp> valueExp, Utf8C
     {
     AddChild(std::move(valueExp));
     }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-DerivedPropertyExp::DerivedPropertyExp(std::unique_ptr<BooleanExp> booleanExp, Utf8CP columnAlias)
-    : Exp(Type::DerivedProperty), m_columnAlias(columnAlias)
-    {
-    AddChild(std::move(booleanExp));
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-// DerivedPropertyExp constructor allows either BooleanExp or ValueExp both of which are children of ComputedExp so GetExpression<ComputedExp> will always give a valid pointer
-template<typename T>
-T const* DerivedPropertyExp::GetExpression() const
-    {
-    auto child = GetChild<ComputedExp>(0);
-    if(child != nullptr && dynamic_cast<T const*> (child) != nullptr)
-        return static_cast<T const*>(child);
-    return nullptr; 
-    }
-// As DerivedPropertyExp can have a child of one of these two types ValueExp or BooleanExp so only GetExpression<ValueExp> or GetExpression<BooleanExp> or GetExpression<ComputedExp> is allowed. DON'T CALL GetExpression<>() WITH ANY OTHER TYPE.
-template ComputedExp const* DerivedPropertyExp::GetExpression<ComputedExp>() const;
-template ValueExp const* DerivedPropertyExp::GetExpression<ValueExp>() const;
-template BooleanExp const* DerivedPropertyExp::GetExpression<BooleanExp>() const;
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool DerivedPropertyExp::IsComputed() const
     {
-    if (GetExpression<ComputedExp>()->GetType() == Exp::Type::PropertyName)
+    if (GetExpression()->GetType() == Exp::Type::PropertyName)
         {
-        PropertyNameExp const& propertyNameExp = GetExpression<ComputedExp>()->GetAs<PropertyNameExp>();
+        PropertyNameExp const& propertyNameExp = GetExpression()->GetAs<PropertyNameExp>();
         if (propertyNameExp.IsPropertyRef())
             {
             return propertyNameExp.GetPropertyRef()->IsComputedExp();
@@ -115,17 +89,17 @@ Utf8String DerivedPropertyExp::GetName() const {
     if (!columnAlias.empty())
         return columnAlias;
 
-    if (GetExpression<ComputedExp>()->GetType() == Exp::Type::PropertyName) {
-        PropertyNameExp const& propertyNameExp = GetExpression<ComputedExp>()->GetAs<PropertyNameExp>();
+    if (GetExpression()->GetType() == Exp::Type::PropertyName) {
+        PropertyNameExp const& propertyNameExp = GetExpression()->GetAs<PropertyNameExp>();
         return propertyNameExp.GetResolvedPropertyPath().ToString();
     }
 
-    if (GetExpression<ComputedExp>()->GetType() == Exp::Type::NavValueCreationFunc) {
-        NavValueCreationFuncExp const& navValueCreationFuncExp = GetExpression<ComputedExp>()->GetAs<NavValueCreationFuncExp>();
+    if (GetExpression()->GetType() == Exp::Type::NavValueCreationFunc) {
+        NavValueCreationFuncExp const& navValueCreationFuncExp = GetExpression()->GetAs<NavValueCreationFuncExp>();
         return navValueCreationFuncExp.GetPropertyNameExp()->GetResolvedPropertyPath().ToString();
     }
 
-    return GetExpression<ComputedExp>()->ToECSql();
+    return GetExpression()->ToECSql();
 }
 //-----------------------------------------------------------------------------------------
 // @bsimethod
@@ -135,8 +109,8 @@ Utf8String DerivedPropertyExp::GetAliasRecursively() const {
     if (!columnAlias.empty())
         return columnAlias;
 
-    if (GetExpression<ComputedExp>()->GetType() == Exp::Type::PropertyName) {
-        PropertyNameExp const& propertyNameExp = GetExpression<ComputedExp>()->GetAs<PropertyNameExp>();
+    if (GetExpression()->GetType() == Exp::Type::PropertyName) {
+        PropertyNameExp const& propertyNameExp = GetExpression()->GetAs<PropertyNameExp>();
         if (propertyNameExp.IsPropertyRef()) {
             auto alias = propertyNameExp.GetPropertyRef()->LinkedTo().GetAliasRecursively();
             if (!alias.empty())
@@ -153,9 +127,9 @@ Utf8StringCR DerivedPropertyExp::GetColumnAlias() const
     if (!m_columnAlias.empty())
         return m_columnAlias;
 
-    if (m_subQueryAlias.empty() && GetExpression<ComputedExp>()->GetType() == Exp::Type::PropertyName)
+    if (m_subQueryAlias.empty() && GetExpression()->GetType() == Exp::Type::PropertyName)
         {
-        PropertyNameExp const& propertyNameExp = GetExpression<ComputedExp>()->GetAs<PropertyNameExp>();
+        PropertyNameExp const& propertyNameExp = GetExpression()->GetAs<PropertyNameExp>();
         if (propertyNameExp.IsPropertyRef())
             m_subQueryAlias =  propertyNameExp.GetResolvedPropertyPath().ToString();
         }
@@ -170,7 +144,7 @@ void DerivedPropertyExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
     //! ITWINJS_PARSE_TREE: DerivedPropertyExp
     val.SetEmptyObject();
     val["id"] = "DerivedPropertyExp";
-    GetExpression<ComputedExp>()->ToJson(val["exp"], fmt);
+    GetExpression()->ToJson(val["exp"], fmt);
     if (!m_columnAlias.empty())
         val["alias"] = m_columnAlias;
 }
@@ -182,19 +156,18 @@ void DerivedPropertyExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
     if (m_columnAlias.empty())
         {
-        ctx.AppendToECSql(*GetExpression<ComputedExp>());
+        ctx.AppendToECSql(*GetExpression());
         return;
         }
 
-    ctx.AppendToECSql("(").AppendToECSql(*GetExpression<ComputedExp>()).AppendToECSql(") AS ").AppendToECSql(m_columnAlias);
+    ctx.AppendToECSql("(").AppendToECSql(*GetExpression()).AppendToECSql(") AS ").AppendToECSql(m_columnAlias);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 ExtractPropertyValueExp const* DerivedPropertyExp::TryGetExtractPropExp() const {
-    // Calling GetExpression<ComputedExp>() here because in this method ultimately the return value is getting converted to Exp*
-    const Exp* exp = GetExpression<ComputedExp>();
+    const Exp* exp = GetExpression();
     while(exp) {
         if (exp->GetType() == Exp::Type::ExtractProperty)
             return exp->GetAsCP<ExtractPropertyValueExp>();
@@ -202,7 +175,7 @@ ExtractPropertyValueExp const* DerivedPropertyExp::TryGetExtractPropExp() const 
             auto prop = exp->GetAsCP<PropertyNameExp>();
             if (!prop->IsPropertyRef())
                 return nullptr;
-            exp = prop->GetPropertyRef()->GetEndPointDerivedProperty().GetExpression<ComputedExp>();
+            exp = prop->GetPropertyRef()->GetEndPointDerivedProperty().GetExpression();
         } else if (exp->GetChildrenCount() == 1)
             exp = exp->GetChildren()[0];
         else
@@ -214,8 +187,8 @@ ExtractPropertyValueExp const* DerivedPropertyExp::TryGetExtractPropExp() const 
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool DerivedPropertyExp::IsWildCard() const {
-    if (GetExpression<ComputedExp>()->GetType() == Exp::Type::PropertyName) {
-        return GetExpression<ComputedExp>()->GetAsCP<PropertyNameExp>()->IsWildCard();
+    if (GetExpression()->GetType() == Exp::Type::PropertyName) {
+        return GetExpression()->GetAsCP<PropertyNameExp>()->IsWildCard();
     }
     return false;
 }
@@ -742,14 +715,13 @@ BentleyStatus SelectClauseExp::ReplaceAsteriskExpressions(ECSqlParseContext cons
     for (Exp const* childExp : GetChildren())
         {
         DerivedPropertyExp const& derivedPropExp = childExp->GetAs<DerivedPropertyExp> ();
-        if (derivedPropExp.GetExpression<ComputedExp>()->GetType() == Exp::Type::PropertyName)
+        if (derivedPropExp.GetExpression()->GetType() == Exp::Type::PropertyName)
             propertyNameExpList.push_back(&derivedPropExp);
         }
 
     for (DerivedPropertyExp const* propertyNameExp : propertyNameExpList)
         {
-        // All the expressions in propertyNameExpList are of type PropertyName so getting as PropertyNameExp
-        PropertyNameExp const& innerExp = propertyNameExp->GetExpression<ComputedExp>()->GetAs<PropertyNameExp>();
+        PropertyNameExp const& innerExp = propertyNameExp->GetExpression()->GetAs<PropertyNameExp>();
         if (Exp::IsAsteriskToken(innerExp.GetPropertyName()))
             {
             if (SUCCESS != ReplaceAsteriskExpression(ctx, *propertyNameExp, rangeClassRefs))
@@ -916,10 +888,10 @@ PropertyMatchResult SingleSelectStatementExp::_FindProperty(ECSqlParseContext& c
     auto findProperty = [&](PropertyPath const& effectivePath) {
         for (Exp const* selectClauseExp : GetSelection()->GetChildren()) {
             DerivedPropertyExp const& derivedPropertyExp = selectClauseExp->GetAs<DerivedPropertyExp>();
-            PropertyNameExp const *propertyNameExp = derivedPropertyExp.GetExpression<ComputedExp>()->GetType() == Exp::Type::PropertyName ? derivedPropertyExp.GetExpression<ComputedExp>()->GetAsCP<PropertyNameExp>() : nullptr;
+            PropertyNameExp const *propertyNameExp = derivedPropertyExp.GetExpression()->GetType() == Exp::Type::PropertyName ? derivedPropertyExp.GetExpression()->GetAsCP<PropertyNameExp>() : nullptr;
 
-            if (propertyNameExp == nullptr) 
-                propertyNameExp = derivedPropertyExp.GetExpression<ComputedExp>()->GetType() == Exp::Type::NavValueCreationFunc ? derivedPropertyExp.GetExpression<ComputedExp>()->
+            if (propertyNameExp == nullptr)
+                propertyNameExp = derivedPropertyExp.GetExpression()->GetType() == Exp::Type::NavValueCreationFunc ? derivedPropertyExp.GetExpression()->
                     GetAs<NavValueCreationFuncExp>().GetPropertyNameExp() : nullptr;
             // Match alias or indirect
             const auto matchUserAlias = !derivedPropertyExp.GetColumnAlias().empty() && derivedPropertyExp.GetColumnAlias().EqualsIAscii(effectivePath.First().GetName());
@@ -1382,7 +1354,7 @@ Exp::FinalizeParseStatus SubqueryValueExp::_FinalizeParsing(ECSqlParseContext& c
         return FinalizeParseStatus::Error;
         }
 
-    SetTypeInfo(selectClauseExp->GetChildren().Get<DerivedPropertyExp>(0)->GetExpression<ComputedExp>()->GetTypeInfo());
+    SetTypeInfo(selectClauseExp->GetChildren().Get<DerivedPropertyExp>(0)->GetExpression()->GetTypeInfo());
     return FinalizeParseStatus::Completed;
     }
 

@@ -124,9 +124,9 @@ ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECProper
         {
 
         DerivedPropertyExp const& first = selectClauseItemPropNameExp->GetPropertyRef()->GetEndPointDerivedProperty();
-        if (first.GetExpression<ComputedExp>()->GetType() == Exp::Type::PropertyName)
+        if (first.GetExpression()->GetType() == Exp::Type::PropertyName)
             {
-            const PropertyNameExp& firstExp = first.GetExpression<ComputedExp>()->GetAs<PropertyNameExp>();
+            const PropertyNameExp& firstExp = first.GetExpression()->GetAs<PropertyNameExp>();
             const PropertyPath& internalPropPath = firstExp.GetResolvedPropertyPath();
             const ECPropertyCP leafProp = internalPropPath[internalPropPath.Size() - 1].GetProperty();
             const bool isSystem = leafProp != nullptr
@@ -151,7 +151,7 @@ ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECProper
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlStatus DynamicSelectClauseECClass::AddProperty(ECN::ECPropertyCP& generatedProperty, ECSqlPrepareContext& ctx, Utf8StringCR propName, DerivedPropertyExp const& selectClauseItemExp, PropertyNameExp const* selectClauseItemPropNameExp, bool isDynamic)
     {
-    ECSqlTypeInfo const& typeInfo = selectClauseItemExp.GetExpression<ComputedExp>()->GetTypeInfo();
+    ECSqlTypeInfo const& typeInfo = selectClauseItemExp.GetExpression()->GetTypeInfo();
     const ECSqlTypeInfo::Kind typeKind = typeInfo.GetKind();
 
     Utf8String encodedPropName;
