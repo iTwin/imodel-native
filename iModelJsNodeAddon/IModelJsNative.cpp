@@ -4474,7 +4474,6 @@ public:
         ECDb* ecdb = nullptr;
         if (NativeDgnDb::InstanceOf(dbObj)) {
             NativeDgnDb* addonDgndb = NativeDgnDb::Unwrap(dbObj);
-
             ecdb = &addonDgndb->GetDgnDb();
 
         } else if (NativeECDb::InstanceOf(dbObj)) {
@@ -4482,11 +4481,11 @@ public:
             ecdb = &addonECDb->GetECDb();
 
         } else {
-            THROW_JS_TYPE_EXCEPTION("ECSqlStatement::Prepare requires first argument to be a NativeDgnDb or NativeECDb object.");
+            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb or NativeECDb object");
         }
 
         if (!ecdb || !ecdb->IsDbOpen())
-            BeNapi::ThrowJsException(Env(), "provided db is not open");
+            BeNapi::ThrowJsException(Env(), "Provided db is not open");
 
         m_changeset.OpenGroup(Env(), fileNames, *ecdb, invert);
         }
