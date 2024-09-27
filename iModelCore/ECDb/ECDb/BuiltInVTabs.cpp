@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include "iostream"
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -282,12 +283,12 @@ void IdSetModule::IdSetTable::IdSetCursor::Reset() {
 //---------------------------------------------------------------------------------------
 DbResult IdSetModule::IdSetTable::BestIndex(IndexInfo& indexInfo) {
      int i, j;              /* Loop over constraints */
-    int idxNum = 0;        /* The query plan bitmask */
+    int idxMask = 0;        /* The query plan bitmask */
     int unusableMask = 0;  /* Mask of unusable constraints */
-    int nArg = 0;          /* Number of arguments that seriesFilter() expects */
-    int aIdx[2];           /* Constraints on start, stop, and step */
+    int nArg = 1;          /* Number of arguments that seriesFilter() expects */
+    int aIdx[1];           /* Constraints on start, stop, and step */
     const int SQLITE_SERIES_CONSTRAINT_VERIFY = 0;
-    aIdx[0] = aIdx[1] = -1;
+    aIdx[0] = -1;
     int nConstraint = indexInfo.GetConstraintCount();
 
     for(i=0; i<nConstraint; i++){
@@ -301,33 +302,29 @@ DbResult IdSetModule::IdSetTable::BestIndex(IndexInfo& indexInfo) {
             unusableMask |=  iMask;
             continue;
         } else if (pConstraint->GetOp() == IndexInfo::Operator::EQ ){
-            idxNum |= iMask;
+            idxMask |= iMask;
             aIdx[iCol] = i;
         }
     }
-    for( i = 0; i < 2; i++) {
-        if( (j = aIdx[i]) >= 0 ) {
-            indexInfo.GetConstraintUsage(j)->SetArgvIndex(++nArg);
-            indexInfo.GetConstraintUsage(j)->SetOmit(!SQLITE_SERIES_CONSTRAINT_VERIFY);
-        }
-    }
 
-    if ((unusableMask & ~idxNum)!=0 ){
+    if ((unusableMask & ~idxMask)!=0 ){
         return BE_SQLITE_CONSTRAINT;
     }
 
-    indexInfo.SetEstimatedCost(2.0);
-    indexInfo.SetEstimatedRows(1000);
-    if( indexInfo.GetIndexOrderByCount() >= 1 && indexInfo.GetOrderBy(0)->GetColumn() == 0 ) {
-        if( indexInfo.GetOrderBy(0) ->GetDesc()){
-            idxNum |= 8;
-        } else {
-            idxNum |= 16;
-        }
-        indexInfo.SetOrderByConsumed(true);
-    }
-    indexInfo.SetIdxNum(idxNum);
+    if( aIdx[0]<0 ){
+    /* No JSON input.  Leave estimatedCost at the huge value that it was
+    ** initialized to to discourage the query planner from selecting this
+    ** plan. */
+    indexInfo.SetIdxNum(0);
+  }else{
+    indexInfo.SetEstimatedCost(1.0);
+    j = aIdx[0];
+    indexInfo.GetConstraintUsage(j)->SetArgvIndex(nArg);
+    indexInfo.GetConstraintUsage(j)->SetOmit(!SQLITE_SERIES_CONSTRAINT_VERIFY);
+    indexInfo.SetIdxNum(1); /* JSON supplied.  Plan 1 */ 
+  }
     return BE_SQLITE_OK;
+
 }
 
 //---------------------------------------------------------------------------------------

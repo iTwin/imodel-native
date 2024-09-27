@@ -414,7 +414,9 @@ void InstanceOfFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
         ctx.SetResultError("ec_instanceof() db is close");
         return;
         }
-    stmt->BindVirtualSet(1, classIds);
+    stmt->
+    
+    BindVirtualSet(1, classIds);
     stmt->BindId(2, curId);
     ctx.SetResultInt(stmt->Step() == BE_SQLITE_ROW ? 1 : 0);
     }
