@@ -46,6 +46,11 @@ struct ClassPropsModule : BeSQLite::DbModule {
 struct IdSetModule : ECDbModule {
     struct IdSetTable : ECDbVirtualTable {
         struct IdSetCursor : ECDbCursor {
+
+            enum class Columns{
+                Id = 0,
+                Json_array_ids = 1,
+            };
             
             private:
                 Utf8String m_text;
@@ -76,7 +81,7 @@ struct IdSetModule : ECDbModule {
         IdSetModule(ECDbR db): ECDbModule(
             db,
             "IdSet",
-            "CREATE TABLE x(id hidden)",
+            "CREATE TABLE x(id, json_array_ids hidden)",
             R"xml(<?xml version="1.0" encoding="utf-8" ?>
             <ECSchema
                     schemaName="test"

@@ -166,7 +166,7 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Next() {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult IdSetModule::IdSetTable::IdSetCursor::GetRowId(int64_t& rowId) {
-    rowId = (*m_index);
+    rowId = (int64_t)(*m_index);
     return BE_SQLITE_OK;
 }
 
@@ -174,7 +174,11 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::GetRowId(int64_t& rowId) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult IdSetModule::IdSetTable::IdSetCursor::GetColumn(int i, Context& ctx) {
-    ctx.SetResultInt64((*m_index));
+    if ((Columns)i == Columns::Json_array_ids) {
+        ctx.SetResultText(m_text.c_str(), (int)m_text.size(), Context::CopyData::No);
+    } else if ((Columns)i == Columns::Id && m_index != m_idSet.end()) {
+        ctx.SetResultInt64((int64_t)(*m_index));
+    }
     return BE_SQLITE_OK;
 }
 
@@ -249,6 +253,10 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *id
             Reset();
         }
     }
+    else
+    {
+        Reset();
+    }
     if(recompute)
     {
         m_idSet.clear();
@@ -282,47 +290,44 @@ void IdSetModule::IdSetTable::IdSetCursor::Reset() {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult IdSetModule::IdSetTable::BestIndex(IndexInfo& indexInfo) {
-     int i, j;              /* Loop over constraints */
-    int idxMask = 0;        /* The query plan bitmask */
+    int i, j;              /* Loop over constraints */
+    int idxNum = 0;        /* The query plan bitmask */
     int unusableMask = 0;  /* Mask of unusable constraints */
-    int nArg = 1;          /* Number of arguments that seriesFilter() expects */
-    int aIdx[1];           /* Constraints on start, stop, and step */
+    int nArg = 0;          /* Number of arguments that seriesFilter() expects */
+    int aIdx[2];           /* Constraints on start, stop, and step */
     const int SQLITE_SERIES_CONSTRAINT_VERIFY = 0;
-    aIdx[0] = -1;
+    aIdx[0] = aIdx[1] = -1;
     int nConstraint = indexInfo.GetConstraintCount();
 
     for(i=0; i<nConstraint; i++){
         auto pConstraint = indexInfo.GetConstraint(i);
         int iCol;    /* 0 for start, 1 for stop, 2 for step */
         int iMask;   /* bitmask for those column */
-        if( pConstraint->GetColumn()< 0) continue;
-        iCol = pConstraint->GetColumn();
+        if( pConstraint->GetColumn()< (int)IdSetCursor::Columns::Json_array_ids) continue;
+        iCol = pConstraint->GetColumn() - (int)IdSetCursor::Columns::Json_array_ids;
         iMask = 1 << iCol;
         if (!pConstraint->IsUsable()){
             unusableMask |=  iMask;
             continue;
         } else if (pConstraint->GetOp() == IndexInfo::Operator::EQ ){
-            idxMask |= iMask;
+            idxNum |= iMask;
             aIdx[iCol] = i;
         }
     }
+    for( i = 0; i < 1; i++) {
+        if( (j = aIdx[i]) >= 0 ) {
+            indexInfo.GetConstraintUsage(j)->SetArgvIndex(++nArg);
+            indexInfo.GetConstraintUsage(j)->SetOmit(!SQLITE_SERIES_CONSTRAINT_VERIFY);
+        }
+    }
 
-    if ((unusableMask & ~idxMask)!=0 ){
+    if ((unusableMask & ~idxNum)!=0 ){
         return BE_SQLITE_CONSTRAINT;
     }
 
-    if( aIdx[0]<0 ){
-    /* No JSON input.  Leave estimatedCost at the huge value that it was
-    ** initialized to to discourage the query planner from selecting this
-    ** plan. */
-    indexInfo.SetIdxNum(0);
-  }else{
-    indexInfo.SetEstimatedCost(1.0);
-    j = aIdx[0];
-    indexInfo.GetConstraintUsage(j)->SetArgvIndex(nArg);
-    indexInfo.GetConstraintUsage(j)->SetOmit(!SQLITE_SERIES_CONSTRAINT_VERIFY);
-    indexInfo.SetIdxNum(1); /* JSON supplied.  Plan 1 */ 
-  }
+    indexInfo.SetEstimatedCost(0);
+    indexInfo.SetEstimatedRows(100);
+    indexInfo.SetIdxNum(idxNum);
     return BE_SQLITE_OK;
 
 }
