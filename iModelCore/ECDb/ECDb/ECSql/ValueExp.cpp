@@ -826,7 +826,7 @@ Exp::FinalizeParseStatus MemberFunctionCallExp::_FinalizeParsing(ECSqlParseConte
                         IssueSeverity::Error,
                         IssueCategory::BusinessProperties,
                         IssueType::ECSQL,
-                        ECDbIssueId::ECDb_0734,
+                        ECDbIssueId::ECDb_0735,
                         "There must have an argument for the function'%s'",
                         m_functionName.c_str()
                     );
@@ -839,7 +839,7 @@ Exp::FinalizeParseStatus MemberFunctionCallExp::_FinalizeParsing(ECSqlParseConte
                         IssueSeverity::Error,
                         IssueCategory::BusinessProperties,
                         IssueType::ECSQL,
-                        ECDbIssueId::ECDb_0735,
+                        ECDbIssueId::ECDb_0736,
                         "The argument for the function '%s' can only be either a string literal or an unset parameter",
                         m_functionName.c_str()
                     );
@@ -854,7 +854,7 @@ Exp::FinalizeParseStatus MemberFunctionCallExp::_FinalizeParsing(ECSqlParseConte
                             IssueSeverity::Error,
                             IssueCategory::BusinessProperties,
                             IssueType::ECSQL,
-                            ECDbIssueId::ECDb_0735,
+                            ECDbIssueId::ECDb_0736,
                             "The argument for the function '%s' can only be either a string literal or an unset parameter",
                             m_functionName.c_str()
                         );
