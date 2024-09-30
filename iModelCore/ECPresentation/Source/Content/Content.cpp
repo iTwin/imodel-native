@@ -1425,6 +1425,15 @@ void ContentSetItem::AddUsersExtendedData(Utf8CP key, ECValueCR value)
     m_extendedData.AddMember(rapidjson::Value(key, m_extendedData.GetAllocator()), ValueHelpers::GetJsonFromECValue(value, "", &m_extendedData.GetAllocator()), m_extendedData.GetAllocator());
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentDescriptor::CalculatedPropertyField::AddExtendedData(Utf8CP key, ECValueCR value)
+    {
+    m_extendedData.AddMember(rapidjson::Value(key, m_extendedData.GetAllocator()), ValueHelpers::GetJsonFromECValue(value, "", &m_extendedData.GetAllocator()), m_extendedData.GetAllocator());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1726,13 +1735,18 @@ std::unique_ptr<ContentDescriptor::Category> DefaultCategorySupplier::_CreateECC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+std::unique_ptr<ContentDescriptor::Category> DefaultCategorySupplier::_CreatePropertyCategory(PropertyCategoryCR schemaCategory) const
+    {
+    return std::make_unique<ContentDescriptor::Category>(schemaCategory.GetName(), schemaCategory.GetDisplayLabel(),
+        schemaCategory.GetDescription(), schemaCategory.GetPriority());
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 std::unique_ptr<ContentDescriptor::Category> DefaultCategorySupplier::_CreatePropertyCategory(ECPropertyCR ecProperty) const
     {
     PropertyCategoryCP propertyCategory = ecProperty.GetCategory();
     if (nullptr != propertyCategory)
-        {
-        return std::make_unique<ContentDescriptor::Category>(propertyCategory->GetName(), propertyCategory->GetDisplayLabel(),
-            propertyCategory->GetDescription(), propertyCategory->GetPriority());
-        }
+        return CreatePropertyCategory(*propertyCategory);
     return nullptr;
     }

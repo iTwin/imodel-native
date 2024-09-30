@@ -3145,7 +3145,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label2", 1100, "1+2"));
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("label3", 1200, "this.Property"));
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("noValueLabel", 1000, ""));
-    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("integerType", 1000, "2*3","int"));
+    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("integerType", 1000, "2*3", "int"));
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("booleanType", 1000, "2 > 3", "boolean"));
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("doubleType", 1000, "1/4", "double"));
     specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("stringValue", 1000, "2 > 3", "string"));
@@ -3233,6 +3233,62 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     EXPECT_STREQ("False", jsonValues["CalculatedProperty_9"].GetString());
     EXPECT_STREQ("2017-05-30T00:00:00.000", jsonValues["CalculatedProperty_10"].GetString());
     EXPECT_EQ(123456789876, jsonValues["CalculatedProperty_11"].GetInt64());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+    * @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(ContentInstancesOfSpecificClasses_CalculatedPropertiesExtendedData, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="Property" typeName="string" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificClasses_CalculatedPropertiesExtendedData)
+    {
+    ECClassCP classA = GetClass("A");
+
+    // insert some instance
+    IECInstancePtr instance = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance)
+        {
+        instance.SetValue("Property", ECValue("Test"));
+        });
+
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    ContentSpecificationP specification = new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false);
+    specification->AddCalculatedProperty(*new CalculatedPropertiesSpecification("instance id", 1000, "this.ECInstanceId"));
+    auto specificationWithExtendedData = new CalculatedPropertiesSpecification("with extended data", 1000, "1+1");
+    bmap<Utf8String, Utf8String> extendedData;
+    extendedData.Insert("extendedDataStr", "\"val1\"");
+    extendedData.Insert("extendedDataInt", "2+2");
+    specificationWithExtendedData->SetExtendedDataMap(extendedData);
+    specification->AddCalculatedProperty(*specificationWithExtendedData);
+    rule->AddSpecification(*specification);
+    rules->AddPresentationRule(*rule);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(3, descriptor->GetVisibleFields().size());
+
+    ASSERT_TRUE(descriptor->GetVisibleFields()[1]->IsCalculatedPropertyField());
+    ASSERT_TRUE(descriptor->GetVisibleFields()[2]->IsCalculatedPropertyField());
+
+    EXPECT_STREQ("instance id", descriptor->GetVisibleFields()[1]->AsCalculatedPropertyField()->GetLabel().c_str());
+    EXPECT_STREQ("with extended data", descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetLabel().c_str());
+
+    ASSERT_TRUE(descriptor->GetVisibleFields()[1]->AsCalculatedPropertyField()->GetExtendedData().GetJson().IsObject());
+    ASSERT_EQ(0, descriptor->GetVisibleFields()[1]->AsCalculatedPropertyField()->GetExtendedData().GetJson().MemberCount());
+    ASSERT_TRUE(descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetExtendedData().GetJson().IsObject());
+    ASSERT_EQ(2, descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetExtendedData().GetJson().MemberCount());
+    ASSERT_TRUE(descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetExtendedData().GetJson().HasMember("extendedDataStr"));
+    EXPECT_STREQ("val1", descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetExtendedData().GetJson()["extendedDataStr"].GetString());
+    ASSERT_TRUE(descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetExtendedData().GetJson().HasMember("extendedDataInt"));
+    EXPECT_EQ(4, descriptor->GetVisibleFields()[2]->AsCalculatedPropertyField()->GetExtendedData().GetJson()["extendedDataInt"].GetInt());
     }
 
 /*---------------------------------------------------------------------------------**//**

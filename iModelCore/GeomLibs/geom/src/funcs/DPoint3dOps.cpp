@@ -1074,9 +1074,17 @@ DRange1d DPoint3dOps::ProjectedParameterRange (bvector<DPoint3d> const &points, 
     return range;
     }
 
-
-
-
+double DPoint3dOps::ToleranceXY (bvector<DPoint3d> const& data, double absTol, double relTol)
+    {
+    if (absTol < 0.0)
+        absTol = s_defaultAbsTol;
+    if (relTol < 0.0)
+        relTol = s_defaultRelTol;
+    double tol = absTol;
+    if (relTol > 0.0)
+        tol += relTol * DPoint3dOps::LargestXYCoordinate(data.data(), data.size());
+    return tol;
+    }
 
 //! Query object used by cluster analysis.
 struct ClusterQueries

@@ -186,6 +186,7 @@ TEST_F(ECSqlSelectPrepareTests, TestsForCTESubquery)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT x FROM(WITH RECURSIVE cnt (x,y) AS ( SELECT 100, 200 UNION ALL SELECT x+1, 200 FROM cnt WHERE x<210) SELECT * from cnt)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT 1 FROM ecsql.PSA WHERE 10 = (WITH a(x) AS(SELECT 10) SELECT * FROM a)"));
     }
+    
 
 //---------------------------------------------------------------------------------------
 // @bsiclass
