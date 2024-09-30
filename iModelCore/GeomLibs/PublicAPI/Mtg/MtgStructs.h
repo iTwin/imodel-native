@@ -416,10 +416,10 @@ GEOMDLLIMPEXP size_t CountMaskAroundFace   (MTGNodeId nodeId, MTGMask mask) cons
 GEOMDLLIMPEXP MTGNodeId FindMaskAroundFace (MTGNodeId nodeId, MTGMask mask) const;
 /// Search vertex loop for mask
 GEOMDLLIMPEXP MTGNodeId FindMaskAroundVertex (MTGNodeId nodeId, MTGMask mask) const;
-/// Search vertex loop for mask
+/// Search vertex predecessor loop for mask
 GEOMDLLIMPEXP MTGNodeId FindMaskAroundVertexPred (MTGNodeId nodeId, MTGMask mask) const;
 
-/// Search face loop for mmissing mask
+/// Search face loop for missing mask
 GEOMDLLIMPEXP MTGNodeId FindUnmaskedAroundFace (MTGNodeId nodeId, MTGMask mask) const;
 /// Search vertex loop for missing mask
 GEOMDLLIMPEXP MTGNodeId FindUnmaskedAroundVertex (MTGNodeId nodeId, MTGMask mask) const;
