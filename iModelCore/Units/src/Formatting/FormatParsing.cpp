@@ -784,9 +784,17 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, Format
         thousSep = m_format->GetNumericSpec()->GetThousandSeparator();
         }
 
+
+    std::string cleanInput;
+    if (nullptr != m_format && m_format->GetPresentationType() == PresentationType::Bearing) {
+        std::regex directionPattern(R"(^[NSEW]|[NSEW]$)");
+        cleanInput = std::regex_replace(input, directionPattern, "");
+        input = cleanInput.c_str();
+    }
+
     while (!ng.IsEndOfLine())
         {
-        ng.Grab(m_input, ind, decSep, thousSep);
+        ng.Grab(input, ind, decSep, thousSep);
         if (ng.HasProblem())
             {
             m_problem.UpdateProblemCode(ng.GetProblemCode());
@@ -811,7 +819,7 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, Format
             {
             if (initVect) ind0 = ind;
             initVect = false;
-            csp = CursorScanPoint(m_input, ind);
+            csp = CursorScanPoint(input, ind);
             if (csp.IsSpace())
                 {
                 if (!m_symbs.empty())
@@ -822,7 +830,7 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, Format
                     ind = csp.GetIndex();
                     ind0 = ind;
                     }
-                while (csp.IsSpace()) { csp.Iterate(m_input); }
+                while (csp.IsSpace()) { csp.Iterate(input); }
                 ind = csp.GetIndex();
                 ind0 = ind;
                 }
@@ -1275,8 +1283,9 @@ BEU::Quantity FormatParsingSet::ParseBearingFormat(FormatProblemCode* probCode, 
         return UpdateAndSetProblemCode(FormatProblemCode::QT_BearingPrefixOrSuffixMissing, probCode);
     }
 
-    // Parse the remaining string to get the magnitude
-    BEU::Quantity qty = ParseAndProcessTokens(Formatting::FormatSpecialCodes::SignatureNCNCN, format, inputUnit);
+    Utf8String sig = GetSignature(false);
+    Formatting::FormatSpecialCodes cod = Formatting::FormatConstant::ParsingPatternCode(sig.c_str());
+    BEU::Quantity qty = ParseAndProcessTokens(cod, format, inputUnit);
 
     if (m_problem.IsProblem()){
         return UpdateAndSetProblemCode(FormatProblemCode::QT_ConversionFailed, probCode);

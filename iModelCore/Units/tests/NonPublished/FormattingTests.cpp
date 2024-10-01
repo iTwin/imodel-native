@@ -1675,11 +1675,21 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
         ASSERT_STREQ(bearingDMSFromDeg.c_str(), bearingDMSFromRad.c_str());
         ASSERT_STREQ(row.bearingDMS.c_str(), bearingDMSFromDeg.c_str());
 
-        FormatProblemCode problemCode = FormatProblemCode::NoProblems;
-        auto formatParsingSet = FormatParsingSet(row.bearingDMS.c_str(), unitDegree, &bearingDMS);
-        BEU::Quantity qty = formatParsingSet.GetQuantity(&problemCode, &bearingDMS);
-        ASSERT_EQ(FormatProblemCode::NoProblems, problemCode);
-        ASSERT_NEAR(radian.GetMagnitude(), qty.GetMagnitude(), 0.001);
+        FormatProblemCode problemCode_degree = FormatProblemCode::NoProblems;
+        FormatProblemCode problemCode_radian = FormatProblemCode::NoProblems;
+
+        auto formatParsingSet_degree = FormatParsingSet(row.bearingDMS.c_str(), unitDegree, &bearingDMS);
+        auto formatParsingSet_radian = FormatParsingSet(row.bearingDMS.c_str(), unitRadian, &bearingDMS);
+        BEU::Quantity qtyFromDegree = formatParsingSet_degree.GetQuantity(&problemCode_degree, &bearingDMS);
+        BEU::Quantity qtyFromRadian = formatParsingSet_radian.GetQuantity(&problemCode_radian, &bearingDMS);
+
+        ASSERT_EQ(FormatProblemCode::NoProblems, problemCode_degree);
+        ASSERT_EQ(FormatProblemCode::NoProblems, problemCode_radian);
+
+        double degreeNormalized = std::fmod(degree.GetMagnitude(), 360.0);
+        double radianNormalized = DegreesToRadians(degreeNormalized);
+        ASSERT_NEAR(degreeNormalized, qtyFromDegree.GetMagnitude(), 0.001);
+        ASSERT_NEAR(radianNormalized, qtyFromRadian.GetMagnitude(), 0.001);
 
         // bearingDMSWithLabel
         Utf8String bearingDMSWithLabelFromDeg = bearingDMSWithLabel.FormatQuantity(degree);
@@ -1687,11 +1697,35 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
         ASSERT_STREQ(bearingDMSWithLabelFromDeg.c_str(), bearingDMSWithLabelFromRad.c_str());
         ASSERT_STREQ(row.bearingDMSWithLabel.c_str(), bearingDMSWithLabelFromDeg.c_str());
 
+        formatParsingSet_degree = FormatParsingSet(row.bearingDMS.c_str(), unitDegree, &bearingDMSWithLabel);
+        formatParsingSet_radian = FormatParsingSet(row.bearingDMS.c_str(), unitRadian, &bearingDMSWithLabel);
+        qtyFromDegree = formatParsingSet_degree.GetQuantity(&problemCode_degree, &bearingDMSWithLabel);
+        qtyFromRadian = formatParsingSet_radian.GetQuantity(&problemCode_radian, &bearingDMSWithLabel);
+
+        ASSERT_EQ(FormatProblemCode::NoProblems, problemCode_degree);
+        ASSERT_EQ(FormatProblemCode::NoProblems, problemCode_radian);
+
+        ASSERT_NEAR(degreeNormalized, qtyFromDegree.GetMagnitude(), 0.001);
+        ASSERT_NEAR(radianNormalized, qtyFromRadian.GetMagnitude(), 0.001);
+
+        // bearingDecimal
         Utf8String bearingDecimalFromDeg = bearing.FormatQuantity(degree);
         Utf8String bearingDecimalFromRad = bearing.FormatQuantity(radian);
         ASSERT_STREQ(bearingDecimalFromDeg.c_str(), bearingDecimalFromRad.c_str());
         ASSERT_STREQ(row.bearingDecimal.c_str(), bearingDecimalFromDeg.c_str());
 
+        formatParsingSet_degree = FormatParsingSet(row.bearingDecimal.c_str(), unitDegree, &bearing);
+        formatParsingSet_radian = FormatParsingSet(row.bearingDecimal.c_str(), unitRadian, &bearing);
+        qtyFromDegree = formatParsingSet_degree.GetQuantity(&problemCode_degree, &bearing);
+        qtyFromRadian = formatParsingSet_radian.GetQuantity(&problemCode_radian, &bearing);
+
+        ASSERT_EQ(FormatProblemCode::NoProblems, problemCode_degree);
+        ASSERT_EQ(FormatProblemCode::NoProblems, problemCode_radian);
+
+        ASSERT_NEAR(degreeNormalized, qtyFromDegree.GetMagnitude(), 0.001);
+        ASSERT_NEAR(radianNormalized, qtyFromRadian.GetMagnitude(), 0.001);
+
+        // azimuthDMS
         Utf8String azimuthDMSFromDeg = azimuthDMS.FormatQuantity(degree);
         Utf8String azimuthDMSFromRad = azimuthDMS.FormatQuantity(radian);
         ASSERT_STREQ(azimuthDMSFromDeg.c_str(), azimuthDMSFromRad.c_str());
