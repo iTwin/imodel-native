@@ -234,7 +234,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
 
         if (m_writeable) {
             ResumeWriteLock(); // see if we are re-attaching and previously had the write lock.
-            if ((!m_writeLockHeld && HasLocalChanges()))
+            if (!m_writeLockHeld && HasLocalChanges())
                 AbandonChanges(info); // we lost the write lock, we have no choice but to abandon all local changes.
         }
 
