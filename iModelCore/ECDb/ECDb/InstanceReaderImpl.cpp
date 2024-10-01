@@ -181,9 +181,9 @@ BeJsValue RowRender::GetInstanceJsonObject(ECInstanceKeyCR instanceKey, IECSqlRo
     auto& rowsDoc = ClearAndGetCachedJsonDocument();
     BeJsValue row(rowsDoc);
     ECSqlRowAdaptor adaptor(m_conn);
-    adaptor.GetOptions().UseJsNames(param.GetUseJsName());
-    adaptor.GetOptions().SetAbbreviateBlobs(param.GetAbbreviateBlobs());
-    adaptor.GetOptions().SetConvertClassIdsToClassNames(param.GetClassIdToClassNames());
+    adaptor.UseJsNames(param.GetUseJsName());
+    adaptor.SetAbbreviateBlobs(param.GetAbbreviateBlobs());
+    adaptor.SetConvertClassIdsToClassNames(param.GetClassIdToClassNames());
     adaptor.RenderRow(row, ecsqlRow, false);
     m_instanceKey = instanceKey;
     m_jsonParam = param;
@@ -202,9 +202,9 @@ BeJsValue RowRender::GetPropertyJsonValue(ECInstanceKeyCR instanceKey, Utf8Strin
     BeJsValue row(rowsDoc);
     auto out = row["$"];
     ECSqlRowAdaptor adaptor(m_conn);
-    adaptor.GetOptions().UseJsNames(param.GetUseJsName());
-    adaptor.GetOptions().SetAbbreviateBlobs(param.GetAbbreviateBlobs());
-    adaptor.GetOptions().SetConvertClassIdsToClassNames(param.GetClassIdToClassNames());
+    adaptor.UseJsNames(param.GetUseJsName());
+    adaptor.SetAbbreviateBlobs(param.GetAbbreviateBlobs());
+    adaptor.SetConvertClassIdsToClassNames(param.GetClassIdToClassNames());
     adaptor.RenderValue(out, ecsqlValue);
     m_instanceKey = instanceKey;
     m_jsonParam = param;
