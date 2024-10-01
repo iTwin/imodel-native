@@ -234,10 +234,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
 
         if (m_writeable) {
             ResumeWriteLock(); // see if we are re-attaching and previously had the write lock.
-            BeJsDocument lockedBy;
-            ReadWriteLock(lockedBy);
-            auto lockedByGuid = lockedBy[JSON_NAME(guid)].asString();
-            if ((!lockedByGuid.Equals(m_cache->m_guid) || !m_writeLockHeld) && HasLocalChanges())
+            if ((!m_writeLockHeld && HasLocalChanges()))
                 AbandonChanges(info); // we lost the write lock, we have no choice but to abandon all local changes.
         }
 
@@ -562,6 +559,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         BeJsDocument lockedBy;
         ReadWriteLock(lockedBy);
 
+        m_writeLockHeld = false;
         auto lockedByGuid = lockedBy[JSON_NAME(guid)].asString();
         if (lockedByGuid.Equals(m_cache->m_guid)) {
             try {
