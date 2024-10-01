@@ -20175,14 +20175,18 @@ TEST_F(SchemaSyncTestFixture, PropertyCategoryOverwriteDeleteReferencedFails)
         )
     };
 
+    const auto SCHEMA2_HASH_ECDB_SCHEMA = "5c75a9a15cdf58409b1c31e5f6522d48dd52366cdef7433854829bb0f7150c15";
+    const auto SCHEMA2_HASH_ECDB_MAP = "1b1ae0f5665cd383b79513c33a1ae6f0dab45115c58f7dc2d047015f91f80444";
+    const auto SCHEMA2_HASH_SQLITE_SCHEMA = "ae9a7a553d09613c7f8cf5711dca7a996af71202254deca5cdddde9df2c229ce";
+
     Test(
-        "deleting category while a property still references it should be an error",
+        "referencing an invalid property category should not fail import and category should be ignored",
         [&]()
             {
-            ASSERT_EQ(SchemaImportResult::ERROR, ImportSchema(*schemas.begin()));
+            ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*schemas.begin()));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
-            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
 
@@ -20192,8 +20196,8 @@ TEST_F(SchemaSyncTestFixture, PropertyCategoryOverwriteDeleteReferencedFails)
             {
             ASSERT_EQ(SchemaImportResult::ERROR, ImportSchemas(*m_briefcase, schemas, SchemaManager::SchemaImportOptions::None, m_schemaChannel->GetSyncDbUri()));
             ASSERT_EQ(BE_SQLITE_OK, m_briefcase->AbandonChanges());
-            CheckHashes(*m_briefcase, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP, SCHEMA1_HASH_SQLITE_SCHEMA);
-            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA1_HASH_ECDB_SCHEMA, SCHEMA1_HASH_ECDB_MAP); });
+            CheckHashes(*m_briefcase, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP, SCHEMA2_HASH_SQLITE_SCHEMA);
+            m_schemaChannel->WithReadOnly([&](ECDbR syncDb) { CheckSyncHashes(syncDb, SCHEMA2_HASH_ECDB_SCHEMA, SCHEMA2_HASH_ECDB_MAP); });
             }
     );
     }
@@ -24994,7 +24998,7 @@ TEST_F(SchemaSyncTestFixture, OverflowedStructClass_Simple)
             }
     );
 
-    const auto SCHEMA1_HASH_ECDB_SCHEMA = "f0302f6e61eb9a203726835757419db1e0ace30646e380ea858b1b83b18dc379";
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "021d8b1b7b0fa9bd214e2c7b2845f377966aad39fbc58cc6dd8ed2de8234ba52";
     const auto SCHEMA1_HASH_ECDB_MAP = "dda7c3a60923cb4f4f40e4251df34d47a716f65e88cef94a2be0511b39d4e527";
     const auto SCHEMA1_HASH_SQLITE_SCHEMA = "84bda55de37b3c29de3a3bc49fffb942f5b4a688b58e5eaa947b90bd7fa65325";
     Test(
@@ -25002,7 +25006,7 @@ TEST_F(SchemaSyncTestFixture, OverflowedStructClass_Simple)
         [&]()
             {
             auto schema = SchemaItem(
-                R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+                R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Element">
                         <ECCustomAttributes>

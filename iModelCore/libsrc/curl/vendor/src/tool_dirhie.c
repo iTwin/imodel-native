@@ -25,7 +25,7 @@
 
 #include <sys/stat.h>
 
-#ifdef WIN32
+#ifdef _WIN32
 #  include <direct.h>
 #endif
 
@@ -38,7 +38,7 @@
 
 #include "memdebug.h" /* keep this as LAST include */
 
-#if defined(WIN32) || (defined(MSDOS) && !defined(__DJGPP__))
+#if defined(_WIN32) || (defined(MSDOS) && !defined(__DJGPP__))
 #  define mkdir(x,y) (mkdir)((x))
 #  ifndef F_OK
 #    define F_OK 0
@@ -50,7 +50,7 @@ static void show_dir_errno(struct GlobalConfig *global, const char *name)
   switch(errno) {
 #ifdef EACCES
   case EACCES:
-    errorf(global, "You don't have permission to create %s", name);
+    errorf(global, "You do not have permission to create %s", name);
     break;
 #endif
 #ifdef ENAMETOOLONG
@@ -88,7 +88,7 @@ static void show_dir_errno(struct GlobalConfig *global, const char *name)
  *  should create all the dir* automagically
  */
 
-#if defined(WIN32) || defined(__DJGPP__)
+#if defined(_WIN32) || defined(__DJGPP__)
 /* systems that may use either or when specifying a path */
 #define PATH_DELIMITERS "\\/"
 #else
@@ -117,7 +117,7 @@ CURLcode create_dir_hierarchy(const char *outfile, struct GlobalConfig *global)
   }
   dirbuildup[0] = '\0';
 
-  /* Allow strtok() here since this isn't used threaded */
+  /* Allow strtok() here since this is not used threaded */
   /* !checksrc! disable BANNEDFUNC 2 */
   tempdir = strtok(outdup, PATH_DELIMITERS);
 
@@ -132,18 +132,18 @@ CURLcode create_dir_hierarchy(const char *outfile, struct GlobalConfig *global)
         msnprintf(&dirbuildup[dlen], outlen - dlen, "%s%s", DIR_CHAR, tempdir);
       else {
         if(outdup == tempdir) {
-#if defined(MSDOS) || defined(WIN32)
+#if defined(_WIN32) || defined(MSDOS)
           /* Skip creating a drive's current directory.
              It may seem as though that would harmlessly fail but it could be
              a corner case if X: did not exist, since we would be creating it
              erroneously.
-             eg if outfile is X:\foo\bar\filename then don't mkdir X:
+             eg if outfile is X:\foo\bar\filename then do not mkdir X:
              This logic takes into account unsupported drives !:, 1:, etc. */
           char *p = strchr(tempdir, ':');
           if(p && !p[1])
             skip = true;
 #endif
-          /* the output string doesn't start with a separator */
+          /* the output string does not start with a separator */
           strcpy(dirbuildup, tempdir);
         }
         else

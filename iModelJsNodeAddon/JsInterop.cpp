@@ -388,6 +388,7 @@ private:
 
 public:
     JsDgnHost() { BeAssertFunctions::SetBeAssertHandler(&JsInterop::HandleAssertion);}
+
 };
 
 
@@ -1015,9 +1016,9 @@ Napi::Value JsInterop::GetInstance(ECDbR db, NapiInfoCR info) {
         if (!instanceReader.Seek(position,
             [&](InstanceReader::IRowContext const& row) {
                 ECSqlRowAdaptor adaptor(db);
-                adaptor.SetAbbreviateBlobs(abbreviateBlobs);
-                adaptor.SetConvertClassIdsToClassNames(classIdsToClassNames);
-                adaptor.UseJsNames(useJsNames);
+                adaptor.GetOptions().SetAbbreviateBlobs(abbreviateBlobs);
+                adaptor.GetOptions().SetConvertClassIdsToClassNames(classIdsToClassNames);
+                adaptor.GetOptions().UseJsNames(useJsNames);
                 if (ERROR == adaptor.RenderRow(val, row, false)) {
                     THROW_JS_EXCEPTION("Failed to render instance");
                 }
@@ -1274,7 +1275,7 @@ void NativeChangeset::OpenFile(Napi::Env env, Utf8StringCR changesetFile, bool i
         BeNapi::ThrowJsException(env, "open(): changeset file specified does not exists", (int)BE_SQLITE_CANTOPEN);
     }
 
-    auto reader = std::make_unique<ChangesetFileReaderBase>(bvector<BeFileName>{input}, m_unusedDb);
+    auto reader = std::make_unique<ChangesetFileReaderBase>(bvector<BeFileName>{input});
     DdlChanges ddlChanges;
     bool hasSchemaChanges;
     reader->MakeReader()->GetSchemaChanges(hasSchemaChanges, ddlChanges);
@@ -1298,6 +1299,82 @@ void NativeChangeset::OpenChangeStream(Napi::Env env, std::unique_ptr<ChangeStre
     m_invert = invert;
     m_changeStream = std::move(changeStream);
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void NativeChangeset::OpenGroup(Napi::Env env, T_Utf8StringVector const& changesetFiles, bool invert) {
+    m_changeGroup = std::make_unique<ChangeGroup>();
+    DdlChanges ddlGroup;
+    for(auto& changesetFile : changesetFiles) {
+        BeFileName inputFile(changesetFile);
+        if (!inputFile.DoesPathExist()) {
+            BeNapi::ThrowJsException(env, SqlPrintfString("openGroup(): changeset file specified does not exists (%s)", inputFile.GetNameUtf8().c_str()), (int)BE_SQLITE_CANTOPEN);
+        }
+
+        ChangesetFileReader reader(inputFile);
+        bool containsSchemaChanges;
+        DdlChanges ddlChanges;
+        if (BE_SQLITE_OK != reader.MakeReader()->GetSchemaChanges(containsSchemaChanges, ddlChanges)){
+            BeNapi::ThrowJsException(env, "openGroup(): unable to read schema changes", (int)BE_SQLITE_ERROR);
+        }
+        for(auto& ddl : ddlChanges.GetDDLs()) {
+            ddlGroup.AddDDL(ddl.c_str());
+        }
+        if (BE_SQLITE_OK != reader.AddToChangeGroup(*m_changeGroup)){
+            BeNapi::ThrowJsException(env, "openGroup(): unable to add changeset to group", (int)BE_SQLITE_ERROR);
+        }
+    }
+
+    m_changeStream = std::make_unique<ChangeSet>();
+    if (BE_SQLITE_OK != m_changeStream->FromChangeGroup(*m_changeGroup)){
+        BeNapi::ThrowJsException(env, "openGroup(): unable to create change stream", (int)BE_SQLITE_ERROR);
+    }
+    m_ddl = ddlGroup.ToString();
+    m_invert = invert;
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void NativeChangeset::WriteToFile(Napi::Env env, Utf8String const& fileName, bool containChanges, bool override) {
+    const auto kStmtDelimiter = ";";
+    BeFileName outputFile(fileName);
+    DdlChanges ddlChanges;
+    bvector<Utf8String> individualDDLs;
+    BeStringUtilities::Split(m_ddl.c_str(), kStmtDelimiter, individualDDLs);
+
+    for(auto const& ddl : individualDDLs) {
+        ddlChanges.AddDDL(ddl.c_str());
+    }
+
+    if (outputFile.DoesPathExist() && !override) {
+        BeNapi::ThrowJsException(env, "writeToFile(): changeset file already exists", (int)BE_SQLITE_ERROR);
+    }
+
+    if(outputFile.DoesPathExist() && override) {
+        if (outputFile.BeDeleteFile() != BeFileNameStatus::Success) {
+            BeNapi::ThrowJsException(env, "writeToFile(): unable to delete existing changeset file", (int)BE_SQLITE_ERROR);
+        }
+    }
+
+    ChangesetFileWriter writer(outputFile, containChanges, ddlChanges, nullptr);
+    if (BE_SQLITE_OK !=  writer.Initialize()){
+        BeNapi::ThrowJsException(env, "writeToFile(): unable to initialize changeset writer", (int)BE_SQLITE_ERROR);
+    }
+
+    if(m_changeGroup){
+        writer.FromChangeGroup(*m_changeGroup);
+    } else if (m_changeStream) {
+        ChangeGroup changeGroup;
+        m_changeStream->AddToChangeGroup(changeGroup);
+        writer.FromChangeGroup(changeGroup);
+    } else {
+        BeNapi::ThrowJsException(env, "writeToFile(): no changeset to write", (int)BE_SQLITE_ERROR);
+    }
+    if (!outputFile.DoesPathExist()) {
+        BeNapi::ThrowJsException(env, "writeToFile(): unable to write changeset file", (int)BE_SQLITE_ERROR);
+    }
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1305,6 +1382,8 @@ void NativeChangeset::Close(Napi::Env env) {
     m_currentChange = Changes::Change(nullptr, false);
     m_changes = nullptr;
     m_changeStream = nullptr;
+    m_changeGroup = nullptr;
+    m_invert = false;
     m_ddl.clear();
 }
 

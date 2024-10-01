@@ -1668,6 +1668,50 @@ TEST_F(SchemaDeserializationTest, PruneCAFromPrunedEC32Schemas)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, DoNotSearchClassFromPrunedSchemas)
+    {
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    context->GetSchemasToPrune() = bvector<Utf8String>{"RefSchema"};
+    context->SetResolveConflicts(true);
+
+    Utf8CP refSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="RefSchema" alias="rs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECCustomAttributeClass typeName="TestCustomAttr">
+                </ECCustomAttributeClass>
+            </ECSchema>)xml";
+
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="Test" alias="ts" version="01.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECSchemaReference name="RefSchema" version="01.00.00" alias="rs" />
+                <ECCustomAttributes>
+                    <TestCustomAttr xmlns="RefSchema.01.00.00" />
+                </ECCustomAttributes>
+            </ECSchema>)xml";
+
+    StringSchemaLocater locater;
+    locater.AddSchemaString(SchemaKey("RefSchema", 1, 0, 0), refSchemaXml);
+    locater.AddSchemaString(SchemaKey("Test", 1, 0, 1), schemaXml);
+    context->AddSchemaLocater(locater);
+
+    SchemaKey refSchemaKey("RefSchema", 1, 0, 0);
+    ECSchemaPtr refSchema = context->LocateSchema(refSchemaKey, SchemaMatchType::Latest);
+    ASSERT_TRUE(refSchema.IsValid());
+
+    TestLogger testLogger;
+    LogCatcher logCatcher(testLogger);
+
+    SchemaKey testKey("Test", 1, 0, 1);
+    ECSchemaPtr schema = context->LocateSchema(testKey, SchemaMatchType::Latest);
+    ASSERT_TRUE(schema.IsValid());
+
+    ASSERT_TRUE(testLogger.m_messages.size() == 4);
+    ASSERT_TRUE(testLogger.ValidateMessageAtIndex(1, NativeLogging::SEVERITY::LOG_DEBUG, "Skipping loading of the custom attribute because its schema RefSchema.01.00.00 is being pruned."));
+    ASSERT_TRUE(testLogger.ValidateMessageAtIndex(2, NativeLogging::SEVERITY::LOG_DEBUG, "Skipping finding of the class 'TestCustomAttr' because its schema 'RefSchema.01.00.00' is being pruned."));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaDeserializationTest, AliasesForPruneSchemasAreResetForEachSchema)
     {
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
@@ -2696,6 +2740,93 @@ TEST_F(SchemaDeserializationTest, MissingBSCAReference)
         "</ECSchema>";
             
     EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, AbstractConstraintLogMessages)
+    {
+    {
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="Test" nameSpacePrefix="ts" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECClass typeName="Foo" isDomainClass="True">
+                </ECClass>
+                <ECClass typeName="Bar" isDomainClass="True">
+                    <BaseClass>Foo</BaseClass>
+                </ECClass>
+                <ECRelationshipClass typeName="RelationshipWithNoAbstractConstraint" isDomainClass="True" strength="referencing" strengthDirection="forward">
+                    <Source cardinality="(0,N)" polymorphic="false">
+                        <Class class="Foo" />
+                        <Class class="Bar" />
+                    </Source>
+                    <Target cardinality="(0,1)" polymorphic="false">
+                        <Class class="Foo" />
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>)xml";
+
+    TestLogger testLogger;
+    LogCatcher logCatcher(testLogger);
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(testLogger.ValidateMessageAtIndex(1, NativeLogging::SEVERITY::LOG_INFO, "Abstract Constraint Violation (ResolveIssues: Yes): The Source-Constraint of 'Test:RelationshipWithNoAbstractConstraint' does not contain or inherit an abstractConstraint attribute. It is a required attribute if there is more than one constraint class."));
+    }
+
+    {
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="Test" nameSpacePrefix="ts" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECClass typeName="Foo" isDomainClass="True">
+                </ECClass>
+                <ECRelationshipClass typeName="RelationshipWithNoAbstractConstraint" isDomainClass="True" strength="referencing" strengthDirection="forward">
+                    <Source cardinality="(0,N)" polymorphic="false">
+                        <Class class="Foo" />
+                    </Source>
+                    <Target cardinality="(0,1)" polymorphic="false">
+                        <Class class="Foo" />
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>)xml";
+
+    TestLogger testLogger;
+    LogCatcher logCatcher(testLogger);
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_EQ(nullptr, testLogger.GetLastMessage(NativeLogging::SEVERITY::LOG_INFO));
+    ASSERT_TRUE(testLogger.m_messages.size() == 1);
+    }
+
+    {
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEntityClass typeName="Foo">
+                </ECEntityClass>
+                <ECEntityClass typeName="Bar">
+                    <BaseClass>Foo</BaseClass>
+                </ECEntityClass>
+                <ECRelationshipClass typeName="RelationshipWithNoAbstractConstraint" modifier="Sealed" strength="referencing">
+                    <Source multiplicity="(0..1)" roleLabel="is extracted from" polymorphic="false">
+                        <Class class="Foo" />
+                        <Class class="Bar" />
+                    </Source>
+                    <Target multiplicity="(0..*)" roleLabel="refers to" polymorphic="false">
+                        <Class class="Foo" />
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>)xml";
+
+    TestLogger testLogger;
+    LogCatcher logCatcher(testLogger);
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(testLogger.m_messages.size() == 5);
+    ASSERT_TRUE(testLogger.ValidateMessageAtIndex(1, NativeLogging::SEVERITY::LOG_ERROR, "Abstract Constraint Violation (ResolveIssues: No): The Source-Constraint of 'TestSchema:RelationshipWithNoAbstractConstraint' does not contain or inherit an abstractConstraint attribute. It is a required attribute if there is more than one constraint class."));
+    }
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

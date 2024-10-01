@@ -149,7 +149,7 @@ void CachedConnection::InterruptIf(std::function<bool(RunnableRequestBase const&
             if (cancel) {
                 m_request->Cancel();
             }
-            Interrupt();
+            m_request->Interrupt(*this);
         }
     }
 }
@@ -400,6 +400,17 @@ QueryResponse::Ptr RunnableRequestBase::CreateQueueFullResponse() {
         ""
         );
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void RunnableRequestBase::Interrupt(CachedConnection& conn) {
+    if(!m_interrupted && conn.Id() == m_connId) {
+        conn.Interrupt();
+        m_interrupted = true;
+    }
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -1001,9 +1012,9 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
     if (includeMetaData) {
         adaptor.GetMetaData(props ,stmt);
     }
-    adaptor.SetAbbreviateBlobs(abbreviateBlobs);
-    adaptor.SetConvertClassIdsToClassNames(classIdToClassNames);
-    adaptor.UseJsNames(request.GetValueFormat() == ECSqlRequest::ECSqlValueFormat::JsNames);
+    adaptor.GetOptions().SetAbbreviateBlobs(abbreviateBlobs);
+    adaptor.GetOptions().SetConvertClassIdsToClassNames(classIdToClassNames);
+    adaptor.GetOptions().UseJsNames(request.GetValueFormat() == ECSqlRequest::ECSqlValueFormat::JsNames);
     uint32_t row_count = 0;
     std::string& result = cachedAdaptor.ClearAndGetCachedString();
     result.reserve(QUERY_WORKER_RESULT_RESERVE_BYTES);
@@ -1289,12 +1300,19 @@ QueryMonitor::QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor,
                 }
                 // send respond to client
                 request.SetResponse(request.CreateTimeoutResponse());
-                log_trace("%s monitor cancel query [id=%" PRIu32 "] with timeout", GetTimestamp().c_str(), request.GetId());
+                log_trace("%s monitor interrupt query [id=%" PRIu32 "] with timeout", GetTimestamp().c_str(), request.GetId());
                 return true;
                 });
             m_executor.GetConnectionCache().InterruptIf([&](RunnableRequestBase const& request) {
+                if (request.GetRequest().UsePrimaryConnection()) {
+                    return false;
+                }
                 if (request.IsTimeExceeded() ){
-                    log_trace("%s monitor cancel query [id=%" PRIu32 "] as it exceeded allowed time", GetTimestamp().c_str(), request.GetId());
+                    if (request.IsInterrupted()) {
+                        log_trace("%s monitor query [id=%" PRIu32 "] as it exceeded allowed time. (already interrupted)", GetTimestamp().c_str(), request.GetId());
+                    } else {
+                        log_trace("%s monitor interrupt query [id=%" PRIu32 "] as it exceeded allowed time", GetTimestamp().c_str(), request.GetId());
+                    }
                     return true;
                 }
                 return false;
@@ -1314,10 +1332,10 @@ QueryMonitor::QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor,
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-QueryMonitor::~QueryMonitor() { 
-    m_stop.store(true); 
+QueryMonitor::~QueryMonitor() {
+    m_stop.store(true);
     m_queryMonitorCv.notify_all();
-    if (m_thread.joinable()) 
+    if (m_thread.joinable())
         m_thread.join();
 }
 

@@ -1,6 +1,6 @@
 /*---------------------------------------------------------------------------------------------
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See COPYRIGHT.md in the repository root for full copyright notice.
+* See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
 
@@ -489,6 +489,70 @@ TEST_F(IntegrityCheckerFixture, check_class_ids) {
     ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
     executeTest();
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IntegrityCheckerFixture, check_missing_child_rows) {
+    auto runCheck = [&](ECDbCR db) -> Utf8String {
+        BeJsDocument out;
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "PRAGMA integrity_check(check_missing_child_rows)"));
+        EXPECT_EQ(5, stmt.GetColumnCount());
+        EXPECT_STRCASEEQ("sno", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("class", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("id", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("class_id", stmt.GetColumnInfo(3).GetProperty()->GetName().c_str());
+        EXPECT_STRCASEEQ("MissingRowInTables", stmt.GetColumnInfo(4).GetProperty()->GetName().c_str());
+        EXPECT_EQ(PRIMITIVETYPE_Integer, stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(2).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(3).GetDataType().GetPrimitiveType());
+        EXPECT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(4).GetDataType().GetPrimitiveType());
+
+        out.SetEmptyArray();
+        while (stmt.Step() == BE_SQLITE_ROW) {
+            auto row = out.appendObject();
+            row["sno"] = stmt.GetValueInt(0);
+            row["class"] = stmt.GetValueText(1);
+            row["id"] = stmt.GetValueText(2);
+            row["class_id"] = stmt.GetValueText(3);
+            row["MissingRowInTables"] = stmt.GetValueText(4);
+        }
+        return out.Stringify(StringifyFormat::Indented);
+    };
+
+    auto executeTest = [&]() {
+        ASSERT_STREQ(ParseJSON("[]").c_str(), runCheck(m_ecdb).c_str()) << "expect this to pass";
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, m_ecdb.ExecuteSql("DELETE FROM bis_InformationReferenceElement WHERE ElementId = 0x1D"));
+        ASSERT_EQ(DbResult::BE_SQLITE_OK, m_ecdb.ExecuteSql("DELETE FROM bis_GeometricElement3d WHERE ElementId = 0x3B"));
+        auto expectedJSON = R"json(
+            [
+               {
+                  "sno": 1,
+                  "class": "BisCore:Element",
+                  "id": "0x1d",
+                  "class_id": "0xce",
+                  "MissingRowInTables": "bis_InformationReferenceElement"
+               },
+                {
+                   "sno": 2,
+                   "class": "BisCore:Element",
+                   "id": "0x3b",
+                   "class_id": "0xe7",
+                   "MissingRowInTables": "bis_GeometricElement3d"
+                }
+            ]
+        )json";
+        ASSERT_STREQ(ParseJSON(expectedJSON).c_str(), runCheck(m_ecdb).c_str()) << "Failed for " << m_ecdb.GetDbFileName();
+        m_ecdb.AbandonChanges();
+    };
+
+    ASSERT_EQ(BE_SQLITE_OK, OpenCopyOfDataFile("test.bim", "test.bim", Db::OpenMode::ReadWrite));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
+    executeTest();
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -794,5 +858,292 @@ TEST_F(IntegrityCheckerFixture, check_ec_profile) {
     executeTest();
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IntegrityCheckerFixture, check_linktable_invalid_classIds)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("check_linktable_invalid_classIds.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+	        <ECSchemaReference name="ECDbMap" version="2.0.0" alias="ecdbmap" />
+
+            <ECEntityClass typeName="ClassA" modifier="None">
+                <ECProperty propertyName="ClassAProp" typeName="string" displayLabel="ClassAProp"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="ClassB" modifier="None">
+                <ECProperty propertyName="ClassBProp" typeName="string" displayLabel="ClassBProp"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="ClassC" modifier="None">
+                <ECProperty propertyName="ClassCProp" typeName="string" displayLabel="ClassCProp"/>
+            </ECEntityClass>
+
+            <ECRelationshipClass typeName="RelA_B" modifier="Sealed" strength="referencing" strengthDirection="backward">
+                <ECCustomAttributes>
+                    <LinkTableRelationshipMap xmlns="ECDbMap.2.0.0">
+                        <CreateForeignKeyConstraints>False</CreateForeignKeyConstraints>
+                    </LinkTableRelationshipMap>
+                </ECCustomAttributes>
+                <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                    <Class class="ClassA"/>
+                </Source>
+                <Target multiplicity="(1..*)" roleLabel="is referenced by" polymorphic="true">
+                    <Class class="ClassB"/>
+                </Target>
+            </ECRelationshipClass>
+
+            <ECRelationshipClass typeName="RelB_A" modifier="Sealed" strength="referencing" strengthDirection="backward">
+                <ECCustomAttributes>
+                    <LinkTableRelationshipMap xmlns="ECDbMap.2.0.0">
+                        <CreateForeignKeyConstraints>False</CreateForeignKeyConstraints>
+                    </LinkTableRelationshipMap>
+                </ECCustomAttributes>
+                <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                    <Class class="ClassB"/>
+                </Source>
+                <Target multiplicity="(1..*)" roleLabel="is referenced by" polymorphic="true">
+                    <Class class="ClassA"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml")));
+
+    auto insertEntry = [&](Utf8CP className, Utf8CP propName)
+        {
+        ECSqlStatement stmt;
+        ECInstanceKey outKey;
+        if (ECSqlStatus::Success == stmt.Prepare(m_ecdb, Utf8PrintfString("INSERT INTO TestSchema.%s(%sProp) VALUES('%s')", className, className, propName).c_str()))
+            stmt.Step(outKey);
+        return outKey;
+        };
+
+    auto insertRelationship = [&](Utf8CP className, const ECInstanceKey& sourceKey, const ECInstanceKey& targetKey)
+        {
+        ECSqlStatement stmt;
+        ECInstanceKey outKey;
+        if (ECSqlStatus::Success == stmt.Prepare(m_ecdb, Utf8PrintfString("INSERT INTO TestSchema.%s(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(%s,%s,%s,%s)",
+            className, sourceKey.GetInstanceId().ToString().c_str(), sourceKey.GetClassId().ToString().c_str(), targetKey.GetInstanceId().ToString().c_str(), targetKey.GetClassId().ToString().c_str()).c_str()))
+            stmt.Step(outKey);
+        return outKey;
+        };
+
+    // Insert class instances
+    const auto classA1 = insertEntry("ClassA", "A1");
+    const auto classA2 = insertEntry("ClassA", "A2");
+    const auto classC1 = insertEntry("ClassC", "C1");
+    const auto classB1 = insertEntry("ClassB", "B1");
+    const auto classC2 = insertEntry("ClassC", "C2");
+    const auto classB2 = insertEntry("ClassB", "B2");
+
+    // Insert link table relationships
+    EXPECT_TRUE(insertRelationship("RelA_B", classA1, classB1).IsValid()); // Valid
+    EXPECT_TRUE(insertRelationship("RelB_A", classB2, classA2).IsValid()); // Valid
+    EXPECT_TRUE(insertRelationship("RelA_B", classC1, classB2).IsValid()); // Invalid source, valid target
+    EXPECT_TRUE(insertRelationship("RelA_B", classA1, classC1).IsValid()); // Valid source, invalid target
+    EXPECT_TRUE(insertRelationship("RelA_B", classB1, classA1).IsValid()); // Invalid source, invalid target
+    EXPECT_TRUE(insertRelationship("RelB_A", classA2, classB2).IsValid()); // Invalid source, invalid target
+
+    BeJsDocument out;
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "pragma integrity_check(check_linktable_fk_ids) options enable_experimental_features"));
+    EXPECT_EQ(6, stmt.GetColumnCount());
+
+    out.SetEmptyArray();
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        auto row = out.appendObject();
+        row["sno"] = stmt.GetValueInt(0);
+        row["id"] = stmt.GetValueText(1);
+        row["relationship"] = stmt.GetValueText(2);
+        row["property"] = stmt.GetValueText(3);
+        row["key_id"] = stmt.GetValueText(4);
+        row["primary_class"] = stmt.GetValueText(5);
+        }
+
+    const auto expectedJSON = R"json(
+        [
+            {
+               "sno": 1,
+               "id": "0x9",
+               "relationship": "TestSchema:RelA_B",
+               "property": "SourceECInstanceId",
+               "key_id": "0x3",
+               "primary_class": "TestSchema:ClassA"
+            },
+            {
+               "sno": 2,
+               "id": "0xb",
+               "relationship": "TestSchema:RelA_B",
+               "property": "SourceECInstanceId",
+               "key_id": "0x4",
+               "primary_class": "TestSchema:ClassA"
+            },
+            {
+               "sno": 3,
+               "id": "0xb",
+               "relationship": "TestSchema:RelA_B",
+               "property": "TargetECInstanceId",
+               "key_id": "0x1",
+               "primary_class": "TestSchema:ClassB"
+            },
+            {
+               "sno": 4,
+               "id": "0xa",
+               "relationship": "TestSchema:RelA_B",
+               "property": "TargetECInstanceId",
+               "key_id": "0x3",
+               "primary_class": "TestSchema:ClassB"
+            },
+            {
+               "sno": 5,
+               "id": "0xc",
+               "relationship": "TestSchema:RelB_A",
+               "property": "SourceECInstanceId",
+               "key_id": "0x2",
+               "primary_class": "TestSchema:ClassB"
+            },
+            {
+               "sno": 6,
+               "id": "0xc",
+               "relationship": "TestSchema:RelB_A",
+               "property": "TargetECInstanceId",
+               "key_id": "0x6",
+               "primary_class": "TestSchema:ClassA"
+            }
+        ])json";
+    ASSERT_STREQ(ParseJSON(expectedJSON).c_str(), out.Stringify(StringifyFormat::Indented).c_str()) << "Failed for " << m_ecdb.GetDbFileName();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IntegrityCheckerFixture, check_linktable_invalid_classIds_TPH)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("check_linktable_invalid_classIds_TPH.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+	        <ECSchemaReference name="ECDbMap" version="2.0.0" alias="ecdbmap" />
+
+            <ECEntityClass typeName="BaseClassA" modifier="Abstract">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.2.0.0">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+            </ECEntityClass>
+            <ECEntityClass typeName="SubClassB" modifier="None">
+                <BaseClass>BaseClassA</BaseClass>
+                <ECProperty propertyName="SubClassBProp" typeName="string" displayLabel="ClassBProp"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="SubClassC" modifier="None">
+                <BaseClass>BaseClassA</BaseClass>
+                <ECProperty propertyName="SubClassCProp" typeName="string" displayLabel="ClassCProp"/>
+            </ECEntityClass>
+
+            <ECEntityClass typeName="ClassD" modifier="None">
+                <ECProperty propertyName="ClassDProp" typeName="string" displayLabel="ClassCProp"/>
+            </ECEntityClass>
+
+            <ECRelationshipClass typeName="RelA_A" modifier="Sealed" strength="referencing" strengthDirection="backward">
+                <ECCustomAttributes>
+                    <LinkTableRelationshipMap xmlns="ECDbMap.2.0.0">
+                        <CreateForeignKeyConstraints>False</CreateForeignKeyConstraints>
+                    </LinkTableRelationshipMap>
+                </ECCustomAttributes>
+                <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
+                    <Class class="BaseClassA"/>
+                </Source>
+                <Target multiplicity="(1..*)" roleLabel="is referenced by" polymorphic="true">
+                    <Class class="BaseClassA"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml")));
+
+    auto insertEntry = [&](Utf8CP className, Utf8CP propName)
+        {
+        ECSqlStatement stmt;
+        ECInstanceKey outKey;
+        if (ECSqlStatus::Success == stmt.Prepare(m_ecdb, Utf8PrintfString("INSERT INTO TestSchema.%s(%sProp) VALUES('%s')", className, className, propName).c_str()))
+            stmt.Step(outKey);
+        return outKey;
+        };
+
+    auto insertRelationship = [&](Utf8CP className, const ECInstanceKey& sourceKey, const ECInstanceKey& targetKey)
+        {
+        ECSqlStatement stmt;
+        ECInstanceKey outKey;
+        if (ECSqlStatus::Success == stmt.Prepare(m_ecdb, Utf8PrintfString("INSERT INTO TestSchema.%s(SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId) VALUES(%s,%s,%s,%s)",
+            className, sourceKey.GetInstanceId().ToString().c_str(), sourceKey.GetClassId().ToString().c_str(), targetKey.GetInstanceId().ToString().c_str(), targetKey.GetClassId().ToString().c_str()).c_str()))
+            stmt.Step(outKey);
+        return outKey;
+        };
+
+    // Insert class instances
+    const auto classB1 = insertEntry("SubClassB", "B1");
+    const auto classB2 = insertEntry("SubClassB", "B2");
+    const auto classC1 = insertEntry("SubClassC", "C1");
+    const auto classC2 = insertEntry("SubClassC", "C2");
+    const auto classD1 = insertEntry("ClassD", "D1");
+    const auto classD2 = insertEntry("ClassD", "D2");
+
+    // Insert link table relationships
+    EXPECT_TRUE(insertRelationship("RelA_A", classB1, classB2).IsValid()); // Valid source, valid target
+    EXPECT_TRUE(insertRelationship("RelA_A", classB1, classC1).IsValid()); // Valid source, valid target
+    EXPECT_TRUE(insertRelationship("RelA_A", classC1, classB1).IsValid()); // Valid source, valid target
+    EXPECT_TRUE(insertRelationship("RelA_A", classB2, classD1).IsValid()); // Valid source, invalid target
+    EXPECT_TRUE(insertRelationship("RelA_A", classD1, classB1).IsValid()); // Invalid source, valid target
+    EXPECT_TRUE(insertRelationship("RelA_A", classD1, classD2).IsValid()); // Invalid source, invalid target
+
+    BeJsDocument out;
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "pragma integrity_check(check_linktable_fk_ids) options enable_experimental_features"));
+    EXPECT_EQ(6, stmt.GetColumnCount());
+
+    out.SetEmptyArray();
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        auto row = out.appendObject();
+        row["sno"] = stmt.GetValueInt(0);
+        row["id"] = stmt.GetValueText(1);
+        row["relationship"] = stmt.GetValueText(2);
+        row["property"] = stmt.GetValueText(3);
+        row["key_id"] = stmt.GetValueText(4);
+        row["primary_class"] = stmt.GetValueText(5);
+        }
+
+    const auto expectedJSON = R"json(
+        [
+            {
+               "sno": 1,
+               "id": "0xb",
+               "relationship": "TestSchema:RelA_A",
+               "property": "SourceECInstanceId",
+               "key_id": "0x5",
+               "primary_class": "TestSchema:BaseClassA"
+            },
+            {
+               "sno": 2,
+               "id": "0xc",
+               "relationship": "TestSchema:RelA_A",
+               "property": "SourceECInstanceId",
+               "key_id": "0x5",
+               "primary_class": "TestSchema:BaseClassA"
+            },
+            {
+               "sno": 3,
+               "id": "0xa",
+               "relationship": "TestSchema:RelA_A",
+               "property": "TargetECInstanceId",
+               "key_id": "0x5",
+               "primary_class": "TestSchema:BaseClassA"
+            },
+            {
+               "sno": 4,
+               "id": "0xc",
+               "relationship": "TestSchema:RelA_A",
+               "property": "TargetECInstanceId",
+               "key_id": "0x6",
+               "primary_class": "TestSchema:BaseClassA"
+            }
+        ])json";
+    ASSERT_STREQ(ParseJSON(expectedJSON).c_str(), out.Stringify(StringifyFormat::Indented).c_str()) << "Failed for " << m_ecdb.GetDbFileName();
+    }
 
 END_ECDBUNITTESTS_NAMESPACE
