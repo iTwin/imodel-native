@@ -229,10 +229,9 @@ BentleyStatus ProcessBearingAndAzimuth(NumericFormatSpecCP fmtP, BEU::Quantity& 
         if (quadrant == 2 || quadrant == 3)
             suffix = fmtP->GetWestLabel();
 
-        // special case, if in quadrant 2 and value is very small, turn suffix to E because S00:00:00E is preferred over S00:00:00W
-        if (quadrant == 2 && FormatConstant::IsNegligible(magnitude)){
-            // TODO: typescript side converted this to the smallst unit presented and used the prcision on it
-            suffix = fmtP->GetEastLabel();
+        // special case, if in quadrant 2 and value is very close to quarter revolution (90°), turn prefix to N because N90:00:00W is preferred over S90:00:00W        
+        if (quadrant == 2 && FormatConstant::IsNegligible(magnitude - rightAngle)){
+            prefix = fmtP->GetNorthLabel();
         }
 
         quantity = BEU::Quantity(magnitude, *quantity.GetUnit());
@@ -246,7 +245,7 @@ BentleyStatus ProcessBearingAndAzimuth(NumericFormatSpecCP fmtP, BEU::Quantity& 
             if (fmtP->HasAzimuthBaseUnit())
             {
                 BEU::Quantity azimuthBaseQuantity(azimuthBase, *fmtP->GetAzimuthBaseUnit());
-                azimuthBaseQuantity.ConvertTo(temp.GetUnit());
+                azimuthBaseQuantity.ConvertTo(quantity.GetUnit());
                 azimuthBase = azimuthBaseQuantity.GetMagnitude();
             } 
             else 
