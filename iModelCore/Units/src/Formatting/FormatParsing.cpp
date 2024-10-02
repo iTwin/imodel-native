@@ -935,12 +935,22 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatC
 
     _Analysis_assume_(inputUnit != nullptr);
 
-    if (format->GetPresentationType() == PresentationType::Bearing)
-        return ParseBearingFormat(probCode, format, inputUnit);
+    // TODO - <Naron>: Feel like I can break this into pre-ParseAndProcessTokens and post-ParseAndProcessTokens to effectively reuse the existing code
+    BEU::Quantity qty;
+    if (format->GetPresentationType() == PresentationType::Bearing){
+        qty = ParseBearingFormat(probCode, format, inputUnit);
+    }
 
     if (format->GetPresentationType() == PresentationType::Ratio){
-        return ParseRatioFormat(probCode, format, inputUnit);
+        qty = ParseRatioFormat(probCode, format, inputUnit);
     }
+
+    if (probCode != nullptr && *probCode != FormatProblemCode::NoProblems){
+        m_problem.UpdateProblemCode(*probCode);
+    }
+
+    if (!qty.IsNullQuantity())
+        return qty;
 
     m_problem.Reset();
 
@@ -952,7 +962,7 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatC
     //  50+00.1    - NN (station)
 
     Formatting::FormatSpecialCodes cod = Formatting::FormatConstant::ParsingPatternCode(sig.c_str());
-    BEU::Quantity qty = ParseAndProcessTokens(cod, format, inputUnit);
+    qty = ParseAndProcessTokens(cod, format, inputUnit);
 
     if (!m_problem.IsProblem() && nullptr != inputUnit)
         qty = qty.ConvertTo(inputUnit);
@@ -1245,6 +1255,8 @@ BEU::Quantity FormatParsingSet::ParseAndProcessTokens(Formatting::FormatSpecialC
 
 BEU::Quantity FormatParsingSet::ParseBearingFormat(FormatProblemCode* probCode, FormatCP format, BEU::UnitCP inputUnit)
 {
+    BEU::Quantity converted = BEU::Quantity();
+
     const std::string North = "N";
     const std::string South = "S";
     const std::string East = "E";
@@ -1255,7 +1267,10 @@ BEU::Quantity FormatParsingSet::ParseBearingFormat(FormatProblemCode* probCode, 
     std::string inString(m_input);
     
     if (inString.empty()){
-        return UpdateAndSetProblemCode(FormatProblemCode::QT_NoValueOrUnitFound, probCode);
+        if (probCode != nullptr){
+            *probCode = FormatProblemCode::QT_NoValueOrUnitFound;
+        }
+        return converted;
     }
 
     // check if input stirng begins with North or South, and strip it off
@@ -1280,7 +1295,10 @@ BEU::Quantity FormatParsingSet::ParseBearingFormat(FormatProblemCode* probCode, 
 
     // if both prefix and suffix are missing, return error
     if (matchedPrefix.empty() && matchedSuffix.empty()){
-        return UpdateAndSetProblemCode(FormatProblemCode::QT_BearingPrefixOrSuffixMissing, probCode);
+        if (probCode != nullptr){
+            *probCode = FormatProblemCode::QT_BearingPrefixOrSuffixMissing;
+        }
+        return converted;
     }
 
     Utf8String sig = GetSignature(false);
@@ -1288,12 +1306,18 @@ BEU::Quantity FormatParsingSet::ParseBearingFormat(FormatProblemCode* probCode, 
     BEU::Quantity qty = ParseAndProcessTokens(cod, format, inputUnit);
 
     if (m_problem.IsProblem()){
-        return UpdateAndSetProblemCode(FormatProblemCode::QT_ConversionFailed, probCode);
+        if (probCode != nullptr){ //TODO - <Naron>: this is redundant here as m_problem will get updated in GetQuantity()
+            *probCode = m_problem.GetProblemCode();
+        }
+        return converted;
     }
 
     double perigon;
     if (Format::NormalizeAngle(qty, "bearing", perigon) != BentleyStatus::SUCCESS){
-        return UpdateAndSetProblemCode(FormatProblemCode::QT_ConversionFailed, probCode); // TODO - Naron: not sure if this is the right prob code here
+        if (probCode != nullptr){
+            *probCode = FormatProblemCode::QT_ConversionFailed;
+        }
+        return converted;
     }
     double rightAngle = perigon / 4;
     double magnitude = qty.GetMagnitude();
@@ -1312,9 +1336,11 @@ BEU::Quantity FormatParsingSet::ParseBearingFormat(FormatProblemCode* probCode, 
 
     qty = BEU::Quantity(magnitude, *inputUnit);
     
-    BEU::Quantity converted = qty.ConvertTo(m_unit);
+    converted = qty.ConvertTo(m_unit);
     if (!converted.IsValid()){
-        return UpdateAndSetProblemCode(FormatProblemCode::QT_ConversionFailed, probCode);
+        if (probCode != nullptr){
+            *probCode = FormatProblemCode::QT_ConversionFailed;
+        }
     }
 
     return converted;
@@ -1322,6 +1348,8 @@ BEU::Quantity FormatParsingSet::ParseBearingFormat(FormatProblemCode* probCode, 
 
 BEU::Quantity FormatParsingSet::ParseRatioFormat(FormatProblemCode* probCode, FormatCP format, BEU::UnitCP inputUnit)
 {
+    BEU::Quantity converted = BEU::Quantity();
+
     std::string instring(m_input);
     std::istringstream iss(instring);
     std::string part;
@@ -1332,12 +1360,20 @@ BEU::Quantity FormatParsingSet::ParseRatioFormat(FormatProblemCode* probCode, Fo
     }
 
     if (parts.size() == 0){
-        return UpdateAndSetProblemCode(FormatProblemCode::QT_NoValueOrUnitFound, probCode);
+        if (probCode != nullptr){
+            *probCode = FormatProblemCode::QT_NoValueOrUnitFound;
+        }
+        return converted;
     }
 
     if (parts.size() > 2){
-        return UpdateAndSetProblemCode(FormatProblemCode::QT_InvalidRatioArgument, probCode);
+        if (probCode != nullptr){
+            *probCode = FormatProblemCode::QT_InvalidRatioArgument;
+        }
+        return converted;
     }
+
+    // TODO - <Naron>: maybe ParseAndProcessTokens() can be used here as well?
 
     // for single number input. e.g. input of "30" will be converted to "30:1"
     if (parts.size() == 1){
@@ -1351,16 +1387,24 @@ BEU::Quantity FormatParsingSet::ParseRatioFormat(FormatProblemCode* probCode, Fo
         numerator = std::stod(parts[0]);
         denominator = std::stod(parts[1]);
     } catch (std::invalid_argument){
-        return UpdateAndSetProblemCode(FormatProblemCode::QT_InvalidRatioArgument, probCode);
+        if (probCode != nullptr){
+            *probCode = FormatProblemCode::QT_InvalidRatioArgument;
+        }
+        return converted;
     } catch (std::out_of_range){
-        return UpdateAndSetProblemCode(FormatProblemCode::QT_ValueOutOfRange, probCode);
+        if (probCode != nullptr){
+            *probCode = FormatProblemCode::QT_ValueOutOfRange;
+        }
+        return converted;
     }
 
     if (m_unit == nullptr){
-        return UpdateAndSetProblemCode(FormatProblemCode::QT_NoValueOrUnitFound, probCode);
+        if (probCode != nullptr){
+            *probCode = FormatProblemCode::QT_NoValueOrUnitFound;
+        }
+        return converted;
     }
 
-    BEU::Quantity converted;
     BEU::Quantity zeroQty = BEU::Quantity(0, *inputUnit); // temp qty to check invertingZero error on input "1:0" with invert units
     if (denominator == 0){
         converted = zeroQty.ConvertTo(m_unit);
@@ -1368,7 +1412,10 @@ BEU::Quantity FormatParsingSet::ParseRatioFormat(FormatProblemCode* probCode, Fo
             return BEU::Quantity(0, *m_unit);
         }
         // for input of "N:0" without reversed unit
-        return UpdateAndSetProblemCode(FormatProblemCode::QT_MathematicOperationFoundButIsNotAllowed, probCode);
+        if (probCode != nullptr){
+            *probCode = FormatProblemCode::QT_MathematicOperationFoundButIsNotAllowed;
+        }
+        return converted;
     }
 
     BEU::Quantity qty = BEU::Quantity(numerator / denominator, *inputUnit);
@@ -1376,22 +1423,25 @@ BEU::Quantity FormatParsingSet::ParseRatioFormat(FormatProblemCode* probCode, Fo
 
     // for input of "0:N" with reversed unit
     if (converted.GetProblemCode() == BEU::UnitsProblemCode::InvertingZero){
-        return UpdateAndSetProblemCode(FormatProblemCode::QT_MathematicOperationFoundButIsNotAllowed, probCode);
+        if (probCode != nullptr){
+            *probCode = FormatProblemCode::QT_MathematicOperationFoundButIsNotAllowed;
+        }
+        return converted;
     }
 
     return converted;
 }
 
 
-BEU::Quantity FormatParsingSet::UpdateAndSetProblemCode(FormatProblemCode code, FormatProblemCode* probCode)
-{
-    m_problem.UpdateProblemCode(code);
-    if (probCode != nullptr) {
-        *probCode = m_problem.GetProblemCode();
-    }
+// BEU::Quantity FormatParsingSet::UpdateAndSetProblemCode(FormatProblemCode code, FormatProblemCode* probCode)
+// {
+//     m_problem.UpdateProblemCode(code);
+//     if (probCode != nullptr) {
+//         *probCode = m_problem.GetProblemCode();
+//     }
 
-    return BEU::Quantity();
-}
+//     return BEU::Quantity();
+// }
 
 
 END_BENTLEY_FORMATTING_NAMESPACE

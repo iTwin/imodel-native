@@ -148,7 +148,6 @@ private:
     // parsing helper methods
     BEU::Quantity ParseBearingFormat(FormatProblemCode* probCode, FormatCP fusP, BEU::UnitCP unit);
     BEU::Quantity ParseRatioFormat(FormatProblemCode* probCode,FormatCP fusP, BEU::UnitCP unit);
-    BEU::Quantity UpdateAndSetProblemCode(FormatProblemCode code, FormatProblemCode* probCode);
 
 public:
     UNITS_EXPORT FormatParsingSet(Utf8CP input, BEU::UnitCP unit = nullptr, FormatCP format = nullptr, QuantityFormatting::UnitResolver* resolver = nullptr);
