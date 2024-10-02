@@ -517,7 +517,7 @@ Utf8String FormatProblemDetail::GetProblemDescription() const
 //----------------------------------------------------------------------------------------
 bool FormatProblemDetail::UpdateProblemCode(FormatProblemCode code)
     {
-    if (m_code == FormatProblemCode::NoProblems)  //TODO: this  check appears reversed, please verify and fix
+    if (m_code == FormatProblemCode::NoProblems)
         m_code = code;
     return IsProblem();
     }
