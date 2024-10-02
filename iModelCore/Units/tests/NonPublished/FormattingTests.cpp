@@ -1583,6 +1583,7 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
         {640.0,   "N80:00:00W", "N80°00'00\"W", "N80.000°W", "280:00:00", "280.000"},
     };
 
+
     auto unitDegree = s_unitsContext->LookupUnit("ARC_DEG");
     auto unitRadian = s_unitsContext->LookupUnit("RAD");
     //auto unitMinute = s_unitsContext->LookupUnit("ARC_MINUTE");
@@ -1660,28 +1661,71 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
     EXPECT_FALSE(azimuth.IsProblem());
 
     for(auto& row : testData)
-        {
+        { 
         Units::Quantity degree(row.angleDegree, *unitDegree);
         Units::Quantity radian(DegreesToRadians(row.angleDegree), *unitRadian);
 
         //make sure the provided radian and degree values are roughly the same
         auto degConverted = radian.ConvertTo(unitDegree);
         ASSERT_TRUE(degree.IsClose(degConverted, 0.001)) << "Comparison between provided degree and radian seems off.";
+        
+        // bearingDMS
         Utf8String bearingDMSFromDeg = bearingDMS.FormatQuantity(degree);
         Utf8String bearingDMSFromRad = bearingDMS.FormatQuantity(radian);
         ASSERT_STREQ(bearingDMSFromDeg.c_str(), bearingDMSFromRad.c_str());
         ASSERT_STREQ(row.bearingDMS.c_str(), bearingDMSFromDeg.c_str());
 
+        FormatProblemCode problemCode_degree = FormatProblemCode::NoProblems;
+        FormatProblemCode problemCode_radian = FormatProblemCode::NoProblems;
+
+        auto formatParsingSet_degree = FormatParsingSet(row.bearingDMS.c_str(), unitDegree, &bearingDMS);
+        auto formatParsingSet_radian = FormatParsingSet(row.bearingDMS.c_str(), unitRadian, &bearingDMS);
+        BEU::Quantity qtyFromDegree = formatParsingSet_degree.GetQuantity(&problemCode_degree, &bearingDMS);
+        BEU::Quantity qtyFromRadian = formatParsingSet_radian.GetQuantity(&problemCode_radian, &bearingDMS);
+
+        ASSERT_EQ(FormatProblemCode::NoProblems, problemCode_degree);
+        ASSERT_EQ(FormatProblemCode::NoProblems, problemCode_radian);
+
+        double degreeNormalized = std::fmod(degree.GetMagnitude(), 360.0);
+        double radianNormalized = DegreesToRadians(degreeNormalized);
+        ASSERT_NEAR(degreeNormalized, qtyFromDegree.GetMagnitude(), 0.001);
+        ASSERT_NEAR(radianNormalized, qtyFromRadian.GetMagnitude(), 0.001);
+
+        // bearingDMSWithLabel
         Utf8String bearingDMSWithLabelFromDeg = bearingDMSWithLabel.FormatQuantity(degree);
         Utf8String bearingDMSWithLabelFromRad = bearingDMSWithLabel.FormatQuantity(radian);
         ASSERT_STREQ(bearingDMSWithLabelFromDeg.c_str(), bearingDMSWithLabelFromRad.c_str());
         ASSERT_STREQ(row.bearingDMSWithLabel.c_str(), bearingDMSWithLabelFromDeg.c_str());
 
+        formatParsingSet_degree = FormatParsingSet(row.bearingDMS.c_str(), unitDegree, &bearingDMSWithLabel);
+        formatParsingSet_radian = FormatParsingSet(row.bearingDMS.c_str(), unitRadian, &bearingDMSWithLabel);
+        qtyFromDegree = formatParsingSet_degree.GetQuantity(&problemCode_degree, &bearingDMSWithLabel);
+        qtyFromRadian = formatParsingSet_radian.GetQuantity(&problemCode_radian, &bearingDMSWithLabel);
+
+        ASSERT_EQ(FormatProblemCode::NoProblems, problemCode_degree);
+        ASSERT_EQ(FormatProblemCode::NoProblems, problemCode_radian);
+
+        ASSERT_NEAR(degreeNormalized, qtyFromDegree.GetMagnitude(), 0.001);
+        ASSERT_NEAR(radianNormalized, qtyFromRadian.GetMagnitude(), 0.001);
+
+        // bearingDecimal
         Utf8String bearingDecimalFromDeg = bearing.FormatQuantity(degree);
         Utf8String bearingDecimalFromRad = bearing.FormatQuantity(radian);
         ASSERT_STREQ(bearingDecimalFromDeg.c_str(), bearingDecimalFromRad.c_str());
         ASSERT_STREQ(row.bearingDecimal.c_str(), bearingDecimalFromDeg.c_str());
 
+        formatParsingSet_degree = FormatParsingSet(row.bearingDecimal.c_str(), unitDegree, &bearing);
+        formatParsingSet_radian = FormatParsingSet(row.bearingDecimal.c_str(), unitRadian, &bearing);
+        qtyFromDegree = formatParsingSet_degree.GetQuantity(&problemCode_degree, &bearing);
+        qtyFromRadian = formatParsingSet_radian.GetQuantity(&problemCode_radian, &bearing);
+
+        ASSERT_EQ(FormatProblemCode::NoProblems, problemCode_degree);
+        ASSERT_EQ(FormatProblemCode::NoProblems, problemCode_radian);
+
+        ASSERT_NEAR(degreeNormalized, qtyFromDegree.GetMagnitude(), 0.001);
+        ASSERT_NEAR(radianNormalized, qtyFromRadian.GetMagnitude(), 0.001);
+
+        // azimuthDMS
         Utf8String azimuthDMSFromDeg = azimuthDMS.FormatQuantity(degree);
         Utf8String azimuthDMSFromRad = azimuthDMS.FormatQuantity(radian);
         ASSERT_STREQ(azimuthDMSFromDeg.c_str(), azimuthDMSFromRad.c_str());
@@ -1696,8 +1740,9 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
 
 TEST_F(FormattingTestFixture, AzimuthWithVariousBases) {
     auto unitDegree = s_unitsContext->LookupUnit("ARC_DEG");
+    auto unitRadian = s_unitsContext->LookupUnit("RAD");
 
-    auto formatAzimuth = [&unitDegree](double value, double baseOffsetInDeg = 0.0, bool counterClockwise = false)
+    auto formatAzimuth = [&unitDegree, &unitRadian](double value, double baseOffsetInDeg = 0.0, bool counterClockwise = false)
         {
         NumericFormatSpec azimuthSpec;
         azimuthSpec.SetPresentationType(PresentationType::Azimuth);
@@ -1708,6 +1753,7 @@ TEST_F(FormattingTestFixture, AzimuthWithVariousBases) {
         azimuthSpec.SetKeepSingleZero(true);
         azimuthSpec.SetShowUnitLabel(true);
         azimuthSpec.SetAzimuthBase(DegreesToRadians(baseOffsetInDeg));
+        azimuthSpec.SetAzimuthBaseUnit(unitRadian);
         azimuthSpec.SetCounterClockwiseAngle(counterClockwise);
         Format azimuth(azimuthSpec);
         auto azimuthComp = CompositeValueSpec(*unitDegree);
@@ -1736,6 +1782,204 @@ TEST_F(FormattingTestFixture, AzimuthWithVariousBases) {
     ASSERT_STREQ("05.0°", formatAzimuth(90.0, 85.0).c_str());
     ASSERT_STREQ("180.0°", formatAzimuth(90.0, 270.0).c_str());
     ASSERT_STREQ("180.0°", formatAzimuth(90.0, 270.0,true).c_str());
+}
+
+TEST_F(FormattingTestFixture, FormatRatio){
+    auto formatRatioTest = [](const char* ratioString, double value, Units::UnitCP persistenceUnit, RatioType ratioType,  Units::UnitCP presentationUnit, DecimalPrecision precision = DecimalPrecision::Precision3)
+    {
+        NumericFormatSpec ratioSpec;
+        ratioSpec.SetPresentationType(PresentationType::Ratio);
+        ratioSpec.SetRatioType(ratioType);
+        ratioSpec.SetPrecision(precision);
+        
+        CompositeValueSpec ratioComp(*presentationUnit);
+        ratioComp.SetIncludeZero(true);
+
+        Format ratioFormat(ratioSpec);
+        ratioFormat.SetCompositeSpec(ratioComp);
+
+        Units::Quantity quantity(value, *persistenceUnit);
+        EXPECT_STREQ(ratioString, ratioFormat.FormatQuantity(quantity).c_str());
+
+        // parsing back to quantity
+        FormatProblemCode problemCode = FormatProblemCode::NoProblems;
+        auto formatParsingSet = FormatParsingSet(ratioString, persistenceUnit, &ratioFormat);
+        BEU::Quantity qty = formatParsingSet.GetQuantity(&problemCode, &ratioFormat);
+
+        EXPECT_EQ(FormatProblemCode::NoProblems, problemCode); 
+        auto precisionNum = static_cast<int>(precision);
+        auto tolerance = pow(10, -precisionNum) * 4.999;
+        EXPECT_NEAR(value, qty.GetMagnitude(), tolerance);
+    };
+
+    auto v_h = s_unitsContext->LookupUnit("VERTICAL_PER_HORIZONTAL");
+    auto h_v = s_unitsContext->LookupUnit("HORIZONTAL_PER_VERTICAL");
+
+    auto oneToN = RatioType::OneToN;
+    auto NtoOne = RatioType::NToOne;
+    auto valueBased = RatioType::ValueBased;
+    auto useGreatestCommonDivisor = RatioType::UseGreatestCommonDivisor;
+
+    // corner cases, input vaue is 0
+    {
+    auto ratioTypes = {RatioType::OneToN, RatioType::NToOne, RatioType::ValueBased, RatioType::UseGreatestCommonDivisor};
+
+    for (const auto& ratioType : ratioTypes) 
+        {
+        formatRatioTest("0:1", 0.0, v_h, ratioType, v_h);
+        formatRatioTest("0:1", 0.0, h_v, ratioType, h_v);
+        formatRatioTest("1:0", 0.0, v_h, ratioType, h_v);
+        formatRatioTest("1:0", 0.0, h_v, ratioType, v_h);
+        }
+    }
+
+    // v:h (persistent) -> v:h (presentation) | one to N
+    {
+    formatRatioTest("1:1", 1.0, v_h, oneToN, v_h);
+    formatRatioTest("1:0.5", 2.0, v_h, oneToN, v_h);
+    formatRatioTest("1:2", 0.5, v_h, oneToN, v_h);
+    formatRatioTest("1:3.003", 0.333, v_h, oneToN, v_h);
+    formatRatioTest("1:3", 0.3333, v_h, oneToN, v_h);
+    formatRatioTest("1:3.5", 0.2857, v_h, oneToN, v_h);
+    formatRatioTest("1:4", 0.25, v_h, oneToN, v_h);
+    formatRatioTest("1:1.5", 0.6667, v_h, oneToN, v_h);
+    }
+
+    // v:h -> h:v | one to N
+    {
+    formatRatioTest("1:1", 1.0, v_h, oneToN, h_v);
+    formatRatioTest("1:2", 2.0, v_h, oneToN, h_v);
+    formatRatioTest("1:0.5", 0.5, v_h, oneToN, h_v);
+    formatRatioTest("1:0.333", 0.333, v_h, oneToN, h_v);
+    formatRatioTest("1:0.333", 0.3333, v_h, oneToN, h_v);
+    formatRatioTest("1:0.286", 0.2857, v_h, oneToN, h_v);
+    formatRatioTest("1:0.25", 0.25, v_h, oneToN, h_v);
+    formatRatioTest("1:0.667", 0.6667, v_h, oneToN, h_v);
+    }
+
+    // v:h -> v:h | N to one
+    {
+    formatRatioTest("1:1", 1.0, v_h, NtoOne, v_h);
+    formatRatioTest("2:1", 2.0, v_h, NtoOne, v_h);
+    formatRatioTest("0.5:1", 0.5, v_h, NtoOne, v_h);
+    formatRatioTest("0.333:1", 0.333, v_h, NtoOne, v_h);
+    formatRatioTest("0.333:1", 0.3333, v_h, NtoOne, v_h);
+    formatRatioTest("0.286:1", 0.2857, v_h, NtoOne, v_h);
+    formatRatioTest("0.25:1", 0.25, v_h, NtoOne, v_h);
+    formatRatioTest("0.667:1", 0.6667, v_h, NtoOne, v_h);
+    }
+
+    // v:h -> h:v | N to one
+    {
+    formatRatioTest("1:1", 1.0, v_h, NtoOne, h_v);
+    formatRatioTest("0.5:1", 2.0, v_h, NtoOne, h_v);
+    formatRatioTest("2:1", 0.5, v_h, NtoOne, h_v);
+    formatRatioTest("3.003:1", 0.333, v_h, NtoOne, h_v);
+    formatRatioTest("3:1", 0.3333, v_h, NtoOne, h_v);
+    formatRatioTest("3.5:1", 0.2857, v_h, NtoOne, h_v);
+    formatRatioTest("4:1", 0.25, v_h, NtoOne, h_v);
+    formatRatioTest("1.5:1", 0.6667, v_h, NtoOne, h_v);
+    }
+
+    {
+    // decimal precision
+    // formatRatioTest("1:0", 3, v_h, oneToN, v_h, DecimalPrecision::Precision0);
+    formatRatioTest("1:0.3", 3, v_h, oneToN, v_h, DecimalPrecision::Precision1);
+    formatRatioTest("1:0.33", 3, v_h, oneToN, v_h, DecimalPrecision::Precision2);
+
+    formatRatioTest("1:2500", 0.0004, v_h, oneToN, v_h, DecimalPrecision::Precision3);
+
+    formatRatioTest("1:0", 0.0004, v_h, oneToN, h_v, DecimalPrecision::Precision3);
+    formatRatioTest("1:0.0004", 0.0004, v_h, oneToN, h_v, DecimalPrecision::Precision4);
+    formatRatioTest("1:-0.0004", -0.0004, v_h, oneToN, h_v, DecimalPrecision::Precision4);
+    }
+
+    // v:h -> v:h | ValueBased
+    // if the value is smaller than 1, its 1 to N. else, N to 1
+    {
+    formatRatioTest("1:1", 1.0, v_h, valueBased, v_h);
+    formatRatioTest("2:1", 2.0, v_h, valueBased, v_h);
+    formatRatioTest("1:2", 0.5, v_h, valueBased, v_h);
+    formatRatioTest("1:3.003", 0.333, v_h, valueBased, v_h);
+    formatRatioTest("3.333:1", 3.3333, v_h, valueBased, v_h);
+    formatRatioTest("1:3.5", 0.2857, v_h, valueBased, v_h);
+    formatRatioTest("3.5:1", 3.5, v_h, valueBased, v_h);
+    formatRatioTest("1:4", 0.25, v_h, valueBased, v_h);
+    formatRatioTest("4:1", 4.0, v_h, valueBased, v_h);
+    }   
+
+    // v:h -> v:h | UseGreatestCommonDivisor
+    {
+    formatRatioTest("1:1", 1.0, v_h, useGreatestCommonDivisor, v_h);
+    formatRatioTest("2:1", 2.0, v_h, useGreatestCommonDivisor, v_h);
+    formatRatioTest("1:2", 0.5, v_h, useGreatestCommonDivisor, v_h);
+    formatRatioTest("333:1000", 0.333, v_h, useGreatestCommonDivisor, v_h);
+    formatRatioTest("333:1000", 0.3333, v_h, useGreatestCommonDivisor, v_h);
+    formatRatioTest("143:500", 0.2857, v_h, useGreatestCommonDivisor, v_h);
+    formatRatioTest("1:4", 0.25, v_h, useGreatestCommonDivisor, v_h);
+    formatRatioTest("667:1000", 0.6667, v_h, useGreatestCommonDivisor, v_h);
+    }
+
+    // negative values
+    {
+    formatRatioTest("-1:1", -1.0, v_h, NtoOne, v_h);
+    formatRatioTest("1:-1", -1.0, v_h, valueBased, v_h);
+
+    formatRatioTest("-0.5:1", -0.5, v_h, NtoOne, v_h);
+    formatRatioTest("1:-2", -0.5, v_h, valueBased, v_h);
+
+    formatRatioTest("-0.5:1", -2, v_h, NtoOne, h_v);
+    formatRatioTest("1:-2", -2, v_h, valueBased, h_v);
+    }
+
+    // really large/small numbers
+    {
+    formatRatioTest("0:1", 0.00000001, v_h, NtoOne, v_h);
+    formatRatioTest("100000000:1", 0.00000001, v_h, NtoOne, h_v);
+
+    formatRatioTest("100000000:1", 100000000, v_h, NtoOne, v_h);
+    // formatRatioTest("0:1", 100000000, v_h, NtoOne, h_v); //works one way parsing from quantity to ratio, but not the other way around. from "0:1" cant be parsed to 100000000
+    }
+
+    // irrational numbers
+    {
+    formatRatioTest("0.143:1", 1.0/7, v_h, NtoOne, v_h);
+    formatRatioTest("1:7", 1.0/7, v_h, oneToN, v_h);
+    formatRatioTest("0.286:1", 2.0/7, v_h, NtoOne, v_h);
+    formatRatioTest("143:500", 2.0/7, v_h, useGreatestCommonDivisor, v_h); // loose precision from 0.28571428571 to 0.286
+    formatRatioTest("7:2", 2.0/7, v_h, useGreatestCommonDivisor, h_v); // didnt loose much precision from 3.50000000005 to 3.5
+    }
+
+    // parseRatioString specific tests
+    auto formatRatioErrorTest = [](const char* ratioString, Units::UnitCP persistenceUnit, Units::UnitCP presentationUnit, FormatProblemCode expectedProblemCode = FormatProblemCode::NoProblems)
+    {
+        NumericFormatSpec ratioSpec;
+        ratioSpec.SetPresentationType(PresentationType::Ratio);
+        ratioSpec.SetRatioType(RatioType::OneToN);
+        ratioSpec.SetPrecision(DecimalPrecision::Precision3);
+        CompositeValueSpec ratioComp(*presentationUnit);
+        ratioComp.SetIncludeZero(true);
+        Format ratioFormat(ratioSpec);
+        ratioFormat.SetCompositeSpec(ratioComp);
+
+        FormatProblemCode problemCode;
+        auto formatParsingSet = FormatParsingSet(ratioString, persistenceUnit, &ratioFormat);
+        BEU::Quantity qty = formatParsingSet.GetQuantity(&problemCode, &ratioFormat);
+
+        EXPECT_EQ(expectedProblemCode, problemCode);
+    };
+
+    {
+        formatRatioErrorTest("", v_h, v_h, FormatProblemCode::QT_NoValueOrUnitFound);
+        formatRatioErrorTest("1:1", nullptr, v_h, FormatProblemCode::QT_NoValueOrUnitFound); // test this
+        formatRatioErrorTest("3:1:2", v_h, v_h, FormatProblemCode::QT_InvalidRatioArgument);
+        formatRatioErrorTest("A:2", v_h, v_h, FormatProblemCode::QT_InvalidRatioArgument);
+        formatRatioErrorTest("1:1e1000", v_h, v_h, FormatProblemCode::QT_ValueOutOfRange);
+
+        formatRatioErrorTest("0:1", v_h, h_v, FormatProblemCode::QT_MathematicOperationFoundButIsNotAllowed);
+        formatRatioErrorTest("1:0", v_h, v_h, FormatProblemCode::QT_MathematicOperationFoundButIsNotAllowed);
+    }
+    
 }
 
 END_BENTLEY_FORMATTEST_NAMESPACE

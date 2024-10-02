@@ -166,7 +166,7 @@ BentleyStatus TryGetPerigon(Utf8StringCR unitName, double& value)
     return BentleyStatus::ERROR;
     }
 
-BentleyStatus NormalizeAngle(BEU::Quantity& quantity, Utf8CP operationName, double& perigon)
+BentleyStatus Format::NormalizeAngle(BEU::Quantity& quantity, Utf8CP operationName, double& perigon)
     {
     BEU::UnitCP unit = quantity.GetUnit();
     if (!unit->GetPhenomenon()->IsAngle())
@@ -197,13 +197,13 @@ BentleyStatus ProcessBearingAndAzimuth(NumericFormatSpecCP fmtP, BEU::Quantity& 
         return BentleyStatus::ERROR;
 
     double perigon;
-    if (NormalizeAngle(quantity, type == PresentationType::Bearing ? "bearing" : "azimuth", perigon) != BentleyStatus::SUCCESS)
+    if (Format::NormalizeAngle(quantity, type == PresentationType::Bearing ? "bearing" : "azimuth", perigon) != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
 
+    double rightAngle = perigon / 4;
     double magnitude = quantity.GetMagnitude();
     if (type == PresentationType::Bearing)
         {
-        double rightAngle = perigon / 4;
         int quadrant = 0;
         while (magnitude > rightAngle) {
             magnitude -= rightAngle;
@@ -229,13 +229,34 @@ BentleyStatus ProcessBearingAndAzimuth(NumericFormatSpecCP fmtP, BEU::Quantity& 
         if (quadrant == 2 || quadrant == 3)
             suffix = fmtP->GetWestLabel();
 
+        // special case, if in quadrant 2 and value is very small, turn suffix to E because S00:00:00E is preferred over S00:00:00W
+        if (quadrant == 2 && FormatConstant::IsNegligible(magnitude)){
+            // TODO: typescript side converted this to the smallst unit presented and used the prcision on it
+            suffix = fmtP->GetEastLabel();
+        }
+
         quantity = BEU::Quantity(magnitude, *quantity.GetUnit());
     }
 
     if (type == PresentationType::Azimuth) {
-        double azimuthBase(fmtP->GetAzimuthBase());
+        double azimuthBase = 0.0;
+
+        if (fmtP->HasAzimuthBase()) {
+            azimuthBase = fmtP->GetAzimuthBase();
+            if (fmtP->HasAzimuthBaseUnit())
+            {
+                BEU::Quantity azimuthBaseQuantity(azimuthBase, *fmtP->GetAzimuthBaseUnit());
+                azimuthBaseQuantity.ConvertTo(temp.GetUnit());
+                azimuthBase = azimuthBaseQuantity.GetMagnitude();
+            } 
+            else 
+            {
+                return BentleyStatus::ERROR; // if the base is set, but base unit is missing
+            }
+        }
+
         if(azimuthBase == 0.0)
-            return BentleyStatus::SUCCESS; //no conversion necessary with a north base
+            return BentleyStatus::SUCCESS; //no conversion necessary with a east base
 
         magnitude -= azimuthBase;
         while(magnitude < 0)
@@ -244,7 +265,7 @@ BentleyStatus ProcessBearingAndAzimuth(NumericFormatSpecCP fmtP, BEU::Quantity& 
         while(magnitude > perigon)
             magnitude -= perigon;
 
-        if(fmtP->IsCounterClockwiseAngle())
+        if(!fmtP->IsCounterClockwiseAngle())
             magnitude = perigon - magnitude;
 
         quantity = BEU::Quantity(magnitude, *quantity.GetUnit());
@@ -285,6 +306,15 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
         {
         CompositeValueSpecCP compS = GetCompositeSpec();
         auto dval = compS->DecomposeValue(temp.GetMagnitude(), temp.GetUnit());
+        if(dval.IsProblem()){
+           if (fmtP->GetPresentationType() == PresentationType::Ratio && dval.GetProblemCode() == FormatProblemCode::QT_InvertingZero)
+                return "1:0"; // special case for ratio
+            return "";
+        }
+
+        if (fmtP->GetPresentationType() == PresentationType::Ratio)
+            return fmtP->FormatToRatio(dval.GetMajor());
+
         Utf8String uomSeparator;
         if (compS->HasSpacer())
             uomSeparator = compS->GetSpacer();

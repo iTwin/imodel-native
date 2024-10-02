@@ -31,6 +31,7 @@ BE_JSON_NAME(uomSeparator)
 BE_JSON_NAME(stationSeparator)
 BE_JSON_NAME(stationOffsetSize)
 BE_JSON_NAME(minWidth)
+BE_JSON_NAME(ratioType)
 
 // Format Traits
 BE_JSON_NAME(trailZeroes)
@@ -85,10 +86,14 @@ private:
     uint8_t m_explicitlyDefinedThousandsSeparator:1;
     uint8_t m_explicitlyDefinedUOMSeparator:1;
     uint8_t m_explicitlyDefinedStatSeparator:1;
+    uint8_t m_explicitlyDefinedAzimuthBase:1;
+    uint8_t m_explicitlyDefinedAzimuthBaseUnit:1;
     double              m_roundFactor;
     PresentationType    m_presentationType;      // Decimal, Fractional, Scientific, Station
+    RatioType           m_ratioType;        // OneToN, NToOne, ValueBased, UseGreatestCommonDivisor
     ScientificType      m_scientificType;
     double              m_azimuthBase;     // The base offset for azimuths in radians from north clockwise
+    BEU::UnitCP         m_azimuthBaseUnit; // The unit of the azimuth base
 
     SignOption          m_signOption;            // NoSign, OnlyNegative, SignAlways, NegativeParentheses
     FormatTraits        m_formatTraits;          // NoZeroes, TrailingZeroes, BothZeroes
@@ -195,8 +200,13 @@ public:
     ScientificType GetScientificType() const {return m_scientificType;}
 
     //Sets the azimuth base in radians from north clockwise
-    void SetAzimuthBase(double base) {m_azimuthBase = base;}
+    void SetAzimuthBase(double base) {m_explicitlyDefinedAzimuthBase = true; m_azimuthBase = base;}
+    bool HasAzimuthBase() const {return m_explicitlyDefinedAzimuthBase;}
     double GetAzimuthBase() const {return m_azimuthBase;}
+
+    void SetAzimuthBaseUnit(BEU::UnitCP unit){m_azimuthBaseUnit = unit;}
+    bool HasAzimuthBaseUnit() const {return m_explicitlyDefinedAzimuthBaseUnit;}
+    BEU::UnitCP GetAzimuthBaseUnit() const {return m_azimuthBaseUnit;}
 
     void SetPrecision(FractionalPrecision precision) {m_explicitlyDefinedPrecision = true; m_fractPrecision = precision; }
     void SetPrecision(DecimalPrecision precision) {m_explicitlyDefinedPrecision = true; m_decPrecision = precision;}
@@ -234,6 +244,9 @@ public:
     void SetWestLabel(Utf8StringCR label) {m_westLabel = label;}
     Utf8String GetWestLabel() const {return m_westLabel;}
 
+    void SetRatioType(RatioType ratioType) {m_ratioType = ratioType;}
+    RatioType GetRatioType() const {return m_ratioType;}
+    
     //======================================
     // Format Traits Bit Setters/Getters
     //======================================
@@ -293,6 +306,8 @@ public:
     //Sets angle formatting to be counter clockwise, affects azimuths
     void SetCounterClockwiseAngle(bool setTo) { SetTraitsBit(FormatTraits::CounterClockwiseAngle, setTo);}
     bool IsCounterClockwiseAngle() const {return GetTraitBit(FormatTraits::CounterClockwiseAngle);}
+
+    Utf8String FormatToRatio(double value) const;
 
     //======================================
     // Formatting Methods
@@ -393,6 +408,7 @@ private:
 
         bool UpdateProblemCode(FormatProblemCode code) { return m_problem.UpdateProblemCode(code); }
         bool IsProblem() const {return m_problem.IsProblem();}
+        FormatProblemCode GetProblemCode() const {return m_problem.GetProblemCode();}
     };
 
     static size_t const indxMajor  = 0;
@@ -642,6 +658,8 @@ public:
 
     // Legacy Descriptor string
     UNITS_EXPORT static void ParseUnitFormatDescriptor(Utf8StringR unitName, Utf8StringR formatString, Utf8CP description);
+
+    BentleyStatus static NormalizeAngle(BEU::Quantity& quantity, Utf8CP operationName, double& perigon);
 };
 
 //=======================================================================================

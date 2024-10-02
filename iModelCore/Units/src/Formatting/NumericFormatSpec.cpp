@@ -37,6 +37,8 @@ NumericFormatSpec::NumericFormatSpec()
     , m_explicitlyDefinedStatSeparator(false)
     , m_explicitlyDefinedThousandsSeparator(false)
     , m_explicitlyDefinedUOMSeparator(false)
+    , m_explicitlyDefinedAzimuthBase(false)
+    , m_explicitlyDefinedAzimuthBaseUnit(false)
     , m_roundFactor(FormatConstant::DefaultRoundingFactor())
     , m_presentationType(FormatConstant::DefaultPresentaitonType())
     , m_signOption(FormatConstant::DefaultSignOption())
@@ -54,7 +56,7 @@ NumericFormatSpec::NumericFormatSpec()
     , m_southLabel("S")
     , m_eastLabel("E")
     , m_westLabel("W")
-    , m_azimuthBase(0.0)
+    , m_ratioType(FormatConstant::DefaultRatioType())
     {
     }
 
@@ -153,6 +155,12 @@ bool NumericFormatSpec::FromJson(NumericFormatSpecR out, JsonValueCR jval)
             }
         else if (BeStringUtilities::StricmpAscii(paramName, json_formatTraits()) == 0)
             spec.SetFormatTraits(val); //Handles both string and array
+        else if (BeStringUtilities::StricmpAscii(paramName, json_ratioType()) == 0)
+            {
+            RatioType mode;
+            Utils::ParseRatioType(mode, val.asCString());
+            spec.SetRatioType(mode);
+            }
         }
     out = spec;
     return true;
@@ -168,7 +176,11 @@ bool NumericFormatSpec::ToJson(BeJsValue out, bool verbose) const
     // Always show ScientificType if the type is Scientific.
     if (PresentationType::Scientific == GetPresentationType())
         out[json_scientificType()] = Utils::GetScientificTypeString(GetScientificType());
-
+    
+    // always show RatioType if presentation type is ratio
+    if (PresentationType::Ratio == GetPresentationType())
+        out[json_ratioType()] = Utils::GetRatioTypeString(GetRatioType());
+        
     if (PresentationType::Station == GetPresentationType())
         {
         // Always serialize offsetSize for station.
@@ -235,6 +247,7 @@ bool NumericFormatSpec::IsIdentical(NumericFormatSpecCR other) const
     if (m_southLabel != other.m_southLabel) return false;
     if (m_eastLabel != other.m_eastLabel) return false;
     if (m_westLabel != other.m_westLabel) return false;
+    if (m_ratioType != other.m_ratioType) return false;
 
     return true;
     }
@@ -736,7 +749,10 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
         }
     bool sci = ((dval > 1.0e12) ||m_presentationType == PresentationType::Scientific);
     bool decimal = (sci || m_presentationType == PresentationType::Decimal ||
-                    m_presentationType == PresentationType::Bearing || m_presentationType == PresentationType::Azimuth);
+                    m_presentationType == PresentationType::Bearing || 
+                    m_presentationType == PresentationType::Azimuth || 
+                    m_presentationType == PresentationType::Ratio 
+                    );
     bool fractional = (!decimal && m_presentationType == PresentationType::Fractional);
     bool stops = m_presentationType == PresentationType::Station;
 
@@ -958,5 +974,49 @@ double NumericFormatSpec::RoundDouble(double dval, double roundTo)
     rnd = ival * roundTo;
     return (dval < 0.0) ? -rnd : rnd;
     }
+
+Utf8String NumericFormatSpec::FormatToRatio(double value) const
+{
+    double reciprocal;
+
+    if (value == 0) 
+        return "0:1";
+    else
+        reciprocal = 1.0 / value;
+        
+    switch (m_ratioType){
+        case (RatioType::OneToN): return "1:" + Format(reciprocal);
+        case (RatioType::NToOne): return Format(value) + ":1";
+        case (RatioType::ValueBased):
+            if (std::abs(value) > 1)
+                return Format(value) + ":1";
+            else
+                return "1:" + Format(reciprocal);
+        case (RatioType::UseGreatestCommonDivisor):
+        {
+            double precisionFactor = GetDecimalPrecisionFactor();
+            value = RoundDouble(value, 1/precisionFactor);
+
+            int numerator = static_cast<int>(value * precisionFactor);
+            int denominator = static_cast<int>(precisionFactor);
+
+            // int gcd = std::gcd(numerator, denominator);
+            int a = numerator;
+            int b = denominator;
+            while (b != 0) {
+                int temp = b;
+                b = a % b;
+                a = temp;
+            }
+            numerator /= a;
+            denominator /= a;
+
+            return Format(numerator) + ":" + Format(denominator);
+        }
+    }
+
+    return "";
+}
+
 
 END_BENTLEY_FORMATTING_NAMESPACE
