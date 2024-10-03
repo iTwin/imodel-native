@@ -937,6 +937,10 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatC
 
     // TODO - <Naron>: Feel like I can break this into pre-ParseAndProcessTokens and post-ParseAndProcessTokens to effectively reuse the existing code
     BEU::Quantity qty;
+    if (format->GetPresentationType() == PresentationType::Azimuth){
+        qty = ParseAzimuthFormat(probCode, format, inputUnit);
+    }
+
     if (format->GetPresentationType() == PresentationType::Bearing){
         qty = ParseBearingFormat(probCode, format, inputUnit);
     }
@@ -1253,6 +1257,75 @@ BEU::Quantity FormatParsingSet::ParseAndProcessTokens(Formatting::FormatSpecialC
     return qty;
 }
 
+
+BEU::Quantity FormatParsingSet::ParseAzimuthFormat(FormatProblemCode* probCode, FormatCP format, BEU::UnitCP inputUnit){
+    BEU::Quantity converted = BEU::Quantity();
+    
+    Utf8String sig = GetSignature(false);
+    Formatting::FormatSpecialCodes cod = Formatting::FormatConstant::ParsingPatternCode(sig.c_str());
+    BEU::Quantity qty = ParseAndProcessTokens(cod, format, inputUnit);
+
+    if (m_problem.IsProblem()){
+        if (probCode != nullptr){ //TODO - <Naron>: this is redundant here as m_problem will get updated in GetQuantity()
+            *probCode = m_problem.GetProblemCode();
+        }
+        return converted;
+    }
+
+    double azimuthBase = 0.0;
+    double magnitude = qty.GetMagnitude();
+
+    double perigon;
+    if (Format::NormalizeAngle(qty, "azimuth", perigon) != BentleyStatus::SUCCESS){
+        if (probCode != nullptr){
+            *probCode = FormatProblemCode::CVS_InvalidMajorUnit;
+        }
+        return converted;
+    }
+
+    NumericFormatSpecCP fmtP = format->GetNumericSpec();
+    if (fmtP->HasAzimuthBase()){
+        azimuthBase = fmtP->GetAzimuthBase();
+        if (fmtP->HasAzimuthBaseUnit()){
+            BEU::Quantity azimuthBaseQuantity(azimuthBase, *fmtP->GetAzimuthBaseUnit());
+            azimuthBaseQuantity.ConvertTo(qty.GetUnit());
+            azimuthBase = azimuthBaseQuantity.GetMagnitude();
+        }
+        else{
+            if (probCode != nullptr){
+                *probCode = FormatProblemCode::QT_NoValueOrUnitFound;
+            }
+        }
+    }
+
+    if (std::fmod(azimuthBase, perigon) == 0.0 &&  !fmtP->IsCounterClockwiseAngle()){
+        converted = qty.ConvertTo(m_unit); //TODO - <Naron>: what if m_unit is null? should check it before
+        return converted;
+    }
+
+    if (fmtP->IsCounterClockwiseAngle()){
+        magnitude = azimuthBase - magnitude;
+    } else {
+        magnitude = azimuthBase + magnitude;
+    }
+
+    // Normalize magnitude
+    while(magnitude < 0)
+        magnitude += perigon;
+    
+    while(magnitude > perigon)
+        magnitude -= perigon;
+
+    if(fmtP->IsCounterClockwiseAngle())
+        magnitude = perigon - magnitude;
+    
+    qty = BEU::Quantity(magnitude, *inputUnit);
+    converted = qty.ConvertTo(m_unit);
+
+    return converted;
+}
+
+
 BEU::Quantity FormatParsingSet::ParseBearingFormat(FormatProblemCode* probCode, FormatCP format, BEU::UnitCP inputUnit)
 {
     BEU::Quantity converted = BEU::Quantity();
@@ -1315,7 +1388,7 @@ BEU::Quantity FormatParsingSet::ParseBearingFormat(FormatProblemCode* probCode, 
     double perigon;
     if (Format::NormalizeAngle(qty, "bearing", perigon) != BentleyStatus::SUCCESS){
         if (probCode != nullptr){
-            *probCode = FormatProblemCode::QT_ConversionFailed;
+            *probCode = FormatProblemCode::CVS_InvalidMajorUnit;
         }
         return converted;
     }

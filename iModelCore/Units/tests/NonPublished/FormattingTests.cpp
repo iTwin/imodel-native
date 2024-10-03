@@ -1731,10 +1731,33 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
         ASSERT_STREQ(azimuthDMSFromDeg.c_str(), azimuthDMSFromRad.c_str());
         ASSERT_STREQ(row.northAzimuthDMS.c_str(), azimuthDMSFromDeg.c_str());
 
+        formatParsingSet_degree = FormatParsingSet(row.northAzimuthDMS.c_str(), unitDegree, &azimuthDMS);
+        formatParsingSet_radian = FormatParsingSet(row.northAzimuthDMS.c_str(), unitRadian, &azimuthDMS);
+        qtyFromDegree = formatParsingSet_degree.GetQuantity(&problemCode_degree, &azimuthDMS);
+        qtyFromRadian = formatParsingSet_radian.GetQuantity(&problemCode_radian, &azimuthDMS);
+
+        ASSERT_EQ(FormatProblemCode::NoProblems, problemCode_degree);
+        ASSERT_EQ(FormatProblemCode::NoProblems, problemCode_radian);
+
+        ASSERT_NEAR(degreeNormalized, qtyFromDegree.GetMagnitude(), 0.001);
+        ASSERT_NEAR(radianNormalized, qtyFromRadian.GetMagnitude(), 0.001);
+
+        // azimuth decimal
         Utf8String azimuthDecimalFromDeg = azimuth.FormatQuantity(degree);
         Utf8String azimuthDecimalFromRad = azimuth.FormatQuantity(radian);
         ASSERT_STREQ(azimuthDecimalFromDeg.c_str(), azimuthDecimalFromRad.c_str());
         ASSERT_STREQ(row.northAzimuthDecimal.c_str(), azimuthDecimalFromDeg.c_str());
+
+        formatParsingSet_degree = FormatParsingSet(row.northAzimuthDecimal.c_str(), unitDegree, &azimuth);
+        formatParsingSet_radian = FormatParsingSet(row.northAzimuthDecimal.c_str(), unitRadian, &azimuth);
+        qtyFromDegree = formatParsingSet_degree.GetQuantity(&problemCode_degree, &azimuth);
+        qtyFromRadian = formatParsingSet_radian.GetQuantity(&problemCode_radian, &azimuth);
+
+        ASSERT_EQ(FormatProblemCode::NoProblems, problemCode_degree);
+        ASSERT_EQ(FormatProblemCode::NoProblems, problemCode_radian);
+
+        ASSERT_NEAR(degreeNormalized, qtyFromDegree.GetMagnitude(), 0.001);
+        ASSERT_NEAR(radianNormalized, qtyFromRadian.GetMagnitude(), 0.001);
         }
 }
 

@@ -264,7 +264,7 @@ BentleyStatus ProcessBearingAndAzimuth(NumericFormatSpecCP fmtP, BEU::Quantity& 
         while(magnitude > perigon)
             magnitude -= perigon;
 
-        if(!fmtP->IsCounterClockwiseAngle())
+        if(fmtP->IsCounterClockwiseAngle())
             magnitude = perigon - magnitude;
 
         quantity = BEU::Quantity(magnitude, *quantity.GetUnit());

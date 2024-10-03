@@ -146,6 +146,7 @@ private:
     BEU::Quantity ComposeColonizedQuantity(Formatting::FormatSpecialCodes cod, FormatCP fusP = nullptr);
     BEU::Quantity ParseAndProcessTokens(Formatting::FormatSpecialCodes cod, FormatCP fusp, BEU::UnitCP inputUnit);
     // parsing helper methods
+    BEU::Quantity ParseAzimuthFormat(FormatProblemCode* probCode, FormatCP fusP, BEU::UnitCP unit);
     BEU::Quantity ParseBearingFormat(FormatProblemCode* probCode, FormatCP fusP, BEU::UnitCP unit);
     BEU::Quantity ParseRatioFormat(FormatProblemCode* probCode,FormatCP fusP, BEU::UnitCP unit);
 
