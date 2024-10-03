@@ -1061,23 +1061,66 @@ TEST_F(ConcurrentQueryFixture, BlobIO) {
 TEST_F(ConcurrentQueryFixture, ReaderBindingForIdSetVirtualTable) {
 
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ConcurrentQuery_Simple.ecdb"));
+    {
+        auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
+        BeIdSet idSet;
+        idSet.insert(BeInt64Id(10));
+        idSet.insert(BeInt64Id(20));
+        idSet.insert(BeInt64Id(30));
+        idSet.insert(BeInt64Id(40));
+        int vsRowCount = 0;
 
-    auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
-    BeIdSet idSet;
-    idSet.insert(BeInt64Id(10));
-    idSet.insert(BeInt64Id(20));
-    idSet.insert(BeInt64Id(30));
-    idSet.insert(BeInt64Id(40));
-    int vsRowCount = 0;
+        ECSqlReader  vsReaderIdSet(mgr, "select id from test.IdSet(?)",
+            ECSqlParams().BindIdSet(1, idSet));
 
-    ECSqlReader  vsReaderIdSet(mgr, "select id from test.IdSet(?)",
-        ECSqlParams().BindIdSet(1, idSet));
-
-    while(vsReaderIdSet.Next()) {
-       vsRowCount++;
+        int i = 1;
+        while(vsReaderIdSet.Next()) {
+        auto classRow = vsReaderIdSet.GetRow();
+        ASSERT_EQ(i*10, classRow[0].asInt64());
+        i++; 
+        vsRowCount++;
+        }
+        ASSERT_EQ(vsRowCount,4);
     }
-    ASSERT_EQ(vsRowCount,4);
-}
+    {
+        auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
+        BeIdSet idSet;
+        idSet.insert(BeInt64Id(10));
+        idSet.insert(BeInt64Id(20));
+        idSet.insert(BeInt64Id(30));
+        idSet.insert(BeInt64Id(40));
+        int vsRowCount = 0;
 
+        ECSqlReader  vsReaderIdSet(mgr, "select ECInstanceId from meta.ECClassDef, test.IdSet(?) where ECInstanceId = id",
+            ECSqlParams().BindIdSet(1, idSet));
+
+        int i = 1;
+        while(vsReaderIdSet.Next()) {
+        auto classRow = vsReaderIdSet.GetRow();
+        ASSERT_EQ(i*10, BeStringUtilities::ParseHex(classRow[0].asString().c_str()));
+        i++; 
+        vsRowCount++;
+        }
+        ASSERT_EQ(vsRowCount,4);
+    }
+    {
+        auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
+        int vsRowCount = 0;
+
+        ECSqlReader  vsReaderIdSet(mgr, "select ECInstanceId from meta.ECClassDef, test.IdSet(?) where ECInstanceId = id",
+            ECSqlParams().BindId(1, BeInt64Id(33)));
+
+        try
+        {
+        vsReaderIdSet.Next();
+        }
+        catch (const std::runtime_error& error)
+        {
+        ASSERT_EQ(vsRowCount,0) <<  error.what();
+        }
+        
+    }
+    
+}
 
 END_ECDBUNITTESTS_NAMESPACE
