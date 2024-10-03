@@ -28,14 +28,19 @@ struct BinderInfo final
             JsonValueBinderType,
             NoopECSqlBinderType,
             ProxyECInstanceIdECSqlBinderType,
-            ProxyECSqlBinderType
+            ProxyECSqlBinderType, 
+            NotSpecified
         };
         
     private:
-        BinderType m_binderType;
+        BinderType m_binderType = BinderType::NotSpecified;
+        bool m_binderIsForInVirtualSetOrIdSetVirtualTable = false;
     public:
-        BinderInfo(BinderType binderType) : m_binderType(binderType){}
+        BinderInfo(BinderType binderType) : m_binderType(binderType), m_binderIsForInVirtualSetOrIdSetVirtualTable(false){}
+        BinderInfo(BinderType binderType, bool binderIsForInVirtualSetOrIdSetVirtualTable) : m_binderType(binderType), m_binderIsForInVirtualSetOrIdSetVirtualTable(binderIsForInVirtualSetOrIdSetVirtualTable){}
         BinderInfo::BinderType GetBinderType() const { return m_binderType; }
+        bool CheckIfBinderIsForInVirtualSetOrIdSetVirtualTable() const { return m_binderIsForInVirtualSetOrIdSetVirtualTable; }
+        void SetIfBinderIsForInVirtualSetOrIdSetVirtualTable(bool val) { m_binderIsForInVirtualSetOrIdSetVirtualTable = val; }
     };
 
 
@@ -85,7 +90,7 @@ private:
     virtual IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) = 0;
     virtual IECSqlBinder& _AddArrayElement() = 0;
 
-    virtual BinderInfo::BinderType _GetBinderType() = 0;
+    virtual BinderInfo& _GetBinderInfo() = 0;
 
 
 protected:
@@ -230,9 +235,8 @@ public:
     //! @return The binder for the new array element
     ECDB_EXPORT IECSqlBinder& AddArrayElement();
 
-    //! Adds a new array element to the array to be bound to the parameter.
-    //! @return The binder for the new array element
-    ECDB_EXPORT BinderInfo::BinderType GetBinderType();
+    //! @return Gets the BinderInfo for the specific binder
+    ECDB_EXPORT BinderInfo& GetBinderInfo();
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

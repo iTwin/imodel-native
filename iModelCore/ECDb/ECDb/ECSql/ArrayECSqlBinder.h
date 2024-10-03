@@ -65,7 +65,7 @@ private:
 
             IECSqlBinder& _AddArrayElement() override;
 
-            BinderInfo::BinderType _GetBinderType() override;
+            BinderInfo& _GetBinderInfo() override;
 
         };
 

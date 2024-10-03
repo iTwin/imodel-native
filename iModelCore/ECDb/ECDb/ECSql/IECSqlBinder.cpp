@@ -155,6 +155,6 @@ IECSqlBinder& IECSqlBinder::AddArrayElement() { return _AddArrayElement(); }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-BinderInfo::BinderType IECSqlBinder::GetBinderType() { return _GetBinderType(); }
+BinderInfo& IECSqlBinder::GetBinderInfo() { return _GetBinderInfo(); }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

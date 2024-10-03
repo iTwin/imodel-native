@@ -62,7 +62,7 @@ struct ECSqlBinder : IECSqlBinder
 
         virtual ECSqlStatus _OnBeforeStep() { return ECSqlStatus::Success; }
         virtual void _OnClearBindings() {}
-        BinderInfo::BinderType _GetBinderType() override { return m_binderInfo.GetBinderType(); };
+        BinderInfo& _GetBinderInfo() override { return m_binderInfo; };
 
     protected:
         ECSqlBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, SqlParamNameGenerator&, int mappedSqlParameterCount, bool hasToCallOnBeforeStep, bool hasToCallOnClearBindings, BinderInfo::BinderType binderType);
@@ -89,8 +89,6 @@ struct ECSqlBinder : IECSqlBinder
 
         std::vector<Utf8String> const& GetMappedSqlParameterNames() const { return m_mappedSqlParameterNames; }
 
-        BinderInfo::BinderType GetBinderType() { return _GetBinderType(); } 
-
         ECSqlTypeInfo const& GetTypeInfo() const { return m_typeInfo; }
 
         ECSqlStatus OnBeforeStep() { return _OnBeforeStep(); }
@@ -99,6 +97,7 @@ struct ECSqlBinder : IECSqlBinder
 
 struct IdECSqlBinder;
 struct VirtualSetBinder;
+struct ArrayECSqlBinder;
 
 //=======================================================================================
 //! @bsiclass
@@ -118,7 +117,7 @@ struct ECSqlBinderFactory final
         static std::unique_ptr<IdECSqlBinder> CreateIdBinder(ECSqlPrepareContext&, PropertyMap const&, ECSqlSystemPropertyInfo const&, ECSqlBinder::SqlParamNameGenerator&);
         static std::unique_ptr<IdECSqlBinder> CreateIdBinderForQuery(ECSqlPrepareContext&, ECSqlTypeInfo const&, ECSqlBinder::SqlParamNameGenerator&);
         static std::unique_ptr<VirtualSetBinder> CreateVirtualSetBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, ECSqlBinder::SqlParamNameGenerator&);
-
+        static std::unique_ptr<ArrayECSqlBinder> CreateArrayECSqlBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, ECSqlBinder::SqlParamNameGenerator&);
     };
 
 //=======================================================================================

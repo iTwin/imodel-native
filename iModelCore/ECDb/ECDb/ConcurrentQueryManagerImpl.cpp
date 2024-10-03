@@ -1899,12 +1899,12 @@ bool ECSqlParams::TryBindTo(ECSqlStatement& stmt, std::string& err) const {
             case ECSqlParam::Type::Id:
                 st = stmt.BindId(index, param.GetValueId());  break;
             case ECSqlParam::Type::IdSet: {
-                if(stmt.GetBinderType(index) == BinderInfo::BinderType::VirtualSetECSqlBinderType)
+                if(stmt.GetBinderInfo(index).CheckIfBinderIsForInVirtualSetOrIdSetVirtualTable() && stmt.GetBinderInfo(index).GetBinderType() == BinderInfo::BinderType::VirtualSetECSqlBinderType)
                 {
                     std::shared_ptr<IdSet<BeInt64Id>> idSet = std::make_shared<IdSet<BeInt64Id>>(param.GetValueIdSet());
                     st = stmt.BindVirtualSet(index, idSet);
                 }
-                else if(stmt.GetBinderType(index) == BinderInfo::BinderType::ArrayECSqlBinderType)
+                else if(stmt.GetBinderInfo(index).CheckIfBinderIsForInVirtualSetOrIdSetVirtualTable() && stmt.GetBinderInfo(index).GetBinderType() == BinderInfo::BinderType::ArrayECSqlBinderType)
                 {
                     IECSqlBinder& binder = stmt.GetBinder(index);
                     IdSet<BeInt64Id> set(param.GetValueIdSet());

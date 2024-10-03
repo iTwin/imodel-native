@@ -172,7 +172,7 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
                 IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
                 IECSqlBinder& _AddArrayElement() override;
 
-                BinderInfo::BinderType _GetBinderType() override { return m_binderInfo.GetBinderType(); }
+                BinderInfo& _GetBinderInfo() override { return m_binderInfo; }
 
                 void _AddBinder(IECSqlBinder& binder) override { BeAssert(m_idBinder == nullptr); m_idBinder = &binder; }
 
@@ -215,7 +215,7 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
                 IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
                 IECSqlBinder& _AddArrayElement() override;
 
-                BinderInfo::BinderType _GetBinderType() override { return m_binderInfo.GetBinderType(); }
+                BinderInfo& _GetBinderInfo() override { return m_binderInfo; }
 
                 void _AddBinder(IECSqlBinder& binder) override { m_binders.push_back(&binder); }
 

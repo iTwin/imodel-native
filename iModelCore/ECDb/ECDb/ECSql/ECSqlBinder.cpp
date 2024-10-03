@@ -86,7 +86,23 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContex
         {
         if (FunctionCallExp const* parentExp = exp->GetAsCP<FunctionCallExp>()) {
             if (parentExp->GetFunctionName().EqualsI("InVirtualSet") && parentExp->GetChildren()[0] == &parameterExp)
-                return CreateVirtualSetBinder(ctx, parameterExp.GetTypeInfo(), paramNameGen);
+                {
+                std::unique_ptr<VirtualSetBinder> virtualSetBinder = CreateVirtualSetBinder(ctx, parameterExp.GetTypeInfo(), paramNameGen);
+                virtualSetBinder->GetBinderInfo().SetIfBinderIsForInVirtualSetOrIdSetVirtualTable(true);
+                return virtualSetBinder;
+                }
+            }
+        }
+
+    if (const Exp* exp = parameterExp.FindParent(Exp::Type::MemberFunctionCall))
+        {
+        if (MemberFunctionCallExp const* parentExp = exp->GetAsCP<MemberFunctionCallExp>()) {
+            if (parentExp->IsTableValuedFunc() && parentExp->GetFunctionName().EqualsI("IdSet") && parentExp->GetChildren()[0] == &parameterExp)
+                {
+                std::unique_ptr<ArrayECSqlBinder> arrayECsqlBinder = CreateArrayECSqlBinder(ctx, parameterExp.GetTypeInfo(), paramNameGen);
+                arrayECsqlBinder->GetBinderInfo().SetIfBinderIsForInVirtualSetOrIdSetVirtualTable(true);
+                return arrayECsqlBinder;
+                }
             }
         }
 
@@ -177,6 +193,14 @@ std::unique_ptr<IdECSqlBinder> ECSqlBinderFactory::CreateIdBinderForQuery(ECSqlP
 std::unique_ptr<VirtualSetBinder> ECSqlBinderFactory::CreateVirtualSetBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, ECSqlBinder::SqlParamNameGenerator& paramNameGen)
     {
     return std::unique_ptr<VirtualSetBinder>(new VirtualSetBinder(ctx, typeInfo, paramNameGen));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+std::unique_ptr<ArrayECSqlBinder> ECSqlBinderFactory::CreateArrayECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, ECSqlBinder::SqlParamNameGenerator& paramNameGen)
+    {
+    return std::unique_ptr<ArrayECSqlBinder>(new ArrayECSqlBinder(ctx, typeInfo, paramNameGen));
     }
 
 //---------------------------------------------------------------------------------------

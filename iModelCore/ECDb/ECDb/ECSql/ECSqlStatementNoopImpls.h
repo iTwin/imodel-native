@@ -40,7 +40,7 @@ struct NoopECSqlBinder final : public IECSqlBinder
 
         IECSqlBinder& _AddArrayElement() override { return *this; }
 
-        BinderInfo::BinderType _GetBinderType() override { return m_binderInfo.GetBinderType(); }
+        BinderInfo& _GetBinderInfo() override { return m_binderInfo; }
 
     public:
         static NoopECSqlBinder& Get();
