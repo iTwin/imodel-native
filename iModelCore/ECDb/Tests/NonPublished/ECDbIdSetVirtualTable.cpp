@@ -317,7 +317,7 @@ TEST_F(ECDbIdSetVirtualTableTests, IdSetModuleTest) {
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT x FROM test.IdSet('[1,2,3,4,5]'), (with cte(x) as(select ECInstanceId from meta.ECClassDef) select x from cte) where id = x group by x")));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT x FROM  (with cte(x) as(select ECInstanceId from meta.ECClassDef) select x from cte), test.IdSet('[1,2,3,4,5]') where id = x group by x")));
         int i = 1;
         while (stmt.Step() == BE_SQLITE_ROW)
         {
