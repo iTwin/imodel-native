@@ -93,7 +93,7 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContex
     if (const Exp* exp = parameterExp.FindParent(Exp::Type::MemberFunctionCall))
         {
         if (MemberFunctionCallExp const* parentExp = exp->GetAsCP<MemberFunctionCallExp>()) {
-            if (parentExp->IsTableValuedFunc() && parentExp->GetFunctionName().EqualsI("IdSet") && parentExp->GetChildren()[0] == &parameterExp)
+            if (parentExp->IsTableValuedFunc() && parentExp->GetFunctionName().EqualsI(IdSetModule::NAME) && parentExp->GetChildren()[0] == &parameterExp)
                 {
                 std::unique_ptr<ArrayECSqlBinder> arrayECsqlBinder = CreateArrayECSqlBinder(ctx, parameterExp.GetTypeInfo(), paramNameGen);
                 arrayECsqlBinder->GetBinderInfo().SetIfBinderIsForIdSetVirtualTable(true);

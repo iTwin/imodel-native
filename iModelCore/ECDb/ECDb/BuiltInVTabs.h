@@ -44,6 +44,7 @@ struct ClassPropsModule : BeSQLite::DbModule {
 };
 
 struct IdSetModule : ECDbModule {
+    constexpr static auto NAME = "IdSet";
     struct IdSetTable : ECDbVirtualTable {
         struct IdSetCursor : ECDbCursor {
 
@@ -80,7 +81,7 @@ struct IdSetModule : ECDbModule {
     public:
         IdSetModule(ECDbR db): ECDbModule(
             db,
-            "IdSet",
+            NAME,
             "CREATE TABLE x(id, json_array_ids hidden)",
             R"xml(<?xml version="1.0" encoding="utf-8" ?>
             <ECSchema
