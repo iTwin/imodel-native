@@ -91,7 +91,7 @@ namespace SnapContext
         BE_JSON_NAME(testPoint)
         BE_JSON_NAME(closePoint)
         BE_JSON_NAME(worldToView)
-        BE_JSON_NAME(refToMaster)
+        BE_JSON_NAME(geometryToWorld)
         BE_JSON_NAME(viewFlags)
         BE_JSON_NAME(snapModes)
         BE_JSON_NAME(snapAperture)
@@ -104,7 +104,7 @@ namespace SnapContext
         bool IsValid() const {return m_value.isMember(json_id()) && m_value.isMember(json_closePoint()) && m_value.isMember(json_worldToView());}
         DgnElementId GetElementId() const {DgnElementId elementId; elementId.FromJson(m_value[json_id()]); return elementId;}
         DMatrix4d GetWorldToView() const {return BeJsGeomUtils::ToDMatrix4d(m_value[json_worldToView()]);}
-        Transform GetRefToMaster() const {Transform refToMaster = Transform::FromIdentity(); if (m_value.isMember(json_refToMaster())) BeJsGeomUtils::TransformFromJson(refToMaster, m_value[json_refToMaster()]); return refToMaster;}
+        Transform GetRefToMaster() const {Transform geometryToWorld = Transform::FromIdentity(); if (m_value.isMember(json_geometryToWorld())) BeJsGeomUtils::TransformFromJson(geometryToWorld, m_value[json_geometryToWorld()]); return geometryToWorld;}
         DPoint3d GetTestPoint() const {return BeJsGeomUtils::ToDPoint3d(m_value[json_testPoint()]);}
         DPoint3d GetClosePoint() const {return BeJsGeomUtils::ToDPoint3d(m_value[json_closePoint()]);}
         Render::ViewFlags GetViewFlags() const {Render::ViewFlags viewFlags; if (m_value.isMember(json_viewFlags())) viewFlags.FromJson(m_value[json_viewFlags()]); return viewFlags;}
