@@ -215,7 +215,7 @@ DbResult SingleECSqlPreparedStatement::DoStep()
     {
         if (!m_parameterMap.OnBeforeStep().IsSuccess())
             return BE_SQLITE_ERROR;
-        SetOnBeforeFirstStepNotCalled(false);
+        m_onBeforeFirstStepNotCalled = false;
     }
     
 
