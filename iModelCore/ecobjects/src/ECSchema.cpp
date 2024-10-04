@@ -3534,12 +3534,28 @@ void ECSchema::SortSchemasInDependencyOrder(bvector<ECSchemaCP>& schemas, bool i
     schemas = temp;
     }
 
+namespace
+    {
+    bool CheckECVersionGreaterThanLatest(ECSchemaCR schema)
+        {
+        if (schema.OriginalECXmlVersionGreaterThan(ECVersion::Latest))
+            {
+            LOG.errorv("The schema '%s' has ECVersion %s which is greater than the latest version %s and cannot be serialized.", schema.GetName().c_str(),
+                schema.GetOriginalECXmlVersionAsString().c_str(), schema.GetECVersionString(ECVersion::Latest));
+            return false;
+            }
+        return true;
+        }
+    }
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ECSchema::WriteToXmlString(WStringR ecSchemaXml, ECVersion ecXmlVersion) const
     {
     ecSchemaXml.clear();
+
+    if (!CheckECVersionGreaterThanLatest(*this))
+        return SchemaWriteStatus::FailedToSaveXml;
 
     BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
 
@@ -3566,6 +3582,9 @@ SchemaWriteStatus ECSchema::WriteToXmlString(WStringR ecSchemaXml, ECVersion ecX
 SchemaWriteStatus ECSchema::WriteToXmlString(Utf8StringR ecSchemaXml, ECVersion ecXmlVersion) const
     {
     ecSchemaXml.clear();
+
+    if (!CheckECVersionGreaterThanLatest(*this))
+        return SchemaWriteStatus::FailedToSaveXml;
 
     BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
     xmlWriter->SetIndentation(4);
@@ -3607,6 +3626,9 @@ SchemaWriteStatus ECSchema::WriteToEC2XmlString(Utf8StringR ec2SchemaXml, ECSche
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ecXmlVersion, bool utf16) const
     {
+    if (!CheckECVersionGreaterThanLatest(*this))
+        return SchemaWriteStatus::FailedToSaveXml;
+
     auto serializeToFile = [&ecSchemaXmlFile, &utf16] (ECSchemaCR schema, ECVersion ecXmlVersion) {
         BeXmlWriterPtr xmlWriter = BeXmlWriter::CreateFileWriter(ecSchemaXmlFile);
 
@@ -3633,6 +3655,9 @@ SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ec
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECSchema::WriteToJsonValue(BeJsValue ecSchemaJsonValue) const
     {
+    if (!CheckECVersionGreaterThanLatest(*this))
+        return false;
+
     ecSchemaJsonValue.SetNull();
     SchemaJsonWriter schemaWriter(ecSchemaJsonValue, *this);
 
