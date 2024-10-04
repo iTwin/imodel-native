@@ -3,7 +3,6 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "iostream"
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -343,10 +342,8 @@ DbResult IdSetModule::Connect(DbVirtualTable*& out, Config& conf, int argc, cons
 
 DbResult RegisterBuildInVTabs(ECDbR ecdb) {
     DbResult rc = (new ClassPropsModule(ecdb))->Register();
-    if(rc != BE_SQLITE_OK)
-        return rc;
-    rc = (new IdSetModule(ecdb))->Register();
-    if(rc != BE_SQLITE_OK)
+    DbResult rcIdSet = (new IdSetModule(ecdb))->Register();
+    if(rc != BE_SQLITE_OK || rcIdSet != BE_SQLITE_OK)
         return rc;
     return BE_SQLITE_OK;
 }

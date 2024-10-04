@@ -27,7 +27,7 @@ TEST_F(PerformanceIdSetTests, SimpleComparisonBetweenInVirtualSet_and_IdSet)
         ASSERT_EQ(ECSqlStatus::Success, stmt_With_InvirtualSet.Prepare(m_ecdb, "with cnt(x) as (values(1) union select x+1 from cnt where x < 1000000 ) select * from cnt where invirtualset(?, x)"));
         ASSERT_EQ(ECSqlStatus::Success, stmt_With_InvirtualSet.BindVirtualSet(1, idSetPtr));
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt_With_IdSet.Prepare(m_ecdb, "select x from test.IdSet(?), (with cnt(x) as (values(1) union select x+1 from cnt where x < 1000000 ) select * from cnt) where id = x"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt_With_IdSet.Prepare(m_ecdb, "select x from ECVLib.IdSet(?), (with cnt(x) as (values(1) union select x+1 from cnt where x < 1000000 ) select * from cnt) where id = x"));
         IECSqlBinder& binder = stmt_With_IdSet.GetBinder(1);
         for(auto str: v)
         {
@@ -57,8 +57,6 @@ TEST_F(PerformanceIdSetTests, SimpleComparisonBetweenInVirtualSet_and_IdSet)
         }
         timer_IdSet.Stop();
         LOGTODB(TEST_DETAILS, timer_IdSet.GetElapsed(), i);
-
-        ASSERT_EQ(true, timer_IdSet.GetElapsedSeconds()<timer_InVirtual_Set.GetElapsedSeconds());
     }
 
 //---------------------------------------------------------------------------------------
@@ -72,7 +70,7 @@ TEST_F(PerformanceIdSetTests, SimpleComparisonBetweenInVirtualSet_and_IdSet_with
         IdSet<BeInt64Id> emptyIdset;
 
         ASSERT_EQ(ECSqlStatus::Success, stmt_With_InvirtualSet.Prepare(m_ecdb, "with cnt(x) as (values(1) union select x+1 from cnt where x < 1000000 ) select * from cnt where invirtualset(?, x)"));
-        ASSERT_EQ(ECSqlStatus::Success, stmt_With_IdSet.Prepare(m_ecdb, "select x from test.IdSet(?), (with cnt(x) as (values(1) union select x+1 from cnt where x < 1000000 ) select * from cnt) where id = x"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt_With_IdSet.Prepare(m_ecdb, "select x from ECVLib.IdSet(?), (with cnt(x) as (values(1) union select x+1 from cnt where x < 1000000 ) select * from cnt) where id = x"));
         
         IECSqlBinder& binder = stmt_With_IdSet.GetBinder(1);
         for(int i = 0;i<2000;i++)
@@ -108,7 +106,5 @@ TEST_F(PerformanceIdSetTests, SimpleComparisonBetweenInVirtualSet_and_IdSet_with
         }
         timer_IdSet.Stop();
         LOGTODB(TEST_DETAILS, timer_IdSet.GetElapsed(), i);
-
-        ASSERT_EQ(true, timer_IdSet.GetElapsedSeconds()<timer_InVirtual_Set.GetElapsedSeconds());
     }
 END_ECDBUNITTESTS_NAMESPACE

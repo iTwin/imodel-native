@@ -84,8 +84,8 @@ struct IdSetModule : ECDbModule {
             "CREATE TABLE x(id, json_array_ids hidden)",
             R"xml(<?xml version="1.0" encoding="utf-8" ?>
             <ECSchema
-                    schemaName="test"
-                    alias="test"
+                    schemaName="ECVLib"
+                    alias="ECVLib"
                     version="1.0.0"
                     xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECSchemaReference name="ECDbVirtual" version="01.00.00" alias="ecdbvir" />
@@ -96,7 +96,7 @@ struct IdSetModule : ECDbModule {
                     <ECCustomAttributes>
                         <VirtualType xmlns="ECDbVirtual.01.00.00"/>
                     </ECCustomAttributes>
-                    <ECProperty propertyName="id"  typeName="int"/>
+                    <ECProperty propertyName="id"  typeName="long" extendedTypeName="Id"/>
                 </ECEntityClass>
             </ECSchema>)xml"
             ) {}
