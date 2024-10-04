@@ -159,6 +159,20 @@ BentleyStatus ECSqlRowAdaptor::RenderPrimitiveProperty(BeJsValue out, IECSqlValu
     BeAssert(false && "property type unsupported");
     return ERROR;
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+static bool IsClassIdProperty(Utf8StringCR propertyName) {
+    static const auto classIdProperties = std::set<Utf8String,CompareIUtf8Ascii> {
+        ECDBSYS_PROP_ECClassId,
+        ECDBSYS_PROP_SourceECClassId,
+        ECDBSYS_PROP_TargetECClassId,
+        ECDBSYS_PROP_NavPropRelECClassId
+    };
+    return classIdProperties.find(propertyName) != classIdProperties.end();
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -172,7 +186,11 @@ BentleyStatus ECSqlRowAdaptor::RenderLong(BeJsValue out, IECSqlValue const& in, 
             if (!id.IsValid()) {
                 return SUCCESS;
             }
-            if ((m_options.m_classIdToClassNames || m_options.m_useJsName) && prop->GetName().EndsWith(ECDBSYS_PROP_ECClassId)) {
+            if(m_options.m_doNotConvertClassIdsToClassNamesWhenAliased && !IsClassIdProperty(prop->GetName())) {
+                out = id.ToHexStr();
+                return SUCCESS;bb
+            }
+            if (m_options.m_classIdToClassNames || m_options.m_useJsName) {
                 auto classCP = m_ecdb.Schemas().GetClass(id, in.GetColumnInfo().GetRootClass().GetTableSpace().c_str());
                 if (classCP != nullptr) {
                     ECN::ECJsonUtilities::ClassNameToJson(out, *classCP);
@@ -243,6 +261,7 @@ BentleyStatus ECSqlRowAdaptor::RenderGeometryProperty(BeJsValue out, IECSqlValue
     out.From(jsonDoc);
     return SUCCESS;
 }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -287,15 +306,15 @@ BentleyStatus ECSqlRowAdaptor::RenderNavigationProperty(BeJsValue out, IECSqlVal
     out[jsId] = navIdVal.GetId<ECInstanceId>().ToHexStr();
     auto const& relClassIdVal = in[ECDBSYS_PROP_NavPropRelECClassId];
     if (!relClassIdVal.IsNull()) {
+        const auto classId = relClassIdVal.GetId<ECN::ECClassId>();
         if (m_options.m_classIdToClassNames || m_options.m_useJsName) {
-            const auto classId = relClassIdVal.GetId<ECN::ECClassId>();
             auto classCP = m_ecdb.Schemas().GetClass(classId, in.GetColumnInfo().GetRootClass().GetTableSpace().c_str());
             if (classCP != nullptr) {
                 ECN::ECJsonUtilities::ClassNameToJson(out[jsClassId], *classCP);
                 return SUCCESS;
             }
         }
-        out[jsClassId] = relClassIdVal.GetId<ECN::ECClassId>().ToHexStr();
+        out[jsClassId] = classId.ToHexStr();
     }
     return SUCCESS;
 }
@@ -357,6 +376,7 @@ void ECSqlRowAdaptor::GetMetaData(ECSqlRowProperty::List& list, ECSqlStatement c
     const int count = stmt.GetColumnCount();
     using ExtendedType = ExtendedTypeHelper::ExtendedType;
     std::map<std::string, int> uniqueJsMembers;
+    std::map<std::string, int> uniqueECSqlMembers;
     for (int i = 0; i < count; i++) {
         Utf8String jsName;
         auto const& val = stmt.GetValue(i);
@@ -440,8 +460,44 @@ void ECSqlRowAdaptor::GetMetaData(ECSqlRowProperty::List& list, ECSqlStatement c
             suffix.Sprintf("_%d", uniqueJsMembers[jsName]);
             jsName.append(suffix);
         }
+        if (uniqueECSqlMembers.find(name) == uniqueECSqlMembers.end()) {
+            uniqueECSqlMembers[name] = 0;
+        } else {
+            uniqueECSqlMembers[name]++;
+            Utf8String suffix;
+            suffix.Sprintf("_%d", uniqueECSqlMembers[name]);
+            name.append(suffix);
+        }
         list.append(className, accessString, jsName, name, typeName, col.IsGeneratedProperty(), extendType, i);
     }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSqlRowAdaptor::Options::FromJson(BeJsValue opts) {
+    if (opts.isBoolMember(JAbbreviateBlobs))
+        m_abbreviateBlobs = opts[JAbbreviateBlobs].asBool();
+
+    if (opts.isBoolMember(JClassIdsToClassNames))
+        m_classIdToClassNames = opts[JClassIdsToClassNames].asBool();
+
+    if (opts.isBoolMember(JUseJsName))
+        m_useJsName = opts[JUseJsName].asBool();
+
+    if (opts.isBoolMember(JDoNotConvertClassIdsToClassNamesWhenAliased))
+        m_doNotConvertClassIdsToClassNamesWhenAliased = opts[JDoNotConvertClassIdsToClassNamesWhenAliased].asBool();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ECSqlRowAdaptor::Options::ToJson(BeJsValue opts) const {
+    opts.SetEmptyObject();
+    opts[JAbbreviateBlobs] = m_abbreviateBlobs;
+    opts[JClassIdsToClassNames] = m_classIdToClassNames;
+    opts[JUseJsName] = m_useJsName;
+    opts[JDoNotConvertClassIdsToClassNamesWhenAliased] = m_doNotConvertClassIdsToClassNamesWhenAliased;
 }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
