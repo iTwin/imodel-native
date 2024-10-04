@@ -67,7 +67,7 @@ ECSqlStatus ArrayECSqlBinder::_OnBeforeStep()
 // @bsimethod
 //---------------------------------------------------------------------------------------
 ArrayECSqlBinder::JsonValueBinder::JsonValueBinder(ECDbCR ecdb, ECSqlTypeInfo const& typeInfo, rapidjson::Value& json, rapidjson::MemoryPoolAllocator<>& jsonAllocator) 
-    : m_ecdb(&ecdb), m_typeInfo(typeInfo), m_json(&json), m_jsonAllocator(&jsonAllocator), m_currentArrayElementBinder(nullptr), m_binderInfo(BinderInfo::BinderType::JsonValueBinderType)
+    : IECSqlBinder(), m_ecdb(&ecdb), m_typeInfo(typeInfo), m_json(&json), m_jsonAllocator(&jsonAllocator), m_currentArrayElementBinder(nullptr), m_binderInfo(BinderInfo::BinderType::JsonValueBinderType)
     {
     BeAssert(m_json != nullptr);
     BeAssert(m_jsonAllocator != nullptr);

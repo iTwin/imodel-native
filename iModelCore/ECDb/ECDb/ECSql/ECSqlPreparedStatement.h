@@ -104,7 +104,6 @@ public:
     ECSqlParameterMap& GetParameterMapR() { return m_parameterMap; }
     BeSQLite::Statement& GetSqliteStatement() { return m_sqliteStatement; }
     bool GetOnBeforeFirstStepNotCalled() { return m_onBeforeFirstStepNotCalled; }
-    void SetOnBeforeFirstStepNotCalled(bool val) { m_onBeforeFirstStepNotCalled = val; }
     };
 
 //=======================================================================================

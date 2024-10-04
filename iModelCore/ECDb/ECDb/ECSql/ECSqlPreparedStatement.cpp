@@ -269,7 +269,7 @@ ECSqlStatus SingleECSqlPreparedStatement::_Reset()
     if (nativeSqlStat != BE_SQLITE_OK)
         return ECSqlStatus(nativeSqlStat);
 
-    SetOnBeforeFirstStepNotCalled(true);
+    m_onBeforeFirstStepNotCalled = true;
     return ECSqlStatus::Success;
     }
 
