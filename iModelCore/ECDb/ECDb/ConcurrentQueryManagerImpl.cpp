@@ -1899,29 +1899,33 @@ bool ECSqlParams::TryBindTo(ECSqlStatement& stmt, std::string& err) const {
             case ECSqlParam::Type::Id:
                 st = stmt.BindId(index, param.GetValueId());  break;
             case ECSqlParam::Type::IdSet: {
-                if(stmt.GetBinderInfo(index).CheckIfBinderIsForInVirtualSetOrIdSetVirtualTable() && stmt.GetBinderInfo(index).GetBinderType() == BinderInfo::BinderType::VirtualSetECSqlBinderType)
+                BinderInfo const& binderInfo = stmt.GetBinderInfo(index);
+                if(binderInfo.GetBinderType() == BinderInfo::BinderType::VirtualSetECSqlBinderType)
                 {
                     std::shared_ptr<IdSet<BeInt64Id>> idSet = std::make_shared<IdSet<BeInt64Id>>(param.GetValueIdSet());
                     st = stmt.BindVirtualSet(index, idSet);
                 }
-                else if(stmt.GetBinderInfo(index).CheckIfBinderIsForInVirtualSetOrIdSetVirtualTable() && stmt.GetBinderInfo(index).GetBinderType() == BinderInfo::BinderType::ArrayECSqlBinderType)
+                else if(binderInfo.GetBinderType() == BinderInfo::BinderType::ArrayECSqlBinderType && binderInfo.CheckIfBinderIsForIdSetVirtualTable())
                 {
+                    bool allElementsAdded = true;
                     IECSqlBinder& binder = stmt.GetBinder(index);
                     IdSet<BeInt64Id> set(param.GetValueIdSet());
                     for(auto& ids: set)
                     {
                         st = ids.IsValid() ? binder.AddArrayElement().BindInt64((int64_t) ids.GetValue()) : binder.AddArrayElement().BindNull();
-                        if(st != ECSqlStatus::Success)
+                        if(!st.IsSuccess())
                         {
-                            err = SqlPrintfString("Failed to bind id '%s' while binding IdSet in IdSet VT", ids.ToHexStr().c_str()).GetUtf8CP();
-                            return false;
+                            allElementsAdded = false;
                         }
                     }
+                    if(allElementsAdded) // If even one array element has failed to be added we set the status for the entire operation as ECSqlStatus::Error although for the time being we don't do anything with status even if it fails
+                        st = ECSqlStatus::Success;
+                    else
+                        st = ECSqlStatus::Error;
                 }
                 else
                 {
-                    err = "Unsuported binder type for IdSet";
-                    return false;
+                    st = ECSqlStatus::Error;
                 }
                 
                 break;

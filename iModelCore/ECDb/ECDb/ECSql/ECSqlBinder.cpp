@@ -86,11 +86,7 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContex
         {
         if (FunctionCallExp const* parentExp = exp->GetAsCP<FunctionCallExp>()) {
             if (parentExp->GetFunctionName().EqualsI("InVirtualSet") && parentExp->GetChildren()[0] == &parameterExp)
-                {
-                std::unique_ptr<VirtualSetBinder> virtualSetBinder = CreateVirtualSetBinder(ctx, parameterExp.GetTypeInfo(), paramNameGen);
-                virtualSetBinder->GetBinderInfo().SetIfBinderIsForInVirtualSetOrIdSetVirtualTable(true);
-                return virtualSetBinder;
-                }
+                return CreateVirtualSetBinder(ctx, parameterExp.GetTypeInfo(), paramNameGen);
             }
         }
 
@@ -100,7 +96,7 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContex
             if (parentExp->IsTableValuedFunc() && parentExp->GetFunctionName().EqualsI("IdSet") && parentExp->GetChildren()[0] == &parameterExp)
                 {
                 std::unique_ptr<ArrayECSqlBinder> arrayECsqlBinder = CreateArrayECSqlBinder(ctx, parameterExp.GetTypeInfo(), paramNameGen);
-                arrayECsqlBinder->GetBinderInfo().SetIfBinderIsForInVirtualSetOrIdSetVirtualTable(true);
+                arrayECsqlBinder->GetBinderInfo().SetIfBinderIsForIdSetVirtualTable(true);
                 return arrayECsqlBinder;
                 }
             }

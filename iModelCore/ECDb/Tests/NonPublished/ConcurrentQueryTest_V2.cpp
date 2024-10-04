@@ -1076,7 +1076,7 @@ TEST_F(ConcurrentQueryFixture, ReaderBindingForIdSetVirtualTable) {
         int i = 1;
         while(vsReaderIdSet.Next()) {
         auto classRow = vsReaderIdSet.GetRow();
-        ASSERT_EQ(i*10, classRow[0].asInt64());
+        ASSERT_EQ(i*10, BeStringUtilities::ParseHex(classRow[0].asString().c_str()));
         i++; 
         vsRowCount++;
         }
@@ -1110,15 +1110,11 @@ TEST_F(ConcurrentQueryFixture, ReaderBindingForIdSetVirtualTable) {
         ECSqlReader  vsReaderIdSet(mgr, "select ECInstanceId from meta.ECClassDef, test.IdSet(?) where ECInstanceId = id",
             ECSqlParams().BindId(1, BeInt64Id(33)));
 
-        try
+        while(vsReaderIdSet.Next())
         {
-        vsReaderIdSet.Next();
+            vsRowCount++;
         }
-        catch (const std::runtime_error& error)
-        {
-        ASSERT_EQ(vsRowCount,0) <<  error.what();
-        }
-        
+        ASSERT_EQ(vsRowCount,0);
     }
     
 }

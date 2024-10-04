@@ -34,13 +34,13 @@ struct BinderInfo final
         
     private:
         BinderType m_binderType = BinderType::NotSpecified;
-        bool m_binderIsForInVirtualSetOrIdSetVirtualTable = false;
+        bool m_binderIsForIdSetVirtualTable = false;
     public:
-        BinderInfo(BinderType binderType) : m_binderType(binderType), m_binderIsForInVirtualSetOrIdSetVirtualTable(false){}
-        BinderInfo(BinderType binderType, bool binderIsForInVirtualSetOrIdSetVirtualTable) : m_binderType(binderType), m_binderIsForInVirtualSetOrIdSetVirtualTable(binderIsForInVirtualSetOrIdSetVirtualTable){}
+        BinderInfo(BinderType binderType) : m_binderType(binderType), m_binderIsForIdSetVirtualTable(false){}
+        BinderInfo(BinderType binderType, bool binderIsForInVirtualSetOrIdSetVirtualTable) : m_binderType(binderType), m_binderIsForIdSetVirtualTable(binderIsForInVirtualSetOrIdSetVirtualTable){}
         BinderInfo::BinderType GetBinderType() const { return m_binderType; }
-        bool CheckIfBinderIsForInVirtualSetOrIdSetVirtualTable() const { return m_binderIsForInVirtualSetOrIdSetVirtualTable; }
-        void SetIfBinderIsForInVirtualSetOrIdSetVirtualTable(bool val) { m_binderIsForInVirtualSetOrIdSetVirtualTable = val; }
+        bool CheckIfBinderIsForIdSetVirtualTable() const { return m_binderIsForIdSetVirtualTable; }
+        void SetIfBinderIsForIdSetVirtualTable(bool val) { m_binderIsForIdSetVirtualTable = val; }
     };
 
 
