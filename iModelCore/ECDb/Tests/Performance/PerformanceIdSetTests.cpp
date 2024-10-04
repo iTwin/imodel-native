@@ -44,19 +44,19 @@ TEST_F(PerformanceIdSetTests, SimpleComparisonBetweenInVirtualSet_and_IdSet)
             i++;
         }
         timer_InVirtual_Set.Stop();
-        LOGTODB(TEST_DETAILS, timer_InVirtual_Set.GetElapsedSeconds(), i);
+        LOGTODB(TEST_DETAILS, timer_InVirtual_Set.GetElapsedSeconds(), i, SqlPrintfString("Statement: \"%s\"", stmt_With_InvirtualSet.GetECSql()));
 
         iterator_set = emptyIdset.begin();
         i = 0;
         StopWatch timer_IdSet(true);
-        while(stmt_With_InvirtualSet.Step() == BE_SQLITE_ROW)
+        while(stmt_With_IdSet.Step() == BE_SQLITE_ROW)
         {
-            ASSERT_EQ((*iterator_set).GetValue(), stmt_With_InvirtualSet.GetValueInt64(0));
+            ASSERT_EQ((*iterator_set).GetValue(), stmt_With_IdSet.GetValueInt64(0));
             ++iterator_set;
             i++;
         }
         timer_IdSet.Stop();
-        LOGTODB(TEST_DETAILS, timer_IdSet.GetElapsed(), i);
+        LOGTODB(TEST_DETAILS, timer_IdSet.GetElapsedSeconds(), i, SqlPrintfString("Statement: \"%s\"", stmt_With_IdSet.GetECSql()));
     }
 
 //---------------------------------------------------------------------------------------
@@ -70,12 +70,12 @@ TEST_F(PerformanceIdSetTests, SimpleComparisonBetweenInVirtualSet_and_IdSet_with
         IdSet<BeInt64Id> emptyIdset;
 
         ASSERT_EQ(ECSqlStatus::Success, stmt_With_InvirtualSet.Prepare(m_ecdb, "with cnt(x) as (values(1) union select x+1 from cnt where x < 1000000 ) select * from cnt where invirtualset(?, x)"));
-        ASSERT_EQ(ECSqlStatus::Success, stmt_With_IdSet.Prepare(m_ecdb, "select x from ECVLib.IdSet(?), (with cnt(x) as (values(1) union select x+1 from cnt where x < 1000000 ) select * from cnt) where id = x"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt_With_IdSet.Prepare(m_ecdb, "select x from ECVLib.IdSet(?), (with cnt(x) as (values(1) union select x+1 from cnt where x < 1000000 ) select * from cnt) where x = id"));
         
         IECSqlBinder& binder = stmt_With_IdSet.GetBinder(1);
         for(int i = 0;i<2000;i++)
         {
-            int randNum = std::rand()%(50000-1 + 1) + 1;
+            int randNum = i+1;
             ASSERT_EQ(ECSqlStatus::Success, binder.AddArrayElement().BindInt64(randNum));
             emptyIdset.insert(BeInt64Id(randNum));
         } 
@@ -93,18 +93,88 @@ TEST_F(PerformanceIdSetTests, SimpleComparisonBetweenInVirtualSet_and_IdSet_with
             i++;
         }
         timer_InVirtual_Set.Stop();
-        LOGTODB(TEST_DETAILS, timer_InVirtual_Set.GetElapsedSeconds(), i);
+        LOGTODB(TEST_DETAILS, timer_InVirtual_Set.GetElapsedSeconds(), i, SqlPrintfString("Statement: \"%s\"", stmt_With_InvirtualSet.GetECSql()));
 
         iterator_set = emptyIdset.begin();
         i = 0;
         StopWatch timer_IdSet(true);
-        while(stmt_With_InvirtualSet.Step() == BE_SQLITE_ROW)
+        while(stmt_With_IdSet.Step() == BE_SQLITE_ROW)
         {
-            ASSERT_EQ((*iterator_set).GetValue(), stmt_With_InvirtualSet.GetValueInt64(0));
+            ASSERT_EQ((*iterator_set).GetValue(), stmt_With_IdSet.GetValueInt64(0));
             ++iterator_set;
             i++;
         }
         timer_IdSet.Stop();
-        LOGTODB(TEST_DETAILS, timer_IdSet.GetElapsed(), i);
+        LOGTODB(TEST_DETAILS, timer_IdSet.GetElapsedSeconds(), i, SqlPrintfString("Statement: \"%s\"", stmt_With_IdSet.GetECSql()));
+    }
+
+    //---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PerformanceIdSetTests, SimpleComparisonBetweenInVirtualSet_and_IdSet_with_custom_schema)
+    {
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SimpleComparisonBetweenInVirtualSet_and_IdSet_with_custom_schema.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Foo" >
+                <ECProperty propertyName="Ids" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+        ECSqlStatement insert_stmt;
+        ASSERT_EQ(ECSqlStatus::Success, insert_stmt.Prepare(m_ecdb, "insert into ts.Foo(Ids) values(?)"));
+        for(int i = 0;i<1000000;i++)
+        {
+            insert_stmt.ClearBindings();
+            insert_stmt.Reset();
+            int rand = (i+1) % 70000;
+            insert_stmt.BindInt64(1, rand);
+            ASSERT_EQ(BE_SQLITE_DONE, insert_stmt.Step());
+        }
+
+        std::vector<Utf8String> v = {"ECInstanceId", "Ids"};
+        for(auto& str: v)
+        {
+            ECSqlStatement stmt_With_InvirtualSet;
+            ECSqlStatement stmt_With_IdSet;
+            IdSet<BeInt64Id> emptyIdset;
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt_With_InvirtualSet.Prepare(m_ecdb,SqlPrintfString("select %s from ts.Foo where invirtualset(?, %s) group by %s", str.c_str(), str.c_str(), str.c_str())));
+            ASSERT_EQ(ECSqlStatus::Success, stmt_With_IdSet.Prepare(m_ecdb,SqlPrintfString("select %s from ECVLib.IdSet(?), ts.Foo where %s = id group by %s", str.c_str(), str.c_str(), str.c_str())));
+            
+            IECSqlBinder& binder = stmt_With_IdSet.GetBinder(1);
+            for(int i = 0;i<2000;i++)
+            {
+                int randNum = i+1;
+                ASSERT_EQ(ECSqlStatus::Success, binder.AddArrayElement().BindInt64(randNum));
+                emptyIdset.insert(BeInt64Id(randNum));
+            } 
+            std::shared_ptr<IdSet<BeInt64Id>> idSetPtr = std::make_shared<IdSet<BeInt64Id>>(emptyIdset);
+            ASSERT_EQ(ECSqlStatus::Success, stmt_With_InvirtualSet.BindVirtualSet(1, idSetPtr));
+
+
+            auto iterator_set = emptyIdset.begin();
+            int i = 0;
+            StopWatch timer_InVirtual_Set(true);
+            while(stmt_With_InvirtualSet.Step() == BE_SQLITE_ROW)
+            {
+                ASSERT_EQ((*iterator_set).GetValue(), stmt_With_InvirtualSet.GetValueInt64(0));
+                ++iterator_set;
+                i++;
+            }
+            timer_InVirtual_Set.Stop();
+            LOGTODB(TEST_DETAILS, timer_InVirtual_Set.GetElapsedSeconds(), i, SqlPrintfString("Statement: \"%s\"", stmt_With_InvirtualSet.GetECSql()));
+
+            iterator_set = emptyIdset.begin();
+            i = 0;
+            StopWatch timer_IdSet(true);
+            while(stmt_With_IdSet.Step() == BE_SQLITE_ROW)
+            {
+                ASSERT_EQ((*iterator_set).GetValue(), stmt_With_IdSet.GetValueInt64(0));
+                ++iterator_set;
+                i++;
+            }
+            timer_IdSet.Stop();
+            LOGTODB(TEST_DETAILS, timer_IdSet.GetElapsedSeconds(), i, SqlPrintfString("Statement: \"%s\"", stmt_With_IdSet.GetECSql()));
+        }
     }
 END_ECDBUNITTESTS_NAMESPACE
