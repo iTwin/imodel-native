@@ -59,7 +59,7 @@ struct ECSqlBinder : IECSqlBinder
         bool m_hasToCallOnBeforeStep = false;
         bool m_hasToCallOnClearBindings = false;
 
-        virtual ECSqlStatus _OnBeforeStep() { return ECSqlStatus::Success; }
+        virtual ECSqlStatus _OnBeforeFirstStep() { return ECSqlStatus::Success; }
         virtual void _OnClearBindings() {}
 
     protected:
@@ -89,7 +89,7 @@ struct ECSqlBinder : IECSqlBinder
 
         ECSqlTypeInfo const& GetTypeInfo() const { return m_typeInfo; }
 
-        ECSqlStatus OnBeforeStep() { return _OnBeforeStep(); }
+        ECSqlStatus OnBeforeFirstStep() { return _OnBeforeFirstStep(); }
         void OnClearBindings() { return _OnClearBindings(); }
     };
 
@@ -150,7 +150,7 @@ struct ECSqlParameterMap final
         int GetIndexForName(Utf8StringCR ecsqlParameterName) const;
 
         ECSqlBinder* AddBinder(ECSqlPrepareContext&, ParameterExp const&);
-        ECSqlStatus OnBeforeStep();
+        ECSqlStatus OnBeforeFirstStep();
 
         //Bindings in SQLite have already been cleared at this point. The method
         //allows subclasses to clean-up additional resources tied to binding parameters

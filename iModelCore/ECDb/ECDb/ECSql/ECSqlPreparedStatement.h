@@ -103,7 +103,6 @@ public:
     ECSqlParameterMap const& GetParameterMap() const { return m_parameterMap; }
     ECSqlParameterMap& GetParameterMapR() { return m_parameterMap; }
     BeSQLite::Statement& GetSqliteStatement() { return m_sqliteStatement; }
-    bool GetOnBeforeFirstStepNotCalled() { return m_onBeforeFirstStepNotCalled; }
     };
 
 //=======================================================================================

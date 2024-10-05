@@ -21,7 +21,7 @@ struct StructECSqlBinder final : public ECSqlBinder
         BentleyStatus Initialize(ECSqlPrepareContext&, SqlParamNameGenerator&);
 
         void _OnClearBindings() override;
-        ECSqlStatus _OnBeforeStep() override;
+        ECSqlStatus _OnBeforeFirstStep() override;
 
         ECSqlStatus _BindNull() override;
         ECSqlStatus _BindBoolean(bool value) override;

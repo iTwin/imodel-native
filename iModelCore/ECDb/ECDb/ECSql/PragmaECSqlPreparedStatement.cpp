@@ -605,6 +605,7 @@ ECSqlStatus PragmaECSqlPreparedStatement::_Reset() {
     if (rc != BE_SQLITE_OK)
         return ECSqlStatus(rc);
 
+    m_onBeforeFirstStepNotCalled = true;
     return ECSqlStatus::Success;
 }
 //---------------------------------------------------------------------------------------
@@ -634,8 +635,13 @@ DbResult PragmaECSqlPreparedStatement::DoStep() {
     if (SUCCESS != AssertIsValid())
         return BE_SQLITE_ERROR;
 
-    if (!m_parameterMap.OnBeforeStep().IsSuccess())
-        return BE_SQLITE_ERROR;
+    if(m_onBeforeFirstStepNotCalled)
+    {
+        if (!m_parameterMap.OnBeforeFirstStep().IsSuccess())
+            return BE_SQLITE_ERROR;
+        m_onBeforeFirstStepNotCalled = false;
+    }
+    
 
     return m_resultSet->Step();
 }

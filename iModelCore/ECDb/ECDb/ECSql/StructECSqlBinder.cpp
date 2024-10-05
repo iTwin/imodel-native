@@ -43,11 +43,11 @@ BentleyStatus StructECSqlBinder::Initialize(ECSqlPrepareContext& ctx, SqlParamNa
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructECSqlBinder::_OnBeforeStep()
+ECSqlStatus StructECSqlBinder::_OnBeforeFirstStep()
     {
     for (auto const& kvPair : m_memberBinders)
         {
-        auto stat = kvPair.second->OnBeforeStep();
+        auto stat = kvPair.second->OnBeforeFirstStep();
         if (!stat.IsSuccess())
             return stat;
         }

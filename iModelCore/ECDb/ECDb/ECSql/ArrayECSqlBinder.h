@@ -76,7 +76,7 @@ private:
     void Initialize();
 
     void _OnClearBindings() override { Initialize(); }
-    ECSqlStatus _OnBeforeStep() override;
+    ECSqlStatus _OnBeforeFirstStep() override;
 
     ECSqlStatus _BindNull() override { _OnClearBindings(); return ECSqlStatus::Success; }
     ECSqlStatus _BindBoolean(bool value) override { return m_rootBinder->BindBoolean(value); }

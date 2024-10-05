@@ -335,11 +335,11 @@ ECSqlBinder* ECSqlParameterMap::AddBinder(ECSqlPrepareContext& ctx, ParameterExp
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlParameterMap::OnBeforeStep()
+ECSqlStatus ECSqlParameterMap::OnBeforeFirstStep()
     {
     for (ECSqlBinder* binder : m_bindersToCallOnStep)
         {
-        ECSqlStatus stat = binder->OnBeforeStep();
+        ECSqlStatus stat = binder->OnBeforeFirstStep();
         if (!stat.IsSuccess())
             return stat;
         }

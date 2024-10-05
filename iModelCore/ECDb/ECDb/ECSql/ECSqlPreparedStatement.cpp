@@ -211,9 +211,9 @@ DbResult SingleECSqlPreparedStatement::DoStep()
     if (SUCCESS != AssertIsValid())
         return BE_SQLITE_ERROR;
 
-    if(GetOnBeforeFirstStepNotCalled())
+    if(m_onBeforeFirstStepNotCalled)
     {
-        if (!m_parameterMap.OnBeforeStep().IsSuccess())
+        if (!m_parameterMap.OnBeforeFirstStep().IsSuccess())
             return BE_SQLITE_ERROR;
         m_onBeforeFirstStepNotCalled = false;
     }

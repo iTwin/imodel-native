@@ -34,7 +34,7 @@ void ArrayECSqlBinder::Initialize()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlStatus ArrayECSqlBinder::_OnBeforeStep()
+ECSqlStatus ArrayECSqlBinder::_OnBeforeFirstStep()
     {
     const uint32_t arrayLength = m_json.IsNull() ? 0 : (uint32_t) m_json.Size();
     // from the API we cannot tell between binding NULL and binding an empty array. so we treat them
