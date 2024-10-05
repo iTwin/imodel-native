@@ -11,8 +11,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ArrayECSqlBinder::ArrayECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& paramNameGen)
-    : ECSqlBinder(ctx, typeInfo, paramNameGen, 1, true, true, BinderInfo::BinderType::ArrayECSqlBinderType)
+ArrayECSqlBinder::ArrayECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& paramNameGen, bool isForIdSet)
+    : ECSqlBinder(ctx, typeInfo, paramNameGen, 1, true, true), m_binderInfo(BinderInfo::BinderType::Array, isForIdSet)
     {
     BeAssert(GetTypeInfo().IsArray());
     Initialize();
@@ -67,7 +67,7 @@ ECSqlStatus ArrayECSqlBinder::_OnBeforeStep()
 // @bsimethod
 //---------------------------------------------------------------------------------------
 ArrayECSqlBinder::JsonValueBinder::JsonValueBinder(ECDbCR ecdb, ECSqlTypeInfo const& typeInfo, rapidjson::Value& json, rapidjson::MemoryPoolAllocator<>& jsonAllocator) 
-    : IECSqlBinder(), m_ecdb(&ecdb), m_typeInfo(typeInfo), m_json(&json), m_jsonAllocator(&jsonAllocator), m_currentArrayElementBinder(nullptr), m_binderInfo(BinderInfo::BinderType::JsonValueBinderType)
+    : IECSqlBinder(), m_ecdb(&ecdb), m_typeInfo(typeInfo), m_json(&json), m_jsonAllocator(&jsonAllocator), m_currentArrayElementBinder(nullptr), m_binderInfo(BinderInfo::BinderType::JsonValue)
     {
     BeAssert(m_json != nullptr);
     BeAssert(m_jsonAllocator != nullptr);

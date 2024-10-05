@@ -176,7 +176,7 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
                 void _AddBinder(IECSqlBinder& binder) override { BeAssert(m_idBinder == nullptr); m_idBinder = &binder; }
 
             public:
-                ProxyECInstanceIdECSqlBinder() : IProxyECSqlBinder(), m_binderInfo(BinderInfo::BinderType::ProxyECInstanceIdECSqlBinderType) {}
+                ProxyECInstanceIdECSqlBinder() : IProxyECSqlBinder(), m_binderInfo(BinderInfo::BinderType::ProxyECInstanceId) {}
 
                 IECSqlBinder& GetBinder() { BeAssert(m_idBinder != nullptr); return *m_idBinder; }
 
@@ -219,7 +219,7 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
                 void _AddBinder(IECSqlBinder& binder) override { m_binders.push_back(&binder); }
 
             public:
-                ProxyECSqlBinder() : IProxyECSqlBinder(),m_binderInfo(BinderInfo::BinderType::ProxyECSqlBinderType) {}
+                ProxyECSqlBinder() : IProxyECSqlBinder(),m_binderInfo(BinderInfo::BinderType::Proxy) {}
             };
 
 

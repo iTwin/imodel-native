@@ -58,16 +58,14 @@ struct ECSqlBinder : IECSqlBinder
         std::vector<Utf8String> m_mappedSqlParameterNames;
         bool m_hasToCallOnBeforeStep = false;
         bool m_hasToCallOnClearBindings = false;
-        BinderInfo m_binderInfo;
 
         virtual ECSqlStatus _OnBeforeStep() { return ECSqlStatus::Success; }
         virtual void _OnClearBindings() {}
-        BinderInfo& _GetBinderInfo() override { return m_binderInfo; };
 
     protected:
-        ECSqlBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, SqlParamNameGenerator&, int mappedSqlParameterCount, bool hasToCallOnBeforeStep, bool hasToCallOnClearBindings, BinderInfo::BinderType binderType);
+        ECSqlBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, SqlParamNameGenerator&, int mappedSqlParameterCount, bool hasToCallOnBeforeStep, bool hasToCallOnClearBindings);
         //! Use this ctor for compound binders where the mapped sql parameter count depends on its member binders
-        ECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& paramNameGen, bool hasToCallOnBeforeStep, bool hasToCallOnClearBindings, BinderInfo::BinderType binderType) : ECSqlBinder(ctx, typeInfo, paramNameGen, -1, hasToCallOnBeforeStep, hasToCallOnClearBindings, binderType) {}
+        ECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& paramNameGen, bool hasToCallOnBeforeStep, bool hasToCallOnClearBindings) : ECSqlBinder(ctx, typeInfo, paramNameGen, -1, hasToCallOnBeforeStep, hasToCallOnClearBindings) {}
 
         void AddChildMemberMappedSqlParameterIndices(ECSqlBinder const& memberBinder)
             {
@@ -117,7 +115,7 @@ struct ECSqlBinderFactory final
         static std::unique_ptr<IdECSqlBinder> CreateIdBinder(ECSqlPrepareContext&, PropertyMap const&, ECSqlSystemPropertyInfo const&, ECSqlBinder::SqlParamNameGenerator&);
         static std::unique_ptr<IdECSqlBinder> CreateIdBinderForQuery(ECSqlPrepareContext&, ECSqlTypeInfo const&, ECSqlBinder::SqlParamNameGenerator&);
         static std::unique_ptr<VirtualSetBinder> CreateVirtualSetBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, ECSqlBinder::SqlParamNameGenerator&);
-        static std::unique_ptr<ArrayECSqlBinder> CreateArrayECSqlBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, ECSqlBinder::SqlParamNameGenerator&);
+        static std::unique_ptr<ArrayECSqlBinder> CreateArrayECSqlBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, ECSqlBinder::SqlParamNameGenerator&, bool);
     };
 
 //=======================================================================================

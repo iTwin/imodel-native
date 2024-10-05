@@ -18,29 +18,27 @@ struct BinderInfo final
     public:
         enum class BinderType
         {
-            ArrayECSqlBinderType,
-            IdECSqlBinderType,
-            VirtualSetECSqlBinderType,
-            NavigationPropertyECSqlBinderType,
-            PointECSqlBinderType,
-            PrimitiveECSqlBinderType,
-            StructECSqlBinderType,
-            JsonValueBinderType,
-            NoopECSqlBinderType,
-            ProxyECInstanceIdECSqlBinderType,
-            ProxyECSqlBinderType, 
-            NotSpecified
+            Array,
+            Id,
+            VirtualSet,
+            NavigationProperty,
+            Point,
+            Primitive,
+            Struct,
+            JsonValue,
+            Noop,
+            ProxyECInstanceId,
+            Proxy, 
         };
         
     private:
-        BinderType m_binderType = BinderType::NotSpecified;
-        bool m_binderIsForIdSetVirtualTable = false;
+        BinderType m_binderType ;
+        bool m_binderIsForIdSet = false;
     public:
-        BinderInfo(BinderType binderType) : m_binderType(binderType), m_binderIsForIdSetVirtualTable(false){}
-        BinderInfo(BinderType binderType, bool binderIsForInVirtualSetOrIdSetVirtualTable) : m_binderType(binderType), m_binderIsForIdSetVirtualTable(binderIsForInVirtualSetOrIdSetVirtualTable){}
-        BinderInfo::BinderType GetBinderType() const { return m_binderType; }
-        bool CheckIfBinderIsForIdSetVirtualTable() const { return m_binderIsForIdSetVirtualTable; }
-        void SetIfBinderIsForIdSetVirtualTable(bool val) { m_binderIsForIdSetVirtualTable = val; }
+        explicit BinderInfo(BinderType binderType) : m_binderType(binderType), m_binderIsForIdSet(false){}
+        BinderInfo(BinderType binderType, bool binderIsForInVirtualSetOrIdSetVirtualTable) : m_binderType(binderType), m_binderIsForIdSet(binderIsForInVirtualSetOrIdSetVirtualTable){}
+        BinderType GetType() const { return m_binderType; }
+        bool IsForIdSet() const { return m_binderIsForIdSet; }
     };
 
 
@@ -90,7 +88,7 @@ private:
     virtual IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) = 0;
     virtual IECSqlBinder& _AddArrayElement() = 0;
 
-    virtual BinderInfo& _GetBinderInfo() = 0;
+    virtual BinderInfo const& _GetBinderInfo() = 0;
 
 
 protected:
@@ -236,7 +234,7 @@ public:
     ECDB_EXPORT IECSqlBinder& AddArrayElement();
 
     //! @return Gets the BinderInfo for the specific binder
-    ECDB_EXPORT BinderInfo& GetBinderInfo();
+    ECDB_EXPORT BinderInfo const& GetBinderInfo();
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -19,7 +19,7 @@ struct NoopECSqlBinder final : public IECSqlBinder
         static NoopECSqlBinder* s_singleton;
         BinderInfo m_binderInfo;
 
-        NoopECSqlBinder() : m_errorStatus(ECSqlStatus::Error), m_binderInfo(BinderInfo::BinderType::NoopECSqlBinderType) {}
+        NoopECSqlBinder() : m_errorStatus(ECSqlStatus::Error), m_binderInfo(BinderInfo::BinderType::Noop) {}
 
         ECSqlStatus _BindNull() override { return m_errorStatus; }
         ECSqlStatus _BindBoolean(bool value) override { return m_errorStatus; }

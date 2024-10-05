@@ -71,6 +71,7 @@ private:
 
     rapidjson::Document m_json;
     std::unique_ptr<JsonValueBinder> m_rootBinder = nullptr;
+    BinderInfo m_binderInfo;
 
     void Initialize();
 
@@ -95,9 +96,10 @@ private:
     IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override { return m_rootBinder->operator[](structMemberPropertyId); }
 
     IECSqlBinder& _AddArrayElement() override { return m_rootBinder->AddArrayElement(); }
+    BinderInfo const& _GetBinderInfo() override { return m_binderInfo; }
 
 public:
-    ArrayECSqlBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, SqlParamNameGenerator&);
+    ArrayECSqlBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, SqlParamNameGenerator&, bool);
     ~ArrayECSqlBinder() {}
     };
 
