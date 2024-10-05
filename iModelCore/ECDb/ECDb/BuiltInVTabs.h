@@ -57,7 +57,6 @@ struct IdSetModule : ECDbModule {
                 Utf8String m_text;
                 bset<uint64_t> m_idSet;
                 bset<uint64_t>::iterator m_index;
-                DbValueType m_ArgType;
 
             public:
                 IdSetCursor(IdSetTable& vt): ECDbCursor(vt){}

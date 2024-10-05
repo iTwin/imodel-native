@@ -209,19 +209,20 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::FilterJSONBasedOnType(BeJsConst& 
     }
     else if(val.isNumeric())
     {
-        if(val.asUInt64(-1) == -1)
+        uint64_t id = val.GetUInt64();
+        if(id == 0)
             return BE_SQLITE_ERROR;
-        else
-            m_idSet.insert(val.asUInt64(-1));
+        m_idSet.insert(id);
     }
     else if(val.isString())
     {
-        if(val.asString().EqualsIAscii(""))
+        uint64_t id;
+        BentleyStatus status = BeStringUtilities::ParseUInt64(id, val.ToUtf8CP());
+        if(status != BentleyStatus::SUCCESS)
             return BE_SQLITE_ERROR;
-        else if(val.asUInt64(-1) == -1)
+        if(id == 0)
             return BE_SQLITE_ERROR;
-        else
-           m_idSet.insert(val.asUInt64(-1));
+        m_idSet.insert(id);
     }
     else
         return BE_SQLITE_ERROR;
@@ -234,44 +235,28 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::FilterJSONBasedOnType(BeJsConst& 
 DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *idxStr, int argc, DbValue* argv) {
     int recompute = false;
     if( idxNum & 1 ){
-        m_ArgType = argv[0].GetValueType();
-        if(m_ArgType == DbValueType::TextVal)
-        {
+        if(argv[0].GetValueType() == DbValueType::TextVal) {
             Utf8String valueGiven = argv[0].GetValueText();
-            if(valueGiven.EqualsIAscii(""))
-            {
-                Reset();
-            }
-            else if(!valueGiven.EqualsIAscii(m_text))
-            {
+            if(!valueGiven.EqualsIAscii(m_text)) {
                 m_text = valueGiven;
                 recompute = true;
             }
-        }
-        else{
+        } else {
             Reset();
         }
-    }
-    else
-    {
+    } else {
         Reset();
     }
     if(recompute)
     {
         m_idSet.clear();
-        if(m_ArgType == DbValueType::TextVal && m_text.size() > 0)
-        {
-            BeJsDocument doc;
-            doc.Parse(m_text.c_str());
-            
-            if(FilterJSONStringIntoArray(doc) != BE_SQLITE_OK)
-            {
-                Reset();
-            }
-        }
-        else
+        BeJsDocument doc;
+        doc.Parse(m_text.c_str());
+        
+        if(FilterJSONStringIntoArray(doc) != BE_SQLITE_OK)
         {
             Reset();
+            return BE_SQLITE_ERROR;
         }
     }
     m_index = m_idSet.begin();
