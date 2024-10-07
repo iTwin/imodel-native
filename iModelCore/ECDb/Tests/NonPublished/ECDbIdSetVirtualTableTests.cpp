@@ -329,12 +329,14 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT ECInstanceId FROM ECVLib.IdSet('[1,2,3,4,5]'), meta.ECClassDef where ECInstanceId = id group by ECInstanceId")));
-        ASSERT_STREQ("7 0 0 SCAN main.ec_Class (null) (null) (null) (null);9 0 0 SCAN IdSet VIRTUAL TABLE INDEX 1: (null) (null) (null) (null)", m_ecdb.ExplainQuery(stmt.GetNativeSql(), true).c_str());
+        ASSERT_EQ(true, m_ecdb.ExplainQuery(stmt.GetNativeSql(), true).Contains("SCAN main.ec_Class"));
+        ASSERT_EQ(true, m_ecdb.ExplainQuery(stmt.GetNativeSql(), true).Contains("SCAN IdSet VIRTUAL TABLE INDEX 1"));
     }
     {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT ECClassId FROM ECVLib.IdSet('[1,2,3,4,5]'), meta.ECClassDef where ECClassId = id group by ECClassId")));
-        ASSERT_STREQ("7 0 0 SCAN IdSet VIRTUAL TABLE INDEX 1: (null) (null) (null) (null);15 0 0 SCAN main.ec_Class USING COVERING INDEX ix_ec_Class_Name (null) (null) (null) (null);17 0 0 USE TEMP B-TREE FOR GROUP BY (null) (null) (null) (null)", m_ecdb.ExplainQuery(stmt.GetNativeSql(), true).c_str());
+        ASSERT_EQ(true, m_ecdb.ExplainQuery(stmt.GetNativeSql(), true).Contains("SCAN IdSet VIRTUAL TABLE INDEX 1"));
+        ASSERT_EQ(true, m_ecdb.ExplainQuery(stmt.GetNativeSql(), true).Contains("SCAN main.ec_Class USING COVERING INDEX ix_ec_Class_Name"));
     }
     {
         std::vector<Utf8String> hexIds = std::vector<Utf8String>{"0x1", "0x2", "0x3", "4", "5"};

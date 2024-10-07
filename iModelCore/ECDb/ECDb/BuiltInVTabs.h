@@ -81,7 +81,7 @@ struct IdSetModule : ECDbModule {
         IdSetModule(ECDbR db): ECDbModule(
             db,
             NAME,
-            "CREATE TABLE x(id, json_array_ids hidden)",
+            "CREATE TABLE x(id PRIMARY KEY, json_array_ids hidden)",
             R"xml(<?xml version="1.0" encoding="utf-8" ?>
             <ECSchema
                     schemaName="ECVLib"
