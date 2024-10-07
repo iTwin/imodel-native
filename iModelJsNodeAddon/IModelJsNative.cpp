@@ -4468,8 +4468,26 @@ public:
     void OpenGroup(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_STRING_ARRAY(0, fileNames);
-        REQUIRE_ARGUMENT_BOOL(1, invert);
-        m_changeset.OpenGroup(Env(), fileNames, invert);
+        REQUIRE_ARGUMENT_ANY_OBJ(1, dbObj);
+        REQUIRE_ARGUMENT_BOOL(2, invert);
+
+        ECDb* ecdb = nullptr;
+        if (NativeDgnDb::InstanceOf(dbObj)) {
+            NativeDgnDb* addonDgndb = NativeDgnDb::Unwrap(dbObj);
+            ecdb = &addonDgndb->GetDgnDb();
+
+        } else if (NativeECDb::InstanceOf(dbObj)) {
+            NativeECDb* addonECDb = NativeECDb::Unwrap(dbObj);
+            ecdb = &addonECDb->GetECDb();
+
+        } else {
+            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb or NativeECDb object");
+        }
+
+        if (!ecdb || !ecdb->IsDbOpen())
+            BeNapi::ThrowJsException(Env(), "Provided db is not open");
+
+        m_changeset.OpenGroup(Env(), fileNames, *ecdb, invert);
         }
     void WriteToFile(NapiInfoCR info)
         {
