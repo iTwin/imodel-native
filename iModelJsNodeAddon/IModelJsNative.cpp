@@ -3531,7 +3531,34 @@ public:
                 return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
             idSet->insert(id);
         }
-        ECSqlStatus stat = m_binder->BindVirtualSet(idSet);
+        ECSqlStatus stat;
+        BinderInfo const& binderInfo = m_binder->GetBinderInfo();
+        if(binderInfo.GetType() == BinderInfo::BinderType::VirtualSet)
+            stat = m_binder->BindVirtualSet(idSet);
+        else if(binderInfo.GetType() == BinderInfo::BinderType::Array && binderInfo.IsForIdSet())
+        {
+            bool allElementsAdded = true;
+            for(auto it = idSet->begin(); it != idSet->end(); ++it)
+            {
+                if(!(*it).IsValid())
+                {
+                    allElementsAdded = false;
+                    break;
+                }
+                stat = m_binder->AddArrayElement().BindInt64((int64_t) (*it).GetValue());
+                if(!stat.IsSuccess())
+                {
+                    allElementsAdded = false;
+                    break;
+                }
+            }
+            if(allElementsAdded) // If even one array element has failed to be added we set the status for the entire operation as ECSqlStatus::Error
+                stat = ECSqlStatus::Success;
+            else
+                stat = ECSqlStatus::Error;
+        }
+        else
+            stat = ECSqlStatus::Error;
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
         }
 

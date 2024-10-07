@@ -1912,10 +1912,16 @@ bool ECSqlParams::TryBindTo(ECSqlStatement& stmt, std::string& err) const {
                     IdSet<BeInt64Id> set(param.GetValueIdSet());
                     for(auto& ids: set)
                     {
-                        st = ids.IsValid() ? binder.AddArrayElement().BindInt64((int64_t) ids.GetValue()) : binder.AddArrayElement().BindNull();
+                        if(!ids.IsValid())
+                        {
+                            allElementsAdded = false;
+                            break;
+                        }
+                        st = binder.AddArrayElement().BindInt64((int64_t) ids.GetValue());
                         if(!st.IsSuccess())
                         {
                             allElementsAdded = false;
+                            break;
                         }
                     }
                     if(allElementsAdded) // If even one array element has failed to be added we set the status for the entire operation as ECSqlStatus::Error although for the time being we don't do anything with status even if it fails
@@ -1924,9 +1930,7 @@ bool ECSqlParams::TryBindTo(ECSqlStatement& stmt, std::string& err) const {
                         st = ECSqlStatus::Error;
                 }
                 else
-                {
                     st = ECSqlStatus::Error;
-                }
                 
                 break;
             }
