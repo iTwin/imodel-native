@@ -116,12 +116,12 @@ TEST_F(PerformanceIdSetTests, SimpleComparisonBetweenInVirtualSet_and_IdSet_with
         ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SimpleComparisonBetweenInVirtualSet_and_IdSet_with_custom_schema.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo" >
-                <ECProperty propertyName="Ids" typeName="int" />
+                <ECProperty propertyName="UnIndexed_Prop" typeName="int" />
             </ECEntityClass>
         </ECSchema>)xml")));
 
         ECSqlStatement insert_stmt;
-        ASSERT_EQ(ECSqlStatus::Success, insert_stmt.Prepare(m_ecdb, "insert into ts.Foo(Ids) values(?)"));
+        ASSERT_EQ(ECSqlStatus::Success, insert_stmt.Prepare(m_ecdb, "insert into ts.Foo(UnIndexed_Prop) values(?)"));
         for(int i = 0;i<1000000;i++)
         {
             insert_stmt.ClearBindings();
@@ -131,7 +131,7 @@ TEST_F(PerformanceIdSetTests, SimpleComparisonBetweenInVirtualSet_and_IdSet_with
             ASSERT_EQ(BE_SQLITE_DONE, insert_stmt.Step());
         }
 
-        std::vector<Utf8String> v = {"ECInstanceId", "Ids"};
+        std::vector<Utf8String> v = {"ECInstanceId", "UnIndexed_Prop"};
         for(auto& str: v)
         {
             ECSqlStatement stmt_With_InvirtualSet;
