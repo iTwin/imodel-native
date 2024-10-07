@@ -4696,7 +4696,6 @@ public:
     }
 
     Napi::Value ToRow(NapiInfoCR info) {
-        const auto kClassIdsToClassNames = "classIdsToClassNames";
         if (!m_stmt.IsPrepared())
             THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
 
