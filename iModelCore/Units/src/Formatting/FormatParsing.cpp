@@ -1337,8 +1337,8 @@ BEU::Quantity FormatParsingSet::ParseBearingFormat(FormatProblemCode* probCode, 
 
     std::string matchedPrefix;
     std::string matchedSuffix;
-    std::string inString(m_input);
-    
+    std::string inString(m_input);    
+
     if (inString.empty()){
         if (probCode != nullptr){
             *probCode = FormatProblemCode::QT_NoValueOrUnitFound;
@@ -1504,17 +1504,6 @@ BEU::Quantity FormatParsingSet::ParseRatioFormat(FormatProblemCode* probCode, Fo
 
     return converted;
 }
-
-
-// BEU::Quantity FormatParsingSet::UpdateAndSetProblemCode(FormatProblemCode code, FormatProblemCode* probCode)
-// {
-//     m_problem.UpdateProblemCode(code);
-//     if (probCode != nullptr) {
-//         *probCode = m_problem.GetProblemCode();
-//     }
-
-//     return BEU::Quantity();
-// }
 
 
 END_BENTLEY_FORMATTING_NAMESPACE
