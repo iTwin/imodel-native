@@ -10,7 +10,7 @@ import { DbResult, Guid } from "@itwin/core-bentley";
 import { IModelJsNative } from "../NativeLibrary";
 import { getOutputDir, iModelJsNative } from "./utils";
 
-describe.only("ECSqlStatement", () => {
+describe("ECSqlStatement", () => {
   let db: IModelJsNative.ECDb;
   let stmt: IModelJsNative.ECSqlStatement;
   const outDir = getOutputDir();
