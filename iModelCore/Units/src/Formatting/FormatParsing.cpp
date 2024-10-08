@@ -935,7 +935,6 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatC
 
     _Analysis_assume_(inputUnit != nullptr);
 
-    // TODO - <Naron>: Feel like I can break this into pre-ParseAndProcessTokens and post-ParseAndProcessTokens to effectively reuse the existing code
     BEU::Quantity qty;
     if (format->GetPresentationType() == PresentationType::Azimuth){
         qty = ParseAzimuthFormat(probCode, format, inputUnit);
@@ -951,6 +950,7 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatC
 
     if (probCode != nullptr && *probCode != FormatProblemCode::NoProblems){
         m_problem.UpdateProblemCode(*probCode);
+        return qty;
     }
 
     if (!qty.IsNullQuantity())
@@ -1266,7 +1266,7 @@ BEU::Quantity FormatParsingSet::ParseAzimuthFormat(FormatProblemCode* probCode, 
     BEU::Quantity qty = ParseAndProcessTokens(cod, format, inputUnit);
 
     if (m_problem.IsProblem()){
-        if (probCode != nullptr){ //TODO - <Naron>: this is redundant here as m_problem will get updated in GetQuantity()
+        if (probCode != nullptr){ //TODO - this is redundant here as m_problem will get updated in GetQuantity(), its here now cuz we have 2 different ways tracking problem code
             *probCode = m_problem.GetProblemCode();
         }
         return converted;
@@ -1299,7 +1299,7 @@ BEU::Quantity FormatParsingSet::ParseAzimuthFormat(FormatProblemCode* probCode, 
     }
 
     if (std::fmod(azimuthBase, perigon) == 0.0 &&  !fmtP->IsCounterClockwiseAngle()){
-        converted = qty.ConvertTo(m_unit); //TODO - <Naron>: what if m_unit is null? should check it before
+        converted = qty.ConvertTo(m_unit); 
         return converted;
     }
 
@@ -1321,6 +1321,12 @@ BEU::Quantity FormatParsingSet::ParseAzimuthFormat(FormatProblemCode* probCode, 
     
     qty = BEU::Quantity(magnitude, *inputUnit);
     converted = qty.ConvertTo(m_unit);
+
+    if (!converted.IsValid()){
+        if (probCode != nullptr){
+            *probCode = FormatProblemCode::QT_ConversionFailed;
+        }
+    }
 
     return converted;
 }
@@ -1379,7 +1385,7 @@ BEU::Quantity FormatParsingSet::ParseBearingFormat(FormatProblemCode* probCode, 
     BEU::Quantity qty = ParseAndProcessTokens(cod, format, inputUnit);
 
     if (m_problem.IsProblem()){
-        if (probCode != nullptr){ //TODO - <Naron>: this is redundant here as m_problem will get updated in GetQuantity()
+        if (probCode != nullptr){ //TODO - this is redundant here as m_problem will get updated in GetQuantity(), its here now cuz we have 2 different ways tracking problem code
             *probCode = m_problem.GetProblemCode();
         }
         return converted;
@@ -1445,8 +1451,6 @@ BEU::Quantity FormatParsingSet::ParseRatioFormat(FormatProblemCode* probCode, Fo
         }
         return converted;
     }
-
-    // TODO - <Naron>: maybe ParseAndProcessTokens() can be used here as well?
 
     // for single number input. e.g. input of "30" will be converted to "30:1"
     if (parts.size() == 1){

@@ -1762,6 +1762,91 @@ TEST_F(FormattingTestFixture, AzimuthWithVariousBases) {
     ASSERT_STREQ("180.0°", formatAzimuth(90.0, 270.0,true).c_str());
 }
 
+TEST_F(FormattingTestFixture, ParseBearingProblemCode){
+    auto unitDegree = s_unitsContext->LookupUnit("ARC_DEG");
+
+    NumericFormatSpec bearingDMSSpec;
+    bearingDMSSpec.SetMinWidth(2);
+    bearingDMSSpec.SetPrecision(DecimalPrecision::Precision0);
+    bearingDMSSpec.SetKeepDecimalPoint(false);
+    bearingDMSSpec.SetPresentationType(PresentationType::Bearing);
+    Format bearingDMS(bearingDMSSpec);
+    bearingDMS.SetSuppressUnitLabel();
+    auto bearingDMScomp = CompositeValueSpec(*s_unitsContext->LookupUnit("ARC_DEG"), *s_unitsContext->LookupUnit("ARC_MINUTE"), *s_unitsContext->LookupUnit("ARC_SECOND"));
+    bearingDMScomp.SetSeparator(":");
+    bearingDMS.SetCompositeSpec(bearingDMScomp);
+    EXPECT_FALSE(bearingDMS.IsProblem());
+
+    struct testData {
+        std::string inputString;
+        FormatProblemCode expectedProblemCode;
+    };
+
+    std::string zeroInput = "N00:00:00E";
+
+    std::vector<testData> testDataVec = {
+        {zeroInput, FormatProblemCode::NoProblems},
+        {"", FormatProblemCode::QT_NoValueOrUnitFound},
+        {"00:00:00", FormatProblemCode::QT_BearingPrefixOrSuffixMissing},
+    };
+
+    BEU::Quantity qty;
+    for(auto& row : testDataVec)
+    {
+        FormatProblemCode problemCode = FormatProblemCode::NoProblems;
+        auto formatParsingSet = FormatParsingSet(row.inputString.c_str(), unitDegree, &bearingDMS);
+        qty = formatParsingSet.GetQuantity(&problemCode, &bearingDMS);
+        EXPECT_EQ(row.expectedProblemCode, problemCode);
+    }
+
+    auto invalidUnit = s_unitsContext->LookupUnit("VERTICAL_PER_HORIZONTAL");
+
+    // invalid unit
+    FormatProblemCode problemCode = FormatProblemCode::NoProblems;
+
+    Format bearingDMSInvalidCompUnit(bearingDMSSpec);
+    bearingDMSInvalidCompUnit.SetSuppressUnitLabel();
+    auto bearingDMScompInvalidUnit = CompositeValueSpec(*invalidUnit, *s_unitsContext->LookupUnit("ARC_MINUTE"), *s_unitsContext->LookupUnit("ARC_SECOND"));
+    bearingDMScompInvalidUnit.SetSeparator(":");
+    bearingDMSInvalidCompUnit.SetCompositeSpec(bearingDMScompInvalidUnit);
+    EXPECT_FALSE(bearingDMSInvalidCompUnit.IsProblem());
+
+    bearingDMSInvalidCompUnit.SetCompositeSpec(bearingDMScompInvalidUnit);
+    auto fps = FormatParsingSet(zeroInput.c_str(), unitDegree, &bearingDMSInvalidCompUnit);
+    qty = fps.GetQuantity(&problemCode, &bearingDMSInvalidCompUnit);
+    EXPECT_EQ(FormatProblemCode::PS_MissingCompositeSpec, problemCode); // composite spec wont get set with invalid composite units
+
+    // cant convert
+    problemCode = FormatProblemCode::NoProblems;
+    fps = FormatParsingSet(zeroInput.c_str(), invalidUnit, &bearingDMS);
+    qty = fps.GetQuantity(&problemCode, &bearingDMS);
+    EXPECT_EQ(FormatProblemCode::QT_ConversionFailed, problemCode);
+}
+
+TEST_F(FormattingTestFixture, ParseAzimuthProblemCode){
+    auto unitDegree = s_unitsContext->LookupUnit("ARC_DEG");
+    FormatProblemCode problemCode = FormatProblemCode::NoProblems;
+
+    NumericFormatSpec azimuthSpec;
+    azimuthSpec.SetPresentationType(PresentationType::Azimuth);
+    azimuthSpec.SetMinWidth(6);
+    azimuthSpec.SetPrecision(DecimalPrecision::Precision3);
+    azimuthSpec.SetKeepDecimalPoint(true);
+    azimuthSpec.SetKeepTrailingZeroes(true);
+    azimuthSpec.SetKeepSingleZero(true);
+    azimuthSpec.SetAzimuthBase(180.0);
+
+    Format azimuth(azimuthSpec);
+    auto azimuthComp = CompositeValueSpec(*unitDegree);
+    azimuth.SetCompositeSpec(azimuthComp);
+    EXPECT_FALSE(azimuth.IsProblem());
+
+    std::string zeroInput = "00.0";
+    auto fps = FormatParsingSet(zeroInput.c_str(), unitDegree, &azimuth);
+    BEU::Quantity qty = fps.GetQuantity(&problemCode, &azimuth);
+    EXPECT_EQ(FormatProblemCode::QT_NoValueOrUnitFound, problemCode);
+}
+
 TEST_F(FormattingTestFixture, FormatRatio){
     auto formatRatioTest = [](const char* ratioString, double value, Units::UnitCP persistenceUnit, RatioType ratioType,  Units::UnitCP presentationUnit, DecimalPrecision precision = DecimalPrecision::Precision3)
     {
