@@ -10,7 +10,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod
 //---------------------------------------------------------------------------------------
 StructECSqlBinder::StructECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& ecsqlTypeInfo, SqlParamNameGenerator& paramNameGen)
-    : ECSqlBinder(ctx, ecsqlTypeInfo, paramNameGen, true, true)
+    : ECSqlBinder(ctx, ecsqlTypeInfo, paramNameGen, true, true), m_binderInfo( BinderInfo::BinderType::Struct)
     {
     Initialize(ctx, paramNameGen);
     }
@@ -43,11 +43,11 @@ BentleyStatus StructECSqlBinder::Initialize(ECSqlPrepareContext& ctx, SqlParamNa
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructECSqlBinder::_OnBeforeStep()
+ECSqlStatus StructECSqlBinder::_OnBeforeFirstStep()
     {
     for (auto const& kvPair : m_memberBinders)
         {
-        auto stat = kvPair.second->OnBeforeStep();
+        auto stat = kvPair.second->OnBeforeFirstStep();
         if (!stat.IsSuccess())
             return stat;
         }
@@ -228,5 +228,13 @@ IECSqlBinder& StructECSqlBinder::_AddArrayElement()
     {
     LOG.error("Type mismatch. Cannot bind array to struct parameter.");
     return NoopECSqlBinder::Get();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BinderInfo const& StructECSqlBinder::_GetBinderInfo()
+    {
+    return m_binderInfo;
     }
 END_BENTLEY_SQLITE_EC_NAMESPACE
