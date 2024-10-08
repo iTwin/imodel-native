@@ -1671,9 +1671,8 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
         FormatProblemCode problemCode_degree = FormatProblemCode::NoProblems;
         FormatProblemCode problemCode_radian = FormatProblemCode::NoProblems;
 
-        char const* cstr = expectedString.c_str();
-        auto formatParsingSet_degree = FormatParsingSet(cstr, unitDegree, &format);
-        auto formatParsingSet_radian = FormatParsingSet(cstr, unitRadian, &format);
+        auto formatParsingSet_degree = FormatParsingSet(expectedString, unitDegree, &format);
+        auto formatParsingSet_radian = FormatParsingSet(expectedString, unitRadian, &format);
 
         BEU::Quantity qtyFromDegree = formatParsingSet_degree.GetQuantity(&problemCode_degree, &format);
         BEU::Quantity qtyFromRadian = formatParsingSet_radian.GetQuantity(&problemCode_radian, &format);
@@ -1699,7 +1698,7 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
         struct TestCase
         {
             const Utf8String expectedString;
-            const Format format;
+            const Format& format;
         };
 
        std::vector<TestCase> testCases = {

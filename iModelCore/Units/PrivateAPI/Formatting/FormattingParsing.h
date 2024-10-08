@@ -133,13 +133,13 @@ public:
 struct FormatParsingSet
 {
 private:
-    Utf8CP m_input;
+    std::string m_input;
     bvector<FormatParsingSegment> m_segs;
     BEU::UnitCP m_unit;     // optional reference to a "quantity" unit
     FormatProblemDetail m_problem;
     FormatCP m_format;
 
-    void Init(Utf8CP input, size_t start, BEU::UnitCP unit, FormatCP format, QuantityFormatting::UnitResolver* resolver = nullptr);
+    void Init(std::string input, size_t start, BEU::UnitCP unit, FormatCP format, QuantityFormatting::UnitResolver* resolver = nullptr);
     //! Process's "colonized" expression using a Composite FUS
     //! Returns error codes when FUS does not match the expression.
     //! The input expression signature code mus be provided by the caller
@@ -151,7 +151,7 @@ private:
     BEU::Quantity ParseRatioFormat(FormatProblemCode* probCode,FormatCP fusP, BEU::UnitCP unit);
 
 public:
-    UNITS_EXPORT FormatParsingSet(Utf8CP input, BEU::UnitCP unit = nullptr, FormatCP format = nullptr, QuantityFormatting::UnitResolver* resolver = nullptr);
+    UNITS_EXPORT FormatParsingSet(std::string input, BEU::UnitCP unit = nullptr, FormatCP format = nullptr, QuantityFormatting::UnitResolver* resolver = nullptr);
     bool HasProblem() const {return m_problem.IsProblem();}
     FormatProblemCode GetProblemCode() {return m_problem.GetProblemCode();}
     Utf8String GetProblemDescription() {return m_problem.GetProblemDescription();}

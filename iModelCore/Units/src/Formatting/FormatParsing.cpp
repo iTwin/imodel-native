@@ -663,7 +663,7 @@ FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t
                                 }
                             if (comp->HasMiddleLabel())
                                 {
-                                if (comp->GetMajorLabel().EqualsI(m_name))
+                                if (comp->GetMiddleLabel().EqualsI(m_name))
                                     {
                                 m_unit = comp->GetMiddleUnit();
                                     return;
@@ -702,7 +702,7 @@ FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //----------------------------------------------------------------------------------------
-void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, FormatCP format, QuantityFormatting::UnitResolver* resolver)
+void FormatParsingSet::Init(std::string input, size_t start, BEU::UnitCP unit, FormatCP format, QuantityFormatting::UnitResolver* resolver)
     {
     m_format = format;
     m_input = input;
@@ -716,7 +716,7 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, Format
     size_t ind0 = start;
     bool initVect = true;
 
-    if (Utf8String::IsNullOrEmpty(input))
+    if (input.empty())
         return;
 
     //special case for station format in order not to brake functionality below
@@ -794,7 +794,7 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, Format
 
     while (!ng.IsEndOfLine())
         {
-        ng.Grab(input, ind, decSep, thousSep);
+        ng.Grab(input.c_str(), ind, decSep, thousSep);
         if (ng.HasProblem())
             {
             m_problem.UpdateProblemCode(ng.GetProblemCode());
@@ -819,7 +819,7 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, Format
             {
             if (initVect) ind0 = ind;
             initVect = false;
-            csp = CursorScanPoint(input, ind);
+            csp = CursorScanPoint(input.c_str(), ind);
             if (csp.IsSpace())
                 {
                 if (!m_symbs.empty())
@@ -830,7 +830,7 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, Format
                     ind = csp.GetIndex();
                     ind0 = ind;
                     }
-                while (csp.IsSpace()) { csp.Iterate(input); }
+                while (csp.IsSpace()) { csp.Iterate(input.c_str()); }
                 ind = csp.GetIndex();
                 ind0 = ind;
                 }
@@ -851,7 +851,7 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, Format
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //----------------------------------------------------------------------------------------
-FormatParsingSet::FormatParsingSet(Utf8CP input, BEU::UnitCP unit, FormatCP format, QuantityFormatting::UnitResolver* resolver)
+FormatParsingSet::FormatParsingSet(std::string input, BEU::UnitCP unit, FormatCP format, QuantityFormatting::UnitResolver* resolver)
     {
     Init(input, 0, unit, format, resolver);
     }
@@ -1337,7 +1337,7 @@ BEU::Quantity FormatParsingSet::ParseBearingFormat(FormatProblemCode* probCode, 
 
     std::string matchedPrefix;
     std::string matchedSuffix;
-    std::string inString(m_input);    
+    std::string inString = m_input;   
 
     if (inString.empty()){
         if (probCode != nullptr){
@@ -1423,8 +1423,8 @@ BEU::Quantity FormatParsingSet::ParseRatioFormat(FormatProblemCode* probCode, Fo
 {
     BEU::Quantity converted = BEU::Quantity();
 
-    std::string instring(m_input);
-    std::istringstream iss(instring);
+    std::string inString = m_input;   
+    std::istringstream iss(inString);
     std::string part;
 
     std::vector<std::string> parts;
