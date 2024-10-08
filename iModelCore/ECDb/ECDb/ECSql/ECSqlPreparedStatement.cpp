@@ -68,6 +68,7 @@ int IECSqlPreparedStatement::TryGetParameterIndex(Utf8CP parameterName) const
 //---------------------------------------------------------------------------------------
 ECSqlStatus IECSqlPreparedStatement::Reset()
     {
+    m_onBeforeFirstStepNotCalled = true;
     if (SUCCESS != AssertIsValid())
         return ECSqlStatus::Error;
 
@@ -269,7 +270,6 @@ ECSqlStatus SingleECSqlPreparedStatement::_Reset()
     if (nativeSqlStat != BE_SQLITE_OK)
         return ECSqlStatus(nativeSqlStat);
 
-    m_onBeforeFirstStepNotCalled = true;
     return ECSqlStatus::Success;
     }
 

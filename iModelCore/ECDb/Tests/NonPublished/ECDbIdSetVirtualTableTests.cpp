@@ -17,9 +17,6 @@ struct ECDbIdSetVirtualTableTestFixture : ECDbTestFixture {};
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("vtab.ecdb"));
-    m_ecdb.ExecuteSql("analyze");
-    m_ecdb.SaveChanges();
-    ReopenECDb();
     {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[1,2,3,4,5]')"));
@@ -329,8 +326,8 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ECVLib.IdSet('[1,2,3,4,5]'), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
-        ASSERT_EQ(true, m_ecdb.ExplainQuery(stmt.GetNativeSql(), true).Contains("SCAN main.ec_Class"));
         ASSERT_EQ(true, m_ecdb.ExplainQuery(stmt.GetNativeSql(), true).Contains("SCAN IdSet VIRTUAL TABLE INDEX 1"));
+        ASSERT_EQ(true, m_ecdb.ExplainQuery(stmt.GetNativeSql(), true).Contains("SEARCH main.ec_Class USING INTEGER PRIMARY KEY (rowid=?)"));
     }
     {
         ECSqlStatement stmt;
@@ -458,7 +455,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
             ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText(hexIds[i].c_str(), IECSqlBinder::MakeCopy::No));
         }
         int i = 0;
-        while (i<=1)
+        while (i<=2)
         {
             ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
             ASSERT_EQ(BeStringUtilities::ParseHex(hexIds[i++].c_str()), stmt.GetValueInt64(0));
@@ -469,7 +466,43 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
         ASSERT_EQ(BeStringUtilities::ParseHex(hexIds[i++].c_str()), stmt.GetValueInt64(0));
 
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(BeStringUtilities::ParseHex(hexIds[i++].c_str()), stmt.GetValueInt64(0));
+
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    }
+    {
+        std::vector<Utf8String> ids = std::vector<Utf8String>{"0x1", "0x2", "0x3", "4.5", "5.5"};
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ECVLib.IdSet(?), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(int i =0;i<ids.size();i++)
+        {
+            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+            if(i == 3 || i == 4)
+                ASSERT_EQ(ECSqlStatus::Error, elementBinder.BindText(ids[i].c_str(), IECSqlBinder::MakeCopy::No));
+            else
+                ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText(ids[i].c_str(), IECSqlBinder::MakeCopy::No));
+        }
+
+        // "4.5" and "5.5" are not allowed to bind so empty array element so should fail and throw error
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+
+        ECSqlStatus stat = stmt.Reset();
+        ASSERT_EQ(stat.IsSQLiteError(), true ); // Maybe as we are not stepping successfully in the statement so reset fails from sqlite side
+        ASSERT_EQ(ECSqlStatus::Success, stmt.ClearBindings());
+
+        std::vector<double> dec_ids = std::vector<double>{1, 2, 4.5, 3, 5.5};
+        IECSqlBinder& arrayBinder_two = stmt.GetBinder(1);
+        for(int i =0;i<dec_ids.size();i++)
+        {
+            IECSqlBinder& elementBinder = arrayBinder_two.AddArrayElement();
+            ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindDouble(dec_ids[i]));
+        }
+        
+        // 4.5 and 5.5 are not allowed so should fail and throw error
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
     }
 }
 

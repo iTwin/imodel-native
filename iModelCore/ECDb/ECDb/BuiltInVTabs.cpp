@@ -186,11 +186,17 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::GetColumn(int i, Context& ctx) {
 //---------------------------------------------------------------------------------------
 DbResult IdSetModule::IdSetTable::IdSetCursor::FilterJSONStringIntoArray(BeJsDocument& doc) {
     if(!doc.isArray())
+    {
+        GetTable().SetError("IdSet vtab: The argument should be a valid JSON array of ids");
         return BE_SQLITE_ERROR;
-    bool flag = doc.ForEachArrayMember([&](BeJsValue::ArrayIndex, BeJsConst k1)
+    }
+    bool flag = doc.ForEachArrayMember([&](BeJsValue::ArrayIndex a, BeJsConst k1)
                                         {
                                             if(BE_SQLITE_OK != FilterJSONBasedOnType(k1))
+                                            {
+                                                GetTable().SetError(SqlPrintfString("IdSet vtab: The element with index %u is invalid", a));
                                                 return true;
+                                            }
                                             return false; 
                                         });
     if(flag)
@@ -256,6 +262,7 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *id
         if(FilterJSONStringIntoArray(doc) != BE_SQLITE_OK)
         {
             Reset();
+            m_index = m_idSet.begin();
             return BE_SQLITE_ERROR;
         }
     }
@@ -267,7 +274,7 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *id
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void IdSetModule::IdSetTable::IdSetCursor::Reset() {
-    m_text = "";
+    m_text = "[]";
     m_idSet.clear();
 }
 //---------------------------------------------------------------------------------------

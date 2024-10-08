@@ -56,10 +56,10 @@ struct IdSetModule : ECDbModule {
             private:
                 Utf8String m_text;
                 bset<uint64_t> m_idSet;
-                bset<uint64_t>::iterator m_index;
+                bset<uint64_t>::const_iterator m_index;
 
             public:
-                IdSetCursor(IdSetTable& vt): ECDbCursor(vt){}
+                IdSetCursor(IdSetTable& vt): ECDbCursor(vt), m_index(m_idSet.begin()){}
                 bool Eof() final { return m_index == m_idSet.end() ; }
                 DbResult Next() final;
                 DbResult GetColumn(int i, Context& ctx) final;

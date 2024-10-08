@@ -605,7 +605,6 @@ ECSqlStatus PragmaECSqlPreparedStatement::_Reset() {
     if (rc != BE_SQLITE_OK)
         return ECSqlStatus(rc);
 
-    m_onBeforeFirstStepNotCalled = true;
     return ECSqlStatus::Success;
 }
 //---------------------------------------------------------------------------------------
