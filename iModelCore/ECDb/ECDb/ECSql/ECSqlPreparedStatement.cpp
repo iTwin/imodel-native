@@ -68,7 +68,6 @@ int IECSqlPreparedStatement::TryGetParameterIndex(Utf8CP parameterName) const
 //---------------------------------------------------------------------------------------
 ECSqlStatus IECSqlPreparedStatement::Reset()
     {
-    m_onBeforeFirstStepNotCalled = true;
     if (SUCCESS != AssertIsValid())
         return ECSqlStatus::Error;
 
@@ -212,20 +211,19 @@ DbResult SingleECSqlPreparedStatement::DoStep()
     if (SUCCESS != AssertIsValid())
         return BE_SQLITE_ERROR;
 
-    if(m_onBeforeFirstStepNotCalled)
+    if(m_isFirstStep)
     {
         if (!m_parameterMap.OnBeforeFirstStep().IsSuccess())
             return BE_SQLITE_ERROR;
-        m_onBeforeFirstStepNotCalled = false;
     }
     
 
     const DbResult nativeSqlStatus = m_sqliteStatement.Step();
-
     switch (nativeSqlStatus)
         {
             case BE_SQLITE_ROW:
             case BE_SQLITE_DONE:
+                m_isFirstStep = false; // if step actually successded on the sqlite side then we set this flag to false
                 break;
 
             case BE_SQLITE_INTERRUPT:
@@ -240,7 +238,7 @@ DbResult SingleECSqlPreparedStatement::DoStep()
             break;
             }
         }
-
+         
     return nativeSqlStatus;
     }
 
@@ -270,6 +268,7 @@ ECSqlStatus SingleECSqlPreparedStatement::_Reset()
     if (nativeSqlStat != BE_SQLITE_OK)
         return ECSqlStatus(nativeSqlStat);
 
+    m_isFirstStep = true; // When everything is reset succesffully we reset this flag
     return ECSqlStatus::Success;
     }
 

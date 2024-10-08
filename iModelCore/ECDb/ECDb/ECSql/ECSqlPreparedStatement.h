@@ -24,7 +24,6 @@ struct IECSqlPreparedStatement
         ECSqlType m_type;
         bool m_isCompoundStatement;
         bool m_isNoopInSqlite = false;
-        bool m_onBeforeFirstStepNotCalled = true;
 
 
     private:
@@ -82,6 +81,7 @@ struct SingleECSqlPreparedStatement : IECSqlPreparedStatement
 private:
     mutable BeSQLite::Statement m_sqliteStatement;
     ECSqlParameterMap m_parameterMap;
+    bool m_isFirstStep = true;
 
     IECSqlBinder& _GetBinder(int parameterIndex) const override;
     int _GetParameterIndex(Utf8CP parameterName) const override;

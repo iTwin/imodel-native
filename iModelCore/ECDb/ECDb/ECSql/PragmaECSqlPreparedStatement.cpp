@@ -605,6 +605,7 @@ ECSqlStatus PragmaECSqlPreparedStatement::_Reset() {
     if (rc != BE_SQLITE_OK)
         return ECSqlStatus(rc);
 
+    m_isFirstStep = true; // Will reset the flag when actually everything will be reset successfully
     return ECSqlStatus::Success;
 }
 //---------------------------------------------------------------------------------------
@@ -634,15 +635,16 @@ DbResult PragmaECSqlPreparedStatement::DoStep() {
     if (SUCCESS != AssertIsValid())
         return BE_SQLITE_ERROR;
 
-    if(m_onBeforeFirstStepNotCalled)
+    if(m_isFirstStep)
     {
         if (!m_parameterMap.OnBeforeFirstStep().IsSuccess())
             return BE_SQLITE_ERROR;
-        m_onBeforeFirstStepNotCalled = false;
     }
     
-
-    return m_resultSet->Step();
+    DbResult res = m_resultSet->Step();
+    if(res == BE_SQLITE_DONE || res == BE_SQLITE_ROW)
+        m_isFirstStep = false; // if step actually successded on the sqlite side then we set this flag to false
+    return res;
 }
 
 //---------------------------------------------------------------------------------------
