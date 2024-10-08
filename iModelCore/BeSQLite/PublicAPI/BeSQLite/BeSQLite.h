@@ -127,6 +127,7 @@ methods to extract them into temporary locations.
 #define BEDB_TABLE_Property     "be_Prop"
 #define BEDB_TABLE_EmbeddedFile "be_EmbedFile"
 #define BEDB_MemoryDb           ":memory:"
+#define VIRTUAL_SET_PTR_BIND_NAME "VIRTUAL_SET_PTR"
 
 #define BEGIN_BENTLEY_SQLITE_NAMESPACE BEGIN_BENTLEY_NAMESPACE namespace BeSQLite {
 #define END_BENTLEY_SQLITE_NAMESPACE   } END_BENTLEY_NAMESPACE

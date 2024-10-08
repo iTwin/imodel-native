@@ -567,7 +567,7 @@ DbResult    Statement::BindZeroBlob(int col, int size) {
 }
 DbResult    Statement::BindBlob(int col, void const* val, int size, MakeCopy makeCopy) {return (DbResult)sqlite3_bind_blob(m_stmt, col, val, size, makeCopy==MakeCopy::Yes ? SQLITE_TRANSIENT : SQLITE_STATIC);}
 DbResult    Statement::BindNull(int col) {return (DbResult)sqlite3_bind_null(m_stmt, col);}
-DbResult    Statement::BindVirtualSet(int col, VirtualSet const& intSet) {return BindInt64(col, (int64_t) &intSet);}
+DbResult    Statement::BindVirtualSet(int col, VirtualSet const& intSet) {return BindPointer(col, (VirtualSet*)&intSet, VIRTUAL_SET_PTR_BIND_NAME, nullptr); /*Type casting &intSet to "VirtualSet*" because &intSet gives us "const VirtualSet*" which is unassignable to type "void*" */}
 DbResult    Statement::BindDbValue(int col, struct DbValue const& dbVal) {return (DbResult) sqlite3_bind_value(m_stmt, col, dbVal.GetSqlValueP());}
 DbResult    Statement::BindPointer(int col, void* ptr, const char* name, void(*destroy)(void*))  {return (DbResult) sqlite3_bind_pointer(m_stmt, col, ptr, name, destroy);}
 
@@ -5272,7 +5272,7 @@ static void isInVirtualSet(sqlite3_context* ctx, int nArgs, sqlite3_value** args
         }
 
     // the first argument must be the set to test against.
-    VirtualSet const* vSet = (VirtualSet const*) sqlite3_value_int64(args[0]);
+    VirtualSet const* vSet = (VirtualSet const*) sqlite3_value_pointer(args[0], VIRTUAL_SET_PTR_BIND_NAME);
     if (nullptr==vSet)
         sqlite3_result_int(ctx, 0); //0 means false -> if no virtual set is bound, we treat it as binding an empty virtual set
     else
