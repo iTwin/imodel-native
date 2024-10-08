@@ -1019,7 +1019,7 @@ Napi::Value JsInterop::GetInstance(ECDbR db, NapiInfoCR info) {
                 adaptor.GetOptions().SetAbbreviateBlobs(abbreviateBlobs);
                 adaptor.GetOptions().SetConvertClassIdsToClassNames(classIdsToClassNames);
                 adaptor.GetOptions().UseJsNames(useJsNames);
-                if (ERROR == adaptor.RenderRow(val, row, false)) {
+                if (ERROR == adaptor.RenderRowAsObject(val, row)) {
                     THROW_JS_EXCEPTION("Failed to render instance");
                 }
             },
