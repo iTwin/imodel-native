@@ -192,19 +192,6 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
     void RequireWriteLock() {
         RequireConnected();
         ResumeWriteLock(true);
-        // BeJsDocument lockedBy;
-        // ReadWriteLock(lockedBy);
-        // auto lockedByGuid = lockedBy[JSON_NAME(guid)].asString("");
-
-        // if (lockedByGuid.Equals("")) {
-        //     BeNapi::ThrowJsException(Env(), Utf8PrintfString("Container [%s] is not locked for write access.", m_containerId.c_str()).c_str());
-        // } else if (!lockedByGuid.Equals(m_cache->m_guid)) {
-        //     // another user grabbed the write lock after the current user's write lock expiration time, disable current user from operating
-        //     BeNapi::ThrowJsException(Env(), Utf8PrintfString("Container [%s] is currently locked by another user.", m_containerId.c_str()).c_str());
-        // } else {
-        //     // Refresh the write lock for the current user incase their write lock is about to expire.
-        //     ResumeWriteLock();
-        // }
     }
 
     void CallJsMemberFunc(Utf8CP funcName, std::vector<napi_value> const& args) {
@@ -535,7 +522,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             m_containerDb.TryExecuteSql("ROLLBACK");
             BeNapi::ThrowJsException(Env(), Utf8PrintfString("Container [%s] is not locked for write access.", m_containerId.c_str()).c_str());
         } else if (lockedByGuid.empty() || lockedByGuid.Equals(m_cache->m_guid))
-            return lockedByUser; // not locked or already locked by same cache ( we should use the same user when possible I guess??)
+            return lockedByUser; // not locked or already locked by same cache, we'll use the same user. 
 
         auto expiresAt = DateTime::FromString(lockedBy[JSON_NAME(expires)].asString());
         if (!expiresAt.IsValid())
@@ -559,39 +546,16 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
     }
 
     void ResumeWriteLock(bool shouldFailIfUnableToResume) {
-        // BeJsDocument lockedBy;
-        // ReadWriteLock(lockedBy);
-
         m_writeLockHeld = false;
-        // auto lockedByGuid = lockedBy[JSON_NAME(guid)].asString();
-
-        // Why can't I just call AcquireWriteLock here? do I really need to read the lock? 
-        // I guess one benefit of doing the excessive read is that we could for some unrelated reason fail to acquireWriteLock
-        // but still have the lock? Idk how likely that is 
-        // I guess resumeWriteLock in one case (on the connect, should definitely not fail. But in the other case, it probably should fail)
-        // That would cut out 1 read lock. In order to cut out 1 more would ahve to remove the error handling from requriewritelock.
-        // The thing is, I want people to be explicit about grabbing the write lock. I don't want to just grab it for them.
-        // So requireWriteLock should fail if they don't have it.. I think that sort've requires an extra read.. I mean it doesnt..
-        // but its more changes required. I would have to pass to AcquireWriteLock a bool that says to fail if the lock is not held already.
-        // 
         if (shouldFailIfUnableToResume) {
-            // Shit I need the username!! I guess we would need CheckLock to return the username. This might ruin everything. 
             AcquireWriteLock("", true);
         } else {
             try {
-                AcquireWriteLock("", true); // TODO? 
+                AcquireWriteLock("", true);
             } catch (...) {
                 // if we can't resume, don't fail.
             }
         }
-
-        // if (lockedByGuid.Equals(m_cache->m_guid)) {
-        //     try {
-        //         AcquireWriteLock(lockedBy[JSON_NAME(user)].asString());
-        //     } catch (...) {
-        //         // if we can't resume, don't fail
-        //     }
-        // }
     }
 
     Utf8String GetServerDateString(uint64_t offsetMilliseconds) {
