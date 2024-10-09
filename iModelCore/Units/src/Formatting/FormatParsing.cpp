@@ -1288,8 +1288,8 @@ BEU::Quantity FormatParsingSet::ParseAzimuthFormat(FormatProblemCode* probCode, 
         azimuthBase = fmtP->GetAzimuthBase();
         if (fmtP->HasAzimuthBaseUnit()){
             BEU::Quantity azimuthBaseQuantity(azimuthBase, *fmtP->GetAzimuthBaseUnit());
-            azimuthBaseQuantity.ConvertTo(qty.GetUnit());
-            azimuthBase = azimuthBaseQuantity.GetMagnitude();
+            BEU::Quantity convertedAzimuthBase = azimuthBaseQuantity.ConvertTo(qty.GetUnit());
+            azimuthBase = convertedAzimuthBase.GetMagnitude();
         }
         else{
             if (probCode != nullptr){
@@ -1298,26 +1298,16 @@ BEU::Quantity FormatParsingSet::ParseAzimuthFormat(FormatProblemCode* probCode, 
         }
     }
 
-    if (std::fmod(azimuthBase, perigon) == 0.0 &&  !fmtP->IsCounterClockwiseAngle()){
-        converted = qty.ConvertTo(m_unit); 
-        return converted;
-    }
-
     if (fmtP->IsCounterClockwiseAngle()){
         magnitude = azimuthBase - magnitude;
     } else {
         magnitude = azimuthBase + magnitude;
     }
 
-    // Normalize magnitude
+    // normalize the angle
+    magnitude = std::fmod(magnitude, perigon);
     while(magnitude < 0)
         magnitude += perigon;
-    
-    while(magnitude > perigon)
-        magnitude -= perigon;
-
-    if(fmtP->IsCounterClockwiseAngle())
-        magnitude = perigon - magnitude;
     
     qty = BEU::Quantity(magnitude, *inputUnit);
     converted = qty.ConvertTo(m_unit);

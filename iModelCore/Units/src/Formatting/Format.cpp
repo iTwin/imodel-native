@@ -245,8 +245,8 @@ BentleyStatus ProcessBearingAndAzimuth(NumericFormatSpecCP fmtP, BEU::Quantity& 
             if (fmtP->HasAzimuthBaseUnit())
             {
                 BEU::Quantity azimuthBaseQuantity(azimuthBase, *fmtP->GetAzimuthBaseUnit());
-                azimuthBaseQuantity.ConvertTo(quantity.GetUnit());
-                azimuthBase = azimuthBaseQuantity.GetMagnitude();
+                BEU::Quantity convertedAzimuthBase = azimuthBaseQuantity.ConvertTo(quantity.GetUnit());
+                azimuthBase = convertedAzimuthBase.GetMagnitude();
             } 
             else 
             {

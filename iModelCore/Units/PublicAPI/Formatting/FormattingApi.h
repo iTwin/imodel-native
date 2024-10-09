@@ -204,7 +204,7 @@ public:
     bool HasAzimuthBase() const {return m_explicitlyDefinedAzimuthBase;}
     double GetAzimuthBase() const {return m_azimuthBase;}
 
-    void SetAzimuthBaseUnit(BEU::UnitCP unit){m_azimuthBaseUnit = unit;}
+    void SetAzimuthBaseUnit(BEU::UnitCP unit){m_explicitlyDefinedAzimuthBaseUnit = true;m_azimuthBaseUnit = unit;}
     bool HasAzimuthBaseUnit() const {return m_explicitlyDefinedAzimuthBaseUnit;}
     BEU::UnitCP GetAzimuthBaseUnit() const {return m_azimuthBaseUnit;}
 
