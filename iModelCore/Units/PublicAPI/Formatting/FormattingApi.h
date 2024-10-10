@@ -31,6 +31,7 @@ BE_JSON_NAME(uomSeparator)
 BE_JSON_NAME(stationSeparator)
 BE_JSON_NAME(stationOffsetSize)
 BE_JSON_NAME(minWidth)
+BE_JSON_NAME(ratioType)
 
 // Format Traits
 BE_JSON_NAME(trailZeroes)
@@ -85,9 +86,17 @@ private:
     uint8_t m_explicitlyDefinedThousandsSeparator:1;
     uint8_t m_explicitlyDefinedUOMSeparator:1;
     uint8_t m_explicitlyDefinedStatSeparator:1;
+    uint8_t m_explicitlyDefinedAzimuthBase:1;
+
     double              m_roundFactor;
     PresentationType    m_presentationType;      // Decimal, Fractional, Scientific, Station
+    RatioType           m_ratioType;        // OneToN, NToOne, ValueBased, UseGreatestCommonDivisor
     ScientificType      m_scientificType;
+    double              m_azimuthBase;     // The base offset for azimuths in radians from north clockwise
+    BEU::UnitCP         m_azimuthBaseUnit; // The unit of the azimuth base
+    bool                m_azimuthCounterClockwise; // The orientation of a formatted azimuth
+    BEU::UnitCP         m_revolutionUnit; // Required for bearing and azimuth. Unit which represents a full revolution.
+
     SignOption          m_signOption;            // NoSign, OnlyNegative, SignAlways, NegativeParentheses
     FormatTraits        m_formatTraits;          // NoZeroes, TrailingZeroes, BothZeroes
     DecimalPrecision    m_decPrecision;          // Precision0...12
@@ -102,6 +111,10 @@ private:
                                                  // a number of or integer part of a real is shorter and needs to be augmented by
                                                  // insignificant zeroes. Blanks are not considered because aligning text
                                                  // with the boundaries of a virtual box is the responsibility of annotation layer.
+    Utf8String          m_northLabel;            //Used to represent north
+    Utf8String          m_southLabel;            //Used to represent south
+    Utf8String          m_eastLabel;             //Used to represent east
+    Utf8String          m_westLabel;             //Used to represent west
 
     double EffectiveRoundFactor(double rnd) const { return FormatConstant::IsIgnored(rnd) ? m_roundFactor : rnd; }
 
@@ -188,6 +201,17 @@ public:
     void SetScientificType(ScientificType type) {m_scientificType = type;}
     ScientificType GetScientificType() const {return m_scientificType;}
 
+    //Sets the azimuth base in radians from north clockwise
+    void SetAzimuthBase(double base) {m_explicitlyDefinedAzimuthBase = true; m_azimuthBase = base;}
+    bool HasAzimuthBase() const {return m_explicitlyDefinedAzimuthBase;}
+    double GetAzimuthBase() const {return m_azimuthBase;}
+
+    void SetAzimuthBaseUnit(BEU::UnitCP unit){m_azimuthBaseUnit = unit;}
+    BEU::UnitCP GetAzimuthBaseUnit() const {return m_azimuthBaseUnit;}
+
+    void SetRevolutionUnit(BEU::UnitCP unit){m_revolutionUnit = unit;}
+    BEU::UnitCP GetRevolutionUnit() const {return m_revolutionUnit;}
+
     void SetPrecision(FractionalPrecision precision) {m_explicitlyDefinedPrecision = true; m_fractPrecision = precision; }
     void SetPrecision(DecimalPrecision precision) {m_explicitlyDefinedPrecision = true; m_decPrecision = precision;}
     DecimalPrecision GetDecimalPrecision() const {return m_decPrecision;}
@@ -215,6 +239,18 @@ public:
     Utf8Char GetStationSeparator() const {return m_statSeparator;}
     bool HasStationSeparator() const {return m_explicitlyDefinedStatSeparator;}
 
+    void SetNorthLabel(Utf8StringCR label) {m_northLabel = label;}
+    Utf8String GetNorthLabel() const {return m_northLabel;}
+    void SetSouthLabel(Utf8StringCR label) {m_southLabel = label;}
+    Utf8String GetSouthLabel() const {return m_southLabel;}
+    void SetEastLabel(Utf8StringCR label) {m_eastLabel = label;}
+    Utf8String GetEastLabel() const {return m_eastLabel;}
+    void SetWestLabel(Utf8StringCR label) {m_westLabel = label;}
+    Utf8String GetWestLabel() const {return m_westLabel;}
+
+    void SetRatioType(RatioType ratioType) {m_ratioType = ratioType;}
+    RatioType GetRatioType() const {return m_ratioType;}
+    
     //======================================
     // Format Traits Bit Setters/Getters
     //======================================
@@ -270,6 +306,12 @@ public:
 
     void SetPrependUnitLabel(bool setTo) { SetTraitsBit(FormatTraits::PrependUnitLabel, setTo); }
     bool IsPrependUnitLabel() const { return GetTraitBit(FormatTraits::PrependUnitLabel); }
+
+    // Indicates whether azimuth values should be formatted counter-clockwise from their base
+    void SetAzimuthCounterClockwise(bool setTo) { m_azimuthCounterClockwise = setTo;}
+    bool IsCounterClockwiseAngle() const {return m_azimuthCounterClockwise;}
+
+    Utf8String FormatToRatio(double value) const;
 
     //======================================
     // Formatting Methods
@@ -370,6 +412,7 @@ private:
 
         bool UpdateProblemCode(FormatProblemCode code) { return m_problem.UpdateProblemCode(code); }
         bool IsProblem() const {return m_problem.IsProblem();}
+        FormatProblemCode GetProblemCode() const {return m_problem.GetProblemCode();}
     };
 
     static size_t const indxMajor  = 0;
@@ -380,9 +423,11 @@ private:
     double m_ratio[indxSub] = {0};
     bool m_includeZero = true; // TODO: Not currently used in the formatting code, needs to be fixed.
     bool m_explicitlyDefinedSpacer = false;
-    Utf8String m_spacer = FormatConstant::DefaultSpacer();
+    Utf8String m_spacer = FormatConstant::DefaultSpacer(); //this is used between value and UOM if a label is shown
     FormatProblemDetail m_problem;
     bvector<UnitProxy> mutable m_proxys;
+    Utf8String m_separator = FormatConstant::DefaultSeparator();
+    bool m_explicitlyDefinedSeparator = false;
 
     //! Returns the unit ratio of upper/lower.
     //! Lower may be set to nullptr, indicating the lower unit is not set on the CVS.
@@ -468,6 +513,11 @@ public:
     Utf8String GetSpacer() const {return m_spacer;} //!< Get the spacer used in between each segment value and its uom label of a composite value string.
     bool HasSpacer() const {return m_explicitlyDefinedSpacer;} //!< Returns whether a spacer has been explicitly set.
 
+    //! Set the string that will be used to separate the composite values
+    Utf8String SetSeparator(Utf8CP separator) {m_explicitlyDefinedSeparator = true; return m_separator = separator;}
+    Utf8String GetSeparator() const {return m_separator;} //!< Get the separator used to separate the composite values
+    bool HasSeparator() const {return m_explicitlyDefinedSeparator;} //!< Returns whether a separator has been explicitly set.
+
     //! Sets whether a segment of the composite value will be serialized to the resulting string if it evaluates to zero.
     bool SetIncludeZero(bool incl) {return m_includeZero = incl;}
     //! Determine whether a segment of the composite value will be serialized to the resulting string if it evaluates to zero.
@@ -479,7 +529,6 @@ public:
     //! @return true on success false on error (too many units, null units, etc).
     UNITS_EXPORT static bool CreateCompositeSpec(CompositeValueSpecR out, bvector<BEU::UnitCP> const& units);
 };
-
 
 //=======================================================================================
 //! Container for keeping together numeric and composite spec types.
@@ -613,6 +662,13 @@ public:
 
     // Legacy Descriptor string
     UNITS_EXPORT static void ParseUnitFormatDescriptor(Utf8StringR unitName, Utf8StringR formatString, Utf8CP description);
+
+    BentleyStatus FormatBearingAndAzimuth(BEU::Quantity& quantity, std::string& prefix, std::string& suffix) const;
+
+    //! Normalizes the angle to be within the range of 0 to 2*PI
+    BentleyStatus static NormalizeAngle(BEU::Quantity& quantity, Utf8CP operationName, double revolution);
+    //! Attempts to convert the specified revolution into the provided unit
+    BentleyStatus TryGetRevolution(BEU::UnitCR unit, double& revolution) const;
 };
 
 //=======================================================================================
