@@ -1300,7 +1300,7 @@ BEU::Quantity FormatParsingSet::ParseAzimuthFormat(FormatProblemCode* probCode, 
             BEU::Quantity azimuthBaseQuantity(azimuthBase, *azimuthBaseUnit);
             BEU::Quantity converted = azimuthBaseQuantity.ConvertTo(qty.GetUnit());
             if (converted.IsValid())
-                azimuthBase = azimuthBaseQuantity.GetMagnitude();
+                azimuthBase = converted.GetMagnitude();
             else
                 {   
                 if (probCode != nullptr)
