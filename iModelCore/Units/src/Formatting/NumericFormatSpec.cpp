@@ -38,7 +38,6 @@ NumericFormatSpec::NumericFormatSpec()
     , m_explicitlyDefinedThousandsSeparator(false)
     , m_explicitlyDefinedUOMSeparator(false)
     , m_explicitlyDefinedAzimuthBase(false)
-    , m_explicitlyDefinedAzimuthBaseUnit(false)
     , m_roundFactor(FormatConstant::DefaultRoundingFactor())
     , m_presentationType(FormatConstant::DefaultPresentaitonType())
     , m_signOption(FormatConstant::DefaultSignOption())
@@ -57,6 +56,10 @@ NumericFormatSpec::NumericFormatSpec()
     , m_eastLabel("E")
     , m_westLabel("W")
     , m_ratioType(FormatConstant::DefaultRatioType())
+    , m_azimuthBase(0.0)
+    , m_azimuthBaseUnit(nullptr)
+    , m_revolutionUnit(nullptr)
+    , m_azimuthCounterClockwise(false)
     {
     }
 

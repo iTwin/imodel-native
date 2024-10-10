@@ -1560,9 +1560,7 @@ double DegreesToRadians(double degrees)
 
 TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
     
-    //We're inputting both degrees and radians by value here instead of converting them
-    //To reflect the fact that we mostly store our data in radians, but degrees are easier to look at for tests
-    //We run the test with both input values to ensure that the conversion is working correctly
+
     std::vector<BearingTestData> testData = {
         //DEG,    BEAR DMS      WITH LABEL        BEAR         AZI DMS     AZI
         {0.0,     "N00:00:00E", "N00°00'00\"E", "N00.000°E", "00:00:00", "00.000"},
@@ -1586,6 +1584,7 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
 
     auto unitDegree = s_unitsContext->LookupUnit("ARC_DEG");
     auto unitRadian = s_unitsContext->LookupUnit("RAD");
+    auto revolution = s_unitsContext->LookupUnit("REVOLUTION");
     //auto unitMinute = s_unitsContext->LookupUnit("ARC_MINUTE");
     //auto unitSecond = s_unitsContext->LookupUnit("ARC_SECOND");
 
@@ -1594,6 +1593,7 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
     bearingDMSSpec.SetPrecision(DecimalPrecision::Precision0);
     bearingDMSSpec.SetKeepDecimalPoint(false);
     bearingDMSSpec.SetPresentationType(PresentationType::Bearing);
+    bearingDMSSpec.SetRevolutionUnit(revolution);
     Format bearingDMS(bearingDMSSpec);
     bearingDMS.SetSuppressUnitLabel();
     auto bearingDMScomp = CompositeValueSpec(*s_unitsContext->LookupUnit("ARC_DEG"), *s_unitsContext->LookupUnit("ARC_MINUTE"), *s_unitsContext->LookupUnit("ARC_SECOND"));
@@ -1612,6 +1612,7 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
     bearingDMSWithLabelSpec.SetKeepDecimalPoint(false);
     bearingDMSWithLabelSpec.SetPresentationType(PresentationType::Bearing);
     bearingDMSWithLabelSpec.SetShowUnitLabel(true);
+    bearingDMSWithLabelSpec.SetRevolutionUnit(revolution);
     Format bearingDMSWithLabel(bearingDMSWithLabelSpec);
     auto bearingDMSWithLabelComp = CompositeValueSpec(*s_unitsContext->LookupUnit("ARC_DEG"), *s_unitsContext->LookupUnit("ARC_MINUTE"), *s_unitsContext->LookupUnit("ARC_SECOND"));
     bearingDMSWithLabelComp.SetMajorLabel("°");
@@ -1629,6 +1630,7 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
     bearingSpec.SetKeepTrailingZeroes(true);
     bearingSpec.SetKeepSingleZero(true);
     bearingSpec.SetShowUnitLabel(true);
+    bearingSpec.SetRevolutionUnit(revolution);
     Format bearing(bearingSpec);
     auto bearingComp = CompositeValueSpec(*s_unitsContext->LookupUnit("ARC_DEG"));
     bearingComp.SetMajorLabel("°");
@@ -1641,6 +1643,7 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
     azimuthDMSSpec.SetMinWidth(2);
     azimuthDMSSpec.SetPrecision(DecimalPrecision::Precision0);
     azimuthDMSSpec.SetKeepDecimalPoint(false);
+    azimuthDMSSpec.SetRevolutionUnit(revolution);
     Format azimuthDMS(azimuthDMSSpec);
     azimuthDMS.SetSuppressUnitLabel();
     auto azimuthDMScomp = CompositeValueSpec(*s_unitsContext->LookupUnit("ARC_DEG"), *s_unitsContext->LookupUnit("ARC_MINUTE"), *s_unitsContext->LookupUnit("ARC_SECOND"));
@@ -1655,6 +1658,7 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
     azimuthSpec.SetKeepDecimalPoint(true);
     azimuthSpec.SetKeepTrailingZeroes(true);
     azimuthSpec.SetKeepSingleZero(true);
+    azimuthSpec.SetRevolutionUnit(revolution);
     Format azimuth(azimuthSpec);
     auto azimuthComp = CompositeValueSpec(*s_unitsContext->LookupUnit("ARC_DEG"));
     azimuth.SetCompositeSpec(azimuthComp);
@@ -1695,32 +1699,21 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
         auto degConverted = radian.ConvertTo(unitDegree);
         ASSERT_TRUE(degree.IsClose(degConverted, 0.001));
 
-        struct TestCase
-        {
-            const Utf8String expectedString;
-            const Format& format;
-        };
+        TestFormat(degree, radian, row.bearingDMS, bearingDMS);
+        TestFormat(degree, radian, row.bearingDMSWithLabel, bearingDMSWithLabel);
+        TestFormat(degree, radian, row.bearingDecimal, bearing);
+        TestFormat(degree, radian, row.northAzimuthDMS, azimuthDMS);
+        TestFormat(degree, radian, row.northAzimuthDecimal, azimuth);
 
-       std::vector<TestCase> testCases = {
-            {row.bearingDMS, bearingDMS},
-            {row.bearingDMSWithLabel, bearingDMSWithLabel},
-            {row.bearingDecimal, bearing},
-            {row.northAzimuthDMS, azimuthDMS},
-            {row.northAzimuthDecimal, azimuth}
-        };
-
-        for (const auto testCase : testCases)
-        {
-            TestFormat(degree, radian, testCase.expectedString, testCase.format);
-        };
     };
 }
 
 TEST_F(FormattingTestFixture, AzimuthWithVariousBases) {
     auto unitDegree = s_unitsContext->LookupUnit("ARC_DEG");
     auto unitRadian = s_unitsContext->LookupUnit("RAD");
+    auto unitRevolution = s_unitsContext->LookupUnit("REVOLUTION");
 
-    auto formatAzimuth = [&unitDegree, &unitRadian](double value, double baseOffsetInDeg = 0.0, bool counterClockwise = false)
+    auto formatAzimuth = [&unitDegree, &unitRadian, &unitRevolution](double value, double baseOffset = 0.0, bool counterClockwise = false)
         {
         NumericFormatSpec azimuthSpec;
         azimuthSpec.SetPresentationType(PresentationType::Azimuth);
@@ -1730,9 +1723,10 @@ TEST_F(FormattingTestFixture, AzimuthWithVariousBases) {
         azimuthSpec.SetKeepTrailingZeroes(true);
         azimuthSpec.SetKeepSingleZero(true);
         azimuthSpec.SetShowUnitLabel(true);
-        azimuthSpec.SetAzimuthBase(DegreesToRadians(baseOffsetInDeg));
+        azimuthSpec.SetAzimuthBase(DegreesToRadians(baseOffset));
         azimuthSpec.SetAzimuthBaseUnit(unitRadian);
-        azimuthSpec.SetCounterClockwiseAngle(counterClockwise);
+        azimuthSpec.SetAzimuthCounterClockwise(counterClockwise);
+        azimuthSpec.SetRevolutionUnit(unitRevolution);
         Format azimuth(azimuthSpec);
         auto azimuthComp = CompositeValueSpec(*unitDegree);
         azimuthComp.SetMajorLabel("°");
@@ -1764,12 +1758,14 @@ TEST_F(FormattingTestFixture, AzimuthWithVariousBases) {
 
 TEST_F(FormattingTestFixture, ParseBearingProblemCode){
     auto unitDegree = s_unitsContext->LookupUnit("ARC_DEG");
+    auto revolution = s_unitsContext->LookupUnit("REVOLUTION");
 
     NumericFormatSpec bearingDMSSpec;
     bearingDMSSpec.SetMinWidth(2);
     bearingDMSSpec.SetPrecision(DecimalPrecision::Precision0);
     bearingDMSSpec.SetKeepDecimalPoint(false);
     bearingDMSSpec.SetPresentationType(PresentationType::Bearing);
+    bearingDMSSpec.SetRevolutionUnit(revolution);
     Format bearingDMS(bearingDMSSpec);
     bearingDMS.SetSuppressUnitLabel();
     auto bearingDMScomp = CompositeValueSpec(*s_unitsContext->LookupUnit("ARC_DEG"), *s_unitsContext->LookupUnit("ARC_MINUTE"), *s_unitsContext->LookupUnit("ARC_SECOND"));
@@ -1825,6 +1821,7 @@ TEST_F(FormattingTestFixture, ParseBearingProblemCode){
 
 TEST_F(FormattingTestFixture, ParseAzimuthProblemCode){
     auto unitDegree = s_unitsContext->LookupUnit("ARC_DEG");
+    auto revolution = s_unitsContext->LookupUnit("REVOLUTION");
     FormatProblemCode problemCode = FormatProblemCode::NoProblems;
 
     NumericFormatSpec azimuthSpec;
@@ -1835,6 +1832,8 @@ TEST_F(FormattingTestFixture, ParseAzimuthProblemCode){
     azimuthSpec.SetKeepTrailingZeroes(true);
     azimuthSpec.SetKeepSingleZero(true);
     azimuthSpec.SetAzimuthBase(180.0);
+    // azimuthSpec.SetAzimuthBaseUnit(unitDegree); missing for this test
+    azimuthSpec.SetRevolutionUnit(revolution);
 
     Format azimuth(azimuthSpec);
     auto azimuthComp = CompositeValueSpec(*unitDegree);

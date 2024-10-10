@@ -150,63 +150,64 @@ bool Format::IsIdentical(FormatCR other) const
     return true;
     }
 
-BentleyStatus TryGetPerigon(Utf8StringCR unitName, double& value)
+BentleyStatus Format::TryGetRevolution(BEU::UnitCR unit, double& revolution) const
     {
-    if (unitName.EqualsI("ARC_DEG"))
-        {
-        value = 360.0;
-        return BentleyStatus::SUCCESS;
-        }
-    else if (unitName == "RAD") 
-        {
-        value = 2 * M_PI;
-        return BentleyStatus::SUCCESS;
-        }
+    auto numSpec = GetNumericSpec();
+    if (numSpec == nullptr)
+        return BentleyStatus::ERROR;
 
-    return BentleyStatus::ERROR;
+    auto revUnit = GetNumericSpec()->GetRevolutionUnit();
+    if (revUnit == nullptr)
+        return BentleyStatus::ERROR;
+
+    BEU::Quantity revQuantity(1.0, *revUnit);
+    auto convertedQuantity = revQuantity.ConvertTo(&unit);
+    if (!convertedQuantity.IsValid())
+        return BentleyStatus::ERROR;
+    
+    revolution = convertedQuantity.GetMagnitude();
+    return BentleyStatus::SUCCESS;
     }
 
-BentleyStatus Format::NormalizeAngle(BEU::Quantity& quantity, Utf8CP operationName, double& perigon)
+BentleyStatus Format::NormalizeAngle(BEU::Quantity& quantity, Utf8CP operationName, double revolution)
     {
     BEU::UnitCP unit = quantity.GetUnit();
-    if (!unit->GetPhenomenon()->IsAngle())
-        {
-        LOG.errorv("Invalid unit for %s format. Phenomenon must be 'Angle'. Unit used: %s", operationName, unit->GetName().c_str());
-        return BentleyStatus::ERROR;
-        }
-
-    if(TryGetPerigon(unit->GetName(), perigon) != BentleyStatus::SUCCESS)
-        {
-        LOG.errorv("Unsupported unit for %s format: %s", operationName, unit->GetName().c_str());
-        return BentleyStatus::ERROR;
-        }
-
-    double magnitude = fmod(quantity.GetMagnitude(), perigon); // Strip anything that goes around more than once
+    double magnitude = fmod(quantity.GetMagnitude(), revolution); // Strip anything that goes around more than once
     
     if(magnitude < 0) //If the value is negative, representing a counter-clockwise angle, we want to normalize it to a positive angle
-        magnitude += perigon;
+        magnitude += revolution;
 
     quantity = BEU::Quantity(magnitude, *unit);
     return BentleyStatus::SUCCESS;
     }
 
-BentleyStatus ProcessBearingAndAzimuth(NumericFormatSpecCP fmtP, BEU::Quantity& quantity, std::string& prefix, std::string& suffix)
+BentleyStatus Format::FormatBearingAndAzimuth(BEU::Quantity& quantity, std::string& prefix, std::string& suffix) const
     {
+    NumericFormatSpecCP fmtP = GetNumericSpec();
+    if (fmtP == nullptr)
+        return BentleyStatus::ERROR;
+
     auto type = fmtP->GetPresentationType();
     if(type != PresentationType::Bearing && type != PresentationType::Azimuth)
         return BentleyStatus::ERROR;
 
-    double perigon;
-    if (Format::NormalizeAngle(quantity, type == PresentationType::Bearing ? "bearing" : "azimuth", perigon) != BentleyStatus::SUCCESS)
+    double revolution;
+    auto unit = quantity.GetUnit();
+    if (unit == nullptr)
         return BentleyStatus::ERROR;
 
-    double rightAngle = perigon / 4;
+    if (TryGetRevolution(*unit, revolution) != BentleyStatus::SUCCESS)
+        return BentleyStatus::ERROR;
+    if (Format::NormalizeAngle(quantity, type == PresentationType::Bearing ? "bearing" : "azimuth", revolution) != BentleyStatus::SUCCESS)
+        return BentleyStatus::ERROR;
+
+    double quarterRevolution = revolution / 4;
     double magnitude = quantity.GetMagnitude();
     if (type == PresentationType::Bearing)
         {
         int quadrant = 0;
-        while (magnitude > rightAngle) {
-            magnitude -= rightAngle;
+        while (magnitude > quarterRevolution) {
+            magnitude -= quarterRevolution;
             quadrant++;
         }
 
@@ -215,7 +216,7 @@ BentleyStatus ProcessBearingAndAzimuth(NumericFormatSpecCP fmtP, BEU::Quantity& 
         // 2 1
         // For quadrants 1 and 3 we have to subtract the angle from 90 degrees because they go counter clockwise
         if (quadrant == 1 || quadrant == 3)
-            magnitude = rightAngle - magnitude;
+            magnitude = quarterRevolution - magnitude;
 
         if (quadrant == 0 || quadrant == 3)
             prefix = fmtP->GetNorthLabel();
@@ -230,7 +231,7 @@ BentleyStatus ProcessBearingAndAzimuth(NumericFormatSpecCP fmtP, BEU::Quantity& 
             suffix = fmtP->GetWestLabel();
 
         // special case, if in quadrant 2 and value is very close to quarter revolution (90°), turn prefix to N because N90:00:00W is preferred over S90:00:00W        
-        if (quadrant == 2 && FormatConstant::IsNegligible(magnitude - rightAngle)){
+        if (quadrant == 2 && FormatConstant::IsNegligible(magnitude - quarterRevolution)){
             prefix = fmtP->GetNorthLabel();
         }
 
@@ -242,16 +243,18 @@ BentleyStatus ProcessBearingAndAzimuth(NumericFormatSpecCP fmtP, BEU::Quantity& 
 
         if (fmtP->HasAzimuthBase()) {
             azimuthBase = fmtP->GetAzimuthBase();
-            if (fmtP->HasAzimuthBaseUnit())
-            {
-                BEU::Quantity azimuthBaseQuantity(azimuthBase, *fmtP->GetAzimuthBaseUnit());
-                azimuthBaseQuantity.ConvertTo(quantity.GetUnit());
-                azimuthBase = azimuthBaseQuantity.GetMagnitude();
-            } 
+            auto azimuthBaseUnit = fmtP->GetAzimuthBaseUnit();
+            if (azimuthBaseUnit != nullptr)
+                {
+                BEU::Quantity azimuthBaseQuantity(azimuthBase, *azimuthBaseUnit);
+                BEU::Quantity converted = azimuthBaseQuantity.ConvertTo(quantity.GetUnit());
+                if(!converted.IsValid())
+                    return BentleyStatus::ERROR;
+
+                azimuthBase = converted.GetMagnitude();
+                } 
             else 
-            {
                 return BentleyStatus::ERROR; // if the base is set, but base unit is missing
-            }
         }
 
         if(azimuthBase == 0.0)
@@ -259,13 +262,13 @@ BentleyStatus ProcessBearingAndAzimuth(NumericFormatSpecCP fmtP, BEU::Quantity& 
 
         magnitude -= azimuthBase;
         while(magnitude < 0)
-            magnitude += perigon;
+            magnitude += revolution;
         
-        while(magnitude > perigon)
-            magnitude -= perigon;
+        while(magnitude > revolution)
+            magnitude -= revolution;
 
         if(fmtP->IsCounterClockwiseAngle())
-            magnitude = perigon - magnitude;
+            magnitude = revolution - magnitude;
 
         quantity = BEU::Quantity(magnitude, *quantity.GetUnit());
     }
@@ -295,7 +298,7 @@ Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8
     bool additionalFormatting = false;
     if (fmtP->GetPresentationType() == PresentationType::Bearing || fmtP->GetPresentationType() == PresentationType::Azimuth)
         {
-        if (ProcessBearingAndAzimuth(fmtP, temp, prefix, suffix) != BentleyStatus::SUCCESS)
+        if (FormatBearingAndAzimuth(temp, prefix, suffix) != BentleyStatus::SUCCESS)
             return "";
 
         additionalFormatting = true;

@@ -66,6 +66,7 @@ void UnitsTestFixture::FillRegistry(UnitRegistry* registry)
     registry->AddConstant(METRIC_PREFIX, CONSTANT, "MEGA", "ONE", 1.0e6); //, "MEGA-prefix");
 
     registry->AddConstant(LENGTH_RATIO, CONSTANT, "PI", "ONE", PI); //, "Ratio of Circumference to its Diameter");
+    registry->AddConstant(LENGTH_RATIO, CONSTANT, "TWO_PI", "PI", 2);
 
     registry->AddUnit(LENGTH, METRIC, "MM", "[MILLI]*M");
     registry->AddUnit(LENGTH, METRIC, "CM", "[CENTI]*M");
@@ -75,6 +76,7 @@ void UnitsTestFixture::FillRegistry(UnitRegistry* registry)
     registry->AddUnit(LENGTH, USCUSTOM, "YRD", "FT", 3.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
     registry->AddUnit(LENGTH, USCUSTOM, "MILE", "YRD", 1760.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-8
 
+    registry->AddUnit(ANGLE, METRIC, "REVOLUTION", "[TWO_PI]*RAD");
     registry->AddUnit(ANGLE, METRIC, "ARC_DEG", "[PI]*RAD", 1.0, 180.0 ); // 1/180
     registry->AddUnit(ANGLE, METRIC, "ARC_MINUTE", "ARC_DEG", 1.0, 60.0); // 1/60
     registry->AddUnit(ANGLE, METRIC, "ARC_SECOND", "ARC_DEG", 1.0, 3600.0); // 1/3600 

@@ -87,13 +87,15 @@ private:
     uint8_t m_explicitlyDefinedUOMSeparator:1;
     uint8_t m_explicitlyDefinedStatSeparator:1;
     uint8_t m_explicitlyDefinedAzimuthBase:1;
-    uint8_t m_explicitlyDefinedAzimuthBaseUnit:1;
+
     double              m_roundFactor;
     PresentationType    m_presentationType;      // Decimal, Fractional, Scientific, Station
     RatioType           m_ratioType;        // OneToN, NToOne, ValueBased, UseGreatestCommonDivisor
     ScientificType      m_scientificType;
     double              m_azimuthBase;     // The base offset for azimuths in radians from north clockwise
     BEU::UnitCP         m_azimuthBaseUnit; // The unit of the azimuth base
+    bool                m_azimuthCounterClockwise; // The orientation of a formatted azimuth
+    BEU::UnitCP         m_revolutionUnit; // Required for bearing and azimuth. Unit which represents a full revolution.
 
     SignOption          m_signOption;            // NoSign, OnlyNegative, SignAlways, NegativeParentheses
     FormatTraits        m_formatTraits;          // NoZeroes, TrailingZeroes, BothZeroes
@@ -205,8 +207,10 @@ public:
     double GetAzimuthBase() const {return m_azimuthBase;}
 
     void SetAzimuthBaseUnit(BEU::UnitCP unit){m_azimuthBaseUnit = unit;}
-    bool HasAzimuthBaseUnit() const {return m_explicitlyDefinedAzimuthBaseUnit;}
     BEU::UnitCP GetAzimuthBaseUnit() const {return m_azimuthBaseUnit;}
+
+    void SetRevolutionUnit(BEU::UnitCP unit){m_revolutionUnit = unit;}
+    BEU::UnitCP GetRevolutionUnit() const {return m_revolutionUnit;}
 
     void SetPrecision(FractionalPrecision precision) {m_explicitlyDefinedPrecision = true; m_fractPrecision = precision; }
     void SetPrecision(DecimalPrecision precision) {m_explicitlyDefinedPrecision = true; m_decPrecision = precision;}
@@ -303,9 +307,9 @@ public:
     void SetPrependUnitLabel(bool setTo) { SetTraitsBit(FormatTraits::PrependUnitLabel, setTo); }
     bool IsPrependUnitLabel() const { return GetTraitBit(FormatTraits::PrependUnitLabel); }
 
-    //Sets angle formatting to be counter clockwise, affects azimuths
-    void SetCounterClockwiseAngle(bool setTo) { SetTraitsBit(FormatTraits::CounterClockwiseAngle, setTo);}
-    bool IsCounterClockwiseAngle() const {return GetTraitBit(FormatTraits::CounterClockwiseAngle);}
+    // Indicates whether azimuth values should be formatted counter-clockwise from their base
+    void SetAzimuthCounterClockwise(bool setTo) { m_azimuthCounterClockwise = setTo;}
+    bool IsCounterClockwiseAngle() const {return m_azimuthCounterClockwise;}
 
     Utf8String FormatToRatio(double value) const;
 
@@ -659,7 +663,12 @@ public:
     // Legacy Descriptor string
     UNITS_EXPORT static void ParseUnitFormatDescriptor(Utf8StringR unitName, Utf8StringR formatString, Utf8CP description);
 
-    BentleyStatus static NormalizeAngle(BEU::Quantity& quantity, Utf8CP operationName, double& perigon);
+    BentleyStatus FormatBearingAndAzimuth(BEU::Quantity& quantity, std::string& prefix, std::string& suffix) const;
+
+    //! Normalizes the angle to be within the range of 0 to 2*PI
+    BentleyStatus static NormalizeAngle(BEU::Quantity& quantity, Utf8CP operationName, double revolution);
+    //! Attempts to convert the specified revolution into the provided unit
+    BentleyStatus TryGetRevolution(BEU::UnitCR unit, double& revolution) const;
 };
 
 //=======================================================================================

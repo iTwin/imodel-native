@@ -494,6 +494,7 @@ Utf8String FormatProblemDetail::GetProblemDescription() const
         case FormatProblemCode::NFS_DuplicateSpecName: return "Duplicate Numeric Format name";
         case FormatProblemCode::NFS_DuplicateSpecNameOrAlias: return "Duplicate Numeric Format name or alias";
         case FormatProblemCode::NFS_InvalidJsonObject: return "Invalid Numeric Format JSON-descriptor";
+        case FormatProblemCode::NFS_MissingUnit: return "A required unit on the format is missing";
         case FormatProblemCode::DIV_UnknownDivider: return "Unknown Divider";
         case FormatProblemCode::NA_InvalidSign: return "Invalid or duplicate sign in numeric definition";         // Numeric Accumulator problems
         case FormatProblemCode::NA_InvalidPoint: return "Invalid or duplicate decimal point in numeric definition";
