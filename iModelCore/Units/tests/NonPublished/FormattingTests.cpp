@@ -1,4 +1,4 @@
-/*---------------------------------------------------------------------------------------------
+﻿/*---------------------------------------------------------------------------------------------
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
@@ -1685,7 +1685,7 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
         double degreeNormalized = std::fmod(degree.GetMagnitude(), 360.0);
         double radianNormalized = DegreesToRadians(degreeNormalized);
 
-        ASSERT_NEAR(degreeNormalized, qtyFromDegree.GetMagnitude(), 0.001); // TODO <Naron>: this needs to be adjusted with precision in format
+        ASSERT_NEAR(degreeNormalized, qtyFromDegree.GetMagnitude(), 0.001); 
         ASSERT_NEAR(radianNormalized, qtyFromRadian.GetMagnitude(), 0.001);
     };
 

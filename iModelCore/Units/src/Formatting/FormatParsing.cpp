@@ -934,6 +934,8 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatC
         inputUnit = m_unit;
 
     _Analysis_assume_(inputUnit != nullptr);
+    
+    *probCode = FormatProblemCode::NoProblems;
 
     BEU::Quantity qty;
     if (format->GetPresentationType() == PresentationType::Azimuth){
@@ -948,7 +950,7 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatC
         qty = ParseRatioFormat(probCode, format, inputUnit);
     }
 
-    if (probCode != nullptr && *probCode != FormatProblemCode::NoProblems){
+    if (*probCode != FormatProblemCode::NoProblems){
         m_problem.UpdateProblemCode(*probCode);
         return qty;
     }
@@ -958,7 +960,7 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatC
 
     m_problem.Reset();
 
-    Utf8String sig = GetSignature(false); // TODO-<Naron>: pass in presentation type here?
+    Utf8String sig = GetSignature(false); 
     // only a limited number of signatures will be recognized in this particular context
     // reduced version: NN, NU, NFU, NUNU, NUNFU NUNUNU NUNUNFU
     //        3 FT - NU
@@ -1266,8 +1268,8 @@ BEU::Quantity FormatParsingSet::ParseAzimuthFormat(FormatProblemCode* probCode, 
 
     if (m_problem.IsProblem())
         {
-        if (probCode != nullptr) //TODO - this is redundant here as m_problem will get updated in GetQuantity(), its here now cuz we have 2 different ways tracking problem code
-            *probCode = m_problem.GetProblemCode();
+        //TODO - this is redundant here as m_problem will get updated in GetQuantity(), its here now cuz we have 2 different ways tracking problem code
+        *probCode = m_problem.GetProblemCode();
 
         return converted;
         }
@@ -1278,15 +1280,13 @@ BEU::Quantity FormatParsingSet::ParseAzimuthFormat(FormatProblemCode* probCode, 
     double revolution;
     if (format->TryGetRevolution(*inputUnit, revolution) != BentleyStatus::SUCCESS)
         {
-        if (probCode != nullptr)
-            *probCode = FormatProblemCode::NFS_MissingUnit;
+        *probCode = FormatProblemCode::NFS_MissingUnit;
         return BEU::Quantity(BEU::UnitsProblemCode::UnspecifiedProblem);
         }
 
     if (Format::NormalizeAngle(qty, "azimuth", revolution) != BentleyStatus::SUCCESS)
         {
-        if (probCode != nullptr)
-            *probCode = FormatProblemCode::CVS_InvalidMajorUnit;
+        *probCode = FormatProblemCode::CVS_InvalidMajorUnit;
         return converted;
         }
 
@@ -1303,15 +1303,13 @@ BEU::Quantity FormatParsingSet::ParseAzimuthFormat(FormatProblemCode* probCode, 
                 azimuthBase = converted.GetMagnitude();
             else
                 {   
-                if (probCode != nullptr)
-                    *probCode = FormatProblemCode::QT_ConversionFailed;
+                *probCode = FormatProblemCode::QT_ConversionFailed;
                 return converted;
                 }
             }
         else
             {
-            if (probCode != nullptr)
-                *probCode = FormatProblemCode::QT_NoValueOrUnitFound;
+            *probCode = FormatProblemCode::QT_NoValueOrUnitFound;
             return converted;
             }
         }
@@ -1340,8 +1338,7 @@ BEU::Quantity FormatParsingSet::ParseAzimuthFormat(FormatProblemCode* probCode, 
 
     if (!converted.IsValid())
         {
-        if (probCode != nullptr)
-            *probCode = FormatProblemCode::QT_ConversionFailed;
+        *probCode = FormatProblemCode::QT_ConversionFailed;
         }
 
     return converted;
@@ -1361,9 +1358,7 @@ BEU::Quantity FormatParsingSet::ParseBearingFormat(FormatProblemCode* probCode, 
     std::string inString = m_input;   
 
     if (inString.empty()){
-        if (probCode != nullptr){
-            *probCode = FormatProblemCode::QT_NoValueOrUnitFound;
-        }
+        *probCode = FormatProblemCode::QT_NoValueOrUnitFound;
         return converted;
     }
 
@@ -1387,11 +1382,9 @@ BEU::Quantity FormatParsingSet::ParseBearingFormat(FormatProblemCode* probCode, 
         matchedSuffix = West;
     }
 
-    // if both prefix and suffix are missing, return error
+    // if either prefix and suffix are missing, return error
     if (matchedPrefix.empty() || matchedSuffix.empty()){
-        if (probCode != nullptr){
-            *probCode = FormatProblemCode::QT_BearingPrefixOrSuffixMissing;
-        }
+        *probCode = FormatProblemCode::QT_BearingPrefixOrSuffixMissing;
         return converted;
     }
 
@@ -1400,24 +1393,20 @@ BEU::Quantity FormatParsingSet::ParseBearingFormat(FormatProblemCode* probCode, 
     BEU::Quantity qty = ParseAndProcessTokens(cod, format, inputUnit);
 
     if (m_problem.IsProblem()){
-        if (probCode != nullptr){ //TODO - this is redundant here as m_problem will get updated in GetQuantity(), its here now cuz we have 2 different ways tracking problem code
-            *probCode = m_problem.GetProblemCode();
-        }
+        //TODO - this is redundant here as m_problem will get updated in GetQuantity(), its here now cuz we have 2 different ways tracking problem code
+        *probCode = m_problem.GetProblemCode();
         return converted;
     }
 
     double revolution;
     if (format->TryGetRevolution(*inputUnit, revolution) != BentleyStatus::SUCCESS)
         {
-        if (probCode != nullptr)
-            *probCode = FormatProblemCode::NFS_MissingUnit;
+        *probCode = FormatProblemCode::NFS_MissingUnit;
         return BEU::Quantity(BEU::UnitsProblemCode::UnspecifiedProblem);
         }
 
     if (Format::NormalizeAngle(qty, "bearing", revolution) != BentleyStatus::SUCCESS){
-        if (probCode != nullptr){
-            *probCode = FormatProblemCode::CVS_InvalidMajorUnit;
-        }
+        *probCode = FormatProblemCode::CVS_InvalidMajorUnit;
         return converted;
     }
     double quarterRevolution = revolution / 4;
@@ -1439,9 +1428,7 @@ BEU::Quantity FormatParsingSet::ParseBearingFormat(FormatProblemCode* probCode, 
     
     converted = qty.ConvertTo(m_unit);
     if (!converted.IsValid()){
-        if (probCode != nullptr){
-            *probCode = FormatProblemCode::QT_ConversionFailed;
-        }
+        *probCode = FormatProblemCode::QT_ConversionFailed;
     }
 
     return converted;
@@ -1461,17 +1448,13 @@ BEU::Quantity FormatParsingSet::ParseRatioFormat(FormatProblemCode* probCode, Fo
 
     if (parts.size() == 0)
         {
-        if (probCode != nullptr)
-            *probCode = FormatProblemCode::QT_NoValueOrUnitFound;
-
+        *probCode = FormatProblemCode::QT_NoValueOrUnitFound;
         return converted;
         }
 
     if (parts.size() > 2)
         {
-        if (probCode != nullptr)
-            *probCode = FormatProblemCode::QT_InvalidRatioArgument;
-
+        *probCode = FormatProblemCode::QT_InvalidRatioArgument;
         return converted;
         }
 
@@ -1489,24 +1472,18 @@ BEU::Quantity FormatParsingSet::ParseRatioFormat(FormatProblemCode* probCode, Fo
         }
     catch (std::invalid_argument)
         {
-        if (probCode != nullptr)
-            *probCode = FormatProblemCode::QT_InvalidRatioArgument;
-
+        *probCode = FormatProblemCode::QT_InvalidRatioArgument;
         return converted;
         }
     catch (std::out_of_range)
         {
-        if (probCode != nullptr)
-            *probCode = FormatProblemCode::QT_ValueOutOfRange;
-
+        *probCode = FormatProblemCode::QT_ValueOutOfRange;
         return converted;
         }
 
     if (m_unit == nullptr)
         {
-        if (probCode != nullptr)
-            *probCode = FormatProblemCode::QT_NoValueOrUnitFound;
-
+        *probCode = FormatProblemCode::QT_NoValueOrUnitFound;
         return converted;
         }
 
@@ -1518,8 +1495,7 @@ BEU::Quantity FormatParsingSet::ParseRatioFormat(FormatProblemCode* probCode, Fo
             return BEU::Quantity(0, *m_unit);
 
         // for input of "N:0" without reversed unit
-        if (probCode != nullptr)
-            *probCode = FormatProblemCode::QT_MathematicOperationFoundButIsNotAllowed;
+        *probCode = FormatProblemCode::QT_MathematicOperationFoundButIsNotAllowed;
 
         return converted;
         }
@@ -1530,8 +1506,7 @@ BEU::Quantity FormatParsingSet::ParseRatioFormat(FormatProblemCode* probCode, Fo
     // for input of "0:N" with reversed unit
     if (converted.GetProblemCode() == BEU::UnitsProblemCode::InvertingZero)
         {
-        if (probCode != nullptr)
-            *probCode = FormatProblemCode::QT_MathematicOperationFoundButIsNotAllowed;
+        *probCode = FormatProblemCode::QT_MathematicOperationFoundButIsNotAllowed;
 
         return converted;
         }
