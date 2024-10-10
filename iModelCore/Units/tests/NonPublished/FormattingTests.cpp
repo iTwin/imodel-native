@@ -1673,8 +1673,8 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
         FormatProblemCode problemCode_degree = FormatProblemCode::NoProblems;
         FormatProblemCode problemCode_radian = FormatProblemCode::NoProblems;
 
-        auto formatParsingSet_degree = FormatParsingSet(expectedString, unitDegree, &format);
-        auto formatParsingSet_radian = FormatParsingSet(expectedString, unitRadian, &format);
+        auto formatParsingSet_degree = FormatParsingSet(expectedString.c_str(), unitDegree, &format);
+        auto formatParsingSet_radian = FormatParsingSet(expectedString.c_str(), unitRadian, &format);
 
         BEU::Quantity qtyFromDegree = formatParsingSet_degree.GetQuantity(&problemCode_degree, &format);
         BEU::Quantity qtyFromRadian = formatParsingSet_radian.GetQuantity(&problemCode_radian, &format);
@@ -1770,7 +1770,7 @@ TEST_F(FormattingTestFixture, AzimuthWithVariousBases) {
 
         // Parse the formatted string back into quantities
         FormatProblemCode problemCode = FormatProblemCode::NoProblems;
-        FormatParsingSet formatParsingSet(result, unitDegree, &azimuth);
+        FormatParsingSet formatParsingSet(result.c_str(), unitDegree, &azimuth);
         Units::Quantity qty = formatParsingSet.GetQuantity(&problemCode, &azimuth);
         ASSERT_EQ(FormatProblemCode::NoProblems, problemCode);
         ASSERT_NEAR(testCase.value, qty.GetMagnitude(), 0.001);

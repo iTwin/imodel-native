@@ -702,7 +702,7 @@ FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //----------------------------------------------------------------------------------------
-void FormatParsingSet::Init(std::string input, size_t start, BEU::UnitCP unit, FormatCP format, QuantityFormatting::UnitResolver* resolver)
+void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, FormatCP format, QuantityFormatting::UnitResolver* resolver)
     {
     m_format = format;
     m_input = input;
@@ -716,7 +716,7 @@ void FormatParsingSet::Init(std::string input, size_t start, BEU::UnitCP unit, F
     size_t ind0 = start;
     bool initVect = true;
 
-    if (input.empty())
+    if (Utf8String::IsNullOrEmpty(input))        
         return;
 
     //special case for station format in order not to brake functionality below
@@ -794,7 +794,7 @@ void FormatParsingSet::Init(std::string input, size_t start, BEU::UnitCP unit, F
 
     while (!ng.IsEndOfLine())
         {
-        ng.Grab(input.c_str(), ind, decSep, thousSep);
+        ng.Grab(input, ind, decSep, thousSep);
         if (ng.HasProblem())
             {
             m_problem.UpdateProblemCode(ng.GetProblemCode());
@@ -819,7 +819,7 @@ void FormatParsingSet::Init(std::string input, size_t start, BEU::UnitCP unit, F
             {
             if (initVect) ind0 = ind;
             initVect = false;
-            csp = CursorScanPoint(input.c_str(), ind);
+            csp = CursorScanPoint(input, ind);
             if (csp.IsSpace())
                 {
                 if (!m_symbs.empty())
@@ -830,7 +830,7 @@ void FormatParsingSet::Init(std::string input, size_t start, BEU::UnitCP unit, F
                     ind = csp.GetIndex();
                     ind0 = ind;
                     }
-                while (csp.IsSpace()) { csp.Iterate(input.c_str()); }
+                while (csp.IsSpace()) { csp.Iterate(input); }
                 ind = csp.GetIndex();
                 ind0 = ind;
                 }
@@ -851,7 +851,7 @@ void FormatParsingSet::Init(std::string input, size_t start, BEU::UnitCP unit, F
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //----------------------------------------------------------------------------------------
-FormatParsingSet::FormatParsingSet(std::string input, BEU::UnitCP unit, FormatCP format, QuantityFormatting::UnitResolver* resolver)
+FormatParsingSet::FormatParsingSet(Utf8CP input, BEU::UnitCP unit, FormatCP format, QuantityFormatting::UnitResolver* resolver)
     {
     Init(input, 0, unit, format, resolver);
     }
