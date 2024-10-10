@@ -1388,7 +1388,7 @@ BEU::Quantity FormatParsingSet::ParseBearingFormat(FormatProblemCode* probCode, 
     }
 
     // if both prefix and suffix are missing, return error
-    if (matchedPrefix.empty() && matchedSuffix.empty()){
+    if (matchedPrefix.empty() || matchedSuffix.empty()){
         if (probCode != nullptr){
             *probCode = FormatProblemCode::QT_BearingPrefixOrSuffixMissing;
         }

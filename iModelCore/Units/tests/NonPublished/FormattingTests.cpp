@@ -1546,11 +1546,11 @@ TEST_F(FormattingTestFixture, FormatsUsingDefaultNumericFormatSpecWhenItsNotSet)
 struct BearingTestData 
     {
     double angleDegree;
-    std::string bearingDMS; //degrees minutes seconds
+    Utf8String bearingDMS; //degrees minutes seconds
     Utf8String bearingDMSWithLabel;
-    std::string bearingDecimal;
-    std::string northAzimuthDMS; //degrees minutes seconds
-    std::string northAzimuthDecimal;
+    Utf8String bearingDecimal;
+    Utf8String northAzimuthDMS; //degrees minutes seconds
+    Utf8String northAzimuthDecimal;
     };
 
 double DegreesToRadians(double degrees)
@@ -1559,8 +1559,6 @@ double DegreesToRadians(double degrees)
     };
 
 TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
-    
-
     std::vector<BearingTestData> testData = {
         //DEG,    BEAR DMS      WITH LABEL        BEAR         AZI DMS     AZI
         {0.0,     "N00:00:00E", "N00°00'00\"E", "N00.000°E", "00:00:00", "00.000"},
@@ -1752,12 +1750,11 @@ TEST_F(FormattingTestFixture, AzimuthWithVariousBases) {
         {90.0,  270.0, true,  "180.0°"},
     };
 
-    // Define the formatAzimuth function with parsing logic included
-    auto formatAzimuth = [&azimuthSpec, &unitDegree](double value, double baseOffsetInDeg, bool counterClockwise, Utf8String expectedString) 
+    for (const auto& testCase : testCases)
         {
         // Configure the numeric format specification
-        azimuthSpec.SetAzimuthBase(DegreesToRadians(baseOffsetInDeg));
-        azimuthSpec.SetAzimuthCounterClockwise(counterClockwise);
+        azimuthSpec.SetAzimuthBase(DegreesToRadians(testCase.baseOffsetInDeg));
+        azimuthSpec.SetAzimuthCounterClockwise(testCase.counterClockwise);
 
         Format azimuth(azimuthSpec);
         CompositeValueSpec azimuthComp(*unitDegree);
@@ -1765,23 +1762,19 @@ TEST_F(FormattingTestFixture, AzimuthWithVariousBases) {
         azimuthComp.SetSpacer("");
         azimuth.SetCompositeSpec(azimuthComp);
 
-        Units::Quantity degreeQuantity(value, *unitDegree);
+        Units::Quantity degreeQuantity(testCase.value, *unitDegree);
 
         // Format the quantity
         Utf8String result = azimuth.FormatQuantity(degreeQuantity);
-        ASSERT_STREQ(expectedString.c_str(), result.c_str());
+        ASSERT_STREQ(testCase.expectedString.c_str(), result.c_str());
 
         // Parse the formatted string back into quantities
         FormatProblemCode problemCode = FormatProblemCode::NoProblems;
         FormatParsingSet formatParsingSet(result, unitDegree, &azimuth);
         Units::Quantity qty = formatParsingSet.GetQuantity(&problemCode, &azimuth);
         ASSERT_EQ(FormatProblemCode::NoProblems, problemCode);
-
-        ASSERT_NEAR(value, qty.GetMagnitude(), 0.001);
-        };
-
-    for (const auto& testCase : testCases)
-        formatAzimuth(testCase.value, testCase.baseOffsetInDeg, testCase.counterClockwise, testCase.expectedString);
+        ASSERT_NEAR(testCase.value, qty.GetMagnitude(), 0.001);
+        }
 }
 
 TEST_F(FormattingTestFixture, ParseBearingProblemCode){
@@ -1812,6 +1805,9 @@ TEST_F(FormattingTestFixture, ParseBearingProblemCode){
         {zeroInput, FormatProblemCode::NoProblems},
         {"", FormatProblemCode::QT_NoValueOrUnitFound},
         {"00:00:00", FormatProblemCode::QT_BearingPrefixOrSuffixMissing},
+        {"A00:00:00B", FormatProblemCode::QT_BearingPrefixOrSuffixMissing},
+        {"N00:00:00", FormatProblemCode::QT_BearingPrefixOrSuffixMissing},
+        {"00:00:00S", FormatProblemCode::QT_BearingPrefixOrSuffixMissing},
     };
 
     BEU::Quantity qty;
