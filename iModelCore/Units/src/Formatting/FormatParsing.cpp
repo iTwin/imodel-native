@@ -1334,9 +1334,6 @@ BEU::Quantity FormatParsingSet::ParseAzimuthFormat(FormatProblemCode* probCode, 
     
     while(magnitude > revolution)
         magnitude -= revolution;
-
-    if(fmtP->IsCounterClockwiseAngle())
-        magnitude = revolution - magnitude;
     
     qty = BEU::Quantity(magnitude, *inputUnit);
     converted = qty.ConvertTo(m_unit);
