@@ -702,12 +702,8 @@ FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //----------------------------------------------------------------------------------------
-void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, FormatCP format, QuantityFormatting::UnitResolver* resolver)
+void FormatParsingSet::SegmentInput(Utf8CP input, size_t start)
     {
-    m_format = format;
-    m_input = input;
-    m_unit = unit;
-    m_problem.Reset();
     FormatParsingSegment fps;
     NumberGrabber ng;
     bvector<CursorScanPoint> m_symbs;
@@ -784,14 +780,6 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, Format
         thousSep = m_format->GetNumericSpec()->GetThousandSeparator();
         }
 
-
-    std::string cleanInput;
-    if (nullptr != m_format && m_format->GetPresentationType() == PresentationType::Bearing) {
-        std::regex directionPattern(R"(^[NSEW]|[NSEW]$)");
-        cleanInput = std::regex_replace(input, directionPattern, "");
-        input = cleanInput.c_str();
-    }
-
     while (!ng.IsEndOfLine())
         {
         ng.Grab(input, ind, decSep, thousSep);
@@ -805,7 +793,7 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, Format
             {
             if (!m_symbs.empty())
                 {
-                fps = FormatParsingSegment(m_symbs, ind0, m_unit, m_format, resolver);
+                fps = FormatParsingSegment(m_symbs, ind0, m_unit, m_format, m_resolver);
                 m_segs.push_back(fps);
                 m_symbs.clear();
                 }
@@ -824,7 +812,7 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, Format
                 {
                 if (!m_symbs.empty())
                     {
-                    fps = FormatParsingSegment(m_symbs, ind0, m_unit, m_format, resolver);
+                    fps = FormatParsingSegment(m_symbs, ind0, m_unit, m_format, m_resolver);
                     m_segs.push_back(fps);
                     m_symbs.clear();
                     ind = csp.GetIndex();
@@ -843,7 +831,7 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, Format
 
     if (!m_symbs.empty())
         {
-        fps = FormatParsingSegment(m_symbs, ind0, m_unit, m_format, resolver);
+        fps = FormatParsingSegment(m_symbs, ind0, m_unit, m_format, m_resolver);
         m_segs.push_back(fps);
         }
     }
@@ -851,9 +839,12 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit, Format
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //----------------------------------------------------------------------------------------
-FormatParsingSet::FormatParsingSet(Utf8CP input, BEU::UnitCP unit, FormatCP format, QuantityFormatting::UnitResolver* resolver)
+FormatParsingSet::FormatParsingSet(BEU::UnitCP unit, FormatCP format, QuantityFormatting::UnitResolver* resolver)
     {
-    Init(input, 0, unit, format, resolver);
+    m_unit = unit;
+    m_format = format;
+    m_problem.Reset();
+    m_resolver = resolver;
     }
 
 //----------------------------------------------------------------------------------------
@@ -925,8 +916,22 @@ bool FormatParsingSet::ValidateParsingFUS(int reqUnitCount, FormatCP format)
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //----------------------------------------------------------------------------------------
-BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatCP format)
+BEU::Quantity FormatParsingSet::GetQuantity(Utf8CP input, FormatProblemCode* probCode, FormatCP format)
     {
+        
+    *probCode = FormatProblemCode::NoProblems;
+    m_problem.Reset();
+
+    // special handling for bearing format - strip off the direction characters
+    std::string inString(input);
+    if (nullptr != m_format && m_format->GetPresentationType() == PresentationType::Bearing) {
+        std::regex directionPattern(R"(^[NSEW]|[NSEW]$)"); // TODO - <Naron>: dont use regex here
+        inString = std::regex_replace(input, directionPattern, "");
+        input = inString.c_str();
+    }
+
+    SegmentInput(inString.c_str(), 0);
+
     BEU::UnitCP inputUnit;
     if (nullptr != format && nullptr != format->GetCompositeMajorUnit())
         inputUnit = format->GetCompositeMajorUnit();
@@ -935,19 +940,17 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatC
 
     _Analysis_assume_(inputUnit != nullptr);
     
-    *probCode = FormatProblemCode::NoProblems;
-
     BEU::Quantity qty;
     if (format->GetPresentationType() == PresentationType::Azimuth){
         qty = ParseAzimuthFormat(probCode, format, inputUnit);
     }
 
     if (format->GetPresentationType() == PresentationType::Bearing){
-        qty = ParseBearingFormat(probCode, format, inputUnit);
+        qty = ParseBearingFormat(input, probCode, format, inputUnit);
     }
 
     if (format->GetPresentationType() == PresentationType::Ratio){
-        qty = ParseRatioFormat(probCode, format, inputUnit);
+        qty = ParseRatioFormat(input, probCode, format, inputUnit);
     }
 
     if (*probCode != FormatProblemCode::NoProblems){
@@ -957,8 +960,6 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatC
 
     if (!qty.IsNullQuantity())
         return qty;
-
-    m_problem.Reset();
 
     Utf8String sig = GetSignature(false); 
     // only a limited number of signatures will be recognized in this particular context
@@ -1344,7 +1345,7 @@ BEU::Quantity FormatParsingSet::ParseAzimuthFormat(FormatProblemCode* probCode, 
     return converted;
     }
 
-BEU::Quantity FormatParsingSet::ParseBearingFormat(FormatProblemCode* probCode, FormatCP format, BEU::UnitCP inputUnit)
+BEU::Quantity FormatParsingSet::ParseBearingFormat(Utf8CP input, FormatProblemCode* probCode, FormatCP format, BEU::UnitCP inputUnit)
     {
     BEU::Quantity converted = BEU::Quantity();
 
@@ -1355,7 +1356,7 @@ BEU::Quantity FormatParsingSet::ParseBearingFormat(FormatProblemCode* probCode, 
 
     std::string matchedPrefix;
     std::string matchedSuffix;
-    std::string inString = m_input;   
+    std::string inString(input);
 
     if (inString.empty()){
         *probCode = FormatProblemCode::QT_NoValueOrUnitFound;
@@ -1434,11 +1435,11 @@ BEU::Quantity FormatParsingSet::ParseBearingFormat(FormatProblemCode* probCode, 
     return converted;
     }
 
-BEU::Quantity FormatParsingSet::ParseRatioFormat(FormatProblemCode* probCode, FormatCP format, BEU::UnitCP inputUnit)
+BEU::Quantity FormatParsingSet::ParseRatioFormat(Utf8CP input, FormatProblemCode* probCode, FormatCP format, BEU::UnitCP inputUnit)
     {
     BEU::Quantity converted = BEU::Quantity();
 
-    std::string inString = m_input;   
+    std::string inString(input);
     std::istringstream iss(inString);
     std::string part;
 
