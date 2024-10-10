@@ -1713,47 +1713,75 @@ TEST_F(FormattingTestFixture, AzimuthWithVariousBases) {
     auto unitRadian = s_unitsContext->LookupUnit("RAD");
     auto unitRevolution = s_unitsContext->LookupUnit("REVOLUTION");
 
-    auto formatAzimuth = [&unitDegree, &unitRadian, &unitRevolution](double value, double baseOffset = 0.0, bool counterClockwise = false)
+    NumericFormatSpec azimuthSpec;
+    azimuthSpec.SetPresentationType(PresentationType::Azimuth);
+    azimuthSpec.SetMinWidth(4);
+    azimuthSpec.SetPrecision(DecimalPrecision::Precision1);
+    azimuthSpec.SetKeepDecimalPoint(true);
+    azimuthSpec.SetKeepTrailingZeroes(true);
+    azimuthSpec.SetKeepSingleZero(true);
+    azimuthSpec.SetShowUnitLabel(true);
+    azimuthSpec.SetAzimuthBaseUnit(unitRadian);
+    azimuthSpec.SetRevolutionUnit(unitRevolution);
+
+    // azimuth with various bases - roundtrip test
+    struct AzimuthTestCase {
+        double value;
+        double baseOffsetInDeg;
+        bool counterClockwise;
+        Utf8String expectedString;
+    };
+
+    std::vector<AzimuthTestCase> testCases = {
+        // {value, baseOffsetInDeg, counterClockwise, expectedString}
+        {0.0,   0.0,   false, "00.0°"},
+        {0.0,   180.0, false, "180.0°"},
+        {0.0,   185.0, false, "175.0°"},
+        {0.0,   185.0, true,  "185.0°"},
+        {0.0,   95.0,  false, "265.0°"},
+        {0.0,   85.0,  false, "275.0°"},
+        {0.0,   270.0, false, "90.0°"},
+        {0.0,   270.0, true,  "270.0°"},
+        {90.0,  0.0,   false, "90.0°"},
+        {90.0,  180.0, false, "270.0°"},
+        {90.0,  185.0, false, "265.0°"},
+        {90.0,  185.0, true,  "95.0°"},
+        {90.0,  95.0,  false, "355.0°"},
+        {90.0,  85.0,  false, "05.0°"},
+        {90.0,  270.0, false, "180.0°"},
+        {90.0,  270.0, true,  "180.0°"},
+    };
+
+    // Define the formatAzimuth function with parsing logic included
+    auto formatAzimuth = [&azimuthSpec, &unitDegree](double value, double baseOffsetInDeg, bool counterClockwise, Utf8String expectedString) 
         {
-        NumericFormatSpec azimuthSpec;
-        azimuthSpec.SetPresentationType(PresentationType::Azimuth);
-        azimuthSpec.SetMinWidth(4);
-        azimuthSpec.SetPrecision(DecimalPrecision::Precision1);
-        azimuthSpec.SetKeepDecimalPoint(true);
-        azimuthSpec.SetKeepTrailingZeroes(true);
-        azimuthSpec.SetKeepSingleZero(true);
-        azimuthSpec.SetShowUnitLabel(true);
-        azimuthSpec.SetAzimuthBase(DegreesToRadians(baseOffset));
-        azimuthSpec.SetAzimuthBaseUnit(unitRadian);
+        // Configure the numeric format specification
+        azimuthSpec.SetAzimuthBase(DegreesToRadians(baseOffsetInDeg));
         azimuthSpec.SetAzimuthCounterClockwise(counterClockwise);
-        azimuthSpec.SetRevolutionUnit(unitRevolution);
+
         Format azimuth(azimuthSpec);
-        auto azimuthComp = CompositeValueSpec(*unitDegree);
+        CompositeValueSpec azimuthComp(*unitDegree);
         azimuthComp.SetMajorLabel("°");
         azimuthComp.SetSpacer("");
         azimuth.SetCompositeSpec(azimuthComp);
 
-        Units::Quantity degree(value, *unitDegree);
-        Utf8String result = azimuth.FormatQuantity(degree);
-        return result;
+        Units::Quantity degreeQuantity(value, *unitDegree);
+
+        // Format the quantity
+        Utf8String result = azimuth.FormatQuantity(degreeQuantity);
+        ASSERT_STREQ(expectedString.c_str(), result.c_str());
+
+        // Parse the formatted string back into quantities
+        FormatProblemCode problemCode = FormatProblemCode::NoProblems;
+        FormatParsingSet formatParsingSet(result, unitDegree, &azimuth);
+        Units::Quantity qty = formatParsingSet.GetQuantity(&problemCode, &azimuth);
+        ASSERT_EQ(FormatProblemCode::NoProblems, problemCode);
+
+        ASSERT_NEAR(value, qty.GetMagnitude(), 0.001);
         };
 
-    ASSERT_STREQ("00.0°", formatAzimuth(0.0).c_str());
-    ASSERT_STREQ("180.0°", formatAzimuth(0.0, 180.0).c_str());
-    ASSERT_STREQ("175.0°", formatAzimuth(0.0, 185.0).c_str());
-    ASSERT_STREQ("185.0°", formatAzimuth(0.0, 185, true).c_str());
-    ASSERT_STREQ("265.0°", formatAzimuth(0.0, 95.0).c_str());
-    ASSERT_STREQ("275.0°", formatAzimuth(0.0, 85.0).c_str());
-    ASSERT_STREQ("90.0°", formatAzimuth(0.0, 270.0).c_str());
-    ASSERT_STREQ("270.0°", formatAzimuth(0.0, 270.0 ,true).c_str());
-    ASSERT_STREQ("90.0°", formatAzimuth(90.0).c_str());
-    ASSERT_STREQ("270.0°", formatAzimuth(90.0, 180.0).c_str());
-    ASSERT_STREQ("265.0°", formatAzimuth(90.0, 185.0).c_str());
-    ASSERT_STREQ("95.0°", formatAzimuth(90.0, 185.0, true).c_str());
-    ASSERT_STREQ("355.0°", formatAzimuth(90.0, 95.0).c_str());
-    ASSERT_STREQ("05.0°", formatAzimuth(90.0, 85.0).c_str());
-    ASSERT_STREQ("180.0°", formatAzimuth(90.0, 270.0).c_str());
-    ASSERT_STREQ("180.0°", formatAzimuth(90.0, 270.0,true).c_str());
+    for (const auto& testCase : testCases)
+        formatAzimuth(testCase.value, testCase.baseOffsetInDeg, testCase.counterClockwise, testCase.expectedString);
 }
 
 TEST_F(FormattingTestFixture, ParseBearingProblemCode){

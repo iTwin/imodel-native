@@ -1327,7 +1327,8 @@ BEU::Quantity FormatParsingSet::ParseAzimuthFormat(FormatProblemCode* probCode, 
     else
         magnitude = azimuthBase + magnitude;
 
-    // Normalize magnitude
+    // normalize the angle
+    magnitude = std::fmod(magnitude, revolution);
     while(magnitude < 0)
         magnitude += revolution;
     
