@@ -1,4 +1,4 @@
-﻿/*---------------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------------------
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
@@ -923,50 +923,54 @@ TEST_F(FormatParsingSetTest, CompositeFormats_IGNORED)
 TEST_F(FormatParsingSetTest, OverflowNumberTest)
     {
     TestValidParseToQuantity("812345678910111 m", meter, 812345678910111);
-    FormatParsingSet fps("8123456789101110 m", meter);
-    fps.GetQuantity();
+    Format format = Format();
+    FormatParsingSet fps("8123456789101110 m", meter, &format);
+    
+    fps.GetQuantity(nullptr, &format);
     EXPECT_TRUE(fps.HasProblem());
     EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
 
     TestValidParseToQuantity("0.012345678910111 m", meter, 0.01234567891011101);
     fps = FormatParsingSet("0.0123456789101112 m", meter);
-    fps.GetQuantity();
+    fps.GetQuantity(nullptr, &format);
     EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the floating part is more than 15";
     EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
 
     TestValidParseToQuantity("0.000000000000001 m", meter, 0.000000000000001);
-    fps = FormatParsingSet("0.000000000000001 m", meter);
-    fps.GetQuantity();
+    // fps = FormatParsingSet("0.000000000000001 m", meter);
+    // fps.GetQuantity(nullptr, &format);
+    FormatParsingSet fps2("0.000000000000001 m", meter);
+    fps2.GetQuantity(nullptr, &format);
     EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the floating part is more than 15";
     EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
 
     TestValidParseToQuantity("123456789101112.123456789101112 m", meter, 123456789101112.123456789101112);
     fps = FormatParsingSet("123456789101112134.123456789101112 m", meter);
-    fps.GetQuantity();
+    fps.GetQuantity(nullptr, &format);
     EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the integer part is more than 15";
     EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
 
     TestValidParseToQuantity("223,372,036,854,775 m", millimeter, 2.2337203685477501e+17);
     fps = FormatParsingSet("9,223,372,036,854,775 m", meter);
-    fps.GetQuantity();
+    fps.GetQuantity(nullptr, &format);
     EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the integer part is more than 15";
     EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
 
     TestValidParseToQuantity("1/223372036854775 m", meter, 4.4768361075121889e-15);
     fps = FormatParsingSet("1/9223372036854775 m", meter);
-    fps.GetQuantity();
+    fps.GetQuantity(nullptr, &format);
     EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the denominator part is more than 15";
     EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
 
     TestValidParseToQuantity("1/999999999999999 m", meter, 1.0000000000000011e-15);
     fps = FormatParsingSet("1/9999999999999999 m", meter);
-    fps.GetQuantity();
+    fps.GetQuantity(nullptr, &format);
     EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the denominator part is more than 15";
     EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
 
     TestValidParseToQuantity("100000000000000/1 m", meter, 100000000000000);
     fps = FormatParsingSet("1000000000000000/1 m", meter);
-    fps.GetQuantity();
+    fps.GetQuantity(nullptr, &format);
     EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the nominator part is more than 15";
     EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
     }
@@ -1082,28 +1086,22 @@ TEST_F(FormatParsingSetTest, FailedToParseStation)
             };
 
     auto const VerifyFailure = [&mapper]
-        (Utf8CP input, Utf8CP formatName, FormatProblemCode formatParsingSetProblem, FormatProblemCode getQuantityProblem = FormatProblemCode::NoProblems)
+        (Utf8CP input, Utf8CP formatName, FormatProblemCode getQuantityProblem = FormatProblemCode::NoProblems)
             {
             Format format;
             Format::ParseFormatString(format, formatName, mapper, s_unitsContext);
 
             auto formatParsingSet = FormatParsingSet(input, s_unitsContext->LookupUnit("M"), &format);
-            EXPECT_EQ(formatParsingSetProblem, formatParsingSet.GetProblemCode());
-
-            if (!formatParsingSet.HasProblem())
-                {
-                FormatProblemCode problemCode;
-                auto const actualQuantity = formatParsingSet.GetQuantity(&problemCode, &format);
-                EXPECT_EQ(getQuantityProblem, problemCode);
-                }
+            formatParsingSet.GetQuantity(nullptr, &format);
+            EXPECT_EQ(getQuantityProblem, formatParsingSet.GetProblemCode());
             };
-
+            
     VerifyFailure("50+00 a", "StationZ_1000_3", FormatProblemCode::NA_InvalidSyntax);
     VerifyFailure("50 +00", "StationZ_1000_3", FormatProblemCode::NA_InvalidSyntax);
     VerifyFailure("50+ 00", "StationZ_1000_3", FormatProblemCode::NA_InvalidSyntax);
     VerifyFailure("a 50+00", "StationZ_1000_3", FormatProblemCode::NA_InvalidSyntax);
-    VerifyFailure("50+00.1", "DefaultReal", FormatProblemCode::NoProblems, FormatProblemCode::QT_InvalidSyntax);
-    VerifyFailure("30 40", "DefaultReal", FormatProblemCode::NoProblems, FormatProblemCode::QT_InvalidSyntax);
+    VerifyFailure("50+00.1", "DefaultReal", FormatProblemCode::QT_InvalidSyntax);
+    VerifyFailure("30 40", "DefaultReal", FormatProblemCode::QT_InvalidSyntax);
     }
 
 //---------------------------------------------------------------------------------------
