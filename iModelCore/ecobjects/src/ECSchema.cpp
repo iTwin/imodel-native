@@ -3653,9 +3653,9 @@ SchemaWriteStatus ECSchema::WriteToXmlFile(WCharCP ecSchemaXmlFile, ECVersion ec
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-bool ECSchema::WriteToJsonValue(BeJsValue ecSchemaJsonValue) const
+bool ECSchema::WriteToJsonValue(BeJsValue ecSchemaJsonValue, bool overrideECXmlVersionCheck) const
     {
-    if (!CheckECVersionGreaterThanLatest(*this))
+    if (!CheckECVersionGreaterThanLatest(*this) && !overrideECXmlVersionCheck)
         return false;
 
     ecSchemaJsonValue.SetNull();
@@ -3670,11 +3670,11 @@ bool ECSchema::WriteToJsonValue(BeJsValue ecSchemaJsonValue) const
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-bool ECSchema::WriteToJsonString(Utf8StringR ecSchemaJsonString, bool minify) const
+bool ECSchema::WriteToJsonString(Utf8StringR ecSchemaJsonString, bool minify, bool overrideECXmlVersionCheck) const
     {
     Json::Value jsonSchema;
 
-    if (!WriteToJsonValue(jsonSchema))
+    if (!WriteToJsonValue(jsonSchema, overrideECXmlVersionCheck))
         return false;
 
     ecSchemaJsonString = minify ? jsonSchema.ToString() : jsonSchema.toStyledString();

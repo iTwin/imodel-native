@@ -483,7 +483,7 @@ public:
             BeNapi::ThrowJsException(info.Env(), "schema not found", (int) DgnDbStatus::NotFound);
 
         BeJsNapiObject props(info.Env());
-        if (!schema->WriteToJsonValue(props))
+        if (!schema->WriteToJsonValue(props, true))
             BeNapi::ThrowJsException(info.Env(), "unable to serialize schema");
         return props;
     }
@@ -1225,7 +1225,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             BeNapi::ThrowJsException(info.Env(), "schema not found", (int) DgnDbStatus::NotFound);
 
         BeJsNapiObject props(info.Env());
-        if (!schema->WriteToJsonValue(props))
+        if (!schema->WriteToJsonValue(props, true))
             BeNapi::ThrowJsException(info.Env(), "unable to serialize schema");
 
         return props;

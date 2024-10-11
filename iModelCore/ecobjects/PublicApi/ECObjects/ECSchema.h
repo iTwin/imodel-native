@@ -3810,14 +3810,14 @@ public:
     //! Writes a schema to a Json::Value
     //! @param[out] ecSchemaJsonValue Json::Value the schema is serialized to on success.
     //! @return A status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the Json value will contain the serialized schema.
-    ECOBJECTS_EXPORT bool WriteToJsonValue(BeJsValue ecSchemaJsonValue) const;
+    ECOBJECTS_EXPORT bool WriteToJsonValue(BeJsValue ecSchemaJsonValue, bool overrideECXmlVersionCheck = false) const;
 
     //! Writes a schema as a Json string.
     //! @param[out] ecSchemaJsonString  String the schema is serialized to on success.
     //! @param[in]  minify              If true the Json string will be minified to take up the least number of characters.
     //! If false the Json string will be written in a more human readable format.
     //! @return A status code indicating whether the schema was successfully serialized.  If SUCCESS is returned, then the string will contain the serialized schema.
-    ECOBJECTS_EXPORT bool WriteToJsonString(Utf8StringR ecSchemaJsonString, bool minify = false) const;
+    ECOBJECTS_EXPORT bool WriteToJsonString(Utf8StringR ecSchemaJsonString, bool minify = false, bool overrideECXmlVersionCheck = false) const;
 
     //! Return full schema name in format GetName().RR.ww.mm where Name is the schema name RR is read version, ww is the write compatibility version and mm is minor version.
     Utf8StringCR GetFullSchemaName() const {return m_key.GetFullSchemaName();}
