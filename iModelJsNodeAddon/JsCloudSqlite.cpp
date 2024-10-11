@@ -518,7 +518,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         ReadWriteLock(lockedBy);
         auto lockedByGuid = lockedBy[JSON_NAME(guid)].asString();
         Utf8String lockedByUser = lockedBy[JSON_NAME(user)].asString();
-        if (failIfNotHeldAlready && lockedByGuid.empty()) { // TODO: can i simplify? 
+        if (failIfNotHeldAlready && lockedByGuid.empty()) {
             m_containerDb.TryExecuteSql("ROLLBACK");
             BeNapi::ThrowJsException(Env(), Utf8PrintfString("Container [%s] is not locked for write access.", m_containerId.c_str()).c_str());
         } else if (lockedByGuid.empty() || lockedByGuid.Equals(m_cache->m_guid))
