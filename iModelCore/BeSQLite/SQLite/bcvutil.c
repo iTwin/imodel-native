@@ -2309,7 +2309,6 @@ sqlite3_bcv_request *sqlite3_bcv_job_request(
     pNew->pNext = pJob->pPending;
     pNew->pJob = pJob;
     pNew->pCurl = curl_easy_init();
-    curl_easy_setopt(pNew->pCurl, CURLOPT_BUFFERSIZE, 10 * 1024 * 1024); // BENTLEY CHANGE
     pJob->pPending = pNew;
   }
   return pNew;
