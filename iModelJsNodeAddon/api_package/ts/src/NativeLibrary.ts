@@ -22,7 +22,7 @@ import type {
   FilePropertyProps, FontId, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
   GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, IModelCoordinatesRequestProps,
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
-  ModelProps, QueryQuota, QueryRowFormat, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions,
+  ModelProps, QueryQuota, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions,
 } from "@itwin/core-common";
 import type { Range2dProps, Range3dProps } from "@itwin/core-geometry";
 
@@ -350,6 +350,12 @@ export declare namespace IModelJsNative {
     userCreated: string;
     size?: number;
     pathname: string;
+  }
+  interface ECSqlRowAdaptorOptions {
+    abbreviateBlobs?: boolean;
+    classIdsToClassNames?: boolean;
+    useJsName?: boolean;
+    doNotConvertClassIdsToClassNamesWhenAliased?: boolean; // backward compatibility
   }
 
   interface EmbeddedFileProps {
@@ -791,7 +797,7 @@ export declare namespace IModelJsNative {
     public stepForInsert(): { status: DbResult, id: string };
     public stepForInsertAsync(callback: (result: { status: DbResult, id: string }) => void): void;
     public getNativeSql(): string;
-    public toRow(arg: { classIdsToClassNames?: boolean, rowFormat?: QueryRowFormat }): any;
+    public toRow(arg: ECSqlRowAdaptorOptions): any;
     public getMetadata(): any;
   }
 
@@ -1400,7 +1406,7 @@ export declare namespace IModelJsNative {
     public isIndirectChange(): boolean;
     public getPrimaryKeyColumnIndexes(): number[];
     public openFile(fileName: string, invert: boolean): void;
-    public openGroup(fileName: string[], invert: boolean): void;
+    public openGroup(fileName: string[], db: AnyECDb, invert: boolean): void;
     public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean): void;
     public reset(): void;
     public step(): boolean;

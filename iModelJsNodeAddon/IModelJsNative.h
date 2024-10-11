@@ -656,7 +656,7 @@ struct NativeChangeset {
         NativeChangeset():m_primaryKeyColumns(nullptr), m_tableName(nullptr), m_currentChange(nullptr, false), m_invert(false){}
         void OpenFile(Napi::Env env, Utf8StringCR changesetFile, bool invert);
         void OpenChangeStream(Napi::Env env, std::unique_ptr<ChangeStream>, bool invert);
-        void OpenGroup(Napi::Env env, T_Utf8StringVector const& changesetFiles, bool invert);
+        void OpenGroup(Napi::Env env, T_Utf8StringVector const& changesetFiles, Db const& db, bool invert);
         void Close(Napi::Env env);
         void Reset(Napi::Env env);
         void WriteToFile(Napi::Env env, Utf8String const& fileName, bool containChanges, bool override);
