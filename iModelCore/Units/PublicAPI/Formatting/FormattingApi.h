@@ -678,7 +678,11 @@ struct QuantityFormatting
 {
     typedef std::function<BEU::UnitCP(Utf8CP, BEU::PhenomenonCP)> UnitResolver;
     UNITS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, double* persist, BEU::UnitCP outputUnit, FormatCR inputFUS, FormatProblemCode* problemCode, UnitResolver* resolver = nullptr);
-    UNITS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, FormatCR inputFUS, FormatProblemCode* problemCode, UnitResolver* resolver = nullptr);
+    
+    static BEU::Quantity CreateQuantity(Utf8CP input, FormatCR inputFUS, FormatProblemCode* problemCode, UnitResolver* resolver = nullptr)
+        { return QuantityFormatting::CreateQuantity(input, inputFUS, inputFUS.GetCompositeMajorUnit(), problemCode, resolver); }
+
+    UNITS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, FormatCR inputFUS, BEU::UnitCP targetUnit, FormatProblemCode* problemCode, UnitResolver* resolver = nullptr);
 };
 
 END_BENTLEY_FORMATTING_NAMESPACE

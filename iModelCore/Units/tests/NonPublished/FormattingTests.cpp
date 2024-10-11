@@ -62,12 +62,12 @@ public:
 
     void TestValidParseToQuantity(Utf8CP fmtStr, BEU::UnitCP expectedUnit, double const expectedMagnitude)
         {
-        FormatParsingSet fps(expectedUnit);
+        FormatParsingSet fps(fmtStr, expectedUnit);
         ASSERT_FALSE(fps.HasProblem()) << fps.GetProblemDescription() << '\n' << GetFmtStringErrMsg(fmtStr);
 
         FormatProblemCode probCode;
         Format format = Format();
-        BEU::Quantity qty = fps.GetQuantity(fmtStr, &probCode, &format);
+        BEU::Quantity qty = fps.GetQuantity(&probCode, &format);
 
         ASSERT_FALSE(qty.IsNullQuantity()) << GetFmtStringErrMsg(fmtStr);
         EXPECT_EQ(expectedUnit, qty.GetUnit()) << GetFmtStringErrMsg(fmtStr);
@@ -76,11 +76,11 @@ public:
 
     void TestValidParseToQuantityUsingStdFmt(Utf8CP fmtStr, BEU::UnitCP expectedUnit, double const expectedMagnitude, FormatCP format)
         {
-        FormatParsingSet fps(expectedUnit);
+        FormatParsingSet fps(fmtStr, expectedUnit);
         ASSERT_FALSE(fps.HasProblem()) << fps.GetProblemDescription() << '\n' << GetFmtStringErrMsg(fmtStr);
 
         FormatProblemCode probCode;
-        BEU::Quantity qty = fps.GetQuantity(fmtStr, &probCode, format);
+        BEU::Quantity qty = fps.GetQuantity(&probCode, format);
 
         ASSERT_FALSE(qty.IsNullQuantity()) << GetFmtStringErrMsg(fmtStr);
         EXPECT_EQ(expectedUnit, qty.GetUnit()) << GetFmtStringErrMsg(fmtStr);
@@ -90,7 +90,7 @@ public:
 
     void TestInvalidFmtStr(Utf8CP fmtStr, BEU::UnitCP expectedUnit)
         {
-        FormatParsingSet fps(expectedUnit);
+        FormatParsingSet fps(fmtStr, expectedUnit);
         ASSERT_TRUE(fps.HasProblem()) << GetFmtStringErrMsg(fmtStr);
         }
     };
@@ -111,11 +111,11 @@ struct FormatParseStringTest : FormattingTestFixture
 
         void ParseStringToDouble(Utf8CP input, FormatCP expectedFormat, double const expectedMagnitude)
             {
-            FormatParsingSet fps(nullptr, expectedFormat);
+            FormatParsingSet fps(input, nullptr, expectedFormat);
             ASSERT_FALSE(fps.HasProblem()) << fps.GetProblemDescription();
 
             FormatProblemCode probCode;
-            BEU::Quantity qty = fps.GetQuantity(input, &probCode, expectedFormat);
+            BEU::Quantity qty = fps.GetQuantity(&probCode, expectedFormat);
             ASSERT_FALSE(qty.IsNullQuantity()) << "Parsed output of input \"" << input << "\" is unexpectedly null";
             EXPECT_DOUBLE_EQ(expectedMagnitude, qty.GetMagnitude()) << "Parsed output of input \"" << input << "\" does not match expected value " << expectedMagnitude;
             }
@@ -923,43 +923,50 @@ TEST_F(FormatParsingSetTest, CompositeFormats_IGNORED)
 TEST_F(FormatParsingSetTest, OverflowNumberTest)
     {
     TestValidParseToQuantity("812345678910111 m", meter, 812345678910111);
-    FormatParsingSet fps(meter);
-    fps.GetQuantity("8123456789101110 m");
+    FormatParsingSet fps("8123456789101110 m", meter);
+    fps.GetQuantity();
     EXPECT_TRUE(fps.HasProblem());
     EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
 
     TestValidParseToQuantity("0.012345678910111 m", meter, 0.01234567891011101);
-    fps.GetQuantity("0.0123456789101112 m");
+    fps = FormatParsingSet("0.0123456789101112 m", meter);
+    fps.GetQuantity();
     EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the floating part is more than 15";
     EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
 
     TestValidParseToQuantity("0.000000000000001 m", meter, 0.000000000000001);
-    fps.GetQuantity("0.000000000000001 m");
+    fps = FormatParsingSet("0.000000000000001 m", meter);
+    fps.GetQuantity();
     EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the floating part is more than 15";
     EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
 
     TestValidParseToQuantity("123456789101112.123456789101112 m", meter, 123456789101112.123456789101112);
-    fps.GetQuantity("123456789101112134.123456789101112 m");
+    fps = FormatParsingSet("123456789101112134.123456789101112 m", meter);
+    fps.GetQuantity();
     EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the integer part is more than 15";
     EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
 
     TestValidParseToQuantity("223,372,036,854,775 m", millimeter, 2.2337203685477501e+17);
-    fps.GetQuantity("9,223,372,036,854,775 m");
+    fps = FormatParsingSet("9,223,372,036,854,775 m", meter);
+    fps.GetQuantity();
     EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the integer part is more than 15";
     EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
 
     TestValidParseToQuantity("1/223372036854775 m", meter, 4.4768361075121889e-15);
-    fps.GetQuantity("1/9223372036854775 m");
+    fps = FormatParsingSet("1/9223372036854775 m", meter);
+    fps.GetQuantity();
     EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the denominator part is more than 15";
     EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
 
     TestValidParseToQuantity("1/999999999999999 m", meter, 1.0000000000000011e-15);
-    fps.GetQuantity("1/9999999999999999 m");
+    fps = FormatParsingSet("1/9999999999999999 m", meter);
+    fps.GetQuantity();
     EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the denominator part is more than 15";
     EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
 
     TestValidParseToQuantity("100000000000000/1 m", meter, 100000000000000);
-    fps.GetQuantity("1000000000000000/1 m");
+    fps = FormatParsingSet("1000000000000000/1 m", meter);
+    fps.GetQuantity();
     EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the nominator part is more than 15";
     EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
     }
@@ -1009,10 +1016,10 @@ TEST_F(FormatParsingSetTest, TestParseToStd)
         {
         auto format = getOverride(formatName);
         FormatProblemCode problemCode;
-        auto formatParsingSet = FormatParsingSet(s_unitsContext->LookupUnit(unitName), &format);
+        auto formatParsingSet = FormatParsingSet(input, s_unitsContext->LookupUnit(unitName), &format);
         EXPECT_FALSE(format.IsProblem());
 
-        auto const actualQuantity = formatParsingSet.GetQuantity(input, &problemCode, &format);
+        auto const actualQuantity = formatParsingSet.GetQuantity(&problemCode, &format);
         EXPECT_EQ(FormatProblemCode::NoProblems, problemCode);
 
         auto const unit = s_unitsContext->LookupUnit(qtyUnitName);
@@ -1080,13 +1087,13 @@ TEST_F(FormatParsingSetTest, FailedToParseStation)
             Format format;
             Format::ParseFormatString(format, formatName, mapper, s_unitsContext);
 
-            auto formatParsingSet = FormatParsingSet(s_unitsContext->LookupUnit("M"), &format);
+            auto formatParsingSet = FormatParsingSet(input, s_unitsContext->LookupUnit("M"), &format);
             EXPECT_EQ(formatParsingSetProblem, formatParsingSet.GetProblemCode());
 
             if (!formatParsingSet.HasProblem())
                 {
                 FormatProblemCode problemCode;
-                auto const actualQuantity = formatParsingSet.GetQuantity(input, &problemCode, &format);
+                auto const actualQuantity = formatParsingSet.GetQuantity(&problemCode, &format);
                 EXPECT_EQ(getQuantityProblem, problemCode);
                 }
             };
@@ -1157,8 +1164,8 @@ TEST_F(FormatParsingSetTest, TestParseToStdSynonyms)
             auto unit = map[i];
             return unit;
         };
-        FormatParsingSet fps = FormatParsingSet(s_unitsContext->LookupUnit(unitName), nullptr, &resolver);
-        BEU::Quantity qty = fps.GetQuantity(input, &probCode, &fus);
+        FormatParsingSet fps = FormatParsingSet(input, s_unitsContext->LookupUnit(unitName), nullptr, &resolver);
+        BEU::Quantity qty = fps.GetQuantity(&probCode, &fus);
         BEU::UnitCP unit = s_unitsContext->LookupUnit(qtyUnitName);
         BEU::Quantity temp = BEU::Quantity(magnitude, *unit);
         bool eq = qty.IsClose(temp, 0.0001);
@@ -1674,11 +1681,8 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
         FormatProblemCode problemCode_degree = FormatProblemCode::NoProblems;
         FormatProblemCode problemCode_radian = FormatProblemCode::NoProblems;
 
-        auto formatParsingSet_degree = FormatParsingSet(unitDegree, &format);
-        auto formatParsingSet_radian = FormatParsingSet(unitRadian, &format);
-
-        BEU::Quantity qtyFromDegree = formatParsingSet_degree.GetQuantity(expectedString.c_str(), &problemCode_degree, &format);
-        BEU::Quantity qtyFromRadian = formatParsingSet_radian.GetQuantity(expectedString.c_str(), &problemCode_radian, &format);
+        BEU::Quantity qtyFromDegree = QuantityFormatting::CreateQuantity(expectedString.c_str(), format,unitDegree, &problemCode_degree);
+        BEU::Quantity qtyFromRadian = QuantityFormatting::CreateQuantity(expectedString.c_str(), format,unitRadian, &problemCode_radian);
 
         ASSERT_EQ(FormatProblemCode::NoProblems, problemCode_degree);
         ASSERT_EQ(FormatProblemCode::NoProblems, problemCode_radian);
@@ -1771,8 +1775,7 @@ TEST_F(FormattingTestFixture, AzimuthWithVariousBases) {
 
         // Parse the formatted string back into quantities
         FormatProblemCode problemCode = FormatProblemCode::NoProblems;
-        FormatParsingSet formatParsingSet(unitDegree, &azimuth);
-        Units::Quantity qty = formatParsingSet.GetQuantity(result.c_str(), &problemCode, &azimuth);
+        Units::Quantity qty = QuantityFormatting::CreateQuantity(result.c_str(), azimuth, unitDegree, &problemCode);
         ASSERT_EQ(FormatProblemCode::NoProblems, problemCode);
         ASSERT_NEAR(testCase.value, qty.GetMagnitude(), 0.001);
         }
@@ -1815,8 +1818,7 @@ TEST_F(FormattingTestFixture, ParseBearingProblemCode){
     for(auto& row : testDataVec)
     {
         FormatProblemCode problemCode = FormatProblemCode::NoProblems;
-        auto formatParsingSet = FormatParsingSet(unitDegree, &bearingDMS);
-        qty = formatParsingSet.GetQuantity(row.inputString.c_str(), &problemCode, &bearingDMS);
+        qty = QuantityFormatting::CreateQuantity(row.inputString.c_str(), bearingDMS, unitDegree, &problemCode);
         EXPECT_EQ(row.expectedProblemCode, problemCode);
     }
 
@@ -1833,14 +1835,12 @@ TEST_F(FormattingTestFixture, ParseBearingProblemCode){
     EXPECT_FALSE(bearingDMSInvalidCompUnit.IsProblem());
 
     bearingDMSInvalidCompUnit.SetCompositeSpec(bearingDMScompInvalidUnit);
-    auto fps = FormatParsingSet(unitDegree, &bearingDMSInvalidCompUnit);
-    qty = fps.GetQuantity(zeroInput.c_str(), &problemCode, &bearingDMSInvalidCompUnit);
+    qty = QuantityFormatting::CreateQuantity(zeroInput.c_str(), bearingDMSInvalidCompUnit, unitDegree, &problemCode);
     EXPECT_EQ(FormatProblemCode::PS_MissingCompositeSpec, problemCode); // composite spec wont get set with invalid composite units
 
     // cant convert
     problemCode = FormatProblemCode::NoProblems;
-    fps = FormatParsingSet(invalidUnit, &bearingDMS);
-    qty = fps.GetQuantity(zeroInput.c_str(), &problemCode, &bearingDMS);
+    qty = QuantityFormatting::CreateQuantity(zeroInput.c_str(), bearingDMS, invalidUnit, &problemCode);
     EXPECT_EQ(FormatProblemCode::QT_ConversionFailed, problemCode);
 }
 
@@ -1866,8 +1866,7 @@ TEST_F(FormattingTestFixture, ParseAzimuthProblemCode){
     EXPECT_FALSE(azimuth.IsProblem());
 
     std::string zeroInput = "00.0";
-    auto fps = FormatParsingSet(unitDegree, &azimuth);
-    BEU::Quantity qty = fps.GetQuantity(zeroInput.c_str(), &problemCode, &azimuth);
+    BEU::Quantity qty = QuantityFormatting::CreateQuantity(zeroInput.c_str(), azimuth, unitDegree, &problemCode);
     EXPECT_EQ(FormatProblemCode::QT_NoValueOrUnitFound, problemCode);
 }
 
@@ -1890,8 +1889,7 @@ TEST_F(FormattingTestFixture, FormatRatio){
 
         // parsing back to quantity
         FormatProblemCode problemCode = FormatProblemCode::NoProblems;
-        auto formatParsingSet = FormatParsingSet(persistenceUnit, &ratioFormat);
-        BEU::Quantity qty = formatParsingSet.GetQuantity(ratioString, &problemCode, &ratioFormat);
+        BEU::Quantity qty = QuantityFormatting::CreateQuantity(ratioString, ratioFormat, persistenceUnit, &problemCode);
 
         EXPECT_EQ(FormatProblemCode::NoProblems, problemCode); 
         auto precisionNum = static_cast<int>(precision);
@@ -2038,7 +2036,7 @@ TEST_F(FormattingTestFixture, FormatRatio){
     }
 
     // parseRatioString specific tests
-    auto formatRatioErrorTest = [](const char* ratioString, Units::UnitCP persistenceUnit, Units::UnitCP presentationUnit, FormatProblemCode expectedProblemCode = FormatProblemCode::NoProblems)
+    auto formatRatioErrorTest = [](Utf8CP ratioString, Units::UnitCP persistenceUnit, Units::UnitCP presentationUnit, FormatProblemCode expectedProblemCode = FormatProblemCode::NoProblems)
     {
         NumericFormatSpec ratioSpec;
         ratioSpec.SetPresentationType(PresentationType::Ratio);
@@ -2050,8 +2048,7 @@ TEST_F(FormattingTestFixture, FormatRatio){
         ratioFormat.SetCompositeSpec(ratioComp);
 
         FormatProblemCode problemCode;
-        auto formatParsingSet = FormatParsingSet(persistenceUnit, &ratioFormat);
-        BEU::Quantity qty = formatParsingSet.GetQuantity(ratioString, &problemCode, &ratioFormat);
+        BEU::Quantity qty = QuantityFormatting::CreateQuantity(ratioString, ratioFormat, persistenceUnit, &problemCode);
 
         EXPECT_EQ(expectedProblemCode, problemCode);
     };

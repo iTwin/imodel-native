@@ -133,6 +133,7 @@ public:
 struct FormatParsingSet
 {
 private:
+    Utf8String m_input;
     bvector<FormatParsingSegment> m_segs;
     BEU::UnitCP m_unit;     // optional reference to a "quantity" unit
     FormatProblemDetail m_problem;
@@ -152,13 +153,13 @@ private:
     void SegmentInput(Utf8CP input, size_t start);
 
 public:
-    UNITS_EXPORT FormatParsingSet(BEU::UnitCP unit = nullptr, FormatCP format = nullptr, QuantityFormatting::UnitResolver* resolver = nullptr);
+    UNITS_EXPORT FormatParsingSet(Utf8CP input, BEU::UnitCP unit = nullptr, FormatCP format = nullptr, QuantityFormatting::UnitResolver* resolver = nullptr);
     bool HasProblem() const {return m_problem.IsProblem();}
     FormatProblemCode GetProblemCode() {return m_problem.GetProblemCode();}
     Utf8String GetProblemDescription() {return m_problem.GetProblemDescription();}
     BEU::UnitCP GetUnit() {return m_unit;}
     UNITS_EXPORT Utf8String GetSignature(bool distinct = true);
-    UNITS_EXPORT BEU::Quantity GetQuantity(Utf8CP input, FormatProblemCode* probCode = nullptr, FormatCP format = nullptr);
+    UNITS_EXPORT BEU::Quantity GetQuantity(FormatProblemCode* probCode = nullptr, FormatCP format = nullptr);
     UNITS_EXPORT bool ValidateParsingFUS(int reqUnitCount, FormatCP format);
 };
 
