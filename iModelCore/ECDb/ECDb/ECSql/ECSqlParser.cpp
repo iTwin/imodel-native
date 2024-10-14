@@ -1608,7 +1608,7 @@ BentleyStatus ECSqlParser::ParseTableRef(std::unique_ptr<ClassRefExp>& exp, OSQL
                 if (SUCCESS == ParseCommonTableBlockName(cteBlockNameExp, *thirdNode)) {
                     rangeClassRef = std::move(cteBlockNameExp);
                 }
-                if (SUCCESS == ParseTableValuedFunction(tableValueFunc, *thirdNode)) {
+                else if (SUCCESS == ParseTableValuedFunction(tableValueFunc, *thirdNode)) {
                     rangeClassRef = std::move(tableValueFunc);
                 }
             }
@@ -2075,29 +2075,45 @@ BentleyStatus ECSqlParser::ParseTableValuedFunction(std::unique_ptr<TableValuedF
     }
 
     const size_t pathLength = pathNode->count();
-    if (pathLength  != 2) {
+    if (pathLength != 1 && pathLength  != 2) {
         return ERROR;
     }
 
-    auto schemaNode = pathNode->getChild(0);
-    auto functionNode = pathNode->getChild(1);
+    if(pathLength == 1)
+    {
+        auto functionNode = pathNode->getChild(0);
 
-    auto schemaName = schemaNode->getFirst()->getTokenValue();
-    if (!schemaNode->getChild(1)->isLeaf()) {
-        return ERROR;
-    }
-    if (functionNode->getChild(1)->isLeaf()) {
-        return ERROR;
-    }
+        std::unique_ptr<MemberFunctionCallExp> memberFuncCall;
+        if (functionNode != nullptr)
+            {
+            if (SUCCESS != ParseMemberFunctionCall(memberFuncCall, *functionNode, true))
+                return ERROR;
+            }
 
-    std::unique_ptr<MemberFunctionCallExp> memberFuncCall;
-    if (functionNode != nullptr)
-        {
-        if (SUCCESS != ParseMemberFunctionCall(memberFuncCall, *functionNode, true))
+        exp = std::make_unique<TableValuedFunctionExp>("", std::move(memberFuncCall), PolymorphicInfo::NotSpecified());
+    }
+    else if(pathLength == 2)
+    {
+        auto schemaNode = pathNode->getChild(0);
+        auto functionNode = pathNode->getChild(1);
+
+        auto schemaName = schemaNode->getFirst()->getTokenValue();
+        if (!schemaNode->getChild(1)->isLeaf()) {
+            return ERROR;
+        }
+        if (functionNode->getChild(1)->isLeaf()) {
             return ERROR;
         }
 
-    exp = std::make_unique<TableValuedFunctionExp>(schemaName.c_str(), std::move(memberFuncCall), PolymorphicInfo::NotSpecified());
+        std::unique_ptr<MemberFunctionCallExp> memberFuncCall;
+        if (functionNode != nullptr)
+            {
+            if (SUCCESS != ParseMemberFunctionCall(memberFuncCall, *functionNode, true))
+                return ERROR;
+            }
+
+        exp = std::make_unique<TableValuedFunctionExp>(schemaName.c_str(), std::move(memberFuncCall), PolymorphicInfo::NotSpecified());
+    }
     return SUCCESS;
 }
 
