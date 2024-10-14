@@ -1019,7 +1019,7 @@ Napi::Value JsInterop::GetInstance(ECDbR db, NapiInfoCR info) {
                 adaptor.GetOptions().SetAbbreviateBlobs(abbreviateBlobs);
                 adaptor.GetOptions().SetConvertClassIdsToClassNames(classIdsToClassNames);
                 adaptor.GetOptions().UseJsNames(useJsNames);
-                if (ERROR == adaptor.RenderRow(val, row, false)) {
+                if (ERROR == adaptor.RenderRowAsObject(val, row)) {
                     THROW_JS_EXCEPTION("Failed to render instance");
                 }
             },
@@ -1303,8 +1303,8 @@ void NativeChangeset::OpenChangeStream(Napi::Env env, std::unique_ptr<ChangeStre
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-void NativeChangeset::OpenGroup(Napi::Env env, T_Utf8StringVector const& changesetFiles, bool invert) {
-    m_changeGroup = std::make_unique<ChangeGroup>();
+void NativeChangeset::OpenGroup(Napi::Env env, T_Utf8StringVector const& changesetFiles, Db const& db, bool invert) {
+    m_changeGroup = std::make_unique<ChangeGroup>(db);
     DdlChanges ddlGroup;
     for(auto& changesetFile : changesetFiles) {
         BeFileName inputFile(changesetFile);

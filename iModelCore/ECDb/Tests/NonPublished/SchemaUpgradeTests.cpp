@@ -16181,7 +16181,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_Simple) {
         ASSERT_STREQ(inst1["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
 
-    auto v2 = R"(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+    auto v2 = R"(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Element">
                         <ECCustomAttributes>
