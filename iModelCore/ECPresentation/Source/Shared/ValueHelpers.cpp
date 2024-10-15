@@ -172,8 +172,8 @@ static rapidjson::Document ParseJson(Utf8CP serialized, rapidjson::MemoryPoolAll
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint2d ValueHelpers::GetPoint2dFromSqlValue(IECSqlValue const& value)
-    {
+Nullable<DPoint2d> ValueHelpers::GetPoint2dFromSqlValue(IECSqlValue const& value)
+{
     if (PRIMITIVETYPE_Point2d == value.GetColumnInfo().GetDataType().GetPrimitiveType())
         return value.GetPoint2d();
     return GetPoint2dFromJsonString(value.GetText());
@@ -182,7 +182,7 @@ DPoint2d ValueHelpers::GetPoint2dFromSqlValue(IECSqlValue const& value)
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d ValueHelpers::GetPoint3dFromSqlValue(IECSqlValue const& value)
+Nullable<DPoint3d> ValueHelpers::GetPoint3dFromSqlValue(IECSqlValue const& value)
     {
     if (PRIMITIVETYPE_Point3d == value.GetColumnInfo().GetDataType().GetPrimitiveType())
         return value.GetPoint3d();
@@ -192,44 +192,44 @@ DPoint3d ValueHelpers::GetPoint3dFromSqlValue(IECSqlValue const& value)
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint2d ValueHelpers::GetPoint2dFromJson(RapidJsonValueCR json)
+Nullable<DPoint2d> ValueHelpers::GetPoint2dFromJson(RapidJsonValueCR json)
     {
     if (json.IsNull() || !json.IsObject())
-        return DPoint2d();
+        return nullptr;
     return DPoint2d::From(json["x"].GetDouble(), json["y"].GetDouble());
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d ValueHelpers::GetPoint3dFromJson(RapidJsonValueCR json)
+Nullable<DPoint3d> ValueHelpers::GetPoint3dFromJson(RapidJsonValueCR json)
     {
     if (json.IsNull() || !json.IsObject())
-        return DPoint3d();
+        return nullptr;
     return DPoint3d::From(json["x"].GetDouble(), json["y"].GetDouble(), json["z"].GetDouble());
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint2d ValueHelpers::GetPoint2dFromJsonString(Utf8CP str)
+Nullable<DPoint2d> ValueHelpers::GetPoint2dFromJsonString(Utf8CP str)
     {
     rapidjson::Document::AllocatorType alloc(32U);
     rapidjson::Document json = ParseJson(str, &alloc);
     if (json.IsNull() || !json.IsObject())
-        return DPoint2d();
+        return nullptr;
     return DPoint2d::From(json["x"].GetDouble(), json["y"].GetDouble());
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d ValueHelpers::GetPoint3dFromJsonString(Utf8CP str)
+Nullable<DPoint3d> ValueHelpers::GetPoint3dFromJsonString(Utf8CP str)
     {
     rapidjson::Document::AllocatorType alloc(48U);
     rapidjson::Document json = ParseJson(str, &alloc);
     if (json.IsNull() || !json.IsObject())
-        return DPoint3d();
+        return nullptr;
     return DPoint3d::From(json["x"].GetDouble(), json["y"].GetDouble(), json["z"].GetDouble());
     }
 
@@ -278,25 +278,31 @@ rapidjson::Document ValueHelpers::GetPoint3dJsonFromString(Utf8StringCR str, rap
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ValueHelpers::GetPoint2dJson(DPoint2dCR pt, rapidjson::MemoryPoolAllocator<>* allocator)
+rapidjson::Document ValueHelpers::GetPoint2dJson(Nullable<DPoint2d> pt, rapidjson::MemoryPoolAllocator<>* allocator)
     {
     rapidjson::Document doc(allocator);
-    doc.SetObject();
-    doc.AddMember("x", pt.x, doc.GetAllocator());
-    doc.AddMember("y", pt.y, doc.GetAllocator());
+    if (!pt.IsNull())
+        {
+        doc.SetObject();
+        doc.AddMember("x", pt.Value().x, doc.GetAllocator());
+        doc.AddMember("y", pt.Value().y, doc.GetAllocator());
+        }
     return doc;
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ValueHelpers::GetPoint3dJson(DPoint3dCR pt, rapidjson::MemoryPoolAllocator<>* allocator)
+rapidjson::Document ValueHelpers::GetPoint3dJson(Nullable<DPoint3d> pt, rapidjson::MemoryPoolAllocator<>* allocator)
     {
     rapidjson::Document doc(allocator);
-    doc.SetObject();
-    doc.AddMember("x", pt.x, doc.GetAllocator());
-    doc.AddMember("y", pt.y, doc.GetAllocator());
-    doc.AddMember("z", pt.z, doc.GetAllocator());
+    if (!pt.IsNull())
+        {
+        doc.SetObject();
+        doc.AddMember("x", pt.Value().x, doc.GetAllocator());
+        doc.AddMember("y", pt.Value().y, doc.GetAllocator());
+        doc.AddMember("z", pt.Value().z, doc.GetAllocator());
+        }
     return doc;
     }
 
@@ -503,11 +509,23 @@ ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, Utf8St
             value.SetUtf8CP(sqlValue.GetValueText());
             break;
         case PRIMITIVETYPE_Point2d:
-            value.SetPoint2d(GetPoint2dFromJsonString(sqlValue.GetValueText()));
+            {
+            Nullable<DPoint2d> point2d = GetPoint2dFromJsonString(sqlValue.GetValueText());
+            if (point2d.IsNull())
+                value.SetIsNull(true);
+            else
+                value.SetPoint2d(point2d.Value());
             break;
+            }
         case PRIMITIVETYPE_Point3d:
-            value.SetPoint3d(GetPoint3dFromJsonString(sqlValue.GetValueText()));
+            {
+            Nullable<DPoint3d> point3d = GetPoint3dFromJsonString(sqlValue.GetValueText());
+            if (point3d.IsNull())
+                value.SetIsNull(true);
+            else
+                value.SetPoint3d(point3d.Value());
             break;
+            }
         case PRIMITIVETYPE_Binary:
             if (extendedType == EXTENDED_TYPENAME_BeGuid && sizeof(BeGuid) == sqlValue.GetValueBytes())
                 value.SetBinary((Byte const*)sqlValue.GetValueBlob(), sizeof(BeGuid), true);
@@ -564,11 +582,23 @@ ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, Utf8St
             value.SetUtf8CP(sqlValue.GetText());
             break;
         case PRIMITIVETYPE_Point2d:
-            value.SetPoint2d(GetPoint2dFromSqlValue(sqlValue));
+            {
+            Nullable<DPoint2d> point2d = GetPoint2dFromSqlValue(sqlValue);
+            if (point2d.IsNull())
+                value.SetIsNull(true);
+            else
+                value.SetPoint2d(point2d.Value());
             break;
+            };
         case PRIMITIVETYPE_Point3d:
-            value.SetPoint3d(GetPoint3dFromSqlValue(sqlValue));
+            {
+            Nullable<DPoint3d> point3d = GetPoint3dFromSqlValue(sqlValue);
+            if (point3d.IsNull())
+                value.SetIsNull(true);
+            else
+                value.SetPoint3d(point3d.Value());
             break;
+            }
         case PRIMITIVETYPE_Binary:
             if (extendedType == EXTENDED_TYPENAME_BeGuid)
                 {
@@ -671,11 +701,23 @@ ECValue ValueHelpers::GetECValueFromJson(PrimitiveType type, Utf8StringCR extend
             value.SetUtf8CP(json.GetString());
             break;
         case PRIMITIVETYPE_Point2d:
-            value.SetPoint2d(GetPoint2dFromJson(json));
+            {
+            Nullable<DPoint2d> point2d = GetPoint2dFromJson(json);
+            if (point2d.IsNull())
+                value.SetIsNull(true);
+            else
+                value.SetPoint2d(point2d.Value());
             break;
+            };
         case PRIMITIVETYPE_Point3d:
-            value.SetPoint3d(GetPoint3dFromJson(json));
+            {
+            Nullable<DPoint3d> point3d = GetPoint3dFromJson(json);
+            if (point3d.IsNull())
+                value.SetIsNull(true);
+            else
+                value.SetPoint3d(point3d.Value());
             break;
+            }
         default:
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Unrecognized primitive property type: %d", (int)type));
         }

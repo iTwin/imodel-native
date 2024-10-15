@@ -25,7 +25,11 @@ rapidjson::Document ContentValuesFormatter::GetFallbackPrimitiveValue(ECProperty
     rapidjson::Document json(allocator);
     ECValue v = ValueHelpers::GetECValueFromSqlValue(type, extendedType, value);
     Utf8String stringValue;
-    if (v.ConvertPrimitiveToString(stringValue))
+    if ((type == PRIMITIVETYPE_Point3d || type == PRIMITIVETYPE_Point2d) && v.IsNull())
+        {
+        json.SetString("");
+        }
+    else if (v.ConvertPrimitiveToString(stringValue))
         json.SetString(stringValue.c_str(), json.GetAllocator());
     else
         {

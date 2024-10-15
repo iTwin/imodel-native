@@ -711,16 +711,16 @@ struct ArePointsEqualByValueScalar : ECPresentation::ScalarFunction
 
         if (3 == nArgs)
             {
-            DPoint2d point = ValueHelpers::GetPoint2dFromJsonString(args[0].GetValueText());
-            ctx.SetResultInt((int) 0 == BeNumerical::Compare(point.x, args[1].GetValueDouble())
-                                && 0 == BeNumerical::Compare(point.y, args[2].GetValueDouble()));
+            Nullable<DPoint2d> point = ValueHelpers::GetPoint2dFromJsonString(args[0].GetValueText());
+            ctx.SetResultInt((int) 0 == BeNumerical::Compare(point.Value().x, args[1].GetValueDouble())
+                                && 0 == BeNumerical::Compare(point.Value().y, args[2].GetValueDouble()));
             }
         else
             {
-            DPoint3d point = ValueHelpers::GetPoint3dFromJsonString(args[0].GetValueText());
-            ctx.SetResultInt((int) 0 == BeNumerical::Compare(point.x, args[1].GetValueDouble())
-                                && 0 == BeNumerical::Compare(point.y, args[2].GetValueDouble())
-                                && 0 == BeNumerical::Compare(point.z, args[3].GetValueDouble()));
+            Nullable<DPoint3d> point = ValueHelpers::GetPoint3dFromJsonString(args[0].GetValueText());
+            ctx.SetResultInt((int) 0 == BeNumerical::Compare(point.Value().x, args[1].GetValueDouble())
+                                && 0 == BeNumerical::Compare(point.Value().y, args[2].GetValueDouble())
+                                && 0 == BeNumerical::Compare(point.Value().z, args[3].GetValueDouble()));
             }
         }
     };
