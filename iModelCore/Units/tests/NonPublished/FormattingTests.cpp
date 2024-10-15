@@ -66,7 +66,7 @@ public:
         ASSERT_FALSE(fps.HasProblem()) << fps.GetProblemDescription() << '\n' << GetFmtStringErrMsg(fmtStr);
 
         FormatProblemCode probCode;
-        Format format = Format();
+        Format format;
         BEU::Quantity qty = fps.GetQuantity(&probCode, &format);
 
         ASSERT_FALSE(qty.IsNullQuantity()) << GetFmtStringErrMsg(fmtStr);
@@ -923,7 +923,7 @@ TEST_F(FormatParsingSetTest, CompositeFormats_IGNORED)
 TEST_F(FormatParsingSetTest, OverflowNumberTest)
     {
     TestValidParseToQuantity("812345678910111 m", meter, 812345678910111);
-    Format format = Format();
+    Format format;
     FormatParsingSet fps("8123456789101110 m", meter, &format);
     
     fps.GetQuantity(nullptr, &format);
@@ -1668,7 +1668,7 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
     azimuth.SetCompositeSpec(azimuthComp);
     EXPECT_FALSE(azimuth.IsProblem());
 
-    auto TestFormat = [&unitDegree, &unitRadian](const Units::Quantity& degree, const Units::Quantity& radian, const Utf8String expectedString, const Format& format)
+    auto TestFormat = [&unitDegree, &unitRadian](const Units::Quantity& degree, const Units::Quantity& radian, const Utf8StringCR expectedString, const Format& format)
     {
         Utf8String fromDeg = format.FormatQuantity(degree);
         Utf8String fromRad = format.FormatQuantity(radian);
