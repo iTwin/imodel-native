@@ -730,7 +730,7 @@ TEST_F(DefaultECPresentationSerializerTests, DisplayLabelFieldSerialization)
 TEST_F(DefaultECPresentationSerializerTests, CalculatedPropertyFieldSerialization)
     {
     ECClassCP testClass = GetClass("PropertyTestClassA");
-    ContentDescriptor::CalculatedPropertyField field(nullptr, "10", "FieldName", "ValueExpression", testClass, 10);
+    ContentDescriptor::CalculatedPropertyField field(nullptr, "10", "FieldName", "ValueExpression", PRIMITIVETYPE_String, testClass, 10);
     field.SetUniqueName(field.CreateName());
     rapidjson::Document actual = field.AsJson();
 

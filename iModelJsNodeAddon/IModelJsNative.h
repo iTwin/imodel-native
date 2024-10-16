@@ -634,7 +634,6 @@ struct NativeChangeset {
         bool m_invert;
         Byte* m_primaryKeyColumns;
         Changes::Change m_currentChange;
-        Db m_unusedDb;
         DbOpcode m_opcode;
         int m_columnCount;
         int m_indirect;
@@ -642,6 +641,7 @@ struct NativeChangeset {
         int m_primaryKeyCount;
         std::unique_ptr<Changes> m_changes;
         std::unique_ptr<ChangeStream> m_changeStream;
+        std::unique_ptr<ChangeGroup> m_changeGroup;
         Utf8CP m_tableName;
         Utf8String m_ddl;
 
@@ -656,8 +656,10 @@ struct NativeChangeset {
         NativeChangeset():m_primaryKeyColumns(nullptr), m_tableName(nullptr), m_currentChange(nullptr, false), m_invert(false){}
         void OpenFile(Napi::Env env, Utf8StringCR changesetFile, bool invert);
         void OpenChangeStream(Napi::Env env, std::unique_ptr<ChangeStream>, bool invert);
+        void OpenGroup(Napi::Env env, T_Utf8StringVector const& changesetFiles, Db const& db, bool invert);
         void Close(Napi::Env env);
         void Reset(Napi::Env env);
+        void WriteToFile(Napi::Env env, Utf8String const& fileName, bool containChanges, bool override);
         Napi::Value GetHasRow(Napi::Env env);
         Napi::Value GetColumnCount(Napi::Env env);
         Napi::Value GetColumnValue(Napi::Env env, int col, int target);

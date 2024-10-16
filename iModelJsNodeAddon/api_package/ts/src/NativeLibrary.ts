@@ -351,6 +351,12 @@ export declare namespace IModelJsNative {
     size?: number;
     pathname: string;
   }
+  interface ECSqlRowAdaptorOptions {
+    abbreviateBlobs?: boolean;
+    classIdsToClassNames?: boolean;
+    useJsName?: boolean;
+    doNotConvertClassIdsToClassNamesWhenAliased?: boolean; // backward compatibility
+  }
 
   interface EmbeddedFileProps {
     name: string;
@@ -534,6 +540,7 @@ export declare namespace IModelJsNative {
     public addChildPropagatesChangesToParentRelationship(schemaName: string, relClassName: string): BentleyStatus;
     public addNewFont(arg: { type: FontType, name: string }): number;
     public applyChangeset(changeSet: ChangesetFileProps): void;
+    public revertTimelineChanges(changeSet: ChangesetFileProps[], skipSchemaChanges: boolean): void;
     public attachChangeCache(changeCachePath: string): DbResult;
     public beginMultiTxnOperation(): DbResult;
     public beginPurgeOperation(): IModelStatus;
@@ -790,6 +797,8 @@ export declare namespace IModelJsNative {
     public stepForInsert(): { status: DbResult, id: string };
     public stepForInsertAsync(callback: (result: { status: DbResult, id: string }) => void): void;
     public getNativeSql(): string;
+    public toRow(arg: ECSqlRowAdaptorOptions): any;
+    public getMetadata(): any;
   }
 
   class ECSqlBinder {
@@ -1397,9 +1406,11 @@ export declare namespace IModelJsNative {
     public isIndirectChange(): boolean;
     public getPrimaryKeyColumnIndexes(): number[];
     public openFile(fileName: string, invert: boolean): void;
+    public openGroup(fileName: string[], db: AnyECDb, invert: boolean): void;
     public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean): void;
     public reset(): void;
     public step(): boolean;
+    public writeToFile(fileName: string, containsSchemaChanges: boolean, overrideFile: boolean): void;
   }
 
   class DisableNativeAssertions implements IDisposable {

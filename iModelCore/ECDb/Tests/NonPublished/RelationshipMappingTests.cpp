@@ -223,11 +223,12 @@ TEST_F(RelationshipMappingTestFixture, MoveNavUpInHierarchyRemoveOriginal)
         </ECRelationshipClass>
         )xml", "01.00.01");
     SchemaItem schema2(schemaXml2);
-    ECIssueListener issueListener(m_ecdb);
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
     ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema2));
-    auto lastIssue = issueListener.GetIssue();
-    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
-    ASSERT_STREQ("ECSchema Upgrade failed. ECClass TestSchema:MaterialProfile: Deleting Navigation ECProperty 'Material' from an ECClass is not supported.", lastIssue.message.c_str());
+
+    ASSERT_FALSE(issueListener.IsEmpty()) << "Should raise an issue.";
+    ASSERT_STREQ("ECSchema Upgrade failed. ECClass TestSchema:MaterialProfile: Deleting Navigation ECProperty 'Material' from an ECClass is not supported.", issueListener.GetLastMessage().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -308,11 +309,12 @@ TEST_F(RelationshipMappingTestFixture, MoveNavUpInHierarchyRemoveAndIgnore)
         </ECRelationshipClass>
         )xml", "01.00.01");
     SchemaItem schema2(schemaXml2);
-    ECIssueListener issueListener(m_ecdb);
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
     ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema2, SchemaManager::SchemaImportOptions::DoNotFailForDeletionsOrModifications));
-    auto lastIssue = issueListener.GetIssue();
-    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
-    ASSERT_STREQ("ECSchema Upgrade failed. ECClass TestSchema:MaterialProfile: Deleting Navigation ECProperty 'Material' from an ECClass is not supported.", lastIssue.message.c_str());
+
+    ASSERT_FALSE(issueListener.IsEmpty()) << "Should raise an issue.";
+    ASSERT_STREQ("ECSchema Upgrade failed. ECClass TestSchema:MaterialProfile: Deleting Navigation ECProperty 'Material' from an ECClass is not supported.", issueListener.GetLastMessage().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -395,11 +397,12 @@ TEST_F(RelationshipMappingTestFixture, MoveNavUpInHierarchyAdjustOriginal)
         </ECRelationshipClass>
         )xml", "01.00.01");
     SchemaItem schema2(schemaXml2);
-    ECIssueListener issueListener(m_ecdb);
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
     ASSERT_EQ(BentleyStatus::ERROR, ImportSchema(schema2, SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues));
-    auto lastIssue = issueListener.GetIssue();
-    ASSERT_TRUE(lastIssue.has_value()) << "Should raise an issue.";
-    ASSERT_STREQ("ECSchema Upgrade failed. ECProperty TestSchema:MaterialProfile.Material: Changing the 'Relationship' for a Navigation ECProperty is not supported.", lastIssue.message.c_str());
+
+    ASSERT_FALSE(issueListener.IsEmpty()) << "Should raise an issue.";
+    ASSERT_STREQ("ECSchema Upgrade failed. ECProperty TestSchema:MaterialProfile.Material: Changing the 'Relationship' for a Navigation ECProperty is not supported.", issueListener.GetLastMessage().c_str());
     }
 
 //---------------------------------------------------------------------------------------

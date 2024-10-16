@@ -1053,6 +1053,74 @@ DbResult IntegrityChecker::CheckClassIds(std::function<bool(Utf8CP, ECInstanceId
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+DbResult IntegrityChecker::CheckMissingChildRows(std::function<bool(Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP)> callback)
+	{
+	if ("Check missing child rows from BisCore:Element")
+		{
+		Statement getChildClassesStmt;
+		auto rc = getChildClassesStmt.Prepare(m_conn, R"sql(
+			SELECT 
+			       [Tables], 
+			       GROUP_CONCAT ([Id])
+			FROM   (SELECT 
+			               [CL].[Id] [Id], 
+			               GROUP_CONCAT ([Tb].[Name]) [Tables]
+			        FROM   (SELECT DISTINCT [ECClassId] [Id]
+			                FROM   [bis_Element]) CL
+			               JOIN [ec_cache_ClassHasTables] [CT] ON [CT].[ClassId] = [CL].[Id]
+			               JOIN [ec_Table] [TB] ON [TB].[Id] = [CT].[TableId]
+			        GROUP  BY [CL].[Id])
+			GROUP  BY [Tables];
+		)sql");
+		if (BE_SQLITE_OK != rc)
+			{
+			m_lastError = m_conn.GetLastError();
+			return rc;
+			}
+
+		Utf8String getMissingRowsQueryTemplate = R"sql(select a.Id, a.ECClassId, '%s' as MissingRowInTables from bis_Element a %s where a.ECClassId in (%s) and (%s))sql";
+		Utf8String finalQuery;
+
+		while(getChildClassesStmt.Step() == BE_SQLITE_ROW)
+			{
+			bvector<Utf8String> childClasses;
+			BeStringUtilities::Split(getChildClassesStmt.GetValueText(0), ",", childClasses);
+			Utf8String joins;
+			Utf8String whereClause;
+			int alias = 1;
+			for (auto i = 1; i < childClasses.size(); ++i, ++alias)
+				{
+				const auto childClass = childClasses[i];
+				joins += Utf8PrintfString("left join %s b%d on b%d.ElementId = a.Id ", childClass.c_str(), alias, alias);
+				if (!Utf8String::IsNullOrEmpty(whereClause.c_str()))
+					whereClause += " or ";
+				whereClause += Utf8PrintfString("b%d.ElementId is null", alias);
+				}
+			if (!Utf8String::IsNullOrEmpty(finalQuery.c_str()))
+				finalQuery += " union ";
+
+			finalQuery += Utf8PrintfString(getMissingRowsQueryTemplate.c_str(), BeStringUtilities::Join(bvector<Utf8String>(childClasses.begin()+1, childClasses.end()), ",").c_str(), joins.c_str(), getChildClassesStmt.GetValueText(1), whereClause.c_str());
+			}
+
+		Statement getMissingRowsStmt;
+		rc = getMissingRowsStmt.Prepare(m_conn, finalQuery.c_str());
+		if (BE_SQLITE_OK != rc)
+			{
+			m_lastError = m_conn.GetLastError();
+			return rc;
+			}
+		while(getMissingRowsStmt.Step() == BE_SQLITE_ROW)
+			{
+			if (!callback("BisCore:Element", getMissingRowsStmt.GetValueId<ECInstanceId>(0), getMissingRowsStmt.GetValueId<ECClassId>(1), getMissingRowsStmt.GetValueText(2)))
+				return BE_SQLITE_OK;
+			}
+		}
+		return BE_SQLITE_OK;
+	}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 DbResult IntegrityChecker::CheckDataSchema(std::function<bool(std::string, std::string)> callback) {
     auto rc = CheckDataTableExists([&](std::string table) {
         return callback(table, "table");
@@ -1080,6 +1148,7 @@ Utf8CP IntegrityChecker::GetCheckName(Checks check) {
 		{Checks::CheckLinkTableFkIds, check_linktable_fk_ids},
 		{Checks::CheckClassIds, check_class_ids},
 		{Checks::CheckSchemaLoad, check_schema_load},
+		{Checks::CheckMissingChildRows, check_missing_child_rows},
     };
     const auto it = s_map.find(check);
 	if (it != s_map.end())  {
@@ -1103,6 +1172,7 @@ IntegrityChecker::Checks IntegrityChecker::GetCheckId(Utf8CP checkName) {
 		{check_linktable_fk_ids, Checks::CheckLinkTableFkIds},
 		{check_class_ids, Checks::CheckClassIds},
 		{check_schema_load, Checks::CheckSchemaLoad},
+		{check_missing_child_rows, Checks::CheckMissingChildRows},
     };
     const auto it = s_map.find(checkName);
 	if (it != s_map.end())  {
@@ -1240,6 +1310,20 @@ DbResult IntegrityChecker::QuickCheck(Checks checks, std::function<void(Utf8CP, 
         }
 		callback(GetCheckName(Checks::CheckSchemaLoad), passed, stopWatch.GetCurrent());
     }
+	if (Enum::Contains<Checks>(checks, Checks::CheckMissingChildRows))
+		{
+		StopWatch stopWatch(true);
+        auto passed = true;
+        rc = CheckMissingChildRows([&passed](Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP)
+			{
+            return (passed = false);
+        	});
+		if (rc != BE_SQLITE_OK)
+			{
+            return rc;
+        	}
+		callback(GetCheckName(Checks::CheckSchemaLoad), passed, stopWatch.GetCurrent());
+    	}
     return BE_SQLITE_OK;
 }
 

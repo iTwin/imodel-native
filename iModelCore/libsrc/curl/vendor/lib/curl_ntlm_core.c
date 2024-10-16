@@ -110,7 +110,8 @@
 #elif defined(USE_WIN32_CRYPTO)
 #  include <wincrypt.h>
 #else
-#  error "Can't compile NTLM support without a crypto library with DES."
+#  error "cannot compile NTLM support without a crypto library with DES."
+#  define CURL_NTLM_NOT_SUPPORTED
 #endif
 
 #include "urldata.h"
@@ -130,24 +131,26 @@
 #define NTLMv2_BLOB_SIGNATURE "\x01\x01\x00\x00"
 #define NTLMv2_BLOB_LEN       (44 -16 + ntlm->target_info_len + 4)
 
+#if !defined(CURL_NTLM_NOT_SUPPORTED)
 /*
 * Turns a 56-bit key into being 64-bit wide.
 */
 static void extend_key_56_to_64(const unsigned char *key_56, char *key)
 {
-  key[0] = key_56[0];
-  key[1] = (unsigned char)(((key_56[0] << 7) & 0xFF) | (key_56[1] >> 1));
-  key[2] = (unsigned char)(((key_56[1] << 6) & 0xFF) | (key_56[2] >> 2));
-  key[3] = (unsigned char)(((key_56[2] << 5) & 0xFF) | (key_56[3] >> 3));
-  key[4] = (unsigned char)(((key_56[3] << 4) & 0xFF) | (key_56[4] >> 4));
-  key[5] = (unsigned char)(((key_56[4] << 3) & 0xFF) | (key_56[5] >> 5));
-  key[6] = (unsigned char)(((key_56[5] << 2) & 0xFF) | (key_56[6] >> 6));
-  key[7] = (unsigned char) ((key_56[6] << 1) & 0xFF);
+  key[0] = (char)key_56[0];
+  key[1] = (char)(((key_56[0] << 7) & 0xFF) | (key_56[1] >> 1));
+  key[2] = (char)(((key_56[1] << 6) & 0xFF) | (key_56[2] >> 2));
+  key[3] = (char)(((key_56[2] << 5) & 0xFF) | (key_56[3] >> 3));
+  key[4] = (char)(((key_56[3] << 4) & 0xFF) | (key_56[4] >> 4));
+  key[5] = (char)(((key_56[4] << 3) & 0xFF) | (key_56[5] >> 5));
+  key[6] = (char)(((key_56[5] << 2) & 0xFF) | (key_56[6] >> 6));
+  key[7] = (char) ((key_56[6] << 1) & 0xFF);
 }
+#endif
 
 #if defined(USE_OPENSSL_DES) || defined(USE_WOLFSSL)
 /*
- * Turns a 56 bit key into the 64 bit, odd parity key and sets the key.  The
+ * Turns a 56-bit key into a 64-bit, odd parity key and sets the key. The
  * key schedule ks is also set.
  */
 static void setup_des_key(const unsigned char *key_56,
@@ -155,7 +158,7 @@ static void setup_des_key(const unsigned char *key_56,
 {
   DES_cblock key;
 
-  /* Expand the 56-bit key to 64-bits */
+  /* Expand the 56-bit key to 64 bits */
   extend_key_56_to_64(key_56, (char *) &key);
 
   /* Set the key parity to odd */
@@ -172,7 +175,7 @@ static void setup_des_key(const unsigned char *key_56,
 {
   char key[8];
 
-  /* Expand the 56-bit key to 64-bits */
+  /* Expand the 56-bit key to 64 bits */
   extend_key_56_to_64(key_56, key);
 
   /* Set the key parity to odd */
@@ -190,7 +193,7 @@ static bool encrypt_des(const unsigned char *in, unsigned char *out,
   mbedtls_des_context ctx;
   char key[8];
 
-  /* Expand the 56-bit key to 64-bits */
+  /* Expand the 56-bit key to 64 bits */
   extend_key_56_to_64(key_56, key);
 
   /* Set the key parity to odd */
@@ -211,7 +214,7 @@ static bool encrypt_des(const unsigned char *in, unsigned char *out,
   size_t out_len;
   CCCryptorStatus err;
 
-  /* Expand the 56-bit key to 64-bits */
+  /* Expand the 56-bit key to 64 bits */
   extend_key_56_to_64(key_56, key);
 
   /* Set the key parity to odd */
@@ -237,7 +240,7 @@ static bool encrypt_des(const unsigned char *in, unsigned char *out,
   ctl.Func_ID = ENCRYPT_ONLY;
   ctl.Data_Len = sizeof(key);
 
-  /* Expand the 56-bit key to 64-bits */
+  /* Expand the 56-bit key to 64 bits */
   extend_key_56_to_64(key_56, ctl.Crypto_Key);
 
   /* Set the key parity to odd */
@@ -275,7 +278,7 @@ static bool encrypt_des(const unsigned char *in, unsigned char *out,
   blob.hdr.aiKeyAlg = CALG_DES;
   blob.len = sizeof(blob.key);
 
-  /* Expand the 56-bit key to 64-bits */
+  /* Expand the 56-bit key to 64 bits */
   extend_key_56_to_64(key_56, blob.key);
 
   /* Set the key parity to odd */
@@ -337,6 +340,10 @@ void Curl_ntlm_core_lm_resp(const unsigned char *keys,
   encrypt_des(plaintext, results, keys);
   encrypt_des(plaintext, results + 8, keys + 7);
   encrypt_des(plaintext, results + 16, keys + 14);
+#else
+  (void)keys;
+  (void)plaintext;
+  (void)results;
 #endif
 }
 
@@ -347,9 +354,11 @@ CURLcode Curl_ntlm_core_mk_lm_hash(const char *password,
                                    unsigned char *lmbuffer /* 21 bytes */)
 {
   unsigned char pw[14];
+#if !defined(CURL_NTLM_NOT_SUPPORTED)
   static const unsigned char magic[] = {
     0x4B, 0x47, 0x53, 0x21, 0x40, 0x23, 0x24, 0x25 /* i.e. KGS!@#$% */
   };
+#endif
   size_t len = CURLMIN(strlen(password), 14);
 
   Curl_strntoupper((char *)pw, password, len);
@@ -457,13 +466,13 @@ static void time2filetime(struct ms_filetime *ft, time_t t)
   unsigned int r, s;
   unsigned int i;
 
-  ft->dwLowDateTime = t & 0xFFFFFFFF;
+  ft->dwLowDateTime = (unsigned int)t & 0xFFFFFFFF;
   ft->dwHighDateTime = 0;
 
 # ifndef HAVE_TIME_T_UNSIGNED
   /* Extend sign if needed. */
   if(ft->dwLowDateTime & 0x80000000)
-    ft->dwHighDateTime = ~0;
+    ft->dwHighDateTime = ~(unsigned int)0;
 # endif
 
   /* Bias seconds to Jan 1, 1601.

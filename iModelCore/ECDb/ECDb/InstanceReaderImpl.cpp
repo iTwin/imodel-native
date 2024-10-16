@@ -1,6 +1,6 @@
 /*---------------------------------------------------------------------------------------------
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See COPYRIGHT.md in the repository root for full copyright notice.
+* See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
@@ -181,10 +181,10 @@ BeJsValue RowRender::GetInstanceJsonObject(ECInstanceKeyCR instanceKey, IECSqlRo
     auto& rowsDoc = ClearAndGetCachedJsonDocument();
     BeJsValue row(rowsDoc);
     ECSqlRowAdaptor adaptor(m_conn);
-    adaptor.UseJsNames(param.GetUseJsName());
-    adaptor.SetAbbreviateBlobs(param.GetAbbreviateBlobs());
-    adaptor.SetConvertClassIdsToClassNames(param.GetClassIdToClassNames());
-    adaptor.RenderRow(row, ecsqlRow, false);
+    adaptor.GetOptions().UseJsNames(param.GetUseJsName());
+    adaptor.GetOptions().SetAbbreviateBlobs(param.GetAbbreviateBlobs());
+    adaptor.GetOptions().SetConvertClassIdsToClassNames(param.GetClassIdToClassNames());
+    adaptor.RenderRowAsObject(row, ecsqlRow);
     m_instanceKey = instanceKey;
     m_jsonParam = param;
     m_accessString.clear();
@@ -202,9 +202,9 @@ BeJsValue RowRender::GetPropertyJsonValue(ECInstanceKeyCR instanceKey, Utf8Strin
     BeJsValue row(rowsDoc);
     auto out = row["$"];
     ECSqlRowAdaptor adaptor(m_conn);
-    adaptor.UseJsNames(param.GetUseJsName());
-    adaptor.SetAbbreviateBlobs(param.GetAbbreviateBlobs());
-    adaptor.SetConvertClassIdsToClassNames(param.GetClassIdToClassNames());
+    adaptor.GetOptions().UseJsNames(param.GetUseJsName());
+    adaptor.GetOptions().SetAbbreviateBlobs(param.GetAbbreviateBlobs());
+    adaptor.GetOptions().SetConvertClassIdsToClassNames(param.GetClassIdToClassNames());
     adaptor.RenderValue(out, ecsqlValue);
     m_instanceKey = instanceKey;
     m_jsonParam = param;

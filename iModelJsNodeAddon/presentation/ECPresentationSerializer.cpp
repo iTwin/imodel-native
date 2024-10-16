@@ -216,6 +216,9 @@ void IModelJsECPresentationSerializer::_FieldAsJson(ContextR ctx, ContentDescrip
 
     if (nullptr != field.GetEditor())
         fieldBaseJson.AddMember("editor", field.GetEditor()->AsJson(ctx, &fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
+
+    if (field.IsCalculatedPropertyField() && field.AsCalculatedPropertyField()->GetExtendedData().GetJson().MemberCount() > 0)
+        fieldBaseJson.AddMember("extendedData", rapidjson::Value(field.AsCalculatedPropertyField()->GetExtendedData().GetJson(), fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -734,7 +737,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, Cont
             rapidjson::Value nestedValuesJson(rapidjson::kArrayType);
             for (auto const& nestedItem : nestedContentEntry.second)
                 {
-                static const int valueSerializationFlags = ContentSetItem::SERIALIZE_PrimaryKeys | ContentSetItem::SERIALIZE_Values | ContentSetItem::SERIALIZE_DisplayValues | ContentSetItem::SERIALIZE_MergedFieldNames;
+                static const int valueSerializationFlags = ContentSetItem::SERIALIZE_PrimaryKeys | ContentSetItem::SERIALIZE_Values | ContentSetItem::SERIALIZE_DisplayValues | ContentSetItem::SERIALIZE_MergedFieldNames | ContentSetItem::SERIALIZE_DisplayLabel;
                 nestedValuesJson.PushBack(nestedItem->AsJson(ctx, valueSerializationFlags, &json.GetAllocator()), json.GetAllocator());
                 }
             json["values"].AddMember(rapidjson::Value(nestedContentEntry.first.c_str(), json.GetAllocator()), nestedValuesJson, json.GetAllocator());

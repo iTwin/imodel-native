@@ -150,7 +150,12 @@ MultiSchemaClass* ContentQueryBuilderTests::CreateMultiSchemaClass(bvector<ECCla
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentQueryContractPtr ContentQueryBuilderTests::CreateQueryContract(int id, ContentDescriptorCR descriptor, ECClassCP ecClass, IQueryInfoProvider const& queryInfo, PresentationQueryContractFieldPtr displayLabelField, bvector<RelatedClassPath> relatedInstancePaths, Utf8CP inputAlias)
     {
-    auto contract = ContentQueryContract::Create(id, descriptor, ecClass, queryInfo, displayLabelField, relatedInstancePaths, false, false);
+    auto relatedInstanceDisplayLabelFieldFactory = [&, relatedInstancePaths](Utf8CP fieldName, SelectClass<ECClass> const& selectClass)
+        {
+        return QueryBuilderHelpers::CreateRelatedInstanceDisplayLabelField(fieldName, *m_schemaHelper, selectClass, relatedInstancePaths, m_rulesPreprocessor->GetInstanceLabelOverrides());
+        };
+
+    auto contract = ContentQueryContract::Create(id, descriptor, ecClass, queryInfo, relatedInstanceDisplayLabelFieldFactory, displayLabelField, relatedInstancePaths, false, false);
     if (inputAlias)
         contract->SetInputClassAlias(inputAlias);
     return contract;
