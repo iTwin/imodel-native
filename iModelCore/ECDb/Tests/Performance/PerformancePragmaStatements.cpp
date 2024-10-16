@@ -12,7 +12,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 class PeformancePragmaStatements : public ECDbTestFixture
     {};
 
-TEST_F(PeformancePragmaStatements, PurgeOrphanRelationship)
+TEST_F(PeformancePragmaStatements, PurgeOrphanRelationships)
     {
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDbForCurrentTest());
 
