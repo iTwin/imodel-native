@@ -488,6 +488,8 @@ TEST_F(FormatJsonTest, FormatDecimal)
     spec.ToJson(BeJsValue(json));
     Format f = Format(numericSpec, spec);
     auto expectedJson = R"json({
+                             "azimuthBase" : 0.0,
+                             "azimuthCounterClockwise" : false,
                              "decimalSeparator" : ".",
                              "formatTraits" : [],
                              "minWidth" : 0,
@@ -553,6 +555,8 @@ TEST_F(FormatJsonTest, FormatFractional)
     spec.ToJson(BeJsValue(json));
     Format f = Format(numericSpec, spec);
     auto expectedJson = R"json({
+                             "azimuthBase" : 0.0,
+                             "azimuthCounterClockwise" : false,
                              "decimalSeparator" : ".",
                              "formatTraits" : [],
                              "minWidth" : 0,
@@ -617,6 +621,8 @@ TEST_F(FormatJsonTest, FormatScientific)
     spec.ToJson(BeJsValue(json));
     Format f = Format(numericSpec, spec);
     auto expectedJson = R"json({
+                             "azimuthBase" : 0.0,
+                             "azimuthCounterClockwise" : false,
                              "decimalSeparator" : ".",
                              "formatTraits" : [],
                              "minWidth" : 0,
@@ -683,6 +689,8 @@ TEST_F(FormatJsonTest, FormatStation)
     spec.ToJson(BeJsValue(json));
     Format f = Format(numericSpec, spec);
     auto expectedJson = R"json({
+                             "azimuthBase" : 0.0,
+                             "azimuthCounterClockwise" : false,
                              "decimalSeparator" : ".",
                              "formatTraits" : [],
                              "minWidth" : 0,
@@ -762,15 +770,15 @@ TEST_F(FormatJsonTest, AzimuthRoundtrip)
     EXPECT_TRUE(Format::FromJson(format, json, s_unitsContext));
     EXPECT_EQ(PresentationType::Azimuth, format.GetPresentationType());
     NumericFormatSpecCP numSpec = format.GetNumericSpec();
-    EXPECT_TRUE(numSpec != nullptr);
+    ASSERT_TRUE(numSpec != nullptr);
     EXPECT_EQ(180.0, numSpec->GetAzimuthBase());
     EXPECT_EQ(true, numSpec->GetAzimuthCounterClockwise());
     BEU::UnitCP revolutionUnit = numSpec->GetRevolutionUnit();
-    EXPECT_TRUE(revolutionUnit != nullptr);
+    ASSERT_TRUE(revolutionUnit != nullptr);
     EXPECT_STREQ("REVOLUTION", revolutionUnit->GetName().c_str());
 
     BEU::UnitCP azimuthBaseUnit = numSpec->GetAzimuthBaseUnit();
-    EXPECT_TRUE(azimuthBaseUnit != nullptr);
+    ASSERT_TRUE(azimuthBaseUnit != nullptr);
     EXPECT_STREQ("ARC_DEG", azimuthBaseUnit->GetName().c_str());
     
     Json::Value jsonAfterRoundtrip;
@@ -781,15 +789,15 @@ TEST_F(FormatJsonTest, AzimuthRoundtrip)
 
     EXPECT_EQ(PresentationType::Azimuth, formatAfterRoundtrip.GetPresentationType());
     NumericFormatSpecCP numSpecAfterRoundtrip = formatAfterRoundtrip.GetNumericSpec();
-    EXPECT_TRUE(numSpecAfterRoundtrip != nullptr);
+    ASSERT_TRUE(numSpecAfterRoundtrip != nullptr);
     EXPECT_EQ(180.0, numSpecAfterRoundtrip->GetAzimuthBase());
     EXPECT_EQ(true, numSpecAfterRoundtrip->GetAzimuthCounterClockwise());
     BEU::UnitCP revolutionUnitAfterRoundtrip = numSpecAfterRoundtrip->GetRevolutionUnit();
-    EXPECT_TRUE(revolutionUnitAfterRoundtrip != nullptr);
+    ASSERT_TRUE(revolutionUnitAfterRoundtrip != nullptr);
     EXPECT_STREQ("REVOLUTION", revolutionUnitAfterRoundtrip->GetName().c_str());
 
     BEU::UnitCP azimuthBaseUnitAfterRoundtrip = numSpecAfterRoundtrip->GetAzimuthBaseUnit();
-    EXPECT_TRUE(azimuthBaseUnitAfterRoundtrip != nullptr);
+    ASSERT_TRUE(azimuthBaseUnitAfterRoundtrip != nullptr);
     EXPECT_STREQ("ARC_DEG", azimuthBaseUnitAfterRoundtrip->GetName().c_str());
     }
 
