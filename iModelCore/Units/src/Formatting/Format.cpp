@@ -115,7 +115,7 @@ bool Format::FromJson(FormatR out, Json::Value jval, BEU::IUnitsContextCP contex
         return false;
         }
 
-    if (!NumericFormatSpec::FromJson(f.m_numericSpec, jval))
+    if (!NumericFormatSpec::FromJson(f.m_numericSpec, jval, context))
         return false;
     Utf8CP paramName;
     for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
@@ -267,7 +267,7 @@ BentleyStatus Format::FormatBearingAndAzimuth(BEU::Quantity& quantity, std::stri
         while(magnitude > revolution)
             magnitude -= revolution;
 
-        if(fmtP->IsCounterClockwiseAngle())
+        if(fmtP->GetAzimuthCounterClockwise())
             magnitude = revolution - magnitude;
 
         quantity = BEU::Quantity(magnitude, *quantity.GetUnit());

@@ -66,7 +66,7 @@ NumericFormatSpec::NumericFormatSpec()
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //----------------------------------------------------------------------------------------
-bool NumericFormatSpec::FromJson(NumericFormatSpecR out, JsonValueCR jval)
+bool NumericFormatSpec::FromJson(NumericFormatSpecR out, JsonValueCR jval, BEU::IUnitsContextCP context)
     {
     if (jval.empty())
         return false;
@@ -164,6 +164,34 @@ bool NumericFormatSpec::FromJson(NumericFormatSpecR out, JsonValueCR jval)
             Utils::ParseRatioType(mode, val.asCString());
             spec.SetRatioType(mode);
             }
+        else if (BeStringUtilities::StricmpAscii(paramName, json_azimuthBase()) == 0)
+            {
+            double base = val.asDouble();
+            spec.SetAzimuthBase(base);
+            }
+        else if (context != nullptr && BeStringUtilities::StricmpAscii(paramName, json_azimuthBaseUnit()) == 0)
+            {
+            Utf8String fullName = val.asString();
+            if (!fullName.Contains(":"))
+                fullName.ReplaceAll(".", ":"); // To handle the json case where . is used instead of :
+
+            if(!fullName.empty())
+                spec.SetAzimuthBaseUnit(context->LookupUnit(fullName.c_str(), true));
+            }
+        else if (BeStringUtilities::StricmpAscii(paramName, json_azimuthCounterClockwise()) == 0)
+            {
+            bool ccw = val.asBool();
+            spec.SetAzimuthCounterClockwise(ccw);
+            }
+        else if (context != nullptr && BeStringUtilities::StricmpAscii(paramName, json_revolutionUnit()) == 0)
+            {
+            Utf8String fullName = val.asString();
+            if (!fullName.Contains(":"))
+                fullName.ReplaceAll(".", ":"); // To handle the json case where . is used instead of :
+            
+            if(!fullName.empty())
+                spec.SetRevolutionUnit(context->LookupUnit(fullName.c_str(), true));
+            }
         }
     out = spec;
     return true;
@@ -223,6 +251,23 @@ bool NumericFormatSpec::ToJson(BeJsValue out, bool verbose) const
         out[json_uomSeparator()] = GetUomSeparator();
     if (verbose || HasMinWidth())
         out[json_minWidth()] = GetMinWidth();
+
+    if (verbose || HasAzimuthBase())
+        out[json_azimuthBase()] = GetAzimuthBase();
+    BEU::UnitCP azimuthBaseUnit = GetAzimuthBaseUnit();
+    if (verbose || azimuthBaseUnit != nullptr)
+        {
+        if (nullptr != azimuthBaseUnit)
+        out[json_azimuthBaseUnit()] = azimuthBaseUnit->GetName();
+        }
+    if (verbose || GetAzimuthCounterClockwise())
+        out[json_azimuthCounterClockwise()] = GetAzimuthCounterClockwise();
+    BEU::UnitCP revolutionUnit = GetRevolutionUnit();
+    if (verbose || revolutionUnit != nullptr)
+        {
+        if (nullptr != revolutionUnit)
+            out[json_revolutionUnit()] = revolutionUnit->GetName();
+        }
 
     return true;
     }

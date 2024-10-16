@@ -32,6 +32,10 @@ BE_JSON_NAME(stationSeparator)
 BE_JSON_NAME(stationOffsetSize)
 BE_JSON_NAME(minWidth)
 BE_JSON_NAME(ratioType)
+BE_JSON_NAME(azimuthBase)
+BE_JSON_NAME(azimuthBaseUnit)
+BE_JSON_NAME(azimuthCounterClockwise)
+BE_JSON_NAME(revolutionUnit)
 
 // Format Traits
 BE_JSON_NAME(trailZeroes)
@@ -149,7 +153,7 @@ public:
 
     //! Update this with the values from the provided JSON.
     //! @return Success if this NumericFormatSpec is successfully updated. Otherwise, false.
-    UNITS_EXPORT static bool FromJson(NumericFormatSpecR out, JsonValueCR jval);
+    UNITS_EXPORT static bool FromJson(NumericFormatSpecR out, JsonValueCR jval, BEU::IUnitsContextCP context = nullptr);
     //! Serializes this to JSON. The JSON will only contain values which differ from their initial state, or have been explicitly set
     //! to the current state.
     //!
@@ -309,7 +313,7 @@ public:
 
     // Indicates whether azimuth values should be formatted counter-clockwise from their base
     void SetAzimuthCounterClockwise(bool setTo) { m_azimuthCounterClockwise = setTo;}
-    bool IsCounterClockwiseAngle() const {return m_azimuthCounterClockwise;}
+    bool GetAzimuthCounterClockwise() const {return m_azimuthCounterClockwise;}
 
     Utf8String FormatToRatio(double value) const;
 

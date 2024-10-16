@@ -280,8 +280,12 @@ Utf8String Utils::GetPresentationTypeString(PresentationType type)
         case PresentationType::Scientific: return FormatConstant::FPN_Scientific();
         case PresentationType::Station: return FormatConstant::FPN_Station();
         case PresentationType::Ratio: return FormatConstant::FPN_Ratio();
+        case PresentationType::Azimuth: return FormatConstant::FPN_Azimuth();
+        case PresentationType::Bearing: return FormatConstant::FPN_Bearing();
+
         default:
-        case PresentationType::Decimal: return FormatConstant::FPN_Decimal();
+        case PresentationType::Decimal:
+            return FormatConstant::FPN_Decimal();
         }
     }
 
@@ -301,6 +305,10 @@ bool Utils::ParsePresentationType(PresentationType& type, Utf8CP name)
         type = PresentationType::Station;
     else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Ratio().c_str()) == 0) 
         type = PresentationType::Ratio;
+    else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Azimuth().c_str()) == 0) 
+        type = PresentationType::Azimuth;
+    else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Bearing().c_str()) == 0)
+        type = PresentationType::Bearing;
     else
         return false;
 

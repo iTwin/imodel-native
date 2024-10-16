@@ -569,6 +569,9 @@ bool CompositeValueSpec::UnitProxy::FromJson(Json::Value const& jval, BEU::IUnit
     if (jval.empty())
         return false;
 
+    if(context == nullptr)
+        return false;
+
     Utf8CP paramName;
     for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
         {

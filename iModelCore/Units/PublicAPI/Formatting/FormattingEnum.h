@@ -363,6 +363,8 @@ public:
     static Utf8String FPN_Scientific() { return "Scientific"; }
     static Utf8String FPN_Station() {return "Station";}
     static Utf8String FPN_Ratio() {return "Ratio";}
+    static Utf8String FPN_Azimuth() {return "Azimuth";}
+    static Utf8String FPN_Bearing() {return "Bearing";}
 
     static Utf8String FPN_RatioOneToN() { return "OneToN"; }
     static Utf8String FPN_RatioNToOne() { return "NToOne"; }

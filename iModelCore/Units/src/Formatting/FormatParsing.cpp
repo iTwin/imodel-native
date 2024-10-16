@@ -1325,13 +1325,13 @@ BEU::Quantity FormatParsingSet::ParseAzimuthFormat(FormatProblemCode* probCode, 
             }
         }
 
-    if (std::fmod(azimuthBase, revolution) == 0.0 &&  !fmtP->IsCounterClockwiseAngle())
+    if (std::fmod(azimuthBase, revolution) == 0.0 &&  !fmtP->GetAzimuthCounterClockwise())
         {
         converted = qty.ConvertTo(m_unit); 
         return converted;
         }
 
-    if (fmtP->IsCounterClockwiseAngle())
+    if (fmtP->GetAzimuthCounterClockwise())
         magnitude = azimuthBase - magnitude;
     else
         magnitude = azimuthBase + magnitude;
