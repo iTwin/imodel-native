@@ -252,21 +252,28 @@ bool NumericFormatSpec::ToJson(BeJsValue out, bool verbose) const
     if (verbose || HasMinWidth())
         out[json_minWidth()] = GetMinWidth();
 
-    if (verbose || HasAzimuthBase())
-        out[json_azimuthBase()] = GetAzimuthBase();
-    BEU::UnitCP azimuthBaseUnit = GetAzimuthBaseUnit();
-    if (verbose || azimuthBaseUnit != nullptr)
+    if (PresentationType::Azimuth == GetPresentationType())
         {
-        if (nullptr != azimuthBaseUnit)
-        out[json_azimuthBaseUnit()] = azimuthBaseUnit->GetName();
+        if (verbose || HasAzimuthBase())
+            out[json_azimuthBase()] = GetAzimuthBase();
+        BEU::UnitCP azimuthBaseUnit = GetAzimuthBaseUnit();
+        if (verbose || azimuthBaseUnit != nullptr)
+            {
+            if (nullptr != azimuthBaseUnit)
+            out[json_azimuthBaseUnit()] = azimuthBaseUnit->GetName();
+            }
+        if (verbose || GetAzimuthCounterClockwise())
+            out[json_azimuthCounterClockwise()] = GetAzimuthCounterClockwise();
         }
-    if (verbose || GetAzimuthCounterClockwise())
-        out[json_azimuthCounterClockwise()] = GetAzimuthCounterClockwise();
-    BEU::UnitCP revolutionUnit = GetRevolutionUnit();
-    if (verbose || revolutionUnit != nullptr)
+
+    if (PresentationType::Bearing == GetPresentationType() || PresentationType::Azimuth == GetPresentationType())
         {
-        if (nullptr != revolutionUnit)
-            out[json_revolutionUnit()] = revolutionUnit->GetName();
+        BEU::UnitCP revolutionUnit = GetRevolutionUnit();
+        if (verbose || revolutionUnit != nullptr)
+            {
+            if (nullptr != revolutionUnit)
+                out[json_revolutionUnit()] = revolutionUnit->GetName();
+            }
         }
 
     return true;

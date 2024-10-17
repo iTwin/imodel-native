@@ -488,8 +488,6 @@ TEST_F(FormatJsonTest, FormatDecimal)
     spec.ToJson(BeJsValue(json));
     Format f = Format(numericSpec, spec);
     auto expectedJson = R"json({
-                             "azimuthBase" : 0.0,
-                             "azimuthCounterClockwise" : false,
                              "decimalSeparator" : ".",
                              "formatTraits" : [],
                              "minWidth" : 0,
@@ -555,8 +553,6 @@ TEST_F(FormatJsonTest, FormatFractional)
     spec.ToJson(BeJsValue(json));
     Format f = Format(numericSpec, spec);
     auto expectedJson = R"json({
-                             "azimuthBase" : 0.0,
-                             "azimuthCounterClockwise" : false,
                              "decimalSeparator" : ".",
                              "formatTraits" : [],
                              "minWidth" : 0,
@@ -621,8 +617,6 @@ TEST_F(FormatJsonTest, FormatScientific)
     spec.ToJson(BeJsValue(json));
     Format f = Format(numericSpec, spec);
     auto expectedJson = R"json({
-                             "azimuthBase" : 0.0,
-                             "azimuthCounterClockwise" : false,
                              "decimalSeparator" : ".",
                              "formatTraits" : [],
                              "minWidth" : 0,
@@ -689,8 +683,6 @@ TEST_F(FormatJsonTest, FormatStation)
     spec.ToJson(BeJsValue(json));
     Format f = Format(numericSpec, spec);
     auto expectedJson = R"json({
-                             "azimuthBase" : 0.0,
-                             "azimuthCounterClockwise" : false,
                              "decimalSeparator" : ".",
                              "formatTraits" : [],
                              "minWidth" : 0,

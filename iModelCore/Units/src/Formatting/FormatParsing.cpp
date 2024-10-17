@@ -935,22 +935,15 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatC
     _Analysis_assume_(inputUnit != nullptr);
     
     BEU::Quantity qty;
-    if (format->GetPresentationType() == PresentationType::Azimuth){
-        SegmentInput(m_input.c_str(), 0);
+    if (format->GetPresentationType() == PresentationType::Azimuth)
         qty = ParseAzimuthFormat(probCode, format, inputUnit);
-    }
 
-    if (format->GetPresentationType() == PresentationType::Bearing){
-        // special handling for bearing format - strip off the direction characters
-        std::regex directionPattern(R"(^[NSEW]|[NSEW]$)"); // TODO - <Naron>: dont use regex here
-        Utf8String input(std::regex_replace(m_input, directionPattern, ""));
-        SegmentInput(input.c_str(), 0); 
-        qty = ParseBearingFormat(m_input.c_str(), probCode, format, inputUnit);
-    }
+    if (format->GetPresentationType() == PresentationType::Bearing)
+        qty = ParseBearingFormat(probCode, format, inputUnit);
 
     if (format->GetPresentationType() == PresentationType::Ratio){
-        SegmentInput(m_input.c_str(), 0);
-        qty = ParseRatioFormat(m_input.c_str(), probCode, format, inputUnit);
+        
+        qty = ParseRatioFormat(probCode, format, inputUnit);
     }
 
     if (probCode != nullptr && *probCode != FormatProblemCode::NoProblems){
@@ -1264,6 +1257,7 @@ BEU::Quantity FormatParsingSet::ParseAndProcessTokens(Formatting::FormatSpecialC
 
 BEU::Quantity FormatParsingSet::ParseAzimuthFormat(FormatProblemCode* probCode, FormatCP format, BEU::UnitCP inputUnit)
     {
+    SegmentInput(m_input.c_str(), 0);
     BEU::Quantity converted = BEU::Quantity();
     
     Utf8String sig = GetSignature(false);
@@ -1359,8 +1353,13 @@ BEU::Quantity FormatParsingSet::ParseAzimuthFormat(FormatProblemCode* probCode, 
     return converted;
     }
 
-BEU::Quantity FormatParsingSet::ParseBearingFormat(Utf8CP input, FormatProblemCode* probCode, FormatCP format, BEU::UnitCP inputUnit)
+BEU::Quantity FormatParsingSet::ParseBearingFormat(FormatProblemCode* probCode, FormatCP format, BEU::UnitCP inputUnit)
     {
+    // special handling for bearing format - strip off the direction characters
+    std::regex directionPattern(R"(^[NSEW]|[NSEW]$)"); // TODO - <Naron>: dont use regex here
+    Utf8String strippedInput(std::regex_replace(m_input, directionPattern, ""));
+    SegmentInput(strippedInput.c_str(), 0); 
+
     BEU::Quantity converted = BEU::Quantity();
 
     const std::string North = "N";
@@ -1370,7 +1369,7 @@ BEU::Quantity FormatParsingSet::ParseBearingFormat(Utf8CP input, FormatProblemCo
 
     std::string matchedPrefix;
     std::string matchedSuffix;
-    std::string inString(input);
+    std::string inString(m_input);
 
     if (inString.empty()){
         if (probCode != nullptr) {
@@ -1461,12 +1460,12 @@ BEU::Quantity FormatParsingSet::ParseBearingFormat(Utf8CP input, FormatProblemCo
     return converted;
     }
 
-BEU::Quantity FormatParsingSet::ParseRatioFormat(Utf8CP input, FormatProblemCode* probCode, FormatCP format, BEU::UnitCP inputUnit)
+BEU::Quantity FormatParsingSet::ParseRatioFormat(FormatProblemCode* probCode, FormatCP format, BEU::UnitCP inputUnit)
     {
+    SegmentInput(m_input.c_str(), 0);
     BEU::Quantity converted = BEU::Quantity();
 
-    std::string inString(input);
-    std::istringstream iss(inString);
+    std::istringstream iss(m_input);
     std::string part;
 
     std::vector<std::string> parts;
