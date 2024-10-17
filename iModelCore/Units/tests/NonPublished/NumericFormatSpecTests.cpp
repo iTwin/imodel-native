@@ -461,4 +461,53 @@ TEST_F(NumericFormatSpecTest, FormatTraitsStringTest)
     EXPECT_STRCASEEQ("trailZeroes|keepSingleZero|zeroEmpty|keepDecimalPoint|applyRounding|fractionDash|showUnitLabel|prependUnitLabel|use1000Separator|exponentOnlyNegative", format.GetFormatTraitsString().c_str());
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//--------------------------------------------------------------------------------------
+TEST_F(NumericFormatSpecJsonTest, DeserializeRatio)
+    {
+    Utf8CP jsonString = R"json({
+        "type": "Ratio",
+        "ratioType": "OneToN",
+        "composite": {
+            "includeZero": true,
+            "units": [
+                {"name": "UNITS.VERTICAL_PER_HORIZONTAL"}
+            ]
+        }
+    })json";
+
+
+    Json::Value jval(Json::objectValue);
+    ASSERT_TRUE(Json::Reader::Parse(jsonString, jval));
+
+    NumericFormatSpec testFormat;
+
+    ASSERT_TRUE(NumericFormatSpec::FromJson(testFormat, jval));
+    ASSERT_TRUE(testFormat.GetPresentationType() == PresentationType::Ratio);
+    ASSERT_TRUE(testFormat.GetRatioType() == RatioType::OneToN);
+    }
+
+TEST_F(NumericFormatSpecJsonTest, SerializeRatio)
+    {
+    NumericFormatSpec format;
+    format.SetPresentationType(PresentationType::Ratio);
+
+    {
+    Json::Value basicJson;
+    format.ToJson(BeJsValue(basicJson), false);
+    EXPECT_FALSE(basicJson.empty());
+    EXPECT_EQ(2, (uint32_t)basicJson.size()) << "Incorrect number of default Ratio attributes.";
+    JsonValueCR firstValue = basicJson[json_type()];
+    ValidateJson_Type(firstValue, PresentationType::Ratio);
+    }
+    {
+    Json::Value verboseJson;
+    format.ToJson(BeJsValue(verboseJson), true);
+    EXPECT_FALSE(verboseJson.empty());
+    EXPECT_EQ(10, (uint32_t)verboseJson.size()) << "Incorrect number of Ratio attributes.";
+    ValidateJson_DefaultCommonAttributes(verboseJson);
+    }
+    }
+
 END_BENTLEY_FORMATTEST_NAMESPACE
