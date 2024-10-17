@@ -401,6 +401,7 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start, Utf8Char const decimalSep
     Utf8Char c;
 
     while (csp.IsSpace()) { m_next++; csp.Iterate(m_input); }
+    if (csp.IsUnderscore()){ m_next++; csp.Iterate(m_input);} // sometimes underscore serves as space too
     if (csp.IsSign())  // the sign character can be expected at the start
         {
         c = csp.GetAscii();
@@ -1210,6 +1211,7 @@ BEU::Quantity FormatParsingSet::ParseAndProcessTokens(Formatting::FormatSpecialC
             sign = m_segs[0].GetSign();
             majP = m_segs[2].GetUnit();
             qty = BEU::Quantity(m_segs[0].GetAbsReal() + m_segs[1].GetAbsReal(), *majP);
+            qty.Scale(sign);
             break;
         case Formatting::FormatSpecialCodes::SignatureNUNU:
             sign = m_segs[0].GetSign();

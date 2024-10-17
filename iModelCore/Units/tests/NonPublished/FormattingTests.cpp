@@ -90,8 +90,15 @@ public:
 
     void TestInvalidFmtStr(Utf8CP fmtStr, BEU::UnitCP expectedUnit)
         {
+        Format format;
+        NumericFormatSpec numericSpec;
+        numericSpec.SetPresentationType(PresentationType::Decimal);
+        format.SetNumericSpec(numericSpec);
+        FormatProblemCode probCode = FormatProblemCode::NoProblems;
+
         FormatParsingSet fps(fmtStr, expectedUnit);
-        ASSERT_TRUE(fps.HasProblem()) << GetFmtStringErrMsg(fmtStr);
+        fps.GetQuantity(&probCode, &format);
+        ASSERT_EQ(probCode, FormatProblemCode::QT_InvalidSyntax) << GetFmtStringErrMsg(fmtStr);
         }
     };
 
