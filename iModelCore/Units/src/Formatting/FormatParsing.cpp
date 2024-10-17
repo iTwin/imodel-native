@@ -1355,11 +1355,6 @@ BEU::Quantity FormatParsingSet::ParseAzimuthFormat(FormatProblemCode* probCode, 
 
 BEU::Quantity FormatParsingSet::ParseBearingFormat(FormatProblemCode* probCode, FormatCP format, BEU::UnitCP inputUnit)
     {
-    // special handling for bearing format - strip off the direction characters
-    std::regex directionPattern(R"(^[NSEW]|[NSEW]$)"); // TODO - <Naron>: dont use regex here
-    Utf8String strippedInput(std::regex_replace(m_input, directionPattern, ""));
-    SegmentInput(strippedInput.c_str(), 0); 
-
     BEU::Quantity converted = BEU::Quantity();
 
     const std::string North = "N";
@@ -1405,6 +1400,8 @@ BEU::Quantity FormatParsingSet::ParseBearingFormat(FormatProblemCode* probCode, 
         }
         return converted;
     }
+    
+    SegmentInput(inString.c_str(), 0); 
 
     Utf8String sig = GetSignature(false);
     Formatting::FormatSpecialCodes cod = Formatting::FormatConstant::ParsingPatternCode(sig.c_str());
