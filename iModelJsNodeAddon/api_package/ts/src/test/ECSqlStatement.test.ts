@@ -145,7 +145,7 @@ describe("ECSqlStatement", () => {
       const meta = stmt.getMetadata();
       const row = formatCurrentRow(resp.data, meta.meta, args.useJsName);
       assert.equal(row.id, id);
-      assert.equal(row.className, "Test.Foo");
+      assert.equal(row.className, "0x58");
       assert.equal(row.b0, boolVal);
     }
 
