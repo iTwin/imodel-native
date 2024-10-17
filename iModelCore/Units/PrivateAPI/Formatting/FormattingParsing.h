@@ -147,8 +147,8 @@ private:
     BEU::Quantity ParseAndProcessTokens(Formatting::FormatSpecialCodes cod, FormatCP format, BEU::UnitCP inputUnit);
     // parsing helper methods
     BEU::Quantity ParseAzimuthFormat(FormatProblemCode* probCode, FormatCP format, BEU::UnitCP inputUnit);
-    BEU::Quantity ParseBearingFormat(Utf8CP input, FormatProblemCode* probCode, FormatCP format, BEU::UnitCP inputUnit);
-    BEU::Quantity ParseRatioFormat(Utf8CP input, FormatProblemCode* probCode,FormatCP format, BEU::UnitCP inputUnit);
+    BEU::Quantity ParseBearingFormat(FormatProblemCode* probCode, FormatCP format, BEU::UnitCP inputUnit);
+    BEU::Quantity ParseRatioFormat(FormatProblemCode* probCode,FormatCP format, BEU::UnitCP inputUnit);
 
     void SegmentInput(Utf8CP input, size_t start);
 

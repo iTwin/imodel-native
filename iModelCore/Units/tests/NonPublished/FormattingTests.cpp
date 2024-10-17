@@ -90,7 +90,13 @@ public:
 
     void TestInvalidFmtStr(Utf8CP fmtStr, BEU::UnitCP expectedUnit)
         {
+        Format format;
+        NumericFormatSpec n;
+        n.SetPresentationType(PresentationType::Decimal);
+        format.SetNumericSpec(n);
+        FormatProblemCode probCode = FormatProblemCode::NoProblems;
         FormatParsingSet fps(fmtStr, expectedUnit);
+        fps.GetQuantity(&probCode, &format);
         ASSERT_TRUE(fps.HasProblem()) << GetFmtStringErrMsg(fmtStr);
         }
     };
