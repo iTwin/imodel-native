@@ -486,6 +486,14 @@ void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents)
         Save();
         }
 
+    NotifyProjectExtentsChanged(newExtents);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnGeoLocation::NotifyProjectExtentsChanged(AxisAlignedBox3dCR newExtents) const
+    {
     for (auto const& kvp : m_dgndb.Models().GetLoadedModels())
         {
         auto spatialModel = kvp.second->ToSpatialModelP();
@@ -547,8 +555,12 @@ void DgnGeoLocation::LoadProjectExtents() const
     // Differing precision => different content Ids => invalidate every cached tile in existence.
     Json::Value jsonObj;
     Utf8String value;
+    AxisAlignedBox3d extentsBeforeReadingFromDb = AxisAlignedBox3d(m_extent);
     if (BE_SQLITE_ROW == m_dgndb.QueryProperty(value, DgnProjectProperty::Extents()) && Json::Reader::Parse(value, jsonObj))
         BeJsGeomUtils::DRange3dFromJson(m_extent, jsonObj);
+
+    if (!extentsBeforeReadingFromDb.IsEqual(m_extent, DoubleOps::SmallMetricDistance()))
+        NotifyProjectExtentsChanged(m_extent);
 
     // if we can't get valid extents from the property, use default values
     if (m_extent.IsEmpty())
@@ -565,4 +577,13 @@ AxisAlignedBox3d DgnGeoLocation::GetProjectExtents() const
 
     return m_extent;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+AxisAlignedBox3d DgnGeoLocation::GetProjectExtents(Utf8StringCR when) const
+    {
+    if (m_extent.IsEmpty() || when.EqualsI("pullMerge"))
+        LoadProjectExtents();
 
+    return m_extent;
+    }
