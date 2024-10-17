@@ -173,6 +173,16 @@ bvector<ECClassCP> ECSchemaHelper::GetECClassesByName(Utf8CP name) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+PropertyCategoryCP ECSchemaHelper::GetECPropertyCategory(Utf8CP fullName) const
+    {
+    Utf8String schemaName, categoryName;
+    ECClass::ParseClassName(schemaName, categoryName, fullName);
+    return m_connection.GetECDb().Schemas().GetPropertyCategory(schemaName, categoryName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 static bool IsSchemaHidden(ECSchemaCR ecSchema)
     {
     IECInstancePtr options = ecSchema.GetCustomAttribute("CoreCustomAttributes", "HiddenSchema");

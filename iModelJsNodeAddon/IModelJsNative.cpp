@@ -2246,7 +2246,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         REQUIRE_ARGUMENT_OBJ(0, NativeECDb, changeCacheECDb);
         REQUIRE_ARGUMENT_STRING(1, changesetFilePathStr);
         BeFileName changesetFilePath(changesetFilePathStr.c_str(), true);
-        ChangesetFileReader changeStream(changesetFilePath, db);
+        ChangesetFileReader changeStream(changesetFilePath, &db);
         PERFLOG_START("iModelJsNative", "ExtractChangeSummary>ECDb::ExtractChangeSummary");
         ECInstanceKey changeSummaryKey;
         if (SUCCESS != ECDb::ExtractChangeSummary(changeSummaryKey, changeCacheECDb->GetECDb(), GetOpenedDb(info), ChangeSetArg(changeStream)))
@@ -2574,7 +2574,26 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         if (ChangesetStatus::Success != stat)
             BeNapi::ThrowJsException(Env(), "error applying changeset", (int)stat);
     }
+    void RevertTimelineChanges(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        if (info.Length() < 1 || !info[0].IsArray()) {
+            THROW_JS_TYPE_EXCEPTION("Argument 0 must be an array of changesets props")
+        }
+        REQUIRE_ARGUMENT_BOOL(1, skipSchemaChanges);
 
+        std::vector<ChangesetPropsPtr> changesets;
+        Napi::Array arr = info[0].As<Napi::Array>();
+        for (uint32_t arrIndex = 0; arrIndex < arr.Length(); ++arrIndex) {
+            Napi::Value arrValue = arr[arrIndex];
+             if (arrValue.IsObject()) {
+                auto revision = JsInterop::GetChangesetProps(db.GetDbGuid().ToString(), arrValue);
+                changesets.push_back(revision);
+             } else {
+                THROW_JS_TYPE_EXCEPTION("Expect an object in the array")
+             }
+        }
+        db.Txns().RevertTimelineChanges(changesets, skipSchemaChanges);
+    }
     void ConcurrentQueryExecute(NapiInfoCR info) {
         REQUIRE_ARGUMENT_ANY_OBJ(0, requestObj);
         REQUIRE_ARGUMENT_FUNCTION(1, callback);
@@ -2657,6 +2676,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("addChildPropagatesChangesToParentRelationship", &NativeDgnDb::AddChildPropagatesChangesToParentRelationship),
             InstanceMethod("addNewFont", &NativeDgnDb::AddNewFont),
             InstanceMethod("applyChangeset", &NativeDgnDb::ApplyChangeset),
+            InstanceMethod("revertTimelineChanges", &NativeDgnDb::RevertTimelineChanges),
             InstanceMethod("attachChangeCache", &NativeDgnDb::AttachChangeCache),
             InstanceMethod("beginMultiTxnOperation", &NativeDgnDb::BeginMultiTxnOperation),
             InstanceMethod("beginPurgeOperation", &NativeDgnDb::BeginPurgeOperation),
@@ -4352,6 +4372,8 @@ public:
           InstanceMethod("isIndirectChange", &NativeChangesetReader::IsIndirectChange),
           InstanceMethod("getPrimaryKeyColumnIndexes", &NativeChangesetReader::GetPrimaryKeyColumnIndexes),
           InstanceMethod("openFile", &NativeChangesetReader::OpenFile),
+          InstanceMethod("openGroup", &NativeChangesetReader::OpenGroup),
+          InstanceMethod("writeToFile", &NativeChangesetReader::WriteToFile),
           InstanceMethod("openLocalChanges", &NativeChangesetReader::OpenLocalChanges),
           InstanceMethod("reset", &NativeChangesetReader::Reset),
           InstanceMethod("step", &NativeChangesetReader::Step),
@@ -4443,6 +4465,37 @@ public:
         REQUIRE_ARGUMENT_BOOL(1, invert);
         m_changeset.OpenFile(Env(), fileName.c_str(), invert);
         }
+    void OpenGroup(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_STRING_ARRAY(0, fileNames);
+        REQUIRE_ARGUMENT_ANY_OBJ(1, dbObj);
+        REQUIRE_ARGUMENT_BOOL(2, invert);
+
+        ECDb* ecdb = nullptr;
+        if (NativeDgnDb::InstanceOf(dbObj)) {
+            NativeDgnDb* addonDgndb = NativeDgnDb::Unwrap(dbObj);
+            ecdb = &addonDgndb->GetDgnDb();
+
+        } else if (NativeECDb::InstanceOf(dbObj)) {
+            NativeECDb* addonECDb = NativeECDb::Unwrap(dbObj);
+            ecdb = &addonECDb->GetECDb();
+
+        } else {
+            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb or NativeECDb object");
+        }
+
+        if (!ecdb || !ecdb->IsDbOpen())
+            BeNapi::ThrowJsException(Env(), "Provided db is not open");
+
+        m_changeset.OpenGroup(Env(), fileNames, *ecdb, invert);
+        }
+    void WriteToFile(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, fileName);
+        REQUIRE_ARGUMENT_BOOL(1, containsSchemaChanges);
+        REQUIRE_ARGUMENT_BOOL(2, overrideFile);
+        m_changeset.WriteToFile(Env(), fileName, containsSchemaChanges, overrideFile);
+        }
     void OpenLocalChanges(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
@@ -4521,7 +4574,9 @@ public:
             InstanceMethod("stepForInsertAsync", &NativeECSqlStatement::StepForInsertAsync),
             InstanceMethod("getColumnCount", &NativeECSqlStatement::GetColumnCount),
             InstanceMethod("getValue", &NativeECSqlStatement::GetValue),
-            InstanceMethod("getNativeSql", &NativeECSqlStatement::GetNativeSql)
+            InstanceMethod("getNativeSql", &NativeECSqlStatement::GetNativeSql),
+            InstanceMethod("toRow", &NativeECSqlStatement::ToRow),
+            InstanceMethod("getMetadata", &NativeECSqlStatement::GetMetadata)
         });
 
         exports.Set("ECSqlStatement", t);
@@ -4656,6 +4711,36 @@ public:
             THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
 
         return Napi::String::New(Env(), m_stmt.GetNativeSql());
+    }
+
+    Napi::Value ToRow(NapiInfoCR info) {
+        if (!m_stmt.IsPrepared())
+            THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
+
+        REQUIRE_ARGUMENT_ANY_OBJ(0, optObj);
+        BeJsValue opts(optObj);
+        ECSqlRowAdaptor adaptor(*m_stmt.GetECDb());
+        adaptor.GetOptions().FromJson(opts);
+
+        BeJsNapiObject out(info.Env());
+        BeJsValue rowJson = out["data"];
+        if (adaptor.RenderRowAsArray(rowJson, ECSqlStatementRow(m_stmt)) != SUCCESS)
+            BeNapi::ThrowJsException(info.Env(), "Failed to render row", BE_SQLITE_ERROR);
+
+        return out;
+    }
+
+    Napi::Value GetMetadata(NapiInfoCR info) {
+        if (!m_stmt.IsPrepared())
+            THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
+
+        BeJsNapiObject out(info.Env());
+        BeJsValue metaJson = out["meta"];
+        ECSqlRowAdaptor adaptor(*m_stmt.GetECDb());
+        ECSqlRowProperty::List props;
+        adaptor.GetMetaData(props, m_stmt);
+        props.ToJs(metaJson);
+        return out;
     }
 
     static DbResult ToDbResult(ECSqlStatus status) {
