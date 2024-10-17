@@ -84,7 +84,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[0x1,0x2,\"3\",\"4\",\"5\"]')"));
 
-        // Should fail while converting to json array because hex values with quotes are required so should be empty table and should throw error
+        // Should fail while converting to json array because hex values with quotes are required so should be empty table and should log error
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
     }
     {
@@ -102,7 +102,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[1,\"2\",3, 4.5, 5.6]')"));
         
-        // Will not take into account 4.5 and 5.6 because they are decimal values so should be empty table and throw error
+        // Will not take into account 4.5 and 5.6 because they are decimal values so should be empty table and log error
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
     }
     {
@@ -127,7 +127,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
         IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
         ASSERT_EQ(ECSqlStatus::Error, elementBinder.BindText( "[1,\"2\",3, \"abc\"]", IECSqlBinder::MakeCopy::No));
 
-        // EmptyArray is Binded so should be empty table and should throw error because the ultimate json text which will be binded will be an empty json array and that is not allowed
+        // EmptyArray is Binded so should be empty table and should log error because the ultimate json text which will be binded will be an empty json array and that is not allowed
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
     }
     {
@@ -178,7 +178,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
             ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindDouble(i));
         }
 
-        // having null as an element so should be empty table and should throw error
+        // having null as an element so should be empty table and should log error
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
     }
     {
@@ -198,7 +198,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
             ASSERT_EQ(ECSqlStatus::Error, elementBinder.BindPoint3d(pArrayOfST1_P3D[i]));
         }
 
-        // EmptyArray is Binded so should be empty table and should throw error because the ultimate json text which will be binded will be an empty json array and that is not allowed
+        // EmptyArray is Binded so should be empty table and should log error because the ultimate json text which will be binded will be an empty json array and that is not allowed
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
     }
     {
@@ -221,7 +221,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
             ASSERT_EQ(ECSqlStatus::Error, elementBinder["P3D"].BindPoint3d(pArrayOfST1_P3D[i]));
         }
 
-        // EmptyArray is Binded so should be empty table and should throw error because the ultimate json text which will be binded will be an empty json array and that is not allowed
+        // EmptyArray is Binded so should be empty table and should log error because the ultimate json text which will be binded will be an empty json array and that is not allowed
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
     }
     {
@@ -251,7 +251,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
             ASSERT_EQ(ECSqlStatus::Error, arrayBinder.AddArrayElement().BindDateTime(dtUtc));
         }
 
-        // EmptyArray is Binded so should be empty table and should throw error because the ultimate json text which will be binded will be an empty json array and that is not allowed
+        // EmptyArray is Binded so should be empty table and should log error because the ultimate json text which will be binded will be an empty json array and that is not allowed
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
     }
     {
@@ -276,7 +276,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
             ASSERT_EQ(ECSqlStatus::Error, arrayBinder.AddArrayElement().BindText("ABC",IECSqlBinder::MakeCopy::No));
         }
 
-        // EmptyArray is Binded so should be empty table and should throw error because the ultimate json text which will be binded will be an empty json array and that is not allowed
+        // EmptyArray is Binded so should be empty table and should log error because the ultimate json text which will be binded will be an empty json array and that is not allowed
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
     }
     {
@@ -288,7 +288,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
             ASSERT_EQ(ECSqlStatus::Error, arrayBinder.AddArrayElement().BindText("[abc]",IECSqlBinder::MakeCopy::No));
         }
 
-        // EmptyArray is Binded so should be empty table and should throw error because the ultimate json text which will be binded will be an empty json array and that is not allowed
+        // EmptyArray is Binded so should be empty table and should log error because the ultimate json text which will be binded will be an empty json array and that is not allowed
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
     }
     {
@@ -300,7 +300,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
             ASSERT_EQ(ECSqlStatus::Error, arrayBinder.AddArrayElement().BindText("[\"abc\"]",IECSqlBinder::MakeCopy::No));
         }
 
-        // EmptyArray is Binded so should be empty table and should throw error because the ultimate json text which will be binded will be an empty json array and that is not allowed
+        // EmptyArray is Binded so should be empty table and should log error because the ultimate json text which will be binded will be an empty json array and that is not allowed
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
     }
     {
@@ -388,7 +388,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[-1,-2,3,-4,5]')"));
-        // negative values are not allowed so empty table and should throw error
+        // negative values are not allowed so empty table and should log error
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
     }
     {
@@ -401,13 +401,13 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
         {
             ASSERT_EQ(ECSqlStatus::Success, binder.AddArrayElement().BindInt(i));
         }
-        // 0 is not allowed so empty table and dhould throw error
+        // 0 is not allowed so empty table and dhould log error
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
     }
     {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[\"-1\",\"-2\",\"3\",\"-4\",\"5\"]')"));
-        // negative values are not allowed so empty table and should throw error
+        // negative values are not allowed so empty table and should log error
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
     }
     {
@@ -423,7 +423,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
             else
                 ASSERT_EQ(ECSqlStatus::Error, binder.AddArrayElement().BindText(i.c_str(), IECSqlBinder::MakeCopy::No));
         }
-        // Binding negative values will fail so for the negative values binder.AddArrayElement().BindText() will be empty array element which are not allowed so empty table and should throw error
+        // Binding negative values will fail so for the negative values binder.AddArrayElement().BindText() will be empty array element which are not allowed so empty table and should log error
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
     }
     {
@@ -440,7 +440,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[\"0x0\",3,4,5]')"));
-        // 0 values are not allowed so empty table and should throw error
+        // 0 values are not allowed so empty table and should log error
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
     }
     {
@@ -486,11 +486,11 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
                 ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText(ids[i].c_str(), IECSqlBinder::MakeCopy::No));
         }
 
-        // "4.5" and "5.5" are not allowed to bind so empty array element so should fail and throw error
+        // "4.5" and "5.5" are not allowed to bind so empty array element so should fail and log error
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
 
         ECSqlStatus stat = stmt.Reset();
-        ASSERT_EQ(stat.IsSQLiteError(), true ); // Maybe as we are not stepping successfully in the statement so reset fails from sqlite side
+        ASSERT_EQ(stat.IsSQLiteError(), true ); // As we are not stepping successfully in the statement so reset fails from sqlite side
         ASSERT_EQ(ECSqlStatus::Success, stmt.ClearBindings());
 
         std::vector<double> dec_ids = std::vector<double>{1, 2, 4.5, 3, 5.5};
@@ -501,8 +501,120 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
             ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindDouble(dec_ids[i]));
         }
         
-        // 4.5 and 5.5 are not allowed so should fail and throw error
+        // 4.5 and 5.5 are not allowed so should fail and log error
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+    }
+    {
+        std::vector<Utf8String> ids = std::vector<Utf8String>{"0x1", "0x2", "0x3", "4.5", "5.5"};
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ECVLib.IdSet(?), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(int i =0;i<ids.size();i++)
+        {
+            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+            if(i == 3 || i == 4)
+                ASSERT_EQ(ECSqlStatus::Error, elementBinder.BindText(ids[i].c_str(), IECSqlBinder::MakeCopy::No));
+            else
+                ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText(ids[i].c_str(), IECSqlBinder::MakeCopy::No));
+        }
+
+        // "4.5" and "5.5" are not allowed to bind so empty array element so should fail and log error
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
+
+        ECSqlStatus stat = stmt.Reset();
+        ASSERT_EQ(stat.IsSQLiteError(), true ); // As we are not stepping successfully in the statement so reset fails from sqlite side
+        ASSERT_EQ(ECSqlStatus::Success, stmt.ClearBindings());
+
+        std::vector<double> dec_ids = std::vector<double>{1, 2, 4.0, 3, 5.0};
+        IECSqlBinder& arrayBinder_two = stmt.GetBinder(1);
+        for(int i =0;i<dec_ids.size();i++)
+        {
+            IECSqlBinder& elementBinder = arrayBinder_two.AddArrayElement();
+            ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindDouble(dec_ids[i]));
+        }
+        
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+        {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+        }
+        ASSERT_EQ(i, 5);
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ECVLib.IdSet(?), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
+
+        std::vector<double> dec_ids = std::vector<double>{1, 2, 4.0, 3, 5.0};
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(int i =0;i<dec_ids.size();i++)
+        {
+            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+            ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindDouble(dec_ids[i]));
+        }
+        
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+        {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+        }
+        ASSERT_EQ(i, 5);
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Reset());
+
+        i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+        {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+        }
+        ASSERT_EQ(i, 5);        
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ECVLib.IdSet(?), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
+
+        std::vector<double> dec_ids = std::vector<double>{0,1,2,3.0};
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(int i =0;i<dec_ids.size();i++)
+        {
+            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+            ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindDouble(dec_ids[i]));
+        }
+        
+        // 0 is not allowed in IdSet VT so should fail and log error
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());      
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ECVLib.IdSet(?), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
+
+        std::vector<Utf8String> dec_ids = std::vector<Utf8String>{"0","1","2","3.0"};
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(int i =0;i<dec_ids.size();i++)
+        {
+            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+            if(i == dec_ids.size() - 1)
+                ASSERT_EQ(ECSqlStatus::Error, elementBinder.BindText(dec_ids[i].c_str(), IECSqlBinder::MakeCopy::No));
+            else
+                ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText(dec_ids[i].c_str(), IECSqlBinder::MakeCopy::No));
+        }
+        
+        // "0" are not allowed to bind so empty array element so should fail and log error
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());      
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ECVLib.IdSet('[\"0\",\"1\",\"2\",\"3.0\"]'), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
+        
+        // "0" is not allowed in IdSet VT so should fail and log error
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());      
+    }
+    {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ECVLib.IdSet('[\"1\",\"2\",\"3.0\"]'), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
+        
+        // "3.0" is not allowed in IdSet VT so should fail and log error
+        ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());      
     }
 }
 
