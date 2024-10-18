@@ -25,6 +25,7 @@ struct IECSqlPreparedStatement
         bool m_isCompoundStatement;
         bool m_isNoopInSqlite = false;
 
+
     private:
         Utf8String m_ecsql;
         ECDb::Impl::ClearCacheCounter m_preparationClearCacheCounter;
@@ -80,6 +81,7 @@ struct SingleECSqlPreparedStatement : IECSqlPreparedStatement
 private:
     mutable BeSQLite::Statement m_sqliteStatement;
     ECSqlParameterMap m_parameterMap;
+    bool m_isFirstStep = true;
 
     IECSqlBinder& _GetBinder(int parameterIndex) const override;
     int _GetParameterIndex(Utf8CP parameterName) const override;
@@ -148,6 +150,7 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
             private:
                 IECSqlBinder* m_idBinder = nullptr;
                 bool m_boundValueIsNull = true;
+                BinderInfo m_binderInfo;
 
                 ECSqlStatus _BindNull() override { m_boundValueIsNull = true; return GetBinder().BindNull(); }
                 ECSqlStatus _BindInt64(int64_t value) override { m_boundValueIsNull = false; return GetBinder().BindInt64(value); }
@@ -168,10 +171,12 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
                 IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
                 IECSqlBinder& _AddArrayElement() override;
 
+                BinderInfo& _GetBinderInfo() override { return m_binderInfo; }
+
                 void _AddBinder(IECSqlBinder& binder) override { BeAssert(m_idBinder == nullptr); m_idBinder = &binder; }
 
             public:
-                ProxyECInstanceIdECSqlBinder() : IProxyECSqlBinder() {}
+                ProxyECInstanceIdECSqlBinder() : IProxyECSqlBinder(), m_binderInfo(BinderInfo::BinderType::ProxyECInstanceId) {}
 
                 IECSqlBinder& GetBinder() { BeAssert(m_idBinder != nullptr); return *m_idBinder; }
 
@@ -190,6 +195,7 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
                 std::map<ECN::ECPropertyId, std::unique_ptr<ProxyECSqlBinder>> m_structMemberProxyBindersById;
                 std::map<Utf8String, std::unique_ptr<ProxyECSqlBinder>, CompareIUtf8Ascii> m_structMemberProxyBindersByName;
                 std::unique_ptr<ProxyECSqlBinder> m_arrayElementProxyBinder;
+                BinderInfo m_binderInfo;
 
                 ECSqlStatus _BindNull() override;
                 ECSqlStatus _BindBoolean(bool value) override;
@@ -208,10 +214,12 @@ struct CompoundECSqlPreparedStatement : IECSqlPreparedStatement
                 IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
                 IECSqlBinder& _AddArrayElement() override;
 
+                BinderInfo& _GetBinderInfo() override { return m_binderInfo; }
+
                 void _AddBinder(IECSqlBinder& binder) override { m_binders.push_back(&binder); }
 
             public:
-                ProxyECSqlBinder() : IProxyECSqlBinder() {}
+                ProxyECSqlBinder() : IProxyECSqlBinder(),m_binderInfo(BinderInfo::BinderType::Proxy) {}
             };
 
 

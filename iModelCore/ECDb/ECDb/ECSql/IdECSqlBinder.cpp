@@ -12,7 +12,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod
 //---------------------------------------------------------------------------------------
 IdECSqlBinder::IdECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, bool isNoop, SqlParamNameGenerator& paramNameGen)
-    : ECSqlBinder(ctx, typeInfo, paramNameGen, isNoop ? 0 : 1, false, false), m_isNoop(isNoop)
+    : ECSqlBinder(ctx, typeInfo, paramNameGen, isNoop ? 0 : 1, false, false), m_isNoop(isNoop), m_binderInfo(BinderInfo::BinderType::Id)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -194,6 +194,14 @@ IECSqlBinder& IdECSqlBinder::_AddArrayElement()
     {
     LOG.error("Type mismatch. Cannot bind array to Id parameter.");
     return NoopECSqlBinder::Get();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BinderInfo const& IdECSqlBinder::_GetBinderInfo()
+    {
+    return m_binderInfo;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

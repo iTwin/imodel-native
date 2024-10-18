@@ -59,6 +59,8 @@ Utf8StringCR TableValuedFunctionExp::_GetId() const {
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TableValuedFunctionExp::_ExpandSelectAsterisk(
     std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const {
+    if(m_virtualEntityClass == nullptr)
+        return;
     BeAssert(m_virtualEntityClass != nullptr);
     auto alias = GetAlias();
     for(auto& prop : m_virtualEntityClass->GetProperties()) {
@@ -75,6 +77,8 @@ void TableValuedFunctionExp::_ExpandSelectAsterisk(
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 PropertyMatchResult TableValuedFunctionExp::_FindProperty(ECSqlParseContext& ctx, PropertyPath const& propertyPath, const PropertyMatchOptions& options) const {
+    if(m_virtualEntityClass == nullptr)
+        return PropertyMatchResult::NotFound();
     BeAssert(m_virtualEntityClass != nullptr);
     if (propertyPath.Size() == 1) {
        auto property = m_virtualEntityClass->GetPropertyP(propertyPath.First().GetName());

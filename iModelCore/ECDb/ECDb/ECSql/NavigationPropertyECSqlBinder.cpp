@@ -11,7 +11,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod
 //---------------------------------------------------------------------------------------
 NavigationPropertyECSqlBinder::NavigationPropertyECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& ecsqlTypeInfo, SqlParamNameGenerator& paramNameGen)
-    : ECSqlBinder(ctx, ecsqlTypeInfo, paramNameGen, true, false)
+    : ECSqlBinder(ctx, ecsqlTypeInfo, paramNameGen, true, false), m_binderInfo(BinderInfo::BinderType::NavigationProperty)
     {
     Initialize(ctx, paramNameGen);
     }
@@ -215,5 +215,13 @@ IECSqlBinder& NavigationPropertyECSqlBinder::_AddArrayElement()
     {
     LOG.error("Type mismatch. Cannot bind array to navigation property parameter.");
     return NoopECSqlBinder::Get();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BinderInfo const& NavigationPropertyECSqlBinder::_GetBinderInfo()
+    {
+    return m_binderInfo;
     }
 END_BENTLEY_SQLITE_EC_NAMESPACE

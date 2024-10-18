@@ -21,6 +21,7 @@ struct PointECSqlBinder final : public ECSqlBinder
             };
 
         bool m_isPoint3d;
+        BinderInfo m_binderInfo;
 
         ECSqlStatus _BindNull() override;
         ECSqlStatus _BindBoolean(bool value) override;
@@ -41,6 +42,8 @@ struct PointECSqlBinder final : public ECSqlBinder
 
         IECSqlBinder& _AddArrayElement() override;
 
+        BinderInfo const& _GetBinderInfo() override;
+
         int GetCoordSqlParamIndex(Coordinate coord) const
             {
             BeAssert(GetMappedSqlParameterNames().size() == (m_isPoint3d ? 3 : 2));
@@ -53,7 +56,7 @@ struct PointECSqlBinder final : public ECSqlBinder
 
     public:
         PointECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, bool isPoint3d, SqlParamNameGenerator& paramNameGen)
-            : ECSqlBinder(ctx, typeInfo, paramNameGen, isPoint3d ? 3 : 2, false, false), m_isPoint3d(isPoint3d)
+            : ECSqlBinder(ctx, typeInfo, paramNameGen, isPoint3d ? 3 : 2, false, false), m_isPoint3d(isPoint3d), m_binderInfo(BinderInfo::BinderType::Point)
             {}
 
         ~PointECSqlBinder() {}
