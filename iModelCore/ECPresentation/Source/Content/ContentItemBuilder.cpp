@@ -27,27 +27,6 @@ rapidjson::Document ContentValuesFormatter::GetFallbackPrimitiveValue(PrimitiveT
     Utf8String stringValue;
     if (v.IsNull())
         json.SetString("");
-    else if (v.ConvertPrimitiveToString(stringValue))
-        json.SetString(stringValue.c_str(), json.GetAllocator());
-    else
-        {
-        DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_ERROR, Utf8PrintfString("Failed to convert ECValue to string - returning empty string. Value: '%s'", v.ToString().c_str()));
-        json.SetString("");
-        }
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ContentValuesFormatter::GetValueAsString(PrimitiveType type, Utf8StringCR extendedType, IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator)
-    {
-    NULL_FORMATTED_PRIMITIVE_VALUE_PRECONDITION(value, type);
-    rapidjson::Document json(allocator);
-    ECValue v = ValueHelpers::GetECValueFromSqlValue(type, extendedType, value);
-    Utf8String stringValue;
-    if (v.IsNull())
-        json.SetString("");
     else if (type == PRIMITIVETYPE_DateTime)
         {
         json.SetString(v.GetDateTime().ToString().c_str(), json.GetAllocator()); ;
@@ -181,7 +160,7 @@ rapidjson::Document ContentValuesFormatter::GetFormattedValue(ECPropertyCR prop,
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document ContentValuesFormatter::GetFormattedValue(PrimitiveType type, Utf8StringCR extendedType, IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator) const
     {
-        return GetValueAsString(type, extendedType, value, allocator);
+        return GetFallbackPrimitiveValue(type, extendedType, value, allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**
