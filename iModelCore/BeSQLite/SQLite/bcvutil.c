@@ -1368,6 +1368,23 @@ static void bcvUploadOneBlock(BcvUploadJob *pJob){
 }
 
 /*
+** Buffer zRemote (nRemote bytes in size) contains a proposed name for a new
+** cloud database. This function checks that the database name is acceptable.
+** If so, SQLITE_OK is returned. Otherwise, an SQLite error code is returned
+** and error message left in bcv handle p.
+*/
+static int bcvCheckDbname(sqlite3_bcv *p, const char *zRemote){
+  int nRemote = bcvStrlen(zRemote);
+  if( nRemote>=BCV_DBNAME_SIZE ){
+    return bcvApiError(p, SQLITE_ERROR, 
+        "database name \"%s\" is too long (max = %d bytes)",
+        zRemote, BCV_DBNAME_SIZE-1
+    );
+  }
+  return SQLITE_OK;
+}
+
+/*
 ** Upload a database to cloud storage.
 */
 int sqlite3_bcv_upload(
@@ -1393,13 +1410,10 @@ int sqlite3_bcv_upload(
   bcvApiErrorClear(p);
 
   /* Check that the database name is not too long for the manifest format */
-  nRemote = bcvStrlen(zRemote);
-  if( nRemote>=BCV_DBNAME_SIZE ){
-    return bcvApiError(p, SQLITE_ERROR, 
-        "database name \"%s\" is too long (max = %d bytes)",
-        zRemote, BCV_DBNAME_SIZE-1
-    );
+  if( bcvCheckDbname(p, zRemote)!=SQLITE_OK ){
+    return p->errCode;
   }
+  nRemote = bcvStrlen(zRemote);
 
   /* Download the manifest file. */
   if( bcvManifestFetchParsed(p, &pMan) ){
@@ -1543,6 +1557,9 @@ int sqlite3_bcv_copy(
   if( p->pCont==0 ) return p->errCode;
 
   bcvApiErrorClear(p);
+  if( bcvCheckDbname(p, zTo) ){
+    return p->errCode;
+  }
 
   /* Download the manifest file. */
   if( bcvManifestFetchParsed(p, &pMan) ){
