@@ -649,20 +649,24 @@ struct GetPointAsJsonStringScalar : ECPresentation::ScalarFunction
     void _ComputeValue(BeSQLite::DbFunction::Context& ctx, int nArgs, BeSQLite::DbValue* args) override
         {
         ARGUMENTS_COUNT_PRECONDITION_CUSTOM(nArgs == 2 || nArgs == 3, "2 or 3");
-
-        Utf8String str;
-        str.append("{\"x\":");
-        str.append(args[0].IsNull() ? "NULL" : args[0].GetValueText());
-        str.append(",\"y\":");
-        str.append(args[1].IsNull() ? "NULL" : args[1].GetValueText());
-        if (3 == nArgs)
+        if (args[0].IsNull() && args[1].IsNull() && (3 != nArgs || args[2].IsNull()))
+            ctx.SetResultNull();
+        else
             {
-            str.append(",\"z\":");
-            str.append(args[2].IsNull() ? "NULL" : args[2].GetValueText());
-            }
-        str.append("}");
+            Utf8String str;
+            str.append("{\"x\":");
+            str.append(args[0].IsNull() ? "NULL" : args[0].GetValueText());
+            str.append(",\"y\":");
+            str.append(args[1].IsNull() ? "NULL" : args[1].GetValueText());
+            if (3 == nArgs)
+                {
+                str.append(",\"z\":");
+                str.append(args[2].IsNull() ? "NULL" : args[2].GetValueText());
+                }
+            str.append("}");
 
-        ctx.SetResultText(str.c_str(), (int)str.size(), DbFunction::Context::CopyData::Yes);
+            ctx.SetResultText(str.c_str(), (int)str.size(), DbFunction::Context::CopyData::Yes);
+            }
         }
     };
 
