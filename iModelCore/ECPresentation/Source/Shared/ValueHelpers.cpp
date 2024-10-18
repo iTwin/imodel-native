@@ -435,7 +435,7 @@ rapidjson::Document ValueHelpers::GetJsonFromString(PrimitiveType primitiveType,
             double julianDays;
             if (SUCCESS != DateTime::FromString(dt, str.c_str()) || SUCCESS != dt.ToJulianDay(julianDays))
                 DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to parse DateTime from '%s'", str.c_str()))
-                doc.SetDouble(julianDays);
+            doc.SetDouble(julianDays);
             return doc;
             }
         case PRIMITIVETYPE_Double:
@@ -1030,18 +1030,18 @@ static bvector<std::function<bool(Units::UnitSystemCR)>> const& GetUnitSystemGro
         };
     static bvector<std::function<bool(Units::UnitSystemCR)>> s_britishImperialUnitSystemMatchers{
         [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "IMPERIAL");},
-        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "USCUSTOM");},        	
+        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "USCUSTOM");},        
         [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "INTERNATIONAL");},
         [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "FINANCE");},
         };
     static bvector<std::function<bool(Units::UnitSystemCR)>> s_usCustomaryUnitSystemMatchers{
-        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "USCUSTOM");},        	
+        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "USCUSTOM");},        
         [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "INTERNATIONAL");},
         [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "FINANCE");},
         };
     static bvector<std::function<bool(Units::UnitSystemCR)>> s_usSurveyUnitSystemMatchers{
         [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "USSURVEY");},
-        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "USCUSTOM");},        	
+        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "USCUSTOM");},        
         [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "INTERNATIONAL");},
         [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "FINANCE");},
         };
