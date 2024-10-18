@@ -17,19 +17,19 @@ BentleyStatus ValueHelpers::GetEnumDisplayValue(Utf8StringR displayValue, ECEnum
     switch (enumeration.GetType())
         {
         case PRIMITIVETYPE_Integer:
-        {
-        int enumId = getIntEnumId();
-        rawValue.Sprintf("%d", enumId);
-        enumerator = enumeration.FindEnumerator(enumId);
-        break;
-        }
+            {
+            int enumId = getIntEnumId();
+            rawValue.Sprintf("%d", enumId);
+            enumerator = enumeration.FindEnumerator(enumId);
+            break;
+            }
         case PRIMITIVETYPE_String:
-        {
-        Utf8CP enumId = getStrEnumId();
-        rawValue = enumId;
-        enumerator = enumeration.FindEnumerator(enumId);
-        break;
-        }
+            {
+            Utf8CP enumId = getStrEnumId();
+            rawValue = enumId;
+            enumerator = enumeration.FindEnumerator(enumId);
+            break;
+            }
         }
     if (nullptr == enumerator)
         {
@@ -371,11 +371,11 @@ rapidjson::Document ValueHelpers::GetJsonFromStructValue(ECStructClassCR structC
                 doc.AddMember(propertyNameJson, GetJsonFromArrayValue(v, &doc.GetAllocator()), doc.GetAllocator());
                 break;
             case ValueKind::VALUEKIND_Primitive:
-            {
-            Utf8StringCR extendedType = v.GetColumnInfo().GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName();
-            doc.AddMember(propertyNameJson, GetJsonFromPrimitiveValue(v.GetColumnInfo().GetDataType().GetPrimitiveType(), extendedType, v, &doc.GetAllocator()), doc.GetAllocator());
-            break;
-            }
+                {
+                Utf8StringCR extendedType = v.GetColumnInfo().GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName();
+                doc.AddMember(propertyNameJson, GetJsonFromPrimitiveValue(v.GetColumnInfo().GetDataType().GetPrimitiveType(), extendedType, v, &doc.GetAllocator()), doc.GetAllocator());
+                break;
+                }
             }
         }
     return doc;
@@ -405,7 +405,7 @@ rapidjson::Document ValueHelpers::GetJsonFromArrayValue(IECSqlValue const& sqlVa
                 if (property == nullptr)
                     DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to get origin ECProperty from column. Path to property: %s", v.GetColumnInfo().GetPropertyPath().ToString().c_str()))
 
-                    Utf8CP extendedType = "";
+                Utf8CP extendedType = "";
                 if (property->GetIsPrimitive())
                     extendedType = property->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str();
                 else if (property->GetIsPrimitiveArray())
@@ -430,14 +430,14 @@ rapidjson::Document ValueHelpers::GetJsonFromString(PrimitiveType primitiveType,
             doc.SetBool(str.EqualsI("true") || str.Equals("1"));
             return doc;
         case PRIMITIVETYPE_DateTime:
-        {
-        DateTime dt;
-        double julianDays;
-        if (SUCCESS != DateTime::FromString(dt, str.c_str()) || SUCCESS != dt.ToJulianDay(julianDays))
-            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to parse DateTime from '%s'", str.c_str()))
-            doc.SetDouble(julianDays);
-        return doc;
-        }
+            {
+            DateTime dt;
+            double julianDays;
+            if (SUCCESS != DateTime::FromString(dt, str.c_str()) || SUCCESS != dt.ToJulianDay(julianDays))
+                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to parse DateTime from '%s'", str.c_str()))
+                doc.SetDouble(julianDays);
+            return doc;
+            }
         case PRIMITIVETYPE_Double:
             doc.SetDouble(std::stod(str.c_str()));
             return doc;
@@ -479,17 +479,17 @@ ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, Utf8St
             value.SetBoolean(0 != sqlValue.GetValueInt());
             break;
         case PRIMITIVETYPE_DateTime:
-        {
-        double julianDay;
-        if (DbValueType::TextVal == sqlValue.GetValueType())
-            julianDay = std::stod(sqlValue.GetValueText());
-        else
-            julianDay = sqlValue.GetValueDouble();
-        DateTime dt;
-        DateTime::FromJulianDay(dt, julianDay, DateTime::Info::CreateForDateTime(DateTime::Kind::Utc));
-        value.SetDateTime(dt);
-        break;
-        }
+            {
+            double julianDay;
+            if (DbValueType::TextVal == sqlValue.GetValueType())
+                julianDay = std::stod(sqlValue.GetValueText());
+            else
+                julianDay = sqlValue.GetValueDouble();
+            DateTime dt;
+            DateTime::FromJulianDay(dt, julianDay, DateTime::Info::CreateForDateTime(DateTime::Kind::Utc));
+            value.SetDateTime(dt);
+            break;
+            }
         case PRIMITIVETYPE_Double:
             value.SetDouble(sqlValue.GetValueDouble());
             break;
@@ -540,17 +540,17 @@ ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, Utf8St
             value.SetBoolean(sqlValue.GetBoolean());
             break;
         case PRIMITIVETYPE_DateTime:
-        {
-        double julianDay;
-        if (PRIMITIVETYPE_String == sqlValue.GetColumnInfo().GetDataType().GetPrimitiveType())
-            julianDay = std::stod(sqlValue.GetText());
-        else
-            julianDay = sqlValue.GetDouble();
-        DateTime dt;
-        DateTime::FromJulianDay(dt, julianDay, DateTime::Info::CreateForDateTime(DateTime::Kind::Utc));
-        value.SetDateTime(dt);
-        break;
-        }
+            {
+            double julianDay;
+            if (PRIMITIVETYPE_String == sqlValue.GetColumnInfo().GetDataType().GetPrimitiveType())
+                julianDay = std::stod(sqlValue.GetText());
+            else
+                julianDay = sqlValue.GetDouble();
+            DateTime dt;
+            DateTime::FromJulianDay(dt, julianDay, DateTime::Info::CreateForDateTime(DateTime::Kind::Utc));
+            value.SetDateTime(dt);
+            break;
+            }
         case PRIMITIVETYPE_Double:
             value.SetDouble(sqlValue.GetDouble());
             break;
@@ -609,12 +609,12 @@ ECValue ValueHelpers::GetECValueFromString(PrimitiveType valueType, Utf8StringCR
         case PRIMITIVETYPE_Long:
             return ECValue((int64_t)std::stoll(str.c_str()));
         case PRIMITIVETYPE_DateTime:
-        {
-        DateTime dt;
-        if (SUCCESS != DateTime::FromString(dt, str.c_str()))
-            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to parse DateTime from '%s'", str.c_str()));
-        return ECValue(dt);
-        }
+            {
+            DateTime dt;
+            if (SUCCESS != DateTime::FromString(dt, str.c_str()))
+                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to parse DateTime from '%s'", str.c_str()));
+            return ECValue(dt);
+            }
         }
 
     return ECValue(str.c_str());
@@ -638,15 +638,15 @@ ECValue ValueHelpers::GetECValueFromJson(PrimitiveType type, Utf8StringCR extend
             value.SetBoolean(json.GetBool());
             break;
         case PRIMITIVETYPE_DateTime:
-        {
-        DateTime dt;
-        if (json.IsDouble())
-            DateTime::FromJulianDay(dt, json.GetDouble(), DateTime::Info::CreateForDateTime(DateTime::Kind::Utc));
-        else
-            DateTime::FromString(dt, json.GetString());
-        value.SetDateTime(dt);
-        break;
-        }
+            {
+            DateTime dt;
+            if (json.IsDouble())
+                DateTime::FromJulianDay(dt, json.GetDouble(), DateTime::Info::CreateForDateTime(DateTime::Kind::Utc));
+            else
+                DateTime::FromString(dt, json.GetString());
+            value.SetDateTime(dt);
+            break;
+            }
         case PRIMITIVETYPE_Double:
             value.SetDouble(json.GetDouble());
             break;
@@ -1030,18 +1030,18 @@ static bvector<std::function<bool(Units::UnitSystemCR)>> const& GetUnitSystemGro
         };
     static bvector<std::function<bool(Units::UnitSystemCR)>> s_britishImperialUnitSystemMatchers{
         [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "IMPERIAL");},
-        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "USCUSTOM");},
+        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "USCUSTOM");},        	
         [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "INTERNATIONAL");},
         [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "FINANCE");},
         };
     static bvector<std::function<bool(Units::UnitSystemCR)>> s_usCustomaryUnitSystemMatchers{
-        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "USCUSTOM");},
+        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "USCUSTOM");},        	
         [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "INTERNATIONAL");},
         [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "FINANCE");},
         };
     static bvector<std::function<bool(Units::UnitSystemCR)>> s_usSurveyUnitSystemMatchers{
         [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "USSURVEY");},
-        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "USCUSTOM");},
+        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "USCUSTOM");},        	
         [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "INTERNATIONAL");},
         [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "FINANCE");},
         };
@@ -1090,9 +1090,9 @@ Formatting::Format const* ValueHelpers::GetPresentationFormat(KindOfQuantityCR k
         }
 
     // if persistence unit matches one of the unit systems in the group, use it
-    if (!format
+    if (!format 
         && ContainerHelpers::Contains(
-            unitSystemMatchers,
+            unitSystemMatchers, 
             [&](std::function<bool(Units::UnitSystemCR)> const& matcher){return matcher(*koq.GetPersistenceUnit()->GetUnitSystem());}
         )
     )
