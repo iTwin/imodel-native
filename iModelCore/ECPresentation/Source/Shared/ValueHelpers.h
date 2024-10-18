@@ -40,16 +40,16 @@ public:
 
     static BentleyStatus ParsePrimitiveType(PrimitiveType&, Utf8StringCR);
 
-    static Nullable<DPoint2d> GetPoint2dFromSqlValue(BeSQLite::EC::IECSqlValue const&);
-    static Nullable<DPoint2d> GetPoint2dFromJson(RapidJsonValueCR);
-    static Nullable<DPoint2d> GetPoint2dFromJsonString(Utf8CP);
-    static Nullable<DPoint3d> GetPoint3dFromSqlValue(BeSQLite::EC::IECSqlValue const&);
-    static Nullable<DPoint3d> GetPoint3dFromJson(RapidJsonValueCR);
-    static Nullable<DPoint3d> GetPoint3dFromJsonString(Utf8CP);
+    static DPoint2d GetPoint2dFromSqlValue(BeSQLite::EC::IECSqlValue const&);
+    static DPoint2d GetPoint2dFromJson(RapidJsonValueCR);
+    static DPoint2d GetPoint2dFromJsonString(Utf8CP);
+    static DPoint3d GetPoint3dFromSqlValue(BeSQLite::EC::IECSqlValue const&);
+    static DPoint3d GetPoint3dFromJson(RapidJsonValueCR);
+    static DPoint3d GetPoint3dFromJsonString(Utf8CP);
 
-    static rapidjson::Document GetPoint2dJson(Nullable<DPoint2d>, rapidjson::MemoryPoolAllocator<>*);
+    static rapidjson::Document GetPoint2dJson(DPoint2dCR, rapidjson::MemoryPoolAllocator<>*);
     static rapidjson::Document GetPoint2dJsonFromString(Utf8StringCR, rapidjson::MemoryPoolAllocator<>*);
-    static rapidjson::Document GetPoint3dJson(Nullable<DPoint3d>, rapidjson::MemoryPoolAllocator<>*);
+    static rapidjson::Document GetPoint3dJson(DPoint3dCR, rapidjson::MemoryPoolAllocator<>*);
     static rapidjson::Document GetPoint3dJsonFromString(Utf8StringCR, rapidjson::MemoryPoolAllocator<>*);
 
     static rapidjson::Document GetJsonFromPrimitiveValue(ECN::PrimitiveType, Utf8StringCR, BeSQLite::EC::IECSqlValue const&, rapidjson::MemoryPoolAllocator<>*);

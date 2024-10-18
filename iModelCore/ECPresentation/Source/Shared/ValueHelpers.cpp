@@ -17,19 +17,19 @@ BentleyStatus ValueHelpers::GetEnumDisplayValue(Utf8StringR displayValue, ECEnum
     switch (enumeration.GetType())
         {
         case PRIMITIVETYPE_Integer:
-            {
-            int enumId = getIntEnumId();
-            rawValue.Sprintf("%d", enumId);
-            enumerator = enumeration.FindEnumerator(enumId);
-            break;
-            }
+        {
+        int enumId = getIntEnumId();
+        rawValue.Sprintf("%d", enumId);
+        enumerator = enumeration.FindEnumerator(enumId);
+        break;
+        }
         case PRIMITIVETYPE_String:
-            {
-            Utf8CP enumId = getStrEnumId();
-            rawValue = enumId;
-            enumerator = enumeration.FindEnumerator(enumId);
-            break;
-            }
+        {
+        Utf8CP enumId = getStrEnumId();
+        rawValue = enumId;
+        enumerator = enumeration.FindEnumerator(enumId);
+        break;
+        }
         }
     if (nullptr == enumerator)
         {
@@ -172,8 +172,8 @@ static rapidjson::Document ParseJson(Utf8CP serialized, rapidjson::MemoryPoolAll
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Nullable<DPoint2d> ValueHelpers::GetPoint2dFromSqlValue(IECSqlValue const& value)
-{
+DPoint2d ValueHelpers::GetPoint2dFromSqlValue(IECSqlValue const& value)
+    {
     if (PRIMITIVETYPE_Point2d == value.GetColumnInfo().GetDataType().GetPrimitiveType())
         return value.GetPoint2d();
     return GetPoint2dFromJsonString(value.GetText());
@@ -182,7 +182,7 @@ Nullable<DPoint2d> ValueHelpers::GetPoint2dFromSqlValue(IECSqlValue const& value
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Nullable<DPoint3d> ValueHelpers::GetPoint3dFromSqlValue(IECSqlValue const& value)
+DPoint3d ValueHelpers::GetPoint3dFromSqlValue(IECSqlValue const& value)
     {
     if (PRIMITIVETYPE_Point3d == value.GetColumnInfo().GetDataType().GetPrimitiveType())
         return value.GetPoint3d();
@@ -192,44 +192,44 @@ Nullable<DPoint3d> ValueHelpers::GetPoint3dFromSqlValue(IECSqlValue const& value
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Nullable<DPoint2d> ValueHelpers::GetPoint2dFromJson(RapidJsonValueCR json)
+DPoint2d ValueHelpers::GetPoint2dFromJson(RapidJsonValueCR json)
     {
     if (json.IsNull() || !json.IsObject())
-        return nullptr;
+        return DPoint2d();
     return DPoint2d::From(json["x"].GetDouble(), json["y"].GetDouble());
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Nullable<DPoint3d> ValueHelpers::GetPoint3dFromJson(RapidJsonValueCR json)
+DPoint3d ValueHelpers::GetPoint3dFromJson(RapidJsonValueCR json)
     {
     if (json.IsNull() || !json.IsObject())
-        return nullptr;
+        return DPoint3d();
     return DPoint3d::From(json["x"].GetDouble(), json["y"].GetDouble(), json["z"].GetDouble());
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Nullable<DPoint2d> ValueHelpers::GetPoint2dFromJsonString(Utf8CP str)
+DPoint2d ValueHelpers::GetPoint2dFromJsonString(Utf8CP str)
     {
     rapidjson::Document::AllocatorType alloc(32U);
     rapidjson::Document json = ParseJson(str, &alloc);
     if (json.IsNull() || !json.IsObject())
-        return nullptr;
+        return DPoint2d();
     return DPoint2d::From(json["x"].GetDouble(), json["y"].GetDouble());
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Nullable<DPoint3d> ValueHelpers::GetPoint3dFromJsonString(Utf8CP str)
+DPoint3d ValueHelpers::GetPoint3dFromJsonString(Utf8CP str)
     {
     rapidjson::Document::AllocatorType alloc(48U);
     rapidjson::Document json = ParseJson(str, &alloc);
     if (json.IsNull() || !json.IsObject())
-        return nullptr;
+        return DPoint3d();
     return DPoint3d::From(json["x"].GetDouble(), json["y"].GetDouble(), json["z"].GetDouble());
     }
 
@@ -278,31 +278,25 @@ rapidjson::Document ValueHelpers::GetPoint3dJsonFromString(Utf8StringCR str, rap
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ValueHelpers::GetPoint2dJson(Nullable<DPoint2d> pt, rapidjson::MemoryPoolAllocator<>* allocator)
+rapidjson::Document ValueHelpers::GetPoint2dJson(DPoint2dCR pt, rapidjson::MemoryPoolAllocator<>* allocator)
     {
     rapidjson::Document doc(allocator);
-    if (!pt.IsNull())
-        {
-        doc.SetObject();
-        doc.AddMember("x", pt.Value().x, doc.GetAllocator());
-        doc.AddMember("y", pt.Value().y, doc.GetAllocator());
-        }
+    doc.SetObject();
+    doc.AddMember("x", pt.x, doc.GetAllocator());
+    doc.AddMember("y", pt.y, doc.GetAllocator());
     return doc;
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ValueHelpers::GetPoint3dJson(Nullable<DPoint3d> pt, rapidjson::MemoryPoolAllocator<>* allocator)
+rapidjson::Document ValueHelpers::GetPoint3dJson(DPoint3dCR pt, rapidjson::MemoryPoolAllocator<>* allocator)
     {
     rapidjson::Document doc(allocator);
-    if (!pt.IsNull())
-        {
-        doc.SetObject();
-        doc.AddMember("x", pt.Value().x, doc.GetAllocator());
-        doc.AddMember("y", pt.Value().y, doc.GetAllocator());
-        doc.AddMember("z", pt.Value().z, doc.GetAllocator());
-        }
+    doc.SetObject();
+    doc.AddMember("x", pt.x, doc.GetAllocator());
+    doc.AddMember("y", pt.y, doc.GetAllocator());
+    doc.AddMember("z", pt.z, doc.GetAllocator());
     return doc;
     }
 
@@ -377,11 +371,11 @@ rapidjson::Document ValueHelpers::GetJsonFromStructValue(ECStructClassCR structC
                 doc.AddMember(propertyNameJson, GetJsonFromArrayValue(v, &doc.GetAllocator()), doc.GetAllocator());
                 break;
             case ValueKind::VALUEKIND_Primitive:
-                {
-                Utf8StringCR extendedType = v.GetColumnInfo().GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName();
-                doc.AddMember(propertyNameJson, GetJsonFromPrimitiveValue(v.GetColumnInfo().GetDataType().GetPrimitiveType(), extendedType, v, &doc.GetAllocator()), doc.GetAllocator());
-                break;
-                }
+            {
+            Utf8StringCR extendedType = v.GetColumnInfo().GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName();
+            doc.AddMember(propertyNameJson, GetJsonFromPrimitiveValue(v.GetColumnInfo().GetDataType().GetPrimitiveType(), extendedType, v, &doc.GetAllocator()), doc.GetAllocator());
+            break;
+            }
             }
         }
     return doc;
@@ -411,7 +405,7 @@ rapidjson::Document ValueHelpers::GetJsonFromArrayValue(IECSqlValue const& sqlVa
                 if (property == nullptr)
                     DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to get origin ECProperty from column. Path to property: %s", v.GetColumnInfo().GetPropertyPath().ToString().c_str()))
 
-                Utf8CP extendedType = "";
+                    Utf8CP extendedType = "";
                 if (property->GetIsPrimitive())
                     extendedType = property->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str();
                 else if (property->GetIsPrimitiveArray())
@@ -436,14 +430,14 @@ rapidjson::Document ValueHelpers::GetJsonFromString(PrimitiveType primitiveType,
             doc.SetBool(str.EqualsI("true") || str.Equals("1"));
             return doc;
         case PRIMITIVETYPE_DateTime:
-            {
-            DateTime dt;
-            double julianDays;
-            if (SUCCESS != DateTime::FromString(dt, str.c_str()) || SUCCESS != dt.ToJulianDay(julianDays))
-                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to parse DateTime from '%s'", str.c_str()))
+        {
+        DateTime dt;
+        double julianDays;
+        if (SUCCESS != DateTime::FromString(dt, str.c_str()) || SUCCESS != dt.ToJulianDay(julianDays))
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to parse DateTime from '%s'", str.c_str()))
             doc.SetDouble(julianDays);
-            return doc;
-            }
+        return doc;
+        }
         case PRIMITIVETYPE_Double:
             doc.SetDouble(std::stod(str.c_str()));
             return doc;
@@ -485,17 +479,17 @@ ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, Utf8St
             value.SetBoolean(0 != sqlValue.GetValueInt());
             break;
         case PRIMITIVETYPE_DateTime:
-            {
-            double julianDay;
-            if (DbValueType::TextVal == sqlValue.GetValueType())
-                julianDay = std::stod(sqlValue.GetValueText());
-            else
-                julianDay = sqlValue.GetValueDouble();
-            DateTime dt;
-            DateTime::FromJulianDay(dt, julianDay, DateTime::Info::CreateForDateTime(DateTime::Kind::Utc));
-            value.SetDateTime(dt);
-            break;
-            }
+        {
+        double julianDay;
+        if (DbValueType::TextVal == sqlValue.GetValueType())
+            julianDay = std::stod(sqlValue.GetValueText());
+        else
+            julianDay = sqlValue.GetValueDouble();
+        DateTime dt;
+        DateTime::FromJulianDay(dt, julianDay, DateTime::Info::CreateForDateTime(DateTime::Kind::Utc));
+        value.SetDateTime(dt);
+        break;
+        }
         case PRIMITIVETYPE_Double:
             value.SetDouble(sqlValue.GetValueDouble());
             break;
@@ -509,23 +503,11 @@ ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, Utf8St
             value.SetUtf8CP(sqlValue.GetValueText());
             break;
         case PRIMITIVETYPE_Point2d:
-            {
-            Nullable<DPoint2d> point2d = GetPoint2dFromJsonString(sqlValue.GetValueText());
-            if (point2d.IsNull())
-                value.SetIsNull(true);
-            else
-                value.SetPoint2d(point2d.Value());
+            value.SetPoint2d(GetPoint2dFromJsonString(sqlValue.GetValueText()));
             break;
-            }
         case PRIMITIVETYPE_Point3d:
-            {
-            Nullable<DPoint3d> point3d = GetPoint3dFromJsonString(sqlValue.GetValueText());
-            if (point3d.IsNull())
-                value.SetIsNull(true);
-            else
-                value.SetPoint3d(point3d.Value());
+            value.SetPoint3d(GetPoint3dFromJsonString(sqlValue.GetValueText()));
             break;
-            }
         case PRIMITIVETYPE_Binary:
             if (extendedType == EXTENDED_TYPENAME_BeGuid && sizeof(BeGuid) == sqlValue.GetValueBytes())
                 value.SetBinary((Byte const*)sqlValue.GetValueBlob(), sizeof(BeGuid), true);
@@ -558,17 +540,17 @@ ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, Utf8St
             value.SetBoolean(sqlValue.GetBoolean());
             break;
         case PRIMITIVETYPE_DateTime:
-            {
-            double julianDay;
-            if (PRIMITIVETYPE_String == sqlValue.GetColumnInfo().GetDataType().GetPrimitiveType())
-                julianDay = std::stod(sqlValue.GetText());
-            else
-                julianDay = sqlValue.GetDouble();
-            DateTime dt;
-            DateTime::FromJulianDay(dt, julianDay, DateTime::Info::CreateForDateTime(DateTime::Kind::Utc));
-            value.SetDateTime(dt);
-            break;
-            }
+        {
+        double julianDay;
+        if (PRIMITIVETYPE_String == sqlValue.GetColumnInfo().GetDataType().GetPrimitiveType())
+            julianDay = std::stod(sqlValue.GetText());
+        else
+            julianDay = sqlValue.GetDouble();
+        DateTime dt;
+        DateTime::FromJulianDay(dt, julianDay, DateTime::Info::CreateForDateTime(DateTime::Kind::Utc));
+        value.SetDateTime(dt);
+        break;
+        }
         case PRIMITIVETYPE_Double:
             value.SetDouble(sqlValue.GetDouble());
             break;
@@ -582,23 +564,11 @@ ECValue ValueHelpers::GetECValueFromSqlValue(PrimitiveType primitiveType, Utf8St
             value.SetUtf8CP(sqlValue.GetText());
             break;
         case PRIMITIVETYPE_Point2d:
-            {
-            Nullable<DPoint2d> point2d = GetPoint2dFromSqlValue(sqlValue);
-            if (point2d.IsNull())
-                value.SetIsNull(true);
-            else
-                value.SetPoint2d(point2d.Value());
+            value.SetPoint2d(GetPoint2dFromSqlValue(sqlValue));
             break;
-            };
         case PRIMITIVETYPE_Point3d:
-            {
-            Nullable<DPoint3d> point3d = GetPoint3dFromSqlValue(sqlValue);
-            if (point3d.IsNull())
-                value.SetIsNull(true);
-            else
-                value.SetPoint3d(point3d.Value());
+            value.SetPoint3d(GetPoint3dFromSqlValue(sqlValue));
             break;
-            }
         case PRIMITIVETYPE_Binary:
             if (extendedType == EXTENDED_TYPENAME_BeGuid)
                 {
@@ -639,12 +609,12 @@ ECValue ValueHelpers::GetECValueFromString(PrimitiveType valueType, Utf8StringCR
         case PRIMITIVETYPE_Long:
             return ECValue((int64_t)std::stoll(str.c_str()));
         case PRIMITIVETYPE_DateTime:
-            {
-            DateTime dt;
-            if (SUCCESS != DateTime::FromString(dt, str.c_str()))
-                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to parse DateTime from '%s'", str.c_str()));
-            return ECValue(dt);
-            }
+        {
+        DateTime dt;
+        if (SUCCESS != DateTime::FromString(dt, str.c_str()))
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Failed to parse DateTime from '%s'", str.c_str()));
+        return ECValue(dt);
+        }
         }
 
     return ECValue(str.c_str());
@@ -668,15 +638,15 @@ ECValue ValueHelpers::GetECValueFromJson(PrimitiveType type, Utf8StringCR extend
             value.SetBoolean(json.GetBool());
             break;
         case PRIMITIVETYPE_DateTime:
-            {
-            DateTime dt;
-            if (json.IsDouble())
-                DateTime::FromJulianDay(dt, json.GetDouble(), DateTime::Info::CreateForDateTime(DateTime::Kind::Utc));
-            else
-                DateTime::FromString(dt, json.GetString());
-            value.SetDateTime(dt);
-            break;
-            }
+        {
+        DateTime dt;
+        if (json.IsDouble())
+            DateTime::FromJulianDay(dt, json.GetDouble(), DateTime::Info::CreateForDateTime(DateTime::Kind::Utc));
+        else
+            DateTime::FromString(dt, json.GetString());
+        value.SetDateTime(dt);
+        break;
+        }
         case PRIMITIVETYPE_Double:
             value.SetDouble(json.GetDouble());
             break;
@@ -701,23 +671,11 @@ ECValue ValueHelpers::GetECValueFromJson(PrimitiveType type, Utf8StringCR extend
             value.SetUtf8CP(json.GetString());
             break;
         case PRIMITIVETYPE_Point2d:
-            {
-            Nullable<DPoint2d> point2d = GetPoint2dFromJson(json);
-            if (point2d.IsNull())
-                value.SetIsNull(true);
-            else
-                value.SetPoint2d(point2d.Value());
+            value.SetPoint2d(GetPoint2dFromJson(json));
             break;
-            };
         case PRIMITIVETYPE_Point3d:
-            {
-            Nullable<DPoint3d> point3d = GetPoint3dFromJson(json);
-            if (point3d.IsNull())
-                value.SetIsNull(true);
-            else
-                value.SetPoint3d(point3d.Value());
+            value.SetPoint3d(GetPoint3dFromJson(json));
             break;
-            }
         default:
             DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Unrecognized primitive property type: %d", (int)type));
         }
@@ -1072,18 +1030,18 @@ static bvector<std::function<bool(Units::UnitSystemCR)>> const& GetUnitSystemGro
         };
     static bvector<std::function<bool(Units::UnitSystemCR)>> s_britishImperialUnitSystemMatchers{
         [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "IMPERIAL");},
-        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "USCUSTOM");},        
+        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "USCUSTOM");},
         [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "INTERNATIONAL");},
         [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "FINANCE");},
         };
     static bvector<std::function<bool(Units::UnitSystemCR)>> s_usCustomaryUnitSystemMatchers{
-        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "USCUSTOM");},        
+        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "USCUSTOM");},
         [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "INTERNATIONAL");},
         [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "FINANCE");},
         };
     static bvector<std::function<bool(Units::UnitSystemCR)>> s_usSurveyUnitSystemMatchers{
         [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "USSURVEY");},
-        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "USCUSTOM");},        
+        [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "USCUSTOM");},
         [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "INTERNATIONAL");},
         [](Units::UnitSystemCR unitSystem){return MatchUnitSystem(unitSystem, "FINANCE");},
         };
@@ -1132,9 +1090,9 @@ Formatting::Format const* ValueHelpers::GetPresentationFormat(KindOfQuantityCR k
         }
 
     // if persistence unit matches one of the unit systems in the group, use it
-    if (!format 
+    if (!format
         && ContainerHelpers::Contains(
-            unitSystemMatchers, 
+            unitSystemMatchers,
             [&](std::function<bool(Units::UnitSystemCR)> const& matcher){return matcher(*koq.GetPersistenceUnit()->GetUnitSystem());}
         )
     )
