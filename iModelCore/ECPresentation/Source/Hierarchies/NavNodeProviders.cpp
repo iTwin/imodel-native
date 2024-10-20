@@ -1029,7 +1029,7 @@ static bool ShouldHideNodeBasedOnHideExpression(NavNodesProviderContextCR contex
         context.GetConnection(), context.GetRulesetVariables(), &context.GetUsedVariablesListener());
     ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCustomizationRulesContext(params);
     ECValue value;
-    if (ECExpressionsHelper(context.GetECExpressionsCache()).EvaluateECExpression(value, expression, *expressionContext) && value.IsPrimitive() && value.ConvertToPrimitiveType(PRIMITIVETYPE_Boolean))
+    if (ECExpressionEvaluationResult::EVALUATION_Success == ECExpressionsHelper(context.GetECExpressionsCache()).EvaluateECExpression(value, expression, *expressionContext) && value.IsPrimitive() && value.ConvertToPrimitiveType(PRIMITIVETYPE_Boolean))
         return value.GetBoolean();
     return false;
     }

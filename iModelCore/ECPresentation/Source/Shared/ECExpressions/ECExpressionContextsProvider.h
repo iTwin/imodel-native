@@ -173,6 +173,17 @@ public:
     ECExpressionsCache& Get(Utf8CP rulesetId) {return _Get(rulesetId);}
 };
 
+//===================================================================================
+// @bsiclass
+//===================================================================================
+enum class ECExpressionEvaluationResult
+    {
+    EVALUATION_Success,
+    EVALUATION_ParseError,
+    EVALUATION_EvaluationError,
+    EVALUATION_InvalidECValueError
+    };
+
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -182,7 +193,7 @@ private:
     ECExpressionsCache& m_cache;
 public:
     ECExpressionsHelper(ECExpressionsCache& cache) : m_cache(cache) {}
-    bool EvaluateECExpression(ECValueR result, Utf8StringCR expression, ExpressionContextR context);
+    ECExpressionEvaluationResult EvaluateECExpression(ECValueR result, Utf8StringCR expression, ExpressionContextR context);
     ECPRESENTATION_EXPORT NodePtr GetNodeFromExpression(Utf8CP expression);
     ECPRESENTATION_EXPORT QueryClauseAndBindings ConvertToECSql(Utf8StringCR expression, IPresentationQueryFieldTypesProvider const*, ExpressionContext*);
     ECPRESENTATION_EXPORT bvector<Utf8String> GetUsedClasses(Utf8StringCR expression);
