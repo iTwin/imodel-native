@@ -5577,17 +5577,18 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoAndSystemProperties)
     for (int i = 0; i < 9; i++)
         {
         ECSqlColumnInfo const& colInfo = statement.GetColumnInfo(i);
-        EXPECT_TRUE(colInfo.IsSystemProperty()) << colInfo.GetPropertyPath().ToString();
         EXPECT_FALSE(colInfo.IsGeneratedProperty()) << colInfo.GetPropertyPath().ToString();
         EXPECT_TRUE(colInfo.GetDataType().IsPrimitive()) << colInfo.GetPropertyPath().ToString();
 
         if (i < 2)
             {
+            EXPECT_TRUE(colInfo.IsSystemProperty()) << colInfo.GetPropertyPath().ToString();
             ASSERT_STREQ("ClassECSqlSystemProperties", colInfo.GetProperty()->GetClass().GetName().c_str()) << colInfo.GetPropertyPath().ToString();
             ASSERT_EQ(PrimitiveType::PRIMITIVETYPE_Long, colInfo.GetDataType().GetPrimitiveType()) << colInfo.GetPropertyPath().ToString();
             }
         else if (i < 4)
             {
+            EXPECT_TRUE(colInfo.IsSystemProperty()) << colInfo.GetPropertyPath().ToString();
             ECClassCR navPropMemberClass = colInfo.GetProperty()->GetClass();
             ASSERT_STREQ("NavigationECSqlSystemProperties", navPropMemberClass.GetName().c_str()) << colInfo.GetPropertyPath().ToString();
             ASSERT_TRUE(navPropMemberClass.IsStructClass()) << colInfo.GetPropertyPath().ToString();
@@ -5595,6 +5596,7 @@ TEST_F(ECSqlStatementTestFixture, ColumnInfoAndSystemProperties)
             }
         else
             {
+            EXPECT_FALSE(colInfo.IsSystemProperty()) << colInfo.GetPropertyPath().ToString();
             ECClassCR pointMemberClass = colInfo.GetProperty()->GetClass();
             ASSERT_STREQ("PointECSqlSystemProperties", pointMemberClass.GetName().c_str()) << colInfo.GetPropertyPath().ToString();
             ASSERT_TRUE(pointMemberClass.IsStructClass()) << colInfo.GetPropertyPath().ToString();
@@ -8317,15 +8319,15 @@ TEST_F(ECSqlStatementTestFixture, SystemProperties) {
         EXPECT_STREQ(stmt.GetColumnInfo( 0).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"            );// D.ECInstanceId               CORRECT
         EXPECT_STREQ(stmt.GetColumnInfo( 1).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"            );// D.ECInstanceId       a1      CORRECT
         EXPECT_STREQ(stmt.GetColumnInfo( 2).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "ClassId"       );// D.ECClassId                  CORRECT
-        EXPECT_STREQ(stmt.GetColumnInfo( 3).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"            );// D.ECClassId          a2      WRONG?
+        EXPECT_STREQ(stmt.GetColumnInfo( 3).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "ClassId"       );// D.ECClassId          a2      CORRECT
         EXPECT_STREQ(stmt.GetColumnInfo( 4).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "SourceId"      );// D.SourceECInstanceId         CORRECT
-        EXPECT_STREQ(stmt.GetColumnInfo( 5).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"            );// D.SourceECInstanceId a3      WRONG?
+        EXPECT_STREQ(stmt.GetColumnInfo( 5).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "SourceId"      );// D.SourceECInstanceId a3      CORRECT
         EXPECT_STREQ(stmt.GetColumnInfo( 6).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "SourceClassId" );// D.SourceECClassId            CORRECT
-        EXPECT_STREQ(stmt.GetColumnInfo( 7).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"            );// D.SourceECClassId    a4      WRONG?
+        EXPECT_STREQ(stmt.GetColumnInfo( 7).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "SourceClassId" );// D.SourceECClassId    a4      CORRECT
         EXPECT_STREQ(stmt.GetColumnInfo( 8).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "TargetId"      );// D.TargetECInstanceId         CORRECT
-        EXPECT_STREQ(stmt.GetColumnInfo( 9).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"            );// D.TargetECInstanceId a5      WRONG?
+        EXPECT_STREQ(stmt.GetColumnInfo( 9).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "TargetId"      );// D.TargetECInstanceId a5      CORRECT
         EXPECT_STREQ(stmt.GetColumnInfo(10).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "TargetClassId" );// D.TargetECClassId            CORRECT
-        EXPECT_STREQ(stmt.GetColumnInfo(11).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"            );// D.TargetECClassId    a6      WRONG?
+        EXPECT_STREQ(stmt.GetColumnInfo(11).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "TargetClassId" );// D.TargetECClassId    a6      CORRECT
     }
 
     if ("top level subquery relationship") {
@@ -8361,17 +8363,17 @@ TEST_F(ECSqlStatementTestFixture, SystemProperties) {
         ASSERT_TRUE (stmt.GetColumnInfo(11).IsGeneratedProperty());// D.TargetECClassId    a6      CORRECT
 
         ASSERT_TRUE (stmt.GetColumnInfo( 0).IsSystemProperty());    // D.ECInstanceId               CORRECT
-        ASSERT_FALSE(stmt.GetColumnInfo( 1).IsSystemProperty());    // D.ECInstanceId       a1      WRONG
+        ASSERT_TRUE(stmt.GetColumnInfo( 1).IsSystemProperty());     // D.ECInstanceId       a1      CORRECT
         ASSERT_TRUE (stmt.GetColumnInfo( 2).IsSystemProperty());    // D.ECClassId                  CORRECT
-        ASSERT_FALSE(stmt.GetColumnInfo( 3).IsSystemProperty());    // D.ECClassId          a2      WRONG
+        ASSERT_TRUE(stmt.GetColumnInfo( 3).IsSystemProperty());     // D.ECClassId          a2      CORRECT
         ASSERT_TRUE (stmt.GetColumnInfo( 4).IsSystemProperty());    // D.SourceECInstanceId         CORRECT
-        ASSERT_FALSE(stmt.GetColumnInfo( 5).IsSystemProperty());    // D.SourceECInstanceId a3      WRONG
+        ASSERT_TRUE(stmt.GetColumnInfo( 5).IsSystemProperty());     // D.SourceECInstanceId a3      CORRECT
         ASSERT_TRUE (stmt.GetColumnInfo( 6).IsSystemProperty());    // D.SourceECClassId            CORRECT
-        ASSERT_FALSE(stmt.GetColumnInfo( 7).IsSystemProperty());    // D.SourceECClassId    a4      WRONG
+        ASSERT_TRUE(stmt.GetColumnInfo( 7).IsSystemProperty());     // D.SourceECClassId    a4      CORRECT
         ASSERT_TRUE (stmt.GetColumnInfo( 8).IsSystemProperty());    // D.TargetECInstanceId         CORRECT
-        ASSERT_FALSE(stmt.GetColumnInfo( 9).IsSystemProperty());    // D.TargetECInstanceId a5      WRONG
+        ASSERT_TRUE(stmt.GetColumnInfo( 9).IsSystemProperty());     // D.TargetECInstanceId a5      CORRECT
         ASSERT_TRUE (stmt.GetColumnInfo(10).IsSystemProperty());    // D.TargetECClassId            CORRECT
-        ASSERT_FALSE(stmt.GetColumnInfo(11).IsSystemProperty());    // D.TargetECClassId    a6      WRONG
+        ASSERT_TRUE(stmt.GetColumnInfo(11).IsSystemProperty());     // D.TargetECClassId    a6      CORRECT
 
         EXPECT_STREQ(stmt.GetColumnInfo( 0).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"        );// D.ECInstanceId               CORRECT
         EXPECT_STREQ(stmt.GetColumnInfo( 1).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id"        );// D.ECInstanceId       a1      CORRECT
@@ -8416,15 +8418,15 @@ TEST_F(ECSqlStatementTestFixture, SystemProperties) {
         ASSERT_TRUE (stmt.GetColumnInfo(9).IsGeneratedProperty());// D.Schema.RelECClassId SRID
 
         ASSERT_TRUE (stmt.GetColumnInfo(0).IsSystemProperty());// D.ECInstanceId,
-        ASSERT_FALSE(stmt.GetColumnInfo(1).IsSystemProperty());// D.ECInstanceId Goo,
+        ASSERT_TRUE(stmt.GetColumnInfo(1).IsSystemProperty());// D.ECInstanceId Goo,
         ASSERT_TRUE (stmt.GetColumnInfo(2).IsSystemProperty());// D.ECClassId,
-        ASSERT_FALSE(stmt.GetColumnInfo(3).IsSystemProperty());// D.ECClassId Boo,
+        ASSERT_TRUE(stmt.GetColumnInfo(3).IsSystemProperty());// D.ECClassId Boo,
         ASSERT_FALSE(stmt.GetColumnInfo(4).IsSystemProperty());// D.Schema,
         ASSERT_TRUE (stmt.GetColumnInfo(5).IsSystemProperty());// D.Schema.Id,
         ASSERT_TRUE (stmt.GetColumnInfo(6).IsSystemProperty());// D.Schema.RelECClassId,
         ASSERT_FALSE(stmt.GetColumnInfo(7).IsSystemProperty());// D.Schema S,
-        ASSERT_FALSE(stmt.GetColumnInfo(8).IsSystemProperty());// D.Schema.Id SID,
-        ASSERT_FALSE(stmt.GetColumnInfo(9).IsSystemProperty());// D.Schema.RelECClassId SRID
+        ASSERT_TRUE(stmt.GetColumnInfo(8).IsSystemProperty());// D.Schema.Id SID,
+        ASSERT_TRUE(stmt.GetColumnInfo(9).IsSystemProperty());// D.Schema.RelECClassId SRID
 
         EXPECT_STREQ(stmt.GetColumnInfo(0).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id");           // D.ECInstanceId,
         EXPECT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id");           // D.ECInstanceId Goo,
@@ -8481,13 +8483,13 @@ TEST_F(ECSqlStatementTestFixture, SystemProperties) {
         EXPECT_STREQ(stmt.GetColumnInfo(0).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id");           // D.ECInstanceId,
         EXPECT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id");           // D.ECInstanceId Goo,
         EXPECT_STREQ(stmt.GetColumnInfo(2).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "ClassId");      // D.ECClassId,
-        EXPECT_STREQ(stmt.GetColumnInfo(3).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id");           // D.ECClassId Boo,             WRONG?
+        EXPECT_STREQ(stmt.GetColumnInfo(3).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "ClassId");      // D.ECClassId Boo,             WRONG?
         ASSERT_TRUE (stmt.GetColumnInfo(4).GetProperty()->GetIsNavigation());                                                       // D.Schema,
         EXPECT_STREQ(stmt.GetColumnInfo(5).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "NavId");        // D.Schema.Id,
         EXPECT_STREQ(stmt.GetColumnInfo(6).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "NavRelClassId");// D.Schema.RelECClassId,
         ASSERT_TRUE (stmt.GetColumnInfo(7).GetProperty()->GetIsNavigation());                                                       // D.Schema S,
-        EXPECT_STREQ(stmt.GetColumnInfo(8).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id");           // D.Schema.Id SID,             WRONG?
-        EXPECT_STREQ(stmt.GetColumnInfo(9).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "Id");           // D.Schema.RelECClassId SRID   WRONG?
+        EXPECT_STREQ(stmt.GetColumnInfo(8).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "NavId");        // D.Schema.Id SID,             WRONG?
+        EXPECT_STREQ(stmt.GetColumnInfo(9).GetProperty()->GetAsPrimitiveProperty()->GetExtendedTypeName().c_str(), "NavRelClassId");// D.Schema.RelECClassId SRID   WRONG?
     }
 }
 //---------------------------------------------------------------------------------------
@@ -11610,7 +11612,7 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
     if ("Select 1")
         {
         Utf8CP ecsql = "SELECT 1 FROM ts.SomeEntity WHERE 10 = ANY (SELECT 10)";
-        Utf8PrintfString expectedSql ("SELECT 1 FROM (SELECT [Id] ECInstanceId,%d ECClassId FROM [main].[ts_SomeEntity]) [SomeEntity] " 
+        Utf8PrintfString expectedSql ("SELECT 1 FROM (SELECT [Id] ECInstanceId,%d ECClassId FROM [main].[ts_SomeEntity]) [SomeEntity] "
                                     "WHERE EXISTS(SELECT 10 WHERE 10 = 10)", classId);
 
         ECSqlStatement stmt;
@@ -11625,8 +11627,8 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
     if ("Select single column")
         {
         Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary = ANY (SELECT Secondary FROM ts.SomeEntity)";
-        Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] " 
-        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] " 
+        Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
+        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
         "WHERE EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary] FROM [main].[ts_SomeEntity]) [SomeEntity] WHERE [SomeEntity].[Primary] = [SomeEntity].[Secondary])", classId, classId);
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
@@ -11643,9 +11645,9 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
     if ("Select multiple columns")
         {
         Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary = ANY (SELECT Random, Secondary FROM ts.SomeEntity)";
-        Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] " 
-        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] " 
-        "WHERE EXISTS(SELECT [SomeEntity].[Random],[SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary],[Random] " 
+        Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
+        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+        "WHERE EXISTS(SELECT [SomeEntity].[Random],[SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary],[Random] "
         "FROM [main].[ts_SomeEntity]) [SomeEntity] WHERE [SomeEntity].[Primary] = [SomeEntity].[Random] OR [SomeEntity].[Primary] = [SomeEntity].[Secondary])", classId, classId);
 
         ECSqlStatement stmt;
@@ -11664,9 +11666,9 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
     if ("Select less than ANY")
         {
         Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary < ANY (SELECT Secondary FROM ts.SomeEntity WHERE Random <= 0)";
-        Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] " 
-        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] " 
-        "WHERE EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] " 
+        Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
+        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+        "WHERE EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
         "WHERE ([SomeEntity].[Random]<=0) AND ([SomeEntity].[Primary] < [SomeEntity].[Secondary]))", classId, classId);
 
         ECSqlStatement stmt;
@@ -11686,9 +11688,9 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
     if ("Select with GROUP BY")
         {
         Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary < ANY (SELECT Secondary FROM ts.SomeEntity GROUP BY Random)";
-        Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] " 
-        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] " 
-        "WHERE EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary],[Random] " 
+        Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
+        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+        "WHERE EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary],[Random] "
         "FROM [main].[ts_SomeEntity]) [SomeEntity] WHERE [SomeEntity].[Primary] < [SomeEntity].[Secondary]  GROUP BY [SomeEntity].[Random])", classId, classId);
 
         ECSqlStatement stmt;
@@ -11708,9 +11710,9 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
     if ("Select with WHERE")
         {
         Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary >= SOME (SELECT Secondary FROM ts.SomeEntity WHERE Secondary > 0)";
-        Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] " 
-        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] " 
-        "WHERE EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary] FROM [main].[ts_SomeEntity]) [SomeEntity] " 
+        Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
+        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+        "WHERE EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary] FROM [main].[ts_SomeEntity]) [SomeEntity] "
         "WHERE ([SomeEntity].[Secondary]>0) AND ([SomeEntity].[Primary] >= [SomeEntity].[Secondary]))", classId, classId);
 
         ECSqlStatement stmt;
@@ -11728,9 +11730,9 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
     if ("Select with Limit")
         {
         Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary <= SOME (SELECT Secondary FROM ts.SomeEntity WHERE Secondary > 0 Limit 1)";
-        Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] " 
-        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] " 
-        "WHERE EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary] FROM [main].[ts_SomeEntity]) [SomeEntity] " 
+        Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
+        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+        "WHERE EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary] FROM [main].[ts_SomeEntity]) [SomeEntity] "
         "WHERE ([SomeEntity].[Secondary]>0) AND ([SomeEntity].[Primary] <= [SomeEntity].[Secondary])  LIMIT 1)", classId, classId);
 
         ECSqlStatement stmt;
@@ -11750,9 +11752,9 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
     if ("Select more than ALL")
         {
         Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary > ALL (SELECT Secondary FROM ts.SomeEntity WHERE Random = 0)";
-        Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] " 
-        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] " 
-        "WHERE NOT EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] " 
+        Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
+        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+        "WHERE NOT EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
         "WHERE ([SomeEntity].[Random]=0) AND ([SomeEntity].[Secondary] > [SomeEntity].[Primary]))", classId, classId);
 
         ECSqlStatement stmt;
@@ -11767,9 +11769,9 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
     if ("Select Not Equals ALL")
         {
         Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary <> ALL (SELECT Secondary FROM ts.SomeEntity WHERE Random > 0)";
-        Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] " 
-        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] " 
-        "WHERE NOT EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] " 
+        Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
+        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+        "WHERE NOT EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
         "WHERE ([SomeEntity].[Random]>0) AND ([SomeEntity].[Secondary] = [SomeEntity].[Primary]))", classId, classId);
 
         ECSqlStatement stmt;
@@ -11789,9 +11791,9 @@ TEST_F(ECSqlStatementTestFixture, SelectAnySomeAll)
     if ("Select less than ALL")
         {
         Utf8CP ecsql = "SELECT * FROM ts.SomeEntity WHERE Primary < ALL (SELECT Secondary FROM ts.SomeEntity)";
-        Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] " 
-        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] " 
-        "WHERE NOT EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary] FROM [main].[ts_SomeEntity]) [SomeEntity] " 
+        Utf8PrintfString expectedSql ("SELECT [SomeEntity].[ECInstanceId],[SomeEntity].[ECClassId],[SomeEntity].[Name],[SomeEntity].[Primary],[SomeEntity].[Secondary],[SomeEntity].[Random] "
+        "FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Name],[Primary],[Secondary],[Random] FROM [main].[ts_SomeEntity]) [SomeEntity] "
+        "WHERE NOT EXISTS(SELECT [SomeEntity].[Secondary] FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Secondary] FROM [main].[ts_SomeEntity]) [SomeEntity] "
         "WHERE [SomeEntity].[Secondary] < [SomeEntity].[Primary])", classId, classId);
 
         ECSqlStatement stmt;
@@ -12171,7 +12173,7 @@ TEST_F(ECSqlStatementTestFixture, UpdateToNullInline)
     Utf8String insertEcsql("INSERT INTO ts.TestClass (st) VALUES (?)");
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
-    
+
     auto& st = stmt.GetBinder(1);
     st["st"]["b"].BindBoolean(st_st_b);
     st["st"]["i"].BindBoolean(st_st_i);
@@ -12216,7 +12218,7 @@ TEST_F(ECSqlStatementTestFixture, UpdateToNullInline)
     Utf8String insertEcsql("INSERT INTO ts.TestClass (st) VALUES (?)");
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, insertEcsql.c_str())) << insertEcsql.c_str();
-    
+
     auto& st = stmt.GetBinder(1);
     st["p2d"].BindPoint2d(p2d);
     st["st"]["i"].BindInt(st_st_i);
@@ -12746,335 +12748,7 @@ TEST_F(ECSqlStatementTestFixture, InsertUsingOnlyAndAll)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
     }
     }
-//---------------------------------------------------------------------------------------
-// @bsiclass
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, ScalarTestsForBooleanExpInSelect)
-    {
-        ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("Scalar_Tests_for_bool_exp_in_select.ecdb"));
 
-        //Scalar Tests
-       {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select 1>0"));
-        EXPECT_EQ(stmt.GetColumnCount(), 1);
-        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
-        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(true, stmt.GetValueBoolean(0));
-       }
-       {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select 'ABCIFGQQ' LIKE '%IF%'"));
-        EXPECT_EQ(stmt.GetColumnCount(), 1);
-        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
-        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(true, stmt.GetValueBoolean(0));
-       }
-       {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select 'ABCIFGQQ' IS NOT NULL"));
-        EXPECT_EQ(stmt.GetColumnCount(), 1);
-        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
-        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(true, stmt.GetValueBoolean(0));
-       }
-       {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select 5 IN(2,7)"));
-        EXPECT_EQ(stmt.GetColumnCount(), 1);
-        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
-        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(false, stmt.GetValueBoolean(0));
-       }
-       {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select (300 + 200) = 500"));
-        EXPECT_EQ(stmt.GetColumnCount(), 1);
-        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
-        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(true, stmt.GetValueBoolean(0));
-       }
-       {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select 300/2 = 151"));
-        EXPECT_EQ(stmt.GetColumnCount(), 1);
-        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
-        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(false, stmt.GetValueBoolean(0));
-       }
-       // InvalidECSql Tests
-        {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "select 300 + (200 = 500)")) << "Syntax error";
-        }
-    }
 
-//---------------------------------------------------------------------------------------
-// @bsiclass
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, TestsForBooleanExpInSelect)
-    {
-        ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("Tests_for_bool_exp_in_select.ecdb"));
-
-       //value based tests
-       {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select count(*)>1 from meta.ECClassDef"));
-        EXPECT_EQ(stmt.GetColumnCount(), 1);
-        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
-        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(true, stmt.GetValueBoolean(0));
-       }
-       {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT COUNT(S.ECInstanceId) > 1 count_for_instance_id FROM meta.ECClassDef S"));
-        EXPECT_EQ(stmt.GetColumnCount(), 1);
-        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
-        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
-        ASSERT_STREQ("count_for_instance_id", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(true, stmt.GetValueBoolean(0));
-       }
-        {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT p.ECInstanceId=k.s FROM meta.ECClassDef p, (SELECT 1 s) k limit 5"));
-        EXPECT_EQ(stmt.GetColumnCount(), 1);
-        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
-        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        for(int i =0;i<4;i++)
-        {
-            ASSERT_EQ(false, stmt.GetValueBoolean(0));   
-            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        }
-        ASSERT_EQ(true, stmt.GetValueBoolean(0));
-        }
-        {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select ECInstanceId >= ALL(with cte as(select ECClassId from meta.ECClassDef) select * from cte) from meta.ECClassDef limit 5"));
-        EXPECT_EQ(stmt.GetColumnCount(), 1);
-        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
-        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        for(int i =0;i<4;i++)
-        {
-            if(i == 0)
-                ASSERT_EQ(false, stmt.GetValueBoolean(0));
-            else
-                ASSERT_EQ(true, stmt.GetValueBoolean(0));   
-            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        }
-        ASSERT_EQ(false, stmt.GetValueBoolean(0));
-        }
-        {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select Name <= (select Name from meta.ECClassDef) from meta.ECClassDef limit 5"));
-        EXPECT_EQ(stmt.GetColumnCount(), 1);
-        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().IsPrimitive(), true);
-        EXPECT_EQ(stmt.GetColumnInfo(0).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        for(int i =0;i<4;i++)
-        {
-            if(i == 0)
-                ASSERT_EQ(true, stmt.GetValueBoolean(0));
-            else
-                ASSERT_EQ(false, stmt.GetValueBoolean(0));   
-            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        }
-        ASSERT_EQ(false, stmt.GetValueBoolean(0));
-        }
-        {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT DisplayLabel, DisplayLabel IS NULL displayLabelIsNull FROM meta.ECClassDef limit 4"));
-        EXPECT_EQ(stmt.GetColumnCount(), 2);
-        ASSERT_STREQ("DisplayLabel", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
-        ASSERT_STREQ("displayLabelIsNull", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
-        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().IsPrimitive(), true);
-        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        for(int i =0;i<3;i++)
-            {
-            ASSERT_EQ(true, stmt.IsValueNull(0)); 
-            ASSERT_EQ(true, stmt.GetValueBoolean(1));   
-            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-            }
-        ASSERT_EQ(false, stmt.IsValueNull(0)); 
-        ASSERT_EQ(false, stmt.GetValueBoolean(1));
-        }
-        {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Description, Description IS NOT NULL DescriptionIsNotNull FROM meta.ECClassDef limit 4"));
-        EXPECT_EQ(stmt.GetColumnCount(), 2);
-        ASSERT_STREQ("Description", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
-        ASSERT_STREQ("DescriptionIsNotNull", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
-        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().IsPrimitive(), true);
-        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        ASSERT_EQ(true, stmt.IsValueNull(0)); 
-        ASSERT_EQ(false, stmt.GetValueBoolean(1));
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        for(int i =0;i<2;i++)
-            {
-            ASSERT_EQ(false, stmt.IsValueNull(0)); 
-            ASSERT_EQ(true, stmt.GetValueBoolean(1));   
-            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-            }
-        }
-        {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select Ordinal, Ordinal IN (1,2,3) OrdinalInRange from meta.ECPropertyDef limit 20"));
-        EXPECT_EQ(stmt.GetColumnCount(), 2);
-        ASSERT_STREQ("Ordinal", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
-        ASSERT_STREQ("OrdinalInRange", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
-        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().IsPrimitive(), true);
-        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        for(int i =0;i<19;i++)
-            {
-            if(stmt.GetValueInt(0) == 0)
-                ASSERT_EQ(false, stmt.GetValueBoolean(1));
-            else
-                ASSERT_EQ(true, stmt.GetValueBoolean(1));
-            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-            }
-        if(stmt.GetValueInt(0) == 0)
-             ASSERT_EQ(false, stmt.GetValueBoolean(1));
-        else
-            ASSERT_EQ(true, stmt.GetValueBoolean(1));
-        }
-        {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select Ordinal, Ordinal IN (1,2,3) AND Ordinal NOT IN (0) OrdinalInRange from meta.ECPropertyDef limit 20"));
-        EXPECT_EQ(stmt.GetColumnCount(), 2);
-        ASSERT_STREQ("Ordinal", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
-        ASSERT_STREQ("OrdinalInRange", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
-        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().IsPrimitive(), true);
-        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        for(int i =0;i<19;i++)
-            {
-            if(stmt.GetValueInt(0) == 0)
-                ASSERT_EQ(false, stmt.GetValueBoolean(1));
-            else
-                ASSERT_EQ(true, stmt.GetValueBoolean(1));
-            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-            }
-        if(stmt.GetValueInt(0) == 0)
-             ASSERT_EQ(false, stmt.GetValueBoolean(1));
-        else
-            ASSERT_EQ(true, stmt.GetValueBoolean(1));
-        }
-        {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select Ordinal, Ordinal IN (1,2,3) OR Ordinal IN (0) OrdinalInRange from meta.ECPropertyDef limit 20"));
-        EXPECT_EQ(stmt.GetColumnCount(), 2);
-        ASSERT_STREQ("Ordinal", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
-        ASSERT_STREQ("OrdinalInRange", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
-        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().IsPrimitive(), true);
-        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        for(int i =0;i<19;i++)
-            {
-            ASSERT_EQ(true, stmt.GetValueBoolean(1));
-            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-            }
-        ASSERT_EQ(true, stmt.GetValueBoolean(1));
-        }
-       {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select Ordinal, Ordinal NOT IN (SELECT Ordinal from meta.ECPropertyDef) OrdinalInRange from meta.ECPropertyDef limit 20"));
-        EXPECT_EQ(stmt.GetColumnCount(), 2);
-        ASSERT_STREQ("Ordinal", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
-        ASSERT_STREQ("OrdinalInRange", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
-        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().IsPrimitive(), true);
-        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        for(int i =0;i<19;i++)
-            {
-            ASSERT_EQ(false, stmt.GetValueBoolean(1));
-            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-            }
-        ASSERT_EQ(false, stmt.GetValueBoolean(1));
-        }
-        {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select Name, Name LIKE '%Info' PatternMatch from meta.ECSchemaDef"));
-        EXPECT_EQ(stmt.GetColumnCount(), 2);
-        ASSERT_STREQ("Name", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
-        ASSERT_STREQ("PatternMatch", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
-        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().IsPrimitive(), true);
-        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        for(int i =0;i<4;i++)
-            {
-            if(i == 1)
-                ASSERT_EQ(true, stmt.GetValueBoolean(1));
-            else
-                ASSERT_EQ(false, stmt.GetValueBoolean(1));
-            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-            }
-        ASSERT_EQ(false, stmt.GetValueBoolean(1));
-        }
-        {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select Name, Name NOT LIKE 'ECDb%' PatternMatch from meta.ECSchemaDef"));
-        EXPECT_EQ(stmt.GetColumnCount(), 2);
-        ASSERT_STREQ("Name", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
-        ASSERT_STREQ("PatternMatch", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
-        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().IsPrimitive(), true);
-        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        for(int i =0;i<4;i++)
-            {
-            if(i == 0)
-                ASSERT_EQ(true, stmt.GetValueBoolean(1));
-            else
-                ASSERT_EQ(false, stmt.GetValueBoolean(1));
-            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-            }
-        ASSERT_EQ(false, stmt.GetValueBoolean(1));
-        }
-        {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select Name, EXISTS (SELECT Name from meta.ECSchemaDef) Exist from meta.ECSchemaDef"));
-        EXPECT_EQ(stmt.GetColumnCount(), 2);
-        ASSERT_STREQ("Name", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
-        ASSERT_STREQ("Exist", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
-        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().IsPrimitive(), true);
-        EXPECT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), PRIMITIVETYPE_Boolean);
-        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-        for(int i =0;i<4;i++)
-            {
-            ASSERT_EQ(true, stmt.GetValueBoolean(1));
-            ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-            }
-        ASSERT_EQ(true, stmt.GetValueBoolean(1));
-        }
-        
-        // InvalidECSql Tests
-        {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "select Name, UNIQUE(SELECT Name from meta.ECSchemaDef) PatternMatch from meta.ECSchemaDef"));
-        }
-        {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "select Ordinal, Ordinal NOT IN (SELECT * from meta.ECPropertyDef) OrdinalInRange from meta.ECPropertyDef")) << "Subquery must return exactly one column";
-        }
-        {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "select ECInstanceId > (select * from meta.ECClassDef) PatternMatch from meta.ECClassDef")) << "Subquery must return exactly one column";
-        }
-        {
-        ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "select ECInstanceId IN (select * from meta.ECClassDef) PatternMatch from meta.ECClassDef")) << "Subquery must return exactly one column";
-        }
-    }
 
 END_ECDBUNITTESTS_NAMESPACE

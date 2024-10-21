@@ -4,7 +4,6 @@
 *--------------------------------------------------------------------------------------------*/
 #include "testHarness.h"
 #include <Geom/BinaryRangeHeap.h>
-#include <GeomSerialization/GeomLibsSerialization.h>
 #include <GeomSerialization/GeomLibsJsonSerialization.h>
 
 USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL

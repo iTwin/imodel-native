@@ -40,7 +40,7 @@ bool NavNodeCustomizer::ApplyLabelAndDescriptionOverride()
         ECValue value;
         Utf8String valueStr;
         if (customizeLabel && !labelOverride->GetLabel().empty()
-            && ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetLabel(), GetNodeExpressionContext())
+            && ECExpressionEvaluationStatus::Success == ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetLabel(), GetNodeExpressionContext())
             && value.CanConvertToPrimitiveType(PRIMITIVETYPE_String) && value.ConvertPrimitiveToString(valueStr))
             {
             LabelDefinitionPtr labelDefinition = value.IsString() ? LabelDefinition::FromString(valueStr.c_str()) : LabelDefinition::Create(value, valueStr.c_str());
@@ -49,7 +49,7 @@ bool NavNodeCustomizer::ApplyLabelAndDescriptionOverride()
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_TRACE, Utf8PrintfString("Set label to `%s`", valueStr.c_str()));
             }
         if (!labelOverride->GetDescription().empty()
-            && ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetDescription(), GetNodeExpressionContext())
+            && ECExpressionEvaluationStatus::Success == ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetDescription(), GetNodeExpressionContext())
             && value.CanConvertToPrimitiveType(PRIMITIVETYPE_String) && value.ConvertPrimitiveToString(valueStr))
             {
             m_setter._SetDescription(valueStr);
@@ -75,7 +75,7 @@ bool NavNodeCustomizer::ApplyStyleOverride()
         ECValue value;
         Utf8String valueStr;
         if (!styleOverride->GetForeColor().empty()
-            && ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, styleOverride->GetForeColor(), GetNodeExpressionContext())
+            && ECExpressionEvaluationStatus::Success == ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, styleOverride->GetForeColor(), GetNodeExpressionContext())
             && value.CanConvertToPrimitiveType(PRIMITIVETYPE_String) && value.ConvertPrimitiveToString(valueStr))
             {
             m_setter._SetForeColor(valueStr);
@@ -83,7 +83,7 @@ bool NavNodeCustomizer::ApplyStyleOverride()
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_TRACE, Utf8PrintfString("Set foreground color to `%s`", valueStr.c_str()));
             }
         if (!styleOverride->GetBackColor().empty()
-            && ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, styleOverride->GetBackColor(), GetNodeExpressionContext())
+            && ECExpressionEvaluationStatus::Success == ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, styleOverride->GetBackColor(), GetNodeExpressionContext())
             && value.CanConvertToPrimitiveType(PRIMITIVETYPE_String) && value.ConvertPrimitiveToString(valueStr))
             {
             m_setter._SetBackColor(valueStr);
@@ -91,7 +91,7 @@ bool NavNodeCustomizer::ApplyStyleOverride()
             DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Default, LOG_TRACE, Utf8PrintfString("Set background color to `%s`", valueStr.c_str()));
             }
         if (!styleOverride->GetFontStyle().empty()
-            && ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, styleOverride->GetFontStyle(), GetNodeExpressionContext())
+            && ECExpressionEvaluationStatus::Success == ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, styleOverride->GetFontStyle(), GetNodeExpressionContext())
             && value.CanConvertToPrimitiveType(PRIMITIVETYPE_String) && value.ConvertPrimitiveToString(valueStr))
             {
             m_setter._SetFontStyle(valueStr);
@@ -116,7 +116,7 @@ bool NavNodeCustomizer::ApplyImageIdOverride()
         DiagnosticsHelpers::ReportRule(*imageIdOverride);
         ECValue value;
         Utf8String valueStr;
-        if (ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, imageIdOverride->GetImageId(), GetNodeExpressionContext())
+        if (ECExpressionEvaluationStatus::Success == ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, imageIdOverride->GetImageId(), GetNodeExpressionContext())
             && value.CanConvertToPrimitiveType(PRIMITIVETYPE_String) && value.ConvertPrimitiveToString(valueStr))
             {
             m_setter._SetImageId(valueStr);
@@ -176,7 +176,7 @@ bool NavNodeCustomizer::ApplyCheckboxRules()
         ECValue value;
         isChecked = rule->GetDefaultValue();
         isReadOnly = (!rule->GetIsEnabled().empty()
-            && ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, rule->GetIsEnabled(), GetNodeExpressionContext())
+            && ECExpressionEvaluationStatus::Success == ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, rule->GetIsEnabled(), GetNodeExpressionContext())
             && value.IsBoolean()
             && !value.GetBoolean());
         }
@@ -205,7 +205,7 @@ bool NavNodeCustomizer::ApplyExtendedDataRules()
             Utf8StringCR key = entry.first;
             Utf8StringCR valueExpr = entry.second;
             ECValue value;
-            if (usedKeys.find(key) == usedKeys.end() && ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, valueExpr, GetNodeExpressionContext()))
+            if (usedKeys.find(key) == usedKeys.end() && ECExpressionEvaluationStatus::Success == ECExpressionsHelper(m_context.GetECExpressionsCache()).EvaluateECExpression(value, valueExpr, GetNodeExpressionContext()))
                 {
                 m_setter._AddExtendedData(key, value);
                 didAddExtendedData = true;
@@ -362,7 +362,7 @@ NodeArtifacts CustomizationHelper::EvaluateArtifacts(NavNodesProviderContextCR c
             Utf8StringCR key = entry.first;
             Utf8StringCR valueExpr = entry.second;
             ECValue value;
-            if (ECExpressionsHelper(context.GetECExpressionsCache()).EvaluateECExpression(value, valueExpr, *evaluationContext))
+            if (ECExpressionEvaluationStatus::Success == ECExpressionsHelper(context.GetECExpressionsCache()).EvaluateECExpression(value, valueExpr, *evaluationContext))
                 artifacts.Insert(key, value);
             }
         }

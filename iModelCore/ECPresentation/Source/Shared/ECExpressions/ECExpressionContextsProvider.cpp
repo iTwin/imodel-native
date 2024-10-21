@@ -1009,7 +1009,7 @@ ExpressionContextPtr ECExpressionContextsProvider::GetCalculatedPropertyContext(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECExpressionsHelper::EvaluateECExpression(ECValueR result, Utf8StringCR expression, ExpressionContextR context)
+ECExpressionEvaluationStatus ECExpressionsHelper::EvaluateECExpression(ECValueR result, Utf8StringCR expression, ExpressionContextR context)
     {
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Evaluate ECExpression: `%s`", expression.c_str()));
 
@@ -1017,24 +1017,24 @@ bool ECExpressionsHelper::EvaluateECExpression(ECValueR result, Utf8StringCR exp
     if (node.IsNull())
         {
         DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Failed to parse ECExpression: %s", expression.c_str()));
-        return false;
+        return ECExpressionEvaluationStatus::ParseError;
         }
 
     ValueResultPtr valueResult;
     if (ExpressionStatus::Success != node->GetValue(valueResult, context))
         {
         DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Failed to evaluate ECExpression: %s", expression.c_str()));
-        return false;
+        return ECExpressionEvaluationStatus::EvaluationError;
         }
 
     if (ExpressionStatus::Success != valueResult->GetECValue(result))
         {
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::ECExpressions, "Could not get ECValue from value result");
-        return false;
+        return ECExpressionEvaluationStatus::InvalidECValueError;
         }
 
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::ECExpressions, LOG_TRACE, Utf8PrintfString("Evaluation result: `%s`", result.ToString().c_str()));
-    return true;
+    return ECExpressionEvaluationStatus::Success;
     }
 
 /*=================================================================================**//**
