@@ -28,9 +28,7 @@ rapidjson::Document ContentValuesFormatter::GetFallbackPrimitiveValue(PrimitiveT
     if (v.IsNull())
         json.SetString("");
     else if (type == PRIMITIVETYPE_DateTime)
-        {
-        json.SetString(v.GetDateTime().ToString().c_str(), json.GetAllocator()); ;
-        }
+        json.SetString(v.GetDateTime().ToString().c_str(), json.GetAllocator());
     else if (v.ConvertPrimitiveToString(stringValue))
         json.SetString(stringValue.c_str(), json.GetAllocator());
     else
@@ -153,14 +151,6 @@ rapidjson::Document ContentValuesFormatter::GetFormattedValue(ECPropertyCR prop,
     if (prop.GetIsStruct())
         return GetFormattedStructValue(value, allocator);
     DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Unexpected ECProperty type");
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ContentValuesFormatter::GetFormattedValue(PrimitiveType type, Utf8StringCR extendedType, IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator) const
-    {
-    return GetFallbackPrimitiveValue(type, extendedType, value, allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -303,7 +293,7 @@ void ContentItemBuilder::AddValue(Utf8CP name, PrimitiveType type, IECSqlValue c
 
     _AddValue(name,
         ValueHelpers::GetJsonFromPrimitiveValue(type, nullptr, value, &m_values.second->GetAllocator()),
-        m_formatter.GetFormattedValue(type, ValueHelpers::PrimitiveTypeAsString(type), value, &m_displayValues.second->GetAllocator()),
+        m_formatter.GetFallbackPrimitiveValue(type, ValueHelpers::PrimitiveTypeAsString(type), value, &m_displayValues.second->GetAllocator()),
         nullptr);
         
     }

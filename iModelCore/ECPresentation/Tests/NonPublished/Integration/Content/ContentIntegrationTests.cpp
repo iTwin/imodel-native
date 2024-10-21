@@ -3304,7 +3304,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     EXPECT_STREQ("False", jsonValues["CalculatedProperty_9"].GetString());
     EXPECT_STREQ("False", jsonDisplayValues["CalculatedProperty_9"].GetString());
 
-    EXPECT_STREQ("2017-05-30T00:00:00.000", jsonValues["CalculatedProperty_10"].GetString());
+    EXPECT_STREQ("2017-05-30T00:00:00.000Z", jsonValues["CalculatedProperty_10"].GetString());
     EXPECT_STREQ("2017-05-30T00:00:00.000Z", jsonDisplayValues["CalculatedProperty_10"].GetString());
 
     EXPECT_EQ(123456789876, jsonValues["CalculatedProperty_11"].GetInt64());
@@ -3543,7 +3543,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentSerialization)
             }
         else if (name.Equals(FIELD_NAME(classA, "DateProperty")))
             {
-            EXPECT_STREQ("2017-05-30T00:00:00.000", value[name.c_str()].GetString());
+            EXPECT_STREQ("2017-05-30T00:00:00.000Z", value[name.c_str()].GetString());
             EXPECT_STREQ("Primitive", (*field)["Type"]["ValueFormat"].GetString());
             EXPECT_STREQ("dateTime", (*field)["Type"]["TypeName"].GetString());
             }
