@@ -2086,6 +2086,9 @@ BentleyStatus ECSqlParser::ParseTableValuedFunction(std::unique_ptr<TableValuedF
     if (!schemaNode->getChild(1)->isLeaf()) {
         return ERROR;
     }
+    if (functionNode->getChild(1)->isLeaf()) {
+        return ERROR;
+    }
 
     std::unique_ptr<MemberFunctionCallExp> memberFuncCall;
     if (functionNode != nullptr)
