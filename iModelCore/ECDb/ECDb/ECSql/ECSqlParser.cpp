@@ -2105,6 +2105,10 @@ BentleyStatus ECSqlParser::ParseTableValuedFunction(std::unique_ptr<TableValuedF
 
         if(functionNode == nullptr) return ERROR;
 
+        if (functionNode->getChild(1) == nullptr || functionNode->getChild(1)->isLeaf()) {
+            return ERROR;
+        }
+
         std::unique_ptr<MemberFunctionCallExp> memberFuncCall;
         if (functionNode != nullptr)
             {
@@ -2268,12 +2272,7 @@ BentleyStatus ECSqlParser::ParseMemberFunctionCall(std::unique_ptr<MemberFunctio
         return ERROR;
     if (argsNode->isLeaf())
         {
-        m_context->Issues().ReportV(
-            IssueSeverity::Error,
-            IssueCategory::BusinessProperties,
-            IssueType::ECSQL, ECDbIssueId::ECDb_0738,
-            "ParseNode passed to ParseMemberFunctionCall is expected to have a non-empty second child node"
-        );
+        BeAssert(false && "ParseNode passed to ParseMemberFunctionCall is expected to have a non-empty second child node");
         return ERROR;
         }
 
