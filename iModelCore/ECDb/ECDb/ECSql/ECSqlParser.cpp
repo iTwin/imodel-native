@@ -2267,7 +2267,7 @@ BentleyStatus ECSqlParser::ParseMemberFunctionCall(std::unique_ptr<MemberFunctio
 
     if(parseNode.count() != 2)
         return ERROR;
-    OSQLParseNode const* argsNode = parseNode.getChild(1);
+    OSQLParseNode const* argsNode = parseNode.getChild(1); //
     if(argsNode == nullptr)
         return ERROR;
     if (argsNode->isLeaf())
