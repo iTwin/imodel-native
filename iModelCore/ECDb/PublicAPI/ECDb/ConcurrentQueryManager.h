@@ -278,10 +278,11 @@ struct ECSqlRequest : public QueryRequest{
         bool m_suppressLogErrors;
         bool m_includeMetaData;
         bool m_convertClassIdsToClassNames;
+        bool m_doNotConvertClassIdsToClassNamesWhenAliased;
         ECSqlValueFormat m_valueFmt;
     public:
         ECSqlRequest(std::string const& query, ECSqlParams&& args)
-            :QueryRequest(Kind::ECSql), m_query(query), m_args(std::move(args)),m_abbreviateBlobs(false), m_suppressLogErrors(false),m_includeMetaData(true), m_convertClassIdsToClassNames(false),m_valueFmt(ECSqlValueFormat::ECSqlNames){}
+            :QueryRequest(Kind::ECSql), m_query(query), m_args(std::move(args)),m_abbreviateBlobs(false), m_suppressLogErrors(false),m_includeMetaData(true), m_convertClassIdsToClassNames(false), m_doNotConvertClassIdsToClassNamesWhenAliased(true), m_valueFmt(ECSqlValueFormat::ECSqlNames){}
         virtual ~ECSqlRequest(){}
         std::string const& GetQuery() const { return m_query; }
         ECSqlParams const& GetArgs() const { return  m_args; }
@@ -290,6 +291,7 @@ struct ECSqlRequest : public QueryRequest{
         bool GetSuppressLogErrors() const {return m_suppressLogErrors; }
         bool GetIncludeMetaData() const {return m_includeMetaData; }
         bool GetConvertClassIdsToClassNames() const {return m_convertClassIdsToClassNames; }
+        bool GetDoNotConvertClassIdsToClassNamesWhenAliased() const { return m_doNotConvertClassIdsToClassNamesWhenAliased; }
         QueryLimit const& GetLimit() const {return m_limit;}
         ECSqlValueFormat GetValueFormat() const { return m_valueFmt; }
         ECSqlRequest& SetValueFmt(ECSqlValueFormat fmt) noexcept { m_valueFmt = fmt; return *this;}

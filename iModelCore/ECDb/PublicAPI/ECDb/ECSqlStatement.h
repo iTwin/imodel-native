@@ -757,10 +757,10 @@ enum class QueryRowFormat {
 //=======================================================================================
 struct ECSqlRowAdaptor {
     struct Options {
-        const char* JAbbreviateBlobs = "abbreviateBlobs";
-        const char* JClassIdsToClassNames = "classIdsToClassNames";
-        const char* JUseJsName = "useJsName";
-        const char* JDoNotConvertClassIdsToClassNamesWhenAliased = "doNotConvertClassIdsToClassNamesWhenAliased";
+        static constexpr auto JAbbreviateBlobs = "abbreviateBlobs";
+        static constexpr auto JClassIdsToClassNames = "classIdsToClassNames";
+        static constexpr auto JUseJsName = "useJsName";
+        static constexpr auto JDoNotConvertClassIdsToClassNamesWhenAliased = "doNotConvertClassIdsToClassNamesWhenAliased";
 
         bool m_abbreviateBlobs = true;
         bool m_classIdToClassNames = false;
@@ -770,6 +770,7 @@ struct ECSqlRowAdaptor {
         Options& SetAbbreviateBlobs(bool v) { m_abbreviateBlobs = v; return *this; }
         Options& SetConvertClassIdsToClassNames(bool v) { m_classIdToClassNames = v;  return *this; }
         Options& UseJsNames(bool v) { m_useJsName = v;  return *this; }
+        Options& DoNotConvertClassIdsToClassNamesWhenAliased(bool v) { m_doNotConvertClassIdsToClassNamesWhenAliased = v;  return *this; }
         ECDB_EXPORT void FromJson(BeJsValue opts);
         ECDB_EXPORT void ToJson(BeJsValue opts) const;
     };
