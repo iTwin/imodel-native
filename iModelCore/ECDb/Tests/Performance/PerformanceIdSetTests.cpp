@@ -27,7 +27,7 @@ TEST_F(PerformanceIdSetTests, SimpleComparisonBetweenInVirtualSet_and_IdSet)
         ASSERT_EQ(ECSqlStatus::Success, stmt_With_InvirtualSet.Prepare(m_ecdb, "with cnt(x) as (values(1) union select x+1 from cnt where x < 1000000 ) select * from cnt where invirtualset(?, x)"));
         ASSERT_EQ(ECSqlStatus::Success, stmt_With_InvirtualSet.BindVirtualSet(1, idSetPtr));
 
-        ASSERT_EQ(ECSqlStatus::Success, stmt_With_IdSet.Prepare(m_ecdb, "select x from ECVLib.IdSet(?), (with cnt(x) as (values(1) union select x+1 from cnt where x < 1000000 ) select * from cnt) where id = x"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt_With_IdSet.Prepare(m_ecdb, "select x from IdSet(?), (with cnt(x) as (values(1) union select x+1 from cnt where x < 1000000 ) select * from cnt) where id = x"));
         IECSqlBinder& binder = stmt_With_IdSet.GetBinder(1);
         for(auto str: v)
         {
@@ -70,7 +70,7 @@ TEST_F(PerformanceIdSetTests, SimpleComparisonBetweenInVirtualSet_and_IdSet_with
         IdSet<BeInt64Id> emptyIdset;
 
         ASSERT_EQ(ECSqlStatus::Success, stmt_With_InvirtualSet.Prepare(m_ecdb, "with cnt(x) as (values(1) union select x+1 from cnt where x < 1000000 ) select * from cnt where invirtualset(?, x)"));
-        ASSERT_EQ(ECSqlStatus::Success, stmt_With_IdSet.Prepare(m_ecdb, "select x from ECVLib.IdSet(?), (with cnt(x) as (values(1) union select x+1 from cnt where x < 1000000 ) select * from cnt) where x = id"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt_With_IdSet.Prepare(m_ecdb, "select x from IdSet(?), (with cnt(x) as (values(1) union select x+1 from cnt where x < 1000000 ) select * from cnt) where x = id"));
         
         IECSqlBinder& binder = stmt_With_IdSet.GetBinder(1);
         for(int i = 0;i<2000;i++)
@@ -139,7 +139,7 @@ TEST_F(PerformanceIdSetTests, SimpleComparisonBetweenInVirtualSet_and_IdSet_with
             IdSet<BeInt64Id> emptyIdset;
 
             ASSERT_EQ(ECSqlStatus::Success, stmt_With_InvirtualSet.Prepare(m_ecdb,SqlPrintfString("select %s from ts.Foo where invirtualset(?, %s) group by %s", str.c_str(), str.c_str(), str.c_str())));
-            ASSERT_EQ(ECSqlStatus::Success, stmt_With_IdSet.Prepare(m_ecdb,SqlPrintfString("select %s from ECVLib.IdSet(?), ts.Foo where %s = id group by %s", str.c_str(), str.c_str(), str.c_str())));
+            ASSERT_EQ(ECSqlStatus::Success, stmt_With_IdSet.Prepare(m_ecdb,SqlPrintfString("select %s from IdSet(?), ts.Foo where %s = id group by %s", str.c_str(), str.c_str(), str.c_str())));
             
             IECSqlBinder& binder = stmt_With_IdSet.GetBinder(1);
             for(int i = 0;i<2000;i++)

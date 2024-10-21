@@ -19,7 +19,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("vtab.ecdb"));
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[1,2,3,4,5]')"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[1,2,3,4,5]')"));
 
         int i = 0;
         while (stmt.Step() == BE_SQLITE_ROW)
@@ -30,7 +30,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[1,2,3,4,5]') where id = 1"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[1,2,3,4,5]') where id = 1"));
 
         int i = 0;
         while (stmt.Step() == BE_SQLITE_ROW)
@@ -54,7 +54,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
         std::vector<Utf8String> hexIds = std::vector<Utf8String>{"0x1", "0x2", "0x3", "4", "5"};
 
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet(?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
         IECSqlBinder& arrayBinder = stmt.GetBinder(1);
         for(int i =0;i<hexIds.size();i++)
         {
@@ -70,7 +70,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[\"0x1\",\"0x2\",3,4,5]')"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[\"0x1\",\"0x2\",3,4,5]')"));
     
         int i = 0;
         while (stmt.Step() == BE_SQLITE_ROW)
@@ -82,14 +82,14 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[0x1,0x2,\"3\",\"4\",\"5\"]')"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[0x1,0x2,\"3\",\"4\",\"5\"]')"));
 
         // Should fail while converting to json array because hex values with quotes are required so should be empty table and should log error
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[1,\"2\",3, 4.0, 5.0]')"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[1,\"2\",3, 4.0, 5.0]')"));
         int i = 0;
         while (stmt.Step() == BE_SQLITE_ROW)
         {
@@ -107,7 +107,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet(?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
         ASSERT_EQ(ECSqlStatus::Error,stmt.BindText(1, "[1,\"2\",3, \"abc\"]", IECSqlBinder::MakeCopy::No));
 
         // no binding as we use array ecsql binder so need to call AddArrayElement first
@@ -115,14 +115,14 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet(?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
 
         // no binding so no data
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet(?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
         IECSqlBinder& arrayBinder = stmt.GetBinder(1);
         IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
         ASSERT_EQ(ECSqlStatus::Error, elementBinder.BindText( "[1,\"2\",3, \"abc\"]", IECSqlBinder::MakeCopy::No));
@@ -132,7 +132,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet(?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
         IECSqlBinder& arrayBinder = stmt.GetBinder(1);
         for(int i = 1;i<=10;i++)
         {
@@ -150,7 +150,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet(?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
         IECSqlBinder& arrayBinder = stmt.GetBinder(1);
         for(int i = 1;i<=10;i++)
         {
@@ -168,7 +168,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet(?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
         IECSqlBinder& arrayBinder = stmt.GetBinder(1);
         IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
         ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindNull());
@@ -185,7 +185,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
         DPoint2d pArrayOfST1_P2D[] = {DPoint2d::From(-21, 22.1),DPoint2d::From(-85.34, 35.36),DPoint2d::From(-31.34, 12.35)};
         DPoint3d pArrayOfST1_P3D[] = {DPoint3d::From(-12.11, -74.1, 12.3),DPoint3d::From(-12.53, 21.76, -32.22),DPoint3d::From(-41.14, -22.45, -31.16)};
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet(?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
         IECSqlBinder& arrayBinder = stmt.GetBinder(1);
         for(int i = 0;i<=2;i++)
         {
@@ -206,7 +206,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
         DPoint3d pArrayOfST1_P3D[] = {DPoint3d::From(-12.11, -74.1, 12.3),DPoint3d::From(-12.53, 21.76, -32.22),DPoint3d::From(-41.14, -22.45, -31.16)};
         double pST1P_ST2P_D2 = 431231.3432;
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet(?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
         IECSqlBinder& arrayBinder = stmt.GetBinder(1);
         for(int i = 0;i<=2;i++)
         {
@@ -231,7 +231,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
             {0x48, 0x65, 0x6}
         };
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet(?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
         IECSqlBinder& arrayBinder = stmt.GetBinder(1);
         for(auto& m : bi_array)
             ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindBlob((void const*)&m[0], (int)m.size(), IECSqlBinder::MakeCopy::No));
@@ -257,7 +257,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     {
         auto geom = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet(?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
         IECSqlBinder& arrayBinder = stmt.GetBinder(1);
         for(int i = 0;i<=1;i++)
         {
@@ -269,7 +269,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet(?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
         IECSqlBinder& arrayBinder = stmt.GetBinder(1);
         for(int i = 0;i<=1;i++)
         {
@@ -281,7 +281,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet(?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
         IECSqlBinder& arrayBinder = stmt.GetBinder(1);
         for(int i = 0;i<=1;i++)
         {
@@ -293,7 +293,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet(?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
         IECSqlBinder& arrayBinder = stmt.GetBinder(1);
         for(int i = 0;i<=1;i++)
         {
@@ -305,7 +305,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT x FROM ECVLib.IdSet('[1,2,3,4,5]'), (with cte(x) as(select ECInstanceId from meta.ECClassDef) select x from cte) where id = x group by x"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT x FROM IdSet('[1,2,3,4,5]'), (with cte(x) as(select ECInstanceId from meta.ECClassDef) select x from cte) where id = x group by x"));
         int i = 1;
         while (stmt.Step() == BE_SQLITE_ROW)
         {
@@ -315,7 +315,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT x FROM  (with cte(x) as(select ECInstanceId from meta.ECClassDef) select x from cte), ECVLib.IdSet('[1,2,3,4,5]') where id = x group by x"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT x FROM  (with cte(x) as(select ECInstanceId from meta.ECClassDef) select x from cte), IdSet('[1,2,3,4,5]') where id = x group by x"));
         int i = 1;
         while (stmt.Step() == BE_SQLITE_ROW)
         {
@@ -325,13 +325,13 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ECVLib.IdSet('[1,2,3,4,5]'), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM IdSet('[1,2,3,4,5]'), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
         ASSERT_EQ(true, m_ecdb.ExplainQuery(stmt.GetNativeSql(), true).Contains("SCAN IdSet VIRTUAL TABLE INDEX 1"));
         ASSERT_EQ(true, m_ecdb.ExplainQuery(stmt.GetNativeSql(), true).Contains("SEARCH main.ec_Class USING INTEGER PRIMARY KEY (rowid=?)"));
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECClassId FROM ECVLib.IdSet('[1,2,3,4,5]'), meta.ECClassDef where ECClassId = id group by ECClassId"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECClassId FROM IdSet('[1,2,3,4,5]'), meta.ECClassDef where ECClassId = id group by ECClassId"));
         ASSERT_EQ(true, m_ecdb.ExplainQuery(stmt.GetNativeSql(), true).Contains("SCAN IdSet VIRTUAL TABLE INDEX 1"));
         ASSERT_EQ(true, m_ecdb.ExplainQuery(stmt.GetNativeSql(), true).Contains("SCAN main.ec_Class USING COVERING INDEX ix_ec_Class_Name"));
     }
@@ -339,7 +339,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
         std::vector<Utf8String> hexIds = std::vector<Utf8String>{"0x1", "0x2", "0x3", "4", "5"};
 
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ECVLib.IdSet(?), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM IdSet(?), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
         IECSqlBinder& arrayBinder = stmt.GetBinder(1);
         for(int i =0;i<hexIds.size();i++)
         {
@@ -371,11 +371,11 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT ECClassId FROM ECVLib.IdSet(?,?), meta.ECClassDef where ECClassId = id group by ECClassId"));
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT ECClassId FROM IdSet(?,?), meta.ECClassDef where ECClassId = id group by ECClassId"));
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[1,1,1,1]')"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[1,1,1,1]')"));
         
         int i = 0;
         while (stmt.Step() == BE_SQLITE_ROW)
@@ -387,7 +387,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[-1,-2,3,-4,5]')"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[-1,-2,3,-4,5]')"));
         // negative values are not allowed so empty table and should log error
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
     }
@@ -406,14 +406,14 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[\"-1\",\"-2\",\"3\",\"-4\",\"5\"]')"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[\"-1\",\"-2\",\"3\",\"-4\",\"5\"]')"));
         // negative values are not allowed so empty table and should log error
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
     }
     {
         std::vector<Utf8String> stringIds = std::vector<Utf8String>{"-1", "-2", "3", "-4", "5"};
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet(?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet(?)"));
         IECSqlBinder& binder = stmt.GetBinder(1);
 
         for(auto& i : stringIds)
@@ -428,7 +428,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[\"0xFFFFFFFF\",3,4,5]')"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[\"0xFFFFFFFF\",3,4,5]')"));
         int i = 3;
         while (i<=5)
         {
@@ -439,7 +439,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[\"0x0\",3,4,5]')"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet('[\"0x0\",3,4,5]')"));
         // 0 values are not allowed so empty table and should log error
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());
     }
@@ -447,7 +447,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
         std::vector<Utf8String> hexIds = std::vector<Utf8String>{"0x1", "0x2", "0x3", "4", "5"};
 
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ECVLib.IdSet(?), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM IdSet(?), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
         IECSqlBinder& arrayBinder = stmt.GetBinder(1);
         for(int i =0;i<hexIds.size();i++)
         {
@@ -475,7 +475,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
         std::vector<Utf8String> ids = std::vector<Utf8String>{"0x1", "0x2", "0x3", "4.5", "5.5"};
 
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ECVLib.IdSet(?), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM IdSet(?), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
         IECSqlBinder& arrayBinder = stmt.GetBinder(1);
         for(int i =0;i<ids.size();i++)
         {
@@ -508,7 +508,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
         std::vector<Utf8String> ids = std::vector<Utf8String>{"0x1", "0x2", "0x3", "4.5", "5.5"};
 
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ECVLib.IdSet(?), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM IdSet(?), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
         IECSqlBinder& arrayBinder = stmt.GetBinder(1);
         for(int i =0;i<ids.size();i++)
         {
@@ -543,7 +543,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ECVLib.IdSet(?), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM IdSet(?), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
 
         std::vector<double> dec_ids = std::vector<double>{1, 2, 4.0, 3, 5.0};
         IECSqlBinder& arrayBinder = stmt.GetBinder(1);
@@ -571,7 +571,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ECVLib.IdSet(?), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM IdSet(?), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
 
         std::vector<double> dec_ids = std::vector<double>{0,1,2,3.0};
         IECSqlBinder& arrayBinder = stmt.GetBinder(1);
@@ -586,7 +586,7 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ECVLib.IdSet(?), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM IdSet(?), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
 
         std::vector<Utf8String> dec_ids = std::vector<Utf8String>{"0","1","2","3.0"};
         IECSqlBinder& arrayBinder = stmt.GetBinder(1);
@@ -604,14 +604,14 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ECVLib.IdSet('[\"0\",\"1\",\"2\",\"3.0\"]'), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM IdSet('[\"0\",\"1\",\"2\",\"3.0\"]'), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
         
         // "0" is not allowed in IdSet VT so should fail and log error
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());      
     }
     {
         ECSqlStatement stmt;
-        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ECVLib.IdSet('[\"1\",\"2\",\"3.0\"]'), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM IdSet('[\"1\",\"2\",\"3.0\"]'), meta.ECClassDef where ECInstanceId = id group by ECInstanceId"));
         
         // "3.0" is not allowed in IdSet VT so should fail and log error
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());      
