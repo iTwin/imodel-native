@@ -605,7 +605,8 @@ ECSqlStatus PragmaECSqlPreparedStatement::_Reset() {
     if (rc != BE_SQLITE_OK)
         return ECSqlStatus(rc);
 
-    m_isFirstStep = true; // Will reset the flag when actually everything will be reset successfully
+    if(!m_isFirstStep)
+        m_isFirstStep = true; // Will reset the flag when actually everything will be reset successfully if flag is false
     return ECSqlStatus::Success;
 }
 //---------------------------------------------------------------------------------------
@@ -642,8 +643,8 @@ DbResult PragmaECSqlPreparedStatement::DoStep() {
     }
     
     DbResult res = m_resultSet->Step();
-    if(res == BE_SQLITE_DONE || res == BE_SQLITE_ROW)
-        m_isFirstStep = false; // if step actually successded on the sqlite side then we set this flag to false
+    if((res == BE_SQLITE_DONE || res == BE_SQLITE_ROW) && m_isFirstStep)
+        m_isFirstStep = false; // if step actually successded on the sqlite side then we set this flag to false if flag is true
     return res;
 }
 
