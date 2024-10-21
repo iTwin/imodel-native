@@ -258,6 +258,11 @@ void CommonTableBlockExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<Deri
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
 PropertyMatchResult CommonTableBlockExp::_FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const {
+    // First Expansion
+    if (!ExpandDerivedProperties(ctx)) {
+        return PropertyMatchResult::NotFound();
+    }
+    // Then Property Finding
     if(m_columnList.size() == 0){
         if(Utf8String::IsNullOrEmpty(options.GetAlias().c_str()))
         {
@@ -271,9 +276,7 @@ PropertyMatchResult CommonTableBlockExp::_FindProperty(ECSqlParseContext& ctx, P
         }
         return GetQuery()->FindProperty(ctx, propertyPath, options);
     }
-    if (!ExpandDerivedProperties(ctx)) {
-        return PropertyMatchResult::NotFound();
-    }
+    
     auto path = propertyPath;
     if (path.Size() > 1) {
         if (path.First().GetName().EqualsIAscii(GetName()) || path.First().GetName().EqualsIAscii(options.GetAlias())) {
