@@ -280,7 +280,7 @@ void ContentItemBuilder::AddNull(Utf8CP name, ECPropertyCP prop)
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentItemBuilder::AddValue(Utf8CP name, PrimitiveType type, IECSqlValue const& value)
+void ContentItemBuilder::AddCalculatedPropertyValue(Utf8CP name, PrimitiveType type, IECSqlValue const& value)
     {
     if (BeforeAddValueStatus::Skip == _OnBeforeAddValue(name))
         return;
@@ -293,7 +293,7 @@ void ContentItemBuilder::AddValue(Utf8CP name, PrimitiveType type, IECSqlValue c
 
     _AddValue(name,
         ValueHelpers::GetJsonFromPrimitiveValue(type, nullptr, value, &m_values.second->GetAllocator()),
-        m_formatter.GetFallbackPrimitiveValue(type, ValueHelpers::PrimitiveTypeAsString(type), value, &m_displayValues.second->GetAllocator()),
+        m_formatter.GetFallbackPrimitiveValue(type, "", value, &m_displayValues.second->GetAllocator()),
         nullptr);
         
     }

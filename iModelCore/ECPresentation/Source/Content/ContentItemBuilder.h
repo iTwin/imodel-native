@@ -153,7 +153,7 @@ public:
     ContentSetItemExtendedData& GetExtendedData() { return m_extendedData; }
     ContentSetItemExtendedData const& GetExtendedData() const { return m_extendedData; }
 
-    void AddValue(Utf8CP name, PrimitiveType type, IECSqlValue const& value);
+    void AddCalculatedPropertyValue(Utf8CP name, PrimitiveType type, IECSqlValue const& value);
     void AddValue(Utf8CP name, ECPropertyCR ecProperty, IECSqlValue const& value);
     void AddNull(Utf8CP name, ECPropertyCP);
     void AddEmptyNestedContentValue(Utf8CP name) { _AddEmptyNestedContentValue(name); }
