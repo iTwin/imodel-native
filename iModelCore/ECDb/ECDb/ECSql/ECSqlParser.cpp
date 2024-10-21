@@ -2073,20 +2073,17 @@ BentleyStatus ECSqlParser::ParseTableValuedFunction(std::unique_ptr<TableValuedF
         BeAssert(false && "Wrong grammar. Expecting table_node_path");
         return ERROR;
     }
+
     const size_t pathLength = pathNode->count();
-    if (pathLength != 1 && pathLength  != 2) {
+    if (pathLength != 1 && pathLength  != 2) 
         return ERROR;
-    }
 
     if(pathLength == 2){
     auto schemaNode = pathNode->getChild(0);
     auto functionNode = pathNode->getChild(1);
-    if(schemaNode == nullptr || functionNode == nullptr) return ERROR;
+
     auto schemaName = schemaNode->getFirst()->getTokenValue();
     if (!schemaNode->getChild(1)->isLeaf()) {
-        return ERROR;
-    }
-    if (functionNode->getChild(1)->isLeaf()) {
         return ERROR;
     }
 
