@@ -20,6 +20,7 @@ struct InstanceReader final {
     public:
     constexpr static unsigned FLAGS_UseJsPropertyNames = 0x1u;
     constexpr static unsigned FLAGS_DoNotTruncateBlobs = 0x2u;
+    constexpr static unsigned FLAGS_ClassIdsToClassNames = 0x4u;
 
     struct JsonParams {
         private:

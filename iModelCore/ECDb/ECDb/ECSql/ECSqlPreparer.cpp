@@ -181,7 +181,7 @@ ECSqlStatus ECSqlExpPreparer::InsertSubquery(ECSqlPrepareContext& ctx, AllOrAnyE
         {
         case SqlCompareListType::All:
             {
-            
+
             for (Exp const* childExp : subquerySelect.GetSelection()->GetChildren())
                 {
                 if (!isFirstItem)
@@ -212,7 +212,7 @@ ECSqlStatus ECSqlExpPreparer::InsertSubquery(ECSqlPrepareContext& ctx, AllOrAnyE
                 allOrAnyQuery.AppendParenRight();
             break;
             }
-            
+
         case SqlCompareListType::Any:
         case SqlCompareListType::Some:
             {
@@ -1892,7 +1892,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowFunctionClauseExp(ECSqlPrepareContext
             ctx.GetSqlBuilder().AppendComma();
             ctx.GetSqlBuilder().AppendSpace();
             }
-        
+
         ctx.GetSqlBuilder().Append(snippet);
         isFirstSnippet = false;
         }
@@ -1946,7 +1946,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowFunctionExp(NativeSqlBuilder::List& n
     status = PrepareFunctionCallExp(nativeSqlFunctionSnippets, ctx, exp.GetWindowFunctionCallExp()->GetAs<FunctionCallExp>());
     if (!status.IsSuccess())
         return status;
-    
+
     for (auto snippet : nativeSqlFunctionSnippets)
         nativeSqlBuilder.Append(snippet);
 
@@ -1963,7 +1963,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowFunctionExp(NativeSqlBuilder::List& n
         status = PrepareWindowSpecification(nativeSqlBuilder, ctx, *e);
         if (!status.IsSuccess())
             return status;
-        
+
         nativeSqlSnippets.push_back(nativeSqlBuilder);
         return ECSqlStatus::Success;
         }
@@ -1977,7 +1977,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowFunctionExp(NativeSqlBuilder::List& n
     else
         {
         ctx.Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0661, "Unsupported window function expression.");
-        return ECSqlStatus::InvalidECSql;    
+        return ECSqlStatus::InvalidECSql;
         }
     }
 
@@ -2070,7 +2070,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowPartitionColumnReferenceList(NativeSq
         status = PrepareWindowPartitionColumnReference(nativeSqlBuilder, ctx, exp.GetChildren()[nPos]->GetAs<WindowPartitionColumnReferenceExp>());
         if (!status.IsSuccess())
             return status;
-        
+
         isFirstItem = false;
         }
     return ECSqlStatus::Success;
@@ -2097,7 +2097,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowSpecification(NativeSqlBuilder& nativ
 
         status = PrepareWindowPartitionColumnReferenceList(nativeSqlBuilder, ctx, *e);
         if (!status.IsSuccess())
-            return status; 
+            return status;
 
         isFirstWindowSpecificationClause = false;
         }
@@ -2113,7 +2113,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowSpecification(NativeSqlBuilder& nativ
 
         isFirstWindowSpecificationClause = false;
         }
-    
+
     if (WindowFrameClauseExp const * e = exp.GetWindowFrameClause())
         {
         if (!isFirstWindowSpecificationClause)
@@ -2123,7 +2123,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowSpecification(NativeSqlBuilder& nativ
         if (!status.IsSuccess())
             return status;
         }
-        
+
     nativeSqlBuilder.AppendParenRight();
     return ECSqlStatus::Success;
     }
@@ -2228,10 +2228,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowFrameStartExp(NativeSqlBuilder& nativ
             ECSqlStatus status = PrepareValueExp(nativeSqlSnippets, ctx, *exp.GetValueExp());
             if (!status.IsSuccess())
                 return status;
-            
+
             for (const auto& snippet: nativeSqlSnippets)
                 nativeSqlBuilder.Append(snippet);
-            
+
             nativeSqlBuilder.Append(" PRECEDING");
             return ECSqlStatus::Success;
             }
@@ -2358,10 +2358,10 @@ ECSqlStatus ECSqlExpPreparer::PrepareWindowFrameExclusion(NativeSqlBuilder& nati
             return ECSqlStatus::Success;
         case WindowFrameClauseExp::WindowFrameExclusionType::ExcludeGroup:
             nativeSqlBuilder.Append(" EXCLUDE GROUP");
-            return ECSqlStatus::Success;  
+            return ECSqlStatus::Success;
         case WindowFrameClauseExp::WindowFrameExclusionType::ExcludeNoOthers:
             nativeSqlBuilder.Append(" EXCLUDE NO OTHERS");
-            return ECSqlStatus::Success;  
+            return ECSqlStatus::Success;
         case WindowFrameClauseExp::WindowFrameExclusionType::ExcludeTies:
             nativeSqlBuilder.Append(" EXCLUDE CURRENT ROW");
             return ECSqlStatus::Success;
@@ -2390,7 +2390,7 @@ unsigned int ECSqlExpPreparer::QueryOptionsInstanceFlags(ExpCR exp)
     const auto useJsPropName = OptionsExp::FindLocalOrInheritedOption<bool>(exp, OptionsExp::USE_JS_PROP_NAMES, [](OptionExp const& opt) { return opt.asBool(); }, []() { return false; });
     const auto doNotTruncateBlob = OptionsExp::FindLocalOrInheritedOption<bool>(exp, OptionsExp::DO_NOT_TRUNCATE_BLOB, [](OptionExp const& opt) { return opt.asBool(); }, []() { return false; });
     unsigned int flags = 0;
-    if (useJsPropName) flags |= InstanceReader::FLAGS_UseJsPropertyNames;
+    if (useJsPropName) flags |= InstanceReader::FLAGS_UseJsPropertyNames | InstanceReader::FLAGS_ClassIdsToClassNames;
     if (doNotTruncateBlob) flags |= InstanceReader::FLAGS_DoNotTruncateBlobs;
     return flags;
     }
@@ -2740,7 +2740,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareNavValueCreationFuncExp(NativeSqlBuilder::L
         relECClassIdNativeSql.push_back(NativeSqlBuilder (std::to_string(property->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue())));
     else
         stat = PrepareValueExp(relECClassIdNativeSql, ctx, *exp.GetRelECClassIdExp());
-    
+
     if (!stat.IsSuccess())
         return stat;
 
