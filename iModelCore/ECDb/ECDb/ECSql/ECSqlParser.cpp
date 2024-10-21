@@ -2073,15 +2073,37 @@ BentleyStatus ECSqlParser::ParseTableValuedFunction(std::unique_ptr<TableValuedF
         BeAssert(false && "Wrong grammar. Expecting table_node_path");
         return ERROR;
     }
-
     const size_t pathLength = pathNode->count();
     if (pathLength != 1 && pathLength  != 2) {
         return ERROR;
     }
 
-    if(pathLength == 1)
+    if(pathLength == 2){
+    auto schemaNode = pathNode->getChild(0);
+    auto functionNode = pathNode->getChild(1);
+    if(schemaNode == nullptr || functionNode == nullptr) return ERROR;
+    auto schemaName = schemaNode->getFirst()->getTokenValue();
+    if (!schemaNode->getChild(1)->isLeaf()) {
+        return ERROR;
+    }
+    if (functionNode->getChild(1)->isLeaf()) {
+        return ERROR;
+    }
+
+    std::unique_ptr<MemberFunctionCallExp> memberFuncCall;
+    if (functionNode != nullptr)
+        {
+        if (SUCCESS != ParseMemberFunctionCall(memberFuncCall, *functionNode, true))
+            return ERROR;
+        }
+
+    exp = std::make_unique<TableValuedFunctionExp>(schemaName.c_str(), std::move(memberFuncCall), PolymorphicInfo::NotSpecified());
+    }
+    else if(pathLength == 1)
     {
         auto functionNode = pathNode->getChild(0);
+
+        if(functionNode == nullptr) return ERROR;
 
         std::unique_ptr<MemberFunctionCallExp> memberFuncCall;
         if (functionNode != nullptr)
@@ -2092,28 +2114,7 @@ BentleyStatus ECSqlParser::ParseTableValuedFunction(std::unique_ptr<TableValuedF
 
         exp = std::make_unique<TableValuedFunctionExp>("", std::move(memberFuncCall), PolymorphicInfo::NotSpecified());
     }
-    else if(pathLength == 2)
-    {
-        auto schemaNode = pathNode->getChild(0);
-        auto functionNode = pathNode->getChild(1);
-
-        auto schemaName = schemaNode->getFirst()->getTokenValue();
-        if (!schemaNode->getChild(1)->isLeaf()) {
-            return ERROR;
-        }
-        if (functionNode->getChild(1)->isLeaf()) {
-            return ERROR;
-        }
-
-        std::unique_ptr<MemberFunctionCallExp> memberFuncCall;
-        if (functionNode != nullptr)
-            {
-            if (SUCCESS != ParseMemberFunctionCall(memberFuncCall, *functionNode, true))
-                return ERROR;
-            }
-
-        exp = std::make_unique<TableValuedFunctionExp>(schemaName.c_str(), std::move(memberFuncCall), PolymorphicInfo::NotSpecified());
-    }
+    
     return SUCCESS;
 }
 
@@ -2260,16 +2261,24 @@ BentleyStatus ECSqlParser::ParseMemberFunctionCall(std::unique_ptr<MemberFunctio
         return ERROR;
         }
 
-    BeAssert(parseNode.count() == 2);
+    if(parseNode.count() != 2)
+        return ERROR;
     OSQLParseNode const* argsNode = parseNode.getChild(1);
-    BeAssert(argsNode != nullptr);
+    if(argsNode == nullptr)
+        return ERROR;
     if (argsNode->isLeaf())
         {
-        BeAssert(false && "ParseNode passed to ParseMemberFunctionCall is expected to have a non-empty second child node");
+        m_context->Issues().ReportV(
+            IssueSeverity::Error,
+            IssueCategory::BusinessProperties,
+            IssueType::ECSQL, ECDbIssueId::ECDb_0738,
+            "ParseNode passed to ParseMemberFunctionCall is expected to have a non-empty second child node"
+        );
         return ERROR;
         }
 
-    BeAssert(argsNode->count() == 3);
+    if(argsNode->count() != 3)
+        return ERROR;
 
     Utf8StringCR functionName = parseNode.getChild(0)->getTokenValue();
     memberFunCallExp = std::make_unique<MemberFunctionCallExp>(functionName, tableValuedFunc);
