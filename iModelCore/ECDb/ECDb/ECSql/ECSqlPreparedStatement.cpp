@@ -223,7 +223,8 @@ DbResult SingleECSqlPreparedStatement::DoStep()
         {
             case BE_SQLITE_ROW:
             case BE_SQLITE_DONE:
-                m_isFirstStep = false; // if step actually successded on the sqlite side then we set this flag to false
+                if(m_isFirstStep)  
+                    m_isFirstStep = false;   // if step actually successded on the sqlite side then we set this flag to false if flag is true
                 break;
 
             case BE_SQLITE_INTERRUPT:
@@ -268,7 +269,8 @@ ECSqlStatus SingleECSqlPreparedStatement::_Reset()
     if (nativeSqlStat != BE_SQLITE_OK)
         return ECSqlStatus(nativeSqlStat);
 
-    m_isFirstStep = true; // When everything is reset succesffully we reset this flag
+    if(!m_isFirstStep)
+        m_isFirstStep = true; // When everything is reset successfully we reset this flag if flag is false
     return ECSqlStatus::Success;
     }
 
