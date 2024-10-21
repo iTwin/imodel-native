@@ -160,7 +160,7 @@ rapidjson::Document ContentValuesFormatter::GetFormattedValue(ECPropertyCR prop,
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document ContentValuesFormatter::GetFormattedValue(PrimitiveType type, Utf8StringCR extendedType, IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator) const
     {
-        return GetFallbackPrimitiveValue(type, extendedType, value, allocator);
+    return GetFallbackPrimitiveValue(type, extendedType, value, allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**
