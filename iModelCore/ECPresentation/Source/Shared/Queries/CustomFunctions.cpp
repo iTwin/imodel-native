@@ -52,7 +52,7 @@ static void ProcessLabelOverride(LabelDefinitionPtr& labelDefinition, CustomFunc
         ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetCustomizationRulesContext(expressionContextParams);
         ECValue value;
         Utf8String displayValue;
-        if (ECExpressionEvaluationResult::EVALUATION_Success == ECExpressionsHelper(context.GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetLabel(), *expressionContext) && value.IsPrimitive() && value.ConvertPrimitiveToString(displayValue))
+        if (ECExpressionEvaluationStatus::Success == ECExpressionsHelper(context.GetECExpressionsCache()).EvaluateECExpression(value, labelOverride->GetLabel(), *expressionContext) && value.IsPrimitive() && value.ConvertPrimitiveToString(displayValue))
             {
             if (value.IsString())
                 labelDefinition = LabelDefinition::FromString(displayValue.c_str());
@@ -452,18 +452,18 @@ struct EvaluateECExpressionScalar : CachingScalarFunction<bmap<ECExpressionScala
 
             ECValue value;
             ECExpressionsCache noCache;
-            ECExpressionEvaluationResult evaluationResult = ECExpressionsHelper(noCache).EvaluateECExpression(value, expression, *expressionContext);
-            if (evaluationResult == ECExpressionEvaluationResult::EVALUATION_ParseError)
+            ECExpressionEvaluationStatus evaluationResult = ECExpressionsHelper(noCache).EvaluateECExpression(value, expression, *expressionContext);
+            if (evaluationResult == ECExpressionEvaluationStatus::ParseError)
                 {
                 ctx.SetResultError(Utf8PrintfString("Failed to parse ECExpression: %s", expression).c_str());
                 return;
                 }
-            if (evaluationResult == ECExpressionEvaluationResult::EVALUATION_EvaluationError)
+            if (evaluationResult == ECExpressionEvaluationStatus::EvaluationError)
                 {
                 ctx.SetResultError(Utf8PrintfString("Failed to evaluate ECExpression: %s", expression).c_str());
                 return;
                 }
-            if (evaluationResult == ECExpressionEvaluationResult::EVALUATION_InvalidECValueError)
+            if (evaluationResult == ECExpressionEvaluationStatus::InvalidECValueError)
                 {
                 ctx.SetResultError(Utf8PrintfString("Could not get ECValue from evaluated ECExpression: %s", expression).c_str());
                 return;

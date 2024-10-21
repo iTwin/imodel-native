@@ -176,12 +176,12 @@ public:
 //===================================================================================
 // @bsiclass
 //===================================================================================
-enum class ECExpressionEvaluationResult
+enum class ECExpressionEvaluationStatus
     {
-    EVALUATION_Success,
-    EVALUATION_ParseError,
-    EVALUATION_EvaluationError,
-    EVALUATION_InvalidECValueError
+    Success,
+    ParseError,
+    EvaluationError,
+    InvalidECValueError
     };
 
 /*=================================================================================**//**
@@ -193,7 +193,7 @@ private:
     ECExpressionsCache& m_cache;
 public:
     ECExpressionsHelper(ECExpressionsCache& cache) : m_cache(cache) {}
-    ECExpressionEvaluationResult EvaluateECExpression(ECValueR result, Utf8StringCR expression, ExpressionContextR context);
+    ECExpressionEvaluationStatus EvaluateECExpression(ECValueR result, Utf8StringCR expression, ExpressionContextR context);
     ECPRESENTATION_EXPORT NodePtr GetNodeFromExpression(Utf8CP expression);
     ECPRESENTATION_EXPORT QueryClauseAndBindings ConvertToECSql(Utf8StringCR expression, IPresentationQueryFieldTypesProvider const*, ExpressionContext*);
     ECPRESENTATION_EXPORT bvector<Utf8String> GetUsedClasses(Utf8StringCR expression);
