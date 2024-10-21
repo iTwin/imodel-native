@@ -2105,7 +2105,7 @@ BentleyStatus ECSqlParser::ParseTableValuedFunction(std::unique_ptr<TableValuedF
 
         if(functionNode == nullptr) return ERROR;
 
-        if (functionNode->getChild(1) == nullptr || functionNode->getChild(1)->isLeaf()) {
+        if (functionNode->getChild(1) == nullptr || functionNode->getChild(1)->isLeaf()) { // We also need to check the leaf condition here to avoid a BeAssert
             return ERROR;
         }
 
@@ -2267,7 +2267,7 @@ BentleyStatus ECSqlParser::ParseMemberFunctionCall(std::unique_ptr<MemberFunctio
 
     if(parseNode.count() != 2)
         return ERROR;
-    OSQLParseNode const* argsNode = parseNode.getChild(1); //
+    OSQLParseNode const* argsNode = parseNode.getChild(1);
     if(argsNode == nullptr)
         return ERROR;
     if (argsNode->isLeaf())
