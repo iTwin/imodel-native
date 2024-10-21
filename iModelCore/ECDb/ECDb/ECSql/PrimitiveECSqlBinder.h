@@ -14,6 +14,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct PrimitiveECSqlBinder final : public ECSqlBinder
     {
 private:
+    BinderInfo m_binderInfo;
+
     ECSqlStatus CanBind(ECN::PrimitiveType requestedType) const;
 
     ECSqlStatus _BindNull() override;
@@ -34,6 +36,7 @@ private:
     IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
 
     IECSqlBinder& _AddArrayElement() override;
+    BinderInfo const& _GetBinderInfo() override;
 
     int GetSqlParameterIndex() const 
         { 
@@ -43,7 +46,7 @@ private:
         }
 
 public:
-    PrimitiveECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& paramNameGen) : ECSqlBinder(ctx, typeInfo, paramNameGen, 1, false, false) {}
+    PrimitiveECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& paramNameGen) : ECSqlBinder(ctx, typeInfo, paramNameGen, 1, false, false), m_binderInfo(BinderInfo::BinderType::Primitive) {}
     ~PrimitiveECSqlBinder() { OnClearBindings(); }
     };
 
