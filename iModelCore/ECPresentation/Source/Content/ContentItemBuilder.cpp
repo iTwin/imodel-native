@@ -28,9 +28,7 @@ rapidjson::Document ContentValuesFormatter::GetFallbackPrimitiveValue(PrimitiveT
     if (v.IsNull())
         json.SetString("");
     else if (type == PRIMITIVETYPE_DateTime)
-        {
-        json.SetString(v.GetDateTime().ToString().c_str(), json.GetAllocator()); ;
-        }
+        json.SetString(v.GetDateTime().ToString().c_str(), json.GetAllocator());
     else if (v.ConvertPrimitiveToString(stringValue))
         json.SetString(stringValue.c_str(), json.GetAllocator());
     else
