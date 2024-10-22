@@ -91,13 +91,14 @@ public:
     void TestInvalidFmtStr(Utf8CP fmtStr, BEU::UnitCP expectedUnit)
         {
         Format format;
-        NumericFormatSpec n;
-        n.SetPresentationType(PresentationType::Decimal);
-        format.SetNumericSpec(n);
+        NumericFormatSpec numericSpec;
+        numericSpec.SetPresentationType(PresentationType::Decimal);
+        format.SetNumericSpec(numericSpec);
         FormatProblemCode probCode = FormatProblemCode::NoProblems;
+
         FormatParsingSet fps(fmtStr, expectedUnit);
         fps.GetQuantity(&probCode, &format);
-        ASSERT_TRUE(fps.HasProblem()) << GetFmtStringErrMsg(fmtStr);
+        ASSERT_EQ(probCode, FormatProblemCode::QT_InvalidSyntax) << GetFmtStringErrMsg(fmtStr);
         }
     };
 

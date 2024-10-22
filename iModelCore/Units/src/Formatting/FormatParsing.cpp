@@ -401,6 +401,7 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start, Utf8Char const decimalSep
     Utf8Char c;
 
     while (csp.IsSpace()) { m_next++; csp.Iterate(m_input); }
+    if (csp.IsUnderscore()){ m_next++; csp.Iterate(m_input);} // sometimes underscore serves as space too
     if (csp.IsSign())  // the sign character can be expected at the start
         {
         c = csp.GetAscii();
@@ -1203,6 +1204,7 @@ BEU::Quantity FormatParsingSet::ParseAndProcessTokens(Formatting::FormatSpecialC
             sign = m_segs[0].GetSign();
             majP = m_segs[2].GetUnit();
             qty = BEU::Quantity(m_segs[0].GetAbsReal() + m_segs[1].GetAbsReal(), *majP);
+            qty.Scale(sign);
             break;
         case Formatting::FormatSpecialCodes::SignatureNUNU:
             sign = m_segs[0].GetSign();
@@ -1353,11 +1355,6 @@ BEU::Quantity FormatParsingSet::ParseAzimuthFormat(FormatProblemCode* probCode, 
 
 BEU::Quantity FormatParsingSet::ParseBearingFormat(FormatProblemCode* probCode, FormatCP format, BEU::UnitCP inputUnit)
     {
-    // special handling for bearing format - strip off the direction characters
-    std::regex directionPattern(R"(^[NSEW]|[NSEW]$)"); // TODO - <Naron>: dont use regex here
-    Utf8String strippedInput(std::regex_replace(m_input, directionPattern, ""));
-    SegmentInput(strippedInput.c_str(), 0); 
-
     BEU::Quantity converted = BEU::Quantity();
 
     const std::string North = "N";
@@ -1403,6 +1400,8 @@ BEU::Quantity FormatParsingSet::ParseBearingFormat(FormatProblemCode* probCode, 
         }
         return converted;
     }
+    
+    SegmentInput(inString.c_str(), 0); 
 
     Utf8String sig = GetSignature(false);
     Formatting::FormatSpecialCodes cod = Formatting::FormatConstant::ParsingPatternCode(sig.c_str());

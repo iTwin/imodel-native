@@ -45,6 +45,7 @@ public:
     bool IsSeparator(Utf8Char const dec = '.', Utf8Char const thous = ',') { return (m_len == 1) && (m_patt == dec || m_patt == thous); }
     bool IsBar() { return (m_len == 1) && (m_patt == '/'); }
     bool IsExponent() {return (m_len == 1) && (m_patt == 'x'); }
+    bool IsUnderscore() { return (m_len == 1) && (m_patt == '_'); }
 
     //! The caller is responsible for keeping the index inside the allowable range
     UNITS_EXPORT ScannerCursorStatus AppendTrailingByte(Utf8CP txt);
