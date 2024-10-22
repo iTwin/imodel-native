@@ -944,10 +944,8 @@ TEST_F(FormatParsingSetTest, OverflowNumberTest)
     EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
 
     TestValidParseToQuantity("0.000000000000001 m", meter, 0.000000000000001);
-    // fps = FormatParsingSet("0.000000000000001 m", meter);
-    // fps.GetQuantity(nullptr, &format);
-    FormatParsingSet fps2("0.000000000000001 m", meter);
-    fps2.GetQuantity(nullptr, &format);
+    fps = FormatParsingSet("0.0123456789101112 m", meter);
+    fps.GetQuantity(nullptr, &format);
     EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the floating part is more than 15";
     EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
 

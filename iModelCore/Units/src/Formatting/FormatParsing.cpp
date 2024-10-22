@@ -941,10 +941,8 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatC
     if (format->GetPresentationType() == PresentationType::Bearing)
         qty = ParseBearingFormat(probCode, format, inputUnit);
 
-    if (format->GetPresentationType() == PresentationType::Ratio){
-        
+    if (format->GetPresentationType() == PresentationType::Ratio)
         qty = ParseRatioFormat(probCode, format, inputUnit);
-    }
 
     if (probCode != nullptr && *probCode != FormatProblemCode::NoProblems){
         m_problem.UpdateProblemCode(*probCode);
