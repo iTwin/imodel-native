@@ -15,10 +15,10 @@ import type { NativeCloudSqlite } from "./NativeCloudSqlite";
 
 import type {
   BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IDisposable, IModelStatus, LogLevel, OpenMode,
-  StatusCodeWithMessage,
 } from "@itwin/core-bentley";
 import type {
-  ChangesetIndexAndId, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps, ElementGraphicsRequestProps, ElementLoadProps, ElementProps,
+  ChangesetIndexAndId, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps,
+  ElementGraphicsRequestProps, ElementLoadProps, ElementMeshRequestProps, ElementProps,
   FilePropertyProps, FontId, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
   GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, IModelCoordinatesRequestProps,
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
@@ -29,9 +29,6 @@ import type { Range2dProps, Range3dProps } from "@itwin/core-geometry";
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable @itwin/prefer-get */
-
-// ###TODO import from core-common after merge with master
-export type ElementMeshRequestProps = any;
 
 // cspell:ignore  blocksize cachesize polltime bentleyjs imodeljs ecsql pollable polyface txns lzma uncompress changesets ruleset ulas oidc keychain libsecret rulesets struct
 
@@ -217,6 +214,12 @@ export declare namespace IModelJsNative {
     /** If true, the returned SHA1 includes the hash of all referenced schemas */
     exactMatch?: boolean;
   }): string;
+
+  /** When you want to associate an explanatory message with an error status value. */
+  interface StatusCodeWithMessage<ErrorCodeType> {
+    status: ErrorCodeType;
+    message: string;
+  }
 
   /** The return type of synchronous functions that may return an error or a successful result. */
   type ErrorStatusOrResult<ErrorCodeType, ResultType> = {
