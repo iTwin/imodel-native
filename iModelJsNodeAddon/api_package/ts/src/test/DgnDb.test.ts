@@ -871,7 +871,7 @@ describe("basic tests", () => {
     it("throws if source is not a geometric element", async () => {
       const msg = "Geometric element required";
       await expect(dgndb.generateElementMeshes({ source: "NotAnId" })).rejectedWith(msg);
-      await expect(dgndb.generateElementMeshes({})).rejectedWith(msg);
+      await expect(dgndb.generateElementMeshes({} as any)).rejectedWith(msg);
       await expect(dgndb.generateElementMeshes({ source: "0" })).rejectedWith(msg);
       await expect(dgndb.generateElementMeshes({ source: "0x1" })).rejectedWith(msg);
       await expect(dgndb.generateElementMeshes({ source: "0x123456789" })).rejectedWith(msg);
