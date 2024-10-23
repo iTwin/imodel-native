@@ -29,10 +29,13 @@ enum class SignOption
 //=======================================================================================
 enum class PresentationType
     {
-    Decimal,
+    Decimal,// 
     Fractional,
     Scientific, // scientific with 1 digit presenting the integer part
-    Station,
+    Station, // Civil Engineering Stationing (ie 1+00)
+    Bearing, // Bearing angle e.g. N05:00:00E. Requires provided quantities to be of the angle phenomenon
+    Azimuth, // Azimuth angle e.g. 45°30'00". Requires provided quantities to be of the angle phenomenon
+    Ratio, // indicates the size compairson between two numbers. Eg. 1:2 or 0.3:1
     };
 
 //=======================================================================================
@@ -48,19 +51,19 @@ enum class ScientificType
 // @bsienum
 //=======================================================================================
 enum class FormatTraits : int32_t
-    {
-    None             = 0x000,
-    TrailingZeroes   = 0x001, //!< Indicates that one or more insignificant zeroes are to be added after the last digit of the fraction.
-    KeepSingleZero   = 0x002, //!< Indicates that the fractional part of the number is required when the fraction is zero.
-    ZeroEmpty        = 0x004, //!< Indicates that zero value should be presented by an empty string.
-    KeepDecimalPoint = 0x008, //!< Indicates that the decimal point is should be presented when the fraction is zero.
-    ApplyRounding    = 0x010, //!< Use the rounding factor.
-    FractionDash     = 0x020, //!< Use a dash between integer and fraction instead of a space: 3-1/4 rather than 3 1/4.
-    ShowUnitLabel    = 0x040, //!< Indicates that the numeric expression should be followed by the unit name.
-    PrependUnitLabel = 0x080, //!< Indicates the position of the Unit name shifts from the right side of the value to the left.
-    Use1000Separator = 0x100, //!< Indicates that thousands in the integer part of the number should be separated by a special char (. or,).
-    ExponenentOnlyNegative = 0x200, //!< Indicates that if an exponent value is positive to not include a +. By default a sign, + or -, is always shown.
-    };
+{
+    None                    = 0,
+    TrailingZeroes          = 1 << 0, //!< Indicates that one or more insignificant zeroes are to be added after the last digit of the fraction.
+    KeepSingleZero          = 1 << 1, //!< Indicates that the fractional part of the number is required when the fraction is zero.
+    ZeroEmpty               = 1 << 2, //!< Indicates that zero value should be presented by an empty string.
+    KeepDecimalPoint        = 1 << 3, //!< Indicates that the decimal point is should be presented when the fraction is zero.
+    ApplyRounding           = 1 << 4, //!< Use the rounding factor.
+    FractionDash            = 1 << 5, //!< Use a dash between integer and fraction instead of a space: 3-1/4 rather than 3 1/4.
+    ShowUnitLabel           = 1 << 6, //!< Indicates that the numeric expression should be followed by the unit name.
+    PrependUnitLabel        = 1 << 7, //!< Indicates the position of the Unit name shifts from the right side of the value to the left.
+    Use1000Separator        = 1 << 8, //!< Indicates that thousands in the integer part of the number should be separated by a special char (. or,).
+    ExponenentOnlyNegative  = 1 << 9, //!< Indicates that if an exponent value is positive to not include a +. By default a sign, + or -, is always shown.
+};
 
 //=======================================================================================
 //! Number of points after decimal point given significance in the scientific notation
@@ -139,12 +142,20 @@ enum class FormatProblemCode
     QT_InvalidMidLowUnits = 20104,
     QT_InvalidUnitCombination = 20105,
     QT_InvalidSyntax = 20106,
+    QT_ConversionFailed = 20107,
+    QT_InvertingZero = 20108,
+    QT_NoValueOrUnitFound = 20109,
+    QT_InvalidRatioArgument = 20110,
+    QT_ValueOutOfRange = 20111,
+    QT_MathematicOperationFoundButIsNotAllowed = 20112,
+    QT_BearingPrefixOrSuffixMissing = 20113,
     FUS_InvalidSyntax = 20151,
     NFS_Undefined = 20160,
     NFS_InvalidSpecName = 20161,
     NFS_DuplicateSpecName = 20162,
     NFS_DuplicateSpecNameOrAlias = 20163,
     NFS_InvalidJsonObject = 20164,
+    NFS_MissingUnit = 20165,
     DIV_UnknownDivider = 25001,
     NA_InvalidSign = 25101,             // Numeric Accumulator problems
     NA_InvalidPoint = 25102,
@@ -231,6 +242,23 @@ enum class FormatSpecialCodes
     };
 
 //=======================================================================================
+// @bsienum
+//=======================================================================================
+enum class AlternativeFormatComparison
+    {
+    GreaterThan,
+    LessThan
+    };
+
+enum class RatioType
+    {
+    OneToN, // 1 on the left side of the colon
+    NToOne, // 1 on the right side of the colon
+    ValueBased, // if abs value is greater than 1, 1 is on left. If abs value is less than 1, 1 is on right
+    UseGreatestCommonDivisor, // scales to the greatest common divisor, integer ratio. e.g. 3:10
+    };
+
+//=======================================================================================
 //! @bsistruct
 //=======================================================================================
 struct FormatProblemDetail
@@ -282,6 +310,9 @@ struct Utils
     //! Parses the provided string into a SignOption.
     //! @return True if successfully parsed into a SignOption. Otherwise, false.
     UNITS_EXPORT static bool ParsePresentationType(PresentationType& type, Utf8CP typeString);
+
+    UNITS_EXPORT static bool ParseRatioType(RatioType& mode, Utf8CP modeString);
+    UNITS_EXPORT static Utf8String GetRatioTypeString(RatioType mode);
     
     UNITS_EXPORT static bool FractionalPrecisionByDenominator(FractionalPrecision& out, const int32_t prec);
     UNITS_EXPORT static int32_t FractionalPrecisionDenominator(FractionalPrecision prec);
@@ -315,6 +346,8 @@ public:
     static Utf8Char const DefaultStationSeparator() {return '+';}
     static int const DefaultMinWidth() { return 0; }
     static Utf8String const DefaultSpacer() {return " ";}
+    static Utf8String const DefaultSeparator() {return " ";}
+    static RatioType const DefaultRatioType() {return RatioType::ValueBased;} 
 
     // FPN prefix stands for FormatParameterName
     static Utf8String FPN_NoSign() { return "NoSign"; }
@@ -329,6 +362,14 @@ public:
     static Utf8String FPN_Fractional() { return "Fractional"; }
     static Utf8String FPN_Scientific() { return "Scientific"; }
     static Utf8String FPN_Station() {return "Station";}
+    static Utf8String FPN_Ratio() {return "Ratio";}
+    static Utf8String FPN_Azimuth() {return "Azimuth";}
+    static Utf8String FPN_Bearing() {return "Bearing";}
+
+    static Utf8String FPN_RatioOneToN() { return "OneToN"; }
+    static Utf8String FPN_RatioNToOne() { return "NToOne"; }
+    static Utf8String FPN_RatioValueBased() { return "ValueBased"; }
+    static Utf8String FPN_RatioUseGreatestCommonDivisor() { return "UseGreatestCommonDivisor"; }
 
     static Utf8String FPN_TrailZeroes() {return "TrailZeroes";}
     static Utf8String FPN_LeadZeroes() {return "LeadZeroes";}
