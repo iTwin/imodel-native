@@ -1373,8 +1373,8 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     auto dataApplyArgs = ApplyChangesArgs::Default()
         .SetRebase(rebase)
         .SetInvert(invert)
-        .SetIgnoreNoop(false)
-        .SetFkNoAction(false);
+        .SetIgnoreNoop(true)
+        .SetFkNoAction(true);
 
     // If schema changes are present, we need to apply only data changes after schema changes are applied.
     if (containsSchemaChanges){
