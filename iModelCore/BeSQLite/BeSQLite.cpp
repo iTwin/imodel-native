@@ -42,6 +42,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 extern "C" int checkNoActiveStatements(SqlDbP db);
 #endif
 
+extern "C" int getStatementState(SqlStatementP pStmt);
 extern "C" int sqlite3_shathree_init(sqlite3 *, char **, const sqlite3_api_routines *);
 
 BEGIN_BENTLEY_SQLITE_NAMESPACE
@@ -918,6 +919,16 @@ void Statement::DumpResults()
         }
 
     Reset();
+    }
+    
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+StatementState Statement::GetStatementState()
+    {
+    if(!IsPrepared())
+        return StatementState::NOT_PREPARED;
+    return (StatementState)getStatementState(m_stmt);
     }
 
 /*---------------------------------------------------------------------------------**//**

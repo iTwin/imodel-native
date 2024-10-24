@@ -189,4 +189,12 @@ IECSqlBinder& PointECSqlBinder::_AddArrayElement()
     return NoopECSqlBinder::Get();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BinderInfo const& PointECSqlBinder::_GetBinderInfo()
+    {
+    return m_binderInfo;
+    }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
