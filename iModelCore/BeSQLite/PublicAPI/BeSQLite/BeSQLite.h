@@ -437,6 +437,19 @@ ENUM_IS_FLAGS(DbDeserializeOptions)
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
+enum StatementState
+{
+    // The first four values should be in accordance with sqlite3.c #define values with the same names
+    VDBE_INIT_STATE          = 0,   //!< Prepared statement under construction
+    VDBE_READY_STATE         = 1,   //!< Ready to run but not yet started
+    VDBE_RUN_STATE           = 2,   //!< Run in progress
+    VDBE_HALT_STATE          = 3,   //!< Finished.  Need reset() or finalize()
+    NOT_PREPARED             = 4,   //!< Statement not yet prepared
+};
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
 enum DbResult
 {
     BE_SQLITE_OK          = 0,   //!< Successful result
@@ -984,6 +997,9 @@ public:
 
     //! Dump query results to stdout, for debugging purposes
     BE_SQLITE_EXPORT void DumpResults();
+
+    //! Gets the state in which a particular statement is
+    BE_SQLITE_EXPORT StatementState GetStatementState();
 
     SqlStatementP GetSqlStatementP() const {return m_stmt;}  // for direct use of sqlite3 api
     operator SqlStatementP(){return m_stmt;}                 // for direct use of sqlite3 api

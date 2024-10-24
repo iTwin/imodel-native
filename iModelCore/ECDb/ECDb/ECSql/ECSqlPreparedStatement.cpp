@@ -211,7 +211,7 @@ DbResult SingleECSqlPreparedStatement::DoStep()
     if (SUCCESS != AssertIsValid())
         return BE_SQLITE_ERROR;
 
-    if(m_isFirstStep)
+    if(m_sqliteStatement.GetStatementState() == StatementState::VDBE_READY_STATE)
     {
         if (!m_parameterMap.OnBeforeFirstStep().IsSuccess())
             return BE_SQLITE_ERROR;
@@ -223,8 +223,6 @@ DbResult SingleECSqlPreparedStatement::DoStep()
         {
             case BE_SQLITE_ROW:
             case BE_SQLITE_DONE:
-                if(m_isFirstStep)  
-                    m_isFirstStep = false;   // if step actually successded on the sqlite side then we set this flag to false if flag is true
                 break;
 
             case BE_SQLITE_INTERRUPT:
@@ -269,8 +267,6 @@ ECSqlStatus SingleECSqlPreparedStatement::_Reset()
     if (nativeSqlStat != BE_SQLITE_OK)
         return ECSqlStatus(nativeSqlStat);
 
-    if(!m_isFirstStep)
-        m_isFirstStep = true; // When everything is reset successfully we reset this flag if flag is false
     return ECSqlStatus::Success;
     }
 
