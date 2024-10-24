@@ -1072,14 +1072,32 @@ TEST_F(ConcurrentQueryFixture, CommentAtEndOfECSql) {
     m_ecdb.SaveChanges();
 
     auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
-    auto req = ECSqlRequest::MakeRequest("SELECT entity_id FROM ts.testEntity -- This is a comment");
-    auto r = mgr.Enqueue(std::move(req)).Get();
-    ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
 
-    auto res = ((ECSqlResponse*) r.get());
-    BeJsDocument resJson;
-    res->ToJs(resJson, true);
-    ASSERT_EQ(res->asJsonString(), "[[1]]");
+    {
+        auto req = ECSqlRequest::MakeRequest("SELECT entity_id FROM ts.testEntity -- This is a comment");
+        auto r = mgr.Enqueue(std::move(req)).Get();
+        ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
+
+        auto res = ((ECSqlResponse*) r.get());
+        BeJsDocument resJson;
+        res->ToJs(resJson, true);
+        ASSERT_EQ(res->asJsonString(), "[[1]]");
+    }
+
+    // Additional test with a WITH clause
+    {
+        auto req = ECSqlRequest::MakeRequest(
+            "WITH baseQuery AS (SELECT entity_id FROM ts.testEntity) SELECT * FROM baseQuery -- This is a comment"
+        );
+        auto r = mgr.Enqueue(std::move(req)).Get();
+        ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
+
+        auto res = ((ECSqlResponse*) r.get());
+        BeJsDocument resJson;
+        res->ToJs(resJson, true);
+        ASSERT_EQ(res->asJsonString(), "[[1]]");
+    }
+
 }
 
 
