@@ -866,6 +866,7 @@ SingleSelectStatementExp::SingleSelectStatementExp(std::vector<std::unique_ptr<V
     {
     std::unique_ptr<SelectClauseExp> selectClauseExp = std::make_unique<SelectClauseExp>();
     int expIx = 0;
+    UNUSED_VARIABLE(expIx);
     for (std::unique_ptr<ValueExp>& valueExp : valueExpList)
         {
         expIx++;
