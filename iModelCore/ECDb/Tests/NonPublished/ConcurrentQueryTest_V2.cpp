@@ -1054,7 +1054,33 @@ TEST_F(ConcurrentQueryFixture, BlobIO) {
         ASSERT_STREQ(resp->GetError().c_str(), "BlobIO: offset + length provided is greater then size of blob");
     }
 }
+//---------------------------------------------------------------------------------------
+//@bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConcurrentQueryFixture, CommentAtEndOfECSql) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("CommentAtEndOfECSql.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECEntityClass typeName="testEntity">
+                    <ECProperty propertyName="entity_id" typeName="int" />
+                </ECEntityClass>
+            </ECSchema>)xml")));
 
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.testEntity(entity_id) VALUES(?)"));
+    stmt.BindInt(1, 1);
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+    m_ecdb.SaveChanges();
+
+    auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
+    auto req = ECSqlRequest::MakeRequest("SELECT entity_id FROM ts.testEntity -- This is a comment");
+    auto r = mgr.Enqueue(std::move(req)).Get();
+    ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
+
+    auto res = ((ECSqlResponse*) r.get());
+    BeJsDocument resJson;
+    res->ToJs(resJson, true);
+    ASSERT_EQ(res->asJsonString(), "[[1]]");
+}
 
 
 END_ECDBUNITTESTS_NAMESPACE

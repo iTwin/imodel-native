@@ -1594,8 +1594,6 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
     auto unitDegree = s_unitsContext->LookupUnit("ARC_DEG");
     auto unitRadian = s_unitsContext->LookupUnit("RAD");
     auto revolution = s_unitsContext->LookupUnit("REVOLUTION");
-    //auto unitMinute = s_unitsContext->LookupUnit("ARC_MINUTE");
-    //auto unitSecond = s_unitsContext->LookupUnit("ARC_SECOND");
 
     NumericFormatSpec bearingDMSSpec;
     bearingDMSSpec.SetMinWidth(2);
