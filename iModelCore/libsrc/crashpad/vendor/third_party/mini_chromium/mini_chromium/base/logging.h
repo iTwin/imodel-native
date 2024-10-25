@@ -12,6 +12,8 @@
 #include <sstream>
 #include <string>
 
+#include <cstdint>
+
 #include "base/check.h"
 #include "base/check_op.h"
 #include "base/notreached.h"
@@ -20,7 +22,7 @@
 namespace logging {
 
 // A bitmask of potential logging destinations.
-using LoggingDestination = uint32_t;
+using LoggingDestination = std::uint32_t;
 
 // Specifies where logs will be written. Multiple destinations can be specified
 // with bitwise OR.

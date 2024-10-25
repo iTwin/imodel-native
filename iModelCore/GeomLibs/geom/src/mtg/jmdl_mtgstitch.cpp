@@ -659,6 +659,7 @@ bool     SortAroundEdges (bool deleteDuplicateFaces = true)
     const DPoint3d *pCoordinateArray;
     DVec3d normal;
     int errorCount = 0;
+    UNUSED_VARIABLE(errorCount);
 
     for (MTGNodeId startId : faceStartArray)
         {

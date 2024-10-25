@@ -3992,7 +3992,7 @@ MTGNodeId                       faceNodeId
     double deltaArea, deltaTheta, absArea;
     DPoint3d point;
     int numEdge = 0;
-
+    UNUSED_VARIABLE(numEdge);
 
     if (pPoint)
         {
