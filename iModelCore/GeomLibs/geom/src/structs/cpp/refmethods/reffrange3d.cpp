@@ -501,16 +501,14 @@ void FRange3d::Get8Corners (bvector<FPoint3d> &corners) const
     {
     corners.clear ();
     FPoint3d minmax[2];
-    int ix,iy,iz,i;
+    int ix,iy,iz;
     minmax[0] = low;
     minmax[1] = high;
-    i = 0;
     for( iz = 0; iz < 2; iz++ )
         for ( iy = 0; iy < 2; iy++ )
             for ( ix = 0; ix < 2; ix++ )
                 {
                 corners.push_back (FPoint3d::From (minmax[ix].x, minmax[iy].y, minmax[iz].z ));
-                i++;
                 }
     }
 

@@ -58,7 +58,7 @@ bool PolyfaceVisitor::AdvanceToFacetBySearchPoint (DPoint3dCR xyz, double tolera
 #else
     edgeIndex = -1;
     edgeFraction = 0.0;
-    for (int faceIndex = 0; AdvanceToNextFace (); faceIndex++)
+    while (AdvanceToNextFace ())
         {
         int code = bsiPolygon_closestPointExt (facetXYZ, edgeIndex, edgeFraction, &m_point[0], (int)m_point.size (), xyz);
         double distance = xyz.Distance (facetXYZ);
@@ -75,7 +75,7 @@ bool PolyfaceVisitor::AdvanceToFacetBySearchPoint (DPoint3dCR xyz, double tolera
 +--------------------------------------------------------------------------------------*/
 bool PolyfaceVisitor::AdvanceToFacetBySearchPoint (DPoint3dCR xyz, double tolerance, DPoint3dR facetXYZ)
     {
-    for (int faceIndex = 0; AdvanceToNextFace (); faceIndex++)
+    while (AdvanceToNextFace ())
         {
         if (TryFindCloseFacetPoint (xyz, tolerance, facetXYZ))
             return true;

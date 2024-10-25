@@ -336,7 +336,6 @@ bool             addVerticesAtCrossings
     VuMask      numberedNodeMask = vu_grabMask (graphP);
     VuP         faceP, originalNodeP;
     bool status = false;
-    int       i;
     int       originalIndex;
     int       outputIndex;
     int     separator = signedOneBasedIndices ? 0 : -1;
@@ -368,7 +367,7 @@ bool             addVerticesAtCrossings
 
     vu_arrayOpen (faceArrayP);
     status = true;
-    for (i = 0; status && vu_arrayRead (faceArrayP, &faceP); i++)
+    while (status && vu_arrayRead (faceArrayP, &faceP))
         {
         // ignore faces that did not triangulate, such as a part of the polygon that retraces itself
         int numEdges = vu_faceLoopSize(faceP);
@@ -445,7 +444,7 @@ bool             addVerticesAtCrossings
         vu_collectExteriorFaceLoops (faceArrayP, graphP);
         vu_arrayOpen (faceArrayP);
         status = true;
-        for (i = 0; status && vu_arrayRead (faceArrayP, &faceP); i++)
+        while (status && vu_arrayRead (faceArrayP, &faceP))
             {
             VuP lowIndexP = faceP;
             int lowIndex = vu_getUserDataPAsInt (faceP);
@@ -1334,6 +1333,7 @@ bool PolygonOps::PickTriangleFromStart
     double fi;
     DPoint3d xyzi;
     size_t numHit = 0;
+    UNUSED_VARIABLE(numHit);
     for (size_t i0 = 1, i1 = 2; i1 < numXYZ; i0 = i1++)
         {
         DPoint3d uvwLocal;
@@ -1536,6 +1536,7 @@ double      tol             /* tolerance for ON case detection */
     double crossing;
     double s;
     int numLeft = 0, numRight = 0;
+    UNUSED_VARIABLE(numRight);
 
     int i, i0;
     if (fabs (h0) <= tol)
@@ -1596,6 +1597,7 @@ double      tol             /* tolerance for ON case detection */
     double crossing;
     double s;
     int numLeft = 0, numRight = 0;
+    UNUSED_VARIABLE(numRight);
 
     int i, i0;
     if (fabs (h0) <= tol)
@@ -1665,6 +1667,7 @@ double      tol             /* tolerance for ON case detection */
     double u;
     double s;
     int numLeft = 0, numRight = 0;
+    UNUSED_VARIABLE(numRight);
 
     int i, i0;
 
