@@ -1607,11 +1607,6 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
     bearingDMScomp.SetSeparator(":");
     bearingDMS.SetCompositeSpec(bearingDMScomp);
     EXPECT_FALSE(bearingDMS.IsProblem());
-    /*Json::Value basicJson;
-    bearingDMS.ToJson(BeJsValue(basicJson), false);
-    Utf8String json = basicJson.ToString();
-    EXPECT_FALSE(json.empty());
-    printf("Bearing DMS: %s\n", json.c_str());*/
 
     NumericFormatSpec bearingDMSWithLabelSpec;
     bearingDMSWithLabelSpec.SetMinWidth(2);
