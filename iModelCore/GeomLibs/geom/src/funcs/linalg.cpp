@@ -2297,6 +2297,7 @@ int     n
     double  tresh, theta, tau, t, sum, s, c, g, h;
     //int nn = n * n;
     int numRotations = 0;
+    UNUSED_VARIABLE(numRotations);
     //int diagonalStep = n + 1;
 
     /* Initialize Eigenvectors as identity matrix */

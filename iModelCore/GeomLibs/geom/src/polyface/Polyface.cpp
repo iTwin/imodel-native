@@ -1402,6 +1402,7 @@ bvector<T> &newData
     for (size_t i = 0; i < numData; i++)
         oldDataToNewData.push_back (SIZE_MAX);
     size_t errors = 0;
+    UNUSED_VARIABLE(errors);
     for (int &index1 : indices)  // ONE BASED
         {
         if (index1 != 0)

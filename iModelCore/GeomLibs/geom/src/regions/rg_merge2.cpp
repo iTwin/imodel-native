@@ -118,6 +118,7 @@ int             noisy
     DPoint3d xyNodeId;
     int numThisCluster, clusterIndex, blockIndex;
     int xyNodeIdIndex;
+    UNUSED_VARIABLE(numThisCluster);
 
     jmdlVArrayDPoint3d_identifyMatchedVerticesXY
                             (pXYNodeIdArray, NULL, pBlockedIndexArray, tolerance, 0.0);
@@ -546,12 +547,13 @@ bvector<double>   *pParamArray
     DPoint3d xyzCenter, xyzCurr;
     DVec3d vector;
     int numIntersect;
-    int numFail;
+    int numFail = 0;
+    UNUSED_VARIABLE(numFail);
+    
     int i;
     jmdlEmbeddedDPoint3dArray_empty (pXYZArray);
     pParamArray->clear();
     jmdlRG_getVertexData (pRG, &xyzCenter, 0, NULL, pSortData[0].nodeId, 0.0);
-    numFail = 0;
     for (i = 0; i < numSort; i++)
         {
         jmdlRG_edgeCircleXYIntersection (pRG, pParamArray, pXYZArray,
