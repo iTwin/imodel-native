@@ -208,6 +208,8 @@ void IModelConsole::Setup()
     AddCommand(std::make_shared<DebugCommand>());
     AddCommand(std::make_shared<ExplainCommand>());
     AddCommand(std::make_shared<SyncCommand>());
+    AddCommand(std::make_shared<DbSchemaDiffCommand>());
+
     auto exitCommand = std::make_shared<ExitCommand>();
     AddCommand(exitCommand);
     AddCommand(".quit", exitCommand); //add same command with alternative command name
