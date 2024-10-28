@@ -9,6 +9,7 @@
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 struct ConcretePropertyCategoryRef;
+struct SchemaPropertyCategoryRef;
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -18,11 +19,13 @@ protected:
     virtual bool _IsRootCategoryRef() const {return false;}
     virtual bool _IsDefaultParentCategoryRef() const {return false;}
     virtual ConcretePropertyCategoryRef const* _AsConcreteCategoryRef() const {return nullptr;}
+    virtual SchemaPropertyCategoryRef const* _AsSchemaCategoryRef() const {return nullptr;}
 public:
     virtual ~PropertyCategoryRef() {}
     bool IsRootCategoryRef() const {return _IsRootCategoryRef();}
     bool IsDefaultParentCategoryRef() const {return _IsDefaultParentCategoryRef();}
     ConcretePropertyCategoryRef const* AsConcreteCategoryRef() const {return _AsConcreteCategoryRef();}
+    SchemaPropertyCategoryRef const* AsSchemaCategoryRef() const {return _AsSchemaCategoryRef();}
 };
 
 /*=================================================================================**//**
@@ -40,6 +43,22 @@ public:
     VirtualPropertyCategoryRef(Types t) : m_type(t) {}
     static std::unique_ptr<VirtualPropertyCategoryRef> CreateRootCategoryRef() {return std::make_unique<VirtualPropertyCategoryRef>(ROOT);}
     static std::unique_ptr<VirtualPropertyCategoryRef> CreateDefaultParentCategoryRef() {return std::make_unique<VirtualPropertyCategoryRef>(DEFAULT_PARENT);}
+};
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct SchemaPropertyCategoryRef : PropertyCategoryRef
+{
+private:
+    Utf8String m_categoryName;
+protected:
+    SchemaPropertyCategoryRef const* _AsSchemaCategoryRef() const override {return this;}
+public:
+    SchemaPropertyCategoryRef(Utf8String categoryName)
+        : m_categoryName(std::move(categoryName))
+        {}
+    Utf8StringCR GetCategoryName() const {return m_categoryName;}
 };
 
 /*=================================================================================**//**
@@ -164,8 +183,10 @@ struct PropertyInfoStore
     public:
         CategoryOverridesCacheKey(PropertyCategoryIdentifier const& identifier, Utf8String className) : m_type(identifier.GetType()), m_className(className)
             {
-            if (identifier.GetType() == PropertyCategoryIdentifierType::Id)
-                m_categoryId = identifier.AsIdIdentifier()->GetCategoryId();
+            if (auto idIdentifier = identifier.AsIdIdentifier())
+                m_categoryId = Utf8PrintfString("id: %s", idIdentifier->GetCategoryId().c_str());
+            else if (auto schemaCategoryIdentifier = identifier.AsSchemaCategoryIdentifier())
+                m_categoryId = Utf8PrintfString("sc: %s", schemaCategoryIdentifier->GetCategoryName().c_str());
             else
                 m_categoryId = "";
             }

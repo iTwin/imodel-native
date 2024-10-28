@@ -65,16 +65,15 @@ ContentQueryContract::ContentQueryContract(uint64_t id, ContentDescriptorCR desc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationQueryContractFieldCPtr ContentQueryContract::GetCalculatedPropertyField(Utf8StringCR calculatedFieldName, Nullable<Utf8String> const& calculatedPropertyValue, Utf8StringCR prefix) const
+PresentationQueryContractFieldCPtr ContentQueryContract::GetCalculatedPropertyField(Utf8StringCR calculatedFieldName, Utf8StringCR calculatedPropertyValue, Utf8StringCR prefix, PrimitiveType type) const
     {
     PresentationQueryContractFieldPtr field;
-    if (calculatedPropertyValue.IsValid())
+    if (!calculatedPropertyValue.empty())
         {
-        Utf8String value = "'";
-        value += calculatedPropertyValue.Value();
-        value += "'";
+        Utf8String value = "'" + calculatedPropertyValue + "'";
+        Utf8PrintfString fieldType("%d", (int)type);
         field = PresentationQueryContractFunctionField::Create(calculatedFieldName.c_str(), FUNCTION_NAME_EvaluateECExpression,
-        CreateFieldsList("ECClassId", "ECInstanceId", value), true);
+        CreateFieldsList("ECClassId", "ECInstanceId", value, fieldType));
         } 
     else 
         {
@@ -309,7 +308,7 @@ bool ContentQueryContract::CreateContractFields(bvector<PresentationQueryContrac
 
             if (nullptr == descriptorField->AsCalculatedPropertyField()->GetClass() || selectClass->Is(descriptorField->AsCalculatedPropertyField()->GetClass()))
                 {
-                contractField = GetCalculatedPropertyField(descriptorField->GetUniqueName(), descriptorField->AsCalculatedPropertyField()->GetValueExpression(), prefix);
+                contractField = GetCalculatedPropertyField(descriptorField->GetUniqueName(), descriptorField->AsCalculatedPropertyField()->GetValueExpression(), prefix, descriptorField->AsCalculatedPropertyField()->GetType());
                 didCreateNonNullField = true;
                 }
             else

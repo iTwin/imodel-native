@@ -24998,7 +24998,7 @@ TEST_F(SchemaSyncTestFixture, OverflowedStructClass_Simple)
             }
     );
 
-    const auto SCHEMA1_HASH_ECDB_SCHEMA = "f0302f6e61eb9a203726835757419db1e0ace30646e380ea858b1b83b18dc379";
+    const auto SCHEMA1_HASH_ECDB_SCHEMA = "021d8b1b7b0fa9bd214e2c7b2845f377966aad39fbc58cc6dd8ed2de8234ba52";
     const auto SCHEMA1_HASH_ECDB_MAP = "dda7c3a60923cb4f4f40e4251df34d47a716f65e88cef94a2be0511b39d4e527";
     const auto SCHEMA1_HASH_SQLITE_SCHEMA = "84bda55de37b3c29de3a3bc49fffb942f5b4a688b58e5eaa947b90bd7fa65325";
     Test(
@@ -25006,7 +25006,7 @@ TEST_F(SchemaSyncTestFixture, OverflowedStructClass_Simple)
         [&]()
             {
             auto schema = SchemaItem(
-                R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+                R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Element">
                         <ECCustomAttributes>

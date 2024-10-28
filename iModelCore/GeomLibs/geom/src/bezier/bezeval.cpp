@@ -1877,10 +1877,15 @@ int         numComponentB
     if (orderAB > MAX_BEZIER_ORDER)
         return false;
 
-    static int sNum1 = 0;
-    static int sNum2 = 0;
-    static int sNum3 = 0;
-    static int sNumX = 0;
+    int sNum1 = 0;
+    int sNum2 = 0;
+    int sNum3 = 0;
+    int sNumX = 0;
+    UNUSED_VARIABLE(sNum1);
+    UNUSED_VARIABLE(sNum2);
+    UNUSED_VARIABLE(sNum3);
+    UNUSED_VARIABLE(sNumX);
+
     if (degreeAB == 1)
         sNum1++;
     else if (degreeAB == 2)
