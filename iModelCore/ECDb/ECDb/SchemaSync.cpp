@@ -4,27 +4,9 @@
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
-#define TABLE_SQLSCHEMA "sync_SqlSchema"
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-/*
-SQL to reconstruct index from ec_tables
-
-
-SELECT idx.id, idx.Name name, tb.Name tbl_name, 'index' type,
-       FORMAT ('CREATE %s INDEX %s ON %s (%s)',
-              IIF ([idx].[IsUnique], 'UNIQUE', ''),
-              [idx].[Name],
-              [tb].[Name],
-              (SELECT GROUP_CONCAT ([col].[Name], ',')
-                      FROM   [ec_IndexColumn] [ic]
-                      JOIN [ec_Column] [col] ON [col].[Id] = [ic].[ColumnId]
-                      AND [ic].[IndexId] = [idx].[Id]
-                      ORDER  BY [ic].[Ordinal])) sql
-FROM   [ec_index] [idx]
-       JOIN [ec_table] [tb] ON [tb].[Id] = [idx].[TableId];
-*/
 
 //=======================================================================================
 //     JsonNames
@@ -35,9 +17,12 @@ FROM   [ec_index] [idx]
 struct JsonNames {
     constexpr static char SyncId[] = "id";
     constexpr static char SyncDataVer[] = "dataVer";
-    constexpr static char JNamespace[] = "ec_Db";
+    constexpr static char JNamespaceEC[] = "ec_Db";
+    constexpr static char JNamespaceBE[] = "be_Db";
+    constexpr static char JNamespaceDGN[] = "dgn_Db";
     constexpr static char JSyncDbInfo[] = "syncDbInfo";
     constexpr static char JLocalDbInfo[] = "localDbInfo";
+    constexpr static char JSchemaVersion[] = "SchemaVersion";
 };
 
 //SchemaSyncHelper==============================================================
@@ -60,11 +45,11 @@ ProfileVersion SchemaSyncHelper::QueryProfileVersion(SchemaSync::SyncDbUri syncD
 //+---------------+---------------+---------------+---------------+---------------+------
 PropertySpec SchemaSyncHelper::GetPropertySpec(ProfileKind kind) {
     if (kind == ProfileKind::BE){
-        return PropertySpec("SchemaVersion", "be_Db");
+        return PropertySpec(JsonNames::JSchemaVersion, JsonNames::JNamespaceBE);
     } else if (kind == ProfileKind::EC){
-        return PropertySpec("SchemaVersion", "ec_Db");
+        return PropertySpec(JsonNames::JSchemaVersion, JsonNames::JNamespaceEC);
     } else if (kind == ProfileKind::DGN){
-        return PropertySpec("SchemaVersion", "dgn_Db");
+        return PropertySpec(JsonNames::JSchemaVersion, JsonNames::JNamespaceDGN);
     }
     BeAssert(false && "unrecognized value");
     return PropertySpec("", "");
@@ -100,10 +85,24 @@ DbResult SchemaSyncHelper::SaveProfileVersion(SchemaSync::SyncDbUri syncDbUri, P
     if (rc != BE_SQLITE_OK) {
         return rc;
     }
+
+    return SaveProfileVersion(conn, kind, ver);
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SchemaSyncHelper::SaveProfileVersion(DbR conn, ProfileKind kind, ProfileVersion const& ver) {
+    const auto profileSpec = SchemaSyncHelper::GetPropertySpec(kind);
+    if (conn.IsReadonly()) {
+        LOG.error("Failed to save profile version. Database is readonly.");
+        return BE_SQLITE_ERROR;
+    }
     Utf8String profileVersionStr = ver.ToJson();
-    rc = conn.SavePropertyString(profileSpec, profileVersionStr);
-    if (rc != BE_SQLITE_OK)
+    auto rc = conn.SavePropertyString(profileSpec, profileVersionStr);
+    if (rc != BE_SQLITE_OK) {
+        LOG.error("Failed to save profile version.");
         return rc;
+    }
 
     return conn.SaveChanges();
 }
@@ -533,18 +532,11 @@ SchemaSync::Status SchemaSync::Init(SyncDbUri const& syncDbUri, Utf8StringCR con
         return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
     }
 
-    rc = SchemaSyncHelper::CreateMetaTablesFrom(m_conn, sharedDb);
+    rc = SchemaSyncHelper::SyncProfileTablesSchema(m_conn, sharedDb);
     if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
             IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0620,
             "Fail to re-create meta table(s) in schema sync db (%s). %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
-        return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
-    }
-    rc = sharedDb.TryExecuteSql("create table if not exists " TABLE_SQLSCHEMA "(id integer primary key, Type text, Name text, TableName text, Sql text)");
-    if (rc != BE_SQLITE_OK) {
-        m_conn.GetImpl().Issues().ReportV(
-            IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0621,
-            "Fail to create sync table (" TABLE_SQLSCHEMA ") in schema sync db (%s). %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
         return Status::ERROR_FAIL_TO_INIT_SCHEMA_SYNC_DB;
     }
 
@@ -594,7 +586,7 @@ SchemaSync::Status SchemaSync::Init(SyncDbUri const& syncDbUri, Utf8StringCR con
                 "Fail to open schema sync db %s. %s", syncDbUri.GetUri().c_str(), BeSQLiteLib::GetErrorString(rc));
             return Status::ERROR_SCHEMA_SYNC_DB_ALREADY_INITIALIZED;
         }
-        const auto propSpec = PropertySpec(JsonNames::JLocalDbInfo, JsonNames::JNamespace);
+        const auto propSpec = PropertySpec(JsonNames::JLocalDbInfo, JsonNames::JNamespaceEC);
         sharedDb.DeleteProperty(propSpec);
         sharedDb.SaveChanges();
         sharedDb.CloseDb();
@@ -746,7 +738,15 @@ SchemaSync::Status SchemaSync::PullInternal(SyncDbUri const& syncDbUri, TableLis
         return Status::ERROR;
     }
 
-    auto rc = m_conn.AttachDb(syncDbUri.GetDbAttachUri().c_str(), SchemaSyncHelper::ALIAS_SYNC_DB);
+    // patch thisDb with on from container
+    auto rc = SchemaSyncHelper::SyncProfileTablesSchema(m_conn, syncDbUri, false);
+    if (rc != BE_SQLITE_OK) {
+        m_conn.AbandonChanges();
+        m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
+        return Status::ERROR_SYNC_SQL_SCHEMA;
+    }
+
+    rc = m_conn.AttachDb(syncDbUri.GetDbAttachUri().c_str(), SchemaSyncHelper::ALIAS_SYNC_DB);
     if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
             IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0630,
@@ -755,13 +755,6 @@ SchemaSync::Status SchemaSync::PullInternal(SyncDbUri const& syncDbUri, TableLis
             SchemaSyncHelper::ALIAS_SYNC_DB,
             m_conn.GetLastError().c_str());
         return Status::ERROR_UNABLE_TO_ATTACH;
-    }
-
-    rc = PullSqlSchema(m_conn);
-    if (rc != BE_SQLITE_OK) {
-        m_conn.AbandonChanges();
-        m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
-        return Status::ERROR_SYNC_SQL_SCHEMA;
     }
 
     // pull changes ================================================
@@ -795,64 +788,6 @@ SchemaSync::Status SchemaSync::PullInternal(SyncDbUri const& syncDbUri, TableLis
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SchemaSync::PullSqlSchema(ECDbR conn) {
-    /*
-    This a somewhat incomplete implementation to deal with db tables not tracked by EC. It attempt copy sqlite_master from source briefcase
-    into sync db "sync_SqlSchema". On pull it will attempt to create tables indexes triggers etc that are not in target db.
-
-    It will log but not fail on any failures. In future we should have a way to generate patch sql
-    e.g. ALTER TABLE ADD COLUMN etc.to precisely patch untracked meta tables.
-    */
-    Utf8String facetsThatDoesNotExitsSql = SqlPrintfString(
-        "SELECT [s].[sql] FROM [%s].[" TABLE_SQLSCHEMA "] [s] WHERE NOT EXISTS (SELECT 1 FROM [%s].[sqlite_master] m WHERE [m].[type]=[s].[type] AND [m].[name]=[s].[name]) ORDER BY [s].[id]",
-        SchemaSyncHelper::ALIAS_SYNC_DB,
-        SchemaSyncHelper::ALIAS_MAIN_DB
-    ).GetUtf8CP();
-
-    Statement stmt;
-    auto rc = stmt.Prepare(conn, facetsThatDoesNotExitsSql.c_str());
-    if (rc != BE_SQLITE_OK) {
-        LOG.errorv("PullSqlSchema() unable to prepare statement (%s): %s", facetsThatDoesNotExitsSql.c_str(), conn.GetLastError().c_str());
-        return rc;
-    }
-
-    while ((rc=stmt.Step()) == BE_SQLITE_ROW) {
-        auto sql = stmt.GetValueText(0);
-        const auto rcx = conn.GetImpl().ExecuteDDL(sql);
-        if (rcx != BE_SQLITE_OK) {
-            LOG.infov("PullSqlSchema() fail to execute ddl (%s): %s", sql, conn.GetLastError().c_str());
-        }
-    }
-
-    return rc == BE_SQLITE_DONE ? BE_SQLITE_OK : rc;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-DbResult SchemaSync::PushSqlSchema(ECDbR conn) {
-    Utf8String truncatSql = SqlPrintfString("DELETE FROM [%s].[" TABLE_SQLSCHEMA "]", SchemaSyncHelper::ALIAS_SYNC_DB).GetUtf8CP();
-    auto rc = conn.TryExecuteSql(truncatSql.c_str());
-    if (rc != BE_SQLITE_OK) {
-        LOG.errorv("PushSqlSchema() unable to prepare statement (%s): %s", truncatSql.c_str(), conn.GetLastError().c_str());
-        return rc;
-    }
-    Utf8String bulkInsertSql = SqlPrintfString(
-        "INSERT INTO [%s].[" TABLE_SQLSCHEMA "](Type,Name,TableName,Sql) "
-        "SELECT [type], [name], [tbl_name], [sql] FROM [%s].[sqlite_master] WHERE [name] NOT LIKE 'sqlite%%'",
-        SchemaSyncHelper::ALIAS_SYNC_DB,
-        SchemaSyncHelper::ALIAS_MAIN_DB).GetUtf8CP();
-
-    rc = conn.TryExecuteSql(bulkInsertSql.c_str());
-    if (rc != BE_SQLITE_OK) {
-        LOG.errorv("PushSqlSchema() fail to update sql schema (%s): %s", bulkInsertSql.c_str(), conn.GetLastError().c_str());
-        return rc;
-    }
-    return BE_SQLITE_OK;
-}
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
 SchemaSync::Status SchemaSync::PushInternal(SyncDbUri const& syncDbUri, TableList additionTables, bool isInit) {
     const auto vrc = VerifySyncDb(syncDbUri, false, isInit);
     if  (vrc != Status::OK) {
@@ -869,7 +804,15 @@ SchemaSync::Status SchemaSync::PushInternal(SyncDbUri const& syncDbUri, TableLis
         return Status::ERROR;
     }
 
-    auto rc = m_conn.AttachDb(syncDbUri.GetDbAttachUri().c_str(), SchemaSyncHelper::ALIAS_SYNC_DB);
+    // patch container with thisDb schema changes if any
+    auto rc = SchemaSyncHelper::SyncProfileTablesSchema(m_conn, syncDbUri, true);
+    if (rc != BE_SQLITE_OK) {
+        m_conn.AbandonChanges();
+        m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
+        return Status::ERROR;
+    }
+
+    rc = m_conn.AttachDb(syncDbUri.GetDbAttachUri().c_str(), SchemaSyncHelper::ALIAS_SYNC_DB);
     if (rc != BE_SQLITE_OK) {
         m_conn.GetImpl().Issues().ReportV(
             IssueSeverity::Error, IssueCategory::SchemaSync, IssueType::ECDbIssue, ECDbIssueId::ECDb_0630,
@@ -894,13 +837,6 @@ SchemaSync::Status SchemaSync::PushInternal(SyncDbUri const& syncDbUri, TableLis
 
     tables.insert(tables.end(), additionTables.begin(), additionTables.end());
     rc = SchemaSyncHelper::SyncData(m_conn, tables, fromAlias, toAlias);
-    if (rc != BE_SQLITE_OK) {
-        m_conn.AbandonChanges();
-        m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
-        return Status::ERROR;
-    }
-
-    rc = PushSqlSchema(m_conn);
     if (rc != BE_SQLITE_OK) {
         m_conn.AbandonChanges();
         m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
@@ -955,8 +891,15 @@ SchemaSync::Status SchemaSync::Pull(SyncDbUri const& syncDbUri, SchemaImportToke
         return rc;
     }
 
+    auto sqliteRc = SchemaSyncHelper::UpdateProfileVersion(m_conn, syncDbUri, false);
+    if (sqliteRc != BE_SQLITE_OK) {
+        LOG.error("Failed to update profile version in schema sync db");
+        return Status::ERROR;
+    }
+
     rc = UpdateDbSchema();
     if (rc != Status::OK) {
+        LOG.error("Failed to update schema in schema sync db");
         return rc;
     }
 
@@ -985,7 +928,7 @@ SchemaSync::Status SchemaSync::UpdateDbSchema() {
     SchemaImportContext ctx(m_conn, SchemaManager::SchemaImportOptions(), /* synchronizeSchemas = */true);
     auto& mainDisp = m_conn.Schemas().Main();
     m_conn.ClearECDbCache();
-
+    m_conn.GetImpl().RefreshProfileVersion();
     if (SUCCESS != mainDisp.GetDbSchema().ForceReloadTableAndIndexesFromDisk()) {
         return Status::ERROR;
     }
@@ -1031,14 +974,6 @@ SchemaSync::Status SchemaSync::UpdateDataVersion(SyncDbUri const& syncDbUri) {
     if (rc != Status::OK) {
         return rc;
     }
-
-    const auto shareDbProfileVersion = SchemaSyncHelper::QueryProfileVersion(syncDbUri, SchemaSyncHelper::ProfileKind::EC);
-    const auto currentDbProfileVersion = SchemaSyncHelper::QueryProfileVersion(m_conn, SchemaSyncHelper::ProfileKind::EC);
-    if (currentDbProfileVersion > shareDbProfileVersion){
-        if (BE_SQLITE_OK != SchemaSyncHelper::SaveProfileVersion(syncDbUri, SchemaSyncHelper::ProfileKind::EC, currentDbProfileVersion)){
-            return Status::ERROR;
-        }
-    }
     return Status::OK;
 }
 
@@ -1053,8 +988,15 @@ SchemaSync::Status SchemaSync::Push(SyncDbUri const& syncDbUri) {
     auto rc = PushInternal(syncDbUri, {}, false);
     EndModifiedRowCount();
     if (rc == Status::OK && GetModifiedRowCount() > 0) {
+        DbResult sqliteStatus = SchemaSyncHelper::UpdateProfileVersion(m_conn, syncDbUri, true);
+        if (sqliteStatus != BE_SQLITE_OK) {
+            LOG.error("Failed to update profile version in schema sync db");
+            return Status::ERROR;
+        }
+
         rc = UpdateDataVersion(syncDbUri);
         if (rc != Status::OK) {
+            LOG.error("Failed to update data version in schema sync db");
             return rc;
         }
     }
@@ -1086,7 +1028,9 @@ DbResult SchemaSync::ScanForSchemaChanges(ChangeStream& stream, bool& isECMetaDa
         UNUSED_VARIABLE(indirect);
 
         tableName.AssignOrClear(tableNameP);
-        if (!isECMetaDataChanged && tableName.StartsWithIAscii("ec_") && !tableName.StartsWithIAscii("ec_cache_")) {
+        if (!isECMetaDataChanged
+            && (tableName.StartsWithIAscii("ec_"))
+            && !tableName.StartsWithIAscii("ec_cache_")) {
             isECMetaDataChanged = true;
         }
         if (tableName.EqualsIAscii("be_Prop")) {
@@ -1096,7 +1040,7 @@ DbResult SchemaSync::ScanForSchemaChanges(ChangeStream& stream, bool& isECMetaDa
                 const auto ns = namespaceVal.IsValid() && namespaceVal.GetValueType() == DbValueType::TextVal ? namespaceVal.GetValueText() : nullptr;
                 const auto name = nameVal.IsValid() && nameVal.GetValueType() == DbValueType::TextVal ? nameVal.GetValueText() : nullptr;
                 if (ns && name &&
-                    0 == BeStringUtilities::StricmpAscii(ns, JsonNames::JNamespace) &&
+                    0 == BeStringUtilities::StricmpAscii(ns, JsonNames::JNamespaceEC) &&
                     0 == BeStringUtilities::StricmpAscii(name, JsonNames::JLocalDbInfo)) {
                     isSchemaSyncInfoChanged = true;
                 }
@@ -1130,7 +1074,7 @@ SchemaSync::LocalDbInfo SchemaSync::GetInfo() const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 SchemaSync::Status SchemaSync::SaveSyncDbInfo(DbR syncDb, SyncDbInfo const& info) {
-    const auto propSpec = PropertySpec(JsonNames::JSyncDbInfo, JsonNames::JNamespace);
+    const auto propSpec = PropertySpec(JsonNames::JSyncDbInfo, JsonNames::JNamespaceEC);
     BeJsDocument jsonDoc;
     info.To(BeJsValue(jsonDoc));
     auto rc = syncDb.SavePropertyString(propSpec, jsonDoc.Stringify());
@@ -1144,7 +1088,7 @@ SchemaSync::Status SchemaSync::SaveSyncDbInfo(DbR syncDb, SyncDbInfo const& info
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 SchemaSync::Status SchemaSync::SaveLocalDbInfo(DbR db, LocalDbInfo const& info) {
-    const auto propSpec = PropertySpec(JsonNames::JLocalDbInfo, JsonNames::JNamespace);
+    const auto propSpec = PropertySpec(JsonNames::JLocalDbInfo, JsonNames::JNamespaceEC);
     BeJsDocument jsonDoc;
     info.To(BeJsValue(jsonDoc));
     auto rc = db.SavePropertyString(propSpec, jsonDoc.Stringify());
@@ -1222,7 +1166,7 @@ SchemaSync::SyncDbInfo SchemaSync::SyncDbUri::GetInfo() const{
 //+---------------+---------------+---------------+---------------+---------------+------
 SchemaSync::SyncDbInfo SchemaSync::SyncDbInfo::From(DbCR conn){
     Utf8String strData;
-    const auto propSpec = PropertySpec(JsonNames::JSyncDbInfo, JsonNames::JNamespace);
+    const auto propSpec = PropertySpec(JsonNames::JSyncDbInfo, JsonNames::JNamespaceEC);
     auto rc = conn.QueryProperty(strData, propSpec);
     if (rc != BE_SQLITE_ROW) {
         return SyncDbInfo();
@@ -1288,7 +1232,7 @@ void SchemaSync::LocalDbInfo::To(BeJsValue val) const {
 //+---------------+---------------+---------------+---------------+---------------+------
 SchemaSync::LocalDbInfo SchemaSync::LocalDbInfo::From(DbCR conn){
     Utf8String strData;
-    const auto propSpec = PropertySpec(JsonNames::JLocalDbInfo, JsonNames::JNamespace);
+    const auto propSpec = PropertySpec(JsonNames::JLocalDbInfo, JsonNames::JNamespaceEC);
     auto rc = conn.QueryProperty(strData, propSpec);
     if (rc != BE_SQLITE_ROW) {
         return LocalDbInfo();
@@ -1324,6 +1268,124 @@ SchemaSync::LocalDbInfo SchemaSync::LocalDbInfo::From(BeJsConst val){
     return s_empty;
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SchemaSyncHelper::SyncProfileTablesSchema(DbR thisDb, SchemaSync::SyncDbUri const& syncDbUri, bool thisDbToSyncDb) {
+    Db conn;
+    Db::OpenParams openParams(thisDbToSyncDb ? Db::OpenMode::ReadWrite : Db::OpenMode::Readonly);
+    SchemaSync::ParseQueryParams(openParams, syncDbUri);
+    auto rc = conn.OpenBeSQLiteDb(syncDbUri.GetUri().c_str(), openParams);
+    if (rc != BE_SQLITE_OK) {
+        return rc;
+    }
+    if (thisDbToSyncDb) {
+        return SchemaSyncHelper::SyncProfileTablesSchema(thisDb, conn);
+    }
+    return SchemaSyncHelper::SyncProfileTablesSchema(conn, thisDb);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SchemaSyncHelper::SyncProfileTablesSchema(DbR fromDb, DbR toDb) {
+    std::vector<Utf8String> patches;
+    if (toDb.IsReadonly()) {
+        LOG.error("SyncProfileTablesSchema() rhsDb is readonly");
+        return BE_SQLITE_READONLY;
+    }
+    auto rc = MetaData::SchemaDiff(fromDb, toDb,
+        [](MetaData::TableInfo const& tblInfo) -> bool {
+            return !(tblInfo.schema.EqualsIAscii("main")
+                && (tblInfo.name.StartsWithIAscii("ec_") || tblInfo.name.StartsWithIAscii("dgn_") || tblInfo.name.StartsWithIAscii("be_"))
+                && tblInfo.type == "table");
+        }, patches);
+
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("SyncProfileTablesSchema() fail to get schema diff: %s", toDb.GetLastError().c_str());
+        return rc;
+    }
+
+    for (auto& patch : patches) {
+        rc = toDb.ExecuteSql(patch.c_str());
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("SyncProfileTablesSchema() fail to execute patch (%s): %s", patch.c_str(), toDb.GetLastError().c_str());
+            return rc;
+        }
+    }
+    if (!patches.empty()) {
+        toDb.SaveChanges();
+    }
+    return BE_SQLITE_OK;
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult SchemaSyncHelper::UpdateProfileVersion(DbR conn, SchemaSync::SyncDbUri syncDbUri, bool thisDbToSyncDb) {
+
+    Db sharedDb;
+    Db::OpenParams openParams(thisDbToSyncDb ? Db::OpenMode::ReadWrite : Db::OpenMode::Readonly);
+    SchemaSync::ParseQueryParams(openParams, syncDbUri);
+    auto rc = sharedDb.OpenBeSQLiteDb(syncDbUri.GetUri().c_str(), openParams);
+    if (rc != BE_SQLITE_OK) {
+        return rc;
+    }
+    if (thisDbToSyncDb) {
+        const auto containerECVer = SchemaSyncHelper::QueryProfileVersion(sharedDb, SchemaSyncHelper::ProfileKind::EC);
+        const auto thisECVer = SchemaSyncHelper::QueryProfileVersion(conn, SchemaSyncHelper::ProfileKind::EC);
+        if (thisECVer > containerECVer){
+            if (BE_SQLITE_OK != SchemaSyncHelper::SaveProfileVersion(sharedDb, SchemaSyncHelper::ProfileKind::EC, thisECVer)){
+                return BE_SQLITE_ERROR;
+            }
+        }
+
+        const auto containerBEVer = SchemaSyncHelper::QueryProfileVersion(sharedDb, SchemaSyncHelper::ProfileKind::BE);
+        const auto thisBEVer = SchemaSyncHelper::QueryProfileVersion(conn, SchemaSyncHelper::ProfileKind::BE);
+        if (thisBEVer > containerBEVer){
+            if (BE_SQLITE_OK != SchemaSyncHelper::SaveProfileVersion(sharedDb, SchemaSyncHelper::ProfileKind::BE, thisBEVer)){
+                return BE_SQLITE_ERROR;
+            }
+        }
+
+        const auto containerDGNVer = SchemaSyncHelper::QueryProfileVersion(sharedDb, SchemaSyncHelper::ProfileKind::DGN);
+        const auto thisDGNVer = SchemaSyncHelper::QueryProfileVersion(conn, SchemaSyncHelper::ProfileKind::DGN);
+        if (thisDGNVer > containerDGNVer){
+            if (BE_SQLITE_OK != SchemaSyncHelper::SaveProfileVersion(sharedDb, SchemaSyncHelper::ProfileKind::DGN, thisDGNVer)){
+                return BE_SQLITE_ERROR;
+            }
+        }
+    } else {
+        if (conn.IsReadonly()) {
+            LOG.error("UpdateProfileVersion() primary connection is readonly");
+            return BE_SQLITE_READONLY;
+        }
+        const auto containerECVer = SchemaSyncHelper::QueryProfileVersion(sharedDb, SchemaSyncHelper::ProfileKind::EC);
+        const auto thisECVer = SchemaSyncHelper::QueryProfileVersion(conn, SchemaSyncHelper::ProfileKind::EC);
+        if (thisECVer < containerECVer){
+            if (BE_SQLITE_OK != SchemaSyncHelper::SaveProfileVersion(conn, SchemaSyncHelper::ProfileKind::EC, containerECVer)){
+                return BE_SQLITE_ERROR;
+            }
+        }
+
+        const auto containerBEVer = SchemaSyncHelper::QueryProfileVersion(sharedDb, SchemaSyncHelper::ProfileKind::BE);
+        const auto thisBEVer = SchemaSyncHelper::QueryProfileVersion(conn, SchemaSyncHelper::ProfileKind::BE);
+        if (thisBEVer < containerBEVer){
+            if (BE_SQLITE_OK != SchemaSyncHelper::SaveProfileVersion(conn, SchemaSyncHelper::ProfileKind::BE, containerBEVer)){
+                return BE_SQLITE_ERROR;
+            }
+        }
+
+        const auto containerDGNVer = SchemaSyncHelper::QueryProfileVersion(sharedDb, SchemaSyncHelper::ProfileKind::DGN);
+        const auto thisDGNVer = SchemaSyncHelper::QueryProfileVersion(conn, SchemaSyncHelper::ProfileKind::DGN);
+        if (thisDGNVer < containerDGNVer){
+            if (BE_SQLITE_OK != SchemaSyncHelper::SaveProfileVersion(conn, SchemaSyncHelper::ProfileKind::DGN, containerDGNVer)){
+                return BE_SQLITE_ERROR;
+            }
+        }
+    }
+    return BE_SQLITE_OK;
+}
+
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
-
-
