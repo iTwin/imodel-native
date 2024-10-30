@@ -891,7 +891,7 @@ SchemaSync::Status SchemaSync::Pull(SyncDbUri const& syncDbUri, SchemaImportToke
         return rc;
     }
 
-    auto sqliteRc = SchemaSyncHelper::UpdateProfileVersion(m_conn, syncDbUri, false);
+    auto sqliteRc = SchemaSyncHelper::UpdateProfileVersion(m_conn, effectiveSyncDbUri, false);
     if (sqliteRc != BE_SQLITE_OK) {
         LOG.error("Failed to update profile version in schema sync db");
         return Status::ERROR;
@@ -904,7 +904,7 @@ SchemaSync::Status SchemaSync::Pull(SyncDbUri const& syncDbUri, SchemaImportToke
     }
 
     auto localDb = GetInfo();
-    auto syncDb = SyncDbInfo::From(syncDbUri);
+    auto syncDb = SyncDbInfo::From(effectiveSyncDbUri);
     localDb.m_dataVer = syncDb.GetDataVersion();
     rc = SaveLocalDbInfo(m_conn, localDb);
     if (rc != Status::OK) {
@@ -984,17 +984,18 @@ SchemaSync::Status SchemaSync::Push(SyncDbUri const& syncDbUri) {
     ECDB_PERF_LOG_SCOPE("Pushing tp schema sync db");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaSync::Push");
     BeMutexHolder holder(m_conn.GetImpl().GetMutex());
+    const auto effectiveSyncDbUri = syncDbUri.IsEmpty() ? GetDefaultSyncDbUri() : syncDbUri;
     BeginModifiedRowCount();
-    auto rc = PushInternal(syncDbUri, {}, false);
+    auto rc = PushInternal(effectiveSyncDbUri, {}, false);
     EndModifiedRowCount();
     if (rc == Status::OK && GetModifiedRowCount() > 0) {
-        DbResult sqliteStatus = SchemaSyncHelper::UpdateProfileVersion(m_conn, syncDbUri, true);
+        DbResult sqliteStatus = SchemaSyncHelper::UpdateProfileVersion(m_conn, effectiveSyncDbUri, true);
         if (sqliteStatus != BE_SQLITE_OK) {
             LOG.error("Failed to update profile version in schema sync db");
             return Status::ERROR;
         }
 
-        rc = UpdateDataVersion(syncDbUri);
+        rc = UpdateDataVersion(effectiveSyncDbUri);
         if (rc != Status::OK) {
             LOG.error("Failed to update data version in schema sync db");
             return rc;
