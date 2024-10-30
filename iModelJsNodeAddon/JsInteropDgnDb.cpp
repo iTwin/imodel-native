@@ -46,7 +46,7 @@ BE_JSON_NAME(geographicCoordinateSystem)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-[[noreturn]] void JsInterop::throwDgnDbStatus(DgnDbStatus stat) {
+[[noreturn]] void JsInterop::throwDgnDbStatus(DgnDbStatus stat, DbResult rc) {
     Utf8String msg;
     switch (stat) {
         case DgnDbStatus::BadArg:         msg = "invalid arguments"; break;
@@ -61,7 +61,7 @@ BE_JSON_NAME(geographicCoordinateSystem)
         case DgnDbStatus::NotFound:       msg = "not found"; break;
         case DgnDbStatus::ReadOnly:       msg = "readonly"; break;
         case DgnDbStatus::ReadOnlyDomain: msg = "readonly domain"; break;
-        case DgnDbStatus::SQLiteError:    msg = "sql error"; break;
+        case DgnDbStatus::SQLiteError:    msg = BeSQLiteLib::GetErrorName(rc); break;
         case DgnDbStatus::WriteError:     msg = "write error"; break;
         case DgnDbStatus::WrongClass:     msg = "wrong class"; break;
         case DgnDbStatus::WrongDgnDb:     msg = "wrong iModel"; break;
@@ -871,7 +871,7 @@ Napi::String JsInterop::InsertLinkTableRelationship(DgnDbR dgndb, Napi::Object o
     BeSQLite::EC::ECInstanceKey relKey;
     auto rc = dgndb.InsertLinkTableRelationship(relKey, *relClass, sourceId, targetId, props.get()); // nullptr is okay if there are no props
     if (BE_SQLITE_OK != rc)
-        throwSqlError();
+        throwSqlError(rc);
 
     return Napi::String::New(Env(), relKey.GetInstanceId().ToHexStr());
     }
