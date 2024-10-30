@@ -61,7 +61,7 @@ BE_JSON_NAME(geographicCoordinateSystem)
         case DgnDbStatus::NotFound:       msg = "not found"; break;
         case DgnDbStatus::ReadOnly:       msg = "readonly"; break;
         case DgnDbStatus::ReadOnlyDomain: msg = "readonly domain"; break;
-        case DgnDbStatus::SQLiteError:    msg = BeSQLiteLib::GetErrorName(rc); break;
+        case DgnDbStatus::SQLiteError:    msg = BeSQLiteLib::GetLogError(rc); break;
         case DgnDbStatus::WriteError:     msg = "write error"; break;
         case DgnDbStatus::WrongClass:     msg = "wrong class"; break;
         case DgnDbStatus::WrongDgnDb:     msg = "wrong iModel"; break;
