@@ -1308,7 +1308,7 @@ DbResult SchemaSyncHelper::SyncProfileTablesSchema(DbR fromDb, DbR toDb) {
     }
 
     for (auto& patch : patches) {
-        rc = toDb.ExecuteSql(patch.c_str());
+        rc = toDb.ExecuteDdl(patch.c_str());
         if (rc != BE_SQLITE_OK) {
             LOG.errorv("SyncProfileTablesSchema() fail to execute patch (%s): %s", patch.c_str(), toDb.GetLastError().c_str());
             return rc;
