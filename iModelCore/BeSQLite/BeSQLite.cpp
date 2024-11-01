@@ -827,7 +827,7 @@ DbResult Db::FreeMemory() const { return (DbResult)sqlite3_db_release_memory(m_d
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static std::vector<MetaData::TableInfo> MetaData::QueryTableNames(DbCR& db, std::optional<Utf8String> dbName, DbResult& rc) {
+std::vector<MetaData::TableInfo> MetaData::QueryTableNames(DbCR& db, std::optional<Utf8String> dbName, DbResult& rc) {
     std::vector<MetaData::TableInfo> tableNames;
     Statement stmt;
     Utf8String sql = "PRAGMA [table_list]";
@@ -856,7 +856,7 @@ static std::vector<MetaData::TableInfo> MetaData::QueryTableNames(DbCR& db, std:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static std::vector<MetaData::TableInfo> MetaData::QueryTableNames(DbCR& db, std::optional<Utf8String> dbName){
+std::vector<MetaData::TableInfo> MetaData::QueryTableNames(DbCR& db, std::optional<Utf8String> dbName){
     DbResult rc;
     return QueryTableNames(db, dbName, rc);
 }
@@ -864,7 +864,7 @@ static std::vector<MetaData::TableInfo> MetaData::QueryTableNames(DbCR& db, std:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DbResult MetaData::QueryTable(DbCR& db, Utf8StringCR dbName, Utf8StringCR tableName, CompleteTableInfo& tableInfo) {
+DbResult MetaData::QueryTable(DbCR& db, Utf8StringCR dbName, Utf8StringCR tableName, CompleteTableInfo& tableInfo) {
     MetaData::TableInfo qualifiedTableName;
     qualifiedTableName.schema = dbName;
     qualifiedTableName.name = tableName;
@@ -874,7 +874,7 @@ static DbResult MetaData::QueryTable(DbCR& db, Utf8StringCR dbName, Utf8StringCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DbResult MetaData::QueryTable(DbCR& db, MetaData::TableInfo const& qualifiedTableName, CompleteTableInfo& tableInfo) {
+DbResult MetaData::QueryTable(DbCR& db, MetaData::TableInfo const& qualifiedTableName, CompleteTableInfo& tableInfo) {
     tableInfo.name.clear();
     tableInfo.schema.clear();
     tableInfo.type.clear();
@@ -1043,7 +1043,7 @@ static DbResult MetaData::QueryTable(DbCR& db, MetaData::TableInfo const& qualif
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DbResult MetaData::SchemaDiff(DbCR lhsDb, DbCR rhsDb, std::vector<Utf8String>& patches, bool allowDrop) {
+DbResult MetaData::SchemaDiff(DbCR lhsDb, DbCR rhsDb, std::vector<Utf8String>& patches, bool allowDrop) {
     auto defaultFilter = [](auto const& table) {
         return table.name.StartsWith("sqlite_") || table.type != "table";
     };
@@ -1053,7 +1053,7 @@ static DbResult MetaData::SchemaDiff(DbCR lhsDb, DbCR rhsDb, std::vector<Utf8Str
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DbResult MetaData::SchemaDiff(DbCR lhsDb, DbCR rhsDb, std::function<bool(MetaData::TableInfo const&)> excludeFilter, std::vector<Utf8String>& patches, bool allowDrop) {
+DbResult MetaData::SchemaDiff(DbCR lhsDb, DbCR rhsDb, std::function<bool(MetaData::TableInfo const&)> excludeFilter, std::vector<Utf8String>& patches, bool allowDrop) {
     DbResult rc;
     auto lhsTables = MetaData::QueryTableNames(lhsDb, "main", rc);
     if (rc != BE_SQLITE_OK)
@@ -1252,7 +1252,7 @@ static DbResult MetaData::SchemaDiff(DbCR lhsDb, DbCR rhsDb, std::function<bool(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void MetaData::ToJson(CompleteTableInfo const& tableInfo, BeJsValue jsTableInfo){
+void MetaData::ToJson(CompleteTableInfo const& tableInfo, BeJsValue jsTableInfo){
     jsTableInfo.SetEmptyObject();
     jsTableInfo["name"] = tableInfo.name;
     jsTableInfo["schema"] = tableInfo.schema;
