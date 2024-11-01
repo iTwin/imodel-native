@@ -76,8 +76,6 @@ ProfileVersion SchemaSyncHelper::QueryProfileVersion(DbR db, ProfileKind kind) {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult SchemaSyncHelper::SaveProfileVersion(SchemaSync::SyncDbUri syncDbUri, ProfileKind kind, ProfileVersion const& ver) {
-    const auto profileSpec = SchemaSyncHelper::GetPropertySpec(kind);
-
     Db conn;
     Db::OpenParams openParams(Db::OpenMode::ReadWrite);
     SchemaSync::ParseQueryParams(openParams, syncDbUri);
