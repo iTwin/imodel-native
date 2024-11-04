@@ -832,7 +832,7 @@ std::vector<MetaData::TableInfo> MetaData::QueryTableNames(DbCR& db, std::option
     Statement stmt;
     Utf8String sql = "PRAGMA [table_list]";
     if (dbName.has_value()) {
-        sql = SqlPrintfString("PRAGMA [%s].[table_list]", dbName.value()).GetUtf8CP()   ;
+        sql = SqlPrintfString("PRAGMA [%s].[table_list]", dbName.value().c_str()).GetUtf8CP()   ;
     }
 
     rc = stmt.Prepare(db, sql.c_str());
