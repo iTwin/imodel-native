@@ -3270,20 +3270,45 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
     rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
+
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
+    RapidJsonValueCR jsonDisplayValues = jsonDoc["DisplayValues"];
 
     EXPECT_STREQ(BeInt64Id::FromString(instance->GetInstanceId().c_str()).ToHexStr().c_str(), jsonValues["CalculatedProperty_0"].GetString());
+    EXPECT_STREQ(BeInt64Id::FromString(instance->GetInstanceId().c_str()).ToHexStr().c_str(), jsonDisplayValues["CalculatedProperty_0"].GetString());
+    
     EXPECT_STREQ(BeInt64Id(classA->GetId()).ToHexStr().c_str(), jsonValues["CalculatedProperty_1"].GetString());
+    EXPECT_STREQ(BeInt64Id(classA->GetId()).ToHexStr().c_str(), jsonDisplayValues["CalculatedProperty_1"].GetString());
+
     EXPECT_STREQ("Value", jsonValues["CalculatedProperty_2"].GetString());
+    EXPECT_STREQ("Value", jsonDisplayValues["CalculatedProperty_2"].GetString());
+
     EXPECT_STREQ("3", jsonValues["CalculatedProperty_3"].GetString());
+    EXPECT_STREQ("3", jsonDisplayValues["CalculatedProperty_3"].GetString());
+
     EXPECT_STREQ("Test", jsonValues["CalculatedProperty_4"].GetString());
+    EXPECT_STREQ("Test", jsonDisplayValues["CalculatedProperty_4"].GetString());
+
     EXPECT_FALSE(jsonValues.HasMember("CalculatedProperty_5"));
+    EXPECT_FALSE(jsonDisplayValues.HasMember("CalculatedProperty_5"));
+
     EXPECT_EQ(6, jsonValues["CalculatedProperty_6"].GetInt());
+    EXPECT_STREQ("6", jsonDisplayValues["CalculatedProperty_6"].GetString());
+
     EXPECT_FALSE(jsonValues["CalculatedProperty_7"].GetBool());
+    EXPECT_STREQ("False", jsonDisplayValues["CalculatedProperty_7"].GetString());
+
     EXPECT_EQ(0.25, jsonValues["CalculatedProperty_8"].GetDouble());
+    EXPECT_STREQ("0.25", jsonDisplayValues["CalculatedProperty_8"].GetString());
+
     EXPECT_STREQ("False", jsonValues["CalculatedProperty_9"].GetString());
-    EXPECT_STREQ("2017-05-30T00:00:00.000", jsonValues["CalculatedProperty_10"].GetString());
+    EXPECT_STREQ("False", jsonDisplayValues["CalculatedProperty_9"].GetString());
+
+    EXPECT_STREQ("2017-05-30T00:00:00.000Z", jsonValues["CalculatedProperty_10"].GetString());
+    EXPECT_STREQ("2017-05-30T00:00:00.000Z", jsonDisplayValues["CalculatedProperty_10"].GetString());
+
     EXPECT_EQ(123456789876, jsonValues["CalculatedProperty_11"].GetInt64());
+    EXPECT_STREQ("123456789876", jsonDisplayValues["CalculatedProperty_11"].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3518,7 +3543,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentSerialization)
             }
         else if (name.Equals(FIELD_NAME(classA, "DateProperty")))
             {
-            EXPECT_STREQ("2017-05-30T00:00:00.000", value[name.c_str()].GetString());
+            EXPECT_STREQ("2017-05-30T00:00:00.000Z", value[name.c_str()].GetString());
             EXPECT_STREQ("Primitive", (*field)["Type"]["ValueFormat"].GetString());
             EXPECT_STREQ("dateTime", (*field)["Type"]["TypeName"].GetString());
             }

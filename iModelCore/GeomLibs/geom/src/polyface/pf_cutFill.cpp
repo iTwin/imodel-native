@@ -246,6 +246,7 @@ void vu_deleteNullFaceParityPairs (VuSetP graph, VuMask exteriorMask, bool delet
 void vu_checkConsistentFaceMask (VuSetP graph, VuMask mask)
     {
     int numError = 0;
+    UNUSED_VARIABLE(numError);
     VuMask visitMask = vu_grabMask (graph);
     vu_clearMaskInSet (graph, visitMask);
     assert (visitMask != 0);
@@ -355,6 +356,7 @@ public:
 void PushGraph ()
     {
     static int numNonNull = 0;
+    UNUSED_VARIABLE(numNonNull);
     if (NULL != vu_firstNodeInGraph (m_pGraph))
         numNonNull++;
     vu_stackPush (m_pGraph);
@@ -363,6 +365,7 @@ void PushGraph ()
 void PopGraph ()
     {
     static int numNonNull = 0;
+    UNUSED_VARIABLE(numNonNull);
     if (NULL != vu_firstNodeInGraph (m_pGraph))
         numNonNull++;
     vu_stackPop (m_pGraph);
@@ -1159,6 +1162,8 @@ void CollectClip (TaggedPolygonVectorR outputPolygons, bool subtractB, bool inte
     m_clipper.ActivateCollection (s_indexFinal);
     m_clipper.SetupForLoopOverInteriorFaces ();
     size_t numPolygon = 0;
+    UNUSED_VARIABLE(numPolygon);
+    
     for (;m_clipper.GetFace (xyz, false);)
         {
         double area = bsiGeom_getXYPolygonArea (&xyz[0], (int)xyz.size ());

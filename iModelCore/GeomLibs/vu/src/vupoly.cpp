@@ -202,7 +202,6 @@ bool                addVerticesAtCrossings
     VuMask      numberedNodeMask = graphP ? vu_grabMask (graphP) : 0;
     VuP         faceP, originalNodeP;
     StatusInt status = ERROR;
-    int       i;
     int       originalIndex;
     int       outputIndex;
     int     separator = signedOneBasedIndices ? 0 : -1;
@@ -268,7 +267,7 @@ bool                addVerticesAtCrossings
 
         vu_arrayOpen (faceArrayP);
         status = SUCCESS;
-        for (i = 0; SUCCESS == status && vu_arrayRead (faceArrayP, &faceP); i++)
+        while (SUCCESS == status && vu_arrayRead (faceArrayP, &faceP))
             {
             // We triangulated.  So of course there are 3 nodes per face.
             // Really?  If the input polygon retraces itself, there will be
@@ -341,7 +340,7 @@ bool                addVerticesAtCrossings
             vu_collectExteriorFaceLoops (faceArrayP, graphP);
             vu_arrayOpen (faceArrayP);
             status = SUCCESS;
-            for (i = 0; SUCCESS == status && vu_arrayRead (faceArrayP, &faceP); i++)
+            while (SUCCESS == status && vu_arrayRead (faceArrayP, &faceP))
                 {
                 VuP lowIndexP = faceP;
                 int lowIndex = vu_getUserDataPAsInt (faceP);
@@ -1097,7 +1096,6 @@ DPoint3d            *meshOrigin
     VuArrayP    faceArrayP = vu_grabArray (graphP);
     VuP         faceP;
     StatusInt status = SUCCESS;
-    int       i;
     int     separator = 0;
     int    maxPerFace = 3;
     static double s_shortEdgeToleranceFactor = 1.0e-8;
@@ -1272,7 +1270,7 @@ DPoint3d            *meshOrigin
     vu_collectInteriorFaceLoops (faceArrayP, graphP);
     VuMask visibleMask = (NULL == pVisible ? VU_BOUNDARY_EDGE : secondaryMask);
     vu_arrayOpen (faceArrayP);
-    for (i = 0; vu_arrayRead (faceArrayP, &faceP); i++)
+    while (vu_arrayRead (faceArrayP, &faceP))
         {
         // We triangulated.  So of course there are 3 nodes per face.
         // Really?  If the input polygon retraces itself, there will be

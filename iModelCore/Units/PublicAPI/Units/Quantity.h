@@ -21,17 +21,24 @@ private:
     unsigned int m_tolerance;
     double m_magnitude;
     UnitCP m_unit;
+    UnitsProblemCode m_problemCode;
 
     BentleyStatus ConvertTo(UnitCP unit, double& value) const;
     UnitsProblemCode GetConvertedMagnitude(double& value, UnitCP unit) const;
 public:
-    Quantity() :m_tolerance(1000), m_magnitude(0.0), m_unit(nullptr) {}   // Invalid - empty - quantity
-    Quantity(double magnitude, UnitCR unit) : m_unit(&unit), m_magnitude(magnitude), m_tolerance(1000) {}
+    Quantity() : Quantity(UnitsProblemCode::UnspecifiedProblem) {}   // Invalid - empty - quantity
+    Quantity(UnitsProblemCode problemCode) : m_tolerance(1000), m_magnitude(0.0), m_unit(nullptr), m_problemCode(problemCode) {
+        // corner case. This constructor is used to create an invalid quantity. So the value cannot be "NoProblem"
+        if(problemCode == UnitsProblemCode::NoProblem) 
+            m_problemCode = UnitsProblemCode::UnspecifiedProblem;
+    };
+    Quantity(double magnitude, UnitCR unit) : m_unit(&unit), m_magnitude(magnitude), m_tolerance(1000), m_problemCode(UnitsProblemCode::NoProblem) {}
     UNITS_EXPORT Quantity(QuantityCR rhs);
 
     bool IsNullQuantity() const {return (0.0 == m_magnitude && nullptr == m_unit);}
 
-    bool IsValid() {return (nullptr != m_unit);}
+    bool IsValid() {return (nullptr != m_unit && m_problemCode == UnitsProblemCode::NoProblem);}
+    UnitsProblemCode GetProblemCode() const {return m_problemCode;}
     double GetMagnitude() const {return m_magnitude;}
     double Scale(double scale) {m_magnitude *= scale; return m_magnitude;}
     UnitCP GetUnit() const {return m_unit;}

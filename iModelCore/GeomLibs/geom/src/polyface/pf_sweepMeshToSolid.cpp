@@ -253,6 +253,10 @@ bool triangulateSides
     size_t numSimpleBoundary = 0;
     size_t numMatedPair = 0;
     size_t numUnMatedCoedge = 0;
+    UNUSED_VARIABLE(numSimpleBoundary);
+    UNUSED_VARIABLE(numMatedPair);
+    UNUSED_VARIABLE(numUnMatedCoedge);
+
     for (size_t i0 = 0, i1 = 0; i0 < numEdges; i0 = i1)
         {
         size_t numUndirectedMatch = 1;
