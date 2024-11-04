@@ -4426,9 +4426,9 @@ ZipErrors SnappyFromMemory::_Read(Byte* data, uint32_t bufSize, uint32_t& bytesA
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SnappyToBlob::SnappyToBlob()
+SnappyToBlob::SnappyToBlob(int bufsize)
     {
-    enum {bufsize = 32*1024};
+    bufsize = std::max(bufsize, 32*1024);
     m_rawBuf = (Byte*) malloc(bufsize);
     m_rawSize = bufsize;
     Init();

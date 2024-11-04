@@ -62,7 +62,7 @@
             "program": "${env:OutRoot}Winx64/Product/BeSQLite-Gtest/BeSQLiteTest.exe",
             "args": [
                 "--gtest_break_on_failure",
-                "--gtest_filter=BeSQLiteDbTests.MaxBlobSize"
+                "--gtest_filter=BeSQliteTestFixture.SnappyTest"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

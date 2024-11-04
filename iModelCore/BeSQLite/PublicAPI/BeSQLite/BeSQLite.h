@@ -3353,7 +3353,7 @@ private:
     uint32_t m_unsnappedSize;
 
 public:
-    BE_SQLITE_EXPORT SnappyToBlob();
+    BE_SQLITE_EXPORT SnappyToBlob(int bufsz=32*1024);
     BE_SQLITE_EXPORT ~SnappyToBlob();
     uint32_t GetCurrChunk() {return m_currChunk;}
     Byte*  GetChunkData(int i) {return (Byte*) m_chunks[i]->m_data;}

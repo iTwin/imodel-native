@@ -7,6 +7,7 @@
 #include <Bentley/BeDirectoryIterator.h>
 #include <BeSQLite/Profiler.h>
 #include <BeSQLite/VirtualTab.h>
+#include <stdlib.h>
 using namespace MemorySize;
 
 #define MEM_THRESHOLD (100 * MEG)
@@ -1206,6 +1207,63 @@ TEST_F(BeSQliteTestFixture, IntegrityCheckShouldRunOnReadOnlyFileWithFTS5) {
     ASSERT_EQ(BE_SQLITE_DONE, stmt->Step());
     stmt = nullptr;
     db.CloseDb();
+}
+
+TEST_F(BeSQliteTestFixture, SnappyTest) {
+    auto createBuffer = [](int size) {
+        std::vector<uint8_t> buffer(size);
+        for (int i = 0; i < size; i++) {
+            buffer[i] = (uint8_t)(rand() % std::numeric_limits<uint8_t>::max());
+        }
+        return buffer;
+    };
+    auto compareBuffer = [](const std::vector<uint8_t>& buffer1, const std::vector<uint8_t>& buffer2) {
+        if (buffer1.size() != buffer2.size()) {
+            return false;
+        }
+        for (size_t i = 0; i < buffer1.size(); i++) {
+            if (buffer1[i] != buffer2[i]) {
+                return false;
+            }
+        }
+        return true;
+    };
+
+    Byte uncompressBuffer[BeSQLite::SnappyReader::SNAPPY_UNCOMPRESSED_BUFFER_SIZE];
+
+    auto db = Create("first.db");
+    ASSERT_EQ(BE_SQLITE_OK, db->ExecuteSql("CREATE TABLE [test]([id] INTEGER PRIMARY KEY, [bl] BLOB);"));
+    db->SaveChanges();
+
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*db, "INSERT INTO [test] ([id],[bl]) VALUES(?,?)"));
+    BeTest::SetFailOnAssert(false);
+    uint32_t sz =1234567;
+    int id = 1;
+    std::vector<uint8_t> buffer = createBuffer(sz);
+    std::vector<uint8_t> buffer2(sz);
+    SnappyToBlob snappyToBlob(1024*1024*1);
+    snappyToBlob.Init();
+    snappyToBlob.Write(buffer.data(), static_cast<uint32_t>(buffer.size()));
+
+    stmt.BindInt(1, 1);
+    stmt.BindZeroBlob(2, snappyToBlob.GetCompressedSize());
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ASSERT_EQ(BE_SQLITE_OK, snappyToBlob.SaveToRow(*db, "test", "bl", id));
+    db->SaveChanges();
+
+    Statement stmt2;
+    ASSERT_EQ(BE_SQLITE_OK, stmt2.Prepare(*db, "SELECT [bl] FROM [test] WHERE [id]=?"));
+    stmt2.BindInt(1, 1);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt2.Step());
+    SnappyFromMemory snappyFrom(uncompressBuffer, sizeof(uncompressBuffer));
+    snappyFrom.Init(const_cast<void*>(stmt2.GetValueBlob(0)), static_cast<uint32_t>(stmt2.GetColumnBytes(0)));
+    uint32_t actuallyRead;
+
+    ASSERT_EQ(ZIP_SUCCESS, snappyFrom._Read(buffer2.data(), sz, actuallyRead));
+    ASSERT_EQ(actuallyRead, sz);
+    ASSERT_TRUE(compareBuffer(buffer, buffer2));
+    BeTest::SetFailOnAssert(true);
 }
 
 #ifdef ANALYZE_MEMORY_USAGE
