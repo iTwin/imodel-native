@@ -755,7 +755,7 @@ def main():
     cov.set_ReportPath(repoPath)
     if cov.runCoverage(reportType):
         if args.excelReport: #For global report, we need methods and Excel report
-            cov.methodsFromPDBs()
+            # cov.methodsFromPDBs()  TODO: will be done when the feature of method coverage will be integrated 
             cov.coverageAll()
             cov.writeToExcel()
         print ('\nReports are at: ' + repoPath + '\n')
