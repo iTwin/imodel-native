@@ -142,7 +142,7 @@ class CoverageOpenCPP:
             if os.path.exists(pdbFile):
                 if not os.path.exists(dumpFile):
                     print ('Generating dump for: ' + comp+'.pdb')
-                    cmd = '"' + dbhPath + '" ' + pdbFile + ' dump >' + dumpFile
+                    cmd = '"' + dbhPath + '" '+ ' -c dump '+ pdbFile+ " > " + dumpFile
                     print (cmd)
                     result = subprocess.call(cmd, shell=True)
                     if result is not 0:
