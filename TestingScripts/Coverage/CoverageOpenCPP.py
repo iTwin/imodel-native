@@ -199,7 +199,6 @@ class CoverageOpenCPP:
                 if cov.covTestExe(testExe):  # if a single run completes, mark it success
                     covSuccess = True
                 cov.createZip(testExe)
-                cov.deleteLogs() #delete log file
             else:
                 if not os.path.exists(os.path.join(self.repoPath, os.path.basename(testExe)+'.xml')):
                     cov = CodeCoverage()
@@ -209,7 +208,6 @@ class CoverageOpenCPP:
                         covSuccess = True
                 else: #XML output is already there.
                     covSuccess = True
-                cov.deleteLogs()
         return covSuccess
 
     #-------------------------------------------------------------------------------------------
@@ -442,7 +440,7 @@ class CoverageOpenCPP:
         print ('\n*** writing to Excel \n')
         self.xlsReport = os.path.join(self.repoPath, self.streamName+'_CovSummary.xlsx')
         rp = ExcelReport(self.xlsReport)
-        wsHigh = rp.addSheet('FunctionSummary')
+        # wsHigh = rp.addSheet('FunctionSummary') TODO: will be done when the feature of method coverage will be integrated
         wsHigh2 = rp.addSheet('LineSummary')
         wsSumm = rp.addSheet('Components')
         wsSumm = self.addSummary(rp, wsSumm)
@@ -453,13 +451,13 @@ class CoverageOpenCPP:
 
         TotalFiles = TotalMethods = TotalLines = CoveredFiles = CoveredMethods = CoveredLines = 0
         for comp in self.comps:
-            methods = self.comps[comp]['methods']
+            methods = self.comps[comp]['methods'] 
             wsComp = rp.addSheet(comp)
             wsComp.write_url(0, 0, 'internal:Components!A1', rp.link, "Home")
             wsComp.merge_range('C1:N1', cmp.DllForComp(comp), rp.heading)
-            wsComp.merge_range('B2:E2', "Unvisited Functions", rp.heading)
+            # wsComp.merge_range('B2:E2', "Unvisited Functions", rp.heading) TODO: will be done when the feature of method coverage will be integrated
             wsComp.merge_range('J2:L2', "Unvisited Files", rp.heading)
-            wsComp.merge_range('S2:V2', "Ignored Functions", rp.heading)
+            # wsComp.merge_range('S2:V2', "Ignored Functions", rp.heading) TODO: will be done when the feature of method coverage will be integrated
             wsComp.freeze_panes(2, 0)
 
             compName = cmp.GetName(comp)
@@ -519,8 +517,8 @@ class CoverageOpenCPP:
                 if methods[m]['covered']:
                     covered = covered + 1
                 else:
-                    wsComp.write(sRow + j, 0, j+1)
-                    wsComp.write(sRow + j, 1,  m)
+                    #wsComp.write(sRow + j, 0, j+1) TODO: will be done when the feature of method coverage will be integrated
+                    #wsComp.write(sRow + j, 1,  m)  TODO: will be done when the feature of method coverage will be integrated
                     j = j + 1
             wsSumm.write(startRow + i, startCol + 13, total, rp.num)
             wsSumm.write(startRow + i, startCol + 14, covered, rp.num)
@@ -567,7 +565,7 @@ class CoverageOpenCPP:
         wsSumm.write(endRow, startCol + 18, "", rp.leftborder)
 
         #Now add high level summary
-        self.addHighSummary(rp, wsHigh)
+        # self.addHighSummary(rp, wsHigh)  TODO: will be done when the feature of method coverage will be integrated
         self.addHighSummary(rp, wsHigh2, False)
     #-------------------------------------------------------------------------------------------
     # bsimethod
@@ -759,7 +757,6 @@ def main():
             cov.coverageAll()
             cov.writeToExcel()
         print ('\nReports are at: ' + repoPath + '\n')
-
     else:
         print ('\n\nError running Code Coverage. Please ensure that you have OpenCPP Coverage tool in your source\n\n')
         exit(-1)

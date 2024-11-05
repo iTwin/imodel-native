@@ -9,15 +9,16 @@ always:
 
 always:
     %if defined (COMP_NAME)
-        start "CodeCoverage $(COMP_NAME)" \/WAIT $(BBPYTHONCMD) $(_MakeFilePath)CoverageOpenCPP.py --component=$(COMP_NAME) --localReport
-	    %if defined (Type)
-		    start "CodeCoverage $(COMP_NAME)" \/WAIT $(BBPYTHONCMD) $(_MakeFilePath)CoverageOpenCPP.py --component=$(COMP_NAME)
-	    %endif
+        %if defined (generateExcel)
+            $(BBPYTHONCMD) $(_MakeFilePath)CoverageOpenCPP.py --reportPath=$(LOG_DIR) --component=$(COMP_NAME) --excelReport
+        %else
+            start "CodeCoverage $(COMP_NAME)" \/WAIT $(BBPYTHONCMD) $(_MakeFilePath)CoverageOpenCPP.py --component=$(COMP_NAME) --localReport
+            %if defined (Type)
+                start "CodeCoverage $(COMP_NAME)" \/WAIT $(BBPYTHONCMD) $(_MakeFilePath)CoverageOpenCPP.py --component=$(COMP_NAME)
+            %endif
+        %endif    
     %else
-        %if !defined (Win10SdkDir)
-            %error Define Win10SdkDir in your shared shell. e.g. set Win10SdkDir=C:\Program Files (x86)\Windows Kits\10\.
-        %endif
-        $(BBPYTHONCMD) $(_MakeFilePath)CoverageOpenCPP.py --reportPath=$(LOG_DIR) --excelReport
+        %error Define COMP_NAME in your BentleyBuildMakeOptions. e.g. BentleyBuildMakeOptions="-dCOMP_Name=BeSQLite".
     %endif
 
 
