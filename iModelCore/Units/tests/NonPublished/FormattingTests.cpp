@@ -1594,8 +1594,6 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
     auto unitDegree = s_unitsContext->LookupUnit("ARC_DEG");
     auto unitRadian = s_unitsContext->LookupUnit("RAD");
     auto revolution = s_unitsContext->LookupUnit("REVOLUTION");
-    //auto unitMinute = s_unitsContext->LookupUnit("ARC_MINUTE");
-    //auto unitSecond = s_unitsContext->LookupUnit("ARC_SECOND");
 
     NumericFormatSpec bearingDMSSpec;
     bearingDMSSpec.SetMinWidth(2);
@@ -1609,11 +1607,6 @@ TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
     bearingDMScomp.SetSeparator(":");
     bearingDMS.SetCompositeSpec(bearingDMScomp);
     EXPECT_FALSE(bearingDMS.IsProblem());
-    /*Json::Value basicJson;
-    bearingDMS.ToJson(BeJsValue(basicJson), false);
-    Utf8String json = basicJson.ToString();
-    EXPECT_FALSE(json.empty());
-    printf("Bearing DMS: %s\n", json.c_str());*/
 
     NumericFormatSpec bearingDMSWithLabelSpec;
     bearingDMSWithLabelSpec.SetMinWidth(2);
