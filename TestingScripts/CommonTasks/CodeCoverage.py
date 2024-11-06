@@ -89,7 +89,6 @@ class CodeCoverage:
     def runCovCmd(self):
         print (self.cmd)
         result = subprocess.call(self.cmd, shell=True)
-        self.deleteLogs()
         if result != 0:
             print ("Coverage tool failed for command: " + str(self.cmd))
             return False
@@ -98,28 +97,3 @@ class CodeCoverage:
     
     def editModules(self, moduleFilter):
         self.modules = moduleFilter
-
-    def deleteLogs(self):
-        srcRoot = os.getenv('SrcRoot')
-
-        imodelNatSrc = os.path.join(srcRoot,"imodel-native")
-        logPath = os.path.join(imodelNatSrc, 'LastCoverageResults.log')
-        isFile = os.path.isfile(logPath)
-        if isFile:
-            try:
-                os.remove(logPath)
-            except:
-                print("Error deleting LastCoverageResults.log")
-        else:
-            print ("*** LastCoverageResults.log not found at: " + str(logPath))
-        
-        imodelNatSrcTesting = os.path.join(imodelNatSrc,"TestingScripts","Coverage")
-        logPath = os.path.join(imodelNatSrcTesting, 'LastCoverageResults.log')
-        isFile = os.path.isfile(logPath)
-        if isFile:
-            try:
-                os.remove(logPath)
-            except:
-                print("Error deleting LastCoverageResults.log")
-        else:
-            print ("*** LastCoverageResults.log not found at: " + str(logPath))

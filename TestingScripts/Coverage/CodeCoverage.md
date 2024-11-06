@@ -24,7 +24,7 @@
 
 ### Special Note
 
-`LastCoverageResults.log` files might be generated when we run code coverage. `DONOT FORGET TO REMOVE THEM BEFORE COMMITING` if they are generated.These files give us an overview of the overall coverage.
+`LastCoverageResults.log` files might be generated when we run code coverage. These files give us an overview of the overall coverage. The most probable places of generation are at `srcRoot/imodel-native/TestingScripts/Coverage` or in the `srcRoot/imodel-native` or both. The name `LastCoverageResults.log` is gitignored so that we don't accidentally push them to git. Still it is advised when we run code coverage we also manually check before commiting to prevent accidental push.
 
 ### Note - TODO:
 

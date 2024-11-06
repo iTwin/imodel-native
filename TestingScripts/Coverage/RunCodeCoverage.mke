@@ -10,7 +10,7 @@ always:
 always:
     %if defined (COMP_NAME)
         %if defined (generateExcel)
-            $(BBPYTHONCMD) $(_MakeFilePath)CoverageOpenCPP.py --reportPath=$(LOG_DIR) --component=$(COMP_NAME) --excelReport
+            start "CodeCoverage $(COMP_NAME)" \/WAIT $(BBPYTHONCMD) $(_MakeFilePath)CoverageOpenCPP.py --reportPath=$(LOG_DIR) --component=$(COMP_NAME) --excelReport
         %else
             start "CodeCoverage $(COMP_NAME)" \/WAIT $(BBPYTHONCMD) $(_MakeFilePath)CoverageOpenCPP.py --component=$(COMP_NAME) --localReport
             %if defined (Type)
