@@ -1562,7 +1562,7 @@ DbResult TxnManager::ApplyDdlChanges(DdlChangesCR ddlChanges) {
         // If it fails, it's fine because SchemaSync::pull() will patch/update all tables as necessary after applying the changeset.
         // Not applying the DDL can cause the current changeset to fail if a column in the profile table is missing.
         // This issue is detected when applying a changeset that upgrades the ECDb profile from version 4.0.0.1 to a newer version.
-        // Version 4.0.0.2 adds new tables and columns to ec_* tables. Since SchemaSync::pull() is called,
+        // Version 4.0.0.2 adds new tables and columns to ec_* tables. Since SchemaSync::pull() is called, after pull/merge is complete.
         bvector<Utf8String> individualSQL;
         BeStringUtilities::Split(originalDDL.c_str(), ";", individualSQL);
         for (auto& sql : individualSQL) {
