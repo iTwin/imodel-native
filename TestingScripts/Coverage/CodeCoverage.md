@@ -33,7 +33,7 @@ Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 
 Currently the test coverage we get is for files and for the number of lines. We can also extend the behaviour so that we get coverage also for the number of methods. The logic for that is not yet implemented properly and needs looking into in subsequent time.
 
-### Detailed explanation of Components.json file
+### Detailed explanation of Components.json file for future maintenance
 
 The `Components.json` file contains a mapping between each individual component of imodel-native and their corresponding dlls,exes and other values.
 The key is the component name.
