@@ -51,27 +51,41 @@ class CodeCoverage:
         
     def covSingleTest(self, testExe, testName, overwrite=True):
         report = os.path.join(self.reportPath, testName + self.exportExt)
-        if not os.path.exists(report) and overwrite:
+        if overwrite:
             self.export = ' --export_type=cobertura:'
             self.export = self.export + report
             self.cmd = self.covExe + self.modules + self.sources + self.export
             self.cmd = self.cmd + ' -- ' + testExe + ' --gtest_filter=' + testName
             return self.runCovCmd()
         else:
-            print ('Report exists: ' + report)
-            return True
+            if not os.path.exists(report):
+                self.export = ' --export_type=cobertura:'
+                self.export = self.export + report
+                self.cmd = self.covExe + self.modules + self.sources + self.export
+                self.cmd = self.cmd + ' -- ' + testExe + ' --gtest_filter=' + testName
+                return self.runCovCmd()
+            else:
+                print ('Report exists: ' + report)
+                return True
 
     def covTestCase(self, testExe, testName, overwrite=True):
         report = os.path.join(self.reportPath, testName + self.exportExt)
-        if not os.path.exists(report) and overwrite:
+        if overwrite:
             self.export = ' --export_type=cobertura:'
             self.export = self.export + report
             self.cmd = self.covExe + self.modules + self.sources + self.export
             self.cmd = self.cmd + ' -- ' + testExe + ' --gtest_filter=' + testName + '.*'
             return self.runCovCmd()
         else:
-            print ('Report exists: ' + report)
-            return True
+            if not os.path.exists(report):
+                self.export = ' --export_type=cobertura:'
+                self.export = self.export + report
+                self.cmd = self.covExe + self.modules + self.sources + self.export
+                self.cmd = self.cmd + ' -- ' + testExe + ' --gtest_filter=' + testName + '.*'
+                return self.runCovCmd()
+            else:
+                print ('Report exists: ' + report)
+                return True
 
     def covTestExe(self, testExe):
         report = os.path.join(self.reportPath, os.path.basename(testExe) + self.exportExt)

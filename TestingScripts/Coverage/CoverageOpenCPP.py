@@ -120,65 +120,66 @@ class CoverageOpenCPP:
                         return m1
         return None
 
+    #TODO: will be done when the feature of method coverage will be integrated
     #-------------------------------------------------------------------------------------------
     # bsimethod
     #-------------------------------------------------------------------------------------------
-    def methodsFromPDBs(self):
-        winSdk = os.getenv('Win10SdkDir')
-        if winSdk is None:
-            print ('Please set Win10SkDir environment variable for dbh.exe')
-            exit(-1)
-        else:
-            dbhPath = os.path.join(winSdk, 'Debuggers', 'x86', 'dbh.exe')
+    # def methodsFromPDBs(self):
+    #     winSdk = os.getenv('Win10SdkDir')
+    #     if winSdk is None:
+    #         print ('Please set Win10SkDir environment variable for dbh.exe')
+    #         exit(-1)
+    #     else:
+    #         dbhPath = os.path.join(winSdk, 'Debuggers', 'x86', 'dbh.exe')
             
-        if not os.path.exists(self.repoPath):
-            os.mkdir(self.repoPath)
+    #     if not os.path.exists(self.repoPath):
+    #         os.mkdir(self.repoPath)
 
-        #Gather method details for all components
-        for comp in self.comps:
-            methods = self.comps[comp]['methods']
-            pdbFile = cmp.PdbPathForComp(comp)
-            dumpFile = os.path.join(self.repoPath, comp+'_dump.txt')
-            if os.path.exists(pdbFile):
-                if not os.path.exists(dumpFile):
-                    print ('Generating dump for: ' + comp+'.pdb')
-                    cmd = '"' + dbhPath + '" '+ ' -c dump '+ pdbFile+ " > " + dumpFile
-                    print (cmd)
-                    result = subprocess.call(cmd, shell=True)
-                    if result is not 0:
-                        print ('Dump command failed: ' + cmd)
-                        exit(-1)
-                print ('Processing dump file: ' + comp+'_dump.txt')
-                with open(dumpFile, 'r') as f:
-                    lines = f.readlines()
-                    print(len(lines))
-                    for line in lines:
-                        if len(line) > 1:
-                            lineP = line.split('\t')
-                            method = lineP[1]
-                            if 'bvector<' in method.lower() or ('<' in method.lower() and '>' in method.lower()) or '::operator' in method.lower():
-                                continue
-                            fullFileName = lineP[len(lineP) - 3]
+    #     #Gather method details for all components
+    #     for comp in self.comps:
+    #         methods = self.comps[comp]['methods']
+    #         pdbFile = cmp.PdbPathForComp(comp)
+    #         dumpFile = os.path.join(self.repoPath, comp+'_dump.txt')
+    #         if os.path.exists(pdbFile):
+    #             if not os.path.exists(dumpFile):
+    #                 print ('Generating dump for: ' + comp+'.pdb')
+    #                 cmd = '"' + dbhPath + '" '+ ' -c dump '+ pdbFile+ " > " + dumpFile
+    #                 print (cmd)
+    #                 result = subprocess.call(cmd, shell=True)
+    #                 if result is not 0:
+    #                     print ('Dump command failed: ' + cmd)
+    #                     exit(-1)
+    #             print ('Processing dump file: ' + comp+'_dump.txt')
+    #             with open(dumpFile, 'r') as f:
+    #                 lines = f.readlines()
+    #                 print(len(lines))
+    #                 for line in lines:
+    #                     if len(line) > 1:
+    #                         lineP = line.split('\t')
+    #                         method = lineP[1]
+    #                         if 'bvector<' in method.lower() or ('<' in method.lower() and '>' in method.lower()) or '::operator' in method.lower():
+    #                             continue
+    #                         fullFileName = lineP[len(lineP) - 3]
                                           
-                            fileName = os.path.basename(fullFileName)
-                            fName, fExt = os.path.splitext(fileName)
-                            lineNo = int(lineP[len(lineP) - 2])
-                            skipMethod = False
-                            baseRoot = os.path.dirname(os.path.dirname(os.getenv('SrcRoot')))
-                            if fExt == ".h" and baseRoot.lower() in fullFileName.lower():
-                                with open(fullFileName, 'r') as f2:
-                                    lines2 = f2.readlines()
-                                    fullLine = lines2[lineNo - 1].strip()
-                                    if not '_EXPORT' in fullLine:
-                                        skipMethod = True
-                            print(method.lower()+" "+fullFileName.lower())
-                            if method.lower().startswith('bentleyb0200::') and method not in methods and not skipMethod:
-                                methods.setdefault(method, {})
-                                methods[method]['fileName'] = fileName
-                                methods[method]['lineNo'] = lineNo
-                                methods[method]['covered'] = False
-            else:
-                print ('PDB file could not be located: ' + pdbFile)
+    #                         fileName = os.path.basename(fullFileName)
+    #                         fName, fExt = os.path.splitext(fileName)
+    #                         lineNo = int(lineP[len(lineP) - 2])
+    #                         skipMethod = False
+    #                         baseRoot = os.path.dirname(os.path.dirname(os.getenv('SrcRoot')))
+    #                         if fExt == ".h" and baseRoot.lower() in fullFileName.lower():
+    #                             with open(fullFileName, 'r') as f2:
+    #                                 lines2 = f2.readlines()
+    #                                 fullLine = lines2[lineNo - 1].strip()
+    #                                 if not '_EXPORT' in fullLine:
+    #                                     skipMethod = True
+    #                         print(method.lower()+" "+fullFileName.lower())
+    #                         if method.lower().startswith('bentleyb0200::') and method not in methods and not skipMethod:
+    #                             methods.setdefault(method, {})
+    #                             methods[method]['fileName'] = fileName
+    #                             methods[method]['lineNo'] = lineNo
+    #                             methods[method]['covered'] = False
+    #         else:
+    #             print ('PDB file could not be located: ' + pdbFile)
             
     #-------------------------------------------------------------------------------------------
     # bsimethod                                     
@@ -567,156 +568,158 @@ class CoverageOpenCPP:
         #Now add high level summary
         # self.addHighSummary(rp, wsHigh)  TODO: will be done when the feature of method coverage will be integrated
         self.addHighSummary(rp, wsHigh2, False)
+    
+    #TODO: will be done when the feature of method coverage will be integrated
     #-------------------------------------------------------------------------------------------
     # bsimethod
     #-------------------------------------------------------------------------------------------
-    def methodsHtml(self):
+    # def methodsHtml(self):
         
-        print ('\n*** writing methods to html \n')
-        self.runCoverage()
-        self.methodsFromPDBs()
-        self.coverageAll()
+    #     print ('\n*** writing methods to html \n')
+    #     self.runCoverage()
+    #     self.methodsFromPDBs()
+    #     self.coverageAll()
 
-        for comp in self.comps:
-            methods = self.comps[comp]['methods']
-            compName = cmp.GetName(comp)
-            exeName = os.path.basename(cmp.ExePathForComp(comp))
-            moduleFile = os.path.join(self.repoPath, exeName +'.html', 'Modules', cmp.DllForComp(comp)[:-4]+'_methods.html')
-            html_file = open(moduleFile,"w")
-            html_file.write('<html><body>')
-            html_file.write('<h1>')
-            html_file.write(exeName)
-            html_file.write('</h1>')
-            html_file.write('<table border="1">')
-            html_file.write('<tr><th>')
-            html_file.write('Method Name')
-            html_file.write('</th><th>')
-            html_file.write('File Name')
-            html_file.write('</th></tr>')
+    #     for comp in self.comps:
+    #         methods = self.comps[comp]['methods']
+    #         compName = cmp.GetName(comp)
+    #         exeName = os.path.basename(cmp.ExePathForComp(comp))
+    #         moduleFile = os.path.join(self.repoPath, exeName +'.html', 'Modules', cmp.DllForComp(comp)[:-4]+'_methods.html')
+    #         html_file = open(moduleFile,"w")
+    #         html_file.write('<html><body>')
+    #         html_file.write('<h1>')
+    #         html_file.write(exeName)
+    #         html_file.write('</h1>')
+    #         html_file.write('<table border="1">')
+    #         html_file.write('<tr><th>')
+    #         html_file.write('Method Name')
+    #         html_file.write('</th><th>')
+    #         html_file.write('File Name')
+    #         html_file.write('</th></tr>')
 
-            total = len(methods)
-            covered = 0
-            f = open(os.path.join(self.repoPath, exeName+'.html', 'methods.html'),"w")
-            for m in methods:
-                if methods[m]['covered']:
-                    html_file.write('<tr bgcolor="#dfd"><td>')
-                    html_file.write (m)
-                    html_file.write('</td><td><a href="')
-                    html_file.write(os.path.join(cmp.DllForComp(comp)[:-4], methods[m]['fileName']+'.html'))
-                    html_file.write('" /a>')
-                    html_file.write(methods[m]['fileName'])
-                    html_file.write('</td><tr/>')                    
-                    covered = covered + 1
-                else:
-                    html_file.write('<tr bgcolor="#fdd"><td>')
-                    html_file.write (m)
-                    html_file.write('</td><td><a href="')
-                    html_file.write(os.path.join(cmp.DllForComp(comp)[:-4], methods[m]['fileName']+'.html'))
-                    html_file.write('" /a>')
-                    html_file.write(methods[m]['fileName'])
-                    html_file.write('</td><tr/>')                    
+    #         total = len(methods)
+    #         covered = 0
+    #         f = open(os.path.join(self.repoPath, exeName+'.html', 'methods.html'),"w")
+    #         for m in methods:
+    #             if methods[m]['covered']:
+    #                 html_file.write('<tr bgcolor="#dfd"><td>')
+    #                 html_file.write (m)
+    #                 html_file.write('</td><td><a href="')
+    #                 html_file.write(os.path.join(cmp.DllForComp(comp)[:-4], methods[m]['fileName']+'.html'))
+    #                 html_file.write('" /a>')
+    #                 html_file.write(methods[m]['fileName'])
+    #                 html_file.write('</td><tr/>')                    
+    #                 covered = covered + 1
+    #             else:
+    #                 html_file.write('<tr bgcolor="#fdd"><td>')
+    #                 html_file.write (m)
+    #                 html_file.write('</td><td><a href="')
+    #                 html_file.write(os.path.join(cmp.DllForComp(comp)[:-4], methods[m]['fileName']+'.html'))
+    #                 html_file.write('" /a>')
+    #                 html_file.write(methods[m]['fileName'])
+    #                 html_file.write('</td><tr/>')                    
             
-            html_file.write('</body></html>')
-            html_file.close()
-            uncovered = total - covered
-            covPercent = int(round((float(covered) / float(total)) * 100.0))
-            uncovPercent = int(round((float(uncovered) / float(total)) * 100.0))
-            message = """<!doctype html>
-            <html xmlns="http://www.w3.org/1999/xhtml">
-            <head>
-                <meta charset="utf-8"/>
-                <title>"""
-            message = message + exeName
-            message = message + """
-                </title>
-                <link rel="stylesheet" type="text/css" href="third-party/css/style.css"/>
-                <script src="third-party/RGraph/libraries/RGraph.common.core.js" type="text/javascript"></script>
-                <script src="third-party/RGraph/libraries/RGraph.common.dynamic.js" type="text/javascript"></script>
-                <script src="third-party/RGraph/libraries/RGraph.common.tooltips.js" type="text/javascript"></script>
-                <script src="third-party/RGraph/libraries/RGraph.pie.js" type="text/javascript"></script>
-                <script src="third-party/JQuery/jquery-1.11.1.min.js"></script>
-            </head>
-            <body>
-            <script type="text/javascript">
-                $(document).ready(function ()
-                {
+    #         html_file.write('</body></html>')
+    #         html_file.close()
+    #         uncovered = total - covered
+    #         covPercent = int(round((float(covered) / float(total)) * 100.0))
+    #         uncovPercent = int(round((float(uncovered) / float(total)) * 100.0))
+    #         message = """<!doctype html>
+    #         <html xmlns="http://www.w3.org/1999/xhtml">
+    #         <head>
+    #             <meta charset="utf-8"/>
+    #             <title>"""
+    #         message = message + exeName
+    #         message = message + """
+    #             </title>
+    #             <link rel="stylesheet" type="text/css" href="third-party/css/style.css"/>
+    #             <script src="third-party/RGraph/libraries/RGraph.common.core.js" type="text/javascript"></script>
+    #             <script src="third-party/RGraph/libraries/RGraph.common.dynamic.js" type="text/javascript"></script>
+    #             <script src="third-party/RGraph/libraries/RGraph.common.tooltips.js" type="text/javascript"></script>
+    #             <script src="third-party/RGraph/libraries/RGraph.pie.js" type="text/javascript"></script>
+    #             <script src="third-party/JQuery/jquery-1.11.1.min.js"></script>
+    #         </head>
+    #         <body>
+    #         <script type="text/javascript">
+    #             $(document).ready(function ()
+    #             {
                     
-                    new RGraph.Pie('pi_"""
-            message = message + cmp.DllForComp(comp)
-            message = message + """', ["""
-            message = message + str(covered)
-            message = message + """, """
-            message = message + str((len(methods) - covered))
-            message = message + """])
-                        .set('labels', ['Cover"""
-            message = message + str(covPercent)
-            message = message + """%','Uncover """
-            message = message + str(uncovPercent)
-            message = message + """%'])
-                        .set('colors', ['rgb(0,255,0)','rgb(255,0,0)'])
-                        .set('linewidth', 1)
-                        .set('shadow', true)
-                        .set('labels.sticks', true)
-                        .set('labels.sticks.length', 10)
-                        .draw();
+    #                 new RGraph.Pie('pi_"""
+    #         message = message + cmp.DllForComp(comp)
+    #         message = message + """', ["""
+    #         message = message + str(covered)
+    #         message = message + """, """
+    #         message = message + str((len(methods) - covered))
+    #         message = message + """])
+    #                     .set('labels', ['Cover"""
+    #         message = message + str(covPercent)
+    #         message = message + """%','Uncover """
+    #         message = message + str(uncovPercent)
+    #         message = message + """%'])
+    #                     .set('colors', ['rgb(0,255,0)','rgb(255,0,0)'])
+    #                     .set('linewidth', 1)
+    #                     .set('shadow', true)
+    #                     .set('labels.sticks', true)
+    #                     .set('labels.sticks.length', 10)
+    #                     .draw();
             
-              })
-            </script>    
-            <h1>"""
-            message = message + exeName
-            message = message + """
-                    </h1>
-                    <h4>
+    #           })
+    #         </script>    
+    #         <h1>"""
+    #         message = message + exeName
+    #         message = message + """
+    #                 </h1>
+    #                 <h4>
                     
-                    </h4>
-                    <table id="rounded-corner">
-                        <thead>
-                            <tr>
-                                <th scope="col" class="rounded-left">Coverage</th>
-                                <th scope="col">Total Methods</th>
-                                <th scope="col" class="rounded-right">Items</th>
-                            </tr>
-                        </thead> 
-                        <tbody>
+    #                 </h4>
+    #                 <table id="rounded-corner">
+    #                     <thead>
+    #                         <tr>
+    #                             <th scope="col" class="rounded-left">Coverage</th>
+    #                             <th scope="col">Total Methods</th>
+    #                             <th scope="col" class="rounded-right">Items</th>
+    #                         </tr>
+    #                     </thead> 
+    #                     <tbody>
                             
-                            <tr>
-                                <td>
-                        <canvas id="pi_"""
-            message = message + cmp.DllForComp(comp)
-            message = message + """" width="280" height="100">Cover"""
-            message = message + str(covPercent)
-            message = message + """%</canvas>
-                                </td>            
-                                <td>"""
-            message = message + str(total)
-            message = message + """
-                                </td>
-                                <td>
-                                <a href = "
-                                """
-            message = message + moduleFile
-            message = message + """ " />"""
-            message = message + cmp.DllForComp(comp)
-            message = message + """
-                              </td>
-                            </tr>        
+    #                         <tr>
+    #                             <td>
+    #                     <canvas id="pi_"""
+    #         message = message + cmp.DllForComp(comp)
+    #         message = message + """" width="280" height="100">Cover"""
+    #         message = message + str(covPercent)
+    #         message = message + """%</canvas>
+    #                             </td>            
+    #                             <td>"""
+    #         message = message + str(total)
+    #         message = message + """
+    #                             </td>
+    #                             <td>
+    #                             <a href = "
+    #                             """
+    #         message = message + moduleFile
+    #         message = message + """ " />"""
+    #         message = message + cmp.DllForComp(comp)
+    #         message = message + """
+    #                           </td>
+    #                         </tr>        
                             
              
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                            <td colspan="2" class="rounded-foot-left"></td>
-                            <td class="rounded-foot-right"></td>
-                            </tr>
-                        </tfoot>            
-                    </table>
-                </body>
-                </html>            
+    #                     </tbody>
+    #                     <tfoot>
+    #                         <tr>
+    #                         <td colspan="2" class="rounded-foot-left"></td>
+    #                         <td class="rounded-foot-right"></td>
+    #                         </tr>
+    #                     </tfoot>            
+    #                 </table>
+    #             </body>
+    #             </html>            
 
-                """
+    #             """
 
-            f.write(message)
-            f.close()
+    #         f.write(message)
+    #         f.close()
 
 #-------------------------------------------------------------------------------------------
 # bsimethod                                     

@@ -1,14 +1,17 @@
+Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 # Code Coverage
 
 ## Development setup
 
-### Steps
+### Steps to generate html report
 
 - Change the build strategy in the env.bat file to iModelCoreCoverage
 
 - Run `bb build` to generate the code coverage report for all the different components of iModelCore
 
 - You can also generate the code coverage reports of a single component by specifing the part in the `bb` command. Follow `Coverage.PartFile.xml` for more details on indiviual parts.
+
+- You can also generate xml reports with html reports just by providing the flag Type in `BentleyBuildMakeOptions` e.g.- `BentleyBuildMakeOptions="-dCOMP_Name=Bentley -dType=xml"`. See `Coverage.PartFile.xml` for more details.
 
 ### Steps to generate excel report
 
@@ -30,4 +33,15 @@
 
 Currently the test coverage we get is for files and for the number of lines. We can also extend the behaviour so that we get coverage also for the number of methods. The logic for that is not yet implemented properly and needs looking into in subsequent time.
 
-Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+### Detailed explanation of Components.json file
+
+The `Components.json` file contains a mapping between each individual component of imodel-native and their corresponding dlls,exes and other values.
+The key is the component name.
+The values are in themselves json objects which are explained as follows :- 
+| Values    | Meaning                     |
+| --------  | --------------------------  |
+| dll       | dll Name                    |
+| exe       | exe Name                    |
+| product   | product Name                | 
+| ignore    | path to ignore_list.txt(The base path for this is : ${SrcRoot}/imodel-native)     |
+| pdb       | path to .pdb files(The base path for this is : ${OutRoot}/Winx64/build)           |
