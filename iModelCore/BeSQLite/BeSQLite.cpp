@@ -891,8 +891,10 @@ DbResult MetaData::QueryTable(DbCR& db, MetaData::TableInfo const& qualifiedTabl
     auto getSql = [&](Utf8String const& name, Utf8String const& type) -> Utf8String {
         Statement stmt;
         rc = stmt.Prepare(db, SqlPrintfString("SELECT [sql] FROM [%s].[sqlite_master] WHERE [type]='%s' AND [name]='%s'", dbName.c_str(), type.c_str(), name.c_str()));
-        if (rc != BE_SQLITE_OK)
+        if (rc != BE_SQLITE_OK){
+            LOG.warningv("MetaData::QueryTable(): Failed to query sql for %s: %s", type.c_str(), name.c_str());
             return "";
+        }
         if (stmt.Step() == BE_SQLITE_ROW) {
             return stmt.GetValueText(0);
         }
@@ -902,8 +904,10 @@ DbResult MetaData::QueryTable(DbCR& db, MetaData::TableInfo const& qualifiedTabl
     auto findColumns = [&]() {
         Statement stmt;
         rc = stmt.Prepare(db, SqlPrintfString("PRAGMA [%s].[table_info]([%s])", dbName.c_str(), tableName.c_str()));
-        if (rc != BE_SQLITE_OK)
+        if (rc != BE_SQLITE_OK){
+            LOG.errorv("MetaData::QueryTable(): Failed to query column definitions for table: %s", tableName.c_str());
             return false;
+        }
 
         while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
             MetaData::ColumnInfo column;
@@ -918,8 +922,10 @@ DbResult MetaData::QueryTable(DbCR& db, MetaData::TableInfo const& qualifiedTabl
             char const* pzCollSeq;
             int pAutoinc;
             rc = (DbResult)sqlite3_table_column_metadata(db.GetSqlDb(), dbName.c_str(), tableName.c_str(), column.name.c_str(), nullptr, &pzCollSeq, nullptr, nullptr, &pAutoinc);
-            if (rc != BE_SQLITE_OK)
+            if (rc != BE_SQLITE_OK) {
+                LOG.errorv("MetaData::QueryTable(): Failed to query column metadata for column: %s", column.name.c_str());
                 return false;
+            }
             column.collSeq = pzCollSeq;
             column.autoIncrement = pAutoinc != 0;
             tableInfo.columns.push_back(column);
@@ -930,8 +936,10 @@ DbResult MetaData::QueryTable(DbCR& db, MetaData::TableInfo const& qualifiedTabl
     auto findForeignKeys = [&]() {
         Statement stmt;
         rc = stmt.Prepare(db, SqlPrintfString("PRAGMA [%s].[foreign_key_list]([%s])", dbName.c_str(), tableName.c_str()));
-        if (rc != BE_SQLITE_OK)
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("MetaData::QueryTable(): Failed to query foreign key definitions for table: %s", tableName.c_str());
             return false;
+        }
         int lastId = -1;
         while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
             if (lastId == stmt.GetValueInt(0)) {
@@ -956,8 +964,10 @@ DbResult MetaData::QueryTable(DbCR& db, MetaData::TableInfo const& qualifiedTabl
     auto findTriggers = [&]() {
         Statement stmt;
         rc = stmt.Prepare(db, SqlPrintfString("SELECT [name], [sql] FROM [%s].[sqlite_master] WHERE [type]='trigger' AND [tbl_name]='%s'", dbName.c_str(), tableName.c_str()));
-        if (rc != BE_SQLITE_OK)
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("MetaData::QueryTable(): Failed to query existing trigger definitions for table: %s", tableName.c_str());
             return false;
+        }
 
         while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
             MetaData::TriggerInfo info;
@@ -971,8 +981,10 @@ DbResult MetaData::QueryTable(DbCR& db, MetaData::TableInfo const& qualifiedTabl
     auto findIndexColumns = [&](MetaData::IndexInfo& info) {
         Statement stmt;
         rc = stmt.Prepare(db, SqlPrintfString("PRAGMA [%s].[index_xinfo]([%s])", dbName.c_str(), info.name.c_str()));
-        if (rc != BE_SQLITE_OK)
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("MetaData::QueryTable(): Failed to query index columns definitions for db: %s", info.name.c_str());
             return false;
+        }
 
         while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
             if (stmt.GetValueInt(1) != -1) {
@@ -991,8 +1003,10 @@ DbResult MetaData::QueryTable(DbCR& db, MetaData::TableInfo const& qualifiedTabl
     auto findIndexes = [&]() {
         Statement stmt;
         rc = stmt.Prepare(db, SqlPrintfString("PRAGMA [%s].[index_list]([%s])", dbName.c_str(), tableName.c_str()));
-        if (rc != BE_SQLITE_OK)
+        if (rc != BE_SQLITE_OK){
+            LOG.errorv("MetaData::QueryTable(): Failed to query indexes for table %s", tableName.c_str());
             return false;
+        }
 
         while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
             MetaData::IndexInfo info;
@@ -1010,8 +1024,10 @@ DbResult MetaData::QueryTable(DbCR& db, MetaData::TableInfo const& qualifiedTabl
 
     Statement stmt;
     rc = stmt.Prepare(db, SqlPrintfString("PRAGMA [%s].[table_list]", dbName.c_str()));
-    if (rc != BE_SQLITE_OK)
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("MetaData::QueryTable(): Failed to prepare table_list statement for database %s", dbName.c_str());
         return rc;
+    }
 
     while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
         if (tableName.CompareToI(stmt.GetValueText(1)) == 0) {
@@ -1056,23 +1072,20 @@ DbResult MetaData::SchemaDiff(DbCR lhsDb, DbCR rhsDb, std::vector<Utf8String>& p
 DbResult MetaData::SchemaDiff(DbCR lhsDb, DbCR rhsDb, std::function<bool(MetaData::TableInfo const&)> excludeFilter, std::vector<Utf8String>& patches, bool allowDrop) {
     DbResult rc;
     auto lhsTables = MetaData::QueryTableNames(lhsDb, "main", rc);
-    if (rc != BE_SQLITE_OK)
+    if (rc != BE_SQLITE_OK) {
+        LOG.error("MetaData::SchemaDiff(): Failed to query table names for lhs database");
         return rc;
+    }
 
     auto rhsTables = MetaData::QueryTableNames(rhsDb, "main", rc);
-    if (rc != BE_SQLITE_OK)
+    if (rc != BE_SQLITE_OK) {
+        LOG.error("MetaData::SchemaDiff(): Failed to query table names for rhs database");
         return rc;
-
-    // if (excludeFilter == nullptr) {
-    //     excludeFilter = [](auto const& table) {
-    //         return table.name.StartsWith("sqlite_") || table.type != "table";
-    //     };
-    // };
-
+    }
 
     auto filterOutUnsupportedTables = [&](std::vector<MetaData::TableInfo>& list) {
         list.erase(std::remove_if(list.begin(), list.end(), [&](auto const& table) {
-            return excludeFilter(table);
+            return excludeFilter != nullptr ? excludeFilter(table) : false;
         }), list.end());
     };
 
@@ -1163,11 +1176,7 @@ DbResult MetaData::SchemaDiff(DbCR lhsDb, DbCR rhsDb, std::function<bool(MetaDat
                     addColumnSql.append(" ").append(column.dataType);
                 }
                 if (column.primaryKey) {
-                    // addColumnSql.append(" PRIMARY KEY");
-                    // if (column.autoIncrement) {
-                    //     addColumnSql.append(" AUTOINCREMENT");
-                    // }
-                    LOG.error("Primary key column cannot be added using ALTER TABLE");
+                    LOG.error("MetaData::SchemaDiff(): Primary key column cannot be added using ALTER TABLE");
                     return BE_SQLITE_ERROR;
                 }
                 if (column.notNull) {
@@ -1186,7 +1195,7 @@ DbResult MetaData::SchemaDiff(DbCR lhsDb, DbCR rhsDb, std::function<bool(MetaDat
                     if (std::find_if(fk.fromColumns.begin(), fk.fromColumns.end(),
                         [&column](auto const& fromColumn) { return column.name == fromColumn; }) != fk.fromColumns.end()) {
                         if (fk.fromColumns.size() > 1) {
-                            LOG.error("Foreign key with multiple columns cannot be added using ALTER TABLE");
+                            LOG.error("MetaData::SchemaDiff(): Foreign key with multiple columns cannot be added using ALTER TABLE");
                             return BE_SQLITE_ERROR;
                         }
                         addColumnSql.append(SqlPrintfString(" REFERENCES [%s]([%s])", fk.table.c_str(), fk.toColumns[0].c_str()).GetUtf8CP());
