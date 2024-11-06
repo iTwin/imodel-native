@@ -368,6 +368,32 @@ void test_random ()
     for(int n=0; n<10; ++n)
         printf ("%d ", rnd());
     printf ("\n");
+    // printf("****\n");
+    // for(int n=0; n<10; ++n) {
+    //     printf ("%d ", static_cast<int> (rnd()));
+    // }
+
+    // printf ("\n****\n");
+
+/*
+[----------] 1 test from Cpp
+[ RUN      ] Cpp.LanguageFeatures
+****
+6 3 10 9 4 7 0 6 5 4 
+****
+2 1 42 10 7
+12 12 12 4 5
+100
+10
+i=2, j=1
+ERROR    TestRunner           C++11 test - This platform does not support: doubleLiterals
+This is a Unicode Character: ΓÇÿ.
+2
+The String Data \ Stuff " 
+ERROR    TestRunner           C++11 test - This platform does not support: alignas
+[       OK ] Cpp.LanguageFeatures (13651 ms)
+[----------] 1 test from Cpp (13652 ms total)
+*/
     }
 
 //  ---------------------------------------------------------------------
@@ -977,7 +1003,7 @@ TEST(Cpp, LanguageFeatures)
         char c = (i & 0xFF);
     Changing the code in this way will not affect the quality of the resulting optimized code.
     */
-    // test_random ();
+    test_random ();
     test_std_bind ();
     test_shared_ptr ();
     test_shared_ptr_in_collections ();
