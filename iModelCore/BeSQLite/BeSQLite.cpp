@@ -1083,14 +1083,16 @@ DbResult MetaData::SchemaDiff(DbCR lhsDb, DbCR rhsDb, std::function<bool(MetaDat
         return rc;
     }
 
-    auto filterOutUnsupportedTables = [&](std::vector<MetaData::TableInfo>& list) {
-        list.erase(std::remove_if(list.begin(), list.end(), [&](auto const& table) {
-            return excludeFilter != nullptr ? excludeFilter(table) : false;
-        }), list.end());
-    };
+    if (nullptr != excludeFilter) {
+        auto filterOutUnsupportedTables = [&](std::vector<MetaData::TableInfo>& list) {
+            list.erase(std::remove_if(list.begin(), list.end(), [&](auto const& table) {
+                return excludeFilter(table);
+            }), list.end());
+        };
 
-    filterOutUnsupportedTables(lhsTables);
-    filterOutUnsupportedTables(rhsTables);
+        filterOutUnsupportedTables(lhsTables);
+        filterOutUnsupportedTables(rhsTables);
+    }
 
     // MISSING | EXISTS  | DROP
     if (allowDrop) {
