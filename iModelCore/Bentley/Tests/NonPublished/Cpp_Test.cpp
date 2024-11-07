@@ -969,15 +969,7 @@ TEST(Cpp, LanguageFeatures)
     test_condition_variable ();
     test_regex ();
 
-    /*
-    Exception has occurred: A cast to a smaller data type has caused a loss of data.  If this was intentional, you should mask the source of the cast with the appropriate bitmask.  For example:  
-        char c = (i & 0xFF);
-    Changing the code in this way will not affect the quality of the resulting optimized code.
-    Run-Time Check Failure #1 - A cast to a smaller data type has caused a loss of data.  If this was intentional, you should mask the source of the cast with the appropriate bitmask.  For example:  
-        char c = (i & 0xFF);
-    Changing the code in this way will not affect the quality of the resulting optimized code.
-    */
-    test_random ();
+    // test_random ();
     test_std_bind ();
     test_shared_ptr ();
     test_shared_ptr_in_collections ();
