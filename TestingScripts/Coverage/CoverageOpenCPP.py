@@ -120,7 +120,7 @@ class CoverageOpenCPP:
                         return m1
         return None
 
-    #TODO: will be done when the feature of method coverage will be integrated
+    #TODO: The following method will be reviewed and will be written properly when the feature of method coverage will be integrated
     #-------------------------------------------------------------------------------------------
     # bsimethod
     #-------------------------------------------------------------------------------------------
@@ -152,8 +152,8 @@ class CoverageOpenCPP:
     #             print ('Processing dump file: ' + comp+'_dump.txt')
     #             with open(dumpFile, 'r') as f:
     #                 lines = f.readlines()
-    #                 print(len(lines))
     #                 for line in lines:
+                        #TODO: put a sample line as a comment nearby this code
     #                     if len(line) > 1:
     #                         lineP = line.split('\t')
     #                         method = lineP[1]
@@ -569,7 +569,7 @@ class CoverageOpenCPP:
         # self.addHighSummary(rp, wsHigh)  TODO: will be done when the feature of method coverage will be integrated
         self.addHighSummary(rp, wsHigh2, False)
     
-    #TODO: will be done when the feature of method coverage will be integrated
+    #TODO: The following method will be reviewed and will be written properly when the feature of method coverage will be integrated
     #-------------------------------------------------------------------------------------------
     # bsimethod
     #-------------------------------------------------------------------------------------------
@@ -603,21 +603,15 @@ class CoverageOpenCPP:
     #         for m in methods:
     #             if methods[m]['covered']:
     #                 html_file.write('<tr bgcolor="#dfd"><td>')
-    #                 html_file.write (m)
-    #                 html_file.write('</td><td><a href="')
-    #                 html_file.write(os.path.join(cmp.DllForComp(comp)[:-4], methods[m]['fileName']+'.html'))
-    #                 html_file.write('" /a>')
-    #                 html_file.write(methods[m]['fileName'])
-    #                 html_file.write('</td><tr/>')                    
     #                 covered = covered + 1
     #             else:
     #                 html_file.write('<tr bgcolor="#fdd"><td>')
-    #                 html_file.write (m)
-    #                 html_file.write('</td><td><a href="')
-    #                 html_file.write(os.path.join(cmp.DllForComp(comp)[:-4], methods[m]['fileName']+'.html'))
-    #                 html_file.write('" /a>')
-    #                 html_file.write(methods[m]['fileName'])
-    #                 html_file.write('</td><tr/>')                    
+    #             html_file.write (m)
+    #             html_file.write('</td><td><a href="')
+    #             html_file.write(os.path.join(cmp.DllForComp(comp)[:-4], methods[m]['fileName']+'.html'))
+    #             html_file.write('" /a>')
+    #             html_file.write(methods[m]['fileName'])
+    #             html_file.write('</td><tr/>')                     
             
     #         html_file.write('</body></html>')
     #         html_file.close()

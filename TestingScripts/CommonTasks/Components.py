@@ -90,14 +90,7 @@ def MapPathForComp(compToFind):
 def AllComps():
     comps = []
     for comp in Components:
-        if comp not in comps:
-            comps.append(comp.lower())
-    return comps
-def AllCompsProper():
-    comps = []
-    for comp in Components:
-        if comp not in comps:
-            comps.append(comp)
+        comps.append(comp.lower())
     return comps
 
 def GetName(compName):
