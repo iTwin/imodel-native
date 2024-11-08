@@ -48,7 +48,7 @@ def RepoForComp(compToFind):
 
 def ExePathForComp(compToFind):
     exeName = ExeForComp(compToFind)
-    exe_path = os.path.join('%OutRoot%Winx64', 'Product')
+    exe_path = os.path.join(os.getenv('OutRoot'),'Winx64', 'Product')
     exe_path = os.path.join(exe_path, compToFind+"-GTest")
     exe_path = os.path.join(exe_path, exeName+'.exe')
     return exe_path
