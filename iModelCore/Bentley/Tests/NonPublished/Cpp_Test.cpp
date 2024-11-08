@@ -363,7 +363,7 @@ void test_random ()
     {
     // common use case: binding a RNG with a distribution
     std::default_random_engine e;
-    std::uniform_int_distribution<> d(0, 10);
+    std::uniform_int_distribution<uint64_t> d(0, 10);
     std::function<int()> rnd = std::bind(d, e);
     for(int n=0; n<10; ++n)
         printf ("%d ", rnd());
@@ -969,7 +969,7 @@ TEST(Cpp, LanguageFeatures)
     test_condition_variable ();
     test_regex ();
 
-    // test_random ();
+    test_random ();
     test_std_bind ();
     test_shared_ptr ();
     test_shared_ptr_in_collections ();
