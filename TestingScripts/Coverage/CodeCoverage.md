@@ -44,4 +44,4 @@ The values are in themselves json objects which are explained as follows :-
 | exe       | exe Name                    |
 | product   | product Name                | 
 | ignore    | path to ignore_list.txt. Each array element is a path string which is joined onto a base path using os.path.join().(The base path for this is : ${SrcRoot}/imodel-native)     |
-| pdb       | path to .pdb files. Each array element is a path string which are joined using os.path.join().(The base path for this is : ${OutRoot}/Winx64/build)           |
+| pdb       | path to .pdb files. Each array element is a path string which is joined onto a base path using os.path.join().(The base path for this is : ${OutRoot}/Winx64/build)           |
