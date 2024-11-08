@@ -2958,7 +2958,7 @@ public:
     DbResult DropTableIfExists(Utf8CP tableName) const { return DropTable(tableName, false); }
 
     //! Determine whether a table exists in this Db.
-    BE_SQLITE_EXPORT bool TableExists(Utf8CP tableName) const;
+    BE_SQLITE_EXPORT bool TableExists(Utf8CP tableName, Utf8CP tableSpace = nullptr) const;
 
     //! Add a column to a table
     //! @param[in] tableName Name of the table. e.g., "test_Employee"

@@ -109,10 +109,7 @@ public:
 
     static bool TableExists(ECDbCR ecdb, Utf8CP tableName, Utf8CP tableSpace = nullptr)
         {
-        if (Utf8String::IsNullOrEmpty(tableSpace))
-            return BE_SQLITE_OK == ecdb.TryExecuteSql(Utf8PrintfString("SELECT NULL FROM [%s]", tableName).c_str());
-
-        return BE_SQLITE_OK == ecdb.TryExecuteSql(Utf8PrintfString("SELECT NULL FROM [%s].[%s]", tableSpace, tableName).c_str());
+        return ecdb.TableExists(tableName, tableSpace);
         }
 
     static bool IndexExists(ECDbCR ecdb, Utf8CP indexName, Utf8CP tableSpace = nullptr)
