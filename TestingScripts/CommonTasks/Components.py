@@ -75,18 +75,6 @@ def RepoPathForComp(compToFind):
         repoPath = os.path.join(srcRoot,'imodel-native', 'iModelCore' ,compToFind)
     return repoPath
 
-def MapPathForComp(compToFind):
-    for comp in Components:
-        if compToFind.lower() in Components[comp]['product'].lower():
-            if 'map_repo' in Components[comp].keys():
-                repo = Components[comp]['map_repo']
-                repoPath = os.getenv('SrcRoot')
-                for path in repo:
-                    repoPath = os.path.join(repoPath, path)
-                return repoPath
-            else:
-                repoPath = RepoPathForComp(compToFind)
-                return repoPath
 def AllComps():
     comps = []
     for comp in Components:
