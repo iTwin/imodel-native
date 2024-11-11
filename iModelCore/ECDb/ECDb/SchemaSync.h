@@ -36,6 +36,10 @@ struct SchemaSyncHelper final {
     static ProfileVersion QueryProfileVersion(DbR db, ProfileKind kind);
     static ProfileVersion QueryProfileVersion(SchemaSync::SyncDbUri syncDbUri, ProfileKind kind);
     static DbResult SaveProfileVersion(SchemaSync::SyncDbUri syncDbUri, ProfileKind kind, ProfileVersion const& ver);
+    static DbResult SaveProfileVersion(DbR conn, ProfileKind kind, ProfileVersion const& ver);
+    static DbResult SyncProfileTablesSchema(DbR fromDb, DbR toDb);
+    static DbResult SyncProfileTablesSchema(DbR thisDb, SchemaSync::SyncDbUri const& syncDbUri, bool thisDbToSyncDb);
+    static DbResult UpdateProfileVersion(DbR conn, SchemaSync::SyncDbUri syncDbUri, bool thisDbToSyncDb);
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

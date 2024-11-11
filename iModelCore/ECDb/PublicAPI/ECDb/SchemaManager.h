@@ -113,8 +113,6 @@ private:
     Status PullInternal(SyncDbUri const&, TableList);
     Status PushInternal(SyncDbUri const&, TableList, bool isInit);
     Status VerifySyncDb(SyncDbUri const&, bool isPull, bool isInit) const;
-    DbResult PullSqlSchema(ECDbR conn);
-    DbResult PushSqlSchema(ECDbR conn);
     Status SaveLocalDbInfo(DbR, LocalDbInfo const&);
     Status SaveSyncDbInfo(DbR, SyncDbInfo const&);
     Status SaveSyncDbInfo(SyncDbUri, SyncDbInfo const&);
