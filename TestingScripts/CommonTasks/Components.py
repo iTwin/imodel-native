@@ -40,10 +40,10 @@ def PdbForComp(compToFind):
         if comp.lower() == compToFind.lower():
             return Components[comp]['pdb']
             
-def RepoForComp(compToFind):
+def RepoForComp(compToFind):        
     for comp in Components:
         if comp.lower() == compToFind.lower():
-            repoPath = os.path.join(os.getenv('SrcRoot'),'imodel-native', 'iModelCore', compToFind)
+            repoPath = os.path.join(os.getenv('SrcRoot'),'imodel-native', 'iModelCore', compToFind)  # This is the path to the component source folder relative to source root
             return repoPath
 
 def ExePathForComp(compToFind):

@@ -170,7 +170,7 @@ class CoverageOpenCPP:
     #                             with open(fullFileName, 'r') as f2:
     #                                 lines2 = f2.readlines()
     #                                 fullLine = lines2[lineNo - 1].strip()
-    #                                 if not '_EXPORT' in fullLine:
+    #                                 if not '_EXPORT' in fullLine: TODO: Clarify why this line is needed
     #                                     skipMethod = True
     #                         print(method.lower()+" "+fullFileName.lower())
     #                         if method.lower().startswith('bentleyb0200::') and method not in methods and not skipMethod:
