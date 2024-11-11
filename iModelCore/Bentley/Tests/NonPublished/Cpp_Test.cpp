@@ -364,7 +364,7 @@ void test_random ()
     // common use case: binding a RNG with a distribution
     std::default_random_engine e;
     std::uniform_int_distribution<uint64_t> d(0, 10);
-    auto rnd = std::bind(d, e);
+    std::function<uint64_t()> rnd = std::bind(d, e);
     for(int n=0; n<10; ++n)
         printf ("%lld ", rnd());
     printf ("\n");
