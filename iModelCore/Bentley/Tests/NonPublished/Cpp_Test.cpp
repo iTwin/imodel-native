@@ -366,7 +366,7 @@ void test_random ()
     std::uniform_int_distribution<uint64_t> d(0, 10);
     std::function<uint64_t()> rnd = std::bind(d, e);
     for(int n=0; n<10; ++n)
-        printf ("%lld ", rnd());
+        printf ("%" PRIu64 " ", rnd());
     printf ("\n");
     }
 
