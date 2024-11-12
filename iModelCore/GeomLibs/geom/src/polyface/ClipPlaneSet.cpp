@@ -934,6 +934,9 @@ ClipPlaneSet  ClipPlaneSet::FromSweptPolygon (DPoint3dCP points, size_t n, DVec3
     ClipPlaneSet      clipSet;
     size_t numNegative = 0;
     size_t numPositive = 0;
+    UNUSED_VARIABLE(numNegative);
+    UNUSED_VARIABLE(numPositive);
+
     VU_SET_LOOP (faceSeed, graphP)
         {
         if (   !vu_getMask (faceSeed, visitMask)

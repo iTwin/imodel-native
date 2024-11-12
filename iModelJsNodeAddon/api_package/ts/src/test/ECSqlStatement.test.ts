@@ -7,7 +7,6 @@ import { assert, expect } from "chai";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { DbResult, Guid } from "@itwin/core-bentley";
-import { QueryRowFormat } from "@itwin/core-common";
 import { IModelJsNative } from "../NativeLibrary";
 import { getOutputDir, iModelJsNative } from "./utils";
 
@@ -51,22 +50,13 @@ describe("ECSqlStatement", () => {
     return ecdb;
   }
 
-  function formatCurrentRow(resp: any, meta: any, rowFormat: QueryRowFormat = QueryRowFormat.UseECSqlPropertyNames): any {
+  function formatCurrentRow(resp: any, meta: any, useJsName: boolean): any {
     const formattedRow = {};
-    const uniqueNames = new Map<string, number>();
     for (const prop of meta) {
-      const propName = rowFormat === QueryRowFormat.UseJsPropertyNames ? prop.jsonName : prop.name;
+      const propName = useJsName ? prop.jsonName : prop.name;
       const val = resp[prop.index];
       if (typeof val !== "undefined" && val !== null) {
-        let uniquePropName = propName;
-        if (uniqueNames.has(propName)) {
-          uniqueNames.set(propName, uniqueNames.get(propName)! + 1);
-          uniquePropName = `${propName}_${uniqueNames.get(propName)!}`;
-        } else {
-          uniqueNames.set(propName,0);
-        }
-
-        Object.defineProperty(formattedRow, uniquePropName, {
+        Object.defineProperty(formattedRow, propName, {
           value: val,
           enumerable: true,
           writable: true,
@@ -107,10 +97,10 @@ describe("ECSqlStatement", () => {
     stmt.prepare(db, "SELECT D,I,L,S FROM Test.Foo WHERE ECInstanceId=?");
     stmt.getBinder(1).bindId(id);
     assert.equal(stmt.step(), DbResult.BE_SQLITE_ROW);
-    const args = { classIdsToClassNames: true, rowFormat: QueryRowFormat.UseJsPropertyNames };
+    const args = { classIdsToClassNames: true, useJsName: true };
     const resp = stmt.toRow(args);
     const meta = stmt.getMetadata();
-    const row = formatCurrentRow(resp.data, meta.meta, args.rowFormat);
+    const row = formatCurrentRow(resp.data, meta.meta, args.useJsName);
     assert.equal(row.d, doubleVal);
     assert.equal(row.i, 3);
     assert.equal(row.l, 3);
@@ -138,46 +128,42 @@ describe("ECSqlStatement", () => {
     stmt.prepare(db, "SELECT ECInstanceId, ECClassId, B0 FROM test.Foo WHERE ECInstanceId=?");
     stmt.getBinder(1).bindId(id);
     assert.equal(stmt.step(), DbResult.BE_SQLITE_ROW);
-    {
-      const args = { rowFormat: QueryRowFormat.UseJsPropertyNames };
-      expect(() => stmt.toRow(args)).to.throw("classIdsToClassNames argument missing");
-    }
 
     {
-      const args = { classIdsToClassNames: false, rowFormat: QueryRowFormat.UseECSqlPropertyNames };
+      const args = { classIdsToClassNames: false, useJsName: false };
       const resp = stmt.toRow(args);
       const meta = stmt.getMetadata();
-      const row = formatCurrentRow(resp.data, meta.meta, args.rowFormat);
+      const row = formatCurrentRow(resp.data, meta.meta, args.useJsName);
       assert.equal(row.ECInstanceId, id);
       assert.equal(row.ECClassId, "0x58");
       assert.equal(row.B0, boolVal);
     }
 
     {
-      const args = { classIdsToClassNames: false, rowFormat: QueryRowFormat.UseJsPropertyNames };
+      const args = { classIdsToClassNames: false, useJsName: true };
       const resp = stmt.toRow(args);
       const meta = stmt.getMetadata();
-      const row = formatCurrentRow(resp.data, meta.meta, args.rowFormat);
+      const row = formatCurrentRow(resp.data, meta.meta, args.useJsName);
       assert.equal(row.id, id);
       assert.equal(row.className, "Test.Foo");
       assert.equal(row.b0, boolVal);
     }
 
     {
-      const args = { classIdsToClassNames: true, rowFormat: QueryRowFormat.UseECSqlPropertyNames };
+      const args = { classIdsToClassNames: true, useJsName: false };
       const resp = stmt.toRow(args);
       const meta = stmt.getMetadata();
-      const row = formatCurrentRow(resp.data, meta.meta, args.rowFormat);
+      const row = formatCurrentRow(resp.data, meta.meta, args.useJsName);
       assert.equal(row.ECInstanceId, id);
       assert.equal(row.ECClassId, "Test.Foo");
       assert.equal(row.B0, boolVal);
     }
 
     {
-      const args = { classIdsToClassNames: true, rowFormat: QueryRowFormat.UseJsPropertyNames };
+      const args = { classIdsToClassNames: true, useJsName: true };
       const resp = stmt.toRow(args);
       const meta = stmt.getMetadata();
-      const row = formatCurrentRow(resp.data, meta.meta, args.rowFormat);
+      const row = formatCurrentRow(resp.data, meta.meta, args.useJsName);
       assert.equal(row.id, id);
       assert.equal(row.className, "Test.Foo");
       assert.equal(row.b0, boolVal);
@@ -206,25 +192,20 @@ describe("ECSqlStatement", () => {
     stmt.getBinder(1).bindId(id);
     assert.equal(stmt.step(), DbResult.BE_SQLITE_ROW);
     {
-      const args = { classIdsToClassNames: false };
-      expect(() => stmt.toRow(args)).to.throw("rowFormat argument missing");
-    }
-
-    {
-      const args = { classIdsToClassNames: true, rowFormat: QueryRowFormat.UseJsPropertyNames };
+      const args = { classIdsToClassNames: true, useJsName: true };
       const resp = stmt.toRow(args);
       const meta = stmt.getMetadata();
-      const row = formatCurrentRow(resp.data, meta.meta, args.rowFormat);
+      const row = formatCurrentRow(resp.data, meta.meta, args.useJsName);
       assert.equal(row.id, id);
       assert.equal(row.className, "Test.Foo");
       assert.equal(row.b0, boolVal);
     }
 
     {
-      const args = { classIdsToClassNames: true, rowFormat: QueryRowFormat.UseECSqlPropertyNames };
+      const args = { classIdsToClassNames: true, useJsName: false };
       const resp = stmt.toRow(args);
       const meta = stmt.getMetadata();
-      const row = formatCurrentRow(resp.data, meta.meta, args.rowFormat);
+      const row = formatCurrentRow(resp.data, meta.meta, args.useJsName);
       assert.equal(row.ECInstanceId, id);
       assert.equal(row.ECClassId, "Test.Foo");
       assert.equal(row.B0, boolVal);

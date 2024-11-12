@@ -45,6 +45,7 @@ public:
     bool IsSeparator(Utf8Char const dec = '.', Utf8Char const thous = ',') { return (m_len == 1) && (m_patt == dec || m_patt == thous); }
     bool IsBar() { return (m_len == 1) && (m_patt == '/'); }
     bool IsExponent() {return (m_len == 1) && (m_patt == 'x'); }
+    bool IsUnderscore() { return (m_len == 1) && (m_patt == '_'); }
 
     //! The caller is responsible for keeping the index inside the allowable range
     UNITS_EXPORT ScannerCursorStatus AppendTrailingByte(Utf8CP txt);
@@ -133,17 +134,24 @@ public:
 struct FormatParsingSet
 {
 private:
-    Utf8CP m_input;
+    Utf8String m_input;
     bvector<FormatParsingSegment> m_segs;
     BEU::UnitCP m_unit;     // optional reference to a "quantity" unit
     FormatProblemDetail m_problem;
     FormatCP m_format;
+    QuantityFormatting::UnitResolver* m_resolver;
 
-    void Init(Utf8CP input, size_t start, BEU::UnitCP unit, FormatCP format, QuantityFormatting::UnitResolver* resolver = nullptr);
     //! Process's "colonized" expression using a Composite FUS
     //! Returns error codes when FUS does not match the expression.
     //! The input expression signature code mus be provided by the caller
-    BEU::Quantity ComposeColonizedQuantity(Formatting::FormatSpecialCodes cod, FormatCP fusP = nullptr);
+    BEU::Quantity ComposeColonizedQuantity(Formatting::FormatSpecialCodes cod, FormatCP format = nullptr);
+    BEU::Quantity ParseAndProcessTokens(Formatting::FormatSpecialCodes cod, FormatCP format, BEU::UnitCP inputUnit);
+    // parsing helper methods
+    BEU::Quantity ParseAzimuthFormat(FormatProblemCode* probCode, FormatCP format, BEU::UnitCP inputUnit);
+    BEU::Quantity ParseBearingFormat(FormatProblemCode* probCode, FormatCP format, BEU::UnitCP inputUnit);
+    BEU::Quantity ParseRatioFormat(FormatProblemCode* probCode,FormatCP format, BEU::UnitCP inputUnit);
+
+    void SegmentInput(Utf8CP input, size_t start);
 
 public:
     UNITS_EXPORT FormatParsingSet(Utf8CP input, BEU::UnitCP unit = nullptr, FormatCP format = nullptr, QuantityFormatting::UnitResolver* resolver = nullptr);
@@ -152,7 +160,7 @@ public:
     Utf8String GetProblemDescription() {return m_problem.GetProblemDescription();}
     BEU::UnitCP GetUnit() {return m_unit;}
     UNITS_EXPORT Utf8String GetSignature(bool distinct = true);
-    UNITS_EXPORT BEU::Quantity GetQuantity(FormatProblemCode* probCode = nullptr, FormatCP fusP = nullptr);
+    UNITS_EXPORT BEU::Quantity GetQuantity(FormatProblemCode* probCode = nullptr, FormatCP format = nullptr);
     UNITS_EXPORT bool ValidateParsingFUS(int reqUnitCount, FormatCP format);
 };
 

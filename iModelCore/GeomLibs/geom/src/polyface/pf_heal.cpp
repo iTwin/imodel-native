@@ -672,6 +672,7 @@ static size_t FillHolesBySpaceTriangulation (MTGFacets* facets)
     MTGMask visitMask = jmdlMTGGraph_grabMask (graph);
     jmdlMTGGraph_clearMaskInSet (graph, visitMask);
     int numFailures = 0;
+    UNUSED_VARIABLE(numFailures);
 
     MTGARRAY_SET_LOOP (seedNodeId, graph)
         {
@@ -696,6 +697,8 @@ static size_t FillHolesBySpaceTriangulation (MTGFacets* facets)
             int nA = 0;
             int nB = 0;
             int nOther = 0;
+            UNUSED_VARIABLE(nOther);
+            
             int fringeSize = jmdlEmbeddedDPoint3dArray_getCount (pFringeXYZArray);
             DPoint3dP pFringeXYZBuffer = jmdlEmbeddedDPoint3dArray_getPtr (pFringeXYZArray, 0);
             // TRUE ==> signed, one based indices that distinguish direction clearly.

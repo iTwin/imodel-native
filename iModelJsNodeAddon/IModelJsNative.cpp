@@ -4719,18 +4719,12 @@ public:
 
         REQUIRE_ARGUMENT_ANY_OBJ(0, optObj);
         BeJsValue opts(optObj);
-        if (!opts.isBoolMember("classIdsToClassNames"))
-            BeNapi::ThrowJsException(info.Env(), "classIdsToClassNames argument missing");
-        if (!opts.isNumericMember("rowFormat"))
-            BeNapi::ThrowJsException(info.Env(), "rowFormat argument missing");
-
         ECSqlRowAdaptor adaptor(*m_stmt.GetECDb());
         adaptor.GetOptions().FromJson(opts);
-        adaptor.GetOptions().SetAbbreviateBlobs(false);
 
         BeJsNapiObject out(info.Env());
         BeJsValue rowJson = out["data"];
-        if (adaptor.RenderRow(rowJson, ECSqlStatementRow(m_stmt)) != SUCCESS)
+        if (adaptor.RenderRowAsArray(rowJson, ECSqlStatementRow(m_stmt)) != SUCCESS)
             BeNapi::ThrowJsException(info.Env(), "Failed to render row", BE_SQLITE_ERROR);
 
         return out;
@@ -4740,14 +4734,12 @@ public:
         if (!m_stmt.IsPrepared())
             THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
 
+        BeJsNapiObject out(info.Env());
+        BeJsValue metaJson = out["meta"];
         ECSqlRowAdaptor adaptor(*m_stmt.GetECDb());
         ECSqlRowProperty::List props;
         adaptor.GetMetaData(props, m_stmt);
-
-        BeJsNapiObject out(info.Env());
-        BeJsValue metaJson = out["meta"];
         props.ToJs(metaJson);
-
         return out;
     }
 

@@ -277,6 +277,8 @@ BentleyStatus Expression::ParseDefinition(UnitsSymbolCR owner, int& depth, Utf8C
     Exponent currentExponent;
     bool inExponent = false;
     int numTokens = 0;
+    UNUSED_VARIABLE(numTokens);
+
     for (auto const& character : definitionString)
         {
         if (Utf8String::IsAsciiWhiteSpace(character))

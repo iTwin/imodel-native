@@ -475,7 +475,8 @@ TEST_F(IModelCompatibilityTestFixture, ECSqlColumnInfoForAliases)
         Utf8StringCR selectClauseItem = colInfo.GetProperty()->GetDisplayLabel();
 
         EXPECT_EQ(hasAlias, colInfo.IsGeneratedProperty()) << selectClauseItem << " | " << testDb.GetDescription();
-        EXPECT_EQ(!hasAlias, colInfo.IsSystemProperty()) << selectClauseItem << " | " << testDb.GetDescription();
+        // Either alias is true or false, IsSystem will return true for all system properties
+        ASSERT_TRUE(colInfo.IsSystemProperty()) << selectClauseItem << " | " << testDb.GetDescription();
         EXPECT_EQ(PRIMITIVETYPE_Long, colInfo.GetDataType().GetPrimitiveType()) << selectClauseItem << " | " << testDb.GetDescription();
 
         ASSERT_TRUE(colInfo.GetProperty()->GetIsPrimitive()) << selectClauseItem << " | " << testDb.GetDescription();

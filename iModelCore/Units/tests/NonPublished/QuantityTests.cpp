@@ -3,6 +3,8 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "../TestFixture/QuantityTestFixture.h"
+#include <cfloat>
+#include <iostream>
 
 BEGIN_UNITS_UNITTESTS_NAMESPACE
 
@@ -168,6 +170,84 @@ TEST_F(QuantityTestFixture, QuantityComparison)
 
     Quantity bprime = aprime.ConvertTo(mphUnit);
     QuantityGreater(bprime, a);
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(QuantityTestFixture, InvertedUnitCornerCases)
+    {
+    UnitCP vph = s_unitsContext->LookupUnit("VERTICAL_PER_HORIZONTAL");
+    UnitCP hpv = s_unitsContext->LookupUnit("HORIZONTAL_PER_VERTICAL");
+
+    { // 1 in both directions
+    Quantity a = Quantity(1.0, *vph);
+
+    Quantity b = a.ConvertTo(hpv);
+    ASSERT_TRUE(b.IsValid());
+    ASSERT_EQ(1.0, b.GetMagnitude());
+
+    Quantity c = b.ConvertTo(vph);
+    ASSERT_TRUE(c.IsValid());
+    ASSERT_EQ(1.0, c.GetMagnitude());
+    }
+
+    { // invalid unit in both directions
+    UnitCP meters = s_unitsContext->LookupUnit("M");
+    Quantity a = Quantity(1.0, *vph);
+    Quantity b = a.ConvertTo(meters);
+    ASSERT_FALSE(b.IsValid());
+    ASSERT_EQ(UnitsProblemCode::UncomparableUnits, b.GetProblemCode());
+    
+    Quantity c = Quantity(1.0, *hpv);
+    Quantity d = c.ConvertTo(meters);
+    ASSERT_FALSE(d.IsValid());
+    ASSERT_EQ(UnitsProblemCode::UncomparableUnits, d.GetProblemCode());
+
+    Quantity e = Quantity(1.0, *meters);
+    Quantity f = e.ConvertTo(vph);
+    ASSERT_FALSE(f.IsValid());
+    ASSERT_EQ(UnitsProblemCode::UncomparableUnits, f.GetProblemCode());
+    Quantity g = e.ConvertTo(hpv);
+    ASSERT_FALSE(g.IsValid());
+    ASSERT_EQ(UnitsProblemCode::UncomparableUnits, g.GetProblemCode());
+    }
+
+    { // zero value in both directions
+    Quantity a = Quantity(0.0, *vph);
+    Quantity b = a.ConvertTo(hpv);
+    ASSERT_FALSE(b.IsValid());
+    ASSERT_EQ(UnitsProblemCode::InvertingZero, b.GetProblemCode());
+
+    Quantity c = Quantity(0.0, *hpv);
+    Quantity d = c.ConvertTo(vph);
+    ASSERT_FALSE(d.IsValid());
+    ASSERT_EQ(UnitsProblemCode::InvertingZero, d.GetProblemCode());
+    }
+
+    { // NaN value in both directions
+    Quantity a = Quantity(std::numeric_limits<double>::quiet_NaN(), *vph);
+    Quantity b = a.ConvertTo(hpv);
+    ASSERT_FALSE(b.IsValid());
+    ASSERT_EQ(UnitsProblemCode::NaN, b.GetProblemCode());
+
+    Quantity c = Quantity(std::numeric_limits<double>::quiet_NaN(), *hpv);
+    Quantity d = c.ConvertTo(vph);
+    ASSERT_FALSE(d.IsValid());
+    ASSERT_EQ(UnitsProblemCode::NaN, d.GetProblemCode());
+    }
+
+    { // Infinity value in both directions
+    Quantity a = Quantity(std::numeric_limits<double>::infinity(), *vph);
+    Quantity b = a.ConvertTo(hpv);
+    ASSERT_TRUE(b.IsValid());
+    ASSERT_EQ(0.0, b.GetMagnitude());
+
+    Quantity c = Quantity(std::numeric_limits<double>::infinity(), *hpv);
+    Quantity d = c.ConvertTo(vph);
+    ASSERT_TRUE(d.IsValid());
+    ASSERT_EQ(0.0, d.GetMagnitude());
+    }
     }
 
 END_UNITS_UNITTESTS_NAMESPACE

@@ -754,6 +754,7 @@ void AnalyzeCutPlaneLoops(size_t numComplexFaces)
             // Anything left is a complete loop.
             // Holes?
             size_t numLoop = 0;
+            UNUSED_VARIABLE(numLoop);
             for (size_t startIndex = beginIndex; startIndex < endIndex; startIndex++)
                 {
                 // This is wrong for holeInFace !!!

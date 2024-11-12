@@ -307,6 +307,8 @@ void CollectClip (TaggedPolygonVectorR outputPolygons, bool primarySelect = true
 
     m_clipper->SetupForLoopOverFaces (primarySelect, secondarySelect);
     size_t numPolygon = 0;
+    UNUSED_VARIABLE(numPolygon);
+
     for (;m_clipper->GetFace (xyz, NULL, numThisFace, MAXOUT, false);)
         {
         PolygonVectorOps::AddPolygon (outputPolygons, xyz, numThisFace);

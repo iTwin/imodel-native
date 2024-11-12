@@ -882,13 +882,13 @@ std::string QueryHelper::FormatQuery(const char* query) {
             auto n = matches.position();
             Utf8String prefix = trimmedECSql.substr(0, n + 1);
             Utf8String select = trimmedECSql.substr(n + 2);
-            return Utf8PrintfString("%s select * from (%s) limit :" LIMIT_VAR_COUNT " offset :" LIMIT_VAR_OFFSET, prefix.c_str(), select.c_str());
+            return Utf8PrintfString("%s select * from (%s \n) limit :" LIMIT_VAR_COUNT " offset :" LIMIT_VAR_OFFSET, prefix.c_str(), select.c_str());
         }
     }
     if (trimmedECSql.StartsWithIAscii("pragma")) {
         return std::move(trimmedECSql);
     }
-    return Utf8PrintfString("select * from (%s) limit :" LIMIT_VAR_COUNT " offset :" LIMIT_VAR_OFFSET, trimmedECSql.c_str());
+    return Utf8PrintfString("select * from (%s \n) limit :" LIMIT_VAR_COUNT " offset :" LIMIT_VAR_OFFSET, trimmedECSql.c_str());
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -1006,6 +1006,7 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
     const auto abbreviateBlobs = request.GetAbbreviateBlobs();
     const auto includeMetaData= request.GetIncludeMetaData();
     const auto classIdToClassNames = request.GetConvertClassIdsToClassNames();
+    const auto doNotConvertClassIdsToClassNamesWhenAliased = request.GetDoNotConvertClassIdsToClassNamesWhenAliased();
     auto& stmt = cachedAdaptor.GetStatement();
     auto& adaptor = cachedAdaptor.GetJsonAdaptor();
     ECSqlRowProperty::List props;
@@ -1015,6 +1016,7 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
     adaptor.GetOptions().SetAbbreviateBlobs(abbreviateBlobs);
     adaptor.GetOptions().SetConvertClassIdsToClassNames(classIdToClassNames);
     adaptor.GetOptions().UseJsNames(request.GetValueFormat() == ECSqlRequest::ECSqlValueFormat::JsNames);
+    adaptor.GetOptions().DoNotConvertClassIdsToClassNamesWhenAliased(doNotConvertClassIdsToClassNamesWhenAliased);
     uint32_t row_count = 0;
     std::string& result = cachedAdaptor.ClearAndGetCachedString();
     result.reserve(QUERY_WORKER_RESULT_RESERVE_BYTES);
@@ -1036,7 +1038,7 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
     while (rc == BE_SQLITE_ROW) {
         auto& rowsDoc = cachedAdaptor.ClearAndGetCachedJsonDocument();
         BeJsValue rows(rowsDoc);
-        if (adaptor.RenderRow(rows, ECSqlStatementRow(stmt)) != SUCCESS) {
+        if (adaptor.RenderRowAsArray(rows, ECSqlStatementRow(stmt)) != SUCCESS) {
             setError(QueryResponse::Status::Error_ECSql_RowToJsonFailed, "failed to serialize ecsql statement row to json");
             return;
         } else {
@@ -1649,6 +1651,9 @@ void ECSqlRequest::FromJs(BeJsConst const& val) {
     }
     if (val.isNumericMember(JValueFormat)) {
         m_valueFmt = (ECSqlValueFormat)val[JValueFormat].asInt();
+    }
+    if (val.isBoolMember(ECSqlRowAdaptor::Options::JDoNotConvertClassIdsToClassNamesWhenAliased)) {
+        m_doNotConvertClassIdsToClassNamesWhenAliased = val[ECSqlRowAdaptor::Options::JDoNotConvertClassIdsToClassNamesWhenAliased].asBool();
     }
 }
 

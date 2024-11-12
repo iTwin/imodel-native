@@ -351,6 +351,20 @@ struct SqliteCommand final : public Command
         SqliteCommand() : Command() {}
         ~SqliteCommand() {}
     };
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//---------------------------------------------------------------------------------------
+struct DbSchemaDiffCommand final : public Command
+    {
+    private:
+        Utf8String _GetName() const override { return ".db_schema_diff"; }
+        Utf8String _GetUsage() const override;
+        void _Run(Session&, Utf8StringCR args) const override;
+
+    public:
+        DbSchemaDiffCommand() : Command() {}
+        ~DbSchemaDiffCommand() {}
+    };
 
 //---------------------------------------------------------------------------------------
 // @bsiclass

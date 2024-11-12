@@ -457,6 +457,57 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_AllP
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SelectedNodeInstances_GetsValidContent, R"*(
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="PropertyA" typeName="string" />
+        <ECProperty propertyName="PropertyB" typeName="point3d" />
+        <ECProperty propertyName="PropertyC" typeName="point2d" />
+        <ECProperty propertyName="PropertyD" typeName="int" />
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_GetsValidContent)
+    {
+    // set up the dataset
+    ECEntityClassCP classA = GetClass("A")->GetEntityClassCP();
+    IECInstancePtr instanceA = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance) { instance.SetValue("PropertyA", ECValue("stringVal")); instance.SetValue("PropertyD", ECValue(2000)); });
+    // set up input
+    KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{instanceA});
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP contentRule = new ContentRule("", 1, false);
+    SelectedNodeInstancesSpecification* spec = new SelectedNodeInstancesSpecification();
+    contentRule->AddSpecification(*spec);
+    rules->AddPresentationRule(*contentRule);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *input)));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(4, descriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
+    RapidJsonValueCR jsonValues = jsonDoc["Values"];
+    EXPECT_TRUE(jsonValues.HasMember(FIELD_NAME(classA, "PropertyA")));
+    EXPECT_STREQ("stringVal", jsonValues[FIELD_NAME(classA, "PropertyA")].GetString());
+    EXPECT_FALSE(jsonValues.HasMember(FIELD_NAME(classA, "PropertyB")));
+    EXPECT_FALSE(jsonValues.HasMember(FIELD_NAME(classA, "PropertyC")));
+    EXPECT_TRUE(jsonValues.HasMember(FIELD_NAME(classA, "PropertyD")));
+    EXPECT_EQ(2000, jsonValues[FIELD_NAME(classA, "PropertyD")].GetInt());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 // @betest
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(DescriptorOverride_WithSortingFieldAndOrder, R"*(
@@ -3219,20 +3270,45 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentInstancesOfSpecificC
     DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
     ASSERT_EQ(1, contentSet.GetSize());
     rapidjson::Document jsonDoc = contentSet.Get(0)->AsJson();
+
     RapidJsonValueCR jsonValues = jsonDoc["Values"];
+    RapidJsonValueCR jsonDisplayValues = jsonDoc["DisplayValues"];
 
     EXPECT_STREQ(BeInt64Id::FromString(instance->GetInstanceId().c_str()).ToHexStr().c_str(), jsonValues["CalculatedProperty_0"].GetString());
+    EXPECT_STREQ(BeInt64Id::FromString(instance->GetInstanceId().c_str()).ToHexStr().c_str(), jsonDisplayValues["CalculatedProperty_0"].GetString());
+    
     EXPECT_STREQ(BeInt64Id(classA->GetId()).ToHexStr().c_str(), jsonValues["CalculatedProperty_1"].GetString());
+    EXPECT_STREQ(BeInt64Id(classA->GetId()).ToHexStr().c_str(), jsonDisplayValues["CalculatedProperty_1"].GetString());
+
     EXPECT_STREQ("Value", jsonValues["CalculatedProperty_2"].GetString());
+    EXPECT_STREQ("Value", jsonDisplayValues["CalculatedProperty_2"].GetString());
+
     EXPECT_STREQ("3", jsonValues["CalculatedProperty_3"].GetString());
+    EXPECT_STREQ("3", jsonDisplayValues["CalculatedProperty_3"].GetString());
+
     EXPECT_STREQ("Test", jsonValues["CalculatedProperty_4"].GetString());
+    EXPECT_STREQ("Test", jsonDisplayValues["CalculatedProperty_4"].GetString());
+
     EXPECT_FALSE(jsonValues.HasMember("CalculatedProperty_5"));
+    EXPECT_FALSE(jsonDisplayValues.HasMember("CalculatedProperty_5"));
+
     EXPECT_EQ(6, jsonValues["CalculatedProperty_6"].GetInt());
+    EXPECT_STREQ("6", jsonDisplayValues["CalculatedProperty_6"].GetString());
+
     EXPECT_FALSE(jsonValues["CalculatedProperty_7"].GetBool());
+    EXPECT_STREQ("False", jsonDisplayValues["CalculatedProperty_7"].GetString());
+
     EXPECT_EQ(0.25, jsonValues["CalculatedProperty_8"].GetDouble());
+    EXPECT_STREQ("0.25", jsonDisplayValues["CalculatedProperty_8"].GetString());
+
     EXPECT_STREQ("False", jsonValues["CalculatedProperty_9"].GetString());
-    EXPECT_STREQ("2017-05-30T00:00:00.000", jsonValues["CalculatedProperty_10"].GetString());
+    EXPECT_STREQ("False", jsonDisplayValues["CalculatedProperty_9"].GetString());
+
+    EXPECT_STREQ("2017-05-30T00:00:00.000Z", jsonValues["CalculatedProperty_10"].GetString());
+    EXPECT_STREQ("2017-05-30T00:00:00.000Z", jsonDisplayValues["CalculatedProperty_10"].GetString());
+
     EXPECT_EQ(123456789876, jsonValues["CalculatedProperty_11"].GetInt64());
+    EXPECT_STREQ("123456789876", jsonDisplayValues["CalculatedProperty_11"].GetString());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3357,7 +3433,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CalculatedPropertiesSpecifi
     EXPECT_STREQ("2000", jsonValues1["CalculatedProperty_0"].GetString());
     EXPECT_FALSE(jsonValues1.HasMember(FIELD_NAME(classA, "PropertyA")));
     EXPECT_EQ(2000, jsonValues1[FIELD_NAME(classB, "PropertyB")].GetInt());
-    EXPECT_FALSE(jsonValues1[FIELD_NAME(classC, "PropertyC")].IsNull());
+    EXPECT_FALSE(jsonValues1.HasMember(FIELD_NAME(classC, "PropertyC")));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3467,7 +3543,7 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, ContentSerialization)
             }
         else if (name.Equals(FIELD_NAME(classA, "DateProperty")))
             {
-            EXPECT_STREQ("2017-05-30T00:00:00.000", value[name.c_str()].GetString());
+            EXPECT_STREQ("2017-05-30T00:00:00.000Z", value[name.c_str()].GetString());
             EXPECT_STREQ("Primitive", (*field)["Type"]["ValueFormat"].GetString());
             EXPECT_STREQ("dateTime", (*field)["Type"]["TypeName"].GetString());
             }

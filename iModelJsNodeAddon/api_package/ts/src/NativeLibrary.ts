@@ -15,23 +15,20 @@ import type { NativeCloudSqlite } from "./NativeCloudSqlite";
 
 import type {
   BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IDisposable, IModelStatus, LogLevel, OpenMode,
-  StatusCodeWithMessage,
 } from "@itwin/core-bentley";
 import type {
-  ChangesetIndexAndId, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps, ElementGraphicsRequestProps, ElementLoadProps, ElementProps,
+  ChangesetIndexAndId, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps,
+  ElementGraphicsRequestProps, ElementLoadProps, ElementMeshRequestProps, ElementProps,
   FilePropertyProps, FontId, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
   GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, IModelCoordinatesRequestProps,
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
-  ModelProps, QueryQuota, QueryRowFormat, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions,
+  ModelProps, QueryQuota, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions,
 } from "@itwin/core-common";
 import type { Range2dProps, Range3dProps } from "@itwin/core-geometry";
 
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable @itwin/prefer-get */
-
-// ###TODO import from core-common after merge with master
-export type ElementMeshRequestProps = any;
 
 // cspell:ignore  blocksize cachesize polltime bentleyjs imodeljs ecsql pollable polyface txns lzma uncompress changesets ruleset ulas oidc keychain libsecret rulesets struct
 
@@ -218,6 +215,12 @@ export declare namespace IModelJsNative {
     exactMatch?: boolean;
   }): string;
 
+  /** When you want to associate an explanatory message with an error status value. */
+  interface StatusCodeWithMessage<ErrorCodeType> {
+    status: ErrorCodeType;
+    message: string;
+  }
+
   /** The return type of synchronous functions that may return an error or a successful result. */
   type ErrorStatusOrResult<ErrorCodeType, ResultType> = {
     /** Error from the operation. This property is defined if and only if the operation failed. */
@@ -350,6 +353,12 @@ export declare namespace IModelJsNative {
     userCreated: string;
     size?: number;
     pathname: string;
+  }
+  interface ECSqlRowAdaptorOptions {
+    abbreviateBlobs?: boolean;
+    classIdsToClassNames?: boolean;
+    useJsName?: boolean;
+    doNotConvertClassIdsToClassNamesWhenAliased?: boolean; // backward compatibility
   }
 
   interface EmbeddedFileProps {
@@ -791,7 +800,7 @@ export declare namespace IModelJsNative {
     public stepForInsert(): { status: DbResult, id: string };
     public stepForInsertAsync(callback: (result: { status: DbResult, id: string }) => void): void;
     public getNativeSql(): string;
-    public toRow(arg: { classIdsToClassNames?: boolean, rowFormat?: QueryRowFormat }): any;
+    public toRow(arg: ECSqlRowAdaptorOptions): any;
     public getMetadata(): any;
   }
 
