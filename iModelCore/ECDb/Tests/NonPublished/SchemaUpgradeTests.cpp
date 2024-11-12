@@ -283,7 +283,6 @@ TEST_F(SchemaUpgradeTestFixture, DeleteSchema_VerifyCustomAttributesAreDeletedAs
     auto testCA1ClassId = testCA1Class->GetId();
     auto pipeClassId = pipeClass->GetId();
     auto pipePropId = p4Prop->GetId();
-    const auto ContainerType_Schema = 1;
     const auto ContainerType_Class = 30;
     const auto ContainerType_Property = 992;
     auto doesCustomAttributeExists = [&](BeInt64Id containerId, ECN::ECClassId caClassId, int containerType) {
