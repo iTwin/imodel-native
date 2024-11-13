@@ -943,6 +943,7 @@ void ECSqlRowProperty::ToJs(BeJsValue& val) const {
     val[JJsonName]=m_jsonName;
     val[JName]=m_name;
     val[JExtendedType]=m_extendedType;
+    val[JExtendType]=m_extendedType;
     val[JType]=m_typeName;
 }
 

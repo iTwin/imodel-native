@@ -716,6 +716,7 @@ struct ECSqlRowProperty final: IJsSerializable {
         static constexpr auto JJsonName = "jsonName";
         static constexpr auto JName = "name";
         static constexpr auto JExtendedType = "extendedType";
+        static constexpr auto JExtendType = "extendType";
         static constexpr auto JType = "typeName";
         std::string m_className;
         std::string m_accessString;

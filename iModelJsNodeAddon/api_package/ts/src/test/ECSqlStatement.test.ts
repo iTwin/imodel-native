@@ -236,9 +236,9 @@ describe("ECSqlStatement", () => {
 
     const expectedMeta = {
       meta: [
-        { className: "", accessString: "ECInstanceId", generated: false, index: 0, jsonName: "id", name: "ECInstanceId", extendedType: "Id", typeName: "long" },
-        { className: "", accessString: "ECClassId", generated: false, index: 1, jsonName: "className", name: "ECClassId", extendedType: "ClassId", typeName: "long" },
-        { className: "Test:Foo", accessString: "B0", generated: false, index: 2, jsonName: "b0", name: "B0", extendedType: "", typeName: "boolean" },
+        { className: "", accessString: "ECInstanceId", generated: false, index: 0, jsonName: "id", name: "ECInstanceId", extendedType: "Id", extendType: "Id", typeName: "long" },
+        { className: "", accessString: "ECClassId", generated: false, index: 1, jsonName: "className", name: "ECClassId", extendedType: "ClassId", extendType: "ClassId", typeName: "long" },
+        { className: "Test:Foo", accessString: "B0", generated: false, index: 2, jsonName: "b0", name: "B0", extendedType: "", extendType: "", typeName: "boolean" },
       ],
     };
     const meta = stmt.getMetadata();
