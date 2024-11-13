@@ -24624,7 +24624,7 @@ TEST_F(SchemaSyncTestFixture, FailMixinRelationshipConstraintMultiFileVersioning
         "import not allowed schemas",
         [&]()
             {
-            auto schemas = {
+            auto schemas = std::vector<SchemaItem>{
                 SchemaItem(
                     R"xml(<?xml version='1.0' encoding='utf-8'?>
                     <ECSchema schemaName='BaseSchema' alias='base1' description='Holds base classes' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
