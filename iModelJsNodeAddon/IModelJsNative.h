@@ -371,7 +371,7 @@ struct JsInterop {
     [[noreturn]] static void throwBadRequest() { throwDgnDbStatus(DgnDbStatus::BadRequest); }
     [[noreturn]] static void throwWriteError() { throwDgnDbStatus(DgnDbStatus::WriteError); }
     [[noreturn]] static void throwNotFound()   { throwDgnDbStatus(DgnDbStatus::NotFound); }
-    [[noreturn]] static void throwSqlError() { throwDgnDbStatus(DgnDbStatus::SQLiteError); }
+    [[noreturn]] static void throwSqlError()   { throwDgnDbStatus(DgnDbStatus::SQLiteError); }
 
     static bmap<Dgn::DgnDb*, BeFileName> s_openDgnDbFileNames;
 
