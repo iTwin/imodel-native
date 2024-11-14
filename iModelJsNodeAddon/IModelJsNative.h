@@ -360,9 +360,9 @@ ENUM_IS_FLAGS(TextEmphasis);
 
 struct JsInterop {
     [[noreturn]] static void throwSqlResult(Utf8CP msg, Utf8CP fileName, DbResult result) {
-        BeNapi::ThrowJsException(Env(), Utf8PrintfString("%s [%s]: %s", msg, fileName, BeSQLiteLib::GetErrorString(result)).c_str(), result);
+        BeNapi::ThrowJsException(Env(), Utf8PrintfString("%s [%s]: rc=%d, %s", msg, fileName, (int)result, BeSQLiteLib::GetLogError(result).c_str()).c_str(), result);
     }
-    [[noreturn]] static void throwDgnDbStatus(DgnDbStatus, DbResult rc = BE_SQLITE_ERROR);
+    [[noreturn]] static void throwDgnDbStatus(DgnDbStatus);
     [[noreturn]] static void throwWrongClass() { throwDgnDbStatus(DgnDbStatus::WrongClass); }
     [[noreturn]] static void throwBadArg()     { throwDgnDbStatus(DgnDbStatus::BadArg); }
     [[noreturn]] static void throwInvalidId()  { throwDgnDbStatus(DgnDbStatus::InvalidId); }
@@ -371,7 +371,7 @@ struct JsInterop {
     [[noreturn]] static void throwBadRequest() { throwDgnDbStatus(DgnDbStatus::BadRequest); }
     [[noreturn]] static void throwWriteError() { throwDgnDbStatus(DgnDbStatus::WriteError); }
     [[noreturn]] static void throwNotFound()   { throwDgnDbStatus(DgnDbStatus::NotFound); }
-    [[noreturn]] static void throwSqlError(DbResult rc = BE_SQLITE_ERROR) { throwDgnDbStatus(DgnDbStatus::SQLiteError, rc); }
+    [[noreturn]] static void throwSqlError() { throwDgnDbStatus(DgnDbStatus::SQLiteError); }
 
     static bmap<Dgn::DgnDb*, BeFileName> s_openDgnDbFileNames;
 
