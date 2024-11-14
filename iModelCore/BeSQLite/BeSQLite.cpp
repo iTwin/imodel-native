@@ -3148,7 +3148,7 @@ DbResult Db::TruncateTable(Utf8CP tableName) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Db::TableExists(Utf8CP tableName, Utf8CP tableSpace) const 
+bool Db::TableExists(Utf8CP tableName) const 
     {
     // tableName could contain tableSpace, parse if that's the case
     Utf8String actualTableName(tableName);
@@ -3200,10 +3200,17 @@ bool Db::ColumnExists(Utf8CP tableName, Utf8CP columnName) const
 bool Db::GetColumns(bvector<Utf8String>& columns, Utf8CP tableName) const
     {
     columns.clear();
-    auto statement = GetCachedStatement("SELECT NAME FROM PRAGMA_table_info(?)");
-    statement->BindText(1, tableName, Statement::MakeCopy::No);
-    while (statement->Step() == BE_SQLITE_ROW)
-        columns.push_back(statement->GetValueText(0));
+    
+    CachedStatementPtr stmt;
+    if (strchr(tableName, '.') != nullptr) {
+        stmt = GetCachedStatement(Utf8String("PRAGMA ").append(tableName).append(".table_info(?)").c_str());
+    } else {
+        stmt = GetCachedStatement("SELECT NAME FROM PRAGMA_table_info(?)");
+    }
+    
+    stmt->BindText(1, tableName, Statement::MakeCopy::No);
+    while (stmt->Step() == BE_SQLITE_ROW)
+        columns.push_back(stmt->GetValueText(0));
 
     return true;
     }

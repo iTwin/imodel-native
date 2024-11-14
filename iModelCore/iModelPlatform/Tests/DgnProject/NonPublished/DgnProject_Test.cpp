@@ -420,7 +420,7 @@ TEST_F(DgnDbTest, IsPurgeOperationActive)
     
 TEST_F(DgnDbTest, CreateImodel_ShouldLogLessWarnings)
     {
-    // Logging to console
+    // Log to console
     // NativeLogging::Logging::SetLogger(&NativeLogging::ConsoleLogger::GetLogger());
     // NativeLogging::ConsoleLogger::GetLogger().SetSeverity("SQLite", BentleyApi::NativeLogging::LOG_TRACE);
     

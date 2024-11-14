@@ -109,7 +109,13 @@ public:
 
     static bool TableExists(ECDbCR ecdb, Utf8CP tableName, Utf8CP tableSpace = nullptr)
         {
-        return ecdb.TableExists(tableName, tableSpace);
+            Utf8String fullTableName;
+            if (tableSpace != nullptr)
+                fullTableName = Utf8PrintfString("%s.%s", tableSpace, tableName).c_str();
+            else
+                fullTableName = tableName;
+
+            return ecdb.TableExists(fullTableName.c_str());
         }
 
     static bool IndexExists(ECDbCR ecdb, Utf8CP indexName, Utf8CP tableSpace = nullptr)
