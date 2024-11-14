@@ -3198,22 +3198,34 @@ bool Db::ColumnExists(Utf8CP tableName, Utf8CP columnName) const
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Db::GetColumns(bvector<Utf8String>& columns, Utf8CP tableName) const
-    {
+{
     columns.clear();
-    
-    CachedStatementPtr stmt;
-    if (strchr(tableName, '.') != nullptr) {
-        stmt = GetCachedStatement(Utf8String("PRAGMA ").append(tableName).append(".table_info(?)").c_str());
-    } else {
-        stmt = GetCachedStatement("SELECT NAME FROM PRAGMA_table_info(?)");
+
+    Statement stmt;
+    DbResult status;
+
+    const char* dotPosition = strchr(tableName, '.');
+    if (dotPosition != nullptr)
+    {
+        Utf8String tablespace(tableName, dotPosition - tableName);
+        Utf8String actualTableName(dotPosition + 1);
+
+        status = stmt.Prepare(*this, SqlPrintfString("PRAGMA %s.table_info([%s])", tablespace.c_str(), actualTableName.c_str()));
     }
-    
-    stmt->BindText(1, tableName, Statement::MakeCopy::No);
-    while (stmt->Step() == BE_SQLITE_ROW)
-        columns.push_back(stmt->GetValueText(0));
+    else
+    {
+        status = stmt.Prepare(*this, SqlPrintfString("PRAGMA table_info([%s])", tableName));
+    }
+
+    if (status != BE_SQLITE_OK)
+        return false;
+
+    while (stmt.Step() == BE_SQLITE_ROW)
+        columns.push_back(stmt.GetValueText(1)); 
 
     return true;
-    }
+}
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
