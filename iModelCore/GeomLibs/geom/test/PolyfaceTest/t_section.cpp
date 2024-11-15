@@ -2309,9 +2309,9 @@ TEST(Polyface, DrapeLinestringTolerance)
     bool oneSegmentIsHorizontal = false;
     auto testSegment = [&](DSegment3dCR seg) -> void
         {
-        if (seg.point[0].AlmostEqualXY(seg.point[1], DoubleOps::SmallMetricDistance()) && DoubleOps::AlmostEqual(seg.length(), vertLength, DoubleOps::SmallMetricDistance()))
+        if (seg.point[0].AlmostEqualXY(seg.point[1], DoubleOps::SmallMetricDistance()) && DoubleOps::AlmostEqual(seg.Length(), vertLength, DoubleOps::SmallMetricDistance()))
             oneSegmentIsVertical = true;
-        else if (DoubleOps::AlmostEqual(seg.point[0].z, seg.point[1].z, DoubleOps::SmallMetricDistance()) && DoubleOps::AlmostEqual(seg.length(), horizLength, DoubleOps::SmallMetricDistance()))
+        else if (DoubleOps::AlmostEqual(seg.point[0].z, seg.point[1].z, DoubleOps::SmallMetricDistance()) && DoubleOps::AlmostEqual(seg.Length(), horizLength, DoubleOps::SmallMetricDistance()))
             oneSegmentIsHorizontal = true;
         };
 

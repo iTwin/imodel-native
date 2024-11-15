@@ -465,5 +465,5 @@ TEST(PolygonOps,SplitToConvexPartsXY)
     facetedPoly->Compress(0.0);     // squeeze out the disconnect
     Check::SaveTransformed(*facetedPoly);
 
-    Check::ClearGeometry("PolygonOps.SplitToConvexPartsXY", true);
+    Check::ClearGeometry("PolygonOps.SplitToConvexPartsXY");
     }
