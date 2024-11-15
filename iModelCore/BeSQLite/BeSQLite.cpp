@@ -3163,7 +3163,7 @@ bool Db::TableExists(Utf8CP tableName) const
     if (Utf8String::IsNullOrEmpty(parsedTableSpace.c_str()))
         stmt = GetCachedStatement("SELECT 1 FROM sqlite_master where type='table' AND name=?");
     else
-        stmt = GetCachedStatement(Utf8PrintfString("SELECT 1 FROM %s.sqlite_master where type='table' AND name=?", parsedTableSpace).c_str());
+        stmt = GetCachedStatement(Utf8PrintfString("SELECT 1 FROM %s.sqlite_master where type='table' AND name=?", parsedTableSpace.c_str()).c_str());
 
     if (stmt == nullptr)
         {
@@ -3174,7 +3174,6 @@ bool Db::TableExists(Utf8CP tableName) const
     stmt->BindText(1, actualTableName.c_str(), Statement::MakeCopy::No);
     return stmt->Step() == BE_SQLITE_ROW;
     }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //--------------+------------------------------------------------------------------------
