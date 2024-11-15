@@ -4611,11 +4611,26 @@ static bool lexicalXYZLessThanTol(double x0, double y0, double z0, double x1, do
     if (DoubleOps::WithinTolerance(x0, x1, tol) && DoubleOps::WithinTolerance(y0, y1, tol) && DoubleOps::WithinTolerance(z0, z1, tol))
         return false;
     if (!DoubleOps::WithinTolerance(x0, x1, tol))
-        return x0 < x1;
+        {
+        if (x0 < x1)
+            return true;
+        if (x0 > x1)
+            return false;
+        }
     if (!DoubleOps::WithinTolerance(y0, y1, tol))
-       return y0 < y1;
+        {
+        if (y0 < y1)
+            return true;
+        if (y0 > y1)
+            return false;
+        }
     if (!DoubleOps::WithinTolerance(z0, z1, tol))
-        return z0 < z1;
+        {
+        if (z0 < z1)
+            return true;
+        if (z0 > z1)
+            return false;
+        }
     return false;
     }
 

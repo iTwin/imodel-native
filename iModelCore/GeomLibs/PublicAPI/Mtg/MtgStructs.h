@@ -418,7 +418,8 @@ GEOMDLLIMPEXP MTGNodeId FindMaskAroundFace (MTGNodeId nodeId, MTGMask mask) cons
 GEOMDLLIMPEXP MTGNodeId FindMaskAroundVertex (MTGNodeId nodeId, MTGMask mask) const;
 /// Search vertex predecessor loop for mask
 GEOMDLLIMPEXP MTGNodeId FindMaskAroundVertexPred (MTGNodeId nodeId, MTGMask mask) const;
-
+/// Search vertex predecessor loop for missing mask
+GEOMDLLIMPEXP MTGNodeId FindUnmaskedAroundVertexPred(MTGNodeId nodeId, MTGMask mask) const;
 /// Search face loop for missing mask
 GEOMDLLIMPEXP MTGNodeId FindUnmaskedAroundFace (MTGNodeId nodeId, MTGMask mask) const;
 /// Search vertex loop for missing mask
@@ -432,6 +433,8 @@ GEOMDLLIMPEXP bool AreNodesInSameFaceLoop (MTGNodeId nodeA, MTGNodeId nodeB) con
 
 /// Count nodes with mask around a vertex
 GEOMDLLIMPEXP size_t CountMaskAroundVertex (MTGNodeId nodeId, MTGMask mask) const;
+/// Count nodes missing the mask around a vertex
+GEOMDLLIMPEXP size_t CountUnmaskedAroundVertex(MTGNodeId nodeId, MTGMask mask) const;
 /// Count masked nodes in entire graph.
 GEOMDLLIMPEXP size_t CountMask   (MTGMask mask) const;
 

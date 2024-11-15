@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include <stdio.h>
+#include <Bentley/BeTimeUtilities.h>
 #include "testHarness.h"
 #include <GeomSerialization/GeomLibsJsonSerialization.h>
 
@@ -1132,4 +1133,87 @@ TEST(PolyfaceClip, ClipConeMesh)
         }
 
     Check::ClearGeometry("PolyfaceClip.ClipConeMesh");
+    }
+
+TEST(Polyface, SweptPolygonClip)
+    {
+    struct TestCase
+        {
+        BeFileName          m_fileName;
+        bvector<DPoint3d>   m_polygon;
+        DVec3d              m_sweepVector;
+        TestCase(BeFileNameCR fileName, bvector<DPoint3d> const& polygon, DVec3dCR sweepVector): m_fileName(fileName), m_polygon(polygon), m_sweepVector(sweepVector) {}
+        };
+    bvector<TestCase> testCases;    // all files and polygons in meters, translated to 1st octant
+
+    BeFileName sourcePath;
+    BeTest::GetHost().GetDocumentsRoot(sourcePath);
+    sourcePath.AppendToPath(L"GeomLibsTestData").AppendToPath(L"Polyface").AppendToPath(L"Clipping").AppendToPath(L"mesh18K_almost_closed.imjs");
+
+    bvector<DPoint3d> polygon;
+    polygon.push_back(DPoint3d::From(220, 216.554504715461, 19.4880999999996));
+    polygon.push_back(DPoint3d::From(-10, 216.554504715461, 19.4880999999996));
+    polygon.push_back(DPoint3d::From(-10, 216.554504715461, 15.4880999999996));
+    polygon.push_back(DPoint3d::From(220, 216.554504715461, 15.4880999999996));
+    testCases.push_back(TestCase(sourcePath, polygon, DVec3d::From(0,-1,0)));
+
+    if (Check::GetEnableLongTests())
+        {
+        BeTest::GetHost().GetDocumentsRoot(sourcePath);
+        sourcePath.AppendToPath(L"GeomLibsTestData").AppendToPath(L"Polyface").AppendToPath(L"Clipping").AppendToPath(L"mesh300K_almost_closed.imjs");
+
+        polygon.clear();
+        polygon.push_back(DPoint3d::From(1150, 1677.88169069408, 64.6504000000004));
+        polygon.push_back(DPoint3d::From(-10,  1677.88169069408, 64.6504000000004));
+        polygon.push_back(DPoint3d::From(-10,  1677.88169069408, 60.6504000000004));
+        polygon.push_back(DPoint3d::From(1150, 1677.88169069408, 60.6504000000004));
+
+        testCases.push_back(TestCase(sourcePath, polygon, DVec3d::From(0,-1,0)));
+        }
+
+    for (auto const& testCase : testCases)
+        {
+        bvector<IGeometryPtr> geometry;
+        if (!Check::True(GTestFileOps::JsonFileToGeometry(testCase.m_fileName, geometry), "Parse inputs"))
+            continue;
+        auto mesh = geometry.front()->GetAsPolyfaceHeader();
+        if (!Check::True(mesh.IsValid(), "Have mesh"))
+            continue;
+        if (!Check::True(mesh->HasFacets(), "Nonempty mesh"))
+            continue;
+        Check::False(mesh->IsClosedByEdgePairing(), "input mesh is not closed");
+
+        auto time0 = BeTimeUtilities::QueryMillisecondsCounter();
+
+        PolyfaceHeaderPtr inside;
+        ClipPlaneSet::SweptPolygonClipPolyface(*mesh, testCase.m_polygon, testCase.m_sweepVector, true, &inside, nullptr);
+
+        auto time1 = BeTimeUtilities::QueryMillisecondsCounter();
+        printf("  SweptPolygonClipPolyface took: %llu ms\n", time1 - time0);
+
+        if (Check::True(inside.IsValid(), "clip succeeded"))
+            {
+            Check::SaveTransformed(mesh);
+            Check::SaveTransformed(inside);
+
+            auto vv = inside->ValidatedVolume();
+            double volume = 0.0;
+            bool tolerant = false;
+            if (vv.IsValid())
+                {
+                volume = vv.Value();
+                }
+            else
+                {
+                DPoint3d centroid;
+                RotMatrix axes;
+                DVec3d moments;
+                inside->ComputePrincipalMomentsAllowMissingSideFacets(volume, centroid, axes, moments, true);
+                tolerant = true;
+                }
+            Check::True(volume > 0.0, tolerant ? "clip is volumetric (tolerant)" : "clip is volumetric");
+            }
+        }
+
+    Check::ClearGeometry("Polyface.SweptPolygonClip");
     }

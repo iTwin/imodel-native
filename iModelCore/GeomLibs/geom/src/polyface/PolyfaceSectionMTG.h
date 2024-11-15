@@ -78,10 +78,10 @@ bvector<DSegment3d> &segments           // output segments.
         if (localPoints[i1].z != 0.0
           && localPoints[i].z * localPoints[i1].z <= 0.0)
             {
-            double f = (-localPoints[i].z) / (localPoints[i1].z - localPoints[i].z);   // fraction along the edge that crosses
-           double x = DoubleOps::Interpolate (localPoints[i].x, f, localPoints[i1].x);               // distance along the x axis that contains cut lines
+            double f = (-localPoints[i].z) / (localPoints[i1].z - localPoints[i].z);    // fraction along the edge that crosses
+            double x = DoubleOps::Interpolate (localPoints[i].x, f, localPoints[i1].x); // distance along the x axis that contains cut lines
             DPoint3d xyz = DPoint3d::FromInterpolate (worldPoints[i], f, worldPoints[i1]);
-            cutPoints.push_back (DPoint4d::From (xyz, x));
+            cutPoints.push_back (DPoint4d::From (xyz, x));  // sneaky: use w to store param of projection onto the segment being draped
             }
         }
     std::sort (cutPoints.begin (), cutPoints.end (), cb_dpoint4dLT_w);
@@ -89,13 +89,15 @@ bvector<DSegment3d> &segments           // output segments.
     for (size_t i = 0; i + 1 < cutPoints.size (); i += 2)
         {
         double f0 = cutPoints[i].w;
-        double f1 = cutPoints[i+1].w;
+        double f1 = cutPoints[i+1].w;   // f1 >= f0 guaranteed by the sort
         DSegment3d fullSegment;
         cutPoints[i].GetXYZ (fullSegment.point[0]);
         cutPoints[i + 1].GetXYZ (fullSegment.point[1]);
         double g;
         DSegment3d clippedSegment = fullSegment;
-        if (f0 < 1.0 && f1 > 0.0 && f1 > f0)
+        // NOTE: tolerance is consistently NOT used here; it is not needed.
+        // When f1==f0 we've draped onto a perpendicular facet; allow this only when the draped segment is nontrivial.
+        if (f0 < 1.0 && f1 > 0.0 && (f1 > f0 || clippedSegment.LengthSquared() > 0.0))
             {
             double df = f1 - f0;
             if (f0 < 0.0)
@@ -108,7 +110,7 @@ bvector<DSegment3d> &segments           // output segments.
                 DoubleOps::SafeDivide (g, 1.0 - f0, df, 1.0);
                 clippedSegment.point[1].Interpolate (fullSegment.point[0], g, fullSegment.point[1]);
                 }
-                segments.push_back (clippedSegment);
+            segments.push_back (clippedSegment);
             }
         }
     }
@@ -231,7 +233,7 @@ MTGNodeId FindPriorNodeAtVertex (size_t vertexIndex)
     }
 
 
-// On input:  graph has isolated edges indexeing into m_allVertexData.
+// On input: graph has isolated edges indexing into m_allVertexData.
 // (m_allVertexData[i].m_vertexIndex is not used yet)
 // Assign vertex indices and twist the edges together.
 void JoinEdges ()
@@ -240,14 +242,11 @@ void JoinEdges ()
         m_allVertexData[i].m_vertexIndex = SIZE_MAX;
     MTGARRAY_SET_LOOP (nodeA, &m_graph)
         {
-        int iIndex;
-        if (m_graph.TryGetLabel (nodeA, m_vertexDataLabel, iIndex)
-            && iIndex >= 0)
+        if (auto data = GetVertexData(nodeA))
             {
-            size_t index = (size_t)iIndex;
-            size_t vertexIndex = m_coordinateMap->AddPoint (m_allVertexData[index].mXYZ);
+            size_t vertexIndex = m_coordinateMap->AddPoint(data->mXYZ);
             MTGNodeId nodeB = FindOrSetPriorNodeAtVertex (vertexIndex, nodeA);
-            m_allVertexData[index].m_vertexIndex = vertexIndex;
+            data->m_vertexIndex = vertexIndex;
             if (m_graph.IsValidNodeId (nodeB))
                 m_graph.VertexTwist (nodeA, nodeB);
             }
@@ -266,6 +265,23 @@ size_t AddVertexData (VertexData const & data)
     size_t index = m_allVertexData.size ();
     m_allVertexData.push_back (data);
     return index;
+    }
+
+void AddGapEdge(MTGNodeId startNodeId, size_t destVertexIndex)
+    {
+    MTGNodeId destNodeId = FindPriorNodeAtVertex(destVertexIndex);
+    int startVertexDataIndex, destVertexDataIndex;
+    if (m_graph.IsValidNodeId(startNodeId) && m_graph.IsValidNodeId(destNodeId) &&
+        m_graph.TryGetLabel(startNodeId, m_vertexDataLabel, startVertexDataIndex) &&
+        m_graph.TryGetLabel(destNodeId, m_vertexDataLabel, destVertexDataIndex))
+        {
+        MTGNodeId nodeA, nodeB;
+        m_graph.CreateEdge(nodeA, nodeB);
+        m_graph.TrySetLabel(nodeA, m_vertexDataLabel, startVertexDataIndex);
+        m_graph.TrySetLabel(nodeB, m_vertexDataLabel, destVertexDataIndex);
+        m_graph.VertexTwist(nodeA, startNodeId);
+        m_graph.VertexTwist(nodeB, destNodeId);
+        }
     }
 
 void AddEdge (VertexData const &vertexA, VertexData const &vertexB)
@@ -319,6 +335,13 @@ size_t PurgeDuplicates ()
             }
         }
     MTGARRAY_END_SET_LOOP (nodeA0, &m_graph)
+
+    for (MTGNodeId& nodeId : m_anyNodeAtVertex)
+        {   // find a surviving node at each vertex
+        if (m_graph.GetMaskAt(nodeId, deleteMask))
+            nodeId = m_graph.FindUnmaskedAroundVertex(nodeId, deleteMask);
+        }
+
     size_t numDelete = m_graph.DropMaskedEdges (deleteMask);
     assert (numMark == numDelete);
     m_graph.DropMask (deleteMask);
@@ -413,9 +436,6 @@ void CutVisitorPolygonWithSinglePlane (PolyfaceVisitorR visitor, ClipPlaneR plan
         }
     }
 
-
-
-
 void AddPlaneSectionCut
 (
 PolyfaceQueryCR source,
@@ -458,17 +478,27 @@ DVec3dCR direction
         }
     }
 
+size_t GetVertexDataIndex(MTGNodeId nodeId)
+    {
+    int vertexDataIndex;
+    if (m_graph.TryGetLabel(nodeId, m_vertexDataLabel, vertexDataIndex) && vertexDataIndex >= 0 && vertexDataIndex < m_allVertexData.size())
+        return (size_t) vertexDataIndex;
+    return SIZE_MAX;
+    }
 
+VertexData* GetVertexData(MTGNodeId nodeId)
+    {
+    size_t index = GetVertexDataIndex(nodeId);
+    if (index < SIZE_MAX)
+        return &m_allVertexData[index];
+    return nullptr;
+    }
 
 bool AppendXYZ (MTGNodeId nodeId, bvector<DPoint3d> &dest)
     {
-    int index;
-    DPoint3d xyz;
-    if (m_graph.TryGetLabel (nodeId, m_vertexDataLabel, index)
-        && m_coordinateMap->TryGetPoint ((size_t)index, xyz)
-        )
+    if (auto data = GetVertexData(nodeId))
         {
-        dest.push_back (xyz);
+        dest.push_back(data->mXYZ);
         return true;
         }
     return false;
@@ -479,13 +509,10 @@ bvector <FacetEdgeLocationDetail> m_chainLocation;
 bvector <DPoint3d> m_chainXYZ;
 void AppendOutputVertex (MTGNodeId nodeId)
     {
-    int vertexDataIndex;
-    if (m_graph.TryGetLabel (nodeId, m_vertexDataLabel, vertexDataIndex)
-        && vertexDataIndex >= 0)
+    if (auto data = GetVertexData(nodeId))
         {
-        size_t index = (size_t) vertexDataIndex;
-        m_chainXYZ.push_back (m_allVertexData[index].mXYZ);
-        m_chainLocation.push_back (FacetEdgeLocationDetail (m_allVertexData[index].m_readIndex, m_allVertexData[index].m_edgeFraction));
+        m_chainXYZ.push_back(data->mXYZ);
+        m_chainLocation.push_back(FacetEdgeLocationDetail(data->m_readIndex, data->m_edgeFraction));
         }
     }
 
@@ -510,163 +537,388 @@ ICurvePrimitivePtr ChainToCurvePrimitive (size_t minimumSize, bool markEdgeFract
     return linestring;
     }
 
-// Collect a linestring with all edges reachable from startNode forward.
-// Apply barrier mask to both sides of each edge.
-// Stop on hitting vertexBarrierMask or edgeVisitedMask
-// Add closure if returned to start.
-// use xyz as work space.
-ICurvePrimitivePtr CollectChainFrom (MTGNodeId startNode, MTGMask edgeVisitedMask, MTGMask barrierMask, bvector<DPoint3d>&xyz,
-    size_t minimumSize, bool markEdgeFractions)
+void FillGapsInLoops(bvector<MTGNodeId> const& vertexSeeds, DVec3dCR refVector)
     {
-    ClearChain ();
-    MTGNodeId currNode = startNode;
-    AppendOutputVertex (currNode);
-    while (!m_graph.GetMaskAt (currNode, edgeVisitedMask))
+    double absTol = m_coordinateMap->GetXYZAbsTol();
+    double relTol = m_coordinateMap->GetXYZRelTol();
+    if (relTol <= 0.0)
+        return;
+
+    typedef bpair<double, size_t> ParamVertexIndexPair;
+    auto compareParams = [](ParamVertexIndexPair const& a, ParamVertexIndexPair const& b) { return a.first < b.first; };
+
+    // order the points in the mesh by dot product with "random" vector
+    DPoint3d xyz0;
+    m_coordinateMap->TryGetPoint(0, xyz0);
+    DVec3d unitSortVec = DVec3d::FromNormalizedCrossProduct(refVector, DVec3d::From(1.45, 0.13, 0.2));
+    size_t vertexIndex = 0;
+    bvector<ParamVertexIndexPair> paramToVertexIndex;
+    for (auto const& xyz : m_coordinateMap->GetPolyfaceHeaderR().Point())
+        paramToVertexIndex.push_back(ParamVertexIndexPair(xyz.DotDifference(xyz0, unitSortVec), vertexIndex++));
+    std::sort(paramToVertexIndex.begin(), paramToVertexIndex.end(), compareParams);
+
+    // for each dangling vertex in the graph, look for nearby mesh points mapped to distinct graph vertices,
+    // and bridge the gap if within tolerance.
+    for (auto const& seed: vertexSeeds)
         {
-        m_graph.SetMaskAroundEdge (currNode, edgeVisitedMask);
-        currNode = m_graph.FSucc (currNode);
-        AppendOutputVertex (currNode);
-        if (currNode == startNode || m_graph.GetMaskAt (currNode, barrierMask))
+        if (1 != m_graph.CountNodesAroundVertex(seed))
+            continue;
+        auto degOneData = GetVertexData(seed);
+        auto fSuccData = GetVertexData(m_graph.FSucc(seed));
+        if (!degOneData || !fSuccData)
+            continue;
+        DPoint3dCR danglerVertex = degOneData->mXYZ;
+        size_t danglerVertexIndex = degOneData->m_vertexIndex;
+        size_t danglerFarVertexIndex = fSuccData->m_vertexIndex;
+
+        // sort_zyx() in PolyfaceCoordinateMap.cpp equates points using l-infinity norm:
+        // ||a-b|| := a.MaxDiff(b) <= absTol + relTol * (|a.x| + |a.y| + |a.z| + |b.x| + |b.y| + |b.z|)
+        double tolFactor = 2.0 * (fabs(danglerVertex.x) + fabs(danglerVertex.y) + fabs(danglerVertex.z));
+        double param = danglerVertex.DotDifference(xyz0, unitSortVec);
+
+        // bridge shortest gaps first, then loosen relative tol and repeat
+        static const size_t s_maxIter = 4;
+        double myRelTol = relTol * 10.0;
+        for (size_t iter = 0; iter < s_maxIter && myRelTol <= mgds_fc_epsilon; ++iter, myRelTol *= 10.0)
+            {
+            double tol = absTol + myRelTol * tolFactor; // approximation to coordMap's tol using new relative tolerance
+            double twoTol = tol + tol;
+            double minDist = DBL_MAX;
+            size_t closestVertexIndex = SIZE_MAX;
+
+            // To find nearby points c to d=danglerVertex, we only have to check nearby projection parameters q to
+            // p=param. To see this, suppose |q-param| > 2*tol. Then we have:
+            //    2*tol < |q-param| <= DRange3d::From(c,d).DiagonalDistance() <= sqrt(3||c-d||^2) < 2||c-d||.
+            // Thus all points c with projection parameter q that satisfy ||c-d|| <= tol are found in the parameter
+            // range |q-param| <= 2*tol.
+            auto lessThan = [&](ParamVertexIndexPair const& a, ParamVertexIndexPair const& b) { return a.first < b.first - twoTol; };
+
+            // find the first vertex in parametric range of danglerVertex
+            auto closeParam = std::lower_bound(paramToVertexIndex.begin(), paramToVertexIndex.end(), ParamVertexIndexPair(param, 0), lessThan);
+            if (closeParam != paramToVertexIndex.end())
+                {
+                // iterate projections in range of param
+                for (auto iParam = closeParam; iParam != paramToVertexIndex.end(); ++iParam)
+                    {
+                    if (iParam->first - param > twoTol)
+                        break; // no more vertices close to danglerVertex in parameter space
+                    if (iParam->second == danglerVertexIndex || iParam->second == danglerFarVertexIndex)
+                        continue; // there's already an edge between this vertex and danglerVertex
+                    DPoint3d closeVertex;
+                    m_coordinateMap->TryGetPoint(iParam->second, closeVertex);
+                    double dist = danglerVertex.MaxDiff(closeVertex); // using coordMap norm
+                    if (dist > 0.0 && dist <= tol && dist < minDist)
+                        {
+                        closestVertexIndex = iParam->second;
+                        minDist = dist;
+                        }
+                    }
+                }
+            if (closestVertexIndex < SIZE_MAX)
+                {
+                AddGapEdge(seed, closestVertexIndex);
+                break;
+                }
+            }
+        }
+    }
+
+bvector<MTGNodeId> MarkDanglingChains(bvector<MTGNodeId> const& vertexSeeds, MTGMask danglerMask)
+    {
+    bvector<MTGNodeId> danglerVertices;
+
+    // Lambda to return unmasked node at this vertex if it is the only such node.
+    // We can't just mark chains starting at degree-1 vertices: this would miss the trunk of a dangling tree.
+    auto getIsolatedUnmaskedNodeAtVertex = [&](MTGNodeId vertex, MTGMask mask) -> MTGNodeId
+        {
+        MTGNodeId found = MTG_NULL_NODEID;
+        MTGARRAY_VERTEX_LOOP(currNodeId, &m_graph, vertex)
+            {
+            if (!m_graph.GetMaskAt(currNodeId, mask))
+                {
+                if (MTG_NULL_NODEID != found)
+                    return MTG_NULL_NODEID; // not isolated
+                found = currNodeId;
+                }
+            }
+        MTGARRAY_END_VERTEX_LOOP(currNodeId, &m_graph, vertex)
+        return found;
+        };
+
+    bool foundDanglingEdge;
+    do
+        {
+        foundDanglingEdge = false;
+        for (auto const& seed: vertexSeeds)
+            {
+            MTGNodeId dangler = getIsolatedUnmaskedNodeAtVertex(seed, danglerMask);
+            if (MTG_NULL_NODEID != dangler)
+                {
+                foundDanglingEdge = true;
+                danglerVertices.push_back(dangler);
+                do
+                    {   // mark the entire *unambiguous* chain
+                    m_graph.SetMaskAroundEdge(dangler, danglerMask);
+                    dangler = m_graph.FSucc(dangler);
+                    } while (m_graph.CountNodesAroundVertex(dangler) == 2);
+                }
+            }
+        } while (foundDanglingEdge);
+
+    return danglerVertices;
+    }
+
+// Given a vertex loop containing more than 2 edges, reorder the radial edges by their angle measured from the first edge.
+void SortVertexLoop(MTGNodeId seed, DVec3dCR refVector)
+    {
+    auto nearVertexData = GetVertexData(seed);
+    if (!nearVertexData)
+        return;
+    auto farVertexData = GetVertexData(m_graph.FSucc(seed));
+    if (!farVertexData)
+        return;
+    DVec3d edgeDir0 = DVec3d::FromStartEnd(nearVertexData->mXYZ, farVertexData->mXYZ);
+
+    farVertexData = GetVertexData(m_graph.FSucc(m_graph.VSucc(seed)));
+    if (!farVertexData)
+        return;
+    DVec3d edgeDir1 = DVec3d::FromStartEnd(nearVertexData->mXYZ, farVertexData->mXYZ);
+    DVec3d normal = (edgeDir0.SignedAngleTo(edgeDir1, refVector) < 0.0) ? DVec3d::FromScale(refVector, -1) : refVector;
+
+    bvector<bpair<double, MTGNodeId>> incidentEdges; // radian angle in [0, 2pi)
+    MTGARRAY_VERTEX_LOOP(edgeId, &m_graph, seed)
+        {
+        farVertexData = GetVertexData(m_graph.FSucc(edgeId));
+        if (!farVertexData)
+            return;
+        double angle = Angle::AdjustToSweep(edgeDir0.SignedAngleTo(DVec3d::FromStartEnd(nearVertexData->mXYZ, farVertexData->mXYZ), normal), 0.0, msGeomConst_2pi);
+        incidentEdges.push_back({angle, edgeId});
+        }
+    MTGARRAY_END_VERTEX_LOOP(edgeId, &m_graph, seed)
+
+    bool alreadyOrdered = true;
+    for (size_t i = 1; i < incidentEdges.size(); ++i)
+        {
+        if (!(alreadyOrdered = (incidentEdges[i - 1].first <= incidentEdges[i].first)))
             break;
         }
-    return ChainToCurvePrimitive (minimumSize, markEdgeFractions);
+    if (alreadyOrdered)
+        return;
+
+    // lambda ignores duplicate angles, because we don't expect them after PurgeDuplicates
+    std::sort(incidentEdges.begin(), incidentEdges.end(), [](auto const& e0, auto const& e1) { return e0.first < e1.first; });
+
+    // destroy the vertex loop
+    for (MTGNodeId edgeId = seed; m_graph.VSucc(edgeId) != edgeId; )
+        edgeId = m_graph.YankEdgeFromVertex(edgeId);
+
+    // reconstitute the vertex loop in order
+    for (size_t i = 1; i < incidentEdges.size(); ++i)
+        m_graph.VertexTwist(incidentEdges[i - 1].second, incidentEdges[i].second);
     }
 
-static void Check (size_t value, char const* name)
+void CollectDanglingChains(bvector<ICurvePrimitivePtr>& linestrings, bvector<MTGNodeId> const& danglerVertices, MTGMask danglerMask, MTGMask visitedMask, bool markEdgeFractions)
     {
-    }
-
-
-CurveVectorPtr CollectChains (bool formRegions, bool markEdgeFractions)
-    {
-    bvector<MTGNodeId> vertexSeed;
-    m_graph.CollectVertexLoops (vertexSeed);
-    MTGMask barrierVertexMask = m_graph.GrabMask ();
-    m_graph.ClearMask (barrierVertexMask);
-    size_t totalVerts = vertexSeed.size ();
-    size_t interiorVerts = 0;
-    size_t otherVerts = 0;
-    // We want unusual vertices -- anything with other than 2 nodes -- at front.
-    // Walk throught the array, swapping simple verts to the (growing downward) pile of simples at the end.
-    // (The vert that is swapped forward is always unknown and is then reinspected on the next pass)
-    // Indices [0..otherVerts-1] are confirmed "other"
-    // Indices [totalVerts-interiorVerts..totalVerts-1] are confirmed "interior"
-    // Indices [otherVerts..totalVerts-interiorVerts-1] are untested.
-    // Index [otherVerts] is being tested
-    // Indices
-    while (otherVerts + interiorVerts < totalVerts)
+    auto isChain = [&](MTGNodeId nodeId) -> bool { return m_graph.GetMaskAt(nodeId, danglerMask); };
+    auto isVisited = [&](MTGNodeId nodeId) -> bool { return m_graph.GetMaskAt(nodeId, visitedMask); };
+    for (auto const& seed: danglerVertices)
         {
-        MTGNodeId seed = vertexSeed[otherVerts];
-        size_t numThisVertex = m_graph.CountNodesAroundVertex (seed);
-        if (numThisVertex == 2)
+        MTGARRAY_VERTEX_LOOP(nodeId, &m_graph, seed)
             {
-            interiorVerts++;
-            std::swap (vertexSeed[otherVerts], vertexSeed[totalVerts - interiorVerts]);
+            if (!isVisited(nodeId))
+                {
+                ClearChain();
+                MTGNodeId chainNode = nodeId;
+                AppendOutputVertex(chainNode);
+                do
+                    {
+                    m_graph.SetMaskAroundEdge(chainNode, visitedMask);
+                    chainNode = m_graph.FSucc(chainNode);
+                    AppendOutputVertex(chainNode);
+                    } while (!isVisited(chainNode) && isChain(chainNode) && m_graph.VSucc(chainNode) != chainNode);
+
+                auto chain = ChainToCurvePrimitive(2, markEdgeFractions);
+                if (chain.IsValid())
+                    linestrings.push_back(chain);
+                }
             }
-        else
+        MTGARRAY_END_VERTEX_LOOP(nodeId, &m_graph, seed)
+        }
+    }
+
+void CollectLoopsAtVertex(bvector<ICurvePrimitivePtr>& linestrings, MTGNodeId seed, MTGMask danglerMask, MTGMask visitedMask, bool markEdgeFractions)
+    {
+    auto isChain = [&](MTGNodeId nodeId) -> bool { return m_graph.GetMaskAt(nodeId, danglerMask); };
+    auto isVisited = [&](MTGNodeId nodeId) -> bool { return m_graph.GetMaskAt(nodeId, visitedMask); };
+    MTGARRAY_VERTEX_LOOP(nodeId, &m_graph, seed)
+        {
+        if (!isVisited(nodeId))
             {
-            m_graph.SetMaskAroundVertex (seed, barrierVertexMask);
-            otherVerts++;
+            BeAssert(!isChain(nodeId));
+
+            ClearChain();
+            MTGNodeId loopNode = nodeId;
+            AppendOutputVertex(loopNode);
+            do
+                {
+                m_graph.SetMaskAroundEdge(loopNode, visitedMask);
+                loopNode = m_graph.FSucc(loopNode);
+                loopNode = m_graph.FindUnmaskedAroundVertexPred(loopNode, danglerMask); // skip danglers at the far vertex
+                AppendOutputVertex(loopNode);
+                } while (!isVisited(loopNode) && loopNode != nodeId);
+
+            BeAssert(loopNode == nodeId);
+
+            auto loop = ChainToCurvePrimitive(3, markEdgeFractions);
+            if (loop.IsValid())
+                linestrings.push_back(loop);
             }
         }
+    MTGARRAY_END_VERTEX_LOOP(nodeId, &m_graph, seed)
+    };
 
-    MTGMask edgeVisitedMask = m_graph.GrabMask ();
-    m_graph.ClearMask (edgeVisitedMask);
-    bvector<DPoint3d> chainXYZ;
-    CurveVector::BoundaryType topType;
-    size_t minSize;
-    if (otherVerts == 0 && formRegions)
+CurveVectorPtr OutputChainsAsCurveVector(bvector<ICurvePrimitivePtr> const& linestrings, bool hasDanglers, bool formRegions)
+    {
+    CurveVectorPtr result;
+    if (linestrings.empty())
+        return result;
+    bool resultIsRegion = !hasDanglers && formRegions;
+    if (linestrings.size() == 1)
         {
-        // The graph has nothing but closed loops !!! (All cheer)
-        topType = CurveVector::BOUNDARY_TYPE_ParityRegion;
-        minSize = 3;
+        // The linestrings are primitives that don't care whether they are open or closed.
+        // Closure arises if they are placed in parents that announce closure ...
+        auto boundaryType = resultIsRegion ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open;
+        result = CurveVector::Create(linestrings[0], boundaryType);
+        }
+    else if (resultIsRegion)
+        {
+        result = CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion);
+        for (size_t i = 0; i < linestrings.size(); i++)
+            {
+            CurveVectorPtr child = CurveVector::Create(linestrings[i], CurveVector::BOUNDARY_TYPE_Outer);
+            result->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*child));
+            }
         }
     else
         {
-        topType = CurveVector::BOUNDARY_TYPE_None;
-        minSize = 2;
+        // we have a mix of loops and chains; collect all the loops into a region
+        result = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+        auto region = formRegions ? CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion) : nullptr;
+        for (auto const& linestring : linestrings)
+            {
+            auto pts = linestring->GetLineStringCP();
+            if (region.IsValid() && pts && pts->front().AlmostEqual(pts->back()) && pts->size() > 3)
+                {
+                CurveVectorPtr child = CurveVector::Create(linestring, CurveVector::BOUNDARY_TYPE_Outer);
+                region->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*child));
+                }
+            else
+                {
+                result->push_back(linestring);
+                }
+            }
+        // if we found a region, insert it at front
+        if (region.IsValid() && !region->empty())
+            {
+            if (1 == region->size())
+                region->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Outer);
+            result->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*region));
+            result->SwapAt(0, result->size() - 1);
+            }
+        }
+    return result;
+    }
+
+// The input mesh is typically not well-behaved (gaps, non-manifold topology, duplicate faces,
+// self-intersects), so this method tries really hard to compensate.
+// Optional refVector (e.g., cutplane normal) is used when formRegions=true for sorting nodes.
+CurveVectorPtr CollectChains(bool formRegions = false, bool markEdgeFractions = false, DVec3dCP refVector = nullptr)
+    {
+    if (!m_graph.GetActiveNodeCount())
+        return nullptr;
+
+    bvector<MTGNodeId> vertexSeeds;
+    m_graph.CollectVertexLoops (vertexSeeds);
+
+    // Step 1: fill gaps to eliminate dangling chains (to improve loop collection)
+    if (formRegions && refVector)
+        FillGapsInLoops(vertexSeeds, *refVector);
+
+    // Step 2: mark remaining dangling chains and remember their starts. We'll ignore them during loop collection.
+    MTGMask danglerMask = m_graph.GrabMask();
+    m_graph.ClearMask(danglerMask);
+    bvector<MTGNodeId> danglerVertices = MarkDanglingChains(vertexSeeds, danglerMask);
+
+    // Step 3: sort the edges around pinch vertices, which lie on multiple loops
+    bvector<MTGNodeId> pinchVertices;
+    if (formRegions && refVector)
+        {
+        for (auto const& seed: vertexSeeds)
+            {
+            size_t numThisVertex = m_graph.CountUnmaskedAroundVertex(seed, danglerMask);
+            if (numThisVertex % 2 == 0 && numThisVertex > 2)
+                {
+                pinchVertices.push_back(seed);
+                SortVertexLoop(seed, *refVector);
+                }
+            }
         }
 
-    size_t numFace = m_graph.CountFaceLoops ();
-    size_t numVertex = m_graph.CountVertexLoops ();
-    Check (numFace, "faces");
-    Check (numVertex, "vertices");
-    ICurvePrimitivePtr thisLoop = NULL;
-    CurveVectorPtr allLoops = CurveVector::Create (topType);
-
+    // Step 4: collect chains
     bvector<ICurvePrimitivePtr> linestrings;
-    for (size_t i = 0, n = vertexSeed.size (); i < n; i++)
+    MTGMask visitedMask = m_graph.GrabMask();
+    m_graph.ClearMask(visitedMask);
+    CollectDanglingChains(linestrings, danglerVertices, danglerMask, visitedMask, markEdgeFractions);
+
+    // Step 5: collect loops at pinch vertices
+    if (formRegions)
         {
-        MTGNodeId seed = vertexSeed[i];
-        if (!m_graph.GetMaskAt (seed, edgeVisitedMask))
+        for (auto& seed : pinchVertices)
             {
-            thisLoop = CollectChainFrom (seed,edgeVisitedMask, barrierVertexMask, chainXYZ, minSize, markEdgeFractions);
-            if (thisLoop.IsValid ())
-                linestrings.push_back (thisLoop);
-            }
-        }
-    CurveVectorPtr result = NULL;
-    bool resultIsRegion = otherVerts == 0 && formRegions;
-    // The linestrings are primitives that don't care whether they are open or closed.
-    // Closure arises if they are placed in parents that announce closure ...
-    if (linestrings.size () == 0)
-        {
-        }
-    else if (linestrings.size () == 1)
-        {
-        result = CurveVector::Create (linestrings[0],
-                    resultIsRegion ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open);
-        }
-    else // many children
-        {
-        if (resultIsRegion)
-            {
-            // Multiple loops ...
-            result = CurveVector::Create (CurveVector::BOUNDARY_TYPE_ParityRegion);
-            for (size_t i = 0; i < linestrings.size (); i++)
-                {
-                CurveVectorPtr child = CurveVector::Create (linestrings[i], CurveVector::BOUNDARY_TYPE_Outer);
-                result->push_back (ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*child));
-                }
-            }
-        else
-            {
-            // Multiple isolated primitives ...
-            result = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
-            for (size_t i = 0; i < linestrings.size (); i++)
-                {
-                result->push_back (linestrings[i]);
-                }
+            // start at visited node (if present) to preserve parity
+            MTGNodeId visitedSeed = m_graph.FindMaskAroundVertex(seed, visitedMask);
+            if (MTG_NULL_NODEID != visitedSeed)
+                seed = visitedSeed;
+
+            CollectLoopsAtVertex(linestrings, seed, danglerMask, visitedMask, markEdgeFractions);
             }
         }
 
+    // Step 6: collect remaining loops
+    for (auto& seed : vertexSeeds)
+        CollectLoopsAtVertex(linestrings, seed, danglerMask, visitedMask, markEdgeFractions);
+
+    bool hasDanglers = danglerVertices.size() > 0;
+    CurveVectorPtr result = OutputChainsAsCurveVector(linestrings, hasDanglers, formRegions);
+
+    m_graph.DropMask(visitedMask);
+    m_graph.DropMask(danglerMask);
     return result;
     }
 };
-// NEEDS WORK: Output "ON" faces as complete regions.
 
 GEOMDLLIMPEXP CurveVectorPtr PolyfaceQuery::PlaneSlice (DPlane3dCR sectionPlane, bool formRegions, bool markEdgeFractions) const
     {
-    // This polyface only gets its point array built up ... (The PolyfaceCoordinateMap addresse them)
+    // This polyface only gets its point array built up ... (The PolyfaceCoordinateMap addresses them)
     PolyfaceHeaderPtr section = PolyfaceHeader::CreateVariableSizeIndexed ();
     PolyfaceCoordinateMapPtr sectionMap = PolyfaceCoordinateMap::New (*section.get ());
     SectionGraph chainGraph (sectionMap);
     chainGraph.AddPlaneSectionCut (*this, *sectionMap, sectionPlane);
     chainGraph.JoinEdges ();
     chainGraph.PurgeDuplicates ();
-    return chainGraph.CollectChains (formRegions, markEdgeFractions);
+    return chainGraph.CollectChains(formRegions, markEdgeFractions, &sectionPlane.normal);
     }
 
 
 CurveVectorPtr PolyfaceQuery::DrapeLinestring (bvector<DPoint3d> &spacePoints, DVec3dCR direction) const
     {
-    // This polyface only gets its point array built up ... (The PolyfaceCoordinateMap addresse them)
+    // This polyface only gets its point array built up ... (The PolyfaceCoordinateMap addresses them)
     PolyfaceHeaderPtr section = PolyfaceHeader::CreateVariableSizeIndexed ();
     PolyfaceCoordinateMapPtr sectionMap = PolyfaceCoordinateMap::New (*section.get ());
     SectionGraph chainGraph (sectionMap);
     chainGraph.AddDrapedLinestring (*this, *sectionMap, spacePoints, direction);
     chainGraph.JoinEdges ();
     chainGraph.PurgeDuplicates ();
-    return chainGraph.CollectChains (false, false);
+    return chainGraph.CollectChains();
     }
 END_BENTLEY_GEOMETRY_NAMESPACE

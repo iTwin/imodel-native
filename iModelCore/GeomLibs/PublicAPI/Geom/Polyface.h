@@ -1507,7 +1507,7 @@ bvector<PolyfaceHeaderPtr> &submeshArray
 
 
 //! Return connected meshes.
-//! @param [in] connectivityType 0 for vertex connectivity, 1 for invisible edge connectivity (any shared visible edge is a barrier), 2 for connectivity across any edge (no visibility test)
+//! @param [in] connectivityType 0 for vertex connectivity, 1 for connectivity across any edge (no visibility test), 2 for invisible edge connectivity (any shared visible edge is a barrier)
 //! @param [out] submeshArray This is initially cleared, then filled with as many (smartpointers to) new arrays as needed
 //!     for the blocking.  Each new array receives data from a block.
 GEOMDLLIMPEXP bool PartitionByConnectivity (int connectivityType, bvector<PolyfaceHeaderPtr> &submeshArray) const;
@@ -3434,12 +3434,12 @@ GEOMDLLIMPEXP bool operator() (const DVec3d& pointA, const DVec3d &pointB) const
 struct PolyfaceZYXMap : bmap <DPoint3d, size_t, DPoint3dZYXTolerancedSortComparison>
 {
 PolyfaceZYXMap (DPoint3dZYXTolerancedSortComparison const &compare);
+DPoint3dZYXTolerancedSortComparison const& GetComparator() const;
 };
 struct PolyfaceZYXDVec3dMap : bmap <DVec3d, size_t, DVec3dZYXTolerancedSortComparison>
 {
 PolyfaceZYXDVec3dMap (DVec3dZYXTolerancedSortComparison const &compare);
 };
-
 
 struct DPoint3dZYXSortComparison
 {
@@ -3529,6 +3529,11 @@ public:
     //! @param [in] point coordinates to look up.
     //! @param [out] index 0-based index within the client mesh.
     GEOMDLLIMPEXP bool   FindPoint (DPoint3dCR point, size_t &index);
+
+    //! return absolute tolerance for point comparisons
+    GEOMDLLIMPEXP double GetXYZAbsTol() const;
+    //! return relative tolerance for point comparisons
+    GEOMDLLIMPEXP double GetXYZRelTol() const;
 
 //! (Find or) Add a normal.  Return its (0 based) index.
     //! @param [in] normal normal coordinates.
