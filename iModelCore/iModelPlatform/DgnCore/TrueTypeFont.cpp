@@ -837,7 +837,16 @@ static bool hasEmbeddingRights(FT_Face face) {
     if (NULL == os2Table)
         return false;
 
-    return (0 == (0x1 & os2Table->fsType));
+    // https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6OS2.html
+    // Bit #1 (value 2) is the "licensed" / "protected" bit.
+    /*
+    0   Reserved; must be 0
+    1   Licensed (protected) font; should not be 1 if bits 2 or 3 are one. Fonts that have only this bit set must not be modified, embedded, or exchanged in any manner without first obtaining permission of the legal owner.
+    2   Preview and print embedding; should not be 1 if bits 1 or 3 are one. Fonts that have only this bit set may be embedded in documents and temporarily loaded on the remote system. Documents containing such fonts must be opened “read-only;” no edits can be applied to the document.
+    3   Editable embedding; should not be 1 if bits 1 or 2 are one. Fonts that have only this bit set may be embedded in documents and temporarily loaded on the remote system. Documents containing such fonts may be editable.
+    4–7 Reserved; must be 0
+    */
+    return (0 == (0x2 & os2Table->fsType));
 }
 
 /** Determine whether this font face may be embedded. */
