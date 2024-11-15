@@ -837,16 +837,31 @@ static bool hasEmbeddingRights(FT_Face face) {
     if (NULL == os2Table)
         return false;
 
-    // https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6OS2.html
-    // Bit #1 (value 2) is the "licensed" / "protected" bit.
-    /*
-    0   Reserved; must be 0
-    1   Licensed (protected) font; should not be 1 if bits 2 or 3 are one. Fonts that have only this bit set must not be modified, embedded, or exchanged in any manner without first obtaining permission of the legal owner.
-    2   Preview and print embedding; should not be 1 if bits 1 or 3 are one. Fonts that have only this bit set may be embedded in documents and temporarily loaded on the remote system. Documents containing such fonts must be opened “read-only;” no edits can be applied to the document.
-    3   Editable embedding; should not be 1 if bits 1 or 2 are one. Fonts that have only this bit set may be embedded in documents and temporarily loaded on the remote system. Documents containing such fonts may be editable.
-    4–7 Reserved; must be 0
-    */
-    return (0 == (0x2 & os2Table->fsType));
+    // https://learn.microsoft.com/en-us/typography/opentype/spec/os2#fstype
+    // Bits 0-3 describe usage permissions. Valid fonts must set at most one of bits 1, 2 or 3; bit 0 is permanently reserved and must be zero. Valid values for this sub-field are 0, 2, 4 or 8. The meaning of these values is as follows: 
+    enum {
+      // 0: Installable embedding: the font may be embedded, and may be permanently installed for use on a remote systems, or for use by other users. The user of the remote system acquires the identical rights, obligations and licenses for that font as the original purchaser of the font, and is subject to the same end-user license agreement, copyright, design patent, and/or trademark as was the original purchaser.
+      kInstallable = 0,
+      // 2: Restricted License embedding: the font must not be modified, embedded or exchanged in any manner without first obtaining explicit permission of the legal owner. 
+      kRestricted = 2,
+      // 4: Preview & Print embedding: the font may be embedded, and may be temporarily loaded on other systems for purposes of viewing or printing the document. Documents containing Preview & Print fonts must be opened “read-only”; no edits may be applied to the document. 
+      kPreviewAndPrint = 4,
+      // 8: Editable embedding: the font may be embedded, and may be temporarily loaded on other systems. As with Preview & Print embedding, documents containing Editable fonts may be opened for reading. In addition, editing is permitted, including ability to format new text using the embedded font, and changes may be saved. 
+      kEditable = 8,
+      
+      // Embedding restricted fonts is obviously prohibited.
+      // Embedding preview+print fonts would make the document uneditable in many contexts.
+      // Don't embed either.
+      kNoEmbed = kPreviewAndPrint | kRestricted,
+    };
+    
+    // Only one bit in bits 0 through 3 is supposed to be set.
+    // If more than one bit is set, we're allowed to assume the least restrictive one applies.
+    if (kEditable == (os2Table->fsType & kEditable)) {
+      return true;
+    }
+    
+    return 0 == (os2Table->fsType & kNoEmbed);
 }
 
 /** Determine whether this font face may be embedded. */
