@@ -287,7 +287,7 @@ template<typename T_Db> struct SQLiteOps {
             fontDbHolder.reset(fontDb);
         }
 
-        printf("EmbedFont: 1\n");
+        printf("EmbedFont: 1 (%s)\n", JsInterop::json_data().c_str());
         if (argJson.isMember(JsInterop::json_data())) {
             bvector<FontFace> faces;
             FontFace face(argJson[JsInterop::json_face()]);
@@ -296,7 +296,7 @@ template<typename T_Db> struct SQLiteOps {
             faces.emplace_back(face);
 
             auto napiData = argJson[JsInterop::json_data()].AsNapiValueRef();
-            printf("EmbedFont: 2\n");
+            printf("EmbedFont: 2\n%s\n", argJson.Stringify(StringifyFormat::Indented).c_str());
             switch (napiData->m_napiVal.Type()) {
             case napi_undefined:
                 printf("EmbedFont: data is undefined\n");
