@@ -1,0 +1,28 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+
+LOG_DIR=$(OutputRootDir)LogFiles\CodeCoverage
+always:
+	!~@mkdir $(LOG_DIR)
+
+always:
+    %if defined (COMP_NAME)
+        %if defined (generateExcel)
+            start "CodeCoverage $(COMP_NAME)" \/WAIT $(BBPYTHONCMD) $(_MakeFilePath)CoverageOpenCPP.py --reportPath=$(LOG_DIR) --component=$(COMP_NAME) --excelReport
+        %else
+            start "CodeCoverage $(COMP_NAME)" \/WAIT $(BBPYTHONCMD) $(_MakeFilePath)CoverageOpenCPP.py --component=$(COMP_NAME) --localReport
+            %if defined (Type)
+                start "CodeCoverage $(COMP_NAME)" \/WAIT $(BBPYTHONCMD) $(_MakeFilePath)CoverageOpenCPP.py --component=$(COMP_NAME)
+            %endif
+        %endif    
+    %else
+        %error Define COMP_NAME in your BentleyBuildMakeOptions. e.g. BentleyBuildMakeOptions="-dCOMP_Name=BeSQLite".
+    %endif
+
+
+
+%message ..
+%message The Coverage reports are at $(LOG_DIR)
+%message ..
