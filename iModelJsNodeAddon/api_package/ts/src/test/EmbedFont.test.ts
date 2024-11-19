@@ -80,12 +80,12 @@ describe("embed fonts", () => {
       tempDgnDb.embedFont({ systemFont: "times new roman", compress: true });
 
     // We prohibit embedding restricted and print-and-preview fonts in iModels.
-    expect(tempDgnDb.embedFont({
+    expect(() => tempDgnDb.embedFont({
       fileName: getFontPath("Karla-Restricted.ttf"),
       compress: true,
     })).to.throw("unable to embed font");
 
-    expect(tempDgnDb.embedFont({
+    expect(() => tempDgnDb.embedFont({
       fileName: getFontPath("Karla-Preview-And-Print.ttf"),
       compress: true,
     })).to.throw("unable to embed font");
