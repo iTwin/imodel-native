@@ -9,6 +9,7 @@
   "scripts": {
     "build": "tsc 1>&2",
     "lint": "eslint -f visualstudio \"./src/**/*.ts\" 1>&2",
+    "lint-fix": "eslint --fix -f visualstudio \"./src/**/*.ts\" 1>&2",
     "buildAndLint": "npm run -s build && npm run -s lint",
     "clean": "rimraf lib",
     "copy:test-assets": "cpx \"./assets/test/**/*\" ./lib/test/assets",
