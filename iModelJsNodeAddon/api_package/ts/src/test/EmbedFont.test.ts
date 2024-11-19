@@ -51,7 +51,7 @@ describe("embed fonts", () => {
     if (os.platform() === "win32") // Embedding system fonts is only supported on windows.
       tempSQLiteDb.embedFont({ systemFont: "Times New Roman" });
 
-    // Currently, embedding rights are not enforced for workspace dbs.
+    // Currently embedding rights are not enforced for workspace dbs.
     tempSQLiteDb.embedFont({
       fileName: getFontPath("Karla-Restricted.ttf"),
       compress: true,
