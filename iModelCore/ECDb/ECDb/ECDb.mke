@@ -401,6 +401,20 @@ $(o)BuiltInVTabs$(oext):                                      $(baseDir)BuiltInV
 
 $(o)ClassViews$(oext):                                        $(baseDir)ClassViews.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)ECSqlLexer$(oext):                                        $(baseDir)ECSql/Antlr4/ECSqlLexer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ECSqlParser2$(oext):                                       $(baseDir)ECSql/Antlr4/ECSqlParser.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ECSqlParserVisitor$(oext):                                $(baseDir)ECSql/Antlr4/ECSqlParserVisitor.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ECSqlParserBaseListener$(oext):                           $(baseDir)ECSql/Antlr4/ECSqlParserBaseListener.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ECSqlParserBaseVisitor$(oext):                            $(baseDir)ECSql/Antlr4/ECSqlParserBaseVisitor.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)ECSqlParserListener$(oext):                               $(baseDir)ECSql/Antlr4/ECSqlParserListener.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+
+
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)
 CCPchOpts =
@@ -515,7 +529,7 @@ LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(BeSQLiteLib) \
                               $(ContextSubpartsLibs)$(libprefix)iTwinJsonCpp$(stlibext) \
                               $(ContextSubpartsLibs)$(libprefix)iTwinGeomSerialization$(libext) \
                               $(ContextSubPartsLibs)$(stlibprefix)iTwin_google_re2$(stlibext) \
-                              $(ContextSubPartsLibs)$(stlibprefix)iTwin_antlr4$(stlibext)
+                              $(ContextSubPartsStaticLibs)$(stlibprefix)iTwin_antlr4$(stlibext)
 
 
 # We support shared or static linking.

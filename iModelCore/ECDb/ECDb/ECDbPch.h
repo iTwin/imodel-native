@@ -130,3 +130,10 @@
 #include "ECSql/ECInstanceAdapterHelper.h"
 
 #include "ECSql/ECSqlPragmas.h"
+#define ANTLR4CPP_STATIC
+#include "ECSql/Antlr4/ECSqlLexer.h"
+#include "ECSql/Antlr4/ECSqlParser.h"
+#include "ECSql/Antlr4/ECSqlParserBaseListener.h"
+#include "ECSql/Antlr4/ECSqlParserBaseVisitor.h"
+#include "ECSql/Antlr4/ECSqlParserListener.h"
+#include "ECSql/Antlr4/ECSqlParserVisitor.h"
