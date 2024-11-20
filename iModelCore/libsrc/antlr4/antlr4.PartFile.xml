@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../bentleybuild/PartFile.xsd">
+
+    <Part Name="antlr4">
+        <SubPart PartName="antlr4_static_lib"  LibType="Static" />
+    </Part>
+
+    <Part Name="PublicAPI" BentleyBuildMakeFile="prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="antlr4" />
+        </Bindings>
+    </Part>
+
+    <Part Name="antlr4_static_lib" BentleyBuildMakeFile="antlr4.mke">
+        <!-- Now in plain Bentley namespace to be shared with Vancouver <SubPart PartName="BENTLEY_NAMESPACE_NAME" PartFile="BENTLEY_NAMESPACE_NAME" Repository="BENTLEY_NAMESPACE_NAME" /> -->
+        <SubPart PartName="PublicAPI" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)iTwin_antlr4$(stlibext)</Libs>
+            <!-- N.B. This library is forced to build statically, and chooses to embed symbols directly in the LIB file (vs. a PDB). -->
+            <VendorNotices>Delivery/antlr4-license.txt</VendorNotices>
+        </Bindings>
+    </Part>
+</BuildContext>

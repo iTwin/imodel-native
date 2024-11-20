@@ -1,0 +1,477 @@
+#---------------------------------------------------------------------------------------------
+#  Copyright (c) Bentley Systems, Incorporated. All rights reserved.
+#  See LICENSE.md in the repository root for full copyright notice.
+#---------------------------------------------------------------------------------------------
+# Export/make visible all functions in ANTLR4 runtime
+GCC_DEFAULT_VISIBILITY=default
+
+# Ignore warnings in third-party code.
+IS_THIRD_PARTY_LIBRARY = 1
+
+# We have had issues in firebug where the PDB produced here sometimes does not match the LIB.
+# Instead of sinking more time into determining why the PDB is bad, link symbol information directly into the LIB as, effectively, a workaround.
+# This must be defined /before/ including mdl.mki.
+DEBUG_INFO_IN_OBJ = 1
+
+BUILD_WITH_C20=1
+
+%include mdl.mki
+
+base_dir            = $(_MakeFilePath)
+appName             = iTwin_antlr4
+o                   = $(OutputRootDir)build/$(appName)/
+
+
+%if defined (CREATE_STATIC_LIBRARIES)
+    nameToDefine = ANTLR4CPP_STATIC
+    %include cdefapnd.mki
+%endif
+
+always:
+    !~@mkdir $(o)
+
+# includes in library is relative to root directory
+dirToSearch = $(base_dir)
+%include cincapnd.mki
+
+dirToSearch = $(base_dir)/src
+%include cincapnd.mki
+
+# Disable min/max macros
+cDefs + -DNOMINMAX
+
+#--------------------------------------------------------------------------------------
+#   Compile source
+#--------------------------------------------------------------------------------------
+
+$(o)ANTLRErrorListener$(oext):               $(base_dir)src/ANTLRErrorListener.cpp                      ${MultiCompileDepends}
+
+$(o)ANTLRErrorStrategy$(oext):               $(base_dir)src/ANTLRErrorStrategy.cpp                      ${MultiCompileDepends}
+
+$(o)ANTLRFileStream$(oext):                  $(base_dir)src\ANTLRFileStream.cpp                         ${MultiCompileDepends}
+
+$(o)ANTLRInputStream$(oext):                 $(base_dir)src\ANTLRInputStream.cpp                        ${MultiCompileDepends}
+
+$(o)BailErrorStrategy$(oext):                $(base_dir)src\BailErrorStrategy.cpp                       ${MultiCompileDepends}
+
+$(o)BaseErrorListener$(oext):                $(base_dir)src\BaseErrorListener.cpp                       ${MultiCompileDepends}
+
+$(o)BufferedTokenStream$(oext):              $(base_dir)src\BufferedTokenStream.cpp                     ${MultiCompileDepends}
+
+$(o)CharStream$(oext):                       $(base_dir)src\CharStream.cpp                              ${MultiCompileDepends}
+
+$(o)CommonToken$(oext):                      $(base_dir)src\CommonToken.cpp                             ${MultiCompileDepends}
+
+$(o)CommonTokenFactory$(oext):               $(base_dir)src\CommonTokenFactory.cpp                      ${MultiCompileDepends}
+
+$(o)CommonTokenStream$(oext):                $(base_dir)src\CommonTokenStream.cpp                       ${MultiCompileDepends}
+
+$(o)ConsoleErrorListener$(oext):             $(base_dir)src\ConsoleErrorListener.cpp                    ${MultiCompileDepends}
+
+$(o)DefaultErrorStrategy$(oext):             $(base_dir)src\DefaultErrorStrategy.cpp                    ${MultiCompileDepends}
+
+$(o)DiagnosticErrorListener$(oext):          $(base_dir)src\DiagnosticErrorListener.cpp                 ${MultiCompileDepends}
+
+$(o)Exceptions$(oext):                       $(base_dir)src\Exceptions.cpp                              ${MultiCompileDepends}
+
+$(o)FailedPredicateException$(oext):         $(base_dir)src\FailedPredicateException.cpp                ${MultiCompileDepends}
+
+$(o)InputMismatchException$(oext):           $(base_dir)src\InputMismatchException.cpp                  ${MultiCompileDepends}
+
+$(o)IntStream$(oext):                        $(base_dir)src\IntStream.cpp                               ${MultiCompileDepends}
+
+$(o)InterpreterRuleContext$(oext):           $(base_dir)src\InterpreterRuleContext.cpp                  ${MultiCompileDepends}
+
+$(o)Lexer$(oext):                            $(base_dir)src\Lexer.cpp                                   ${MultiCompileDepends}
+
+$(o)LexerInterpreter$(oext):                 $(base_dir)src\LexerInterpreter.cpp                        ${MultiCompileDepends}
+
+$(o)LexerNoViableAltException$(oext):        $(base_dir)src\LexerNoViableAltException.cpp               ${MultiCompileDepends}
+
+$(o)ListTokenSource$(oext):                  $(base_dir)src\ListTokenSource.cpp                         ${MultiCompileDepends}
+
+$(o)NoViableAltException$(oext):             $(base_dir)src\NoViableAltException.cpp                    ${MultiCompileDepends}
+
+$(o)Parser$(oext):                           $(base_dir)src\Parser.cpp                                  ${MultiCompileDepends}
+
+$(o)ParserInterpreter$(oext):                $(base_dir)src\ParserInterpreter.cpp                       ${MultiCompileDepends}
+
+$(o)ParserRuleContext$(oext):                $(base_dir)src\ParserRuleContext.cpp                       ${MultiCompileDepends}
+
+$(o)ProxyErrorListener$(oext):               $(base_dir)src\ProxyErrorListener.cpp                      ${MultiCompileDepends}
+
+$(o)RecognitionException$(oext):             $(base_dir)src\RecognitionException.cpp                    ${MultiCompileDepends}
+
+$(o)Recognizer$(oext):                       $(base_dir)src\Recognizer.cpp                              ${MultiCompileDepends}
+
+$(o)RuleContext$(oext):                      $(base_dir)src\RuleContext.cpp                             ${MultiCompileDepends}
+
+$(o)RuleContextWithAltNum$(oext):            $(base_dir)src\RuleContextWithAltNum.cpp                   ${MultiCompileDepends}
+
+$(o)RuntimeMetaData$(oext):                  $(base_dir)src\RuntimeMetaData.cpp                         ${MultiCompileDepends}
+
+$(o)Token$(oext):                            $(base_dir)src\Token.cpp                                   ${MultiCompileDepends}
+
+$(o)TokenSource$(oext):                      $(base_dir)src\TokenSource.cpp                             ${MultiCompileDepends}
+
+$(o)TokenStream$(oext):                      $(base_dir)src\TokenStream.cpp                             ${MultiCompileDepends}
+
+$(o)TokenStreamRewriter$(oext):              $(base_dir)src\TokenStreamRewriter.cpp                     ${MultiCompileDepends}
+
+$(o)UnbufferedCharStream$(oext):             $(base_dir)src\UnbufferedCharStream.cpp                    ${MultiCompileDepends}
+
+$(o)UnbufferedTokenStream$(oext):            $(base_dir)src\UnbufferedTokenStream.cpp                   ${MultiCompileDepends}
+
+$(o)Vocabulary$(oext):                       $(base_dir)src\Vocabulary.cpp                              ${MultiCompileDepends}
+
+$(o)WritableToken$(oext):                    $(base_dir)src\WritableToken.cpp                           ${MultiCompileDepends}
+
+$(o)ATN$(oext):                              $(base_dir)src\atn\ATN.cpp                                 ${MultiCompileDepends}
+
+$(o)ATNConfig$(oext):                        $(base_dir)src\atn\ATNConfig.cpp                           ${MultiCompileDepends}
+
+$(o)ATNConfigSet$(oext):                     $(base_dir)src\atn\ATNConfigSet.cpp                        ${MultiCompileDepends}
+
+$(o)ATNDeserializationOptions$(oext):        $(base_dir)src\atn\ATNDeserializationOptions.cpp           ${MultiCompileDepends}
+
+$(o)ATNDeserializer$(oext):                  $(base_dir)src\atn\ATNDeserializer.cpp                     ${MultiCompileDepends}
+
+$(o)ATNSimulator$(oext):                     $(base_dir)src\atn\ATNSimulator.cpp                        ${MultiCompileDepends}
+
+$(o)ATNState$(oext):                         $(base_dir)src\atn\ATNState.cpp                            ${MultiCompileDepends}
+
+$(o)ATNStateType$(oext):                     $(base_dir)src\atn\ATNStateType.cpp                        ${MultiCompileDepends}
+
+$(o)ActionTransition$(oext):                 $(base_dir)src\atn\ActionTransition.cpp                    ${MultiCompileDepends}
+
+$(o)AmbiguityInfo$(oext):                    $(base_dir)src\atn\AmbiguityInfo.cpp                       ${MultiCompileDepends}
+
+$(o)ArrayPredictionContext$(oext):           $(base_dir)src\atn\ArrayPredictionContext.cpp              ${MultiCompileDepends}
+
+$(o)AtomTransition$(oext):                   $(base_dir)src\atn\AtomTransition.cpp                      ${MultiCompileDepends}
+
+$(o)ContextSensitivityInfo$(oext):           $(base_dir)src\atn\ContextSensitivityInfo.cpp              ${MultiCompileDepends}
+
+$(o)DecisionEventInfo$(oext):                $(base_dir)src\atn\DecisionEventInfo.cpp                   ${MultiCompileDepends}
+
+$(o)DecisionInfo$(oext):                     $(base_dir)src\atn\DecisionInfo.cpp                        ${MultiCompileDepends}
+
+$(o)DecisionState$(oext):                    $(base_dir)src\atn\DecisionState.cpp                       ${MultiCompileDepends}
+
+$(o)EpsilonTransition$(oext):                $(base_dir)src\atn\EpsilonTransition.cpp                   ${MultiCompileDepends}
+
+$(o)ErrorInfo$(oext):                        $(base_dir)src\atn\ErrorInfo.cpp                           ${MultiCompileDepends}
+
+$(o)LL1Analyzer$(oext):                      $(base_dir)src\atn\LL1Analyzer.cpp                         ${MultiCompileDepends}
+
+$(o)LexerATNConfig$(oext):                   $(base_dir)src\atn\LexerATNConfig.cpp                      ${MultiCompileDepends}
+
+$(o)LexerATNSimulator$(oext):                $(base_dir)src\atn\LexerATNSimulator.cpp                   ${MultiCompileDepends}
+
+$(o)LexerAction$(oext):                      $(base_dir)src\atn\LexerAction.cpp                         ${MultiCompileDepends}
+
+$(o)LexerActionExecutor$(oext):              $(base_dir)src\atn\LexerActionExecutor.cpp                 ${MultiCompileDepends}
+
+$(o)LexerChannelAction$(oext):               $(base_dir)src\atn\LexerChannelAction.cpp                  ${MultiCompileDepends}
+
+$(o)LexerCustomAction$(oext):                $(base_dir)src\atn\LexerCustomAction.cpp                   ${MultiCompileDepends}
+
+$(o)LexerIndexedCustomAction$(oext):         $(base_dir)src\atn\LexerIndexedCustomAction.cpp            ${MultiCompileDepends}
+
+$(o)LexerModeAction$(oext):                  $(base_dir)src\atn\LexerModeAction.cpp                     ${MultiCompileDepends}
+
+$(o)LexerMoreAction$(oext):                  $(base_dir)src\atn\LexerMoreAction.cpp                     ${MultiCompileDepends}
+
+$(o)LexerPopModeAction$(oext):               $(base_dir)src\atn\LexerPopModeAction.cpp                  ${MultiCompileDepends}
+
+$(o)LexerPushModeAction$(oext):              $(base_dir)src\atn\LexerPushModeAction.cpp                 ${MultiCompileDepends}
+
+$(o)LexerSkipAction$(oext):                  $(base_dir)src\atn\LexerSkipAction.cpp                     ${MultiCompileDepends}
+
+$(o)LexerTypeAction$(oext):                  $(base_dir)src\atn\LexerTypeAction.cpp                     ${MultiCompileDepends}
+
+$(o)LookaheadEventInfo$(oext):               $(base_dir)src\atn\LookaheadEventInfo.cpp                  ${MultiCompileDepends}
+
+$(o)NotSetTransition$(oext):                 $(base_dir)src\atn\NotSetTransition.cpp                    ${MultiCompileDepends}
+
+$(o)OrderedATNConfigSet$(oext):              $(base_dir)src\atn\OrderedATNConfigSet.cpp                 ${MultiCompileDepends}
+
+$(o)ParseInfo$(oext):                        $(base_dir)src\atn\ParseInfo.cpp                           ${MultiCompileDepends}
+
+$(o)ParserATNSimulator$(oext):               $(base_dir)src\atn\ParserATNSimulator.cpp                  ${MultiCompileDepends}
+
+$(o)PrecedencePredicateTransition$(oext):    $(base_dir)src\atn\PrecedencePredicateTransition.cpp       ${MultiCompileDepends}
+
+$(o)PredicateEvalInfo$(oext):                $(base_dir)src\atn\PredicateEvalInfo.cpp                   ${MultiCompileDepends}
+
+$(o)PredicateTransition$(oext):              $(base_dir)src\atn\PredicateTransition.cpp                 ${MultiCompileDepends}
+
+$(o)PredictionContext$(oext):                $(base_dir)src\atn\PredictionContext.cpp                   ${MultiCompileDepends}
+
+$(o)PredictionContextCache$(oext):           $(base_dir)src\atn\PredictionContextCache.cpp              ${MultiCompileDepends}
+
+$(o)PredictionContextMergeCache$(oext):      $(base_dir)src\atn\PredictionContextMergeCache.cpp         ${MultiCompileDepends}
+
+$(o)PredictionMode$(oext):                   $(base_dir)src\atn\PredictionMode.cpp                      ${MultiCompileDepends}
+
+$(o)ProfilingATNSimulator$(oext):            $(base_dir)src\atn\ProfilingATNSimulator.cpp               ${MultiCompileDepends}
+
+$(o)RangeTransition$(oext):                  $(base_dir)src\atn\RangeTransition.cpp                     ${MultiCompileDepends}
+
+$(o)RuleTransition$(oext):                   $(base_dir)src\atn\RuleTransition.cpp                      ${MultiCompileDepends}
+
+$(o)SemanticContext$(oext):                  $(base_dir)src\atn\SemanticContext.cpp                     ${MultiCompileDepends}
+
+$(o)SetTransition$(oext):                    $(base_dir)src\atn\SetTransition.cpp                       ${MultiCompileDepends}
+
+$(o)SingletonPredictionContext$(oext):       $(base_dir)src\atn\SingletonPredictionContext.cpp          ${MultiCompileDepends}
+
+$(o)StarLoopbackState$(oext):                $(base_dir)src\atn\StarLoopbackState.cpp                   ${MultiCompileDepends}
+
+$(o)Transition$(oext):                       $(base_dir)src\atn\Transition.cpp                          ${MultiCompileDepends}
+
+$(o)TransitionType$(oext):                   $(base_dir)src\atn\TransitionType.cpp                      ${MultiCompileDepends}
+
+$(o)WildcardTransition$(oext):               $(base_dir)src\atn\WildcardTransition.cpp                  ${MultiCompileDepends}
+
+$(o)DFA$(oext):                              $(base_dir)src\dfa\DFA.cpp                                 ${MultiCompileDepends}
+
+$(o)DFASerializer$(oext):                    $(base_dir)src\dfa\DFASerializer.cpp                       ${MultiCompileDepends}
+
+$(o)DFAState$(oext):                         $(base_dir)src\dfa\DFAState.cpp                            ${MultiCompileDepends}
+
+$(o)LexerDFASerializer$(oext):               $(base_dir)src\dfa\LexerDFASerializer.cpp                  ${MultiCompileDepends}
+
+$(o)Synchronization$(oext):                  $(base_dir)src\internal\Synchronization.cpp                ${MultiCompileDepends}
+
+$(o)InterpreterDataReader$(oext):            $(base_dir)src\misc\InterpreterDataReader.cpp              ${MultiCompileDepends}
+
+$(o)Interval$(oext):                         $(base_dir)src\misc\Interval.cpp                           ${MultiCompileDepends}
+
+$(o)IntervalSet$(oext):                      $(base_dir)src\misc\IntervalSet.cpp                        ${MultiCompileDepends}
+
+$(o)MurmurHash$(oext):                       $(base_dir)src\misc\MurmurHash.cpp                         ${MultiCompileDepends}
+
+$(o)Predicate$(oext):                        $(base_dir)src\misc\Predicate.cpp                          ${MultiCompileDepends}
+
+$(o)Any$(oext):                              $(base_dir)src\support\Any.cpp                             ${MultiCompileDepends}
+
+$(o)Arrays$(oext):                           $(base_dir)src\support\Arrays.cpp                          ${MultiCompileDepends}
+
+$(o)CPPUtils$(oext):                         $(base_dir)src\support\CPPUtils.cpp                        ${MultiCompileDepends}
+
+$(o)StringUtils$(oext):                      $(base_dir)src\support\StringUtils.cpp                     ${MultiCompileDepends}
+
+$(o)Utf8$(oext):                             $(base_dir)src\support\Utf8.cpp                            ${MultiCompileDepends}
+
+$(o)ErrorNodeImpl$(oext):                    $(base_dir)src\tree\ErrorNodeImpl.cpp                      ${MultiCompileDepends}
+
+$(o)IterativeParseTreeWalker$(oext):         $(base_dir)src\tree\IterativeParseTreeWalker.cpp           ${MultiCompileDepends}
+
+$(o)ParseTree$(oext):                        $(base_dir)src\tree\ParseTree.cpp                          ${MultiCompileDepends}
+
+$(o)ParseTreeListener$(oext):                $(base_dir)src\tree\ParseTreeListener.cpp                  ${MultiCompileDepends}
+
+$(o)ParseTreeVisitor$(oext):                 $(base_dir)src\tree\ParseTreeVisitor.cpp                   ${MultiCompileDepends}
+
+$(o)ParseTreeWalker$(oext):                  $(base_dir)src\tree\ParseTreeWalker.cpp                    ${MultiCompileDepends}
+
+$(o)TerminalNodeImpl$(oext):                 $(base_dir)src\tree\TerminalNodeImpl.cpp                   ${MultiCompileDepends}
+
+$(o)Trees$(oext):                            $(base_dir)src\tree\Trees.cpp                              ${MultiCompileDepends}
+
+$(o)Chunk$(oext):                            $(base_dir)src\tree\pattern\Chunk.cpp                      ${MultiCompileDepends}
+
+$(o)ParseTreeMatch$(oext):                   $(base_dir)src\tree\pattern\ParseTreeMatch.cpp             ${MultiCompileDepends}
+
+$(o)ParseTreePattern$(oext):                 $(base_dir)src\tree\pattern\ParseTreePattern.cpp           ${MultiCompileDepends}
+
+$(o)ParseTreePatternMatcher$(oext):          $(base_dir)src\tree\pattern\ParseTreePatternMatcher.cpp    ${MultiCompileDepends}
+
+$(o)RuleTagToken$(oext):                     $(base_dir)src\tree\pattern\RuleTagToken.cpp               ${MultiCompileDepends}
+
+$(o)TagChunk$(oext):                         $(base_dir)src\tree\pattern\TagChunk.cpp                   ${MultiCompileDepends}
+
+$(o)TextChunk$(oext):                        $(base_dir)src\tree\pattern\TextChunk.cpp                  ${MultiCompileDepends}
+
+$(o)TokenTagToken$(oext):                    $(base_dir)src\tree\pattern\TokenTagToken.cpp              ${MultiCompileDepends}
+
+$(o)XPath$(oext):                            $(base_dir)src\tree\xpath\XPath.cpp                        ${MultiCompileDepends}
+
+$(o)XPathElement$(oext):                     $(base_dir)src\tree\xpath\XPathElement.cpp                 ${MultiCompileDepends}
+
+$(o)XPathLexer$(oext):                       $(base_dir)src\tree\xpath\XPathLexer.cpp                   ${MultiCompileDepends}
+
+$(o)XPathLexerErrorListener$(oext):          $(base_dir)src\tree\xpath\XPathLexerErrorListener.cpp      ${MultiCompileDepends}
+
+$(o)XPathRuleAnywhereElement$(oext):         $(base_dir)src\tree\xpath\XPathRuleAnywhereElement.cpp     ${MultiCompileDepends}
+
+$(o)XPathRuleElement$(oext):                 $(base_dir)src\tree\xpath\XPathRuleElement.cpp             ${MultiCompileDepends}
+
+$(o)XPathTokenAnywhereElement$(oext):        $(base_dir)src\tree\xpath\XPathTokenAnywhereElement.cpp    ${MultiCompileDepends}
+
+$(o)XPathTokenElement$(oext):                $(base_dir)src\tree\xpath\XPathTokenElement.cpp            ${MultiCompileDepends}
+
+$(o)XPathWildcardAnywhereElement$(oext):     $(base_dir)src\tree\xpath\XPathWildcardAnywhereElement.cpp ${MultiCompileDepends}
+
+$(o)XPathWildcardElement$(oext):             $(base_dir)src\tree\xpath\XPathWildcardElement.cpp         ${MultiCompileDepends}
+
+antlr4_objs = $(o)ANTLRErrorListener$(oext) \
+            $(o)ANTLRErrorStrategy$(oext) \
+            $(o)ANTLRFileStream$(oext) \
+            $(o)ANTLRInputStream$(oext) \
+            $(o)BailErrorStrategy$(oext) \
+            $(o)BaseErrorListener$(oext) \
+            $(o)BufferedTokenStream$(oext) \
+            $(o)CharStream$(oext) \
+            $(o)CommonToken$(oext) \
+            $(o)CommonTokenFactory$(oext) \
+            $(o)CommonTokenStream$(oext) \
+            $(o)ConsoleErrorListener$(oext) \
+            $(o)DefaultErrorStrategy$(oext) \
+            $(o)DiagnosticErrorListener$(oext) \
+            $(o)Exceptions$(oext) \
+            $(o)FailedPredicateException$(oext) \
+            $(o)InputMismatchException$(oext) \
+            $(o)IntStream$(oext) \
+            $(o)InterpreterRuleContext$(oext) \
+            $(o)Lexer$(oext) \
+            $(o)LexerInterpreter$(oext) \
+            $(o)LexerNoViableAltException$(oext) \
+            $(o)ListTokenSource$(oext) \
+            $(o)NoViableAltException$(oext) \
+            $(o)Parser$(oext) \
+            $(o)ParserInterpreter$(oext) \
+            $(o)ParserRuleContext$(oext) \
+            $(o)ProxyErrorListener$(oext) \
+            $(o)RecognitionException$(oext) \
+            $(o)Recognizer$(oext) \
+            $(o)RuleContext$(oext) \
+            $(o)RuleContextWithAltNum$(oext) \
+            $(o)RuntimeMetaData$(oext) \
+            $(o)Token$(oext) \
+            $(o)TokenSource$(oext) \
+            $(o)TokenStream$(oext) \
+            $(o)TokenStreamRewriter$(oext) \
+            $(o)UnbufferedCharStream$(oext) \
+            $(o)UnbufferedTokenStream$(oext) \
+            $(o)Vocabulary$(oext) \
+            $(o)WritableToken$(oext) \
+            $(o)ATN$(oext) \
+            $(o)ATNConfig$(oext) \
+            $(o)ATNConfigSet$(oext) \
+            $(o)ATNDeserializationOptions$(oext) \
+            $(o)ATNDeserializer$(oext) \
+            $(o)ATNSimulator$(oext) \
+            $(o)ATNState$(oext) \
+            $(o)ATNStateType$(oext) \
+            $(o)ActionTransition$(oext) \
+            $(o)AmbiguityInfo$(oext) \
+            $(o)ArrayPredictionContext$(oext) \
+            $(o)AtomTransition$(oext) \
+            $(o)ContextSensitivityInfo$(oext) \
+            $(o)DecisionEventInfo$(oext) \
+            $(o)DecisionInfo$(oext) \
+            $(o)DecisionState$(oext) \
+            $(o)EpsilonTransition$(oext) \
+            $(o)ErrorInfo$(oext) \
+            $(o)LL1Analyzer$(oext) \
+            $(o)LexerATNConfig$(oext) \
+            $(o)LexerATNSimulator$(oext) \
+            $(o)LexerAction$(oext) \
+            $(o)LexerActionExecutor$(oext) \
+            $(o)LexerChannelAction$(oext) \
+            $(o)LexerCustomAction$(oext) \
+            $(o)LexerIndexedCustomAction$(oext) \
+            $(o)LexerModeAction$(oext) \
+            $(o)LexerMoreAction$(oext) \
+            $(o)LexerPopModeAction$(oext) \
+            $(o)LexerPushModeAction$(oext) \
+            $(o)LexerSkipAction$(oext) \
+            $(o)LexerTypeAction$(oext) \
+            $(o)LookaheadEventInfo$(oext) \
+            $(o)NotSetTransition$(oext) \
+            $(o)OrderedATNConfigSet$(oext) \
+            $(o)ParseInfo$(oext) \
+            $(o)ParserATNSimulator$(oext) \
+            $(o)PrecedencePredicateTransition$(oext) \
+            $(o)PredicateEvalInfo$(oext) \
+            $(o)PredicateTransition$(oext) \
+            $(o)PredictionContext$(oext) \
+            $(o)PredictionContextCache$(oext) \
+            $(o)PredictionContextMergeCache$(oext) \
+            $(o)PredictionMode$(oext) \
+            $(o)ProfilingATNSimulator$(oext) \
+            $(o)RangeTransition$(oext) \
+            $(o)RuleTransition$(oext) \
+            $(o)SemanticContext$(oext) \
+            $(o)SetTransition$(oext) \
+            $(o)SingletonPredictionContext$(oext) \
+            $(o)StarLoopbackState$(oext) \
+            $(o)Transition$(oext) \
+            $(o)TransitionType$(oext) \
+            $(o)WildcardTransition$(oext) \
+            $(o)DFA$(oext) \
+            $(o)DFASerializer$(oext) \
+            $(o)DFAState$(oext) \
+            $(o)LexerDFASerializer$(oext) \
+            $(o)Synchronization$(oext) \
+            $(o)InterpreterDataReader$(oext) \
+            $(o)Interval$(oext) \
+            $(o)IntervalSet$(oext) \
+            $(o)MurmurHash$(oext) \
+            $(o)Predicate$(oext) \
+            $(o)Any$(oext) \
+            $(o)Arrays$(oext) \
+            $(o)CPPUtils$(oext) \
+            $(o)StringUtils$(oext) \
+            $(o)Utf8$(oext) \
+            $(o)ErrorNodeImpl$(oext) \
+            $(o)IterativeParseTreeWalker$(oext) \
+            $(o)ParseTree$(oext) \
+            $(o)ParseTreeListener$(oext) \
+            $(o)ParseTreeVisitor$(oext) \
+            $(o)ParseTreeWalker$(oext) \
+            $(o)TerminalNodeImpl$(oext) \
+            $(o)Trees$(oext) \
+            $(o)Chunk$(oext) \
+            $(o)ParseTreeMatch$(oext) \
+            $(o)ParseTreePattern$(oext) \
+            $(o)ParseTreePatternMatcher$(oext) \
+            $(o)RuleTagToken$(oext) \
+            $(o)TagChunk$(oext) \
+            $(o)TextChunk$(oext) \
+            $(o)TokenTagToken$(oext) \
+            $(o)XPath$(oext) \
+            $(o)XPathElement$(oext) \
+            $(o)XPathLexer$(oext) \
+            $(o)XPathLexerErrorListener$(oext) \
+            $(o)XPathRuleAnywhereElement$(oext) \
+            $(o)XPathRuleElement$(oext) \
+            $(o)XPathTokenAnywhereElement$(oext) \
+            $(o)XPathTokenElement$(oext) \
+            $(o)XPathWildcardAnywhereElement$(oext) \
+            $(o)XPathWildcardElement$(oext)
+
+
+#--------------------------------------------------------------------------------------
+#   Create the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = $(appName)
+DLM_OBJECT_FILES            = $(antlr4_objs)
+DLM_OBJECT_DEST             = $(o)
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_NO_BENTLEY_LIB          = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+CREATE_STATIC_LIBRARIES     = 1
+DLM_NO_SOURCEINDEX =1
+
+
+%include $(sharedMki)linkLibrary.mki
+
+$(BuildContext)Delivery/antlr4-license.txt : $(_MakeFilePath)LICENSE
+    $(LinkFirstDepToFirstTarget)

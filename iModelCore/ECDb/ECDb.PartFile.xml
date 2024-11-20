@@ -21,12 +21,13 @@
 
     <Part Name="ECDbLibrary" BentleyBuildMakeFile="ECDb/ECDb.mke">
         <SubPart PartName="PublicAPI" />
-        <SubPart PartName="BeSQLite"        PartFile="iModelCore/BeSQLite/BeSQLite" />
-        <SubPart PartName="ECObjectsNative" PartFile="iModelCore/ecobjects/ECObjects" />
-        <SubPart PartName="GeomlibsSerialization" PartFile="iModelCore/GeomLibs/geomlibs" />
-        <SubPart PartName="BeJsonCpp"       PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
-        <SubPart PartName="BeRapidJson" PartFile="iModelCore/Bentley/Bentley" />
-        <SubPart PartName="google_re2"  PartFile="iModelCore/libsrc/google_re2/google_re2" />
+        <SubPart PartName="BeSQLite"                PartFile="iModelCore/BeSQLite/BeSQLite" />
+        <SubPart PartName="ECObjectsNative"         PartFile="iModelCore/ecobjects/ECObjects" />
+        <SubPart PartName="GeomlibsSerialization"   PartFile="iModelCore/GeomLibs/geomlibs" />
+        <SubPart PartName="BeJsonCpp"               PartFile="iModelCore/libsrc/jsoncpp/BeJsonCpp" />
+        <SubPart PartName="BeRapidJson"             PartFile="iModelCore/Bentley/Bentley" />
+        <SubPart PartName="google_re2"              PartFile="iModelCore/libsrc/google_re2/google_re2" />
+        <SubPart PartName="antlr4"                  PartFile="iModelCore/libsrc/antlr4/antlr4"  LibType="Static"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)iTwinSQLiteEC$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)iTwinSQLiteEC$(shlibext)</Assemblies>

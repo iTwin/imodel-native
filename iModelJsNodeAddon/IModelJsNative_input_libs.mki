@@ -30,6 +30,7 @@ THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libsnappy.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinUnits.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinOpenSSL.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwin_google_re2.a
+THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwin_antlr4.a
 THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinPugixml.a
 
 %if defined (BENTLEYCONFIG_PARASOLID)
@@ -58,6 +59,7 @@ THIN_ARCHIVE_INPUTS + $(ContextSubpartsLibs)libiTwinVisualization.a
 
 DLM_OBJECT_FILES + $(ContextSubpartsLibs)$(libprefix)iTwinJsonCpp$(stlibext)
 DLM_OBJECT_FILES + $(ContextSubpartsLibs)$(libprefix)iTwin_google_re2$(stlibext)
+DLM_OBJECT_FILES + $(ContextSubpartsLibs)$(libprefix)iTwin_antlr4$(stlibext)
 
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinBentley$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinPlatform$(libext)
