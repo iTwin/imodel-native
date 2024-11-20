@@ -403,7 +403,7 @@ $(o)ClassViews$(oext):                                        $(baseDir)ClassVie
 
 $(o)ECSqlLexer$(oext):                                        $(baseDir)ECSql/Antlr4/ECSqlLexer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECSqlParser2$(oext):                                       $(baseDir)ECSql/Antlr4/ECSqlParser.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlParser2$(oext):                                       $(baseDir)ECSql/Antlr4/ECSqlParser2.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlParserVisitor$(oext):                                $(baseDir)ECSql/Antlr4/ECSqlParserVisitor.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
