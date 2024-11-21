@@ -675,7 +675,7 @@ PropertyMap const * PropertyNameExp::PropertyRef::TryGetPropertyMap(PropertyPath
 
     PropertyNameExp const &exp = next.GetExpression()->GetType() == Exp::Type::PropertyName ? next.GetExpression()->GetAs<PropertyNameExp>() : *next.GetExpression()->GetAs<NavValueCreationFuncExp>().GetPropertyNameExp();
     if (exp.IsPropertyRef())
-        return exp.GetPropertyRef()->TryGetPropertyMap();
+        return exp.GetPropertyRef()->TryGetPropertyMap(testPath);
 
 
     PropertyMap const *propertyMap = exp.GetPropertyMap();

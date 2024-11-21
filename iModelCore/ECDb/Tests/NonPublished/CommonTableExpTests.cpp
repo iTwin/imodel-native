@@ -1753,6 +1753,28 @@ TEST_F(CommonTableExpTestFixture, CTE_Without_SubColumns) {
         ASSERT_EQ(2, stmt.GetValueInt(0));
         ASSERT_STREQ("Document", stmt.GetValueText(2));
     }
+    if ("simple_select_cte_subquery") {
+        auto ecsql = R"(select Parent from (with cte as (select * from ts.Element) select * from cte) limit 2)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("Parent", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(stmt.GetValueNavigation<ECInstanceId>(0, &relClassId), ECInstanceId(UINT64_C(0)));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(stmt.GetValueNavigation<ECInstanceId>(0, &relClassId), ECInstanceId(UINT64_C(1)));
+    }
+    if ("simple_select_cte_subquery_with_navigation_props_internal_prop") {
+        auto ecsql = R"(select Parent.Id from (with cte as (select * from ts.Element) select * from cte) limit 2)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("Id", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(0, stmt.GetValueInt(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(0));
+    }
     if ("simple_select_cte_wit_defined_columns_inside") {
         auto ecsql = R"(with cte as (select Subject, Parent.Id PiD from ts.Element) select * from cte)";
         ECSqlStatement stmt;
