@@ -23,7 +23,6 @@ struct SchemaSyncHelper final {
     static DbResult GetMetaTables(DbR conn, StringList& tables, Utf8CP dbAlias);
     static DbResult DropDataTables(DbR conn);
     static DbResult DropMetaTables(DbR conn);
-    static DbResult CreateMetaTablesFrom(ECDbR fromDb, DbR syncDb);
     static DbResult TryGetAttachDbs(AliasMap& aliasMap, ECDbR conn);
     static DbResult VerifyAlias(ECDbR conn);
     static DbResult GetColumnNames(DbCR db, Utf8CP dbAlias, Utf8CP tableName, StringList& columnNames);
