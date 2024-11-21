@@ -34,7 +34,6 @@ describe("embed fonts", () => {
     data: new Uint8Array([100, 2, 233, 200]),
   };
 
-  it(`process.versions: ${JSON.stringify(process.versions)}`, () => { });
   it("embed fonts in SQLiteDb", () => {
     const tempSQLiteDbName = path.join(getOutputDir(), "fontWs.db");
     const tempSQLiteDb = new iModelJsNative.SQLiteDb();

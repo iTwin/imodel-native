@@ -296,9 +296,8 @@ template<typename T_Db> struct SQLiteOps {
 
             auto jsonData = argJson[JsInterop::json_data()];
             auto napiData = jsonData.AsNapiValueRef();
-            if (!napiData->m_napiVal.IsTypedArray()) {
+            if (!napiData->m_napiVal.IsTypedArray())
                 BeNapi::ThrowJsException(info.Env(), "font data not valid");
-            }
 
             auto arrayBuf = napiData->m_napiVal.As<Napi::Uint8Array>();
             if (SUCCESS == fontDb->EmbedFont(faces, ByteStream(arrayBuf.Data(), arrayBuf.ByteLength()), compressFont))
