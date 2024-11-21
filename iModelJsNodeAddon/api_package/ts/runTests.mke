@@ -7,15 +7,6 @@
 baseDir = $(_MakeFilePath)
 npmCmd = npm
 
-# On MacOSARM64, we must use an arm64 version of node which nodejs_14_16_0 does not support, so use a newer one.
-%if $(TARGET_PROCESSOR_ARCHITECTURE) == "MacOSARM64"
-    # Only run tests if we're compiling with an Apple processor
-    %if " " == $[@findstring Apple, $[@readstdout "sysctl -n machdep.cpu.brand_string"]]
-        %warn *** Skipping tests as we're not running on an Apple Silicon processor ***
-        %return
-    %endif
-%endif
-
 always:
     ~chdir $(baseDir)
     $(npmCmd) run test
