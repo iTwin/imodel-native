@@ -18,11 +18,11 @@ parameters:
 - name: defaultNativeBranch
   displayName: Default Native Branch Used for PR Validation
   type: string
-  default: 'release/4.10.x' # Change to appropriate branch name when creating new release branch
+  default: 'release/4.11.x' # Change to appropriate branch name when creating new release branch
 - name: defaultCoreBranch
   displayName: Default itwinjs-core Branch Used for PR Validation
   type: string
-  default: 'release/4.10.x' # Change to appropriate branch name when creating new release branch
+  default: 'release/4.11.x' # Change to appropriate branch name when creating new release branch
 
 
 resources:
