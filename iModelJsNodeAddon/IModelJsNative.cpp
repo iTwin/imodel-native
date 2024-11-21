@@ -287,7 +287,6 @@ template<typename T_Db> struct SQLiteOps {
             fontDbHolder.reset(fontDb);
         }
 
-        printf("EmbedFont: 1 (%s)\n", JsInterop::json_data().c_str());
         if (argJson.isMember(JsInterop::json_data())) {
             bvector<FontFace> faces;
             FontFace face(argJson[JsInterop::json_face()]);
@@ -295,70 +294,22 @@ template<typename T_Db> struct SQLiteOps {
                 BeNapi::ThrowJsException(info.Env(), "invalid face");
             faces.emplace_back(face);
 
-            auto napiData = argJson[JsInterop::json_data()].AsNapiValueRef();
-            printf("EmbedFont: 2\n%s\n", argJson.Stringify(StringifyFormat::Indented).c_str());
-            switch (napiData->m_napiVal.Type()) {
-            case napi_undefined:
-                printf("EmbedFont: data is undefined\n");
-                break;
-            case napi_null:
-                printf("EmbedFont: data is null\n");
-                break;
-            case napi_boolean:
-                printf("EmbedFont: data is boolean\n");
-                break;
-            case napi_number:
-                printf("EmbedFont: data is number\n");
-                break;
-            case napi_string:
-                printf("EmbedFont: data is string\n");
-                break;
-            case napi_symbol:
-                printf("EmbedFont: data is symbol\n");
-                break;
-            case napi_object:
-                printf("EmbedFont: data is object\n");
-                if (napiData->m_napiVal.IsArray()) {
-                    printf("EmbedFont: data is array\n");
-                }
-                if (napiData->m_napiVal.IsArrayBuffer()) {
-                    printf("EmbedFont: data is array buffer\n");
-                }
-                if (napiData->m_napiVal.IsTypedArray()) {
-                    printf("EmbedFont: data is typed array\n");
-                }
-                break;
-            case napi_function:
-                printf("EmbedFont: data is function\n");
-                break;
-            case napi_external:
-                printf("EmbedFont: data is external\n");
-                break;
-            case napi_bigint:
-                printf("EmbedFont: data is bigint\n");
-                break;
-            default:
-                printf("EmbedFont: invalid data type\n");
-                break;
-            }
+            auto jsonData = argJson[JsInterop::json_data()];
+            auto napiData = jsonData.AsNapiValueRef();
             if (!napiData->m_napiVal.IsTypedArray()) {
                 BeNapi::ThrowJsException(info.Env(), "font data not valid");
             }
 
-            printf("EmbedFont: 3\n");
             auto arrayBuf = napiData->m_napiVal.As<Napi::Uint8Array>();
             if (SUCCESS == fontDb->EmbedFont(faces, ByteStream(arrayBuf.Data(), arrayBuf.ByteLength()), compressFont))
                 return;
         }
-        printf("EmbedFont: 4\n");
         if (SUCCESS == fontDb->EmbedFontFile(argJson[JsInterop::json_fileName()].asString().c_str(), compressFont))
             return;
 
-        printf("EmbedFont: 5\n");
         if (SystemTrueTypeFont(argJson[JsInterop::json_systemFont()].asString().c_str(), compressFont).Embed(*fontDb))
             return;
 
-        printf("EmbedFont: 6\n");
         BeNapi::ThrowJsException(info.Env(), "unable to embed font");
     }
 
