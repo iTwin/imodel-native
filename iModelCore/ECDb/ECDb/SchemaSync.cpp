@@ -206,37 +206,6 @@ DbResult SchemaSyncHelper::DropMetaTables(DbR conn) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult SchemaSyncHelper::CreateMetaTablesFrom(ECDbR fromDb, DbR syncDb) {
-    const auto sql = Utf8String {R"z(
-        SELECT
-            [sql]
-        FROM   [sqlite_master]
-        WHERE  [tbl_name] LIKE 'ec\_%' ESCAPE '\'
-                AND ([type] = 'table'
-                OR [type] = 'index')
-                AND [sql] IS NOT NULL
-        ORDER  BY [RootPage];
-    )z"};
-    Statement stmt;
-    auto rc = stmt.Prepare(fromDb, sql.c_str());
-    if (rc != BE_SQLITE_OK) {
-        LOG.errorv("SchemaSyncHelper::CreateMetaTablesFrom(): Failed to prepare statement to query meta tables. %s", BeSQLiteLib::GetErrorString(rc));
-        return rc;
-    }
-    while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
-        const auto ddl = stmt.GetValueText(0);
-        rc = syncDb.ExecuteSql(ddl);
-        if(rc != BE_SQLITE_OK) {
-            LOG.errorv("SchemaSyncHelper::CreateMetaTablesFrom(): Failed to execute DDL. %s", BeSQLiteLib::GetErrorString(rc));
-            return rc;
-        }
-    }
-    return BE_SQLITE_OK;
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
 DbResult SchemaSyncHelper::TryGetAttachDbs(AliasMap& aliasMap, ECDbR conn) {
     Statement stmt;
     auto rc = stmt.Prepare(conn, "pragma main.database_list");
@@ -794,7 +763,7 @@ SchemaSync::Status SchemaSync::PullInternal(SyncDbUri const& syncDbUri, TableLis
 
     TableList tables;
     rc = SchemaSyncHelper::GetMetaTables(m_conn, tables, fromAlias);
-    if (rc != BE_SQLITE_OK) {
+     if (rc != BE_SQLITE_OK) {
         LOG.error("SchemaSync::PullInternal(): Failed to get meta tables.");
         m_conn.AbandonChanges();
         m_conn.DetachDb(SchemaSyncHelper::ALIAS_SYNC_DB);
@@ -968,6 +937,11 @@ SchemaSync::Status SchemaSync::UpdateDbSchema() {
     auto& mainDisp = m_conn.Schemas().Main();
     m_conn.ClearECDbCache();
     m_conn.GetImpl().RefreshProfileVersion();
+
+    if (SUCCESS != mainDisp.RepopulateCacheTables()) {
+        return Status::ERROR;
+    }
+
     if (SUCCESS != mainDisp.GetDbSchema().ForceReloadTableAndIndexesFromDisk()) {
         return Status::ERROR;
     }
