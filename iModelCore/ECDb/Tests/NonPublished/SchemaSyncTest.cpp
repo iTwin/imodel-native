@@ -52,6 +52,101 @@ auto schemaXMLBuilder = [](Utf8CP newSchemaVersion = "01.00.00")
 // ---------------------------------------------------------------------------------------
 // @bsitest
 // +---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaSyncTestFixture, cache_table_updated)
+    {
+    auto tableEcCacheClassHasTables = "ec_cache_ClassHasTables";
+    auto tableEcCacheClassHierarchy = "ec_cache_ClassHierarchy";
+    auto computeHash = [](ECDbCR db, Utf8CP tableName) -> std::string {
+      Statement stmt;
+      EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(db, SqlPrintfString("select hex(sha3_query('SELECT * FROM [%s] ORDER BY ROWID'))", tableName).GetUtf8CP()));
+      EXPECT_EQ(BE_SQLITE_ROW, stmt.Step());
+      return stmt.GetValueText(0);
+    };
+
+    ECDbHub hub;
+    SchemaSyncDb schemaSyncDb("sync-db");
+    auto b1 = hub.CreateBriefcase();
+
+    ASSERT_EQ(SchemaSync::Status::OK, b1->Schemas().GetSchemaSync().Init(schemaSyncDb.GetSyncDbUri(), "xxxxx", false));
+
+    b1->SaveChanges();
+    b1->PullMergePush("init");
+
+    auto b2 = hub.CreateBriefcase();
+    auto b3 = hub.CreateBriefcase();
+
+    auto b1_tableEcCacheClassHasTables =  computeHash(*b1, tableEcCacheClassHasTables);
+    auto b1_tableEcCacheClassHierarchy =  computeHash(*b1, tableEcCacheClassHierarchy);
+    auto b2_tableEcCacheClassHasTables =  computeHash(*b2, tableEcCacheClassHasTables);
+    auto b2_tableEcCacheClassHierarchy =  computeHash(*b2, tableEcCacheClassHierarchy);
+    auto b3_tableEcCacheClassHasTables =  computeHash(*b3, tableEcCacheClassHasTables);
+    auto b3_tableEcCacheClassHierarchy =  computeHash(*b3, tableEcCacheClassHierarchy);
+    ASSERT_STREQ(b1_tableEcCacheClassHasTables.c_str(), b2_tableEcCacheClassHasTables.c_str());
+    ASSERT_STREQ(b1_tableEcCacheClassHierarchy.c_str(), b2_tableEcCacheClassHierarchy.c_str());
+    ASSERT_STREQ(b1_tableEcCacheClassHasTables.c_str(), b3_tableEcCacheClassHasTables.c_str());
+    ASSERT_STREQ(b1_tableEcCacheClassHierarchy.c_str(), b3_tableEcCacheClassHierarchy.c_str());
+    ASSERT_STREQ(b2_tableEcCacheClassHasTables.c_str(), b3_tableEcCacheClassHasTables.c_str());
+    ASSERT_STREQ(b2_tableEcCacheClassHierarchy.c_str(), b3_tableEcCacheClassHierarchy.c_str());
+    auto s1 = SchemaItem(
+        R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema1" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Pipe1">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="p1" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"
+    );
+
+    ASSERT_EQ(SchemaImportResult::OK, ImportSchema(*b1, s1, SchemaManager::SchemaImportOptions::None, schemaSyncDb.GetSyncDbUri()));
+    ASSERT_EQ(BE_SQLITE_OK, b1->SaveChanges());
+    b1->PullMergePush("");
+
+    b1_tableEcCacheClassHasTables =  computeHash(*b1, tableEcCacheClassHasTables);
+    b1_tableEcCacheClassHierarchy =  computeHash(*b1, tableEcCacheClassHierarchy);
+    b2_tableEcCacheClassHasTables =  computeHash(*b2, tableEcCacheClassHasTables);
+    b2_tableEcCacheClassHierarchy =  computeHash(*b2, tableEcCacheClassHierarchy);
+    b3_tableEcCacheClassHasTables =  computeHash(*b3, tableEcCacheClassHasTables);
+    b3_tableEcCacheClassHierarchy =  computeHash(*b3, tableEcCacheClassHierarchy);
+    ASSERT_STRNE(b1_tableEcCacheClassHasTables.c_str(), b2_tableEcCacheClassHasTables.c_str());
+    ASSERT_STRNE(b1_tableEcCacheClassHierarchy.c_str(), b2_tableEcCacheClassHierarchy.c_str());
+    ASSERT_STRNE(b1_tableEcCacheClassHasTables.c_str(), b3_tableEcCacheClassHasTables.c_str());
+    ASSERT_STRNE(b1_tableEcCacheClassHierarchy.c_str(), b3_tableEcCacheClassHierarchy.c_str());
+    ASSERT_STREQ(b2_tableEcCacheClassHasTables.c_str(), b3_tableEcCacheClassHasTables.c_str());
+    ASSERT_STREQ(b2_tableEcCacheClassHierarchy.c_str(), b3_tableEcCacheClassHierarchy.c_str());
+
+    // Simulate in correct cache tables
+    schemaSyncDb.WithReadWrite([](ECDbR db){
+        // simulate incorrect cache tables.
+        EXPECT_EQ(BE_SQLITE_OK, db.TryExecuteSql("DELETE FROM ec_cache_ClassHasTables;"));
+        EXPECT_EQ(BE_SQLITE_OK, db.TryExecuteSql("DELETE FROM ec_cache_ClassHierarchy;"));
+        EXPECT_EQ(BE_SQLITE_OK, db.SaveChanges());
+    });
+
+    schemaSyncDb.Pull(*b2, [&]() {});
+    b3->PullMergePush("");
+
+    b1_tableEcCacheClassHasTables =  computeHash(*b1, tableEcCacheClassHasTables);
+    b1_tableEcCacheClassHierarchy =  computeHash(*b1, tableEcCacheClassHierarchy);
+    b2_tableEcCacheClassHasTables =  computeHash(*b2, tableEcCacheClassHasTables);
+    b2_tableEcCacheClassHierarchy =  computeHash(*b2, tableEcCacheClassHierarchy);
+    b3_tableEcCacheClassHasTables =  computeHash(*b3, tableEcCacheClassHasTables);
+    b3_tableEcCacheClassHierarchy =  computeHash(*b3, tableEcCacheClassHierarchy);
+    ASSERT_STREQ(b1_tableEcCacheClassHasTables.c_str(), b2_tableEcCacheClassHasTables.c_str());
+    ASSERT_STREQ(b1_tableEcCacheClassHierarchy.c_str(), b2_tableEcCacheClassHierarchy.c_str());
+    ASSERT_STREQ(b1_tableEcCacheClassHasTables.c_str(), b3_tableEcCacheClassHasTables.c_str());
+    ASSERT_STREQ(b1_tableEcCacheClassHierarchy.c_str(), b3_tableEcCacheClassHierarchy.c_str());
+    ASSERT_STREQ(b2_tableEcCacheClassHasTables.c_str(), b3_tableEcCacheClassHasTables.c_str());
+    ASSERT_STREQ(b2_tableEcCacheClassHierarchy.c_str(), b3_tableEcCacheClassHierarchy.c_str());
+}
+
+// ---------------------------------------------------------------------------------------
+// @bsitest
+// +---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaSyncTestFixture, checksum_pragma)
     {
     ECDbHub hub;
@@ -26465,3 +26560,4 @@ TEST_F(SchemaSyncTestFixture, OverflowedStructClass)
     }
 
 END_ECDBUNITTESTS_NAMESPACE
+
