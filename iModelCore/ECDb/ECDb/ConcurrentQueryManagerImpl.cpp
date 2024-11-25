@@ -149,7 +149,7 @@ void CachedConnection::InterruptIf(std::function<bool(RunnableRequestBase const&
             if (cancel) {
                 m_request->Cancel();
             }
-            Interrupt();
+            m_request->Interrupt(*this);
         }
     }
 }
@@ -400,6 +400,17 @@ QueryResponse::Ptr RunnableRequestBase::CreateQueueFullResponse() {
         ""
         );
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void RunnableRequestBase::Interrupt(CachedConnection& conn) {
+    if(!m_interrupted && conn.Id() == m_connId) {
+        conn.Interrupt();
+        m_interrupted = true;
+    }
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -871,13 +882,13 @@ std::string QueryHelper::FormatQuery(const char* query) {
             auto n = matches.position();
             Utf8String prefix = trimmedECSql.substr(0, n + 1);
             Utf8String select = trimmedECSql.substr(n + 2);
-            return Utf8PrintfString("%s select * from (%s) limit :" LIMIT_VAR_COUNT " offset :" LIMIT_VAR_OFFSET, prefix.c_str(), select.c_str());
+            return Utf8PrintfString("%s select * from (%s \n) limit :" LIMIT_VAR_COUNT " offset :" LIMIT_VAR_OFFSET, prefix.c_str(), select.c_str());
         }
     }
     if (trimmedECSql.StartsWithIAscii("pragma")) {
         return std::move(trimmedECSql);
     }
-    return Utf8PrintfString("select * from (%s) limit :" LIMIT_VAR_COUNT " offset :" LIMIT_VAR_OFFSET, trimmedECSql.c_str());
+    return Utf8PrintfString("select * from (%s \n) limit :" LIMIT_VAR_COUNT " offset :" LIMIT_VAR_OFFSET, trimmedECSql.c_str());
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -995,15 +1006,17 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
     const auto abbreviateBlobs = request.GetAbbreviateBlobs();
     const auto includeMetaData= request.GetIncludeMetaData();
     const auto classIdToClassNames = request.GetConvertClassIdsToClassNames();
+    const auto doNotConvertClassIdsToClassNamesWhenAliased = request.GetDoNotConvertClassIdsToClassNamesWhenAliased();
     auto& stmt = cachedAdaptor.GetStatement();
     auto& adaptor = cachedAdaptor.GetJsonAdaptor();
     ECSqlRowProperty::List props;
     if (includeMetaData) {
         adaptor.GetMetaData(props ,stmt);
     }
-    adaptor.SetAbbreviateBlobs(abbreviateBlobs);
-    adaptor.SetConvertClassIdsToClassNames(classIdToClassNames);
-    adaptor.UseJsNames(request.GetValueFormat() == ECSqlRequest::ECSqlValueFormat::JsNames);
+    adaptor.GetOptions().SetAbbreviateBlobs(abbreviateBlobs);
+    adaptor.GetOptions().SetConvertClassIdsToClassNames(classIdToClassNames);
+    adaptor.GetOptions().UseJsNames(request.GetValueFormat() == ECSqlRequest::ECSqlValueFormat::JsNames);
+    adaptor.GetOptions().DoNotConvertClassIdsToClassNamesWhenAliased(doNotConvertClassIdsToClassNamesWhenAliased);
     uint32_t row_count = 0;
     std::string& result = cachedAdaptor.ClearAndGetCachedString();
     result.reserve(QUERY_WORKER_RESULT_RESERVE_BYTES);
@@ -1025,7 +1038,7 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
     while (rc == BE_SQLITE_ROW) {
         auto& rowsDoc = cachedAdaptor.ClearAndGetCachedJsonDocument();
         BeJsValue rows(rowsDoc);
-        if (adaptor.RenderRow(rows, ECSqlStatementRow(stmt)) != SUCCESS) {
+        if (adaptor.RenderRowAsArray(rows, ECSqlStatementRow(stmt)) != SUCCESS) {
             setError(QueryResponse::Status::Error_ECSql_RowToJsonFailed, "failed to serialize ecsql statement row to json");
             return;
         } else {
@@ -1289,12 +1302,19 @@ QueryMonitor::QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor,
                 }
                 // send respond to client
                 request.SetResponse(request.CreateTimeoutResponse());
-                log_trace("%s monitor cancel query [id=%" PRIu32 "] with timeout", GetTimestamp().c_str(), request.GetId());
+                log_trace("%s monitor interrupt query [id=%" PRIu32 "] with timeout", GetTimestamp().c_str(), request.GetId());
                 return true;
                 });
             m_executor.GetConnectionCache().InterruptIf([&](RunnableRequestBase const& request) {
+                if (request.GetRequest().UsePrimaryConnection()) {
+                    return false;
+                }
                 if (request.IsTimeExceeded() ){
-                    log_trace("%s monitor cancel query [id=%" PRIu32 "] as it exceeded allowed time", GetTimestamp().c_str(), request.GetId());
+                    if (request.IsInterrupted()) {
+                        log_trace("%s monitor query [id=%" PRIu32 "] as it exceeded allowed time. (already interrupted)", GetTimestamp().c_str(), request.GetId());
+                    } else {
+                        log_trace("%s monitor interrupt query [id=%" PRIu32 "] as it exceeded allowed time", GetTimestamp().c_str(), request.GetId());
+                    }
                     return true;
                 }
                 return false;
@@ -1314,10 +1334,10 @@ QueryMonitor::QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor,
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-QueryMonitor::~QueryMonitor() { 
-    m_stop.store(true); 
+QueryMonitor::~QueryMonitor() {
+    m_stop.store(true);
     m_queryMonitorCv.notify_all();
-    if (m_thread.joinable()) 
+    if (m_thread.joinable())
         m_thread.join();
 }
 
@@ -1631,6 +1651,9 @@ void ECSqlRequest::FromJs(BeJsConst const& val) {
     }
     if (val.isNumericMember(JValueFormat)) {
         m_valueFmt = (ECSqlValueFormat)val[JValueFormat].asInt();
+    }
+    if (val.isBoolMember(ECSqlRowAdaptor::Options::JDoNotConvertClassIdsToClassNamesWhenAliased)) {
+        m_doNotConvertClassIdsToClassNamesWhenAliased = val[ECSqlRowAdaptor::Options::JDoNotConvertClassIdsToClassNamesWhenAliased].asBool();
     }
 }
 

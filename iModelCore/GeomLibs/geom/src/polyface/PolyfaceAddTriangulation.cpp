@@ -813,6 +813,8 @@ VuMask exteriorMask = VU_EXTERIOR_EDGE
     static bool s_interior = false;
     static double s_sign = -1.0;
     size_t errors = 0;
+    UNUSED_VARIABLE(errors);
+    
     if (nullptr != cellData)
         cellData->clear ();
     int useEdgeNeighborClip = voronoiMetric != 1.0;

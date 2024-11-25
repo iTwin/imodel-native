@@ -26,16 +26,6 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 struct SchemaUpgradeTestFixture : public ECDbTestFixture
     {
     std::vector<Utf8String> m_updatedDbs;
-    class IssueListener: public ECN::IIssueListener
-    {
-    public:
-    mutable bvector<Utf8String> m_issues;
-    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override
-        {
-        m_issues.push_back(message);
-        }
-    void clear() { m_issues.clear(); }
-    };
     protected:
 
         //---------------------------------------------------------------------------------------
@@ -66,7 +56,7 @@ struct SchemaUpgradeTestFixture : public ECDbTestFixture
             ECDb ecdb;
             ASSERT_EQ(BE_SQLITE_OK, CloneECDb(ecdb, "schemaupgrade_unrestricted.ecdb", seedFilePath));
 
-            IssueListener issueListener;
+            TestIssueListener issueListener;
             ecdb.AddIssueListener(issueListener);
 
             bool expectedToSucceed = expectedToSucceedList.first;
@@ -83,7 +73,7 @@ struct SchemaUpgradeTestFixture : public ECDbTestFixture
                 if (!Utf8String::IsNullOrEmpty(errorMessage))
                     {
                     ASSERT_EQ(issueListener.m_issues.size(), 1U);
-                    EXPECT_STREQ(errorMessage, issueListener.m_issues[0].c_str());
+                    EXPECT_STREQ(errorMessage, issueListener.GetLastMessage().c_str());
                     }
                 }
 
@@ -240,8 +230,8 @@ TEST_F(SchemaUpgradeTestFixture, ValidateMapCheck_CheckForOrphanCustomAttributeI
     auto testSchemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema1" alias="ts1" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"/>)xml";
 
-    IssueListener listener;
-    m_ecdb.AddIssueListener(listener);
+    TestIssueListener issueListener;
+    m_ecdb.AddIssueListener(issueListener);
 
     // this should fail and generate issue messages
     ASSERT_EQ(ERROR, ImportSchema(SchemaItem(testSchemaXml1)));
@@ -249,9 +239,9 @@ TEST_F(SchemaUpgradeTestFixture, ValidateMapCheck_CheckForOrphanCustomAttributeI
     Utf8PrintfString expectedMsg2Pattern("Detected orphan custom attribute rows. CustomAttribute with id=\\d+ applied to container of type 'ECProperty' with container id=%d.", p4PropId);
     Utf8String expectedMsg3 = "Detected 2 orphan rows in ec_CustomAttributes.";
 
-    ASSERT_TRUE(std::regex_match (listener.m_issues[0].c_str(), std::regex (expectedMsg1Pattern.c_str ())));
-    ASSERT_TRUE(std::regex_match (listener.m_issues[1].c_str(), std::regex (expectedMsg2Pattern.c_str ())));
-    ASSERT_STREQ(expectedMsg3.c_str(), listener.m_issues[2].c_str());
+    ASSERT_TRUE(std::regex_match (issueListener.m_issues[0].message.c_str(), std::regex (expectedMsg1Pattern.c_str ())));
+    ASSERT_TRUE(std::regex_match (issueListener.m_issues[1].message.c_str(), std::regex (expectedMsg2Pattern.c_str ())));
+    ASSERT_STREQ(expectedMsg3.c_str(), issueListener.m_issues[2].message.c_str());
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -293,7 +283,6 @@ TEST_F(SchemaUpgradeTestFixture, DeleteSchema_VerifyCustomAttributesAreDeletedAs
     auto testCA1ClassId = testCA1Class->GetId();
     auto pipeClassId = pipeClass->GetId();
     auto pipePropId = p4Prop->GetId();
-    const auto ContainerType_Schema = 1;
     const auto ContainerType_Class = 30;
     const auto ContainerType_Property = 992;
     auto doesCustomAttributeExists = [&](BeInt64Id containerId, ECN::ECClassId caClassId, int containerType) {
@@ -3213,12 +3202,12 @@ TEST_F(SchemaUpgradeTestFixture, DeletePropertyNoSharedColumn)
                    <ECEntityClass typeName="TestClass" modifier="None"/>
                 </ECSchema>)xml";
 
-    IssueListener issueListener;
+    TestIssueListener issueListener;
     m_ecdb.AddIssueListener(issueListener);
 
     ASSERT_EQ(ERROR, ImportSchema(SchemaItem(schemaUpdateTemplate)));
     ASSERT_EQ(issueListener.m_issues.size(), 1U);
-    EXPECT_STREQ(issueListener.m_issues[0].c_str(), "ECSchema Upgrade failed. ECClass TestSchema:TestClass: Deleting ECProperty 'TestProperty' from an ECClass which is not mapped to a shared column is not supported.");
+    EXPECT_STREQ(issueListener.GetLastMessage().c_str(), "ECSchema Upgrade failed. ECClass TestSchema:TestClass: Deleting ECProperty 'TestProperty' from an ECClass which is not mapped to a shared column is not supported.");
 
     constexpr Utf8CP dynamicSchemaUpdateTemplate = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00.00' alias = 'CoreCA' />
@@ -3229,12 +3218,12 @@ TEST_F(SchemaUpgradeTestFixture, DeletePropertyNoSharedColumn)
                    <ECEntityClass typeName="TestClass" modifier="None"/>
                 </ECSchema>)xml";
 
-    issueListener.clear();
-    ASSERT_TRUE(issueListener.m_issues.empty());
+    issueListener.ClearIssues();
+    ASSERT_TRUE(issueListener.IsEmpty());
 
     ASSERT_EQ(ERROR, ImportSchema(SchemaItem(dynamicSchemaUpdateTemplate)));
     ASSERT_EQ(issueListener.m_issues.size(), 1U);
-    EXPECT_STREQ(issueListener.m_issues[0].c_str(), "ECSchema Upgrade failed. ECClass TestSchema:TestClass: Deleting ECProperty 'TestProperty' from an ECClass which is not mapped to a shared column is not supported.");
+    EXPECT_STREQ(issueListener.GetLastMessage().c_str(), "ECSchema Upgrade failed. ECClass TestSchema:TestClass: Deleting ECProperty 'TestProperty' from an ECClass which is not mapped to a shared column is not supported.");
     m_ecdb.AbandonChanges();
     }
 
@@ -7689,7 +7678,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteECRelationshipConstraintClassUnsupported)
           </ECRelationshipClass>
         </ECSchema>)xml")));
 
-    IssueListener issueListener;
+    TestIssueListener issueListener;
     m_ecdb.AddIssueListener(issueListener);
 
     ASSERT_EQ(ERROR, ImportSchema(SchemaItem(
@@ -7726,7 +7715,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteECRelationshipConstraintClassUnsupported)
         </ECSchema>)xml"))) << "Deleting ECStructClass is expected to be not supported";
 
     ASSERT_EQ(issueListener.m_issues.size(), 1U);
-    EXPECT_STREQ("ECSchema Upgrade failed. ECSchema TestSchema.01.00.00: Deleting ECClass 'ElementGeometry' failed. A class which is specified in a relationship constraint cannot be deleted", issueListener.m_issues[0].c_str());
+    EXPECT_STREQ("ECSchema Upgrade failed. ECSchema TestSchema.01.00.00: Deleting ECClass 'ElementGeometry' failed. A class which is specified in a relationship constraint cannot be deleted", issueListener.GetLastMessage().c_str());
     }
 
 TEST_F(SchemaUpgradeTestFixture, DeleteECStructClassUnsupported)
@@ -7741,7 +7730,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteECStructClassUnsupported)
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
-    IssueListener issueListener;
+    TestIssueListener issueListener;
     m_ecdb.AddIssueListener(issueListener);
 
     ASSERT_EQ(ERROR, ImportSchema(SchemaItem(
@@ -7754,7 +7743,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteECStructClassUnsupported)
         "</ECSchema>"))) << "Deleting ECStructClass is expected to be not supported";
 
     ASSERT_EQ(issueListener.m_issues.size(), 1U);
-    EXPECT_STREQ("ECSchema Upgrade failed. ECSchema TestSchema.01.00.00: Deleting ECClass 'ChangeInfoStruct' failed. ECStructClass cannot be deleted", issueListener.m_issues[0].c_str());
+    EXPECT_STREQ("ECSchema Upgrade failed. ECSchema TestSchema.01.00.00: Deleting ECClass 'ChangeInfoStruct' failed. ECStructClass cannot be deleted", issueListener.GetLastMessage().c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -7969,12 +7958,12 @@ TEST_F(SchemaUpgradeTestFixture, DeleteNavigationProperty)
     Utf8String schemaV2Xml;
     schemaV2Xml.Sprintf(schemaTemplate,"2.0", "");
 
-    IssueListener issueListener;
+    TestIssueListener issueListener;
     m_ecdb.AddIssueListener(issueListener);
 
     ASSERT_EQ(ERROR, ImportSchema(SchemaItem(schemaV2Xml))) << "Schema update should fail when a nav prop (w/o ForeignKeyConstraint) is deleted because it would change the mapping type logical FK to link table";
     ASSERT_EQ(issueListener.m_issues.size(), 1U);
-    EXPECT_STREQ(issueListener.m_issues[0].c_str(), "ECSchema Upgrade failed. ECClass TestSchema:B: Deleting Navigation ECProperty 'A' from an ECClass is not supported.");
+    EXPECT_STREQ(issueListener.GetLastMessage().c_str(), "ECSchema Upgrade failed. ECClass TestSchema:B: Deleting Navigation ECProperty 'A' from an ECClass is not supported.");
     m_ecdb.AbandonChanges();
 
     //now delete nav prop (physical FK)
@@ -8028,12 +8017,12 @@ TEST_F(SchemaUpgradeTestFixture, DeleteNavigationPropertyDynamicSchema)
     Utf8String schemaV2Xml;
     schemaV2Xml.Sprintf(schemaTemplate,"2.0.0", dynamicSchema, "");
 
-    IssueListener issueListener;
+    TestIssueListener issueListener;
     m_ecdb.AddIssueListener(issueListener);
 
     ASSERT_EQ(ERROR, ImportSchema(SchemaItem(schemaV2Xml))) << "Schema update should fail when a nav prop (w/o ForeignKeyConstraint) is deleted because it would change the mapping type logical FK to link table";
     ASSERT_EQ(issueListener.m_issues.size(), 1U);
-    EXPECT_STREQ(issueListener.m_issues[0].c_str(), "ECSchema Upgrade failed. ECClass TestSchema:B: Deleting Navigation ECProperty 'A' from an ECClass is not supported.");
+    EXPECT_STREQ(issueListener.GetLastMessage().c_str(), "ECSchema Upgrade failed. ECClass TestSchema:B: Deleting Navigation ECProperty 'A' from an ECClass is not supported.");
     m_ecdb.AbandonChanges();
 
     //now delete nav prop (physical FK)
@@ -16191,7 +16180,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_Simple) {
         ASSERT_STREQ(inst1["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
 
-    auto v2 = R"(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+    auto v2 = R"(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Element">
                         <ECCustomAttributes>
@@ -17499,7 +17488,7 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradePropertyTypeChangeFromPrim)
         })
         {
         Utf8PrintfString errorMsg("Test case at line %d has failed.\n", lineNumber);
-        IssueListener issueListener;
+        TestIssueListener issueListener;
         m_ecdb.AddIssueListener(issueListener);
 
         EXPECT_EQ(expectedResult, GetHelper().ImportSchema(SchemaItem(Utf8PrintfString(newSchema, newSchemaVersion, changedPropertyTypeName.c_str())), importOption)) << errorMsg;
@@ -17543,13 +17532,12 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradePropertyTypeChangeFromPrim)
         else if (!Utf8String::IsNullOrEmpty(expectedErrorMessage))
             {
             ASSERT_EQ(issueListener.m_issues.size(), 1U) << errorMsg;
-            EXPECT_STREQ(issueListener.m_issues[0].c_str(), expectedErrorMessage) << errorMsg;
+            EXPECT_STREQ(issueListener.GetLastMessage().c_str(), expectedErrorMessage) << errorMsg;
             }
 
         // Reset test setup for next case
         ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AbandonChanges()) << errorMsg;
         ASSERT_EQ(BE_SQLITE_OK, ReopenECDb()) << errorMsg;
-        m_ecdb.RemoveIssueListener();
         }
     }
 
@@ -17712,7 +17700,7 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradePropertyTypeChangeFromEnum)
         })
         {
         Utf8PrintfString errorMsg("Test case at line %d has failed.\n", lineNumber);
-        IssueListener issueListener;
+        TestIssueListener issueListener;
         m_ecdb.AddIssueListener(issueListener);
 
         // Import base schema
@@ -17752,13 +17740,12 @@ TEST_F(SchemaUpgradeTestFixture, MajorSchemaUpgradePropertyTypeChangeFromEnum)
         else if (!Utf8String::IsNullOrEmpty(expectedErrorMessage))
             {
             ASSERT_EQ(issueListener.m_issues.size(), 1U) << errorMsg;
-            EXPECT_STREQ(issueListener.m_issues[0].c_str(), expectedErrorMessage) << errorMsg;
+            EXPECT_STREQ(issueListener.GetLastMessage().c_str(), expectedErrorMessage) << errorMsg;
             }
 
         // Reset test setup for next case
         ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AbandonChanges()) << errorMsg;
         ASSERT_EQ(BE_SQLITE_OK, ReopenECDb()) << errorMsg;
-        m_ecdb.RemoveIssueListener();
         }
     }
 

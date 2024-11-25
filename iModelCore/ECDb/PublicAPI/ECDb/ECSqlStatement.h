@@ -746,12 +746,37 @@ struct ECSqlRowProperty final: IJsSerializable {
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
+enum class QueryRowFormat {
+    UseECSqlPropertyNames = 0,
+    UseECSqlPropertyIndexes = 1,
+    UseJsPropertyNames = 2
+};
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
 struct ECSqlRowAdaptor {
+    struct Options {
+        static constexpr auto JAbbreviateBlobs = "abbreviateBlobs";
+        static constexpr auto JClassIdsToClassNames = "classIdsToClassNames";
+        static constexpr auto JUseJsName = "useJsName";
+        static constexpr auto JDoNotConvertClassIdsToClassNamesWhenAliased = "doNotConvertClassIdsToClassNamesWhenAliased";
+
+        bool m_abbreviateBlobs = true;
+        bool m_classIdToClassNames = false;
+        bool m_useJsName = false;
+        bool m_doNotConvertClassIdsToClassNamesWhenAliased = false;
+
+        Options& SetAbbreviateBlobs(bool v) { m_abbreviateBlobs = v; return *this; }
+        Options& SetConvertClassIdsToClassNames(bool v) { m_classIdToClassNames = v;  return *this; }
+        Options& UseJsNames(bool v) { m_useJsName = v;  return *this; }
+        Options& DoNotConvertClassIdsToClassNamesWhenAliased(bool v) { m_doNotConvertClassIdsToClassNamesWhenAliased = v;  return *this; }
+        ECDB_EXPORT void FromJson(BeJsValue opts);
+        ECDB_EXPORT void ToJson(BeJsValue opts) const;
+    };
 private:
-    bool m_abbreviateBlobs;
-    bool m_classIdToClassNames;
-    bool m_useJsName;
     ECDbCR m_ecdb;
+    ECSqlRowAdaptor::Options m_options;
 
 private:
     BentleyStatus RenderRootProperty(BeJsValue out, IECSqlValue const& in) const;
@@ -768,13 +793,14 @@ private:
     BentleyStatus RenderStructArrayProperty(BeJsValue out, IECSqlValue const& in) const;
 
 public:
-    ECSqlRowAdaptor(ECDbCR ecdb):m_ecdb(ecdb), m_abbreviateBlobs(true), m_classIdToClassNames(false), m_useJsName(false){}
-    ECSqlRowAdaptor& SetAbbreviateBlobs(bool v) { m_abbreviateBlobs = v; return *this;}
-    ECSqlRowAdaptor& SetConvertClassIdsToClassNames(bool v) { m_classIdToClassNames = v; return *this; }
-    ECSqlRowAdaptor& UseJsNames(bool v) { m_useJsName = v; return *this; }
+    ECSqlRowAdaptor(ECDbCR ecdb):m_ecdb(ecdb){}
     ECDB_EXPORT BentleyStatus RenderRow(BeJsValue rowJson, IECSqlRow const& stmt, bool asArray = true) const;
     ECDB_EXPORT BentleyStatus RenderValue(BeJsValue valJson, IECSqlValue const& val) { return RenderRootProperty(valJson, val); }
     ECDB_EXPORT void GetMetaData(ECSqlRowProperty::List& list, ECSqlStatement const& stmt) const;
+    Options& GetOptions() { return m_options; }
+    Options const& GetOptions() const { return m_options; }
+    BentleyStatus RenderRowAsArray(BeJsValue rowJson, IECSqlRow const& stmt) const { return RenderRow(rowJson, stmt, true); }
+    BentleyStatus RenderRowAsObject(BeJsValue rowJson, IECSqlRow const& stmt) const{ return RenderRow(rowJson, stmt, false); }
 };
 
 //=======================================================================================

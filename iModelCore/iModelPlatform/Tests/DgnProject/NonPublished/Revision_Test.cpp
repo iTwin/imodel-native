@@ -1552,10 +1552,10 @@ TEST_F(RevisionTestFixture, IterateOverRedundantSchemaChange)
 
     // ignore the initial revision since it will have a bunch of inserted stuff for setup purposes that we're not trying to iterate over
     //RevisionChangesFileReader reader1(revisionPtrs[0]->GetRevisionChangesFile(), *m_db);
-    ChangesetFileReader reader2(revisionPtrs[1]->GetFileName(), *m_db);
-    ChangesetFileReader reader3(revisionPtrs[2]->GetFileName(), *m_db);
-    ChangesetFileReader reader4(revisionPtrs[3]->GetFileName(), *m_db);
-    ChangesetFileReader reader5(revisionPtrs[4]->GetFileName(), *m_db);
+    ChangesetFileReader reader2(revisionPtrs[1]->GetFileName(), m_db.get());
+    ChangesetFileReader reader3(revisionPtrs[2]->GetFileName(), m_db.get());
+    ChangesetFileReader reader4(revisionPtrs[3]->GetFileName(), m_db.get());
+    ChangesetFileReader reader5(revisionPtrs[4]->GetFileName(), m_db.get());
     // this pointer array compensates for a lack of copy or move constructors which make this type difficult to put in STL containers
     std::array<ChangesetFileReader*, revisionPtrs.size() - 1> revisionReaders { &reader2, &reader3, &reader4, &reader5  };
 

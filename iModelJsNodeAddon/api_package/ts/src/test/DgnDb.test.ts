@@ -2,7 +2,7 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-import { DbResult, Id64Array, Id64String, IModelStatus, OpenMode } from "@itwin/core-bentley";
+import { DbResult, Id64Array, Id64String, IModelStatus, OpenMode, using } from "@itwin/core-bentley";
 import { BlobRange, DbBlobRequest, DbBlobResponse, DbQueryRequest, DbQueryResponse, DbRequestKind, DbResponseStatus, ProfileOptions, RelationshipProps } from "@itwin/core-common";
 import { DomainOptions } from "@itwin/core-common/lib/cjs/BriefcaseTypes";
 import { assert, expect } from "chai";
@@ -615,8 +615,8 @@ describe("basic tests", () => {
       .property("errorNumber").equal(BE_SQLITE_ERROR_SchemaUpgradeFailed);
   });
 
-  it("testSchemaImportPrefersExistingAndLocalOverStandard", () => {
-    const testFileName = copyFile("testSchemaImportPrefersExistingOverStandard.bim", dbFileName);
+  it("testSchemaImport PrefersExistingAndLocalOverStandard", () => {
+    const testFileName = copyFile("prefersExistingOverStandard.bim", dbFileName);
     const db = openDgnDb(testFileName);
     const assetsDir = path.join(getAssetsDir(), "ImportSchemaTests");
     const test100Path = path.join(assetsDir, "Test.01.00.00.ecschema.xml");
@@ -636,6 +636,47 @@ describe("basic tests", () => {
     const test101Path = path.join(subAssetsDir, "Test.01.00.01.ecschema.xml");
     db.importSchemas([test101Path], { schemaLockHeld: false });
     assert.equal(db.getSchemaProps("TestRef").version, "01.00.01", "TestRef after Test 1.0.1 import");
+  });
+
+  it("testSchemaImport ErrorWhenAnyXmlIsIllFormed", async () => {
+    await using(new iModelJsNative.DisableNativeAssertions(), async (_r) => {
+      const writeDbFileName = copyFile("errorWhenAnyXmlIsIllFormed.bim", dbFileName);
+      // Without ProfileOptions.Upgrade, we get: Error | ECDb | Failed to import schema 'BisCore.01.00.15'. Current ECDb profile version (4.0.0.1) only support schemas with EC version < 3.2. ECDb profile version upgrade is required to import schemas with EC Version >= 3.2.
+      const db = openDgnDb(writeDbFileName, { profile: ProfileOptions.Upgrade, schemaLockHeld: false });
+      assert.isTrue(db !== undefined);
+      const bisProps = db.getSchemaProps("BisCore");
+      assert.isTrue(bisProps.version === "01.00.00");
+
+      const validSchema = `<?xml version="1.0" encoding="utf-8" ?>
+      <ECSchema schemaName="ValidSchema" alias="vs" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="BisCore" version="01.00.10" alias="bis" />
+        <ECEntityClass typeName="Pipe">
+          <BaseClass>bis:GeometricElement2d</BaseClass>
+          <ECProperty propertyName="p1" typeName="int" />
+        </ECEntityClass>
+      </ECSchema>`;
+
+      const invalidSchema = `<?xml version="1.0" encoding="utf-8" ?>
+      <ECSchema schemaName="InvalidSchema" alias="is" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <ECSchemaReference name="BisCore" version="01.00.10" alias="bis" />
+        <ECEntityClass typeName="Manhole" displayLabel="Manhole">
+          <BaseClass>bis:GeometricElement3d</BaseClass>
+        <ECEntityClass>
+      </ECSchema>`;
+
+      expect(() => db.importXmlSchemas([invalidSchema], { schemaLockHeld: false }))
+        .to.throw("Failed to import schemas")
+        .property("errorNumber").equal(DbResult.BE_SQLITE_ERROR);
+
+      expect(() => db.importXmlSchemas([validSchema, invalidSchema], { schemaLockHeld: false }))
+        .to.throw("Failed to import schemas")
+        .property("errorNumber").equal(DbResult.BE_SQLITE_ERROR);
+
+      db.importXmlSchemas([validSchema], { schemaLockHeld: false });
+      const validSchemaProps = db.getSchemaProps("ValidSchema");
+      assert.isTrue(validSchemaProps.name === "ValidSchema");
+      assert.isTrue(validSchemaProps.version === "01.00.00");
+    });
   });
 
   it("testSchemaExport", () => {
@@ -830,7 +871,7 @@ describe("basic tests", () => {
     it("throws if source is not a geometric element", async () => {
       const msg = "Geometric element required";
       await expect(dgndb.generateElementMeshes({ source: "NotAnId" })).rejectedWith(msg);
-      await expect(dgndb.generateElementMeshes({})).rejectedWith(msg);
+      await expect(dgndb.generateElementMeshes({} as any)).rejectedWith(msg);
       await expect(dgndb.generateElementMeshes({ source: "0" })).rejectedWith(msg);
       await expect(dgndb.generateElementMeshes({ source: "0x1" })).rejectedWith(msg);
       await expect(dgndb.generateElementMeshes({ source: "0x123456789" })).rejectedWith(msg);

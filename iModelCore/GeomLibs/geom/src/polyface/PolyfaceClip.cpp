@@ -21,7 +21,6 @@ struct VertexData
     static VertexData FromEdgeData (size_t readIndex, double edgeFraction, DPoint3dCR xyz)
         {
         VertexData data;
-        data.m_edgeFraction = edgeFraction;
         data.m_readIndex = readIndex;
         data.m_edgeFraction = edgeFraction;
         return data;

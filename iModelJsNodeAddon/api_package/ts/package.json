@@ -9,6 +9,7 @@
   "scripts": {
     "build": "tsc 1>&2",
     "lint": "eslint -f visualstudio \"./src/**/*.ts\" 1>&2",
+    "lint-fix": "eslint --fix -f visualstudio \"./src/**/*.ts\" 1>&2",
     "buildAndLint": "npm run -s build && npm run -s lint",
     "clean": "rimraf lib",
     "copy:test-assets": "cpx \"./assets/test/**/*\" ./lib/test/assets",
@@ -16,10 +17,10 @@
     "test": "node ./lib/test/index.js"
   },
   "devDependencies": {
-    "@itwin/build-tools": "^4.5.0-dev.29",
-    "@itwin/core-bentley": "^4.5.0-dev.29",
-    "@itwin/core-common": "^4.5.0-dev.29",
-    "@itwin/core-geometry": "^4.5.0-dev.29",
+    "@itwin/build-tools": "^4.9.5",
+    "@itwin/core-bentley": "^4.9.5",
+    "@itwin/core-common": "^4.9.5",
+    "@itwin/core-geometry": "^4.9.5",
     "@itwin/eslint-plugin": "^3.7.0-dev.8",
     "@types/chai": "^4.3.6",
     "@types/chai-as-promised": "^7.1.6",

@@ -306,6 +306,7 @@ double      tol               /* tolerance for ON case detection */
     double crossing;
     double s;
     int numLeft = 0, numRight = 0;
+    UNUSED_VARIABLE(numRight);
 
     int i, i0;
     if (fabs (h0) <= tol)
@@ -366,6 +367,7 @@ double      tol               /* tolerance for ON case detection */
     double crossing;
     double s;
     int numLeft = 0, numRight = 0;
+    UNUSED_VARIABLE(numRight);
 
     int i, i0;
     if (fabs (h0) <= tol)
@@ -436,6 +438,7 @@ double      tol               /* tolerance for ON case detection */
     double u;
     double s;
     int numLeft = 0, numRight = 0;
+    UNUSED_VARIABLE(numRight);
 
     int i, i0;
 
@@ -704,6 +707,8 @@ double      tol
     int i0 = 0;
     int numIn = 0;
     int numOut = 0;
+    UNUSED_VARIABLE(numOut);
+    
     for (int i1 = 0; i1 <= numPoint;)
         {
         if (i1 >= numPoint || pPointArray[i1].IsDisconnect ())

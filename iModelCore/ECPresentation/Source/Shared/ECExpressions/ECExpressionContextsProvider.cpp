@@ -231,7 +231,15 @@ public:
 //=======================================================================================
 struct ECInstanceMethodSymbolsProvider : IECSymbolProvider
 {
+    struct Context : ProviderContext
+        {
+        IConnectionCR m_connection;
+        Context(IConnectionCR connection) : m_connection(connection) {}
+        };
+
 private:
+    Context const& m_context;
+
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
@@ -263,14 +271,131 @@ private:
         ECEXPRESSIONS_EVALUATE_LOG(LOG_TRACE, Utf8PrintfString("ECInstanceMethodSymbolsProvider::IsOfClass: Result: %s", evalResult.ToString().c_str()).c_str());
         return ExpressionStatus::Success;
         }
+
+    static ExpressionStatus GetRelatedDisplayLabelQuery(Utf8StringR query, Utf8CP relationshipName, Utf8CP direction, Utf8CP className)
+        {
+        Utf8CP thisInstanceIdColumnName, thisClassIdColumnName,
+            relatedInstanceIdColumnName, relatedClassIdColumnName;
+        if (0 == BeStringUtilities::Stricmp("Forward", direction))
+            {
+            thisInstanceIdColumnName = "SourceECInstanceId";
+            thisClassIdColumnName = "SourceECClassId";
+            relatedInstanceIdColumnName = "TargetECInstanceId";
+            relatedClassIdColumnName = "TargetECClassId";
+            }
+        else if (0 == BeStringUtilities::Stricmp("Backward", direction))
+            {
+            thisInstanceIdColumnName = "TargetECInstanceId";
+            thisClassIdColumnName = "TargetECClassId";
+            relatedInstanceIdColumnName = "SourceECInstanceId";
+            relatedClassIdColumnName = "SourceECClassId";
+            }
+        else
+            {
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Invalid relationship direction specified. Expected 'Forward' or 'Backward', got: '%s'", direction));
+            return ExpressionStatus::UnknownError;
+            }
+
+        Utf8String relationshipSchemaName, relationshipClassName;
+        if (ECObjectsStatus::Success != ECClass::ParseClassName(relationshipSchemaName, relationshipClassName, relationshipName))
+            {
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Failed to parse specified relationship name: '%s'", relationshipName));
+            return ExpressionStatus::UnknownError;
+            }
+
+        Utf8String relatedClassSchemaName, relatedClassName;
+        if (ECObjectsStatus::Success != ECClass::ParseClassName(relatedClassSchemaName, relatedClassName, className))
+            {
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Failed to parse specified class name: '%s'", className));
+            return ExpressionStatus::UnknownError;
+            }
+
+        query = Utf8PrintfString("SELECT " FUNCTION_NAME_GetRelatedDisplayLabel "([related].[ECClassId], [related].[ECInstanceId]) "
+                                    "FROM %%s this, [%s].[%s] relationship, [%s].[%s] related "
+                                    "WHERE this.[ECInstanceId]=? AND "
+                                    "      this.[ECInstanceId]=relationship.[%s] AND this.[ECClassId]=relationship.[%s] AND "
+                                    "      related.[ECInstanceId]=relationship.[%s] AND related.[ECClassId]=relationship.[%s]",
+                                    relationshipSchemaName.c_str(), relationshipClassName.c_str(),
+                                    relatedClassSchemaName.c_str(), relatedClassName.c_str(),
+                                    thisInstanceIdColumnName, thisClassIdColumnName,
+                                    relatedInstanceIdColumnName, relatedClassIdColumnName);
+        return ExpressionStatus::Success;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static ExpressionStatus GetRelatedDisplayLabel(EvaluationResult& evalResult, void* context, ECInstanceListCR instanceData, EvaluationResultVector& args)
+        {
+        if (instanceData.empty())
+            {
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_TRACE, LOG_INFO, "Requesting display label on an empty ECInstances list. Returning NULL.");
+            evalResult.InitECValue().SetToNull();
+            return ExpressionStatus::Success;
+            }
+
+        if (3 != args.size())
+            {
+            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Wrong number of arguments. Expected 3, got: %" PRIu64, (uint64_t)args.size()));
+            return ExpressionStatus::WrongNumberOfArguments;
+            }
+
+        for (size_t i = 0; i < 3; ++i)
+            {
+            if (!args[i].IsECValue() || !args[i].GetECValue()->IsString())
+                {
+                DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Invalid type of argument %" PRIu64 " - expected a string", (uint64_t)i));
+                return ExpressionStatus::WrongType;
+                }
+            }
+
+        Context ctx = *static_cast<Context*>(context);
+
+        Utf8String queryFormat;
+        ExpressionStatus stat = GetRelatedDisplayLabelQuery(queryFormat, args[0].GetECValue()->GetUtf8CP(), args[1].GetECValue()->GetUtf8CP(), args[2].GetECValue()->GetUtf8CP());
+        if (ExpressionStatus::Success != stat)
+            return stat;
+
+        for (IECInstancePtr const& instance : instanceData)
+            {
+            Utf8PrintfString query(queryFormat.c_str(), instance->GetClass().GetECSqlName().c_str());
+
+            ECSqlStatement stmt;
+            ECSqlStatus status = stmt.Prepare(ctx.m_connection.GetECDb().Schemas(), ctx.m_connection.GetDb(), query.c_str());
+            if (!status.IsSuccess())
+                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::ECExpressions, "Failed to prepare related display label query");
+
+            ECInstanceId id;
+            ECInstanceId::FromString(id, instance->GetInstanceId().c_str());
+            status = stmt.BindId(1, id);
+            if (!status.IsSuccess())
+                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::ECExpressions, "Failed to bind related display label query parameter");
+
+            if (BE_SQLITE_ROW == QueryExecutorHelper::Step(stmt))
+                {
+                LabelDefinitionPtr labelDefinition = LabelDefinition::FromString(stmt.GetValueText(0));
+                evalResult.InitECValue() = ECValue(labelDefinition->GetDisplayValue().c_str());
+                
+                ECEXPRESSIONS_EVALUATE_LOG(LOG_TRACE, Utf8PrintfString("ECInstanceMethodSymbolsProvider::GetRelatedDisplayLabel: Result: %s", evalResult.ToString().c_str()).c_str());
+                return ExpressionStatus::Success;
+                }
+            }
+
+        evalResult.InitECValue().SetToNull();
+        ECEXPRESSIONS_EVALUATE_LOG(LOG_TRACE, Utf8PrintfString("ECInstanceMethodSymbolsProvider::GetRelatedDisplayLabel: Result: %s", evalResult.ToString().c_str()).c_str());
+        return ExpressionStatus::Success;
+        }
+        
 protected:
     Utf8CP _GetName() const override {return "ECInstanceMethods";}
     void _PublishSymbols(SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const override
         {
         context.AddSymbol(*MethodSymbol::Create("IsOfClass", NULL, &IsOfClass));
+        void* methodContext = const_cast<Context*>(&m_context);
+        context.AddSymbol(*MethodSymbol::Create("GetRelatedDisplayLabel", nullptr, &GetRelatedDisplayLabel, methodContext));
         }
 public:
-    ECInstanceMethodSymbolsProvider() {}
+    ECInstanceMethodSymbolsProvider(Context const& context) : m_context(context) {}
 };
 
 //=======================================================================================
@@ -701,145 +826,6 @@ public:
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct LabelSymbolsProvider : IECSymbolProvider
-{
-    struct Context : ProviderContext
-        {
-        IConnectionCR m_connection;
-        Context(IConnectionCR connection) : m_connection(connection) {}
-        };
-
-private:
-    Context const& m_context;
-
-private:
-    static ExpressionStatus GetRelatedDisplayLabelQuery(Utf8StringR query, Utf8CP relationshipName, Utf8CP direction, Utf8CP className)
-        {
-        Utf8CP thisInstanceIdColumnName, thisClassIdColumnName,
-            relatedInstanceIdColumnName, relatedClassIdColumnName;
-        if (0 == BeStringUtilities::Stricmp("Forward", direction))
-            {
-            thisInstanceIdColumnName = "SourceECInstanceId";
-            thisClassIdColumnName = "SourceECClassId";
-            relatedInstanceIdColumnName = "TargetECInstanceId";
-            relatedClassIdColumnName = "TargetECClassId";
-            }
-        else if (0 == BeStringUtilities::Stricmp("Backward", direction))
-            {
-            thisInstanceIdColumnName = "TargetECInstanceId";
-            thisClassIdColumnName = "TargetECClassId";
-            relatedInstanceIdColumnName = "SourceECInstanceId";
-            relatedClassIdColumnName = "SourceECClassId";
-            }
-        else
-            {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Invalid relationship direction specified. Expected 'Forward' or 'Backward', got: '%s'", direction));
-            return ExpressionStatus::UnknownError;
-            }
-
-        Utf8String relationshipSchemaName, relationshipClassName;
-        if (ECObjectsStatus::Success != ECClass::ParseClassName(relationshipSchemaName, relationshipClassName, relationshipName))
-            {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Failed to parse specified relationship name: '%s'", relationshipName));
-            return ExpressionStatus::UnknownError;
-            }
-
-        Utf8String relatedClassSchemaName, relatedClassName;
-        if (ECObjectsStatus::Success != ECClass::ParseClassName(relatedClassSchemaName, relatedClassName, className))
-            {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Failed to parse specified class name: '%s'", className));
-            return ExpressionStatus::UnknownError;
-            }
-
-        query = Utf8PrintfString("SELECT " FUNCTION_NAME_GetRelatedDisplayLabel "([related].[ECClassId], [related].[ECInstanceId]) "
-                                 "FROM %%s this, [%s].[%s] relationship, [%s].[%s] related "
-                                 "WHERE this.[ECInstanceId]=? AND "
-                                 "      this.[ECInstanceId]=relationship.[%s] AND this.[ECClassId]=relationship.[%s] AND "
-                                 "      related.[ECInstanceId]=relationship.[%s] AND related.[ECClassId]=relationship.[%s]",
-                                 relationshipSchemaName.c_str(), relationshipClassName.c_str(),
-                                 relatedClassSchemaName.c_str(), relatedClassName.c_str(),
-                                 thisInstanceIdColumnName, thisClassIdColumnName,
-                                 relatedInstanceIdColumnName, relatedClassIdColumnName);
-        return ExpressionStatus::Success;
-        }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    static ExpressionStatus GetRelatedDisplayLabel (EvaluationResult& evalResult, void* context, ECInstanceListCR instanceData, EvaluationResultVector& args)
-        {
-        if (instanceData.empty())
-            {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_TRACE, LOG_INFO, "Requesting display label on an empty ECInstances list. Returning NULL.");
-            evalResult.InitECValue().SetToNull();
-            return ExpressionStatus::Success;
-            }
-
-        if (3 != args.size())
-            {
-            DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Wrong number of arguments. Expected 3, got: %" PRIu64, (uint64_t)args.size()));
-            return ExpressionStatus::WrongNumberOfArguments;
-            }
-
-        for (size_t i = 0; i < 3; ++i)
-            {
-            if (!args[i].IsECValue() || !args[i].GetECValue()->IsString())
-                {
-                DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Invalid type of argument %" PRIu64 " - expected a string", (uint64_t)i));
-                return ExpressionStatus::WrongType;
-                }
-            }
-
-        Context ctx = *static_cast<Context*>(context);
-
-        Utf8String queryFormat;
-        ExpressionStatus stat = GetRelatedDisplayLabelQuery(queryFormat, args[0].GetECValue()->GetUtf8CP(), args[1].GetECValue()->GetUtf8CP(), args[2].GetECValue()->GetUtf8CP());
-        if (ExpressionStatus::Success != stat)
-            return stat;
-
-        for (IECInstancePtr const& instance : instanceData)
-            {
-            Utf8PrintfString query(queryFormat.c_str(), instance->GetClass().GetECSqlName().c_str());
-
-            ECSqlStatement stmt;
-            ECSqlStatus status = stmt.Prepare(ctx.m_connection.GetECDb().Schemas(), ctx.m_connection.GetDb(), query.c_str());
-            if (!status.IsSuccess())
-                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::ECExpressions, "Failed to prepare related display label query");
-
-            ECInstanceId id;
-            ECInstanceId::FromString(id, instance->GetInstanceId().c_str());
-            status = stmt.BindId(1, id);
-            if (!status.IsSuccess())
-                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::ECExpressions, "Failed to bind related display label query parameter");
-
-            if (BE_SQLITE_ROW == QueryExecutorHelper::Step(stmt))
-                {
-                evalResult.InitECValue() = ECValue(stmt.GetValueText(0));
-                ECEXPRESSIONS_EVALUATE_LOG(LOG_TRACE, Utf8PrintfString("LabelOverrideSymbolsProvider::GetRelatedDisplayLabel: Result: %s", evalResult.ToString().c_str()).c_str());
-                return ExpressionStatus::Success;
-                }
-            }
-
-        evalResult.InitECValue().SetToNull();
-        ECEXPRESSIONS_EVALUATE_LOG(LOG_TRACE, Utf8PrintfString("LabelOverrideSymbolsProvider::GetRelatedDisplayLabel: Result: %s", evalResult.ToString().c_str()).c_str());
-        return ExpressionStatus::Success;
-        }
-
-protected:
-    Utf8CP _GetName() const override {return "Label";}
-    void _PublishSymbols(SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const override
-        {
-        void* methodContext = const_cast<Context*>(&m_context);
-        context.AddSymbol(*MethodSymbol::Create("GetRelatedDisplayLabel", nullptr, &GetRelatedDisplayLabel, methodContext));
-        }
-
-public:
-    LabelSymbolsProvider(Context const& context) : m_context(context) {}
-};
-
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
 struct ECDbSymbolsProvider : IECSymbolProvider
 {
     struct Context : ProviderContext
@@ -874,7 +860,7 @@ static RulesEngineRootSymbolsContextPtr CreateRulesEngineRootContext(ECExpressio
     rulesetVariablesSymbols.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
 
     // ECInstance methods
-    ECInstanceMethodSymbolsProvider ecInstanceMethods;
+    ECInstanceMethodSymbolsProvider ecInstanceMethods(rootCtx->AddContext(*new ECInstanceMethodSymbolsProvider::Context(params.GetConnection())));
     ecInstanceMethods.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
 
     // ECDb methods
@@ -1004,10 +990,6 @@ ExpressionContextPtr ECExpressionContextsProvider::GetCustomizationRulesContext(
             *ECInstanceContextEvaluator::Create(params.GetConnection(), key.GetInstanceKey())));
         }
 
-    // Label related methods
-    LabelSymbolsProvider labelOverrrideMethods(rootCtx->AddContext(*new LabelSymbolsProvider::Context(params.GetConnection())));
-    labelOverrrideMethods.PublishSymbols(rootCtx->GetSymbolsContext(), bvector<Utf8String>());
-
     return rootCtx;
     }
 
@@ -1027,7 +1009,7 @@ ExpressionContextPtr ECExpressionContextsProvider::GetCalculatedPropertyContext(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECExpressionsHelper::EvaluateECExpression(ECValueR result, Utf8StringCR expression, ExpressionContextR context)
+ECExpressionEvaluationStatus ECExpressionsHelper::EvaluateECExpression(ECValueR result, Utf8StringCR expression, ExpressionContextR context)
     {
     auto scope = Diagnostics::Scope::Create(Utf8PrintfString("Evaluate ECExpression: `%s`", expression.c_str()));
 
@@ -1035,24 +1017,24 @@ bool ECExpressionsHelper::EvaluateECExpression(ECValueR result, Utf8StringCR exp
     if (node.IsNull())
         {
         DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Failed to parse ECExpression: %s", expression.c_str()));
-        return false;
+        return ECExpressionEvaluationStatus::ParseError;
         }
 
     ValueResultPtr valueResult;
     if (ExpressionStatus::Success != node->GetValue(valueResult, context))
         {
         DIAGNOSTICS_LOG(DiagnosticsCategory::ECExpressions, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Failed to evaluate ECExpression: %s", expression.c_str()));
-        return false;
+        return ECExpressionEvaluationStatus::EvaluationError;
         }
 
     if (ExpressionStatus::Success != valueResult->GetECValue(result))
         {
         DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::ECExpressions, "Could not get ECValue from value result");
-        return false;
+        return ECExpressionEvaluationStatus::InvalidECValueError;
         }
 
     DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::ECExpressions, LOG_TRACE, Utf8PrintfString("Evaluation result: `%s`", result.ToString().c_str()));
-    return true;
+    return ECExpressionEvaluationStatus::Success;
     }
 
 /*=================================================================================**//**

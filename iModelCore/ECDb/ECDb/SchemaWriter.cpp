@@ -286,6 +286,11 @@ BentleyStatus SchemaWriter::ImportSchema(Context& ctx, ECN::ECSchemaCR ecSchema)
                 {
                 if (schema->GetName().Equals(schemaChange->GetChangeName()))
                     {
+                    if (!schema->IsDynamicSchema() && !schemaChange->VersionWrite().IsChanged() && !schemaChange->VersionRead().IsChanged() && !schemaChange->VersionMinor().IsChanged())
+                        {
+                        LOG.errorv("ECSchema import has failed. Schema %s has new changes, but the schema version is not incremented.", schema->GetName().c_str());
+                        }
+
                     existingSchema = schema;
                     break;
                     }
@@ -5765,6 +5770,17 @@ BentleyStatus SchemaWriter::Context::PreprocessSchemas(bvector<ECN::ECSchemaCP>&
                 ECSchema::GetECVersionString(ECVersion::Latest),
                 ECSchema::GetECVersionString(schema->GetECVersion())
             );
+            return ERROR;
+            }
+        if (schema->OriginalECXmlVersionGreaterThan(ECVersion::Latest))
+            {
+            Issues().ReportV(
+                IssueSeverity::Error,
+                IssueCategory::BusinessProperties,
+                IssueType::ECDbIssue,
+                ECDbIssueId::ECDb_0734,
+                "Failed to import ECSchema %s. It has a higher ECXml version %s than the current version %s and may contain unknown elements which are not supported in this version of ECDb.",
+                schema->GetFullSchemaName().c_str(), schema->GetOriginalECXmlVersionAsString().c_str(), ECSchema::GetECVersionString(ECVersion::Latest));
             return ERROR;
             }
 

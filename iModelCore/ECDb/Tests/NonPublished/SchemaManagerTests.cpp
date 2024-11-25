@@ -3187,6 +3187,45 @@ TEST_F(SchemaManagerTests, DuplicateInMemorySchemaTest)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaManagerTests, SchemaWithChangesButSameVersionTest)
+    {
+    Utf8CP originalSchemaXml =
+        "<?xml version='1.0' encoding='utf-8' ?>"
+        "<ECSchema schemaName='std' alias='std' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "   <ECEntityClass typeName='Foo' >"
+        "       <ECProperty propertyName='Test1' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>";
+
+    Utf8CP changedSchemaXml =
+        "<?xml version='1.0' encoding='utf-8' ?>"
+        "<ECSchema schemaName='std' alias='std' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>"
+        "   <ECEntityClass typeName='Foo' >"
+        "       <ECProperty propertyName='Test1' typeName='string' />"
+        "       <ECProperty propertyName='Test2' typeName='string' />"
+        "   </ECEntityClass>"
+        "</ECSchema>";
+
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("SchemaWithChangesButSameVersionTest.ecdb"));
+
+    ECSchemaPtr originalSchema;
+    ECSchemaReadContextPtr readContext1 = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString(originalSchema, originalSchemaXml, *readContext1));
+    ASSERT_EQ(BentleyStatus::SUCCESS, m_ecdb.Schemas().ImportSchemas(readContext1->GetCache().GetSchemas()));
+
+    TestLogger logger;
+    LogCatcher logCatcher(logger);
+
+    ECSchemaPtr changedSchema;
+    ECSchemaReadContextPtr readContext2 = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(changedSchema, changedSchemaXml, *readContext2));
+    ASSERT_EQ(BentleyStatus::SUCCESS, m_ecdb.Schemas().ImportSchemas(readContext2->GetCache().GetSchemas()));
+    ASSERT_STREQ("ECSchema import has failed. Schema std has new changes, but the schema version is not incremented.", logger.GetLastMessage(NativeLogging::LOG_ERROR)->second.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaManagerTests, ForeignKeyOnWrongSide)
     {
     // Bug354429, when trying to use a navigation property with the foreign key being on the other side of the relationship, should throw an error
