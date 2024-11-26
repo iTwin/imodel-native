@@ -484,7 +484,7 @@ private:
     BentleyStatus PatchSlowDdlChanges(Utf8StringR patchedDDL, Utf8StringCR compoundSQL);
     void NotifyOnCommit();
     void ThrowIfChangesetInProgress();
-
+    BeSQLite::DbResult UpdateTxn(BeSQLite::ChangeSetCR changeSet, TxnId id);
 public:
     void StartNewSession();
     void CallJsTxnManager(Utf8CP methodName) { DgnDb::CallJsFunction(m_dgndb.GetJsTxns(), methodName, {}); };
@@ -503,6 +503,15 @@ public:
     void SaveParentChangeset(Utf8StringCR revisionId, int32_t changesetIndex);
     ChangesetPropsPtr CreateChangesetProps(BeFileNameCR pathName);
 
+    //! PullMerge
+    DGNPLATFORM_EXPORT std::unique_ptr<BeSQLite::ChangeSet> OpenLocalTxn(TxnManager::TxnId id);
+    DGNPLATFORM_EXPORT void PullMergeSetMethod(bool rebase);
+    DGNPLATFORM_EXPORT bool PullMergeInProgress() const;
+    DGNPLATFORM_EXPORT bool PullMergeIsRebase() const;
+    DGNPLATFORM_EXPORT void PullMergeEraseConf();
+    DGNPLATFORM_EXPORT void PullMergeBegin();
+    DGNPLATFORM_EXPORT void PullMergeEnd();
+    DGNPLATFORM_EXPORT ChangesetStatus PullMergeApply(ChangesetPropsCR revision, bool useRebase = false);     // for testing
     //! Add a TxnMonitor. The monitor will be notified of all transaction events until it is dropped.
     DGNPLATFORM_EXPORT static void AddTxnMonitor(TxnMonitor& monitor);
     DGNPLATFORM_EXPORT static void DropTxnMonitor(TxnMonitor& monitor);
@@ -1035,5 +1044,23 @@ public:
     void ClearLastErrorMessage() { m_lastErrorMessage.clear(); }
 };
 
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+struct LocalChangeSet : BeSQLite::ChangeSet {
+private:
+    BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause, BeSQLite::Changes::Change iter) override;
+    Utf8String m_lastErrorMessage;
+    DgnDbR m_dgndb;
+    TxnManager::TxnId m_id;
+    TxnType m_type;
+    Utf8String m_descr;
+
+public:
+       LocalChangeSet(DgnDbR db, TxnManager::TxnId id, TxnType type, Utf8StringCR description)
+            :m_dgndb(db), m_id(id), m_type(type), m_descr(description){}
+        Utf8StringCR GetLastErrorMessage() const { return m_lastErrorMessage; }
+    void ClearLastErrorMessage() { m_lastErrorMessage.clear(); }
+};
 
 END_BENTLEY_DGN_NAMESPACE

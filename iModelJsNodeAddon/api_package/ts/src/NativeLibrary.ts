@@ -703,6 +703,13 @@ export declare namespace IModelJsNative {
     public enableWalMode(yesNo?: boolean): void;
     public performCheckpoint(mode?: WalCheckpointMode): void;
     public setAutoCheckpointThreshold(frames: number): void;
+    public pullMergeSetMethod(method: "Rebase" | "Merge"): void;
+    public pullMergeInProgress(): boolean;
+    public pullMergeGetMethod(): "Rebase" | "Merge";
+    public pullMergeEraseConf(): void;
+    public pullMergeBegin(): void;
+    public pullMergeEnd(): void;
+
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
     public static zlibCompress(data: Uint8Array): Uint8Array;

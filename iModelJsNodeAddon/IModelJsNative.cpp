@@ -2656,6 +2656,38 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         memcpy(blob.Data(), uncompressed.data(), uncompressed.size());
         return blob;
     }
+
+    void PullMergeBegin(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        db.Txns().PullMergeBegin();
+    }
+
+    void PullMergeEnd(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        db.Txns().PullMergeEnd();
+    }
+
+    void PullMergeEraseConf(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        db.Txns().PullMergeEraseConf();
+    }
+
+    void PullMergeSetMethod(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_STRING(0, method);
+        auto& db = GetWritableDb(info);
+        db.Txns().PullMergeSetMethod(method == "Rebase");
+    }
+
+    Napi::Value PullMergeGetMethod(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        return db.Txns().PullMergeIsRebase() ? Napi::String::New(Env(), "Rebase") : Napi::String::New(Env(), "Merge");
+    }
+
+    Napi::Value PullMergeInProgress(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        return Napi::Boolean::New(Env(), db.Txns().PullMergeInProgress());
+    }
+
     // ========================================================================================
     // Test method handler
     // ========================================================================================
@@ -2844,6 +2876,12 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("getLocalChanges", &NativeDgnDb::GetLocalChanges),
             InstanceMethod("getNoCaseCollation", &NativeDgnDb::GetNoCaseCollation),
             InstanceMethod("setNoCaseCollation", &NativeDgnDb::SetNoCaseCollation),
+            InstanceMethod("pullMergeSetMethod", &NativeDgnDb::PullMergeSetMethod),
+            InstanceMethod("pullMergeInProgress", &NativeDgnDb::PullMergeInProgress),
+            InstanceMethod("pullMergeGetMethod", &NativeDgnDb::PullMergeGetMethod),
+            InstanceMethod("pullMergeEraseConf", &NativeDgnDb::PullMergeEraseConf),
+            InstanceMethod("pullMergeBegin", &NativeDgnDb::PullMergeBegin),
+            InstanceMethod("pullMergeEnd", &NativeDgnDb::PullMergeEnd),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
             StaticMethod("zlibCompress", &NativeDgnDb::ZlibCompress),
