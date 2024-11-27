@@ -1055,12 +1055,12 @@ GEOMDLLIMPEXP void CollectPerFaceCounts (size_t &minPerFace, size_t &maxPerFace)
 //! @param [in] omitInvisibles true to hide segments that are not visible (due to negated indices)
 GEOMDLLIMPEXP void CollectSegments (bvector<DSegment3d> &segments, bool omitInvisibles) const;
 
-//! Cut with a plane. (Prototype)
-//! Return as a curve vector. Optionally structure as area-bounding loops.
+//! Cut with a plane. Return intersection edges as a curve vector, optionally structured as area-bounding loops.
 //! @param [in] sectionPlane plane to cut the mesh.
 //! @param [in] formRegions true to look for closed loops and structure the return as a loop or parity CurveVector.
-//! @param [in] markEdgeFractions true to attache FacetEdgeLocationDetailVector to the linestrings.
-GEOMDLLIMPEXP CurveVectorPtr PlaneSlice (DPlane3dCR sectionPlane, bool formRegions, bool markEdgeFractions = false) const;
+//! @param [in] markEdgeFractions true to attach FacetEdgeLocationDetailVector to the linestrings. Default is false.
+//! @param [in] skipOnPlaneFacets whether output lacks facets coplanar with sectionPlane. Default is false (include them).
+GEOMDLLIMPEXP CurveVectorPtr PlaneSlice (DPlane3dCR sectionPlane, bool formRegions, bool markEdgeFractions = false, bool skipOnPlaneFacets = false) const;
 
 //! Project linestring in given direction to intersection with facets.
 //! Return as a curve vector.
@@ -2378,9 +2378,12 @@ IPolyfaceVisitorFilter *filter  //!< [in] optional object to ask if current face
 //! @returns true if any changes were made.
 GEOMDLLIMPEXP bool CompactIndexArrays ();
 
+//! Trim excess capacity from the data and index vectors. No data is removed.
+//! @param compactIndices call CompactIndexArrays first
+//! @returns bytes trimmed
+GEOMDLLIMPEXP size_t CompactArrays(bool compactIndices);
 
 //! Apply a transform to all coordinates. Optionally reverse index order (to maintain cross product relationships)
-
 GEOMDLLIMPEXP void Transform
 (
 TransformCR transform,

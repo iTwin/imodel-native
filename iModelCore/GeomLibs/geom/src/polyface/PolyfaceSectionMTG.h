@@ -284,11 +284,14 @@ void AddGapEdge(MTGNodeId startNodeId, size_t destVertexIndex)
         }
     }
 
-void AddEdge (VertexData const &vertexA, VertexData const &vertexB)
+// @param edgeMask applied to both sides of the new edge
+void AddEdge (VertexData const &vertexA, VertexData const &vertexB, MTGMask edgeMask = MTG_NULL_MASK)
     {
     MTGNodeId nodeA, nodeB;
     // Make an edge...  just hanging out there.
     m_graph.CreateEdge (nodeA, nodeB);
+    if (edgeMask)
+        m_graph.SetMaskAroundEdge(nodeA, edgeMask);
     m_graph.TrySetLabel (nodeA, m_vertexDataLabel, (int)AddVertexData (vertexA));
     m_graph.TrySetLabel (nodeB, m_vertexDataLabel, (int)AddVertexData (vertexB));
     }
@@ -304,31 +307,28 @@ void AddEdge (size_t readIndex, DPoint3dCR xyzA, DPoint3dCR xyzB)
 
 size_t PurgeDuplicates ()
     {
-    //
     MTGMask deleteMask = m_graph.GrabMask ();
     MTGMask edgeVisitedMask = m_graph.GrabMask ();
     m_graph.ClearMask (deleteMask);
     m_graph.ClearMask (edgeVisitedMask);
     size_t numMark = 0;
-    MTGARRAY_SET_LOOP (nodeA0, &m_graph)
+    MTGARRAY_SET_LOOP (survivingNode, &m_graph)
         {
-        if (!m_graph.GetMaskAt (nodeA0, deleteMask)
-            && !m_graph.GetMaskAt (nodeA0, edgeVisitedMask)
-            )
+        if (!m_graph.GetMaskAt(survivingNode, deleteMask | edgeVisitedMask))
             {
-            m_graph.SetMaskAroundEdge (nodeA0, edgeVisitedMask);
-            MTGNodeId nodeB0 = m_graph.FSucc (nodeA0);
-            for (MTGNodeId nodeA1 = nodeA0;
-                (nodeA1 = m_graph.VSucc (nodeA1)) != nodeA0;
-                )
+            m_graph.SetMaskAroundEdge(survivingNode, edgeVisitedMask);
+            MTGNodeId farNode = m_graph.FSucc(survivingNode);
+            for (MTGNodeId nearNode = survivingNode; (nearNode = m_graph.VSucc(nearNode)) != survivingNode; )
                 {
-                if (!m_graph.GetMaskAt (nodeA1, deleteMask))
+                if (!m_graph.GetMaskAt(nearNode, deleteMask))
                     {
-                    MTGNodeId nodeB1 = m_graph.FSucc (nodeA1);
-                    if (m_graph.AreNodesInSameVertexLoop (nodeB0, nodeB1))
+                    if (m_graph.AreNodesInSameVertexLoop(farNode, m_graph.FSucc(nearNode)))
                         {
-                        m_graph.SetMaskAroundEdge (nodeA1, deleteMask);
+                        m_graph.SetMaskAroundEdge(nearNode, deleteMask);
                         numMark++;
+                        // survivor needs to be marked onPlane if any of its doomed duplicates is
+                        if (m_graph.HasMaskAt(nearNode, MTG_SECTION_EDGE_MASK))
+                            m_graph.SetMaskAroundEdge(survivingNode, MTG_SECTION_EDGE_MASK);
                         }
                     }
                 }
@@ -337,7 +337,7 @@ size_t PurgeDuplicates ()
     MTGARRAY_END_SET_LOOP (nodeA0, &m_graph)
 
     for (MTGNodeId& nodeId : m_anyNodeAtVertex)
-        {   // find a surviving node at each vertex
+        { // find a surviving node at each vertex
         if (m_graph.GetMaskAt(nodeId, deleteMask))
             nodeId = m_graph.FindUnmaskedAroundVertex(nodeId, deleteMask);
         }
@@ -384,6 +384,7 @@ void CutVisitorPolygonWithSinglePlane (PolyfaceVisitorR visitor, ClipPlaneR plan
             m_edges.push_back (VertexDataPair (m_vertexAroundFacet[k], m_vertexAroundFacet[k+1]));
             }
         }
+    MTGMask onPlaneMask = (n0 == m_edges.size()) ? MTG_SECTION_EDGE_MASK : MTG_NULL_MASK;
 
     // For each vertex:  is this vertex the last vertex before a true crossing?
     // "ON" edges have already been identified.  We walk past ON vertices if not convenient here.
@@ -432,7 +433,7 @@ void CutVisitorPolygonWithSinglePlane (PolyfaceVisitorR visitor, ClipPlaneR plan
         for (size_t i = 0; i < numSimpleCrossings; i += 2)
             AddEdge (m_simpleCrossings[i], m_simpleCrossings[i+1]);
         for (size_t i = 0; i < numEdges; i++)
-            AddEdge (m_edges[i].m_dataA, m_edges[i].m_dataB);
+            AddEdge (m_edges[i].m_dataA, m_edges[i].m_dataB, onPlaneMask);
         }
     }
 
@@ -746,42 +747,169 @@ void CollectDanglingChains(bvector<ICurvePrimitivePtr>& linestrings, bvector<MTG
         }
     }
 
-void CollectLoopsAtVertex(bvector<ICurvePrimitivePtr>& linestrings, MTGNodeId seed, MTGMask danglerMask, MTGMask visitedMask, bool markEdgeFractions)
+// Collect the super-face at the given seed node and mark it with the given `visitMask`.
+// @param superFace [out] nodes around the super-face. This method returns true if and only if the first and last nodes are equal.
+// @param seed [in] starting node for the super-face
+// @param avoidMask [in] super-faces follow fSucc pointers where the next edge at a vertex is the first vPred without this mask
+// @param visitMask [in] the collected super-face will be marked with this mask
+// @param visitBothSides [in] whether to mark both sides of the super-face edges with `visitMask`, or just the side containing `seed`
+// @returns Whether a valid super-face was collected.
+bool CollectAndVisitSuperFace(bvector<MTGNodeId>& superFace, MTGNodeId seed, MTGMask avoidMask, MTGMask visitMask, bool visitBothSides)
     {
+    superFace.clear();
+    seed = m_graph.FindUnmaskedAroundVertexPred(seed, avoidMask | visitMask);
+    if (MTG_NULL_NODEID == seed)
+        return false;
+    superFace.push_back(seed);
+    MTGNodeId loopNode = seed;
+    size_t maxIters = m_graph.GetActiveNodeCount() / 2  + 1; // insurance
+    size_t iter = 0;
+    do
+        {
+        if (visitBothSides)
+            m_graph.SetMaskAroundEdge(loopNode, visitMask);
+        else
+            m_graph.SetMaskAt(loopNode, visitMask);
+        loopNode = m_graph.FindUnmaskedAroundVertexPred(m_graph.FSucc(loopNode), avoidMask);
+        if (MTG_NULL_NODEID == loopNode)
+            {
+            BeAssert(!"Unexpected end to superFace!");
+            return false;   // return the edges we found so far
+            }
+        superFace.push_back(loopNode);
+        } while (loopNode != seed && ++iter < maxIters);
+    return loopNode == seed;
+    }
+
+// Mark exterior super-faces in the graph if they are unambiguous.
+// @param avoidMask [in] super-faces follow fSucc pointers where the next edge at a vertex is the first vPred without this mask
+// @param mask [in] what exterior faces are marked with (e.g., visitMask)
+// @param planeNormal [in] the plane in which signed xy-areas are computed. In this plane, exterior and interior
+//        faces have xy-areas with opposite sign.
+// @param graphIsReversed [out] on a true return, whether the graph's interior face loops are CW with respect to planeNormal
+// @returns Whether exterior face loop(s) were marked with the given mask. If false, exterior faces could not be
+//        unambiguously determined and no face loops were marked.
+bool MarkExteriorSuperFaces(MTGMask avoidMask, MTGMask mask, DVec3dCR planeNormal, bool& graphIsReversed)
+    {
+    // NOTE: MTG doesn't carry coordinates, so it has no area support like VU. Here we know the graph is planar, so we
+    // implement bespoke signed area support (without parity sweep).
+    typedef bvector<MTGNodeId> SuperFace;
+    typedef std::pair<double, SuperFace> SignedArea;
+
+    graphIsReversed = false;
+    bvector<MTGNodeId> superFace;
+    bvector<DPoint3d> polygon;
+    bvector<SignedArea> superFaceAreas;
+    double maxAbsArea = 0.0;
+
+    auto toLocal = RotMatrix::From1Vector(planeNormal, 2, true);
+    toLocal.Transpose();
+
+    auto myVisitMask = m_graph.GrabMask();
+    m_graph.ClearMask(myVisitMask);
+    MTGARRAY_SET_LOOP(nodeId, &m_graph)
+        {
+        if (!m_graph.HasMaskAt(nodeId, myVisitMask))
+            {
+            if (CollectAndVisitSuperFace(superFace, nodeId, avoidMask, myVisitMask, false))
+                {
+                superFace.pop_back(); // don't need wraparound edge
+                polygon.clear();
+                for (auto const& edge : superFace)
+                    {
+                    if (auto data = GetVertexData(edge))
+                        polygon.push_back(data->mXYZ);
+                    }
+                toLocal.Multiply(polygon, polygon);
+                double area = PolygonOps::AreaXY(polygon);
+                superFaceAreas.push_back({area, superFace});
+                if (maxAbsArea < fabs(area))
+                    maxAbsArea = fabs(area);
+                }
+            }
+        }
+    MTGARRAY_END_SET_LOOP(nodeId, &m_graph)
+    m_graph.DropMask(myVisitMask);
+
+    double areaTol = this->m_coordinateMap->GetXYZAbsTol();
+    double smallestArea = areaTol * areaTol;
+    areaTol = smallestArea + this->m_coordinateMap->GetXYZRelTol() * maxAbsArea;
+
+    // after sort, the most negative area face is first
+    std::sort(superFaceAreas.begin(), superFaceAreas.end(), [](auto const& a, auto const& b) -> bool { return a.first < b.first; });
+    double absArea0 = fabs(superFaceAreas.front().first);
+    double absArea1 = fabs(superFaceAreas.back().first);
+    graphIsReversed = absArea0 < absArea1;
+    if (fabs(absArea0 - absArea1) <= areaTol)
+        {
+        // no obvious exterior face; break ties by counting signed areas of nontrivial faces
+        // HEURISTIC: usually there will be more positive area (interior) faces than negative (exterior).
+        size_t numNegative = 0, numPositive = 0;
+        std::for_each(superFaceAreas.begin(), superFaceAreas.end(), [&](auto const& a) { if (fabs(a.first) < smallestArea) return; if (a.first < 0) ++numNegative; else ++numPositive; });
+        if (numNegative == numPositive)
+            return false;   // exterior faces are ambiguous; possibly all face loops are disjoint and have equal area.
+        graphIsReversed = numPositive < numNegative;
+        }
+
+    // largest face is unambiguous, but if it has positive signed area, the graph's parity is reversed
+    if (graphIsReversed)
+        {
+        std::for_each(superFaceAreas.begin(), superFaceAreas.end(), [](auto& a) { a.first *= -1.0; });
+        std::reverse(superFaceAreas.begin(), superFaceAreas.end());
+        }
+
+    // negative area (exterior) faces are frontloaded: mark them
+    for (auto const& faceArea : superFaceAreas)
+        {
+        if (faceArea.first >= smallestArea)
+            break;
+        for (auto const& edge : faceArea.second)
+            m_graph.SetMaskAt(edge, mask);
+        }
+    return true;
+    }
+
+void CollectLoopsAtVertex(bvector<ICurvePrimitivePtr>& linestrings, MTGNodeId seed, MTGMask danglerMask, MTGMask visitedMask, MTGMask onPlaneMask, bool markEdgeFractions, bool visitBothSides)
+    {
+    bvector<MTGNodeId> superFace;
     auto isChain = [&](MTGNodeId nodeId) -> bool { return m_graph.GetMaskAt(nodeId, danglerMask); };
     auto isVisited = [&](MTGNodeId nodeId) -> bool { return m_graph.GetMaskAt(nodeId, visitedMask); };
+    auto isSuperFaceOnSection = [&]() -> bool { return onPlaneMask && superFace.size() == std::count_if(superFace.begin(), superFace.end(), [&](auto n) -> bool { return m_graph.GetMaskAt(n, onPlaneMask); }); };
     MTGARRAY_VERTEX_LOOP(nodeId, &m_graph, seed)
         {
         if (!isVisited(nodeId))
             {
             BeAssert(!isChain(nodeId));
-
             ClearChain();
-            MTGNodeId loopNode = nodeId;
-            AppendOutputVertex(loopNode);
-            do
+            bool haveLoop = CollectAndVisitSuperFace(superFace, nodeId, danglerMask, visitedMask, visitBothSides);
+            BeAssert(visitBothSides || haveLoop);
+            if (haveLoop && isSuperFaceOnSection())
                 {
-                m_graph.SetMaskAroundEdge(loopNode, visitedMask);
-                loopNode = m_graph.FSucc(loopNode);
-                loopNode = m_graph.FindUnmaskedAroundVertexPred(loopNode, danglerMask); // skip danglers at the far vertex
-                AppendOutputVertex(loopNode);
-                } while (!isVisited(loopNode) && loopNode != nodeId);
-
-            BeAssert(loopNode == nodeId);
-
-            auto loop = ChainToCurvePrimitive(3, markEdgeFractions);
-            if (loop.IsValid())
-                linestrings.push_back(loop);
+                ; // skip a loop that came from a facet on the clip plane; these can lead to overlapping/duplicate output facets
+                }
+            else
+                {
+                for (auto const& edge : superFace)
+                    AppendOutputVertex(edge);
+                auto linestring = ChainToCurvePrimitive(3, markEdgeFractions);
+                if (linestring.IsValid())
+                    linestrings.push_back(linestring);
+                }
             }
         }
     MTGARRAY_END_VERTEX_LOOP(nodeId, &m_graph, seed)
     };
 
-CurveVectorPtr OutputChainsAsCurveVector(bvector<ICurvePrimitivePtr> const& linestrings, bool hasDanglers, bool formRegions)
+CurveVectorPtr OutputChainsAsCurveVector(bvector<ICurvePrimitivePtr> const& linestrings, bool hasDanglers, bool formRegions, bool reverseLoops)
     {
     CurveVectorPtr result;
     if (linestrings.empty())
         return result;
+
+    auto IsLoop = [](ICurvePrimitiveCR curve) -> bool { auto pts = curve.GetLineStringCP(); return pts && pts->front().AlmostEqual(pts->back()) && pts->size() > 3; };
+    if (formRegions && reverseLoops)
+        for_each(linestrings.begin(), linestrings.end(), [&](auto& ls) { if (IsLoop(*ls)) ls->ReverseCurvesInPlace(); });
+
     bool resultIsRegion = !hasDanglers && formRegions;
     if (linestrings.size() == 1)
         {
@@ -806,8 +934,7 @@ CurveVectorPtr OutputChainsAsCurveVector(bvector<ICurvePrimitivePtr> const& line
         auto region = formRegions ? CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion) : nullptr;
         for (auto const& linestring : linestrings)
             {
-            auto pts = linestring->GetLineStringCP();
-            if (region.IsValid() && pts && pts->front().AlmostEqual(pts->back()) && pts->size() > 3)
+            if (region.IsValid() && IsLoop(*linestring))
                 {
                 CurveVectorPtr child = CurveVector::Create(linestring, CurveVector::BOUNDARY_TYPE_Outer);
                 region->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*child));
@@ -821,7 +948,7 @@ CurveVectorPtr OutputChainsAsCurveVector(bvector<ICurvePrimitivePtr> const& line
         if (region.IsValid() && !region->empty())
             {
             if (1 == region->size())
-                region->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Outer);
+                region = region->at(0)->GetChildCurveVectorP(); // promote parity region to outer loop
             result->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*region));
             result->SwapAt(0, result->size() - 1);
             }
@@ -829,19 +956,23 @@ CurveVectorPtr OutputChainsAsCurveVector(bvector<ICurvePrimitivePtr> const& line
     return result;
     }
 
-// The input mesh is typically not well-behaved (gaps, non-manifold topology, duplicate faces,
-// self-intersects), so this method tries really hard to compensate.
-// Optional refVector (e.g., cutplane normal) is used when formRegions=true for sorting nodes.
-CurveVectorPtr CollectChains(bool formRegions = false, bool markEdgeFractions = false, DVec3dCP refVector = nullptr)
+// The input mesh is typically not well-behaved (gaps, non-manifold topology, duplicate faces, self-intersects), so this method tries really hard to compensate.
+// @param [in] formRegions whether to construct a region from any loops assembled from section edges. Default false.
+// @param [in] markEdgeFractions whether to populate FacetEdgeLocationDetailVector on each returned CurvePrimitive. Default false.
+// @param [in] skipOnPlaneFacets whether output lacks facets coplanar with sectionPlane. Default is false (include them).
+// @param [in] refVector when formRegions is true, this optional vector is used for sorting nodes and computing signed areas. Typically this is the cutplane normal. Default nullptr.
+CurveVectorPtr CollectChains(bool formRegions = false, bool markEdgeFractions = false, bool skipOnPlaneFacets = false, DVec3dCP refVector = nullptr)
     {
     if (!m_graph.GetActiveNodeCount())
         return nullptr;
 
+    MTGMask onPlaneMask = skipOnPlaneFacets ? MTG_SECTION_EDGE_MASK : MTG_NULL_MASK;
+    bool collectLoops = formRegions && refVector;
     bvector<MTGNodeId> vertexSeeds;
     m_graph.CollectVertexLoops (vertexSeeds);
 
     // Step 1: fill gaps to eliminate dangling chains (to improve loop collection)
-    if (formRegions && refVector)
+    if (collectLoops)
         FillGapsInLoops(vertexSeeds, *refVector);
 
     // Step 2: mark remaining dangling chains and remember their starts. We'll ignore them during loop collection.
@@ -851,7 +982,7 @@ CurveVectorPtr CollectChains(bool formRegions = false, bool markEdgeFractions = 
 
     // Step 3: sort the edges around pinch vertices, which lie on multiple loops
     bvector<MTGNodeId> pinchVertices;
-    if (formRegions && refVector)
+    if (collectLoops)
         {
         for (auto const& seed: vertexSeeds)
             {
@@ -870,7 +1001,19 @@ CurveVectorPtr CollectChains(bool formRegions = false, bool markEdgeFractions = 
     m_graph.ClearMask(visitedMask);
     CollectDanglingChains(linestrings, danglerVertices, danglerMask, visitedMask, markEdgeFractions);
 
-    // Step 5: collect loops at pinch vertices
+    // Step 5: mark exterior loops
+    // We collected open chains by marking both sides of an edge as visited. But when we collect loops, marking both sides
+    // prevents us from collecting two complete adjacent loops. On the other hand, marking only one side of each loop means
+    // we will collect exterior loops too, which we don't want. Therefore, here we mark exterior loops if we can distinguish
+    // them; then we can proceed in the next steps to collect single-sided interior loops. If we can't decide which loops
+    // are exterior, we fall back to visiting both sides of each edge, which means a loop adjacent to another loop may
+    // be collected as chain(s), rather than a loop.
+    bool visitBothSides = true;
+    bool graphIsReversed = false;
+    if (collectLoops && m_graph.CountFaceLoops() > 2)
+        visitBothSides = !MarkExteriorSuperFaces(danglerMask, visitedMask, *refVector, graphIsReversed);
+
+    // Step 6: collect loops at pinch vertices
     if (formRegions)
         {
         for (auto& seed : pinchVertices)
@@ -880,16 +1023,16 @@ CurveVectorPtr CollectChains(bool formRegions = false, bool markEdgeFractions = 
             if (MTG_NULL_NODEID != visitedSeed)
                 seed = visitedSeed;
 
-            CollectLoopsAtVertex(linestrings, seed, danglerMask, visitedMask, markEdgeFractions);
+            CollectLoopsAtVertex(linestrings, seed, danglerMask, visitedMask, onPlaneMask, markEdgeFractions, visitBothSides);
             }
         }
 
-    // Step 6: collect remaining loops
+    // Step 7: collect remaining loops
     for (auto& seed : vertexSeeds)
-        CollectLoopsAtVertex(linestrings, seed, danglerMask, visitedMask, markEdgeFractions);
+        CollectLoopsAtVertex(linestrings, seed, danglerMask, visitedMask, onPlaneMask, markEdgeFractions, visitBothSides);
 
     bool hasDanglers = danglerVertices.size() > 0;
-    CurveVectorPtr result = OutputChainsAsCurveVector(linestrings, hasDanglers, formRegions);
+    CurveVectorPtr result = OutputChainsAsCurveVector(linestrings, hasDanglers, formRegions, graphIsReversed);
 
     m_graph.DropMask(visitedMask);
     m_graph.DropMask(danglerMask);
@@ -897,7 +1040,7 @@ CurveVectorPtr CollectChains(bool formRegions = false, bool markEdgeFractions = 
     }
 };
 
-GEOMDLLIMPEXP CurveVectorPtr PolyfaceQuery::PlaneSlice (DPlane3dCR sectionPlane, bool formRegions, bool markEdgeFractions) const
+CurveVectorPtr PolyfaceQuery::PlaneSlice (DPlane3dCR sectionPlane, bool formRegions, bool markEdgeFractions, bool skipOnPlaneFacets) const
     {
     // This polyface only gets its point array built up ... (The PolyfaceCoordinateMap addresses them)
     PolyfaceHeaderPtr section = PolyfaceHeader::CreateVariableSizeIndexed ();
@@ -906,17 +1049,16 @@ GEOMDLLIMPEXP CurveVectorPtr PolyfaceQuery::PlaneSlice (DPlane3dCR sectionPlane,
     chainGraph.AddPlaneSectionCut (*this, *sectionMap, sectionPlane);
     chainGraph.JoinEdges ();
     chainGraph.PurgeDuplicates ();
-    return chainGraph.CollectChains(formRegions, markEdgeFractions, &sectionPlane.normal);
+    return chainGraph.CollectChains(formRegions, markEdgeFractions, skipOnPlaneFacets, &sectionPlane.normal);
     }
-
 
 CurveVectorPtr PolyfaceQuery::DrapeLinestring (bvector<DPoint3d> &spacePoints, DVec3dCR direction) const
     {
     // This polyface only gets its point array built up ... (The PolyfaceCoordinateMap addresses them)
     PolyfaceHeaderPtr section = PolyfaceHeader::CreateVariableSizeIndexed ();
-    PolyfaceCoordinateMapPtr sectionMap = PolyfaceCoordinateMap::New (*section.get ());
-    SectionGraph chainGraph (sectionMap);
-    chainGraph.AddDrapedLinestring (*this, *sectionMap, spacePoints, direction);
+    PolyfaceCoordinateMapPtr coordMap = PolyfaceCoordinateMap::New (*section.get ());
+    SectionGraph chainGraph (coordMap);
+    chainGraph.AddDrapedLinestring (*this, *coordMap, spacePoints, direction);
     chainGraph.JoinEdges ();
     chainGraph.PurgeDuplicates ();
     return chainGraph.CollectChains();

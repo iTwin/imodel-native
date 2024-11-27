@@ -1520,20 +1520,22 @@ Check ( PolygonOps::AreaXY (work1),
         );
         area1 += PolygonOps::AreaXY (outside.back ());
 #endif
+        // special cases for work1 nearly all on one side of the plane to avoid slivers
         if (altitudeRange.low >= -distanceTolerance && altitudeRange.low <= 0.0)
             {
-            // leave unclipped IN
+            // treat work1 as all inside/coplanar, therefore it is unchanged, and outside gets no shard
             outside.PopToCache();
             }
         else if (altitudeRange.high >= 0.0 && altitudeRange.high <= distanceTolerance)
             {
-            // leave unclipped OUT
+            // treat work1 as all outside, therefore it becomes an outside shard, and there's nothing left to clip
             inside.clear ();
             outside.back ().clear ();
             outside.back ().swap (work1);
             }
         else
             {
+            // update work1 from the inside clip, and keep new outside shard only if nonempty
             inside.swap (work1);
             if (outside.back ().empty ())
                 outside.PopToCache();
@@ -2167,9 +2169,9 @@ double distanceTolerance
             outsideA.ClearToCache ();
             context.ClipAndCollect (visitor->Point (), clipSet, insideA, outsideA);
             if (outside && keepPolyfaceOutsideParts)
-                AddPolygonsToMesh (*outside, outsideA, *visitor);
+                AddPolygonsToMesh (*outside, outsideA, *visitor); // includes on-plane facets
             if (inside && keepPolyfaceInsideParts)
-                AddPolygonsToMesh (*inside, insideA, *visitor);
+                AddPolygonsToMesh (*inside, insideA, *visitor); // includes on-plane facets
             }
         }
 
@@ -2185,9 +2187,10 @@ double distanceTolerance
                 {
                 if (plane.IsVisible ())
                     {
-                    auto section = polyface.PlaneSlice (plane.GetDPlane3d(), true);  // output loops have closure point
+                    auto section = polyface.PlaneSlice (plane.GetDPlane3d(), true, false, true);  // skip on-plane facets
                     if (section.IsValid ())
                         {
+                        // output loops have closure point
                         bvector<bvector<bvector<DPoint3d>>> regions;
                         bvector<bvector<DPoint3d>> clippedLoopsXYZ;
                         section->CollectLinearGeometry (regions);
@@ -2263,9 +2266,10 @@ ValidatedDouble &colinearEdgeTolerance
             {
             if (plane.IsVisible())
                 {
-                auto section = polyface.PlaneSlice(plane.GetDPlane3d(), true);  // output loops have closure point
+                auto section = polyface.PlaneSlice(plane.GetDPlane3d(), true); // we want on-plane facets
                 if (section.IsValid())
                     {
+                    // output loops have closure point
                     bvector<bvector<bvector<DPoint3d>>> regions;
                     bvector<bvector<DPoint3d>> clippedLoopsXYZ;
                     section->CollectLinearGeometry(regions);
