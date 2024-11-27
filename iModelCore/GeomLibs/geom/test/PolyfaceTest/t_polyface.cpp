@@ -877,7 +877,9 @@ void ExaminePolyface (PolyfaceHeaderR mesh, char const* title)
         VerifyMTG(mesh, title);
         PolyfaceHeaderPtr compactee = PolyfaceHeader::CreateFixedBlockIndexed (4);
         mesh.CopyTo (*compactee);
-        compactee->CompactIndexArrays ();
+        size_t savings = compactee->CompactArrays(true);
+        if (s_print && savings > 0)
+            printf ("Mesh compacted by %zu bytes\n", savings);
         VerifyPolyface (*compactee, *compactee, "compacted");
 
         PolyfaceHeaderPtr meshWithNormals = PolyfaceHeader::CreateVariableSizeIndexed ();
