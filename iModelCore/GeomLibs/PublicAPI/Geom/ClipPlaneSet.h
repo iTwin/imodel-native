@@ -307,7 +307,7 @@ struct  ConvexClipPlaneSet : T_ClipPlanes
     //! If the intervals array is nullptr, returns true immediately when any interior interval is found.
     GEOMDLLIMPEXP bool AppendIntervals(DEllipse3dCR arc, bvector<DSegment1d> *intervals, double planeSign = 1.0) const;
     GEOMDLLIMPEXP bool AppendIntervals(MSBsplineCurveCR curve, bvector<DSegment1d> *intervals) const;
-    //! Return the (0 or 1) intersection polygon and (0 or to numClipPlane) outside pieces.
+    //! Return the (0 or 1) intersection polygon and (0 to numClipPlane) outside pieces.
     GEOMDLLIMPEXP void ConvexPolygonClipInsideOutside
     (
     bvector<DPoint3d> const &input,  //!< [in] points of a convex polygon
