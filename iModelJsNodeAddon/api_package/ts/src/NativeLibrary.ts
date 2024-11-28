@@ -162,6 +162,11 @@ export const enum SchemaWriteStatus {
   FailedToWriteFile = 4,
 }
 
+export interface TrueTypeFontMetadata {
+  familyNames: string[];
+  embeddable: boolean;
+}
+
 /** Module that declares the IModelJs native code.
  * @internal
  */
@@ -204,6 +209,8 @@ export declare namespace IModelJsNative {
   function addGcsWorkspaceDb(dbNames: string, container?: CloudContainer, priority?: number): boolean;
   function enableLocalGcsFiles(yesNo: boolean): void;
   function queryConcurrency(pool: "io" | "cpu"): number;
+
+  function getTrueTypeFontMetadata(fileName: LocalFileName): TrueTypeFontMetadata;
 
   /** Get the SHA1 hash of a Schema XML file, possibly including its referenced Schemas */
   function computeSchemaChecksum(arg: {
