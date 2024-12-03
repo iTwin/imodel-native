@@ -13122,8 +13122,7 @@ Utf8CP unitName
         return GEOCOORDERR_InvalidCoordSys;
 
     const struct cs_Unittab_   *pUnit;
-    int                         index;
-    for (index = 0, pUnit = cs_Unittab; cs_UTYP_END != pUnit->type; pUnit++)
+    for (pUnit = cs_Unittab; cs_UTYP_END != pUnit->type; pUnit++)
         {
         if (pUnit->type == cs_UTYP_LEN)
             {
@@ -13133,7 +13132,6 @@ Utf8CP unitName
                 SetModified(true);
                 return SUCCESS;
                 }
-            index++;
             }
         /* If the unit type is not length then it must be angular and can only be used to set lat/long geographic coordinate systems */
         else if (cs_PRJCOD_UNITY == m_csParameters->prj_code)
@@ -13144,7 +13142,6 @@ Utf8CP unitName
                 SetModified(true);
                 return SUCCESS;
                 }
-            index++;
             }
         }
     return GEOCOORDERR_InvalidUnitCode;

@@ -1,10 +1,13 @@
-﻿/*---------------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------------------
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 
 #include "../FormattingTestsPch.h"
 #include "../TestFixture/FormattingTestFixture.h"
+#define _USE_MATH_DEFINES
+#include <math.h>
+#include <iostream>
 
 USING_BENTLEY_FORMATTING
 BEGIN_BENTLEY_FORMATTEST_NAMESPACE
@@ -63,7 +66,7 @@ public:
         ASSERT_FALSE(fps.HasProblem()) << fps.GetProblemDescription() << '\n' << GetFmtStringErrMsg(fmtStr);
 
         FormatProblemCode probCode;
-        Format format = Format();
+        Format format;
         BEU::Quantity qty = fps.GetQuantity(&probCode, &format);
 
         ASSERT_FALSE(qty.IsNullQuantity()) << GetFmtStringErrMsg(fmtStr);
@@ -87,8 +90,15 @@ public:
 
     void TestInvalidFmtStr(Utf8CP fmtStr, BEU::UnitCP expectedUnit)
         {
+        Format format;
+        NumericFormatSpec numericSpec;
+        numericSpec.SetPresentationType(PresentationType::Decimal);
+        format.SetNumericSpec(numericSpec);
+        FormatProblemCode probCode = FormatProblemCode::NoProblems;
+
         FormatParsingSet fps(fmtStr, expectedUnit);
-        ASSERT_TRUE(fps.HasProblem()) << GetFmtStringErrMsg(fmtStr);
+        fps.GetQuantity(&probCode, &format);
+        ASSERT_EQ(probCode, FormatProblemCode::QT_InvalidSyntax) << GetFmtStringErrMsg(fmtStr);
         }
     };
 
@@ -920,42 +930,52 @@ TEST_F(FormatParsingSetTest, CompositeFormats_IGNORED)
 TEST_F(FormatParsingSetTest, OverflowNumberTest)
     {
     TestValidParseToQuantity("812345678910111 m", meter, 812345678910111);
-    FormatParsingSet fps("8123456789101110 m", meter);
+    Format format;
+    FormatParsingSet fps("8123456789101110 m", meter, &format);
+    
+    fps.GetQuantity(nullptr, &format);
     EXPECT_TRUE(fps.HasProblem());
     EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
 
     TestValidParseToQuantity("0.012345678910111 m", meter, 0.01234567891011101);
     fps = FormatParsingSet("0.0123456789101112 m", meter);
+    fps.GetQuantity(nullptr, &format);
     EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the floating part is more than 15";
     EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
 
     TestValidParseToQuantity("0.000000000000001 m", meter, 0.000000000000001);
-    fps = FormatParsingSet("0.0000000000000001 m", meter);
+    fps = FormatParsingSet("0.0123456789101112 m", meter);
+    fps.GetQuantity(nullptr, &format);
     EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the floating part is more than 15";
     EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
 
     TestValidParseToQuantity("123456789101112.123456789101112 m", meter, 123456789101112.123456789101112);
     fps = FormatParsingSet("123456789101112134.123456789101112 m", meter);
+    fps.GetQuantity(nullptr, &format);
     EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the integer part is more than 15";
     EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
 
     TestValidParseToQuantity("223,372,036,854,775 m", millimeter, 2.2337203685477501e+17);
     fps = FormatParsingSet("9,223,372,036,854,775 m", meter);
+    fps.GetQuantity(nullptr, &format);
     EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the integer part is more than 15";
     EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
 
     TestValidParseToQuantity("1/223372036854775 m", meter, 4.4768361075121889e-15);
     fps = FormatParsingSet("1/9223372036854775 m", meter);
+    fps.GetQuantity(nullptr, &format);
     EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the denominator part is more than 15";
     EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
 
     TestValidParseToQuantity("1/999999999999999 m", meter, 1.0000000000000011e-15);
     fps = FormatParsingSet("1/9999999999999999 m", meter);
+    fps.GetQuantity(nullptr, &format);
     EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the denominator part is more than 15";
     EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
 
     TestValidParseToQuantity("100000000000000/1 m", meter, 100000000000000);
     fps = FormatParsingSet("1000000000000000/1 m", meter);
+    fps.GetQuantity(nullptr, &format);
     EXPECT_TRUE(fps.HasProblem()) << "Should be overflow because the number of digits in the nominator part is more than 15";
     EXPECT_TRUE(fps.GetProblemCode() == FormatProblemCode::TooManyDigits);
     }
@@ -1071,28 +1091,22 @@ TEST_F(FormatParsingSetTest, FailedToParseStation)
             };
 
     auto const VerifyFailure = [&mapper]
-        (Utf8CP input, Utf8CP formatName, FormatProblemCode formatParsingSetProblem, FormatProblemCode getQuantityProblem = FormatProblemCode::NoProblems)
+        (Utf8CP input, Utf8CP formatName, FormatProblemCode getQuantityProblem = FormatProblemCode::NoProblems)
             {
             Format format;
             Format::ParseFormatString(format, formatName, mapper, s_unitsContext);
 
             auto formatParsingSet = FormatParsingSet(input, s_unitsContext->LookupUnit("M"), &format);
-            EXPECT_EQ(formatParsingSetProblem, formatParsingSet.GetProblemCode());
-
-            if (!formatParsingSet.HasProblem())
-                {
-                FormatProblemCode problemCode;
-                auto const actualQuantity = formatParsingSet.GetQuantity(&problemCode, &format);
-                EXPECT_EQ(getQuantityProblem, problemCode);
-                }
+            formatParsingSet.GetQuantity(nullptr, &format);
+            EXPECT_EQ(getQuantityProblem, formatParsingSet.GetProblemCode());
             };
-
+            
     VerifyFailure("50+00 a", "StationZ_1000_3", FormatProblemCode::NA_InvalidSyntax);
     VerifyFailure("50 +00", "StationZ_1000_3", FormatProblemCode::NA_InvalidSyntax);
     VerifyFailure("50+ 00", "StationZ_1000_3", FormatProblemCode::NA_InvalidSyntax);
     VerifyFailure("a 50+00", "StationZ_1000_3", FormatProblemCode::NA_InvalidSyntax);
-    VerifyFailure("50+00.1", "DefaultReal", FormatProblemCode::NoProblems, FormatProblemCode::QT_InvalidSyntax);
-    VerifyFailure("30 40", "DefaultReal", FormatProblemCode::NoProblems, FormatProblemCode::QT_InvalidSyntax);
+    VerifyFailure("50+00.1", "DefaultReal", FormatProblemCode::QT_InvalidSyntax);
+    VerifyFailure("30 40", "DefaultReal", FormatProblemCode::QT_InvalidSyntax);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1487,8 +1501,7 @@ TEST_F(FormattingTestFixture, LargeNumbers)
     EXPECT_STREQ("-3.048e+31", spec.Format(-3.0479999999999998e+31).c_str());
     EXPECT_STREQ("-3.048e+35", spec.Format(-3.0479999999999998e+35).c_str());
     }
-
-
+    
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
@@ -1540,5 +1553,513 @@ TEST_F(FormattingTestFixture, FormatsUsingDefaultNumericFormatSpecWhenItsNotSet)
     Units::Quantity quantity(1500.5, *compSpec.GetMajorUnit());
     EXPECT_STREQ("1500.5 M", fmtSpec.FormatQuantity(quantity).c_str());
     }
+
+struct BearingTestData 
+    {
+    double angleDegree;
+    Utf8String bearingDMS; //degrees minutes seconds
+    Utf8String bearingDMSWithLabel;
+    Utf8String bearingDecimal;
+    Utf8String northAzimuthDMS; //degrees minutes seconds
+    Utf8String northAzimuthDecimal;
+    };
+
+double DegreesToRadians(double degrees)
+    {
+    return degrees * (M_PI / 180.0);
+    };
+
+TEST_F(FormattingTestFixture, FormatBearingAndAzimuth) {
+    std::vector<BearingTestData> testData = {
+        //DEG,    BEAR DMS      WITH LABEL        BEAR         AZI DMS     AZI
+        {0.0,     "N00:00:00E", "N00°00'00\"E", "N00.000°E", "00:00:00", "00.000"},
+        {5.0,     "N05:00:00E", "N05°00'00\"E", "N05.000°E", "05:00:00", "05.000"},
+        {45.0,    "N45:00:00E", "N45°00'00\"E", "N45.000°E", "45:00:00", "45.000"},
+        {45.5028, "N45:30:10E", "N45°30'10\"E", "N45.503°E", "45:30:10", "45.503"},
+        {90.0,    "N90:00:00E", "N90°00'00\"E", "N90.000°E", "90:00:00", "90.000"},
+        {135.0,   "S45:00:00E", "S45°00'00\"E", "S45.000°E", "135:00:00", "135.000"},
+        {180.0,   "S00:00:00E", "S00°00'00\"E", "S00.000°E", "180:00:00", "180.000"},
+        {225.0,   "S45:00:00W", "S45°00'00\"W", "S45.000°W", "225:00:00", "225.000"},
+        {234.4972,"S54:29:50W", "S54°29'50\"W", "S54.497°W", "234:29:50", "234.497"},
+        {270.0,   "N90:00:00W", "N90°00'00\"W", "N90.000°W", "270:00:00", "270.000"},
+        {315.0,   "N45:00:00W", "N45°00'00\"W", "N45.000°W", "315:00:00", "315.000"},
+        {360.0,   "N00:00:00E", "N00°00'00\"E", "N00.000°E", "00:00:00", "00.000"},
+        {412.0,   "N52:00:00E", "N52°00'00\"E", "N52.000°E", "52:00:00", "52.000"},
+        {470.0,   "S70:00:00E", "S70°00'00\"E", "S70.000°E", "110:00:00", "110.000"},
+        {580.0,   "S40:00:00W", "S40°00'00\"W", "S40.000°W", "220:00:00", "220.000"},
+        {640.0,   "N80:00:00W", "N80°00'00\"W", "N80.000°W", "280:00:00", "280.000"},
+    };
+
+
+    auto unitDegree = s_unitsContext->LookupUnit("ARC_DEG");
+    auto unitRadian = s_unitsContext->LookupUnit("RAD");
+    auto revolution = s_unitsContext->LookupUnit("REVOLUTION");
+
+    NumericFormatSpec bearingDMSSpec;
+    bearingDMSSpec.SetMinWidth(2);
+    bearingDMSSpec.SetPrecision(DecimalPrecision::Precision0);
+    bearingDMSSpec.SetKeepDecimalPoint(false);
+    bearingDMSSpec.SetPresentationType(PresentationType::Bearing);
+    bearingDMSSpec.SetRevolutionUnit(revolution);
+    Format bearingDMS(bearingDMSSpec);
+    bearingDMS.SetSuppressUnitLabel();
+    auto bearingDMScomp = CompositeValueSpec(*s_unitsContext->LookupUnit("ARC_DEG"), *s_unitsContext->LookupUnit("ARC_MINUTE"), *s_unitsContext->LookupUnit("ARC_SECOND"));
+    bearingDMScomp.SetSeparator(":");
+    bearingDMS.SetCompositeSpec(bearingDMScomp);
+    EXPECT_FALSE(bearingDMS.IsProblem());
+
+    NumericFormatSpec bearingDMSWithLabelSpec;
+    bearingDMSWithLabelSpec.SetMinWidth(2);
+    bearingDMSWithLabelSpec.SetPrecision(DecimalPrecision::Precision0);
+    bearingDMSWithLabelSpec.SetKeepDecimalPoint(false);
+    bearingDMSWithLabelSpec.SetPresentationType(PresentationType::Bearing);
+    bearingDMSWithLabelSpec.SetShowUnitLabel(true);
+    bearingDMSWithLabelSpec.SetRevolutionUnit(revolution);
+    Format bearingDMSWithLabel(bearingDMSWithLabelSpec);
+    auto bearingDMSWithLabelComp = CompositeValueSpec(*s_unitsContext->LookupUnit("ARC_DEG"), *s_unitsContext->LookupUnit("ARC_MINUTE"), *s_unitsContext->LookupUnit("ARC_SECOND"));
+    bearingDMSWithLabelComp.SetMajorLabel("°");
+    bearingDMSWithLabelComp.SetMiddleLabel("'");
+    bearingDMSWithLabelComp.SetMinorLabel("\"");
+    bearingDMSWithLabelComp.SetSeparator("");
+    bearingDMSWithLabel.SetCompositeSpec(bearingDMSWithLabelComp);
+    EXPECT_FALSE(bearingDMSWithLabel.IsProblem());
+
+    NumericFormatSpec bearingSpec;
+    bearingSpec.SetPresentationType(PresentationType::Bearing);
+    bearingSpec.SetMinWidth(6);
+    bearingSpec.SetPrecision(DecimalPrecision::Precision3);
+    bearingSpec.SetKeepDecimalPoint(true);
+    bearingSpec.SetKeepTrailingZeroes(true);
+    bearingSpec.SetKeepSingleZero(true);
+    bearingSpec.SetShowUnitLabel(true);
+    bearingSpec.SetRevolutionUnit(revolution);
+    Format bearing(bearingSpec);
+    auto bearingComp = CompositeValueSpec(*s_unitsContext->LookupUnit("ARC_DEG"));
+    bearingComp.SetMajorLabel("°");
+    bearingComp.SetSpacer("");
+    bearing.SetCompositeSpec(bearingComp);
+    EXPECT_FALSE(bearing.IsProblem());
+    
+    NumericFormatSpec azimuthDMSSpec;
+    azimuthDMSSpec.SetPresentationType(PresentationType::Azimuth);
+    azimuthDMSSpec.SetMinWidth(2);
+    azimuthDMSSpec.SetPrecision(DecimalPrecision::Precision0);
+    azimuthDMSSpec.SetKeepDecimalPoint(false);
+    azimuthDMSSpec.SetRevolutionUnit(revolution);
+    Format azimuthDMS(azimuthDMSSpec);
+    azimuthDMS.SetSuppressUnitLabel();
+    auto azimuthDMScomp = CompositeValueSpec(*s_unitsContext->LookupUnit("ARC_DEG"), *s_unitsContext->LookupUnit("ARC_MINUTE"), *s_unitsContext->LookupUnit("ARC_SECOND"));
+    azimuthDMScomp.SetSeparator(":");
+    azimuthDMS.SetCompositeSpec(azimuthDMScomp);
+    EXPECT_FALSE(azimuthDMS.IsProblem());
+
+    NumericFormatSpec azimuthSpec;
+    azimuthSpec.SetPresentationType(PresentationType::Azimuth);
+    azimuthSpec.SetMinWidth(6);
+    azimuthSpec.SetPrecision(DecimalPrecision::Precision3);
+    azimuthSpec.SetKeepDecimalPoint(true);
+    azimuthSpec.SetKeepTrailingZeroes(true);
+    azimuthSpec.SetKeepSingleZero(true);
+    azimuthSpec.SetRevolutionUnit(revolution);
+    Format azimuth(azimuthSpec);
+    auto azimuthComp = CompositeValueSpec(*s_unitsContext->LookupUnit("ARC_DEG"));
+    azimuth.SetCompositeSpec(azimuthComp);
+    EXPECT_FALSE(azimuth.IsProblem());
+
+    auto TestFormat = [&unitDegree, &unitRadian](const Units::Quantity& degree, const Units::Quantity& radian, const Utf8StringCR expectedString, const Format& format)
+    {
+        Utf8String fromDeg = format.FormatQuantity(degree);
+        Utf8String fromRad = format.FormatQuantity(radian);
+
+        ASSERT_STREQ(fromDeg.c_str(), fromRad.c_str());
+        ASSERT_STREQ(fromDeg.c_str(), expectedString.c_str());
+
+        FormatProblemCode problemCode_degree = FormatProblemCode::NoProblems;
+        FormatProblemCode problemCode_radian = FormatProblemCode::NoProblems;
+
+        BEU::Quantity qtyFromDegree = QuantityFormatting::CreateQuantity(expectedString.c_str(), format,unitDegree, &problemCode_degree);
+        BEU::Quantity qtyFromRadian = QuantityFormatting::CreateQuantity(expectedString.c_str(), format,unitRadian, &problemCode_radian);
+
+        ASSERT_EQ(FormatProblemCode::NoProblems, problemCode_degree);
+        ASSERT_EQ(FormatProblemCode::NoProblems, problemCode_radian);
+
+        double degreeNormalized = std::fmod(degree.GetMagnitude(), 360.0);
+        double radianNormalized = DegreesToRadians(degreeNormalized);
+
+        ASSERT_NEAR(degreeNormalized, qtyFromDegree.GetMagnitude(), 0.001); 
+        ASSERT_NEAR(radianNormalized, qtyFromRadian.GetMagnitude(), 0.001);
+    };
+
+    for(auto& row : testData)
+    { 
+        Units::Quantity degree(row.angleDegree, *unitDegree);
+        Units::Quantity radian(DegreesToRadians(row.angleDegree), *unitRadian);
+
+        auto degConverted = radian.ConvertTo(unitDegree);
+        ASSERT_TRUE(degree.IsClose(degConverted, 0.001));
+
+        TestFormat(degree, radian, row.bearingDMS, bearingDMS);
+        TestFormat(degree, radian, row.bearingDMSWithLabel, bearingDMSWithLabel);
+        TestFormat(degree, radian, row.bearingDecimal, bearing);
+        TestFormat(degree, radian, row.northAzimuthDMS, azimuthDMS);
+        TestFormat(degree, radian, row.northAzimuthDecimal, azimuth);
+
+    };
+}
+
+TEST_F(FormattingTestFixture, AzimuthWithVariousBases) {
+    auto unitDegree = s_unitsContext->LookupUnit("ARC_DEG");
+    auto unitRadian = s_unitsContext->LookupUnit("RAD");
+    auto unitRevolution = s_unitsContext->LookupUnit("REVOLUTION");
+
+    NumericFormatSpec azimuthSpec;
+    azimuthSpec.SetPresentationType(PresentationType::Azimuth);
+    azimuthSpec.SetMinWidth(4);
+    azimuthSpec.SetPrecision(DecimalPrecision::Precision1);
+    azimuthSpec.SetKeepDecimalPoint(true);
+    azimuthSpec.SetKeepTrailingZeroes(true);
+    azimuthSpec.SetKeepSingleZero(true);
+    azimuthSpec.SetShowUnitLabel(true);
+    azimuthSpec.SetAzimuthBaseUnit(unitRadian);
+    azimuthSpec.SetRevolutionUnit(unitRevolution);
+
+    // azimuth with various bases - roundtrip test
+    struct AzimuthTestCase {
+        double value;
+        double baseOffsetInDeg;
+        bool counterClockwise;
+        Utf8String expectedString;
+    };
+
+    std::vector<AzimuthTestCase> testCases = {
+        // {value, baseOffsetInDeg, counterClockwise, expectedString}
+        {0.0,   0.0,   false, "00.0°"},
+        {0.0,   180.0, false, "180.0°"},
+        {0.0,   185.0, false, "175.0°"},
+        {0.0,   185.0, true,  "185.0°"},
+        {0.0,   95.0,  false, "265.0°"},
+        {0.0,   85.0,  false, "275.0°"},
+        {0.0,   270.0, false, "90.0°"},
+        {0.0,   270.0, true,  "270.0°"},
+        {90.0,  0.0,   false, "90.0°"},
+        {90.0,  180.0, false, "270.0°"},
+        {90.0,  185.0, false, "265.0°"},
+        {90.0,  185.0, true,  "95.0°"},
+        {90.0,  95.0,  false, "355.0°"},
+        {90.0,  85.0,  false, "05.0°"},
+        {90.0,  270.0, false, "180.0°"},
+        {90.0,  270.0, true,  "180.0°"},
+    };
+
+    for (const auto& testCase : testCases)
+        {
+        // Configure the numeric format specification
+        azimuthSpec.SetAzimuthBase(DegreesToRadians(testCase.baseOffsetInDeg));
+        azimuthSpec.SetAzimuthCounterClockwise(testCase.counterClockwise);
+
+        Format azimuth(azimuthSpec);
+        CompositeValueSpec azimuthComp(*unitDegree);
+        azimuthComp.SetMajorLabel("°");
+        azimuthComp.SetSpacer("");
+        azimuth.SetCompositeSpec(azimuthComp);
+
+        Units::Quantity degreeQuantity(testCase.value, *unitDegree);
+
+        // Format the quantity
+        Utf8String result = azimuth.FormatQuantity(degreeQuantity);
+        ASSERT_STREQ(testCase.expectedString.c_str(), result.c_str());
+
+        // Parse the formatted string back into quantities
+        FormatProblemCode problemCode = FormatProblemCode::NoProblems;
+        Units::Quantity qty = QuantityFormatting::CreateQuantity(result.c_str(), azimuth, unitDegree, &problemCode);
+        ASSERT_EQ(FormatProblemCode::NoProblems, problemCode);
+        ASSERT_NEAR(testCase.value, qty.GetMagnitude(), 0.001);
+        }
+}
+
+TEST_F(FormattingTestFixture, ParseBearingProblemCode){
+    auto unitDegree = s_unitsContext->LookupUnit("ARC_DEG");
+    auto revolution = s_unitsContext->LookupUnit("REVOLUTION");
+
+    NumericFormatSpec bearingDMSSpec;
+    bearingDMSSpec.SetMinWidth(2);
+    bearingDMSSpec.SetPrecision(DecimalPrecision::Precision0);
+    bearingDMSSpec.SetKeepDecimalPoint(false);
+    bearingDMSSpec.SetPresentationType(PresentationType::Bearing);
+    bearingDMSSpec.SetRevolutionUnit(revolution);
+    Format bearingDMS(bearingDMSSpec);
+    bearingDMS.SetSuppressUnitLabel();
+    auto bearingDMScomp = CompositeValueSpec(*s_unitsContext->LookupUnit("ARC_DEG"), *s_unitsContext->LookupUnit("ARC_MINUTE"), *s_unitsContext->LookupUnit("ARC_SECOND"));
+    bearingDMScomp.SetSeparator(":");
+    bearingDMS.SetCompositeSpec(bearingDMScomp);
+    EXPECT_FALSE(bearingDMS.IsProblem());
+
+    struct testData {
+        std::string inputString;
+        FormatProblemCode expectedProblemCode;
+    };
+
+    std::string zeroInput = "N00:00:00E";
+
+    std::vector<testData> testDataVec = {
+        {zeroInput, FormatProblemCode::NoProblems},
+        {"", FormatProblemCode::QT_NoValueOrUnitFound},
+        {"00:00:00", FormatProblemCode::QT_BearingPrefixOrSuffixMissing},
+        {"A00:00:00B", FormatProblemCode::QT_BearingPrefixOrSuffixMissing},
+        {"N00:00:00", FormatProblemCode::QT_BearingPrefixOrSuffixMissing},
+        {"00:00:00S", FormatProblemCode::QT_BearingPrefixOrSuffixMissing},
+    };
+
+    BEU::Quantity qty;
+    for(auto& row : testDataVec)
+    {
+        FormatProblemCode problemCode = FormatProblemCode::NoProblems;
+        qty = QuantityFormatting::CreateQuantity(row.inputString.c_str(), bearingDMS, unitDegree, &problemCode);
+        EXPECT_EQ(row.expectedProblemCode, problemCode);
+    }
+
+    auto invalidUnit = s_unitsContext->LookupUnit("VERTICAL_PER_HORIZONTAL");
+
+    // invalid unit
+    FormatProblemCode problemCode = FormatProblemCode::NoProblems;
+
+    Format bearingDMSInvalidCompUnit(bearingDMSSpec);
+    bearingDMSInvalidCompUnit.SetSuppressUnitLabel();
+    auto bearingDMScompInvalidUnit = CompositeValueSpec(*invalidUnit, *s_unitsContext->LookupUnit("ARC_MINUTE"), *s_unitsContext->LookupUnit("ARC_SECOND"));
+    bearingDMScompInvalidUnit.SetSeparator(":");
+    bearingDMSInvalidCompUnit.SetCompositeSpec(bearingDMScompInvalidUnit);
+    EXPECT_FALSE(bearingDMSInvalidCompUnit.IsProblem());
+
+    bearingDMSInvalidCompUnit.SetCompositeSpec(bearingDMScompInvalidUnit);
+    qty = QuantityFormatting::CreateQuantity(zeroInput.c_str(), bearingDMSInvalidCompUnit, unitDegree, &problemCode);
+    EXPECT_EQ(FormatProblemCode::PS_MissingCompositeSpec, problemCode); // composite spec wont get set with invalid composite units
+
+    // cant convert
+    problemCode = FormatProblemCode::NoProblems;
+    qty = QuantityFormatting::CreateQuantity(zeroInput.c_str(), bearingDMS, invalidUnit, &problemCode);
+    EXPECT_EQ(FormatProblemCode::QT_ConversionFailed, problemCode);
+}
+
+TEST_F(FormattingTestFixture, ParseAzimuthProblemCode){
+    auto unitDegree = s_unitsContext->LookupUnit("ARC_DEG");
+    auto revolution = s_unitsContext->LookupUnit("REVOLUTION");
+    FormatProblemCode problemCode = FormatProblemCode::NoProblems;
+
+    NumericFormatSpec azimuthSpec;
+    azimuthSpec.SetPresentationType(PresentationType::Azimuth);
+    azimuthSpec.SetMinWidth(6);
+    azimuthSpec.SetPrecision(DecimalPrecision::Precision3);
+    azimuthSpec.SetKeepDecimalPoint(true);
+    azimuthSpec.SetKeepTrailingZeroes(true);
+    azimuthSpec.SetKeepSingleZero(true);
+    azimuthSpec.SetAzimuthBase(180.0);
+    // azimuthSpec.SetAzimuthBaseUnit(unitDegree); missing for this test
+    azimuthSpec.SetRevolutionUnit(revolution);
+
+    Format azimuth(azimuthSpec);
+    auto azimuthComp = CompositeValueSpec(*unitDegree);
+    azimuth.SetCompositeSpec(azimuthComp);
+    EXPECT_FALSE(azimuth.IsProblem());
+
+    std::string zeroInput = "00.0";
+    BEU::Quantity qty = QuantityFormatting::CreateQuantity(zeroInput.c_str(), azimuth, unitDegree, &problemCode);
+    EXPECT_EQ(FormatProblemCode::QT_NoValueOrUnitFound, problemCode);
+}
+
+TEST_F(FormattingTestFixture, FormatRatio){
+    auto formatRatioTest = [](const char* ratioString, double value, Units::UnitCP persistenceUnit, RatioType ratioType,  Units::UnitCP presentationUnit, DecimalPrecision precision = DecimalPrecision::Precision3)
+    {
+        NumericFormatSpec ratioSpec;
+        ratioSpec.SetPresentationType(PresentationType::Ratio);
+        ratioSpec.SetRatioType(ratioType);
+        ratioSpec.SetPrecision(precision);
+        
+        CompositeValueSpec ratioComp(*presentationUnit);
+        ratioComp.SetIncludeZero(true);
+
+        Format ratioFormat(ratioSpec);
+        ratioFormat.SetCompositeSpec(ratioComp);
+
+        Units::Quantity quantity(value, *persistenceUnit);
+        EXPECT_STREQ(ratioString, ratioFormat.FormatQuantity(quantity).c_str());
+
+        // parsing back to quantity
+        FormatProblemCode problemCode = FormatProblemCode::NoProblems;
+        BEU::Quantity qty = QuantityFormatting::CreateQuantity(ratioString, ratioFormat, persistenceUnit, &problemCode);
+
+        EXPECT_EQ(FormatProblemCode::NoProblems, problemCode); 
+        auto precisionNum = static_cast<int>(precision);
+        auto tolerance = pow(10, -precisionNum) * 4.999;
+        EXPECT_NEAR(value, qty.GetMagnitude(), tolerance);
+    };
+
+    auto v_h = s_unitsContext->LookupUnit("VERTICAL_PER_HORIZONTAL");
+    auto h_v = s_unitsContext->LookupUnit("HORIZONTAL_PER_VERTICAL");
+
+    auto oneToN = RatioType::OneToN;
+    auto NtoOne = RatioType::NToOne;
+    auto valueBased = RatioType::ValueBased;
+    auto useGreatestCommonDivisor = RatioType::UseGreatestCommonDivisor;
+
+    // corner cases, input vaue is 0
+    {
+    auto ratioTypes = {RatioType::OneToN, RatioType::NToOne, RatioType::ValueBased, RatioType::UseGreatestCommonDivisor};
+
+    for (const auto& ratioType : ratioTypes) 
+        {
+        formatRatioTest("0:1", 0.0, v_h, ratioType, v_h);
+        formatRatioTest("0:1", 0.0, h_v, ratioType, h_v);
+        formatRatioTest("1:0", 0.0, v_h, ratioType, h_v);
+        formatRatioTest("1:0", 0.0, h_v, ratioType, v_h);
+        }
+    }
+
+    // v:h (persistent) -> v:h (presentation) | one to N
+    {
+    formatRatioTest("1:1", 1.0, v_h, oneToN, v_h);
+    formatRatioTest("1:0.5", 2.0, v_h, oneToN, v_h);
+    formatRatioTest("1:2", 0.5, v_h, oneToN, v_h);
+    formatRatioTest("1:3.003", 0.333, v_h, oneToN, v_h);
+    formatRatioTest("1:3", 0.3333, v_h, oneToN, v_h);
+    formatRatioTest("1:3.5", 0.2857, v_h, oneToN, v_h);
+    formatRatioTest("1:4", 0.25, v_h, oneToN, v_h);
+    formatRatioTest("1:1.5", 0.6667, v_h, oneToN, v_h);
+    }
+
+    // v:h -> h:v | one to N
+    {
+    formatRatioTest("1:1", 1.0, v_h, oneToN, h_v);
+    formatRatioTest("1:2", 2.0, v_h, oneToN, h_v);
+    formatRatioTest("1:0.5", 0.5, v_h, oneToN, h_v);
+    formatRatioTest("1:0.333", 0.333, v_h, oneToN, h_v);
+    formatRatioTest("1:0.333", 0.3333, v_h, oneToN, h_v);
+    formatRatioTest("1:0.286", 0.2857, v_h, oneToN, h_v);
+    formatRatioTest("1:0.25", 0.25, v_h, oneToN, h_v);
+    formatRatioTest("1:0.667", 0.6667, v_h, oneToN, h_v);
+    }
+
+    // v:h -> v:h | N to one
+    {
+    formatRatioTest("1:1", 1.0, v_h, NtoOne, v_h);
+    formatRatioTest("2:1", 2.0, v_h, NtoOne, v_h);
+    formatRatioTest("0.5:1", 0.5, v_h, NtoOne, v_h);
+    formatRatioTest("0.333:1", 0.333, v_h, NtoOne, v_h);
+    formatRatioTest("0.333:1", 0.3333, v_h, NtoOne, v_h);
+    formatRatioTest("0.286:1", 0.2857, v_h, NtoOne, v_h);
+    formatRatioTest("0.25:1", 0.25, v_h, NtoOne, v_h);
+    formatRatioTest("0.667:1", 0.6667, v_h, NtoOne, v_h);
+    }
+
+    // v:h -> h:v | N to one
+    {
+    formatRatioTest("1:1", 1.0, v_h, NtoOne, h_v);
+    formatRatioTest("0.5:1", 2.0, v_h, NtoOne, h_v);
+    formatRatioTest("2:1", 0.5, v_h, NtoOne, h_v);
+    formatRatioTest("3.003:1", 0.333, v_h, NtoOne, h_v);
+    formatRatioTest("3:1", 0.3333, v_h, NtoOne, h_v);
+    formatRatioTest("3.5:1", 0.2857, v_h, NtoOne, h_v);
+    formatRatioTest("4:1", 0.25, v_h, NtoOne, h_v);
+    formatRatioTest("1.5:1", 0.6667, v_h, NtoOne, h_v);
+    }
+
+    {
+    // decimal precision
+    // formatRatioTest("1:0", 3, v_h, oneToN, v_h, DecimalPrecision::Precision0);
+    formatRatioTest("1:0.3", 3, v_h, oneToN, v_h, DecimalPrecision::Precision1);
+    formatRatioTest("1:0.33", 3, v_h, oneToN, v_h, DecimalPrecision::Precision2);
+
+    formatRatioTest("1:2500", 0.0004, v_h, oneToN, v_h, DecimalPrecision::Precision3);
+
+    formatRatioTest("1:0", 0.0004, v_h, oneToN, h_v, DecimalPrecision::Precision3);
+    formatRatioTest("1:0.0004", 0.0004, v_h, oneToN, h_v, DecimalPrecision::Precision4);
+    formatRatioTest("1:-0.0004", -0.0004, v_h, oneToN, h_v, DecimalPrecision::Precision4);
+    }
+
+    // v:h -> v:h | ValueBased
+    // if the value is smaller than 1, its 1 to N. else, N to 1
+    {
+    formatRatioTest("1:1", 1.0, v_h, valueBased, v_h);
+    formatRatioTest("2:1", 2.0, v_h, valueBased, v_h);
+    formatRatioTest("1:2", 0.5, v_h, valueBased, v_h);
+    formatRatioTest("1:3.003", 0.333, v_h, valueBased, v_h);
+    formatRatioTest("3.333:1", 3.3333, v_h, valueBased, v_h);
+    formatRatioTest("1:3.5", 0.2857, v_h, valueBased, v_h);
+    formatRatioTest("3.5:1", 3.5, v_h, valueBased, v_h);
+    formatRatioTest("1:4", 0.25, v_h, valueBased, v_h);
+    formatRatioTest("4:1", 4.0, v_h, valueBased, v_h);
+    }   
+
+    // v:h -> v:h | UseGreatestCommonDivisor
+    {
+    formatRatioTest("1:1", 1.0, v_h, useGreatestCommonDivisor, v_h);
+    formatRatioTest("2:1", 2.0, v_h, useGreatestCommonDivisor, v_h);
+    formatRatioTest("1:2", 0.5, v_h, useGreatestCommonDivisor, v_h);
+    formatRatioTest("333:1000", 0.333, v_h, useGreatestCommonDivisor, v_h);
+    formatRatioTest("333:1000", 0.3333, v_h, useGreatestCommonDivisor, v_h);
+    formatRatioTest("143:500", 0.2857, v_h, useGreatestCommonDivisor, v_h);
+    formatRatioTest("1:4", 0.25, v_h, useGreatestCommonDivisor, v_h);
+    formatRatioTest("667:1000", 0.6667, v_h, useGreatestCommonDivisor, v_h);
+    }
+
+    // negative values
+    {
+    formatRatioTest("-1:1", -1.0, v_h, NtoOne, v_h);
+    formatRatioTest("1:-1", -1.0, v_h, valueBased, v_h);
+
+    formatRatioTest("-0.5:1", -0.5, v_h, NtoOne, v_h);
+    formatRatioTest("1:-2", -0.5, v_h, valueBased, v_h);
+
+    formatRatioTest("-0.5:1", -2, v_h, NtoOne, h_v);
+    formatRatioTest("1:-2", -2, v_h, valueBased, h_v);
+    }
+
+    // really large/small numbers
+    {
+    formatRatioTest("0:1", 0.00000001, v_h, NtoOne, v_h);
+    formatRatioTest("100000000:1", 0.00000001, v_h, NtoOne, h_v);
+
+    formatRatioTest("100000000:1", 100000000, v_h, NtoOne, v_h);
+    // formatRatioTest("0:1", 100000000, v_h, NtoOne, h_v); //works one way parsing from quantity to ratio, but not the other way around. from "0:1" cant be parsed to 100000000
+    }
+
+    // irrational numbers
+    {
+    formatRatioTest("0.143:1", 1.0/7, v_h, NtoOne, v_h);
+    formatRatioTest("1:7", 1.0/7, v_h, oneToN, v_h);
+    formatRatioTest("0.286:1", 2.0/7, v_h, NtoOne, v_h);
+    formatRatioTest("143:500", 2.0/7, v_h, useGreatestCommonDivisor, v_h); // loose precision from 0.28571428571 to 0.286
+    formatRatioTest("7:2", 2.0/7, v_h, useGreatestCommonDivisor, h_v); // didnt loose much precision from 3.50000000005 to 3.5
+    }
+
+    // parseRatioString specific tests
+    auto formatRatioErrorTest = [](Utf8CP ratioString, Units::UnitCP persistenceUnit, Units::UnitCP presentationUnit, FormatProblemCode expectedProblemCode = FormatProblemCode::NoProblems)
+    {
+        NumericFormatSpec ratioSpec;
+        ratioSpec.SetPresentationType(PresentationType::Ratio);
+        ratioSpec.SetRatioType(RatioType::OneToN);
+        ratioSpec.SetPrecision(DecimalPrecision::Precision3);
+        CompositeValueSpec ratioComp(*presentationUnit);
+        ratioComp.SetIncludeZero(true);
+        Format ratioFormat(ratioSpec);
+        ratioFormat.SetCompositeSpec(ratioComp);
+
+        FormatProblemCode problemCode;
+        BEU::Quantity qty = QuantityFormatting::CreateQuantity(ratioString, ratioFormat, persistenceUnit, &problemCode);
+
+        EXPECT_EQ(expectedProblemCode, problemCode);
+    };
+
+    {
+        formatRatioErrorTest("", v_h, v_h, FormatProblemCode::QT_NoValueOrUnitFound);
+        formatRatioErrorTest("1:1", nullptr, v_h, FormatProblemCode::QT_NoValueOrUnitFound); // test this
+        formatRatioErrorTest("3:1:2", v_h, v_h, FormatProblemCode::QT_InvalidRatioArgument);
+        formatRatioErrorTest("A:2", v_h, v_h, FormatProblemCode::QT_InvalidRatioArgument);
+        formatRatioErrorTest("1:1e1000", v_h, v_h, FormatProblemCode::QT_ValueOutOfRange);
+
+        formatRatioErrorTest("0:1", v_h, h_v, FormatProblemCode::QT_MathematicOperationFoundButIsNotAllowed);
+        formatRatioErrorTest("1:0", v_h, v_h, FormatProblemCode::QT_MathematicOperationFoundButIsNotAllowed);
+    }
+    
+}
 
 END_BENTLEY_FORMATTEST_NAMESPACE

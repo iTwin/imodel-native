@@ -360,7 +360,7 @@ ENUM_IS_FLAGS(TextEmphasis);
 
 struct JsInterop {
     [[noreturn]] static void throwSqlResult(Utf8CP msg, Utf8CP fileName, DbResult result) {
-        BeNapi::ThrowJsException(Env(), Utf8PrintfString("%s [%s]: %s", msg, fileName, BeSQLiteLib::GetErrorString(result)).c_str(), result);
+        BeNapi::ThrowJsException(Env(), Utf8PrintfString("%s [%s]: rc=%d, %s", msg, fileName, (int)result, BeSQLiteLib::GetLogError(result).c_str()).c_str(), result);
     }
     [[noreturn]] static void throwDgnDbStatus(DgnDbStatus);
     [[noreturn]] static void throwWrongClass() { throwDgnDbStatus(DgnDbStatus::WrongClass); }
@@ -656,7 +656,7 @@ struct NativeChangeset {
         NativeChangeset():m_primaryKeyColumns(nullptr), m_tableName(nullptr), m_currentChange(nullptr, false), m_invert(false){}
         void OpenFile(Napi::Env env, Utf8StringCR changesetFile, bool invert);
         void OpenChangeStream(Napi::Env env, std::unique_ptr<ChangeStream>, bool invert);
-        void OpenGroup(Napi::Env env, T_Utf8StringVector const& changesetFiles, bool invert);
+        void OpenGroup(Napi::Env env, T_Utf8StringVector const& changesetFiles, Db const& db, bool invert);
         void Close(Napi::Env env);
         void Reset(Napi::Env env);
         void WriteToFile(Napi::Env env, Utf8String const& fileName, bool containChanges, bool override);

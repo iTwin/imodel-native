@@ -294,7 +294,10 @@ template<typename T_Db> struct SQLiteOps {
                 BeNapi::ThrowJsException(info.Env(), "invalid face");
             faces.emplace_back(face);
 
-            auto napiData = argJson[JsInterop::json_data()].AsNapiValueRef();
+            // NOTE: Do NOT combine the following two lines. Doing so can lead to a value in
+            // napiData that references freed memory due to the way the ref counted pointers work.
+            auto jsonData = argJson[JsInterop::json_data()];
+            auto napiData = jsonData.AsNapiValueRef();
             if (!napiData->m_napiVal.IsTypedArray())
                 BeNapi::ThrowJsException(info.Env(), "font data not valid");
 
@@ -4469,8 +4472,26 @@ public:
     void OpenGroup(NapiInfoCR info)
         {
         REQUIRE_ARGUMENT_STRING_ARRAY(0, fileNames);
-        REQUIRE_ARGUMENT_BOOL(1, invert);
-        m_changeset.OpenGroup(Env(), fileNames, invert);
+        REQUIRE_ARGUMENT_ANY_OBJ(1, dbObj);
+        REQUIRE_ARGUMENT_BOOL(2, invert);
+
+        ECDb* ecdb = nullptr;
+        if (NativeDgnDb::InstanceOf(dbObj)) {
+            NativeDgnDb* addonDgndb = NativeDgnDb::Unwrap(dbObj);
+            ecdb = &addonDgndb->GetDgnDb();
+
+        } else if (NativeECDb::InstanceOf(dbObj)) {
+            NativeECDb* addonECDb = NativeECDb::Unwrap(dbObj);
+            ecdb = &addonECDb->GetECDb();
+
+        } else {
+            THROW_JS_TYPE_EXCEPTION("Provided db must be a NativeDgnDb or NativeECDb object");
+        }
+
+        if (!ecdb || !ecdb->IsDbOpen())
+            BeNapi::ThrowJsException(Env(), "Provided db is not open");
+
+        m_changeset.OpenGroup(Env(), fileNames, *ecdb, invert);
         }
     void WriteToFile(NapiInfoCR info)
         {
@@ -4702,18 +4723,12 @@ public:
 
         REQUIRE_ARGUMENT_ANY_OBJ(0, optObj);
         BeJsValue opts(optObj);
-        if (!opts.isBoolMember("classIdsToClassNames"))
-            BeNapi::ThrowJsException(info.Env(), "classIdsToClassNames argument missing");
-        if (!opts.isNumericMember("rowFormat"))
-            BeNapi::ThrowJsException(info.Env(), "rowFormat argument missing");
-
         ECSqlRowAdaptor adaptor(*m_stmt.GetECDb());
         adaptor.GetOptions().FromJson(opts);
-        adaptor.GetOptions().SetAbbreviateBlobs(false);
 
         BeJsNapiObject out(info.Env());
         BeJsValue rowJson = out["data"];
-        if (adaptor.RenderRow(rowJson, ECSqlStatementRow(m_stmt)) != SUCCESS)
+        if (adaptor.RenderRowAsArray(rowJson, ECSqlStatementRow(m_stmt)) != SUCCESS)
             BeNapi::ThrowJsException(info.Env(), "Failed to render row", BE_SQLITE_ERROR);
 
         return out;
@@ -4723,14 +4738,12 @@ public:
         if (!m_stmt.IsPrepared())
             THROW_JS_EXCEPTION("ECSqlStatement is not prepared.");
 
+        BeJsNapiObject out(info.Env());
+        BeJsValue metaJson = out["meta"];
         ECSqlRowAdaptor adaptor(*m_stmt.GetECDb());
         ECSqlRowProperty::List props;
         adaptor.GetMetaData(props, m_stmt);
-
-        BeJsNapiObject out(info.Env());
-        BeJsValue metaJson = out["meta"];
         props.ToJs(metaJson);
-
         return out;
     }
 

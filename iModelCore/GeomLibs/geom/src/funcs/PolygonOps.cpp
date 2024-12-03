@@ -336,7 +336,6 @@ bool             addVerticesAtCrossings
     VuMask      numberedNodeMask = vu_grabMask (graphP);
     VuP         faceP, originalNodeP;
     bool status = false;
-    int       i;
     int       originalIndex;
     int       outputIndex;
     int     separator = signedOneBasedIndices ? 0 : -1;
@@ -368,7 +367,7 @@ bool             addVerticesAtCrossings
 
     vu_arrayOpen (faceArrayP);
     status = true;
-    for (i = 0; status && vu_arrayRead (faceArrayP, &faceP); i++)
+    while (status && vu_arrayRead (faceArrayP, &faceP))
         {
         // ignore faces that did not triangulate, such as a part of the polygon that retraces itself
         int numEdges = vu_faceLoopSize(faceP);
@@ -445,7 +444,7 @@ bool             addVerticesAtCrossings
         vu_collectExteriorFaceLoops (faceArrayP, graphP);
         vu_arrayOpen (faceArrayP);
         status = true;
-        for (i = 0; status && vu_arrayRead (faceArrayP, &faceP); i++)
+        while (status && vu_arrayRead (faceArrayP, &faceP))
             {
             VuP lowIndexP = faceP;
             int lowIndex = vu_getUserDataPAsInt (faceP);
@@ -723,6 +722,45 @@ bvector<DTriangle3d> &triangles
             }
         }
     return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PolygonOps::FixupAndTriangulateProjectedLoops
+(
+bvector<int>& triangleIndices,
+bvector<int>* exteriorLoopIndices,
+bvector<DPoint3d>& xyzOut,
+TransformCR localToWorld,
+TransformCR worldToLocal,
+bvector<bvector<DPoint3d>> const& loops,
+double xyTolerance,
+bool signedOneBasedIndices
+)
+    {
+    triangleIndices.clear();
+    if (exteriorLoopIndices)
+        exteriorLoopIndices->clear();
+    xyzOut.clear();
+
+    bvector<DPoint3d> packedLocalPoints;
+    DPoint3d disconnect;
+    disconnect.InitDisconnect();
+    for (auto const& loop : loops)
+        {
+        for (auto const& xyz : loop)
+            packedLocalPoints.push_back(worldToLocal * xyz);
+        packedLocalPoints.push_back(disconnect);
+        }
+    if (packedLocalPoints.size() < 4)
+        return false;
+
+    if (!FixupAndTriangulateLoopsXY(&triangleIndices, exteriorLoopIndices, &xyzOut, &packedLocalPoints, xyTolerance, 3, signedOneBasedIndices, true))
+        return false;
+
+    DPoint3dOps::Multiply(&xyzOut, localToWorld);
+    return true;
     }
 
 bool PolygonOps::FixupAndTriangulateProjectedLoops
@@ -1295,6 +1333,7 @@ bool PolygonOps::PickTriangleFromStart
     double fi;
     DPoint3d xyzi;
     size_t numHit = 0;
+    UNUSED_VARIABLE(numHit);
     for (size_t i0 = 1, i1 = 2; i1 < numXYZ; i0 = i1++)
         {
         DPoint3d uvwLocal;
@@ -1497,6 +1536,7 @@ double      tol             /* tolerance for ON case detection */
     double crossing;
     double s;
     int numLeft = 0, numRight = 0;
+    UNUSED_VARIABLE(numRight);
 
     int i, i0;
     if (fabs (h0) <= tol)
@@ -1557,6 +1597,7 @@ double      tol             /* tolerance for ON case detection */
     double crossing;
     double s;
     int numLeft = 0, numRight = 0;
+    UNUSED_VARIABLE(numRight);
 
     int i, i0;
     if (fabs (h0) <= tol)
@@ -1626,6 +1667,7 @@ double      tol             /* tolerance for ON case detection */
     double u;
     double s;
     int numLeft = 0, numRight = 0;
+    UNUSED_VARIABLE(numRight);
 
     int i, i0;
 
