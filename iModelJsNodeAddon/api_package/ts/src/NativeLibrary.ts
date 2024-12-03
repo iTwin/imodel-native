@@ -163,7 +163,7 @@ export const enum SchemaWriteStatus {
 }
 
 export interface TrueTypeFontMetadata {
-  familyNames: string[];
+  familyNames?: string[];
   embeddable: boolean;
 }
 
