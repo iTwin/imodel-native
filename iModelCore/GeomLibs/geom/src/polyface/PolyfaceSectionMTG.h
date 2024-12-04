@@ -210,14 +210,11 @@ bvector <VertexData> m_allVertexData;   // Built up as edges are added to the gr
 MTGNodeId FindOrSetPriorNodeAtVertex (size_t vertexIndex, MTGNodeId nodeId)
     {
     size_t numRegistered = m_anyNodeAtVertex.size ();
-    assert (vertexIndex <= numRegistered + 1);  // we expect the map lookup to generate new vertex indices sequentially,
-                                                // and they will
     while (numRegistered <= vertexIndex)
         {
         m_anyNodeAtVertex.push_back (MTG_NULL_NODEID);
         numRegistered++;
         }
-
     if (m_anyNodeAtVertex[vertexIndex] == MTG_NULL_NODEID)
         {
         m_anyNodeAtVertex[vertexIndex] = nodeId;
@@ -232,21 +229,13 @@ MTGNodeId FindPriorNodeAtVertex (size_t vertexIndex)
     return vertexIndex < numRegistered ? m_anyNodeAtVertex[vertexIndex] : MTG_NULL_NODEID;
     }
 
-
-// On input: graph has isolated edges indexing into m_allVertexData.
-// (m_allVertexData[i].m_vertexIndex is not used yet)
-// Assign vertex indices and twist the edges together.
 void JoinEdges ()
     {
-    for (size_t i = 0, n = m_allVertexData.size (); i < n; i++)
-        m_allVertexData[i].m_vertexIndex = SIZE_MAX;
     MTGARRAY_SET_LOOP (nodeA, &m_graph)
         {
         if (auto data = GetVertexData(nodeA))
             {
-            size_t vertexIndex = m_coordinateMap->AddPoint(data->mXYZ);
-            MTGNodeId nodeB = FindOrSetPriorNodeAtVertex (vertexIndex, nodeA);
-            data->m_vertexIndex = vertexIndex;
+            MTGNodeId nodeB = FindOrSetPriorNodeAtVertex (data->m_vertexIndex, nodeA);
             if (m_graph.IsValidNodeId (nodeB))
                 m_graph.VertexTwist (nodeA, nodeB);
             }
@@ -267,86 +256,54 @@ size_t AddVertexData (VertexData const & data)
     return index;
     }
 
-void AddGapEdge(MTGNodeId startNodeId, size_t destVertexIndex)
+void AddGapEdge(MTGNodeId danglerNodeId, size_t destVertexIndex)
     {
     MTGNodeId destNodeId = FindPriorNodeAtVertex(destVertexIndex);
     int startVertexDataIndex, destVertexDataIndex;
-    if (m_graph.IsValidNodeId(startNodeId) && m_graph.IsValidNodeId(destNodeId) &&
-        m_graph.TryGetLabel(startNodeId, m_vertexDataLabel, startVertexDataIndex) &&
+    if (m_graph.IsValidNodeId(danglerNodeId) && m_graph.IsValidNodeId(destNodeId) &&
+        m_graph.TryGetLabel(danglerNodeId, m_vertexDataLabel, startVertexDataIndex) &&
         m_graph.TryGetLabel(destNodeId, m_vertexDataLabel, destVertexDataIndex))
         {
         MTGNodeId nodeA, nodeB;
         m_graph.CreateEdge(nodeA, nodeB);
         m_graph.TrySetLabel(nodeA, m_vertexDataLabel, startVertexDataIndex);
         m_graph.TrySetLabel(nodeB, m_vertexDataLabel, destVertexDataIndex);
-        m_graph.VertexTwist(nodeA, startNodeId);
+        m_graph.VertexTwist(nodeA, danglerNodeId);
         m_graph.VertexTwist(nodeB, destNodeId);
         }
     }
 
+std::map<std::pair<size_t, size_t>, MTGNodeId> m_uniqueEdges;
+
 // @param edgeMask applied to both sides of the new edge
-void AddEdge (VertexData const &vertexA, VertexData const &vertexB, MTGMask edgeMask = MTG_NULL_MASK)
+void AddEdge (VertexData& vertexA, VertexData& vertexB, MTGMask edgeMask = MTG_NULL_MASK)
     {
-    MTGNodeId nodeA, nodeB;
-    // Make an edge...  just hanging out there.
-    m_graph.CreateEdge (nodeA, nodeB);
+    // avoid duplicate or trivial edge
+    auto iA = vertexA.m_vertexIndex = m_coordinateMap->AddPoint(vertexA.mXYZ);
+    auto iB = vertexB.m_vertexIndex = m_coordinateMap->AddPoint(vertexB.mXYZ);
+    if (iA == iB)
+        return;
+    auto edge = (iA < iB) ? std::pair(iA, iB) : std::pair(iB, iA);
+    auto found = m_uniqueEdges.find(edge);
+    if (m_uniqueEdges.end() == found)
+        {
+        MTGNodeId nodeA, nodeB;
+        // Make an edge...  just hanging out there.
+        m_graph.CreateEdge (nodeA, nodeB);
+        m_graph.TrySetLabel (nodeA, m_vertexDataLabel, (int)AddVertexData (vertexA));
+        m_graph.TrySetLabel (nodeB, m_vertexDataLabel, (int)AddVertexData (vertexB));
+        found = m_uniqueEdges.insert({edge, nodeA}).first;
+        }
+    // set mask on new edge, or transfer it to existing edge
     if (edgeMask)
-        m_graph.SetMaskAroundEdge(nodeA, edgeMask);
-    m_graph.TrySetLabel (nodeA, m_vertexDataLabel, (int)AddVertexData (vertexA));
-    m_graph.TrySetLabel (nodeB, m_vertexDataLabel, (int)AddVertexData (vertexB));
+        m_graph.SetMaskAroundEdge(found->second, edgeMask);
     }
 
 void AddEdge (size_t readIndex, DPoint3dCR xyzA, DPoint3dCR xyzB)
     {
-    MTGNodeId nodeA, nodeB;
-    // Make an edge...  just hanging out there.
-    m_graph.CreateEdge (nodeA, nodeB);
-    m_graph.TrySetLabel (nodeA, m_vertexDataLabel, (int)AddVertexData (VertexData::FromReadIndexAndCoordinates (readIndex, xyzA)));
-    m_graph.TrySetLabel (nodeB, m_vertexDataLabel, (int)AddVertexData (VertexData::FromReadIndexAndCoordinates (readIndex, xyzB)));
-    }
-
-size_t PurgeDuplicates ()
-    {
-    MTGMask deleteMask = m_graph.GrabMask ();
-    MTGMask edgeVisitedMask = m_graph.GrabMask ();
-    m_graph.ClearMask (deleteMask);
-    m_graph.ClearMask (edgeVisitedMask);
-    size_t numMark = 0;
-    MTGARRAY_SET_LOOP (survivingNode, &m_graph)
-        {
-        if (!m_graph.GetMaskAt(survivingNode, deleteMask | edgeVisitedMask))
-            {
-            m_graph.SetMaskAroundEdge(survivingNode, edgeVisitedMask);
-            MTGNodeId farNode = m_graph.FSucc(survivingNode);
-            for (MTGNodeId nearNode = survivingNode; (nearNode = m_graph.VSucc(nearNode)) != survivingNode; )
-                {
-                if (!m_graph.GetMaskAt(nearNode, deleteMask))
-                    {
-                    if (m_graph.AreNodesInSameVertexLoop(farNode, m_graph.FSucc(nearNode)))
-                        {
-                        m_graph.SetMaskAroundEdge(nearNode, deleteMask);
-                        numMark++;
-                        // survivor needs to be marked onPlane if any of its doomed duplicates is
-                        if (m_graph.HasMaskAt(nearNode, MTG_SECTION_EDGE_MASK))
-                            m_graph.SetMaskAroundEdge(survivingNode, MTG_SECTION_EDGE_MASK);
-                        }
-                    }
-                }
-            }
-        }
-    MTGARRAY_END_SET_LOOP (nodeA0, &m_graph)
-
-    for (MTGNodeId& nodeId : m_anyNodeAtVertex)
-        { // find a surviving node at each vertex
-        if (m_graph.GetMaskAt(nodeId, deleteMask))
-            nodeId = m_graph.FindUnmaskedAroundVertex(nodeId, deleteMask);
-        }
-
-    size_t numDelete = m_graph.DropMaskedEdges (deleteMask);
-    assert (numMark == numDelete);
-    m_graph.DropMask (deleteMask);
-    m_graph.DropMask (edgeVisitedMask);
-    return numDelete;
+    auto vdA = VertexData::FromReadIndexAndCoordinates(readIndex, xyzA);
+    auto vdB = VertexData::FromReadIndexAndCoordinates(readIndex, xyzB);
+    return AddEdge(vdA, vdB);
     }
 
 VertexDataArray m_vertexAroundFacet;           // Vertices around one facet.
@@ -564,12 +521,12 @@ void FillGapsInLoops(bvector<MTGNodeId> const& vertexSeeds, DVec3dCR refVector)
         {
         if (1 != m_graph.CountNodesAroundVertex(seed))
             continue;
-        auto degOneData = GetVertexData(seed);
+        auto danglerData = GetVertexData(seed);
         auto fSuccData = GetVertexData(m_graph.FSucc(seed));
-        if (!degOneData || !fSuccData)
+        if (!danglerData || !fSuccData)
             continue;
-        DPoint3dCR danglerVertex = degOneData->mXYZ;
-        size_t danglerVertexIndex = degOneData->m_vertexIndex;
+        DPoint3dCR danglerVertex = danglerData->mXYZ;
+        size_t danglerVertexIndex = danglerData->m_vertexIndex;
         size_t danglerFarVertexIndex = fSuccData->m_vertexIndex;
 
         // sort_zyx() in PolyfaceCoordinateMap.cpp equates points using l-infinity norm:
@@ -672,6 +629,8 @@ bvector<MTGNodeId> MarkDanglingChains(bvector<MTGNodeId> const& vertexSeeds, MTG
 // Given a vertex loop containing more than 2 edges, reorder the radial edges by their angle measured from the first edge.
 void SortVertexLoop(MTGNodeId seed, DVec3dCR refVector)
     {
+    if (m_graph.CountNodesAroundVertex(seed) <= 2)
+        return;
     auto nearVertexData = GetVertexData(seed);
     if (!nearVertexData)
         return;
@@ -680,19 +639,13 @@ void SortVertexLoop(MTGNodeId seed, DVec3dCR refVector)
         return;
     DVec3d edgeDir0 = DVec3d::FromStartEnd(nearVertexData->mXYZ, farVertexData->mXYZ);
 
-    farVertexData = GetVertexData(m_graph.FSucc(m_graph.VSucc(seed)));
-    if (!farVertexData)
-        return;
-    DVec3d edgeDir1 = DVec3d::FromStartEnd(nearVertexData->mXYZ, farVertexData->mXYZ);
-    DVec3d normal = (edgeDir0.SignedAngleTo(edgeDir1, refVector) < 0.0) ? DVec3d::FromScale(refVector, -1) : refVector;
-
     bvector<bpair<double, MTGNodeId>> incidentEdges; // radian angle in [0, 2pi)
     MTGARRAY_VERTEX_LOOP(edgeId, &m_graph, seed)
         {
         farVertexData = GetVertexData(m_graph.FSucc(edgeId));
         if (!farVertexData)
             return;
-        double angle = Angle::AdjustToSweep(edgeDir0.SignedAngleTo(DVec3d::FromStartEnd(nearVertexData->mXYZ, farVertexData->mXYZ), normal), 0.0, msGeomConst_2pi);
+        double angle = Angle::AdjustToSweep(edgeDir0.SignedAngleTo(DVec3d::FromStartEnd(nearVertexData->mXYZ, farVertexData->mXYZ), refVector), 0.0, msGeomConst_2pi);
         incidentEdges.push_back({angle, edgeId});
         }
     MTGARRAY_END_VERTEX_LOOP(edgeId, &m_graph, seed)
@@ -706,16 +659,15 @@ void SortVertexLoop(MTGNodeId seed, DVec3dCR refVector)
     if (alreadyOrdered)
         return;
 
-    // lambda ignores duplicate angles, because we don't expect them after PurgeDuplicates
     std::sort(incidentEdges.begin(), incidentEdges.end(), [](auto const& e0, auto const& e1) { return e0.first < e1.first; });
 
     // destroy the vertex loop
     for (MTGNodeId edgeId = seed; m_graph.VSucc(edgeId) != edgeId; )
         edgeId = m_graph.YankEdgeFromVertex(edgeId);
 
-    // reconstitute the vertex loop in order
+    // reconstitute the vertex loop in order: since edge i dangles, it is always inserted in the loop after edge i-1.
     for (size_t i = 1; i < incidentEdges.size(); ++i)
-        m_graph.VertexTwist(incidentEdges[i - 1].second, incidentEdges[i].second);
+        m_graph.VertexTwist(incidentEdges[i].second, incidentEdges[i - 1].second);
     }
 
 void CollectDanglingChains(bvector<ICurvePrimitivePtr>& linestrings, bvector<MTGNodeId> const& danglerVertices, MTGMask danglerMask, MTGMask visitedMask, bool markEdgeFractions)
@@ -968,10 +920,9 @@ CurveVectorPtr CollectChains(bool formRegions = false, bool markEdgeFractions = 
 
     MTGMask onPlaneMask = skipOnPlaneFacets ? MTG_SECTION_EDGE_MASK : MTG_NULL_MASK;
     bool collectLoops = formRegions && refVector;
-    bvector<MTGNodeId> vertexSeeds;
-    m_graph.CollectVertexLoops (vertexSeeds);
+    auto const& vertexSeeds = m_anyNodeAtVertex;
 
-    // Step 1: fill gaps to eliminate dangling chains (to improve loop collection)
+    // Step 1: add edges to eliminate dangling chains. This improves loop collection.
     if (collectLoops)
         FillGapsInLoops(vertexSeeds, *refVector);
 
@@ -980,19 +931,11 @@ CurveVectorPtr CollectChains(bool formRegions = false, bool markEdgeFractions = 
     m_graph.ClearMask(danglerMask);
     bvector<MTGNodeId> danglerVertices = MarkDanglingChains(vertexSeeds, danglerMask);
 
-    // Step 3: sort the edges around pinch vertices, which lie on multiple loops
-    bvector<MTGNodeId> pinchVertices;
+    // Step 3: sort the vertex loops now that we've added all the edges. This avoids collecting overlapping loops.
     if (collectLoops)
         {
-        for (auto const& seed: vertexSeeds)
-            {
-            size_t numThisVertex = m_graph.CountUnmaskedAroundVertex(seed, danglerMask);
-            if (numThisVertex % 2 == 0 && numThisVertex > 2)
-                {
-                pinchVertices.push_back(seed);
-                SortVertexLoop(seed, *refVector);
-                }
-            }
+        for (auto const& seed : vertexSeeds)
+            SortVertexLoop(seed, *refVector);
         }
 
     // Step 4: collect chains
@@ -1002,32 +945,18 @@ CurveVectorPtr CollectChains(bool formRegions = false, bool markEdgeFractions = 
     CollectDanglingChains(linestrings, danglerVertices, danglerMask, visitedMask, markEdgeFractions);
 
     // Step 5: mark exterior loops
-    // We collected open chains by marking both sides of an edge as visited. But when we collect loops, marking both sides
-    // prevents us from collecting two complete adjacent loops. On the other hand, marking only one side of each loop means
-    // we will collect exterior loops too, which we don't want. Therefore, here we mark exterior loops if we can distinguish
-    // them; then we can proceed in the next steps to collect single-sided interior loops. If we can't decide which loops
-    // are exterior, we fall back to visiting both sides of each edge, which means a loop adjacent to another loop may
-    // be collected as chain(s), rather than a loop.
+    // We collected dangling chains by marking both sides of an edge as visited. But when we collect loops, marking
+    // both sides would prevent us from collecting two complete adjacent loops. So we have to mark only one side of
+    // each loop, but this means exterior loops would be collected, which we don't want. Therefore, here we mark
+    // exterior loops if we can distinguish them; then we can proceed in the next steps to collect single-sided loops,
+    // which will all be interior loops. If we can't decide which loops are exterior, we fall back to visiting both
+    // sides of each edge, which means collecting adjacent loops may result in open chain(s).
     bool visitBothSides = true;
     bool graphIsReversed = false;
     if (collectLoops && m_graph.CountFaceLoops() > 2)
         visitBothSides = !MarkExteriorSuperFaces(danglerMask, visitedMask, *refVector, graphIsReversed);
 
-    // Step 6: collect loops at pinch vertices
-    if (formRegions)
-        {
-        for (auto& seed : pinchVertices)
-            {
-            // start at visited node (if present) to preserve parity
-            MTGNodeId visitedSeed = m_graph.FindMaskAroundVertex(seed, visitedMask);
-            if (MTG_NULL_NODEID != visitedSeed)
-                seed = visitedSeed;
-
-            CollectLoopsAtVertex(linestrings, seed, danglerMask, visitedMask, onPlaneMask, markEdgeFractions, visitBothSides);
-            }
-        }
-
-    // Step 7: collect remaining loops
+    // Step 6: collect remaining loops
     for (auto& seed : vertexSeeds)
         CollectLoopsAtVertex(linestrings, seed, danglerMask, visitedMask, onPlaneMask, markEdgeFractions, visitBothSides);
 
@@ -1048,7 +977,6 @@ CurveVectorPtr PolyfaceQuery::PlaneSlice (DPlane3dCR sectionPlane, bool formRegi
     SectionGraph chainGraph (sectionMap);
     chainGraph.AddPlaneSectionCut (*this, *sectionMap, sectionPlane);
     chainGraph.JoinEdges ();
-    chainGraph.PurgeDuplicates ();
     return chainGraph.CollectChains(formRegions, markEdgeFractions, skipOnPlaneFacets, &sectionPlane.normal);
     }
 
@@ -1060,7 +988,6 @@ CurveVectorPtr PolyfaceQuery::DrapeLinestring (bvector<DPoint3d> &spacePoints, D
     SectionGraph chainGraph (coordMap);
     chainGraph.AddDrapedLinestring (*this, *coordMap, spacePoints, direction);
     chainGraph.JoinEdges ();
-    chainGraph.PurgeDuplicates ();
     return chainGraph.CollectChains();
     }
 END_BENTLEY_GEOMETRY_NAMESPACE
