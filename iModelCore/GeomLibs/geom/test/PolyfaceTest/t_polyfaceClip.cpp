@@ -387,41 +387,27 @@ TEST (Polyface, PolygonClipTunnel)
 TEST (Polyface, ClipPolygonPrism)
     {
     int64_t allocationCounter = BSIBaseGeom::GetAllocationDifference ();
-    //static int s_printGraph = 0;
 
     IPolyfaceConstructionPtr builder = CreateBuilder (false, false);
     builder->GetFacetOptionsR ().SetMaxPerFace (4);
     builder->GetFacetOptionsR ().SetMaxEdgeLength (4);
-    //varunused double mySize = SetTransformToNewGridSpot (*builder, true);
 
-
-    for (auto points :
+    bvector<bvector<DPoint3d>> profiles;
+    profiles.push_back({DPoint3d::From(1,1,0), DPoint3d::From(1,1,3), DPoint3d::From(1,2,3), DPoint3d::From(1,2,2), DPoint3d::From(1,1,0)});
+    profiles.push_back({DPoint3d::From(0,1,0), DPoint3d::From(0,1,3), DPoint3d::From(0,2,3), DPoint3d::From(0,2,2), DPoint3d::From(0,1,0)});
+    for (auto const& points : profiles)
         {
-        bvector<DPoint3d> {
-            DPoint3d::From (1,1,0), DPoint3d::From (1,1,3), DPoint3d::From (1,2,3), DPoint3d::From (1,2,2)},
-        bvector<DPoint3d> {
-            DPoint3d::From(0,1,0), DPoint3d::From(0,1,3), DPoint3d::From(0,2,3), DPoint3d::From(0,2,2)}
-    })
-        {
-        auto xyz0 = points.front ();
-        points.push_back (xyz0);
         auto section = CurveVector::CreateLinear (points, CurveVector::BOUNDARY_TYPE_Outer);
-        Check::SaveTransformed (*section);
         Check::Shift (300, 0, 0);
 
-        auto solid = ISolidPrimitive::CreateDgnExtrusion (
-            DgnExtrusionDetail (section, DVec3d::From (20,0,0), true));
-
+        auto solid = ISolidPrimitive::CreateDgnExtrusion(DgnExtrusionDetail(section, DVec3d::From(20,0,0), true));
         builder->AddSolidPrimitive (*solid);
         PolyfaceHeaderR polyface = builder->GetClientMeshR ();
-        DPoint3d clipOrigin = DPoint3d::From (0,0,0);
 
         for (auto sweepVector: {DVec3d::From (0,0,1), DVec3d::From (0,0,-1)})
             {
             SaveAndRestoreCheckTransform shifter (100,0,0);
-            for (auto diagonal : {
-                DVec3d::From (2,5),
-                DVec3d::From (6,3)})
+            for (auto diagonal : {DVec3d::From(2,5), DVec3d::From(6,3)})
                 {
                 SaveAndRestoreCheckTransform shifter1 (50,0,0);
                 for (bool reverseRectangle : {false, true})
@@ -429,29 +415,34 @@ TEST (Polyface, ClipPolygonPrism)
                     SaveAndRestoreCheckTransform shifter2(0, 40, 0);
 
                     bvector<DPoint3d> rectanglePoints;
-                    bvector<BoolTypeForVector> interiorFlag;
-                    double ax = clipOrigin.x;
-                    double ay = clipOrigin.y;
-                    double bx = clipOrigin.x + diagonal.x;
-                    double by = clipOrigin.y + diagonal.y;
-                    MakeRectangle (ax, ay, bx, by, 0, rectanglePoints, interiorFlag);
+                    bvector<BoolTypeForVector> _;
+                    MakeRectangle(0, 0, diagonal.x, diagonal.y, 0, rectanglePoints, _);
                     if (reverseRectangle)
                         std::reverse (rectanglePoints.begin (), rectanglePoints.end ());
                     Check::SaveTransformed (rectanglePoints);
                     Check::SaveTransformed (polyface);
 
                     PolyfaceHeaderPtr insideClip, outsideClip;
-                    ClipPlaneSet::SweptPolygonClipPolyface (
-                            polyface,
-                            rectanglePoints, sweepVector,
-                            true,
-                            &insideClip, &outsideClip);
+                    ClipPlaneSet::SweptPolygonClipPolyface(polyface, rectanglePoints, sweepVector, true, &insideClip, &outsideClip);
                     Check::Shift (0,10,0);
                     if (insideClip.IsValid ())
                         Check::SaveTransformed (*insideClip);
                     Check::Shift (0,10,0);
                     if (outsideClip.IsValid ())
                         Check::SaveTransformed (*outsideClip);
+
+                    bvector<bvector<size_t>> componentSeeds;
+                    MeshAnnotationVector messages(true);
+                    if (Check::True(insideClip->OrientAndCollectManifoldComponents(componentSeeds, messages), "insideClip successfully analyzed"))
+                        Check::Size(1, componentSeeds.size(), "insideClip has 1 component");
+                    if (Check::True(outsideClip->OrientAndCollectManifoldComponents(componentSeeds, messages), "outsideClip successfully analyzed"))
+                        Check::Size(1, componentSeeds.size(), "outsideClip has 1 component");
+
+                    auto volumeTotal = polyface.ValidatedVolume();
+                    auto volumeInside = insideClip->ValidatedVolume();
+                    auto volumeOutside = outsideClip->ValidatedVolume();
+                    if (Check::True(volumeInside.IsValid(), "insideClip has volume") && Check::True(volumeOutside.IsValid(), "outsideClip has volume"))
+                        Check::Near(volumeTotal.Value(), volumeInside.Value() + volumeOutside.Value(), "clips have expected total volume");
                     }
                 }
             }
@@ -459,6 +450,7 @@ TEST (Polyface, ClipPolygonPrism)
     Check::Size ((size_t)allocationCounter, (size_t)BSIBaseGeom::GetAllocationDifference ());
     Check::ClearGeometry ("Polyface.ClipPolygonPrism");
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
