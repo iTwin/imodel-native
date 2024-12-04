@@ -388,10 +388,6 @@ TEST (Polyface, ClipPolygonPrism)
     {
     int64_t allocationCounter = BSIBaseGeom::GetAllocationDifference ();
 
-    IPolyfaceConstructionPtr builder = CreateBuilder (false, false);
-    builder->GetFacetOptionsR ().SetMaxPerFace (4);
-    builder->GetFacetOptionsR ().SetMaxEdgeLength (4);
-
     bvector<bvector<DPoint3d>> profiles;
     profiles.push_back({DPoint3d::From(1,1,0), DPoint3d::From(1,1,3), DPoint3d::From(1,2,3), DPoint3d::From(1,2,2), DPoint3d::From(1,1,0)});
     profiles.push_back({DPoint3d::From(0,1,0), DPoint3d::From(0,1,3), DPoint3d::From(0,2,3), DPoint3d::From(0,2,2), DPoint3d::From(0,1,0)});
@@ -401,6 +397,10 @@ TEST (Polyface, ClipPolygonPrism)
         Check::Shift (300, 0, 0);
 
         auto solid = ISolidPrimitive::CreateDgnExtrusion(DgnExtrusionDetail(section, DVec3d::From(20,0,0), true));
+
+        IPolyfaceConstructionPtr builder = CreateBuilder(false, false);
+        builder->GetFacetOptionsR().SetMaxPerFace(4);
+        builder->GetFacetOptionsR().SetMaxEdgeLength(4);
         builder->AddSolidPrimitive (*solid);
         PolyfaceHeaderR polyface = builder->GetClientMeshR ();
 
