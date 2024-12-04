@@ -505,7 +505,11 @@ GEOMDLLIMPEXP void CollectConnectedComponents (bvector<bvector<MTGNodeId>>& comp
 GEOMDLLIMPEXP void DropMasked (bvector <MTGNodeId> &nodes, MTGMask mask) const;
 // Pack the bvector to remove nodes that do not have the mask.
 GEOMDLLIMPEXP void DropUnMasked (bvector <MTGNodeId> &nodes, MTGMask mask) const;
-
+// Swap vertex successors and face predecessors.
+// If the nodes do not start in the same vertex loop, and one node is dangling (vSucc is itself), then this node will
+// be inserted after the other node in the other node's vertex loop.
+// If the nodes start out in the same vertex loop, then they will end up in separate vertex loops; in particular, if
+// one node is the other node's vSucc, it becomes a dangling node (see YankEdgeFromVertex).
 GEOMDLLIMPEXP bool VertexTwist (MTGNodeId nodeIdA, MTGNodeId nodeIdB);
 // Yank then end of a single edge from a vertex.
 // @return if this is a dangling edge, return null.  Otherwise return
