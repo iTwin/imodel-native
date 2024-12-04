@@ -482,7 +482,7 @@ protected:
     SqlSessionP m_session;
     Utf8String m_name;
 
-    enum class OnCommitStatus { Commit = 0, Abort=1, Completed=2, NoChanges=3 };
+    enum class OnCommitStatus { Commit = 0, Abort=1, Completed=2, NoChanges=3, RebaseInProgress=4 };
     enum class TrackChangesForTable : bool { No = 0, Yes = 1 };
 
     BE_SQLITE_EXPORT DbResult CreateSession();

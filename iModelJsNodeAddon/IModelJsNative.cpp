@@ -2657,6 +2657,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return blob;
     }
 
+    void PullMergeResume(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        db.Txns().PullMergeResume();
+    }
+
     void PullMergeBegin(NapiInfoCR info) {
         auto& db = GetWritableDb(info);
         db.Txns().PullMergeBegin();
@@ -2882,6 +2887,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("pullMergeEraseConf", &NativeDgnDb::PullMergeEraseConf),
             InstanceMethod("pullMergeBegin", &NativeDgnDb::PullMergeBegin),
             InstanceMethod("pullMergeEnd", &NativeDgnDb::PullMergeEnd),
+            InstanceMethod("pullMergeResume", &NativeDgnDb::PullMergeResume),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
             StaticMethod("zlibCompress", &NativeDgnDb::ZlibCompress),

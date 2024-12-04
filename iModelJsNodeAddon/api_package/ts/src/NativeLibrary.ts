@@ -709,6 +709,7 @@ export declare namespace IModelJsNative {
     public pullMergeEraseConf(): void;
     public pullMergeBegin(): void;
     public pullMergeEnd(): void;
+    public pullMergeResume(): void;
 
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;

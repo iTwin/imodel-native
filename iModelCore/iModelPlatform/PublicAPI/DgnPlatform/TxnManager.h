@@ -511,6 +511,8 @@ public:
     DGNPLATFORM_EXPORT void PullMergeEraseConf();
     DGNPLATFORM_EXPORT void PullMergeBegin();
     DGNPLATFORM_EXPORT void PullMergeEnd();
+    DGNPLATFORM_EXPORT void PullMergeResume();
+
     DGNPLATFORM_EXPORT ChangesetStatus PullMergeApply(ChangesetPropsCR revision, bool useRebase = false);     // for testing
     //! Add a TxnMonitor. The monitor will be notified of all transaction events until it is dropped.
     DGNPLATFORM_EXPORT static void AddTxnMonitor(TxnMonitor& monitor);

@@ -1707,6 +1707,11 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation) 
 
     // Don't check m_tracker->HasChanges - may have dynamic changes to rollback
     ChangeTracker::OnCommitStatus trackerStatus = (m_tracker.IsValid()) ? m_tracker->_OnCommit(isCommit, operation) : ChangeTracker::OnCommitStatus::Commit;
+
+    if (trackerStatus == ChangeTracker::OnCommitStatus::RebaseInProgress) {
+        return BE_SQLITE_ERROR;
+    }
+
     if (trackerStatus == ChangeTracker::OnCommitStatus::Abort) {
         // Abort is considered fatal and application must quit.
         // We do not allocate memory or attempt to log as this is only happens when sqlite returns NOMEM.
