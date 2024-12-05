@@ -2391,14 +2391,12 @@ bool        reverseIndicesIfMirrored = true
 );
 
 //! Apply a transform to all coordinates of an array of meshes. Optionally reverse index order (to maintain cross product relationships)
-
 static GEOMDLLIMPEXP void Transform
 (
 bvector<PolyfaceHeaderPtr> &data,
 TransformCR transform,
 bool        reverseIndicesIfMirrored = true
 );
-
 
 //!
 //! Reverse (negate) all stored normals.  Note that this does NOT change index order.

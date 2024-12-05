@@ -283,7 +283,7 @@ void AddEdge (VertexData& vertexA, VertexData& vertexB, MTGMask edgeMask = MTG_N
     auto iB = vertexB.m_vertexIndex = m_coordinateMap->AddPoint(vertexB.mXYZ);
     if (iA == iB)
         return;
-    auto edge = (iA < iB) ? std::pair(iA, iB) : std::pair(iB, iA);
+    auto edge = (iA < iB) ? std::pair<size_t, size_t>(iA, iB) : std::pair<size_t, size_t>(iB, iA);
     auto found = m_uniqueEdges.find(edge);
     if (m_uniqueEdges.end() == found)
         {
@@ -860,7 +860,7 @@ CurveVectorPtr OutputChainsAsCurveVector(bvector<ICurvePrimitivePtr> const& line
 
     auto IsLoop = [](ICurvePrimitiveCR curve) -> bool { auto pts = curve.GetLineStringCP(); return pts && pts->front().AlmostEqual(pts->back()) && pts->size() > 3; };
     if (formRegions && reverseLoops)
-        for_each(linestrings.begin(), linestrings.end(), [&](auto& ls) { if (IsLoop(*ls)) ls->ReverseCurvesInPlace(); });
+        std::for_each(linestrings.begin(), linestrings.end(), [&](auto& ls) { if (IsLoop(*ls)) ls->ReverseCurvesInPlace(); });
 
     bool resultIsRegion = !hasDanglers && formRegions;
     if (linestrings.size() == 1)
