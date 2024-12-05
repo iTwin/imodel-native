@@ -294,7 +294,10 @@ template<typename T_Db> struct SQLiteOps {
                 BeNapi::ThrowJsException(info.Env(), "invalid face");
             faces.emplace_back(face);
 
-            auto napiData = argJson[JsInterop::json_data()].AsNapiValueRef();
+            // NOTE: Do NOT combine the following two lines. Doing so can lead to a value in
+            // napiData that references freed memory due to the way the ref counted pointers work.
+            auto jsonData = argJson[JsInterop::json_data()];
+            auto napiData = jsonData.AsNapiValueRef();
             if (!napiData->m_napiVal.IsTypedArray())
                 BeNapi::ThrowJsException(info.Env(), "font data not valid");
 

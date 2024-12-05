@@ -3153,12 +3153,32 @@ DbResult Db::TruncateTable(Utf8CP tableName) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Db::TableExists(Utf8CP tableName) const
+bool Db::TableExists(Utf8CP tableName) const 
     {
-    Statement statement;
-    return BE_SQLITE_OK == statement.TryPrepare(*this, SqlPrintfString("SELECT NULL FROM %s", tableName));
+    // tableName could contain tableSpace, parse if that's the case
+    Utf8String actualTableName(tableName);
+    Utf8String parsedTableSpace; 
+    auto dotPosition = actualTableName.find('.');
+    if (dotPosition != Utf8String::npos) {
+        parsedTableSpace = actualTableName.substr(0, dotPosition);
+        actualTableName = actualTableName.substr(dotPosition + 1);
     }
 
+    CachedStatementPtr stmt;
+    if (Utf8String::IsNullOrEmpty(parsedTableSpace.c_str()))
+        stmt = GetCachedStatement("SELECT 1 FROM sqlite_master where type='table' AND name=?");
+    else
+        stmt = GetCachedStatement(Utf8PrintfString("SELECT 1 FROM %s.sqlite_master where type='table' AND name=?", parsedTableSpace.c_str()).c_str());
+
+    if (stmt == nullptr)
+        {
+        BeAssert(false);
+        return false;
+        }
+
+    stmt->BindText(1, actualTableName.c_str(), Statement::MakeCopy::No);
+    return stmt->Step() == BE_SQLITE_ROW;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //--------------+------------------------------------------------------------------------
@@ -3172,26 +3192,44 @@ void Db::FlushPageCache()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Db::ColumnExists(Utf8CP tableName, Utf8CP columnName) const
     {
-    Statement sql;
-    return BE_SQLITE_OK == sql.TryPrepare(*this, SqlPrintfString("SELECT [%s] FROM %s", columnName, tableName));
+    bvector<Utf8String> columns;
+
+    GetColumns(columns, tableName);
+    return columns.end() != std::find_if(columns.begin(), columns.end(), [columnName](Utf8StringCR col) { return col.EqualsIAscii(columnName); });
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Db::GetColumns(bvector<Utf8String>& columns, Utf8CP tableName) const
+{
+    columns.clear();
+
+    Statement stmt;
+    DbResult status;
+
+    const char* dotPosition = strchr(tableName, '.');
+    if (dotPosition != nullptr)
     {
-    Statement statement;
-    DbResult status =  statement.TryPrepare(*this, SqlPrintfString("SELECT * FROM %s LIMIT 0", tableName));
+        Utf8String tablespace(tableName, dotPosition - tableName);
+        Utf8String actualTableName(dotPosition + 1);
+
+        status = stmt.Prepare(*this, SqlPrintfString("PRAGMA %s.table_info([%s])", tablespace.c_str(), actualTableName.c_str()));
+    }
+    else
+    {
+        status = stmt.Prepare(*this, SqlPrintfString("PRAGMA table_info([%s])", tableName));
+    }
+
     if (status != BE_SQLITE_OK)
         return false;
 
-    columns.clear();
-    for (int nColumn = 0; nColumn < statement.GetColumnCount(); nColumn++)
-        columns.push_back(statement.GetColumnName(nColumn));
+    while (stmt.Step() == BE_SQLITE_ROW)
+        columns.push_back(stmt.GetValueText(1)); 
 
     return true;
-    }
+}
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
