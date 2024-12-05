@@ -3158,9 +3158,11 @@ bool TxnManager::PullMergeIsRebase() const {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChangesetStatus TxnManager::PullMergeApply(ChangesetPropsCR revision, bool useRebase){
-    PullMergeSetMethod(useRebase);
+    if (useRebase && !PullMergeIsRebase()){
+        PullMergeSetMethod(useRebase);
+    }
     PullMergeBegin();
     auto rc = MergeChangeset(revision);
-    PullMergeBegin();
+    PullMergeEnd();
     return rc;
 }

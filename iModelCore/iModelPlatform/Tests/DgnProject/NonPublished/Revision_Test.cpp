@@ -402,7 +402,7 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
     status = m_defaultModel->Delete();
     ASSERT_TRUE(status == DgnDbStatus::Success);
     m_defaultModel = nullptr;
-    m_db->SaveChanges("Deleted model and contained elements");
+     m_db->SaveChanges("Deleted model and contained elements");
 
     expectToThrow([&]() { m_db->Txns().PullMergeApply(*revision1); }, "Detected 1 foreign key conflicts in ChangeSet. Aborting merge.");
     }
