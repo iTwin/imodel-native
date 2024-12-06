@@ -773,7 +773,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
             LOG.error("Saving changes are not allowed when rebasing local changes");
             return OnCommitStatus::RebaseInProgress;
         } else {
-            OnCommitStatus::NoChanges;
+            return OnCommitStatus::NoChanges;
         }
     }
 
