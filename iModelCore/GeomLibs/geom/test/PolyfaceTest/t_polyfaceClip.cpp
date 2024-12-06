@@ -1077,13 +1077,35 @@ TEST(PolyfaceClip, ClipConeMesh)
     }
     Check::True(iVerticalPlane > -1 && iHorizontalPlane > -1, "found expected planes of interest");
 
-    // clip the cone: not recommended on open meshes: these cutFacets are bogus!
+    // clip the cone: not recommended on open meshes: these cutFacets are bogus
     auto defaultColinearEdgeTol = ValidatedDouble(2.47e-5);
     PolyfaceHeaderPtr cutFacets;
-    ClipPlaneSet::ClipPlaneSetSectionPolyface(*mesh, clipper, &cutFacets, nullptr, defaultColinearEdgeTol);
+    bvector<bvector<DPoint3d>> lineStrings0;
+    ClipPlaneSet::ClipPlaneSetSectionPolyface(*mesh, clipper, &cutFacets, &lineStrings0, defaultColinearEdgeTol);
     Check::SaveTransformed(cutFacets);
+    Check::SaveTransformed(lineStrings0);
+    Check::True(cutFacets.IsValid() && cutFacets->HasFacets(), "section has facet(s)");
 
-    // at least verify that the edges added by triangulation are hidden
+    // another reason why sectioning an open mesh is ill-advised: some linestrings are missing
+    if (Check::Size(1, lineStrings0.size(), "lineStrings0 is nonempty"))
+        {
+        // verify that the linestring only contains points on the faceted loop
+        for (auto const& edgePt : lineStrings0[0])
+            {
+            bool edgePtIsSectionPt = false;
+            for (auto const& facetPt : cutFacets->Point())
+                {
+                if (edgePt.AlmostEqual(facetPt))
+                    {
+                    edgePtIsSectionPt = true;
+                    break;
+                    }
+                }
+            Check::True(edgePtIsSectionPt, "linestring pts are section vertices");
+            }
+        }
+
+    // verify that the edges added by triangulation are hidden
     size_t numHalfEdges = 0, numInteriorEdges = 0, numBoundaryEdges = 0, numDoubledEdges = 0, numTrebledEdges = 0, numQuadrupledEdges = 0, numQuintupledPlusEdges = 0, numDegenerateEdges = 0, numHiddenVertices = 0, numVisibleVertices = 0;
     cutFacets->CountSharedEdges(numHalfEdges, numInteriorEdges, numBoundaryEdges, numDoubledEdges, numTrebledEdges, numQuadrupledEdges, numQuintupledPlusEdges, numDegenerateEdges, false, numHiddenVertices, numVisibleVertices);
     size_t numVertices = 0, numFacets = 0, numQuads = 0, numTriangles = 0, numImplicitTriangles = 0, numVisibleEdges = 0, numHiddenEdges = 0;
@@ -1091,16 +1113,17 @@ TEST(PolyfaceClip, ClipConeMesh)
     Check::Size(numBoundaryEdges, numVisibleEdges, "the only visible edges are those on the section boundary");
     Check::Size(numImplicitTriangles, numFacets, "expect section facets are all triangles");
 
-    bvector<bvector<DPoint3d>> lineStrings;
-    ClipPlaneSet::ClipPlaneSetPolyfaceIntersectionEdges(*mesh, clipper, lineStrings);
-    Check::SaveTransformed(lineStrings);
+    bvector<bvector<DPoint3d>> lineStrings1;
+    ClipPlaneSet::ClipPlaneSetPolyfaceIntersectionEdges(*mesh, clipper, lineStrings1);
+    Check::SaveTransformed(lineStrings1);
 
-    // verify that ClipPlaneSetPolyfaceIntersectionEdges produces edges on both cutplanes
-    if (Check::Size(1, lineStrings.size(), "intersectEdges returned a single linestring"))
+    if (Check::Size(1, lineStrings1.size(), "intersectEdges returned a single linestring"))
         {
         Transform l2w, w2l;
-        Check::False(CurveVector::CreateLinear(lineStrings[0])->IsPlanar(l2w, w2l, range), "cut edge linestring is not planar");
-        for (auto const& edgePt : lineStrings[0])
+        Check::False(CurveVector::CreateLinear(lineStrings1[0])->IsPlanar(l2w, w2l, range), "cut edge linestring is not planar");
+
+        // verify that ClipPlaneSetPolyfaceIntersectionEdges produces edges on both cutplanes
+        for (auto const& edgePt : lineStrings1[0])
             {
             bool edgePtIsOnVerticalPlane = clipper[0][iVerticalPlane].IsPointOn(edgePt, Angle::SmallAngle());
             bool edgePtIsOnHorizontalPlane = clipper[0][iHorizontalPlane].IsPointOn(edgePt, Angle::SmallAngle());
@@ -1109,19 +1132,32 @@ TEST(PolyfaceClip, ClipConeMesh)
         }
 
     // verify that ClipPlaneSetSectionPolyface and ClipPlaneSetPolyfaceIntersectionEdges produce the same points along the cut facets
-    for (size_t i = 0; i < cutFacets->GetPointCount(); ++i)
+    for (auto const& facetPt : cutFacets->Point())
         {
-        auto facetPt = cutFacets->GetPointCP()[i];
-        bool facetPtOnLineString = false;
-        for (auto const& edgePt : lineStrings[0])
+        bool facetPtIsLineStringPt = false;
+        for (auto const& edgePt : lineStrings1[0])
             {
             if (facetPt.AlmostEqual(edgePt))
                 {
-                facetPtOnLineString = true;
+                facetPtIsLineStringPt = true;
                 break;
                 }
             }
-        Check::True(facetPtOnLineString, "cut facet mesh points are on cut edge linestring");
+        Check::True(facetPtIsLineStringPt, "cut facet mesh points are on cut edge linestring");
+        }
+
+    // verify that section method lineStrings0 points are a subset of the full edge method lineStrings1 points
+    auto lineString1 = ICurvePrimitive::CreateLineString(lineStrings1[0]);
+    for (auto const& lineString : lineStrings0)
+        {
+        for (size_t i = 0; i + 1 < lineString.size(); ++i)
+            {
+            CurveLocationDetail detail;
+            if (Check::True(lineString1->ClosestPointBounded(lineString[i], detail)))
+                Check::True(DoubleOps::AlmostEqual(detail.a, 0.0), "pt0 on lineString1");
+            if (Check::True(lineString1->ClosestPointBounded(lineString[i + 1], detail)))
+                Check::True(DoubleOps::AlmostEqual(detail.a, 0.0), "pt1 on lineString1");
+            }
         }
 
     Check::ClearGeometry("PolyfaceClip.ClipConeMesh");

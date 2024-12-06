@@ -2249,7 +2249,7 @@ TEST(Polyface, DrapedLineLimits)
 
         auto line = curve->at(0);
         DSegment3d segment;
-        if (Check::True (line->TryGetLine(segment), "contains just a segment)"))
+        if (Check::True (line->TryGetLine(segment), "contains just a segment"))
             {
             DRange3d range = mesh->PointRange();
             double maxAbs = range.MaxAbs();
@@ -2260,16 +2260,17 @@ TEST(Polyface, DrapedLineLimits)
             auto drape = mesh->DrapeLinestring(ls, DVec3d::From (0,0,1));
             if (Check::True(drape.IsValid(), "Drape computed"))
                 {
+                Check::True(drape->IsPhysicallyClosedPath() || drape->IsClosedPath(), "Drape is closed");
                 Check::SaveTransformed (*drape);
                 }
 
-            // drape with another method and compare result
+            // drape with another (inferior) method and compare result
             Check::Shift (0, range.YLength (), 0);
             Check::SaveTransformed(*mesh);
             Check::SaveTransformed(segment);
             bvector<DrapeSegment> drapeSegments;
             PolyfaceSearchContext drapeContext (mesh, true, true, false);
-            drapeContext.DoDrapeXY(segment, drapeSegments);
+            drapeContext.DoDrapeXY(segment, drapeSegments); // fails to generate segments on vertical facets
             for (auto &ds : drapeSegments)
                 {
                 CurveLocationDetail detail;
