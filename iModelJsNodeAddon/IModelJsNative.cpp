@@ -318,6 +318,7 @@ template<typename T_Db> struct SQLiteOps {
         REQUIRE_ARGUMENT_INTEGER(0, id);
         REQUIRE_ARGUMENT_ANY_OBJ(1, facesObj);
         REQUIRE_ARGUMENT_ANY_OBJ(2, dataObj);
+        REQUIRE_ARGUMENT_BOOL(3, compress);
 
         if (!dataObj.IsTypedArray() || !facesObj.IsArray()) {
             BeNapi::ThrowJsException(info.Env(), "font data not valid");
@@ -351,7 +352,7 @@ template<typename T_Db> struct SQLiteOps {
         }
 
         auto arrayBuf = dataObj.As<Napi::Uint8Array>();
-        if (SUCCESS != fontDb->EmbedFont(id, faces, ByteStream(arrayBuf.Data(), arrayBuf.ByteLength()), true)) {
+        if (SUCCESS != fontDb->EmbedFont(id, faces, ByteStream(arrayBuf.Data(), arrayBuf.ByteLength()), compress)) {
             BeNapi::ThrowJsException(info.Env(), "unable to embed font");
         }
     }

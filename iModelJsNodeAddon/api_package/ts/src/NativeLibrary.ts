@@ -432,7 +432,7 @@ export declare namespace IModelJsNative {
   interface SQLiteOps {
     embedFile(arg: EmbedFileArg): void;
     embedFont(arg: EmbedFontArg): void;
-    embedFontFile(id: number, faces: FontFaceProps[], data: Uint8Array): void;
+    embedFontFile(id: number, faces: FontFaceProps[], data: Uint8Array, compress: boolean): void;
     extractEmbeddedFile(arg: EmbeddedFileProps): void;
     getFilePath(): string;
     getLastInsertRowId(): number;
@@ -583,7 +583,7 @@ export declare namespace IModelJsNative {
     public elementGeometryCacheOperation(requestProps: any/* ElementGeometryCacheOperationRequestProps */): BentleyStatus;
     public embedFile(arg: EmbedFileArg): void;
     public embedFont(arg: EmbedFontArg): void;
-    public embedFontFile(id: number, faces: FontFaceProps[], data: Uint8Array): void;
+    public embedFontFile(id: number, faces: FontFaceProps[], data: Uint8Array, compress: boolean): void;
     public enableChangesetSizeStats(enabled: boolean): DbResult;
     public enableTxnTesting(): void;
     public endMultiTxnOperation(): DbResult;
@@ -930,7 +930,7 @@ export declare namespace IModelJsNative {
     public dispose(): void;
     public embedFile(arg: EmbedFileArg): void;
     public embedFont(arg: EmbedFontArg): void;
-    public embedFontFile(id: number, faces: FontFaceProps[], data: Uint8Array): void;
+    public embedFontFile(id: number, faces: FontFaceProps[], data: Uint8Array, compress: boolean): void;
     public extractEmbeddedFile(arg: EmbeddedFileProps): void;
     public getFilePath(): string;
     public getLastError(): string;
