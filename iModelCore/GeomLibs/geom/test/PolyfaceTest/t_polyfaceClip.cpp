@@ -1170,7 +1170,9 @@ TEST(Polyface, SweptPolygonClip)
         BeFileName          m_fileName;
         bvector<DPoint3d>   m_polygon;
         DVec3d              m_sweepVector;
-        TestCase(BeFileNameCR fileName, bvector<DPoint3d> const& polygon, DVec3dCR sweepVector): m_fileName(fileName), m_polygon(polygon), m_sweepVector(sweepVector) {}
+        size_t              m_maxBoundaryEdges;
+        double              m_volume;
+        TestCase(BeFileNameCR fileName, bvector<DPoint3d> const& polygon, DVec3dCR sweepVector, size_t maxBoundaryEdges, double volume): m_fileName(fileName), m_polygon(polygon), m_sweepVector(sweepVector), m_maxBoundaryEdges(maxBoundaryEdges), m_volume(volume) {}
         };
     bvector<TestCase> testCases;    // all files and polygons in meters, translated to 1st octant
 
@@ -1183,7 +1185,7 @@ TEST(Polyface, SweptPolygonClip)
     polygon.push_back(DPoint3d::From(-10, 216.554504715461, 19.4880999999996));
     polygon.push_back(DPoint3d::From(-10, 216.554504715461, 15.4880999999996));
     polygon.push_back(DPoint3d::From(220, 216.554504715461, 15.4880999999996));
-    testCases.push_back(TestCase(sourcePath, polygon, DVec3d::From(0,-1,0)));
+    testCases.push_back(TestCase(sourcePath, polygon, DVec3d::From(0,-1,0), 293, 83448.505341041062));
 
     if (Check::GetEnableLongTests())
         {
@@ -1195,8 +1197,7 @@ TEST(Polyface, SweptPolygonClip)
         polygon.push_back(DPoint3d::From(-10,  1677.88169069408, 64.6504000000004));
         polygon.push_back(DPoint3d::From(-10,  1677.88169069408, 60.6504000000004));
         polygon.push_back(DPoint3d::From(1150, 1677.88169069408, 60.6504000000004));
-
-        testCases.push_back(TestCase(sourcePath, polygon, DVec3d::From(0,-1,0)));
+        testCases.push_back(TestCase(sourcePath, polygon, DVec3d::From(0,-1,0), 354, 939666.54336569679));
         }
 
     for (auto const& testCase : testCases)
@@ -1223,7 +1224,7 @@ TEST(Polyface, SweptPolygonClip)
             {
             Check::SaveTransformed(mesh);
             Check::SaveTransformed(inside);
-
+            // verify some metrics, allowing for future perturbations
             auto vv = inside->ValidatedVolume();
             double volume = 0.0;
             bool tolerant = false;
@@ -1233,6 +1234,10 @@ TEST(Polyface, SweptPolygonClip)
                 }
             else
                 {
+                bvector<FacetEdgeDetail> boundaryEdges;
+                inside->CollectEdgeMateData(boundaryEdges);
+                std::for_each(boundaryEdges.begin(), boundaryEdges.end(), [](auto const& edge) { Check::SaveTransformed(edge.segment); });
+                Check::True(boundaryEdges.size() <= testCase.m_maxBoundaryEdges, "clip boundary edge count is bounded above");
                 DPoint3d centroid;
                 RotMatrix axes;
                 DVec3d moments;
@@ -1240,6 +1245,9 @@ TEST(Polyface, SweptPolygonClip)
                 tolerant = true;
                 }
             Check::True(volume > 0.0, tolerant ? "clip is volumetric (tolerant)" : "clip is volumetric");
+            Check::PushTolerance(ToleranceSelect::ToleranceSelect_Loose);
+            Check::Near(volume, testCase.m_volume, "clip volume roughly as expected");
+            Check::PopTolerance();
             }
         }
 
