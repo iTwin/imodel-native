@@ -439,7 +439,7 @@ DVec3dCR direction
 size_t GetVertexDataIndex(MTGNodeId nodeId)
     {
     int vertexDataIndex;
-    if (m_graph.TryGetLabel(nodeId, m_vertexDataLabel, vertexDataIndex) && vertexDataIndex >= 0 && vertexDataIndex < m_allVertexData.size())
+    if (m_graph.TryGetLabel(nodeId, m_vertexDataLabel, vertexDataIndex) && vertexDataIndex >= 0 && (size_t) vertexDataIndex < m_allVertexData.size())
         return (size_t) vertexDataIndex;
     return SIZE_MAX;
     }
