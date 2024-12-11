@@ -205,6 +205,13 @@ export declare namespace IModelJsNative {
   function enableLocalGcsFiles(yesNo: boolean): void;
   function queryConcurrency(pool: "io" | "cpu"): number;
 
+  interface TrueTypeFontMetadata {
+    faces: FontFaceProps[];
+    embeddable: boolean;
+  }
+
+  function getTrueTypeFontMetadata(fileName: LocalFileName): TrueTypeFontMetadata;
+
   /** Get the SHA1 hash of a Schema XML file, possibly including its referenced Schemas */
   function computeSchemaChecksum(arg: {
     /** the full path to the root schema XML file */

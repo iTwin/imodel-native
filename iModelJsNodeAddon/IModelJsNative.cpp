@@ -6639,6 +6639,15 @@ static Napi::Value queryConcurrency(NapiInfoCR info)
     return Napi::Number::New(info.Env(), static_cast<int>(concurrency));
     }
 
+static Napi::Value getTrueTypeFontMetadata(NapiInfoCR info) {
+    REQUIRE_ARGUMENT_STRING(0, fileName);
+    auto ret = Napi::Object::New(info.Env());
+    TrueTypeFile ttFile(fileName.c_str(), false);
+    BeJsValue retVal(ret);
+    ttFile.ExtractMetadata(retVal);
+    return ret;
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -6696,6 +6705,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
         Napi::PropertyDescriptor::Function(env, exports, "setCrashReporting", &setCrashReporting),
         Napi::PropertyDescriptor::Function(env, exports, "setCrashReportProperty", &setCrashReportProperty),
         Napi::PropertyDescriptor::Function(env, exports, "setMaxTileCacheSize", &setMaxTileCacheSize),
+        Napi::PropertyDescriptor::Function(env, exports, "getTrueTypeFontMetadata", &getTrueTypeFontMetadata),
     });
 
     registerCloudSqlite(env, exports);
