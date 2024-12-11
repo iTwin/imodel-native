@@ -10,7 +10,6 @@ import { iModelJsNative } from "./utils";
 
 describe("Logger", () => {
   const testCategory = "test-category";
-  const { emitLogs } = iModelJsNative.NativeDevTools;
 
   before(async () => {
     Logger.setLevel(testCategory, LogLevel.Trace);
@@ -28,7 +27,7 @@ describe("Logger", () => {
   it("logs messages from main thread", async () => {
     const logTrace = sinon.stub(iModelJsNative.logger, "logTrace");
     await new Promise<void>((resolve) => {
-      emitLogs(3, testCategory, LogLevel.Trace, "main", resolve);
+      iModelJsNative.NativeDevTools.emitLogs(3, testCategory, LogLevel.Trace, "main", resolve);
     });
     await waitFor(() => expect(logTrace.callCount).to.eq(3));
   });
@@ -37,9 +36,9 @@ describe("Logger", () => {
     const logTrace = sinon.stub(iModelJsNative.logger, "logTrace").throws(new Error("test error"));
     await expect(new Promise<void>((resolve, reject) => {
       try {
-        emitLogs(2, testCategory, LogLevel.Trace, "main", resolve);
+        iModelJsNative.NativeDevTools.emitLogs(2, testCategory, LogLevel.Trace, "main", resolve);
       } catch (e) {
-        reject(e);
+        reject(e instanceof Error ? e : new Error(String(e)));
       }
     })).to.eventually.be.rejectedWith("test error");
     expect(logTrace.calledOnce).to.be.true;
@@ -48,7 +47,7 @@ describe("Logger", () => {
   it("logs messages from worker thread", async () => {
     const logTrace = sinon.stub(iModelJsNative.logger, "logTrace");
     await new Promise<void>((resolve) => {
-      emitLogs(3, testCategory, LogLevel.Trace, "worker", resolve);
+      iModelJsNative.NativeDevTools.emitLogs(3, testCategory, LogLevel.Trace, "worker", resolve);
     });
     await waitFor(() => expect(logTrace.callCount).to.eq(3));
   });
@@ -57,9 +56,9 @@ describe("Logger", () => {
     const logTrace = sinon.stub(iModelJsNative.logger, "logTrace").throws(new Error("test error"));
     await new Promise<void>((resolve, reject) => {
       try {
-        emitLogs(2, testCategory, LogLevel.Trace, "worker", resolve);
+        iModelJsNative.NativeDevTools.emitLogs(2, testCategory, LogLevel.Trace, "worker", resolve);
       } catch (e) {
-        reject(e);
+        reject(e instanceof Error ? e : new Error(String(e)));
       }
     });
     expect(logTrace.calledTwice).to.be.true;
@@ -102,7 +101,7 @@ describe("Logger", () => {
     await using(new MainThreadMonitor(), async (monitor) => {
       onFirstEmission = () => monitor.start();
       await new Promise<void>((resolve) => {
-        emitLogs(count, testCategory, LogLevel.Trace, "worker", resolve);
+        iModelJsNative.NativeDevTools.emitLogs(count, testCategory, LogLevel.Trace, "worker", resolve);
       });
       await waitFor(() => expect(logTrace.callCount).to.eq(count));
       expect(monitor.triggerCount).to.be.above(0);
