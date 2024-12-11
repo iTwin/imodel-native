@@ -1032,7 +1032,7 @@ void TrueTypeFile::ExtractMetadata(BeJsValue& output) {
     bool embeddable = true;
     for (int iFace = 0; iFace < numFaces; iFace++) {
         TrueTypeFont::TrueTypeFace face;
-        face.Initialize(m_fileName.c_str());
+        face.Initialize(m_fileName.c_str(), iFace);
         if (!face.m_ftFaceStream->m_ftFace) {
             continue;
         }
