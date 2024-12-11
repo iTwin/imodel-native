@@ -314,6 +314,48 @@ template<typename T_Db> struct SQLiteOps {
         BeNapi::ThrowJsException(info.Env(), "unable to embed font");
     }
 
+    void EmbedFontFile(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_INTEGER(0, id);
+        REQUIRE_ARGUMENT_ANY_OBJ(1, facesObj);
+        REQUIRE_ARGUMENT_ANY_OBJ(2, dataObj);
+
+        if (!dataObj.IsTypedArray() || !facesObj.IsArray()) {
+            BeNapi::ThrowJsException(info.Env(), "font data not valid");
+        }
+
+        bvector<FontFace> faces;
+        auto arr = facesObj.As<Napi::Array>();
+        for (uint32_t i = 0; i < arr.Length(); i++) {
+            Napi::Value v = arr[i];
+            if (!v.IsObject()) {
+                BeNapi::ThrowJsException(info.Env(), "font data not valid");
+            }
+            
+            FontFace face(v);
+            faces.push_back(face);
+        }
+
+        if (faces.empty()) {
+            BeNapi::ThrowJsException(info.Env(), "font data not valid");
+        }
+            
+        auto db = &GetOpenedDb(info);
+        auto dgnDb = dynamic_cast<DgnDbP>(db);
+        std::unique_ptr<FontDb> fontDbHolder;
+
+        FontDbP fontDb;
+        if (dgnDb) {
+            fontDb = &dgnDb->Fonts().m_fontDb;
+        } else {
+            fontDbHolder.reset(fontDb = new FontDb(*db, true));
+        }
+
+        auto arrayBuf = dataObj.As<Napi::Uint8Array>();
+        if (SUCCESS != fontDb->EmbedFont(id, faces, ByteStream(arrayBuf.Data(), arrayBuf.ByteLength()), true)) {
+            BeNapi::ThrowJsException(info.Env(), "unable to embed font");
+        }
+    }
+    
     Napi::Value IsOpen(NapiInfoCR info) {
         auto db = _GetMyDb();
         return Napi::Boolean::New(info.Env(), nullptr != db && db->IsDbOpen());
@@ -754,6 +796,7 @@ public:
             InstanceMethod("dispose", &SQLiteDb::Dispose),
             InstanceMethod("embedFile", &SQLiteDb::EmbedFile),
             InstanceMethod("embedFont", &SQLiteDb::EmbedFont),
+            InstanceMethod("embedFontFile", &SQLiteDb::EmbedFontFile),
             InstanceMethod("extractEmbeddedFile", &SQLiteDb::ExtractEmbeddedFile),
             InstanceMethod("getFilePath", &SQLiteDb::GetFilePath),
             InstanceMethod("getLastInsertRowId", &SQLiteDb::GetLastInsertRowId),
@@ -2711,6 +2754,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("elementGeometryCacheOperation", &NativeDgnDb::ElementGeometryCacheOperation),
             InstanceMethod("embedFile", &NativeDgnDb::EmbedFile),
             InstanceMethod("embedFont", &NativeDgnDb::EmbedFont),
+            InstanceMethod("embedFontFile", &NativeDgnDb::EmbedFontFile),
             InstanceMethod("enableChangesetSizeStats", &NativeDgnDb::EnableChangesetSizeStats),
             InstanceMethod("enableTxnTesting", &NativeDgnDb::EnableTxnTesting),
             InstanceMethod("endMultiTxnOperation", &NativeDgnDb::EndMultiTxnOperation),
