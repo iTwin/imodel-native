@@ -84,21 +84,6 @@ public:
     }
 };
 
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
-struct Finally {
-    using CallBack = std::function<void()>;
-
-private:
-    CallBack m_finalCallBack;
-
-public:
-    Finally(CallBack cb):m_finalCallBack(cb){}
-    ~Finally(){
-        m_finalCallBack();
-    }
-};
 
 //=======================================================================================
 // @bsiclass
