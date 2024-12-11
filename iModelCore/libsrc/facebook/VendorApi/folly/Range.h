@@ -58,6 +58,12 @@
 #include <folly/detail/RangeCommon.h>
 #include <folly/detail/RangeSse42.h>
 
+#ifdef __clang__
+// C++20 clang does not like char_traits<unsigned char>.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif // __clang__
+
 // Ignore shadowing warnings within this file, so includers can use -Wshadow.
 #if defined (BENTLEY_CHANGE)
 #pragma GCC diagnostic push
@@ -1234,3 +1240,7 @@ template <class T> struct IsSomeString {
 
 FOLLY_ASSUME_FBVECTOR_COMPATIBLE_1(folly::Range);
 #endif
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif // __clang__
