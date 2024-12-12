@@ -579,7 +579,7 @@ double                              xyTol
 
     double absTol = xyTol;
     double relTol = 1.0e-10;
-    if (absTol <= 0.0)
+    if (absTol < 0.0)
         {
         DRange3d range = DRange3d::NullRange();
         for (auto const& loop : inputLoops)

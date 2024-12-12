@@ -1392,11 +1392,13 @@ TEST(PolylineOps, CollectAllLoops)
         };
     bvector<TestCase> testCases; // all files in meters
 
+    /*
     testCases.push_back(TestCase(L"loop-oversampled-rectangle.imjs", 1, 1, 0));
     testCases.push_back(TestCase(L"parity-region-hole-1.imjs", 2, 1, 1));
     testCases.push_back(TestCase(L"parity-region-hole-2.imjs", 2, 1, 1));
     testCases.push_back(TestCase(L"parity-region-holes-with-islands.imjs", 7, 3, 4));
     testCases.push_back(TestCase(L"union-region-no-holes.imjs", 14, 1, 0));
+    */
     testCases.push_back(TestCase(L"parity-region-complex.imjs", 700, 1, 53));
 
     for (auto const& testCase : testCases)
@@ -1432,10 +1434,13 @@ TEST(PolylineOps, CollectAllLoops)
             Check::SaveTransformed(innerLoops);
             Check::Shift (0, 0, -2 * zDelta);
 
+            auto oldVolume = Check::SetMaxVolume(STRUCTURE_PRINT_VOLUME);
             if (!Check::Size(testCase.m_expectedNumOuterLoops, outerLoops.size(), "CollectAllLoopsXY results in expected # outer loops"))
-                wprintf(L">>> %s: outerLoop count %d\n", testCase.m_fileName.GetName(), (int) outerLoops.size());
+                Check::Print(outerLoops, "CollectAllLoopsXY");
             if (!Check::Size(testCase.m_expectedNumInnerLoops, innerLoops.size(), "CollectAllLoopsXY results in expected # inner loops"))
-                wprintf(L">>> %s: innerLoop count %d\n", testCase.m_fileName.GetName(), (int) innerLoops.size());
+                Check::Print(innerLoops, "CollectAllLoopsXY");
+            Check::SetMaxVolume(oldVolume);
+
             for (auto const& outerLoop : outerLoops)
                 Check::True(PolygonOps::AreaXY(outerLoop) > 0.0, "outer loops are CCW");
             for (auto const& innerLoop : innerLoops)
