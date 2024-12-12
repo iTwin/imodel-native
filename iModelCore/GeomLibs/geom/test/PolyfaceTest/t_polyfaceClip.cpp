@@ -3,7 +3,6 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include <stdio.h>
-#include <inttypes.h>
 #include <Bentley/BeTimeUtilities.h>
 #include "testHarness.h"
 #include <GeomSerialization/GeomLibsJsonSerialization.h>
