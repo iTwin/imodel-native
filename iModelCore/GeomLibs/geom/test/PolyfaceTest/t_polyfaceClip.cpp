@@ -1218,7 +1218,7 @@ TEST(Polyface, SweptPolygonClip)
         ClipPlaneSet::SweptPolygonClipPolyface(*mesh, testCase.m_polygon, testCase.m_sweepVector, true, &inside, nullptr);
 
         auto time1 = BeTimeUtilities::QueryMillisecondsCounter();
-        printf("  SweptPolygonClipPolyface took: %llu ms\n", time1 - time0);
+        printf("  SweptPolygonClipPolyface took: %lu ms\n", time1 - time0);
 
         if (Check::True(inside.IsValid(), "clip succeeded"))
             {
