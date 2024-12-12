@@ -1432,8 +1432,10 @@ TEST(PolylineOps, CollectAllLoops)
             Check::SaveTransformed(innerLoops);
             Check::Shift (0, 0, -2 * zDelta);
 
-            Check::Size(testCase.m_expectedNumOuterLoops, outerLoops.size(), "CollectAllLoopsXY results in expected # outer loops");
-            Check::Size(testCase.m_expectedNumInnerLoops, innerLoops.size(), "CollectAllLoopsXY results in expected # inner loops");
+            if (!Check::Size(testCase.m_expectedNumOuterLoops, outerLoops.size(), "CollectAllLoopsXY results in expected # outer loops"))
+                wprintf(L">>> %s: outerLoop count %d\n", testCase.m_fileName.GetName(), (int) outerLoops.size());
+            if (!Check::Size(testCase.m_expectedNumInnerLoops, innerLoops.size(), "CollectAllLoopsXY results in expected # inner loops"))
+                wprintf(L">>> %s: innerLoop count %d\n", testCase.m_fileName.GetName(), (int) innerLoops.size());
             for (auto const& outerLoop : outerLoops)
                 Check::True(PolygonOps::AreaXY(outerLoop) > 0.0, "outer loops are CCW");
             for (auto const& innerLoop : innerLoops)
