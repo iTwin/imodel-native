@@ -238,8 +238,8 @@ TEST_F(ConcurrentQueryFixture, Blob_Metadata) {
         "index":0,
         "jsonName":"bin",
         "name":"bin",
-        "extendedType":"Json",
-        "typeName":"string"
+        "extendedType":"",
+        "typeName":"binary"
     })json");
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("Blob_Metadata.ecdb", SchemaItem(
@@ -270,8 +270,8 @@ TEST_F(ConcurrentQueryFixture, Blob_Metadata) {
     auto metadataJson = resJson["meta"][0];
 
     ASSERT_STREQ(metadataJson["accessString"].asCString(), "bin");
-    ASSERT_STREQ(metadataJson["typeName"].asCString(), "string");
-    ASSERT_STREQ(metadataJson["extendedType"].asCString(), "Json");
+    ASSERT_STREQ(metadataJson["typeName"].asCString(), "binary");
+    ASSERT_STREQ(metadataJson["extendedType"].asCString(), "");
     ASSERT_STREQ(metadataJson.Stringify(StringifyFormat::Indented).c_str(), expectedMetadataDoc.Stringify(StringifyFormat::Indented).c_str());
 }
 
