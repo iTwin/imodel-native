@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include <stdio.h>
+#include <inttypes.h>
 #include <Bentley/BeTimeUtilities.h>
 #include "testHarness.h"
 #include <GeomSerialization/GeomLibsJsonSerialization.h>
@@ -1218,7 +1219,7 @@ TEST(Polyface, SweptPolygonClip)
         ClipPlaneSet::SweptPolygonClipPolyface(*mesh, testCase.m_polygon, testCase.m_sweepVector, true, &inside, nullptr);
 
         auto time1 = BeTimeUtilities::QueryMillisecondsCounter();
-        printf("  SweptPolygonClipPolyface took: %lu ms\n", time1 - time0);
+        printf("  SweptPolygonClipPolyface took: %d ms\n", (int) (time1 - time0));
 
         if (Check::True(inside.IsValid(), "clip succeeded"))
             {
