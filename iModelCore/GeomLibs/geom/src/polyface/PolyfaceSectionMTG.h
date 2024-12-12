@@ -824,14 +824,13 @@ bool MarkExteriorSuperFaces(MTGMask avoidMask, MTGMask mask, DVec3dCR planeNorma
 void CollectLoopsAtVertex(bvector<ICurvePrimitivePtr>& linestrings, MTGNodeId seed, MTGMask danglerMask, MTGMask visitedMask, MTGMask onPlaneMask, bool markEdgeFractions, bool visitBothSides)
     {
     bvector<MTGNodeId> superFace;
-    auto isChain = [&](MTGNodeId nodeId) -> bool { return m_graph.GetMaskAt(nodeId, danglerMask); };
     auto isVisited = [&](MTGNodeId nodeId) -> bool { return m_graph.GetMaskAt(nodeId, visitedMask); };
     auto isSuperFaceOnSection = [&]() -> bool { return onPlaneMask && superFace.size() == std::count_if(superFace.begin(), superFace.end(), [&](auto n) -> bool { return m_graph.GetMaskAt(n, onPlaneMask); }); };
     MTGARRAY_VERTEX_LOOP(nodeId, &m_graph, seed)
         {
         if (!isVisited(nodeId))
             {
-            BeAssert(!isChain(nodeId));
+            BeAssert(!m_graph.GetMaskAt(nodeId, danglerMask));  // expect all chains to be visited already
             ClearChain();
             bool haveLoop = CollectAndVisitSuperFace(superFace, nodeId, danglerMask, visitedMask, visitBothSides);
             BeAssert(visitBothSides || haveLoop);
