@@ -242,7 +242,7 @@ TEST(Polyface, PlaneSlice)
                 Check::Size(size0, 12, "A Parity Region loop has 12 vertices");
                 Check::Size(size1, 40, "A Parity Region loop has 40 vertices");
                 }
-            else if (region->GetBoundaryType() == CurveVector::BOUNDARY_TYPE_Outer, "Loop output")
+            else if (region->GetBoundaryType() == CurveVector::BOUNDARY_TYPE_Outer)
                 {
                 // the exterior face of the graph was picked first
                 Check::Size(region->size(), 1, "Outer Loop has one child");
