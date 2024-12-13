@@ -6693,6 +6693,12 @@ static Napi::Value getTrueTypeFontMetadata(NapiInfoCR info) {
     return ret;
 }
 
+static Napi::Value isRscFontData(NapiInfoCR info) {
+    REQUIRE_ARGUMENT_ANY_OBJ(0, dataObj);
+    auto isRsc = dataObj.IsTypedArray() && RscFont::IsRscFontData(dataObj.As<Napi::Uint8Array>().Data());
+    return Napi::Boolean::New(info.Env(), isRsc);
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -6751,6 +6757,7 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
         Napi::PropertyDescriptor::Function(env, exports, "setCrashReportProperty", &setCrashReportProperty),
         Napi::PropertyDescriptor::Function(env, exports, "setMaxTileCacheSize", &setMaxTileCacheSize),
         Napi::PropertyDescriptor::Function(env, exports, "getTrueTypeFontMetadata", &getTrueTypeFontMetadata),
+        Napi::PropertyDescriptor::Function(env, exports, "isRscFontData", &isRscFontData),
     });
 
     registerCloudSqlite(env, exports);

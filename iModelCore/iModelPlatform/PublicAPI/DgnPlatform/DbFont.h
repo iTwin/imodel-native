@@ -221,6 +221,8 @@ public:
         LoadGlyphs();
         return m_descenderRatio;
     }
+
+    DGNPLATFORM_EXPORT static bool IsRscFontData(uint8_t const* data);
 };
 
 /** An SHX DbFont. */
