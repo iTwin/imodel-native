@@ -1436,9 +1436,8 @@ TEST(PolylineOps, CollectAllLoops)
 
             auto oldVolume = Check::SetMaxVolume(STRUCTURE_PRINT_VOLUME);
             if (!Check::Size(testCase.m_expectedNumOuterLoops, outerLoops.size(), "CollectAllLoopsXY results in expected # outer loops"))
-                Check::Print(outerLoops, "CollectAllLoopsXY");
-            if (!Check::Size(testCase.m_expectedNumInnerLoops, innerLoops.size(), "CollectAllLoopsXY results in expected # inner loops"))
-                Check::Print(innerLoops, "CollectAllLoopsXY");
+                Check::Print(outerLoops, "CollectAllLoopsXY outer loops");
+            Check::Size(testCase.m_expectedNumInnerLoops, innerLoops.size(), "CollectAllLoopsXY results in expected # inner loops");
             Check::SetMaxVolume(oldVolume);
 
             for (auto const& outerLoop : outerLoops)

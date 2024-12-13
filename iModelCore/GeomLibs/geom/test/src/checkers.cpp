@@ -1353,17 +1353,17 @@ void Check::Print (bvector<bvector<DPoint3d>> const &data, char const *name)
     {
     if (!PrintDeepStructs ())
         return;
-    printf ("(%s\n", name == nullptr ? "xyz" : name);
+    BeConsole::Printf("(%s\n", name == nullptr ? "xyz" : name);
     for (size_t i = 0; i < data.size (); i++)
         {
-        printf ("  (  // (loop %d)\n", (int)i);
+        BeConsole::Printf("  (  // (loop %d)\n", (int)i);
         for (auto &data2 : data[i])
             {
-            printf ("     (%.17g, %.17g, %.17g)\n", data2.x, data2.y, data2.z);
+            BeConsole::Printf("     (%.17g, %.17g, %.17g)\n", data2.x, data2.y, data2.z);
             }
-        printf ("  )\n");
+        BeConsole::Printf("  )\n");
         }
-    printf (")\n");
+    BeConsole::Printf(")\n");
     }
 
 void Check::Print (bvector<bvector<bvector<DPoint3d>>> const &data, char const *name)
