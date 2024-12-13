@@ -1884,10 +1884,6 @@ DgnDbStatus TxnManager::ReverseAll() {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::ReplayExternalTxns(TxnId from) {
-    if (PullMergeConf::Load(m_dgndb).InProgress()) {
-        m_dgndb.ThrowException("operation failed: pull merge in progress.", BE_SQLITE_ERROR);
-    }
-
     if (!m_initTableHandlers || !m_dgndb.IsReadonly())
         return; // this method can only be called on a readonly connection with the TxnManager active
 
