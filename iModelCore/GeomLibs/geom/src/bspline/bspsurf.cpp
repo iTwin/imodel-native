@@ -3362,11 +3362,11 @@ double                  closureTolerance
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-Public GEOMDLLIMPEXP int bsputil_ruledSurfaceFromCompatibleCurves
+Public GEOMDLLIMPEXP int     bsputil_ruledSurfaceFromCompatibleCurves
 (
-MSBsplineSurface *surface,
-MSBsplineCurve *curve1,     // order, knots become surface uParams.order, uKnots
-MSBsplineCurve *curve2
+MSBsplineSurface    *surface,
+MSBsplineCurve      *curve1,     // order, knots become surface uParams.order, uKnots
+MSBsplineCurve      *curve2
 )
     {
     // ADO#885899: inputs should be compatible, but verify the pole counts at least
