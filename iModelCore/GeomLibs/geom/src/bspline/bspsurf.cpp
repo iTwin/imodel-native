@@ -3362,10 +3362,12 @@ double                  closureTolerance
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
-    Public GEOMDLLIMPEXP int bsputil_ruledSurfaceFromCompatibleCurves(
-        MSBsplineSurface *surface,
-        MSBsplineCurve *curve1,     // order, knots become surface uParams.order, uKnots
-        MSBsplineCurve *curve2)
+Public GEOMDLLIMPEXP int bsputil_ruledSurfaceFromCompatibleCurves
+(
+MSBsplineSurface *surface,
+MSBsplineCurve *curve1,     // order, knots become surface uParams.order, uKnots
+MSBsplineCurve *curve2
+)
     {
     // ADO#885899: inputs should be compatible, but verify the pole counts at least
     if (!surface || !curve1 || !curve2 || curve1->params.numPoles != curve2->params.numPoles)
@@ -3389,7 +3391,7 @@ double                  closureTolerance
 
     for (int i = 0, uPoles = surface->uParams.numPoles; i < curve1->params.numPoles;
          i++, uPoles++)
-    {
+        {
         surface->poles[i] = curve1->poles[i];
         surface->poles[uPoles] = curve2->poles[i];
         if (surface->rational)
