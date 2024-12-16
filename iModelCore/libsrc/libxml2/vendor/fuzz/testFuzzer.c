@@ -22,6 +22,16 @@ int fuzzHtml(const char *data, size_t size);
 #undef LLVMFuzzerTestOneInput
 #endif
 
+#ifdef HAVE_READER_FUZZER
+int fuzzReaderInit(int *argc, char ***argv);
+int fuzzReader(const char *data, size_t size);
+#define LLVMFuzzerInitialize fuzzReaderInit
+#define LLVMFuzzerTestOneInput fuzzReader
+#include "reader.c"
+#undef LLVMFuzzerInitialize
+#undef LLVMFuzzerTestOneInput
+#endif
+
 #ifdef HAVE_REGEXP_FUZZER
 int fuzzRegexpInit(int *argc, char ***argv);
 int fuzzRegexp(const char *data, size_t size);
@@ -147,14 +157,9 @@ testEntityLoader(void) {
         "<!ENTITY ent SYSTEM \"ent.txt\">\\\n"
         "ent.txt\\\n"
         "Hello, world!\\\n";
-    static xmlChar expected[] =
-        "<?xml version=\"1.0\"?>\n"
-        "<!DOCTYPE doc SYSTEM \"doc.dtd\">\n"
-        "<doc>Hello, world!</doc>\n";
     const char *docBuffer;
     size_t docSize;
     xmlDocPtr doc;
-    xmlChar *out;
     int ret = 0;
 
     xmlSetExternalEntityLoader(xmlFuzzEntityLoader);
@@ -165,13 +170,23 @@ testEntityLoader(void) {
     doc = xmlReadMemory(docBuffer, docSize, NULL, NULL,
                         XML_PARSE_NOENT | XML_PARSE_DTDLOAD);
 
-    xmlDocDumpMemory(doc, &out, NULL);
-    if (xmlStrcmp(out, expected) != 0) {
-        fprintf(stderr, "Expected:\n%sGot:\n%s", expected, out);
-        ret = 1;
-    }
+#ifdef LIBXML_OUTPUT_ENABLED
+    {
+        static xmlChar expected[] =
+            "<?xml version=\"1.0\"?>\n"
+            "<!DOCTYPE doc SYSTEM \"doc.dtd\">\n"
+            "<doc>Hello, world!</doc>\n";
+        xmlChar *out;
 
-    xmlFree(out);
+        xmlDocDumpMemory(doc, &out, NULL);
+        if (xmlStrcmp(out, expected) != 0) {
+            fprintf(stderr, "Expected:\n%sGot:\n%s", expected, out);
+            ret = 1;
+        }
+        xmlFree(out);
+    }
+#endif
+
     xmlFreeDoc(doc);
     xmlFuzzDataCleanup();
 
@@ -189,6 +204,10 @@ main(void) {
 #endif
 #ifdef HAVE_HTML_FUZZER
     if (testFuzzer(fuzzHtmlInit, fuzzHtml, "seed/html/*") != 0)
+        ret = 1;
+#endif
+#ifdef HAVE_READER_FUZZER
+    if (testFuzzer(fuzzReaderInit, fuzzReader, "seed/reader/*") != 0)
         ret = 1;
 #endif
 #ifdef HAVE_REGEXP_FUZZER
