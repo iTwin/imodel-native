@@ -407,7 +407,10 @@ bool Class::Seek(ECInstanceId rowId, ECN::ECClassId& rowClassId) const {
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 bool Property::Seek(ECInstanceId rowId, ECN::ECClassId& rowClassId) const {
-    return m_table->Seek(rowId, &rowClassId);
+    OnAfterReset();
+    bool result = m_table->Seek(rowId, &rowClassId);
+    OnAfterStep();
+    return result;
 }
 
 //---------------------------------------------------------------------------------------
