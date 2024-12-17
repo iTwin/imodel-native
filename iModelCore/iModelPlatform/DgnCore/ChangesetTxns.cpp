@@ -53,6 +53,22 @@ ChangeSet::ConflictResolution LocalChangeSet::_OnConflict(ChangeSet::ConflictCau
     arg.Set("getForeignKeyConflicts", Napi::Function::New(env, [&](const Napi::CallbackInfo&) -> Napi::Value {
         return Napi::Number::New(env, iter.GetForeignKeyConflicts());
     }));
+
+    auto txnInfo = Napi::Object::New(env);
+    txnInfo.Set("id", Napi::String::New(env, m_id.GetValue() == 0 ? "0x0" : BeInt64Id(m_id.GetValue()).ToHexStr()));
+    txnInfo.Set("descr", Napi::String::New(env, m_descr));
+    txnInfo.Set("type" , Napi::String::New(env, m_type == TxnType::Data? "Data" : "Schema"));
+
+    arg.Set("txn", txnInfo);
+    arg.Set("getColumnNames", Napi::Function::New(env, [&](const Napi::CallbackInfo&) -> Napi::Value {
+        auto array = Napi::Array::New(env);
+        bvector<Utf8String> columns;
+        if (m_dgndb.GetColumns(columns, iter.GetTableName().c_str())) {
+            for(int i = 0; i < static_cast<int>(columns.size()); ++i)
+                array.Set(i, Napi::String::New(env, columns[i].c_str()));
+        }
+        return array;
+    }));
     arg.Set("getPrimaryKeyColumns", Napi::Function::New(env, [&](const Napi::CallbackInfo&) -> Napi::Value {
         auto array = Napi::Array::New(env);
         int k = -1;
