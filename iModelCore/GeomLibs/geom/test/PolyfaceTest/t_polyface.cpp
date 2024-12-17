@@ -650,7 +650,7 @@ void VerifyPolyface (PolyfaceHeader  &meshVectors, PolyfaceQueryR meshQuery, cha
     //varunused double tolerance = meshVectors.GetMediumTolerance ();
     double s_relTol = 0.01;
     //varunused int failures = 0;
-    int numEdges = 0;
+    //varunused int numEdges = 0;
     bvector<int>failureIndices;
     bvector<int>edgeFailureIndices;
     size_t numFacet = meshVectors.GetNumFacet ();
@@ -692,7 +692,7 @@ void VerifyPolyface (PolyfaceHeader  &meshVectors, PolyfaceQueryR meshQuery, cha
                 }
             else if (innerCount == 2)
                 {
-                numEdges++;
+                //varunused numEdges++;
                 }
             else
                 failureIndices.push_back (outerFaceCount);
@@ -705,13 +705,11 @@ void VerifyPolyface (PolyfaceHeader  &meshVectors, PolyfaceQueryR meshQuery, cha
                 edgeTestPoint.Interpolate (point0, f0, point1);
                 ptrdiff_t edgeIndex;
                 double edgeFraction;
-                int numFacetHit = 0;
                 int numEdgeHit = 0;
                 double edgeFractionTol = 1.0e-10;
                 bool foundPrimaryTarget = false;
                 for (pointVisitor->Reset (); pointVisitor->AdvanceToFacetBySearchPoint (edgeTestPoint, tolerance1, edgePoint, edgeIndex, edgeFraction);)
                     {
-                    numFacetHit++;
                     if (edgeIndex >= 0)
                         numEdgeHit++;
                     if (vectorVisitor->IndexPosition()[0] == pointVisitor->IndexPosition()[0]
