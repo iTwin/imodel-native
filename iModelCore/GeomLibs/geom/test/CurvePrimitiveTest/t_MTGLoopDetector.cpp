@@ -316,7 +316,6 @@ bool noisy = false
     size_t numExteriorFaces = 0;
     size_t numInteriorFaces = 0;
     size_t numExteriorVertices = 0;
-    size_t numInteriorVertices = 0;
     bmap<size_t, size_t> vertexCounters;
     for (MTGNodeId node : vertexSeed)
         {
@@ -325,8 +324,6 @@ bool noisy = false
             numExteriorVertices++;
             exteriorVertexCounts.Report (graph.CountNodesAroundVertex (node));
             }
-        else
-            numInteriorVertices++;
         }
 
     for (MTGNodeId node : faceSeed)
