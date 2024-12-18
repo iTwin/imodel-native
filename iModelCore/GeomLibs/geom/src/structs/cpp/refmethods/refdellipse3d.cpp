@@ -1415,6 +1415,43 @@ DEllipse3d DEllipse3d::FromPointsOnArc (DPoint3dCR start, DPoint3dCR middle, DPo
     return ellipse;
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+std::optional<DEllipse3d> DEllipse3d::FromStartMiddleEnd (DPoint3dCR start, DPoint3dCR middle, DPoint3dCR end, double sweep)
+    {
+    DVec3d vector0, vector1, vector90;
+    DPoint3d center;
+    DPoint3d origin = DPoint3d::From(0, 0, 0);
+    DVec3d normal;
+    double v90Len;
+
+    center.SumOf(origin, start, 0.5, end, 0.5);
+    vector0.DifferenceOf(start, center);
+    vector1.DifferenceOf(middle, center);
+    double v0DotV1 = vector0.DotProduct(vector1);
+    double v0Len2 = vector0.MagnitudeSquared();
+
+    if (std::abs(v0DotV1) >= v0Len2)
+        return std::nullopt; // middle point projects to end of axis or beyond (rules out negative under the radical below)
+
+    normal.CrossProduct(vector0, vector1);
+    vector90.NormalizedCrossProduct(normal, vector0);
+    double v1DotV90 = vector1.DotProduct(vector90);
+
+    // solve the standard ellipse equation for the unknown axis length, given local coords of middle (v0.v1/||v0||, v90.v1)
+    DoubleOps::SafeDivide(v90Len, v0Len2 * v1DotV90, std::sqrt(v0Len2 * v0Len2 - v0DotV1 * v0DotV1), 0);
+
+    if (std::abs(v90Len) <= 1e-12)
+        return std::nullopt;
+
+    vector90.ScaleToLength(v90Len);
+    return DEllipse3d::FromVectors(center, vector0, vector90, 0.0, sweep);
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
 ValidatedDEllipse3d DEllipse3d::FromStartTangentNormalRadiusSweep
 (
 DPoint3dCR pointA,
@@ -1433,9 +1470,7 @@ double sweepRadians
     DPoint3d center = DPoint3d::FromSumOf (pointA, vector0, -1.0);
     return ValidatedDEllipse3d (
         DEllipse3d::FromVectors (center, vector0, vector90, 0.0, sweepRadians), true);
-
     }
-
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -1734,8 +1769,8 @@ void DEllipse3d::InitFromPoints
 DPoint3dCR center0,
 DPoint3dCR point0,
 DPoint3dCR point90,
-double          startRadiansIn,
-double          sweepIn
+double     startRadiansIn,
+double     sweepIn
 
 )
     {

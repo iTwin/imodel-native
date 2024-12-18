@@ -283,6 +283,117 @@ TEST(CurveVectorA, PointIsPlanar)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST (CurveVectorA, FromStartMiddleEnd)
+{
+    int dx = 5;
+    DPoint3d p0 = DPoint3d::From(1, 0, 0);
+    DPoint3d p1 = DPoint3d::From(0, 1, 0);
+    DPoint3d p2 = DPoint3d::From(-1, 0, 0);
+    auto unitCircle = DEllipse3d::FromStartMiddleEnd(p0, p1, p2);
+    Check::SaveTransformed(*unitCircle);
+    auto lineString = ICurvePrimitive::CreateLineString (bvector<DPoint3d>{p0, p1, p2});
+    Check::SaveTransformed(*lineString);
+    if (Check::True(unitCircle.has_value(), "created the arc"))
+        {
+        Check::True(unitCircle->IsFullEllipse(), "ellipse is full sweep");
+        Check::Exact(unitCircle->center, DPoint3d::From(0, 0, 0), "ellipse centered at origin");
+        Check::Exact(unitCircle->vector0, DVec3d::From(p0.x, p0.y, p0.z), "ellipse vector0 along x-axis");
+        Check::Exact(unitCircle->vector90, DVec3d::From(p1.x, p1.y, p1.z), "ellipse vector90 along y-axis");
+        Check::True(unitCircle->IsCircular(), "ellipse is circular");
+        }
+
+    Check::Shift(dx, 0, 0);
+    p1.y = 2;
+    auto ellipse1 = DEllipse3d::FromStartMiddleEnd(p0, p1, p2);
+    Check::SaveTransformed(*ellipse1);
+    lineString = ICurvePrimitive::CreateLineString (bvector<DPoint3d>{p0, p1, p2});
+    Check::SaveTransformed(*lineString);
+    if (Check::True(ellipse1.has_value(), "created the arc"))
+        {
+        Check::True(ellipse1->IsFullEllipse(), "ellipse is full sweep");
+        Check::Exact(ellipse1->center, DPoint3d::From(0, 0, 0), "ellipse centered at origin");
+        Check::Exact(ellipse1->vector0, DVec3d::From(p0.x, p0.y, p0.z), "ellipse vector0 along x-axis");
+        Check::Exact(ellipse1->vector90, DVec3d::From(p1.x, p1.y, p1.z), "ellipse vector90 along y-axis");
+        Check::False(ellipse1->IsCircular(), "ellipse is not circular");
+        }
+
+    Check::Shift(dx, 0, 0);
+    p0.y = 1;
+    p2.y = -1;
+    auto ellipse2 = DEllipse3d::FromStartMiddleEnd(p0, p1, p2);
+    lineString = ICurvePrimitive::CreateLineString(bvector<DPoint3d>{p0, p1, p2});
+    Check::SaveTransformed(*lineString);
+    Check::False(ellipse2.has_value(), "arc construction not possible");
+
+    Check::Shift(dx, 0, 0);
+    p1.y = 1.95;
+    auto ellipse3 = DEllipse3d::FromStartMiddleEnd(p0, p1, p2);
+    Check::SaveTransformed(*ellipse3);
+    lineString = ICurvePrimitive::CreateLineString (bvector<DPoint3d>{p0, p1, p2});
+    Check::SaveTransformed(*lineString);
+    if (Check::True(ellipse3.has_value(), "created the arc"))
+        {
+        Check::True(ellipse3->IsFullEllipse(), "ellipse is full sweep");
+        Check::Exact(ellipse3->center, DPoint3d::From(0, 0, 0), "ellipse centered at origin");
+        Check::Exact(ellipse3->vector0, DVec3d::From(p0.x, p0.y, p0.z), "ellipse vector0 along x-axis");
+        Check::False(ellipse3->IsCircular(), "ellipse is not circular");
+        }
+
+    Check::Shift(dx, 0, 0);
+    p1.y = -1.95;
+    auto ellipse4 = DEllipse3d::FromStartMiddleEnd(p0, p1, p2);
+    Check::SaveTransformed(*ellipse4);
+    lineString = ICurvePrimitive::CreateLineString(bvector<DPoint3d>{p0, p1, p2});
+    Check::SaveTransformed(*lineString);
+    if (Check::True(ellipse4.has_value(), "created the arc"))
+        {
+        Check::True(ellipse4->IsFullEllipse(), "ellipse is full sweep");
+        Check::Exact(ellipse4->center, DPoint3d::From(0, 0, 0), "ellipse centered at origin");
+        Check::Exact(ellipse4->vector0, DVec3d::From(p0.x, p0.y, p0.z), "ellipse vector0 along x-axis");
+        Check::False(ellipse4->IsCircular(), "ellipse is not circular");
+        }
+
+    Check::Shift(dx, 0, 0);
+    p1.y = -2;
+    auto ellipse5 = DEllipse3d::FromStartMiddleEnd(p0, p1, p2);
+    lineString = ICurvePrimitive::CreateLineString(bvector<DPoint3d>{p0, p1, p2});
+    Check::SaveTransformed(*lineString);
+    Check::False(ellipse5.has_value(), "arc construction not possible");
+
+    Check::Shift(dx, 0, 0);
+    p1.y = 1;
+    auto ellipse6 = DEllipse3d::FromStartMiddleEnd(p0, p1, p2);
+    Check::SaveTransformed(*ellipse6);
+    lineString = ICurvePrimitive::CreateLineString(bvector<DPoint3d>{p0, p1, p2});
+    Check::SaveTransformed(*lineString);
+    if (Check::True(ellipse6.has_value(), "created the arc"))
+        {
+        Check::True(ellipse6->IsFullEllipse(), "ellipse is full sweep");
+        Check::Exact(ellipse6->center, DPoint3d::From(0, 0, 0), "ellipse centered at origin");
+        Check::Exact(ellipse6->vector0, DVec3d::From(p0.x, p0.y, p0.z), "ellipse vector0 along x-axis");
+        Check::False(ellipse6->IsCircular(), "ellipse is not circular");
+        }
+
+    Check::Shift(dx, 0, 0);
+    p1.y = -1;
+    auto ellipse7 = DEllipse3d::FromStartMiddleEnd(p0, p1, p2, Angle::DegreesToRadians(200));
+    Check::SaveTransformed(*ellipse7);
+    lineString = ICurvePrimitive::CreateLineString(bvector<DPoint3d>{p0, p1, p2});
+    Check::SaveTransformed(*lineString);
+    if (Check::True(ellipse7.has_value(), "created the arc"))
+        {
+        Check::False(ellipse7->IsFullEllipse(), "ellipse is full sweep");
+        Check::Exact(ellipse7->center, DPoint3d::From(0, 0, 0), "ellipse centered at origin");
+        Check::Exact(ellipse7->vector0, DVec3d::From(p0.x, p0.y, p0.z), "ellipse vector0 along x-axis");
+        Check::False(ellipse7->IsCircular(), "ellipse is not circular");
+        }
+
+    Check::ClearGeometry("CurveVectorA.FromStartMiddleEnd");
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (CurveVectorA, LocalRange)
     {
     CurveVectorPtr curves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
