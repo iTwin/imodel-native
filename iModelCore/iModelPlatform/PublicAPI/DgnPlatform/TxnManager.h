@@ -496,6 +496,7 @@ public:
     DGNPLATFORM_EXPORT void FinishCreateChangeset(int32_t changesetIndex, bool keepFile = false);
     DGNPLATFORM_EXPORT void StopCreateChangeset(bool keepFile);
     DGNPLATFORM_EXPORT ChangesetStatus MergeChangeset(ChangesetPropsCR revision);
+    DGNPLATFORM_EXPORT void RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesets, bool skipSchemaChanges);
     DGNPLATFORM_EXPORT void ReverseChangeset(ChangesetPropsCR revision);
     DGNPLATFORM_EXPORT std::unique_ptr<BeSQLite::ChangeSet> CreateChangesetFromLocalChanges(bool includeInMemoryChanges);
     DGNPLATFORM_EXPORT void ForEachLocalChange(std::function<void(BeSQLite::EC::ECInstanceKey const&, BeSQLite::DbOpcode)>, bvector<Utf8String> const&, bool includeInMemoryChanges = false);
@@ -1025,11 +1026,11 @@ struct ChangesetProps : RefCountedBase {
 struct EXPORT_VTABLE_ATTRIBUTE ChangesetFileReader : BeSQLite::ChangesetFileReaderBase {
 private:
     DGNPLATFORM_EXPORT BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause, BeSQLite::Changes::Change iter) override;
-    DgnDbR m_dgndb;
+    DgnDb* m_dgndb;
     Utf8String m_lastErrorMessage;
 
 public:
-    ChangesetFileReader(BeFileNameCR pathname, DgnDbR dgndb) : BeSQLite::ChangesetFileReaderBase({pathname}, dgndb), m_dgndb(dgndb) {}
+    ChangesetFileReader(BeFileNameCR pathname, DgnDb* dgndb = nullptr) : BeSQLite::ChangesetFileReaderBase({pathname}, dgndb), m_dgndb(dgndb) {}
     Utf8StringCR GetLastErrorMessage() const { return m_lastErrorMessage; }
     void ClearLastErrorMessage() { m_lastErrorMessage.clear(); }
 };

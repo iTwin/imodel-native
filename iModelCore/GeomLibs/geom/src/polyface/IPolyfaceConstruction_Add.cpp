@@ -925,7 +925,7 @@ static bool AddRuledBetweenCorrespondingBsplineCurves
     if (numOK != numContour)
         return false;
 
-    for (size_t bezierIndex = 0; true; bezierIndex++)
+    while (true)
         {
         // Advance all the beziers ...
         size_t numAdvanced = 0;
@@ -2222,6 +2222,7 @@ static CurveVector::BoundaryType CommonBoundaryType (bvector<CurveVectorPtr> con
     size_t numClosed = 0;
     size_t numParity = 0;
     size_t numUnion = 0;
+    UNUSED_VARIABLE(numOpen);
 
     for (size_t i = 0; i < curves.size (); i++)
         {

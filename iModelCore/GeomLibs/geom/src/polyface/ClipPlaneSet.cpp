@@ -176,7 +176,6 @@ bool ConvexClipPlaneSet::IsSphereInside (DPoint3dCR point, double radius) const
     return true;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -188,8 +187,6 @@ bool ClipPlaneSet::IsPointInside (DPoint3dCR point) const
 
     return false;
     }
-
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -231,8 +228,6 @@ bool    ClipPlaneSet::GetRayIntersection (double& nearest, DPoint3dCR point, DVe
     return nearest > -fc_hugeVal;
     }
 
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -244,6 +239,7 @@ bool ClipPlaneSet::IsPointOnOrInside (DPoint3dCR point, double tolerance) const
 
     return false;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -255,6 +251,7 @@ bool ClipPlaneSet::IsSphereInside (DPoint3dCR point, double radius) const
 
     return false;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -283,6 +280,10 @@ void ClipPlaneSet::AppendIntervals (DSegment3dCR segment, bvector<DSegment1d> &i
             }
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void ClipPlaneSet::AppendIntervals(DSegment3dCR segment, bvector<DRange1d> &intervals) const
     {
     double f0, f1;
@@ -339,9 +340,6 @@ bool ClipPlaneSet::IsAnyPointInOrOn(MSBsplineCurveCR curve) const
     return false;
     }
 
-
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -377,7 +375,6 @@ void ClipPlaneSet::MultiplyPlanesTimesMatrix(DMatrix4dCR matrix)
     for (ConvexClipPlaneSetR convexSet: *this)
         convexSet.MultiplyPlanesTimesMatrix(matrix);
     }
-
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -429,7 +426,6 @@ ClipPlaneCP planeToSkip) const
         }
     return fraction1 >= fraction0;
     }
-
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -580,8 +576,6 @@ bool ConvexClipPlaneSet::AppendIntervals (MSBsplineCurveCR curve, bvector<DSegme
         return false;
     return intervals->size () > 0;
     }
-
-
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -770,6 +764,10 @@ bvector<DPoint3d> const &pointsB
         }
     return false;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void ClipPlaneSetWithIndexedRangeHeap::AppendDSegment3dIntervals
 (
 DSegment3dCR segment,
@@ -830,6 +828,9 @@ bool ClipPlaneSet::AddMatchedXYPointVectors
     return false;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 static DPoint3d LexicalXYZSelectLow (DPoint3dCR point0, DPoint3dCR point1)
     {
     if (point0.x < point1.x)
@@ -884,7 +885,6 @@ bool ConvexClipPlaneSet::Add (ValidatedClipPlane const &plane)
     return plane.IsValid ();
     }
 
-
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
@@ -934,6 +934,9 @@ ClipPlaneSet  ClipPlaneSet::FromSweptPolygon (DPoint3dCP points, size_t n, DVec3
     ClipPlaneSet      clipSet;
     size_t numNegative = 0;
     size_t numPositive = 0;
+    UNUSED_VARIABLE(numNegative);
+    UNUSED_VARIABLE(numPositive);
+
     VU_SET_LOOP (faceSeed, graphP)
         {
         if (   !vu_getMask (faceSeed, visitMask)
@@ -977,6 +980,9 @@ ClipPlaneSet  ClipPlaneSet::FromSweptPolygon (DPoint3dCP points, size_t n, DVec3
     return clipSet;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void ConvexClipPlaneSet::ClipPointsOnOrInside
 (
 bvector<DPoint3d> const &points,   //!< [in] input points
@@ -1002,6 +1008,10 @@ bvector<DPoint3d> *out      //!< [out] points that are outside.
             }
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void ConvexClipPlaneSet::ConvexPolygonClip
 (
 bvector<DPoint3d> const &input, //!< [in] points of a convex polygon
@@ -1018,7 +1028,11 @@ int onPlaneHandling
         plane.ConvexPolygonClipInPlace (output, work, onPlaneHandling);
         }
     }
-// DEPRECATED SHORT ARG LIST
+
+/*---------------------------------------------------------------------------------**//**
+* DEPRECATED SHORT ARG LIST
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void ConvexClipPlaneSet::ConvexPolygonClip
 (
 bvector<DPoint3d> const &input, //!< [in] points of a convex polygon
@@ -1044,6 +1058,10 @@ double Check(double a0, double a1)
     return dx;
     }
 #endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void ConvexClipPlaneSet::ConvexPolygonClipInsideOutside
 (
 bvector<DPoint3d> const &input, //!< [in] points of a convex polygon
@@ -1119,6 +1137,9 @@ Check ( PolygonOps::AreaXY (work1),
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 int ConvexClipPlaneSet::ReloadSweptConvexPolygon
 (
 bvector<DPoint3d> const &points,      // polygon points
@@ -1183,6 +1204,7 @@ void ConvexClipPlaneSet::AppendCrossings (ICurvePrimitiveCR curve, bvector<Curve
         plane.AppendCrossings (curve, crossings);
         }
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1216,10 +1238,9 @@ ClipPlaneContainment ClipPlaneSet::ClassifyPointContainment (DPoint3dCP points, 
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod
-*
 *  Doesn't attempt to find true minimum range for set - only handles aligned planes.
 *  (this is all that is required by our current (internal) users.)
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool    ConvexClipPlaneSet::GetRange (DRange3dR range, TransformCP transform) const
     {
@@ -1274,7 +1295,6 @@ bool    ClipPlaneSet::GetRange (DRange3dR range, TransformCP transform) const
     return !range.IsNull();
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1326,6 +1346,10 @@ static void AppendPrimitiveStartEnd (ICurvePrimitiveCR curve, bvector<CurveLocat
         crossings.push_back (CurveLocationDetailPair (&curve, 1.0, xyz1));
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 bool CurveLocationDetailPair::cb_compareCurveFraction (CurveLocationDetailPairCR dataA, CurveLocationDetailPairCR dataB)
     {
     ptrdiff_t a = dataA.detailA.curve - dataB.detailB.curve;
@@ -1378,6 +1402,7 @@ ClipPlaneSetCP maskSet
         }
     return ClipPlaneContainment::ClipPlaneContainment_Ambiguous;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1456,7 +1481,7 @@ CurveVectorCP curves
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GEOMDLLIMPEXP ClipPlaneContainment ClipPlaneSet::ClassifyCurveVectorInSetDifference
+ClipPlaneContainment ClipPlaneSet::ClassifyCurveVectorInSetDifference
 (
 CurveVectorCR curves,
 ClipPlaneSetCR clipSet,
@@ -1472,11 +1497,10 @@ bool treatRegions
     return ClassifyCrossings (crossings, clipSet, maskSet, treatRegions, &curves);
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-GEOMDLLIMPEXP ClipPlaneContainment ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference
+ClipPlaneContainment ClipPlaneSet::ClassifyCurvePrimitiveInSetDifference
 (
 ICurvePrimitiveCR curve,
 ClipPlaneSetCR clipSet,
@@ -1541,7 +1565,10 @@ ClipPlaneSetCP maskSet
     return ClipPlaneContainment::ClipPlaneContainment_Ambiguous;
     }
 
-// add polygons -- also interpolate from visitor if active.
+/*---------------------------------------------------------------------------------**//**
+* add polygons -- also interpolate from visitor if active.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 static void AddPolygonsToMesh(PolyfaceHeaderPtr &mesh, BVectorCache<DPoint3d> &shards, PolyfaceVisitorR visitor)
     {
     IndexedParameterMap map;
@@ -1552,6 +1579,9 @@ static void AddPolygonsToMesh(PolyfaceHeaderPtr &mesh, BVectorCache<DPoint3d> &s
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 static void AddPolygonsToMesh (PolyfaceHeaderPtr *mesh, BVectorCache<DPoint3d> &shards)
     {
     if (mesh != nullptr)
@@ -1561,29 +1591,27 @@ static void AddPolygonsToMesh (PolyfaceHeaderPtr *mesh, BVectorCache<DPoint3d> &
         }
     }
 
-
-static void AddTrianglesToMesh(PolyfaceHeaderPtr *mesh,
-    bvector<DTriangle3d> &triangles,    // world coordinates, to save
-    bool reverse,                       // reverse coordinate order (does not affect normal)
-    bvector<DPoint3d> &work,            // work array for coordinates
-    TransformCR worldToParameterSpace,  // transform for parameters.
-    DVec3dCR normal,                    // normal (same for all)
-    bool compressNormal                 // if true, make only one normal.  If false, make same number of normals as points and params
-    )
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void AddTrianglesToMesh(
+PolyfaceHeaderR mesh,
+bvector<DPoint3d> const& triangleVertices,  // in world coordinates
+bvector<int> const& triangleIndices,        // 1-based, signed, 0-terminated
+TransformCR worldToParameterSpace,          // transform for parameters
+DVec3dCR normal,                            // normal (same for all)
+bool compressNormal,                        // if true, make only one normal; otherwise make same number of normals as points and params.
+bool reverse                                // reverse coordinate order (does not affect normal)
+)
     {
-    if (mesh != nullptr)
+    bvector<int> indices(4, 0);
+    for (size_t i = 0; i < triangleIndices.size(); ++i /* skip terminator */)
         {
-        DVec3d myNormal = normal;
-        if (reverse)
-            myNormal = normal;
-        for (auto &t : triangles)
-            {
-            work.clear();
-            work.push_back(t.point[0]);
-            work.push_back(t.point[1]);
-            work.push_back(t.point[2]);
-            (*mesh)->AddPolygon(work, worldToParameterSpace, normal, compressNormal, reverse);
-            }
+        indices[0] = triangleIndices[i++];
+        indices[1] = triangleIndices[i++];
+        indices[2] = triangleIndices[i++];
+        indices[3] = 0;
+        mesh.AddPolygon(triangleVertices, indices, worldToParameterSpace, normal, compressNormal, reverse);
         }
     }
 
@@ -1652,11 +1680,9 @@ PolyfaceHeaderPtr *inside,
 PolyfaceHeaderPtr *outside
 )
     {
-    bvector<BoolTypeForVector> interiorFlag; // empty ==> all active.
     ClipPlaneSet clipper = ClipPlaneSet::FromSweptPolygon (polygon.data (), polygon.size (), &sweepDirection);
     ClipPlaneSet::ClipPlaneSetIntersectPolyface (polyface, clipper, constructNewFacetsOnClipSetPlanes, inside, outside);
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -1675,6 +1701,7 @@ void ClipPlaneSet::ClipPlaneSetIntersectPolyface
             outside, true, constructNewFacetsOnClipSetPlanes,
             nullptr);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1688,7 +1715,7 @@ bool keepCutFacesWithInside,
 PolyfaceHeaderPtr *outside,
 bool keepPolyfaceOutsideParts,
 bool keepCutFacesWithOutside,
-bvector<bvector<DPoint3d>> *cutEdges
+bvector<bvector<DPoint3d>> *cutEdges    // unimplemented
 )
     {
     if (inside != nullptr)
@@ -1714,18 +1741,17 @@ bvector<bvector<DPoint3d>> *cutEdges
             insideA.ClearToCache ();
             outsideA.ClearToCache ();
             context.ClipAndCollect (visitor->Point (), clipSet, insideA, outsideA);
-            if (outside)
+            if (outside && keepPolyfaceOutsideParts)
                 AddPolygonsToMesh (*outside, outsideA, *visitor);
-            if (inside)
+            if (inside && keepPolyfaceInsideParts)
                 AddPolygonsToMesh (*inside, insideA, *visitor);
             }
         }
 
-    if (keepCutFacesWithInside || keepCutFacesWithOutside || cutEdges != nullptr)
+    if (keepCutFacesWithInside || keepCutFacesWithOutside)
         {
         // Each infinite plane of the clip plane set creates a section with the mesh,
         // and the sections are clipped by the other clip planes.
-        // unused - DRange3d range = polyface.PointRange ();
         bvector<DPoint3d> work;
         bvector<DPoint3d> clippedXYZ;
         for (auto &convexSet : clipSet)
@@ -1734,21 +1760,18 @@ bvector<bvector<DPoint3d>> *cutEdges
                 {
                 if (plane.IsVisible ())
                     {
-                    auto dplane = plane.GetDPlane3d ();
-                    auto localToWorld = plane.GetLocalToWorldTransform (false);
-                    Transform worldToLocal;
-                    worldToLocal.InverseOf (localToWorld);
-                    auto section = polyface.PlaneSlice (dplane, true);
+                    auto section = polyface.PlaneSlice (plane.GetDPlane3d(), true);  // output loops have closure point
                     if (section.IsValid ())
                         {
                         bvector<bvector<bvector<DPoint3d>>> regions;
                         bvector<bvector<DPoint3d>> clippedLoopsXYZ;
                         section->CollectLinearGeometry (regions);
-                        auto parityRegion = CurveVector::Create (CurveVector::BOUNDARY_TYPE_ParityRegion);
                         for (auto &region : regions)
                             {
                             for (auto &loop : region)
                                 {
+                                if (!loop.front().AlmostEqual(loop.back()))
+                                    continue;   // we can only triangulate/clip loops
                                 convexSet.ConvexPolygonClip (loop, clippedXYZ, work, 1);
                                 if (clippedXYZ.size () > 0)
                                     clippedLoopsXYZ.push_back (clippedXYZ);
@@ -1756,15 +1779,18 @@ bvector<bvector<DPoint3d>> *cutEdges
                             }
                         if (clippedLoopsXYZ.size () > 0)
                             {
-                            bvector<DTriangle3d> triangles;
-    //                        PolygonOps::FixupAndTriangulateSpaceLoops (clippedLoopsXYZ, triangles);
-                            PolygonOps::FixupAndTriangulateProjectedLoops (clippedLoopsXYZ, localToWorld, worldToLocal, triangles);
+                            Transform worldToLocal, localToWorld = plane.GetLocalToWorldTransform (false);
+                            worldToLocal.InverseOf(localToWorld);
+                            bvector<int> triangleIndices;
+                            bvector<DPoint3d> triangleVertices;
+                            PolygonOps::FixupAndTriangulateProjectedLoops(triangleIndices, nullptr, triangleVertices, localToWorld, worldToLocal, clippedLoopsXYZ, 0.0, true);
+
                             DVec3d normal0 = DVec3d::FromMatrixColumn (localToWorld, 2);
                             DVec3d normal1 = DVec3d::FromScale (normal0, -1.0);
-                            AddTrianglesToMesh (inside, triangles, true, work,
-                                    worldToLocal, normal1, true);
-                            AddTrianglesToMesh (outside, triangles, false, work,
-                                    worldToLocal, normal0, true);
+                            if (inside && keepCutFacesWithInside)
+                                AddTrianglesToMesh (*(*inside), triangleVertices, triangleIndices, worldToLocal, normal1, true, true);
+                            if (outside && keepCutFacesWithOutside)
+                                AddTrianglesToMesh (*(*outside), triangleVertices, triangleIndices, worldToLocal, normal0, true, false);
                             }
                         }
                     }
@@ -1783,11 +1809,11 @@ bvector<bvector<DPoint3d>> *cutEdges
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ClipPlaneSet::ClipPlaneSetSectionPolyface
 (
-    PolyfaceQueryCR polyface,
-    ClipPlaneSetCR clipSet,
-    PolyfaceHeaderPtr *planeSections,
-    bvector<bvector<DPoint3d>> *linestrings,
-    ValidatedDouble &colinearEdgeTolerance
+PolyfaceQueryCR polyface,   // ASSUMED to be closed!
+ClipPlaneSetCR clipSet,
+PolyfaceHeaderPtr *planeSections,
+bvector<bvector<DPoint3d>> *linestrings,
+ValidatedDouble &colinearEdgeTolerance
 )
     {
     if (planeSections != nullptr)
@@ -1799,7 +1825,6 @@ void ClipPlaneSet::ClipPlaneSetSectionPolyface
         linestrings->clear();
     // Each infinite plane of the clip plane set creates a section with the mesh,
     // and the sections are clipped by the other clip planes.
-    // unused - DRange3d range = polyface.PointRange ();
     bvector<DPoint3d> work;
     bvector<DPoint3d> clippedXYZ;
     for (auto &convexSet : clipSet)
@@ -1808,11 +1833,7 @@ void ClipPlaneSet::ClipPlaneSetSectionPolyface
             {
             if (plane.IsVisible())
                 {
-                auto dplane = plane.GetDPlane3d();
-                auto localToWorld = plane.GetLocalToWorldTransform(false);
-                Transform worldToLocal;
-                worldToLocal.InverseOf(localToWorld);
-                auto section = polyface.PlaneSlice(dplane, true);
+                auto section = polyface.PlaneSlice(plane.GetDPlane3d(), true);  // output loops have closure point
                 if (section.IsValid())
                     {
                     bvector<bvector<bvector<DPoint3d>>> regions;
@@ -1822,29 +1843,33 @@ void ClipPlaneSet::ClipPlaneSetSectionPolyface
                         {
                         for (auto &loop : region)
                             {
+                            if (!loop.front().AlmostEqual(loop.back()))
+                                continue;   // we can only triangulate/clip loops
                             convexSet.ConvexPolygonClip(loop, clippedXYZ, work, 1);
-                            if (colinearEdgeTolerance.IsValid ()){
-                                PolylineOps::CompressColinearPoints (clippedXYZ,
-                                        colinearEdgeTolerance.Value (), true, true);
-                                }
+
+                            if (colinearEdgeTolerance.IsValid())
+                                PolylineOps::CompressColinearPoints(clippedXYZ, colinearEdgeTolerance.Value(), true, true);
+
                             if (clippedXYZ.size() > 0)
                                 {
-                                clippedLoopsXYZ.push_back(clippedXYZ);
-                                if (linestrings != nullptr)
-                                    linestrings->push_back (clippedXYZ);
+                                if (planeSections)
+                                    clippedLoopsXYZ.push_back(clippedXYZ);
+                                if (linestrings)
+                                    linestrings->push_back(clippedXYZ);
                                 }
                             }
                         }
                     if (clippedLoopsXYZ.size() > 0)
                         {
-                        bvector<DTriangle3d> triangles;
-                        //                        PolygonOps::FixupAndTriangulateSpaceLoops (clippedLoopsXYZ, triangles);
-                        PolygonOps::FixupAndTriangulateProjectedLoops(clippedLoopsXYZ, localToWorld, worldToLocal, triangles);
+                        Transform worldToLocal, localToWorld = plane.GetLocalToWorldTransform(false);
+                        worldToLocal.InverseOf(localToWorld);
+                        bvector<int> triangleIndices;
+                        bvector<DPoint3d> triangleVertices;
+                        PolygonOps::FixupAndTriangulateProjectedLoops(triangleIndices, nullptr, triangleVertices, localToWorld, worldToLocal, clippedLoopsXYZ, 0.0, true);
+
                         DVec3d normal0 = DVec3d::FromMatrixColumn(localToWorld, 2);
                         DVec3d normal1 = DVec3d::FromScale(normal0, -1.0);
-                        AddTrianglesToMesh(planeSections, triangles, true, work,
-                            worldToLocal, normal1, true);
-
+                        AddTrianglesToMesh(*(*planeSections), triangleVertices, triangleIndices, worldToLocal, normal1, true, true);
                         }
                     }
                 }
@@ -2152,7 +2177,9 @@ bool ClipPlaneSet::IsAnyRangeFacePointInside(DRange3dCR range, bvector<DPoint3d>
     return false;
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void ClipPlaneSetCompoundClipContext::ClipPolylineToBooleanCombinationOfLineClips
 (
 ClipPlaneSetsWithOpcodes &clippers, //!< [in] array of clippers with annotation for how they are to be applied.
@@ -2186,6 +2213,9 @@ bvector<bvector<DPoint3d>> &clippedChains
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void ClipPlaneSetCompoundClipContext::BooleanCombinationOfLineClips
 (
 ClipPlaneSetsWithOpcodes &clippers, //!< [in] array of clippers with annotation for how they are to be applied.
@@ -2278,9 +2308,13 @@ bvector<DSegment3d> *insideSegs    //! [out] segments that are inside
             }
         }
     }
-// Move mesh pointers from source to dest.
-// . . but ignore empties.
-// . . clear the source array
+
+/*---------------------------------------------------------------------------------**//**
+* Move mesh pointers from source to dest.
+* . . but ignore empties.
+* . . clear the source array
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 static void MoveMeshes (bvector<PolyfaceHeaderPtr> &source, bool clearDestination, bvector<PolyfaceHeaderPtr> &dest)
     {
     if (clearDestination)
@@ -2292,6 +2326,10 @@ static void MoveMeshes (bvector<PolyfaceHeaderPtr> &source, bool clearDestinatio
         }
     source.clear ();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 static void CollectClips
 (
 ClipPlaneSetCP clipper,
@@ -2313,6 +2351,10 @@ bvector<PolyfaceHeaderPtr> &outsideParts
             }
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void ClipPlaneSetCompoundClipContext::BooleanCombinationOfMeshClips
 (
 ClipPlaneSetsWithOpcodes &clippers, //!< [in] array of clippers with annotation for how they are to be applied.
@@ -2404,7 +2446,10 @@ bvector<PolyfaceHeaderPtr> &clipResult
     clipResult.swap (insideParts);
     }
 
-GEOMDLLIMPEXP void ConvexClipPlaneSet::AppendPolygonPlaneIntersectionEdgesInConvexSet
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConvexClipPlaneSet::AppendPolygonPlaneIntersectionEdgesInConvexSet
 (
 ClipPlaneCR sectionPlane,
 bvector<DPoint3d> &points,

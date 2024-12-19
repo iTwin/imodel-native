@@ -1601,7 +1601,7 @@ StatusInt ChangedElementFinder::GetChangedElementsFromSummary(
     VCLOG.infov("GetChangedElementsFromSummary: start processing all instances");
     for (auto const& entry : changeSummary.MakeInstanceIterator())
         ProcessInstance(db, changeSummary, entry.GetInstance(), relatedInstanceFinder);
-    
+
     // Query any missing model ids
     QueryMissingInstancesModelIds(db);
 
@@ -1775,7 +1775,7 @@ StatusInt    VersionCompareChangeSummary::ProcessChangesets()
         // Create a summary with the current target db
         DgnChangeSummary changeSummary(*m_targetDb);
         // Put together the changeset
-        ChangesetFileReader fr (changeset->GetFileName(), *m_targetDb);
+        ChangesetFileReader fr (changeset->GetFileName(), m_targetDb.get());
         changeSummary.FromChangeSet(fr);
 
 // #define DUMP_CHANGE_SUMMARIES

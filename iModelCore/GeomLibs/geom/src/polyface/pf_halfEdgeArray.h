@@ -380,6 +380,10 @@ DVec3dCP silhouetteVector
     size_t numBoundary = 0;
     size_t numPositiveIndex = 0;
     size_t numNegativeIndex = 0;
+    UNUSED_VARIABLE(numBoundary);
+    UNUSED_VARIABLE(numPositiveIndex);
+    UNUSED_VARIABLE(numNegativeIndex);
+
     for (size_t i0 = 0, numMatch = 0; i0 < numHalfEdge; i0 += numMatch)
         {
         numMatch = 1;
@@ -528,6 +532,7 @@ bool returnSingleEdgeReadIndex
         {
         numMatch = 1;
         size_t numVisible = 0;
+        UNUSED_VARIABLE(numVisible);
         if (at(i0).IsVisible ())
             numVisible = 1;
         for (size_t i1 = i0 + 1; i1 < numHalfEdge && !cb_LessThan_LowVertexHighVertex (at(i0), at(i1)); i1++)

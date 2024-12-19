@@ -343,8 +343,6 @@ TEST(PolygonOps,ClassifyTriangleRange)
         DPoint3d::From(3, 1, 1),
         DPoint3d::From(1.1, 0.5, 0.5),
         4), "ClassifyTriangleRange: fringe trim cases");
-    int num0 = 0;
-    int num1 = 0;
     for (double c1u : {1.02, 0.5, 0.02, -0.5})
         {
         for (auto range : {
@@ -388,13 +386,6 @@ TEST(PolygonOps,ClassifyTriangleRange)
                             {
                             classifyBySeparatorPlanes = PolygonOps::TriangleIntersectsRangeBySeparatorPlanes(range, pointA, pointB, pointC);
                             classifyByClip = PolygonOps::TriangleIntersectsRangeByPlaneClip(range, pointA, pointB, pointC);
-                            }
-                        else
-                            {
-                            if (classifyByClip == 0)
-                                num0++;
-                            else
-                                num1++;
                             }
                         }
                     }

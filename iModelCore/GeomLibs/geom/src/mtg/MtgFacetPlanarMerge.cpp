@@ -17,6 +17,9 @@ bool MarkPlanarBoundaries (MTGFacets &facets, MTGMask boundaryMask, MTGMask igno
     size_t errors = 0;
     size_t numSmooth = 0;
     size_t numAngle = 0;
+    UNUSED_VARIABLE(numSmooth);
+    UNUSED_VARIABLE(numAngle);
+
     MTGARRAY_SET_LOOP (nodeIdA, graph)
         {
         if (!graph->HasMaskAt (nodeIdA, visitMask))
@@ -116,6 +119,9 @@ void MarkColinearEdges (MTGFacets &facets, MTGMask boundaryMask, MTGMask exterio
     MTGMask visitMask = visitMaskA.Get ();
     size_t numSmooth = 0;
     size_t numTested = 0;
+    UNUSED_VARIABLE(numSmooth);
+    UNUSED_VARIABLE(numTested);
+
     MTGARRAY_SET_LOOP (nodeIdA, &graph)
         {
         if (!graph.HasMaskAt (nodeIdA, visitMask)

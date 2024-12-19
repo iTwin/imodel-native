@@ -518,12 +518,12 @@ void TxnManager::OnValidateChanges(ChangeStreamCR changeStream) {
 
         DbResult rc = change.GetOperation(&tableName, &nCols, &opcode, &indirect);
         if (rc != BE_SQLITE_OK) {
-            LOG.error("invalid change in changset");
+            LOG.error("invalid change in changeset");
             BeAssert(false && "invalid change in changeset");
             continue;
         }
 
-        if (0 != strcmp(currTable.c_str(), tableName)) { // changes within a changeset are grouped by table
+        if (0 != BeStringUtilities::StricmpAscii(currTable.c_str(), tableName)) { // changes within a changeset are grouped by table
             currTable = tableName;
             txnTable = FindTxnTable(tableName);
         }
@@ -574,7 +574,7 @@ void TxnManager::OnChangeSetApplied(ChangeStreamCR changeStream, bool invert) {
         BeAssert(rc == BE_SQLITE_OK);
         UNUSED_VARIABLE(rc);
 
-        if (0 != strcmp(currTable.c_str(), tableName)) { // changes within a changeset are grouped by table
+        if (0 != BeStringUtilities::StricmpAscii(currTable.c_str(), tableName)) { // changes within a changeset are grouped by table
             currTable = tableName;
             txnTable = FindTxnTable(tableName);
         }
@@ -949,7 +949,7 @@ void TxnManager::ReverseChangeset(ChangesetPropsCR changeset) {
     if (changeset.ContainsDdlChanges(m_dgndb))
         m_dgndb.ThrowException("Cannot reverse a changeset containing schema changes", (int) ChangesetStatus::ReverseOrReinstateSchemaChanges);
 
-    ChangesetFileReader changeStream(changeset.GetFileName(), m_dgndb);
+    ChangesetFileReader changeStream(changeset.GetFileName(), &m_dgndb);
 
     // Skip the entire schema change set when reversing or reinstating - DDL and
     // the meta-data changes. Reversing meta data changes cause conflicts
@@ -964,6 +964,81 @@ void TxnManager::ReverseChangeset(ChangesetPropsCR changeset) {
         m_dgndb.ThrowException("unable to save changes", (int) ChangesetStatus::SQLiteError);
 }
 
+
+/*---------------------------------------------------------------------------------**//**
+ * @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesetProps, bool skipSchemaChanges) {
+    // If we are readonly, we can't revert changesets
+    if (m_dgndb.IsReadonly())
+        m_dgndb.ThrowException("file is readonly", (int) ChangesetStatus::CannotMergeIntoReadonly);
+
+    // If we have changes in progress, we can't revert changesets
+    if (IsChangesetInProgress())
+        m_dgndb.ThrowException("changeset creation is in progress", (int) ChangesetStatus::IsCreatingChangeset);
+
+    if(!skipSchemaChanges){
+        // If we have changes in progress, we can't revert changesets
+        if (HasPendingTxns())
+            m_dgndb.ThrowException("pending transactions present", (int) ChangesetStatus::HasLocalChanges);
+
+        // If we have changes in progress, we can't revert changesets
+        if (HasChanges())
+            m_dgndb.ThrowException("unsaved changes present", (int) ChangesetStatus::HasUncommittedChanges);
+    }
+
+    constexpr auto invert = true;
+
+    // Revert the changesets in reverse order
+    m_dgndb.AbandonChanges();
+    m_dgndb.Elements().ClearCache();
+    m_dgndb.Models().ClearCache();
+    m_dgndb.ClearECDbCache();
+
+    Utf8String currentChangesetId = GetParentChangesetId();
+    for(auto& changesetProp : changesetProps) {
+        changesetProp->ValidateContent(m_dgndb);
+        ChangesetFileReader changeStream(changesetProp->GetFileName(), &m_dgndb);
+        if (currentChangesetId != changesetProp->GetChangesetId()) {
+            m_dgndb.ThrowException("changeset out of order", (int) ChangesetStatus::ParentMismatch);
+        }
+        currentChangesetId = changesetProp->GetParentId();
+        auto dataApplyArgs = ApplyChangesArgs::Default()
+            .SetInvert(invert)
+            .SetIgnoreNoop(true)
+            .SetFkNoAction(true)
+            .ApplyOnlyDataChanges();
+
+        auto rc = changeStream.ApplyChanges(m_dgndb, dataApplyArgs);
+        if (rc != BE_SQLITE_OK) {
+            m_dgndb.AbandonChanges();
+            if (changeStream.GetLastErrorMessage().empty())
+                m_dgndb.ThrowException("failed to apply changes", rc);
+            else
+                m_dgndb.ThrowException(changeStream.GetLastErrorMessage().c_str(), rc);
+        }
+
+        if (!skipSchemaChanges){
+            auto schemaApplyArgs = ApplyChangesArgs::Default()
+                .SetInvert(invert)
+                .SetIgnoreNoop(true)
+                .SetFkNoAction(true)
+                .ApplyOnlySchemaChanges();
+
+            m_dgndb.Schemas().OnBeforeSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
+            rc = changeStream.ApplyChanges(m_dgndb, schemaApplyArgs);
+            if (rc != BE_SQLITE_OK) {
+                m_dgndb.AbandonChanges();
+                m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
+                if (changeStream.GetLastErrorMessage().empty())
+                    m_dgndb.ThrowException("failed to apply changes", rc);
+                else
+                    m_dgndb.ThrowException(changeStream.GetLastErrorMessage().c_str(), rc);
+            }
+            m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
+        }
+    }
+}
 /*---------------------------------------------------------------------------------**/ /**
  * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -981,7 +1056,7 @@ ChangesetStatus TxnManager::MergeChangeset(ChangesetPropsCR changeset) {
     if (GetParentChangesetId() != changeset.GetParentId())
         m_dgndb.ThrowException("changeset out of order", (int) ChangesetStatus::ParentMismatch);
 
-    ChangesetFileReader changeStream(changeset.GetFileName(), m_dgndb);
+    ChangesetFileReader changeStream(changeset.GetFileName(), &m_dgndb);
 
     const bool containsDDLChanges = changeset.ContainsDdlChanges(m_dgndb);
 
@@ -1298,7 +1373,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     auto dataApplyArgs = ApplyChangesArgs::Default()
         .SetRebase(rebase)
         .SetInvert(invert)
-        .SetIgnoreNoop(false)
+        .SetIgnoreNoop(true)
         .SetFkNoAction(true);
 
     // If schema changes are present, we need to apply only data changes after schema changes are applied.
@@ -1476,16 +1551,31 @@ BentleyStatus TxnManager::PatchSlowDdlChanges(Utf8StringR patchedDDL, Utf8String
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::ApplyDdlChanges(DdlChangesCR ddlChanges) {
     BeAssert(!ddlChanges._IsEmpty() && "DbSchemaChangeSet is empty");
-    auto info = GetDgnDb().Schemas().GetSchemaSync().GetInfo();
+    const auto info = GetDgnDb().Schemas().GetSchemaSync().GetInfo();
+    const bool wasTracking = EnableTracking(false);
+    Utf8String originalDDL = ddlChanges.ToString();
+
+    DbResult result = BE_SQLITE_OK;
     if (!info.IsEmpty()) {
-        LOG.infov("Skipping DDL Changes as IModel has schema sync enabled. Sync-Id {%s}.", info.GetSyncId().c_str());
+        // In SchemaSync, we still need to apply schema changes to ec_*, dgn_*, and be_* tables.
+        // We cannot determine which DDL is for profile tables, so we try applying all of them.
+        // If it fails, it's fine because SchemaSync::pull() will patch/update all tables as necessary after applying the changeset.
+        // Not applying the DDL can cause the current changeset to fail if a column in the profile table is missing.
+        // This issue is detected when applying a changeset that upgrades the ECDb profile from version 4.0.0.1 to a newer version.
+        // Version 4.0.0.2 adds new tables and columns to ec_* tables. Since SchemaSync::pull() is called, after pull/merge is complete.
+        bvector<Utf8String> individualSQL;
+        BeStringUtilities::Split(originalDDL.c_str(), ";", individualSQL);
+        for (auto& sql : individualSQL) {
+            result = m_dgndb.TryExecuteSql(sql.c_str());
+            if (result != BE_SQLITE_OK) {
+                LOG.warningv("ApplyDdlChanges() with SchemaSync: Failed to apply DDL changes. Error: %s (%s)", BeSQLiteLib::GetErrorName(result), sql.c_str());
+            }
+        }
+        EnableTracking(wasTracking);
         return BE_SQLITE_OK;
     }
 
-    bool wasTracking = EnableTracking(false);
-    Utf8String originalDDL = ddlChanges.ToString();
     Utf8String patchedDDL;
-    DbResult result = BE_SQLITE_OK;
     BentleyStatus status = PatchSlowDdlChanges(patchedDDL, originalDDL);
     if (status == SUCCESS) {
         // Info message so we can look out if this issue has gone due to fix in the place which produce these changeset.

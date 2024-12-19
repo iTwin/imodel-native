@@ -9,7 +9,9 @@ SUBDIRS = . tests
 EXTRA_DIST = 			\
 	generator.py		\
 	libxml.py		\
-	libxml2-python-api.xml
+	libxml2-python-api.xml  \
+	pyproject.toml		\
+	meson.build
 
 if WITH_PYTHON
 AM_CPPFLAGS = \

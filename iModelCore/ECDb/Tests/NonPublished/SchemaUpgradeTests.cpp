@@ -283,7 +283,6 @@ TEST_F(SchemaUpgradeTestFixture, DeleteSchema_VerifyCustomAttributesAreDeletedAs
     auto testCA1ClassId = testCA1Class->GetId();
     auto pipeClassId = pipeClass->GetId();
     auto pipePropId = p4Prop->GetId();
-    const auto ContainerType_Schema = 1;
     const auto ContainerType_Class = 30;
     const auto ContainerType_Property = 992;
     auto doesCustomAttributeExists = [&](BeInt64Id containerId, ECN::ECClassId caClassId, int containerType) {
@@ -16181,7 +16180,7 @@ TEST_F(SchemaUpgradeTestFixture, OverflowedStructClass_Simple) {
         ASSERT_STREQ(inst1["data"].toStyledString().c_str(), out.toStyledString().c_str());
     }
 
-    auto v2 = R"(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+    auto v2 = R"(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Element">
                         <ECCustomAttributes>
