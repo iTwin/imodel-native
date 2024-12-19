@@ -1554,6 +1554,12 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return Napi::Number::New(Env(), (int) id.GetValue());
     }
 
+    void InvalidateFontMap(NapiInfoCR info) {
+        auto& db = GetOpenedDb(info);
+        BeMutexHolder lock(FontManager::GetMutex());
+        db.Fonts().Invalidate();
+    }
+    
     Napi::Value WriteFullElementDependencyGraphToFile(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);
@@ -2722,6 +2728,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("abandonCreateChangeset", &NativeDgnDb::AbandonCreateChangeset),
             InstanceMethod("addChildPropagatesChangesToParentRelationship", &NativeDgnDb::AddChildPropagatesChangesToParentRelationship),
             InstanceMethod("addNewFont", &NativeDgnDb::AddNewFont),
+            InstanceMethod("invalidateFontMap", &NativeDgnDb::InvalidateFontMap),
             InstanceMethod("applyChangeset", &NativeDgnDb::ApplyChangeset),
             InstanceMethod("revertTimelineChanges", &NativeDgnDb::RevertTimelineChanges),
             InstanceMethod("attachChangeCache", &NativeDgnDb::AttachChangeCache),

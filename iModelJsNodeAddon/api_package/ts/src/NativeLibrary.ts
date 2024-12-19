@@ -550,6 +550,7 @@ export declare namespace IModelJsNative {
     public abandonChanges(): DbResult;
     public abandonCreateChangeset(): void;
     public addChildPropagatesChangesToParentRelationship(schemaName: string, relClassName: string): BentleyStatus;
+    public invalidateFontMap(): void;
     public addNewFont(arg: { type: FontType, name: string }): number;
     public applyChangeset(changeSet: ChangesetFileProps): void;
     public revertTimelineChanges(changeSet: ChangesetFileProps[], skipSchemaChanges: boolean): void;
