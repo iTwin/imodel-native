@@ -149,6 +149,7 @@ public:
         return m_trueType;
     }
     DGNPLATFORM_EXPORT BentleyStatus EmbedFont(bvector<FontFace> const& faces, ByteStreamCR data, bool compress);
+    DGNPLATFORM_EXPORT BentleyStatus EmbedFont(uint32_t id, bvector<FontFace> const& faces, ByteStreamCR data, bool compress);
     DGNPLATFORM_EXPORT BentleyStatus EmbedFontFile(Utf8CP fileName, bool compress);
     DGNPLATFORM_EXPORT DbFontP FindFont(FontType fontType, Utf8CP fontName) const { Load(); return GetMap(fontType).Find(fontName); }
 };
