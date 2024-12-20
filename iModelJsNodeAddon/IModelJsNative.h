@@ -15,6 +15,11 @@
 #include <Napi/napi.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include "DgnDbWorker.h"
+#ifdef BENTLEY_WIN32
+    #define signal(x,y)
+#else
+    #include <signal.h>
+#endif
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE

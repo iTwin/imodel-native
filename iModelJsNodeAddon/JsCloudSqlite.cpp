@@ -1032,6 +1032,7 @@ void registerCloudSqlite(Napi::Env env, Napi::Object exports) {
     JsCloudCache::Init(env, exports);
     JsCloudContainer::Init(env, exports);
     JsCloudPrefetch::Init(env, exports);
+    signal(SIGPIPE, SIG_IGN); // ignore SIGPIPE
 }
 
 } // end namespace IModelJsNative
