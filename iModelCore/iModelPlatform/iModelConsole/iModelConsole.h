@@ -256,6 +256,8 @@ struct IModelConsole final : Dgn::PlatformLib::Host
 
         int Run(int argc, WCharCP argv[]);
 
+        int ExecuteSampleQuery(char *sample_bytes);
+
         static size_t FindNextToken(Utf8String& token, WStringCR inputString, size_t startIndex, WChar delimiter, WChar delimiterEscapeChar = L'\0');
 
         static void Write(Utf8CP format, ...);
