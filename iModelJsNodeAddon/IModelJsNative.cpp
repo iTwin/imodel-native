@@ -2557,13 +2557,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     void ApplyChangeset(NapiInfoCR info) {
         auto& db = GetWritableDb(info);
         REQUIRE_ARGUMENT_ANY_OBJ(0, changeset);
+        REQUIRE_ARGUMENT_BOOL(1, fastForward);
 
         auto revision = JsInterop::GetChangesetProps(db.GetDbGuid().ToString(), changeset);
-
         auto currentId = db.Txns().GetParentChangesetId();
         ChangesetStatus stat =  ChangesetStatus::Success;
         if (revision->GetParentId() == currentId)  // merge
-            stat = db.Txns().MergeChangeset(*revision);
+            stat = db.Txns().MergeChangeset(*revision, fastForward);
         else if (revision->GetChangesetId() == currentId) //reverse
             db.Txns().ReverseChangeset(*revision);
         if (ChangesetStatus::Success != stat)
@@ -2665,22 +2665,6 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     void PullMergeEnd(NapiInfoCR info) {
         auto& db = GetWritableDb(info);
         db.Txns().PullMergeEnd();
-    }
-
-    void PullMergeEraseConf(NapiInfoCR info) {
-        auto& db = GetWritableDb(info);
-        db.Txns().PullMergeEraseConf();
-    }
-
-    void PullMergeSetMethod(NapiInfoCR info) {
-        REQUIRE_ARGUMENT_STRING(0, method);
-        auto& db = GetWritableDb(info);
-        db.Txns().PullMergeSetMethod(method == "Rebase");
-    }
-
-    Napi::Value PullMergeGetMethod(NapiInfoCR info) {
-        auto& db = GetWritableDb(info);
-        return db.Txns().PullMergeIsRebase() ? Napi::String::New(Env(), "Rebase") : Napi::String::New(Env(), "Merge");
     }
 
     Napi::Value PullMergeInProgress(NapiInfoCR info) {
@@ -2876,10 +2860,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("getLocalChanges", &NativeDgnDb::GetLocalChanges),
             InstanceMethod("getNoCaseCollation", &NativeDgnDb::GetNoCaseCollation),
             InstanceMethod("setNoCaseCollation", &NativeDgnDb::SetNoCaseCollation),
-            InstanceMethod("pullMergeSetMethod", &NativeDgnDb::PullMergeSetMethod),
             InstanceMethod("pullMergeInProgress", &NativeDgnDb::PullMergeInProgress),
-            InstanceMethod("pullMergeGetMethod", &NativeDgnDb::PullMergeGetMethod),
-            InstanceMethod("pullMergeEraseConf", &NativeDgnDb::PullMergeEraseConf),
             InstanceMethod("pullMergeBegin", &NativeDgnDb::PullMergeBegin),
             InstanceMethod("pullMergeEnd", &NativeDgnDb::PullMergeEnd),
             InstanceMethod("pullMergeResume", &NativeDgnDb::PullMergeResume),

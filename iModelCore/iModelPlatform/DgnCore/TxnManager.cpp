@@ -33,14 +33,11 @@ private:
 
     TxnManager::TxnId _endTxnId;
     TxnManager::TxnId _startTxnId;
-    bool _isRebase = false; //! Default to 'Merge' method.
     MergeStage _mergeStage = MergeStage::None;
 
 public:
     TxnManager::TxnId GetEndTxnId() const { return _endTxnId; }
     TxnManager::TxnId GetStartTxnId() const { return _startTxnId; }
-    bool IsRebase() const {return _isRebase; }
-    bool IsMerge() const {return !_isRebase; }
     MergeStage GetMergeStage() const { return _mergeStage; }
     bool IsMergingRemoteChanges() const { return _mergeStage == MergeStage::MergingRemoteChanges; }
     bool IsRebasingLocalChanges() const { return _mergeStage == MergeStage::RebasingLocalChanges; }
@@ -51,13 +48,10 @@ public:
         doc[PullMergeConf::JVersion] = VER;
         doc[PullMergeConf::JMergeStage] = static_cast<int>(_mergeStage);
         doc[PullMergeConf::JEndTxnId] = static_cast<int64_t>(_endTxnId.GetValue());
-        doc[PullMergeConf::JIsRebase] = _isRebase;
         return db.SaveBriefcaseLocalValue(PullMergeConf::JKey, doc.Stringify());
     }
     PullMergeConf& SetEndTxnId(TxnManager::TxnId id) { _endTxnId = id; return *this; }
     PullMergeConf& SetStartTxnId(TxnManager::TxnId id) { _startTxnId = id; return *this; }
-    PullMergeConf& SetMethodAsRebase() { _isRebase = true; return *this; }
-    PullMergeConf& SetMethodAsMerge() { _isRebase = false; return *this; }
     PullMergeConf& SetMergeStage(MergeStage stage) { _mergeStage = stage; return *this; }
 
     static DbResult Remove(DbR db) { return db.DeleteBriefcaseLocalValue(PullMergeConf::JKey); }
@@ -78,7 +72,6 @@ public:
             info._mergeStage = static_cast<MergeStage>(doc[PullMergeConf::JMergeStage].GetInt(static_cast<int>(MergeStage::None)));
             info._endTxnId  = TxnManager::TxnId(doc[PullMergeConf::JEndTxnId].GetUInt64(0));
             info._startTxnId  = TxnManager::TxnId(doc[PullMergeConf::JStartTxnId].GetUInt64(0));
-            info._isRebase = doc[PullMergeConf::JIsRebase].GetBoolean(false);
         }
         return info;
     }
@@ -250,77 +243,6 @@ DbResult TxnManager::SaveTxn(ChangeSetCR changeSet, Utf8CP operation, TxnType tx
 
     return rc;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TxnManager::SaveRebase(int64_t& id, Rebase const& rebase)
-    {
-    if (!m_enableRebasers)
-        return BE_SQLITE_DONE;
-
-    BeAssert(0 != rebase.GetSize());
-
-    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE_Rebase "(Rebase) VALUES(?)");
-    stmt.BindBlob(1, rebase.GetData(), rebase.GetSize(), Statement::MakeCopy::No);
-
-    auto rc = stmt.Step();
-    if (BE_SQLITE_DONE == rc)
-        id = m_dgndb.GetLastInsertRowId();
-    else
-        {
-        BeAssert(false);
-        }
-    return rc;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TxnManager::LoadRebases(Rebaser& rebaser, int64_t thruId)
-    {
-    if (!m_enableRebasers) {
-        BeAssert(false && "rebasers are not enabled for the DgnDb");
-        return BE_SQLITE_OK;
-    }
-
-    Statement stmt(m_dgndb, "SELECT Rebase FROM " DGN_TABLE_Rebase " WHERE (Id <= ?)");
-    stmt.BindInt64(1, thruId);
-
-    DbResult rc;
-    while (BE_SQLITE_ROW == (rc = stmt.Step())) {
-        rc = rebaser.AddRebase(stmt.GetValueBlob(0), stmt.GetColumnBytes(0));
-        if (rc != BE_SQLITE_OK)
-            return rc;
-    }
-
-    return BE_SQLITE_DONE == rc ? BE_SQLITE_OK : rc;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::DeleteRebases(int64_t id) {
-    if (!m_enableRebasers || id==0)
-        return;
-
-    Statement stmt(m_dgndb, "DELETE FROM " DGN_TABLE_Rebase " WHERE (Id <= ?)");
-    stmt.BindInt64(1, id);
-    auto result = stmt.Step();
-    UNUSED_VARIABLE(result);
-    BeAssert(BE_SQLITE_DONE == result);
-}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-int64_t TxnManager::QueryLastRebaseId() {
-    if (!m_enableRebasers || !m_dgndb.TableExists(DGN_TABLE_Rebase))
-        return 0;
-
-    Statement stmt(m_dgndb, "SELECT MAX(Id) FROM " DGN_TABLE_Rebase);
-    return BE_SQLITE_ROW == stmt.Step() ? stmt.GetValueInt64(0) : 0;
-}
 
 /*---------------------------------------------------------------------------------**//**
 * Read the description of a Txn
@@ -563,6 +485,7 @@ BentleyStatus TxnManager::DoPropagateChanges(ChangeTracker& tracker) {
 TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName) {
     // Skip these tables - they hold redundant data that will be automatically updated when the changeset is applied
     return (
+               TABLE_NAME_STARTS_WITH(BEDB_TABLE_Local) ||
                TABLE_NAME_STARTS_WITH(DGN_TABLE_Txns) ||
                TABLE_NAME_STARTS_WITH(DGN_VTABLE_SpatialIndex) ||
                TABLE_NAME_STARTS_WITH(DGN_TABLE_Rebase) ||
@@ -913,12 +836,11 @@ ChangesetStatus TxnManager::MergeDdlChanges(ChangesetPropsCR revision, Changeset
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, ChangesetFileReader& changeStream, bool containsSchemaChanges) {
+ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, ChangesetFileReader& changeStream, bool containsSchemaChanges, bool fastForward) {
     // if we don't have any pending txns, this is merely an Apply, no merging or propagation needed.
-    bool mergeNeeded = HasPendingTxns() && m_initTableHandlers; // if tablehandlers are not present we can't merge - happens for schema upgrade
-    Rebase rebase;
+    bool mergeNeeded = HasPendingTxns() && m_initTableHandlers; // if tablehandlers are not present we can't
 
-    DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, mergeNeeded ? &rebase : nullptr, false);
+    DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, false, fastForward);
     if (result != BE_SQLITE_OK) {
         if (changeStream.GetLastErrorMessage().empty())
             m_dgndb.ThrowException("failed to apply changes", result);
@@ -972,20 +894,11 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
         OnEndValidate();
     }
 
-    if ((ChangesetStatus::Success == status) && mergeNeeded && 0 != rebase.GetSize()) {
-        int64_t rebaseId;
-        result = SaveRebase(rebaseId, rebase);
-        if (BE_SQLITE_DONE != result) {
-            BeAssert(false);
-            status = ChangesetStatus::SQLiteError;
-        }
-    }
-
     if (status == ChangesetStatus::Success) {
         SaveParentChangeset(revision.GetChangesetId(), revision.GetChangesetIndex());
 
         if (status == ChangesetStatus::Success) {
-            if (PullMergeConf::Load(m_dgndb).IsMerge()) {
+            if (PullMergeConf::Load(m_dgndb).InProgress()) {
                 result = m_dgndb.SaveChanges();
             }
             // Note: All that the above operation does is to COMMIT the current Txn and BEGIN a new one.
@@ -1009,7 +922,7 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
 
         UndoChangeSet allChanges;
         allChanges.FromChangeGroup(changeGroup);
-        result = ApplyChanges(allChanges, TxnAction::Reverse, containsSchemaChanges, nullptr, true);
+        result = ApplyChanges(allChanges, TxnAction::Reverse, containsSchemaChanges, true);
         BeAssert(result == BE_SQLITE_OK);
     }
     return status;
@@ -1043,7 +956,7 @@ void TxnManager::ReverseChangeset(ChangesetPropsCR changeset) {
 
     // Skip the entire schema change set when reversing or reinstating - DDL and
     // the meta-data changes. Reversing meta data changes cause conflicts
-    DbResult result = ApplyChanges(changeStream, TxnAction::Reverse, false, nullptr, true);
+    DbResult result = ApplyChanges(changeStream, TxnAction::Reverse, false, true);
     if (result != BE_SQLITE_OK)
         m_dgndb.ThrowException("Error applying changeset", (int) ChangesetStatus::ApplyError);
 
@@ -1132,14 +1045,14 @@ void TxnManager::RevertTimelineChanges(std::vector<ChangesetPropsPtr> changesetP
 /*---------------------------------------------------------------------------------**/ /**
  * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChangesetStatus TxnManager::MergeChangeset(ChangesetPropsCR changeset) {
+ChangesetStatus TxnManager::MergeChangeset(ChangesetPropsCR changeset, bool fastForward) {
     ThrowIfChangesetInProgress();
 
     if (m_dgndb.IsReadonly())
         m_dgndb.ThrowException("file is readonly", (int) ChangesetStatus::CannotMergeIntoReadonly);
 
     auto conf = PullMergeConf::Load(m_dgndb);
-    if (HasChanges() && !(conf.IsRebase() && conf.InProgress()))
+    if (HasChanges() && !(conf.InProgress()))
         m_dgndb.ThrowException("unsaved changes present", (int) ChangesetStatus::HasUncommittedChanges);
 
     changeset.ValidateContent(m_dgndb);
@@ -1159,13 +1072,12 @@ ChangesetStatus TxnManager::MergeChangeset(ChangesetPropsCR changeset) {
             return status;
     }
 
-
     /**
      * The value of this boolean variable is determined by checking if the changeset
      * contains DDL changes or if the changeset type includes the Schema change type.
      */
     const bool hasEcOrDdlChanges = containsDDLChanges || changeset.ContainsEcChanges();
-    return MergeDataChanges(changeset, changeStream, hasEcOrDdlChanges);
+    return MergeDataChanges(changeset, changeStream, hasEcOrDdlChanges, fastForward);
 }
 
 /*---------------------------------------------------------------------------------**/ /**
@@ -1406,7 +1318,13 @@ struct DisableTracking {
 * Apply a changeset to the database. Notify all TxnTables about what was in the Changeset afterwards.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bool containsSchemaChanges, Rebase* rebase, bool invert) {
+DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bool containsSchemaChanges, bool invert, bool fastForward) {
+    if (invert && fastForward) {
+         LOG.error("ApplyChanges() cannot be called with invert & fastForward flag both been set at same time");
+        BeAssert(false);
+        return BE_SQLITE_ERROR;
+    }
+
     BeAssert(action != TxnAction::None);
     AutoRestore<TxnAction> saveAction(&m_action, action);
     auto pmConf = PullMergeConf::Load(m_dgndb);
@@ -1425,16 +1343,30 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
         m_dgndb.Schemas().OnBeforeSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
     }
 
+    // we want cascade delete to work during rebase.
+    const bool fkNoAction = !pmConf.IsRebasingLocalChanges();
+
+    bool fastForwardEncounteredMergeConflict = false;
+    auto fastForwardConflictHandler = [&fastForwardEncounteredMergeConflict](ChangeStream::ConflictCause _, Changes::Change change) {
+        if(change.IsIndirect())
+            return ChangeStream::ConflictResolution::Replace;
+
+        fastForwardEncounteredMergeConflict = true;
+        return ChangeStream::ConflictResolution::Abort;
+    };
 
     // apply schema part of changeset before data changes if schema changes are present
     if (containsSchemaChanges) {
         m_dgndb.Schemas().OnBeforeSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
         auto schemaApplyArgs = ApplyChangesArgs::Default()
-            .SetRebase(rebase)
             .SetInvert(invert)
             .SetIgnoreNoop(true)
-            .SetFkNoAction(true)
+            .SetFkNoAction(fkNoAction)
             .ApplyOnlySchemaChanges();
+
+        if (fastForward) {
+            schemaApplyArgs.SetConflictHandler(fastForwardConflictHandler);
+        }
 
         if(!m_dgndb.IsReadonly()) {
             const auto result = [&]() {
@@ -1443,7 +1375,11 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
                 return changeset.ApplyChanges(m_dgndb, schemaApplyArgs);
             }();
             if (result != BE_SQLITE_OK) {
-                LOG.errorv("failed to apply changeset: %s", BeSQLiteLib::GetErrorName(result));
+                if (fastForwardEncounteredMergeConflict)
+                    LOG.error("failed to apply changeset in fastforward mode. Atleast one conflict was detected");
+                else
+                    LOG.errorv("failed to apply changeset: %s", BeSQLiteLib::GetErrorName(result));
+
                 m_dgndb.AbandonChanges();
                 m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
                 return result;
@@ -1463,10 +1399,13 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     }
 
     auto dataApplyArgs = ApplyChangesArgs::Default()
-        .SetRebase(rebase)
         .SetInvert(invert)
         .SetIgnoreNoop(true)
-        .SetFkNoAction(true);
+        .SetFkNoAction(fkNoAction);
+
+    if (fastForward) {
+        dataApplyArgs.SetConflictHandler(fastForwardConflictHandler);
+    }
 
     // If schema changes are present, we need to apply only data changes after schema changes are applied.
     if (containsSchemaChanges){
@@ -1481,7 +1420,11 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
         }();
 
         if (result != BE_SQLITE_OK) {
-            LOG.errorv("failed to apply changeset: %s", BeSQLiteLib::GetErrorName(result));
+            if (fastForwardEncounteredMergeConflict)
+                LOG.error("failed to apply changeset in fastforward mode. Atleast one conflict was detected");
+            else
+                LOG.errorv("failed to apply changeset: %s", BeSQLiteLib::GetErrorName(result));
+
             m_dgndb.AbandonChanges();
             if (containsSchemaChanges) {
                 m_dgndb.Schemas().OnAfterSchemaChanges().RaiseEvent(m_dgndb, SchemaChangeType::SchemaChangesetApply);
@@ -1985,9 +1928,6 @@ void TxnManager::DeleteAllTxns() {
 
     m_dgndb.SaveChanges(); // in case there are outstanding changes that will create a new Txn
     m_dgndb.ExecuteSql("DELETE FROM " DGN_TABLE_Txns);
-    if (m_dgndb.TableExists(DGN_TABLE_Rebase))
-        m_dgndb.ExecuteSql("DELETE FROM " DGN_TABLE_Rebase);
-
     m_dgndb.SaveChanges();
     Initialize();
 }
@@ -2922,10 +2862,6 @@ void TxnManager::PullMergeBegin() {
         m_dgndb.ThrowException("cannot processed due to unsaved changes.", BE_SQLITE_ERROR);
     }
 
-    if (conf.IsMerge()){
-        return;
-    }
-
     DeleteReversedTxns();
 
     const auto endTxnId = GetCurrentTxnId();
@@ -2951,10 +2887,6 @@ void TxnManager::PullMergeBegin() {
 void TxnManager::PullMergeEnd() {
     auto conf = PullMergeConf::Load(m_dgndb);
     if (!conf.InProgress()) {
-        return;
-    }
-
-    if (conf.IsMerge()){
         return;
     }
 
@@ -3016,7 +2948,7 @@ void TxnManager::PullMergeEnd() {
         const auto isSchemaOrDDLChange = type != TxnType::Data;
         LocalChangeSet changeset(GetDgnDb(), currTxnId, type, desc);
         ReadDataChanges(changeset, currTxnId, TxnAction::None);
-        rc = ApplyChanges(changeset, TxnAction::Merge, isSchemaOrDDLChange, nullptr, false);
+        rc = ApplyChanges(changeset, TxnAction::Merge, isSchemaOrDDLChange, false);
         if (rc != BE_SQLITE_OK) {
             if (changeset.GetLastErrorMessage().empty())
                 throwError(currTxnId, "failed to apply changes", rc);
@@ -3084,6 +3016,8 @@ void TxnManager::PullMergeEnd() {
         .SetEndTxnId(TxnId(0))
         .SetStartTxnId(TxnId(0))
         .Save(m_dgndb);
+
+    m_dgndb.SaveChanges();
     Restart();
 }
 
@@ -3099,31 +3033,6 @@ void TxnManager::PullMergeEraseConf() {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::PullMergeSetMethod(bool rebase) {
-    auto conf = PullMergeConf::Load(m_dgndb);
-    if (conf.InProgress()) {
-        m_dgndb.ThrowException("operation failed: pull merge in progress.", BE_SQLITE_ERROR);
-    }
-
-    if (HasPendingTxns()){
-        m_dgndb.ThrowException("operation failed: there are pending changes.", BE_SQLITE_ERROR);
-    }
-
-    if (rebase){
-        conf.SetMethodAsRebase();
-    } else {
-        conf.SetMethodAsMerge();
-    }
-
-    auto rc = conf.Save(m_dgndb);
-    if (rc != BE_SQLITE_DONE) {
-        m_dgndb.ThrowException("PullMergeSetMethod(): fail to save pull-merge conf ", (int)rc);
-    }
-}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool TxnManager::PullMergeInProgress() const {
     return PullMergeConf::Load(m_dgndb).InProgress();
 }
@@ -3131,19 +3040,9 @@ bool TxnManager::PullMergeInProgress() const {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TxnManager::PullMergeIsRebase() const {
-    return PullMergeConf::Load(m_dgndb).IsRebase();
-}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ChangesetStatus TxnManager::PullMergeApply(ChangesetPropsCR revision, bool useRebase){
-    if (useRebase && !PullMergeIsRebase()){
-        PullMergeSetMethod(useRebase);
-    }
+ChangesetStatus TxnManager::PullMergeApply(ChangesetPropsCR revision){
     PullMergeBegin();
-    auto rc = MergeChangeset(revision);
+    auto rc = MergeChangeset(revision, false);
     PullMergeEnd();
     return rc;
 }

@@ -921,8 +921,14 @@ Rebase::~Rebase() {
 +---------------+---------------+---------------+---------------+---------------+------*/
 int ApplyChangesArgs::ConflictCallback(void* pCtx, int cause, SqlChangesetIterP iter) {
     const auto changeStream = (ChangeStream*)pCtx;
-    if (changeStream->m_args && changeStream->m_args->HasConflictHandler()){
-        return (int)(((ChangeStream*)pCtx)->m_args)->OnConflict((ChangeSet::ConflictCause)cause, Changes::Change(iter, true));
+    auto thisArgs = changeStream->m_args;
+    if (thisArgs) {
+        if (thisArgs->m_abortOnAnyConflict) {
+            return (int)ChangeStream::ConflictResolution::Abort;
+        }
+        if (thisArgs->HasConflictHandler()){
+            return (int)(((ChangeStream*)pCtx)->m_args)->OnConflict((ChangeSet::ConflictCause)cause, Changes::Change(iter, true));
+        }
     }
     return (int)changeStream->_OnConflict((ChangeSet::ConflictCause)cause, Changes::Change(iter, true));
 }

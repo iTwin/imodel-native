@@ -340,6 +340,7 @@ struct ApplyChangesArgs {
         bool m_invert;
         bool m_ignoreNoop;
         bool m_fkNoAction;
+        bool m_abortOnAnyConflict;
         mutable int64_t m_filterRowCount;
         mutable int64_t m_conflictRowCount;
         std::function<ChangeStream::ApplyChangesForTable(Utf8CP)> m_filterTable;
@@ -352,7 +353,8 @@ struct ApplyChangesArgs {
         ChangeStream::ConflictResolution OnConflict(ChangeStream::ConflictCause cause, Changes::Change iter) const;
 
     public:
-        ApplyChangesArgs() : m_rebase(nullptr), m_invert(false), m_ignoreNoop(false), m_fkNoAction(false), m_filterTable(nullptr),m_conflictHandler(nullptr),m_filterRowCount(0),m_conflictRowCount(0){}
+        ApplyChangesArgs() : m_rebase(nullptr), m_invert(false), m_ignoreNoop(false), m_fkNoAction(false), m_filterTable(nullptr),m_conflictHandler(nullptr),m_filterRowCount(0),m_conflictRowCount(0), m_abortOnAnyConflict(false){}
+        ApplyChangesArgs& SetAbortOnAnyConflict(bool abortOnAnyConflict) { m_abortOnAnyConflict = abortOnAnyConflict; return *this; }
         ApplyChangesArgs& SetRebase(Rebase* rebase) { m_rebase = rebase; return *this; }
         ApplyChangesArgs& SetInvert(bool invert) { m_invert = invert; return *this; }
         ApplyChangesArgs& SetIgnoreNoop(bool ignoreNoop) { m_ignoreNoop = ignoreNoop; return *this; }
@@ -364,6 +366,7 @@ struct ApplyChangesArgs {
         ApplyChangesArgs& SetConflictHandler(std::function<ChangeStream::ConflictResolution(ChangeStream::ConflictCause, Changes::Change)> conflictHandler) { m_conflictHandler = conflictHandler; return *this; }
         Rebase* GetRebase() const { return m_rebase; }
         bool GetInvert() const { return m_invert; }
+        bool GetAbortOnAnyConflict() const { return m_abortOnAnyConflict; }
         bool GetIgnoreNoop() const { return m_ignoreNoop; }
         bool GetFkNoAction() const { return m_fkNoAction; }
         int64_t GetFilterRowCount() const { return m_filterRowCount; }

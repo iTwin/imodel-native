@@ -12,7 +12,6 @@
 USING_NAMESPACE_BENTLEY_SQLITE
 
 #define CURRENT_CS_END_TXN_ID "CurrentChangeSetEndTxnId"
-#define LAST_REBASE_ID "LastRebaseId"
 #define PARENT_CS_ID "ParentChangeSetId"
 #define PARENT_CHANGESET "parentChangeset"
 
@@ -219,7 +218,7 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
         return ChangeSet::ConflictResolution::Abort;
     }
 
-    const auto jsIModelDb = m_dgndb->GetJsIModelDb();
+const auto jsIModelDb = m_dgndb->GetJsIModelDb();
     if (nullptr != jsIModelDb) {
         const auto jsDgnDb = jsIModelDb->Value();
         const auto env = jsDgnDb.Env();
@@ -379,7 +378,7 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
     }
 
     if (cause == ChangeSet::ConflictCause::Data && !iter.IsIndirect()) {
-        /*
+/*
         * From SQLite Docs CHANGESET_DATA as the second argument
         * when processing a DELETE or UPDATE change if a row with the required
         * PRIMARY KEY fields is present in the database, but one or more other
@@ -396,9 +395,9 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
         if (!m_dgndb->Txns().HasPendingTxns()) {
             // This changeset is bad. However, it is already in the timeline. We must allow services such as
             // checkpoint-creation, change history, and other apps to apply any changeset that is in the timeline.
-            LOG.warning("UPDATE/DELETE before value do not match with one in db or CASCADE action was triggered.");
-            iter.Dump(*m_dgndb, false, 1);
-        } else {
+        LOG.warning("UPDATE/DELETE before value do not match with one in db or CASCADE action was triggered.");
+        iter.Dump(*m_dgndb, false, 1);
+    } else {
             if (iter.GetTableName().StartsWithIAscii("ec_")) {
                 return ChangeSet::ConflictResolution::Skip;
             }
@@ -418,14 +417,14 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
     }
     // Handle some special cases
     if (cause == ChangeSet::ConflictCause::Conflict) {
-        // From the SQLite docs: "CHANGESET_CONFLICT is passed as the second argument to the conflict handler while processing an INSERT change if the operation would result in duplicate primary key values."
+// From the SQLite docs: "CHANGESET_CONFLICT is passed as the second argument to the conflict handler while processing an INSERT change if the operation would result in duplicate primary key values."
         // This is always a fatal error - it can happen only if the app started with a briefcase that is behind the tip and then uses the same primary key values (e.g., ElementIds)
         // that have already been used by some other app using the SAME briefcase ID that recently pushed changes. That can happen only if the app makes changes without first pulling and acquiring locks.
         if (!m_dgndb->Txns().HasPendingTxns()) {
             // This changeset is bad. However, it is already in the timeline. We must allow services such as
             // checkpoint-creation, change history, and other apps to apply any changeset that is in the timeline.
-            LOG.warning("PRIMARY KEY INSERT CONFLICT - resolved by replacing the existing row with the incoming row");
-            iter.Dump(*m_dgndb, false, 1);
+        LOG.warning("PRIMARY KEY INSERT CONFLICT - resolved by replacing the existing row with the incoming row");
+iter.Dump(*m_dgndb, false, 1);
         } else {
             if (iter.GetTableName().StartsWithIAscii("ec_")) {
                 return ChangeSet::ConflictResolution::Skip;
@@ -438,7 +437,7 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
     }
 
     if (cause == ChangeSet::ConflictCause::ForeignKey) {
-        // Note: No current or conflicting row information is provided if it's a FKey conflict
+// Note: No current or conflicting row information is provided if it's a FKey conflict
         // Since we abort on FKey conflicts, always try and provide details about the error
         int nConflicts = iter.GetForeignKeyConflicts();
 
@@ -457,7 +456,7 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
     }
 
     if (cause == ChangeSet::ConflictCause::NotFound) {
-        /*
+/*
          * Note: If ConflictCause = NotFound, the primary key was not found, and returning ConflictResolution::Replace is
          * not an option at all - this will cause a BE_SQLITE_MISUSE error.
          */
@@ -475,7 +474,7 @@ ChangeSet::ConflictResolution ChangesetFileReader::_OnConflict(ChangeSet::Confli
         return ChangeSet::ConflictResolution::Skip;
     }
 
-    /*
+/*
      * If we don't have a control, we always accept the incoming revision in cases of conflicts:
      *
      * + In a briefcase with no local changes, the state of a row in the Db (i.e., the final state of a previous revision)
@@ -658,7 +657,6 @@ void TxnManager::ClearSavedChangesetValues() {
 
     // these are just cruft from old versions.
     m_dgndb.DeleteBriefcaseLocalValue(CURRENT_CS_END_TXN_ID);
-    m_dgndb.DeleteBriefcaseLocalValue(LAST_REBASE_ID);
     m_dgndb.DeleteBriefcaseLocalValue("ReversedChangeSetId");
 }
 
@@ -796,37 +794,17 @@ struct ChangeStreamQueueConsumer : ChangeStream {
  * Write the changes from:
  *  1) the DdlChanges
  *  2) data changes
- *  3) rebase information
  *
  * into a file about to become a changeset file.
  */
-void TxnManager::WriteChangesToFile(BeFileNameCR pathname, DdlChangesCR ddlChanges, ChangeGroupCR dataChangeGroup, Rebaser* rebaser) {
+void TxnManager::WriteChangesToFile(BeFileNameCR pathname, DdlChangesCR ddlChanges, ChangeGroupCR dataChangeGroup) {
     ChangesetFileWriter writer(pathname, dataChangeGroup.ContainsEcSchemaChanges(), ddlChanges, &m_dgndb);
 
     if (BE_SQLITE_OK !=  writer.Initialize())
         m_dgndb.ThrowException("unable to initialize change writer", (int) ChangesetStatus::FileWriteError);
 
-    if (nullptr == rebaser) {
-        if (BE_SQLITE_OK != writer.FromChangeGroup(dataChangeGroup))
-            m_dgndb.ThrowException("unable to save changes to file", (int) ChangesetStatus::FileWriteError);
-    } else {
-        DbResult rebaseResult = BE_SQLITE_OK;
-
-        folly::ProducerConsumerQueue<bvector<uint8_t>> pageQueue{5};
-
-        ChangeStreamQueueConsumer readFromQueue(pageQueue);
-        std::thread writerThread([&] { rebaseResult = rebaser->DoRebase(readFromQueue, writer); });
-
-        ChangeStreamQueueProducer writeToQueue(pageQueue);
-        DbResult result = writeToQueue.FromChangeGroup(dataChangeGroup);
-
-        while (!pageQueue.write(bvector<uint8_t>())) // write an empty page to tell the consumer that we are done.
-            ;
-        writerThread.join();
-
-        if (BE_SQLITE_OK != result || BE_SQLITE_OK != rebaseResult)
-            m_dgndb.ThrowException("unable to save changes with rebase", (int) ChangesetStatus::FileWriteError);
-    }
+    if (BE_SQLITE_OK != writer.FromChangeGroup(dataChangeGroup))
+        m_dgndb.ThrowException("unable to save changes to file", (int) ChangesetStatus::FileWriteError);
 
     if (!pathname.DoesPathExist())
         m_dgndb.ThrowException("changeset file not created", (int) ChangesetStatus::FileWriteError);
@@ -1088,7 +1066,6 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
 
     TxnManager::TxnId endTxnId = GetCurrentTxnId();
     TxnId startTxnId = QueryNextTxnId(TxnId(0));
-    int64_t lastRebaseId = QueryLastRebaseId();
 
     DdlChanges ddlChangeGroup;
     ChangeGroup dataChangeGroup(m_dgndb);
@@ -1116,12 +1093,8 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
         }
     }
 
-    Rebaser rebaser;
-    if (lastRebaseId != 0 && (BE_SQLITE_OK != LoadRebases(rebaser, lastRebaseId)))
-        m_dgndb.ThrowException("rebase failed", (int) ChangesetStatus::SQLiteError);
-
     BeFileName changesetFileName((m_dgndb.GetTempFileBaseName() + (extension ? extension : "") +  ".changeset").c_str());
-    WriteChangesToFile(changesetFileName, ddlChangeGroup, dataChangeGroup, (lastRebaseId != 0) ? &rebaser : nullptr);
+    WriteChangesToFile(changesetFileName, ddlChangeGroup, dataChangeGroup);
 
     auto parentRevId = GetParentChangesetId();
     auto revId = ChangesetIdGenerator::GenerateId(parentRevId, changesetFileName, m_dgndb);
@@ -1134,11 +1107,9 @@ ChangesetPropsPtr TxnManager::StartCreateChangeset(Utf8CP extension) {
 
     m_changesetInProgress = new ChangesetProps(revId, -1, parentRevId, dbGuid, changesetFileName, changesetType);
     m_changesetInProgress->m_endTxnId = endTxnId;
-    m_changesetInProgress->m_lastRebaseId = lastRebaseId;
 
     // clean this cruft up from older versions.
     m_dgndb.DeleteBriefcaseLocalValue(CURRENT_CS_END_TXN_ID);
-    m_dgndb.DeleteBriefcaseLocalValue(LAST_REBASE_ID);
 
     auto rc = m_dgndb.SaveChanges();
     if (BE_SQLITE_OK != rc)
@@ -1169,8 +1140,6 @@ void TxnManager::FinishCreateChangeset(int32_t changesetIndex, bool keepFile) {
         m_dgndb.ThrowException("changeset in progress is not valid", (int) ChangesetStatus::IsNotCreatingChangeset);
 
     m_dgndb.Txns().DeleteFromStartTo(endTxnId);
-    if (0 !=m_changesetInProgress->m_lastRebaseId)
-        m_dgndb.Txns().DeleteRebases(m_changesetInProgress->m_lastRebaseId);
     m_changesetInProgress->SetChangesetIndex(changesetIndex);
 
     SaveParentChangeset(m_changesetInProgress->GetChangesetId(), changesetIndex);
@@ -1201,6 +1170,7 @@ void TxnManager::StopCreateChangeset(bool keepFile) {
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
+// UNUSED_CODE
 //--------------------------------------------------------------------------------------
 ChangesetStatus TxnManager::ProcessRevisions(bvector<ChangesetPropsCP> const &revisions, RevisionProcessOption processOptions) {
     ChangesetStatus status;
@@ -1208,7 +1178,7 @@ ChangesetStatus TxnManager::ProcessRevisions(bvector<ChangesetPropsCP> const &re
     case RevisionProcessOption::Merge:
         PullMergeBegin();
         for (ChangesetPropsCP revision : revisions) {
-            status = MergeChangeset(*revision);
+            status = MergeChangeset(*revision, false);
             if (ChangesetStatus::Success != status) {
                 PullMergeEnd();
                 return status;
@@ -1225,7 +1195,7 @@ ChangesetStatus TxnManager::ProcessRevisions(bvector<ChangesetPropsCP> const &re
     default:
         BeAssert(false && "Invalid revision process option");
     }
-
+    PullMergeEnd();
     return ChangesetStatus::Success;
 }
 

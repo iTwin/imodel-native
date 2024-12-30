@@ -535,7 +535,7 @@ export declare namespace IModelJsNative {
     public abandonCreateChangeset(): void;
     public addChildPropagatesChangesToParentRelationship(schemaName: string, relClassName: string): BentleyStatus;
     public invalidateFontMap(): void;
-    public applyChangeset(changeSet: ChangesetFileProps): void;
+    public applyChangeset(changeSet: ChangesetFileProps, fastForward: boolean): void;
     public revertTimelineChanges(changeSet: ChangesetFileProps[], skipSchemaChanges: boolean): void;
     public attachChangeCache(changeCachePath: string): DbResult;
     public beginMultiTxnOperation(): DbResult;
@@ -696,10 +696,7 @@ export declare namespace IModelJsNative {
     public enableWalMode(yesNo?: boolean): void;
     public performCheckpoint(mode?: WalCheckpointMode): void;
     public setAutoCheckpointThreshold(frames: number): void;
-    public pullMergeSetMethod(method: "Rebase" | "Merge"): void;
     public pullMergeInProgress(): boolean;
-    public pullMergeGetMethod(): "Rebase" | "Merge";
-    public pullMergeEraseConf(): void;
     public pullMergeBegin(): void;
     public pullMergeEnd(): void;
     public pullMergeResume(): void;
