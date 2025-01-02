@@ -2904,7 +2904,7 @@ void TxnManager::PullMergeEnd() {
         args.Set("id", Napi::String::New(env, BeInt64Id(id.GetValue()).ToHexStr()));
         args.Set("descr", Napi::String::New(env, descr));
         args.Set("type", Napi::String::New(env, type == TxnType::Data ? "Data":  "Schema"));
-        DgnDb::CallJsFunction(m_dgndb.GetJsTxns(), notifyId == NotifyId::Begin ? "_onRebaseTxnBegin" : "_onRebaseLTxnEnd", {args});
+        DgnDb::CallJsFunction(m_dgndb.GetJsTxns(), notifyId == NotifyId::Begin ? "_onRebaseTxnBegin" : "_onRebaseTxnEnd", {args});
     };
 
     auto throwError = [&](TxnId id, Utf8String err, DbResult rc){
