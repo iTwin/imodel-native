@@ -27,7 +27,6 @@ private:
     static constexpr auto JVersion = "version";
     static constexpr auto JStartTxnId = "start_txn_id";
     static constexpr auto JEndTxnId = "end_txn_id";
-    static constexpr auto JIsRebase = "is_rebase";
     static constexpr auto JMergeStage = "merge_stage";
     static constexpr auto JKey = "pull_merge_conf";
 
