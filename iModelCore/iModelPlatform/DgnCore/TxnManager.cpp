@@ -124,10 +124,7 @@ uint64_t TxnManager::GetMaxReasonableTxnSize() { return MAX_REASONABLE_TXN_SIZE;
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 TxnManager::UndoChangeSet::ConflictResolution TxnManager::UndoChangeSet::_OnConflict(ConflictCause cause, BeSQLite::Changes::Change change) {
-    Utf8CP tableName;
-    int nCols, indirect;
-    DbOpcode opcode;
-    change.GetOperation(&tableName, &nCols, &opcode, &indirect);
+    const auto opcode = change.GetOpcode();
 
     if (cause == ConflictCause::NotFound) {
         if (opcode == DbOpcode::Delete)      // a delete that is already gone.
@@ -135,8 +132,7 @@ TxnManager::UndoChangeSet::ConflictResolution TxnManager::UndoChangeSet::_OnConf
         if (opcode == DbOpcode::Update)
             return ConflictResolution::Skip; // caused by inserting row and then updating it in the same txn and then undoing the txn. It's not a problem.
     } else if (ConflictCause::Data == cause) {
-        if (DbOpcode::Delete == opcode)
-            return ConflictResolution::Skip; // caused by inserting row and then updating it in the same txn and then undoing the txn. It's not a problem.
+        return ConflictResolution::Skip; // caused by inserting row and then updating it in the same txn and then undoing the txn. It's not a problem.
     }
 
     BeAssert(false);
@@ -313,7 +309,6 @@ void TxnManager::StartNewSession() {
 +---------------+---------------+---------------+---------------+---------------+------*/
 TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20), m_rlt(*this), m_initTableHandlers(false), m_modelChanges(*this) {
     m_dgndb.SetChangeTracker(this);
-    m_enableRebasers = m_dgndb.TableExists(DGN_TABLE_Rebase);
     Initialize();
 }
 
@@ -489,7 +484,6 @@ TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName) {
                TABLE_NAME_STARTS_WITH(DGN_TABLE_Txns) ||
                TABLE_NAME_STARTS_WITH(DGN_VTABLE_SpatialIndex) ||
                TABLE_NAME_STARTS_WITH(DGN_TABLE_Rebase) ||
-               TABLE_NAME_STARTS_WITH("ec_cache_") ||
                DgnSearchableText::IsUntrackedFts5Table(tableName)
             ) ? TrackChangesForTable::No : TrackChangesForTable::Yes;
 }
@@ -672,7 +666,6 @@ void TxnManager::OnRollback(ChangeStreamCR changeSet) {
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operation) {
-
     auto conf = PullMergeConf::Load(m_dgndb);
 
     // During PullMergeEnd() we donot allow COMMIT but we do let be_Local which is untracked to be saved.
@@ -686,31 +679,27 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     }
 
     ModelChangesScope v_v_v_(*this);
-
-    bool hasEcSchemaChanges = m_hasEcSchemaChanges;
-    m_hasEcSchemaChanges = false;
-
     DdlChanges ddlChanges = std::move(m_ddlChanges);
 
-    UndoChangeSet dataChangeSet;
+    UndoChangeSet currentChanges;
     if (HasDataChanges()) {
-        DbResult result = dataChangeSet.FromChangeTrack(*this);
+        DbResult result = currentChanges.FromChangeTrack(*this);
 
-        Restart();  // Clear the change tracker since we copied any changes to dataChangeSet
+        Restart();  // Clear the change tracker since we copied any changes to currentChanges
 
         if (BE_SQLITE_OK != result) {
             LOG.errorv("failed to create a data Changeset: %s", BeSQLiteLib::GetErrorName(result));
-            BeAssert(false && "dataChangeSet.FromChangeTrack failed");
+            BeAssert(false && "currentChanges.FromChangeTrack failed");
             return OnCommitStatus::Abort;
         }
     }
 
     if (s_onCommitCallback != nullptr) { // allow a test to inject a failure
-        if (CallbackOnCommitStatus::Continue != s_onCommitCallback(*this, isCommit, operation, dataChangeSet, ddlChanges))
+        if (CallbackOnCommitStatus::Continue != s_onCommitCallback(*this, isCommit, operation, currentChanges, ddlChanges))
             return OnCommitStatus::Abort;
     }
 
-    if (dataChangeSet._IsEmpty() && ddlChanges._IsEmpty())
+    if (currentChanges._IsEmpty() && ddlChanges._IsEmpty())
         return OnCommitStatus::NoChanges;
 
     if (!isCommit) { // this is a call to AbandonChanges, perform the rollback and notify table handlers
@@ -718,8 +707,8 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
         if (rc != BE_SQLITE_OK)
             return OnCommitStatus::Abort;
 
-        if (!dataChangeSet._IsEmpty())
-            OnRollback(dataChangeSet);
+        if (!currentChanges._IsEmpty())
+            OnRollback(currentChanges);
 
         return OnCommitStatus::Completed; // we've already done the rollback, tell BeSQLite not to try to do it
     }
@@ -728,10 +717,54 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     // just leave them reversed and they'll get thrown away on the next commit (or reinstated.)
     DeleteReversedTxns(); // these Txns are no longer reachable.
 
-    if (!dataChangeSet._IsEmpty() && m_initTableHandlers) { // we cannot propagate changes without table handlers - happens for schema upgrades
-        OnBeginValidate();
+    // Following is a function to free memory as soon as possiable after we seperate changes
+    auto seperateDataAndSchemaChanges = [](
+        ChangeSet& in,
+        ChangeStream& outData,
+        ChangeStream& outSchema) {
 
-        OnValidateChanges(dataChangeSet);
+        ChangeGroup dataChangeGroup;
+        ChangeGroup schemaChangeGroup;
+        auto rc = ChangeGroup::FilterIfElse(in,
+            [&](Changes::Change const& change) {
+            auto const& tbl = change.GetTableName();
+            return tbl.StartsWithIAscii("ec_") || tbl.StartsWithIAscii("be_Props");
+        }, schemaChangeGroup, dataChangeGroup);
+
+        in.Clear();
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("failed to filter changeset out into schema & data: %s", BeSQLiteLib::GetErrorName(rc));
+            return rc;
+        }
+
+        rc = outData.FromChangeGroup(dataChangeGroup);
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("failed to read changes grom data change group: %s", BeSQLiteLib::GetErrorName(rc));
+            return rc;
+        }
+
+        rc = outSchema.FromChangeGroup(schemaChangeGroup);
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("failed to read changes from schema change group: %s", BeSQLiteLib::GetErrorName(rc));
+            return rc;
+        }
+        return rc;
+    };
+
+    //! We need to preciously seperate out data and schema changeset as it require by rebase.
+    //! when we reverse changes schema changes are also reversed.
+    ChangeSet dataChanges;
+    ChangeSet schemaChanges;
+    auto rc = seperateDataAndSchemaChanges(currentChanges, dataChanges, schemaChanges);
+    if (rc != BE_SQLITE_OK) {
+        return OnCommitStatus::Abort;
+    }
+
+    const auto propagateChanges = !dataChanges._IsEmpty() && m_initTableHandlers;
+    if (propagateChanges) {
+        // we cannot propagate changes without table handlers - happens for schema upgrades
+        OnBeginValidate();
+        OnValidateChanges(dataChanges);
 
         BentleyStatus status = PropagateChanges();   // Propagate to generate indirect changes
         if (SUCCESS != status) {
@@ -743,21 +776,21 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
         // Then, when we call OnValidateChanges below, it creates another change to the last-mod-time and geometry-GUIDs of the changed models.
         // We need to add that to the changeset too. This loop should never execute more than twice.
         while (HasDataChanges()) {  // do we have any indirect data changes captured in the tracker?
-            UndoChangeSet indirectDataChangeSet;
-            DbResult result = indirectDataChangeSet.FromChangeTrack(*this);
+            UndoChangeSet propagatedIndirectChanges;
+            DbResult result = propagatedIndirectChanges.FromChangeTrack(*this);
             if (BE_SQLITE_OK != result)
                 {
-                BeAssert(false && "indirectDataChangeSet.FromChangeTrack failed");
+                BeAssert(false && "propagatedIndirectChanges.FromChangeTrack failed");
                 LOG.fatalv("failed to create indirect changeset: %s", BeSQLiteLib::GetErrorName(result));
                 if (BE_SQLITE_NOMEM == result)
                     throw std::bad_alloc();
                 return OnCommitStatus::Abort;
                 }
             Restart();
-            OnValidateChanges(indirectDataChangeSet);
+            OnValidateChanges(propagatedIndirectChanges);
 
             // combine direct and indirect changes into a single dataChangeSet
-            result = dataChangeSet.ConcatenateWith(indirectDataChangeSet);
+            result = dataChanges.ConcatenateWith(propagatedIndirectChanges);
             if (BE_SQLITE_OK != result){
                 LOG.errorv("failed to concatenate indirect changes: %s", BeSQLiteLib::GetErrorName(result));
                 return OnCommitStatus::Abort;
@@ -766,17 +799,25 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     }
 
     if (!ddlChanges._IsEmpty()) {
-        DbResult result = SaveTxn(ddlChanges, operation, TxnType::Ddl);
-        if (result != BE_SQLITE_OK) {
-            LOG.errorv("failed to save ddl changes: %s", BeSQLiteLib::GetErrorName(result));
+        rc = SaveTxn(ddlChanges, operation, TxnType::Ddl);
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("failed to save ddl changes: %s", BeSQLiteLib::GetErrorName(rc));
             return OnCommitStatus::Abort;
         }
     }
 
-    if (!dataChangeSet._IsEmpty()) {
-        DbResult result = SaveTxn(dataChangeSet, operation, hasEcSchemaChanges ? TxnType::EcSchema : TxnType::Data);
-        if (result != BE_SQLITE_OK) {
-            LOG.errorv("failed to save Txn: %s", BeSQLiteLib::GetErrorName(result));
+    if (!schemaChanges._IsEmpty()) {
+        rc = SaveTxn(schemaChanges, operation, TxnType::EcSchema);
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("failed to save schema Txn: %s", BeSQLiteLib::GetErrorName(rc));
+            return OnCommitStatus::Abort;
+        }
+    }
+
+    if (!dataChanges._IsEmpty()) {
+        rc = SaveTxn(dataChanges, operation, TxnType::Data);
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("failed to save data Txn: %s", BeSQLiteLib::GetErrorName(rc));
             return OnCommitStatus::Abort;
         }
     }
@@ -784,8 +825,9 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
     NotifyOnCommit();
 
-    if (!dataChangeSet._IsEmpty() && m_initTableHandlers) // we cannot validate without table handlers - happens for schema upgrades
+    if (propagateChanges) {
         OnEndValidate();
+    }
 
     return OnCommitStatus::Commit;
 }
@@ -837,9 +879,6 @@ ChangesetStatus TxnManager::MergeDdlChanges(ChangesetPropsCR revision, Changeset
  * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, ChangesetFileReader& changeStream, bool containsSchemaChanges, bool fastForward) {
-    // if we don't have any pending txns, this is merely an Apply, no merging or propagation needed.
-    bool mergeNeeded = HasPendingTxns() && m_initTableHandlers; // if tablehandlers are not present we can't
-
     DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, false, fastForward);
     if (result != BE_SQLITE_OK) {
         if (changeStream.GetLastErrorMessage().empty())
@@ -851,48 +890,6 @@ ChangesetStatus TxnManager::MergeDataChanges(ChangesetPropsCR revision, Changese
 
     ChangesetStatus status = ChangesetStatus::Success;
     UndoChangeSet indirectChanges;
-
-    // We only need to propagate changes (run dependency rules) if there have been are local changes that need to be validated against the incoming changes.
-    if (mergeNeeded) {
-        OnBeginValidate();
-
-        OnValidateChanges(changeStream);
-
-        if (SUCCESS != PropagateChanges()) {
-            LOG.error("MergeDataChanges failed to propagate changes");
-            status = ChangesetStatus::MergePropagationError;
-        }
-
-        if (HasDataChanges()) {
-            result = indirectChanges.FromChangeTrack(*this);
-            if (BeSQLite::BE_SQLITE_OK != result) {
-                BeAssert(false);
-                LOG.fatalv("MergeDataChanges failed at indirectDataChangeSet.FromChangeTrack(): %s", BeSQLiteLib::GetErrorName(result));
-                if (BE_SQLITE_NOMEM == result)
-                    throw std::bad_alloc();
-                return ChangesetStatus::SQLiteError;
-            }
-            Restart();
-
-            if (status == ChangesetStatus::Success) {
-                NotifyOnCommit();
-
-                Utf8String mergeComment = "Merged";
-                if (!revision.GetSummary().empty()) {
-                    mergeComment.append(": ");
-                    mergeComment.append(revision.GetSummary());
-                }
-
-                result = SaveTxn(indirectChanges, mergeComment.c_str(), TxnType::Data);
-                if (BE_SQLITE_OK != result) {
-                    LOG.fatalv("MergeDataChanges failed saving changes %s", BeSQLiteLib::GetErrorName(result));
-                    BeAssert(false);
-                    status = ChangesetStatus::SQLiteError;
-                }
-            }
-        }
-        OnEndValidate();
-    }
 
     if (status == ChangesetStatus::Success) {
         SaveParentChangeset(revision.GetChangesetId(), revision.GetChangesetIndex());
@@ -1664,7 +1661,7 @@ ZipErrors TxnManager::ReadChanges(ChangeSet& changeset, TxnId rowId) {
 void TxnManager::ApplyTxnChanges(TxnId rowId, TxnAction action) {
     BeAssert(!HasDataChanges());
     BeAssert(TxnAction::Reverse == action || TxnAction::Reinstate == action); // Do not call ApplyChanges() if you don't want undo/redo notifications sent to TxnMonitors...
-    BeAssert(TxnType::Data == GetTxnType(rowId));
+ //   BeAssert(TxnType::Data == GetTxnType(rowId));
 
     UndoChangeSet changeset;
     ReadDataChanges(changeset, rowId, action);
@@ -2862,6 +2859,10 @@ void TxnManager::PullMergeBegin() {
         m_dgndb.ThrowException("cannot processed due to unsaved changes.", BE_SQLITE_ERROR);
     }
 
+    if (m_dgndb.IsReadonly() && !HasPendingTxns()) {
+        m_dgndb.ThrowException("file is readonly", (int) ChangesetStatus::CannotMergeIntoReadonly);
+    }
+
     DeleteReversedTxns();
 
     const auto endTxnId = GetCurrentTxnId();
@@ -2930,7 +2931,16 @@ void TxnManager::PullMergeEnd() {
         }
         m_curr = id;
     };
-
+    auto deleteTxn = [&](TxnId id){
+        const auto idStr = BeInt64Id(id.GetValue()).ToHexStr();
+        CachedStatementPtr stmt = GetTxnStatement("DELETE " DGN_TABLE_Txns " WHERE Id=?");
+        stmt->BindInt64(1, id.GetValue());
+        auto rc = stmt->Step();
+        if (rc != BE_SQLITE_DONE) {
+            throwError(id, SqlPrintfString("unable to delete local txn (id: %s)", idStr.c_str()).GetUtf8CP(), rc);
+        }
+        m_curr = id;
+    };
     TxnId startTxnId = QueryNextTxnId(TxnId(0));
     TxnId endTxnId = conf.GetEndTxnId();
 
@@ -2945,11 +2955,17 @@ void TxnManager::PullMergeEnd() {
         }
 
         notifyJs(NotifyId::Begin, currTxnId, desc, type);
-        const auto isSchemaOrDDLChange = type != TxnType::Data;
+        const auto isSchemaTxn = type == TxnType::EcSchema;
         LocalChangeSet changeset(GetDgnDb(), currTxnId, type, desc);
         ReadDataChanges(changeset, currTxnId, TxnAction::None);
-        rc = ApplyChanges(changeset, TxnAction::Merge, isSchemaOrDDLChange, false);
+        rc = ApplyChanges(changeset, TxnAction::Merge, isSchemaTxn, false);
         if (rc != BE_SQLITE_OK) {
+            if (isSchemaTxn) {
+                m_dgndb.AbandonChanges();
+                deleteTxn(currTxnId);
+                continue;
+            }
+
             if (changeset.GetLastErrorMessage().empty())
                 throwError(currTxnId, "failed to apply changes", rc);
             else
@@ -2996,12 +3012,12 @@ void TxnManager::PullMergeEnd() {
             }
             OnEndValidate();
         }
-
-        rc = UpdateTxn(rebasedChangeset, currTxnId);
-        if (rc != BE_SQLITE_OK) {
-            throwError(currTxnId, SqlPrintfString("unable to save rebased local txn (id: %s)", currTxnIdStr.c_str()).GetUtf8CP(), rc);
+        if(!rebasedChangeset._IsEmpty()){
+            rc = UpdateTxn(rebasedChangeset, currTxnId);
+            if (rc != BE_SQLITE_OK) {
+                throwError(currTxnId, SqlPrintfString("unable to save rebased local txn (id: %s)", currTxnIdStr.c_str()).GetUtf8CP(), rc);
+            }
         }
-
         Restart();
         m_dgndb.SaveChanges(); // save dgn_txn/be_Local
         m_curr = currTxnId;

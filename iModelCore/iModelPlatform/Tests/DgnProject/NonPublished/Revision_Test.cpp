@@ -404,7 +404,8 @@ TEST_F(RevisionTestFixture, MoreWorkflow)
     m_defaultModel = nullptr;
      m_db->SaveChanges("Deleted model and contained elements");
 
-    expectToThrow([&]() { m_db->Txns().PullMergeApply(*revision1); }, "Detected 1 foreign key conflicts in ChangeSet. Aborting merge.");
+    // In rebase following error would not happen
+    // expectToThrow([&]() { m_db->Txns().PullMergeApply(*revision1); }, "Detected 1 foreign key conflicts in ChangeSet. Aborting merge.");
     }
 
 //---------------------------------------------------------------------------------------

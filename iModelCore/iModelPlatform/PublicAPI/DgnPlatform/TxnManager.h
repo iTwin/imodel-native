@@ -428,7 +428,6 @@ private:
     bool m_initTableHandlers;
     bool m_inProfileUpgrade = false;
     bool m_indirectChanges = false;
-    bool m_enableRebasers;
     bvector<ECN::ECClassId> m_childPropagatesChangesToParentRels;
     ChangesetPropsPtr m_changesetInProgress;
 

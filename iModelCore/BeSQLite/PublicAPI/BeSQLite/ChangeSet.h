@@ -480,7 +480,6 @@ private:
 protected:
     DdlChanges m_ddlChanges;
     bool m_isTracking;
-    bool m_hasEcSchemaChanges = false;
     Db* m_db;
     SqlSessionP m_session;
     Utf8String m_name;
@@ -565,9 +564,6 @@ public:
         EnableTracking(true);
     }
     bool IsTracking() const { return m_isTracking; }
-
-    bool HasEcSchemaChanges() const { return m_hasEcSchemaChanges; }
-    void SetHasEcSchemaChanges(bool val) {m_hasEcSchemaChanges = val;}
 };
 
 END_BENTLEY_SQLITE_NAMESPACE
