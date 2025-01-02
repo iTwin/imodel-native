@@ -15,9 +15,7 @@
 #include <Napi/napi.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include "DgnDbWorker.h"
-#ifdef BENTLEY_WIN32
-    #define signal(x,y)
-#else
+#ifndef BENTLEY_WIN32
     #include <signal.h>
 #endif
 

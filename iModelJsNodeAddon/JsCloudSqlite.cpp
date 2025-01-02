@@ -1032,8 +1032,10 @@ void registerCloudSqlite(Napi::Env env, Napi::Object exports) {
     JsCloudCache::Init(env, exports);
     JsCloudContainer::Init(env, exports);
     JsCloudPrefetch::Init(env, exports);
-    // ignore SIGPIPE to prevent crashes in CloudSQLite/curl. 
-    signal(SIGPIPE, SIG_IGN);
+    #ifndef BENTLEY_WIN32
+        // Ignore SIGPIPE to prevent crashes in CloudSQLite/curl.
+        signal(SIGPIPE, SIG_IGN);
+    #endif
 }
 
 } // end namespace IModelJsNative
