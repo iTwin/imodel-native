@@ -270,50 +270,49 @@ template<typename T_Db> struct SQLiteOps {
         return Napi::Number::New(info.Env(), next);
     }
 
-    void EmbedFont(NapiInfoCR info) {
-        REQUIRE_ARGUMENT_ANY_OBJ(0, arg);
-        BeJsConst argJson(arg);
+    void EmbedFontFile(NapiInfoCR info) {
+        REQUIRE_ARGUMENT_INTEGER(0, id);
+        REQUIRE_ARGUMENT_ANY_OBJ(1, facesObj);
+        REQUIRE_ARGUMENT_ANY_OBJ(2, dataObj);
+        REQUIRE_ARGUMENT_BOOL(3, compress);
 
-        bool compressFont = argJson[JsInterop::json_compress()].asBool(false);
+        if (!dataObj.IsTypedArray() || !facesObj.IsArray()) {
+            BeNapi::ThrowJsException(info.Env(), "font data not valid");
+        }
+
+        bvector<FontFace> faces;
+        auto arr = facesObj.As<Napi::Array>();
+        for (uint32_t i = 0; i < arr.Length(); i++) {
+            Napi::Value v = arr[i];
+            if (!v.IsObject()) {
+                BeNapi::ThrowJsException(info.Env(), "font data not valid");
+            }
+            
+            FontFace face(v);
+            faces.push_back(face);
+        }
+
+        if (faces.empty()) {
+            BeNapi::ThrowJsException(info.Env(), "font data not valid");
+        }
+            
         auto db = &GetOpenedDb(info);
         auto dgnDb = dynamic_cast<DgnDbP>(db);
         std::unique_ptr<FontDb> fontDbHolder;
 
         FontDbP fontDb;
-        if (nullptr != dgnDb)
+        if (dgnDb) {
             fontDb = &dgnDb->Fonts().m_fontDb;
-        else {
-            fontDb = new FontDb(*db, true);
-            fontDbHolder.reset(fontDb);
+        } else {
+            fontDbHolder.reset(fontDb = new FontDb(*db, true));
         }
 
-        if (argJson.isMember(JsInterop::json_data())) {
-            bvector<FontFace> faces;
-            FontFace face(argJson[JsInterop::json_face()]);
-            if (face.m_familyName.empty())
-                BeNapi::ThrowJsException(info.Env(), "invalid face");
-            faces.emplace_back(face);
-
-            // NOTE: Do NOT combine the following two lines. Doing so can lead to a value in
-            // napiData that references freed memory due to the way the ref counted pointers work.
-            auto jsonData = argJson[JsInterop::json_data()];
-            auto napiData = jsonData.AsNapiValueRef();
-            if (!napiData->m_napiVal.IsTypedArray())
-                BeNapi::ThrowJsException(info.Env(), "font data not valid");
-
-            auto arrayBuf = napiData->m_napiVal.As<Napi::Uint8Array>();
-            if (SUCCESS == fontDb->EmbedFont(faces, ByteStream(arrayBuf.Data(), arrayBuf.ByteLength()), compressFont))
-                return;
+        auto arrayBuf = dataObj.As<Napi::Uint8Array>();
+        if (SUCCESS != fontDb->EmbedFont(id, faces, ByteStream(arrayBuf.Data(), arrayBuf.ByteLength()), compress)) {
+            BeNapi::ThrowJsException(info.Env(), "unable to embed font");
         }
-        if (SUCCESS == fontDb->EmbedFontFile(argJson[JsInterop::json_fileName()].asString().c_str(), compressFont))
-            return;
-
-        if (SystemTrueTypeFont(argJson[JsInterop::json_systemFont()].asString().c_str(), compressFont).Embed(*fontDb))
-            return;
-
-        BeNapi::ThrowJsException(info.Env(), "unable to embed font");
     }
-
+    
     Napi::Value IsOpen(NapiInfoCR info) {
         auto db = _GetMyDb();
         return Napi::Boolean::New(info.Env(), nullptr != db && db->IsDbOpen());
@@ -753,7 +752,7 @@ public:
             InstanceMethod("createDb", &SQLiteDb::CreateDb),
             InstanceMethod("dispose", &SQLiteDb::Dispose),
             InstanceMethod("embedFile", &SQLiteDb::EmbedFile),
-            InstanceMethod("embedFont", &SQLiteDb::EmbedFont),
+            InstanceMethod("embedFontFile", &SQLiteDb::EmbedFontFile),
             InstanceMethod("extractEmbeddedFile", &SQLiteDb::ExtractEmbeddedFile),
             InstanceMethod("getFilePath", &SQLiteDb::GetFilePath),
             InstanceMethod("getLastInsertRowId", &SQLiteDb::GetLastInsertRowId),
@@ -1497,19 +1496,12 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         return Napi::Number::New(Env(), (int) status);
     }
 
-    Napi::Value AddNewFont(NapiInfoCR info) {
+    void InvalidateFontMap(NapiInfoCR info) {
         auto& db = GetOpenedDb(info);
-        REQUIRE_ARGUMENT_ANY_OBJ(0, fontPropObj);
-        BeJsConst fontProps(fontPropObj);
-        int fontTypeVal = fontProps[JsInterop::json_type()].asInt(1);
-        FontType fontType = fontTypeVal==3 ? FontType::Shx : fontTypeVal==2 ? FontType::Rsc : FontType::TrueType;
-        Utf8String name = fontProps[JsInterop::json_name()].asString();
-        if (name.empty())
-            BeNapi::ThrowJsException(Env(), "Font name is invalid");
-        auto id = db.Fonts().GetId(fontType, name.c_str());
-        return Napi::Number::New(Env(), (int) id.GetValue());
+        BeMutexHolder lock(FontManager::GetMutex());
+        db.Fonts().Invalidate();
     }
-
+    
     Napi::Value WriteFullElementDependencyGraphToFile(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);
@@ -2677,7 +2669,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("abandonChanges", &NativeDgnDb::AbandonChanges),
             InstanceMethod("abandonCreateChangeset", &NativeDgnDb::AbandonCreateChangeset),
             InstanceMethod("addChildPropagatesChangesToParentRelationship", &NativeDgnDb::AddChildPropagatesChangesToParentRelationship),
-            InstanceMethod("addNewFont", &NativeDgnDb::AddNewFont),
+            InstanceMethod("invalidateFontMap", &NativeDgnDb::InvalidateFontMap),
             InstanceMethod("applyChangeset", &NativeDgnDb::ApplyChangeset),
             InstanceMethod("revertTimelineChanges", &NativeDgnDb::RevertTimelineChanges),
             InstanceMethod("attachChangeCache", &NativeDgnDb::AttachChangeCache),
@@ -2710,7 +2702,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("dumpChangeset", &NativeDgnDb::DumpChangeSet),
             InstanceMethod("elementGeometryCacheOperation", &NativeDgnDb::ElementGeometryCacheOperation),
             InstanceMethod("embedFile", &NativeDgnDb::EmbedFile),
-            InstanceMethod("embedFont", &NativeDgnDb::EmbedFont),
+            InstanceMethod("embedFontFile", &NativeDgnDb::EmbedFontFile),
             InstanceMethod("enableChangesetSizeStats", &NativeDgnDb::EnableChangesetSizeStats),
             InstanceMethod("enableTxnTesting", &NativeDgnDb::EnableTxnTesting),
             InstanceMethod("endMultiTxnOperation", &NativeDgnDb::EndMultiTxnOperation),
@@ -6639,6 +6631,21 @@ static Napi::Value queryConcurrency(NapiInfoCR info)
     return Napi::Number::New(info.Env(), static_cast<int>(concurrency));
     }
 
+static Napi::Value getTrueTypeFontMetadata(NapiInfoCR info) {
+    REQUIRE_ARGUMENT_STRING(0, fileName);
+    auto ret = Napi::Object::New(info.Env());
+    TrueTypeFile ttFile(fileName.c_str(), false);
+    BeJsValue retVal(ret);
+    ttFile.ExtractMetadata(retVal);
+    return ret;
+}
+
+static Napi::Value isRscFontData(NapiInfoCR info) {
+    REQUIRE_ARGUMENT_ANY_OBJ(0, dataObj);
+    auto isRsc = dataObj.IsTypedArray() && RscFont::IsRscFontData(dataObj.As<Napi::Uint8Array>().Data());
+    return Napi::Boolean::New(info.Env(), isRsc);
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -6696,6 +6703,8 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
         Napi::PropertyDescriptor::Function(env, exports, "setCrashReporting", &setCrashReporting),
         Napi::PropertyDescriptor::Function(env, exports, "setCrashReportProperty", &setCrashReportProperty),
         Napi::PropertyDescriptor::Function(env, exports, "setMaxTileCacheSize", &setMaxTileCacheSize),
+        Napi::PropertyDescriptor::Function(env, exports, "getTrueTypeFontMetadata", &getTrueTypeFontMetadata),
+        Napi::PropertyDescriptor::Function(env, exports, "isRscFontData", &isRscFontData),
     });
 
     registerCloudSqlite(env, exports);

@@ -294,6 +294,7 @@ size_t PurgeDuplicates ()
     m_graph.ClearMask (deleteMask);
     m_graph.ClearMask (edgeVisitedMask);
     size_t numMark = 0;
+    UNUSED_VARIABLE (numMark);
     MTGARRAY_SET_LOOP (nodeA0, &m_graph)
         {
         if (!m_graph.GetMaskAt (nodeA0, deleteMask)
