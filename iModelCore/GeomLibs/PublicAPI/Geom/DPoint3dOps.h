@@ -904,6 +904,9 @@ static bool GEOMDLLIMPEXP InCircleXY(DPoint3d const &pointA, DPoint3d const &poi
 
 //! @description return a tolerance as an absolute tolerance plus relative tolerance times largest xy-coordinate.
 static double GEOMDLLIMPEXP ToleranceXY (bvector<DPoint3d> const& data, double absTol, double relTol);
+
+//! @description return an area tolerance for a given xy-range and optional distance tolerance.
+static double AreaToleranceXY(DRange3dCR range, double distanceTolerance);
 };
 
 //! @description Operations in which an array of points is understood to be connected as a polyline (but not closed as a polygon).
@@ -1510,10 +1513,10 @@ static GEOMDLLIMPEXP size_t SplitToConvexPartsXY(bvector<int>& indices, bvector<
 //! * Computations ignore z-coordinates, but they are carried through to output. For best results, input polygons should contain no vertically separated vertices.
 //! * Input loops may intersect or even self-intersect.
 //! * A Boolean union operation is performed on a graph formed from the inputs, then the graph is flooded from the exterior face to mark void regions via a parity rule. This algorithm finds islands in holes, and holes in islands.
-//! @param [out] outerLoops array of CCW polygons bounding area
-//! @param [out] holeLoops array of CW polygons bounding void
-//! @param [in] inputLoops array of polygons, closure point optional, any orientation
-//! @param [in] xyTol absolute tolerance for clustering xy-coordinates of polygon vertices, or negative to compute from range (default)
+//! @param [out] outerLoops array of CCW polygons bounding area.
+//! @param [out] holeLoops array of CW polygons bounding void.
+//! @param [in] inputLoops array of polygons, closure point optional, any orientation.
+//! @param [in] xyTol absolute tolerance for clustering xy-coordinates of polygon vertices, or negative to use 1.0e-8 times the largest polygon xy-coordinate (default).
 //!
 static GEOMDLLIMPEXP void CollectAllLoopsXY(bvector<bvector<DPoint3d>>& outerLoops, bvector<bvector<DPoint3d>>& holeLoops, bvector<bvector<DPoint3d>> const& inputLoops, double xyTol = -1.0);
 

@@ -1378,7 +1378,6 @@ TEST(PolylineOps, CollectAllLoops)
         size_t      m_numInputLoops;
         size_t      m_expectedNumOuterLoops;
         size_t      m_expectedNumInnerLoops;
-
         TestCase(WCharCP fileName, size_t numInput, size_t numOuter, size_t numInner): m_numInputLoops(numInput), m_expectedNumOuterLoops(numOuter), m_expectedNumInnerLoops(numInner)
             {
             static BeFileName s_sourcePath;
@@ -1392,14 +1391,12 @@ TEST(PolylineOps, CollectAllLoops)
         };
     bvector<TestCase> testCases; // all files in meters
 
-    /*
     testCases.push_back(TestCase(L"loop-oversampled-rectangle.imjs", 1, 1, 0));
     testCases.push_back(TestCase(L"parity-region-hole-1.imjs", 2, 1, 1));
     testCases.push_back(TestCase(L"parity-region-hole-2.imjs", 2, 1, 1));
     testCases.push_back(TestCase(L"parity-region-holes-with-islands.imjs", 7, 3, 4));
     testCases.push_back(TestCase(L"union-region-no-holes.imjs", 14, 1, 0));
-    */
-    testCases.push_back(TestCase(L"parity-region-complex.imjs", 700, 1, 53));
+    testCases.push_back(TestCase(L"parity-region-complex.imjs", 700, 1, 3));
 
     for (auto const& testCase : testCases)
         {
@@ -1434,13 +1431,8 @@ TEST(PolylineOps, CollectAllLoops)
             Check::SaveTransformed(innerLoops);
             Check::Shift (0, 0, -2 * zDelta);
 
-            auto oldVolume = Check::SetMaxVolume(STRUCTURE_PRINT_VOLUME);
-            Check::Print(outerLoops, "CollectAllLoopsXY outer loops");
-            Check::SetMaxVolume(oldVolume);
-
-            // Check::Size(testCase.m_expectedNumOuterLoops, outerLoops.size(), "CollectAllLoopsXY results in expected # outer loops");
-            // Check::Size(testCase.m_expectedNumInnerLoops, innerLoops.size(), "CollectAllLoopsXY results in expected # inner loops");
-
+            Check::Size(testCase.m_expectedNumOuterLoops, outerLoops.size(), "CollectAllLoopsXY results in expected # outer loops");
+            Check::Size(testCase.m_expectedNumInnerLoops, innerLoops.size(), "CollectAllLoopsXY results in expected # inner loops");
             for (auto const& outerLoop : outerLoops)
                 Check::True(PolygonOps::AreaXY(outerLoop) > 0.0, "outer loops are CCW");
             for (auto const& innerLoop : innerLoops)

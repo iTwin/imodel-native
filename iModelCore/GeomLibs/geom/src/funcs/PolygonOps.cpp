@@ -578,13 +578,15 @@ double                              xyTol
     holeLoops.clear();
 
     double absTol = xyTol;
-    double relTol = 1.0e-10;
+    double relTol = 0.0;
     if (absTol < 0.0)
         {
-        DRange3d range = DRange3d::NullRange();
+        // default as per vu_loopFromDPoint3dArrayXYTol_goNoDisconnects
+        static double s_defaultRelTol = 1.0e-8;
+        double maxCoord = 0.0;
         for (auto const& loop : inputLoops)
-            range.Extend(loop);
-        absTol = relTol * range.DiagonalDistanceXY();
+            maxCoord = std::max(maxCoord, DPoint3dOps::LargestXYCoordinate(loop.data(), loop.size()));
+        absTol = s_defaultRelTol * maxCoord;
         }
 
     // input edges have BOUNDARY mask
@@ -626,8 +628,9 @@ double                              xyTol
                 loop.push_back(loop.front()); // close the loop
 
                 double area = vu_area(faceSeed);
-                double length = PolylineOps::Length(loop);
-                double areaTol = absTol + relTol * length;
+                DRange3d range = DRange3d::NullRange();
+                range.Extend(loop);
+                double areaTol = DPoint3dOps::AreaToleranceXY(range, absTol);
                 if (area > areaTol)
                     holeLoops.push_back(loop); // interior CCW face becomes CW hole loop
                 else if (area < -areaTol)
