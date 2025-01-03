@@ -1394,19 +1394,32 @@ TEST(ClipPlaneSet, ClassifySetDifference)
 // Demonstrate "ClipPlaneSet in range" clip where the ClipPlaneSet is two disjoint ranges.
 TEST(ClipPlaneSet, BoundedClipperFacesInRange)
     {
-    ConvexClipPlaneSet clipper1 (DRange3d::From (2,2,2, 6,5,3));
-    ConvexClipPlaneSet clipper2 (DRange3d::From (7,7,7, 10,8,40));
+    auto range1 = DRange3d::From (2,2,2, 6,5,3);
+    auto range2 = DRange3d::From (7,7,7, 10,8,40);
+    ConvexClipPlaneSet clipper1 (range1);
+    ConvexClipPlaneSet clipper2 (range2);
     ClipPlaneSet clipper;
     clipper.push_back (clipper1);
     clipper.push_back (clipper2);
 
+    // the front face of this polyface is coplanar with one of the clipper planes,
+    // and was causing duplicate/overlapping facets in the intersection mesh
     auto bigBoxMesh = PolyfaceHeader::CreateDRange3dFaces(DRange3d::From(1, 2, 1, 15, 20, 20), true);
-
-    auto inside = PolyfaceHeader::CreateVariableSizeIndexed();
-    ClipPlaneSet::ClipPlaneSetIntersectPolyface(*bigBoxMesh, clipper, true, &inside, nullptr);
-    Check::SaveTransformed (*inside);
     Check::SaveTransformed(*bigBoxMesh);
 
+    PolyfaceHeaderPtr inside;
+    ClipPlaneSet::ClipPlaneSetIntersectPolyface(*bigBoxMesh, clipper, true, &inside, nullptr);
+    Check::SaveTransformed (*inside);
+    Check::True(inside.IsValid() && inside->HasFacets(), "intersection is defined and nonempty");
+
+    bvector<bvector<size_t>> componentSeeds;
+    MeshAnnotationVector messages(true);
+    Check::True(inside->OrientAndCollectManifoldComponents(componentSeeds, messages), "intersection mesh successfully analyzed");
+    Check::Size(2, componentSeeds.size(), "intersection mesh has 2 components");
+
+    auto vv = inside->ValidatedVolume();
+    if (Check::True(vv.IsValid(), "intersection mesh has volume"))
+        Check::Near(51, vv.Value(), "intersection mesh has expected volume");
 
     Check::ClearGeometry("ClipPlaneSet.BoundedClipperFacesInRange");
     }

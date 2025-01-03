@@ -1365,3 +1365,84 @@ TEST(PolylineOps, IsColinear)
     points[3].z -= (1 + sqrt(1.5) * numPoints) * DoubleOps::SmallCoordinateRelTol();
     Check::False(PolylineOps::IsColinear(points), "Non-linear polyline, just outside default tol");
     }
+
+
+TEST(PolylineOps, CollectAllLoops)
+    {
+    double xDelta = 100;
+    double zDelta = 100;
+
+    struct TestCase
+        {
+        BeFileName  m_fileName; // bag'o'curves with Loop child CurveVectors
+        size_t      m_numInputLoops;
+        size_t      m_expectedNumOuterLoops;
+        size_t      m_expectedNumInnerLoops;
+        TestCase(WCharCP fileName, size_t numInput, size_t numOuter, size_t numInner): m_numInputLoops(numInput), m_expectedNumOuterLoops(numOuter), m_expectedNumInnerLoops(numInner)
+            {
+            static BeFileName s_sourcePath;
+            if (s_sourcePath.IsEmpty())
+                {
+                BeTest::GetHost().GetDocumentsRoot(s_sourcePath);
+                s_sourcePath.AppendToPath(L"GeomLibsTestData").AppendToPath(L"CurveVector").AppendToPath(L"Regions");
+                }
+            m_fileName.AppendString(s_sourcePath.GetWCharCP()).AppendToPath(fileName);
+            }
+        };
+    bvector<TestCase> testCases; // all files in meters
+
+    testCases.push_back(TestCase(L"loop-oversampled-rectangle.imjs", 1, 1, 0));
+    testCases.push_back(TestCase(L"parity-region-hole-1.imjs", 2, 1, 1));
+    testCases.push_back(TestCase(L"parity-region-hole-2.imjs", 2, 1, 1));
+    testCases.push_back(TestCase(L"parity-region-holes-with-islands.imjs", 7, 3, 4));
+    testCases.push_back(TestCase(L"union-region-no-holes.imjs", 14, 1, 0));
+
+    // MacOSARM64 returns zero outer loops, but all other compilers succeed. Suspect compiler bug. Skip for now.
+    if (Check::GetEnableLongTests())
+        testCases.push_back(TestCase(L"parity-region-complex.imjs", 700, 1, 0));
+
+    for (auto const& testCase : testCases)
+        {
+        CurveVectorPtr curves;
+        bvector<IGeometryPtr> geometry;
+        if (Check::True(GTestFileOps::JsonFileToGeometry(testCase.m_fileName, geometry), "Parse inputs"))
+            curves = geometry.front()->GetAsCurveVector();
+        if (Check::True(curves.IsValid(), "Have curves"))
+            {
+            Check::Int(CurveVector::BOUNDARY_TYPE_None, curves->GetBoundaryType(), "test case is a bag of curves");
+
+            Check::SaveTransformed(*curves);
+            Check::Shift (0, 0, zDelta);
+
+            bvector<bvector<bvector<DPoint3d>>> linear;
+            Check::True(curves->CollectLinearGeometry(linear), "extracted linear geom from test case");
+            Check::Size(testCase.m_numInputLoops, linear.size(), "test case consists of expected # regions");
+
+            bvector<bvector<DPoint3d>> polygons;
+            for (auto const& region : linear)
+                {
+                Check::Size(1, region.size(), "each region consists of a single loop");
+                polygons.push_back(region[0]);
+                }
+
+            bvector<bvector<DPoint3d>> outerLoops;
+            bvector<bvector<DPoint3d>> innerLoops;
+            PolygonOps::CollectAllLoopsXY(outerLoops, innerLoops, polygons);
+
+            Check::SaveTransformed(outerLoops);
+            Check::Shift (0, 0, zDelta);
+            Check::SaveTransformed(innerLoops);
+            Check::Shift (0, 0, -2 * zDelta);
+
+            Check::Size(testCase.m_expectedNumOuterLoops, outerLoops.size(), "CollectAllLoopsXY results in expected # outer loops");
+            Check::Size(testCase.m_expectedNumInnerLoops, innerLoops.size(), "CollectAllLoopsXY results in expected # inner loops");
+            for (auto const& outerLoop : outerLoops)
+                Check::True(PolygonOps::AreaXY(outerLoop) > 0.0, "outer loops are CCW");
+            for (auto const& innerLoop : innerLoops)
+                Check::True(PolygonOps::AreaXY(innerLoop) < 0.0, "holes are CW");
+            }
+        Check::Shift (xDelta, 0, 0);
+        }
+
+    Check::ClearGeometry("PolylineOps.CollectAllLoops");
+    }

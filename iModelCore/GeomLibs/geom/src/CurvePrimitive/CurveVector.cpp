@@ -686,29 +686,16 @@ void CurveVector::AddStrokePoints (bvector<DPoint3dDoubleUVCurveArrays> &points,
         }
     }
 
-
-
 struct LinearGeometryCollector
 {
-size_t errors;
+size_t m_errors;
 IFacetOptionsPtr m_facetOptions;
-private:
-void CreateFacetOptions ()
-    {
-    if (!m_facetOptions.IsValid ())
-        m_facetOptions = IFacetOptions::CreateForCurves ();
-    }
-public:
-LinearGeometryCollector (IFacetOptionsP options)
-    : m_facetOptions(options)
-    {
-    errors = 0;
-    }
 
-size_t NumErrors () {return errors;}
+LinearGeometryCollector (IFacetOptionsP options) : m_errors(0), m_facetOptions(options) {}
 
-// Return false if anything other than Line or LineString
-bool CollectPointsFromSinglePrimitive
+size_t NumErrors () {return m_errors;}
+
+void CollectPointsFromSinglePrimitive
 (
 ICurvePrimitiveCR prim,
 bvector<DPoint3d> &path
@@ -719,17 +706,16 @@ bvector<DPoint3d> &path
         size_t initialCount = path.size ();
         prim.AddStrokes (path, *m_facetOptions, true);
         PolylineOps::PackAlmostEqualAfter (path, initialCount);
-        return true;
+        return;
         }
-    // No options given .. only take points.
+
+    // No options given: only take linear primitives
     DSegment3d segment;
     auto linestringPoints = prim.GetLineStringCP ();
     if (nullptr != linestringPoints)
         {
         for (DPoint3d xyz : *linestringPoints)
-            {
             PolylineOps::AddPointIfDistinctFromBack (path, xyz);
-            }
         }
     else if (prim.TryGetLine (segment))
         {
@@ -738,31 +724,28 @@ bvector<DPoint3d> &path
         }
     else
         {
-        errors++;
+        m_errors++;
         }
-    return true;
     }
 
-// Return false if anything other than Line or LineString
-bool CollectPointsFromSinglePrimitive
+void CollectPointsFromSinglePrimitive
 (
 ICurvePrimitiveCR prim,
 bvector<bvector<DPoint3d>> &paths
 )
     {
     paths.push_back (bvector<DPoint3d> ());
-    return CollectPointsFromSinglePrimitive (prim, paths.back ());
+    CollectPointsFromSinglePrimitive (prim, paths.back ());
     }
 
-// Return false if anything other than Line or LineString
-bool CollectPointsFromSinglePrimitive
+void CollectPointsFromSinglePrimitive
 (
 ICurvePrimitiveCR prim,
 bvector<bvector<bvector<DPoint3d>>> &paths
 )
     {
     paths.push_back (bvector<bvector<DPoint3d>> ());
-    return CollectPointsFromSinglePrimitive (prim, paths.back ());
+    CollectPointsFromSinglePrimitive (prim, paths.back ());
     }
 
 void CollectPointsFromLinearPrimitives
@@ -776,9 +759,7 @@ bvector<bvector<DPoint3d>> &paths
         paths.push_back (bvector<DPoint3d> ());
         auto &newPath = paths.back ();
         for (auto &prim : curves)
-            {
             CollectPointsFromSinglePrimitive (*prim, newPath);
-            }
         if (curves.IsClosedPath ())
             PolylineOps::EnforceClosure (newPath);
         }
@@ -801,8 +782,6 @@ bvector<bvector<DPoint3d>> &paths
         }
     }
 
-
-
 void CollectPointsFromLinearPrimitives
 (
 CurveVectorCR curves,
@@ -814,17 +793,13 @@ bool inParityRegion
         {
         // Each child will become a new top level region
         for (auto &prim : curves)
-            {
             CollectPointsFromLinearPrimitives (*prim->GetChildCurveVectorP (), paths, false);
-            }
         }
     else if (curves.IsParityRegion ())
         {
         paths.push_back (bvector<bvector<DPoint3d>>());
         for (auto &prim : curves)
-            {
             CollectPointsFromLinearPrimitives (*prim->GetChildCurveVectorP (), paths, true);
-            }
         }
     else if (curves.IsOpenPath () || curves.IsClosedPath ())
         {
@@ -836,8 +811,7 @@ bool inParityRegion
         parityLoops.push_back (bvector<DPoint3d> ());
         auto &loop = parityLoops.back ();
         for (auto &prim : curves)
-            if (!CollectPointsFromSinglePrimitive (*prim, loop))
-                errors++;
+            CollectPointsFromSinglePrimitive (*prim, loop);
         if (curves.IsClosedPath ())
             PolylineOps::EnforceClosure (loop);
         }
@@ -854,14 +828,14 @@ bool inParityRegion
             }
         }
     else
-        errors++;
+        m_errors++;
     }
 };
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool CurveVector::CollectLinearGeometry (bvector <bvector<bvector<DPoint3d>>> &regionPoints, IFacetOptionsP strokeOptions) const
+bool CurveVector::CollectLinearGeometry (bvector<bvector<bvector<DPoint3d>>> &regionPoints, IFacetOptionsP strokeOptions) const
     {
     LinearGeometryCollector collector (strokeOptions);
     regionPoints.clear ();
@@ -879,7 +853,6 @@ bool CurveVector::CollectLinearGeometry (bvector<bvector<DPoint3d>> &regionPoint
     collector.CollectPointsFromLinearPrimitives (*this, regionPoints);
     return collector.NumErrors () == 0;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
