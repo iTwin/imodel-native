@@ -3,7 +3,6 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #pragma once
-#include <optional>
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 /**
@@ -113,23 +112,6 @@ double sweepRadians         //!< [in] sweep angle.
 //!
 //!
 static DEllipse3d FromPointsOnArc (DPoint3dCR start, DPoint3dCR middle, DPoint3dCR end);
-
-//!
-//! @description Create an elliptical arc from 3 points on ellipse: two points on an axis and one in between.
-//!
-//! @param [in] start start of arc, on an axis.
-//! @param [in] middle point on arc somewhere between `start` and `end`.
-//! @param [in] end point on arc directly opposite `start`.
-//! @param [in] sweep angular sweep (radian), measured from `start` in the direction of `middle`.
-//! @return The ellipse, or invalid carrier if construction impossible.
-//!
-static std::optional<DEllipse3d> FromStartMiddleEnd
-(
-DPoint3dCR start,
-DPoint3dCR middle,
-DPoint3dCR end,
-double sweep = msGeomConst_2pi
-);
 
 //! Return a circular arc with given center and start.  Endpoint is on the vector to given endTarget.
 //! Sweep angle is the smaller of the two possible sweeps.
@@ -376,18 +358,38 @@ double          sweep
 
 //!
 //! @description Initialize a circular arc from 3 points.
+//! Note: to create an elliptical arc use DEllipse3d::InitFromPointsOnAxisAndArc.
 //!
 //! @param [in] start start point
 //! @param [in] middle mid point
 //! @param [in] end end point
 //! @return true if the three points are valid, false if colinear.
 //!
-//!
 bool InitFromPointsOnArc
 (
 DPoint3dCR      start,
 DPoint3dCR      middle,
 DPoint3dCR      end
+);
+
+//!
+//! @description Create an elliptical arc from 3 points on ellipse: two points on an axis and one in between.
+//! Note: to create a circular arc use DEllipse3d::InitFromPointsOnArc.
+//!
+//! @param [in] start start of arc, on an axis.
+//! @param [in] middle point on arc somewhere between `start` and `end`.
+//! @param [in] end point on arc directly opposite `start`.
+//! @param [in] theta0 start angle (radian) of the sweep.
+//! @param [in] sweep sweep angle (radian), measured from `start` in the direction of `middle`.
+//! @return true if construction possible; false otherwise.
+//!
+bool InitFromPointsOnAxisAndArc
+(
+DPoint3dCR start,
+DPoint3dCR middle,
+DPoint3dCR end,
+double theta0 = 0.0,
+double sweep = msGeomConst_2pi
 );
 
 //!
