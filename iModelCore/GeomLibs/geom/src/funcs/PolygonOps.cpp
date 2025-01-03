@@ -527,7 +527,7 @@ size_t PolygonOps::SplitToConvexPartsXY(bvector<int>& indices, bvector<DPoint3d>
     vu_collectInteriorFaceLoops(faces, graph);
     vu_arrayOpen(faces);
     VuP face = nullptr;
-    for (int i = 0; vu_arrayRead(faces, &face); ++i)
+    for (; vu_arrayRead(faces, &face); )
         {
         if (vu_faceLoopSize(face) < 3)
             continue;
@@ -577,17 +577,21 @@ double                              xyTol
     outerLoops.clear();
     holeLoops.clear();
 
+    DRange3d range = DRange3d::NullRange();
+    for (auto const& loop : inputLoops)
+        range.Extend(loop);
+
     double absTol = xyTol;
     double relTol = 0.0;
     if (absTol < 0.0)
         {
         // default as per vu_loopFromDPoint3dArrayXYTol_goNoDisconnects
         static double s_defaultRelTol = 1.0e-8;
-        double maxCoord = 0.0;
-        for (auto const& loop : inputLoops)
-            maxCoord = std::max(maxCoord, DPoint3dOps::LargestXYCoordinate(loop.data(), loop.size()));
+        double maxCoord = std::max({fabs(range.low.x), fabs(range.low.y), fabs(range.high.x), fabs(range.high.y)});
         absTol = s_defaultRelTol * maxCoord;
         }
+
+    double areaTol = DPoint3dOps::AreaToleranceXY(range, absTol);
 
     // input edges have BOUNDARY mask
     VuSetP graph = vu_newVuSet(0);
@@ -628,9 +632,6 @@ double                              xyTol
                 loop.push_back(loop.front()); // close the loop
 
                 double area = vu_area(faceSeed);
-                DRange3d range = DRange3d::NullRange();
-                range.Extend(loop);
-                double areaTol = DPoint3dOps::AreaToleranceXY(range, absTol);
                 if (area > areaTol)
                     holeLoops.push_back(loop); // interior CCW face becomes CW hole loop
                 else if (area < -areaTol)
