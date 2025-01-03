@@ -1022,10 +1022,7 @@ double TestTrigRoundTrips (double radians0, size_t n,
     {
     static double s_trigRoundTripTol = 1.0e-16;
     static size_t s_hardTrigTrigger = 20;
-    static size_t s_numCall = 0;
-    static size_t s_numDelta = 0;
     double radians = radians0;
-    s_numCall++;
     for (size_t i = 0; i < n; i++)
         {
         double c = cos (radians);
@@ -1044,7 +1041,6 @@ double TestTrigRoundTrips (double radians0, size_t n,
             }
         }
 
-    s_numDelta++;
     double d = fabs (radians - radians0);
     failureDeltas.Accumulate (d);
     hardTrig.push_back (DPoint3d::From
@@ -1706,7 +1702,6 @@ TEST(Angle,OverlappableIntervalsFixedFractions)
     bvector<double> sweeps  {90, 180, 290, -80, -190};
     bvector<double> starts  {0, 90, 152, -31, 401};
     bvector<double> fractions {0, 0.25, 0.50, 0.75, 1.0};
-    size_t numTest = 0;
     for (double startA : sweeps)
         {
         for (double sweepA : sweeps)
@@ -1769,7 +1764,6 @@ TEST(Angle,OverlappableIntervalsFixedFractions)
                                         1.0);
                             }
                         }
-                    numTest++;
                     }
                 }
             }

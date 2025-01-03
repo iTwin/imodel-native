@@ -156,17 +156,14 @@ public: bool AddEdgeAndTestForCycle (int vertexIndexA, int vertexIndexB, bvector
       closed = FindNodeInFaceLoop (existingNodeAtVertexA, existingNodeAtVertexB);
       }
 
-  int numPrior = 0;
   if (existingNodeAtVertexA != MTG_NULL_NODEID)
       {
       m_graph.VertexTwist (newNodeAtVertexA, existingNodeAtVertexA);
-      numPrior++;
       }
 
   if (existingNodeAtVertexB != MTG_NULL_NODEID)
       {
       m_graph.VertexTwist (newNodeAtVertexB, existingNodeAtVertexB);
-      numPrior++;
       }
 
   if (closed)
