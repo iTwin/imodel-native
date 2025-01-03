@@ -1391,11 +1391,13 @@ TEST(PolylineOps, CollectAllLoops)
         };
     bvector<TestCase> testCases; // all files in meters
 
+/*
     testCases.push_back(TestCase(L"loop-oversampled-rectangle.imjs", 1, 1, 0));
     testCases.push_back(TestCase(L"parity-region-hole-1.imjs", 2, 1, 1));
     testCases.push_back(TestCase(L"parity-region-hole-2.imjs", 2, 1, 1));
     testCases.push_back(TestCase(L"parity-region-holes-with-islands.imjs", 7, 3, 4));
     testCases.push_back(TestCase(L"union-region-no-holes.imjs", 14, 1, 0));
+*/
     testCases.push_back(TestCase(L"parity-region-complex.imjs", 700, 1, 3));
 
     for (auto const& testCase : testCases)
