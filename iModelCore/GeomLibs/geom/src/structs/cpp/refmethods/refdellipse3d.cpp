@@ -1750,7 +1750,6 @@ double     sweepIn
 
 
 /*-----------------------------------------------------------------*//**
- @group "DEllipse3d Initialization"
  @bsimethod
 +----------------------------------------------------------------------*/
 bool DEllipse3d::InitFromPointsOnArc
@@ -1793,7 +1792,6 @@ DPoint3dCR end
     }
 
 /*--------------------------------------------------------------------------------**//**
- @group "DEllipse3d Initialization"
  @bsimethod
 +--------------------------------------------------------------------------------------*/
 bool DEllipse3d::InitFromPointsOnAxisAndArc
