@@ -1055,12 +1055,12 @@ GEOMDLLIMPEXP void CollectPerFaceCounts (size_t &minPerFace, size_t &maxPerFace)
 //! @param [in] omitInvisibles true to hide segments that are not visible (due to negated indices)
 GEOMDLLIMPEXP void CollectSegments (bvector<DSegment3d> &segments, bool omitInvisibles) const;
 
-//! Cut with a plane. (Prototype)
-//! Return as a curve vector. Optionally structure as area-bounding loops.
+//! Cut with a plane. Return intersection edges as a curve vector, optionally structured as area-bounding loops.
 //! @param [in] sectionPlane plane to cut the mesh.
 //! @param [in] formRegions true to look for closed loops and structure the return as a loop or parity CurveVector.
-//! @param [in] markEdgeFractions true to attache FacetEdgeLocationDetailVector to the linestrings.
-GEOMDLLIMPEXP CurveVectorPtr PlaneSlice (DPlane3dCR sectionPlane, bool formRegions, bool markEdgeFractions = false) const;
+//! @param [in] markEdgeFractions true to attach FacetEdgeLocationDetailVector to the linestrings. Default is false.
+//! @param [in] skipOnPlaneFacets whether output lacks facets coplanar with sectionPlane. Default is false (include them).
+GEOMDLLIMPEXP CurveVectorPtr PlaneSlice (DPlane3dCR sectionPlane, bool formRegions, bool markEdgeFractions = false, bool skipOnPlaneFacets = false) const;
 
 //! Project linestring in given direction to intersection with facets.
 //! Return as a curve vector.
@@ -1507,7 +1507,7 @@ bvector<PolyfaceHeaderPtr> &submeshArray
 
 
 //! Return connected meshes.
-//! @param [in] connectivityType 0 for vertex connectivity, 1 for invisible edge connectivity (any shared visible edge is a barrier), 2 for connectivity across any edge (no visibility test)
+//! @param [in] connectivityType 0 for vertex connectivity, 1 for connectivity across any edge (no visibility test), 2 for invisible edge connectivity (any shared visible edge is a barrier)
 //! @param [out] submeshArray This is initially cleared, then filled with as many (smartpointers to) new arrays as needed
 //!     for the blocking.  Each new array receives data from a block.
 GEOMDLLIMPEXP bool PartitionByConnectivity (int connectivityType, bvector<PolyfaceHeaderPtr> &submeshArray) const;
@@ -2378,9 +2378,12 @@ IPolyfaceVisitorFilter *filter  //!< [in] optional object to ask if current face
 //! @returns true if any changes were made.
 GEOMDLLIMPEXP bool CompactIndexArrays ();
 
+//! Trim excess capacity from the data and index vectors. No data is removed.
+//! @param compactIndices call CompactIndexArrays first
+//! @returns bytes trimmed
+GEOMDLLIMPEXP size_t CompactArrays(bool compactIndices);
 
 //! Apply a transform to all coordinates. Optionally reverse index order (to maintain cross product relationships)
-
 GEOMDLLIMPEXP void Transform
 (
 TransformCR transform,
@@ -2388,14 +2391,12 @@ bool        reverseIndicesIfMirrored = true
 );
 
 //! Apply a transform to all coordinates of an array of meshes. Optionally reverse index order (to maintain cross product relationships)
-
 static GEOMDLLIMPEXP void Transform
 (
 bvector<PolyfaceHeaderPtr> &data,
 TransformCR transform,
 bool        reverseIndicesIfMirrored = true
 );
-
 
 //!
 //! Reverse (negate) all stored normals.  Note that this does NOT change index order.
@@ -3434,12 +3435,12 @@ GEOMDLLIMPEXP bool operator() (const DVec3d& pointA, const DVec3d &pointB) const
 struct PolyfaceZYXMap : bmap <DPoint3d, size_t, DPoint3dZYXTolerancedSortComparison>
 {
 PolyfaceZYXMap (DPoint3dZYXTolerancedSortComparison const &compare);
+DPoint3dZYXTolerancedSortComparison const& GetComparator() const;
 };
 struct PolyfaceZYXDVec3dMap : bmap <DVec3d, size_t, DVec3dZYXTolerancedSortComparison>
 {
 PolyfaceZYXDVec3dMap (DVec3dZYXTolerancedSortComparison const &compare);
 };
-
 
 struct DPoint3dZYXSortComparison
 {
@@ -3529,6 +3530,11 @@ public:
     //! @param [in] point coordinates to look up.
     //! @param [out] index 0-based index within the client mesh.
     GEOMDLLIMPEXP bool   FindPoint (DPoint3dCR point, size_t &index);
+
+    //! return absolute tolerance for point comparisons
+    GEOMDLLIMPEXP double GetXYZAbsTol() const;
+    //! return relative tolerance for point comparisons
+    GEOMDLLIMPEXP double GetXYZRelTol() const;
 
 //! (Find or) Add a normal.  Return its (0 based) index.
     //! @param [in] normal normal coordinates.
