@@ -1341,7 +1341,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
 
     // we want cascade delete to work during rebase.
     const bool fkNoAction = !pmConf.IsRebasingLocalChanges();
-
+    const bool ignoreNoop = pmConf.IsRebasingLocalChanges();
     bool fastForwardEncounteredMergeConflict = false;
     auto fastForwardConflictHandler = [&fastForwardEncounteredMergeConflict](ChangeStream::ConflictCause _, Changes::Change change) {
         if(change.IsIndirect())
@@ -1396,7 +1396,7 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
 
     auto dataApplyArgs = ApplyChangesArgs::Default()
         .SetInvert(invert)
-        .SetIgnoreNoop(true)
+        .SetIgnoreNoop(ignoreNoop)
         .SetFkNoAction(fkNoAction);
 
     if (fastForward) {
@@ -2959,11 +2959,11 @@ void TxnManager::PullMergeEnd() {
         ReadDataChanges(changeset, currTxnId, TxnAction::None);
         rc = ApplyChanges(changeset, TxnAction::Merge, isSchemaTxn, false);
         if (rc != BE_SQLITE_OK) {
-            if (isSchemaTxn) {
-                m_dgndb.AbandonChanges();
-                deleteTxn(currTxnId);
-                continue;
-            }
+            // if (isSchemaTxn) {
+            //     m_dgndb.AbandonChanges();
+            //     deleteTxn(currTxnId);
+            //     continue;
+            // }
 
             if (changeset.GetLastErrorMessage().empty())
                 throwError(currTxnId, "failed to apply changes", rc);
@@ -3018,7 +3018,10 @@ void TxnManager::PullMergeEnd() {
             }
         }
         Restart();
-        m_dgndb.SaveChanges(); // save dgn_txn/be_Local
+        rc = m_dgndb.SaveChanges(); // save dgn_txn/be_Local
+            if (rc != BE_SQLITE_OK) {
+                throwError(currTxnId, SqlPrintfString("unable to save rebased txn (id: %s)", currTxnIdStr.c_str()).GetUtf8CP(), rc);
+            }
         m_curr = currTxnId;
         notifyJs(NotifyId::End, currTxnId, desc, type);
 
@@ -3032,7 +3035,10 @@ void TxnManager::PullMergeEnd() {
         .SetStartTxnId(TxnId(0))
         .Save(m_dgndb);
 
-    m_dgndb.SaveChanges();
+    rc = m_dgndb.SaveChanges();
+    if (rc != BE_SQLITE_OK ){
+        m_dgndb.ThrowException("Unable to save merge state", static_cast<int>(rc));
+    }
     Restart();
 }
 
