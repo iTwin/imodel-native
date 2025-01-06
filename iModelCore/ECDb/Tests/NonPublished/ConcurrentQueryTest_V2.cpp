@@ -238,8 +238,8 @@ TEST_F(ConcurrentQueryFixture, Blob_Metadata) {
         "index":0,
         "jsonName":"bin",
         "name":"bin",
-        "extendedType":"Json",
-        "typeName":"string"
+        "extendedType":"",
+        "typeName":"binary"
     })json");
 
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("Blob_Metadata.ecdb", SchemaItem(
@@ -270,8 +270,8 @@ TEST_F(ConcurrentQueryFixture, Blob_Metadata) {
     auto metadataJson = resJson["meta"][0];
 
     ASSERT_STREQ(metadataJson["accessString"].asCString(), "bin");
-    ASSERT_STREQ(metadataJson["typeName"].asCString(), "string");
-    ASSERT_STREQ(metadataJson["extendedType"].asCString(), "Json");
+    ASSERT_STREQ(metadataJson["typeName"].asCString(), "binary");
+    ASSERT_STREQ(metadataJson["extendedType"].asCString(), "");
     ASSERT_STREQ(metadataJson.Stringify(StringifyFormat::Indented).c_str(), expectedMetadataDoc.Stringify(StringifyFormat::Indented).c_str());
 }
 
@@ -383,6 +383,54 @@ TEST_F(ConcurrentQueryFixture, Blob_Abbreviated) {
     resData.Parse(resJson["data"].asString());
 
     ASSERT_STREQ(resData[0][0].asString().c_str(), "{\"bytes\":13}");
+}
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConcurrentQueryFixture, BlobColumnInfoRepeated) {
+    // There was a bug where the abbreviateBlobs flag was not populated properly, this test checks that the flag behaves correctly
+    // when running the same query repeatedly with different values of the flag.
+    const uint8_t bin[] = {0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x2c, 0x20, 0x57, 0x6f, 0x72, 0x6c, 0x64, 0x21};
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("BlobColumnInfoRepeated.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECEntityClass typeName="testEntity"
+                    description="Cover all primitive, primitive array, struct of primitive, array of struct">
+                    <ECProperty propertyName="bin" typeName="binary" />
+                </ECEntityClass>
+            </ECSchema>)xml")));
+    ECSqlStatement stmt;
+    auto rc = stmt.Prepare(m_ecdb, R"sql(
+        insert into ts.testEntity(bin)
+        values(?)
+    )sql");
+    stmt.BindBlob(1, (void const*)bin, (int)sizeof(bin), IECSqlBinder::MakeCopy::No);
+    ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+    m_ecdb.SaveChanges();
+
+    auto checkBlobColumnInfo = [&](const std::string& expectedExtendedType, const std::string& expectedTypeName, std::optional<bool> abbreviateBlobs = std::nullopt) {
+        auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
+        auto req = ECSqlRequest::MakeRequest("SELECT bin FROM ts.testEntity");
+        if (abbreviateBlobs.has_value()) {
+            req->SetAbbreviateBlobs(abbreviateBlobs.value());
+        }
+        auto r = mgr.Enqueue(std::move(req)).Get();
+        ASSERT_EQ(r->GetStatus(), QueryResponse::Status::Done);
+        auto res = ((ECSqlResponse*) r.get());
+        auto& rowProps = res->GetProperties();
+        ASSERT_EQ(rowProps.size(), 1);
+        auto& prop = rowProps[0];
+        ASSERT_STREQ(prop.GetExtendedType().c_str(), expectedExtendedType.c_str());
+        ASSERT_STREQ(prop.GetTypeName().c_str(), expectedTypeName.c_str());
+    };
+
+    checkBlobColumnInfo("", "binary");
+    checkBlobColumnInfo("", "binary", false);
+    checkBlobColumnInfo("Json", "string", true);
+    checkBlobColumnInfo("", "binary");
+    checkBlobColumnInfo("", "binary", false);
 }
 
 //---------------------------------------------------------------------------------------
