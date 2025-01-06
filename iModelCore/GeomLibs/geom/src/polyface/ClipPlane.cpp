@@ -426,9 +426,7 @@ DRange1d &altitudeRange                 //!< [out] min and max altitude values.
     {
     xyzOut.clear ();
     xyzIn.clear ();
-    size_t numSplit = 0;
-    UNUSED_VARIABLE(numSplit);
-    
+
     static double s_fractionTol = 1.0e-8;
     if (xyz.size () > 2)
         {
@@ -459,7 +457,6 @@ DRange1d &altitudeRange                 //!< [out] min and max altitude values.
                     xyzIn.push_back (xyzA);
                     xyzOut.push_back (xyzA);
                     }
-                    numSplit++;
                 }
             if (a1 >= 0.0 || nearZero)
                 xyzIn.push_back (xyz1);
