@@ -901,6 +901,12 @@ bool ApplyChangesArgs::IsSchemaTable(Utf8CP tableName) {
     if (!tableName) {
         return false;
     }
+    // Be_Prop contain ECD/DGN/BE profile version information and should be treated as schema table
+    // After schema changes is applied we need updated profile version information or else it will cause issues
+    // while validating ECDb mapping.
+    if (BeStringUtilities::StricmpAscii(tableName, "be_Prop") == 0) {
+        return true;
+    }
 
     if (!tableName[0] || (tableName[0] != 'e' && tableName[0] != 'E'))  {
         return false;

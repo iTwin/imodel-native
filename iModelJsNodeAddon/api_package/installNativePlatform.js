@@ -23,7 +23,7 @@ const supportedPlatforms = [
   {
     name: "darwin",
     description: "macOS",
-    architectures: ["x64", "arm64"]
+    architectures: ["arm64"]
   }
 ];
 

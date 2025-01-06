@@ -205,6 +205,14 @@ export declare namespace IModelJsNative {
   function enableLocalGcsFiles(yesNo: boolean): void;
   function queryConcurrency(pool: "io" | "cpu"): number;
 
+  interface TrueTypeFontMetadata {
+    faces: FontFaceProps[];
+    embeddable: boolean;
+  }
+
+  function getTrueTypeFontMetadata(fileName: LocalFileName): TrueTypeFontMetadata;
+  function isRscFontData(blob: Uint8Array): boolean;
+
   /** Get the SHA1 hash of a Schema XML file, possibly including its referenced Schemas */
   function computeSchemaChecksum(arg: {
     /** the full path to the root schema XML file */
@@ -407,24 +415,9 @@ export declare namespace IModelJsNative {
     encoding?: FontEncodingProps;
   }
 
-  interface EmbedFontDataProps {
-    face: FontFaceProps;
-    data: Uint8Array;
-  }
-
-  interface EmbedFontFileProps {
-    fileName: LocalFileName;
-  }
-
-  interface EmbedSystemFontProps {
-    systemFont: string;
-  }
-
-  type EmbedFontArg = EmbedFontDataProps | EmbedFontFileProps | EmbedSystemFontProps & { compress?: true };
-
   interface SQLiteOps {
     embedFile(arg: EmbedFileArg): void;
-    embedFont(arg: EmbedFontArg): void;
+    embedFontFile(id: number, faces: FontFaceProps[], data: Uint8Array, compress: boolean): void;
     extractEmbeddedFile(arg: EmbeddedFileProps): void;
     getFilePath(): string;
     getLastInsertRowId(): number;
@@ -541,7 +534,7 @@ export declare namespace IModelJsNative {
     public abandonChanges(): DbResult;
     public abandonCreateChangeset(): void;
     public addChildPropagatesChangesToParentRelationship(schemaName: string, relClassName: string): BentleyStatus;
-    public addNewFont(arg: { type: FontType, name: string }): number;
+    public invalidateFontMap(): void;
     public applyChangeset(changeSet: ChangesetFileProps): void;
     public revertTimelineChanges(changeSet: ChangesetFileProps[], skipSchemaChanges: boolean): void;
     public attachChangeCache(changeCachePath: string): DbResult;
@@ -574,7 +567,7 @@ export declare namespace IModelJsNative {
     public dumpChangeset(changeSet: ChangesetFileProps): void;
     public elementGeometryCacheOperation(requestProps: any/* ElementGeometryCacheOperationRequestProps */): BentleyStatus;
     public embedFile(arg: EmbedFileArg): void;
-    public embedFont(arg: EmbedFontArg): void;
+    public embedFontFile(id: number, faces: FontFaceProps[], data: Uint8Array, compress: boolean): void;
     public enableChangesetSizeStats(enabled: boolean): DbResult;
     public enableTxnTesting(): void;
     public endMultiTxnOperation(): DbResult;
@@ -631,7 +624,7 @@ export declare namespace IModelJsNative {
     public inBulkOperation(): boolean;
     public inlineGeometryPartReferences(): InlineGeometryPartsResult;
     public insertCodeSpec(name: string, jsonProperties: CodeSpecProperties): Id64String;
-    public insertElement(elemProps: ElementProps, options?: { forceUseId: boolean }): Id64String;
+    public insertElement(elemProps: ElementProps, options?: { forceUseId?: boolean }): Id64String;
     public insertElementAspect(aspectProps: ElementAspectProps): Id64String;
     public insertLinkTableRelationship(props: RelationshipProps): Id64String;
     public insertModel(modelProps: ModelProps): Id64String;
@@ -685,7 +678,7 @@ export declare namespace IModelJsNative {
     public setITwinId(guid: GuidString): DbResult;
     public setBusyTimeout(ms: number): void;
     public setCodeValueBehavior(newBehavior: "exact" | "trim-unicode-whitespace"): void;
-    public simplifyElementGeometry(simplifyArgs: any): DbResult;
+    public simplifyElementGeometry(simplifyArgs: any): IModelStatus;
     public startCreateChangeset(): ChangesetFileProps;
     public startProfiler(scopeName?: string, scenarioName?: string, overrideFile?: boolean, computeExecutionPlan?: boolean): DbResult;
     public stopProfiler(): { rc: DbResult, elapsedTime?: number, scopeId?: number, fileName?: string };
@@ -920,7 +913,7 @@ export declare namespace IModelJsNative {
     public createDb(dbName: string, container?: CloudContainer, params?: SQLiteDbCreateParams): void;
     public dispose(): void;
     public embedFile(arg: EmbedFileArg): void;
-    public embedFont(arg: EmbedFontArg): void;
+    public embedFontFile(id: number, faces: FontFaceProps[], data: Uint8Array, compress: boolean): void;
     public extractEmbeddedFile(arg: EmbeddedFileProps): void;
     public getFilePath(): string;
     public getLastError(): string;

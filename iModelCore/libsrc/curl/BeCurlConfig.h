@@ -26,7 +26,7 @@
         #define SEND_TYPE_ARG3 size_t
         #define HAVE_SYS_IOCTL_H 1
         #define HAVE_STRDUP 1
-        #define ENABLE_IPV6 1
+        #define USE_IPV6 1
         #define HAVE_GETADDRINFO 1
         #define HAVE_BOOL_T 1
         #define HAVE_STDBOOL_H 1
@@ -50,4 +50,4 @@
 #endif
 
 // Enable IPV6 support for all platforms
-#define ENABLE_IPV6 1
+#define USE_IPV6 1

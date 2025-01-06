@@ -589,6 +589,10 @@ BentleyStatus RscFont::ReadFontHeader(bvector<Byte>& buffer) {
     return SUCCESS;
 }
 
+bool RscFont::IsRscFontData(uint8_t const* data) {
+    return nullptr != data && nullptr != GetRoot<FB::DgnRscFont>(data);
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
