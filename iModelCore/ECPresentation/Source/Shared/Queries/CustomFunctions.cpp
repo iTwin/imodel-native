@@ -242,13 +242,12 @@ public:
                     if (nullptr == ecClass)
                         HANDLE_CUSTOM_FUNCTION_FAILURE_RETURN(Utf8PrintfString("Invalid ECClassId: %" PRIu64, classId.GetValue()));
 
-                    ECPropertyP instanceLabelProperty = ecClass->GetInstanceLabelProperty();
+                    ECPropertyCP instanceLabelProperty = ecClass->GetInstanceLabelProperty();
                     // if the override didn't apply, look for instance label property
                     if (nullptr != instanceLabelProperty)
                         {
                         if (instanceLabelProperty->GetIsPrimitive())
                             {
-                            PrimitiveECPropertyCR primitiveInstanceLabelProperty = *instanceLabelProperty->GetAsPrimitiveProperty();
                             labelDefinition->SetECPropertyValue(*instanceLabelProperty, args[2], GetFormattedPropertyValue(*instanceLabelProperty->GetAsPrimitiveProperty(), args[2],
                                 GetContext().GetPropertyFormatter(), GetContext().GetUnitSystem()).c_str());
                             }
