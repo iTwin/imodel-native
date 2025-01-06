@@ -2060,6 +2060,15 @@ TEST_F(CommonTableExpTestFixture, FindingProperty_For_CTE_Without_SubColumns) {
         ASSERT_STREQ("Pictures", stmt.GetValueText(0));
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     }
+    if ("cte_without_subColumns_in_subquery_ref_with alias") {
+        auto ecsql = R"(select a.x from (with tmp(x) as (SELECT e.Subject FROM ts.Element e order by e.Subject LIMIT 1) select x from tmp) a)";
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, ecsql));
+        ASSERT_EQ(1, stmt.GetColumnCount());
+        ASSERT_STREQ("x", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("Book", stmt.GetValueText(0));
+    }
 }
 
 //---------------------------------------------------------------------------------------
