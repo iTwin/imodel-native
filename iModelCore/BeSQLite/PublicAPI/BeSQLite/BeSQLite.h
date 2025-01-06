@@ -2768,7 +2768,6 @@ private:
 public:
     BE_SQLITE_EXPORT Db();
     BE_SQLITE_EXPORT virtual ~Db();
-
     DbFile* GetDbFile() {return m_dbFile;}
 
     //! SQLite supports the concept of an "implicit" transaction. That is, if no explicit transaction is active when you execute an SQL statement,
@@ -3535,4 +3534,77 @@ struct LzmaUtility
     static ZipErrors DecompressEmbeddedBlob(bvector<Byte>&out, uint32_t expectedSize, void const*inputBuffer, uint32_t inputSize, Byte*header, uint32_t headerSize); //!< @private
 };
 
+// Allow query sqlite meta data & diff schema to create patch that will upgrade schema on another db
+// Rule of thumb is to use this only for schema upgrade, not for data migration. If a db file schema was
+// was evolved using ALTER TABLE ... commands, then the schema diff will be able to generate patch.
+// If the schema was evolved using other means, then the patch will not be generated or fails.
+// Other mean include dropping table and recreating it, or using PRAGMA writable_schema to modify schema.
+namespace MetaData {
+    struct ColumnInfo {
+        Utf8String name;
+        Utf8String dataType;
+        Utf8String collSeq;
+        bool notNull;
+        bool primaryKey;
+        bool autoIncrement;
+        bool hidden;
+        std::optional<Utf8String> defaultValue;
+        int cid;
+    };
+    struct TriggerInfo {
+        Utf8String name;
+        Utf8String sql;
+    };
+    struct IndexColumnInfo {
+        Utf8String name;
+        Utf8String collSeq;
+        int cid;
+        bool desc;
+        bool key;
+    };
+    struct IndexInfo {
+        Utf8String name;
+        Utf8String sql;
+        bool partial;
+        bool unique;
+        Utf8String origin; // "c" if the index was created by a CREATE INDEX statement, "u" if the index was created by a UNIQUE constraint, or "pk" if the index was created by a PRIMARY KEY constraint.
+        std::vector<IndexColumnInfo> columns;
+    };
+    struct ForeignKeyInfo {
+        Utf8String table;
+        std::vector<Utf8String> fromColumns;
+        std::vector<Utf8String> toColumns;
+        Utf8String onUpdate;
+        Utf8String onDelete;
+        Utf8String match;
+    };
+    struct TableInfo {
+        Utf8String schema;
+        Utf8String name;
+        Utf8String type; // "shadow" or "table" or "virtual"
+        int nColumns;
+        bool hasRowId;
+        bool isStrict;
+        bool operator==(TableInfo const& other) const {return schema == other.schema && name == other.name;}
+        bool operator<(TableInfo const& other) const {
+            return schema.CompareToI(other.schema) < 0 || (schema == other.schema && name.CompareToI(other.name) < 0);
+        }
+    };
+    struct CompleteTableInfo : public TableInfo{
+        Utf8String sql;
+        std::vector<ColumnInfo> columns;
+        std::vector<ForeignKeyInfo> foreignKeys;
+        std::vector<IndexInfo> indexes;
+        std::vector<TriggerInfo> triggers;
+        bool operator==(CompleteTableInfo const& other) const {return TableInfo::operator==(other);}
+    };
+
+    BE_SQLITE_EXPORT void ToJson(CompleteTableInfo const&, BeJsValue);
+    BE_SQLITE_EXPORT DbResult QueryTable(DbCR&, Utf8StringCR dbName, Utf8StringCR tableName, CompleteTableInfo&);
+    BE_SQLITE_EXPORT DbResult QueryTable(DbCR&, TableInfo const&, CompleteTableInfo&);
+    BE_SQLITE_EXPORT std::vector<TableInfo> QueryTableNames(DbCR& db, std::optional<Utf8String> dbName, DbResult& rc);
+    BE_SQLITE_EXPORT std::vector<TableInfo> QueryTableNames(DbCR& db, std::optional<Utf8String> dbName);
+    BE_SQLITE_EXPORT DbResult SchemaDiff(DbCR lhsDb, DbCR rhsDb, std::vector<Utf8String>& patches, bool allowDrop = true);
+    BE_SQLITE_EXPORT DbResult SchemaDiff(DbCR lhsDb, DbCR rhsDb, std::function<bool(MetaData::TableInfo const&)> excludeFilter, std::vector<Utf8String>& patches, bool allowDrop = true);
+}
 END_BENTLEY_SQLITE_NAMESPACE

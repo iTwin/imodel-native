@@ -378,7 +378,7 @@ TEST_F(DgnLineStyleTest, InsertRasterComponentAsJson)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, InsertLineCodeComponentAsJson)
     {
-    Utf8CP seedFilePath;
+    Utf8String seedFilePath;
     DgnStyleId styleId;
     {
     SetupSeedProject();
@@ -482,7 +482,7 @@ TEST_F(DgnLineStyleTest, InsertLineCodeComponentAsJson)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, InsertCompoundComponentAsJson)
     {
-    Utf8CP seedFilePath;
+    Utf8String seedFilePath;
     DgnStyleId styleId;
     {
     SetupSeedProject();

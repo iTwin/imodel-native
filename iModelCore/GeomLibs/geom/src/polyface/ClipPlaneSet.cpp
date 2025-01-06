@@ -1043,7 +1043,6 @@ bvector<DPoint3d> &work         //!< [inout] extra polygon
     return ConvexPolygonClip (input, output, work, 0);
     }
 
-#define CheckAreaXY_not
 // EDL Dec 7 2016.
 // superficially bad area split observed when a vertical facet (edge on from above) is split.
 // a1=-2.9864408788819741e-008
@@ -1058,6 +1057,432 @@ double Check(double a0, double a1)
     return dx;
     }
 #endif
+
+#ifdef CountPolygonOrientations
+static int s_numPositive = 0;
+static int s_numNegative = 0;
+static void CheckDirections (DVec3dCR vector, DPoint3dCR point0, DPoint3dCR point1, DPoint3dCR point2)
+    {
+    DVec3d cross = DVec3d::FromCrossProductToPoints (point0, point1, point2);
+    double s = cross.DotProduct (vector);
+    if (s > 0)
+        s_numPositive++;
+    else
+        s_numNegative++;
+    }
+#else
+#define CheckDirections(a,b,c,d)
+#endif
+
+// Add 1 or two planes for the (possibly non-coplanar!) points viewed from OUTSIDE as
+//
+//   A1-------------------------------B1
+//   |                                |
+//   |                                |
+//   A0-------------------------------B0
+//
+// <ul>
+// <li> If coplanar, add a single plane for the planar quad
+// <li> If one (but not both) degenerate, add a single plane for the triangle
+// <li> If noncoplanar, add the triangle pair chosen so for each triangle the "other" corner is below
+// </ul>
+static void AddPlanesForConvexVolume
+(
+ConvexClipPlaneSetR clipSet,
+bvector<bvector<DPoint3d>> *polygons,
+DPoint3dCR pointA0,
+DPoint3dCR pointA1,
+DPoint3dCR pointB0,
+DPoint3dCR pointB1,
+bool hidePlane = false
+)
+    {
+    auto crossA1 = DVec3d::FromCrossProductToPoints(pointA1,pointA0, pointB1);
+    auto crossB0 = DVec3d::FromCrossProductToPoints(pointB0, pointB1, pointA0);
+    double volume = pointA0.TripleProductToPoints(pointB0, pointA1, pointB1);
+    auto unitA1 = crossA1.ValidatedNormalize();
+    auto unitB0 = crossB0.ValidatedNormalize();
+    static int s_allowSinglePlane = 1;      // set this to zero to force triangles everywhere.   Interesting for debugging.
+    if (unitA1.IsValid() && unitB0.IsValid())
+        {
+        if (s_allowSinglePlane && unitA1.Value().IsParallelTo(unitB0))
+            {
+            clipSet.Add(ClipPlane(unitA1, pointA1, hidePlane, hidePlane));
+            if (polygons)
+                polygons->push_back({pointB0, pointA0, pointA1, pointB1, pointB0});
+
+            }
+        else if (volume < 0.0)
+            {
+            // build both triangles on the A0B1 diagonal
+            clipSet.Add(ClipPlane(unitB0, pointB0, hidePlane, hidePlane));
+            clipSet.Add(ClipPlane(unitA1, pointA1, hidePlane, hidePlane));
+            if (polygons)
+                {
+                polygons->push_back({ pointA0, pointB1, pointB0, pointA0 });
+                CheckDirections (unitB0, pointB0, pointB1, pointA0);
+                polygons->push_back({ pointA0, pointA1, pointB1, pointA0 });
+                CheckDirections(unitA1, pointB1, pointA1, pointA0);
+                }
+            }
+        else
+            {
+            // build both triangles on the A1B0 diagonal
+            auto crossB1 = DVec3d::FromCrossProductToPoints(pointB1, pointA1, pointB0);
+            auto crossA0 = DVec3d::FromCrossProductToPoints(pointA0, pointB0, pointA1);
+            auto unitB1 = crossB1.ValidatedNormalize();
+            auto unitA0 = crossA0.ValidatedNormalize();
+            clipSet.Add(ClipPlane(unitB1, pointB1, hidePlane, hidePlane));
+            clipSet.Add(ClipPlane(unitA0, pointA0, hidePlane, hidePlane));
+            if (polygons)
+                {
+                polygons->push_back({ pointA1, pointB1, pointB0, pointA1 });
+                CheckDirections(unitB1, pointB1, pointA1, pointB0);
+                polygons->push_back({ pointA0, pointA1, pointB0, pointA0 });
+                CheckDirections(unitA0, pointA0, pointB0, pointA1);
+                }
+            }
+        }
+    }
+/*--------------------------------------------------------------------------------**//**
+@bsimethod
++--------------------------------------------------------------------------------------*/
+ConvexClipPlaneSet  ConvexClipPlaneSet::FromSweepBetweenCompatibleConvexPolygons
+(
+bvector<DPoint3d> const& pointA,
+int capCodeA,
+bvector<DPoint3d> const& pointB,
+int capCodeB,
+bvector<bvector<DPoint3d>> *polygons
+)
+    {
+    DVec3d normalA = PolygonOps::AreaNormal(pointA);
+    DVec3d normalB = PolygonOps::AreaNormal (pointB);
+    auto axisVector = pointB[0] - pointA[0];
+    ConvexClipPlaneSet clipSet;
+    double magA, magB;
+    if (!normalA.TryNormalize(normalA, magA) || !normalB.TryNormalize(normalB, magB))
+        return clipSet;
+    if (pointA.size() != pointB.size())
+        return clipSet;
+    if (normalA.DotProduct(normalB) <= 0.0)
+        return clipSet;
+    if (!PolygonOps::IsConvex (pointA))
+        return clipSet;
+    if (!PolygonOps::IsConvex (pointB))
+        return clipSet;
+
+    bool reverseOrientation = normalA.DotProduct(axisVector) < 0.0;
+
+    auto n = pointA.size();
+    for (uint32_t i0 = 0; i0 + 1 < n; i0++)
+        {
+        uint32_t i1 = i0 + 1;
+        auto pointA0 = pointA[i0];
+        auto pointA1 = pointA[i1];
+        auto pointB0 = pointB[i0];
+        auto pointB1 = pointB[i1];
+        if (reverseOrientation)
+            AddPlanesForConvexVolume (clipSet, polygons, pointB0, pointB1, pointA0, pointA1);
+        else
+            AddPlanesForConvexVolume (clipSet, polygons, pointA0, pointA1, pointB0, pointB1);
+        }
+    if (capCodeA != 0)
+        {
+        if (polygons)
+            polygons->push_back(pointA);
+        if (normalA.DotProduct(axisVector) < 0)
+            {
+            normalA.Negate();
+            }
+        else
+            {
+            if (polygons)
+                DPoint3dOps::Reverse(polygons->back());
+            }
+        bool hide = capCodeA == 2;
+        clipSet.Add (ClipPlane(normalA, pointA[0], hide, hide));
+        }
+    if (capCodeB != 0)
+        {
+        if (polygons)
+            polygons->push_back(pointB);
+        if (normalB.DotProduct(axisVector) > 0)
+            {
+            normalB.Negate();
+            }
+        else
+            {
+            if (polygons)
+                DPoint3dOps::Reverse(polygons->back());
+            }
+        bool hide = capCodeB == 2;
+        clipSet.Add(ClipPlane(normalB, pointB[0], hide, hide));
+        }
+    return clipSet;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @param oneBasedIndices n 1-based indices that yield a pair of compatible convex n-gons from each planar point array. No closure point.
+* @param normalA normal of planar points xyzA, aligned to sweep dir
+* @param normalB normal of planar points xyzB, aligned to sweep dir
+* @param range optionally output the range of the returned ConvexClipPlaneSet
+* @param polygons optionally output a vector of polygons, one per plane of the returned ConvexClipPlaneSet
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static ConvexClipPlaneSet  clipperFromSweepBetweenCompatibleIndexedConvexPolygons(bvector<int> const& oneBasedIndices, bvector<DPoint3d> const& xyzA, DVec3dCR normalA, int capCodeA, bvector<DPoint3d> const& xyzB, DVec3dCR normalB, int capCodeB, DRange3dP range = nullptr, bvector<bvector<DPoint3d>>* polygons = nullptr)
+    {
+    ConvexClipPlaneSet clipSet;
+
+    if (range)
+        range->Init();
+    if (polygons)
+        polygons->clear();
+
+    size_t n = oneBasedIndices.size();
+    if (n == 0)
+        return clipSet;
+
+    // generate plane(s) by sweeping between compatible edges
+    for (size_t i0 = 0; i0 < n; ++i0)
+        {
+        auto i1 = i0 + 1;
+        if (i1 == n)
+            i1 = 0;  // the wraparound edge
+        auto e0 = abs(oneBasedIndices[i0]) - 1;
+        auto e1 = abs(oneBasedIndices[i1]) - 1;
+        auto pointA0 = xyzA[e0];    // edge on convex polygon in xyzA
+        auto pointA1 = xyzA[e1];
+        auto pointB0 = xyzB[e0];    // edge on convex polygon in xyzB
+        auto pointB1 = xyzB[e1];
+        bool hidePlane = (oneBasedIndices[i0] < 0); // edge visibility is at edge start
+        AddPlanesForConvexVolume(clipSet, polygons, pointA0, pointA1, pointB0, pointB1, hidePlane);
+        }
+
+    if (clipSet.empty())
+        return clipSet;
+
+    // polygon normals point away from volume
+    bvector<DPoint3d> polyA, polyB;
+    if (range || (polygons && capCodeA))
+        {
+        polyA.reserve(n + 1);
+        for (auto iter = oneBasedIndices.rbegin(); iter != oneBasedIndices.rend(); ++iter)   // iteration is reversed
+            polyA.push_back(xyzA[abs(*iter) - 1]);
+        polyA.push_back(polyA[0]);    // closure point
+        }
+    if (range || (polygons && capCodeB))
+        {
+        polyB.reserve(n + 1);
+        for (auto iter = oneBasedIndices.begin(); iter != oneBasedIndices.end(); ++iter)
+            polyB.push_back(xyzB[abs(*iter) - 1]);
+        polyB.push_back(polyB[0]);    // closure point
+        }
+
+    if (range)
+        {
+        range->Extend(polyA);
+        range->Extend(polyB);
+        }
+
+    if (capCodeA)
+        {
+        bool hide = (2 == capCodeA);
+        clipSet.Add(ClipPlane(normalA, xyzA[abs(oneBasedIndices[0]) - 1], hide, hide));   // start cap plane points into volume
+        if (polygons)
+            polygons->push_back(polyA);
+        }
+    if (capCodeB)
+        {
+        bool hide = (2 == capCodeB);
+        clipSet.Add(ClipPlane(DVec3d::FromScale(normalB, -1.0), xyzB[abs(oneBasedIndices[0]) - 1], hide, hide));   // end cap plane points into volume
+        if (polygons)
+            polygons->push_back(polyB);
+        }
+
+    return clipSet;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static void reverseOneBasedIndices(bvector<int>& oneBasedIndices)
+    {
+    if (oneBasedIndices.size() < 2)
+        return;
+
+    std::reverse(oneBasedIndices.begin(), oneBasedIndices.end());
+
+    // Tricky! The sign of index i0 determines the visibility of edge [i0,i1], but after reversal,
+    //         the visibility of edge [i0,i1] is the sign of index i1. So rotate signs one position
+    //         down (cyclically) to restore first index sign convention.
+    bool firstIndexIsNegative = (oneBasedIndices[0] < 0);
+    for (size_t i0 = 0, i1 = i0 + 1, n = oneBasedIndices.size(); i0 < n; ++i0, ++i1)
+        {
+        if (i1 == n)
+            i1 = 0;
+        bool indexIsNegative = (i1 > 0) ? (oneBasedIndices[i1] < 0) : firstIndexIsNegative;
+        oneBasedIndices[i0] = indexIsNegative ? -abs(oneBasedIndices[i0]) : abs(oneBasedIndices[i0]);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @param oneBasedIndices indices returned by PolygonOps::SplitToConvexPartsXY(polygonA)
+* @param ranges optionally appended with a range for each returned ConvexClipPlaneSet
+* @param polygons optionally appended with vectors of polygons, one vector per returned ConvexClipPlaneSet, one polygon per plane of each returned ConvexClipPlaneSet
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static ClipPlaneSet clipperFromSweepBetweenCompatibleIndexedPolygons(bvector<int> const& oneBasedIndices, bvector<DPoint3d> const& polygonA, int capCodeA, bvector<DPoint3d> const& polygonB, int capCodeB, bvector<DRange3d>* ranges = nullptr, bvector<bvector<bvector<DPoint3d>>>* polygons = nullptr)
+    {
+    ClipPlaneSet cps;
+    if (oneBasedIndices.empty())
+        return cps;
+
+    // first some compatibility sanity checks. Note that closure point is optional.
+    if (polygonA.size() != polygonB.size())
+        return cps;
+    DVec3d normalA = PolygonOps::AreaNormal(polygonA);
+    DVec3d normalB = PolygonOps::AreaNormal(polygonB);
+    auto axisNormal = polygonB[0] - polygonA[0];
+    double mag, magA, magB;
+    if (!normalA.TryNormalize(normalA, magA) || !normalB.TryNormalize(normalB, magB) || !axisNormal.TryNormalize(axisNormal, mag))
+        return cps;
+    if (normalA.DotProduct(normalB) <= 0.0)
+        return cps;
+
+    // ASSUME: polygonA, polygonB, and their convex sub-polygons all have the same orientation
+    bool reverseOrientation = (normalA.DotProduct(axisNormal) < 0.0);
+    if (reverseOrientation)
+        {
+        normalA.Negate();
+        normalB.Negate();
+        }
+
+    size_t i = 0;
+    while (i < oneBasedIndices.size())
+        {
+        // find convex part index range [i0,i1) separated by zeros
+        while (i < oneBasedIndices.size() && 0 == oneBasedIndices[i]) ++i;
+        auto i0 = i;
+        if (i0 >= oneBasedIndices.size())
+            break;
+        while (i < oneBasedIndices.size() && 0 != oneBasedIndices[i]) ++i;
+        auto i1 = i;
+
+        // create & orient indices for a convex polygon with normal aligned to sweep axis
+        bvector<int> polyIndices(oneBasedIndices.begin() + i0, oneBasedIndices.begin() + i1);
+        if (reverseOrientation)
+            reverseOneBasedIndices(polyIndices);
+
+        bvector<bvector<DPoint3d>> polygonSet;
+        DRange3d range;
+        ConvexClipPlaneSet clipSet = clipperFromSweepBetweenCompatibleIndexedConvexPolygons(polyIndices, polygonA, normalA, capCodeA, polygonB, normalB, capCodeB, ranges ? &range : nullptr, polygons ? &polygonSet : nullptr);
+
+        // accumulate outputs for this convex volume
+        if (!clipSet.empty())
+            {
+            cps.push_back(clipSet);
+            if (ranges)
+                ranges->push_back(range);
+            if (polygons)
+                polygons->push_back(polygonSet);
+            }
+        }
+
+    return cps;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @return 1-based, 0-terminated indices of convex decomposition of input polygon. Empty if polygon is self-intersecting.
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+static bvector<int> splitPolygonToConvexParts(bvector<DPoint3d> const& polygon)
+    {
+    bvector<int> oneBasedIndices;
+
+    Transform localToWorld, worldToLocal;
+    if (PolygonOps::CoordinateFrame(polygon.data(), polygon.size(), localToWorld, worldToLocal))
+        {
+        bvector<DPoint3d> localPolygon;
+        worldToLocal.Multiply(localPolygon, polygon);   // convex splitter ignores z-coord!
+
+        bvector<DPoint3d> localPts;
+        auto numConvexParts = PolygonOps::SplitToConvexPartsXY(oneBasedIndices, localPts, localPolygon);
+        if (numConvexParts > 0)
+            {
+            if (localPts.size() != localPolygon.size())
+                oneBasedIndices.clear();  // punt on polygon self-intersection
+            }
+        }
+
+    return oneBasedIndices;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+@bsimethod
++--------------------------------------------------------------------------------------*/
+ClipPlaneSet  ClipPlaneSet::FromSweepBetweenCompatibleConvexPolygons
+(
+bvector<bvector<DPoint3d>> const& points,
+int startCapCode,
+int endCapCode,
+bvector<DRange3d> *ranges,
+bvector<bvector<bvector<DPoint3d>>> *polygons
+)
+    {
+    ClipPlaneSet clipper;
+    size_t n = points.size ();
+    if (ranges)
+        ranges->clear();
+    for (size_t iA = 0; iA + 1 < n; iA++)
+        {
+        size_t iB = iA + 1;
+        // interior capping is always invisible
+        int capCodeA = iA == 0 ? startCapCode : 2;
+        int capCodeB = iA + 2 == n ? endCapCode : 2;
+        if (polygons)
+            polygons->push_back(bvector<bvector<DPoint3d>>());
+        clipper.push_back(ConvexClipPlaneSet::FromSweepBetweenCompatibleConvexPolygons(
+            points[iA], capCodeA, points[iB], capCodeB, polygons ? &polygons->back() : nullptr));
+        if (ranges != nullptr)
+            {
+            DRange3d rangeAB = DRange3d::From(points[iA]);
+            rangeAB.Extend(points[iB]);
+            ranges->push_back(rangeAB);
+            }
+        // ignore any failure steps . . .
+        if (clipper.back().size () == 0)
+            clipper.pop_back ();
+        }
+    return clipper;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ClipPlaneSet  ClipPlaneSet::FromSweepBetweenCompatiblePolygons(bvector<bvector<DPoint3d>> const& polygonsToSweep, int startCapCode, int endCapCode, bvector<DRange3d>* clipRanges, bvector<bvector<bvector<DPoint3d>>>* clipPolygons)
+    {
+    ClipPlaneSet cps;
+
+    if (polygonsToSweep.empty())
+        return cps;
+
+    // ASSUME: all polygons have the same convex decomposition
+    bvector<int> indices = splitPolygonToConvexParts(polygonsToSweep.front());
+    if (indices.empty())
+        return cps;
+
+    size_t n = polygonsToSweep.size();
+    for (size_t i0 = 0, i1 = i0 + 1; i1 < n; i0 = i1++)
+        {
+        // interior capping is always invisible
+        int capCode0 = (i0 == 0) ? startCapCode : 2;
+        int capCode1 = (i1 == n - 1) ? endCapCode : 2;
+        for (auto const& convexSet : clipperFromSweepBetweenCompatibleIndexedPolygons(indices, polygonsToSweep[i0], capCode0, polygonsToSweep[i1], capCode1, clipRanges, clipPolygons))
+            cps.push_back(convexSet);
+        }
+    return cps;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -1095,20 +1520,22 @@ Check ( PolygonOps::AreaXY (work1),
         );
         area1 += PolygonOps::AreaXY (outside.back ());
 #endif
+        // special cases for work1 nearly all on one side of the plane to avoid slivers
         if (altitudeRange.low >= -distanceTolerance && altitudeRange.low <= 0.0)
             {
-            // leave unclipped IN
+            // treat work1 as all inside/coplanar, therefore it is unchanged, and outside gets no shard
             outside.PopToCache();
             }
-        else if (altitudeRange.high < distanceTolerance && altitudeRange.high >= 0.0)
+        else if (altitudeRange.high >= 0.0 && altitudeRange.high <= distanceTolerance)
             {
-            // leave unclipped OUT
+            // treat work1 as all outside, therefore it becomes an outside shard, and there's nothing left to clip
             inside.clear ();
             outside.back ().clear ();
             outside.back ().swap (work1);
             }
         else
             {
+            // update work1 from the inside clip, and keep new outside shard only if nonempty
             inside.swap (work1);
             if (outside.back ().empty ())
                 outside.PopToCache();
@@ -1673,7 +2100,7 @@ PolyfaceHeaderPtr *outside
 void ClipPlaneSet::SweptPolygonClipPolyface
 (
 PolyfaceQueryCR polyface,
-bvector<DPoint3d> &polygon,
+bvector<DPoint3d> const& polygon,
 DVec3dCR sweepDirection,
 bool constructNewFacetsOnClipSetPlanes,
 PolyfaceHeaderPtr *inside,
@@ -1698,8 +2125,7 @@ void ClipPlaneSet::ClipPlaneSetIntersectPolyface
     {
     ClipPlaneSetIntersectPolyface (polyface, clipSet,
             inside, true, constructNewFacetsOnClipSetPlanes,
-            outside, true, constructNewFacetsOnClipSetPlanes,
-            nullptr);
+            outside, true, constructNewFacetsOnClipSetPlanes);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1715,7 +2141,7 @@ bool keepCutFacesWithInside,
 PolyfaceHeaderPtr *outside,
 bool keepPolyfaceOutsideParts,
 bool keepCutFacesWithOutside,
-bvector<bvector<DPoint3d>> *cutEdges    // unimplemented
+double distanceTolerance
 )
     {
     if (inside != nullptr)
@@ -1730,6 +2156,7 @@ bvector<bvector<DPoint3d>> *cutEdges    // unimplemented
         }
     auto visitor = PolyfaceVisitor::Attach (polyface);
     ClipPlaneSetPolygonClipContext context (clipSet, nullptr);
+    context.m_distanceTolerance = distanceTolerance;
     BVectorCache<DPoint3d> insideA;
     BVectorCache<DPoint3d> outsideA;
 
@@ -1742,9 +2169,9 @@ bvector<bvector<DPoint3d>> *cutEdges    // unimplemented
             outsideA.ClearToCache ();
             context.ClipAndCollect (visitor->Point (), clipSet, insideA, outsideA);
             if (outside && keepPolyfaceOutsideParts)
-                AddPolygonsToMesh (*outside, outsideA, *visitor);
+                AddPolygonsToMesh (*outside, outsideA, *visitor); // includes on-plane facets
             if (inside && keepPolyfaceInsideParts)
-                AddPolygonsToMesh (*inside, insideA, *visitor);
+                AddPolygonsToMesh (*inside, insideA, *visitor); // includes on-plane facets
             }
         }
 
@@ -1760,9 +2187,10 @@ bvector<bvector<DPoint3d>> *cutEdges    // unimplemented
                 {
                 if (plane.IsVisible ())
                     {
-                    auto section = polyface.PlaneSlice (plane.GetDPlane3d(), true);  // output loops have closure point
+                    auto section = polyface.PlaneSlice (plane.GetDPlane3d(), true, false, true);  // skip on-plane facets
                     if (section.IsValid ())
                         {
+                        // output loops have closure point
                         bvector<bvector<bvector<DPoint3d>>> regions;
                         bvector<bvector<DPoint3d>> clippedLoopsXYZ;
                         section->CollectLinearGeometry (regions);
@@ -1770,8 +2198,13 @@ bvector<bvector<DPoint3d>> *cutEdges    // unimplemented
                             {
                             for (auto &loop : region)
                                 {
-                                if (!loop.front().AlmostEqual(loop.back()))
-                                    continue;   // we can only triangulate/clip loops
+                                // we can only triangulate/clip loops
+                                if (loop.size() < 3)
+                                    continue;
+                                if (!loop.front().AlmostEqual(loop.back(), distanceTolerance))
+                                    continue;
+                                if (loop.size() < 4)
+                                    continue;
                                 convexSet.ConvexPolygonClip (loop, clippedXYZ, work, 1);
                                 if (clippedXYZ.size () > 0)
                                     clippedLoopsXYZ.push_back (clippedXYZ);
@@ -1797,11 +2230,11 @@ bvector<bvector<DPoint3d>> *cutEdges    // unimplemented
                 }
             }
         }
-
+    double absPointTol = distanceTolerance > 0.0 ? distanceTolerance : -1;
     if (inside != nullptr)
-        (*inside)->Compress ();
+        (*inside)->Compress(absPointTol);
     if (outside != nullptr)
-        (*outside)->Compress ();
+        (*outside)->Compress(absPointTol);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1833,9 +2266,10 @@ ValidatedDouble &colinearEdgeTolerance
             {
             if (plane.IsVisible())
                 {
-                auto section = polyface.PlaneSlice(plane.GetDPlane3d(), true);  // output loops have closure point
+                auto section = polyface.PlaneSlice(plane.GetDPlane3d(), true); // we want on-plane facets
                 if (section.IsValid())
                     {
+                    // output loops have closure point
                     bvector<bvector<bvector<DPoint3d>>> regions;
                     bvector<bvector<DPoint3d>> clippedLoopsXYZ;
                     section->CollectLinearGeometry(regions);
@@ -1843,8 +2277,13 @@ ValidatedDouble &colinearEdgeTolerance
                         {
                         for (auto &loop : region)
                             {
+                            // we can only triangulate/clip loops
+                            if (loop.size() < 3)
+                                continue;
                             if (!loop.front().AlmostEqual(loop.back()))
-                                continue;   // we can only triangulate/clip loops
+                                continue;
+                            if (loop.size() < 4)
+                                continue;
                             convexSet.ConvexPolygonClip(loop, clippedXYZ, work, 1);
 
                             if (colinearEdgeTolerance.IsValid())

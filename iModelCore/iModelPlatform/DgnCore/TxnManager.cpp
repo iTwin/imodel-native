@@ -1373,8 +1373,8 @@ DbResult TxnManager::ApplyChanges(ChangeStreamCR changeset, TxnAction action, bo
     auto dataApplyArgs = ApplyChangesArgs::Default()
         .SetRebase(rebase)
         .SetInvert(invert)
-        .SetIgnoreNoop(false)
-        .SetFkNoAction(false);
+        .SetIgnoreNoop(true)
+        .SetFkNoAction(true);
 
     // If schema changes are present, we need to apply only data changes after schema changes are applied.
     if (containsSchemaChanges){
@@ -1551,16 +1551,31 @@ BentleyStatus TxnManager::PatchSlowDdlChanges(Utf8StringR patchedDDL, Utf8String
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::ApplyDdlChanges(DdlChangesCR ddlChanges) {
     BeAssert(!ddlChanges._IsEmpty() && "DbSchemaChangeSet is empty");
-    auto info = GetDgnDb().Schemas().GetSchemaSync().GetInfo();
+    const auto info = GetDgnDb().Schemas().GetSchemaSync().GetInfo();
+    const bool wasTracking = EnableTracking(false);
+    Utf8String originalDDL = ddlChanges.ToString();
+
+    DbResult result = BE_SQLITE_OK;
     if (!info.IsEmpty()) {
-        LOG.infov("Skipping DDL Changes as IModel has schema sync enabled. Sync-Id {%s}.", info.GetSyncId().c_str());
+        // In SchemaSync, we still need to apply schema changes to ec_*, dgn_*, and be_* tables.
+        // We cannot determine which DDL is for profile tables, so we try applying all of them.
+        // If it fails, it's fine because SchemaSync::pull() will patch/update all tables as necessary after applying the changeset.
+        // Not applying the DDL can cause the current changeset to fail if a column in the profile table is missing.
+        // This issue is detected when applying a changeset that upgrades the ECDb profile from version 4.0.0.1 to a newer version.
+        // Version 4.0.0.2 adds new tables and columns to ec_* tables. Since SchemaSync::pull() is called, after pull/merge is complete.
+        bvector<Utf8String> individualSQL;
+        BeStringUtilities::Split(originalDDL.c_str(), ";", individualSQL);
+        for (auto& sql : individualSQL) {
+            result = m_dgndb.TryExecuteSql(sql.c_str());
+            if (result != BE_SQLITE_OK) {
+                LOG.warningv("ApplyDdlChanges() with SchemaSync: Failed to apply DDL changes. Error: %s (%s)", BeSQLiteLib::GetErrorName(result), sql.c_str());
+            }
+        }
+        EnableTracking(wasTracking);
         return BE_SQLITE_OK;
     }
 
-    bool wasTracking = EnableTracking(false);
-    Utf8String originalDDL = ddlChanges.ToString();
     Utf8String patchedDDL;
-    DbResult result = BE_SQLITE_OK;
     BentleyStatus status = PatchSlowDdlChanges(patchedDDL, originalDDL);
     if (status == SUCCESS) {
         // Info message so we can look out if this issue has gone due to fix in the place which produce these changeset.
