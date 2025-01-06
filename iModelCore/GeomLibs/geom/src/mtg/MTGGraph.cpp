@@ -1046,7 +1046,6 @@ MTGNodeId MTGGraph::FindMaskAroundVertex (MTGNodeId nodeId, MTGMask mask) const
     return MTG_NULL_NODEID;
     }
 
-/// Search vertex loop for mask
 MTGNodeId MTGGraph::FindMaskAroundVertexPred (MTGNodeId nodeId, MTGMask mask) const
     {
     MTGARRAY_VERTEX_PREDLOOP (currNodeId, this, nodeId)
@@ -1058,9 +1057,17 @@ MTGNodeId MTGGraph::FindMaskAroundVertexPred (MTGNodeId nodeId, MTGMask mask) co
     return MTG_NULL_NODEID;
     }
 
+MTGNodeId MTGGraph::FindUnmaskedAroundVertexPred(MTGNodeId nodeId, MTGMask mask) const
+    {
+    MTGARRAY_VERTEX_PREDLOOP(currNodeId, this, nodeId)
+        {
+        if (!GetMaskAt(currNodeId, mask))
+            return currNodeId;
+        }
+    MTGARRAY_END_VERTEX_PREDLOOP(currNodeId, this, nodeId)
+    return MTG_NULL_NODEID;
+    }
 
-
-/// Search face loop for mmissing mask
 MTGNodeId MTGGraph::FindUnmaskedAroundFace (MTGNodeId nodeId, MTGMask mask) const
     {
     MTGARRAY_FACE_LOOP (currNodeId, this, nodeId)
@@ -1105,6 +1112,17 @@ size_t MTGGraph::CountMaskAroundVertex (MTGNodeId nodeId, MTGMask mask) const
             n++;
         }
     MTGARRAY_END_VERTEX_LOOP (currNodeId, this, nodeId)
+    return n;
+    }
+size_t MTGGraph::CountUnmaskedAroundVertex (MTGNodeId nodeId, MTGMask mask) const
+    {
+    size_t n = 0;
+    MTGARRAY_VERTEX_LOOP(currNodeId, this, nodeId)
+        {
+        if (!GetMaskAt(currNodeId, mask))
+            n++;
+        }
+    MTGARRAY_END_VERTEX_LOOP(currNodeId, this, nodeId)
     return n;
     }
 size_t MTGGraph::CountMask   (MTGMask mask) const

@@ -1630,7 +1630,15 @@ void Check::SaveTransformed (MSBsplineCurveCR data)
     auto cv = ICurvePrimitive::CreateBsplineCurve (data);
     SaveTransformed (IGeometry::Create (cv));
     }
-
+void Check::SaveTransformed(DPlane3dCR plane, double scale)
+    {
+    auto cell = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+    auto planeDisk = DEllipse3d::FromCenterNormalRadius(plane.origin, plane.normal, scale / 2);
+    auto planeNormal = DSegment3d::From(plane.origin, plane.origin + (plane.normal * scale));
+    cell->push_back(ICurvePrimitive::CreateArc(planeDisk));
+    cell->push_back(ICurvePrimitive::CreateLine(planeNormal));
+    Check::SaveTransformed(cell);
+    }
 DPoint3d Check::TransformPoint(DPoint3dCR xyz)
     {
     return s_transform * xyz;

@@ -559,13 +559,18 @@ TEST(DRay3d, IntersectTriangleAccuracyAndPerformance)
                         }
                     else
                         {
-                        Check::Fail("rated ray hits rotated triangle while original ray did not hit original triangle.");
+                        Check::Fail("rotated ray hits rotated triangle while original ray did not hit original triangle.");
                         exitTheTest = true;
                         }
                     }
                 else
                     {
                     Check::Fail("slow function reported ray intersection while fast function did not.");
+                    Check::Fail("Please fix me: reproduce with below inputs and investigate.");
+                    Check::Print(ray, "ray");
+                    Check::Print(trianglePoints[0], "trianglePoints[0]");
+                    Check::Print(trianglePoints[1], "trianglePoints[1]");
+                    Check::Print(trianglePoints[2], "trianglePoints[2]");
                     exitTheTest = true;
                     }
                 }
@@ -573,6 +578,11 @@ TEST(DRay3d, IntersectTriangleAccuracyAndPerformance)
                 if (fastRet)
                     {
                     Check::Fail("fast function reported ray intersection while slow function did not.");
+                    Check::Fail("Please fix me: reproduce with below inputs and investigate.");
+                    Check::Print(ray, "ray");
+                    Check::Print(trianglePoints[0], "trianglePoints[0]");
+                    Check::Print(trianglePoints[1], "trianglePoints[1]");
+                    Check::Print(trianglePoints[2], "trianglePoints[2]");
                     exitTheTest = true;
                     }
             }
