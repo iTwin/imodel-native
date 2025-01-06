@@ -3,6 +3,7 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include <stdio.h>
+#include <Bentley/BeTimeUtilities.h>
 #include "testHarness.h"
 #include <GeomSerialization/GeomLibsJsonSerialization.h>
 
@@ -386,41 +387,27 @@ TEST (Polyface, PolygonClipTunnel)
 TEST (Polyface, ClipPolygonPrism)
     {
     int64_t allocationCounter = BSIBaseGeom::GetAllocationDifference ();
-    //static int s_printGraph = 0;
 
-    IPolyfaceConstructionPtr builder = CreateBuilder (false, false);
-    builder->GetFacetOptionsR ().SetMaxPerFace (4);
-    builder->GetFacetOptionsR ().SetMaxEdgeLength (4);
-    //varunused double mySize = SetTransformToNewGridSpot (*builder, true);
-
-
-    for (auto points :
+    bvector<bvector<DPoint3d>> profiles;
+    profiles.push_back({DPoint3d::From(1,1,0), DPoint3d::From(1,1,3), DPoint3d::From(1,2,3), DPoint3d::From(1,2,2), DPoint3d::From(1,1,0)});
+    profiles.push_back({DPoint3d::From(0,1,0), DPoint3d::From(0,1,3), DPoint3d::From(0,2,3), DPoint3d::From(0,2,2), DPoint3d::From(0,1,0)});
+    for (auto const& points : profiles)
         {
-        bvector<DPoint3d> {
-            DPoint3d::From (1,1,0), DPoint3d::From (1,1,3), DPoint3d::From (1,2,3), DPoint3d::From (1,2,2)},
-        bvector<DPoint3d> {
-            DPoint3d::From(0,1,0), DPoint3d::From(0,1,3), DPoint3d::From(0,2,3), DPoint3d::From(0,2,2)}
-    })
-        {
-        auto xyz0 = points.front ();
-        points.push_back (xyz0);
         auto section = CurveVector::CreateLinear (points, CurveVector::BOUNDARY_TYPE_Outer);
-        Check::SaveTransformed (*section);
         Check::Shift (300, 0, 0);
 
-        auto solid = ISolidPrimitive::CreateDgnExtrusion (
-            DgnExtrusionDetail (section, DVec3d::From (20,0,0), true));
+        auto solid = ISolidPrimitive::CreateDgnExtrusion(DgnExtrusionDetail(section, DVec3d::From(20,0,0), true));
 
+        IPolyfaceConstructionPtr builder = CreateBuilder(false, false);
+        builder->GetFacetOptionsR().SetMaxPerFace(4);
+        builder->GetFacetOptionsR().SetMaxEdgeLength(4);
         builder->AddSolidPrimitive (*solid);
         PolyfaceHeaderR polyface = builder->GetClientMeshR ();
-        DPoint3d clipOrigin = DPoint3d::From (0,0,0);
 
         for (auto sweepVector: {DVec3d::From (0,0,1), DVec3d::From (0,0,-1)})
             {
             SaveAndRestoreCheckTransform shifter (100,0,0);
-            for (auto diagonal : {
-                DVec3d::From (2,5),
-                DVec3d::From (6,3)})
+            for (auto diagonal : {DVec3d::From(2,5), DVec3d::From(6,3)})
                 {
                 SaveAndRestoreCheckTransform shifter1 (50,0,0);
                 for (bool reverseRectangle : {false, true})
@@ -428,29 +415,34 @@ TEST (Polyface, ClipPolygonPrism)
                     SaveAndRestoreCheckTransform shifter2(0, 40, 0);
 
                     bvector<DPoint3d> rectanglePoints;
-                    bvector<BoolTypeForVector> interiorFlag;
-                    double ax = clipOrigin.x;
-                    double ay = clipOrigin.y;
-                    double bx = clipOrigin.x + diagonal.x;
-                    double by = clipOrigin.y + diagonal.y;
-                    MakeRectangle (ax, ay, bx, by, 0, rectanglePoints, interiorFlag);
+                    bvector<BoolTypeForVector> _;
+                    MakeRectangle(0, 0, diagonal.x, diagonal.y, 0, rectanglePoints, _);
                     if (reverseRectangle)
                         std::reverse (rectanglePoints.begin (), rectanglePoints.end ());
                     Check::SaveTransformed (rectanglePoints);
                     Check::SaveTransformed (polyface);
 
                     PolyfaceHeaderPtr insideClip, outsideClip;
-                    ClipPlaneSet::SweptPolygonClipPolyface (
-                            polyface,
-                            rectanglePoints, sweepVector,
-                            true,
-                            &insideClip, &outsideClip);
+                    ClipPlaneSet::SweptPolygonClipPolyface(polyface, rectanglePoints, sweepVector, true, &insideClip, &outsideClip);
                     Check::Shift (0,10,0);
                     if (insideClip.IsValid ())
                         Check::SaveTransformed (*insideClip);
                     Check::Shift (0,10,0);
                     if (outsideClip.IsValid ())
                         Check::SaveTransformed (*outsideClip);
+
+                    bvector<bvector<size_t>> componentSeeds;
+                    MeshAnnotationVector messages(true);
+                    if (Check::True(insideClip->OrientAndCollectManifoldComponents(componentSeeds, messages), "insideClip successfully analyzed"))
+                        Check::Size(1, componentSeeds.size(), "insideClip has 1 component");
+                    if (Check::True(outsideClip->OrientAndCollectManifoldComponents(componentSeeds, messages), "outsideClip successfully analyzed"))
+                        Check::Size(1, componentSeeds.size(), "outsideClip has 1 component");
+
+                    auto volumeTotal = polyface.ValidatedVolume();
+                    auto volumeInside = insideClip->ValidatedVolume();
+                    auto volumeOutside = outsideClip->ValidatedVolume();
+                    if (Check::True(volumeInside.IsValid(), "insideClip has volume") && Check::True(volumeOutside.IsValid(), "outsideClip has volume"))
+                        Check::Near(volumeTotal.Value(), volumeInside.Value() + volumeOutside.Value(), "clips have expected total volume");
                     }
                 }
             }
@@ -458,6 +450,7 @@ TEST (Polyface, ClipPolygonPrism)
     Check::Size ((size_t)allocationCounter, (size_t)BSIBaseGeom::GetAllocationDifference ());
     Check::ClearGeometry ("Polyface.ClipPolygonPrism");
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1084,13 +1077,35 @@ TEST(PolyfaceClip, ClipConeMesh)
     }
     Check::True(iVerticalPlane > -1 && iHorizontalPlane > -1, "found expected planes of interest");
 
-    // clip the cone: not recommended on open meshes: these cutFacets are bogus!
+    // clip the cone: not recommended on open meshes: these cutFacets are bogus
     auto defaultColinearEdgeTol = ValidatedDouble(2.47e-5);
     PolyfaceHeaderPtr cutFacets;
-    ClipPlaneSet::ClipPlaneSetSectionPolyface(*mesh, clipper, &cutFacets, nullptr, defaultColinearEdgeTol);
+    bvector<bvector<DPoint3d>> lineStrings0;
+    ClipPlaneSet::ClipPlaneSetSectionPolyface(*mesh, clipper, &cutFacets, &lineStrings0, defaultColinearEdgeTol);
     Check::SaveTransformed(cutFacets);
+    Check::SaveTransformed(lineStrings0);
+    Check::True(cutFacets.IsValid() && cutFacets->HasFacets(), "section has facet(s)");
 
-    // at least verify that the edges added by triangulation are hidden
+    // another reason why sectioning an open mesh is ill-advised: some linestrings are missing
+    if (Check::Size(1, lineStrings0.size(), "lineStrings0 is nonempty"))
+        {
+        // verify that the linestring only contains points on the faceted loop
+        for (auto const& edgePt : lineStrings0[0])
+            {
+            bool edgePtIsSectionPt = false;
+            for (auto const& facetPt : cutFacets->Point())
+                {
+                if (edgePt.AlmostEqual(facetPt))
+                    {
+                    edgePtIsSectionPt = true;
+                    break;
+                    }
+                }
+            Check::True(edgePtIsSectionPt, "linestring pts are section vertices");
+            }
+        }
+
+    // verify that the edges added by triangulation are hidden
     size_t numHalfEdges = 0, numInteriorEdges = 0, numBoundaryEdges = 0, numDoubledEdges = 0, numTrebledEdges = 0, numQuadrupledEdges = 0, numQuintupledPlusEdges = 0, numDegenerateEdges = 0, numHiddenVertices = 0, numVisibleVertices = 0;
     cutFacets->CountSharedEdges(numHalfEdges, numInteriorEdges, numBoundaryEdges, numDoubledEdges, numTrebledEdges, numQuadrupledEdges, numQuintupledPlusEdges, numDegenerateEdges, false, numHiddenVertices, numVisibleVertices);
     size_t numVertices = 0, numFacets = 0, numQuads = 0, numTriangles = 0, numImplicitTriangles = 0, numVisibleEdges = 0, numHiddenEdges = 0;
@@ -1098,16 +1113,17 @@ TEST(PolyfaceClip, ClipConeMesh)
     Check::Size(numBoundaryEdges, numVisibleEdges, "the only visible edges are those on the section boundary");
     Check::Size(numImplicitTriangles, numFacets, "expect section facets are all triangles");
 
-    bvector<bvector<DPoint3d>> lineStrings;
-    ClipPlaneSet::ClipPlaneSetPolyfaceIntersectionEdges(*mesh, clipper, lineStrings);
-    Check::SaveTransformed(lineStrings);
+    bvector<bvector<DPoint3d>> lineStrings1;
+    ClipPlaneSet::ClipPlaneSetPolyfaceIntersectionEdges(*mesh, clipper, lineStrings1);
+    Check::SaveTransformed(lineStrings1);
 
-    // verify that ClipPlaneSetPolyfaceIntersectionEdges produces edges on both cutplanes
-    if (Check::Size(1, lineStrings.size(), "intersectEdges returned a single linestring"))
+    if (Check::Size(1, lineStrings1.size(), "intersectEdges returned a single linestring"))
         {
         Transform l2w, w2l;
-        Check::False(CurveVector::CreateLinear(lineStrings[0])->IsPlanar(l2w, w2l, range), "cut edge linestring is not planar");
-        for (auto const& edgePt : lineStrings[0])
+        Check::False(CurveVector::CreateLinear(lineStrings1[0])->IsPlanar(l2w, w2l, range), "cut edge linestring is not planar");
+
+        // verify that ClipPlaneSetPolyfaceIntersectionEdges produces edges on both cutplanes
+        for (auto const& edgePt : lineStrings1[0])
             {
             bool edgePtIsOnVerticalPlane = clipper[0][iVerticalPlane].IsPointOn(edgePt, Angle::SmallAngle());
             bool edgePtIsOnHorizontalPlane = clipper[0][iHorizontalPlane].IsPointOn(edgePt, Angle::SmallAngle());
@@ -1116,20 +1132,124 @@ TEST(PolyfaceClip, ClipConeMesh)
         }
 
     // verify that ClipPlaneSetSectionPolyface and ClipPlaneSetPolyfaceIntersectionEdges produce the same points along the cut facets
-    for (size_t i = 0; i < cutFacets->GetPointCount(); ++i)
+    for (auto const& facetPt : cutFacets->Point())
         {
-        auto facetPt = cutFacets->GetPointCP()[i];
-        bool facetPtOnLineString = false;
-        for (auto const& edgePt : lineStrings[0])
+        bool facetPtIsLineStringPt = false;
+        for (auto const& edgePt : lineStrings1[0])
             {
             if (facetPt.AlmostEqual(edgePt))
                 {
-                facetPtOnLineString = true;
+                facetPtIsLineStringPt = true;
                 break;
                 }
             }
-        Check::True(facetPtOnLineString, "cut facet mesh points are on cut edge linestring");
+        Check::True(facetPtIsLineStringPt, "cut facet mesh points are on cut edge linestring");
+        }
+
+    // verify that section method lineStrings0 points are a subset of the full edge method lineStrings1 points
+    auto lineString1 = ICurvePrimitive::CreateLineString(lineStrings1[0]);
+    for (auto const& lineString : lineStrings0)
+        {
+        for (size_t i = 0; i + 1 < lineString.size(); ++i)
+            {
+            CurveLocationDetail detail;
+            if (Check::True(lineString1->ClosestPointBounded(lineString[i], detail)))
+                Check::True(DoubleOps::AlmostEqual(detail.a, 0.0), "pt0 on lineString1");
+            if (Check::True(lineString1->ClosestPointBounded(lineString[i + 1], detail)))
+                Check::True(DoubleOps::AlmostEqual(detail.a, 0.0), "pt1 on lineString1");
+            }
         }
 
     Check::ClearGeometry("PolyfaceClip.ClipConeMesh");
+    }
+
+TEST(Polyface, SweptPolygonClip)
+    {
+    struct TestCase
+        {
+        BeFileName          m_fileName;
+        bvector<DPoint3d>   m_polygon;
+        DVec3d              m_sweepVector;
+        size_t              m_maxBoundaryEdges;
+        double              m_volume;
+        TestCase(BeFileNameCR fileName, bvector<DPoint3d> const& polygon, DVec3dCR sweepVector, size_t maxBoundaryEdges, double volume): m_fileName(fileName), m_polygon(polygon), m_sweepVector(sweepVector), m_maxBoundaryEdges(maxBoundaryEdges), m_volume(volume) {}
+        };
+    bvector<TestCase> testCases;    // all files and polygons in meters, translated to 1st octant
+
+    BeFileName sourcePath;
+    BeTest::GetHost().GetDocumentsRoot(sourcePath);
+    sourcePath.AppendToPath(L"GeomLibsTestData").AppendToPath(L"Polyface").AppendToPath(L"Clipping").AppendToPath(L"mesh18K_almost_closed.imjs");
+
+    bvector<DPoint3d> polygon;
+    polygon.push_back(DPoint3d::From(220, 216.554504715461, 19.4880999999996));
+    polygon.push_back(DPoint3d::From(-10, 216.554504715461, 19.4880999999996));
+    polygon.push_back(DPoint3d::From(-10, 216.554504715461, 15.4880999999996));
+    polygon.push_back(DPoint3d::From(220, 216.554504715461, 15.4880999999996));
+    testCases.push_back(TestCase(sourcePath, polygon, DVec3d::From(0,-1,0), 293, 83448.505341041062));
+
+    if (Check::GetEnableLongTests())
+        {
+        BeTest::GetHost().GetDocumentsRoot(sourcePath);
+        sourcePath.AppendToPath(L"GeomLibsTestData").AppendToPath(L"Polyface").AppendToPath(L"Clipping").AppendToPath(L"mesh300K_almost_closed.imjs");
+
+        polygon.clear();
+        polygon.push_back(DPoint3d::From(1150, 1677.88169069408, 64.6504000000004));
+        polygon.push_back(DPoint3d::From(-10,  1677.88169069408, 64.6504000000004));
+        polygon.push_back(DPoint3d::From(-10,  1677.88169069408, 60.6504000000004));
+        polygon.push_back(DPoint3d::From(1150, 1677.88169069408, 60.6504000000004));
+        testCases.push_back(TestCase(sourcePath, polygon, DVec3d::From(0,-1,0), 354, 939666.54336569679));
+        }
+
+    for (auto const& testCase : testCases)
+        {
+        bvector<IGeometryPtr> geometry;
+        if (!Check::True(GTestFileOps::JsonFileToGeometry(testCase.m_fileName, geometry), "Parse inputs"))
+            continue;
+        auto mesh = geometry.front()->GetAsPolyfaceHeader();
+        if (!Check::True(mesh.IsValid(), "Have mesh"))
+            continue;
+        if (!Check::True(mesh->HasFacets(), "Nonempty mesh"))
+            continue;
+        Check::False(mesh->IsClosedByEdgePairing(), "input mesh is not closed");
+
+        auto time0 = BeTimeUtilities::QueryMillisecondsCounter();
+
+        PolyfaceHeaderPtr inside;
+        ClipPlaneSet::SweptPolygonClipPolyface(*mesh, testCase.m_polygon, testCase.m_sweepVector, true, &inside, nullptr);
+
+        auto time1 = BeTimeUtilities::QueryMillisecondsCounter();
+        printf("  SweptPolygonClipPolyface took: %d ms\n", (int) (time1 - time0));
+
+        if (Check::True(inside.IsValid(), "clip succeeded"))
+            {
+            Check::SaveTransformed(mesh);
+            Check::SaveTransformed(inside);
+            // verify some metrics, allowing for future perturbations
+            auto vv = inside->ValidatedVolume();
+            double volume = 0.0;
+            bool tolerant = false;
+            if (vv.IsValid())
+                {
+                volume = vv.Value();
+                }
+            else
+                {
+                bvector<FacetEdgeDetail> boundaryEdges;
+                inside->CollectEdgeMateData(boundaryEdges);
+                std::for_each(boundaryEdges.begin(), boundaryEdges.end(), [](auto const& edge) { Check::SaveTransformed(edge.segment); });
+                Check::True(boundaryEdges.size() <= testCase.m_maxBoundaryEdges, "clip boundary edge count is bounded above");
+                DPoint3d centroid;
+                RotMatrix axes;
+                DVec3d moments;
+                inside->ComputePrincipalMomentsAllowMissingSideFacets(volume, centroid, axes, moments, true);
+                tolerant = true;
+                }
+            Check::True(volume > 0.0, tolerant ? "clip is volumetric (tolerant)" : "clip is volumetric");
+            Check::PushTolerance(ToleranceSelect::ToleranceSelect_Loose);
+            Check::Near(volume, testCase.m_volume, "clip volume roughly as expected");
+            Check::PopTolerance();
+            }
+        }
+
+    Check::ClearGeometry("Polyface.SweptPolygonClip");
     }

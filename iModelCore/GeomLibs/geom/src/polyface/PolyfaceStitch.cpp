@@ -355,26 +355,19 @@ struct ConsistentOrientationEnforcer
 HalfEdgeArray m_halfEdges;
 PolyfaceHeaderR m_facets;       // supplied by caller
 MeshAnnotationVector &m_messages; // supplied by caller
-bvector<bvector<size_t>> &m_componentReadIndices; // supplied by caller
+bvector<bvector<size_t>> &m_componentReadIndices; // supplied by caller, cleared first
 size_t m_numFlips;
 size_t m_numErrors;
 bvector<size_t> m_readIndexToHalfEdge;
 bvector<size_t> m_facetReadIndexStack;
-
 PolyfaceVisitorPtr m_searchVisitor1;
 
-
-ConsistentOrientationEnforcer
-(
-PolyfaceHeaderR facets,
-bvector<bvector<size_t>> &componentReadIndices,
-MeshAnnotationVector &messages
-)
-    : m_facets(facets), m_numFlips (0), m_numErrors(0), m_messages (messages),
-    m_halfEdges (&facets),
-    m_componentReadIndices (componentReadIndices)
+ConsistentOrientationEnforcer(PolyfaceHeaderR facets, bvector<bvector<size_t>> &componentReadIndices, MeshAnnotationVector &messages)
+: m_facets(facets), m_numFlips (0), m_numErrors(0), m_messages (messages), m_halfEdges (&facets), m_componentReadIndices (componentReadIndices)
     {
+    m_componentReadIndices.clear();
     }
+
 bool DoSetup ()
     {
     m_halfEdges.BuildArray (m_facets, false, false);
@@ -405,7 +398,6 @@ void MarkEdgesAroundFacet (Size2 readIndexRange, bool value)
             m_halfEdges[heI].m_visible = true;
         }
     }
-
 
 // Run ReverseIndicesOneFace to fix up the polyface itself.
 // Walk around
@@ -508,6 +500,7 @@ void DoSearch (size_t seedReadIndex)
             }
         }
     }
+
 //! ASSUME the polyfaceHeader is the same as the PoyfaceQuery used to build the array !!!!!
 bool Go ()
     {

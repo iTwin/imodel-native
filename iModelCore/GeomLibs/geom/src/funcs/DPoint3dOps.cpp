@@ -1086,6 +1086,13 @@ double DPoint3dOps::ToleranceXY (bvector<DPoint3d> const& data, double absTol, d
     return tol;
     }
 
+double DPoint3dOps::AreaToleranceXY(DRange3dCR range, double distanceTolerance)
+    {
+    // if A = bh and e is distance tolerance, then A' := (b+e/2)(h+e/2) = A + e/2(b+h+e/2), so A'-A = e/2(b+h+e/2).
+    double halfDistTol = 0.5 * distanceTolerance;
+    return halfDistTol * (range.XLength() + range.YLength() + halfDistTol);
+    }
+
 //! Query object used by cluster analysis.
 struct ClusterQueries
 {

@@ -448,6 +448,7 @@ static void SaveTransformed(MSBsplineSurfacePtr const &data);
 static void SaveTransformed(MSBsplineSurface const &data);
 static void SaveTransformed (MSBsplineCurveCR data);
 static void SaveTransformed(MSBsplineCurvePtr const &data, bool savePolygon = false);
+static void SaveTransformed(DPlane3dCR plane, double scale = 1.0);
 static void SaveTransformedEdges (DRange3dCR range);
 static void SaveTransformedEdges(DPoint3d corners[8]);
 static void Shift (double dx, double dy, double dz = 0.0);
