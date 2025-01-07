@@ -182,7 +182,7 @@ TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_UsesInstanceLabelAndFormat
     TestPropertyFormatter propertyFormatter;
     propertyFormatter.SetValueFormatter([](Utf8StringR formattedValue, ECPropertyCR property, ECValueCR value, ECPresentation::UnitSystem)
         {
-        formattedValue = "_" + property.GetAsPrimitiveProperty()->GetDisplayLabel() + "_";
+        formattedValue = "_" + value.ToString() + "_";
         return SUCCESS;
         });
 
