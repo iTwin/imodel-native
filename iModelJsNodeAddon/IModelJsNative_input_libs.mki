@@ -73,9 +73,10 @@ LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinGeoCoord$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinOpenSSL$(libext)
 
 %if defined (BENTLEYCONFIG_PARASOLID)
+DLM_OBJECT_FILES + $(BuildContext)SubParts/StaticLibs/pskernel_archive.lib
+
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinPSBRepGeometry$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinBRepCore$(libext)
-LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)pskernel$(libext)
 %endif
 
 %if !defined (BENTLEYCONFIG_NO_VISUALIZATION)
