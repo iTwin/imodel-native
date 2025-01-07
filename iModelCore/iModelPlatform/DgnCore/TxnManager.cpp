@@ -2930,16 +2930,7 @@ void TxnManager::PullMergeEnd() {
         }
         m_curr = id;
     };
-    auto deleteTxn = [&](TxnId id){
-        const auto idStr = BeInt64Id(id.GetValue()).ToHexStr();
-        CachedStatementPtr stmt = GetTxnStatement("DELETE " DGN_TABLE_Txns " WHERE Id=?");
-        stmt->BindInt64(1, id.GetValue());
-        auto rc = stmt->Step();
-        if (rc != BE_SQLITE_DONE) {
-            throwError(id, SqlPrintfString("unable to delete local txn (id: %s)", idStr.c_str()).GetUtf8CP(), rc);
-        }
-        m_curr = id;
-    };
+
     TxnId startTxnId = QueryNextTxnId(TxnId(0));
     TxnId endTxnId = conf.GetEndTxnId();
 
@@ -2959,12 +2950,6 @@ void TxnManager::PullMergeEnd() {
         ReadDataChanges(changeset, currTxnId, TxnAction::None);
         rc = ApplyChanges(changeset, TxnAction::Merge, isSchemaTxn, false);
         if (rc != BE_SQLITE_OK) {
-            // if (isSchemaTxn) {
-            //     m_dgndb.AbandonChanges();
-            //     deleteTxn(currTxnId);
-            //     continue;
-            // }
-
             if (changeset.GetLastErrorMessage().empty())
                 throwError(currTxnId, "failed to apply changes", rc);
             else
