@@ -193,7 +193,7 @@ TEST_F(CustomFunctionTests, GetECInstanceDisplayLabel_UsesInstanceLabelAndFormat
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, classJ->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, instanceJId));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
-    ASSERT_STREQ(GetDisplayLabelJson("_CustomLabel_").c_str(), stmt.GetValueText(0));
+    ASSERT_STREQ(GetDisplayLabelJson("CustomLabel", "_CustomLabel_").c_str(), stmt.GetValueText(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
