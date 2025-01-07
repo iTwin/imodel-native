@@ -379,7 +379,7 @@ DPoint3dCR      end
 //! @param [in] start start of arc, on an axis.
 //! @param [in] middle point on arc somewhere between `start` and `end`.
 //! @param [in] end point on arc directly opposite `start`.
-//! @param [in] arc start angle in radians (default zero is at `start`).
+//! @param [in] theta0 arc start angle in radians (default zero is at `start`).
 //! @param [in] sweep arc sweep in radians, measured in the direction from `start` to `middle` (default 2pi).
 //! @return true if construction possible; false otherwise.
 //!

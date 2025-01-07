@@ -285,14 +285,14 @@ TEST(CurveVectorA, PointIsPlanar)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(CurveVectorA, InitFromPointsOnAxisAndArc)
     {
-        int dx = 5;
-        DPoint3d p0 = DPoint3d::From(1, 0, 0);
-        DPoint3d p1 = DPoint3d::From(0, 1, 0);
-        DPoint3d p2 = DPoint3d::From(-1, 0, 0);
-        DEllipse3d unitCircle;
-        ICurvePrimitivePtr lineString;
-        bool status = unitCircle.InitFromPointsOnAxisAndArc(p0, p1, p2);
-        if (Check::True(status, "created the arc"))
+    int dx = 5;
+    DPoint3d p0 = DPoint3d::From(1, 0, 0);
+    DPoint3d p1 = DPoint3d::From(0, 1, 0);
+    DPoint3d p2 = DPoint3d::From(-1, 0, 0);
+    DEllipse3d unitCircle;
+    ICurvePrimitivePtr lineString;
+    bool status = unitCircle.InitFromPointsOnAxisAndArc(p0, p1, p2);
+    if (Check::True(status, "created the arc"))
         {
         Check::SaveTransformed(unitCircle);
         auto lineString = ICurvePrimitive::CreateLineString(bvector<DPoint3d>{p0, p1, p2});
@@ -336,7 +336,7 @@ TEST(CurveVectorA, InitFromPointsOnAxisAndArc)
     DEllipse3d ellipse3;
     status = ellipse3.InitFromPointsOnAxisAndArc(p0, p1, p2, Angle::TwoPi());
     if (Check::True(status, "created the arc"))
-    {
+        {
         Check::SaveTransformed(ellipse3);
         lineString = ICurvePrimitive::CreateLineString(bvector<DPoint3d>{p0, p1, p2});
         Check::SaveTransformed(*lineString);

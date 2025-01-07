@@ -1822,7 +1822,7 @@ double sweep
     double v1DotV90 = vector1.DotProduct(vector90);
     // solve the standard ellipse equation for the unknown axis length, given local coords of middle (v0.v1/||v0||, v90.v1)
     DoubleOps::SafeDivideDistance(v90Len, v0Len2 * v1DotV90, sqrt(v0Len2 * v0Len2 - v0DotV1 * v0DotV1), 0);
-    if (fabs(v90Len) <= 1.0e-12) // tighter than smallMetricDistance to allow flatter long ellipses
+    if (fabs(v90Len) <= 1.0e-12) // tighter than smallMetricDistance to allow flatter long elliptical arcs
         return false;
     vector90.ScaleToLength(v90Len);
     InitFromVectors(center, vector0, vector90, theta0, sweep);
