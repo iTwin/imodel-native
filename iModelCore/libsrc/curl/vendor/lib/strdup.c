@@ -26,7 +26,7 @@
 
 #include <curl/curl.h>
 
-#ifdef _WIN32
+#ifdef WIN32
 #include <wchar.h>
 #endif
 
@@ -56,7 +56,7 @@ char *Curl_strdup(const char *str)
 }
 #endif
 
-#ifdef _WIN32
+#ifdef WIN32
 /***************************************************************************
  *
  * Curl_wcsdup(source)
@@ -97,26 +97,6 @@ void *Curl_memdup(const void *src, size_t length)
   memcpy(buffer, src, length);
 
   return buffer;
-}
-
-/***************************************************************************
- *
- * Curl_memdup0(source, length)
- *
- * Copies the 'source' string to a newly allocated buffer (that is returned).
- * Copies 'length' bytes then adds a null terminator.
- *
- * Returns the new pointer or NULL on failure.
- *
- ***************************************************************************/
-void *Curl_memdup0(const char *src, size_t length)
-{
-  char *buf = malloc(length + 1);
-  if(!buf)
-    return NULL;
-  memcpy(buf, src, length);
-  buf[length] = 0;
-  return buf;
 }
 
 /***************************************************************************

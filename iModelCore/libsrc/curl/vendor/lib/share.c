@@ -26,7 +26,6 @@
 
 #include <curl/curl.h>
 #include "urldata.h"
-#include "connect.h"
 #include "share.h"
 #include "psl.h"
 #include "vtls/vtls.h"
@@ -65,7 +64,7 @@ curl_share_setopt(struct Curl_share *share, CURLSHoption option, ...)
     return CURLSHE_INVALID;
 
   if(share->dirty)
-    /* do not allow setting options while one or more handles are already
+    /* don't allow setting options while one or more handles are already
        using this share */
     return CURLSHE_IN_USE;
 
@@ -120,7 +119,7 @@ curl_share_setopt(struct Curl_share *share, CURLSHoption option, ...)
       break;
 
     case CURL_LOCK_DATA_CONNECT:
-      if(Curl_conncache_init(&share->conn_cache, NULL, 103))
+      if(Curl_conncache_init(&share->conn_cache, 103))
         res = CURLSHE_NOMEM;
       break;
 
@@ -134,13 +133,13 @@ curl_share_setopt(struct Curl_share *share, CURLSHoption option, ...)
       res = CURLSHE_BAD_OPTION;
     }
     if(!res)
-      share->specifier |= (unsigned int)(1<<type);
+      share->specifier |= (1<<type);
     break;
 
   case CURLSHOPT_UNSHARE:
     /* this is a type this share will no longer share */
     type = va_arg(param, int);
-    share->specifier &= ~(unsigned int)(1<<type);
+    share->specifier &= ~(1<<type);
     switch(type) {
     case CURL_LOCK_DATA_DNS:
       break;
@@ -265,11 +264,11 @@ Curl_share_lock(struct Curl_easy *data, curl_lock_data type,
   if(!share)
     return CURLSHE_INVALID;
 
-  if(share->specifier & (unsigned int)(1<<type)) {
+  if(share->specifier & (1<<type)) {
     if(share->lockfunc) /* only call this if set! */
       share->lockfunc(data, type, accesstype, share->clientdata);
   }
-  /* else if we do not share this, pretend successful lock */
+  /* else if we don't share this, pretend successful lock */
 
   return CURLSHE_OK;
 }
@@ -282,7 +281,7 @@ Curl_share_unlock(struct Curl_easy *data, curl_lock_data type)
   if(!share)
     return CURLSHE_INVALID;
 
-  if(share->specifier & (unsigned int)(1<<type)) {
+  if(share->specifier & (1<<type)) {
     if(share->unlockfunc) /* only call this if set! */
       share->unlockfunc (data, type, share->clientdata);
   }

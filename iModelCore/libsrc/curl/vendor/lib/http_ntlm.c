@@ -40,6 +40,7 @@
 #include "strcase.h"
 #include "http_ntlm.h"
 #include "curl_ntlm_core.h"
+#include "curl_ntlm_wb.h"
 #include "curl_base64.h"
 #include "vauth/vauth.h"
 #include "url.h"
@@ -200,7 +201,7 @@ CURLcode Curl_output_ntlm(struct Curl_easy *data, bool proxy)
 
   Curl_bufref_init(&ntlmmsg);
 
-  /* connection is already authenticated, do not send a header in future
+  /* connection is already authenticated, don't send a header in future
    * requests so go directly to NTLMSTATE_LAST */
   if(*state == NTLMSTATE_TYPE3)
     *state = NTLMSTATE_LAST;
@@ -265,6 +266,10 @@ void Curl_http_auth_cleanup_ntlm(struct connectdata *conn)
 {
   Curl_auth_cleanup_ntlm(&conn->ntlm);
   Curl_auth_cleanup_ntlm(&conn->proxyntlm);
+
+#if defined(NTLM_WB_ENABLED)
+  Curl_http_auth_cleanup_ntlm_wb(conn);
+#endif
 }
 
 #endif /* !CURL_DISABLE_HTTP && USE_NTLM */

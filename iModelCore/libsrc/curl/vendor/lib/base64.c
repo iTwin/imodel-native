@@ -31,7 +31,6 @@
   !defined(CURL_DISABLE_SMTP) || \
   !defined(CURL_DISABLE_POP3) || \
   !defined(CURL_DISABLE_IMAP) || \
-  !defined(CURL_DISABLE_DIGEST_AUTH) || \
   !defined(CURL_DISABLE_DOH) || defined(USE_SSL) || defined(BUILDING_CURL)
 #include "curl/curl.h"
 #include "warnless.h"
@@ -243,7 +242,7 @@ static CURLcode base64_encode(const char *table64,
   *outptr = base64data;
 
   /* Return the length of the new data */
-  *outlen = (size_t)(output - base64data);
+  *outlen = output - base64data;
 
   return CURLE_OK;
 }

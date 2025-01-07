@@ -25,8 +25,7 @@
  ***************************************************************************/
 
 #if (defined(USE_CURL_NTLM_CORE) && !defined(USE_WINDOWS_SSPI))         \
-  || !defined(CURL_DISABLE_AWS) || !defined(CURL_DISABLE_DIGEST_AUTH)   \
-  || defined(USE_LIBSSH2)
+  || !defined(CURL_DISABLE_AWS) || !defined(CURL_DISABLE_DIGEST_AUTH)
 
 #include <curl/curl.h>
 

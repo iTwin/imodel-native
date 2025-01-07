@@ -40,8 +40,9 @@
 ** Helper functions that are used from more than one source file.
 */
 
-const char *param2text(ParameterError error)
+const char *param2text(int res)
 {
+  ParameterError error = (ParameterError)res;
   switch(error) {
   case PARAM_GOT_EXTRA_PARAMETER:
     return "had unsupported trailing garbage";
@@ -58,17 +59,17 @@ const char *param2text(ParameterError error)
   case PARAM_NEGATIVE_NUMERIC:
     return "expected a positive numerical parameter";
   case PARAM_LIBCURL_DOESNT_SUPPORT:
-    return "the installed libcurl version does not support this";
+    return "the installed libcurl version doesn't support this";
   case PARAM_LIBCURL_UNSUPPORTED_PROTOCOL:
     return "a specified protocol is unsupported by libcurl";
   case PARAM_NO_MEM:
     return "out of memory";
   case PARAM_NO_PREFIX:
-    return "the given option cannot be reversed with a --no- prefix";
+    return "the given option can't be reversed with a --no- prefix";
   case PARAM_NUMBER_TOO_LARGE:
     return "too large number";
   case PARAM_NO_NOT_BOOLEAN:
-    return "used '--no-' for option that is not a boolean";
+    return "used '--no-' for option that isn't a boolean";
   case PARAM_CONTDISP_SHOW_HEADER:
     return "showing headers and --remote-header-name cannot be combined";
   case PARAM_CONTDISP_RESUME_FROM:
@@ -77,8 +78,6 @@ const char *param2text(ParameterError error)
     return "error encountered when reading a file";
   case PARAM_EXPAND_ERROR:
     return "variable expansion failure";
-  case PARAM_BLANK_STRING:
-    return "blank argument where content is expected";
   default:
     return "unknown error";
   }

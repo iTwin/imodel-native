@@ -59,7 +59,6 @@ my %warnings = (
     'ASTERISKSPACE'    => 'pointer declared with space after asterisk',
     'BADCOMMAND'       => 'bad !checksrc! instruction',
     'BANNEDFUNC'       => 'a banned function was used',
-    'BANNEDPREPROC'    => 'a banned symbol was used on a preprocessor line',
     'BRACEELSE'        => '} else on the same line',
     'BRACEPOS'         => 'wrong position for an open brace',
     'BRACEWHILE'       => 'A single space between open brace and while',
@@ -120,7 +119,6 @@ sub readlocalfile {
     open(my $rcfile, "<", "$dir/.checksrc") or return;
 
     while(<$rcfile>) {
-        $windows_os ? $_ =~ s/\r?\n$// : chomp;
         $i++;
 
         # Lines starting with '#' are considered comments
@@ -402,13 +400,6 @@ sub scanfile {
         if($l =~ /\!checksrc\! (.*)/) {
             my $cmd = $1;
             checksrc($cmd, $line, $file, $l)
-        }
-
-        if($l =~ /^#line (\d+) \"([^\"]*)\"/) {
-            # a #line instruction
-            $file = $2;
-            $line = $1;
-            next;
         }
 
         # check for a copyright statement and save the years
@@ -720,8 +711,7 @@ sub scanfile {
                     strtok|
                     v?sprintf|
                     (str|_mbs|_tcs|_wcs)n?cat|
-                    LoadLibrary(Ex)?(A|W)?|
-                    _?w?access)
+                    LoadLibrary(Ex)?(A|W)?)
                    \s*\(
                  /x) {
             checkwarn("BANNEDFUNC",
@@ -902,18 +892,6 @@ sub scanfile {
                       "multiple spaces");
         }
       preproc:
-        if($prep) {
-          # scan for use of banned symbols on a preprocessor line
-          if($l =~ /^(^|.*\W)
-                     (WIN32)
-                     (\W|$)
-                   /x) {
-              checkwarn("BANNEDPREPROC",
-                        $line, length($1), $file, $ol,
-                        "use of $2 is banned from preprocessor lines" .
-                        (($2 eq "WIN32") ? ", use _WIN32 instead" : ""));
-          }
-        }
         $line++;
         $prevp = $prep;
         $prevl = $ol if(!$prep);
@@ -924,7 +902,7 @@ sub scanfile {
         checkwarn("COPYRIGHT", 1, 0, $file, "", "Missing copyright statement", 1);
     }
 
-    # COPYRIGHTYEAR is an extended warning so we must first see if it has been
+    # COPYRIGHTYEAR is a extended warning so we must first see if it has been
     # enabled in .checksrc
     if(defined($warnings{"COPYRIGHTYEAR"})) {
         # The check for updated copyrightyear is overly complicated in order to

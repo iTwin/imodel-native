@@ -56,7 +56,7 @@
 #include <sys/time.h>
 #endif
 
-#ifdef _WIN32
+#ifdef WIN32
 #include <io.h>
 #include <fcntl.h>
 #endif
@@ -70,7 +70,11 @@
 #endif
 
 #ifdef USE_WOLFSSL
-#include <stdint.h>
+#  if defined(HAVE_STDINT_H)
+#    include <stdint.h>
+#  elif defined(HAVE_INTTYPES_H)
+#    include <inttypes.h>
+#  endif
 #endif
 
 #ifdef USE_SCHANNEL
@@ -106,7 +110,7 @@
 #endif
 
 /*
- * Definition of timeval struct for platforms that do not have it.
+ * Definition of timeval struct for platforms that don't have it.
  */
 
 #ifndef HAVE_STRUCT_TIMEVAL
@@ -130,7 +134,7 @@ struct timeval {
 
 
 #if defined(__minix)
-/* Minix does not support recv on TCP sockets */
+/* Minix doesn't support recv on TCP sockets */
 #define sread(x,y,z) (ssize_t)read((RECV_TYPE_ARG1)(x), \
                                    (RECV_TYPE_ARG2)(y), \
                                    (RECV_TYPE_ARG3)(z))
@@ -143,7 +147,7 @@ struct timeval {
  *
  * HAVE_RECV is defined if you have a function named recv()
  * which is used to read incoming data from sockets. If your
- * function has another name then do not define HAVE_RECV.
+ * function has another name then don't define HAVE_RECV.
  *
  * If HAVE_RECV is defined then RECV_TYPE_ARG1, RECV_TYPE_ARG2,
  * RECV_TYPE_ARG3, RECV_TYPE_ARG4 and RECV_TYPE_RETV must also
@@ -151,7 +155,7 @@ struct timeval {
  *
  * HAVE_SEND is defined if you have a function named send()
  * which is used to write outgoing data on a connected socket.
- * If yours has another name then do not define HAVE_SEND.
+ * If yours has another name then don't define HAVE_SEND.
  *
  * If HAVE_SEND is defined then SEND_TYPE_ARG1, SEND_QUAL_ARG2,
  * SEND_TYPE_ARG2, SEND_TYPE_ARG3, SEND_TYPE_ARG4 and
@@ -164,13 +168,15 @@ struct timeval {
                                    (RECV_TYPE_ARG4)(0))
 #else /* HAVE_RECV */
 #ifndef sread
-#error "Missing definition of macro sread!"
+  /* */
+  Error Missing_definition_of_macro_sread
+  /* */
 #endif
 #endif /* HAVE_RECV */
 
 
 #if defined(__minix)
-/* Minix does not support send on TCP sockets */
+/* Minix doesn't support send on TCP sockets */
 #define swrite(x,y,z) (ssize_t)write((SEND_TYPE_ARG1)(x), \
                                     (SEND_TYPE_ARG2)(y), \
                                     (SEND_TYPE_ARG3)(z))
@@ -182,7 +188,9 @@ struct timeval {
                                     (SEND_TYPE_ARG4)(SEND_4TH_ARG))
 #else /* HAVE_SEND */
 #ifndef swrite
-#error "Missing definition of macro swrite!"
+  /* */
+  Error Missing_definition_of_macro_swrite
+  /* */
 #endif
 #endif /* HAVE_SEND */
 
@@ -226,7 +234,7 @@ struct timeval {
 
 /*
  * 'bool' exists on platforms with <stdbool.h>, i.e. C99 platforms.
- * On non-C99 platforms there is no bool, so define an enum for that.
+ * On non-C99 platforms there's no bool, so define an enum for that.
  * On C99 platforms 'false' and 'true' also exist. Enum uses a
  * global namespace though, so use bool_false and bool_true.
  */
@@ -238,7 +246,7 @@ struct timeval {
   } bool;
 
 /*
- * Use a define to let 'true' and 'false' use those enums. There
+ * Use a define to let 'true' and 'false' use those enums.  There
  * are currently no use of true and false in libcurl proper, but
  * there are some in the examples. This will cater for any later
  * code happening to use true and false.

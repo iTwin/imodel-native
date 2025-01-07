@@ -31,14 +31,22 @@
 #include "urldata.h"
 #include "conncache.h"
 
+/* SalfordC says "A structure member may not be volatile". Hence:
+ */
+#ifdef __SALFORDC__
+#define CURL_VOLATILE
+#else
+#define CURL_VOLATILE volatile
+#endif
+
 #define CURL_GOOD_SHARE 0x7e117a1e
 #define GOOD_SHARE_HANDLE(x) ((x) && (x)->magic == CURL_GOOD_SHARE)
 
-/* this struct is libcurl-private, do not export details */
+/* this struct is libcurl-private, don't export details */
 struct Curl_share {
   unsigned int magic; /* CURL_GOOD_SHARE */
   unsigned int specifier;
-  volatile unsigned int dirty;
+  CURL_VOLATILE unsigned int dirty;
 
   curl_lock_function lockfunc;
   curl_unlock_function unlockfunc;

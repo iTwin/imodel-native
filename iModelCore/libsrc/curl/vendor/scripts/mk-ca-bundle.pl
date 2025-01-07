@@ -136,6 +136,8 @@ else {
   $url = $opt_d;
 }
 
+my $curl = `curl -V`;
+
 if ($opt_i) {
   print ("=" x 78 . "\n");
   print "Script Version                   : $version\n";
@@ -312,7 +314,6 @@ if(!$opt_n) {
 
   # If we have an HTTPS URL then use curl
   if($url =~ /^https:\/\//i) {
-    my $curl = `curl -V`;
     if($curl) {
       if($curl =~ /^Protocols:.* https( |$)/m) {
         report "Get certdata with curl!";

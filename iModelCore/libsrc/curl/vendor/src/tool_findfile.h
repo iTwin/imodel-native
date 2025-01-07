@@ -25,7 +25,7 @@
  ***************************************************************************/
 #include "tool_setup.h"
 
-#ifdef _WIN32
+#ifdef WIN32
 #define CURLRC_DOTSCORE 2 /* look for underscore-prefixed name too */
 #else
 #define CURLRC_DOTSCORE 1 /* regular .curlrc check */

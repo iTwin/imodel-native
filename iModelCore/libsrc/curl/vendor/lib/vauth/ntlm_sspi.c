@@ -34,7 +34,6 @@
 #include "warnless.h"
 #include "curl_multibyte.h"
 #include "sendf.h"
-#include "strdup.h"
 
 /* The last #include files should be: */
 #include "curl_memory.h"
@@ -75,10 +74,10 @@ bool Curl_auth_is_ntlm_supported(void)
  * Parameters:
  *
  * data    [in]     - The session handle.
- * userp   [in]     - The username in the format User or Domain\User.
+ * userp   [in]     - The user name in the format User or Domain\User.
  * passwdp [in]     - The user's password.
  * service [in]     - The service type such as http, smtp, pop or imap.
- * host    [in]     - The hostname.
+ * host    [in]     - The host name.
  * ntlm    [in/out] - The NTLM data struct being used and modified.
  * out     [out]    - The result storage.
  *
@@ -106,7 +105,7 @@ CURLcode Curl_auth_create_ntlm_type1_message(struct Curl_easy *data,
   status = s_pSecFn->QuerySecurityPackageInfo((TCHAR *) TEXT(SP_NAME_NTLM),
                                               &SecurityPackage);
   if(status != SEC_E_OK) {
-    failf(data, "SSPI: could not get auth info");
+    failf(data, "SSPI: couldn't get auth info");
     return CURLE_AUTH_ERROR;
   }
 
@@ -214,10 +213,11 @@ CURLcode Curl_auth_decode_ntlm_type2_message(struct Curl_easy *data,
   }
 
   /* Store the challenge for later use */
-  ntlm->input_token = Curl_memdup0((const char *)Curl_bufref_ptr(type2),
-                                   Curl_bufref_len(type2));
+  ntlm->input_token = malloc(Curl_bufref_len(type2) + 1);
   if(!ntlm->input_token)
     return CURLE_OUT_OF_MEMORY;
+  memcpy(ntlm->input_token, Curl_bufref_ptr(type2), Curl_bufref_len(type2));
+  ntlm->input_token[Curl_bufref_len(type2)] = '\0';
   ntlm->input_token_len = Curl_bufref_len(type2);
 
   return CURLE_OK;
@@ -233,7 +233,7 @@ CURLcode Curl_auth_decode_ntlm_type2_message(struct Curl_easy *data,
  * Parameters:
  *
  * data    [in]     - The session handle.
- * userp   [in]     - The username in the format User or Domain\User.
+ * userp   [in]     - The user name in the format User or Domain\User.
  * passwdp [in]     - The user's password.
  * ntlm    [in/out] - The NTLM data struct being used and modified.
  * out     [out]    - The result storage.
@@ -314,7 +314,7 @@ CURLcode Curl_auth_create_ntlm_type3_message(struct Curl_easy *data,
                                                &type_3_desc,
                                                &attrs, &expiry);
   if(status != SEC_E_OK) {
-    infof(data, "NTLM handshake failure (type-3 message): Status=%lx",
+    infof(data, "NTLM handshake failure (type-3 message): Status=%x",
           status);
 
     if(status == SEC_E_INSUFFICIENT_MEMORY)

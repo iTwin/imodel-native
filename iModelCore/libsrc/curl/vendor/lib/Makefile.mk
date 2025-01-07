@@ -24,8 +24,8 @@
 
 # Makefile to build curl parts with GCC-like toolchains and optional features.
 #
-# Usage:   make -f Makefile.mk CFG=-feat1[-feat2][-feat3][...]
-# Example: make -f Makefile.mk CFG=-zlib-ssl-libssh2-ipv6
+# Usage:   [mingw32-]make -f Makefile.mk CFG=-feat1[-feat2][-feat3][...]
+# Example: [mingw32-]make -f Makefile.mk CFG=-zlib-ssl-libssh2-ipv6
 #
 # Look for ' ?=' to find all accepted customization variables.
 
@@ -40,7 +40,10 @@ endif
 
 CFLAGS ?=
 CPPFLAGS ?=
+RCFLAGS ?=
 LDFLAGS ?=
+CURL_LDFLAGS_BIN ?=
+CURL_LDFLAGS_LIB ?=
 LIBS ?=
 
 CROSSPREFIX ?=
@@ -50,21 +53,46 @@ ifeq ($(CC),cc)
 endif
 CC := $(CROSSPREFIX)$(CC)
 AR := $(CROSSPREFIX)$(AR)
+RC ?= $(CROSSPREFIX)windres
 
-TRIPLET ?= $(shell $(CC) -dumpmachine)
+# For compatibility
+ARCH ?=
+ifeq ($(ARCH),w64)
+  TRIPLET := x86_64-w64-mingw32
+  CFLAGS  += -m64
+  LDFLAGS += -m64
+  RCFLAGS += --target=pe-x86-64
+else ifdef ARCH
+  TRIPLET := i686-w64-mingw32
+  CFLAGS  += -m32
+  LDFLAGS += -m32
+  RCFLAGS += --target=pe-i386
+else
+  TRIPLET ?= $(shell $(CC) -dumpmachine)
+endif
 
-BIN_EXT :=
+BIN_EXT := .exe
 
-ifneq ($(findstring msdos,$(TRIPLET)),)
+ifneq ($(findstring -w,$(TRIPLET)),)
+  WIN32 := 1
+else ifneq ($(findstring msdos,$(TRIPLET)),)
   # Cross-tools: https://github.com/andrewwutw/build-djgpp
   MSDOS := 1
-  BIN_EXT := .exe
 else ifneq ($(findstring amigaos,$(TRIPLET)),)
   # Cross-tools: https://github.com/bebbo/amiga-gcc
   AMIGA := 1
 endif
 
 CPPFLAGS += -I. -I$(PROOT)/include
+RCFLAGS  += -I$(PROOT)/include
+
+ifndef WIN32
+  DYN :=
+endif
+
+ifdef AMIGA
+  BIN_EXT :=
+endif
 
 ### Deprecated settings. For compatibility.
 
@@ -87,9 +115,20 @@ ifneq ($(findstring -map,$(CFG)),)
   MAP := 1
 endif
 
+ifdef WIN32
+  ifneq ($(findstring -unicode,$(CFG)),)
+    CPPFLAGS += -DUNICODE -D_UNICODE
+    CURL_LDFLAGS_BIN += -municode
+  endif
+endif
+
 # CPPFLAGS below are only necessary when building libcurl via 'lib' (see
 # comments below about exceptions). Always include them anyway to match
 # behavior of other build systems.
+
+# Linker options to exclude for shared mode executables.
+_LDFLAGS :=
+_LIBS :=
 
 ifneq ($(findstring -sync,$(CFG)),)
   CPPFLAGS += -DUSE_SYNC_DNS
@@ -97,16 +136,16 @@ else ifneq ($(findstring -ares,$(CFG)),)
   LIBCARES_PATH ?= $(PROOT)/../c-ares
   CPPFLAGS += -DUSE_ARES
   CPPFLAGS += -I"$(LIBCARES_PATH)/include"
-  LDFLAGS += -L"$(LIBCARES_PATH)/lib"
-  LIBS += -lcares
+  _LDFLAGS += -L"$(LIBCARES_PATH)/lib"
+  _LIBS += -lcares
 endif
 
 ifneq ($(findstring -rtmp,$(CFG)),)
   LIBRTMP_PATH ?= $(PROOT)/../librtmp
   CPPFLAGS += -DUSE_LIBRTMP
   CPPFLAGS += -I"$(LIBRTMP_PATH)"
-  LDFLAGS += -L"$(LIBRTMP_PATH)/librtmp"
-  LIBS += -lrtmp
+  _LDFLAGS += -L"$(LIBRTMP_PATH)/librtmp"
+  _LIBS += -lrtmp -lwinmm
   ZLIB := 1
 endif
 
@@ -114,20 +153,23 @@ ifneq ($(findstring -ssh2,$(CFG)),)
   LIBSSH2_PATH ?= $(PROOT)/../libssh2
   CPPFLAGS += -DUSE_LIBSSH2
   CPPFLAGS += -I"$(LIBSSH2_PATH)/include"
-  LDFLAGS += -L"$(LIBSSH2_PATH)/lib"
-  LIBS += -lssh2
+  _LDFLAGS += -L"$(LIBSSH2_PATH)/lib"
+  ifdef WIN32
+    _LDFLAGS += -L"$(LIBSSH2_PATH)/win32"
+  endif
+  _LIBS += -lssh2
 else ifneq ($(findstring -libssh,$(CFG)),)
   LIBSSH_PATH ?= $(PROOT)/../libssh
   CPPFLAGS += -DUSE_LIBSSH
   CPPFLAGS += -I"$(LIBSSH_PATH)/include"
-  LDFLAGS += -L"$(LIBSSH_PATH)/lib"
-  LIBS += -lssh
+  _LDFLAGS += -L"$(LIBSSH_PATH)/lib"
+  _LIBS += -lssh
 else ifneq ($(findstring -wolfssh,$(CFG)),)
   WOLFSSH_PATH ?= $(PROOT)/../wolfssh
   CPPFLAGS += -DUSE_WOLFSSH
   CPPFLAGS += -I"$(WOLFSSH_PATH)/include"
-  LDFLAGS += -L"$(WOLFSSH_PATH)/lib"
-  LIBS += -lwolfssh
+  _LDFLAGS += -L"$(WOLFSSH_PATH)/lib"
+  _LIBS += -lwolfssh
 endif
 
 ifneq ($(findstring -ssl,$(CFG)),)
@@ -137,9 +179,9 @@ ifneq ($(findstring -ssl,$(CFG)),)
   OPENSSL_INCLUDE ?= $(OPENSSL_PATH)/include
   OPENSSL_LIBPATH ?= $(OPENSSL_PATH)/lib
   CPPFLAGS += -I"$(OPENSSL_INCLUDE)"
-  LDFLAGS += -L"$(OPENSSL_LIBPATH)"
+  _LDFLAGS += -L"$(OPENSSL_LIBPATH)"
   OPENSSL_LIBS ?= -lssl -lcrypto
-  LIBS += $(OPENSSL_LIBS)
+  _LIBS += $(OPENSSL_LIBS)
 
   ifneq ($(findstring -srp,$(CFG)),)
     ifneq ($(wildcard $(OPENSSL_INCLUDE)/openssl/srp.h),)
@@ -154,16 +196,20 @@ ifneq ($(findstring -wolfssl,$(CFG)),)
   CPPFLAGS += -DUSE_WOLFSSL
   CPPFLAGS += -DSIZEOF_LONG_LONG=8
   CPPFLAGS += -I"$(WOLFSSL_PATH)/include"
-  LDFLAGS += -L"$(WOLFSSL_PATH)/lib"
-  LIBS += -lwolfssl
+  _LDFLAGS += -L"$(WOLFSSL_PATH)/lib"
+  _LIBS += -lwolfssl
   SSLLIBS += 1
 endif
 ifneq ($(findstring -mbedtls,$(CFG)),)
   MBEDTLS_PATH ?= $(PROOT)/../mbedtls
   CPPFLAGS += -DUSE_MBEDTLS
   CPPFLAGS += -I"$(MBEDTLS_PATH)/include"
-  LDFLAGS += -L"$(MBEDTLS_PATH)/lib"
-  LIBS += -lmbedtls -lmbedx509 -lmbedcrypto
+  _LDFLAGS += -L"$(MBEDTLS_PATH)/lib"
+  _LIBS += -lmbedtls -lmbedx509 -lmbedcrypto
+  SSLLIBS += 1
+endif
+ifneq ($(findstring -schannel,$(CFG)),)
+  CPPFLAGS += -DUSE_SCHANNEL
   SSLLIBS += 1
 endif
 
@@ -171,21 +217,21 @@ ifneq ($(findstring -nghttp2,$(CFG)),)
   NGHTTP2_PATH ?= $(PROOT)/../nghttp2
   CPPFLAGS += -DUSE_NGHTTP2
   CPPFLAGS += -I"$(NGHTTP2_PATH)/include"
-  LDFLAGS += -L"$(NGHTTP2_PATH)/lib"
-  LIBS += -lnghttp2
+  _LDFLAGS += -L"$(NGHTTP2_PATH)/lib"
+  _LIBS += -lnghttp2
 endif
 
 ifeq ($(findstring -nghttp3,$(CFG))$(findstring -ngtcp2,$(CFG)),-nghttp3-ngtcp2)
   NGHTTP3_PATH ?= $(PROOT)/../nghttp3
   CPPFLAGS += -DUSE_NGHTTP3
   CPPFLAGS += -I"$(NGHTTP3_PATH)/include"
-  LDFLAGS += -L"$(NGHTTP3_PATH)/lib"
-  LIBS += -lnghttp3
+  _LDFLAGS += -L"$(NGHTTP3_PATH)/lib"
+  _LIBS += -lnghttp3
 
   NGTCP2_PATH ?= $(PROOT)/../ngtcp2
   CPPFLAGS += -DUSE_NGTCP2
   CPPFLAGS += -I"$(NGTCP2_PATH)/include"
-  LDFLAGS += -L"$(NGTCP2_PATH)/lib"
+  _LDFLAGS += -L"$(NGTCP2_PATH)/lib"
 
   NGTCP2_LIBS ?=
   ifeq ($(NGTCP2_LIBS),)
@@ -200,7 +246,7 @@ ifeq ($(findstring -nghttp3,$(CFG))$(findstring -ngtcp2,$(CFG)),-nghttp3-ngtcp2)
     endif
   endif
 
-  LIBS += -lngtcp2 $(NGTCP2_LIBS)
+  _LIBS += -lngtcp2 $(NGTCP2_LIBS)
 endif
 
 ifneq ($(findstring -zlib,$(CFG))$(ZLIB),)
@@ -208,64 +254,84 @@ ifneq ($(findstring -zlib,$(CFG))$(ZLIB),)
   # These CPPFLAGS are also required when compiling the curl tool via 'src'.
   CPPFLAGS += -DHAVE_LIBZ
   CPPFLAGS += -I"$(ZLIB_PATH)/include"
-  LDFLAGS += -L"$(ZLIB_PATH)/lib"
+  _LDFLAGS += -L"$(ZLIB_PATH)/lib"
   ZLIB_LIBS ?= -lz
-  LIBS += $(ZLIB_LIBS)
+  _LIBS += $(ZLIB_LIBS)
   ZLIB := 1
 endif
 ifneq ($(findstring -zstd,$(CFG)),)
   ZSTD_PATH ?= $(PROOT)/../zstd
   CPPFLAGS += -DHAVE_ZSTD
   CPPFLAGS += -I"$(ZSTD_PATH)/include"
-  LDFLAGS += -L"$(ZSTD_PATH)/lib"
+  _LDFLAGS += -L"$(ZSTD_PATH)/lib"
   ZSTD_LIBS ?= -lzstd
-  LIBS += $(ZSTD_LIBS)
+  _LIBS += $(ZSTD_LIBS)
 endif
 ifneq ($(findstring -brotli,$(CFG)),)
   BROTLI_PATH ?= $(PROOT)/../brotli
   CPPFLAGS += -DHAVE_BROTLI
   CPPFLAGS += -I"$(BROTLI_PATH)/include"
-  LDFLAGS += -L"$(BROTLI_PATH)/lib"
+  _LDFLAGS += -L"$(BROTLI_PATH)/lib"
   BROTLI_LIBS ?= -lbrotlidec -lbrotlicommon
-  LIBS += $(BROTLI_LIBS)
+  _LIBS += $(BROTLI_LIBS)
 endif
 ifneq ($(findstring -gsasl,$(CFG)),)
   LIBGSASL_PATH ?= $(PROOT)/../gsasl
   CPPFLAGS += -DUSE_GSASL
   CPPFLAGS += -I"$(LIBGSASL_PATH)/include"
-  LDFLAGS += -L"$(LIBGSASL_PATH)/lib"
-  LIBS += -lgsasl
+  _LDFLAGS += -L"$(LIBGSASL_PATH)/lib"
+  _LIBS += -lgsasl
 endif
 
 ifneq ($(findstring -idn2,$(CFG)),)
   LIBIDN2_PATH ?= $(PROOT)/../libidn2
   CPPFLAGS += -DUSE_LIBIDN2
   CPPFLAGS += -I"$(LIBIDN2_PATH)/include"
-  LDFLAGS += -L"$(LIBIDN2_PATH)/lib"
-  LIBS += -lidn2
+  _LDFLAGS += -L"$(LIBIDN2_PATH)/lib"
+  _LIBS += -lidn2
 
 ifneq ($(findstring -psl,$(CFG)),)
   LIBPSL_PATH ?= $(PROOT)/../libpsl
   CPPFLAGS += -DUSE_LIBPSL
   CPPFLAGS += -I"$(LIBPSL_PATH)/include"
-  LDFLAGS += -L"$(LIBPSL_PATH)/lib"
-  LIBS += -lpsl
+  _LDFLAGS += -L"$(LIBPSL_PATH)/lib"
+  _LIBS += -lpsl
 endif
+else ifneq ($(findstring -winidn,$(CFG)),)
+  CPPFLAGS += -DUSE_WIN32_IDN
+  _LIBS += -lnormaliz
 endif
 
+ifneq ($(findstring -sspi,$(CFG)),)
+  ifdef WIN32
+    CPPFLAGS += -DUSE_WINDOWS_SSPI
+  endif
+endif
 ifneq ($(findstring -ipv6,$(CFG)),)
-  CPPFLAGS += -DUSE_IPV6
+  CPPFLAGS += -DENABLE_IPV6
 endif
 
 ifneq ($(findstring -watt,$(CFG))$(MSDOS),)
   WATT_PATH ?= $(PROOT)/../watt
   CPPFLAGS += -I"$(WATT_PATH)/inc"
-  LDFLAGS += -L"$(WATT_PATH)/lib"
-  LIBS += -lwatt
+  _LDFLAGS += -L"$(WATT_PATH)/lib"
+  _LIBS += -lwatt
+endif
+
+ifdef WIN32
+  ifeq ($(findstring -lldap,$(LIBS)),)
+    _LIBS += -lwldap32
+  endif
+  _LIBS += -lws2_32 -lcrypt32 -lbcrypt
 endif
 
 ifneq ($(findstring 11,$(subst $(subst ,, ),,$(SSLLIBS))),)
   CPPFLAGS += -DCURL_WITH_MULTI_SSL
+endif
+
+ifndef DYN
+  LDFLAGS += $(_LDFLAGS)
+  LIBS += $(_LIBS)
 endif
 
 ### Common rules
@@ -294,6 +360,9 @@ $(OBJ_DIR):
 $(OBJ_DIR)/%.o: %.c
 	$(CC) -W -Wall $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
+$(OBJ_DIR)/%.res: %.rc
+	$(RC) -O coff $(RCFLAGS) -i $< -o $@
+
 clean:
 	@$(call DEL, $(TOCLEAN))
 	@$(RMDIR) $(OBJ_DIR)
@@ -306,29 +375,52 @@ distclean vclean: clean
 ifdef LOCAL
 
 CPPFLAGS += -DBUILDING_LIBCURL
+ifdef WIN32
+CPPFLAGS += -DCURL_STATICLIB
+endif
 
 ### Sources and targets
 
-# Provides CSOURCES, HHEADERS
+# Provides CSOURCES, HHEADERS, LIB_RCFILES
 include Makefile.inc
 
 vpath %.c vauth vquic vssh vtls
 
 libcurl_a_LIBRARY := libcurl.a
+ifdef WIN32
+CURL_DLL_SUFFIX ?=
+libcurl_dll_LIBRARY := libcurl$(CURL_DLL_SUFFIX).dll
+libcurl_dll_a_LIBRARY := libcurl.dll.a
+ifeq ($(findstring -trackmem,$(CFG)),)
+CURL_LDFLAGS_LIB += $(PROOT)/libcurl.def
+endif
+ifdef MAP
+libcurl_map_LIBRARY := libcurl$(CURL_DLL_SUFFIX).map
+CURL_LDFLAGS_LIB += -Wl,-Map,$(libcurl_map_LIBRARY)
+endif
+endif
 
-TARGETS := $(libcurl_a_LIBRARY)
+TARGETS := $(libcurl_a_LIBRARY) $(libcurl_dll_LIBRARY)
 
 libcurl_a_OBJECTS := $(patsubst %.c,$(OBJ_DIR)/%.o,$(notdir $(strip $(CSOURCES))))
 libcurl_a_DEPENDENCIES := $(strip $(CSOURCES) $(HHEADERS))
+ifdef WIN32
+libcurl_dll_OBJECTS := $(libcurl_a_OBJECTS)
+libcurl_dll_OBJECTS += $(patsubst %.rc,$(OBJ_DIR)/%.res,$(strip $(LIB_RCFILES)))
+endif
 
-TOCLEAN :=
-TOVCLEAN :=
+TOCLEAN := $(libcurl_dll_OBJECTS)
+TOVCLEAN := $(libcurl_dll_LIBRARY:.dll=.def) $(libcurl_dll_a_LIBRARY) $(libcurl_map_LIBRARY)
 
 ### Rules
 
 $(libcurl_a_LIBRARY): $(libcurl_a_OBJECTS) $(libcurl_a_DEPENDENCIES)
 	@$(call DEL, $@)
 	$(AR) rcs $@ $(libcurl_a_OBJECTS)
+
+$(libcurl_dll_LIBRARY): $(libcurl_dll_OBJECTS)
+	$(CC) $(LDFLAGS) -shared $(CURL_LDFLAGS_LIB) -o $@ $(libcurl_dll_OBJECTS) $(LIBS) \
+	  -Wl,--output-def,$(@:.dll=.def),--out-implib,$(libcurl_dll_a_LIBRARY)
 
 all: $(OBJ_DIR) $(TARGETS)
 endif

@@ -32,13 +32,31 @@ include $(PROOT)/lib/Makefile.mk
 
 ### Local
 
+RCFLAGS  += -DCURL_EMBED_MANIFEST
 CPPFLAGS += -I$(PROOT)/lib
 LDFLAGS  += -L$(PROOT)/lib
 LIBS     := -lcurl $(LIBS)
 
+ifdef WIN32
+  ifneq ($(findstring -dyn,$(CFG)),)
+    DYN := 1
+  endif
+endif
+
+ifdef DYN
+  curl_DEPENDENCIES := $(PROOT)/lib/libcurl$(CURL_DLL_SUFFIX).dll
+  curl_DEPENDENCIES += $(PROOT)/lib/libcurl.dll.a
+else
+  curl_DEPENDENCIES := $(PROOT)/lib/libcurl.a
+  ifdef WIN32
+    CPPFLAGS += -DCURL_STATICLIB
+    LDFLAGS += -static
+  endif
+endif
+
 ### Sources and targets
 
-# Provides CURL_CFILES, CURLX_CFILES
+# Provides CURL_CFILES, CURLX_CFILES, CURL_RCFILES
 include Makefile.inc
 
 TARGETS := curl$(BIN_EXT)
@@ -46,9 +64,12 @@ TARGETS := curl$(BIN_EXT)
 CURL_CFILES += $(notdir $(CURLX_CFILES))
 
 curl_OBJECTS := $(patsubst %.c,$(OBJ_DIR)/%.o,$(strip $(CURL_CFILES)))
+ifdef WIN32
+curl_OBJECTS += $(patsubst %.rc,$(OBJ_DIR)/%.res,$(strip $(CURL_RCFILES)))
+endif
 ifdef MAP
 CURL_MAP := curl.map
-LDFLAGS += -Wl,-Map,$(CURL_MAP)
+CURL_LDFLAGS_BIN += -Wl,-Map,$(CURL_MAP)
 TOVCLEAN := $(CURL_MAP)
 endif
 vpath %.c $(PROOT)/lib
@@ -84,7 +105,7 @@ tool_hugehelp.c:
 endif
 endif
 
-$(TARGETS): $(curl_OBJECTS) $(PROOT)/lib/libcurl.a
-	$(CC) $(LDFLAGS) -o $@ $(curl_OBJECTS) $(LIBS)
+$(TARGETS): $(curl_OBJECTS) $(curl_DEPENDENCIES)
+	$(CC) $(LDFLAGS) $(CURL_LDFLAGS_BIN) -o $@ $(curl_OBJECTS) $(LIBS)
 
 all: $(OBJ_DIR) $(TARGETS)

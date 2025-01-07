@@ -29,8 +29,6 @@
 
 #include "tool_cfgable.h"
 #include "tool_msgs.h"
-#include "tool_cb_prg.h"
-#include "terminal.h"
 
 #include "memdebug.h" /* keep this as LAST include */
 
@@ -41,14 +39,9 @@
 static void voutf(struct GlobalConfig *config,
                   const char *prefix,
                   const char *fmt,
-                  va_list ap) CURL_PRINTF(3, 0);
-
-static void voutf(struct GlobalConfig *config,
-                  const char *prefix,
-                  const char *fmt,
                   va_list ap)
 {
-  size_t width = (get_terminal_columns() - strlen(prefix));
+  size_t width = (79 - strlen(prefix));
   DEBUGASSERT(!strchr(fmt, '\n'));
   if(!config->silent) {
     size_t len;
@@ -107,6 +100,7 @@ void notef(struct GlobalConfig *config, const char *fmt, ...)
  * Emit warning formatted message on configured 'errors' stream unless
  * mute (--silent) was selected.
  */
+
 void warnf(struct GlobalConfig *config, const char *fmt, ...)
 {
   va_list ap;
@@ -114,7 +108,6 @@ void warnf(struct GlobalConfig *config, const char *fmt, ...)
   voutf(config, WARN_PREFIX, fmt, ap);
   va_end(ap);
 }
-
 /*
  * Emit help formatted message on given stream. This is for errors with or
  * related to command line arguments.
