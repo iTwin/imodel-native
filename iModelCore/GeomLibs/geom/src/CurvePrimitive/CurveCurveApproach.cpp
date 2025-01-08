@@ -15,6 +15,23 @@ double Snap01(double x, double tolerance = 1.0e-10)
         return 1.0;
     return x;
     }
+
+void StrokeCurveForNewtonSeed(bvector<DPoint3d>& strokes, ICurvePrimitiveCR curve, IFacetOptionsR options, bool isLinear)
+    {
+    strokes.clear();
+    curve.AddStrokes(strokes, options);
+    // ADO#1229059: avoid Newton settling on local minimum (3 is not enough for an arc)
+    static size_t s_minStrokeCount = 5; // HEURISTIC
+    if (!isLinear && strokes.size() < s_minStrokeCount)
+        {
+        auto myOptions = options.Clone();
+        myOptions->SetChordTolerance(0.5 * myOptions->GetChordTolerance());
+        myOptions->SetAngleTolerance(0.5 * myOptions->GetAngleTolerance());
+        strokes.clear();
+        curve.AddStrokes(strokes, *myOptions);
+        }
+    }
+
 #ifdef CompileCCADebugTracking
 // These functions are marked GEOMDLLIMPEXP so a unit test can extract every single iteration.
 // They are NOT in an h file, so the unit test has to redeclare.
@@ -185,12 +202,10 @@ bvector <CurveLocationDetail> m_locationB;
 void ProcessPrimitivePrimitive(ICurvePrimitiveP curveA, ICurvePrimitiveP curveB, bool bReverse) override
     {
     static double s_absTol = 1.0e-14;
-    m_strokeA.clear ();
-    m_strokeB.clear ();
+    StrokeCurveForNewtonSeed(m_strokeA, *curveA, *GetStrokeOptions(), IsLinear(curveA));
+    StrokeCurveForNewtonSeed(m_strokeB, *curveB, *GetStrokeOptions(), IsLinear(curveB));
     m_locationA.clear ();
     m_locationB.clear ();
-    curveA->AddStrokes (m_strokeA, *GetStrokeOptions ());
-    curveB->AddStrokes (m_strokeB, *GetStrokeOptions ());
     bool needNewton = !IsLinear (curveA) || !IsLinear (curveB);
     CurveCurveApproachIterate iterate (curveA, curveB);
     NewtonIterationsRRToRR newton (s_absTol);
@@ -457,10 +472,8 @@ void ProcessPrimitivePrimitive(ICurvePrimitiveP curveA, ICurvePrimitiveP curveB,
     {
     static double s_absTol = 1.0e-10;
     static double s_softTol = 1.0e-6;
-    m_strokeA.clear ();
-    m_strokeB.clear ();
-    curveA->AddStrokes (m_strokeA, *GetStrokeOptions ());
-    curveB->AddStrokes (m_strokeB, *GetStrokeOptions ());
+    StrokeCurveForNewtonSeed(m_strokeA, *curveA, *GetStrokeOptions(), IsLinear(curveA));
+    StrokeCurveForNewtonSeed(m_strokeB, *curveB, *GetStrokeOptions(), IsLinear(curveB));
     bool needNewton = !IsLinear (curveA) || !IsLinear (curveB);
     CurveLocationDetail locationA, locationB;
     if (PolylineOps::ClosestApproach (m_strokeA, m_strokeB, locationA, locationB))

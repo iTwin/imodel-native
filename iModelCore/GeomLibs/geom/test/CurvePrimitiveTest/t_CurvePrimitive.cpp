@@ -3136,7 +3136,7 @@ TEST(CurveVector, TunnelProfileShadowIntersectionsXY)
     {
     BeFileName dataFullPathName;
     BeTest::GetHost().GetDocumentsRoot(dataFullPathName);
-    dataFullPathName.AppendToPath(L"GeomLibsTestData").AppendToPath(L"CurveVector").AppendToPath(L"profiles.imjs");
+    dataFullPathName.AppendToPath(L"GeomLibsTestData").AppendToPath(L"CurveVector").AppendToPath(L"Regions").AppendToPath(L"profiles.imjs");
     bvector<IGeometryPtr> geometry;
     CurveVectorPtr curves[2];
     if (Check::True(GTestFileOps::JsonFileToGeometry(dataFullPathName, geometry), "File read") &&
@@ -3182,7 +3182,7 @@ TEST(CurveVector, TunnelProfileInOutOnXY)
     {
     BeFileName dataFullPathName;
     BeTest::GetHost().GetDocumentsRoot(dataFullPathName);
-    dataFullPathName.AppendToPath(L"GeomLibsTestData").AppendToPath(L"CurveVector").AppendToPath(L"profiles2.imjs");
+    dataFullPathName.AppendToPath(L"GeomLibsTestData").AppendToPath(L"CurveVector").AppendToPath(L"Regions").AppendToPath(L"profiles2.imjs");
     bvector<IGeometryPtr> geometry;
     CurveVectorPtr curves[2];
     if (Check::True(GTestFileOps::JsonFileToGeometry(dataFullPathName, geometry), "File read") &&
