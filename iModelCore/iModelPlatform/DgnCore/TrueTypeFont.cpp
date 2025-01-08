@@ -1023,6 +1023,46 @@ bool TrueTypeFile::Embed(FontDbR fontDb) {
     return SUCCESS == fontDb.EmbedFont(faces, data, m_compress);
 }
 
+void TrueTypeFile::ExtractMetadata(BeJsValue& output) {
+    auto faces = output["faces"];
+    faces.toArray();
+    
+    // We have to read the first face to get the number of faces in the file.
+    int numFaces = 1;
+    bool embeddable = true;
+    for (int iFace = 0; iFace < numFaces; iFace++) {
+        TrueTypeFont::TrueTypeFace face;
+        face.Initialize(m_fileName.c_str(), iFace);
+        if (!face.m_ftFaceStream->m_ftFace) {
+            continue;
+        }
+
+        if (0 == iFace) {
+            numFaces = face.m_ftFaceStream->m_ftFace->num_faces;
+        }
+        
+        embeddable = embeddable && face.HasEmbeddingRights();
+        auto familyName = face.GetFamilyName();
+        if (!familyName.empty()) {
+            auto faceProps = faces.appendValue();
+            faceProps["familyName"] = familyName;
+            faceProps["type"] = static_cast<int>(FontType::TrueType);
+            faceProps["subId"] = iFace;
+            
+            auto faceName = "regular";
+            switch (face.GetFaceStyle()) {
+                case FaceStyle::Bold: faceName = "bold"; break;
+                case FaceStyle::Italic: faceName = "italic"; break;
+                case FaceStyle::BoldItalic: faceName = "bolditalic"; break;
+            }
+
+            faceProps["faceName"] = faceName;
+        }
+    }
+
+    output["embeddable"] = embeddable;
+}
+
 /**
  *
  */
