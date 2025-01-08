@@ -28,9 +28,12 @@
 #define CURL_NO_OLDIES
 #endif
 
+/* Tell "curl/curl.h" not to include "curl/mprintf.h" */
+#define CURL_SKIP_INCLUDE_MPRINTF
+
 /* FIXME: Delete this once the warnings have been fixed. */
 #if !defined(CURL_WARN_SIGN_CONVERSION)
-#ifdef __GNUC__
+#if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic ignored "-Wsign-conversion"
 #endif
 #endif
@@ -40,21 +43,24 @@
 #include <_mingw.h>
 #endif
 
-/* Workaround for Homebrew gcc 12.4.0, 13.3.0, 14.1.0 and newer (as of 14.1.0)
+/* Workaround for Homebrew gcc 12.4.0, 13.3.0, 14.1.0, 14.2.0 (initial build)
    that started advertising the `availability` attribute, which then gets used
-   by Apple SDK, but, in a way incompatible with gcc, resulting in a misc
-   errors inside SDK headers, e.g.:
+   by Apple SDK, but, in a way incompatible with gcc, resulting in misc errors
+   inside SDK headers, e.g.:
      error: attributes should be specified before the declarator in a function
             definition
      error: expected ',' or '}' before
    Followed by missing declarations.
-   Fix it by overriding the built-in feature-check macro used by the headers
-   to enable the problematic attributes. This makes the feature check fail. */
-#if defined(__APPLE__) &&                \
-  !defined(__clang__) &&                 \
-  defined(__GNUC__) && __GNUC__ >= 12 && \
+   Work it around by overriding the built-in feature-check macro used by the
+   headers to enable the problematic attributes. This makes the feature check
+   fail. Fixed in 14.2.0_1. Disable the workaround if the fix is detected. */
+#if defined(__APPLE__) && !defined(__clang__) && defined(__GNUC__) && \
   defined(__has_attribute)
-#define availability curl_pp_attribute_disabled
+#  if !defined(__has_feature)
+#    define availability curl_pp_attribute_disabled
+#  elif !__has_feature(attribute_availability)
+#    define availability curl_pp_attribute_disabled
+#  endif
 #endif
 
 #if defined(__APPLE__)
@@ -106,7 +112,7 @@
 #  include <winapifamily.h>
 #  if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP) &&  \
      !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-#    define CURL_WINDOWS_APP
+#    define CURL_WINDOWS_UWP
 #  endif
 # endif
 #endif
@@ -205,6 +211,11 @@
 /*  please, do it beyond the point further indicated in this file.  */
 /* ================================================================ */
 
+/* Give calloc a chance to be dragging in early, so we do not redefine */
+#if defined(USE_THREADS_POSIX) && defined(HAVE_PTHREAD_H)
+#  include <pthread.h>
+#endif
+
 /*
  * Disable other protocols when http is the only one desired.
  */
@@ -279,6 +290,14 @@
 #  define CURL_DISABLE_HTTP_AUTH 1
 #endif
 
+/*
+ * ECH requires HTTPSRR.
+ */
+
+#if defined(USE_ECH) && !defined(USE_HTTPSRR)
+#  define USE_HTTPSRR
+#endif
+
 /* ================================================================ */
 /* No system header file shall be included in this file before this */
 /* point.                                                           */
@@ -319,7 +338,7 @@
 
 /* curl uses its own printf() function internally. It understands the GNU
  * format. Use this format, so that is matches the GNU format attribute we
- * use with the mingw compiler, allowing it to verify them at compile-time.
+ * use with the MinGW compiler, allowing it to verify them at compile-time.
  */
 #ifdef  __MINGW32__
 #  undef CURL_FORMAT_CURL_OFF_T
@@ -344,6 +363,9 @@
 #else
 #define CURL_PRINTF(fmt, arg)
 #endif
+
+/* Override default printf mask check rules in "curl/mprintf.h" */
+#define CURL_TEMP_PRINTF CURL_PRINTF
 
 /* Workaround for mainline llvm v16 and earlier missing a built-in macro
    expected by macOS SDK v14 / Xcode v15 (2023) and newer.
@@ -443,8 +465,14 @@
 #include <curl/stdcheaders.h>
 #endif
 
+#ifdef _WIN32
+#define Curl_getpid() GetCurrentProcessId()
+#else
+#define Curl_getpid() getpid()
+#endif
+
 /*
- * Large file (>2Gb) support using WIN32 functions.
+ * Large file (>2Gb) support using Win32 functions.
  */
 
 #ifdef USE_WIN32_LARGE_FILES
@@ -467,7 +495,7 @@
 #endif
 
 /*
- * Small file (<2Gb) support using WIN32 functions.
+ * Small file (<2Gb) support using Win32 functions.
  */
 
 #ifdef USE_WIN32_SMALL_FILES
@@ -513,11 +541,11 @@
 #endif
 
 #if SIZEOF_CURL_SOCKET_T < 8
-#  define CURL_FORMAT_SOCKET_T "d"
+#  define FMT_SOCKET_T "d"
 #elif defined(__MINGW32__)
-#  define CURL_FORMAT_SOCKET_T "zd"
+#  define FMT_SOCKET_T "zd"
 #else
-#  define CURL_FORMAT_SOCKET_T "qd"
+#  define FMT_SOCKET_T "qd"
 #endif
 
 /*
@@ -565,9 +593,12 @@
 #  endif
 #  define CURL_UINT64_SUFFIX  CURL_SUFFIX_CURL_OFF_TU
 #  define CURL_UINT64_C(val)  CURL_CONC_MACROS(val,CURL_UINT64_SUFFIX)
-# define CURL_PRId64  CURL_FORMAT_CURL_OFF_T
-# define CURL_PRIu64  CURL_FORMAT_CURL_OFF_TU
+# define FMT_PRId64  CURL_FORMAT_CURL_OFF_T
+# define FMT_PRIu64  CURL_FORMAT_CURL_OFF_TU
 #endif
+
+#define FMT_OFF_T CURL_FORMAT_CURL_OFF_T
+#define FMT_OFF_TU CURL_FORMAT_CURL_OFF_TU
 
 #if (SIZEOF_TIME_T == 4)
 #  ifdef HAVE_TIME_T_UNSIGNED
@@ -715,6 +746,11 @@
 #define USE_SSL    /* SSL support has been enabled */
 #endif
 
+#if defined(USE_WOLFSSL) && defined(USE_GNUTLS)
+/* Avoid defining unprefixed wolfSSL SHA macros colliding with nettle ones */
+#define NO_OLD_WC_NAMES
+#endif
+
 /* Single point where USE_SPNEGO definition might be defined */
 #if !defined(CURL_DISABLE_NEGOTIATE_AUTH) && \
     (defined(HAVE_GSSAPI) || defined(USE_WINDOWS_SSPI))
@@ -816,7 +852,7 @@
 
 #if defined(__LWIP_OPT_H__) || defined(LWIP_HDR_OPT_H)
 #  if defined(SOCKET) || defined(USE_WINSOCK)
-#    error "WinSock and lwIP TCP/IP stack definitions shall not coexist!"
+#    error "Winsock and lwIP TCP/IP stack definitions shall not coexist!"
 #  endif
 #endif
 
@@ -854,7 +890,7 @@ Therefore we specify it explicitly. https://github.com/curl/curl/pull/258
 #define FOPEN_WRITETEXT "wt"
 #define FOPEN_APPENDTEXT "at"
 #elif defined(__CYGWIN__)
-/* Cygwin has specific behavior we need to address when WIN32 is not defined.
+/* Cygwin has specific behavior we need to address when _WIN32 is not defined.
 https://cygwin.com/cygwin-ug-net/using-textbinary.html
 For write we want our output to have line endings of LF and be compatible with
 other Cygwin utilities. For read we want to handle input that may have line
