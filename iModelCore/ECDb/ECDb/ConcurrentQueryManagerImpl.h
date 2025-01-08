@@ -155,6 +155,7 @@ struct CachedConnection final : std::enable_shared_from_this<CachedConnection> {
     public:
         CachedConnection(ConnectionCache& cache, uint16_t id):m_cache(cache), m_id(id), m_adaptorCache(*this),m_isChangeSummaryCacheAttached(false),m_retryHandler(QueryRetryHandler::Create(60s)){}
         ~CachedConnection();
+        void SyncAttachDbs();
         void Interrupt() const { m_db.Interrupt();}
         void Execute(std::function<void(QueryAdaptorCache&,RunnableRequestBase&)>, std::unique_ptr<RunnableRequestBase>);
         void Reset(bool detachDbs);
@@ -179,7 +180,7 @@ struct ConnectionCache final {
         ECDb const& m_primaryDb;
         recursive_mutex_t m_mutex;
         uint32_t m_poolSize;
-
+        uint64_t m_primaryAttachFileHash = 0;
     public:
         ConnectionCache(ECDb const& primaryDb, uint32_t pool_size);
         ECDb const& GetPrimaryDb() const { return m_primaryDb; }
@@ -189,6 +190,7 @@ struct ConnectionCache final {
         void InterruptIf(std::function<bool(RunnableRequestBase const&)> predicate, bool cancel);
         void SetCacheStatementsPerWork(uint32_t);
         void SetMaxPoolSize(uint32_t newSize)  {m_poolSize = newSize; }
+        void SyncAttachDbs();
 };
 
 struct RunnableRequestQueue;
