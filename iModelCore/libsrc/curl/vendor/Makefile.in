@@ -356,18 +356,20 @@ CFLAG_CURL_SYMBOL_HIDING = @CFLAG_CURL_SYMBOL_HIDING@
 CONFIGURE_OPTIONS = @CONFIGURE_OPTIONS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
-CPPFLAG_CURL_STATICLIB = @CPPFLAG_CURL_STATICLIB@
 CSCOPE = @CSCOPE@
 CTAGS = @CTAGS@
 CURLVERSION = @CURLVERSION@
 CURL_CA_BUNDLE = @CURL_CA_BUNDLE@
+CURL_CA_EMBED = @CURL_CA_EMBED@
 CURL_CFLAG_EXTRAS = @CURL_CFLAG_EXTRAS@
+CURL_CPP = @CURL_CPP@
 CURL_DISABLE_DICT = @CURL_DISABLE_DICT@
 CURL_DISABLE_FILE = @CURL_DISABLE_FILE@
 CURL_DISABLE_FTP = @CURL_DISABLE_FTP@
 CURL_DISABLE_GOPHER = @CURL_DISABLE_GOPHER@
 CURL_DISABLE_HTTP = @CURL_DISABLE_HTTP@
 CURL_DISABLE_IMAP = @CURL_DISABLE_IMAP@
+CURL_DISABLE_IPFS = @CURL_DISABLE_IPFS@
 CURL_DISABLE_LDAP = @CURL_DISABLE_LDAP@
 CURL_DISABLE_LDAPS = @CURL_DISABLE_LDAPS@
 CURL_DISABLE_MQTT = @CURL_DISABLE_MQTT@
@@ -378,7 +380,9 @@ CURL_DISABLE_SMB = @CURL_DISABLE_SMB@
 CURL_DISABLE_SMTP = @CURL_DISABLE_SMTP@
 CURL_DISABLE_TELNET = @CURL_DISABLE_TELNET@
 CURL_DISABLE_TFTP = @CURL_DISABLE_TFTP@
-CURL_LT_SHLIB_VERSIONED_FLAVOUR = @CURL_LT_SHLIB_VERSIONED_FLAVOUR@
+CURL_DISABLE_WEBSOCKETS = @CURL_DISABLE_WEBSOCKETS@
+CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX = @CURL_LIBCURL_VERSIONED_SYMBOLS_PREFIX@
+CURL_LIBCURL_VERSIONED_SYMBOLS_SONAME = @CURL_LIBCURL_VERSIONED_SYMBOLS_SONAME@
 CURL_NETWORK_AND_TIME_LIBS = @CURL_NETWORK_AND_TIME_LIBS@
 CURL_NETWORK_LIBS = @CURL_NETWORK_LIBS@
 CURL_WITH_MULTI_SSL = @CURL_WITH_MULTI_SSL@
@@ -406,7 +410,6 @@ HAVE_BROTLI = @HAVE_BROTLI@
 HAVE_GNUTLS_SRP = @HAVE_GNUTLS_SRP@
 HAVE_LDAP_SSL = @HAVE_LDAP_SSL@
 HAVE_LIBZ = @HAVE_LIBZ@
-HAVE_OPENSSL_QUIC = @HAVE_OPENSSL_QUIC@
 HAVE_OPENSSL_SRP = @HAVE_OPENSSL_SRP@
 HAVE_PROTO_BSDSOCKET_H = @HAVE_PROTO_BSDSOCKET_H@
 HAVE_ZSTD = @HAVE_ZSTD@
@@ -422,8 +425,11 @@ IPV6_ENABLED = @IPV6_ENABLED@
 LCOV = @LCOV@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
-LIBCURL_LIBS = @LIBCURL_LIBS@
-LIBCURL_NO_SHARED = @LIBCURL_NO_SHARED@
+LIBCURL_PC_CFLAGS = @LIBCURL_PC_CFLAGS@
+LIBCURL_PC_CFLAGS_PRIVATE = @LIBCURL_PC_CFLAGS_PRIVATE@
+LIBCURL_PC_LDFLAGS_PRIVATE = @LIBCURL_PC_LDFLAGS_PRIVATE@
+LIBCURL_PC_LIBS = @LIBCURL_PC_LIBS@
+LIBCURL_PC_LIBS_PRIVATE = @LIBCURL_PC_LIBS_PRIVATE@
 LIBCURL_PC_REQUIRES = @LIBCURL_PC_REQUIRES@
 LIBCURL_PC_REQUIRES_PRIVATE = @LIBCURL_PC_REQUIRES_PRIVATE@
 LIBOBJS = @LIBOBJS@
@@ -456,10 +462,8 @@ PKGADD_NAME = @PKGADD_NAME@
 PKGADD_PKG = @PKGADD_PKG@
 PKGADD_VENDOR = @PKGADD_VENDOR@
 PKGCONFIG = @PKGCONFIG@
-RANDOM_FILE = @RANDOM_FILE@
 RANLIB = @RANLIB@
 RC = @RC@
-REQUIRE_LIB_DEPS = @REQUIRE_LIB_DEPS@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -470,6 +474,7 @@ STRIP = @STRIP@
 SUPPORT_FEATURES = @SUPPORT_FEATURES@
 SUPPORT_PROTOCOLS = @SUPPORT_PROTOCOLS@
 TEST_NGHTTPX = @TEST_NGHTTPX@
+USE_APPLE_IDN = @USE_APPLE_IDN@
 USE_ARES = @USE_ARES@
 USE_BEARSSL = @USE_BEARSSL@
 USE_GNUTLS = @USE_GNUTLS@
@@ -478,6 +483,7 @@ USE_LIBPSL = @USE_LIBPSL@
 USE_LIBRTMP = @USE_LIBRTMP@
 USE_LIBSSH = @USE_LIBSSH@
 USE_LIBSSH2 = @USE_LIBSSH2@
+USE_LIBUV = @USE_LIBUV@
 USE_MBEDTLS = @USE_MBEDTLS@
 USE_MSH3 = @USE_MSH3@
 USE_NGHTTP2 = @USE_NGHTTP2@
@@ -571,16 +577,24 @@ CMAKE_DIST = \
  CMake/CurlTests.c                              \
  CMake/FindBearSSL.cmake                        \
  CMake/FindBrotli.cmake                         \
- CMake/FindCARES.cmake                          \
+ CMake/FindCares.cmake                          \
  CMake/FindGSS.cmake                            \
- CMake/FindLibPSL.cmake                         \
- CMake/FindLibSSH2.cmake                        \
+ CMake/FindLibgsasl.cmake                       \
+ CMake/FindLibidn2.cmake                        \
+ CMake/FindLibpsl.cmake                         \
+ CMake/FindLibssh.cmake                         \
+ CMake/FindLibssh2.cmake                        \
+ CMake/FindLibuv.cmake                          \
  CMake/FindMbedTLS.cmake                        \
  CMake/FindMSH3.cmake                           \
+ CMake/FindMbedTLS.cmake                        \
  CMake/FindNGHTTP2.cmake                        \
  CMake/FindNGHTTP3.cmake                        \
  CMake/FindNGTCP2.cmake                         \
- CMake/FindQUICHE.cmake                         \
+ CMake/FindNettle.cmake                         \
+ CMake/FindQuiche.cmake                         \
+ CMake/FindRustls.cmake                         \
+ CMake/FindWolfSSH.cmake                        \
  CMake/FindWolfSSL.cmake                        \
  CMake/FindZstd.cmake                           \
  CMake/Macros.cmake                             \
@@ -598,7 +612,7 @@ VC_DIST = projects/README.md                           \
  projects/wolfssl_options.h                            \
  projects/wolfssl_override.props
 
-WINBUILD_DIST = winbuild/README.md winbuild/gen_resp_file.bat \
+WINBUILD_DIST = winbuild/README.md \
  winbuild/MakefileBuild.vc winbuild/Makefile.vc winbuild/makedebug.bat
 
 PLAN9_DIST = plan9/include/mkfile \
@@ -611,19 +625,19 @@ PLAN9_DIST = plan9/include/mkfile \
  plan9/src/mkfile.inc             \
  plan9/src/mkfile
 
-EXTRA_DIST = CHANGES COPYING maketgz Makefile.dist curl-config.in       \
- RELEASE-NOTES buildconf libcurl.pc.in $(CMAKE_DIST) $(VC_DIST)         \
- $(WINBUILD_DIST) $(PLAN9_DIST) lib/libcurl.vers.in buildconf.bat       \
- libcurl.def Dockerfile
+EXTRA_DIST = CHANGES.md COPYING Makefile.dist             \
+ RELEASE-NOTES $(CMAKE_DIST) $(VC_DIST) $(WINBUILD_DIST)  \
+ $(PLAN9_DIST) buildconf.bat Dockerfile
 
 CLEANFILES = $(VC14_LIBVCXPROJ) $(VC14_SRCVCXPROJ) \
  $(VC14_10_LIBVCXPROJ) $(VC14_10_SRCVCXPROJ)       \
  $(VC14_20_LIBVCXPROJ) $(VC14_20_SRCVCXPROJ)       \
  $(VC14_30_LIBVCXPROJ) $(VC14_30_SRCVCXPROJ)
 
+DISTCLEANFILES = buildinfo.txt
 bin_SCRIPTS = curl-config
 SUBDIRS = lib docs src scripts
-DIST_SUBDIRS = $(SUBDIRS) tests packages scripts include docs
+DIST_SUBDIRS = $(SUBDIRS) tests packages include docs
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libcurl.pc
 LIB_VAUTH_CFILES = \
@@ -701,9 +715,11 @@ LIB_VQUIC_HFILES = \
 LIB_VSSH_CFILES = \
   vssh/libssh.c    \
   vssh/libssh2.c   \
+  vssh/curl_path.c \
   vssh/wolfssh.c
 
 LIB_VSSH_HFILES = \
+  vssh/curl_path.h   \
   vssh/ssh.h
 
 LIB_CFILES = \
@@ -735,7 +751,6 @@ LIB_CFILES = \
   curl_memrchr.c     \
   curl_multibyte.c   \
   curl_ntlm_core.c   \
-  curl_path.c        \
   curl_range.c       \
   curl_rtmp.c        \
   curl_sasl.c        \
@@ -877,7 +892,6 @@ LIB_HFILES = \
   curl_memrchr.h     \
   curl_multibyte.h   \
   curl_ntlm_core.h   \
-  curl_path.h        \
   curl_printf.h      \
   curl_range.h       \
   curl_rtmp.h        \
@@ -1559,6 +1573,7 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -1664,8 +1679,8 @@ uninstall-am: uninstall-binSCRIPTS uninstall-pkgconfigDATA
 
 dist-hook:
 	rm -rf $(top_builddir)/tests/log
-	find $(distdir) -name "*.dist" -exec rm {} \;
-	(distit=`find $(srcdir) -name "*.dist" | grep -v ./ares/`; \
+	find $(distdir) -name "*.dist" -a \! -name Makefile.dist -exec rm {} \;
+	(distit=`find $(srcdir) -name "*.dist" | grep -v Makefile`; \
 	for file in $$distit; do \
 	  strip=`echo $$file | sed -e s/^$(srcdir)// -e s/\.dist//`; \
 	  cp -p $$file $(distdir)$$strip; \
@@ -1674,7 +1689,13 @@ dist-hook:
 check: test examples check-docs
 
 @CROSSCOMPILING_TRUE@test-full: test
+@CROSSCOMPILING_TRUE@test-nonflaky: test
 @CROSSCOMPILING_TRUE@test-torture: test
+@CROSSCOMPILING_TRUE@test-event: test
+@CROSSCOMPILING_TRUE@test-am: test
+@CROSSCOMPILING_TRUE@test-ci: test
+@CROSSCOMPILING_TRUE@pytest: test
+@CROSSCOMPILING_TRUE@pytest-ci: test
 
 @CROSSCOMPILING_TRUE@test:
 @CROSSCOMPILING_TRUE@	@echo "NOTICE: we can't run the tests when cross-compiling!"
@@ -1699,6 +1720,12 @@ check: test examples check-docs
 
 @CROSSCOMPILING_FALSE@test-ci:
 @CROSSCOMPILING_FALSE@	@(cd tests; $(MAKE) all ci-test)
+
+@CROSSCOMPILING_FALSE@pytest:
+@CROSSCOMPILING_FALSE@	@(cd tests; $(MAKE) all default-pytest)
+
+@CROSSCOMPILING_FALSE@pytest-ci:
+@CROSSCOMPILING_FALSE@	@(cd tests; $(MAKE) all ci-pytest)
 
 examples:
 	@(cd docs/examples; $(MAKE) check)
@@ -1748,7 +1775,7 @@ pkgadd:
 	cd $(srcdir)/packages/Solaris && $(MAKE) package
 
 #
-# Build a cygwin binary tarball installation file
+# Build a Cygwin binary tarball installation file
 # resulting .tar.bz2 file will end up at packages/Win32/cygwin
 cygwinbin:
 	$(MAKE) -C packages/Win32/cygwin cygwinbin

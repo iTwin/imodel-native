@@ -23,8 +23,7 @@
  ***************************************************************************/
 #include "tool_setup.h"
 
-#define ENABLE_CURLX_PRINTF
-/* use our own printf() functions */
+#ifndef CURL_DISABLE_IPFS
 #include "curlx.h"
 #include "dynbuf.h"
 
@@ -289,3 +288,4 @@ clean:
   }
   return result;
 }
+#endif /* !CURL_DISABLE_IPFS */

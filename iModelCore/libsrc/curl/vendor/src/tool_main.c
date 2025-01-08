@@ -35,8 +35,6 @@
 #include <fcntl.h>
 #endif
 
-#define ENABLE_CURLX_PRINTF
-/* use our own printf() functions */
 #include "curlx.h"
 
 #include "tool_cfgable.h"
@@ -218,7 +216,7 @@ static void main_free(struct GlobalConfig *config)
 ** curl tool main function.
 */
 #ifdef _UNICODE
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__clang__)
 /* GCC does not know about wmain() */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-prototypes"
@@ -289,7 +287,7 @@ int main(int argc, char *argv[])
 }
 
 #ifdef _UNICODE
-#ifdef __GNUC__
+#if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
 #endif
