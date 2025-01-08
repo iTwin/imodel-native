@@ -271,6 +271,7 @@ if test "x$OPT_OPENSSL" != xno; then
     ],[
         AC_MSG_RESULT([yes])
         ssl_msg="BoringSSL"
+        OPENSSL_IS_BORINGSSL=1
     ],[
         AC_MSG_RESULT([no])
     ])
@@ -287,11 +288,12 @@ if test "x$OPT_OPENSSL" != xno; then
     ],[
         AC_MSG_RESULT([yes])
         ssl_msg="AWS-LC"
+        OPENSSL_IS_BORINGSSL=1
     ],[
         AC_MSG_RESULT([no])
     ])
 
-    AC_MSG_CHECKING([for libressl])
+    AC_MSG_CHECKING([for LibreSSL])
     AC_COMPILE_IFELSE([
       AC_LANG_PROGRAM([[
 #include <openssl/opensslv.h>
@@ -301,8 +303,8 @@ if test "x$OPT_OPENSSL" != xno; then
     ],[
       AC_MSG_RESULT([yes])
       AC_DEFINE_UNQUOTED(HAVE_LIBRESSL, 1,
-        [Define to 1 if using libressl.])
-      ssl_msg="libressl"
+        [Define to 1 if using LibreSSL.])
+      ssl_msg="LibreSSL"
     ],[
       AC_MSG_RESULT([no])
     ])
@@ -312,7 +314,7 @@ if test "x$OPT_OPENSSL" != xno; then
       AC_LANG_PROGRAM([[
 #include <openssl/opensslv.h>
       ]],[[
-        #if defined(OPENSSL_VERSION_MAJOR) && (OPENSSL_VERSION_MAJOR >= 3)
+        #if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
         return 0;
         #else
         #error older than 3
@@ -328,6 +330,15 @@ if test "x$OPT_OPENSSL" != xno; then
     ])
   fi
 
+  dnl is this OpenSSL (fork) providing the original QUIC API?
+  AC_CHECK_FUNCS([SSL_set_quic_use_legacy_codepoint],
+                 [QUIC_ENABLED=yes])
+  if test "$QUIC_ENABLED" = "yes"; then
+    AC_MSG_NOTICE([OpenSSL fork speaks QUIC API])
+  else
+    AC_MSG_NOTICE([OpenSSL version does not speak QUIC API])
+  fi
+
   if test "$OPENSSL_ENABLED" = "1"; then
     if test -n "$LIB_OPENSSL"; then
        dnl when the ssl shared libs were found in a path that the run-time
@@ -340,6 +351,7 @@ if test "x$OPT_OPENSSL" != xno; then
        fi
     fi
     check_for_ca_bundle=1
+    LIBCURL_PC_REQUIRES_PRIVATE="$LIBCURL_PC_REQUIRES_PRIVATE openssl"
   fi
 
   test -z "$ssl_msg" || ssl_backends="${ssl_backends:+$ssl_backends, }$ssl_msg"
@@ -413,4 +425,26 @@ AS_HELP_STRING([--disable-openssl-auto-load-config],[Disable automatic loading o
 ])
 fi
 
+dnl ---
+dnl We may use OpenSSL QUIC.
+dnl ---
+if test "$OPENSSL_ENABLED" = "1"; then
+  AC_MSG_CHECKING([for QUIC support and OpenSSL >= 3.3])
+  AC_LINK_IFELSE([
+    AC_LANG_PROGRAM([[
+#include <openssl/ssl.h>
+    ]],[[
+      #if (OPENSSL_VERSION_NUMBER < 0x30300000L)
+      #error need at least version 3.3.0
+      #endif
+      OSSL_QUIC_client_method();
+    ]])
+  ],[
+    AC_MSG_RESULT([yes])
+    AC_DEFINE(HAVE_OPENSSL_QUIC, 1, [if you have the functions OSSL_QUIC_client_method])
+    AC_SUBST(HAVE_OPENSSL_QUIC, [1])
+  ],[
+    AC_MSG_RESULT([no])
+  ])
+fi
 ])

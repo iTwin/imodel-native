@@ -104,6 +104,7 @@ if test "x$OPT_GNUTLS" != xno; then
        GNUTLS_ENABLED=1
        USE_GNUTLS="yes"
        ssl_msg="GnuTLS"
+       QUIC_ENABLED=yes
        test gnutls != "$DEFAULT_SSL_BACKEND" || VALID_DEFAULT_SSL_BACKEND=yes
        ],
        [
@@ -125,6 +126,7 @@ if test "x$OPT_GNUTLS" != xno; then
             AC_MSG_NOTICE([Added $gtlslib to CURL_LIBRARY_PATH])
           fi
         fi
+        LIBCURL_PC_REQUIRES_PRIVATE="$LIBCURL_PC_REQUIRES_PRIVATE gnutls nettle"
       fi
 
     fi

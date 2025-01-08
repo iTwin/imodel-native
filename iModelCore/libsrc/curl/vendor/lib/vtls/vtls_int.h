@@ -32,8 +32,6 @@
 /* see https://www.iana.org/assignments/tls-extensiontype-values/ */
 #define ALPN_HTTP_1_1_LENGTH 8
 #define ALPN_HTTP_1_1 "http/1.1"
-#define ALPN_HTTP_1_0_LENGTH 8
-#define ALPN_HTTP_1_0 "http/1.0"
 #define ALPN_H2_LENGTH 2
 #define ALPN_H2 "h2"
 #define ALPN_H3_LENGTH 2
@@ -66,18 +64,36 @@ CURLcode Curl_alpn_set_negotiated(struct Curl_cfilter *cf,
                                   const unsigned char *proto,
                                   size_t proto_len);
 
+/* enum for the nonblocking SSL connection state machine */
+typedef enum {
+  ssl_connect_1,
+  ssl_connect_2,
+  ssl_connect_3,
+  ssl_connect_done
+} ssl_connect_state;
+
+typedef enum {
+  ssl_connection_none,
+  ssl_connection_negotiating,
+  ssl_connection_complete
+} ssl_connection_state;
+
+#define CURL_SSL_IO_NEED_NONE   (0)
+#define CURL_SSL_IO_NEED_RECV   (1<<0)
+#define CURL_SSL_IO_NEED_SEND   (1<<1)
+
 /* Information in each SSL cfilter context: cf->ctx */
 struct ssl_connect_data {
-  ssl_connection_state state;
-  ssl_connect_state connecting_state;
-  char *hostname;                   /* hostname for verification */
-  char *dispname;                   /* display version of hostname */
+  struct ssl_peer peer;
   const struct alpn_spec *alpn;     /* ALPN to use or NULL for none */
   void *backend;                    /* vtls backend specific props */
   struct cf_call_data call_data;    /* data handle used in current call */
   struct curltime handshake_done;   /* time when handshake finished */
-  int port;                         /* remote port at origin */
+  ssl_connection_state state;
+  ssl_connect_state connecting_state;
+  int io_need;                      /* TLS signals special SEND/RECV needs */
   BIT(use_alpn);                    /* if ALPN shall be used in handshake */
+  BIT(peer_closed);                 /* peer has closed connection */
 };
 
 
@@ -102,8 +118,8 @@ struct Curl_ssl {
 
   size_t (*version)(char *buffer, size_t size);
   int (*check_cxn)(struct Curl_cfilter *cf, struct Curl_easy *data);
-  int (*shut_down)(struct Curl_cfilter *cf,
-                   struct Curl_easy *data);
+  CURLcode (*shut_down)(struct Curl_cfilter *cf, struct Curl_easy *data,
+                        bool send_shutdown, bool *done);
   bool (*data_pending)(struct Curl_cfilter *cf,
                        const struct Curl_easy *data);
 
@@ -118,18 +134,13 @@ struct Curl_ssl {
                                   struct Curl_easy *data,
                                   bool *done);
 
-  /* If the SSL backend wants to read or write on this connection during a
-     handshake, set socks[0] to the connection's FIRSTSOCKET, and return
-     a bitmap indicating read or write with GETSOCK_WRITESOCK(0) or
-     GETSOCK_READSOCK(0). Otherwise return GETSOCK_BLANK.
-     Mandatory. */
-  int (*get_select_socks)(struct Curl_cfilter *cf, struct Curl_easy *data,
-                          curl_socket_t *socks);
-
+  /* During handshake/shutdown, adjust the pollset to include the socket
+   * for POLLOUT or POLLIN as needed. Mandatory. */
+  void (*adjust_pollset)(struct Curl_cfilter *cf, struct Curl_easy *data,
+                          struct easy_pollset *ps);
   void *(*get_internals)(struct ssl_connect_data *connssl, CURLINFO info);
   void (*close)(struct Curl_cfilter *cf, struct Curl_easy *data);
   void (*close_all)(struct Curl_easy *data);
-  void (*session_free)(void *ptr);
 
   CURLcode (*set_engine)(struct Curl_easy *data, const char *engine);
   CURLcode (*set_engine_default)(struct Curl_easy *data);
@@ -141,8 +152,6 @@ struct Curl_ssl {
 
   bool (*attach_data)(struct Curl_cfilter *cf, struct Curl_easy *data);
   void (*detach_data)(struct Curl_cfilter *cf, struct Curl_easy *data);
-
-  void (*free_multi_ssl_backend_data)(struct multi_ssl_backend_data *mbackend);
 
   ssize_t (*recv_plain)(struct Curl_cfilter *cf, struct Curl_easy *data,
                         char *buf, size_t len, CURLcode *code);
@@ -156,7 +165,8 @@ extern const struct Curl_ssl *Curl_ssl;
 
 int Curl_none_init(void);
 void Curl_none_cleanup(void);
-int Curl_none_shutdown(struct Curl_cfilter *cf, struct Curl_easy *data);
+CURLcode Curl_none_shutdown(struct Curl_cfilter *cf, struct Curl_easy *data,
+                            bool send_shutdown, bool *done);
 int Curl_none_check_cxn(struct Curl_cfilter *cf, struct Curl_easy *data);
 CURLcode Curl_none_random(struct Curl_easy *data, unsigned char *entropy,
                           size_t length);
@@ -169,25 +179,8 @@ CURLcode Curl_none_set_engine(struct Curl_easy *data, const char *engine);
 CURLcode Curl_none_set_engine_default(struct Curl_easy *data);
 struct curl_slist *Curl_none_engines_list(struct Curl_easy *data);
 bool Curl_none_false_start(void);
-int Curl_ssl_get_select_socks(struct Curl_cfilter *cf, struct Curl_easy *data,
-                              curl_socket_t *socks);
-
-/**
- * Get the ssl_config_data in `data` that is relevant for cfilter `cf`.
- */
-struct ssl_config_data *Curl_ssl_cf_get_config(struct Curl_cfilter *cf,
-                                               struct Curl_easy *data);
-
-/**
- * Get the primary config relevant for the filter from its connection.
- */
-struct ssl_primary_config *
-  Curl_ssl_cf_get_primary_config(struct Curl_cfilter *cf);
-
-/**
- * Get the first SSL filter in the chain starting with `cf`, or NULL.
- */
-struct Curl_cfilter *Curl_ssl_cf_get_ssl(struct Curl_cfilter *cf);
+void Curl_ssl_adjust_pollset(struct Curl_cfilter *cf, struct Curl_easy *data,
+                              struct easy_pollset *ps);
 
 /**
  * Get the SSL filter below the given one or NULL if there is none.
@@ -202,18 +195,25 @@ bool Curl_ssl_cf_is_proxy(struct Curl_cfilter *cf);
  */
 bool Curl_ssl_getsessionid(struct Curl_cfilter *cf,
                            struct Curl_easy *data,
+                           const struct ssl_peer *peer,
                            void **ssl_sessionid,
                            size_t *idsize); /* set 0 if unknown */
-/* add a new session ID
+
+/* Set a TLS session ID for `peer`. Replaces an existing session ID if
+ * not already the very same.
  * Sessionid mutex must be locked (see Curl_ssl_sessionid_lock).
+ * Call takes ownership of `ssl_sessionid`, using `sessionid_free_cb`
+ * to deallocate it. Is called in all outcomes, either right away or
+ * later when the session cache is cleaned up.
  * Caller must ensure that it has properly shared ownership of this sessionid
  * object with cache (e.g. incrementing refcount on success)
  */
-CURLcode Curl_ssl_addsessionid(struct Curl_cfilter *cf,
-                               struct Curl_easy *data,
-                               void *ssl_sessionid,
-                               size_t idsize,
-                               bool *added);
+CURLcode Curl_ssl_set_sessionid(struct Curl_cfilter *cf,
+                                struct Curl_easy *data,
+                                const struct ssl_peer *peer,
+                                void *sessionid,
+                                size_t sessionid_size,
+                                Curl_ssl_sessionid_dtor *sessionid_free_cb);
 
 #include "openssl.h"        /* OpenSSL versions */
 #include "gtls.h"           /* GnuTLS versions */

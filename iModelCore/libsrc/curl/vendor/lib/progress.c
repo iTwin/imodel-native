@@ -82,13 +82,13 @@ static char *max5data(curl_off_t bytes, char *max5)
     msnprintf(max5, 6, "%4" CURL_FORMAT_CURL_OFF_T "k", bytes/ONE_KILOBYTE);
 
   else if(bytes < CURL_OFF_T_C(100) * ONE_MEGABYTE)
-    /* 'XX.XM' is good as long as we're less than 100 megs */
+    /* 'XX.XM' is good as long as we are less than 100 megs */
     msnprintf(max5, 6, "%2" CURL_FORMAT_CURL_OFF_T ".%0"
               CURL_FORMAT_CURL_OFF_T "M", bytes/ONE_MEGABYTE,
               (bytes%ONE_MEGABYTE) / (ONE_MEGABYTE/CURL_OFF_T_C(10)) );
 
   else if(bytes < CURL_OFF_T_C(10000) * ONE_MEGABYTE)
-    /* 'XXXXM' is good until we're at 10000MB or above */
+    /* 'XXXXM' is good until we are at 10000MB or above */
     msnprintf(max5, 6, "%4" CURL_FORMAT_CURL_OFF_T "M", bytes/ONE_MEGABYTE);
 
   else if(bytes < CURL_OFF_T_C(100) * ONE_GIGABYTE)
@@ -109,7 +109,7 @@ static char *max5data(curl_off_t bytes, char *max5)
     /* up to 10000PB, display without decimal: XXXXP */
     msnprintf(max5, 6, "%4" CURL_FORMAT_CURL_OFF_T "P", bytes/ONE_PETABYTE);
 
-  /* 16384 petabytes (16 exabytes) is the maximum a 64 bit unsigned number can
+  /* 16384 petabytes (16 exabytes) is the maximum a 64-bit unsigned number can
      hold, but our data type is signed so 8192PB will be the maximum. */
 
   return max5;
@@ -140,7 +140,7 @@ int Curl_pgrsDone(struct Curl_easy *data)
 
   if(!(data->progress.flags & PGRS_HIDE) &&
      !data->progress.callback)
-    /* only output if we don't use a progress callback and we're not
+    /* only output if we do not use a progress callback and we are not
      * hidden */
     fprintf(data->set.err, "\n");
 
@@ -174,9 +174,17 @@ void Curl_pgrsTimeWas(struct Curl_easy *data, timerid timer,
     data->progress.t_startop = timestamp;
     break;
   case TIMER_STARTSINGLE:
-    /* This is set at the start of each single fetch */
+    /* This is set at the start of each single transfer */
     data->progress.t_startsingle = timestamp;
     data->progress.is_t_startransfer_set = false;
+    break;
+  case TIMER_POSTQUEUE:
+    /* Set when the transfer starts (after potentially having been brought
+       back from the waiting queue). It needs to count from t_startop and not
+       t_startsingle since the latter is reset when a connection is brought
+       back from the pending queue. */
+    data->progress.t_postqueue =
+      Curl_timediff_us(timestamp, data->progress.t_startop);
     break;
   case TIMER_STARTACCEPT:
     data->progress.t_acceptdata = timestamp;
@@ -196,7 +204,7 @@ void Curl_pgrsTimeWas(struct Curl_easy *data, timerid timer,
   case TIMER_STARTTRANSFER:
     delta = &data->progress.t_starttransfer;
     /* prevent updating t_starttransfer unless:
-     *   1) this is the first time we're setting t_starttransfer
+     *   1) this is the first time we are setting t_starttransfer
      *   2) a redirect has occurred since the last time t_starttransfer was set
      * This prevents repeated invocations of the function from incorrectly
      * changing the t_starttransfer time.
@@ -257,11 +265,11 @@ void Curl_pgrsStartNow(struct Curl_easy *data)
 
 /*
  * This is used to handle speed limits, calculating how many milliseconds to
- * wait until we're back under the speed limit, if needed.
+ * wait until we are back under the speed limit, if needed.
  *
  * The way it works is by having a "starting point" (time & amount of data
  * transferred by then) used in the speed computation, to be used instead of
- * the start of the transfer.  This starting point is regularly moved as
+ * the start of the transfer. This starting point is regularly moved as
  * transfer goes on, to keep getting accurate values (instead of average over
  * the entire transfer).
  *
@@ -304,7 +312,7 @@ timediff_t Curl_pgrsLimitWaitTime(curl_off_t cursize,
    * 'actual' is the time in milliseconds it took to actually download the
    * last 'size' bytes.
    */
-  actual = Curl_timediff(now, start);
+  actual = Curl_timediff_ceil(now, start);
   if(actual < minimum) {
     /* if it downloaded the data faster than the limit, make it wait the
        difference */
@@ -319,12 +327,6 @@ timediff_t Curl_pgrsLimitWaitTime(curl_off_t cursize,
  */
 CURLcode Curl_pgrsSetDownloadCounter(struct Curl_easy *data, curl_off_t size)
 {
-  if(data->set.max_filesize && (size > data->set.max_filesize)) {
-    failf(data, "Exceeded the maximum allowed file size "
-          "(%" CURL_FORMAT_CURL_OFF_T ")",
-          data->set.max_filesize);
-    return CURLE_FILESIZE_EXCEEDED;
-  }
   data->progress.downloaded = size;
   return CURLE_OK;
 }
@@ -334,7 +336,7 @@ CURLcode Curl_pgrsSetDownloadCounter(struct Curl_easy *data, curl_off_t size)
  */
 void Curl_ratelimit(struct Curl_easy *data, struct curltime now)
 {
-  /* don't set a new stamp unless the time since last update is long enough */
+  /* do not set a new stamp unless the time since last update is long enough */
   if(data->set.max_recv_speed) {
     if(Curl_timediff(now, data->progress.dl_limit_start) >=
        MIN_RATE_LIMIT_PERIOD) {
@@ -397,7 +399,7 @@ static curl_off_t trspeed(curl_off_t size, /* number of bytes */
     return CURL_OFF_T_MAX;
 }
 
-/* returns TRUE if it's time to show the progress meter */
+/* returns TRUE if it is time to show the progress meter */
 static bool progress_calc(struct Curl_easy *data, struct curltime now)
 {
   bool timetoshow = FALSE;
@@ -429,10 +431,10 @@ static bool progress_calc(struct Curl_easy *data, struct curltime now)
     /* figure out how many index entries of data we have stored in our speeder
        array. With N_ENTRIES filled in, we have about N_ENTRIES-1 seconds of
        transfer. Imagine, after one second we have filled in two entries,
-       after two seconds we've filled in three entries etc. */
+       after two seconds we have filled in three entries etc. */
     countindex = ((p->speeder_c >= CURR_TIME)? CURR_TIME:p->speeder_c) - 1;
 
-    /* first of all, we don't do this if there's no counted seconds yet */
+    /* first of all, we do not do this if there is no counted seconds yet */
     if(countindex) {
       int checkindex;
       timediff_t span_ms;
@@ -585,14 +587,12 @@ static void progress_meter(struct Curl_easy *data)
  * Curl_pgrsUpdate() returns 0 for success or the value returned by the
  * progress callback!
  */
-int Curl_pgrsUpdate(struct Curl_easy *data)
+static int pgrsupdate(struct Curl_easy *data, bool showprogress)
 {
-  struct curltime now = Curl_now(); /* what time is it */
-  bool showprogress = progress_calc(data, now);
   if(!(data->progress.flags & PGRS_HIDE)) {
     if(data->set.fxferinfo) {
       int result;
-      /* There's a callback set, call that */
+      /* There is a callback set, call that */
       Curl_set_in_callback(data, true);
       result = data->set.fxferinfo(data->set.progress_client,
                                    data->progress.size_dl,
@@ -628,4 +628,20 @@ int Curl_pgrsUpdate(struct Curl_easy *data)
   }
 
   return 0;
+}
+
+int Curl_pgrsUpdate(struct Curl_easy *data)
+{
+  struct curltime now = Curl_now(); /* what time is it */
+  bool showprogress = progress_calc(data, now);
+  return pgrsupdate(data, showprogress);
+}
+
+/*
+ * Update all progress, do not do progress meter/callbacks.
+ */
+void Curl_pgrsUpdate_nometer(struct Curl_easy *data)
+{
+  struct curltime now = Curl_now(); /* what time is it */
+  (void)progress_calc(data, now);
 }

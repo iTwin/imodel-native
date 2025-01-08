@@ -86,7 +86,7 @@ CURLcode urlerr_cvt(CURLUcode ucode)
 }
 
 /*
- * Adds the file name to the URL if it doesn't already have one.
+ * Adds the filename to the URL if it does not already have one.
  * url will be freed before return if the returned pointer is different
  */
 CURLcode add_file_name_to_url(CURL *curl, char **inurlp, const char *filename)
@@ -118,7 +118,7 @@ CURLcode add_file_name_to_url(CURL *curl, char **inurlp, const char *filename)
     }
     ptr = strrchr(path, '/');
     if(!ptr || !*++ptr) {
-      /* The URL path has no file name part, add the local file name. In order
+      /* The URL path has no filename part, add the local filename. In order
          to be able to do so, we have to create a new URL in another buffer.*/
 
       /* We only want the part of the local path that is on the right
@@ -134,7 +134,7 @@ CURLcode add_file_name_to_url(CURL *curl, char **inurlp, const char *filename)
       else
         filep = filename;
 
-      /* URL encode the file name */
+      /* URL encode the filename */
       encfile = curl_easy_escape(curl, filep, 0 /* use strlen */);
       if(encfile) {
         char *newpath;
@@ -215,7 +215,7 @@ CURLcode get_url_file_name(char **filename, const char *url)
       if(!*filename)
         return CURLE_OUT_OF_MEMORY;
 
-#if defined(MSDOS) || defined(WIN32)
+#if defined(_WIN32) || defined(MSDOS)
       {
         char *sanitized;
         SANITIZEcode sc = sanitize_file_name(&sanitized, *filename, 0);
@@ -227,15 +227,15 @@ CURLcode get_url_file_name(char **filename, const char *url)
         }
         *filename = sanitized;
       }
-#endif /* MSDOS || WIN32 */
+#endif /* _WIN32 || MSDOS */
 
       /* in case we built debug enabled, we allow an environment variable
-       * named CURL_TESTDIR to prefix the given file name to put it into a
+       * named CURL_TESTDIR to prefix the given filename to put it into a
        * specific directory
        */
 #ifdef DEBUGBUILD
       {
-        char *tdir = curlx_getenv("CURL_TESTDIR");
+        char *tdir = curl_getenv("CURL_TESTDIR");
         if(tdir) {
           char *alt = aprintf("%s/%s", tdir, *filename);
           Curl_safefree(*filename);

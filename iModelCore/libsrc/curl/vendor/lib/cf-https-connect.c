@@ -55,7 +55,8 @@ struct cf_hc_baller {
   CURLcode result;
   struct curltime started;
   int reply_ms;
-  bool enabled;
+  BIT(enabled);
+  BIT(shutdown);
 };
 
 static void cf_hc_baller_reset(struct cf_hc_baller *b,
@@ -102,8 +103,8 @@ struct cf_hc_ctx {
   CURLcode result;          /* overall result */
   struct cf_hc_baller h3_baller;
   struct cf_hc_baller h21_baller;
-  int soft_eyeballs_timeout_ms;
-  int hard_eyeballs_timeout_ms;
+  unsigned int soft_eyeballs_timeout_ms;
+  unsigned int hard_eyeballs_timeout_ms;
 };
 
 static void cf_hc_baller_init(struct cf_hc_baller *b,
@@ -188,9 +189,6 @@ static CURLcode baller_connected(struct Curl_cfilter *cf,
 #endif
     infof(data, "using HTTP/2");
     break;
-  case CURL_HTTP_VERSION_1_1:
-    infof(data, "using HTTP/1.1");
-    break;
   default:
     infof(data, "using HTTP/1.x");
     break;
@@ -269,7 +267,7 @@ static CURLcode cf_hc_connect(struct Curl_cfilter *cf,
       cf_hc_baller_init(&ctx->h21_baller, cf, data, "h21",
                        cf->conn->transport);
     ctx->state = CF_HC_CONNECT;
-    /* FALLTHROUGH */
+    FALLTHROUGH();
 
   case CF_HC_CONNECT:
     if(cf_hc_baller_is_active(&ctx->h3_baller)) {
@@ -325,42 +323,68 @@ out:
   return result;
 }
 
-static int cf_hc_get_select_socks(struct Curl_cfilter *cf,
-                                  struct Curl_easy *data,
-                                  curl_socket_t *socks)
+static CURLcode cf_hc_shutdown(struct Curl_cfilter *cf,
+                               struct Curl_easy *data, bool *done)
 {
   struct cf_hc_ctx *ctx = cf->ctx;
-  size_t i, j, s;
-  int brc, rc = GETSOCK_BLANK;
-  curl_socket_t bsocks[MAX_SOCKSPEREASYHANDLE];
   struct cf_hc_baller *ballers[2];
+  size_t i;
+  CURLcode result = CURLE_OK;
 
-  if(cf->connected)
-    return cf->next->cft->get_select_socks(cf->next, data, socks);
+  DEBUGASSERT(data);
+  if(cf->connected) {
+    *done = TRUE;
+    return CURLE_OK;
+  }
 
+  /* shutdown all ballers that have not done so already. If one fails,
+   * continue shutting down others until all are shutdown. */
   ballers[0] = &ctx->h3_baller;
   ballers[1] = &ctx->h21_baller;
-  for(i = s = 0; i < sizeof(ballers)/sizeof(ballers[0]); i++) {
+  for(i = 0; i < sizeof(ballers)/sizeof(ballers[0]); i++) {
     struct cf_hc_baller *b = ballers[i];
-    if(!cf_hc_baller_is_active(b))
+    bool bdone = FALSE;
+    if(!cf_hc_baller_is_active(b) || b->shutdown)
       continue;
-    brc = Curl_conn_cf_get_select_socks(b->cf, data, bsocks);
-    CURL_TRC_CF(data, cf, "get_selected_socks(%s) -> %x", b->name, brc);
-    if(!brc)
-      continue;
-    for(j = 0; j < MAX_SOCKSPEREASYHANDLE && s < MAX_SOCKSPEREASYHANDLE; ++j) {
-      if((brc & GETSOCK_WRITESOCK(j)) || (brc & GETSOCK_READSOCK(j))) {
-        socks[s] = bsocks[j];
-        if(brc & GETSOCK_WRITESOCK(j))
-          rc |= GETSOCK_WRITESOCK(s);
-        if(brc & GETSOCK_READSOCK(j))
-          rc |= GETSOCK_READSOCK(s);
-        s++;
-      }
+    b->result = b->cf->cft->do_shutdown(b->cf, data, &bdone);
+    if(b->result || bdone)
+      b->shutdown = TRUE; /* treat a failed shutdown as done */
+  }
+
+  *done = TRUE;
+  for(i = 0; i < sizeof(ballers)/sizeof(ballers[0]); i++) {
+    if(ballers[i] && !ballers[i]->shutdown)
+      *done = FALSE;
+  }
+  if(*done) {
+    for(i = 0; i < sizeof(ballers)/sizeof(ballers[0]); i++) {
+      if(ballers[i] && ballers[i]->result)
+        result = ballers[i]->result;
     }
   }
-  CURL_TRC_CF(data, cf, "get_selected_socks -> %x", rc);
-  return rc;
+  CURL_TRC_CF(data, cf, "shutdown -> %d, done=%d", result, *done);
+  return result;
+}
+
+static void cf_hc_adjust_pollset(struct Curl_cfilter *cf,
+                                  struct Curl_easy *data,
+                                  struct easy_pollset *ps)
+{
+  if(!cf->connected) {
+    struct cf_hc_ctx *ctx = cf->ctx;
+    struct cf_hc_baller *ballers[2];
+    size_t i;
+
+    ballers[0] = &ctx->h3_baller;
+    ballers[1] = &ctx->h21_baller;
+    for(i = 0; i < sizeof(ballers)/sizeof(ballers[0]); i++) {
+      struct cf_hc_baller *b = ballers[i];
+      if(!cf_hc_baller_is_active(b))
+        continue;
+      Curl_conn_cf_adjust_pollset(b->cf, data, ps);
+    }
+    CURL_TRC_CF(data, cf, "adjust_pollset -> %d socks", ps->num);
+  }
 }
 
 static bool cf_hc_data_pending(struct Curl_cfilter *cf,
@@ -454,8 +478,9 @@ struct Curl_cftype Curl_cft_http_connect = {
   cf_hc_destroy,
   cf_hc_connect,
   cf_hc_close,
+  cf_hc_shutdown,
   Curl_cf_def_get_host,
-  cf_hc_get_select_socks,
+  cf_hc_adjust_pollset,
   cf_hc_data_pending,
   Curl_cf_def_send,
   Curl_cf_def_recv,
@@ -475,7 +500,7 @@ static CURLcode cf_hc_create(struct Curl_cfilter **pcf,
   CURLcode result = CURLE_OK;
 
   (void)data;
-  ctx = calloc(sizeof(*ctx), 1);
+  ctx = calloc(1, sizeof(*ctx));
   if(!ctx) {
     result = CURLE_OUT_OF_MEMORY;
     goto out;
@@ -530,7 +555,7 @@ CURLcode Curl_cf_https_setup(struct Curl_easy *data,
 
   if(data->state.httpwant == CURL_HTTP_VERSION_3ONLY) {
     result = Curl_conn_may_http3(data, conn);
-    if(result) /* can't do it */
+    if(result) /* cannot do it */
       goto out;
     try_h3 = TRUE;
     try_h21 = FALSE;

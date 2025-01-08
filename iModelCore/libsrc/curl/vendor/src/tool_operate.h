@@ -35,9 +35,10 @@ struct per_transfer {
   struct OperationConfig *config; /* for this transfer */
   struct curl_certinfo *certinfo;
   CURL *curl;
-  long retry_numretries;
+  long retry_remaining;
   long retry_sleep_default;
   long retry_sleep;
+  long num_retries; /* counts the performed retries */
   struct timeval start; /* start of this transfer */
   struct timeval retrystart;
   char *this_url;
@@ -74,7 +75,7 @@ struct per_transfer {
 
   /* NULL or malloced */
   char *uploadfile;
-  char *errorbuffer; /* alloced and assigned while this is used for a
+  char *errorbuffer; /* allocated and assigned while this is used for a
                         transfer */
 };
 

@@ -31,9 +31,10 @@ configure_file(curl_config.h.cmake
 transform_makefile_inc("Makefile.inc" "${CMAKE_CURRENT_BINARY_DIR}/Makefile.inc.cmake")
 include(${CMAKE_CURRENT_BINARY_DIR}/Makefile.inc.cmake)
 
-list(APPEND HHEADERS
-  ${CMAKE_CURRENT_BINARY_DIR}/curl_config.h
-  )
+# DllMain is added later for DLL builds only.
+list(REMOVE_ITEM CSOURCES dllmain.c)
+
+list(APPEND HHEADERS ${CMAKE_CURRENT_BINARY_DIR}/curl_config.h)
 
 # The rest of the build
 
@@ -47,42 +48,21 @@ if(USE_ARES)
   include_directories(${CARES_INCLUDE_DIR})
 endif()
 
-add_library(
-  curlu # special libcurlu library just for unittests
-  STATIC
-  EXCLUDE_FROM_ALL
-  ${HHEADERS} ${CSOURCES}
-)
-target_compile_definitions(curlu PUBLIC UNITTESTS CURL_STATICLIB)
+if(BUILD_TESTING)
+  add_library(
+    curlu # special libcurlu library just for unittests
+    STATIC
+    EXCLUDE_FROM_ALL
+    ${HHEADERS} ${CSOURCES}
+  )
+  target_compile_definitions(curlu PUBLIC UNITTESTS CURL_STATICLIB)
+  target_link_libraries(curlu PRIVATE ${CURL_LIBS})
+endif()
 
 if(ENABLE_CURLDEBUG)
   # We must compile these sources separately to avoid memdebug.h redefinitions
   # applying to them.
   set_source_files_properties(memdebug.c curl_multibyte.c PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
-endif()
-target_link_libraries(curlu PRIVATE ${CURL_LIBS})
-
-transform_makefile_inc("Makefile.soname" "${CMAKE_CURRENT_BINARY_DIR}/Makefile.soname.cmake")
-include(${CMAKE_CURRENT_BINARY_DIR}/Makefile.soname.cmake)
-
-if(CMAKE_SYSTEM_NAME STREQUAL "AIX" OR
-  CMAKE_SYSTEM_NAME STREQUAL "Linux" OR
-  CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR
-  CMAKE_SYSTEM_NAME STREQUAL "SunOS" OR
-  CMAKE_SYSTEM_NAME STREQUAL "GNU/kFreeBSD" OR
-
-  # FreeBSD comes with the a.out and elf flavours
-  # but a.out was supported up to version 3.x and
-  # elf from 3.x. I cannot imagine someone running
-  # CMake on those ancient systems
-  CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" OR
-
-  CMAKE_SYSTEM_NAME STREQUAL "Haiku")
-
-  math(EXPR CMAKESONAME "${VERSIONCHANGE} - ${VERSIONDEL}")
-  set(CMAKEVERSION "${CMAKESONAME}.${VERSIONDEL}.${VERSIONADD}")
-else()
-  unset(CMAKESONAME)
 endif()
 
 ## Library definition
@@ -109,17 +89,17 @@ if(NOT DEFINED SHARE_LIB_OBJECT)
   endif()
 endif()
 
-if(WIN32)
-  # Define CURL_STATICLIB always, to disable __declspec(dllexport) for exported
-  # libcurl symbols. We handle exports via libcurl.def instead. Except with
-  # symbol hiding disabled or debug mode enabled, when we export _all_ symbols
-  # from libcurl DLL, without using libcurl.def.
-  add_definitions("-DCURL_STATICLIB")
-endif()
-
 if(SHARE_LIB_OBJECT)
   set(LIB_OBJECT "libcurl_object")
   add_library(${LIB_OBJECT} OBJECT ${HHEADERS} ${CSOURCES})
+  if(WIN32)
+    # Define CURL_STATICLIB always, to disable __declspec(dllexport) for
+    # exported libcurl symbols. We handle exports via libcurl.def instead.
+    # Except with symbol hiding disabled or debug mode enabled, when we export
+    # _all_ symbols from libcurl DLL, without using libcurl.def.
+    set_property(TARGET ${LIB_OBJECT} APPEND
+      PROPERTY COMPILE_DEFINITIONS "CURL_STATICLIB")
+  endif()
   target_link_libraries(${LIB_OBJECT} PRIVATE ${CURL_LIBS})
   set_target_properties(${LIB_OBJECT} PROPERTIES
     POSITION_INDEPENDENT_CODE ON)
@@ -147,6 +127,10 @@ if(BUILD_STATIC_LIBS)
   list(APPEND libcurl_export ${LIB_STATIC})
   add_library(${LIB_STATIC} STATIC ${LIB_SOURCE})
   add_library(${PROJECT_NAME}::${LIB_STATIC} ALIAS ${LIB_STATIC})
+  if(WIN32)
+    set_property(TARGET ${LIB_OBJECT} APPEND
+      PROPERTY COMPILE_DEFINITIONS "CURL_STATICLIB")
+  endif()
   target_link_libraries(${LIB_STATIC} PRIVATE ${CURL_LIBS})
   # Remove the "lib" prefix since the library is already named "libcurl".
   set_target_properties(${LIB_STATIC} PROPERTIES
@@ -162,10 +146,6 @@ if(BUILD_STATIC_LIBS)
       INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE
       INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO TRUE)
   endif()
-  if(CMAKEVERSION AND CMAKESONAME)
-    set_target_properties(${LIB_STATIC} PROPERTIES
-      VERSION ${CMAKEVERSION} SOVERSION ${CMAKESONAME})
-  endif()
 
   target_include_directories(${LIB_STATIC} INTERFACE
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
@@ -176,6 +156,15 @@ if(BUILD_SHARED_LIBS)
   list(APPEND libcurl_export ${LIB_SHARED})
   add_library(${LIB_SHARED} SHARED ${LIB_SOURCE})
   add_library(${PROJECT_NAME}::${LIB_SHARED} ALIAS ${LIB_SHARED})
+  if(WIN32 OR CYGWIN)
+    if(CYGWIN)
+      # For Cygwin always compile dllmain.c as a separate unit since it
+      # includes windows.h, which should not be included in other units.
+      set_source_files_properties(dllmain.c PROPERTIES
+        SKIP_UNITY_BUILD_INCLUSION ON)
+    endif()
+    set_property(TARGET ${LIB_SHARED} APPEND PROPERTY SOURCES dllmain.c)
+  endif()
   if(WIN32)
     set_property(TARGET ${LIB_SHARED} APPEND PROPERTY SOURCES libcurl.rc)
     if(HIDES_CURL_PRIVATE_SYMBOLS)
@@ -197,14 +186,40 @@ if(BUILD_SHARED_LIBS)
       INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE
       INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO TRUE)
   endif()
-  if(CMAKEVERSION AND CMAKESONAME)
-    set_target_properties(${LIB_SHARED} PROPERTIES
-      VERSION ${CMAKEVERSION} SOVERSION ${CMAKESONAME})
-  endif()
 
   target_include_directories(${LIB_SHARED} INTERFACE
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     $<BUILD_INTERFACE:${CURL_SOURCE_DIR}/include>)
+
+  if(CMAKE_DLL_NAME_WITH_SOVERSION OR
+    CYGWIN OR
+    APPLE OR
+    CMAKE_SYSTEM_NAME STREQUAL "AIX" OR
+    CMAKE_SYSTEM_NAME STREQUAL "Linux" OR
+    CMAKE_SYSTEM_NAME STREQUAL "SunOS" OR
+    CMAKE_SYSTEM_NAME STREQUAL "Haiku" OR
+    CMAKE_SYSTEM_NAME STREQUAL "GNU/kFreeBSD" OR
+    # FreeBSD comes with the a.out and ELF flavours but a.out was supported
+    # up to v3.x and ELF from v3.x. I cannot imagine someone running CMake
+    # on those ancient systems.
+    CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+    set(soversion_default TRUE)
+  else()
+    set(soversion_default FALSE)
+  endif()
+
+  option(CURL_LIBCURL_SOVERSION "Enable libcurl SOVERSION" ${soversion_default})
+
+  if(CURL_LIBCURL_SOVERSION)
+    transform_makefile_inc("Makefile.soname" "${CMAKE_CURRENT_BINARY_DIR}/Makefile.soname.cmake")
+    include(${CMAKE_CURRENT_BINARY_DIR}/Makefile.soname.cmake)
+
+    math(EXPR CMAKESONAME "${VERSIONCHANGE} - ${VERSIONDEL}")
+    set(CMAKEVERSION "${CMAKESONAME}.${VERSIONDEL}.${VERSIONADD}")
+
+    set_target_properties(${LIB_SHARED} PROPERTIES
+      VERSION "${CMAKEVERSION}" SOVERSION "${CMAKESONAME}")
+  endif()
 endif()
 
 add_library(${LIB_NAME} ALIAS ${LIB_SELECTED})

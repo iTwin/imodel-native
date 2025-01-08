@@ -81,7 +81,7 @@ bool Curl_auth_is_digest_supported(void)
  *
  * data    [in]     - The session handle.
  * chlg    [in]     - The challenge message.
- * userp   [in]     - The user name in the format User or Domain\User.
+ * userp   [in]     - The username in the format User or Domain\User.
  * passwdp [in]     - The user's password.
  * service [in]     - The service type such as http, smtp, pop or imap.
  * out     [out]    - The result storage.
@@ -122,7 +122,7 @@ CURLcode Curl_auth_create_digest_md5_message(struct Curl_easy *data,
   status = s_pSecFn->QuerySecurityPackageInfo((TCHAR *) TEXT(SP_NAME_DIGEST),
                                               &SecurityPackage);
   if(status != SEC_E_OK) {
-    failf(data, "SSPI: couldn't get auth info");
+    failf(data, "SSPI: could not get auth info");
     return CURLE_AUTH_ERROR;
   }
 
@@ -211,8 +211,10 @@ CURLcode Curl_auth_create_digest_md5_message(struct Curl_easy *data,
     if(status == SEC_E_INSUFFICIENT_MEMORY)
       return CURLE_OUT_OF_MEMORY;
 
+#if !defined(CURL_DISABLE_VERBOSE_STRINGS)
     infof(data, "schannel: InitializeSecurityContext failed: %s",
           Curl_sspi_strerror(status, buffer, sizeof(buffer)));
+#endif
 
     return CURLE_AUTH_ERROR;
   }
@@ -289,7 +291,7 @@ CURLcode Curl_override_sspi_http_realm(const char *chlg,
         }
       }
       else
-        break; /* We're done here */
+        break; /* We are done here */
 
       /* Pass all additional spaces here */
       while(*chlg && ISBLANK(*chlg))
@@ -322,8 +324,8 @@ CURLcode Curl_auth_decode_digest_http_message(const char *chlg,
 {
   size_t chlglen = strlen(chlg);
 
-  /* We had an input token before so if there's another one now that means we
-     provided bad credentials in the previous request or it's stale. */
+  /* We had an input token before so if there is another one now that means we
+     provided bad credentials in the previous request or it is stale. */
   if(digest->input_token) {
     bool stale = false;
     const char *p = chlg;
@@ -377,7 +379,7 @@ CURLcode Curl_auth_decode_digest_http_message(const char *chlg,
  * Parameters:
  *
  * data    [in]     - The session handle.
- * userp   [in]     - The user name in the format User or Domain\User.
+ * userp   [in]     - The username in the format User or Domain\User.
  * passwdp [in]     - The user's password.
  * request [in]     - The HTTP request.
  * uripath [in]     - The path of the HTTP uri.
@@ -411,7 +413,7 @@ CURLcode Curl_auth_create_digest_http_message(struct Curl_easy *data,
   status = s_pSecFn->QuerySecurityPackageInfo((TCHAR *) TEXT(SP_NAME_DIGEST),
                                               &SecurityPackage);
   if(status != SEC_E_OK) {
-    failf(data, "SSPI: couldn't get auth info");
+    failf(data, "SSPI: could not get auth info");
     return CURLE_AUTH_ERROR;
   }
 
@@ -603,8 +605,10 @@ CURLcode Curl_auth_create_digest_http_message(struct Curl_easy *data,
       if(status == SEC_E_INSUFFICIENT_MEMORY)
         return CURLE_OUT_OF_MEMORY;
 
+#if !defined(CURL_DISABLE_VERBOSE_STRINGS)
       infof(data, "schannel: InitializeSecurityContext failed: %s",
             Curl_sspi_strerror(status, buffer, sizeof(buffer)));
+#endif
 
       return CURLE_AUTH_ERROR;
     }
