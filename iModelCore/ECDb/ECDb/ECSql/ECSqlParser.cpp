@@ -2736,7 +2736,7 @@ BentleyStatus ECSqlParser::ParseSubquery(std::unique_ptr<SubqueryExp>& exp, OSQL
         }
     else if(SQL_ISRULE(queryExpNode, cte))
         {
-        //cte
+        //select_statement
         std::unique_ptr<CommonTableExp> cte = nullptr;
         if (SUCCESS != ParseCTE(cte, queryExpNode))
             return ERROR;
