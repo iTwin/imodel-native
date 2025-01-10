@@ -1,3 +1,4 @@
+#!/usr/bin/env perl
 #***************************************************************************
 #                                  _   _ ____  _
 #  Project                     ___| | | |  _ \| |
@@ -22,50 +23,39 @@
 #
 ###########################################################################
 
-all:
-	./configure
-	make
+my $varname = "var";
+if($ARGV[0] eq "--var") {
+    shift;
+    $varname = shift @ARGV;
+}
 
-ssl:
-	./configure --with-openssl
-	make
+my $varname_upper = uc($varname);
 
-vc:
-	cd winbuild
-	nmake /f Makefile.vc MACHINE=x86
+print <<HEAD
+/*
+ * NEVER EVER edit this manually, fix the mk-file-embed.pl script instead!
+ */
+#ifndef CURL_DECLARED_${varname_upper}
+#define CURL_DECLARED_${varname_upper}
+extern const unsigned char ${varname}[];
+#endif
+const unsigned char ${varname}[] = {
+HEAD
+    ;
 
-vc-x64:
-	cd winbuild
-	nmake /f Makefile.vc MACHINE=x64
+while (<STDIN>) {
+    my $line = $_;
+    foreach my $n (split //, $line) {
+        my $ord = ord($n);
+        printf("%s,", $ord);
+        if($ord == 10) {
+             printf("\n");
+        }
+    }
+}
 
-djgpp%:
-	$(MAKE) -C lib -f Makefile.mk CFG=$@ CROSSPREFIX=i586-pc-msdosdjgpp-
-	$(MAKE) -C src -f Makefile.mk CFG=$@ CROSSPREFIX=i586-pc-msdosdjgpp-
-
-cygwin:
-	./configure
-	make
-
-cygwin-ssl:
-	./configure --with-openssl
-	make
-
-amiga%:
-	$(MAKE) -C lib -f Makefile.mk CFG=$@ CROSSPREFIX=m68k-amigaos-
-	$(MAKE) -C src -f Makefile.mk CFG=$@ CROSSPREFIX=m68k-amigaos-
-
-unix: all
-
-unix-ssl: ssl
-
-linux: all
-
-linux-ssl: ssl
-
-ca-bundle: scripts/mk-ca-bundle.pl
-	@echo "generate a fresh ca-bundle.crt"
-	@perl $< -b -l -u lib/ca-bundle.crt
-
-ca-firefox: lib/firefox-db2pem.sh
-	@echo "generate a fresh ca-bundle.crt"
-	./lib/firefox-db2pem.sh lib/ca-bundle.crt
+print <<ENDLINE
+0
+};
+ENDLINE
+    ;
