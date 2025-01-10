@@ -15,7 +15,8 @@ If you are working in imodel-native, you will need to go through a PR validation
     - `imodel-native: https://github.com/iTwin/imodel-native/pull/PULL-NUM`
 1. If you already created the PRs just add this links to your PR description and then in the imodel-native PR comment `/azp run imodel-native` to retrigger the pipelines.
 1. Wait until your pipeline succeeds and *both* PRs are approved.
-1. One both PRs are approved merge the imodel-native PR. This will create a new release with your change and automatically add the new release of the addon to your itwinjs-core PR. (This may take a few hours to build and publish your changes)
+1. Once both PRs are approved merge the imodel-native PR. This will create a new release with your change and automatically add the new release of the addon to your itwinjs-core PR. (This may take a few hours to build and publish your changes)
+
 1. Once you see the new addon is published and committed to your itwinjs-core PR, wait for tests to run and merge PR.
 
 # Solution to most Errors
