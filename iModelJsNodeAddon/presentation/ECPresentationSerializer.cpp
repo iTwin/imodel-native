@@ -177,6 +177,78 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, Cont
         propertyJson.AddMember("kindOfQuantity", IModelJsECPresentationSerializer::_AsJson(ctx, *koq, json.GetAllocator()), json.GetAllocator());
         }
 
+    rapidjson::Value constraintsJson(rapidjson::kObjectType);
+    bool shouldAddConstrains = false;
+    if (property.GetProperty().GetIsPrimitiveArray())
+        {
+        constraintsJson.AddMember("minOccurs", rapidjson::Value(property.GetProperty().GetAsPrimitiveArrayProperty()->GetMinOccurs()), json.GetAllocator());
+        constraintsJson.AddMember("maxOccurs", rapidjson::Value(property.GetProperty().GetAsPrimitiveArrayProperty()->GetMaxOccurs()), json.GetAllocator());
+        shouldAddConstrains = true;
+        }
+    else if (property.GetProperty().GetIsPrimitive() && (property.GetProperty().GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Integer || property.GetProperty().GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Long || property.GetProperty().GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Double))
+        {
+        ECValue minimumValue;
+        if (property.GetProperty().GetAsPrimitiveProperty()->IsMinimumValueDefined() && property.GetProperty().GetAsPrimitiveProperty()->GetMinimumValue(minimumValue) == ECObjectsStatus::Success)
+            {
+            if (minimumValue.IsLong())
+                {
+                constraintsJson.AddMember("minimumValue", rapidjson::Value(minimumValue.GetLong()), json.GetAllocator());
+                shouldAddConstrains = true;
+                }
+
+            if (minimumValue.IsDouble())
+                {
+                constraintsJson.AddMember("minimumValue", rapidjson::Value(minimumValue.GetDouble()), json.GetAllocator());
+                shouldAddConstrains = true;
+                }
+
+            if (minimumValue.IsInteger())
+                {
+                constraintsJson.AddMember("minimumValue", rapidjson::Value(minimumValue.GetInteger()), json.GetAllocator());
+                shouldAddConstrains = true;
+                }
+            }
+        ECValue maximumValue;
+        if (property.GetProperty().GetAsPrimitiveProperty()->IsMaximumValueDefined() && property.GetProperty().GetAsPrimitiveProperty()->GetMaximumValue(maximumValue) == ECObjectsStatus::Success)
+            {
+            if (maxmimumValue.IsLong())
+                {
+                constraintsJson.AddMember("maximumValue", rapidjson::Value(maximumValue.GetLong()), json.GetAllocator());
+                shouldAddConstrains = true;
+                }
+
+            if (maxmimumValue.IsDouble())
+                {
+                constraintsJson.AddMember("maximumValue", rapidjson::Value(maximumValue.GetDouble()), json.GetAllocator());
+                shouldAddConstrains = true;
+                }
+
+            if (maxmimumValue.IsInteger())
+                {
+                constraintsJson.AddMember("maximumValue", rapidjson::Value(maximumValue.GetInteger()), json.GetAllocator());
+                shouldAddConstrains = true;
+                }
+            }
+        }
+    else if (property.GetProperty().GetIsPrimitive() && property.GetProperty().GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_String)
+        {
+        if (property.GetProperty().GetAsPrimitiveProperty()->IsMaximumLengthDefined())
+            {
+            constraintsJson.AddMember("minimumLength", rapidjson::Value(property.GetProperty().GetAsPrimitiveProperty()->GetMinimumLength()), json.GetAllocator());
+            shouldAddConstrains = true;
+            }
+        if (property.GetProperty().GetAsPrimitiveProperty()->IsMinimumLengthDefined())
+            {
+            constraintsJson.AddMember("maximumLength", rapidjson::Value(property.GetProperty().GetAsPrimitiveProperty()->GetMaximumLength()), json.GetAllocator());
+            shouldAddConstrains = true;
+            }
+        }
+
+    if (shouldAddConstrains)
+        {
+        propertyJson.AddMember("constraints", constraintsJson, json.GetAllocator());
+        }
+
     if (property.GetProperty().GetIsNavigation())
         {
         ECRelationshipClassCP relationshipClass = property.GetProperty().GetAsNavigationProperty()->GetRelationshipClass();
