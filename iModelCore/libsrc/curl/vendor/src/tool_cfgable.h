@@ -111,7 +111,7 @@ struct OperationConfig {
   bool sasl_ir;             /* Enable/disable SASL initial response */
   bool proxytunnel;
   bool ftp_append;          /* APPE on ftp */
-  bool use_ascii;           /* select ascii or text transfer */
+  bool use_ascii;           /* select ASCII or text transfer */
   bool autoreferer;         /* automatically set referer */
   bool failonerror;         /* fail on (HTTP) errors */
   bool failwithbody;        /* fail on (HTTP) errors but still store body */
@@ -130,7 +130,9 @@ struct OperationConfig {
   struct getout *url_get;   /* point to the node to fill in URL */
   struct getout *url_out;   /* point to the node to fill in outfile */
   struct getout *url_ul;    /* point to the node to fill in upload */
+#ifndef CURL_DISABLE_IPFS
   char *ipfs_gateway;
+#endif /* !CURL_DISABLE_IPFS */
   char *doh_url;
   char *cipher_list;
   char *proxy_cipher_list;
@@ -259,6 +261,7 @@ struct OperationConfig {
   bool xattr;               /* store metadata in extended attributes */
   long gssapi_delegation;
   bool ssl_allow_beast;     /* allow this SSL vulnerability */
+  bool ssl_allow_earlydata; /* allow use of TLSv1.3 early data */
   bool proxy_ssl_allow_beast; /* allow this SSL vulnerability for proxy */
   bool ssl_no_revoke;       /* disable SSL certificate revocation checks */
   bool ssl_revoke_best_effort; /* ignore SSL revocation offline/missing
@@ -302,12 +305,10 @@ struct OperationConfig {
   struct State state;             /* for create_transfer() */
   bool rm_partial;                /* on error, remove partially written output
                                      files */
-#ifdef USE_ECH
+  bool skip_existing;
   char *ech;                      /* Config set by --ech keywords */
   char *ech_config;               /* Config set by "--ech esl:" option */
   char *ech_public;               /* Config set by "--ech pn:" option */
-#endif
-
 };
 
 struct GlobalConfig {
@@ -315,6 +316,7 @@ struct GlobalConfig {
   bool silent;                    /* do not show messages, --silent given */
   bool noprogress;                /* do not show progress bar */
   bool isatty;                    /* Updated internally if output is a tty */
+  unsigned char verbosity;        /* How verbose we should be */
   char *trace_dump;               /* file to dump the network trace to */
   FILE *trace_stream;
   bool trace_fopened;
@@ -328,13 +330,14 @@ struct GlobalConfig {
   long ms_per_transfer;           /* start next transfer after (at least) this
                                      many milliseconds */
 #ifdef DEBUGBUILD
+  bool test_duphandle;
   bool test_event_based;
 #endif
   bool parallel;
   unsigned short parallel_max; /* MAX_PARALLEL is the maximum */
   bool parallel_connect;
   char *help_category;            /* The help category, if set */
-  struct var *variables;
+  struct tool_var *variables;
   struct OperationConfig *first;
   struct OperationConfig *current;
   struct OperationConfig *last;   /* Always last in the struct */
