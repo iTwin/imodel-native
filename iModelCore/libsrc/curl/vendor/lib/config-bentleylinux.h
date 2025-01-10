@@ -822,7 +822,7 @@
 /* #undef NTLM_WB_FILE */
 
 /* cpu-machine-OS */
-#define OS "x86_64-unknown-linux-gnu"
+#define CURL_OS "x86_64-unknown-linux-gnu"
 
 /* Name of package */
 #define PACKAGE "curl"
