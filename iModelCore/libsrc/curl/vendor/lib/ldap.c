@@ -143,7 +143,7 @@ static void _ldap_free_urldesc(LDAPURLDesc *ludp);
 #endif
 
 #if defined(USE_WIN32_LDAP) && defined(ldap_err2string)
-/* Use ansi error strings in UNICODE builds */
+/* Use ANSI error strings in Unicode builds */
 #undef ldap_err2string
 #define ldap_err2string ldap_err2stringA
 #endif
@@ -825,8 +825,8 @@ static bool split_str(char *str, char ***out, size_t *count)
   if(!res)
     return FALSE;
 
-  for(i = 0, s = strtok_r(str, ",", &lasts); s && i < items;
-      s = strtok_r(NULL, ",", &lasts), i++)
+  for(i = 0, s = Curl_strtok_r(str, ",", &lasts); s && i < items;
+      s = Curl_strtok_r(NULL, ",", &lasts), i++)
     res[i] = s;
 
   *out = res;
