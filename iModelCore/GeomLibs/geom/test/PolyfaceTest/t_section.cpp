@@ -2,9 +2,9 @@
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
-#include "testHarness.h"
 #include <stdio.h>
-
+#include <Bentley/BeTimeUtilities.h>
+#include "testHarness.h"
 #include "SampleGeometry.h"
 #include <GeomSerialization/GeomSerializationApi.h>
 
@@ -69,20 +69,33 @@ void VerifyFacetEdgeLocations (PolyfaceHeaderR mesh, CurveVectorCP curve)
     }
 // Send two meshes with different triangulation but same surface.
 // Verify that section properties match.  Optionally check length.
-void VerifySectionMatch (PolyfaceHeaderR meshA, PolyfaceHeaderR meshB, DPlane3dCR plane1,
-    bool skipSmallRange,
-    bool expectRegion,
-    int expectedLinestringCount,
-    double expectedLength,
-    int noiseLevel)
+void VerifySectionMatch
+(
+PolyfaceHeaderR meshA,
+PolyfaceHeaderR meshB,
+DPlane3dCR plane1,
+bool skipSmallRange,
+bool expectRegion,
+int expectedLinestringCount,
+double expectedLength,
+int noiseLevel,
+double deltaZ = 0.0 // to save geometry relative to meshB
+)
     {
     DPlane3d plane = plane1;
     plane.normal.Normalize ();
-    bvector<DPoint3d> &pointA = meshA.Point ();
+
     CurveVectorPtr sectionQ = meshA.PlaneSlice (plane, expectRegion, true);
+    Check::SaveTransformed(plane);
+    Check::SaveTransformed(sectionQ);
     VerifyFacetEdgeLocations (meshA, sectionQ.get ());
+
     CurveVectorPtr sectionT = meshB.PlaneSlice (plane, expectRegion, true);
+    Check::Shift(0, 0, deltaZ);
+    Check::SaveTransformed(plane);
+    Check::SaveTransformed(sectionT);
     VerifyFacetEdgeLocations (meshB, sectionT.get ());
+    Check::Shift(0, 0, -deltaZ);
 
     if (noiseLevel > 0)
         {
@@ -94,6 +107,7 @@ void VerifySectionMatch (PolyfaceHeaderR meshA, PolyfaceHeaderR meshB, DPlane3dC
     DRange3d rangeB = DPoint3dOps::Range (&meshB.Point ());
     Check::Near (rangeA, rangeB, "Paired mesh range");
 
+    bvector<DPoint3d> &pointA = meshA.Point ();
     DRange1d altitudeRange = DRange1d::FromAltitudes (pointA, plane);
     double tol = 1.0e-10 * rangeA.LargestCoordinate ();
     if (skipSmallRange)
@@ -132,6 +146,7 @@ void VerifySectionMatch (PolyfaceHeaderR meshA, PolyfaceHeaderR meshB, DPlane3dC
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(TrivialSection, Rectangular)
     {
+    const double deltaZ = 5;
     for (int numX = 1; numX < 10; numX += 4)
         {
         for (int numY = 1; numY < 20; numY += 7)
@@ -142,20 +157,23 @@ TEST(TrivialSection, Rectangular)
             double originYStep = ySize / (double)maxPlaneIndex;
             PolyfaceHeaderPtr meshQ = Mesh_XYGrid (numX, numY, xSize, ySize, false);
             PolyfaceHeaderPtr meshT = Mesh_XYGrid (numX, numY, xSize, ySize, true);
-
+            Check::Shift(xSize, ySize);
+            Check::SaveTransformed(meshQ);
+            Check::Shift(0, 0, deltaZ);
+            Check::SaveTransformed(meshT);
+            Check::Shift(0, 0, -deltaZ);
             for (int planeIndex = 0; planeIndex <= maxPlaneIndex; planeIndex++)
                 {
                 DPoint3d origin = DPoint3d::From (0.0, planeIndex * originYStep, 0.0);
                 DPlane3d plane = DPlane3d::FromOriginAndNormal (origin, DVec3d::From (0,1,0));
-                VerifySectionMatch (*meshQ, *meshT, plane, false, false, 1, xSize, 0);
+                VerifySectionMatch (*meshQ, *meshT, plane, false, false, 1, xSize, 0, deltaZ);
                 DPlane3d plane1 = DPlane3d::FromOriginAndNormal (origin, DVec3d::From (1,2,3));
-                VerifySectionMatch (*meshQ, *meshT, plane1, true, false, 1, 0.0, 0);
+                VerifySectionMatch (*meshQ, *meshT, plane1, true, false, 1, 0.0, 0, deltaZ);
                 }
             }
         }
+    Check::ClearGeometry("Polyface.TrivialSection.Rectangular");
     }
-
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -178,10 +196,69 @@ TEST(TrivialSection, Cube)
 
     }
 
+TEST(Polyface, PlaneSlice)
+    {
+    BeFileName fullPathName;
+    BeTest::GetHost().GetDocumentsRoot(fullPathName);
+    fullPathName.AppendToPath(L"GeomLibsTestData").AppendToPath(L"Polyface").AppendToPath(L"Clipping").AppendToPath(L"mesh15K-closed.imjs");
 
+    DPlane3d plane;
+    if (true)
+        {
+        // precisely placed plane intersects a "pinch" point of zero z-height inside the dtm mesh
+        DPoint2d pts[2] = {DPoint2d::From(230947.78314098870,3970106.8026956567), DPoint2d::From(230934.35743837964,3970073.3077127459)};   // in meters
+        DPoint2d origin = DPoint2d::FromInterpolate(pts[0], 0.5, pts[1]);
+        DVec2d normal, vec;
+        vec.DifferenceOf(pts[1], pts[0]);
+        normal.UnitPerpendicular(vec);
+        plane = DPlane3d::FromOriginAndNormal(origin.x, origin.y, 0.0, normal.x, normal.y, 0.0);
+        }
 
+    bvector<IGeometryPtr> geometry;
+    if (Check::True(GTestFileOps::JsonFileToGeometry(fullPathName, geometry), "Parse inputs"))
+        {
+        auto mesh = geometry.front()->GetAsPolyfaceHeader();
+        if (Check::True(mesh.IsValid(), "Have mesh") && Check::True(mesh->HasFacets(), "Nonempty mesh"))
+            {
+            if (Check::GetEnableLongTests())
+                mesh = mesh->CloneWithFacetsInRandomOrder();
 
-#include <Bentley/BeTimeUtilities.h>
+            auto region = mesh->PlaneSlice(plane, true, true);  // as called by _DrawCut in a DV
+            Check::True(region->IsAnyRegionType(), "mesh slice is closed");
+
+            // depending on the order of facets, the region could be represented one of two ways:
+            if (region->GetBoundaryType() == CurveVector::BOUNDARY_TYPE_ParityRegion)
+                {
+                // an interior face of the graph was picked first
+                Check::Size(region->size(), 2, "Parity Region has two children");
+                auto child0 = region->at(0)->GetChildCurveVectorCP();
+                auto child1 = region->at(1)->GetChildCurveVectorCP();
+                Check::True(child0->GetBoundaryType() == CurveVector::BOUNDARY_TYPE_Outer, "Parity Region first child is type Outer");
+                Check::True(child1->GetBoundaryType() == CurveVector::BOUNDARY_TYPE_Outer, "Parity Region second child is type Outer");
+                size_t size0 = child0->at(0)->GetLineStringCP()->size();
+                size_t size1 = child1->at(0)->GetLineStringCP()->size();
+                if (size0 > size1)
+                    std::swap(size0, size1);
+                Check::Size(size0, 12, "A Parity Region loop has 12 vertices");
+                Check::Size(size1, 40, "A Parity Region loop has 40 vertices");
+                }
+            else if (region->GetBoundaryType() == CurveVector::BOUNDARY_TYPE_Outer)
+                {
+                // the exterior face of the graph was picked first
+                Check::Size(region->size(), 1, "Outer Loop has one child");
+                Check::Size(region->at(0)->GetLineStringCP()->size(), 51, "Outer loop has 51 vertices");
+                }
+            else
+                {
+                Check::Fail("PlaneSlice resulted in unexpected region type");
+                }
+
+            Check::SaveTransformed(mesh);
+            Check::SaveTransformed(region);
+            }
+        }
+    Check::ClearGeometry("Polyface.PlaneSlice");
+    }
 
 enum class DrapeAction
   {
@@ -2144,3 +2221,123 @@ TEST(Polyface, BigSynchroMesh)
     Check::ClearGeometry("Polyface.BigSynchroMesh");
     }
 #endif
+
+TEST(Polyface, DrapedLineLimits)
+    {
+    BeFileName meshFileName;
+    BeTest::GetHost().GetDocumentsRoot(meshFileName);
+    meshFileName.AppendToPath(L"GeomLibsTestData").AppendToPath(L"Polyface").AppendToPath(L"Drape").AppendToPath(L"drapeMesh.dgnjs");
+
+    BeFileName lineFileName;
+    BeTest::GetHost().GetDocumentsRoot(lineFileName);
+    lineFileName.AppendToPath(L"GeomLibsTestData").AppendToPath(L"Polyface").AppendToPath(L"Drape").AppendToPath(L"drapeLine.dgnjs");
+
+    PolyfaceHeaderPtr mesh;
+    CurveVectorPtr curve;
+    bvector<IGeometryPtr> geometry;
+    if (Check::True(GTestFileOps::JsonFileToGeometry(meshFileName, geometry), "Parse mesh inputs"))
+        mesh = geometry.front()->GetAsPolyfaceHeader();
+    if (Check::True(GTestFileOps::JsonFileToGeometry(lineFileName, geometry), "Parse curve inputs"))
+        curve = geometry.front()->GetAsCurveVector();
+    if (Check::True(mesh.IsValid(), "Have mesh") && Check::True(mesh->HasFacets(), "Nonempty mesh") &&
+        Check::True(curve.IsValid(), "Have curve") && Check::Size(1, curve->size(), "single primitive"))
+        {
+        double toMeters = 0.0001;
+        auto scale = Transform::FromFixedPointAndScaleFactors(DPoint3d::FromZero(), toMeters, toMeters, toMeters);
+        mesh->Transform(scale);
+        curve->TransformInPlace(scale);
+
+        auto line = curve->at(0);
+        DSegment3d segment;
+        if (Check::True (line->TryGetLine(segment), "contains just a segment"))
+            {
+            DRange3d range = mesh->PointRange();
+            double maxAbs = range.MaxAbs();
+
+            Check::SaveTransformed (*mesh);
+            Check::SaveTransformed (segment);
+            bvector<DPoint3d> ls {segment.point[0], segment.point[1]};
+            auto drape = mesh->DrapeLinestring(ls, DVec3d::From (0,0,1));
+            if (Check::True(drape.IsValid(), "Drape computed"))
+                {
+                Check::True(drape->IsPhysicallyClosedPath() || drape->IsClosedPath(), "Drape is closed");
+                Check::SaveTransformed (*drape);
+                }
+
+            // drape with another (inferior) method and compare result
+            Check::Shift (0, range.YLength (), 0);
+            Check::SaveTransformed(*mesh);
+            Check::SaveTransformed(segment);
+            bvector<DrapeSegment> drapeSegments;
+            PolyfaceSearchContext drapeContext (mesh, true, true, false);
+            drapeContext.DoDrapeXY(segment, drapeSegments); // fails to generate segments on vertical facets
+            for (auto &ds : drapeSegments)
+                {
+                CurveLocationDetail detail;
+                if (Check::True(drape->ClosestPointBounded(ds.m_segment.point[0], detail), "successfully projected seg start to draped linestring"))
+                    Check::Near(detail.a, 0.0, "seg start is on drape linestring", maxAbs);
+                if (Check::True(drape->ClosestPointBounded(ds.m_segment.FractionToPoint(0.5), detail), "successfully projected seg midpoint to draped linestring"))
+                    Check::Near(detail.a, 0.0, "seg midpoint is on drape linestring", maxAbs);
+                Check::SaveTransformed (ds.m_segment);
+                }
+            }
+        }
+    Check::ClearGeometry("Polyface.DrapedLineLimits");
+    }
+
+TEST(Polyface, DrapeLinestringTolerance)
+    {
+    bvector<DPoint3d> linestring;
+    linestring.push_back(DPoint3d::From(3192.8691345036800, 3132.6054710110700, 30.1752603505207));
+    linestring.push_back(DPoint3d::From(3192.8691345036800, 3056.4053186107700, 30.1752603505207));
+    Check::SaveTransformed(linestring);
+
+    bvector<DPoint3d> meshPoints;
+    meshPoints.push_back(DPoint3d::From(3195.9171395996900, 3092.9813917629200, 30.4800609601219));
+    meshPoints.push_back(DPoint3d::From(3195.9171395996900, 3092.9813917629200, 30.3784709171219));
+    meshPoints.push_back(DPoint3d::From(3195.9171395996900, 3094.5053948109200, 30.4800609601219));
+    meshPoints.push_back(DPoint3d::From(3192.8691335036800, 3092.9813917629200, 30.4800609601219));
+    meshPoints.push_back(DPoint3d::From(3192.8691335036800, 3092.9813917629200, 30.3784709171219));
+    meshPoints.push_back(DPoint3d::From(3192.8691335036800, 3094.5053948109200, 30.4800609601219));
+    bvector<int> meshIndices = { 6, 4, 1, 3, 0, 4, 5, 2, 1, 0 };
+    PolyfaceHeaderPtr mesh = PolyfaceHeader::CreateIndexedMesh(1, meshPoints, meshIndices);
+    Check::SaveTransformed(mesh);
+
+    // callback to verify specific drape geometry
+    double const horizLength = 1.52400305;  // meters
+    double const vertLength = 0.10159004;
+    bool oneSegmentIsVertical = false;
+    bool oneSegmentIsHorizontal = false;
+    auto testSegment = [&](DSegment3dCR seg) -> void
+        {
+        if (seg.point[0].AlmostEqualXY(seg.point[1], DoubleOps::SmallMetricDistance()) && DoubleOps::AlmostEqual(seg.Length(), vertLength, DoubleOps::SmallMetricDistance()))
+            oneSegmentIsVertical = true;
+        else if (DoubleOps::AlmostEqual(seg.point[0].z, seg.point[1].z, DoubleOps::SmallMetricDistance()) && DoubleOps::AlmostEqual(seg.Length(), horizLength, DoubleOps::SmallMetricDistance()))
+            oneSegmentIsHorizontal = true;
+        };
+
+    // Civil calls drape with inputs in master units!
+    auto drapedLinestring = mesh->DrapeLinestring(linestring, DVec3d::UnitZ());
+    if (Check::True(drapedLinestring.IsValid(), "drape in master units"))
+        {
+        Check::SaveTransformed(drapedLinestring);
+        if (Check::Size(1, drapedLinestring->size(), "draped curve returned as one primitive"))
+            {
+            auto drapedPoints = drapedLinestring->at(0)->GetLineStringCP();
+            if (Check::True(drapedPoints != nullptr, "draped curve is a linestring"))
+                {
+                if (Check::Size(3, drapedPoints->size(), "draped linestring has 3 pts"))
+                    {
+                    for (size_t iSeg = 0; iSeg < 2; ++iSeg)
+                        {
+                        DSegment3d seg = DSegment3d::From(drapedPoints->at(iSeg), drapedPoints->at(iSeg + 1));
+                        testSegment(seg);
+                        }
+                    }
+                }
+            }
+        Check::True(oneSegmentIsVertical, "one of the segments is vertical");
+        Check::True(oneSegmentIsHorizontal, "one of the segments is horizontal");
+        }
+    Check::ClearGeometry("Polyface.DrapeLinestringTolerance");
+    }
