@@ -27,7 +27,7 @@ If you are working in imodel-native, you will need to go through a PR validation
 ## Expected Behavior
 ### For a native and core change
 1. The native pipeline should begin and build to completion. The `Build itwinjs-core` Stage should not be skipped
-1. There is currently no solution for stopping the iTwinJs Pipeline, so that will run as if nothing is linked, and will most likely fail.
+1. There is currently no solution for stopping the pipelines running in your itwinjs-core PR , so that will run as if nothing is linked, and will most likely fail.
 1. Upon completion of the native pipeline, the status check on your core PR should be updated
 1. The builds for you itwinjs-core PR should still fail. Once your native PR merges, a release will be triggered and that release will be integrated into your pr.
     - This is a safety precaution so people cannot merge a change to itwinjs-core pr before the release of their new addon.
