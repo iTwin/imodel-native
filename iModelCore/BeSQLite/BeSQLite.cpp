@@ -1707,6 +1707,11 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation) 
 
     // Don't check m_tracker->HasChanges - may have dynamic changes to rollback
     ChangeTracker::OnCommitStatus trackerStatus = (m_tracker.IsValid()) ? m_tracker->_OnCommit(isCommit, operation) : ChangeTracker::OnCommitStatus::Commit;
+
+    if (trackerStatus == ChangeTracker::OnCommitStatus::RebaseInProgress) {
+        return BE_SQLITE_ERROR;
+    }
+
     if (trackerStatus == ChangeTracker::OnCommitStatus::Abort) {
         // Abort is considered fatal and application must quit.
         // We do not allocate memory or attempt to log as this is only happens when sqlite returns NOMEM.
@@ -3341,13 +3346,21 @@ DbFile::~DbFile() {
 
     if (BE_SQLITE_OK != rc) {
         sqlite3_stmt* stmt = nullptr;
+        std::vector<sqlite3_stmt*> stmts;
         while (nullptr != (stmt = sqlite3_next_stmt(m_sqlDb, stmt))) {
+            stmts.push_back(stmt);
             Utf8String openStatement(sqlite3_sql(stmt)); // keep as separate line for debugging
             LOG.errorv("Statement not closed: '%s'", openStatement.c_str());
         };
+        for(auto stmt : stmts)
+            sqlite3_finalize(stmt);
 
-        LOG.errorv("Cannot close database '%s'", sqlite3_db_filename(m_sqlDb, "main"));
-        BeAssert(false);
+        rc = (DbResult) sqlite3_close(m_sqlDb);
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("Cannot close database '%s'", sqlite3_db_filename(m_sqlDb, "main"));
+            BeAssert(false);
+        }
+
     }
 
     m_sqlDb = 0;
