@@ -576,6 +576,14 @@ Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR subToGraphic, ClipVector
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool _WantSymbolsAsSubGraphics() override {
+    // Request symbols and allow ExportGraphicsContext._AddSubGraphic decide to collect or explode...
+    return true;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 bool _WantStrokeLineStyle(Render::LineStyleSymbCR symb, IFacetOptionsPtr&) override
     {
     if (symb.IsCosmetic()) // Cosmetic are not supportable
