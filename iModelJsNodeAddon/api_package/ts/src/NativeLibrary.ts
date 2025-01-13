@@ -535,7 +535,7 @@ export declare namespace IModelJsNative {
     public abandonCreateChangeset(): void;
     public addChildPropagatesChangesToParentRelationship(schemaName: string, relClassName: string): BentleyStatus;
     public invalidateFontMap(): void;
-    public applyChangeset(changeSet: ChangesetFileProps): void;
+    public applyChangeset(changeSet: ChangesetFileProps, fastForward: boolean): void;
     public revertTimelineChanges(changeSet: ChangesetFileProps[], skipSchemaChanges: boolean): void;
     public attachChangeCache(changeCachePath: string): DbResult;
     public beginMultiTxnOperation(): DbResult;
@@ -696,6 +696,11 @@ export declare namespace IModelJsNative {
     public enableWalMode(yesNo?: boolean): void;
     public performCheckpoint(mode?: WalCheckpointMode): void;
     public setAutoCheckpointThreshold(frames: number): void;
+    public pullMergeInProgress(): boolean;
+    public pullMergeBegin(): void;
+    public pullMergeEnd(): void;
+    public pullMergeResume(): void;
+
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
     public static zlibCompress(data: Uint8Array): Uint8Array;
@@ -1404,6 +1409,7 @@ export declare namespace IModelJsNative {
     public openFile(fileName: string, invert: boolean): void;
     public openGroup(fileName: string[], db: AnyECDb, invert: boolean): void;
     public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean): void;
+    public openTxn(db: DgnDb, txnId: Id64String, invert: boolean): void;
     public reset(): void;
     public step(): boolean;
     public writeToFile(fileName: string, containsSchemaChanges: boolean, overrideFile: boolean): void;
