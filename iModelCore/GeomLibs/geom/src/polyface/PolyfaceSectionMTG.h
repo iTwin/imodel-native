@@ -735,7 +735,7 @@ bool CollectAndVisitSuperFace(bvector<MTGNodeId>& superFace, MTGNodeId seed, MTG
 
 // Mark exterior super-faces in the graph if they are unambiguous.
 // @param avoidMask [in] super-faces follow fSucc pointers where the next edge at a vertex is the first vPred without this mask
-// @param mask [in] what exterior faces are marked with (e.g., visitMask)
+// @param mask [in] what exterior faces will be marked with
 // @param planeNormal [in] the plane in which signed xy-areas are computed. In this plane, exterior and interior
 //        faces have xy-areas with opposite sign.
 // @param graphIsReversed [out] on a true return, whether the graph's interior face loops are CW with respect to planeNormal
@@ -782,6 +782,9 @@ bool MarkExteriorSuperFaces(MTGMask avoidMask, MTGMask mask, DVec3dCR planeNorma
         }
     MTGARRAY_END_SET_LOOP(nodeId, &m_graph)
     m_graph.DropMask(myVisitMask);
+
+    if (superFaceAreas.empty())
+        return false;
 
     double areaTol = this->m_coordinateMap->GetXYZAbsTol();
     double smallestArea = areaTol * areaTol;
