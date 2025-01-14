@@ -181,7 +181,10 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, Cont
     if (property.GetProperty().GetIsPrimitiveArray())
         {
         constraintsJson.AddMember("minOccurs", rapidjson::Value(property.GetProperty().GetAsPrimitiveArrayProperty()->GetMinOccurs()), json.GetAllocator());
-        constraintsJson.AddMember("maxOccurs", rapidjson::Value(property.GetProperty().GetAsPrimitiveArrayProperty()->GetStoredMaxOccurs()), json.GetAllocator());
+        if (!property.GetProperty().GetAsPrimitiveArrayProperty()->IsStoredMaxOccursUnbounded())
+            {
+            constraintsJson.AddMember("maxOccurs", rapidjson::Value(property.GetProperty().GetAsPrimitiveArrayProperty()->GetStoredMaxOccurs()), json.GetAllocator());
+            }
         }
     else if (property.GetProperty().GetIsPrimitive() && (property.GetProperty().GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Integer || property.GetProperty().GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Long || property.GetProperty().GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Double))
         {
