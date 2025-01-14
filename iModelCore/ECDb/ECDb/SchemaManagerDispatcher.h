@@ -331,6 +331,7 @@ struct SchemaManager::Dispatcher final
         MainSchemaManager const& Main() const { BeAssert(m_main != nullptr); return *m_main; }
         BentleyStatus AddManager(DbTableSpace const&) const;
         BentleyStatus RemoveManager(DbTableSpace const&) const;
+        bool ExistsManager(Utf8StringCR tableSpace) const;
         bool OwnsSchema(ECN::ECSchemaCR schema) const;
         bvector<ECN::ECSchemaCP> GetSchemas(bool loadSchemaEntities, Utf8CP tableSpace) const;
         ECN::ECSchemaPtr LocateSchema(ECN::SchemaKeyR, ECN::SchemaMatchType, ECN::ECSchemaReadContextR, Utf8CP tableSpace) const;

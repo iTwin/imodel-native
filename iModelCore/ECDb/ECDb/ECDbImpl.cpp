@@ -263,6 +263,7 @@ void ECDb::Impl::RegisterECSqlPragmas() const
     GetPragmaManager().Register(PragmaExperimentalFeatures::Create());
     GetPragmaManager().Register(PragmaParseTree::Create());
     GetPragmaManager().Register(PragmaPurgeOrphanRelationships::Create());
+    GetPragmaManager().Register(PragmaDbList::Create());
     }
 
 //--------------------------------------------------------------------------------------
@@ -271,7 +272,7 @@ void ECDb::Impl::RegisterECSqlPragmas() const
 DbResult ECDb::Impl::OnDbAttached(Utf8CP dbFileName, Utf8CP tableSpaceName) const {
     auto tryGetProfileVersion = [&](ProfileVersion& ver) {
         Statement stmt;
-        auto rc = stmt.Prepare(m_ecdb, "SELECT [StrData] FROM [%s].[be_Prop] WHERE [Namespace]='ec_Db' AND [Name] ='SchemaVersion'");
+        auto rc = stmt.Prepare(m_ecdb, SqlPrintfString("SELECT [StrData] FROM [%s].[be_Prop] WHERE [Namespace]='ec_Db' AND [Name] ='SchemaVersion'", tableSpaceName).GetUtf8CP());
         if (rc != BE_SQLITE_OK) {
             return false;
         }
