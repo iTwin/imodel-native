@@ -50,7 +50,6 @@ describe("cloud sqlite", () => {
     expect(container.accessToken).equal(newToken);
 
     const notAttached = "container not connected to cache";
-    // eslint-disable-next-line @typescript-eslint/promise-function-async
     expect(() => container.acquireWriteLock("test 1")).to.throw(notAttached);
     expect(() => container.releaseWriteLock()).to.throw(notAttached);
     // eslint-disable-next-line @typescript-eslint/promise-function-async
