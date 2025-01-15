@@ -27,8 +27,6 @@
 #include <sys/select.h>
 #endif
 
-#define ENABLE_CURLX_PRINTF
-/* use our own printf() functions */
 #include "curlx.h"
 
 #include "tool_cfgable.h"
@@ -154,5 +152,5 @@ int tool_readbusy_cb(void *clientp,
       tool_go_sleep(25);
   }
 
-  return per->noprogress? 0 : CURL_PROGRESSFUNC_CONTINUE;
+  return per->noprogress ? 0 : CURL_PROGRESSFUNC_CONTINUE;
 }

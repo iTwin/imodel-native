@@ -1415,6 +1415,9 @@ DEllipse3d DEllipse3d::FromPointsOnArc (DPoint3dCR start, DPoint3dCR middle, DPo
     return ellipse;
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
 ValidatedDEllipse3d DEllipse3d::FromStartTangentNormalRadiusSweep
 (
 DPoint3dCR pointA,
@@ -1433,9 +1436,7 @@ double sweepRadians
     DPoint3d center = DPoint3d::FromSumOf (pointA, vector0, -1.0);
     return ValidatedDEllipse3d (
         DEllipse3d::FromVectors (center, vector0, vector90, 0.0, sweepRadians), true);
-
     }
-
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -1734,8 +1735,8 @@ void DEllipse3d::InitFromPoints
 DPoint3dCR center0,
 DPoint3dCR point0,
 DPoint3dCR point90,
-double          startRadiansIn,
-double          sweepIn
+double     startRadiansIn,
+double     sweepIn
 
 )
     {
@@ -1749,23 +1750,13 @@ double          sweepIn
 
 
 /*-----------------------------------------------------------------*//**
-@description Initialize an elliptical arc from 3 points.
-
- @param [out] pEllipse initialized ellipse
- @param [in] start start point
- @param [in] middle mid point
- @param [in] end end point
- @return true if the three points are valid, false if colinear.
- @group "DEllipse3d Initialization"
  @bsimethod
 +----------------------------------------------------------------------*/
 bool DEllipse3d::InitFromPointsOnArc
 (
-
 DPoint3dCR startPoint,
 DPoint3dCR middle,
 DPoint3dCR end
-
 )
     {
     DVec3d normal;
@@ -1800,10 +1791,46 @@ DPoint3dCR end
     return false;
     }
 
+/*--------------------------------------------------------------------------------**//**
+ @bsimethod
++--------------------------------------------------------------------------------------*/
+bool DEllipse3d::InitFromPointsOnAxisAndArc
+(
+DPoint3dCR start,
+DPoint3dCR middle,
+DPoint3dCR end,
+double theta0,
+double sweep
+)
+    {
+    DVec3d vector0, vector1, vector90;
+    DPoint3d center;
+    DPoint3d origin = DPoint3d::From(0, 0, 0);
+    DVec3d normal;
+    double v90Len;
 
+    center.SumOf(origin, start, 0.5, end, 0.5);
+    vector0.DifferenceOf(start, center);
+    vector1.DifferenceOf(middle, center);
+    double v0DotV1 = vector0.DotProduct(vector1);
+    double v0Len2 = vector0.MagnitudeSquared();
+
+    if (fabs(v0DotV1) >= v0Len2)
+        return false; // middle point projects to end of axis or beyond (rules out negative under the radical below)
+    normal.CrossProduct(vector0, vector1);
+    vector90.NormalizedCrossProduct(normal, vector0);
+    double v1DotV90 = vector1.DotProduct(vector90);
+    // solve the standard ellipse equation for the unknown axis length, given local coords of middle (v0.v1/||v0||, v90.v1)
+    DoubleOps::SafeDivideDistance(v90Len, v0Len2 * v1DotV90, sqrt(v0Len2 * v0Len2 - v0DotV1 * v0DotV1), 0);
+    if (fabs(v90Len) <= 1.0e-12) // tighter than smallMetricDistance to allow flatter long elliptical arcs
+        return false;
+    vector90.ScaleToLength(v90Len);
+    InitFromVectors(center, vector0, vector90, theta0, sweep);
+    return true;
+    }
 
 /*-----------------------------------------------------------------*//**
-@description Initialize a circlular arc from start point, end point, another vector which
+@description Initialize a circular arc from start point, end point, another vector which
   determines the plane, and the arc length.
 
  @param [out] pEllipse initialized ellipse
