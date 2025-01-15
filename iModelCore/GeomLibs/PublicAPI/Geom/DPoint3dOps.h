@@ -904,6 +904,9 @@ static bool GEOMDLLIMPEXP InCircleXY(DPoint3d const &pointA, DPoint3d const &poi
 
 //! @description return a tolerance as an absolute tolerance plus relative tolerance times largest xy-coordinate.
 static double GEOMDLLIMPEXP ToleranceXY (bvector<DPoint3d> const& data, double absTol, double relTol);
+
+//! @description return an area tolerance for a given xy-range and optional distance tolerance.
+static double AreaToleranceXY(DRange3dCR range, double distanceTolerance);
 };
 
 //! @description Operations in which an array of points is understood to be connected as a polyline (but not closed as a polygon).
@@ -1493,6 +1496,29 @@ public: static GEOMDLLIMPEXP DVec3d AreaNormal (bvector<DPoint3d> const &xyz, si
 //!
 public: static GEOMDLLIMPEXP bool IsConvex (bvector<DPoint3d> const &xyz);
 
+//!
+//! Decompose a polygon into convex parts.
+//! First perform an xy-triangulation, then remove edges to form maximally convex ccw faces.
+//! @param [out] indices one-based, signed indices of convex face loops into which the input polygon is decomposed. Face loops are separated by 0. Interior edges are negated.
+//! @param [out] xyzOut array of the (copied) input vertices, appended with input polygon self-intersections, if any.
+//! @param [in]  xyzIn array of vertices of the polygon to decompose. May contain hole loops, separated by disconnect. For best usage, caller should transform into local coordinates first, since z is ignored.
+//! @param [in]  xyTol xy-coordinate tolerance for detecting duplicate polygon vertices, or negative to compute from range (default)
+//! @see FixupAndTriangulateLoopsXY
+//! @return number of convex parts, or zero if invalid input
+//!
+static GEOMDLLIMPEXP size_t SplitToConvexPartsXY(bvector<int>& indices, bvector<DPoint3d>& xyzOut, bvector<DPoint3d> const& xyzIn, double xyTol = -1.0);
+
+//!
+//! Sort and reorient polygons by containment and parity.
+//! * Computations ignore z-coordinates, but they are carried through to output. For best results, input polygons should contain no vertically separated vertices.
+//! * Input loops may intersect or even self-intersect.
+//! * A Boolean union operation is performed on a graph formed from the inputs, then the graph is flooded from the exterior face to mark void regions via a parity rule. This algorithm finds islands in holes, and holes in islands.
+//! @param [out] outerLoops array of CCW polygons bounding area.
+//! @param [out] holeLoops array of CW polygons bounding void.
+//! @param [in] inputLoops array of polygons, closure point optional, any orientation.
+//! @param [in] xyTol absolute tolerance for clustering xy-coordinates of polygon vertices, or negative to use 1.0e-8 times the largest polygon xy-coordinate (default).
+//!
+static GEOMDLLIMPEXP void CollectAllLoopsXY(bvector<bvector<DPoint3d>>& outerLoops, bvector<bvector<DPoint3d>>& holeLoops, bvector<bvector<DPoint3d>> const& inputLoops, double xyTol = -1.0);
 
 //!
 //! Triangulate a single xy polygon. Triangulation preserves original indices.
