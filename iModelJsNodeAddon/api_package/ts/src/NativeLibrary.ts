@@ -3,8 +3,8 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 
-import * as os from "os";
-import * as path from "path";
+import * as os from "node:os";
+import * as path from "node:path";
 
 import type { NativeCloudSqlite } from "./NativeCloudSqlite";
 
@@ -86,9 +86,9 @@ export class NativeLibrary {
   // This returns true if you used `linkNativePlatform.bat` to install your local addon build.
   public static get isDevBuild(): boolean {
     try {
-      require("./devbuild.json");
+      require.resolve("./devbuild.json");
       return true;
-    } catch (_e) {
+    } catch {
       return false;
     }
   }
@@ -103,7 +103,8 @@ export class NativeLibrary {
         if (platform === "ios" || platform === "android") {
           this._nativeLib = (process as any)._linkedBinding("iModelJsNative") as typeof IModelJsNative;
         } else {
-          this._nativeLib = require(`./${NativeLibrary.archName}/${NativeLibrary.nodeAddonName}`) as typeof IModelJsNative; // eslint-disable-line @typescript-eslint/no-var-requires
+          this._nativeLib =
+            require(`./${NativeLibrary.archName}/${NativeLibrary.nodeAddonName}`) as typeof IModelJsNative; // eslint-disable-line @typescript-eslint/no-require-imports
         }
       } catch (err: any) {
         err.message += "\nThis error may occur when trying to run an iTwin.js backend without"
@@ -192,7 +193,6 @@ export declare namespace IModelJsNative {
     params?: NameValuePair[];
   }
 
-  const version: string;
   let logger: NativeLogger;
   function setMaxTileCacheSize(maxBytes: number): void;
   function getTileVersionInfo(): TileVersionInfo;
@@ -1361,7 +1361,7 @@ export declare namespace IModelJsNative {
 
   class ECSchemaXmlContext {
     constructor();
-    public addSchemaPath(path: string): void;
+    public addSchemaPath(schemaPath: string): void;
     public setSchemaLocater(locater: ECSchemaXmlContext.SchemaLocaterCallback): void;
     public setFirstSchemaLocater(locater: ECSchemaXmlContext.SchemaLocaterCallback): void;
     public readSchemaFromXmlFile(filePath: string): ErrorStatusOrResult<BentleyStatus, string>;
