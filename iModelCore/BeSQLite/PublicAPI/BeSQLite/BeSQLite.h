@@ -439,7 +439,7 @@ ENUM_IS_FLAGS(DbDeserializeOptions)
 //=======================================================================================
 enum StatementState
 {
-    // The first four values should be in accordance with sqlite3.c #define values with the same names
+    // The first four values are in accordance with sqlite3.c
     VDBE_INIT_STATE          = 0,   //!< Prepared statement under construction
     VDBE_READY_STATE         = 1,   //!< Ready to run but not yet started
     VDBE_RUN_STATE           = 2,   //!< Run in progress
