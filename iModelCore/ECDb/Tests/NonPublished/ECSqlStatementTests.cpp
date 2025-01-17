@@ -1556,6 +1556,8 @@ TEST_F(ECSqlStatementTestFixture, UseOfWrongPropertyTags_ForAllVersions)
         {
         ECSchemaPtr schema;
         const auto context = ECSchemaReadContext::CreateContext();
+
+        //Below schema uses ECProperty tag for Struct property which is wrong. It should use ECStructProperty tag.
         Utf8CP xmlSchema = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.%d.%d">
                                     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap" />
                                         <ECStructClass typeName="PrimStruct">
@@ -1568,7 +1570,6 @@ TEST_F(ECSqlStatementTestFixture, UseOfWrongPropertyTags_ForAllVersions)
                                         </ECEntityClass>
                                 </ECSchema>)xml";
 
-        // Schema should always be deserialized successfully irrespective of the ECXml version
         if (testCaseNumber == 1)
             {
             //Below schema uses ECProperty tag for Struct property which is wrong. It should use ECStructProperty tag.
