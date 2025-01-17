@@ -684,7 +684,7 @@ void ECSqlExpPreparer::RemovePropertyRefs(ECSqlPrepareContext& ctx, ClassRefExp 
         if (propertyNameExp->IsPropertyRef())
             continue;
         if (propertyNameExp->IsVirtualProperty())
-            break;
+            continue;
 
         const RangeClassRefExp* classRefExp = propertyNameExp->GetClassRefExp();
         if (&exp == classRefExp)
