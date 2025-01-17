@@ -348,20 +348,23 @@ struct QueryResponse : std::enable_shared_from_this<QueryResponse> {
             static constexpr auto kTimeLimit = "timeLimit";
             static constexpr auto kMemLimit = "memLimit";
             static constexpr auto kMemUsed = "memUsed";
+            static constexpr auto kPrepareTime = "prepareTime";
             std::chrono::microseconds m_cpuTime;
             std::chrono::milliseconds m_totalTime;
             std::chrono::milliseconds m_timeLimit;
+            std::chrono::milliseconds m_prepareTime;
             uint32_t m_memLimit;
             uint32_t m_memUsed;
         public:
-            Stats():m_cpuTime(0ms),m_totalTime(0ms), m_timeLimit(0ms),m_memLimit(0), m_memUsed(0){}
-            Stats(std::chrono::microseconds cpuTime, std::chrono::milliseconds totalTime, uint32_t memUsed, QueryQuota const& quota):
+            Stats():m_cpuTime(0ms),m_totalTime(0ms), m_timeLimit(0ms),m_memLimit(0), m_memUsed(0),m_prepareTime(0){}
+            Stats(std::chrono::microseconds cpuTime, std::chrono::milliseconds totalTime, uint32_t memUsed, QueryQuota const& quota, std::chrono::milliseconds prepareTime):
                 m_cpuTime(cpuTime), m_totalTime(totalTime),m_memLimit(quota.MaxMemoryAllowed()),m_memUsed(memUsed),
-                m_timeLimit(std::chrono::duration_cast<std::chrono::milliseconds>(quota.MaxTimeAllowed())){}
+                m_timeLimit(std::chrono::duration_cast<std::chrono::milliseconds>(quota.MaxTimeAllowed())), m_prepareTime(prepareTime){}
             virtual ~Stats(){}
             std::chrono::microseconds CpuTime() const { return m_cpuTime;}
             std::chrono::milliseconds TotalTime() const { return m_totalTime;}
             std::chrono::milliseconds TimeLimit() const { return m_timeLimit;}
+            std::chrono::milliseconds PrepareTime() const { return m_prepareTime;}
             uint32_t MemLimit() const { return m_memLimit;}
             uint32_t MemUsed() const { return m_memUsed;}
             ECDB_EXPORT void ToJs(BeJsValue&) const;
@@ -473,34 +476,65 @@ struct ConcurrentQueryMgr final {
          static constexpr auto JIgnorePriority = "ignorePriority";
          static constexpr auto JQuota = "globalQuota";
          static constexpr auto JIgnoreDelay = "ignoreDelay";
-        private:
-            QueryQuota m_quota;
-            uint32_t m_workerThreadCount;
-            uint32_t m_requestQueueSize;
-            bool m_ignorePriority;
-            bool m_ignoreDelay;
-            static Config From(std::string const& json);
-        public:
-            ECDB_EXPORT Config();
-            ECDB_EXPORT bool Equals(Config const& rhs) const;
-            bool operator == (Config const& rhs) { return Equals(rhs);}
-            QueryQuota const& GetQuota() const { return m_quota;}
-            uint32_t GetWorkerThreadCount() const{ return m_workerThreadCount;}
-            uint32_t GetRequestQueueSize() const{ return m_requestQueueSize;}
-            bool GetIgnorePriority() const {return m_ignorePriority; }
-            bool GetIgnoreDelay() const {return m_ignoreDelay; }
-            Config& SetIgnoreDelay(bool ignoreDelay) { m_ignoreDelay = ignoreDelay; return *this; }
-            Config& SetQuota(QueryQuota const& quota) { m_quota = quota; return *this; }
-            Config& SetWorkerThreadCount(uint32_t workerThreadCount) { m_workerThreadCount = workerThreadCount; return *this;}
-            Config& SetRequestQueueSize(uint32_t requestQueueSize) { m_requestQueueSize = requestQueueSize; return *this;}
-            Config& SetIgnorePriority(bool ignorePriority) { m_ignorePriority = ignorePriority; return *this;}
-            bool IsDefault() const { return this == &Config::GetDefault() || Config::GetDefault().Equals(*this);}
-            ECDB_EXPORT static Config const& GetDefault();
-            ECDB_EXPORT static Config GetFromEnv();
-            //ECDB_EXPORT static Config& GetInstance();
-            ECDB_EXPORT static Config From(BeJsValue);
-            ECDB_EXPORT void To(BeJsValue) const;
-            void Reset() { *this = GetDefault(); }
+         static constexpr auto JDoNotUsePrimaryConnToPrepare = "doNotUsePrimaryConnToPrepare";
+         static constexpr auto JAutoShutdowWhenIdealForSeconds = "autoShutdowWhenIdealForSeconds";
+         static constexpr auto JStatementCacheSizePerWorker = "statementCacheSizePerWorker";
+         static constexpr auto JMonitorPollInterval = "monitorPollInterval";
+         static constexpr auto JMemoryMapFileSize = "memoryMapFileSize";
+
+     private:
+         QueryQuota m_quota;
+         uint32_t m_workerThreadCount;
+         uint32_t m_requestQueueSize;
+         bool m_ignorePriority;
+         bool m_ignoreDelay;
+         bool m_doNotUsePrimaryConnToPrepare;
+         uint32_t m_statementCacheSizePerWorker;
+         std::chrono::milliseconds m_monitorPollInterval;
+         std::chrono::seconds m_autoShutdowWhenIdealForSeconds;
+         static Config From(std::string const& json);
+         uint32_t m_memoryMapFileSize;
+     public:
+        ECDB_EXPORT Config();
+        ECDB_EXPORT bool Equals(Config const& rhs) const;
+        bool operator==(Config const& rhs) { return Equals(rhs); }
+        QueryQuota const& GetQuota() const { return m_quota; }
+        uint32_t GetWorkerThreadCount() const { return m_workerThreadCount; }
+        uint32_t GetRequestQueueSize() const { return m_requestQueueSize; }
+        bool GetIgnorePriority() const { return m_ignorePriority; }
+        bool GetIgnoreDelay() const { return m_ignoreDelay; }
+        bool GetDoNotUsePrimaryConnToPrepare() const { return m_doNotUsePrimaryConnToPrepare; }
+        std::chrono::milliseconds GetMonitorPollInterval() const { return m_monitorPollInterval; }
+        uint32_t GetStatementCacheSizePerWorker() const { return m_statementCacheSizePerWorker; }
+        std::chrono::seconds GetAutoShutdowWhenIdealForSeconds() const { return m_autoShutdowWhenIdealForSeconds; }
+        uint32_t GetMemoryMapFileSize() const { return m_memoryMapFileSize; }
+        Config& SetIgnoreDelay(bool ignoreDelay) {
+            m_ignoreDelay = ignoreDelay;
+            return *this;
+        }
+        Config& SetMonitorPollInterval(std::chrono::milliseconds monitorPollInterval) {
+            m_monitorPollInterval = monitorPollInterval;
+            return *this;
+        }
+        Config& SetMemoryMapFileSize(uint32_t memoryMapFileSize) {
+            m_memoryMapFileSize = memoryMapFileSize;
+            return *this;
+        }
+        Config& SetQuota(QueryQuota const& quota) { m_quota = quota; return *this; }
+        Config& SetWorkerThreadCount(uint32_t workerThreadCount) { m_workerThreadCount = workerThreadCount; return *this;}
+        Config& SetRequestQueueSize(uint32_t requestQueueSize) { m_requestQueueSize = requestQueueSize; return *this;}
+        Config& SetIgnorePriority(bool ignorePriority) { m_ignorePriority = ignorePriority; return *this;}
+        Config& SetDoNotUsePrimaryConnToPrepare(bool doNotUsePrimaryConnToPrepare) { m_doNotUsePrimaryConnToPrepare = doNotUsePrimaryConnToPrepare; return *this;}
+        Config& SetAutoShutdowWhenIdealForSeconds(std::chrono::seconds autoShutdowWhenIdealForSeconds) { m_autoShutdowWhenIdealForSeconds = autoShutdowWhenIdealForSeconds; return *this;}
+        Config& SetStatementCacheSizePerWorker(uint32_t statementCacheSizePerWorker) { m_statementCacheSizePerWorker = statementCacheSizePerWorker; return *this;}
+
+        bool IsDefault() const { return this == &Config::GetDefault() || Config::GetDefault().Equals(*this);}
+        ECDB_EXPORT static Config const& GetDefault();
+        ECDB_EXPORT static Config GetFromEnv();
+        //ECDB_EXPORT static Config& GetInstance();
+        ECDB_EXPORT static Config From(BeJsValue);
+        ECDB_EXPORT void To(BeJsValue) const;
+        void Reset() { *this = GetDefault(); }
     };
     public:
         struct Impl; // prevent circular dependency on ECDb
