@@ -618,5 +618,192 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     }
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetWithJOINS) {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("IdSet_with_JOINS.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema' alias='ts' version='10.10.10' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='A' >
+            <ECProperty propertyName="str_prop" typeName="string" />
+            <ECProperty propertyName="int_prop" typeName="int" />
+        </ECEntityClass>
+        </ECSchema>)xml")));
+    std::vector<BeInt64Id> listOfIds;
+    std::vector<Utf8CP> listOfStringVal = {"str1", "str2", "str3", "str4","str5", "str6", "str7", "str8", "str9", "str10"};
+    ECSqlStatement insertStmt;
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ts.A(str_prop, int_prop) VALUES(?,?)"));
+    for(int i =1;i<=10;i++)
+    {
+        insertStmt.BindText(1, listOfStringVal[i-1], IECSqlBinder::MakeCopy::No);
+        insertStmt.BindInt(2, i);
+        ECInstanceKey key;
+        if(insertStmt.Step(key) != BE_SQLITE_DONE)
+            break;
+        listOfIds.push_back((BeInt64Id)key.GetInstanceId());
+        insertStmt.ClearBindings();
+        insertStmt.Reset();
+    }
+    ASSERT_EQ(10, listOfIds.size());
+    if("testing normal joins with IdSet")
+    {
+        ECSqlStatement selectStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selectStmt.Prepare(m_ecdb, "Select test.str_prop, test.int_prop, v.id from ts.A test JOIN ECVLib.IdSet(?) v on test.ECInstanceId = v.id"));
+        IECSqlBinder& binder = selectStmt.GetBinder(1);
+        ASSERT_EQ(ECSqlStatus::Success,binder.AddArrayElement().BindId(listOfIds[3]));
+        ASSERT_EQ(ECSqlStatus::Success,binder.AddArrayElement().BindId(listOfIds[6]));
+        ASSERT_EQ(ECSqlStatus::Success,binder.AddArrayElement().BindId(listOfIds[7]));
+        ASSERT_STREQ("str_prop", selectStmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("int_prop", selectStmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("id", selectStmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, selectStmt.Step());
+        ASSERT_STREQ("str4", selectStmt.GetValueText(0)) << "str_prop";
+        ASSERT_EQ(4, selectStmt.GetValueInt(1)) << "int_prop";
+        ASSERT_EQ(listOfIds[3], selectStmt.GetValueId<BeInt64Id>(2)) << "id";
+
+        ASSERT_EQ(BE_SQLITE_ROW, selectStmt.Step());
+        ASSERT_STREQ("str7", selectStmt.GetValueText(0)) << "str_prop";
+        ASSERT_EQ(7, selectStmt.GetValueInt(1)) << "int_prop";
+        ASSERT_EQ(listOfIds[6], selectStmt.GetValueId<BeInt64Id>(2)) << "id";
+
+        ASSERT_EQ(BE_SQLITE_ROW, selectStmt.Step());
+        ASSERT_STREQ("str8", selectStmt.GetValueText(0)) << "str_prop";
+        ASSERT_EQ(8, selectStmt.GetValueInt(1)) << "int_prop";
+        ASSERT_EQ(listOfIds[7], selectStmt.GetValueId<BeInt64Id>(2)) << "id";
+
+        ASSERT_EQ(BE_SQLITE_DONE, selectStmt.Step());
+
+        ASSERT_STREQ("SELECT [test].[str_prop],[test].[int_prop],v.id FROM (SELECT [Id] ECInstanceId,88 ECClassId,[str_prop],[int_prop] FROM [main].[ts_A]) [test] INNER JOIN IdSet(:_ecdb_sqlparam_ix1_col1) v ON [test].[ECInstanceId]=v.id ", selectStmt.GetNativeSql());
+    }
+    if("testing inner join with IdSet")
+    {
+        ECSqlStatement selectStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selectStmt.Prepare(m_ecdb, "Select test.str_prop, test.int_prop, v.id from ts.A test INNER JOIN ECVLib.IdSet(?) v on test.ECInstanceId = v.id"));
+        IECSqlBinder& binder = selectStmt.GetBinder(1);
+        ASSERT_EQ(ECSqlStatus::Success,binder.AddArrayElement().BindId(listOfIds[3]));
+        ASSERT_EQ(ECSqlStatus::Success,binder.AddArrayElement().BindId(listOfIds[6]));
+        ASSERT_EQ(ECSqlStatus::Success,binder.AddArrayElement().BindId(listOfIds[7]));
+        ASSERT_STREQ("str_prop", selectStmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("int_prop", selectStmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("id", selectStmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, selectStmt.Step());
+        ASSERT_STREQ("str4", selectStmt.GetValueText(0)) << "str_prop";
+        ASSERT_EQ(4, selectStmt.GetValueInt(1)) << "int_prop";
+        ASSERT_EQ(listOfIds[3], selectStmt.GetValueId<BeInt64Id>(2)) << "id";
+
+        ASSERT_EQ(BE_SQLITE_ROW, selectStmt.Step());
+        ASSERT_STREQ("str7", selectStmt.GetValueText(0)) << "str_prop";
+        ASSERT_EQ(7, selectStmt.GetValueInt(1)) << "int_prop";
+        ASSERT_EQ(listOfIds[6], selectStmt.GetValueId<BeInt64Id>(2)) << "id";
+
+        ASSERT_EQ(BE_SQLITE_ROW, selectStmt.Step());
+        ASSERT_STREQ("str8", selectStmt.GetValueText(0)) << "str_prop";
+        ASSERT_EQ(8, selectStmt.GetValueInt(1)) << "int_prop";
+        ASSERT_EQ(listOfIds[7], selectStmt.GetValueId<BeInt64Id>(2)) << "id";
+
+        ASSERT_EQ(BE_SQLITE_DONE, selectStmt.Step());
+        ASSERT_STREQ("SELECT [test].[str_prop],[test].[int_prop],v.id FROM (SELECT [Id] ECInstanceId,88 ECClassId,[str_prop],[int_prop] FROM [main].[ts_A]) [test] INNER JOIN IdSet(:_ecdb_sqlparam_ix1_col1) v ON [test].[ECInstanceId]=v.id ", selectStmt.GetNativeSql());
+    }
+    if("testing right outer join with IdSet")
+    {
+        ECSqlStatement selectStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selectStmt.Prepare(m_ecdb, "Select test.str_prop, test.int_prop, v.id from ts.A test RIGHT OUTER JOIN ECVLib.IdSet(?) v on test.ECInstanceId = v.id"));
+        IECSqlBinder& binder = selectStmt.GetBinder(1);
+        ASSERT_EQ(ECSqlStatus::Success,binder.AddArrayElement().BindId(listOfIds[3]));
+        ASSERT_EQ(ECSqlStatus::Success,binder.AddArrayElement().BindId(listOfIds[6]));
+        ASSERT_EQ(ECSqlStatus::Success,binder.AddArrayElement().BindId(listOfIds[7]));
+        ASSERT_STREQ("str_prop", selectStmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("int_prop", selectStmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("id", selectStmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        ASSERT_EQ(BE_SQLITE_ROW, selectStmt.Step());
+        ASSERT_STREQ("str4", selectStmt.GetValueText(0)) << "str_prop";
+        ASSERT_EQ(4, selectStmt.GetValueInt(1)) << "int_prop";
+        ASSERT_EQ(listOfIds[3], selectStmt.GetValueId<BeInt64Id>(2)) << "id";
+
+        ASSERT_EQ(BE_SQLITE_ROW, selectStmt.Step());
+        ASSERT_STREQ("str7", selectStmt.GetValueText(0)) << "str_prop";
+        ASSERT_EQ(7, selectStmt.GetValueInt(1)) << "int_prop";
+        ASSERT_EQ(listOfIds[6], selectStmt.GetValueId<BeInt64Id>(2)) << "id";
+
+        ASSERT_EQ(BE_SQLITE_ROW, selectStmt.Step());
+        ASSERT_STREQ("str8", selectStmt.GetValueText(0)) << "str_prop";
+        ASSERT_EQ(8, selectStmt.GetValueInt(1)) << "int_prop";
+        ASSERT_EQ(listOfIds[7], selectStmt.GetValueId<BeInt64Id>(2)) << "id";
+
+        ASSERT_EQ(BE_SQLITE_DONE, selectStmt.Step());
+        ASSERT_STREQ("SELECT [test].[str_prop],[test].[int_prop],v.id FROM (SELECT [Id] ECInstanceId,88 ECClassId,[str_prop],[int_prop] FROM [main].[ts_A]) [test] RIGHT OUTER JOIN IdSet(:_ecdb_sqlparam_ix1_col1) v ON [test].[ECInstanceId]=v.id ", selectStmt.GetNativeSql());
+    }
+    if("testing left outer join with IdSet")
+    {
+        ECSqlStatement selectStmt;
+        ASSERT_EQ(ECSqlStatus::Success, selectStmt.Prepare(m_ecdb, "Select test.str_prop, test.int_prop, v.id from ts.A test LEFT OUTER JOIN ECVLib.IdSet(?) v on test.ECInstanceId = v.id"));
+        IECSqlBinder& binder = selectStmt.GetBinder(1);
+        ASSERT_EQ(ECSqlStatus::Success,binder.AddArrayElement().BindId(listOfIds[3]));
+        ASSERT_EQ(ECSqlStatus::Success,binder.AddArrayElement().BindId(listOfIds[6]));
+        ASSERT_EQ(ECSqlStatus::Success,binder.AddArrayElement().BindId(listOfIds[7]));
+        ASSERT_STREQ("str_prop", selectStmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("int_prop", selectStmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("id", selectStmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        
+        ASSERT_EQ(BE_SQLITE_ROW, selectStmt.Step());
+        ASSERT_STREQ("str1", selectStmt.GetValueText(0)) << "str_prop";
+        ASSERT_EQ(1, selectStmt.GetValueInt(1)) << "int_prop";
+        ASSERT_EQ(selectStmt.IsValueNull(2), true) << "id";
+
+        ASSERT_EQ(BE_SQLITE_ROW, selectStmt.Step());
+        ASSERT_STREQ("str2", selectStmt.GetValueText(0)) << "str_prop";
+        ASSERT_EQ(2, selectStmt.GetValueInt(1)) << "int_prop";
+        ASSERT_EQ(selectStmt.IsValueNull(2), true) << "id";
+
+        ASSERT_EQ(BE_SQLITE_ROW, selectStmt.Step());
+        ASSERT_STREQ("str3", selectStmt.GetValueText(0)) << "str_prop";
+        ASSERT_EQ(3, selectStmt.GetValueInt(1)) << "int_prop";
+        ASSERT_EQ(selectStmt.IsValueNull(2), true) << "id";
+
+        ASSERT_EQ(BE_SQLITE_ROW, selectStmt.Step());
+        ASSERT_STREQ("str4", selectStmt.GetValueText(0)) << "str_prop";
+        ASSERT_EQ(4, selectStmt.GetValueInt(1)) << "int_prop";
+        ASSERT_EQ(listOfIds[3], selectStmt.GetValueId<BeInt64Id>(2)) << "id";
+
+        ASSERT_EQ(BE_SQLITE_ROW, selectStmt.Step());
+        ASSERT_STREQ("str5", selectStmt.GetValueText(0)) << "str_prop";
+        ASSERT_EQ(5, selectStmt.GetValueInt(1)) << "int_prop";
+        ASSERT_EQ(selectStmt.IsValueNull(2), true) << "id";
+
+        ASSERT_EQ(BE_SQLITE_ROW, selectStmt.Step());
+        ASSERT_STREQ("str6", selectStmt.GetValueText(0)) << "str_prop";
+        ASSERT_EQ(6, selectStmt.GetValueInt(1)) << "int_prop";
+        ASSERT_EQ(selectStmt.IsValueNull(2), true) << "id";
+
+        ASSERT_EQ(BE_SQLITE_ROW, selectStmt.Step());
+        ASSERT_STREQ("str7", selectStmt.GetValueText(0)) << "str_prop";
+        ASSERT_EQ(7, selectStmt.GetValueInt(1)) << "int_prop";
+        ASSERT_EQ(listOfIds[6], selectStmt.GetValueId<BeInt64Id>(2)) << "id";
+
+        ASSERT_EQ(BE_SQLITE_ROW, selectStmt.Step());
+        ASSERT_STREQ("str8", selectStmt.GetValueText(0)) << "str_prop";
+        ASSERT_EQ(8, selectStmt.GetValueInt(1)) << "int_prop";
+        ASSERT_EQ(listOfIds[7], selectStmt.GetValueId<BeInt64Id>(2)) << "id";
+
+        ASSERT_EQ(BE_SQLITE_ROW, selectStmt.Step());
+        ASSERT_STREQ("str9", selectStmt.GetValueText(0)) << "str_prop";
+        ASSERT_EQ(9, selectStmt.GetValueInt(1)) << "int_prop";
+        ASSERT_EQ(selectStmt.IsValueNull(2), true) << "id";
+
+        ASSERT_EQ(BE_SQLITE_ROW, selectStmt.Step());
+        ASSERT_STREQ("str10", selectStmt.GetValueText(0)) << "str_prop";
+        ASSERT_EQ(10, selectStmt.GetValueInt(1)) << "int_prop";
+        ASSERT_EQ(selectStmt.IsValueNull(2), true) << "id";
+
+        ASSERT_EQ(BE_SQLITE_DONE, selectStmt.Step());
+        ASSERT_STREQ("SELECT [test].[str_prop],[test].[int_prop],v.id FROM (SELECT [Id] ECInstanceId,88 ECClassId,[str_prop],[int_prop] FROM [main].[ts_A]) [test] LEFT OUTER JOIN IdSet(:_ecdb_sqlparam_ix1_col1) v ON [test].[ECInstanceId]=v.id ", selectStmt.GetNativeSql());
+    }
+    if("testing left outer join with IdSet")
+    {
+        ECSqlStatement selectStmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, selectStmt.Prepare(m_ecdb, "Select test.str_prop, test.int_prop, v.id from ts.A test OUTER JOIN ECVLib.IdSet(?) v on test.ECInstanceId = v.id"));
+    }
+}
+
 
 END_ECDBUNITTESTS_NAMESPACE
