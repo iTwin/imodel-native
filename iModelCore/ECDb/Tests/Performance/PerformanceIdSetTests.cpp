@@ -177,4 +177,78 @@ TEST_F(PerformanceIdSetTests, SimpleComparisonBetweenInVirtualSet_and_IdSet_with
             LOGTODB(TEST_DETAILS, timer_IdSet.GetElapsedSeconds(), i, SqlPrintfString("Statement: \"%s\"", stmt_With_IdSet.GetECSql()));
         }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PerformanceIdSetTests, SimpleComparisonBetweenJoinedQuery_and_QueryWithWhereClause_with_IdSet)
+    {
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("SimpleComparisonBetweenJoinedQuery_and_QueryWithWhereClause_with_IdSet.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Foo" >
+                <ECProperty propertyName="UnIndexed_Prop" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+        ECSqlStatement insert_stmt;
+        ASSERT_EQ(ECSqlStatus::Success, insert_stmt.Prepare(m_ecdb, "insert into ts.Foo(UnIndexed_Prop) values(?)"));
+        for(int i = 0;i<1000000;i++)
+        {
+            insert_stmt.ClearBindings();
+            insert_stmt.Reset();
+            int rand = (i+1) % 70000;
+            insert_stmt.BindInt64(1, rand);
+            ASSERT_EQ(BE_SQLITE_DONE, insert_stmt.Step());
+        }
+
+        std::vector<Utf8String> v = {"ECInstanceId", "UnIndexed_Prop"};
+        for(auto& str: v)
+        {
+            ECSqlStatement stmt_With_Join;
+            ECSqlStatement stmt_With_WhereClause;
+            IdSet<BeInt64Id> emptyIdset;
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt_With_Join.Prepare(m_ecdb,SqlPrintfString("select %s from ts.Foo test INNER JOIN ECVLib.IdSet(?) v ON test.%s = v.id group by %s", str.c_str(), str.c_str(), str.c_str())));
+            ASSERT_EQ(ECSqlStatus::Success, stmt_With_WhereClause.Prepare(m_ecdb,SqlPrintfString("select %s from ECVLib.IdSet(?), ts.Foo where %s = id group by %s", str.c_str(), str.c_str(), str.c_str())));
+            
+            IECSqlBinder& binderForJoin = stmt_With_Join.GetBinder(1);
+            for(int i = 0;i<2000;i++)
+            {
+                int randNum = i+1;
+                ASSERT_EQ(ECSqlStatus::Success, binderForJoin.AddArrayElement().BindInt64(randNum));
+                emptyIdset.insert(BeInt64Id(randNum));
+            }
+
+            IECSqlBinder& binderForWhereClause = stmt_With_WhereClause.GetBinder(1);
+            for(int i = 0;i<2000;i++)
+            {
+                int randNum = i+1;
+                ASSERT_EQ(ECSqlStatus::Success, binderForWhereClause.AddArrayElement().BindInt64(randNum));
+            } 
+
+            auto iterator_set = emptyIdset.begin();
+            int i = 0;
+            StopWatch timer_Join_Query(true);
+            while(stmt_With_Join.Step() == BE_SQLITE_ROW)
+            {
+                ASSERT_EQ((*iterator_set).GetValue(), stmt_With_Join.GetValueInt64(0));
+                ++iterator_set;
+                i++;
+            }
+            timer_Join_Query.Stop();
+            LOGTODB(TEST_DETAILS, timer_Join_Query.GetElapsedSeconds(), i, SqlPrintfString("Statement: \"%s\"", stmt_With_Join.GetECSql()));
+
+            iterator_set = emptyIdset.begin();
+            i = 0;
+            StopWatch timer_Query_With_WhereClause(true);
+            while(stmt_With_WhereClause.Step() == BE_SQLITE_ROW)
+            {
+                ASSERT_EQ((*iterator_set).GetValue(), stmt_With_WhereClause.GetValueInt64(0));
+                ++iterator_set;
+                i++;
+            }
+            timer_Query_With_WhereClause.Stop();
+            LOGTODB(TEST_DETAILS, timer_Query_With_WhereClause.GetElapsedSeconds(), i, SqlPrintfString("Statement: \"%s\"", stmt_With_WhereClause.GetECSql()));
+        }
+    }
 END_ECDBUNITTESTS_NAMESPACE
