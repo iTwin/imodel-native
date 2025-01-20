@@ -28,6 +28,7 @@ resources:
       type: github
       endpoint: imodel-native
       name: iTwin/profileversion-tests
+      ref: refs/heads/test-pool
 
     - repository: imodel-native-internal
       type: github
