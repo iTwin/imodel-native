@@ -7,10 +7,10 @@ trigger:
 
 pr:
   autoCancel: true
-  drafts: false
+  drafts: true
   branches:
     include:
-      - main
+      - test-pool-old
 
 parameters:
 - name: defaultNativeBranch
