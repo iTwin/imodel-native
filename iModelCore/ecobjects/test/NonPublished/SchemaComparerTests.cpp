@@ -1121,6 +1121,50 @@ TEST_F(SchemaCompareTest, CompareECClassIdentical)
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+--------
+TEST_F(SchemaComparerXmlTests, CompareSchemasWithWrongPropertyTags)
+    {
+    //Test created for 3.1 version of schema specifically 
+    //to observe defaulting behavior for and when the property tags are wrong
+     bvector<Utf8CP> firstSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+      <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECStructClass typeName="PrimStruct">
+                    <ECProperty propertyName="p2d" typeName="Point2d" />
+                    <ECProperty propertyName="p3d" typeName="Point3d" />
+                </ECStructClass>
+                <ECEntityClass typeName="UseOfWrongPropertyTags">
+                    <ECProperty propertyName="Struct" typeName="PrimStruct" />
+                    <ECStructArrayProperty propertyName="Struct_Array" typeName="PrimStruct" />
+                </ECEntityClass>
+      </ECSchema>)schema"
+      };
+
+    LoadSchemasIntoContext(m_firstContext, firstSchemasXml);
+
+    bvector<Utf8CP> secondSchemasXml {
+      R"schema(<?xml version='1.0' encoding='utf-8' ?>
+      <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECStructClass typeName="PrimStruct">
+                    <ECProperty propertyName="p2d" typeName="Point2d" />
+                    <ECProperty propertyName="p3d" typeName="Point3d" />
+                </ECStructClass>
+                <ECEntityClass typeName="UseOfWrongPropertyTags">
+                    <ECStructProperty propertyName="Struct" typeName="PrimStruct" />
+                    <ECStructArrayProperty propertyName="Struct_Array" typeName="PrimStruct" />
+                </ECEntityClass>
+      </ECSchema>)schema"
+      };
+
+    LoadSchemasIntoContext(m_secondContext, secondSchemasXml);
+    
+    SchemaComparer comparer;
+    SchemaDiff changes;
+    comparer.Compare(changes, m_firstContext->GetCache().GetSchemas(),  m_secondContext->GetCache().GetSchemas());
+    ASSERT_EQ(1, changes.Changes().Count());
+    }
+//----------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+--------
 TEST_F(SchemaCompareTest, CompareECSchemaClassPropertyDescriptionAgainstNull)
     {
     CreateFirstSchema();
