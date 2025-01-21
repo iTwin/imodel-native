@@ -1160,7 +1160,10 @@ TEST_F(SchemaComparerXmlTests, CompareSchemasWithWrongPropertyTags)
     SchemaComparer comparer;
     SchemaDiff changes;
     comparer.Compare(changes, m_firstContext->GetCache().GetSchemas(),  m_secondContext->GetCache().GetSchemas());
-    ASSERT_EQ(1, changes.Changes().Count());
+
+    // We default to string when the property tag is wrong therefore, property change should be observed.
+    auto isPropChanged = changes.Changes()[0].Classes()[0].Properties()[0].IsChanged();
+    ASSERT_TRUE(isPropChanged);
     }
 //----------------------------------------------------------------------------------------
 // @bsimethod
