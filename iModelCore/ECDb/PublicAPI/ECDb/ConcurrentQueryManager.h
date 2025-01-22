@@ -375,6 +375,7 @@ struct QueryResponse : std::enable_shared_from_this<QueryResponse> {
         Partial = 3, // query was running but ran out of quota.
         Timeout = 4, // query time quota expired while it was in queue.
         QueueFull = 5, // could not submit the query as queue was full.
+        ShuttingDown = 6, // shutdown in progress.
         Error = 100, // generic error
         Error_ECSql_PreparedFailed = Error + 1, // ecsql prepared failed
         Error_ECSql_StepFailed = Error + 2, // ecsql step failed

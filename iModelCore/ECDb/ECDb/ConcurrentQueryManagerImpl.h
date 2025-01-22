@@ -18,7 +18,7 @@
 #define DEFAULT_IGNORE_PRIORITY                     false
 #define DEFAULT_IGNORE_DELAY                        true
 #define DEFAULT_DONOT_USE_PRIMARY_CONN_TO_PREPARE   false
-#define DEFAULT_SHUTDOWN_WHEN_IDEAL_FOR_SECONDS     120
+#define DEFAULT_SHUTDOWN_WHEN_IDEAL_FOR_SECONDS     60*2
 #define DEFAULT_MONITOR_POLL_INTERVAL               1000 // ms
 #define DEFAULT_WORKER_THREAD_COUNT                 std::min(4u, std::thread::hardware_concurrency())
 #define DEFAULT_STATEMENT_CACHE_SIZE_PER_WORKER     40
@@ -235,7 +235,7 @@ struct RunnableRequestBase {
         RunnableRequestQueue& GetQueue() { return m_queue;}
         bool IsInterrupted() const { return m_interrupted; }
         void Cancel() { m_cancelled.store(true); }
-        bool IsReady() const { return GetTotalTime() > m_request->GetDelay(); }
+        bool IsReady() const { return GetTotalTime() >= m_request->GetDelay(); }
         bool IsCancelled () const {return m_cancelled.load(); }
         bool IsTimeExceeded() const { return m_quota.MaxTimeAllowed() == 0s ? false : std::chrono::duration_cast<std::chrono::seconds>(GetTotalTime()) >  m_quota.MaxTimeAllowed();}
         bool IsMemoryExceeded(std::string const& result) const { return m_quota.MaxMemoryAllowed() == 0 ? false : result.size() > m_quota.MaxMemoryAllowed(); }
@@ -296,8 +296,8 @@ struct RunnableRequestQueue final {
     };
 
     private:
-        mutex_t m_mutex;
-        std::condition_variable m_cond;
+        recursive_mutex_t m_mutex;
+        std::condition_variable_any m_cond;
         std::atomic<State> m_state;
         uint32_t m_maxQueueSize;
         uint32_t m_nextId;
@@ -305,6 +305,8 @@ struct RunnableRequestQueue final {
         QueryQuota m_quota;
         std::vector<std::unique_ptr<RunnableRequestBase>> m_requests;
         ECDbCR m_ecdb;
+        std::chrono::seconds m_shutdownWhenIdleFor;
+        std::chrono::time_point<std::chrono::steady_clock> m_lastDequeueTime;
 
     private:
         void InsertSorted(ConnectionCache&,std::unique_ptr<RunnableRequestBase>&& request);
@@ -328,8 +330,8 @@ struct RunnableRequestQueue final {
         void Enqueue(ConnectionCache&,QueryRequest::Ptr, ConcurrentQueryMgr::OnCompletion onComplete);
         uint32_t Count();
         bool Stop();
+        void IfReadyForAutoShutdown(std::function<void()> shutdownCb);
 };
-
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================

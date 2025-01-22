@@ -489,19 +489,21 @@ RunnableRequestQueue::RunnableRequestQueue(ECDbCR ecdb): m_nextId(0), m_state(St
     auto env = ConcurrentQueryMgr::GetConfig(ecdb);
     m_quota = env.GetQuota();
     m_maxQueueSize = env.GetRequestQueueSize();
+    m_shutdownWhenIdleFor = env.GetAutoShutdowWhenIdealForSeconds();
+    m_lastDequeueTime = std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::steady_clock::now());
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void RunnableRequestQueue::SetMaxQuota(QueryQuota const& quota) {
-    guard_t lock(m_mutex);
+    recursive_guard_t lock(m_mutex);
     m_quota = quota;
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void RunnableRequestQueue::SetRequestQueueMaxSize(uint32_t size) {
-    guard_t lock(m_mutex);
+    recursive_guard_t lock(m_mutex);
     if (size < kMinQueueSize )
         size = kMinQueueSize;
 
@@ -511,7 +513,7 @@ void RunnableRequestQueue::SetRequestQueueMaxSize(uint32_t size) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 uint32_t RunnableRequestQueue::GetNextId () {
-    guard_t lock(m_mutex);
+    recursive_guard_t lock(m_mutex);
     constexpr auto kMax = std::numeric_limits<uint32_t>::max() - 0xff;
     constexpr auto kMin = std::numeric_limits<uint32_t>::min();
     if (m_nextId  >  kMax)
@@ -525,7 +527,7 @@ uint32_t RunnableRequestQueue::GetNextId () {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void RunnableRequestQueue::InsertSorted(ConnectionCache& conns, std::unique_ptr<RunnableRequestBase>&& request) {
-    guard_t lock(m_mutex);
+    recursive_guard_t lock(m_mutex);
     log_trace("%s enqueuing request [id=%" PRIu32 "]", GetTimestamp().c_str(), request->GetId());
     auto& restartToken = request->GetRequest().GetRestartToken();
     if (!restartToken.empty()) {
@@ -572,12 +574,27 @@ void RunnableRequestQueue::InsertSorted(ConnectionCache& conns, std::unique_ptr<
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+void RunnableRequestQueue::IfReadyForAutoShutdown(std::function<void()> shutdownCb) {
+    recursive_guard_t lock(m_mutex);
+    if (m_shutdownWhenIdleFor == 0s || !m_requests.empty() || m_state.load() != State::Running)
+        return;
+
+    const auto elapsedSinceLastRequest = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - m_lastDequeueTime);
+    if (elapsedSinceLastRequest > m_shutdownWhenIdleFor) {
+        shutdownCb();
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 std::unique_ptr<RunnableRequestBase> RunnableRequestQueue::Dequeue() {
     if (m_requests.empty())
         return nullptr;
 
     auto req = std::move(m_requests.back());
     m_requests.pop_back();
+    m_lastDequeueTime  = std::chrono::steady_clock::now();
     if (req->IsReady()) {
         log_trace("%s dequeued request [id=%" PRIu32 "]", GetTimestamp().c_str(), req->GetId());
         req->OnDequeued();
@@ -600,7 +617,7 @@ std::unique_ptr<RunnableRequestBase> RunnableRequestQueue::Dequeue() {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 std::unique_ptr<RunnableRequestBase> RunnableRequestQueue::WaitForDequeue() {
-    unique_lock_t lock(m_mutex);
+    std::unique_lock<std::recursive_mutex> lock(m_mutex);
     m_cond.wait(lock, [&](){
         return !m_requests.empty() || m_state.load() != State::Running;
     });
@@ -658,7 +675,7 @@ QueryResponse::Future RunnableRequestQueue::Enqueue(ConnectionCache& conns, Quer
     } else  {
         if (m_state.load()==State::Stop) {
             log_error("%s concurrent query shuting down, rejecting request [id=%" PRIu32 "]", GetTimestamp().c_str(), runnableReq->GetId());
-            runnableReq->SetResponse(runnableReq->CreateErrorResponse(QueryResponse::Status::Error, "concurrent query is shutting down"));
+            runnableReq->SetResponse(runnableReq->CreateErrorResponse(QueryResponse::Status::ShuttingDown, "concurrent query is shutting down"));
         } else {
             if (runnableReq->GetRequest().UsePrimaryConnection()) {
                 ExecuteSynchronously(conns, std::move(runnableReq));
@@ -692,7 +709,7 @@ void RunnableRequestQueue::Enqueue(ConnectionCache& conns, QueryRequest::Ptr req
     } else  {
         if (m_state.load()==State::Stop) {
             log_error("%s concurrent query shuting down, rejecting request [id=%" PRIu32 "]", GetTimestamp().c_str(), runnableReq->GetId());
-            runnableReq->SetResponse(runnableReq->CreateErrorResponse(QueryResponse::Status::Error,"concurrent query is shutting down"));
+            runnableReq->SetResponse(runnableReq->CreateErrorResponse(QueryResponse::Status::ShuttingDown,"concurrent query is shutting down"));
         } else {
             if (runnableReq->GetRequest().UsePrimaryConnection()) {
                 ExecuteSynchronously(conns, std::move(runnableReq));
@@ -708,7 +725,7 @@ void RunnableRequestQueue::Enqueue(ConnectionCache& conns, QueryRequest::Ptr req
 // @bsimethod
 //---------------------------------------------------------------------------------------
 uint32_t RunnableRequestQueue::Count() {
-    guard_t lock(m_mutex);
+    recursive_guard_t lock(m_mutex);
     return (uint32_t)m_requests.size();
 }
 
@@ -722,7 +739,7 @@ bool RunnableRequestQueue::Suspend() {
     log_trace("%s suspending request queue.", GetTimestamp().c_str());
     m_state.store(State::Paused);
 
-    guard_t lock(m_mutex);
+    recursive_guard_t lock(m_mutex);
     m_cond.notify_all();
     log_trace("%s request queue suspended.", GetTimestamp().c_str());
     return true;
@@ -738,7 +755,7 @@ bool RunnableRequestQueue::Stop() {
     log_trace("%s stopping request queue.", GetTimestamp().c_str());
     m_state.store(State::Stop);
 
-    guard_t lock(m_mutex);
+    recursive_guard_t lock(m_mutex);
     for(auto & request : m_requests) {
         request->SetResponse(request->CreateErrorResponse(QueryResponse::Status::Error,"concurrent query is shutting down"));
     }
@@ -751,7 +768,7 @@ bool RunnableRequestQueue::Stop() {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 void RunnableRequestQueue::RemoveIf (std::function<bool(RunnableRequestBase&)> predicate) {
-    guard_t lock(m_mutex);
+    recursive_guard_t lock(m_mutex);
     auto it = m_requests.begin();
     while(it != m_requests.end()) {
         if (predicate(*(*it))) {
@@ -780,7 +797,7 @@ bool RunnableRequestQueue::Resume() {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 bool RunnableRequestQueue::CancelRequest(uint32_t id) {
-    guard_t lock(m_mutex);
+    recursive_guard_t lock(m_mutex);
     log_trace("%s request to cancel [id=%" PRIu32 "]", GetTimestamp().c_str(), id);
     auto it = std::find_if(std::begin(m_requests), std::end(m_requests), [id](std::unique_ptr<RunnableRequestBase>& v){
         return v->GetId() == id;
@@ -1222,6 +1239,7 @@ void QueryHelper::Execute(QueryAdaptorCache& adaptorCache, RunnableRequestBase& 
         recordPrepareTime();
         adaptorCache.GetConnection().SetCanBeInterrupted(true);
         QueryHelper::Execute(*adaptor, runnableRequest);
+        adaptorCache.GetConnection().SetCanBeInterrupted(false);
     } else {
         setError(QueryResponse::Status::Error, "unsupported kind of request");
     }
@@ -1341,6 +1359,13 @@ QueryMonitor::QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor)
                 return false;
             }, false);
 
+            m_queue.IfReadyForAutoShutdown([&](){
+                m_queue.Stop();
+                log_trace("%s monitor invoking autoshutdown.", GetTimestamp().c_str());
+                std::thread([&]() {
+                    ConcurrentQueryMgr::Shutdown(m_queue.GetECDb());
+                }).detach();
+            });
             std::unique_lock<std::mutex> lock(m_queryMonitorMutex);
             m_queryMonitorCv.wait_for(lock,m_pollInterval,[&]{ return m_stop.load() == true; });
             m_queryMonitorCv.notify_all();
