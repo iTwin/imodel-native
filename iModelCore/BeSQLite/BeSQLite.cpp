@@ -1434,11 +1434,12 @@ void Statement::DumpResults()
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatementState Statement::GetStatementState()
+bool Statement::TryGetStatementState(StatementState& state)
     {
     if(!IsPrepared())
-        return StatementState::NOT_PREPARED;
-    return (StatementState)getStatementState(m_stmt);
+        return false;
+    state = (StatementState)getStatementState(m_stmt);
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**

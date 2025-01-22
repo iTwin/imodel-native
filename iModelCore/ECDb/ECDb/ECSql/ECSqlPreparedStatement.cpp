@@ -211,7 +211,8 @@ DbResult SingleECSqlPreparedStatement::DoStep()
     if (SUCCESS != AssertIsValid())
         return BE_SQLITE_ERROR;
 
-    if(m_sqliteStatement.GetStatementState() == StatementState::VDBE_READY_STATE)
+    StatementState state;
+    if(m_sqliteStatement.TryGetStatementState(state) && state == StatementState::Ready)
         {
         if (!m_parameterMap.OnBeforeFirstStep().IsSuccess())
             return BE_SQLITE_ERROR;
