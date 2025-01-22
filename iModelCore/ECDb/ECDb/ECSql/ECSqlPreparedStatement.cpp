@@ -212,10 +212,10 @@ DbResult SingleECSqlPreparedStatement::DoStep()
         return BE_SQLITE_ERROR;
 
     if(m_sqliteStatement.GetStatementState() == StatementState::VDBE_READY_STATE)
-    {
+        {
         if (!m_parameterMap.OnBeforeFirstStep().IsSuccess())
             return BE_SQLITE_ERROR;
-    }
+        }
     
 
     const DbResult nativeSqlStatus = m_sqliteStatement.Step();

@@ -1906,26 +1906,21 @@ bool ECSqlParams::TryBindTo(ECSqlStatement& stmt, std::string& err) const {
                 st = stmt.BindId(index, param.GetValueId());  break;
             case ECSqlParam::Type::IdSet: {
                 BinderInfo const& binderInfo = stmt.GetBinderInfo(index);
-                if(binderInfo.GetType() == BinderInfo::BinderType::VirtualSet)
-                {
+                if(binderInfo.GetType() == BinderInfo::BinderType::VirtualSet) {
                     std::shared_ptr<IdSet<BeInt64Id>> idSet = std::make_shared<IdSet<BeInt64Id>>(param.GetValueIdSet());
                     st = stmt.BindVirtualSet(index, idSet);
                 }
-                else if(binderInfo.GetType() == BinderInfo::BinderType::Array && binderInfo.IsForIdSet())
-                {
+                else if(binderInfo.GetType() == BinderInfo::BinderType::Array && binderInfo.IsForIdSet()) {
                     bool allElementsAdded = true;
                     IECSqlBinder& binder = stmt.GetBinder(index);
                     IdSet<BeInt64Id> set(param.GetValueIdSet());
-                    for(auto& ids: set)
-                    {
-                        if(!ids.IsValid())
-                        {
+                    for(auto& ids: set) {
+                        if(!ids.IsValid()) {
                             allElementsAdded = false;
                             break;
                         }
                         st = binder.AddArrayElement().BindInt64((int64_t) ids.GetValue());
-                        if(!st.IsSuccess())
-                        {
+                        if(!st.IsSuccess()) {
                             allElementsAdded = false;
                             break;
                         }

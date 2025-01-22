@@ -1153,7 +1153,7 @@ TEST_F(ConcurrentQueryFixture, CommentAtEndOfECSql) {
 TEST_F(ConcurrentQueryFixture, ReaderBindingForIdSetVirtualTable) {
 
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ConcurrentQuery_Simple.ecdb"));
-    {
+        {
         auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
         BeIdSet idSet;
         idSet.insert(BeInt64Id(10));
@@ -1173,8 +1173,8 @@ TEST_F(ConcurrentQueryFixture, ReaderBindingForIdSetVirtualTable) {
         vsRowCount++;
         }
         ASSERT_EQ(vsRowCount,4);
-    }
-    {
+        }
+        {
         auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
         BeIdSet idSet;
         idSet.insert(BeInt64Id(10));
@@ -1194,8 +1194,8 @@ TEST_F(ConcurrentQueryFixture, ReaderBindingForIdSetVirtualTable) {
         vsRowCount++;
         }
         ASSERT_EQ(vsRowCount,4);
-    }
-    {
+        }
+        {
         auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
         int vsRowCount = 0;
 
@@ -1203,11 +1203,11 @@ TEST_F(ConcurrentQueryFixture, ReaderBindingForIdSetVirtualTable) {
             ECSqlParams().BindId(1, BeInt64Id(33)));
 
         while(vsReaderIdSet.Next())
-        {
+            {
             vsRowCount++;
-        }
+            }
         ASSERT_EQ(vsRowCount,0);
-    }
+        }
     
 }
 

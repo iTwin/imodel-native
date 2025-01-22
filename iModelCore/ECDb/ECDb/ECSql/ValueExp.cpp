@@ -818,10 +818,10 @@ Exp::FinalizeParseStatus MemberFunctionCallExp::_FinalizeParsing(ECSqlParseConte
         {
         if (this->IsTableValuedFunc()) {
             if(m_functionName.EqualsIAscii(IdSetModule::NAME))
-            {
+                {
                 ValueExp const* argExp = GetArgument(0);
                 if(argExp == nullptr)
-                {
+                    {
                     ctx.Issues().ReportV(
                         IssueSeverity::Error,
                         IssueCategory::BusinessProperties,
@@ -831,10 +831,10 @@ Exp::FinalizeParseStatus MemberFunctionCallExp::_FinalizeParsing(ECSqlParseConte
                         m_functionName.c_str()
                     );
                     return Exp::FinalizeParseStatus::Error;
-                }
+                    }
                 ECSqlTypeInfo typeInfo = argExp->GetTypeInfo();
                 if (!typeInfo.IsPrimitive() && !typeInfo.IsUnset())
-                {
+                    {
                     ctx.Issues().ReportV(
                         IssueSeverity::Error,
                         IssueCategory::BusinessProperties,
@@ -844,12 +844,12 @@ Exp::FinalizeParseStatus MemberFunctionCallExp::_FinalizeParsing(ECSqlParseConte
                         m_functionName.c_str()
                     );
                     return Exp::FinalizeParseStatus::Error;
-                }
+                    }
                 if(typeInfo.IsPrimitive())
-                {
+                    {
                     ECN::PrimitiveType primitiveType = typeInfo.GetPrimitiveType();
                     if(primitiveType != ECN::PrimitiveType::PRIMITIVETYPE_String)
-                    {
+                        {
                         ctx.Issues().ReportV(
                             IssueSeverity::Error,
                             IssueCategory::BusinessProperties,
@@ -859,9 +859,9 @@ Exp::FinalizeParseStatus MemberFunctionCallExp::_FinalizeParsing(ECSqlParseConte
                             m_functionName.c_str()
                         );
                         return Exp::FinalizeParseStatus::Error;
+                        }
                     }
                 }
-            }
             return FinalizeParseStatus::Completed;
         }
         FunctionSignature const* funcSig = FunctionSignatureSet::GetInstance().Find(m_functionName.c_str());
@@ -961,10 +961,10 @@ Utf8String MemberFunctionCallExp::_ToString() const
 bool MemberFunctionCallExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const
     {
     if(this->IsTableValuedFunc() && m_functionName.EqualsIAscii(IdSetModule::NAME))
-    {
+        {
         parameterExp.SetTargetExpInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Long, true, EXTENDEDTYPENAME_Id));
         return true;
-    }
+        }
     //we don't have metadata about function args, so use a default type if the arg is a parameter
     parameterExp.SetTargetExpInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Double));
     return true;
