@@ -431,17 +431,18 @@ BentleyStatus TextStringPersistence::EncodeAsFlatBuf(Offset<FB::TextString>& tex
     // I prefer to ensure encoders write default values instead of it being unknown later if it's really a default value, or if the encoder missed it and it's bad data.
     TemporaryForceDefaults forceDefaults(encoder, true);
 
-    FontId fontId = text.m_style.m_font;
-    if (!fontId.IsValid())
-        return ERROR;
-
     FB::TextStringStyleBuilder fbStyle(encoder);
     fbStyle.add_majorVersion(CURRENT_STYLE_MAJOR_VERSION);
     fbStyle.add_minorVersion(CURRENT_STYLE_MINOR_VERSION);
 
-    // we're going to store the fontid as a 32 bit value, even though in memory we have a 64bit value. Make sure the high bits are 0.
-    BeAssert(fontId.GetValue() == (int64_t)((uint32_t)fontId.GetValue()));
-    fbStyle.add_fontId((uint32_t)fontId.GetValue());
+    FontId fontId = text.m_style.m_font;
+    if (!fontId.IsValid())
+        fbStyle.add_fontId((uint32_t)0);
+    else{
+        // we're going to store the fontid as a 32 bit value, even though in memory we have a 64bit value. Make sure the high bits are 0.
+        BeAssert(fontId.GetValue() == (int64_t)((uint32_t)fontId.GetValue()));
+        fbStyle.add_fontId((uint32_t)fontId.GetValue());
+    }
 
     fbStyle.add_isBold(text.m_style.m_isBold);
     fbStyle.add_isItalic(text.m_style.m_isItalic);
