@@ -18,7 +18,7 @@
 #define DEFAULT_IGNORE_PRIORITY                     false
 #define DEFAULT_IGNORE_DELAY                        true
 #define DEFAULT_DONOT_USE_PRIMARY_CONN_TO_PREPARE   false
-#define DEFAULT_SHUTDOWN_WHEN_IDEAL_FOR_SECONDS     60*2
+#define DEFAULT_SHUTDOWN_WHEN_IDLE_FOR_SECONDS      60*5
 #define DEFAULT_MONITOR_POLL_INTERVAL               1000 // ms
 #define DEFAULT_WORKER_THREAD_COUNT                 std::min(4u, std::thread::hardware_concurrency())
 #define DEFAULT_STATEMENT_CACHE_SIZE_PER_WORKER     40
@@ -390,6 +390,7 @@ struct QueryMonitor {
         RunnableRequestQueue& m_queue;
         QueryExecutor& m_executor;
         std::chrono::milliseconds m_pollInterval;
+        bool m_allowTestingArgs;
         cancel_callback_type m_cancelBeforeSchemaChanges;
     public:
         QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor);

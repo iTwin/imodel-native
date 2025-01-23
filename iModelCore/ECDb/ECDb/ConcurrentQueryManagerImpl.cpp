@@ -489,7 +489,7 @@ RunnableRequestQueue::RunnableRequestQueue(ECDbCR ecdb): m_nextId(0), m_state(St
     auto env = ConcurrentQueryMgr::GetConfig(ecdb);
     m_quota = env.GetQuota();
     m_maxQueueSize = env.GetRequestQueueSize();
-    m_shutdownWhenIdleFor = env.GetAutoShutdowWhenIdealForSeconds();
+    m_shutdownWhenIdleFor = env.GetAutoShutdowWhenIdlelForSeconds();
     m_lastDequeueTime = std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::steady_clock::now());
 }
 //---------------------------------------------------------------------------------------
@@ -658,13 +658,17 @@ void RunnableRequestQueue::ExecuteSynchronously(ConnectionCache& conns, std::uni
 //---------------------------------------------------------------------------------------
 QueryResponse::Future RunnableRequestQueue::Enqueue(ConnectionCache& conns, QueryRequest::Ptr request) {
     // Put a upper limit on query delay to make it safe.
-    if (ConcurrentQueryMgr::GetConfig(m_ecdb).GetIgnoreDelay()) {
+    const auto& conf = ConcurrentQueryMgr::GetConfig(m_ecdb);
+    if (conf.GetIgnoreDelay()) {
         request->SetDelay(0ms);
     } else {
         const auto maxDelayAllowed = (std::chrono::milliseconds)DEFAULT_QUERY_DELAY_MAX_TIME;
         if (request->GetDelay() >  maxDelayAllowed) {
             request->SetDelay(maxDelayAllowed);
         }
+    }
+    if (!conf.GetAllowTestingArgs() && request->GetTestingArgs() != nullptr) {
+        request->ResetTestingArgs();
     }
     auto adjustedQuota = AdjustQuota(request->GetQuota());
     auto runnableReq = std::unique_ptr<RunnableRequestBase>(new RunnableRequestWithPromise(*this, std::move(request), adjustedQuota, GetNextId()));
@@ -693,13 +697,17 @@ QueryResponse::Future RunnableRequestQueue::Enqueue(ConnectionCache& conns, Quer
 //---------------------------------------------------------------------------------------
 void RunnableRequestQueue::Enqueue(ConnectionCache& conns, QueryRequest::Ptr request, ConcurrentQueryMgr::OnCompletion onComplete) {
     // Put a upper limit on query delay to make it safe.
-    if (ConcurrentQueryMgr::GetConfig(m_ecdb).GetIgnoreDelay()) {
+    const auto& conf = ConcurrentQueryMgr::GetConfig(m_ecdb);
+    if (conf.GetIgnoreDelay()) {
         request->SetDelay(0ms);
     } else {
         const auto maxDelayAllowed = (std::chrono::milliseconds)DEFAULT_QUERY_DELAY_MAX_TIME;
         if (request->GetDelay() >  maxDelayAllowed) {
             request->SetDelay(maxDelayAllowed);
         }
+    }
+    if (!conf.GetAllowTestingArgs() && request->GetTestingArgs() != nullptr) {
+        request->ResetTestingArgs();
     }
     auto adjustedQuota = AdjustQuota(request->GetQuota());
     auto runnableReq = std::unique_ptr<RunnableRequestBase>(new RunnableRequestWithCallback(*this, std::move(request), adjustedQuota, GetNextId(), onComplete));
@@ -1327,7 +1335,9 @@ QueryExecutor::~QueryExecutor() {
 //---------------------------------------------------------------------------------------
 QueryMonitor::QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor)
     :m_stop(false), m_queue(queue), m_executor(executor) {
-    m_pollInterval = ConcurrentQueryMgr::GetConfig(m_executor.GetConnectionCache().GetPrimaryDb()).GetMonitorPollInterval();
+    const auto& config = ConcurrentQueryMgr::GetConfig(m_executor.GetConnectionCache().GetPrimaryDb());
+    m_pollInterval = config.GetMonitorPollInterval();
+    m_allowTestingArgs = config.GetAllowTestingArgs();
     auto notifyThreadHasStarted = std::make_unique<std::promise<void>>();
     log_trace("%s monitor started.", GetTimestamp().c_str());
     m_thread = std::thread([&](std::promise<void>* notifyWhenThreadStarted) {
@@ -1350,11 +1360,23 @@ QueryMonitor::QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor)
                 }
                 if (request.IsTimeExceeded() ){
                     if (request.IsInterrupted()) {
-                        log_trace("%s monitor query [id=%" PRIu32 "] as it exceeded allowed time. (already interrupted)", GetTimestamp().c_str(), request.GetId());
+                        log_trace("%s monitor query [id=%" PRIu32 "] has it exceeded allowed time. (already interrupted)", GetTimestamp().c_str(), request.GetId());
                     } else {
                         log_trace("%s monitor interrupt query [id=%" PRIu32 "] as it exceeded allowed time", GetTimestamp().c_str(), request.GetId());
                     }
                     return true;
+                }
+                if (m_allowTestingArgs) {
+                    if (auto testingArgs = request.GetRequest().GetTestingArgs()) {
+                        if (testingArgs->isBoolMember("interrupt") && testingArgs->Get("interrupt").asBool(false)) {
+                            if (request.IsInterrupted()) {
+                                log_trace("%s monitor query [id=%" PRIu32 "] mark for interrupt by testing args. (already interrupted)", GetTimestamp().c_str(), request.GetId());
+                            } else {
+                                log_trace("%s monitor interrupt query [id=%" PRIu32 "] mark for interrupt by testing args", GetTimestamp().c_str(), request.GetId());
+                            }
+                            return true;
+                        }
+                    }
                 }
                 return false;
             }, false);
@@ -1640,6 +1662,9 @@ void QueryRequest::FromJs(BeJsConst const& val) {
     if (val.isNumericMember(JDelay)) {
         m_delay = std::chrono::milliseconds(val[JDelay].asInt());
     }
+    if (val.isObjectMember(JTestingArgs)) {
+        SetTestArgs(val[JTestingArgs]);
+    }
 }
 
 //---------------------------------------------------------------------------------------
@@ -1703,7 +1728,19 @@ void ECSqlRequest::FromJs(BeJsConst const& val) {
         m_doNotConvertClassIdsToClassNamesWhenAliased = val[ECSqlRowAdaptor::Options::JDoNotConvertClassIdsToClassNamesWhenAliased].asBool();
     }
 }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+QueryRequest& QueryRequest::SetTestArgs(BeJsConst const& val) noexcept {
+    if (!val.isObject()) {
+        m_testingArgs.reset();
+        return *this;
+    }
 
+    m_testingArgs = std::make_unique<BeJsDocument>();
+    m_testingArgs->From(val);
+    return *this;
+}
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -1714,6 +1751,7 @@ QueryRequest::Ptr QueryRequest::Deserialize(BeJsValue const& val) {
     } else {
         throw std::runtime_error("concurrent query: unsupported query request type");
     }
+
     QueryRequest::Ptr ptr;
     if (kind == Kind::BlobIO) {
         ptr = BlobIORequest::MakeRequest("", "", 0);
@@ -2037,9 +2075,10 @@ ConcurrentQueryMgr::Config::Config():
     m_ignorePriority(DEFAULT_IGNORE_PRIORITY),
     m_ignoreDelay(DEFAULT_IGNORE_DELAY),
     m_doNotUsePrimaryConnToPrepare(DEFAULT_DONOT_USE_PRIMARY_CONN_TO_PREPARE),
-    m_autoShutdowWhenIdealForSeconds(DEFAULT_SHUTDOWN_WHEN_IDEAL_FOR_SECONDS),
+    m_autoShutdowWhenIdlelForSeconds(DEFAULT_SHUTDOWN_WHEN_IDLE_FOR_SECONDS),
     m_monitorPollInterval(std::chrono::milliseconds(DEFAULT_MONITOR_POLL_INTERVAL)),
-    m_statementCacheSizePerWorker(DEFAULT_STATEMENT_CACHE_SIZE_PER_WORKER), m_memoryMapFileSize(0) {
+    m_statementCacheSizePerWorker(DEFAULT_STATEMENT_CACHE_SIZE_PER_WORKER), m_memoryMapFileSize(0),
+    m_allowTestingArgs(false) {
 }
 
 //---------------------------------------------------------------------------------------
@@ -2060,13 +2099,15 @@ bool ConcurrentQueryMgr::Config::Equals(Config const& rhs) const {
         return false;
     if (m_doNotUsePrimaryConnToPrepare != rhs.GetDoNotUsePrimaryConnToPrepare())
         return false;
-    if (m_autoShutdowWhenIdealForSeconds != rhs.GetAutoShutdowWhenIdealForSeconds())
+    if (m_autoShutdowWhenIdlelForSeconds != rhs.GetAutoShutdowWhenIdlelForSeconds())
         return false;
     if (m_statementCacheSizePerWorker != rhs.GetStatementCacheSizePerWorker())
         return false;
     if (m_monitorPollInterval != rhs.GetMonitorPollInterval())
         return false;
     if (m_memoryMapFileSize != rhs.GetMemoryMapFileSize())
+        return false;
+    if (m_allowTestingArgs != rhs.GetAllowTestingArgs())
         return false;
     return true;
 }
@@ -2107,10 +2148,11 @@ void ConcurrentQueryMgr::Config::To(BeJsValue val) const {
     val[Config::JIgnorePriority] = GetIgnorePriority();
     val[Config::JIgnoreDelay] = GetIgnoreDelay();
     val[Config::JDoNotUsePrimaryConnToPrepare] = GetDoNotUsePrimaryConnToPrepare();
-    val[Config::JAutoShutdowWhenIdealForSeconds] = GetAutoShutdowWhenIdealForSeconds().count();
+    val[Config::JAutoShutdowWhenIdlelForSeconds] = GetAutoShutdowWhenIdlelForSeconds().count();
     val[Config::JStatementCacheSizePerWorker] = GetStatementCacheSizePerWorker();
     val[Config::JMonitorPollInterval] = GetMonitorPollInterval().count();
     val[Config::JMemoryMapFileSize] = GetMemoryMapFileSize();
+    val[Config::JAllowTestingArgs] = GetAllowTestingArgs();
     auto quota = val[Config::JQuota];
     m_quota.ToJs(quota);
 }
@@ -2155,9 +2197,9 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::From(BeJsValue val) {
         const auto doNotUsePrimaryConnToPrepare = val[Config::JDoNotUsePrimaryConnToPrepare].asBool(defaultConfig.GetDoNotUsePrimaryConnToPrepare());
         config.SetDoNotUsePrimaryConnToPrepare(doNotUsePrimaryConnToPrepare);
     }
-    if (val.isNumericMember(Config::JAutoShutdowWhenIdealForSeconds)) {
-        const auto autoShutdowWhenIdealForSeconds = val[Config::JAutoShutdowWhenIdealForSeconds].asUInt64(defaultConfig.GetAutoShutdowWhenIdealForSeconds().count());
-        config.SetAutoShutdowWhenIdealForSeconds(std::chrono::seconds(autoShutdowWhenIdealForSeconds));
+    if (val.isNumericMember(Config::JAutoShutdowWhenIdlelForSeconds)) {
+        const auto autoShutdowWhenIdlelForSeconds = val[Config::JAutoShutdowWhenIdlelForSeconds].asUInt64(defaultConfig.GetAutoShutdowWhenIdlelForSeconds().count());
+        config.SetAutoShutdowWhenIdlelForSeconds(std::chrono::seconds(autoShutdowWhenIdlelForSeconds));
     }
     if (val.isNumericMember(Config::JStatementCacheSizePerWorker)) {
         auto statementCacheSizePerWorker = val[Config::JStatementCacheSizePerWorker].asUInt(defaultConfig.GetStatementCacheSizePerWorker());
@@ -2179,6 +2221,10 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::From(BeJsValue val) {
     if (val.isNumericMember(Config::JMemoryMapFileSize)) {
         uint32_t memoryMapFileSize = (uint32_t)val[Config::JMemoryMapFileSize].asUInt(defaultConfig.GetMemoryMapFileSize());
         config.SetMemoryMapFileSize(memoryMapFileSize);
+    }
+    if (val.isBoolMember(Config::JAllowTestingArgs)) {
+        const auto allowTestingArgs = val[Config::JAllowTestingArgs].asBool(defaultConfig.GetAllowTestingArgs());
+        config.SetAllowTestingArgs(allowTestingArgs);
     }
     return config;
 }
