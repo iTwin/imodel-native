@@ -107,20 +107,71 @@ ECSqlRowAdaptor& CachedQueryAdaptor::GetJsonAdaptor() {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void CachedConnection::Execute(std::function<void(QueryAdaptorCache&,RunnableRequestBase&)> cb, std::unique_ptr<RunnableRequestBase> request) {
-    if (true) {
-        recursive_guard_t lock(m_mutexReq);
-        if (!m_isChangeSummaryCacheAttached) {
-            BeFileName primaryChangeCacheFile;
-            if (GetPrimaryDb().TryGetChangeCacheFileName(primaryChangeCacheFile)) {
-                if (!m_db.IsChangeCacheAttached()) {
-                    if (BE_SQLITE_OK == m_db.AttachChangeCache(primaryChangeCacheFile)) {
-                        m_isChangeSummaryCacheAttached = true;
-                    }
-                }
-            }
+void CachedConnection::SyncAttachDbs() {
+    recursive_guard_t lock(m_mutexReq);
+    if (m_request != nullptr || !m_db.IsDbOpen()) {
+        // cannot sync attach dbs if request is pending.
+        return;
+    }
+
+    // simple fast way to verify if attach file have changed or not.
+    const auto primaryAttachDbs = GetPrimaryDb().GetAttachedDbs();
+    const auto thisAttachDbs = GetDb().GetAttachedDbs();
+    std::once_flag cachedClearFlag;
+    auto reset = [&]() {
+        m_adaptorCache.Reset();
+        m_db.ClearECDbCache();
+    };
+
+    // detach dbs that does not exist on primary connection
+    for (auto& attachFile : thisAttachDbs) {
+        if (attachFile.m_type == AttachFileTypes::Main || attachFile.m_type == AttachFileTypes::Temp) {
+            continue;
+        }
+
+        BeAssert(attachFile.m_type != AttachFileTypes::SchemaSync);
+
+        auto it = std::find_if(primaryAttachDbs.begin(), primaryAttachDbs.end(),
+        [&attachFile](auto& primaryAttach) {
+            return primaryAttach.m_alias.EqualsIAscii(attachFile.m_alias) &&
+                primaryAttach.m_fileName.EqualsIAscii(attachFile.m_fileName);
+        });
+
+        if (it == primaryAttachDbs.end()) {
+            std::call_once(cachedClearFlag, reset);
+            if (attachFile.m_type == AttachFileTypes::ECChangeCache)
+                m_db.DetachChangeCache();
+            else
+                m_db.DetachDb(attachFile.m_alias.c_str());
         }
     }
+
+    // attach dbs that exist on primary connection but not on cached connection.
+    for (auto& attachFile : primaryAttachDbs) {
+        if (attachFile.m_type == AttachFileTypes::SchemaSync || attachFile.m_type == AttachFileTypes::Main || attachFile.m_type == AttachFileTypes::Temp) {
+            continue;
+        }
+
+        auto it = std::find_if(thisAttachDbs.begin(), thisAttachDbs.end(),
+        [&attachFile](auto& thisAttach) {
+            return thisAttach.m_alias.EqualsIAscii(attachFile.m_alias) && thisAttach.m_fileName.EqualsIAscii(attachFile.m_fileName);
+        });
+
+        if (it == thisAttachDbs.end()) {
+            std::call_once(cachedClearFlag, reset);
+            if (attachFile.m_type == AttachFileTypes::ECChangeCache)
+                m_db.AttachChangeCache(BeFileName(attachFile.m_fileName.c_str()));
+            else
+                m_db.AttachDb(attachFile.m_fileName.c_str(), attachFile.m_alias.c_str());
+        }
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void CachedConnection::Execute(std::function<void(QueryAdaptorCache&,RunnableRequestBase&)> cb, std::unique_ptr<RunnableRequestBase> request) {
+    SyncAttachDbs();
     SetRequest(std::move(request));
     cb(m_adaptorCache, *m_request);
     ClearRequest();
@@ -232,6 +283,33 @@ std::shared_ptr<CachedConnection> CachedConnection::Make(ConnectionCache& cache,
     }
     return newConn;
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void ConnectionCache::SyncAttachDbs() {
+    FNV1HashBuilder builder;
+    for (auto& file : GetPrimaryDb().GetAttachedDbs()) {
+        if (file.m_type == AttachFileTypes::SchemaSync  || file.m_type == AttachFileTypes::Main || file.m_type == AttachFileTypes::Temp) {
+            continue;
+        }
+        builder.UpdateString(file.m_alias);
+        builder.UpdateString(file.m_fileName);
+    }
+
+    const auto hashCode = builder.GetHashCode();
+    if (hashCode == m_primaryAttachFileHash) {
+        return;
+    }
+
+    recursive_guard_t lock(m_mutex);
+    m_primaryAttachFileHash = hashCode;
+    for (auto& conn: m_conns) {
+        if (conn != nullptr)
+            conn->SyncAttachDbs();
+    }
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -1321,6 +1399,7 @@ QueryMonitor::QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor,
                 return false;
             }, false);
 
+            m_executor.GetConnectionCache().SyncAttachDbs();
             std::unique_lock<std::mutex> lock(m_queryMonitorMutex);
             m_queryMonitorCv.wait_for(lock,m_pollInterval,[&]{ return m_stop.load() == true; });
             m_queryMonitorCv.notify_all();

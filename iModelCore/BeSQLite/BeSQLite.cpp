@@ -2777,6 +2777,36 @@ DbResult Db::DetachDb(Utf8CP alias) const
 /*---------------------------------------------------------------------------------**//**
 *
 +---------------+---------------+---------------+---------------+---------------+------*/
+std::vector<AttachFileInfo> Db::GetAttachedDbs() const {
+    if (!IsDbOpen())
+        return {};
+
+    std::vector<AttachFileInfo> result;
+    Statement stmt;
+    stmt.Prepare(*this, "PRAGMA database_list");
+    while (stmt.Step() == BE_SQLITE_ROW) {
+        AttachFileInfo info;
+        info.m_alias = stmt.GetValueText(1);
+        info.m_fileName = stmt.GetValueText(2);
+        if (info.m_alias.EqualsIAscii("main")) {
+            info.m_type = AttachFileTypes::Main;
+        } else if (info.m_alias.EqualsIAscii("schema_sync_db")){
+            info.m_type = AttachFileTypes::SchemaSync;
+        } else if (info.m_alias.EqualsIAscii("ecchange")){
+            info.m_type = AttachFileTypes::ECChangeCache;
+        } else if (info.m_alias.EqualsIAscii("temp")){
+            info.m_type = AttachFileTypes::Temp;
+        } else {
+            info.m_type = AttachFileTypes::Unknown;
+        }
+        result.push_back(info);
+    }
+    return result;
+}
+
+/*---------------------------------------------------------------------------------**//**
+*
++---------------+---------------+---------------+---------------+---------------+------*/
 DbResult BriefcaseLocalValueCache::Register(size_t& index, Utf8CP name)
     {
     BeMutexHolder lock(m_mutex);
