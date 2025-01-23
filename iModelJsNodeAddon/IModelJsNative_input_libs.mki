@@ -75,7 +75,12 @@ LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinOpenSSL$(libext)
 %if defined (BENTLEYCONFIG_PARASOLID)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinPSBRepGeometry$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)iTwinBRepCore$(libext)
-LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)pskernel$(libext)
+
+%if $(TARGET_PLATFORM) == "Windows"
+    DLM_OBJECT_FILES + $(BuildContext)SubParts/StaticLibs/pskernel_archive.lib
+%else
+    LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)pskernel$(libext)
+%endif
 %endif
 
 %if !defined (BENTLEYCONFIG_NO_VISUALIZATION)
