@@ -998,7 +998,7 @@ public:
     BE_SQLITE_EXPORT void DumpResults();
 
     //! Tries to get the state in which a particular statement is. Returns true if it is successful in getting the state of the statement otherwise returns false
-    //! If it returns true, the state value is stored in the passed reference argument.
+    //! If the returned value is true, the state value is stored in the passed reference argument.
     BE_SQLITE_EXPORT bool TryGetStatementState(StatementState&);
 
     SqlStatementP GetSqlStatementP() const {return m_stmt;}  // for direct use of sqlite3 api
