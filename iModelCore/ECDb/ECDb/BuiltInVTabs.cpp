@@ -189,15 +189,13 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::FilterJSONStringIntoArray(BeJsDoc
         GetTable().SetError("IdSet vtab: The argument should be a valid JSON array of ids");
         return BE_SQLITE_ERROR;
     }
-    bool flag = doc.ForEachArrayMember([&](BeJsValue::ArrayIndex a, BeJsConst k1)
-                                            {
-                                            if(BE_SQLITE_OK != FilterJSONBasedOnType(k1))
-                                                {
+    bool flag = doc.ForEachArrayMember([&](BeJsValue::ArrayIndex a, BeJsConst k1) {
+                                            if(BE_SQLITE_OK != FilterJSONBasedOnType(k1)) {
                                                 GetTable().SetError(SqlPrintfString("IdSet vtab: The element with index %u is invalid", a));
                                                 return true;
-                                                }
+                                            }
                                             return false; 
-                                            });
+                                        });
     if(flag)
         return BE_SQLITE_ERROR;
     return BE_SQLITE_OK;

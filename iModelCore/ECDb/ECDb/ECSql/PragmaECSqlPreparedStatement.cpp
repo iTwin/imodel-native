@@ -643,8 +643,9 @@ DbResult PragmaECSqlPreparedStatement::DoStep() {
         }
     
     DbResult res = m_resultSet->Step();
+    // if step actually succeeded and returned BE_SQLITE_DONE or BE_SQLITE_ROW on the sqlite side then we set this flag to false if flag is true, if the returned value is something else like BE_SQLITE_SCHEMA or anything else we don't set the flag to false
     if((res == BE_SQLITE_DONE || res == BE_SQLITE_ROW) && m_isFirstStep)
-        m_isFirstStep = false; // if step actually successded on the sqlite side then we set this flag to false if flag is true
+        m_isFirstStep = false; 
     return res;
 }
 
