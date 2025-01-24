@@ -2707,6 +2707,64 @@ TEST_F(SchemaDeserializationTest, MultipleVersionsOfSchemaInSameContext)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, EmptyStringPropertyTagInCA)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECCustomAttributeClass typeName="GeneralCustomAttribute" appliesTo="Schema, AnyClass">
+                    <ECProperty propertyName="Primitive" typeName="string"/>
+                </ECCustomAttributeClass>
+                <ECEntityClass typeName="MyClass">
+                    <ECCustomAttributes>
+                        <GeneralCustomAttribute xmlns="TestSchema.01.00.00">
+                            <Primitive />
+                        </GeneralCustomAttribute>
+                    </ECCustomAttributes>
+                </ECEntityClass>
+            </ECSchema>)xml";
+
+    // Load schemas
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_TRUE(schema.IsValid());
+
+    {
+    ECClassCP myClass = schema->GetClassCP("MyClass");
+    ASSERT_TRUE(myClass != nullptr);
+    ECClassCP caClass = schema->GetClassCP("GeneralCustomAttribute");
+    ASSERT_TRUE(caClass != nullptr);
+    IECInstancePtr ca = myClass->GetCustomAttribute(*caClass);
+    ASSERT_TRUE(ca.IsValid());
+    ECValue val;
+    ca->GetValue(val, "Primitive");
+    ASSERT_FALSE(val.IsNull());
+    ASSERT_STREQ("", val.GetUtf8CP());
+    }
+
+    // Serialize to string
+    Utf8String schemaXmlSerialized;
+    ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(schemaXmlSerialized, ECVersion::Latest));
+
+    // Load from serialized string
+    ECSchemaReadContextPtr context2 = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema2;
+    status = ECSchema::ReadFromXmlString(schema2, schemaXmlSerialized.c_str(), *context2);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_TRUE(schema2.IsValid());
+
+    // Compare the schemas
+    SchemaComparer comparer;
+    SchemaComparer::Options comparerOptions = SchemaComparer::Options(SchemaComparer::DetailLevel::Full, SchemaComparer::DetailLevel::Full);
+    SchemaDiff diff;
+    ASSERT_EQ(BentleyStatus::SUCCESS, comparer.Compare(diff, context->GetCache().GetSchemas(), context2->GetCache().GetSchemas(), comparerOptions));
+    ASSERT_FALSE(diff.Changes().IsChanged());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(SchemaDeserializationTest, MissingBSCAReference)
     {
     // For standard schemas, our custom attribute deserializer automatically adds missing references. It writes a warning to the logs but schema is expected

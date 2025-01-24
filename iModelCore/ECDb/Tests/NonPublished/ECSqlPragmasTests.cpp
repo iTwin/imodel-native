@@ -24,7 +24,7 @@ TEST_F(ECSqlPragmasTestFixture, explain_query){
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(stmt.GetValueInt(0), 3); // id
     ASSERT_EQ(stmt.GetValueInt(1), 0); // parent
-    ASSERT_EQ(stmt.GetValueInt(2), 0); // notused
+    ASSERT_EQ(stmt.GetValueInt(2), 62); // notused
     ASSERT_STREQ(stmt.GetValueText(3), "SEARCH main.ec_Class USING INDEX ix_ec_Class_Name (Name=?)"); // detail
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
 }

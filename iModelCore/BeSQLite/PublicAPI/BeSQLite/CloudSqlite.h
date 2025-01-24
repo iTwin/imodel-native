@@ -94,7 +94,7 @@ struct CloudContainer {
     bool m_isPublic = false;
 
     CloudContainer() {}
-    ~CloudContainer() { Disconnect(false, false); }
+    virtual ~CloudContainer() { Disconnect(false, false); }
     CloudContainer(Utf8StringCR storageType, Utf8StringCR baseUri, Utf8StringCR containerId, Utf8StringCR alias, Utf8StringCR accessToken) :
         m_storageType(storageType), m_baseUri(baseUri), m_containerId(containerId), m_alias(alias), m_accessToken(accessToken) {}
 

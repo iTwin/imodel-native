@@ -257,7 +257,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
 
     Napi::Value UploadChanges(NapiInfoCR info) {
         RequireWriteLock();
-        return QueueWorker(info, [=]() { return CloudContainer::UploadChanges(); });
+        return QueueWorker(info, [=, this]() { return CloudContainer::UploadChanges(); });
     }
 
     Napi::Value GetBlockSize(NapiInfoCR) {
@@ -448,13 +448,13 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         RequireWriteLock();
         REQUIRE_ARGUMENT_STRING(0, fromName);
         REQUIRE_ARGUMENT_STRING(1, toName);
-        return QueueWorker(info, [=]() { return CloudContainer::CopyDatabase(fromName, toName); });
+        return QueueWorker(info, [=, this]() { return CloudContainer::CopyDatabase(fromName, toName); });
     }
 
     Napi::Value DeleteDatabase(NapiInfoCR info) {
         RequireWriteLock();
         REQUIRE_ARGUMENT_STRING(0, dbName);
-        return QueueWorker(info, [=]() { return CloudContainer::DeleteDatabase(dbName); });
+        return QueueWorker(info, [=, this]() { return CloudContainer::DeleteDatabase(dbName); });
     }
 
     void InitializeContainer(NapiInfoCR info) {
@@ -1032,6 +1032,10 @@ void registerCloudSqlite(Napi::Env env, Napi::Object exports) {
     JsCloudCache::Init(env, exports);
     JsCloudContainer::Init(env, exports);
     JsCloudPrefetch::Init(env, exports);
+    #ifndef BENTLEY_WIN32
+        // Ignore SIGPIPE to prevent crashes in CloudSQLite/curl.
+        signal(SIGPIPE, SIG_IGN);
+    #endif
 }
 
 } // end namespace IModelJsNative

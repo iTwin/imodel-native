@@ -140,3 +140,61 @@ struct PerfTestFixture : ::testing::Test
         DgnCategoryId GetDefaultCategoryId() { return m_defaultCategoryId; }
 
     };
+
+//=======================================================================================
+//! Used in combination with LogCatcher to capture log messages
+// @bsiclass
+//=======================================================================================
+struct TestLogger : NativeLogging::Logger {
+    std::vector<std::pair<NativeLogging::SEVERITY, Utf8String>> m_messages;
+        void LogMessage(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg) override {
+            m_messages.emplace_back(sev, msg);
+    }
+
+    bool IsSeverityEnabled(Utf8CP category, NativeLogging::SEVERITY sev) override{
+        return true;
+    }
+
+    void Clear() { m_messages.clear(); }
+
+    bool ValidateMessageAtIndex(size_t index, NativeLogging::SEVERITY expectedSeverity, const Utf8String& expectedMessage) const {
+        if (index < m_messages.size()) {
+            const auto& [severity, message] = m_messages[index];
+            return severity == expectedSeverity && message.Equals(expectedMessage);
+        }
+        return false; // Return false if the index is out of bounds
+    }
+    
+    const std::pair<NativeLogging::SEVERITY, Utf8String>* GetLastMessage() const {
+        if (!m_messages.empty()) {
+            return &m_messages.back();
+        }
+        return nullptr; // Return nullptr if there are no messages
+    }
+
+    const std::pair<NativeLogging::SEVERITY, Utf8String>* GetLastMessage(NativeLogging::SEVERITY severity) const {
+        for (auto it = m_messages.rbegin(); it != m_messages.rend(); ++it) {
+            if (it->first == severity) {
+                return &(*it);
+            }
+        }
+        return nullptr; // Return nullptr if no messages with the specified severity are found
+    }
+};
+
+//=======================================================================================
+//! Until destruction, captures log messages and redirects them to the TestLogger
+// @bsiclass
+//=======================================================================================
+struct LogCatcher {
+    NativeLogging::Logger& m_previousLogger;
+    TestLogger& m_testLogger;
+
+    LogCatcher(TestLogger& testLogger) : m_testLogger(testLogger), m_previousLogger(NativeLogging::Logging::GetLogger()) {
+        NativeLogging::Logging::SetLogger(&m_testLogger);
+    }
+
+    ~LogCatcher() {
+        NativeLogging::Logging::SetLogger(&m_previousLogger);
+    }
+};

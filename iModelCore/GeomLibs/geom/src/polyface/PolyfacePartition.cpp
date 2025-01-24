@@ -299,6 +299,8 @@ bool Load ()
     */
     bool ignore = false;
     size_t numNull = 0;
+    UNUSED_VARIABLE(numNull);
+    
     bvector<DPoint3d>const& points = visitor->Point ();
     for (visitor->Reset (); visitor->AdvanceToNextFace ();)
         {

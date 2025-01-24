@@ -882,13 +882,13 @@ std::string QueryHelper::FormatQuery(const char* query) {
             auto n = matches.position();
             Utf8String prefix = trimmedECSql.substr(0, n + 1);
             Utf8String select = trimmedECSql.substr(n + 2);
-            return Utf8PrintfString("%s select * from (%s) limit :" LIMIT_VAR_COUNT " offset :" LIMIT_VAR_OFFSET, prefix.c_str(), select.c_str());
+            return Utf8PrintfString("%s select * from (%s \n) limit :" LIMIT_VAR_COUNT " offset :" LIMIT_VAR_OFFSET, prefix.c_str(), select.c_str());
         }
     }
     if (trimmedECSql.StartsWithIAscii("pragma")) {
         return std::move(trimmedECSql);
     }
-    return Utf8PrintfString("select * from (%s) limit :" LIMIT_VAR_COUNT " offset :" LIMIT_VAR_OFFSET, trimmedECSql.c_str());
+    return Utf8PrintfString("select * from (%s \n) limit :" LIMIT_VAR_COUNT " offset :" LIMIT_VAR_OFFSET, trimmedECSql.c_str());
 }
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -1009,14 +1009,15 @@ void QueryHelper::Execute(CachedQueryAdaptor& cachedAdaptor, RunnableRequestBase
     const auto doNotConvertClassIdsToClassNamesWhenAliased = request.GetDoNotConvertClassIdsToClassNamesWhenAliased();
     auto& stmt = cachedAdaptor.GetStatement();
     auto& adaptor = cachedAdaptor.GetJsonAdaptor();
+    auto& options = adaptor.GetOptions();
+    options.SetAbbreviateBlobs(abbreviateBlobs);
+    options.SetConvertClassIdsToClassNames(classIdToClassNames);
+    options.UseJsNames(request.GetValueFormat() == ECSqlRequest::ECSqlValueFormat::JsNames);
+    options.DoNotConvertClassIdsToClassNamesWhenAliased(doNotConvertClassIdsToClassNamesWhenAliased);
     ECSqlRowProperty::List props;
     if (includeMetaData) {
         adaptor.GetMetaData(props ,stmt);
     }
-    adaptor.GetOptions().SetAbbreviateBlobs(abbreviateBlobs);
-    adaptor.GetOptions().SetConvertClassIdsToClassNames(classIdToClassNames);
-    adaptor.GetOptions().UseJsNames(request.GetValueFormat() == ECSqlRequest::ECSqlValueFormat::JsNames);
-    adaptor.GetOptions().DoNotConvertClassIdsToClassNamesWhenAliased(doNotConvertClassIdsToClassNamesWhenAliased);
     uint32_t row_count = 0;
     std::string& result = cachedAdaptor.ClearAndGetCachedString();
     result.reserve(QUERY_WORKER_RESULT_RESERVE_BYTES);
@@ -1905,26 +1906,21 @@ bool ECSqlParams::TryBindTo(ECSqlStatement& stmt, std::string& err) const {
                 st = stmt.BindId(index, param.GetValueId());  break;
             case ECSqlParam::Type::IdSet: {
                 BinderInfo const& binderInfo = stmt.GetBinderInfo(index);
-                if(binderInfo.GetType() == BinderInfo::BinderType::VirtualSet)
-                {
+                if(binderInfo.GetType() == BinderInfo::BinderType::VirtualSet) {
                     std::shared_ptr<IdSet<BeInt64Id>> idSet = std::make_shared<IdSet<BeInt64Id>>(param.GetValueIdSet());
                     st = stmt.BindVirtualSet(index, idSet);
                 }
-                else if(binderInfo.GetType() == BinderInfo::BinderType::Array && binderInfo.IsForIdSet())
-                {
+                else if(binderInfo.GetType() == BinderInfo::BinderType::Array && binderInfo.IsForIdSet()) {
                     bool allElementsAdded = true;
                     IECSqlBinder& binder = stmt.GetBinder(index);
                     IdSet<BeInt64Id> set(param.GetValueIdSet());
-                    for(auto& ids: set)
-                    {
-                        if(!ids.IsValid())
-                        {
+                    for(auto& ids: set) {
+                        if(!ids.IsValid()) {
                             allElementsAdded = false;
                             break;
                         }
                         st = binder.AddArrayElement().BindInt64((int64_t) ids.GetValue());
-                        if(!st.IsSuccess())
-                        {
+                        if(!st.IsSuccess()) {
                             allElementsAdded = false;
                             break;
                         }

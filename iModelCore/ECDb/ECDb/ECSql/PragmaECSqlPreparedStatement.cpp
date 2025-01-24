@@ -637,10 +637,10 @@ DbResult PragmaECSqlPreparedStatement::DoStep() {
         return BE_SQLITE_ERROR;
 
     if(m_isFirstStep)
-    {
+        {
         if (!m_parameterMap.OnBeforeFirstStep().IsSuccess())
             return BE_SQLITE_ERROR;
-    }
+        }
     
     DbResult res = m_resultSet->Step();
     if((res == BE_SQLITE_DONE || res == BE_SQLITE_ROW) && m_isFirstStep)

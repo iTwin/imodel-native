@@ -53,6 +53,8 @@ bool PolyfaceEdgeChain::GetXYZ (bvector<DPoint3d> &dest, bvector<DPoint3d> const
     size_t n = source.size ();
     size_t oldIndex = SIZE_MAX;
     size_t dups = 0;
+    UNUSED_VARIABLE(dups);
+    
     for (auto index1 : m_vertexIndices)
         {
         if (index1 == oldIndex)

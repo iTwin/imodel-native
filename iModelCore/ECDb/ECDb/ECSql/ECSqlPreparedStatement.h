@@ -81,7 +81,6 @@ struct SingleECSqlPreparedStatement : IECSqlPreparedStatement
 private:
     mutable BeSQLite::Statement m_sqliteStatement;
     ECSqlParameterMap m_parameterMap;
-    bool m_isFirstStep = true;
 
     IECSqlBinder& _GetBinder(int parameterIndex) const override;
     int _GetParameterIndex(Utf8CP parameterName) const override;

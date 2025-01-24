@@ -318,8 +318,17 @@ rapidjson::Document ValueHelpers::GetJsonFromPrimitiveValue(PrimitiveType primit
             doc.SetBool(value.GetBoolean());
             return doc;
         case PRIMITIVETYPE_DateTime:
-            doc.SetString(value.GetDateTime().ToString().c_str(), doc.GetAllocator());
+            {
+            double julianDay;
+            if (PRIMITIVETYPE_String == value.GetColumnInfo().GetDataType().GetPrimitiveType())
+                julianDay = std::stod(value.GetText());
+            else
+                julianDay = value.GetDouble();
+            DateTime dt;
+            DateTime::FromJulianDay(dt, julianDay, DateTime::Info::CreateForDateTime(DateTime::Kind::Utc));
+            doc.SetString(dt.ToString().c_str(), doc.GetAllocator());
             return doc;
+            }
         case PRIMITIVETYPE_Double:
             doc.SetDouble(value.GetDouble());
             return doc;

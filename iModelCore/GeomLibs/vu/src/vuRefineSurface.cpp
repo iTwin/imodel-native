@@ -306,6 +306,11 @@ size_t SplitEdges13 ()
     int numA1 = 0;
     int numA2 = 0;
     int numA3 = 0;
+    UNUSED_VARIABLE(numA0);
+    UNUSED_VARIABLE(numA1);
+    UNUSED_VARIABLE(numA2);
+    UNUSED_VARIABLE(numA3);
+
     VU_SET_LOOP (nodeA, m_graph)
         {
         if (!vu_getMask (nodeA, visitMask))
@@ -405,6 +410,11 @@ size_t SplitEdges13 ()
     int num1 = 0;
     int num2 = 0;
     int num3 = 0;
+    UNUSED_VARIABLE(num0);
+    UNUSED_VARIABLE(num1);
+    UNUSED_VARIABLE(num2);
+    UNUSED_VARIABLE(num3);
+    
     VU_SET_LOOP (nodeA, m_graph)
         {
         if (!vu_getMask (nodeA, visitMask))

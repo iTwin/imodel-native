@@ -279,8 +279,13 @@ Utf8String Utils::GetPresentationTypeString(PresentationType type)
         case PresentationType::Fractional: return FormatConstant::FPN_Fractional();
         case PresentationType::Scientific: return FormatConstant::FPN_Scientific();
         case PresentationType::Station: return FormatConstant::FPN_Station();
+        case PresentationType::Ratio: return FormatConstant::FPN_Ratio();
+        case PresentationType::Azimuth: return FormatConstant::FPN_Azimuth();
+        case PresentationType::Bearing: return FormatConstant::FPN_Bearing();
+
         default:
-        case PresentationType::Decimal: return FormatConstant::FPN_Decimal();
+        case PresentationType::Decimal:
+            return FormatConstant::FPN_Decimal();
         }
     }
 
@@ -298,9 +303,51 @@ bool Utils::ParsePresentationType(PresentationType& type, Utf8CP name)
         type = PresentationType::Scientific;
     else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Station().c_str()) == 0) 
         type = PresentationType::Station;
+    else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Ratio().c_str()) == 0) 
+        type = PresentationType::Ratio;
+    else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Azimuth().c_str()) == 0) 
+        type = PresentationType::Azimuth;
+    else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Bearing().c_str()) == 0)
+        type = PresentationType::Bearing;
     else
         return false;
 
+    return true;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod
+//----------------------------------------------------------------------------------------
+// static
+Utf8String Utils::GetRatioTypeString(RatioType mode)
+    {
+    switch (mode)
+        {
+        case RatioType::OneToN: return FormatConstant::FPN_RatioOneToN();
+        case RatioType::NToOne: return FormatConstant::FPN_RatioNToOne();
+        case RatioType::ValueBased: return FormatConstant::FPN_RatioValueBased();
+        case RatioType::UseGreatestCommonDivisor: return FormatConstant::FPN_RatioUseGreatestCommonDivisor();
+        }
+    return "";
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod
+//----------------------------------------------------------------------------------------
+// static
+bool Utils::ParseRatioType(RatioType& mode, Utf8CP name)
+    {
+    if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_RatioOneToN().c_str()) == 0) 
+        mode = RatioType::OneToN;
+    else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_RatioNToOne().c_str()) == 0) 
+        mode = RatioType::NToOne;
+    else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_RatioValueBased().c_str()) == 0) 
+        mode = RatioType::ValueBased;
+    else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_RatioUseGreatestCommonDivisor().c_str()) == 0) 
+        mode = RatioType::UseGreatestCommonDivisor;
+    else
+        return false;
+    
     return true;
     }
 
@@ -448,12 +495,14 @@ Utf8String FormatProblemDetail::GetProblemDescription() const
         case FormatProblemCode::QT_InvalidMidLowUnits: return "Middle and Low units are not comparable";
         case FormatProblemCode::QT_InvalidUnitCombination: return "Invalid Unit combination ";
         case FormatProblemCode::QT_InvalidSyntax: return "Invalid syntax of KOQ"; 
+        case FormatProblemCode::QT_ConversionFailed: return "Failed to convert value to target unit. Possible reasons include divide by zero or not comparable units."; 
         case FormatProblemCode::FUS_InvalidSyntax: return "Invalid syntax of FUS";
         case FormatProblemCode::NFS_Undefined: return "Numeric Format is not defined";
         case FormatProblemCode::NFS_InvalidSpecName: return "Invalid Numeric Format name";
         case FormatProblemCode::NFS_DuplicateSpecName: return "Duplicate Numeric Format name";
         case FormatProblemCode::NFS_DuplicateSpecNameOrAlias: return "Duplicate Numeric Format name or alias";
         case FormatProblemCode::NFS_InvalidJsonObject: return "Invalid Numeric Format JSON-descriptor";
+        case FormatProblemCode::NFS_MissingUnit: return "A required unit on the format is missing";
         case FormatProblemCode::DIV_UnknownDivider: return "Unknown Divider";
         case FormatProblemCode::NA_InvalidSign: return "Invalid or duplicate sign in numeric definition";         // Numeric Accumulator problems
         case FormatProblemCode::NA_InvalidPoint: return "Invalid or duplicate decimal point in numeric definition";

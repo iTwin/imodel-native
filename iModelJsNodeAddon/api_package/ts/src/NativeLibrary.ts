@@ -3,8 +3,8 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 
-import * as os from "os";
-import * as path from "path";
+import * as os from "node:os";
+import * as path from "node:path";
 
 import type { NativeCloudSqlite } from "./NativeCloudSqlite";
 
@@ -15,10 +15,10 @@ import type { NativeCloudSqlite } from "./NativeCloudSqlite";
 
 import type {
   BentleyStatus, DbOpcode, DbResult, GuidString, Id64Array, Id64String, IDisposable, IModelStatus, LogLevel, OpenMode,
-  StatusCodeWithMessage,
 } from "@itwin/core-bentley";
 import type {
-  ChangesetIndexAndId, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps, ElementGraphicsRequestProps, ElementLoadProps, ElementProps,
+  ChangesetIndexAndId, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps,
+  ElementGraphicsRequestProps, ElementLoadProps, ElementMeshRequestProps, ElementProps,
   FilePropertyProps, FontId, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
   GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, IModelCoordinatesRequestProps,
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
@@ -29,9 +29,6 @@ import type { Range2dProps, Range3dProps } from "@itwin/core-geometry";
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable @itwin/prefer-get */
-
-// ###TODO import from core-common after merge with master
-export type ElementMeshRequestProps = any;
 
 // cspell:ignore  blocksize cachesize polltime bentleyjs imodeljs ecsql pollable polyface txns lzma uncompress changesets ruleset ulas oidc keychain libsecret rulesets struct
 
@@ -89,9 +86,9 @@ export class NativeLibrary {
   // This returns true if you used `linkNativePlatform.bat` to install your local addon build.
   public static get isDevBuild(): boolean {
     try {
-      require("./devbuild.json");
+      require.resolve("./devbuild.json");
       return true;
-    } catch (_e) {
+    } catch {
       return false;
     }
   }
@@ -106,7 +103,8 @@ export class NativeLibrary {
         if (platform === "ios" || platform === "android") {
           this._nativeLib = (process as any)._linkedBinding("iModelJsNative") as typeof IModelJsNative;
         } else {
-          this._nativeLib = require(`./${NativeLibrary.archName}/${NativeLibrary.nodeAddonName}`) as typeof IModelJsNative; // eslint-disable-line @typescript-eslint/no-var-requires
+          this._nativeLib =
+            require(`./${NativeLibrary.archName}/${NativeLibrary.nodeAddonName}`) as typeof IModelJsNative; // eslint-disable-line @typescript-eslint/no-require-imports
         }
       } catch (err: any) {
         err.message += "\nThis error may occur when trying to run an iTwin.js backend without"
@@ -195,7 +193,6 @@ export declare namespace IModelJsNative {
     params?: NameValuePair[];
   }
 
-  const version: string;
   let logger: NativeLogger;
   function setMaxTileCacheSize(maxBytes: number): void;
   function getTileVersionInfo(): TileVersionInfo;
@@ -208,6 +205,14 @@ export declare namespace IModelJsNative {
   function enableLocalGcsFiles(yesNo: boolean): void;
   function queryConcurrency(pool: "io" | "cpu"): number;
 
+  interface TrueTypeFontMetadata {
+    faces: FontFaceProps[];
+    embeddable: boolean;
+  }
+
+  function getTrueTypeFontMetadata(fileName: LocalFileName): TrueTypeFontMetadata;
+  function isRscFontData(blob: Uint8Array): boolean;
+
   /** Get the SHA1 hash of a Schema XML file, possibly including its referenced Schemas */
   function computeSchemaChecksum(arg: {
     /** the full path to the root schema XML file */
@@ -217,6 +222,12 @@ export declare namespace IModelJsNative {
     /** If true, the returned SHA1 includes the hash of all referenced schemas */
     exactMatch?: boolean;
   }): string;
+
+  /** When you want to associate an explanatory message with an error status value. */
+  interface StatusCodeWithMessage<ErrorCodeType> {
+    status: ErrorCodeType;
+    message: string;
+  }
 
   /** The return type of synchronous functions that may return an error or a successful result. */
   type ErrorStatusOrResult<ErrorCodeType, ResultType> = {
@@ -404,24 +415,9 @@ export declare namespace IModelJsNative {
     encoding?: FontEncodingProps;
   }
 
-  interface EmbedFontDataProps {
-    face: FontFaceProps;
-    data: Uint8Array;
-  }
-
-  interface EmbedFontFileProps {
-    fileName: LocalFileName;
-  }
-
-  interface EmbedSystemFontProps {
-    systemFont: string;
-  }
-
-  type EmbedFontArg = EmbedFontDataProps | EmbedFontFileProps | EmbedSystemFontProps & { compress?: true };
-
   interface SQLiteOps {
     embedFile(arg: EmbedFileArg): void;
-    embedFont(arg: EmbedFontArg): void;
+    embedFontFile(id: number, faces: FontFaceProps[], data: Uint8Array, compress: boolean): void;
     extractEmbeddedFile(arg: EmbeddedFileProps): void;
     getFilePath(): string;
     getLastInsertRowId(): number;
@@ -538,8 +534,8 @@ export declare namespace IModelJsNative {
     public abandonChanges(): DbResult;
     public abandonCreateChangeset(): void;
     public addChildPropagatesChangesToParentRelationship(schemaName: string, relClassName: string): BentleyStatus;
-    public addNewFont(arg: { type: FontType, name: string }): number;
-    public applyChangeset(changeSet: ChangesetFileProps): void;
+    public invalidateFontMap(): void;
+    public applyChangeset(changeSet: ChangesetFileProps, fastForward: boolean): void;
     public revertTimelineChanges(changeSet: ChangesetFileProps[], skipSchemaChanges: boolean): void;
     public attachChangeCache(changeCachePath: string): DbResult;
     public beginMultiTxnOperation(): DbResult;
@@ -571,7 +567,7 @@ export declare namespace IModelJsNative {
     public dumpChangeset(changeSet: ChangesetFileProps): void;
     public elementGeometryCacheOperation(requestProps: any/* ElementGeometryCacheOperationRequestProps */): BentleyStatus;
     public embedFile(arg: EmbedFileArg): void;
-    public embedFont(arg: EmbedFontArg): void;
+    public embedFontFile(id: number, faces: FontFaceProps[], data: Uint8Array, compress: boolean): void;
     public enableChangesetSizeStats(enabled: boolean): DbResult;
     public enableTxnTesting(): void;
     public endMultiTxnOperation(): DbResult;
@@ -628,7 +624,7 @@ export declare namespace IModelJsNative {
     public inBulkOperation(): boolean;
     public inlineGeometryPartReferences(): InlineGeometryPartsResult;
     public insertCodeSpec(name: string, jsonProperties: CodeSpecProperties): Id64String;
-    public insertElement(elemProps: ElementProps, options?: { forceUseId: boolean }): Id64String;
+    public insertElement(elemProps: ElementProps, options?: { forceUseId?: boolean }): Id64String;
     public insertElementAspect(aspectProps: ElementAspectProps): Id64String;
     public insertLinkTableRelationship(props: RelationshipProps): Id64String;
     public insertModel(modelProps: ModelProps): Id64String;
@@ -682,7 +678,7 @@ export declare namespace IModelJsNative {
     public setITwinId(guid: GuidString): DbResult;
     public setBusyTimeout(ms: number): void;
     public setCodeValueBehavior(newBehavior: "exact" | "trim-unicode-whitespace"): void;
-    public simplifyElementGeometry(simplifyArgs: any): DbResult;
+    public simplifyElementGeometry(simplifyArgs: any): IModelStatus;
     public startCreateChangeset(): ChangesetFileProps;
     public startProfiler(scopeName?: string, scenarioName?: string, overrideFile?: boolean, computeExecutionPlan?: boolean): DbResult;
     public stopProfiler(): { rc: DbResult, elapsedTime?: number, scopeId?: number, fileName?: string };
@@ -700,6 +696,11 @@ export declare namespace IModelJsNative {
     public enableWalMode(yesNo?: boolean): void;
     public performCheckpoint(mode?: WalCheckpointMode): void;
     public setAutoCheckpointThreshold(frames: number): void;
+    public pullMergeInProgress(): boolean;
+    public pullMergeBegin(): void;
+    public pullMergeEnd(): void;
+    public pullMergeResume(): void;
+
     public static enableSharedCache(enable: boolean): DbResult;
     public static getAssetsDir(): string;
     public static zlibCompress(data: Uint8Array): Uint8Array;
@@ -917,7 +918,7 @@ export declare namespace IModelJsNative {
     public createDb(dbName: string, container?: CloudContainer, params?: SQLiteDbCreateParams): void;
     public dispose(): void;
     public embedFile(arg: EmbedFileArg): void;
-    public embedFont(arg: EmbedFontArg): void;
+    public embedFontFile(id: number, faces: FontFaceProps[], data: Uint8Array, compress: boolean): void;
     public extractEmbeddedFile(arg: EmbeddedFileProps): void;
     public getFilePath(): string;
     public getLastError(): string;
@@ -1360,7 +1361,7 @@ export declare namespace IModelJsNative {
 
   class ECSchemaXmlContext {
     constructor();
-    public addSchemaPath(path: string): void;
+    public addSchemaPath(schemaPath: string): void;
     public setSchemaLocater(locater: ECSchemaXmlContext.SchemaLocaterCallback): void;
     public setFirstSchemaLocater(locater: ECSchemaXmlContext.SchemaLocaterCallback): void;
     public readSchemaFromXmlFile(filePath: string): ErrorStatusOrResult<BentleyStatus, string>;
@@ -1408,6 +1409,7 @@ export declare namespace IModelJsNative {
     public openFile(fileName: string, invert: boolean): void;
     public openGroup(fileName: string[], db: AnyECDb, invert: boolean): void;
     public openLocalChanges(db: DgnDb, includeInMemoryChanges: boolean, invert: boolean): void;
+    public openTxn(db: DgnDb, txnId: Id64String, invert: boolean): void;
     public reset(): void;
     public step(): boolean;
     public writeToFile(fileName: string, containsSchemaChanges: boolean, overrideFile: boolean): void;

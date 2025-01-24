@@ -20,7 +20,6 @@ private:
 private:
     static rapidjson::Document GetFallbackValue(ECPropertyCR prop, IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator);
 
-    static rapidjson::Document GetFallbackPrimitiveValue(ECPropertyCR prop, PrimitiveType type, Utf8StringCR extendedType, IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator);
     rapidjson::Document GetFormattedPrimitiveValue(ECPropertyCR prop, PrimitiveType type, Utf8StringCR extendedType, IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator) const;
 
     static rapidjson::Document GetFallbackStructValue(IECSqlValue const& structValue, rapidjson::MemoryPoolAllocator<>* allocator);
@@ -33,6 +32,7 @@ public:
     ContentValuesFormatter(IECPropertyFormatter const* formatter, ECPresentation::UnitSystem unitSystem)
         : m_propertyFormatter(formatter), m_unitSystem(unitSystem)
         {}
+    static rapidjson::Document GetFallbackPrimitiveValue(PrimitiveType type, Utf8StringCR extendedType, IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator);
     rapidjson::Document GetFormattedValue(ECPropertyCR prop, IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator) const;
     void LocalizeString(Utf8StringR) const;
 };
@@ -153,7 +153,7 @@ public:
     ContentSetItemExtendedData& GetExtendedData() { return m_extendedData; }
     ContentSetItemExtendedData const& GetExtendedData() const { return m_extendedData; }
 
-    void AddValue(Utf8CP name, PrimitiveType type, IECSqlValue const& value);
+    void AddCalculatedPropertyValue(Utf8CP name, PrimitiveType type, IECSqlValue const& value);
     void AddValue(Utf8CP name, ECPropertyCR ecProperty, IECSqlValue const& value);
     void AddNull(Utf8CP name, ECPropertyCP);
     void AddEmptyNestedContentValue(Utf8CP name) { _AddEmptyNestedContentValue(name); }

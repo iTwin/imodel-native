@@ -106,7 +106,7 @@ struct LimitingTaskQueue
         folly::via(&m_executor, [=] {
             return task.first(); // execute task
         })
-            .then([=](Result_T result) {
+            .then([=, this](Result_T result) {
                 --m_runningTasks;
                 task.second->setValue(result); // fulfill the promise
                 CheckQueue();

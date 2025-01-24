@@ -651,10 +651,10 @@ bool PolyfaceHeader::CompactIndexArrays ()
         BlockedVectorIntR paramIndex  = ParamIndex ();
         BlockedVectorIntR colorIndex  = ColorIndex ();
         BlockedVectorIntR faceIndex   = FaceIndex ();
-        bool normalActive = normalIndex.Active ();
-        bool paramActive = paramIndex.Active ();
-        bool colorActive = colorIndex.Active ();
-        bool faceIndexActive = faceIndex.Active ();
+        bool normalActive = normalIndex.Active () && !normalIndex.empty(); // a mesh array may be active but empty!
+        bool paramActive = paramIndex.Active () && !paramIndex.empty();
+        bool colorActive = colorIndex.Active () && !colorIndex.empty();
+        bool faceIndexActive = faceIndex.Active () && !faceIndex.empty();
         size_t numOut = 0;
         for (visitor->Reset (); visitor->AdvanceToNextFace (); )
             {
@@ -687,6 +687,44 @@ bool PolyfaceHeader::CompactIndexArrays ()
     return changed;
     }
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+size_t PolyfaceHeader::CompactArrays(bool compactIndices)
+    {
+    auto GetCapacity = [&]() -> size_t
+        {
+        return m_point.capacity() * sizeof(decltype(m_point)::value_type)
+             + m_param.capacity() * sizeof(decltype(m_param)::value_type)
+             + m_normal.capacity() * sizeof(decltype(m_normal)::value_type)
+             + m_intColor.capacity() * sizeof(decltype(m_intColor)::value_type)
+             + m_faceData.capacity() * sizeof(decltype(m_faceData)::value_type)
+             + m_edgeChain.capacity() * sizeof(decltype(m_edgeChain)::value_type)
+             + m_pointIndex.capacity() * sizeof(decltype(m_pointIndex)::value_type)
+             + m_paramIndex.capacity() * sizeof(decltype(m_paramIndex)::value_type)
+             + m_normalIndex.capacity() * sizeof(decltype(m_normalIndex)::value_type)
+             + m_colorIndex.capacity() * sizeof(decltype(m_colorIndex)::value_type)
+             + m_faceIndex.capacity() * sizeof(decltype(m_faceIndex)::value_type);
+        };
+    size_t cap0 = GetCapacity();
+    if (compactIndices)
+        CompactIndexArrays();
+    // squeeze out excess capacity using Meyers' swap trick.
+    decltype(m_point)(m_point).swap(m_point);
+    decltype(m_param)(m_param).swap(m_param);
+    decltype(m_normal)(m_normal).swap(m_normal);
+    decltype(m_intColor)(m_intColor).swap(m_intColor);
+    decltype(m_faceData)(m_faceData).swap(m_faceData);
+    decltype(m_edgeChain)(m_edgeChain).swap(m_edgeChain);
+    decltype(m_pointIndex)(m_pointIndex).swap(m_pointIndex);
+    decltype(m_paramIndex)(m_paramIndex).swap(m_paramIndex);
+    decltype(m_normalIndex)(m_normalIndex).swap(m_normalIndex);
+    decltype(m_colorIndex)(m_colorIndex).swap(m_colorIndex);
+    decltype(m_faceIndex)(m_faceIndex).swap(m_faceIndex);
+    size_t cap1 = GetCapacity();
+    BeAssert(cap0 >= cap1 && "CompactArrays doesn't increase mesh size");
+    return cap0 - cap1; // savings
+    }
 
 //! Apply a transform to all coordinates of an array of meshes. Optionally reverse index order (to maintain cross product relationships)
 void PolyfaceHeader::Transform
@@ -1402,6 +1440,7 @@ bvector<T> &newData
     for (size_t i = 0; i < numData; i++)
         oldDataToNewData.push_back (SIZE_MAX);
     size_t errors = 0;
+    UNUSED_VARIABLE(errors);
     for (int &index1 : indices)  // ONE BASED
         {
         if (index1 != 0)

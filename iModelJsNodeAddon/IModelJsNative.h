@@ -15,6 +15,9 @@
 #include <Napi/napi.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include "DgnDbWorker.h"
+#ifndef BENTLEY_WIN32
+    #include <signal.h>
+#endif
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -360,7 +363,7 @@ ENUM_IS_FLAGS(TextEmphasis);
 
 struct JsInterop {
     [[noreturn]] static void throwSqlResult(Utf8CP msg, Utf8CP fileName, DbResult result) {
-        BeNapi::ThrowJsException(Env(), Utf8PrintfString("%s [%s]: %s", msg, fileName, BeSQLiteLib::GetErrorString(result)).c_str(), result);
+        BeNapi::ThrowJsException(Env(), Utf8PrintfString("%s [%s]: rc=%d, %s", msg, fileName, (int)result, BeSQLiteLib::GetLogError(result).c_str()).c_str(), result);
     }
     [[noreturn]] static void throwDgnDbStatus(DgnDbStatus);
     [[noreturn]] static void throwWrongClass() { throwDgnDbStatus(DgnDbStatus::WrongClass); }

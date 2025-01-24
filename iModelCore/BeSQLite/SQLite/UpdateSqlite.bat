@@ -8,7 +8,7 @@ rem +---------------------------------------------------------------------------
 rem This script will update the SQLite source from a fossil branch, and then create the amalgamation `sqlite.c` source file.
 rem @note that it requires cygwin be installed
 
-set sqlite_tag=itwin-sqlite-v3.46.1-r0
+set sqlite_tag=itwin-sqlite-v3.47.2-r0
 set imodel_native_sqlite=%SrcRoot%imodel-native\iModelCore\BeSQLite\SQLite\
 set sqlite_root=%appdata%\itwin-sqlite
 set build_dir=outdir
@@ -19,8 +19,8 @@ if  not exist %CYGWIN_BIN% (
   popd
   exit /b %errorlevel%
 )
-
-
+rem update tags
+git fetch --tags
 rem create folder in appdata if it does not already exist.
 if not exist %sqlite_root% md %sqlite_root%
 

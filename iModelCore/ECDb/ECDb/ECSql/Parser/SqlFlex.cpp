@@ -5176,12 +5176,10 @@ sal_Int32 parseString (yyscan_t yyscanner)
     Utf8String sBuffer;
     sBuffer.reserve(256);
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
-    int s = 1;
     while (!checkeof (ch = yyinput (yyscanner)))
     {
     if (ch == delim)
         {
-        s++;
         ch = yyinput (yyscanner);
         if (checkeof (ch))
         {

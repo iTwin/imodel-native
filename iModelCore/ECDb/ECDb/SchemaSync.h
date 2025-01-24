@@ -23,7 +23,6 @@ struct SchemaSyncHelper final {
     static DbResult GetMetaTables(DbR conn, StringList& tables, Utf8CP dbAlias);
     static DbResult DropDataTables(DbR conn);
     static DbResult DropMetaTables(DbR conn);
-    static DbResult CreateMetaTablesFrom(ECDbR fromDb, DbR syncDb);
     static DbResult TryGetAttachDbs(AliasMap& aliasMap, ECDbR conn);
     static DbResult VerifyAlias(ECDbR conn);
     static DbResult GetColumnNames(DbCR db, Utf8CP dbAlias, Utf8CP tableName, StringList& columnNames);
@@ -36,6 +35,10 @@ struct SchemaSyncHelper final {
     static ProfileVersion QueryProfileVersion(DbR db, ProfileKind kind);
     static ProfileVersion QueryProfileVersion(SchemaSync::SyncDbUri syncDbUri, ProfileKind kind);
     static DbResult SaveProfileVersion(SchemaSync::SyncDbUri syncDbUri, ProfileKind kind, ProfileVersion const& ver);
+    static DbResult SaveProfileVersion(DbR conn, ProfileKind kind, ProfileVersion const& ver);
+    static DbResult SyncProfileTablesSchema(DbR fromDb, DbR toDb);
+    static DbResult SyncProfileTablesSchema(DbR thisDb, SchemaSync::SyncDbUri const& syncDbUri, bool thisDbToSyncDb);
+    static DbResult UpdateProfileVersion(DbR conn, SchemaSync::SyncDbUri syncDbUri, bool thisDbToSyncDb);
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

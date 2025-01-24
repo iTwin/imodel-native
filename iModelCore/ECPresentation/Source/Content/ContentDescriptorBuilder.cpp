@@ -400,7 +400,7 @@ protected:
             Utf8StringCR key = entry.first;
             Utf8StringCR expression = entry.second;
             ECValue value;
-            if (ECExpressionsHelper(noCache).EvaluateECExpression(value, expression, *expressionContext))
+            if (ECExpressionEvaluationStatus::Success == ECExpressionsHelper(noCache).EvaluateECExpression(value, expression, *expressionContext))
                 field->AddExtendedData(key.c_str(), value);
             }
         return field;

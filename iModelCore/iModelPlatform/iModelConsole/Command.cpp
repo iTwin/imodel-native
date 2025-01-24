@@ -2294,6 +2294,47 @@ Utf8String ExitCommand::_GetUsage() const
 void ExitCommand::_Run(Session& session, Utf8StringCR args) const { exit(0); }
 
 //******************************* SqliteCommand ******************
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+Utf8String DbSchemaDiffCommand::_GetUsage() const {
+    return ".db_schema_diff <target-sqlite>";
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void DbSchemaDiffCommand::_Run(Session& session, Utf8StringCR args) const {
+    if (args.empty())
+        {
+        IModelConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    if (!session.IsFileLoaded(true))
+        return;
+
+    auto& lhs = session.GetFile().GetHandle();
+    Db rhs;
+    auto rc = rhs.OpenBeSQLiteDb(args.c_str(), Db::OpenParams(BeSQLite::Db::OpenMode::Readonly));
+    if (rc != BE_SQLITE_OK)
+        {
+        IModelConsole::WriteErrorLine("Failed to open SQLite file %s: %s", args.c_str(), rhs.GetLastError().c_str());
+        return;
+        }
+
+    std::vector<BentleyM0200::Utf8String> patches;
+    rc = MetaData::SchemaDiff(lhs, rhs, patches);
+    if (rc != BE_SQLITE_OK)
+        {
+        IModelConsole::WriteErrorLine("Failed to compute schema diff: %s", lhs.GetLastError().c_str());
+        return;
+        }
+    for(auto& patch : patches)
+        IModelConsole::WriteLine(patch.c_str());
+}
+
+//******************************* SqliteCommand ******************
 
 //---------------------------------------------------------------------------------------
 // @bsimethod

@@ -185,20 +185,19 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::GetColumn(int i, Context& ctx) {
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult IdSetModule::IdSetTable::IdSetCursor::FilterJSONStringIntoArray(BeJsDocument& doc) {
-    if(!doc.isArray())
-    {
+    if(!doc.isArray()) {
         GetTable().SetError("IdSet vtab: The argument should be a valid JSON array of ids");
         return BE_SQLITE_ERROR;
     }
     bool flag = doc.ForEachArrayMember([&](BeJsValue::ArrayIndex a, BeJsConst k1)
-                                        {
-                                            if(BE_SQLITE_OK != FilterJSONBasedOnType(k1))
                                             {
+                                            if(BE_SQLITE_OK != FilterJSONBasedOnType(k1))
+                                                {
                                                 GetTable().SetError(SqlPrintfString("IdSet vtab: The element with index %u is invalid", a));
                                                 return true;
-                                            }
+                                                }
                                             return false; 
-                                        });
+                                            });
     if(flag)
         return BE_SQLITE_ERROR;
     return BE_SQLITE_OK;
@@ -209,19 +208,16 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::FilterJSONStringIntoArray(BeJsDoc
 // @bsimethod
 //---------------------------------------------------------------------------------------
 DbResult IdSetModule::IdSetTable::IdSetCursor::FilterJSONBasedOnType(BeJsConst& val) {
-    if(val.isNull())
-    {
+    if(val.isNull()) {
         return BE_SQLITE_ERROR;
     }
-    else if(val.isNumeric())
-    {
+    else if(val.isNumeric()) {
         uint64_t id = val.GetUInt64();
         if(id == 0)
             return BE_SQLITE_ERROR;
         m_idSet.insert(id);
     }
-    else if(val.isString())
-    {
+    else if(val.isString()) {
         uint64_t id;
         BentleyStatus status = BeStringUtilities::ParseUInt64(id, val.ToUtf8CP());
         if(status != BentleyStatus::SUCCESS)
@@ -253,14 +249,12 @@ DbResult IdSetModule::IdSetTable::IdSetCursor::Filter(int idxNum, const char *id
     } else {
         Reset();
     }
-    if(recompute)
-    {
+    if(recompute) {
         m_idSet.clear();
         BeJsDocument doc;
         doc.Parse(m_text.c_str());
         
-        if(FilterJSONStringIntoArray(doc) != BE_SQLITE_OK)
-        {
+        if(FilterJSONStringIntoArray(doc) != BE_SQLITE_OK) {
             Reset();
             m_index = m_idSet.begin();
             return BE_SQLITE_ERROR;
@@ -290,7 +284,7 @@ DbResult IdSetModule::IdSetTable::BestIndex(IndexInfo& indexInfo) {
     aIdx[0] = aIdx[1] = -1;
     int nConstraint = indexInfo.GetConstraintCount();
 
-    for(i=0; i<nConstraint; i++){
+    for(i=0; i<nConstraint; i++) {
         auto pConstraint = indexInfo.GetConstraint(i);
         int iCol;    /* 0 for start, 1 for stop, 2 for step */
         int iMask;   /* bitmask for those column */
@@ -312,7 +306,7 @@ DbResult IdSetModule::IdSetTable::BestIndex(IndexInfo& indexInfo) {
         }
     }
 
-    if ((unusableMask & ~idxNum)!=0 ){
+    if ((unusableMask & ~idxNum)!=0 ) {
         return BE_SQLITE_CONSTRAINT;
     }
 

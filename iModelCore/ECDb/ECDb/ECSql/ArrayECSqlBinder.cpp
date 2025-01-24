@@ -585,7 +585,7 @@ ECSqlStatus ArrayECSqlBinder::JsonValueBinder::FailIfInvalid() const
 //---------------------------------------------------------------------------------------
 BinderInfo& ArrayECSqlBinder::JsonValueBinder::_GetBinderInfo()
     {
-        return m_binderInfo;
+    return m_binderInfo;
     }
 
 

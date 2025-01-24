@@ -4,11 +4,12 @@
   "description": "TypeScript API of imodeljs-native",
   "private": true,
   "engines": {
-    "node": ">=18.0 <21.0"
+    "node": "^20.0.0 || ^22.0.0"
   },
   "scripts": {
     "build": "tsc 1>&2",
     "lint": "eslint -f visualstudio \"./src/**/*.ts\" 1>&2",
+    "lint-fix": "eslint --fix -f visualstudio \"./src/**/*.ts\" 1>&2",
     "buildAndLint": "npm run -s build && npm run -s lint",
     "clean": "rimraf lib",
     "copy:test-assets": "cpx \"./assets/test/**/*\" ./lib/test/assets",
@@ -16,31 +17,25 @@
     "test": "node ./lib/test/index.js"
   },
   "devDependencies": {
-    "@itwin/build-tools": "^4.5.0-dev.29",
-    "@itwin/core-bentley": "^4.5.0-dev.29",
-    "@itwin/core-common": "^4.5.0-dev.29",
-    "@itwin/core-geometry": "^4.5.0-dev.29",
-    "@itwin/eslint-plugin": "^3.7.0-dev.8",
+    "@itwin/build-tools": "^5.0.0-dev",
+    "@itwin/core-bentley": "^5.0.0-dev",
+    "@itwin/core-common": "^5.0.0-dev",
+    "@itwin/core-geometry": "^5.0.0-dev",
+    "@itwin/eslint-plugin": "^5.0.0-dev.2",
     "@types/chai": "^4.3.6",
     "@types/chai-as-promised": "^7.1.6",
     "@types/fs-extra": "^4.0.13",
     "@types/mocha": "^5.2.7",
-    "@types/node": "10.14.1",
+    "@types/node": "~20.17.0",
     "@types/sinon": "^9.0.11",
     "chai": "^4.3.10",
     "chai-as-promised": "^7.1.1",
     "cpx2": "^3.0.2",
-    "eslint": "^7.32.0",
+    "eslint": "~9.14.0",
     "fs-extra": "^8.1.0",
     "mocha": "^10.2.0",
     "rimraf": "^2.7.1",
     "sinon": "^9.2.4",
-    "typescript": "^4.9.5"
-  },
-  "eslintConfig": {
-    "plugins": [
-      "@itwin"
-    ],
-    "extends": "plugin:@itwin/itwinjs-recommended"
+    "typescript": "~5.6.2"
   }
 }
