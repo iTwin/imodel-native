@@ -2148,9 +2148,9 @@ void ConcurrentQueryMgr::Config::To(BeJsValue val) const {
     val[Config::JIgnorePriority] = GetIgnorePriority();
     val[Config::JIgnoreDelay] = GetIgnoreDelay();
     val[Config::JDoNotUsePrimaryConnToPrepare] = GetDoNotUsePrimaryConnToPrepare();
-    val[Config::JAutoShutdowWhenIdlelForSeconds] = GetAutoShutdowWhenIdlelForSeconds().count();
+    val[Config::JAutoShutdowWhenIdlelForSeconds] =static_cast<uint32_t>(GetAutoShutdowWhenIdlelForSeconds().count());
     val[Config::JStatementCacheSizePerWorker] = GetStatementCacheSizePerWorker();
-    val[Config::JMonitorPollInterval] = GetMonitorPollInterval().count();
+    val[Config::JMonitorPollInterval] = static_cast<uint32_t>(GetMonitorPollInterval().count());
     val[Config::JMemoryMapFileSize] = GetMemoryMapFileSize();
     val[Config::JAllowTestingArgs] = GetAllowTestingArgs();
     auto quota = val[Config::JQuota];
