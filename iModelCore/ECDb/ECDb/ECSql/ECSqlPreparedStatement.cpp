@@ -211,11 +211,15 @@ DbResult SingleECSqlPreparedStatement::DoStep()
     if (SUCCESS != AssertIsValid())
         return BE_SQLITE_ERROR;
 
-    if (!m_parameterMap.OnBeforeStep().IsSuccess())
-        return BE_SQLITE_ERROR;
+    StatementState state;
+    if(m_sqliteStatement.TryGetStatementState(state) && state == StatementState::Ready)
+        {
+        if (!m_parameterMap.OnBeforeFirstStep().IsSuccess())
+            return BE_SQLITE_ERROR;
+        }
+    
 
     const DbResult nativeSqlStatus = m_sqliteStatement.Step();
-
     switch (nativeSqlStatus)
         {
             case BE_SQLITE_ROW:
@@ -234,7 +238,7 @@ DbResult SingleECSqlPreparedStatement::DoStep()
             break;
             }
         }
-
+         
     return nativeSqlStatus;
     }
 

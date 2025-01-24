@@ -15,6 +15,7 @@ struct IdECSqlBinder final : public ECSqlBinder
     {
 private:
     bool m_isNoop;
+    BinderInfo m_binderInfo;
 
     int GetSqlParamIndex() const 
         { 
@@ -44,6 +45,8 @@ public:
     IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
 
     IECSqlBinder& _AddArrayElement() override;
+
+    BinderInfo const& _GetBinderInfo() override;
 
     public:
         IdECSqlBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, bool isNoop, SqlParamNameGenerator&);

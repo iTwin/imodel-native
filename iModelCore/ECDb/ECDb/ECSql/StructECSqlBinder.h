@@ -15,12 +15,13 @@ struct StructECSqlBinder final : public ECSqlBinder
 
     private:
         std::map<ECN::ECPropertyId, std::unique_ptr<ECSqlBinder>> m_memberBinders;
+        BinderInfo m_binderInfo;
 
         StructECSqlBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, SqlParamNameGenerator&);
         BentleyStatus Initialize(ECSqlPrepareContext&, SqlParamNameGenerator&);
 
         void _OnClearBindings() override;
-        ECSqlStatus _OnBeforeStep() override;
+        ECSqlStatus _OnBeforeFirstStep() override;
 
         ECSqlStatus _BindNull() override;
         ECSqlStatus _BindBoolean(bool value) override;
@@ -40,6 +41,8 @@ struct StructECSqlBinder final : public ECSqlBinder
         IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
 
         IECSqlBinder& _AddArrayElement() override;
+
+        BinderInfo const& _GetBinderInfo() override;
 
     public:
         ~StructECSqlBinder() {}

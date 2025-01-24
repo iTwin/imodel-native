@@ -205,6 +205,7 @@ struct PragmaECSqlPreparedStatement final: public IECSqlPreparedStatement {
 private:
     ECSqlParameterMap m_parameterMap;
     std::unique_ptr<PragmaResult> m_resultSet;
+    bool m_isFirstStep = true;
     IECSqlBinder& _GetBinder(int parameterIndex) const override;
     int _GetParameterIndex(Utf8CP parameterName) const override;
     int _TryGetParameterIndex(Utf8CP parameterName) const override;

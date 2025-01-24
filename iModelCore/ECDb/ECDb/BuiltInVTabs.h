@@ -43,6 +43,67 @@ struct ClassPropsModule : BeSQLite::DbModule {
         DbResult Connect(DbVirtualTable*& out, Config& conf, int argc, const char* const* argv) final;
 };
 
+struct IdSetModule : ECDbModule {
+    constexpr static auto NAME = "IdSet";
+    struct IdSetTable : ECDbVirtualTable {
+        struct IdSetCursor : ECDbCursor {
+
+            enum class Columns{
+                Id = 0,
+                Json_array_ids = 1,
+            };
+            
+            private:
+                Utf8String m_text;
+                bset<uint64_t> m_idSet;
+                bset<uint64_t>::const_iterator m_index;
+
+            public:
+                IdSetCursor(IdSetTable& vt): ECDbCursor(vt), m_index(m_idSet.begin()){}
+                bool Eof() final { return m_index == m_idSet.end() ; }
+                DbResult Next() final;
+                DbResult GetColumn(int i, Context& ctx) final;
+                DbResult GetRowId(int64_t& rowId) final;
+                DbResult Filter(int idxNum, const char *idxStr, int argc, DbValue* argv) final;
+                DbResult FilterJSONBasedOnType(BeJsConst& val);
+                DbResult FilterJSONStringIntoArray(BeJsDocument& val);
+                void Reset();
+        };
+        public:
+            IdSetTable(IdSetModule& module): ECDbVirtualTable(module) {}
+            DbResult Open(DbCursor*& cur) override {
+                cur = new IdSetCursor(*this);
+                return BE_SQLITE_OK;
+            }
+             DbResult BestIndex(IndexInfo& indexInfo) final;
+    };
+    public:
+        IdSetModule(ECDbR db): ECDbModule(
+            db,
+            NAME,
+            "CREATE TABLE x(id, json_array_ids hidden)",
+            R"xml(<?xml version="1.0" encoding="utf-8" ?>
+            <ECSchema
+                    schemaName="ECVLib"
+                    alias="ECVLib"
+                    version="1.0.0"
+                    xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECSchemaReference name="ECDbVirtual" version="01.00.00" alias="ecdbvir" />
+                <ECCustomAttributes>
+                    <VirtualSchema xmlns="ECDbVirtual.01.00.00"/>
+                </ECCustomAttributes>
+                <ECEntityClass typeName="IdSet" modifier="Abstract">
+                    <ECCustomAttributes>
+                        <VirtualType xmlns="ECDbVirtual.01.00.00"/>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="id"  typeName="long" extendedTypeName="Id"/>
+                </ECEntityClass>
+            </ECSchema>)xml"
+            ) {}
+        DbResult Connect(DbVirtualTable*& out, Config& conf, int argc, const char* const* argv) final;
+};
+
+
 DbResult RegisterBuildInVTabs(ECDbR);
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

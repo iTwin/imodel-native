@@ -10,6 +10,38 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+//=======================================================================================
+// @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct BinderInfo final
+    {
+    public:
+        enum class BinderType
+        {
+            Array,
+            Id,
+            VirtualSet,
+            NavigationProperty,
+            Point,
+            Primitive,
+            Struct,
+            JsonValue,
+            Noop,
+            ProxyECInstanceId,
+            Proxy, 
+        };
+        
+    private:
+        BinderType m_binderType ;
+        bool m_binderIsForIdSet = false;
+    public:
+        explicit BinderInfo(BinderType binderType) : m_binderType(binderType), m_binderIsForIdSet(false){}
+        BinderInfo(BinderType binderType, bool binderIsForInVirtualSetOrIdSetVirtualTable) : m_binderType(binderType), m_binderIsForIdSet(binderIsForInVirtualSetOrIdSetVirtualTable){}
+        BinderType GetType() const { return m_binderType; }
+        bool IsForIdSet() const { return m_binderIsForIdSet; }
+    };
+
+
 
 //=======================================================================================
 //! IECSqlBinder is used to bind a value to a binding parameter in an ECSqlStatement.
@@ -55,6 +87,9 @@ private:
     virtual IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) = 0;
     virtual IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) = 0;
     virtual IECSqlBinder& _AddArrayElement() = 0;
+
+    virtual BinderInfo const& _GetBinderInfo() = 0;
+
 
 protected:
 #if !defined (DOCUMENTATION_GENERATOR)
@@ -197,6 +232,9 @@ public:
     //! Adds a new array element to the array to be bound to the parameter.
     //! @return The binder for the new array element
     ECDB_EXPORT IECSqlBinder& AddArrayElement();
+
+    //! @return Gets the BinderInfo for the specific binder
+    ECDB_EXPORT BinderInfo const& GetBinderInfo();
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
