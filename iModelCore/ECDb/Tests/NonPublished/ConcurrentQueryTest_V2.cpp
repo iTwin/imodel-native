@@ -1153,6 +1153,7 @@ TEST_F(ConcurrentQueryFixture, CommentAtEndOfECSql) {
 TEST_F(ConcurrentQueryFixture, ReaderBindingForIdSetVirtualTable) {
 
     ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("ConcurrentQuery_Simple.ecdb"));
+    ConcurrentQueryFixture::EnableECSqlExperimentalFeatures(m_ecdb, true);
         {
         auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
         BeIdSet idSet;
@@ -1208,7 +1209,28 @@ TEST_F(ConcurrentQueryFixture, ReaderBindingForIdSetVirtualTable) {
             }
         ASSERT_EQ(vsRowCount,0);
         }
-    
+    ConcurrentQueryMgr::Shutdown(m_ecdb);
+    ConcurrentQueryFixture::EnableECSqlExperimentalFeatures(m_ecdb, false);
+        {
+        auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
+        BeIdSet idSet;
+        idSet.insert(BeInt64Id(10));
+        idSet.insert(BeInt64Id(20));
+        idSet.insert(BeInt64Id(30));
+        idSet.insert(BeInt64Id(40));
+        int vsRowCount = 0;
+
+        ECSqlReader  vsReaderIdSet(mgr, "select id from ECVLib.IdSet(?)",
+            ECSqlParams().BindIdSet(1, idSet));
+
+        try{
+            vsReaderIdSet.Next();
+            }
+        catch (std::runtime_error e){
+            ASSERT_STREQ("'IdSet' virtual table is experimental feature and disabled by default.", e.what());
+            ASSERT_EQ(vsRowCount,0);
+            }
+        }
 }
 
 END_ECDBUNITTESTS_NAMESPACE

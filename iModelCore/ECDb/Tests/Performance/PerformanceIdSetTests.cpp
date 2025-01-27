@@ -15,6 +15,8 @@ struct PerformanceIdSetTests : ECDbTestFixture {};
 TEST_F(PerformanceIdSetTests, SimpleComparisonBetweenInVirtualSet_and_IdSet)
         {
         ASSERT_EQ(BE_SQLITE_OK, SetupECDb("SimpleComparisonBetweenInVirtualSet_and_IdSet.ecdb"));
+        ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+        ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
         ECSqlStatement stmt_With_InvirtualSet;
         ECSqlStatement stmt_With_IdSet;
         std::vector<Utf8String> v = {"0x373","0x38F", "0x32", "0x01"};
@@ -57,6 +59,8 @@ TEST_F(PerformanceIdSetTests, SimpleComparisonBetweenInVirtualSet_and_IdSet)
             }
         timer_IdSet.Stop();
         LOGTODB(TEST_DETAILS, timer_IdSet.GetElapsedSeconds(), i, SqlPrintfString("Statement: \"%s\"", stmt_With_IdSet.GetECSql()));
+        ASSERT_TRUE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+        ASSERT_FALSE(EnableECSqlExperimentalFeatures(m_ecdb, false));
         }
 
 //---------------------------------------------------------------------------------------
@@ -65,6 +69,8 @@ TEST_F(PerformanceIdSetTests, SimpleComparisonBetweenInVirtualSet_and_IdSet)
 TEST_F(PerformanceIdSetTests, SimpleComparisonBetweenInVirtualSet_and_IdSet_with_large_set)
         {
         ASSERT_EQ(BE_SQLITE_OK, SetupECDb("SimpleComparisonBetweenInVirtualSet_and_IdSet_with_large_set.ecdb"));
+        ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+        ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
         ECSqlStatement stmt_With_InvirtualSet;
         ECSqlStatement stmt_With_IdSet;
         IdSet<BeInt64Id> emptyIdset;
@@ -106,6 +112,8 @@ TEST_F(PerformanceIdSetTests, SimpleComparisonBetweenInVirtualSet_and_IdSet_with
             }
         timer_IdSet.Stop();
         LOGTODB(TEST_DETAILS, timer_IdSet.GetElapsedSeconds(), i, SqlPrintfString("Statement: \"%s\"", stmt_With_IdSet.GetECSql()));
+        ASSERT_TRUE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+        ASSERT_FALSE(EnableECSqlExperimentalFeatures(m_ecdb, false));
         }
 
 //---------------------------------------------------------------------------------------
@@ -120,6 +128,8 @@ TEST_F(PerformanceIdSetTests, SimpleComparisonBetweenInVirtualSet_and_IdSet_with
             </ECEntityClass>
         </ECSchema>)xml")));
 
+        ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+        ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
         ECSqlStatement insert_stmt;
         ASSERT_EQ(ECSqlStatus::Success, insert_stmt.Prepare(m_ecdb, "insert into ts.Foo(UnIndexed_Prop) values(?)"));
         for(int i = 0;i<1000000;i++)
@@ -176,6 +186,8 @@ TEST_F(PerformanceIdSetTests, SimpleComparisonBetweenInVirtualSet_and_IdSet_with
             timer_IdSet.Stop();
             LOGTODB(TEST_DETAILS, timer_IdSet.GetElapsedSeconds(), i, SqlPrintfString("Statement: \"%s\"", stmt_With_IdSet.GetECSql()));
             }
+        ASSERT_TRUE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+        ASSERT_FALSE(EnableECSqlExperimentalFeatures(m_ecdb, false));
         }
 
 //---------------------------------------------------------------------------------------
@@ -189,6 +201,9 @@ TEST_F(PerformanceIdSetTests, SimpleComparisonBetweenJoinedQuery_and_QueryWithWh
                 <ECProperty propertyName="UnIndexed_Prop" typeName="int" />
             </ECEntityClass>
         </ECSchema>)xml")));
+
+        ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+        ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
 
         ECSqlStatement insert_stmt;
         ASSERT_EQ(ECSqlStatus::Success, insert_stmt.Prepare(m_ecdb, "insert into ts.Foo(UnIndexed_Prop) values(?)"));
@@ -250,5 +265,7 @@ TEST_F(PerformanceIdSetTests, SimpleComparisonBetweenJoinedQuery_and_QueryWithWh
             timer_Query_With_WhereClause.Stop();
             LOGTODB(TEST_DETAILS, timer_Query_With_WhereClause.GetElapsedSeconds(), i, SqlPrintfString("Statement: \"%s\"", stmt_With_WhereClause.GetECSql()));
             }
+        ASSERT_TRUE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+        ASSERT_FALSE(EnableECSqlExperimentalFeatures(m_ecdb, false));
         }
 END_ECDBUNITTESTS_NAMESPACE

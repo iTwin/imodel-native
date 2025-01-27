@@ -17,6 +17,8 @@ struct ECDbIdSetVirtualTableTestFixture : ECDbTestFixture {};
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("vtab.ecdb"));
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
         {
         ECSqlStatement stmt;
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[1,2,3,4,5]')"));
@@ -616,6 +618,8 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
         // "3.0" is not allowed in IdSet VT so should fail and log error
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());      
         }
+    ASSERT_TRUE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_FALSE(EnableECSqlExperimentalFeatures(m_ecdb, false));
 }
 
 //---------------------------------------------------------------------------------------
@@ -629,6 +633,9 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetWithJOINS) {
             <ECProperty propertyName="int_prop" typeName="int" />
         </ECEntityClass>
         </ECSchema>)xml")));
+
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
     std::vector<BeInt64Id> listOfIds;
     std::vector<Utf8CP> listOfStringVal = {"str1", "str2", "str3", "str4","str5", "str6", "str7", "str8", "str9", "str10"};
     ECSqlStatement insertStmt;
@@ -803,7 +810,106 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetWithJOINS) {
         ECSqlStatement selectStmt;
         ASSERT_EQ(ECSqlStatus::InvalidECSql, selectStmt.Prepare(m_ecdb, "Select test.str_prop, test.int_prop, v.id from ts.A test OUTER JOIN ECVLib.IdSet(?) v on test.ECInstanceId = v.id"));
         }
+    ASSERT_TRUE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_FALSE(EnableECSqlExperimentalFeatures(m_ecdb, false));
 }
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbIdSetVirtualTableTestFixture, experimental_test_feature) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("experimental_test_feature.ecdb"));
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[1,2,3,4,5]') ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
+
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 5);
+        }
+        {
+        std::vector<Utf8String> hexIds = std::vector<Utf8String>{"0x1", "0x2", "0x3", "4", "5"};
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ECVLib.IdSet(?), meta.ECClassDef where ECInstanceId = id group by ECInstanceId OPTIONS ENABLE_EXPERIMENTAL_FEATURES = true"));
+        IECSqlBinder& arrayBinder = stmt.GetBinder(1);
+        for(int i =0;i<hexIds.size();i++)
+            {
+            IECSqlBinder& elementBinder = arrayBinder.AddArrayElement();
+            ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText(hexIds[i].c_str(), IECSqlBinder::MakeCopy::No));
+            }
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ(BeStringUtilities::ParseHex(hexIds[i++].c_str()), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, hexIds.size());
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Reset());
+        ASSERT_EQ(ECSqlStatus::Success, stmt.ClearBindings());
+
+        IECSqlBinder& arrayBinder_two = stmt.GetBinder(1);
+        for(int i =0;i<hexIds.size();i++)
+            {
+            IECSqlBinder& elementBinder = arrayBinder_two.AddArrayElement();
+            ASSERT_EQ(ECSqlStatus::Success, elementBinder.BindText(hexIds[i].c_str(), IECSqlBinder::MakeCopy::No));
+            }
+        i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ(BeStringUtilities::ParseHex(hexIds[i++].c_str()), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, hexIds.size());
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[1,2,3,4,5]') ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = 0"));
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[1,2,3,4,5]') OPTIONS ENABLE_EXPERIMENTAL_FEATURES = false"));
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT id FROM ECVLib.IdSet('[1,2,3,4,5]') OPTIONS ENABLE_EXPERIMENTAL_FEATURES = false"));
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM (SELECT id FROM ECVLib.IdSet('[1,2,3,4,5]') OPTIONS ENABLE_EXPERIMENTAL_FEATURES) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = 0"));
+
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 5);
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM (SELECT id FROM ECVLib.IdSet('[1,2,3,4,5]') OPTIONS ENABLE_EXPERIMENTAL_FEATURES = TRUE) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = 0"));
+
+        int i = 0;
+        while (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ASSERT_EQ((1+i++), stmt.GetValueInt64(0));
+            }
+        ASSERT_EQ(i, 5);
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM (SELECT id FROM ECVLib.IdSet('[1,2,3,4,5]') OPTIONS ENABLE_EXPERIMENTAL_FEATURES = FALSE) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM (SELECT id FROM ECVLib.IdSet('[1,2,3,4,5]') OPTIONS ENABLE_EXPERIMENTAL_FEATURES = FALSE) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES"));
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT * FROM (SELECT id FROM ECVLib.IdSet('[1,2,3,4,5]') OPTIONS ENABLE_EXPERIMENTAL_FEATURES = 0) ECSQLOPTIONS ENABLE_EXPERIMENTAL_FEATURES = true"));
+        }
+}    
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -816,6 +922,9 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, Testing_casing_of_IdSet) {
             <ECProperty propertyName="int_prop" typeName="int" />
         </ECEntityClass>
         </ECSchema>)xml")));
+
+    ASSERT_FALSE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_TRUE(EnableECSqlExperimentalFeatures(m_ecdb, true));
     std::vector<BeInt64Id> listOfIds;
     std::vector<Utf8CP> listOfStringVal = {"str1", "str2", "str3", "str4","str5", "str6", "str7", "str8", "str9", "str10"};
     ECSqlStatement insertStmt;
@@ -937,7 +1046,8 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, Testing_casing_of_IdSet) {
             }
         ASSERT_EQ(i, 1);
         }
-
+    ASSERT_TRUE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
+    ASSERT_FALSE(EnableECSqlExperimentalFeatures(m_ecdb, false));
 }
 
 
