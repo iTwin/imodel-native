@@ -15,6 +15,7 @@ struct VirtualSetBinder final : public ECSqlBinder
     {
     private:
         std::shared_ptr<VirtualSet> m_virtualSet;
+        BinderInfo m_binderInfo;
 
         void _OnClearBindings() override { m_virtualSet.reset(); }
 
@@ -43,6 +44,8 @@ struct VirtualSetBinder final : public ECSqlBinder
         IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
 
         IECSqlBinder& _AddArrayElement() override;
+
+        BinderInfo const& _GetBinderInfo() override;
 
     public:
         VirtualSetBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, SqlParamNameGenerator&);

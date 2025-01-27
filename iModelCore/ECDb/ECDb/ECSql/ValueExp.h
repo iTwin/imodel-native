@@ -365,6 +365,7 @@ struct MemberFunctionCallExp final : ValueExp
         explicit MemberFunctionCallExp(Utf8StringCR functionName, bool tableValuedFunc) : ValueExp(Type::MemberFunctionCall), m_tableValuedFunc(tableValuedFunc), m_functionName(functionName){}
         virtual ~MemberFunctionCallExp() {}
 
+        bool IsTableValuedFunc() const { return m_tableValuedFunc; }
         Utf8StringCR GetFunctionName() const { return m_functionName; }
         BentleyStatus AddArgument(std::unique_ptr<ValueExp>, Utf8StringR);
         ValueExp const* GetArgument(size_t index) const;
