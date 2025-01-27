@@ -1342,7 +1342,7 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
     ASSERT_STRCASEEQ("ec_instanceidsequence", stmt.GetValueText(0)) << "Second row";
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Only two entries expected in " << BEDB_TABLE_Local;
     stmt.Finalize();
-    
+
     //verify 4.0.0.4 upgrade
     Db benchmarkFile;
     ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly)));
@@ -1386,7 +1386,7 @@ TEST_F(FileFormatCompatibilityTests, ProfileUpgrade)
     ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(upgradedFile, "SELECT p.ExtendedTypeName, p.Name FROM meta.ECPropertyDef p JOIN meta.ECClassDef c ON c.ECInstanceId=p.Class.Id JOIN meta.ECSchemaDef s ON s.ECInstanceId=c.Schema.Id WHERE s.Name='ECDbSystem' AND p.PrimitiveType=?"));
     ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.BindInt(1, PrimitiveType::PRIMITIVETYPE_Long));
     int rowCount = 0;
-    
+
     // Vector of Expected Extended Type Names to compare against
     std::vector<Utf8String> testValues = { "Id", "ClassId", "NavId", "NavRelClassId", "SourceId", "SourceClassId", "TargetId", "TargetClassId" };
     while (BE_SQLITE_ROW == ecsqlStmt.Step())
@@ -1547,7 +1547,7 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(benchmarkFilePath, upgradedFilePath));
     ECDb upgradedFile;
     ASSERT_EQ(BE_SQLITE_OK, upgradedFile.OpenBeSQLiteDb(upgradedFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite, ECDb::ProfileUpgradeOptions::Upgrade)));
-    
+
     {
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(upgradedFile, R"sql(SELECT count(*) FROM sqlite_master WHERE name LIKE 'ec\_%' ESCAPE '\' ORDER BY name COLLATE NOCASE)sql"));
@@ -1555,9 +1555,9 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
     ASSERT_EQ(25, stmt.GetValueInt(0)) << "ECDb profile table count";
     }
 
-    
+
     BeFileStatus stat = BeFileStatus::Success;
-    
+
     int benchmarkMasterTableRowCount = 0;
     {
     BeFileName benchmarkDdlDumpFilePath(artefactOutDir);
@@ -2207,7 +2207,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_LoadSchemaAn
     EXPECT_EQ(ECObjectsStatus::Success, ECSchema::ParseECVersion(ecXmlMajorVersion, ecXmlMinorVersion, ECVersion::Latest));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(SqlPrintfString("UPDATE ec_Schema SET OriginalECXmlVersionMinor=%d WHERE Name='TestSchema'", ++ecXmlMinorVersion)));
     m_ecdb.SaveChanges();
-    
+
     {
     for (const auto& sqlUpdate : { "UPDATE ec_Class SET Type=100 WHERE Name='A'", "UPDATE ec_Class SET Modifier=100 WHERE Name='A'" })
         {
@@ -2290,7 +2290,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_LoadSchemaAn
     }
 
     {
-    for (const auto& [sqlUpdate, relationshipClassLoaded] : 
+    for (const auto& [sqlUpdate, relationshipClassLoaded] :
         {
         std::make_pair("UPDATE ec_Class SET RelationshipStrength=100 WHERE Name='AHasB'", false),
         std::make_pair("UPDATE ec_Class SET RelationshipStrengthDirection=100 WHERE Name='AHasB'", false),
@@ -2355,6 +2355,206 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_LoadSchemaAn
 //---------------------------------------------------------------------------------------
 // @bsiclass
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_UnknownMapStrategy)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ForwardCompatibilitySafeguards_UnknownMapStrategy.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEntityClass typeName="A">
+                <ECProperty propertyName="PropA" typeName="string"/>
+                <ECNavigationProperty propertyName="RelProp" relationshipName="AToB" direction="Forward"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="SubA">
+                <BaseClass>A</BaseClass>
+                <ECProperty propertyName="PropSubA" typeName="string"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="GrandSubA">
+                <BaseClass>SubA</BaseClass>
+                <ECProperty propertyName="PropGrandSubA" typeName="string"/>
+            </ECEntityClass>
+            <ECEntityClass typeName="B">
+                <ECProperty propertyName="PropB" typeName="string"/>
+                <ECNavigationProperty propertyName="AnotherRelProp" relationshipName="BToA" direction="Forward"/>
+            </ECEntityClass>
+
+            <ECRelationshipClass typeName="AToB" strength="Referencing" modifier="Sealed" strengthDirection="Forward">
+                <Source multiplicity="(0..*)" polymorphic="False" roleLabel="A">
+                    <Class class ="A"/>
+                </Source>
+                <Target multiplicity="(1..1)" polymorphic="False" roleLabel="B">
+                    <Class class ="B"/>
+                </Target>
+            </ECRelationshipClass>
+
+            <ECRelationshipClass typeName="BToA" strength="Referencing" modifier="Sealed" strengthDirection="Forward">
+                <Source multiplicity="(0..*)" polymorphic="False" roleLabel="A">
+                    <Class class ="B"/>
+                </Source>
+                <Target multiplicity="(1..1)" polymorphic="False" roleLabel="B">
+                    <Class class ="A"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml")));
+
+    const auto schema = m_ecdb.Schemas().GetSchema("TestSchema");
+    ASSERT_NE(nullptr, schema);
+    ASSERT_NE(schema->GetClassCP("A"), nullptr);
+    ASSERT_NE(schema->GetClassCP("SubA"), nullptr);
+    ASSERT_NE(schema->GetClassCP("GrandSubA"), nullptr);
+    ASSERT_NE(schema->GetClassCP("B"), nullptr);
+    ASSERT_NE(schema->GetClassCP("AToB"), nullptr);
+    ASSERT_NE(schema->GetClassCP("BToA"), nullptr);
+
+    unsigned int ecXmlMajorVersion;
+    unsigned int ecXmlMinorVersion;
+    EXPECT_EQ(ECObjectsStatus::Success, ECSchema::ParseECVersion(ecXmlMajorVersion, ecXmlMinorVersion, ECVersion::Latest));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(SqlPrintfString("UPDATE ec_Schema SET OriginalECXmlVersionMinor=%d WHERE Name='TestSchema'", ++ecXmlMinorVersion)));
+    m_ecdb.SaveChanges();
+
+    // Let's put some data in the classes
+    for (const auto& insertStatement : std::vector<Utf8CP> {
+        "insert into ts_A(Id, PropA, RelPropId) values (1, 'PropA1', 1)",
+        "insert into ts_A(Id, PropA, RelPropId) values (2, 'PropA2', 1)",
+        "insert into ts_SubA(Id, PropA, PropSubA) values (1, 'PropA1', 'PropSubA1')",
+        "insert into ts_GrandSubA(Id, PropA, PropSubA, PropGrandSubA) values (1, 'PropA1', 'PropSubA1', 'PropGrandSubA1')",
+        "insert into ts_B(Id, PropB, AnotherRelPropId) values (1, 'PropB1', 1)",
+        "insert into ts_B(Id, PropB, AnotherRelPropId) values (2, 'PropB2', 1)",
+    })
+        {
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(insertStatement));
+        }
+
+    m_ecdb.SaveChanges();
+
+    const auto executeTestCase = [&](const unsigned int testCaseNumber, Utf8CP selectStatement, const DbResult stepResult)
+        {
+        ECSqlStatement stmt;
+        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectStatement)) << "Sql Prepare failed for testcase " << testCaseNumber;
+        EXPECT_EQ(stepResult, stmt.Step()) << "Sql Step failed for testcase " << testCaseNumber;
+        stmt.Finalize();
+        };
+
+    const auto resetTestCase = [&](Utf8CP updateStatement)
+        {
+        m_ecdb.AbandonChanges();
+        ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(updateStatement));
+        };
+
+
+    resetTestCase("UPDATE ec_ClassMap SET MapStrategy=999 WHERE ClassId IN (SELECT Id from ec_Class WHERE Name IN ('A'))");
+    for (const auto& [testCaseNumber, selectStatement, stepResult] : std::vector<std::tuple<unsigned int, Utf8CP, DbResult>>
+        {
+            { 1, "SELECT * FROM ts.A", BE_SQLITE_DONE },
+            { 2, "SELECT ECInstanceId, PropA FROM ts.A", BE_SQLITE_DONE },
+            { 3, "SELECT * FROM ts.SubA", BE_SQLITE_DONE },
+            { 4, "SELECT ECInstanceId, PropA, PropSubA FROM ts.SubA", BE_SQLITE_DONE },
+            { 5, "SELECT * FROM ts.GrandSubA", BE_SQLITE_DONE },
+            { 6, "SELECT ECInstanceId, PropA, PropSubA, PropGrandSubA FROM ts.GrandSubA", BE_SQLITE_DONE },
+        })
+        {
+        executeTestCase(testCaseNumber, selectStatement, stepResult);
+        }
+
+    resetTestCase("UPDATE ec_ClassMap SET MapStrategy=999 WHERE ClassId IN (SELECT Id from ec_Class WHERE Name IN ('SubA'))");
+    for (const auto& [testCaseNumber, selectStatement, stepResult] : std::vector<std::tuple<unsigned int, Utf8CP, DbResult>>
+        {
+            {  7, "SELECT * FROM ts.A", BE_SQLITE_ROW },
+            {  8, "SELECT ECInstanceId, PropA FROM ts.A", BE_SQLITE_ROW },
+            {  9, "SELECT * FROM ts.SubA", BE_SQLITE_DONE },
+            { 10, "SELECT ECInstanceId, PropA, PropSubA FROM ts.SubA", BE_SQLITE_DONE },
+            { 11, "SELECT * FROM ts.GrandSubA", BE_SQLITE_DONE },
+            { 12, "SELECT ECInstanceId, PropA, PropSubA, PropGrandSubA FROM ts.GrandSubA", BE_SQLITE_DONE },
+        })
+        {
+        executeTestCase(testCaseNumber, selectStatement, stepResult);
+        }
+
+    resetTestCase("UPDATE ec_ClassMap SET MapStrategy=999 WHERE ClassId IN (SELECT Id from ec_Class WHERE Name IN ('GrandSubA'))");
+    for (const auto& [testCaseNumber, selectStatement, stepResult] : std::vector<std::tuple<unsigned int, Utf8CP, DbResult>>
+        {
+            { 13, "SELECT * FROM ts.A", BE_SQLITE_ROW },
+            { 14, "SELECT ECInstanceId, PropA FROM ts.A", BE_SQLITE_ROW },
+            { 15, "SELECT * FROM ts.SubA", BE_SQLITE_ROW },
+            { 16, "SELECT ECInstanceId, PropA, PropSubA FROM ts.SubA", BE_SQLITE_ROW },
+            { 17, "SELECT * FROM ts.GrandSubA", BE_SQLITE_DONE },
+            { 18, "SELECT ECInstanceId, PropA, PropSubA, PropGrandSubA FROM ts.GrandSubA", BE_SQLITE_DONE },
+        })
+        {
+        executeTestCase(testCaseNumber, selectStatement, stepResult);
+        }
+
+    resetTestCase("UPDATE ec_ClassMap SET MapStrategy=999 WHERE ClassId IN (SELECT Id from ec_Class WHERE Name IN ('A', 'SubA'))");
+    for (const auto& [testCaseNumber, selectStatement, stepResult] : std::vector<std::tuple<unsigned int, Utf8CP, DbResult>>
+        {
+            { 19, "SELECT * FROM ts.A", BE_SQLITE_DONE },
+            { 20, "SELECT ECInstanceId, PropA FROM ts.A", BE_SQLITE_DONE },
+            { 21, "SELECT * FROM ts.SubA", BE_SQLITE_DONE },
+            { 22, "SELECT ECInstanceId, PropA, PropSubA FROM ts.SubA", BE_SQLITE_DONE },
+            { 23, "SELECT * FROM ts.GrandSubA", BE_SQLITE_DONE },
+            { 24, "SELECT ECInstanceId, PropA, PropSubA, PropGrandSubA FROM ts.GrandSubA", BE_SQLITE_DONE },
+        })
+        {
+        executeTestCase(testCaseNumber, selectStatement, stepResult);
+        }
+
+    resetTestCase("UPDATE ec_ClassMap SET MapStrategy=999 WHERE ClassId IN (SELECT Id from ec_Class WHERE Name IN ('SubA', 'GrandSubA'))");
+    for (const auto& [testCaseNumber, selectStatement, stepResult] : std::vector<std::tuple<unsigned int, Utf8CP, DbResult>>
+        {
+            { 25, "SELECT * FROM ts.A", BE_SQLITE_ROW },
+            { 26, "SELECT ECInstanceId, PropA FROM ts.A", BE_SQLITE_ROW },
+            { 27, "SELECT * FROM ts.SubA", BE_SQLITE_DONE },
+            { 28, "SELECT ECInstanceId, PropA, PropSubA FROM ts.SubA", BE_SQLITE_DONE },
+            { 29, "SELECT * FROM ts.GrandSubA", BE_SQLITE_DONE },
+            { 30, "SELECT ECInstanceId, PropA, PropSubA, PropGrandSubA FROM ts.GrandSubA", BE_SQLITE_DONE },
+        })
+        {
+        executeTestCase(testCaseNumber, selectStatement, stepResult);
+        }
+
+    resetTestCase("UPDATE ec_ClassMap SET MapStrategy=999 WHERE ClassId IN (SELECT Id from ec_Class WHERE Name IN ('A', 'GrandSubA'))");
+    for (const auto& [testCaseNumber, selectStatement, stepResult] : std::vector<std::tuple<unsigned int, Utf8CP, DbResult>>
+        {
+            { 31, "SELECT * FROM ts.A", BE_SQLITE_DONE },
+            { 32, "SELECT ECInstanceId, PropA FROM ts.A", BE_SQLITE_DONE },
+            { 33, "SELECT * FROM ts.SubA", BE_SQLITE_DONE },
+            { 34, "SELECT ECInstanceId, PropA, PropSubA FROM ts.SubA", BE_SQLITE_DONE },
+            { 35, "SELECT * FROM ts.GrandSubA", BE_SQLITE_DONE },
+            { 36, "SELECT ECInstanceId, PropA, PropSubA, PropGrandSubA FROM ts.GrandSubA", BE_SQLITE_DONE },
+        })
+        {
+        executeTestCase(testCaseNumber, selectStatement, stepResult);
+        }
+
+    resetTestCase("UPDATE ec_ClassMap SET MapStrategy=999 WHERE ClassId IN (SELECT Id from ec_Class WHERE Name IN ('A', 'SubA', 'GrandSubA'))");
+    for (const auto& [testCaseNumber, selectStatement, stepResult] : std::vector<std::tuple<unsigned int, Utf8CP, DbResult>>
+        {
+            { 37, "SELECT * FROM ts.A", BE_SQLITE_DONE },
+            { 38, "SELECT ECInstanceId, PropA FROM ts.A", BE_SQLITE_DONE },
+            { 39, "SELECT * FROM ts.SubA", BE_SQLITE_DONE },
+            { 40, "SELECT ECInstanceId, PropA, PropSubA FROM ts.SubA", BE_SQLITE_DONE },
+            { 41, "SELECT * FROM ts.GrandSubA", BE_SQLITE_DONE },
+            { 42, "SELECT ECInstanceId, PropA, PropSubA, PropGrandSubA FROM ts.GrandSubA", BE_SQLITE_DONE },
+        })
+        {
+        executeTestCase(testCaseNumber, selectStatement, stepResult);
+        }
+
+    resetTestCase("UPDATE ec_ClassMap SET MapStrategy=999 WHERE ClassId IN (SELECT Id from ec_Class WHERE Name IN ('A', 'SubA', 'GrandSubA'))");
+    for (const auto& [testCaseNumber, selectStatement, stepResult] : std::vector<std::tuple<unsigned int, Utf8CP, DbResult>>
+        {
+            { 43, "SELECT * FROM ts.B", BE_SQLITE_ROW },
+            { 44, "SELECT * FROM ts.AToB", BE_SQLITE_ROW },
+            { 45, "SELECT * FROM ts.BToA", BE_SQLITE_ROW },
+        })
+        {
+        executeTestCase(testCaseNumber, selectStatement, stepResult);
+        }
+    m_ecdb.AbandonChanges();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_ECEnums)
     {
     //Future EC3.2 ECEnumerator property (If this code has already EC3.2 we don't need to execute the test)
@@ -2379,7 +2579,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_ECEnums)
                 <ECEnumeration typeName="StringEnumDisplayLabel" backingTypeName="string" >
                     <ECEnumerator value="On" displayLabel="Turn On" />
                     <ECEnumerator value="Off" displayLabel="Turn Off" />
-                </ECEnumeration>                
+                </ECEnumeration>
                 <ECEntityClass typeName="Foo">
                     <ECProperty propertyName="Prop1" typeName="IntEnumNoDisplayLabel" />
                     <ECProperty propertyName="Prop2" typeName="IntEnumDisplayLabel" />
@@ -2519,7 +2719,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_ECEnums)
                     <ECEnumerator value="On" displayLabel="Turn On" />
                     <ECEnumerator value="Off" displayLabel="Turn Off" />
                     <ECEnumerator value="Toggle" displayLabel="Toggle me" />
-                </ECEnumeration>                
+                </ECEnumeration>
                 <ECEntityClass typeName="Foo">
                     <ECProperty propertyName="Prop1" typeName="IntEnumNoDisplayLabel" />
                     <ECProperty propertyName="Prop2" typeName="IntEnumDisplayLabel" />
@@ -2705,7 +2905,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
         </ECSchema>)xml")));
 
     KindOfQuantityId koqId;
-    { 
+    {
     KindOfQuantityCP koq = m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "MyKoq");
     ASSERT_TRUE(koq != nullptr);
     koqId = koq->GetId();

@@ -283,12 +283,47 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, Cl
                 return ERROR;
         }
 
+    auto isMappingUnknown = false;
+    Utf8String logMessage;
     Nullable<MapStrategy> mapStrategy = DbSchemaPersistenceManager::ToMapStrategy(stmt->GetValueInt(0));
     if (mapStrategy.IsNull())
         {
-        LOG.errorv("Failed to load class map for '%s'. It has an unsupported map strategy (%d). The ECDb file might have been created by a new version of the software.",
-                                       ecClass.GetFullName(), stmt->GetValueInt(0));
-        return ERROR;
+        if (ecClass.GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest))
+            {
+            isMappingUnknown = true;
+            logMessage = Utf8PrintfString("The class '%s' has an unsupported map strategy (%d). Querying this class will return null values. The ECDb file might have been created by a new version of the software.", ecClass.GetFullName(), stmt->GetValueInt(0));
+            }
+        else
+            {
+            LOG.errorv("Failed to load class map for '%s'. It has an unsupported map strategy (%d). The ECDb file might have been created by a new version of the software.", ecClass.GetFullName(), stmt->GetValueInt(0));
+            return ERROR;
+            }
+        }
+
+    // Check if the class is derived from a class with an unsupported map strategy
+    if (!isMappingUnknown && ecClass.GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest))
+        {
+        for (const auto baseClass : ecClass.GetBaseClasses())
+            {
+            const auto baseClassMap = schemaManager.GetClassMap(*baseClass);
+            if (baseClassMap && baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::UnknownMapping)
+                {
+                isMappingUnknown = true;
+                logMessage = Utf8PrintfString("The class '%s' has an unsupported map strategy (%d). Querying this class will return null values. The ECDb file might have been created by a new version of the software.", ecClass.GetFullName(), baseClass->GetFullName(), stmt->GetValueInt(0));
+                break;
+                }
+            }
+        }
+
+    if (isMappingUnknown)
+        {
+        loadContext.m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategy::UnknownMapping);
+        LOG.warningv(logMessage.c_str());
+
+        if (ReadPropertyMaps(loadContext, ecdb, schemaManager, ecClass.GetId()) != SUCCESS)
+            return ERROR;
+        loadContext.m_classMapExists = true;
+        return SUCCESS;
         }
 
     if (mapStrategy == MapStrategy::TablePerHierarchy)
@@ -364,6 +399,7 @@ BentleyStatus DbClassMapLoadContext::ReadPropertyMaps(DbClassMapLoadContext& ctx
         }
 
     stmt->BindId(1, classId);
+    const auto isMappingUnknown = ctx.GetMapStrategy().GetStrategy() == MapStrategy::UnknownMapping;
     while (stmt->Step() == BE_SQLITE_ROW)
         {
         Utf8CP tableName = stmt->GetValueText(0);
@@ -372,11 +408,19 @@ BentleyStatus DbClassMapLoadContext::ReadPropertyMaps(DbClassMapLoadContext& ctx
 
         DbTable const* table = schemaManager.GetDbSchema().FindTable(tableName);
         if (table == nullptr)
+            {
+            if (isMappingUnknown)
+                continue;
             return ERROR;
+            }
 
         DbColumn const* column = table->FindColumn(columName);
         if (column == nullptr)
+            {
+            if (isMappingUnknown)
+                continue;
             return ERROR;
+            }
 
         ctx.m_columnByAccessString[accessString].push_back(column);
         }
