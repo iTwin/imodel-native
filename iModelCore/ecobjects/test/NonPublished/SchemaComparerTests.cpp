@@ -1164,7 +1164,7 @@ TEST_F(SchemaComparerXmlTests, CompareSchemasWithWrongPropertyTags)
     ASSERT_EQ(1, changes.Changes().Count());
 
     // We default to string when the property tag is wrong therefore, property change should be observed.
-    ASSERT_TRUE(changes.Changes()[0].Classes()[0].Properties()[0].IsChanged());
+    EXPECT_TRUE(changes.Changes()[0].Classes()[0].Properties()[0].IsPrimitive().IsChanged());
     }
 //----------------------------------------------------------------------------------------
 // @bsimethod

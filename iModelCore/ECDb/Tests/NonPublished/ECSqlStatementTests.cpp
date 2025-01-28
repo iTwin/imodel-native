@@ -1595,33 +1595,31 @@ TEST_F(ECSqlStatementTestFixture, UseOfWrongPropertyTags_ForAllVersions)
         const auto context = ECSchemaReadContext::CreateContext();
         
         // Schema should always be deserialized successfully irrespective of the ECXml version
-        ASSERT_EQ(deserializationStatus, SchemaReadStatus::Success == ECSchema::ReadFromXmlString(schema, Utf8PrintfString(xmlSchemaVar, majorVersion, minorVersion).c_str(), *context)) << "Test case number " << testCaseNumber << " failed at deserializing.";
-        ASSERT_EQ(deserializationStatus, schema.IsValid()) << "Test case number: " << testCaseNumber << " failed due to invalid schemas.";
+        ASSERT_EQ(deserializationStatus, SchemaReadStatus::Success == ECSchema::ReadFromXmlString(schema, Utf8PrintfString(xmlSchemaVar, majorVersion, minorVersion).c_str(), *context)) << "Test case number : " << testCaseNumber << " failed at deserializing.";
+        ASSERT_EQ(deserializationStatus, schema.IsValid()) << "Test case number : " << testCaseNumber << " failed due to invalid schemas.";
             
         // Checking if the wrong property tags are defaulted to string type
         if (deserializationStatus)
             {
             // Fetching the class pointer 
             auto classP = schema->GetClassCP("UseOfWrongPropertyTags");
-            ASSERT_TRUE(classP) << "Test case failed." << testCaseNumber << "failed to fetch class pointer.";
+            ASSERT_TRUE(classP) << "Test case : " << testCaseNumber << " failed to fetch class pointer.";
             // Fetching the property pointer
             auto propP = classP->GetPropertyByIndex(0);
-            ASSERT_TRUE(propP) << "Test case failed." << testCaseNumber << "failed to fetch property pointer.";
+            ASSERT_TRUE(propP) << "Test case : " << testCaseNumber << " failed to fetch property pointer.";
             // Fetching property as primitive property
             auto primProp = propP->GetAsPrimitiveProperty();
-            ASSERT_TRUE(primProp) << "Test case failed." << testCaseNumber << "failed to fetch the primitive property";
+            ASSERT_TRUE(primProp) << "Test case failed : " << testCaseNumber << " failed to fetch the primitive property";
             // Checking for equality of primivite property type to string
             auto propType = primProp->GetType();
-            EXPECT_EQ(PRIMITIVETYPE_String, propType) << "Test case failed." << testCaseNumber << "did not default to string type.";
+            EXPECT_EQ(PRIMITIVETYPE_String, propType) << "Test case failed : " << testCaseNumber << " did not default to string type.";
             }
 
         
         // Schema import should fail when ECXml version of the schema is greater than the current version that the ECDb supports
-        EXPECT_EQ(importStatus, m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()) == SchemaImportResult::OK) << "Test case number " << testCaseNumber << " failed.";
-        if (importStatus)
-            EXPECT_NE(nullptr, m_ecdb.Schemas().GetSchema("TestSchema")) << "Test case number " << testCaseNumber << " failed.";
+        EXPECT_EQ(importStatus, m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()) == SchemaImportResult::OK) << "Test case number : " << testCaseNumber << " failed to import schema.";
+        EXPECT_EQ(importStatus, m_ecdb.Schemas().GetSchema("TestSchema") != nullptr)<< "Test case number : " << testCaseNumber << " failed at fetching the schema.";
         m_ecdb.AbandonChanges();
-    
         }
     }
 //---------------------------------------------------------------------------------------
