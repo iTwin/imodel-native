@@ -1,100 +1,84 @@
-rem @ECHO OFF
-
+@ECHO OFF
 rem ------------------------------------------------------------------------------------
 rem   Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 rem   See LICENSE.md in the repository root for full copyright notice.
 rem ------------------------------------------------------------------------------------
 
+: Geometry developers run this locally (Windows) to compile the flatbuffer
+: geometry schema allcg.fbs into flatbuffer accessors for native, iTwin, and
+: .NET geometry libraries. This is necessary whenever data is added to a
+: geometry type that must be persisted across all 3 geometry repos.
+
+: flatc version 1.0.0 is compiled in libsrc with Bentley additions
+SET BeflatcExe=%SrcRoot%imodel-native\iModelCore\libsrc\flatbuffers\bin\beflatc.1.0.0.exe
+
+: flatc version 1.12.0 adds Typescript generation
+SET FlatcExe=%SrcRoot%imodel-native\iModelCore\libsrc\flatbuffers\bin\flatc.1.12.0.exe
+
+: gema is open-source pattern-based text processor developed by David N. Gray
+SET GemaExe=%SrcRoot%toolcache\bsitools_x64.1.0.0-6\gema.exe
+
+: NOTES:
+: * Native output is generated in place.
+: * iTwin/.NET outputs in %OutDir% must be hand-copied to their respective repo.
+: * %OutDir% and %TempDir% will be created locally and should not be committed.
+: * The Google flatbuffers repo has diverged too much to efficiently port our
+:   changes and understand output differences, so we use legacy versions here.
+
 SET BaseName=allcg
-SET SrcDir=%SrcRoot%GeomLibs\Serialization\src\Flatbuffer\
-SET SrcFile=%SrcDir%%BaseName%.flatbuf
-SET GeneratedDir=%SrcDir%
-SET GeneratedFileName=%BaseName%_generated.h
-SET GeneratedFile=%GeneratedDir%%GeneratedFileName%
-SET OutDir=%SrcRoot%GeomLibs\Serialization\Flatbuffer\
-SET OutFile=%OutDir%%BaseName%.fb.h
-SET TempFile=%OutDir%%BaseName%.fbs
-SET OutNetDir=%SrcRoot%BentleyGeometryNet\src\FlatBuffers\gensrc\
-
-REM flatbuffers comes from nuget now... just use the latest we can find:
-for /f %%i IN ('dir "%SrcRoot%nuget\FlatBuffersNuget_x64*" /ad /b /on') DO (
-set latestFBNugetDir=%SrcRoot%nuget\%%i
-)
-
-SET CompileExe=%latestFBNugetDir%\native\bin\beflatc.exe
-
-SET CompileCmd=%CompileExe% -c
-SET CompileNETCmd=%CompileExe% -n -o %OutNetDir%
-SET libsrcFBCSDir=%SrcRoot%libsrc\flatbuffers\source\net\FlatBuffers\
-SET BGNetFBCSDir=%SrcRoot%BentleyGeometryNet\src\FlatBuffers\srcFromLibsrcFlatbuffers\
-
-
-rem ***********************************************************************************************
-rem ***********************************************************************************************
+SET SrcDir=.\
+SET SrcFile=%SrcDir%%BaseName%.fbs
+SET OutDir=%SrcDir%out\
+SET TempDir=%SrcDir%temp\
+SET TempFile=%TempDir%%BaseName%.tmp
 
 IF NOT EXIST %OutDir% MKDIR %OutDir% || (
-    ECHO Could not create '%OutDir%'
+    @ECHO Could not create '%OutDir%'
     goto done
     )
 
-IF NOT EXIST %OutNetDir% (
-    ECHO Could not find %OutNetDir%
+IF NOT EXIST %TempDir% MKDIR %TempDir% || (
+    @ECHO Could not create '%TempDir%'
     goto done
     )
 
-IF NOT EXIST %BGNetFBCSDir% (
-    ECHO Could not find %BGNetFBCSDir%
-    goto done
-    )
-
-if .%1 EQU .debug (
-    echo libsrcFBCSDir = %libsrcFBCSDir%
-    echo BGNetFBCSDir = %BGNetFBCSDir%
-    )
-
-rem ***********************************************************************************************
-rem ***********************************************************************************************
-ECHO namespace Bentley.Geometry.FB; > %TempFile%
+: Native accessors: allcg_generated.h
+@ECHO namespace Bentley.Geometry.FB; > %TempFile%
 TYPE %SrcFile% >> %TempFile%
-
-rem ***********************************************************************************************
-rem ***********************************************************************************************
-ECHO Compiling '%TempFile%'...
-
-%CompileCmd% %TempFile% || (
-    rem DEL %TempFile%
-    ECHO Compile failed
+@ECHO Compiling native accessors...
+%BeflatcExe% -c -o %TempDir% %TempFile% || (
+    @ECHO Native compile failed
     goto done
     )
+SET GeneratedFile=%TempDir%%BaseName%_generated.h
+IF NOT EXIST %GeneratedFile% @ECHO Failed to generate '%GeneratedFile%' && goto done
 
-DEL %TempFile%
-IF NOT EXIST %GeneratedFile% ECHO Failed to generate '%GeneratedFile%' && goto done
+SET OutFile=%SrcDir%%BaseName%_generated.h
+%GemaExe% -f %SrcDir%fixupNative.g %GeneratedFile% > %OutFile%
+@ECHO Done Generating %OutFile%
 
-ECHO Done Generating %GeneratedFile%
-ECHO.
-ECHO.
-rem ***********************************************************************************************
-rem ***********************************************************************************************
-ECHO namespace Bentley.GeometryNET.FB; > %TempFile%
+: Typescript accessors: core\geometry\src\serialization\BGFBAccessors.ts
+@ECHO Compiling Typescript accessors...
+%FlatcExe% --ts -o %TempDir% %SrcFile% || (
+    @ECHO Typescript compile failed
+    goto done
+    )
+SET GeneratedFile=%TempDir%%BaseName%_generated.ts
+IF NOT EXIST %GeneratedFile% @ECHO Failed to generate '%GeneratedFile%' && goto done
+
+SET OutFile=%OutDir%BGFBAccessors.ts
+SET TypescriptDir=%SrcDir%typescript\
+%GemaExe% -f %TypescriptDir%fixupTypescript.g %GeneratedFile% > %OutFile%
+@ECHO Done Generating %OutFile%
+
+: .NET accessors: PPBase\BentleyGeometryNet\src\FlatBuffers\gensrc\*.cs
+@ECHO namespace Bentley.GeometryNET.FB; > %TempFile%
 TYPE %SrcFile% >> %TempFile%
-
-rem ***********************************************************************************************
-rem ***********************************************************************************************
-ECHO Compiling '%TempFile%'...
-
-%CompileNETCmd% %TempFile% || (
-    DEL %TempFile%
-    ECHO Compile failed
+@ECHO Compiling .NET accessors...
+%BeflatcExe% -n -o %OutDir% %TempFile% || (
+    @ECHO .NET compile failed
     goto done
     )
-DEL %TempFile%
-
-rem copy cs source files for flatbuffer table/struct abstractions into BGNet ....(BUT THIS MAY OVERWRITE LOCAL CHANGES -- e.g. BlockCopy fixes)
-rem COPY %libsrcFBCSDir%*.cs %BGNetFBCSDir%
-
-MOVE %OutNetDir%Bentley\GeometryNET\FB\* %OutNetDir% >nul
-RD /S /Q %OutNetDir%Bentley
-ECHO Done creating classes in %OutNetDir%
-ECHO.
+@ECHO Done Generating %OutDir%Bentley\GeometryNET\FB\*.cs
 
 :done

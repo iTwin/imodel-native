@@ -342,7 +342,7 @@ table Polyface
     param       : [double];     // xy blocked
     normal      : [double];     // xyz blocked
     doubleColor : [double];
-    intColor    : [int];
+    intColor    : [uint];
     pointIndex  : [int];
     paramIndex  : [int];
     normalIndex : [int];
