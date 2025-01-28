@@ -260,6 +260,35 @@ TEST(Polyface, PlaneSlice)
     Check::ClearGeometry("Polyface.PlaneSlice");
     }
 
+TEST(Polyface, PlaneSlice2)
+    {
+    BeFileName fullPathName;
+    BeTest::GetHost().GetDocumentsRoot(fullPathName);
+    fullPathName.AppendToPath(L"GeomLibsTestData").AppendToPath(L"Polyface").AppendToPath(L"Clipping").AppendToPath(L"mesh-small-open.imjs");
+
+    DPlane3d plane = DPlane3d::FromOriginAndNormal(0.0, 0.0, -54.674777215387010, 0.0, 0.0, -1.0);
+    Check::SaveTransformed(plane);
+
+    bvector<IGeometryPtr> geometry;
+    if (Check::True(GTestFileOps::JsonFileToGeometry(fullPathName, geometry), "Parse inputs"))
+        {
+        auto mesh = geometry.front()->GetAsPolyfaceHeader();
+        if (Check::True(mesh.IsValid(), "Have mesh") && Check::True(mesh->HasFacets(), "Nonempty mesh"))
+            {
+            Check::SaveTransformed(mesh);
+            auto slice = mesh->PlaneSlice(plane, true);    // as called by ClipPlaneSet::ClipPlaneSetSectionPolyface in GeometryClipper::ProductCutGeometry
+            if (Check::True(slice.IsValid(), "Slice is valid"))
+                {
+                Check::SaveTransformed(slice);
+                Check::False(slice->IsAnyRegionType(), "Slice is not a region");
+                Check::True(slice->GetBoundaryType() == CurveVector::BOUNDARY_TYPE_None, "Boundary type is None");
+                Check::Size(slice->size(), 4, "Four linestrings in the section");
+                }
+            }
+        }
+    Check::ClearGeometry("Polyface.PlaneSlice2");
+    }
+
 enum class DrapeAction
   {
   ClassicDrape,

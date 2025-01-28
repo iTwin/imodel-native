@@ -2557,13 +2557,13 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     void ApplyChangeset(NapiInfoCR info) {
         auto& db = GetWritableDb(info);
         REQUIRE_ARGUMENT_ANY_OBJ(0, changeset);
+        REQUIRE_ARGUMENT_BOOL(1, fastForward);
 
         auto revision = JsInterop::GetChangesetProps(db.GetDbGuid().ToString(), changeset);
-
         auto currentId = db.Txns().GetParentChangesetId();
         ChangesetStatus stat =  ChangesetStatus::Success;
         if (revision->GetParentId() == currentId)  // merge
-            stat = db.Txns().MergeChangeset(*revision);
+            stat = db.Txns().MergeChangeset(*revision, fastForward);
         else if (revision->GetChangesetId() == currentId) //reverse
             db.Txns().ReverseChangeset(*revision);
         if (ChangesetStatus::Success != stat)
@@ -2651,6 +2651,27 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         memcpy(blob.Data(), uncompressed.data(), uncompressed.size());
         return blob;
     }
+
+    void PullMergeResume(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        db.Txns().PullMergeResume();
+    }
+
+    void PullMergeBegin(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        db.Txns().PullMergeBegin();
+    }
+
+    void PullMergeEnd(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        db.Txns().PullMergeEnd();
+    }
+
+    Napi::Value PullMergeInProgress(NapiInfoCR info) {
+        auto& db = GetWritableDb(info);
+        return Napi::Boolean::New(Env(), db.Txns().PullMergeInProgress());
+    }
+
     // ========================================================================================
     // Test method handler
     // ========================================================================================
@@ -2839,6 +2860,10 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
             InstanceMethod("getLocalChanges", &NativeDgnDb::GetLocalChanges),
             InstanceMethod("getNoCaseCollation", &NativeDgnDb::GetNoCaseCollation),
             InstanceMethod("setNoCaseCollation", &NativeDgnDb::SetNoCaseCollation),
+            InstanceMethod("pullMergeInProgress", &NativeDgnDb::PullMergeInProgress),
+            InstanceMethod("pullMergeBegin", &NativeDgnDb::PullMergeBegin),
+            InstanceMethod("pullMergeEnd", &NativeDgnDb::PullMergeEnd),
+            InstanceMethod("pullMergeResume", &NativeDgnDb::PullMergeResume),
             StaticMethod("enableSharedCache", &NativeDgnDb::EnableSharedCache),
             StaticMethod("getAssetsDir", &NativeDgnDb::GetAssetDir),
             StaticMethod("zlibCompress", &NativeDgnDb::ZlibCompress),
@@ -3526,7 +3551,34 @@ public:
                 return Napi::Number::New(Env(), (int) BE_SQLITE_ERROR);
             idSet->insert(id);
         }
-        ECSqlStatus stat = m_binder->BindVirtualSet(idSet);
+        ECSqlStatus stat;
+        BinderInfo const& binderInfo = m_binder->GetBinderInfo();
+        if(binderInfo.GetType() == BinderInfo::BinderType::VirtualSet)
+            stat = m_binder->BindVirtualSet(idSet);
+        else if(binderInfo.GetType() == BinderInfo::BinderType::Array && binderInfo.IsForIdSet())
+        {
+            bool allElementsAdded = true;
+            for(auto it = idSet->begin(); it != idSet->end(); ++it)
+            {
+                if(!(*it).IsValid())
+                {
+                    allElementsAdded = false;
+                    break;
+                }
+                stat = m_binder->AddArrayElement().BindInt64((int64_t) (*it).GetValue());
+                if(!stat.IsSuccess())
+                {
+                    allElementsAdded = false;
+                    break;
+                }
+            }
+            if(allElementsAdded) // If even one array element has failed to be added we set the status for the entire operation as ECSqlStatus::Error
+                stat = ECSqlStatus::Success;
+            else
+                stat = ECSqlStatus::Error;
+        }
+        else
+            stat = ECSqlStatus::Error;
         return Napi::Number::New(Env(), (int) ToDbResult(stat));
         }
 
@@ -4370,6 +4422,7 @@ public:
           InstanceMethod("openGroup", &NativeChangesetReader::OpenGroup),
           InstanceMethod("writeToFile", &NativeChangesetReader::WriteToFile),
           InstanceMethod("openLocalChanges", &NativeChangesetReader::OpenLocalChanges),
+          InstanceMethod("openTxn", &NativeChangesetReader::OpenTxn),
           InstanceMethod("reset", &NativeChangesetReader::Reset),
           InstanceMethod("step", &NativeChangesetReader::Step),
         });
@@ -4505,6 +4558,27 @@ public:
             BeNapi::ThrowJsException(Env(), "no local changes");
 
         m_changeset.OpenChangeStream(Env(), std::move(changeset), invert);
+        }
+    void OpenTxn(NapiInfoCR info)
+        {
+        REQUIRE_ARGUMENT_ANY_OBJ(0, dbObj);
+        REQUIRE_ARGUMENT_STRING(1, idStr);
+        REQUIRE_ARGUMENT_BOOL(2, invert);
+        NativeDgnDb* nativeDgnDb = NativeDgnDb::Unwrap(dbObj);
+        if (!nativeDgnDb->IsOpen())
+            BeNapi::ThrowJsException(Env(), "provided db is not open");
+
+        BeInt64Id id;
+        if (SUCCESS != BeInt64Id::FromString(id, idStr.c_str())) {
+            BeNapi::ThrowJsException(Env(), "expect txnId to be a hex string");
+        }
+
+        auto changeset = nativeDgnDb->GetDgnDb().Txns().OpenLocalTxn(TxnManager::TxnId(id.GetValueUnchecked()));
+        if (changeset == nullptr)
+            BeNapi::ThrowJsException(Env(), SqlPrintfString("no local change with id: %s", idStr.c_str()).GetUtf8CP());
+
+        m_changeset.OpenChangeStream(Env(), std::move(changeset), invert);
+
         }
     Napi::Value Step(NapiInfoCR info)
         {
