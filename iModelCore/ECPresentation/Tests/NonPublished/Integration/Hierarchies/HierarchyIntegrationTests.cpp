@@ -12990,6 +12990,61 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_Does
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(Grouping_ClassGroup_DoesNotDuplicateNodesWhenGroupingInstancesSpecifiedByMultipleBaseClasses, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="M">
+        <ECCustomAttributes>
+            <IsMixin xmlns="CoreCustomAttributes.1.0">
+                <AppliesToEntityClass>A</AppliesToEntityClass>
+            </IsMixin>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <BaseClass>A</BaseClass>
+        <BaseClass>M</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <BaseClass>B</BaseClass>
+    </ECEntityClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerNavigationTests, Grouping_ClassGroup_DoesNotDuplicateNodesWhenGroupingInstancesSpecifiedByMultipleBaseClasses)
+    {
+    ECClassCP classA = GetClass("A");
+    ECClassCP classM = GetClass("M");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    IECInstancePtr c = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rootRule = new RootNodeRule("", 1000, false, TargetTree_Both, true);
+    rules->AddPresentationRule(*rootRule);
+    rootRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, ChildrenHint::Unknown, false, false, true, false,
+        "", RulesEngineTestHelpers::CreateClassNamesList({ classA, classM }), true));
+
+    GroupingRuleP baseClassGroup = new GroupingRule("", 1, false, classB->GetSchema().GetName(), classB->GetName(), "", "", "");
+    baseClassGroup->AddGroup(*new ClassGroup("", true, classB->GetSchema().GetName(), classB->GetName()));
+    rootRule->AddCustomizationRule(*baseClassGroup);
+
+    // verify
+    auto params = AsyncHierarchyRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables());
+    ValidateHierarchy(params,
+        {
+        ExpectedHierarchyDef(CreateClassGroupingNodeValidator(*classB, true, { c }),
+            {
+            ExpectedHierarchyDef(CreateClassGroupingNodeValidator(*classC, false, { c }),
+                {
+                CreateInstanceNodeValidator({ c })
+                }),
+            }),
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(Grouping_ClassGroup_GroupsRelatedInstancesByClass, R"*(
     <ECEntityClass typeName="A" />
     <ECEntityClass typeName="B">
