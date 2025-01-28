@@ -267,6 +267,14 @@ IECSqlBinder& PrimitiveECSqlBinder::_AddArrayElement()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+BinderInfo const& PrimitiveECSqlBinder::_GetBinderInfo()
+    {
+    return m_binderInfo;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 ECSqlStatus PrimitiveECSqlBinder::_BindVirtualSet(std::shared_ptr<VirtualSet> virtualSet)
     {
     LOG.error("Type mismatch. Cannot bind virtual set to primitive parameter.");
