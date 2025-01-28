@@ -1535,6 +1535,94 @@ TEST_F(ECSqlStatementTestFixture, IsNull)
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod
+//---------------------------------------------------------------------------------------
+TEST_F(ECSqlStatementTestFixture, UseOfWrongPropertyTags_ForAllVersions)
+    {
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("UseOfWrongPropertyTags.ecdb"));
+
+    unsigned int ecXmlMajorVersion;
+    unsigned int ecXmlMinorVersion;
+    EXPECT_EQ(ECObjectsStatus::Success, ECSchema::ParseECVersion(ecXmlMajorVersion, ecXmlMinorVersion, ECVersion::Latest));
+
+    //Below schema uses ECProperty tag for Struct property which is wrong. It should use ECStructProperty tag.
+    Utf8CP xmlSchema = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.%d.%d">
+                                    <ECStructClass typeName="PrimStruct">
+                                        <ECProperty propertyName="p2d" typeName="Point2d" />
+                                        <ECProperty propertyName="p3d" typeName="Point3d" />
+                                    </ECStructClass>
+                                    <ECEntityClass typeName="UseOfWrongPropertyTags">
+                                        <ECProperty propertyName="Struct" typeName="PrimStruct" />
+                                        <ECStructArrayProperty propertyName="Struct_Array" typeName="PrimStruct" />
+                                    </ECEntityClass>
+                            </ECSchema>)xml";
+
+    //Below schema uses ECProperty tag for Struct property which is wrong. It should use ECStructProperty tag.
+    //Declaring separate xmlSchema for version 2.0 since, previous versions had different xml schema format.
+    Utf8CP xmlSchemaFor_V2_0 = R"xml(<ECSchema schemaName="TestSchema" version="1.0" nameSpacePrefix="test" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                                        <ECClass typeName="PrimStruct" isStruct = "true">
+                                            <ECProperty propertyName="i" typeName="int" />
+                                            <ECArrayProperty propertyName="I" typeName="int" />
+                                        </ECClass>
+                                        <ECClass typeName="UseOfWrongPropertyTags">
+                                            <ECProperty propertyName="Struct" typeName="PrimStruct" />
+                                        </ECClass>
+                                    </ECSchema>)xml";
+    
+    //Below schema uses ECProperty tag for Struct property which is wrong. It should use ECStructProperty tag.
+    //Declaring separate xmlSchema for version 3.0 since, previous versions had different xml schema format.
+    Utf8CP xmlSchemaFor_V3_0 = R"xml(<ECSchema schemaName="TestSchema" version="1.0" nameSpacePrefix="test" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+                                        <ECStructClass typeName="PrimStruct">
+                                            <ECProperty propertyName="p2d" typeName="Point2d" />
+                                            <ECArrayProperty propertyName="p3d" typeName="Point3d" />
+                                        </ECStructClass>
+                                        <ECEntityClass typeName="UseOfWrongPropertyTags">
+                                            <ECProperty propertyName="Struct" typeName="PrimStruct" />
+                                            <ECStructArrayProperty propertyName="Struct_Array" typeName="PrimStruct" />
+                                        </ECEntityClass>
+                                    </ECSchema>)xml";
+
+    for (const auto& [testCaseNumber, majorVersion, minorVersion, xmlSchemaVar, deserializationStatus, importStatus] : std::vector<std::tuple<unsigned int, unsigned int, unsigned int, Utf8CP, bool, bool>>
+        {
+        { 1, 2U, 0U, xmlSchemaFor_V2_0, true , true },  // Older versions on encountering wrong property tags default to a safe type in this case, "string"
+        { 2, 3U, 0U, xmlSchemaFor_V3_0, true , true },  // Older versions on encountering wrong property tags default to a safe type in this case, "string"
+        { 3, 3U, 1U, xmlSchema, true , true },  // Older versions on encountering wrong property tags default to a safe type in this case, "string"
+        { 4, ecXmlMajorVersion, ecXmlMinorVersion, xmlSchema, false , false }, // Current version should always log an error on encountering wrong property tags with no deserialization and import
+        { 5, ecXmlMajorVersion, ecXmlMinorVersion + 1U, xmlSchema, true , false }, // Future versions should deserialize successfully, default to a safe type but, import should fail
+        })
+        {
+        ECSchemaPtr schema;
+        const auto context = ECSchemaReadContext::CreateContext();
+        
+        // Schema should always be deserialized successfully irrespective of the ECXml version
+        ASSERT_EQ(deserializationStatus, SchemaReadStatus::Success == ECSchema::ReadFromXmlString(schema, Utf8PrintfString(xmlSchemaVar, majorVersion, minorVersion).c_str(), *context)) << "Test case number : " << testCaseNumber << " failed at deserializing.";
+        ASSERT_EQ(deserializationStatus, schema.IsValid()) << "Test case number : " << testCaseNumber << " failed due to invalid schemas.";
+            
+        // Checking if the wrong property tags are defaulted to string type
+        if (deserializationStatus)
+            {
+            // Fetching the class pointer 
+            auto classP = schema->GetClassCP("UseOfWrongPropertyTags");
+            ASSERT_TRUE(classP) << "Test case : " << testCaseNumber << " failed to fetch class pointer.";
+            // Fetching the property pointer
+            auto propP = classP->GetPropertyByIndex(0);
+            ASSERT_TRUE(propP) << "Test case : " << testCaseNumber << " failed to fetch property pointer.";
+            // Fetching property as primitive property
+            auto primProp = propP->GetAsPrimitiveProperty();
+            ASSERT_TRUE(primProp) << "Test case failed : " << testCaseNumber << " failed to fetch the primitive property";
+            // Checking for equality of primivite property type to string
+            auto propType = primProp->GetType();
+            EXPECT_EQ(PRIMITIVETYPE_String, propType) << "Test case failed : " << testCaseNumber << " did not default to string type.";
+            }
+
+        
+        // Schema import should fail when ECXml version of the schema is greater than the current version that the ECDb supports
+        EXPECT_EQ(importStatus, m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()) == SchemaImportResult::OK) << "Test case number : " << testCaseNumber << " failed to import schema.";
+        EXPECT_EQ(importStatus, m_ecdb.Schemas().GetSchema("TestSchema") != nullptr)<< "Test case number : " << testCaseNumber << " failed at fetching the schema.";
+        m_ecdb.AbandonChanges();
+        }
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, pragma_ecdb_version)
