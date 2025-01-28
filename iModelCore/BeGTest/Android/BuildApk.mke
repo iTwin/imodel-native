@@ -39,7 +39,7 @@ DGNCLIENT_APP_ProjectRoot = ${outputDir}/prj/
 GRADLE_TASKS = build assembleAndroidTest
 
 %message BuildContext = $(BuildContext)
-%include $(BuildContext)SubParts\AndroidTools\gradleBuild.mki
+%include $(BuildContext)SubParts/AndroidTools/gradleBuild.mki
 
 
 $(outputDir)Scripts/installApk$(scriptExt) : $(testApk) $(_makefilespec)
