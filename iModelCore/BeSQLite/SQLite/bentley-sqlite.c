@@ -99,3 +99,12 @@ int checkNoActiveStatements(sqlite3* db)
     return SQLITE_ERROR;
     }
 #endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+int getStatementState(sqlite3_stmt *pStmt)
+    {
+    Vdbe* stmt = (Vdbe*)pStmt;
+    return stmt->eVdbeState;
+    }
