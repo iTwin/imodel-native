@@ -4,26 +4,35 @@ rem   Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 rem   See LICENSE.md in the repository root for full copyright notice.
 rem ------------------------------------------------------------------------------------
 
-: Geometry developers run this locally (Windows) to compile the flatbuffer
-: geometry schema allcg.fbs into flatbuffer accessors for native, iTwin, and
-: .NET geometry libraries. This is necessary whenever data is added to a
-: geometry type that must be persisted across all 3 geometry repos.
+: Run this Windows script manually to compile the flatbuffer geometry schema allcg.fbs into flatbuffer accessors for
+: native, iTwin, and .NET geometry libraries. Do this whenever data is added to a geometry type that must be persisted.
+: All of the Bentley geometry repos must then be updated with the new accessors. See NOTES below for details.
 
-: flatc version 1.0.0 is compiled in libsrc with Bentley additions
-SET BeflatcExe=%SrcRoot%imodel-native\iModelCore\libsrc\flatbuffers\bin\beflatc.1.0.0.exe
+: beflatc is the latest version built in libsrc with Bentley changes, and used to generate C++ accessors.
+SET CFlatcExe=%SrcRoot%imodel-native\iModelCore\libsrc\flatbuffers\bin\beflatc.exe
 
-: flatc version 1.12.0 adds Typescript generation
-SET FlatcExe=%SrcRoot%imodel-native\iModelCore\libsrc\flatbuffers\bin\flatc.1.12.0.exe
+: flatc v1.12.0 is an early Google release first used to generate Typescript accessors.
+SET TSFlatcExe=%SrcRoot%imodel-native\iModelCore\libsrc\flatbuffers\bin\flatc.1.12.0.exe
 
-: gema is open-source pattern-based text processor developed by David N. Gray
+: beflatc v1.0.0 is the original Bentley version first used to generate .NET accessors.
+SET NETFlatcExe=%SrcRoot%imodel-native\iModelCore\libsrc\flatbuffers\bin\beflatc.1.0.0.exe
+
+: gema is open-source pattern-based text processor developed by David N. Gray and used in several build scripts.
 SET GemaExe=%SrcRoot%toolcache\bsitools_x64.1.0.0-6\gema.exe
 
 : NOTES:
-: * Native output is generated in place.
-: * iTwin/.NET outputs in %OutDir% must be hand-copied to their respective repo.
-: * %OutDir% and %TempDir% will be created locally and should not be committed.
-: * The Google flatbuffers repo has diverged too much to efficiently port our
-:   changes and understand output differences, so we use legacy versions here.
+: * The Google flatbuffers repo has diverged too much to efficiently port our changes and/or analyze modern output
+:   differences in the generated geometry FB accessors for TypeScript and .NET. Therefore in this script, we continue
+:   to employ the same compilers first used to generate the geometry FB accessors for these languages.
+: * %OutDir% and %TempDir% are created locally by this script, and should not be committed.
+: * C++ output is %OutDir%allcg_generated.h, and:
+:   * is copied locally to %SrcDir% by this script
+:   * must be manually copied to PPBase\Geomlibs\serialization\src\FlatBuffer\
+:   * must be manually copied to imodel02\iModelCore\GeomLibs\serialization\src\FlatBuffer\
+: * Typescript output is %OutDir%BGFBAccessors.ts, and:
+:   * must be manually copied to itwinjs\core\geometry\src\serialization\
+: * .NET output is %OutDir%Bentley\GeometryNET\FB\*.cs, and:
+:   * must be manually copied to PPBase\BentleyGeometryNet\src\FlatBuffers\gensrc\
 
 SET BaseName=allcg
 SET SrcDir=.\
@@ -46,20 +55,23 @@ IF NOT EXIST %TempDir% MKDIR %TempDir% || (
 @ECHO namespace Bentley.Geometry.FB; > %TempFile%
 TYPE %SrcFile% >> %TempFile%
 @ECHO Compiling native accessors...
-%BeflatcExe% -c -o %TempDir% %TempFile% || (
+%CFlatcExe% -c -o %TempDir% %TempFile% || (
     @ECHO Native compile failed
     goto done
     )
 SET GeneratedFile=%TempDir%%BaseName%_generated.h
 IF NOT EXIST %GeneratedFile% @ECHO Failed to generate '%GeneratedFile%' && goto done
 
-SET OutFile=%SrcDir%%BaseName%_generated.h
+: TODO: this may not be necessary if beflatc.exe has been updated to insert modern copyright
+SET OutFile=%OutDir%%BaseName%_generated.h
 %GemaExe% -f %SrcDir%fixupNative.g %GeneratedFile% > %OutFile%
+
 @ECHO Done Generating %OutFile%
+COPY %OutFile% %SrcDir%
 
 : Typescript accessors: core\geometry\src\serialization\BGFBAccessors.ts
 @ECHO Compiling Typescript accessors...
-%FlatcExe% --ts -o %TempDir% %SrcFile% || (
+%TSFlatcExe% --ts -o %TempDir% %SrcFile% || (
     @ECHO Typescript compile failed
     goto done
     )
@@ -75,7 +87,7 @@ SET TypescriptDir=%SrcDir%typescript\
 @ECHO namespace Bentley.GeometryNET.FB; > %TempFile%
 TYPE %SrcFile% >> %TempFile%
 @ECHO Compiling .NET accessors...
-%BeflatcExe% -n -o %OutDir% %TempFile% || (
+%NETFlatcExe% -n -o %OutDir% %TempFile% || (
     @ECHO .NET compile failed
     goto done
     )
