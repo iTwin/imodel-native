@@ -817,7 +817,7 @@ Exp::FinalizeParseStatus MemberFunctionCallExp::_FinalizeParsing(ECSqlParseConte
     if (mode == Exp::FinalizeParseMode::AfterFinalizingChildren)
         {
         if (this->IsTableValuedFunc()) {
-            if(m_functionName.EqualsIAscii(IdSetModule::NAME))
+            if(m_functionName.EqualsI(IdSetModule::NAME))
                 {
                 ValueExp const* argExp = GetArgument(0);
                 if(argExp == nullptr)
@@ -960,7 +960,7 @@ Utf8String MemberFunctionCallExp::_ToString() const
 //+---------------+---------------+---------------+---------------+---------------+------
 bool MemberFunctionCallExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const
     {
-    if(this->IsTableValuedFunc() && m_functionName.EqualsIAscii(IdSetModule::NAME))
+    if(this->IsTableValuedFunc() && m_functionName.EqualsI(IdSetModule::NAME))
         {
         parameterExp.SetTargetExpInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Long, true, EXTENDEDTYPENAME_Id));
         return true;
