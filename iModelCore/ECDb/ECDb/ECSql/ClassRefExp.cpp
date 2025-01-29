@@ -14,7 +14,7 @@ Exp::FinalizeParseStatus TableValuedFunctionExp::_FinalizeParsing(ECSqlParseCont
         const auto& vsm = ctx.GetECDb().Schemas().Main().GetVirtualSchemaManager();
         const auto classValuedFunc = GetFunctionExp()->GetFunctionName();
         size_t numberOfClasses = 0; // The numberOfClasses variable gives us the exact number of classes found which is used for more personalized error message
-        const auto tableViewClassP = m_schemaName.EqualsIAscii("") ? vsm.FindClass(classValuedFunc, numberOfClasses) : vsm.GetClass(m_schemaName, classValuedFunc);
+        const auto tableViewClassP = m_schemaName.EqualsI("") ? vsm.FindClass(classValuedFunc, numberOfClasses) : vsm.GetClass(m_schemaName, classValuedFunc);
         if (tableViewClassP == nullptr) {
             if(numberOfClasses == 0)
             {
@@ -33,7 +33,7 @@ Exp::FinalizeParseStatus TableValuedFunctionExp::_FinalizeParsing(ECSqlParseCont
                 IssueSeverity::Error,
                 IssueCategory::BusinessProperties,
                 IssueType::ECDbIssue,
-                ECDbIssueId::ECDb_0737,
+                ECDbIssueId::ECDb_0738,
                 "TableValuedFunction %s() has more than one ECClass describing its output. Unable to understand ambiguous reference",
                 m_schemaName.EqualsIAscii("") ? classValuedFunc.c_str() : m_schemaName.append(".").append(classValuedFunc).c_str()
                 );

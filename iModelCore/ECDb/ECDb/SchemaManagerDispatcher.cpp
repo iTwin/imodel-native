@@ -214,9 +214,7 @@ ECClassCP VirtualSchemaManager::FindClass(Utf8StringCR className, size_t& number
     else if(v.size() == 1)
         return v[0];
     else
-    {
         return nullptr;
-    }
 }
 
 /*---------------------------------------------------------------------------------------
