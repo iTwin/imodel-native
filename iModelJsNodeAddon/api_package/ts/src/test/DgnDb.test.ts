@@ -586,7 +586,7 @@ describe("basic tests", () => {
     let bisProps = db.getSchemaProps("BisCore");
     assert.isTrue(bisProps.version === "01.00.00");
     const schemaPath = path.join(iModelJsNative.DgnDb.getAssetsDir(), "ECSchemas/Domain/PresentationRules.ecschema.xml");
-    db.importSchemas([schemaPath], { schemaLockHeld: true }); // Schema references BisCore.01.00.17+ containing a data transform, so importing will need schema lock.
+    db.importSchemas([schemaPath], { schemaLockHeld: true }); // Schema references BisCore.01.00.17+ which contains a data transform, so importing it will need the schema lock.
 
     db.getSchemaProps("PresentationRules");
     bisProps = db.getSchemaProps("BisCore");
@@ -664,15 +664,15 @@ describe("basic tests", () => {
         <ECEntityClass>
       </ECSchema>`;
 
-      expect(() => db.importXmlSchemas([invalidSchema], { schemaLockHeld: true })) // Schema references BisCore.01.00.17+ containing a data transform, so importing will need schema lock.
+      expect(() => db.importXmlSchemas([invalidSchema], { schemaLockHeld: true })) // Schema references BisCore.01.00.17+ which contains a data transform, so importing it will need the schema lock.
         .to.throw("Failed to import schemas")
         .property("errorNumber").equal(DbResult.BE_SQLITE_ERROR);
 
-      expect(() => db.importXmlSchemas([validSchema, invalidSchema], { schemaLockHeld: true })) // Schema references BisCore.01.00.17+ containing a data transform, so importing will need schema lock.
+      expect(() => db.importXmlSchemas([validSchema, invalidSchema], { schemaLockHeld: true })) // Schema references BisCore.01.00.17+ which contains a data transform, so importing it will need the schema lock.
         .to.throw("Failed to import schemas")
         .property("errorNumber").equal(DbResult.BE_SQLITE_ERROR);
 
-      db.importXmlSchemas([validSchema], { schemaLockHeld: true }); // Schema references BisCore.01.00.17+ containing a data transform, so importing will need schema lock.
+      db.importXmlSchemas([validSchema], { schemaLockHeld: true }); // Schema references BisCore.01.00.17+ which contains a data transform, so importing it will need the schema lock.
       const validSchemaProps = db.getSchemaProps("ValidSchema");
       assert.isTrue(validSchemaProps.name === "ValidSchema");
       assert.isTrue(validSchemaProps.version === "01.00.00");
