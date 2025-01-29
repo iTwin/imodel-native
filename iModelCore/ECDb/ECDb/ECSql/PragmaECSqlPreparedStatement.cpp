@@ -289,7 +289,7 @@ DbResult PragmaManager::PrepareClass(RowSet& rowSet, Utf8StringCR name, PragmaVa
 DbResult PragmaManager::Prepare(RowSet& rowset,PragmaStatementExp const& exp) const {
     OptionsMap optionsMap;
     if (auto opts = exp.GetOptions()) {
-        optionsMap = exp.GetOptions()->GetOptionMap();
+        optionsMap = opts->GetOptionMap();
     }
     return Prepare(rowset, exp.GetName(), exp.GetValue(), exp.IsReadValue() ? Operation::Read : Operation::Write, exp.GetPathTokens(), optionsMap);
 }
