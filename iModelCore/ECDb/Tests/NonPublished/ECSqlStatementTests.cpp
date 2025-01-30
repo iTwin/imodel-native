@@ -1582,23 +1582,32 @@ TEST_F(ECSqlStatementTestFixture, UseOfWrongPropertyTags_ForAllVersions)
                                         </ECEntityClass>
                                     </ECSchema>)xml";
 
-    for (const auto& [testCaseNumber, majorVersion, minorVersion, xmlSchemaVar, deserializationStatus, importStatus] : std::vector<std::tuple<unsigned int, unsigned int, unsigned int, Utf8CP, bool, bool>>
+    for (const auto& [testCaseNumber, majorVersion, minorVersion, xmlSchemaVar, deserializationStatus, importStatus, schemaReadStatus, schemaImportResult] : std::vector<std::tuple<unsigned int, unsigned int, unsigned int, Utf8CP, bool, bool, SchemaReadStatus, SchemaImportResult>>
         {
-        { 1, 2U, 0U, xmlSchemaFor_V2_0, true , true },  // Older versions on encountering wrong property tags default to a safe type in this case, "string"
-        { 2, 3U, 0U, xmlSchemaFor_V3_0, true , true },  // Older versions on encountering wrong property tags default to a safe type in this case, "string"
-        { 3, 3U, 1U, xmlSchema, true , true },  // Older versions on encountering wrong property tags default to a safe type in this case, "string"
-        { 4, ecXmlMajorVersion, ecXmlMinorVersion, xmlSchema, false , false }, // Current version should always log an error on encountering wrong property tags with no deserialization and import
-        { 5, ecXmlMajorVersion, ecXmlMinorVersion + 1U, xmlSchema, true , false }, // Future versions should deserialize successfully, default to a safe type but, import should fail
+        { 1, 2U, 0U, xmlSchemaFor_V2_0, true , true, SchemaReadStatus::Success, SchemaImportResult::OK },  // Older versions on encountering wrong property type default to a safe type in this case, "string"
+        { 2, 3U, 0U, xmlSchemaFor_V3_0, true , true, SchemaReadStatus::Success, SchemaImportResult::OK },  // Older versions on encountering wrong property type default to a safe type in this case, "string"
+        { 3, 3U, 1U, xmlSchema, true , true, SchemaReadStatus::Success, SchemaImportResult::OK },  // Older versions on encountering wrong property type default to a safe type in this case, "string"
+        { 4, ecXmlMajorVersion, ecXmlMinorVersion, xmlSchema, false , false, SchemaReadStatus::InvalidECSchemaXml, SchemaImportResult::ERROR }, // Current version should always log an error on encountering wrong property type with no deserialization and import
+        { 5, ecXmlMajorVersion, ecXmlMinorVersion + 1U, xmlSchema, true , false, SchemaReadStatus::Success, SchemaImportResult::ERROR }, // Future versions should deserialize successfully, default to a safe type but, import should fail
         })
         {
         ECSchemaPtr schema;
         const auto context = ECSchemaReadContext::CreateContext();
         
         // Schema should always be deserialized successfully irrespective of the ECXml version
-        ASSERT_EQ(deserializationStatus, SchemaReadStatus::Success == ECSchema::ReadFromXmlString(schema, Utf8PrintfString(xmlSchemaVar, majorVersion, minorVersion).c_str(), *context)) << "Test case number : " << testCaseNumber << " failed at deserializing.";
+        if (deserializationStatus)
+        {
+        ASSERT_EQ(schemaReadStatus, ECSchema::ReadFromXmlString(schema, Utf8PrintfString(xmlSchemaVar, majorVersion, minorVersion).c_str(), *context)) << "Test case number : " << testCaseNumber << " failed at deserializing.";
         ASSERT_EQ(deserializationStatus, schema.IsValid()) << "Test case number : " << testCaseNumber << " failed due to invalid schemas.";
-            
-        // Checking if the wrong property tags are defaulted to string type
+        }
+        else 
+        {
+        // But, schemas having unknown wrong property types with ecxml versions belonging to [V3_2, Latest] inclusive, should fail to deserialize
+        ASSERT_EQ(schemaReadStatus, ECSchema::ReadFromXmlString(schema, Utf8PrintfString(xmlSchemaVar, majorVersion, minorVersion).c_str(), *context)) << "Test case number : " << testCaseNumber << " failed since, a schema with wrong property type shouldn't deserialize for " << ecXmlMajorVersion << "." << ecXmlMinorVersion;
+        ASSERT_EQ(deserializationStatus, schema.IsValid()) << "Test case number : " << testCaseNumber << " failed since, a schema with wrong property type shouldn't deserialize for " << ecXmlMajorVersion << "." << ecXmlMinorVersion;
+        }
+         
+        // Checking if the wrong property types are defaulted to string type
         if (deserializationStatus)
             {
             // Fetching the class pointer 
@@ -1617,8 +1626,18 @@ TEST_F(ECSqlStatementTestFixture, UseOfWrongPropertyTags_ForAllVersions)
 
         
         // Schema import should fail when ECXml version of the schema is greater than the current version that the ECDb supports
-        EXPECT_EQ(importStatus, m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()) == SchemaImportResult::OK) << "Test case number : " << testCaseNumber << " failed to import schema.";
+        if (importStatus)
+        {
+        EXPECT_EQ(schemaImportResult, m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas())) << "Test case number : " << testCaseNumber << " failed to import schema.";
         EXPECT_EQ(importStatus, m_ecdb.Schemas().GetSchema("TestSchema") != nullptr)<< "Test case number : " << testCaseNumber << " failed at fetching the schema.";
+        }
+        else
+        {
+        //But, import should also fail when the schema has wrong property types with ECXml versions belonging to [V3_2, Latest] inclusive
+        EXPECT_EQ(schemaImportResult, m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas())) << "Test case number : " << testCaseNumber << " failed since, a schema with wrong property type shouldn't import for " << ecXmlMajorVersion << "." << ecXmlMinorVersion;
+        EXPECT_EQ(importStatus, m_ecdb.Schemas().GetSchema("TestSchema") != nullptr)<< "Test case number : " << testCaseNumber << " failed since, a schema with wrong property type shouldn't import for " << ecXmlMajorVersion << "." << ecXmlMinorVersion;
+        }
+        
         m_ecdb.AbandonChanges();
         }
     }
