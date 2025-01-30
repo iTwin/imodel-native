@@ -12863,6 +12863,21 @@ TEST_F(ECSqlStatementTestFixture, Testing_Table_Valued_Functions_without_schemaN
         ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
         ASSERT_STREQ(stmt.GetValueText(2),"text");
         }
+    if("json_each with space as schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "select * from   .json_each(?) s where s.key='gravity'"));
+        }
+    if("json_tree with empty schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "select * from .json_tree(?) s where s.key='gravity'"));
+        }
+    if("json_tree without args")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "select * from json_tree s where s.key='gravity'"));
+        }
     }
 
 

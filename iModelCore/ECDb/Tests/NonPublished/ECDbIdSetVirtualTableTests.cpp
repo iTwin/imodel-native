@@ -618,6 +618,18 @@ TEST_F(ECDbIdSetVirtualTableTestFixture, IdSetModuleTest) {
         // "3.0" is not allowed in IdSet VT so should fail and log error
         ASSERT_EQ(BE_SQLITE_ERROR, stmt.Step());      
         }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT id FROM  .IdSet('[1,2,3,4,5]')"));
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT id FROM .IdSet('[1,2,3,4,5]')"));
+        }
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "SELECT id FROM IdSet"));
+        }
     ASSERT_TRUE(IsECSqlExperimentalFeaturesEnabled(m_ecdb));
     ASSERT_FALSE(EnableECSqlExperimentalFeatures(m_ecdb, false));
 }

@@ -2105,7 +2105,7 @@ BentleyStatus ECSqlParser::ParseTableValuedFunction(std::unique_ptr<TableValuedF
 
         if(functionNode == nullptr) return ERROR;
 
-        if (functionNode->getChild(1) == nullptr || functionNode->getChild(1)->isLeaf()) { // We also need to check the leaf condition here to avoid a BeAssert
+        if (functionNode->getChild(1) == nullptr || functionNode->getChild(1)->isLeaf()) { // We also need to check the leaf condition here because functionNode->getChild(1) is the argument node and that node should have children
             return ERROR;
         }
 
