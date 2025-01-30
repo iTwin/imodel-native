@@ -1124,7 +1124,7 @@ TEST_F(SchemaCompareTest, CompareECClassIdentical)
 TEST_F(SchemaComparerXmlTests, CompareSchemasWithWrongPropertyTags)
     {
     //Test created for 3.1 version of schema specifically 
-    //to observe defaulting behavior for and when the property tags are wrong
+    //to observe defaulting behavior for and when the property types are wrong
      bvector<Utf8CP> firstSchemasXml {
       R"schema(<?xml version='1.0' encoding='utf-8' ?>
       <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -1163,7 +1163,7 @@ TEST_F(SchemaComparerXmlTests, CompareSchemasWithWrongPropertyTags)
 
     ASSERT_EQ(1, changes.Changes().Count());
 
-    // We default to string when the property tag is wrong therefore, property change should be observed.
+    // We default to string when the property type is wrong therefore, property change should be observed.
     EXPECT_TRUE(changes.Changes()[0].Classes()[0].Properties()[0].IsPrimitive().IsChanged());
     }
 //----------------------------------------------------------------------------------------
