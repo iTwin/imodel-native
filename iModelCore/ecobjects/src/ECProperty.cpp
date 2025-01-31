@@ -44,9 +44,8 @@ SchemaReadStatus ReadTypeNameWithPruning(pugi::xml_node node, ECPropertyP prop, 
     // must come after prune check to make sure we don't default to string properties that should be pruned
     if (setTypeStatus == ECObjectsStatus::ParseError && ignoreParseErrors)
         {
-        // Unknown type(s) encountered in a schema for versions that are 
-        // greater than or equal to 'V3_2' and less than or equal to 'Latest'
-        // i.e. 'V3_2 <= version <= Latest'
+        // Unknown type(s) encountered in a schema for ECXml versions that are 
+        // 'V3_2 <= ECXml version <= Latest'
         // then we return InvalidECSchemaXml as SchemaReadStatus
         if (prop->GetClass().GetSchema().OriginalECXmlVersionAtLeast(ECVersion::V3_2) && !prop->GetClass().GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest))
             {
