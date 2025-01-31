@@ -234,7 +234,7 @@ std::shared_ptr<CachedConnection> CachedConnection::Make(ConnectionCache& cache,
         }
         newConn->UpdateSqlFunctions(ConnectionAction::Opening);
     }
-    const auto mmsize = ConcurrentQueryMgr::GetConfig(cache.GetPrimaryDb()).GetMemoryMapFileSize();
+    const auto mmsize = ConcurrentQueryMgr::Config::Get().GetMemoryMapFileSize();
     if (mmsize > 0) {
         newConn->m_db.ExecuteSql(SqlPrintfString("PRAGMA mmap_size=%" PRIu32, mmsize));
     }
@@ -267,7 +267,7 @@ ConnectionCache::ConnectionCache(ECDb const& primaryDb, uint32_t pool_size): m_p
         throw std::runtime_error("primary db connection must be open");
 
     if (m_poolSize < 1) {
-        m_poolSize = ConcurrentQueryMgr::GetConfig(primaryDb).GetWorkerThreadCount();
+        m_poolSize = ConcurrentQueryMgr::Config::Get().GetWorkerThreadCount();
     }
 }
 
@@ -486,7 +486,7 @@ QueryResponse::Ptr RunnableRequestBase::CreateECSqlResponse(std::string& resultJ
 // @bsimethod
 //---------------------------------------------------------------------------------------
 RunnableRequestQueue::RunnableRequestQueue(ECDbCR ecdb): m_nextId(0), m_state(State::Running), m_lastDelayedQueryId(0),m_ecdb(ecdb) {
-    auto env = ConcurrentQueryMgr::GetConfig(ecdb);
+    auto env = ConcurrentQueryMgr::Config::Get();
     m_quota = env.GetQuota();
     m_maxQueueSize = env.GetRequestQueueSize();
     m_shutdownWhenIdleFor = env.GetAutoShutdowWhenIdlelForSeconds();
@@ -658,7 +658,7 @@ void RunnableRequestQueue::ExecuteSynchronously(ConnectionCache& conns, std::uni
 //---------------------------------------------------------------------------------------
 QueryResponse::Future RunnableRequestQueue::Enqueue(ConnectionCache& conns, QueryRequest::Ptr request) {
     // Put a upper limit on query delay to make it safe.
-    const auto& conf = ConcurrentQueryMgr::GetConfig(m_ecdb);
+    const auto& conf = ConcurrentQueryMgr::Config::Get();
     if (conf.GetIgnoreDelay()) {
         request->SetDelay(0ms);
     } else {
@@ -697,7 +697,7 @@ QueryResponse::Future RunnableRequestQueue::Enqueue(ConnectionCache& conns, Quer
 //---------------------------------------------------------------------------------------
 void RunnableRequestQueue::Enqueue(ConnectionCache& conns, QueryRequest::Ptr request, ConcurrentQueryMgr::OnCompletion onComplete) {
     // Put a upper limit on query delay to make it safe.
-    const auto& conf = ConcurrentQueryMgr::GetConfig(m_ecdb);
+    const auto& conf = ConcurrentQueryMgr::Config::Get();
     if (conf.GetIgnoreDelay()) {
         request->SetDelay(0ms);
     } else {
@@ -1161,7 +1161,7 @@ void QueryHelper::ExecutePing(Json::Value const& pingJson, RunnableRequestBase& 
     ECSqlRowProperty::List props;
     props.append("", "", "id", "id", "long", false, "", 0);
 
-    const auto maxMem = (int64_t)ConcurrentQueryMgr::GetConfig(runnableRequest.GetQueue().GetECDb()).GetQuota().MaxMemoryAllowed();
+    const auto maxMem = (int64_t)ConcurrentQueryMgr::Config::Get().GetQuota().MaxMemoryAllowed();
     auto pingResultSize = pingJson["ping"]["resultSize"].asInt64();
     const auto pingSleepTime = std::chrono::milliseconds(pingJson["ping"]["sleepTime"].asUInt());
     const auto sleepUntil = std::chrono::steady_clock::now() + pingSleepTime;
@@ -1264,7 +1264,7 @@ void QueryExecutor::SetWorkerPoolSize(uint32_t newSize) {
 //---------------------------------------------------------------------------------------
 QueryExecutor::QueryExecutor(RunnableRequestQueue& queue, ECDbCR primaryDb, uint32_t pool_size) :m_queue(queue), m_connCache(primaryDb, pool_size),m_maxPoolSize(pool_size),m_threadCount(0) {
     if (pool_size < 1) {
-        pool_size = ConcurrentQueryMgr::GetConfig(primaryDb).GetWorkerThreadCount();
+        pool_size = ConcurrentQueryMgr::Config::Get().GetWorkerThreadCount();
     }
     for (uint32_t i = 0; i < pool_size; ++i) {
         m_threads.emplace_back(std::thread([&](){
@@ -1335,7 +1335,7 @@ QueryExecutor::~QueryExecutor() {
 //---------------------------------------------------------------------------------------
 QueryMonitor::QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor)
     :m_stop(false), m_queue(queue), m_executor(executor) {
-    const auto& config = ConcurrentQueryMgr::GetConfig(m_executor.GetConnectionCache().GetPrimaryDb());
+    const auto& config = ConcurrentQueryMgr::Config::Get();
     m_pollInterval = config.GetMonitorPollInterval();
     m_allowTestingArgs = config.GetAllowTestingArgs();
     auto notifyThreadHasStarted = std::make_unique<std::promise<void>>();
@@ -1568,44 +1568,26 @@ ConcurrentQueryMgr::Impl::~Impl() {
     const_cast<ECDbR>(m_executor.GetConnectionCache().GetPrimaryDb()).RemoveECDbCacheClearListener(*this);
 }
 
+ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::s_config = ConcurrentQueryMgr::Config::GetFromEnv();
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 // static
 //---------------------------------------------------------------------------------------
-ConcurrentQueryMgr::Config const& ConcurrentQueryMgr::ResetConfig(ECDb const& ecdb, Config const& config) {
-    if (!ecdb.IsDbOpen()) {
-        throw std::runtime_error("ecdb is closed or not open");
-    }
-
-    BeMutexHolder lock (ecdb.GetImpl().GetMutex());
-    auto& appKey = ConcurrentQueryConfigAppData::GetKey();
-    auto appData = ecdb.FindAppDataOfType<ConcurrentQueryConfigAppData>(appKey);
-    if (appData.IsNull()) {
-        appData = ConcurrentQueryConfigAppData::Create();
-        ecdb.AddAppData(appKey, appData.get());
-    }
-    appData->SetConfig(config);
-    return appData->GetConfig();
+const ConcurrentQueryMgr::Config& ConcurrentQueryMgr::Config::Get() {
+    return s_config;
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 // static
 //---------------------------------------------------------------------------------------
-ConcurrentQueryMgr::Config const& ConcurrentQueryMgr::GetConfig(ECDb const& ecdb) {
-    if (!ecdb.IsDbOpen()) {
-        throw std::runtime_error("ecdb is closed or not open");
-    }
-
-    BeMutexHolder lock (ecdb.GetImpl().GetMutex());
-    auto& appKey = ConcurrentQueryConfigAppData::GetKey();
-    auto appData = ecdb.FindAppDataOfType<ConcurrentQueryConfigAppData>(appKey);
-    if (appData.IsNull()) {
-        appData = ConcurrentQueryConfigAppData::Create();
-        ecdb.AddAppData(appKey, appData.get());
-    }
-    return appData->GetConfig();
+const ConcurrentQueryMgr::Config& ConcurrentQueryMgr::Config::Reset(std::optional<Config> conf) {
+    s_config = conf.value_or(ConcurrentQueryMgr::Config::GetFromEnv());
+    return s_config;
 }
+
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 // static
@@ -2016,7 +1998,7 @@ bool ECSqlParams::TryBindTo(ECSqlStatement& stmt, std::string& err) const {
                 }
                 else
                     st = ECSqlStatus::Error;
-                
+
                 break;
             }
             case ECSqlParam::Type::Integer:
@@ -2260,7 +2242,7 @@ ConcurrentQueryMgr::Config ConcurrentQueryMgr::Config::From(BeJsValue val) {
 //---------------------------------------------------------------------------------------
 
 QueryAdaptorCache::QueryAdaptorCache(CachedConnection& conn):m_conn(conn){
-    auto config = ConcurrentQueryMgr::GetConfig(m_conn.GetPrimaryDb());
+    auto config = ConcurrentQueryMgr::Config::Get();
     m_maxEntries = config.GetStatementCacheSizePerWorker();
     m_doNotUsePrimaryConnToPrepare = config.GetDoNotUsePrimaryConnToPrepare();
 }

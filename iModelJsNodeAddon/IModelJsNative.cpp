@@ -287,7 +287,7 @@ template<typename T_Db> struct SQLiteOps {
             if (!v.IsObject()) {
                 BeNapi::ThrowJsException(info.Env(), "font data not valid");
             }
-            
+
             FontFace face(v);
             faces.push_back(face);
         }
@@ -295,7 +295,7 @@ template<typename T_Db> struct SQLiteOps {
         if (faces.empty()) {
             BeNapi::ThrowJsException(info.Env(), "font data not valid");
         }
-            
+
         auto db = &GetOpenedDb(info);
         auto dgnDb = dynamic_cast<DgnDbP>(db);
         std::unique_ptr<FontDb> fontDbHolder;
@@ -312,7 +312,7 @@ template<typename T_Db> struct SQLiteOps {
             BeNapi::ThrowJsException(info.Env(), "unable to embed font");
         }
     }
-    
+
     Napi::Value IsOpen(NapiInfoCR info) {
         auto db = _GetMyDb();
         return Napi::Boolean::New(info.Env(), nullptr != db && db->IsDbOpen());
@@ -441,9 +441,9 @@ public:
     Napi::Value ConcurrentQueryResetConfig(NapiInfoCR info) {
         if (info.Length() > 0 && info[0].IsObject()) {
             Napi::Object inConf = info[0].As<Napi::Object>();
-            return JsInterop::ConcurrentQueryResetConfig(Env(), m_ecdb, inConf);
+            return JsInterop::ConcurrentQueryResetConfig(Env(), inConf);
         }
-        return JsInterop::ConcurrentQueryResetConfig(Env(), m_ecdb);
+        return JsInterop::ConcurrentQueryResetConfig(Env());
     }
     void ConcurrentQueryShutdown(NapiInfoCR info) {
         ConcurrentQueryMgr::Shutdown(m_ecdb);
@@ -1501,7 +1501,7 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
         BeMutexHolder lock(FontManager::GetMutex());
         db.Fonts().Invalidate();
     }
-    
+
     Napi::Value WriteFullElementDependencyGraphToFile(NapiInfoCR info)
         {
         auto& db = GetOpenedDb(info);
@@ -2596,12 +2596,11 @@ struct NativeDgnDb : BeObjectWrap<NativeDgnDb>, SQLiteOps<DgnDb>
     }
 
     Napi::Value ConcurrentQueryResetConfig(NapiInfoCR info) {
-        auto& db = GetOpenedDb(info);;
         if (info.Length() > 0 && info[0].IsObject()) {
             Napi::Object inConf = info[0].As<Napi::Object>();
-            return JsInterop::ConcurrentQueryResetConfig(Env(), db, inConf);
+            return JsInterop::ConcurrentQueryResetConfig(Env(), inConf);
         }
-        return JsInterop::ConcurrentQueryResetConfig(Env(), db);
+        return JsInterop::ConcurrentQueryResetConfig(Env());
     }
 
     void ConcurrentQueryShutdown(NapiInfoCR info) {

@@ -18,7 +18,7 @@
 #define DEFAULT_IGNORE_PRIORITY                     false
 #define DEFAULT_IGNORE_DELAY                        true
 #define DEFAULT_DONOT_USE_PRIMARY_CONN_TO_PREPARE   false
-#define DEFAULT_SHUTDOWN_WHEN_IDLE_FOR_SECONDS      60*5
+#define DEFAULT_SHUTDOWN_WHEN_IDLE_FOR_SECONDS      60*30
 #define DEFAULT_MONITOR_POLL_INTERVAL               1000 // ms
 #define DEFAULT_WORKER_THREAD_COUNT                 std::min(4u, std::thread::hardware_concurrency())
 #define DEFAULT_STATEMENT_CACHE_SIZE_PER_WORKER     40
@@ -441,24 +441,4 @@ struct ConcurrentQueryAppData : Db::AppData {
         }
 };
 
-//=======================================================================================
-//! @bsiclass
-//=======================================================================================
-struct ConcurrentQueryConfigAppData : Db::AppData {
-    private:
-        mutable ConcurrentQueryMgr::Config m_config;
-    public:
-        ConcurrentQueryConfigAppData(){
-            m_config = ConcurrentQueryMgr::Config::GetFromEnv();
-        }
-        static Db::AppData::Key& GetKey() {
-            static Db::AppData::Key s_key;
-            return s_key;
-        }
-        ConcurrentQueryMgr::Config const& GetConfig() const { return m_config; }
-        void SetConfig(ConcurrentQueryMgr::Config const& config) { m_config = config; }
-        static RefCountedPtr<ConcurrentQueryConfigAppData> Create() {
-            return new ConcurrentQueryConfigAppData();
-        }
-};
 END_BENTLEY_SQLITE_EC_NAMESPACE

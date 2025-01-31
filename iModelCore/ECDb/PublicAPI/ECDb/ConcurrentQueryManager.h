@@ -502,6 +502,7 @@ struct ConcurrentQueryMgr final {
          static Config From(std::string const& json);
          uint32_t m_memoryMapFileSize;
          bool m_allowTestingArgs;
+         static Config s_config;
 
      public:
         ECDB_EXPORT Config();
@@ -545,7 +546,10 @@ struct ConcurrentQueryMgr final {
         bool IsDefault() const { return this == &Config::GetDefault() || Config::GetDefault().Equals(*this);}
         ECDB_EXPORT static Config const& GetDefault();
         ECDB_EXPORT static Config GetFromEnv();
-        //ECDB_EXPORT static Config& GetInstance();
+
+        ECDB_EXPORT static const Config& Get();
+        ECDB_EXPORT static const Config& Reset(std::optional<Config> conf);
+
         ECDB_EXPORT static Config From(BeJsValue);
         ECDB_EXPORT void To(BeJsValue) const;
         void Reset() { *this = GetDefault(); }
@@ -573,8 +577,6 @@ struct ConcurrentQueryMgr final {
         ECDB_EXPORT void SetMaxQuota(QueryQuota const&);
         ECDB_EXPORT static ConcurrentQueryMgr& GetInstance(ECDb const&);
         ECDB_EXPORT static void Shutdown(ECDbCR ecdb);
-        ECDB_EXPORT static Config const&  ResetConfig(ECDb const&, Config const&  config = Config::GetFromEnv());
-        ECDB_EXPORT static Config const& GetConfig(ECDb const&);
 };
 
 //=======================================================================================
