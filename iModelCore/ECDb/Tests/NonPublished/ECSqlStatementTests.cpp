@@ -12877,6 +12877,137 @@ TEST_F(ECSqlStatementTestFixture, InsertUsingOnlyAndAll)
     }
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, Testing_Table_Valued_Functions_without_schemaNames)
+    {
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("Testing_Table_Valued_Functions_without_schemaNames.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
+    auto test_data = R"({
+        "planet": "mars",
+        "gravity": "3.721 m/s²",
+        "surface_area": "144800000 km²",
+        "distance_from_sun":"227900000 km",
+        "radius" : "3389.5 km",
+        "orbital_period" : "687 days",
+        "moons": ["Phobos", "Deimos"]
+    })";
+    //json_each
+    if("json_each without schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from json_each(?) s where s.key='gravity'"));
+        stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetName().c_str(), "value");
+        ASSERT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        }
+    if("json_each with schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from json1.json_each(?) s where s.key='gravity'"));
+        stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetName().c_str(), "value");
+        ASSERT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        }
+    if("json_each subquery without schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from (select * from json_each(?) s where s.key='gravity')"));
+        stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetName().c_str(), "value");
+        ASSERT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        }
+    if("json_each subquery with schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from (select * from json1.json_each(?) s where s.key='gravity')"));
+        stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetName().c_str(), "value");
+        ASSERT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        }
+
+        //json_each
+    if("json_each without schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from json_tree(?) s where s.key='gravity'"));
+        stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_STREQ(stmt.GetColumnInfo(0).GetProperty()->GetName().c_str(), "key");
+        ASSERT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetName().c_str(), "value");
+        ASSERT_STREQ(stmt.GetColumnInfo(2).GetProperty()->GetName().c_str(), "type");
+        ASSERT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
+        ASSERT_STREQ(stmt.GetValueText(0),"gravity");
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        ASSERT_STREQ(stmt.GetValueText(2),"text");
+        }
+    if("json_each with schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from json1.json_tree(?) s where s.key='gravity'"));
+        stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_STREQ(stmt.GetColumnInfo(0).GetProperty()->GetName().c_str(), "key");
+        ASSERT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetName().c_str(), "value");
+        ASSERT_STREQ(stmt.GetColumnInfo(2).GetProperty()->GetName().c_str(), "type");
+        ASSERT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
+        ASSERT_STREQ(stmt.GetValueText(0),"gravity");
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        ASSERT_STREQ(stmt.GetValueText(2),"text");
+        }
+    if("json_each subquery without schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from (select * from json_tree(?) s where s.key='gravity')"));
+        stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_STREQ(stmt.GetColumnInfo(0).GetProperty()->GetName().c_str(), "key");
+        ASSERT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetName().c_str(), "value");
+        ASSERT_STREQ(stmt.GetColumnInfo(2).GetProperty()->GetName().c_str(), "type");
+        ASSERT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
+        ASSERT_STREQ(stmt.GetValueText(0),"gravity");
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        ASSERT_STREQ(stmt.GetValueText(2),"text");
+        }
+    if("json_each subquery with schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "select * from (select * from json1.json_tree(?) s where s.key='gravity')"));
+        stmt.BindText(1, test_data, IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ASSERT_STREQ(stmt.GetColumnInfo(0).GetProperty()->GetName().c_str(), "key");
+        ASSERT_STREQ(stmt.GetColumnInfo(1).GetProperty()->GetName().c_str(), "value");
+        ASSERT_STREQ(stmt.GetColumnInfo(2).GetProperty()->GetName().c_str(), "type");
+        ASSERT_EQ(stmt.GetColumnInfo(1).GetDataType().GetPrimitiveType(), ECN::PrimitiveType::PRIMITIVETYPE_String);
+        ASSERT_STREQ(stmt.GetValueText(0),"gravity");
+        ASSERT_STREQ(stmt.GetValueText(1),"3.721 m/s²");
+        ASSERT_STREQ(stmt.GetValueText(2),"text");
+        }
+    if("json_each with space as schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "select * from   .json_each(?) s where s.key='gravity'"));
+        }
+    if("json_tree with empty schema name")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "select * from .json_tree(?) s where s.key='gravity'"));
+        }
+    if("json_tree without args")
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "select * from json_tree s where s.key='gravity'"));
+        }
+    }
+
 
 
 END_ECDBUNITTESTS_NAMESPACE
