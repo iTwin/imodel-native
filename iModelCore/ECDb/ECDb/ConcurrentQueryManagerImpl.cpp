@@ -1971,39 +1971,8 @@ bool ECSqlParams::TryBindTo(ECSqlStatement& stmt, std::string& err) const {
             case ECSqlParam::Type::Id:
                 st = stmt.BindId(index, param.GetValueId());  break;
             case ECSqlParam::Type::IdSet: {
-<<<<<<< HEAD
                 std::shared_ptr<IdSet<BeInt64Id>> idSet = std::make_shared<IdSet<BeInt64Id>>(param.GetValueIdSet());
                 st = stmt.BindVirtualSet(index, idSet);
-=======
-                BinderInfo const& binderInfo = stmt.GetBinderInfo(index);
-                if(binderInfo.GetType() == BinderInfo::BinderType::VirtualSet) {
-                    std::shared_ptr<IdSet<BeInt64Id>> idSet = std::make_shared<IdSet<BeInt64Id>>(param.GetValueIdSet());
-                    st = stmt.BindVirtualSet(index, idSet);
-                }
-                else if(binderInfo.GetType() == BinderInfo::BinderType::Array && binderInfo.IsForIdSet()) {
-                    bool allElementsAdded = true;
-                    IECSqlBinder& binder = stmt.GetBinder(index);
-                    IdSet<BeInt64Id> set(param.GetValueIdSet());
-                    for(auto& ids: set) {
-                        if(!ids.IsValid()) {
-                            allElementsAdded = false;
-                            break;
-                        }
-                        st = binder.AddArrayElement().BindInt64((int64_t) ids.GetValue());
-                        if(!st.IsSuccess()) {
-                            allElementsAdded = false;
-                            break;
-                        }
-                    }
-                    if(allElementsAdded) // If even one array element has failed to be added we set the status for the entire operation as ECSqlStatus::Error although for the time being we don't do anything with status even if it fails
-                        st = ECSqlStatus::Success;
-                    else
-                        st = ECSqlStatus::Error;
-                }
-                else
-                    st = ECSqlStatus::Error;
-
->>>>>>> d5e74300 (Fix issue where query get interrupted during prepare. (#973))
                 break;
             }
             case ECSqlParam::Type::Integer:

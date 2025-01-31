@@ -274,30 +274,7 @@ template<typename T_Db> struct SQLiteOps {
         REQUIRE_ARGUMENT_ANY_OBJ(0, arg);
         BeJsConst argJson(arg);
 
-<<<<<<< HEAD
         bool compressFont = argJson[JsInterop::json_compress()].asBool(false);
-=======
-        if (!dataObj.IsTypedArray() || !facesObj.IsArray()) {
-            BeNapi::ThrowJsException(info.Env(), "font data not valid");
-        }
-
-        bvector<FontFace> faces;
-        auto arr = facesObj.As<Napi::Array>();
-        for (uint32_t i = 0; i < arr.Length(); i++) {
-            Napi::Value v = arr[i];
-            if (!v.IsObject()) {
-                BeNapi::ThrowJsException(info.Env(), "font data not valid");
-            }
-
-            FontFace face(v);
-            faces.push_back(face);
-        }
-
-        if (faces.empty()) {
-            BeNapi::ThrowJsException(info.Env(), "font data not valid");
-        }
-
->>>>>>> d5e74300 (Fix issue where query get interrupted during prepare. (#973))
         auto db = &GetOpenedDb(info);
         auto dgnDb = dynamic_cast<DgnDbP>(db);
         std::unique_ptr<FontDb> fontDbHolder;
