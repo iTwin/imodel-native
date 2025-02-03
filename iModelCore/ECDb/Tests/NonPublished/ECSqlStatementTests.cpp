@@ -10617,69 +10617,9 @@ TEST_F(ECSqlStatementTestFixture, OptimizeECSqlForSealedAndClassWithNotDerviedCl
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, AliasedEnumPropsFor_V3_1)
+TEST_F(ECSqlStatementTestFixture, AliasedEnumProps)
     {
-    Utf8CP schemaXml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                <ECEnumeration typeName="Status" backingTypeName="int" isStrict="true">
-                    <ECEnumerator value="1" displayLabel="On" />
-                    <ECEnumerator value="2" displayLabel="Off"/>
-                </ECEnumeration>
-                <ECEnumeration typeName="Domains" backingTypeName="string" isStrict="true">
-                    <ECEnumerator value="Org" displayLabel="Org" />
-                    <ECEnumerator value="Com" displayLabel="Com"/>
-                </ECEnumeration>
-                <ECEntityClass typeName="Foo" >
-                    <ECProperty propertyName="Status" typeName="Status" />
-                    <ECArrayProperty propertyName="Statuses" typeName="Status" />
-                    <ECProperty propertyName="Domain" typeName="Domain" />
-                    <ECArrayProperty propertyName="Domains" typeName="Domain" />
-                </ECEntityClass>
-              </ECSchema>)xml";
-
-    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("AliasedEnumPropsFor_V3_1.ecdb", SchemaItem(schemaXml)));
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(Status,Statuses,Domain,Domains) VALUES (1,?,'Org',?)"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindInt(1)) << stmt.GetECSql();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindInt(2)) << stmt.GetECSql();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(2).AddArrayElement().BindText("Org", IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(2).AddArrayElement().BindText("Com", IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
-    ECInstanceKey key;
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
-    stmt.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Status as MyStatus,Statuses as MyStatuses,Domain as MyDomain, Domains as MyDomains FROM ts.Foo"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
-    ECSqlColumnInfoCR colInfo0 = stmt.GetColumnInfo(0);
-    ASSERT_TRUE(colInfo0.IsGeneratedProperty()) << stmt.GetECSql();
-    ASSERT_FALSE(colInfo0.GetDataType().IsArray()) << stmt.GetECSql();
-    ASSERT_EQ(PRIMITIVETYPE_Integer, colInfo0.GetDataType().GetPrimitiveType()) << stmt.GetECSql();
-
-    ECSqlColumnInfoCR colInfo1 = stmt.GetColumnInfo(1);
-    ASSERT_TRUE(colInfo1.IsGeneratedProperty()) << stmt.GetECSql();
-    ASSERT_TRUE(colInfo1.GetDataType().IsArray()) << stmt.GetECSql();
-    ASSERT_EQ(PRIMITIVETYPE_Integer, colInfo1.GetDataType().GetPrimitiveType()) << stmt.GetECSql();
-
-    ECSqlColumnInfoCR colInfo2 = stmt.GetColumnInfo(2);
-    ASSERT_TRUE(colInfo2.IsGeneratedProperty()) << stmt.GetECSql();
-    ASSERT_FALSE(colInfo2.GetDataType().IsArray()) << stmt.GetECSql();
-    ASSERT_EQ(PRIMITIVETYPE_String, colInfo2.GetDataType().GetPrimitiveType()) << stmt.GetECSql();
-
-    ECSqlColumnInfoCR colInfo3 = stmt.GetColumnInfo(3);
-    ASSERT_TRUE(colInfo3.IsGeneratedProperty()) << stmt.GetECSql();
-    ASSERT_TRUE(colInfo3.GetDataType().IsArray()) << stmt.GetECSql();
-    ASSERT_EQ(PRIMITIVETYPE_String, colInfo3.GetDataType().GetPrimitiveType()) << stmt.GetECSql();
-
-    stmt.Finalize();
-    CloseECDb();
-        
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, AliasedEnumPropsFor_V3_2)
-    {
-    Utf8CP schemaXml = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    for(Utf8CP schemaXml : { R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECEnumeration typeName="Status" backingTypeName="int" isStrict="true">
                     <ECEnumerator name="On" value="1" />
                     <ECEnumerator name="Off" value="2" />
@@ -10691,24 +10631,63 @@ TEST_F(ECSqlStatementTestFixture, AliasedEnumPropsFor_V3_2)
                 <ECEntityClass typeName="Foo" >
                     <ECProperty propertyName="Status" typeName="Status" />
                     <ECArrayProperty propertyName="Statuses" typeName="Status" />
-                    <ECProperty propertyName="Domain" typeName="Domain" />
-                    <ECArrayProperty propertyName="Domains" typeName="Domain" />
+                    <ECProperty propertyName="Domain" typeName="Domains" />
+                    <ECArrayProperty propertyName="Domains" typeName="Domains" />
                 </ECEntityClass>
-              </ECSchema>)xml";
+              </ECSchema>)xml",
+              R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                <ECEnumeration typeName="Status" backingTypeName="int" isStrict="true">
+                    <ECEnumerator name="On" value="1" />
+                    <ECEnumerator name="Off" value="2" />
+                </ECEnumeration>
+                <ECEnumeration typeName="Domains" backingTypeName="string" isStrict="true">
+                    <ECEnumerator name="Org" value="Org" displayLabel="Org" />
+                    <ECEnumerator name="Com" value="Com" displayLabel="Com"/>
+                </ECEnumeration>
+                <ECEntityClass typeName="Foo" >
+                    <ECProperty propertyName="Status" typeName="Status" />
+                    <ECArrayProperty propertyName="Statuses" typeName="Status" />
+                    <ECProperty propertyName="Domain" typeName="Domains" />
+                    <ECArrayProperty propertyName="Domains" typeName="Domains" />
+                </ECEntityClass>
+              </ECSchema>)xml"})
+        {
+        ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("AliasedEnumProps.ecdb", SchemaItem(schemaXml)));
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(Status,Statuses,Domain,Domains) VALUES (1,?,'Org',?)"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindInt(1)) << stmt.GetECSql();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(1).AddArrayElement().BindInt(2)) << stmt.GetECSql();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(2).AddArrayElement().BindText("Org", IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.GetBinder(2).AddArrayElement().BindText("Com", IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+        ECInstanceKey key;
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+        stmt.Finalize();
 
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, SetupECDb("AliasedEnumPropsFor_V3_2.ecdb"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Status as MyStatus,Statuses as MyStatuses,Domain as MyDomain, Domains as MyDomains FROM ts.Foo"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        ECSqlColumnInfoCR colInfo0 = stmt.GetColumnInfo(0);
+        ASSERT_TRUE(colInfo0.IsGeneratedProperty()) << stmt.GetECSql();
+        ASSERT_FALSE(colInfo0.GetDataType().IsArray()) << stmt.GetECSql();
+        ASSERT_EQ(PRIMITIVETYPE_Integer, colInfo0.GetDataType().GetPrimitiveType()) << stmt.GetECSql();
 
-    ECSchemaPtr schema;
-    const auto context = ECSchemaReadContext::CreateContext();
-        
-    // Schema should always be deserialized successfully irrespective of the ECXml version
-    ASSERT_FALSE(SchemaReadStatus::Success == ECSchema::ReadFromXmlString(schema, schemaXml, *context)) << "Test case number failed at deserializing.";
-    ASSERT_FALSE(schema.IsValid()) << "Test case failed due to invalid schemas.";
-                
-    // Schema import should fail when ECXml version of the schema is greater than the current version that the ECDb supports
-    EXPECT_FALSE(m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()) == SchemaImportResult::OK) << "Test case failed to import schema.";
-    EXPECT_FALSE(m_ecdb.Schemas().GetSchema("TestSchema") != nullptr)<< "Test case failed at fetching the schema.";
-    m_ecdb.AbandonChanges(); 
+        ECSqlColumnInfoCR colInfo1 = stmt.GetColumnInfo(1);
+        ASSERT_TRUE(colInfo1.IsGeneratedProperty()) << stmt.GetECSql();
+        ASSERT_TRUE(colInfo1.GetDataType().IsArray()) << stmt.GetECSql();
+        ASSERT_EQ(PRIMITIVETYPE_Integer, colInfo1.GetDataType().GetPrimitiveType()) << stmt.GetECSql();
+
+        ECSqlColumnInfoCR colInfo2 = stmt.GetColumnInfo(2);
+        ASSERT_TRUE(colInfo2.IsGeneratedProperty()) << stmt.GetECSql();
+        ASSERT_FALSE(colInfo2.GetDataType().IsArray()) << stmt.GetECSql();
+        ASSERT_EQ(PRIMITIVETYPE_String, colInfo2.GetDataType().GetPrimitiveType()) << stmt.GetECSql();
+
+        ECSqlColumnInfoCR colInfo3 = stmt.GetColumnInfo(3);
+        ASSERT_TRUE(colInfo3.IsGeneratedProperty()) << stmt.GetECSql();
+        ASSERT_TRUE(colInfo3.GetDataType().IsArray()) << stmt.GetECSql();
+        ASSERT_EQ(PRIMITIVETYPE_String, colInfo3.GetDataType().GetPrimitiveType()) << stmt.GetECSql();
+
+        stmt.Finalize();
+        CloseECDb();
+        }   
     }
 
 //---------------------------------------------------------------------------------------
