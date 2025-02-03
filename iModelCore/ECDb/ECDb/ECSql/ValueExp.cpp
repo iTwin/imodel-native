@@ -303,7 +303,7 @@ void SearchCaseValueExp::_ToJson(BeJsValue val , JsonFormat const& fmt) const  {
         when->ToJson(list.appendValue(), fmt);
 
     if (auto el = Else()) {
-        Else()->ToJson(val["elseExp"], fmt);
+        el->ToJson(val["elseExp"], fmt);
     }
 }
 //-----------------------------------------------------------------------------------------
@@ -816,7 +816,52 @@ Exp::FinalizeParseStatus MemberFunctionCallExp::_FinalizeParsing(ECSqlParseConte
     {
     if (mode == Exp::FinalizeParseMode::AfterFinalizingChildren)
         {
-        if (this->m_tableValuedFunc) {
+        if (this->IsTableValuedFunc()) {
+            if(m_functionName.EqualsI(IdSetModule::NAME))
+                {
+                ValueExp const* argExp = GetArgument(0);
+                if(argExp == nullptr)
+                    {
+                    ctx.Issues().ReportV(
+                        IssueSeverity::Error,
+                        IssueCategory::BusinessProperties,
+                        IssueType::ECSQL,
+                        ECDbIssueId::ECDb_0735,
+                        "There must have an argument for the function'%s'",
+                        m_functionName.c_str()
+                    );
+                    return Exp::FinalizeParseStatus::Error;
+                    }
+                ECSqlTypeInfo typeInfo = argExp->GetTypeInfo();
+                if (!typeInfo.IsPrimitive() && !typeInfo.IsUnset())
+                    {
+                    ctx.Issues().ReportV(
+                        IssueSeverity::Error,
+                        IssueCategory::BusinessProperties,
+                        IssueType::ECSQL,
+                        ECDbIssueId::ECDb_0736,
+                        "The argument for the function '%s' can only be either a string literal or an unset parameter",
+                        m_functionName.c_str()
+                    );
+                    return Exp::FinalizeParseStatus::Error;
+                    }
+                if(typeInfo.IsPrimitive())
+                    {
+                    ECN::PrimitiveType primitiveType = typeInfo.GetPrimitiveType();
+                    if(primitiveType != ECN::PrimitiveType::PRIMITIVETYPE_String)
+                        {
+                        ctx.Issues().ReportV(
+                            IssueSeverity::Error,
+                            IssueCategory::BusinessProperties,
+                            IssueType::ECSQL,
+                            ECDbIssueId::ECDb_0736,
+                            "The argument for the function '%s' can only be either a string literal or an unset parameter",
+                            m_functionName.c_str()
+                        );
+                        return Exp::FinalizeParseStatus::Error;
+                        }
+                    }
+                }
             return FinalizeParseStatus::Completed;
         }
         FunctionSignature const* funcSig = FunctionSignatureSet::GetInstance().Find(m_functionName.c_str());
@@ -915,6 +960,11 @@ Utf8String MemberFunctionCallExp::_ToString() const
 //+---------------+---------------+---------------+---------------+---------------+------
 bool MemberFunctionCallExp::_TryDetermineParameterExpType(ECSqlParseContext& ctx, ParameterExp& parameterExp) const
     {
+    if(this->IsTableValuedFunc() && m_functionName.EqualsI(IdSetModule::NAME))
+        {
+        parameterExp.SetTargetExpInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Long, true, EXTENDEDTYPENAME_Id));
+        return true;
+        }
     //we don't have metadata about function args, so use a default type if the arg is a parameter
     parameterExp.SetTargetExpInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PRIMITIVETYPE_Double));
     return true;
