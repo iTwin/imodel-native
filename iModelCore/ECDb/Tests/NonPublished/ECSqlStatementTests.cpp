@@ -10619,23 +10619,23 @@ TEST_F(ECSqlStatementTestFixture, OptimizeECSqlForSealedAndClassWithNotDerviedCl
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, AliasedEnumProps)
     {
-    for(Utf8CP schemaXml : { R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    for (Utf8CP schemaXml : {R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECEnumeration typeName="Status" backingTypeName="int" isStrict="true">
-                    <ECEnumerator name="On" value="1" />
-                    <ECEnumerator name="Off" value="2" />
+                    <ECEnumerator value="1" displayLabel="On" />
+                    <ECEnumerator value="2" displayLabel="Off"/>
                 </ECEnumeration>
                 <ECEnumeration typeName="Domains" backingTypeName="string" isStrict="true">
-                    <ECEnumerator name="Org" value="Org" displayLabel="Org" />
-                    <ECEnumerator name="Com" value="Com" displayLabel="Com"/>
+                    <ECEnumerator value="Org" displayLabel="Org" />
+                    <ECEnumerator value="Com" displayLabel="Com"/>
                 </ECEnumeration>
                 <ECEntityClass typeName="Foo" >
                     <ECProperty propertyName="Status" typeName="Status" />
                     <ECArrayProperty propertyName="Statuses" typeName="Status" />
-                    <ECProperty propertyName="Domain" typeName="Domains" />
-                    <ECArrayProperty propertyName="Domains" typeName="Domains" />
+                    <ECProperty propertyName="Domain" typeName="Domain" />
+                    <ECArrayProperty propertyName="Domains" typeName="Domain" />
                 </ECEntityClass>
               </ECSchema>)xml",
-              R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                 <ECEnumeration typeName="Status" backingTypeName="int" isStrict="true">
                     <ECEnumerator name="On" value="1" />
                     <ECEnumerator name="Off" value="2" />
@@ -10647,8 +10647,8 @@ TEST_F(ECSqlStatementTestFixture, AliasedEnumProps)
                 <ECEntityClass typeName="Foo" >
                     <ECProperty propertyName="Status" typeName="Status" />
                     <ECArrayProperty propertyName="Statuses" typeName="Status" />
-                    <ECProperty propertyName="Domain" typeName="Domains" />
-                    <ECArrayProperty propertyName="Domains" typeName="Domains" />
+                    <ECProperty propertyName="Domain" typeName="Domain" />
+                    <ECArrayProperty propertyName="Domains" typeName="Domain" />
                 </ECEntityClass>
               </ECSchema>)xml"})
         {
