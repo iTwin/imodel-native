@@ -241,7 +241,7 @@ struct TableValuedFunctionExp : RangeClassRefExp
     {
 friend struct ECSqlParser;
 private:
-    ECN::ECEntityClassCP m_virtualEntityClass;
+    ECN::ECEntityClassCP m_virtualEntityClass = nullptr;
     Utf8String m_schemaName;
     virtual void _OnAliasChanged() override {}
     virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
