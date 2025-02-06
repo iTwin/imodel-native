@@ -11,16 +11,22 @@
 #include <random>
 #include <chrono>
 
-#define DEFAULT_QUERY_DELAY_MAX_TIME    std::chrono::seconds(10)
-#define DEFAULT_QUOTA_MAX_TIME          std::chrono::seconds(60)
-#define DEFAULT_QUOTA_MAX_MEM           0x800000
-#define DEFAULT_REQUEST_QUERY_SIZE      2000
-#define DEFAULT_IGNORE_PRIORITY         false
-#define DEFAULT_IGNORE_DELAY            true
-#define DEFAULT_WORKER_THREAD_COUNT     std::min(4u, std::thread::hardware_concurrency())
-#define MAX_REQUEST_QUERY_SIZE          4000
-#define MIN_WORKER_THREAD_COUNT         2
-#define QUERY_WORKER_RESULT_RESERVE_BYTES 1024*4  // 4Kb and its cached buffer on for each thread.
+#define DEFAULT_QUERY_DELAY_MAX_TIME                std::chrono::seconds(10)
+#define DEFAULT_QUOTA_MAX_TIME                      std::chrono::seconds(60)
+#define DEFAULT_QUOTA_MAX_MEM                       0x800000
+#define DEFAULT_REQUEST_QUERY_SIZE                  2000
+#define DEFAULT_IGNORE_PRIORITY                     false
+#define DEFAULT_IGNORE_DELAY                        true
+#define DEFAULT_DONOT_USE_PRIMARY_CONN_TO_PREPARE   false
+#define DEFAULT_SHUTDOWN_WHEN_IDLE_FOR_SECONDS      60*30
+#define DEFAULT_MONITOR_POLL_INTERVAL               1000 // ms
+#define DEFAULT_WORKER_THREAD_COUNT                 std::min(4u, std::thread::hardware_concurrency())
+#define DEFAULT_STATEMENT_CACHE_SIZE_PER_WORKER     40
+#define MAX_REQUEST_QUERY_SIZE                      4000
+#define MIN_WORKER_THREAD_COUNT                     1
+#define QUERY_WORKER_RESULT_RESERVE_BYTES           1024*4  // 4Kb and its cached buffer on for each thread.
+#define MAX_STATEMENT_CACHE_SIZE_PER_WORKER         100
+#define MIN_MONITOR_POLL_INTERVAL                   1000
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 using namespace std::chrono_literals;
@@ -81,14 +87,15 @@ struct CachedQueryAdaptor final: std::enable_shared_from_this<CachedQueryAdaptor
 //! @bsiclass
 //=======================================================================================
 struct QueryAdaptorCache final {
-    const static uint32_t kDefaultCacheSize =40;
+    const static uint32_t kDefaultCacheSize = DEFAULT_STATEMENT_CACHE_SIZE_PER_WORKER;
     private:
             std::vector<std::shared_ptr<CachedQueryAdaptor>> m_cache;
             recursive_mutex_t m_mutex;
             CachedConnection& m_conn;
             uint32_t m_maxEntries;
+            bool m_doNotUsePrimaryConnToPrepare;
     public:
-        QueryAdaptorCache(CachedConnection& conn, uint32_t maxCacheEntries = kDefaultCacheSize):m_conn(conn), m_maxEntries(maxCacheEntries){}
+        QueryAdaptorCache(CachedConnection& conn);
         ~QueryAdaptorCache(){}
         std::shared_ptr<CachedQueryAdaptor> TryGet(Utf8CP ecsql, bool usePrimaryConn, bool suppressLogError, ECSqlStatus& status, std::string& ecsql_error);
         void Reset() { m_cache.clear(); }
@@ -152,10 +159,14 @@ struct CachedConnection final : std::enable_shared_from_this<CachedConnection> {
         std::vector<FunctionInfo> GetPrimaryDbSqlFunctions() const;
         void SetRequest(std::unique_ptr<RunnableRequestBase> request);
         void ClearRequest();
+        std::atomic_bool m_canBeInterrupted;
     public:
         CachedConnection(ConnectionCache& cache, uint16_t id):m_cache(cache), m_id(id), m_adaptorCache(*this),m_isChangeSummaryCacheAttached(false),m_retryHandler(QueryRetryHandler::Create(60s)){}
+        recursive_mutex_t& GetMutex() { return m_mutexReq; }
         ~CachedConnection();
-        void Interrupt() const { m_db.Interrupt();}
+        void Interrupt() const {m_db.Interrupt();}
+        bool CanBeInterrupted() const { return m_canBeInterrupted.load(); }
+        void SetCanBeInterrupted(bool val) { return m_canBeInterrupted.store(val); }
         void Execute(std::function<void(QueryAdaptorCache&,RunnableRequestBase&)>, std::unique_ptr<RunnableRequestBase>);
         void Reset(bool detachDbs);
         void InterruptIf(std::function<bool(RunnableRequestBase const&)>,bool cancel);
@@ -209,20 +220,22 @@ struct RunnableRequestBase {
         uint32_t m_executorId;
         uint32_t m_connId;
         std::atomic_bool m_interrupted;
+        std::chrono::milliseconds m_prepareTime;
         virtual void _SetResponse(QueryResponse::Ptr response) = 0;
     public:
         RunnableRequestBase(RunnableRequestQueue& queue, QueryRequest::Ptr request, QueryQuota quota, uint32_t id)
             :m_queue(queue), m_request(std::move(request)), m_id(id), m_isCompleted(false),m_dequeuedOn(0s),m_interrupted(false),
-             m_quota(quota), m_submittedOn(std::chrono::steady_clock::now()), m_cancelled(false), m_executorId(0), m_connId(0){}
+             m_quota(quota), m_submittedOn(std::chrono::steady_clock::now()), m_cancelled(false), m_executorId(0), m_connId(0),m_prepareTime(0){}
         virtual ~RunnableRequestBase(){}
         QueryRequest const& GetRequest() const {return *m_request;}
         uint32_t GetId() const {return m_id; }
         void SetResponse(QueryResponse::Ptr response);
+        void SetPrepareTime(std::chrono::milliseconds time) { m_prepareTime = time; }
         bool IsCompleted() const {return m_isCompleted; }
         RunnableRequestQueue& GetQueue() { return m_queue;}
         bool IsInterrupted() const { return m_interrupted; }
         void Cancel() { m_cancelled.store(true); }
-        bool IsReady() const { return GetTotalTime() > m_request->GetDelay(); }
+        bool IsReady() const { return GetTotalTime() >= m_request->GetDelay(); }
         bool IsCancelled () const {return m_cancelled.load(); }
         bool IsTimeExceeded() const { return m_quota.MaxTimeAllowed() == 0s ? false : std::chrono::duration_cast<std::chrono::seconds>(GetTotalTime()) >  m_quota.MaxTimeAllowed();}
         bool IsMemoryExceeded(std::string const& result) const { return m_quota.MaxMemoryAllowed() == 0 ? false : result.size() > m_quota.MaxMemoryAllowed(); }
@@ -283,8 +296,8 @@ struct RunnableRequestQueue final {
     };
 
     private:
-        mutex_t m_mutex;
-        std::condition_variable m_cond;
+        recursive_mutex_t m_mutex;
+        std::condition_variable_any m_cond;
         std::atomic<State> m_state;
         uint32_t m_maxQueueSize;
         uint32_t m_nextId;
@@ -292,6 +305,8 @@ struct RunnableRequestQueue final {
         QueryQuota m_quota;
         std::vector<std::unique_ptr<RunnableRequestBase>> m_requests;
         ECDbCR m_ecdb;
+        std::chrono::seconds m_shutdownWhenIdleFor;
+        std::chrono::time_point<std::chrono::steady_clock> m_lastDequeueTime;
 
     private:
         void InsertSorted(ConnectionCache&,std::unique_ptr<RunnableRequestBase>&& request);
@@ -315,8 +330,8 @@ struct RunnableRequestQueue final {
         void Enqueue(ConnectionCache&,QueryRequest::Ptr, ConcurrentQueryMgr::OnCompletion onComplete);
         uint32_t Count();
         bool Stop();
+        void IfReadyForAutoShutdown(std::function<void()> shutdownCb);
 };
-
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
@@ -327,6 +342,7 @@ struct QueryExecutor final {
         std::vector<std::thread> m_threads;
         uint32_t m_maxPoolSize;
         std::atomic<uint32_t> m_threadCount;
+
     public:
         QueryExecutor(RunnableRequestQueue& queue, ECDbCR primaryDb, uint32_t pool_size = 0);
         ~QueryExecutor();
@@ -374,9 +390,10 @@ struct QueryMonitor {
         RunnableRequestQueue& m_queue;
         QueryExecutor& m_executor;
         std::chrono::milliseconds m_pollInterval;
+        bool m_allowTestingArgs;
         cancel_callback_type m_cancelBeforeSchemaChanges;
     public:
-        QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor, std::chrono::milliseconds pollInterval = 1000ms);
+        QueryMonitor(RunnableRequestQueue& queue, QueryExecutor& executor);
         ~QueryMonitor();
 };
 
@@ -424,24 +441,4 @@ struct ConcurrentQueryAppData : Db::AppData {
         }
 };
 
-//=======================================================================================
-//! @bsiclass
-//=======================================================================================
-struct ConcurrentQueryConfigAppData : Db::AppData {
-    private:
-        mutable ConcurrentQueryMgr::Config m_config;
-    public:
-        ConcurrentQueryConfigAppData(){
-            m_config = ConcurrentQueryMgr::Config::GetFromEnv();
-        }
-        static Db::AppData::Key& GetKey() {
-            static Db::AppData::Key s_key;
-            return s_key;
-        }
-        ConcurrentQueryMgr::Config const& GetConfig() const { return m_config; }
-        void SetConfig(ConcurrentQueryMgr::Config const& config) { m_config = config; }
-        static RefCountedPtr<ConcurrentQueryConfigAppData> Create() {
-            return new ConcurrentQueryConfigAppData();
-        }
-};
 END_BENTLEY_SQLITE_EC_NAMESPACE
