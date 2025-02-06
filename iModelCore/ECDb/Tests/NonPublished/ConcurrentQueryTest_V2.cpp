@@ -1163,7 +1163,7 @@ TEST_F(ConcurrentQueryFixture, ReaderBindingForIdSetVirtualTable) {
         idSet.insert(BeInt64Id(40));
         int vsRowCount = 0;
 
-        ECSqlReader  vsReaderIdSet(mgr, "select id from ECVLib.IdSet(?)",
+        ECSqlReader  vsReaderIdSet(mgr, "select id from IdSet(?)",
             ECSqlParams().BindIdSet(1, idSet));
 
         int i = 1;
@@ -1184,7 +1184,7 @@ TEST_F(ConcurrentQueryFixture, ReaderBindingForIdSetVirtualTable) {
         idSet.insert(BeInt64Id(40));
         int vsRowCount = 0;
 
-        ECSqlReader  vsReaderIdSet(mgr, "select ECInstanceId from meta.ECClassDef, ECVLib.IdSet(?) where ECInstanceId = id",
+        ECSqlReader  vsReaderIdSet(mgr, "select ECInstanceId from meta.ECClassDef, IdSet(?) where ECInstanceId = id",
             ECSqlParams().BindIdSet(1, idSet));
 
         int i = 1;
@@ -1200,7 +1200,7 @@ TEST_F(ConcurrentQueryFixture, ReaderBindingForIdSetVirtualTable) {
         auto& mgr = ConcurrentQueryMgr::GetInstance(m_ecdb);
         int vsRowCount = 0;
 
-        ECSqlReader  vsReaderIdSet(mgr, "select ECInstanceId from meta.ECClassDef, ECVLib.IdSet(?) where ECInstanceId = id",
+        ECSqlReader  vsReaderIdSet(mgr, "select ECInstanceId from meta.ECClassDef, IdSet(?) where ECInstanceId = id",
             ECSqlParams().BindId(1, BeInt64Id(33)));
 
         while(vsReaderIdSet.Next())
@@ -1220,7 +1220,7 @@ TEST_F(ConcurrentQueryFixture, ReaderBindingForIdSetVirtualTable) {
         idSet.insert(BeInt64Id(40));
         int vsRowCount = 0;
 
-        ECSqlReader  vsReaderIdSet(mgr, "select id from ECVLib.IdSet(?)",
+        ECSqlReader  vsReaderIdSet(mgr, "select id from IdSet(?)",
             ECSqlParams().BindIdSet(1, idSet));
 
         try{
