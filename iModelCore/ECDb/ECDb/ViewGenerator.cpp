@@ -881,7 +881,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
             return ERROR;
             }
 
-        if (ClassViews::IsViewClass(relationshipClass)) 
+        if (ClassViews::IsViewClass(relationshipClass))
             {
             ctx.GetECDb().GetImpl().Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECDbIssue, ECDbIssueId::ECDb_0724,
                 "Relationship class %s is marked as a foreign key based view, but it is also a view class. It cannot be both.", relationshipClass.GetFullName());
@@ -929,6 +929,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
         {
         const bool isSelf = partition->GetSourceECClassIdColumn()->GetId() == partition->GetTargetECClassIdColumn()->GetId();
         const bool appendAlias = unionList.empty();
+
         NativeSqlBuilder unionQuerySql("SELECT ");
         //ECInstanceId
         toSql(unionQuerySql, partition->GetECInstanceIdColumn());
@@ -957,7 +958,6 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
 
         unionQuerySql.AppendComma();
 
-        //SourceECClassID
         if (partition->GetSourceECClassIdColumn()->IsVirtual())
             {
             // If ClassId is virtual then the class must be mapped to its own table other wise it would have a ECClassId column.
@@ -1038,6 +1038,37 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
 
         //no need to cast referencIdColumn because IS NOT NULL doesn't need to change the data affinity
         unionQuerySql.Append(" WHERE ").AppendFullyQualified(referenceIdColumn.GetTable().GetName(), referenceIdColumn.GetName()).Append(" IS NOT NULL");
+
+        if (relationMap.GetForeignEnd() == ECRelationshipEnd::ECRelationshipEnd_Source) {
+            if (partition->GetSourceECClassIdColumn()->GetPersistenceType() == PersistenceType::Physical) {
+                const auto constraintClassId = relationshipClass.GetSource().GetConstraintClasses()[0]->GetId().ToString();
+                const auto tablespace = ctx.GetSchemaManager().GetTableSpace().GetName();
+                unionQuerySql.Append(" AND ");
+                toSql(unionQuerySql, *partition->GetSourceECClassIdColumn());
+                if (relationshipClass.GetSource().GetIsPolymorphic()) {
+                    unionQuerySql.AppendFormatted(" IN (SELECT ClassId FROM [%s]." TABLE_ClassHierarchyCache " WHERE BaseClassId=%s)", tablespace.c_str(), constraintClassId.c_str());
+                }
+                else {
+                    unionQuerySql.Append("=").Append(constraintClassId);
+                }
+            }
+        }
+        else {
+            if (partition->GetTargetECClassIdColumn()->GetPersistenceType() == PersistenceType::Physical) {
+                const auto constraintClassId = relationshipClass.GetTarget().GetConstraintClasses()[0]->GetId().ToString();
+                const auto tablespace = ctx.GetSchemaManager().GetTableSpace().GetName();
+                unionQuerySql.Append(" AND ");
+                toSql(unionQuerySql, *partition->GetTargetECClassIdColumn());
+                if (relationshipClass.GetTarget().GetIsPolymorphic()) {
+                    unionQuerySql.AppendFormatted(" IN (SELECT ClassId FROM [%s]." TABLE_ClassHierarchyCache " WHERE BaseClassId=%s)", tablespace.c_str(), constraintClassId.c_str());
+                }
+                else {
+                    unionQuerySql.Append("=").Append(constraintClassId);
+                }
+            }
+        }
+
+
         if (partition->GetECClassIdColumn().GetPersistenceType() == PersistenceType::Physical)
             {
             const bool isPolymorphic = ctx.GetViewType() == ViewType::SelectFromView ? ctx.GetAs<SelectFromViewContext>().GetPolymorphicInfo().IsPolymorphic() : true;
@@ -1045,6 +1076,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
             NativeSqlBuilder temp;
             toSql(temp, partition->GetECClassIdColumn());
             unionQuerySql.Append("COALESCE(").Append(temp).AppendComma().Append(classId).Append(")");
+
             if (isPolymorphic)
                 unionQuerySql.AppendFormatted(" IN (SELECT ClassId FROM [%s]." TABLE_ClassHierarchyCache " WHERE BaseClassId=%s)", ctx.GetSchemaManager().GetTableSpace().GetName().c_str(), relationMap.GetClass().GetId().ToString().c_str());
             else
@@ -1708,7 +1740,12 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(NavigationPropertyMap::Re
         result.GetSqlBuilderR().Append("CAST(");
 
     //The RelECClassId should always be logically null if the respective NavId col is null
-    result.GetSqlBuilderR().AppendFormatted("(CASE WHEN %s IS NULL THEN NULL ELSE %s END)", idColStrBuilder.GetSql().c_str(), relClassIdColStrBuilder.GetSql().c_str());
+
+    result.GetSqlBuilderR().AppendFormatted("(CASE WHEN %s IS NULL THEN NULL ELSE COALESCE(%s, %s) END)",
+        idColStrBuilder.GetSql().c_str(),
+        relClassIdColStrBuilder.GetSql().c_str(),
+        relClassIdPropMap.GetDefaultClassId().ToString().c_str()
+    );
 
     if (requiresCast)
         result.GetSqlBuilderR().Append(" AS ").Append(DbColumn::TypeToSql(relClassIdPropMap.GetColumnDataType())).AppendParenRight();

@@ -484,7 +484,7 @@ RelatedInstanceModule::RelatedInstanceModule(ECDbR db): ECDbModule(
             <ECProperty propertyName="ECInstanceId" typeName="long" extendedTypeName="Id" />
             <ECProperty propertyName="ECClassId" typeName="long" extendedTypeName="ClassId"/>
             <ECProperty propertyName="RelECClassId" typeName="long" extendedTypeName="ClassId"/>
-            <ECProperty propertyName="Direction" typeName="integer"/>
+            <ECProperty propertyName="Direction" typeName="int"/>
         </ECEntityClass>
     </ECSchema>)xml") {}
 
