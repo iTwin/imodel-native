@@ -625,6 +625,11 @@ DropSchemaResult DgnDb::DropSchema(Utf8StringCR name, bool logIssue) {
     return Domains().DoDropSchema(name, logIssue);
 }
 
+DropSchemaResult DgnDb::DropSchemas(bvector<Utf8String> schemaNames, bool logIssue)
+    {
+    return Domains().DoDropSchemas(schemaNames, logIssue);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

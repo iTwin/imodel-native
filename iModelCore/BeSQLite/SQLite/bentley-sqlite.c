@@ -21,8 +21,9 @@
 //Allocate around ~ 32 Mb
 #define SQLITE_DEFAULT_CACHE_SIZE 8000
 #define SQLITE_ENABLE_FTS5 1    // include support for full text search
+#define SQLITE_ENABLE_FTS4 1    // include support for full text search
 #define SESSIONS_STRM_CHUNK_SIZE 64*1024
-// https://sqlite.org/lang_mathfunc.html
+// https://sqlite.org/lang_mathfunc.htmlbb
 #define SQLITE_ENABLE_MATH_FUNCTIONS 1
 #define SQLITE_ENABLE_DBSTAT_VTAB 1
 #define SQLITE_ENABLE_NORMALIZE 1
@@ -98,3 +99,12 @@ int checkNoActiveStatements(sqlite3* db)
     return SQLITE_ERROR;
     }
 #endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+int getStatementState(sqlite3_stmt *pStmt)
+    {
+    Vdbe* stmt = (Vdbe*)pStmt;
+    return stmt->eVdbeState;
+    }

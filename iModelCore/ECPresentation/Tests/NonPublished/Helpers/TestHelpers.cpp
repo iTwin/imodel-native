@@ -525,7 +525,7 @@ static void ValidateContentSetItemPropertyFields(IECInstanceCR instance, Content
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesEngineTestHelpers::ValidateContentSetItem(IECInstanceCR instance, ContentSetItemCR item, ContentDescriptorCR descriptor, Utf8CP expectedLabel, Utf8CP expectedImageId)
+void RulesEngineTestHelpers::ValidateContentSetItem(IECInstanceCR instance, ContentSetItemCR item, ContentDescriptorCR descriptor, std::function<Utf8CP(rapidjson::Document const&)> expectedDisplayLabelFactory, Utf8CP expectedImageId)
     {
     rapidjson::Document json = item.AsJson();
     EXPECT_TRUE(json.IsObject());
@@ -536,14 +536,15 @@ void RulesEngineTestHelpers::ValidateContentSetItem(IECInstanceCR instance, Cont
     EXPECT_STREQ(instance.GetInstanceId().c_str(), keys[0]["ECInstanceId"].GetString());
 
     ASSERT_TRUE(json.HasMember("DisplayLabel"));
-    if (nullptr != expectedLabel)
+    auto const& actualDisplayLabel = json["DisplayLabel"];
+    if (expectedDisplayLabelFactory)
         {
-        ASSERT_TRUE(json["DisplayLabel"].HasMember("DisplayValue"));
-        EXPECT_STREQ(expectedLabel, json["DisplayLabel"]["DisplayValue"].GetString());
+        ASSERT_TRUE(!actualDisplayLabel.ObjectEmpty() && actualDisplayLabel.HasMember("DisplayValue"));
+        EXPECT_STREQ(expectedDisplayLabelFactory(json), actualDisplayLabel["DisplayValue"].GetString());
         }
-    else
+    else if (!actualDisplayLabel.ObjectEmpty())
         {
-        EXPECT_TRUE(!json["DisplayLabel"].IsObject() || json["DisplayLabel"].ObjectEmpty());
+        EXPECT_STREQ("@Presentation:label.notSpecified@", actualDisplayLabel["DisplayValue"].GetString());
         }
 
     ASSERT_TRUE(json.HasMember("ImageId"));
@@ -558,18 +559,18 @@ void RulesEngineTestHelpers::ValidateContentSetItem(IECInstanceCR instance, Cont
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP> instances, Content const& content, bool validateOrder)
+void RulesEngineTestHelpers::ValidateContentSet(bvector<IECInstanceCP> instances, Content const& content, bool validateOrder, std::function<Utf8CP(rapidjson::Document const&)> expectedDisplayLabelFactory)
     {
     ValidateContentSet(ContainerHelpers::TransformContainer<bvector<InstanceInputAndResult>>(instances, [](auto const& resultInstance)
         {
         return InstanceInputAndResult(nullptr, resultInstance);
-        }), content, validateOrder);
+        }), content, validateOrder, std::move(expectedDisplayLabelFactory));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesEngineTestHelpers::ValidateContentSet(bvector<InstanceInputAndResult> instances, Content const& content, bool validateOrder)
+void RulesEngineTestHelpers::ValidateContentSet(bvector<InstanceInputAndResult> instances, Content const& content, bool validateOrder, std::function<Utf8CP(rapidjson::Document const&)> expectedDisplayLabelFactory)
     {
     DataContainer<ContentSetItemCPtr> contentSet = content.GetContentSet();
     ASSERT_EQ(instances.size(), contentSet.GetSize());
@@ -608,7 +609,7 @@ void RulesEngineTestHelpers::ValidateContentSet(bvector<InstanceInputAndResult> 
             }
 
         if (instance.m_result)
-            ValidateContentSetItem(*instance.m_result, *item, content.GetDescriptor());
+            ValidateContentSetItem(*instance.m_result, *item, content.GetDescriptor(), expectedDisplayLabelFactory);
         }
     }
 
@@ -747,7 +748,11 @@ static bset<ECInstanceKey> ReadNodeInstanceKeys(ECDbCR connection, NavNodeCR nod
 
     bset<ECInstanceKey> keys;
     while (BE_SQLITE_ROW == stmt.Step())
-        keys.insert(ECInstanceKey(stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1)));
+        {
+        ECInstanceKey key(stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1));
+        EXPECT_FALSE(ContainerHelpers::Contains(keys, key)) << "Detected duplicate instance key";
+        keys.insert(key);
+        }
     return keys;
     }
 
@@ -784,13 +789,23 @@ static void VerifyInstanceKeysMatch(bvector<RefCountedPtr<IECInstance const>> co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
+static void ValidateNodeInstanceKeys(NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& expectedInstances, bset<ECInstanceKey> const& actualNodeInstanceKeys)
+    {
+    VerifyInstanceKeysMatch(expectedInstances, actualNodeInstanceKeys);
+
+    if (node.GetKey()->AsECInstanceNodeKey())
+        VerifyInstanceKeysMatch(expectedInstances, GetECInstanceNodeKeys(node));
+    else if (auto groupingNodeKey = node.GetKey()->AsGroupingNodeKey())
+        EXPECT_EQ(expectedInstances.size(), groupingNodeKey->GetGroupedInstancesCount());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
 void RulesEngineTestHelpers::ValidateNodeInstances(ECDbCR db, NavNodeCR node, bvector<RefCountedPtr<IECInstance const>> const& instances)
     {
     auto nodeInstanceKeys = ReadNodeInstanceKeys(db, static_cast<NavNodeCR>(node));
-    VerifyInstanceKeysMatch(instances, nodeInstanceKeys);
-
-    if (node.GetKey()->AsECInstanceNodeKey())
-        VerifyInstanceKeysMatch(instances, GetECInstanceNodeKeys(node));
+    ValidateNodeInstanceKeys(node, instances, nodeInstanceKeys);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -801,13 +816,11 @@ void RulesEngineTestHelpers::ValidateNodeInstances(INodeInstanceKeysProvider con
     bset<ECInstanceKey> nodeInstanceKeys;
     instanceKeysProvider.IterateInstanceKeys(*node.GetKey(), [&nodeInstanceKeys](ECInstanceKeyCR k)
         {
+        EXPECT_FALSE(ContainerHelpers::Contains(nodeInstanceKeys, k)) << "Detected duplicate instance key";
         nodeInstanceKeys.insert(k);
         return true;
         });
-    VerifyInstanceKeysMatch(instances, nodeInstanceKeys);
-
-    if (node.GetKey()->AsECInstanceNodeKey())
-        VerifyInstanceKeysMatch(instances, GetECInstanceNodeKeys(node));
+    ValidateNodeInstanceKeys(node, instances, nodeInstanceKeys);
     }
 
 /*---------------------------------------------------------------------------------**//**

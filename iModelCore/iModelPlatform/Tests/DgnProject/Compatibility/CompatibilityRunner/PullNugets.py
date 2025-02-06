@@ -6,13 +6,12 @@ import sys
 import os
 import zipfile
 from shutil import rmtree, copyfile
-from distutils.version import LooseVersion
 bbpath = os.path.join(os.getenv("SrcRoot"),"bentleybuild")
 sys.path.append(bbpath)
 if os.path.exists (os.path.join(bbpath, 'bblib')): # Support bb3
-    from bblib import globalvars, nugetpkg, strategy, symlinks
+    from bblib import globalvars, nugetpkg, strategy, symlinks, versionutils
 else: 
-    from bentleybuild import globalvars, nugetpkg, strategy, symlinks
+    from bentleybuild import globalvars, nugetpkg, strategy, symlinks, versionutils
 
 #-------------------------------------------------------------------------------------------
  # bsimethod
@@ -61,7 +60,7 @@ def pullAllNugets(path, pathToNugetPuller, name, minimumVersion=None, ignoreVers
         print ('  WARNING: No versions found')
     for v in versions:
         # ignore versions older than the passed minimum or if in the ignore set (until they have been deleted from the nuget server)
-        if (minimumVersion and LooseVersion(v) < LooseVersion(minimumVersion)) or (ignoreVersionsSet and v in ignoreVersionsSet):
+        if (minimumVersion and versionutils.Version(v) < versionutils.Version(minimumVersion)) or (ignoreVersionsSet and v in ignoreVersionsSet):
             continue
         # Download and save all versions
         localDir = path

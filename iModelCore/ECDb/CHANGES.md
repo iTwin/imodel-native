@@ -4,8 +4,58 @@ This document including important changes to syntax or file format.
 
 | Module  | Version   |
 | ------- | --------- |
-| Profile | `4.0.0.4` |
-| ECSQL   | `1.2.10.0` |
+| Profile | `4.0.0.5` |
+| ECSQL   | `2.0.2.0` |
+
+## ## `01/29/2025`: Made schema names optional for table valued functions
+* ECSql version change `2.0.1.1` -> `2.0.2.0`.
+* Made schema names optional for table valued functions
+* Table valued functions will now work with and without schema names. Example :- `SELECT * FROM json_each(:json_param)` & 
+    `SELECT * FROM json1.json_each(:json_param)` both are now valid queries from ECSQL perspective.
+* Example: `Select test.str_prop, test.int_prop, v.id from ts.A test RIGHT OUTER JOIN IdSet(:idSet_param) v on test.ECInstanceId = v.id`,
+           `SELECT * FROM json_each(:json_param)`.
+
+## ## `01/22/2025`: Added IdSet Virtual Table in ECSQL
+* ECSql version change `2.0.1.0` -> `2.0.1.1`.
+* Added IdSet Virtual Table in ECSQL
+* Example: `Select test.str_prop, test.int_prop, v.id from ts.A test RIGHT OUTER JOIN ECVLib.IdSet(:idSet_param) v on test.ECInstanceId = v.id`.
+
+## ## `01/10/2025`: Added support for CTE subquery with alias
+* ECSql version change `2.0.0.0` -> `2.0.1.0`.
+* Added support for CTE subquery with alias
+* Example: `select a.x from (with tmp(x) as (SELECT e.i FROM aps.TestElement e order by e.i LIMIT 1) select x from tmp) a`.
+
+
+## ## `09/05/2024`: Remove class names ALIAS support and Disqualify_polymorphic_constraint(+) support in UPDATE & DELETE statements
+* ECSql version change `1.2.14.0` -> `2.0.0.0`.
+* Removed class names ALIAS support and Disqualify_polymorphic_constraint(+) support in UPDATE & DELETE statements
+* Example: `UPDATE ONLY ecsql.PSA t SET t.I = 124, t.L = 100000000000, t.D = -1.2345678, t.S = 'hello, world' WHERE t.D > 0.0`,
+           `UPDATE +ONLY ecsql.P SET I=10 WHERE LOWER(S) = UPPER(S)`. These statements will now result in InvalidECsql.
+* Example: `DELETE FROM ONLY ecsql.P t WHERE t.D > 0.0`, `DELETE FROM +ALL ecsql.PASpatial WHERE Geometry_Array IS NULL`. 
+            These statements will now result in InvalidECsql.
+
+## ## `08/30/2024`: Add support for CTE without columns
+* ECSql version change `1.2.13.0` -> `1.2.14.0`.
+* Added support for use of WITH clause or CTE without columns.
+* Example: `WITH el AS ( SELECT ECInstanceId, ECClassId FROM bis.Element ) SELECT * FROM el`
+
+## `08/29/2024`: Add support for INSERT statements with ONLY keyword
+* ECSql version change `1.2.12.0` -> `1.2.13.0`.
+* Added support for use of ONLY keyword in INSERT statements
+* Example: `INSERT INTO ONLY ts.A VALUES('A-1',100)`
+
+## `08/16/2024`: Add CTE support in subquery
+* ECSql version change `1.2.11.0` -> `1.2.12.0`.
+* Added support for use of WITH clause or CTE in subqueries.
+* Example: `SELECT COUNT(*) FROM (WITH el (Id, ClassId) AS ( SELECT ECInstanceId, ECClassId FROM bis.Element ) SELECT * FROM el)`
+
+## `07/11/2024`: Add PRAGMA purge_orphan_relationships
+
+* ECSql version change `1.2.10.0` -> `1.2.11.0`.
+* Added new command `PRAGMA purge_orphan_relationships` which will delete all orphaned instances in link table relationship tables.
+* The command requires neither any arguments nor any boolean assignments.
+* The use of this command in ECSQL requires either enabling experimental features globally with PRAGMA or specifying `OPTIONS ENABLE_EXPERIMENTAL_FEATURES` in the ecsql.
+* Example: `PRAGMA purge_orphan_relationships options enable_experimental_features`.
 
 ## `1/10/2024`: Add support for navigation value creation function
 
@@ -153,7 +203,7 @@ On the other hand, the following query makes `Foo` optional by adding `?` at the
 * Add support for RIGHT/FULL join.
   * Example: `SELECT $->name FROM meta.ECClassDef ECSQLOPTIONS enable_experimental_features`.
 
-## `8/9/2023`: Truncate BLob to {bytes:####} instead of a single byte via QueryJsonAdaptor
+## `8/9/2023`: Truncate BLob to {bytes:####} instead of a single byte via ECSqlRowAdaptor
 
 * This effect instance access and concurrent query.
 

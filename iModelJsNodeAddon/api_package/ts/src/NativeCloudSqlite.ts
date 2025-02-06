@@ -6,10 +6,10 @@
  * @module iModels
  */
 
-import * as child_process from "child_process";
-import * as fs from "fs";
-import * as os from "os";
-import * as path from "path";
+import * as child_process from "node:child_process";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 import { NativeLibrary } from "./NativeLibrary";
 
 /**
@@ -146,6 +146,32 @@ export namespace NativeCloudSqlite {
     timeout?: number;
     /** The number of prefetch requests to issue while there is foreground activity. Default is 3. */
     minRequests?: number;
+  }
+
+  export interface CleanDeletedBlocksOptions {
+    /**
+     * Any block that was marked as unused before this number of seconds ago will be deleted. Specifying a non-zero
+     * value gives a period of time for other clients to refresh their manifests and stop using the now-garbage blocks. Otherwise they may get
+     * a 404 error. Default is 1 hour.
+     */
+    nSeconds?: number;
+    /** if enabled, outputs verbose logs about the cleanup process. These would include outputting blocks which are determined as eligible for deletion.
+     * @default false
+    */
+    debugLogging?: boolean;
+    /** If true, iterates over all blobs in the cloud container to add blocks that are 'orphaned' to the delete list in the manifest.
+     * Orphaned blocks are created when a client abruptly halts, is disconnected or encounters an error while uploading a change.
+     * If false, the search for 'orphaned' blocks is skipped and only any blocks which are already on the delete list are deleted.
+     * @default true
+     */
+    findOrphanedBlocks?: boolean;
+    /**
+     * a user-supplied progress function called during the cleanup operation. While the search for orphaned blocks occurs, nDeleted will be 0 and nTotalToDelete will be 1.
+     * Once the search is complete and orphaned blocks begin being deleted, nDeleted will be the number of blocks deleted and nTotalToDelete will be the total number of blocks to delete.
+     * If the return value is 1, the job will be cancelled. If one or more blocks have already been deleted, then a new manifest file is uploaded saving the progress of the delete job.
+     * Return any other non-0 value to abort the transfer without saving progress.
+     */
+    onProgress?: (nDeleted: number, nTotalToDelete: number) => Promise<number>;
   }
 
   export type TransferDbProps = DbProps & TransferProgress & CloudHttpProps;

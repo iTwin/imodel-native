@@ -871,7 +871,7 @@ Napi::String JsInterop::InsertLinkTableRelationship(DgnDbR dgndb, Napi::Object o
     BeSQLite::EC::ECInstanceKey relKey;
     auto rc = dgndb.InsertLinkTableRelationship(relKey, *relClass, sourceId, targetId, props.get()); // nullptr is okay if there are no props
     if (BE_SQLITE_OK != rc)
-        throwSqlError();
+        JsInterop::throwSqlResult("Failed to insert relationship", dgndb.GetDbFileName(), rc);
 
     return Napi::String::New(Env(), relKey.GetInstanceId().ToHexStr());
     }
@@ -1149,7 +1149,7 @@ void JsInterop::GetIModelProps(BeJsValue val, DgnDbCR dgndb) {
     auto rootSubject = dgndb.Elements().GetRootSubject();
     if (rootSubject.IsValid()) {
         auto subject = val[json_rootSubject()];
-        subject[json_name()] = rootSubject->GetCode().GetValueUtf8CP();
+        subject[json_name()] =  rootSubject->GetCode().IsEmpty() ? "" : rootSubject->GetCode().GetValueUtf8CP();
         auto descr = rootSubject->GetDescription();
         if (!descr.empty())
             subject[json_description()] = descr;

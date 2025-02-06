@@ -319,7 +319,7 @@ bool RelatedClassPath::ClassesEqual(RelatedClassPathCR other) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RelatedClass::Unify(RelatedClass& result, RelatedClassCR lhs, RelatedClassCR rhs)
     {
-    if (lhs.GetTargetIds() != rhs.GetTargetIds() || lhs.GetTargetInstanceFilter() != rhs.GetTargetInstanceFilter())
+    if (lhs.GetTargetIds() != rhs.GetTargetIds() || !AreTargetInstanceFiltersEqual(lhs, rhs))
         return ERROR;
 
     result = lhs;

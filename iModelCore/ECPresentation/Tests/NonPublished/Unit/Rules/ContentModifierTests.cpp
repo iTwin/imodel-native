@@ -140,8 +140,7 @@ TEST_F(ContentModifierTests, WriteToJson)
         "class": {"schemaName": "schema", "className": "class"},
         "requiredSchemas": [{"name": "TestSchema"}],
         "calculatedProperties": [{
-            "label": "",
-            "value": ""
+            "label": ""
         }],
         "relatedProperties": [{
             "properties": "_none_"

@@ -386,6 +386,10 @@ public:
     //! @param[in] name schema that need to be dropped.
     DGNPLATFORM_EXPORT BeSQLite::EC::DropSchemaResult DropSchema(Utf8StringCR name, bool logIssue = true);
 
+    //! Drop multiple unreferenced schemas with no instances
+    //! @param[in] schemaNames List of schemas that need to be dropped.
+    DGNPLATFORM_EXPORT BeSQLite::EC::DropSchemaResult DropSchemas(bvector<Utf8String> schemaNames, bool logIssue = true);
+
     DGNPLATFORM_EXPORT static BeSQLite::DbResult SchemaStatusToDbResult(SchemaStatus status, bool isUpgrade);
 
     //! Inserts a new link table ECRelationship.

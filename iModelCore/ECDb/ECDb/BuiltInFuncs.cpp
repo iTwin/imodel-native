@@ -271,7 +271,7 @@ void ClassIdFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     {
     if (nArgs < 1 || nArgs > 2)
         {
-        ctx.SetResultError("ec_classid(X[,Y]) expect one or two args.");
+        ctx.SetResultError("ec_classid(X[,Y]) expects one or two args.");
         return;
         }
 
@@ -279,11 +279,9 @@ void ClassIdFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     if (a0.GetValueType() != DbValueType::TextVal)
         return;
 
-    Utf8CP tokenFirst = a0.GetValueText();
+    Utf8String tokenFirst = a0.GetValueText();
     const int tokenFirstLen = a0.GetValueBytes();
-    Utf8Char buffer[512];
-    BeStringUtilities::Strncpy(buffer, tokenFirst, tokenFirstLen);
-    Utf8CP tokenSecond = nullptr;
+    Utf8String tokenSecond;
     if (nArgs == 2)
         {
         DbValue const& a1 = args[1];
@@ -296,18 +294,18 @@ void ClassIdFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
             }
         }
 
-    Utf8CP schemaNameOrAlias;
-    Utf8CP className;
-    Utf8CP delimiters = ".:";
-    Utf8P ctxTok;
-    if (!tokenSecond)
+    Utf8String schemaNameOrAlias;
+    Utf8String className;
+    if (Utf8String::IsNullOrEmpty(tokenSecond.c_str()))
         {
-        schemaNameOrAlias = BeStringUtilities::Strtok(buffer, delimiters, &ctxTok);
-        if (schemaNameOrAlias == nullptr)
+        const auto delimiterPos = tokenFirst.find_first_of(".:");
+        schemaNameOrAlias = tokenFirst.substr(0, delimiterPos);
+        if (Utf8String::IsNullOrEmpty(schemaNameOrAlias.c_str()))
             return;
 
-        className = BeStringUtilities::Strtok (nullptr, delimiters, &ctxTok);
-        if (className == nullptr)
+        if (delimiterPos != std::string::npos)
+            className = tokenFirst.substr(delimiterPos + 1U, tokenFirstLen);
+        if (Utf8String::IsNullOrEmpty(className.c_str()))
             return;
         }
     else
@@ -345,14 +343,12 @@ void InstanceOfFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     {
     if (nArgs <= 1)
         {
-        ctx.SetResultError("ec_instanceof(C[,Y1,...]) expect one arg.");
+        ctx.SetResultError("ec_instanceof(C[,Y1,...]) expects more than one arg.");
         return;
         }
 
     ECN::ECClassId curId;
     IdSet<ECN::ECClassId> classIds;
-    Utf8CP delimiters = ".:";
-    Utf8Char buffer[512];
     for (int i = 0; i < nArgs; i++)
         {
         DbValue const &arg = args[i];
@@ -368,7 +364,7 @@ void InstanceOfFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
             }
         if (arg.GetValueType() == DbValueType::TextVal)
             {
-            auto name = arg.GetValueText();
+            Utf8String name = arg.GetValueText();
             auto it = m_cache.find(name);
             if (it != m_cache.end())
                 {
@@ -380,14 +376,15 @@ void InstanceOfFunc::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
                 }
 
             // resolve name into classid
-            Utf8P ctxTok;
-            BeStringUtilities::Strncpy(buffer, name, arg.GetValueBytes());
-            auto schemaNameOrAlias = BeStringUtilities::Strtok(buffer, delimiters, &ctxTok);
-            if (schemaNameOrAlias == nullptr)
+            const auto delimiterPos = name.find_first_of(".:");
+            Utf8String schemaNameOrAlias = name.substr(0, delimiterPos);
+            if (Utf8String::IsNullOrEmpty(schemaNameOrAlias.c_str()))
                 return;
 
-            auto className = BeStringUtilities::Strtok(nullptr, delimiters, &ctxTok);
-            if (className == nullptr)
+            Utf8String className;
+            if (delimiterPos != std::string::npos)
+                className = name.substr(delimiterPos + 1U, name.length());
+            if (Utf8String::IsNullOrEmpty(className.c_str()))
                 return;
 
             auto stmt = m_db->GetCachedStatement("select c.id from ec_class c join ec_schema s on c.SchemaId = s.Id where c.name= ?1 and (s.name =?2 or s.alias = ?2)");

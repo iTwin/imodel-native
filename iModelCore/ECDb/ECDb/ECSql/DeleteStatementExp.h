@@ -27,7 +27,7 @@ struct DeleteStatementExp final : Exp
         Utf8String _ToString() const override { return "Delete"; }
 
     public:
-        DeleteStatementExp(std::unique_ptr<ClassRefExp>, std::unique_ptr<WhereExp>, std::unique_ptr<OptionsExp>);
+        DeleteStatementExp(std::unique_ptr<ClassNameExp>, std::unique_ptr<WhereExp>, std::unique_ptr<OptionsExp>);
 
         ClassNameExp const* GetClassNameExp() const;
         WhereExp const* GetWhereClauseExp() const;

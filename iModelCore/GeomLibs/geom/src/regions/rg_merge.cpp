@@ -927,6 +927,8 @@ bool                            *pParityChanged
     const RG_Intersection *pA;
     int     changeCount = 0;
     int     vertexCount = 0;
+    UNUSED_VARIABLE(vertexCount);
+
     *pParityChanged = false;
 
     for (size_t i = 0;

@@ -113,8 +113,6 @@ private:
     Status PullInternal(SyncDbUri const&, TableList);
     Status PushInternal(SyncDbUri const&, TableList, bool isInit);
     Status VerifySyncDb(SyncDbUri const&, bool isPull, bool isInit) const;
-    DbResult PullSqlSchema(ECDbR conn);
-    DbResult PushSqlSchema(ECDbR conn);
     Status SaveLocalDbInfo(DbR, LocalDbInfo const&);
     Status SaveSyncDbInfo(DbR, SyncDbInfo const&);
     Status SaveSyncDbInfo(SyncDbUri, SyncDbInfo const&);
@@ -452,6 +450,17 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
         //! @see @ref ECDbECSchemaImportAndUpgrade
         ECDB_EXPORT DropSchemaResult DropSchema(Utf8StringCR name, SchemaImportToken const* token = nullptr, bool logIssue = true) const;
+
+        //! Drop a set of schemas from ecdb as long as there are no instances for any of them.
+        //! @param[in] name  string vector of names of the schemas to be dropped.
+        //! @param [in] token Token required to perform ECSchema imports if the
+        //! the ECDb file was set-up with the option "ECSchema import token validation".
+        //! If the option is set, the schema import will fail without a valid token.
+        //! If the option is not set, nullptr can be passed for @p token.
+        //! See documentation of the respective ECDb subclass to find out whether the option is enabled or not.
+        //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
+        //! @see @ref ECDbECSchemaImportAndUpgrade
+        ECDB_EXPORT DropSchemaResult DropSchemas(bvector<Utf8String> schemaNames, SchemaImportToken const* token = nullptr, bool logIssue = true) const;
 
         //! Imports the list of @ref ECN::ECSchema "ECSchemas" (which must include all its references)
         //! into the @ref ECDbFile "ECDb file".

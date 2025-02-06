@@ -140,8 +140,8 @@ TEST_F(ContentQueryBuilderTests, ContentInstacesOfSpecificClasses_ReturnsQueryWi
 
         AddField(*descriptor, *new ContentDescriptor::DisplayLabelField(DEFAULT_CONTENT_FIELD_CATEGORY, CommonStrings::FIELD_DISPLAYLABEL, 0));
         AddField(*descriptor, DEFAULT_CONTENT_FIELD_CATEGORY, CreateProperty("this", *classA, *classA->GetPropertyP("Prop")));
-        AddField(*descriptor, *new ContentDescriptor::CalculatedPropertyField(DEFAULT_CONTENT_FIELD_CATEGORY, "Label_1", "CalculatedProperty_0", "\"Value\" & 1", nullptr, 1200));
-        AddField(*descriptor, *new ContentDescriptor::CalculatedPropertyField(DEFAULT_CONTENT_FIELD_CATEGORY, "Label_2", "CalculatedProperty_1", "this.Prop & \"Test\"", nullptr, 1500));
+        AddField(*descriptor, *new ContentDescriptor::CalculatedPropertyField(DEFAULT_CONTENT_FIELD_CATEGORY, "Label_1", "CalculatedProperty_0", "\"Value\" & 1", PRIMITIVETYPE_String, nullptr, 1200));
+        AddField(*descriptor, *new ContentDescriptor::CalculatedPropertyField(DEFAULT_CONTENT_FIELD_CATEGORY, "Label_2", "CalculatedProperty_1", "this.Prop & \"Test\"", PRIMITIVETYPE_String, nullptr, 1500));
 
         ComplexQueryBuilderPtr query = ComplexQueryBuilder::Create();
         query->SelectContract(*CreateQueryContract(1, *descriptor, classA, *query), "this");

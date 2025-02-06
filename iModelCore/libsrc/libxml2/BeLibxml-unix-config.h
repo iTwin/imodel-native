@@ -61,7 +61,7 @@
 #undef HAVE_ERRNO_H
 
 /* Define to 1 if you have the <fcntl.h> header file. */
-#undef HAVE_FCNTL_H
+#define HAVE_FCNTL_H
 
 /* Define to 1 if you have the `finite' function. */
 #undef HAVE_FINITE

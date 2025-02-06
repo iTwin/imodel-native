@@ -226,30 +226,45 @@ UnitsProblemCode Unit::Convert(double& converted, double value, UnitCP toUnit) c
         return UnitsProblemCode::UncomparableUnits;
         }
 
-    if (IsInvertedUnit() && toUnit->IsInvertedUnit() || !(IsInvertedUnit() || toUnit->IsInvertedUnit()))
+    if (std::isnan(value))
+        {
+        converted = std::numeric_limits<double>::quiet_NaN();
+        return UnitsProblemCode::NaN;
+        }
+    
+    if (IsInvertedUnit() == toUnit->IsInvertedUnit())
         return DoNumericConversion(converted, value, *toUnit);
 
+    // at this point we know that we need to invert the value on one side
     double temp;
     UnitsProblemCode prob;
-    if (IsInvertedUnit())
+    if (IsInvertedUnit()) // from unit is the inverted one, so invert before conversion
         {
         if (IsNegligible(value))
             {
             converted = 0.0;
-            prob =  UnitsProblemCode::InvertingZero;
+            return UnitsProblemCode::InvertingZero;
             }
-        else
-            prob = DoNumericConversion(converted, 1.0 / value, *toUnit);
+
+        return DoNumericConversion(converted, 1.0 / value, *toUnit);
         }
-    else
+
+    //the toUnit is the inverted one, so invert after conversion
+    prob = DoNumericConversion(temp, value, *toUnit);
+    if (UnitsProblemCode::NoProblem != prob)
         {
-        prob = DoNumericConversion(temp, value, *toUnit);
-        if (UnitsProblemCode::NoProblem != prob || IsNegligible(temp))
-            converted = 0.0;
-        else
-            converted = 1.0 / temp;
+        converted = 0.0;
+        return prob;
         }
-    return prob;
+
+    if (IsNegligible(temp))
+        {
+        converted = 0.0;
+        return UnitsProblemCode::InvertingZero;
+        }
+    
+    converted = 1.0 / temp;
+    return UnitsProblemCode::NoProblem;
     }
 
 //--------------------------------------------------------------------------------------

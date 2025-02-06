@@ -119,6 +119,8 @@ struct VirtualSchemaManager : ECN::IECSchemaLocater {
         bool IsValidVirtualSchema(ECN::ECSchemaR schema, Utf8StringR err) const;
         ECN::ECSchemaCP GetSchema(Utf8StringCR schemaName) const;
         ECN::ECClassCP GetClass(Utf8StringCR schemaName, Utf8StringCR className) const;
+        // The numberOfClasses parameter gives us the exact number of classes found which can be used for more personalized error message
+        ECN::ECClassCP FindClass(Utf8StringCR className, size_t& numberOfClasses) const; 
         BentleyStatus Add(Utf8StringCR schemaXml) const;
 };
 //=======================================================================================
@@ -223,6 +225,7 @@ public:
     std::set<DbTable const*> GetRelationshipConstraintPrimaryTables(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;
     size_t GetRelationshipConstraintTableCount(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;
     DropSchemaResult DropSchema(Utf8StringCR name, SchemaImportToken const* token, bool logIssue) const;
+    DropSchemaResult DropSchemas(bvector<Utf8String> schemaNames, SchemaImportToken const* token, bool logIssue) const;
     BentleyStatus RepopulateCacheTables() const;
     DbResult UpgradeECInstances() const { return UpgradeExistingECInstancesWithNewPropertiesMapToOverflowTable(GetECDb()); }
     BentleyStatus CreateClassViews() const;

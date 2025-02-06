@@ -19,13 +19,17 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ContentValuesFormatter::GetFallbackPrimitiveValue(ECPropertyCR prop, PrimitiveType type, Utf8StringCR extendedType, IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator)
+rapidjson::Document ContentValuesFormatter::GetFallbackPrimitiveValue(PrimitiveType type, Utf8StringCR extendedType, IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator)
     {
     NULL_FORMATTED_PRIMITIVE_VALUE_PRECONDITION(value, type);
     rapidjson::Document json(allocator);
     ECValue v = ValueHelpers::GetECValueFromSqlValue(type, extendedType, value);
     Utf8String stringValue;
-    if (v.ConvertPrimitiveToString(stringValue))
+    if (v.IsNull())
+        json.SetString("");
+    else if (type == PRIMITIVETYPE_DateTime)
+        json.SetString(v.GetDateTime().ToString().c_str(), json.GetAllocator());
+    else if (v.ConvertPrimitiveToString(stringValue))
         json.SetString(stringValue.c_str(), json.GetAllocator());
     else
         {
@@ -34,6 +38,7 @@ rapidjson::Document ContentValuesFormatter::GetFallbackPrimitiveValue(ECProperty
         }
     return json;
     }
+
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -43,7 +48,7 @@ rapidjson::Document ContentValuesFormatter::GetFormattedPrimitiveValue(ECPropert
     rapidjson::Document json(allocator);
     Utf8String formattedValue;
     if (!m_propertyFormatter || SUCCESS != m_propertyFormatter->GetFormattedPropertyValue(formattedValue, prop, ValueHelpers::GetECValueFromSqlValue(type, extendedType, value), m_unitSystem))
-        return GetFallbackPrimitiveValue(prop, type, extendedType, value, allocator);
+        return GetFallbackPrimitiveValue(type, extendedType, value, allocator);
 
     json.SetString(formattedValue.c_str(), json.GetAllocator());
     return json;
@@ -98,7 +103,7 @@ rapidjson::Document ContentValuesFormatter::GetFallbackArrayValue(ArrayECPropert
             {
             PrimitiveType primitiveType = prop.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
             Utf8StringCR extendedType = prop.GetAsPrimitiveArrayProperty()->GetExtendedTypeName();
-            json.PushBack(GetFallbackPrimitiveValue(prop, primitiveType, extendedType, value, &json.GetAllocator()), json.GetAllocator());
+            json.PushBack(GetFallbackPrimitiveValue(primitiveType, extendedType, value, &json.GetAllocator()), json.GetAllocator());
             }
         else
             {
@@ -147,13 +152,14 @@ rapidjson::Document ContentValuesFormatter::GetFormattedValue(ECPropertyCR prop,
         return GetFormattedStructValue(value, allocator);
     DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Unexpected ECProperty type");
     }
+
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document ContentValuesFormatter::GetFallbackValue(ECPropertyCR prop, IECSqlValue const& value, rapidjson::MemoryPoolAllocator<>* allocator)
     {
     if (prop.GetIsPrimitive())
-        return GetFallbackPrimitiveValue(prop, prop.GetAsPrimitiveProperty()->GetType(), prop.GetAsPrimitiveProperty()->GetExtendedTypeName(), value, allocator);
+        return GetFallbackPrimitiveValue(prop.GetAsPrimitiveProperty()->GetType(), prop.GetAsPrimitiveProperty()->GetExtendedTypeName(), value, allocator);
     if (prop.GetIsArray())
         return GetFallbackArrayValue(*prop.GetAsArrayProperty(), value, allocator);
     if (prop.GetIsStruct())
@@ -274,15 +280,22 @@ void ContentItemBuilder::AddNull(Utf8CP name, ECPropertyCP prop)
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentItemBuilder::AddValue(Utf8CP name, Utf8CP rawAndDisplayValue, ECPropertyCP prop)
+void ContentItemBuilder::AddCalculatedPropertyValue(Utf8CP name, PrimitiveType type, IECSqlValue const& value)
     {
     if (BeforeAddValueStatus::Skip == _OnBeforeAddValue(name))
         return;
 
-    if (!rawAndDisplayValue)
-        AddNull(name, prop);
-    else 
-        _AddValue(name, rapidjson::Value(rawAndDisplayValue, m_values.second->GetAllocator()), rapidjson::Value(rawAndDisplayValue, m_displayValues.second->GetAllocator()), prop);
+    if (value.IsNull())
+        {
+        AddNull(name, nullptr);
+        return;
+        }
+
+    _AddValue(name,
+        ValueHelpers::GetJsonFromPrimitiveValue(type, nullptr, value, &m_values.second->GetAllocator()),
+        m_formatter.GetFallbackPrimitiveValue(type, "", value, &m_displayValues.second->GetAllocator()),
+        nullptr);
+        
     }
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod

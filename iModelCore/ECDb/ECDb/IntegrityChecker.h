@@ -19,6 +19,7 @@ struct IntegrityChecker final {
 	constexpr static auto check_linktable_fk_ids = "check_linktable_fk_ids";
 	constexpr static auto check_class_ids = "check_class_ids";
 	constexpr static auto check_schema_load = "check_schema_load";
+	constexpr static auto check_missing_child_rows = "check_missing_child_rows";
 
 
 
@@ -33,6 +34,7 @@ struct IntegrityChecker final {
 		CheckLinkTableFkIds = 0x40,
 		CheckClassIds = 0x80,
 		CheckSchemaLoad = 0x100,
+		CheckMissingChildRows = 0x200,
 		OnlyMetaChecks = CheckEcProfile | CheckDataSchema | CheckDataColumns | CheckSchemaLoad,
 		OnlyDataChecks =CheckNavClassIds | CheckNavIds | CheckLinkTableFkClassIds | CheckLinkTableFkIds | CheckClassIds,
 		All = OnlyMetaChecks | OnlyDataChecks,
@@ -44,7 +46,6 @@ private:
     bmap<Checks, Utf8CP> m_checkIdToName;
 
     DbResult GetTablePerHierarchyClasses(std::vector<ECClassId>&);
-    DbResult GetRootLinkTableRelationships(std::vector<ECClassId>&);
     DbResult GetNavigationProperties(std::map<ECN::ECClassId, std::vector<std::string>>&);
     DbResult GetMappedClasses(std::set<ECN::ECClassId>&);
 
@@ -85,8 +86,11 @@ public:
 	DbResult CheckNavClassIds(std::function<bool(ECInstanceId, Utf8CP, Utf8CP, ECInstanceId, ECN::ECClassId)>);
 	// Callback(schema)
     DbResult CheckSchemaLoad(std::function<bool(Utf8CP)>);
+	// Callback(Utf8CP, InstanceId, classId)
+	DbResult CheckMissingChildRows(std::function<bool(Utf8CP, ECInstanceId, ECN::ECClassId, Utf8CP)>);
 	// Callback(check-name, status)
     DbResult QuickCheck(Checks, std::function<void(Utf8CP, bool, BeDuration)>);
+    DbResult GetRootLinkTableRelationships(std::vector<ECClassId>&);
 };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -21,6 +21,7 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)SchemaManager.h \
                 $(publicApiDir)ECInstanceFinder.h \
                 $(publicApiDir)ECSqlStatement.h \
+                $(publicApiDir)IECSqlRow.h \
                 $(publicApiDir)IECSqlValue.h \
                 $(publicApiDir)IECSqlBinder.h \
                 $(publicApiDir)ECSqlColumnInfo.h \
@@ -73,7 +74,6 @@ ECDbAllHeaders = \
                 $(baseDir)ChangeSummaryExtractor.h \
                 $(baseDir)ChangeSummaryImpl.h \
                 $(baseDir)ConcurrentQueryManagerImpl.h \
-                $(baseDir)QueryJsonAdaptor.h \
                 $(baseDir)InstanceReaderImpl.h \
                 $(baseDir)SchemaSync.h \
                 $(baseDir)IntegrityChecker.h \
@@ -390,7 +390,7 @@ $(o)ClassMapColumnFactory$(oext):          $(baseDir)ClassMapColumnFactory.cpp $
 
 $(o)ConcurrentQueryManagerImpl$(oext):     $(baseDir)ConcurrentQueryManagerImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)QueryJsonAdaptor$(oext):               $(baseDir)QueryJsonAdaptor.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ECSqlRowAdaptor$(oext):                $(baseDir)ECSqlRowAdaptor.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)InstanceReaderImpl$(oext):             $(baseDir)InstanceReaderImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

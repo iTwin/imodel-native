@@ -5974,6 +5974,89 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CategorizesCalculatedProper
     EXPECT_STREQ(DefaultCategorySupplier().CreateDefaultCategory()->GetName().c_str(), fields[0]->GetCategory()->GetName().c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(CategorizesCalculatedPropertiesWithSchemaBasedCategory, R"*(
+    <PropertyCategory typeName="X" displayLabel="X category" />
+    <PropertyCategory typeName="Y" displayLabel="Y category" />
+    <ECEntityClass typeName="A">
+        <ECProperty propertyName="PropA" typeName="string" category="X" />
+    </ECEntityClass>
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="PropB" typeName="string" category="Y" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_B" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="A"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, CategorizesCalculatedPropertiesWithSchemaBasedCategory)
+    {
+    // set up data set
+    PropertyCategoryCP categoryX = GetSchema()->GetPropertyCategoryCP("X");
+    PropertyCategoryCP categoryY = GetSchema()->GetPropertyCategoryCP("Y");
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECRelationshipClassCP relAB = GetClass("A_B")->GetRelationshipClassCP();
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a, *b);
+
+    // set up ruleset
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRule* rule = new ContentRule();
+    rules->AddPresentationRule(*rule);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), false, false));
+
+    ContentModifierP modifier = new ContentModifier(GetSchema()->GetName(), classA->GetName());
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward),
+        }), { new PropertySpecification("*") }, RelationshipMeaning::SameInstance, true));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("In X category", 1000, "123", nullptr, nullptr, PropertyCategoryIdentifier::CreateSchemaBasedCategory(categoryX->GetFullName())));
+    modifier->AddCalculatedProperty(*new CalculatedPropertiesSpecification("In Y category", 1000, "123", nullptr, nullptr, PropertyCategoryIdentifier::CreateSchemaBasedCategory(categoryY->GetFullName())));
+    rules->AddPresentationRule(*modifier);
+
+    // request content
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), nullptr, 0, *KeySet::Create())));
+
+    // verify the field has correct category
+    bvector<ContentDescriptor::Field*> fields = descriptor->GetVisibleFields();
+    ASSERT_EQ(4, fields.size());
+    EXPECT_STREQ("PropA", descriptor->GetVisibleFields()[0]->GetLabel().c_str());
+    ValidateFieldCategoriesHierarchy(*descriptor->GetVisibleFields()[0],
+        {
+        DefaultCategorySupplier().CreatePropertyCategory(*categoryX)->GetName(),
+        DefaultCategorySupplier().CreateDefaultCategory()->GetName()
+        });
+    EXPECT_STREQ("In X category", descriptor->GetVisibleFields()[1]->GetLabel().c_str());
+    ValidateFieldCategoriesHierarchy(*descriptor->GetVisibleFields()[1],
+        {
+        DefaultCategorySupplier().CreatePropertyCategory(*categoryX)->GetName(),
+        DefaultCategorySupplier().CreateDefaultCategory()->GetName()
+        });
+    EXPECT_STREQ("In Y category", descriptor->GetVisibleFields()[2]->GetLabel().c_str());
+    ValidateFieldCategoriesHierarchy(*descriptor->GetVisibleFields()[2],
+        {
+        DefaultCategorySupplier().CreatePropertyCategory(*categoryY)->GetName(),
+        DefaultCategorySupplier().CreateDefaultCategory()->GetName()
+        });
+    EXPECT_STREQ("PropB", descriptor->GetVisibleFields()[3]->AsNestedContentField()->GetFields()[0]->GetLabel().c_str());
+    ValidateFieldCategoriesHierarchy(*descriptor->GetVisibleFields()[3]->AsNestedContentField()->GetFields()[0],
+        {
+        DefaultCategorySupplier().CreatePropertyCategory(*categoryY)->GetName(),
+        DefaultCategorySupplier().CreateDefaultCategory()->GetName()
+        });
+    }
+
 //=======================================================================================
 // @bsiclass
 //=======================================================================================

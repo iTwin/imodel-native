@@ -223,6 +223,12 @@ static BentleyStatus CreatePropertyCategoryFromSpec(bvector<std::shared_ptr<Prop
         return SUCCESS;
         }
 
+    if (identifier.GetType() == PropertyCategoryIdentifierType::SchemaCategory)
+        {
+        stack.push_back(std::make_unique<SchemaPropertyCategoryRef>(identifier.AsSchemaCategoryIdentifier()->GetCategoryName()));
+        return SUCCESS;
+        }
+
     auto iter = std::find_if(specs.begin(), specs.end(), [&identifier](PropertyCategorySpecificationCP spec) {return spec->GetId().Equals(identifier.AsIdIdentifier()->GetCategoryId());});
     if (iter == specs.end())
         {

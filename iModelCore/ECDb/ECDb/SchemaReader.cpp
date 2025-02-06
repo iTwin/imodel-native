@@ -242,8 +242,18 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
 
     if (classType.IsNull() || classModifier.IsNull())
         {
-        LOG.errorv("Failed to load ECClass %s.%s. Its ECClassType or ECClassModifier is unsupported. The file might have been used with newer versions of the software.",
+        if (schema.OriginalECXmlVersionGreaterThan(ECVersion::Latest))
+            {
+            CacheSchemaElementWithUnknowns(TABLE_Class, ecClassId); // Schema is of a newer version and class contains new unknown features. Mark this class to not be loaded.
+            m_cache.SetClassEntryToNull(ecClassId);
+            LOG.warningv("The ECClass %s.%s contains an ECClassType or ECClassModifier which is unsupported. The schema uses a newer version of the standard than is known to the current software. The class will not be loaded.",
                    schema.GetName().c_str(), className);
+            }
+        else
+            {
+            LOG.errorv("Failed to load ECClass %s.%s. Its ECClassType or ECClassModifier is unsupported.",
+                   schema.GetName().c_str(), className);
+            }
         return nullptr;
         }
 
@@ -287,20 +297,30 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
 
             case ECClassType::Relationship:
             {
-            ECRelationshipClassP newClass = nullptr;
-            if (schema.CreateRelationshipClass(newClass, className, false) != ECObjectsStatus::Success)
-                return nullptr;
-
             BeAssert(!stmt->IsColumnNull(relStrengthColIx) && !stmt->IsColumnNull(relStrengthDirColIx));
 
             Nullable<StrengthType> strengthType = SchemaPersistenceHelper::ToStrengthType(stmt->GetValueInt(relStrengthColIx));
             Nullable<ECRelatedInstanceDirection> strengthDir = SchemaPersistenceHelper::ToECRelatedInstanceDirection(stmt->GetValueInt(relStrengthDirColIx));
             if (strengthType.IsNull() || strengthDir.IsNull())
                 {
-                LOG.errorv("Failed to load ECRelationshipClass %s.%s. Its StrengthType or ECRelatedInstanceDirection is unsupported. The file might have been used with newer versions of the software.",
+                if (schema.OriginalECXmlVersionGreaterThan(ECVersion::Latest))
+                    {
+                    CacheSchemaElementWithUnknowns(TABLE_Class, ecClassId); // Schema is of a newer version and the relationship class contains new unknown features. Mark this class to not be loaded.
+                    m_cache.SetClassEntryToNull(ecClassId);
+                    LOG.warningv("The ECRelationshipClass %s.%s has a StrengthType or ECRelatedInstanceDirection which is unsupported. The schema uses a newer version of the standard than is known to the current software. The class will not be loaded.",
                            schema.GetName().c_str(), className);
+                    }
+                else
+                    {
+                    LOG.errorv("Failed to load ECRelationshipClass %s.%s. Its StrengthType or ECRelatedInstanceDirection is unsupported.",
+                        schema.GetName().c_str(), className);
+                    }
                 return nullptr;
                 }
+            
+            ECRelationshipClassP newClass = nullptr;
+            if (schema.CreateRelationshipClass(newClass, className, false) != ECObjectsStatus::Success)
+                return nullptr;
 
             newClass->SetStrength(strengthType.Value());
             newClass->SetStrengthDirection(strengthDir.Value());
@@ -332,6 +352,8 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
         //set the cache entry to nullptr if the class could not be loaded so that future calls will return nullptr without querying into the DB
         //(It is not expected that a future call will succeed, so returning nullptr is correct)
         m_cache.SetClassEntryToNull(ecClassId);
+        if (SchemaElementContainsUnknowns(TABLE_Class, ecClassId))
+            schema.DeleteClass(*ecClass);  // One or more class components contain new unknown features. Don't load the class.
         return nullptr;
         }
 
@@ -932,6 +954,14 @@ BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationCP& ecEnum, Context& ct
     const PrimitiveType underlyingType = (PrimitiveType) stmt->GetValueInt(typeColIx);
     const bool isStrict = stmt->GetValueBoolean(isStrictColIx);
     Utf8CP enumValuesJsonStr = stmt->GetValueText(valuesColIx);
+
+    if (schemaKey->m_cachedSchema->OriginalECXmlVersionGreaterThan(ECVersion::Latest) && SchemaPersistenceHelper::ToPrimitiveType(underlyingType).IsNull())
+        {
+        LOG.warningv("Failed to load ECEnumeration %s.%s. It contains an unsupported underlying type. The schema uses a newer version of the standard than is known to the current software. The ECEnumeration will be ignored.",
+            schemaKey->m_cachedSchema->GetName().c_str(), enumName);
+        CacheSchemaElementWithUnknowns(TABLE_Enumeration, enumId); // Schema is of a newer version and enum contains new unknown features. Mark this class to not be loaded
+        return ERROR;
+        }
 
     ECEnumerationP newEnum = nullptr;
     if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreateEnumeration(newEnum, enumName, underlyingType))
@@ -1754,7 +1784,8 @@ BentleyStatus SchemaReader::ReadSchemaElements(SchemaDbEntry& schemaEntry, Conte
         if (nullptr == GetClass(ctx, classId))
             {
             LOG.errorv("Could not load ECClass with id %" PRIu64 " from schema %s", classId.GetValue(), schemaEntry.m_cachedSchema->GetName().c_str());
-            return ERROR;
+            if (!SchemaElementContainsUnknowns(TABLE_Class, classId))
+                return ERROR;
             }
 
         if (schemaEntry.IsFullyLoaded())
@@ -1775,7 +1806,11 @@ BentleyStatus SchemaReader::ReadSchemaElements(SchemaDbEntry& schemaEntry, Conte
         {
         ECEnumerationCP ecEnum = nullptr;
         if (SUCCESS != ReadEnumeration(ecEnum, ctx, stmt->GetValueId<ECEnumerationId>(0)))
+            {
+            if (SchemaElementContainsUnknowns(TABLE_Enumeration, stmt->GetValueId<ECEnumerationId>(0)))
+                continue;
             return ERROR;
+            }
 
         if (schemaEntry.IsFullyLoaded())
             return SUCCESS;
@@ -1995,8 +2030,17 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
                 Nullable<PropertyKind> kind = SchemaPersistenceHelper::ToPropertyKind(stmt->GetValueInt(kindIx));
                 if (kind.IsNull())
                     {
-                    LOG.errorv("Failed to load ECProperty %s.%s. It is an unsupported type of ECProperty. The file might have been used with newer versions of the software.",
+                    if (ecClass.GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest)) // Ignore the unsupported ECProperty row only if the schema is newer than the current version
+                        {
+                        LOG.warningv("The ECProperty %s.%s has an unsupported type of ECProperty. The schema uses a newer version of the standard than is known to the current software. The ECProperty will be ignored.",
                                ecClass.GetFullName(), rowInfo.m_name.c_str());
+                        continue;
+                        }
+                    else
+                        {
+                        LOG.errorv("Failed to load ECProperty %s.%s. It is an unsupported type of ECProperty.",
+                               ecClass.GetFullName(), rowInfo.m_name.c_str());
+                        }
                     return ERROR;
                     }
 
@@ -2020,7 +2064,13 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
                     rowInfo.m_primType = stmt->GetValueInt(primTypeIx);
                     if (SchemaPersistenceHelper::ToPrimitiveType(rowInfo.m_primType.Value()).IsNull())
                         {
-                        LOG.errorv("Failed to load ECProperty %s.%s. It has an unsupported primitive data type. The file might have been used with newer versions of the software.",
+                        if (ecClass.GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest)) // Ignore the unsupported ECProperty row only if the schema is newer than the current version
+                            {
+                            LOG.warningv("The ECProperty %s.%s has an unsupported primitive data type. The schema uses a newer version of the standard than is known to the current software. The ECProperty will be ignored.",
+                                   ecClass.GetFullName(), rowInfo.m_name.c_str());
+                            continue;
+                            }
+                        LOG.errorv("Failed to load ECProperty %s.%s. It has an unsupported primitive data type.",
                                    ecClass.GetFullName(), rowInfo.m_name.c_str());
                         return ERROR;
                         }
@@ -2105,7 +2155,24 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
                         }
                     }
                 else
+                    {
                     rowInfo.m_navPropDirection = stmt->GetValueInt(navPropDirectionIx);
+                    if (SchemaPersistenceHelper::ToECRelatedInstanceDirection(rowInfo.m_navPropDirection.Value()).IsNull())
+                        {
+                        if (ecClass.GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest)) // Ignore the unsupported ECProperty row only if the schema is newer than the current version
+                            {
+                            LOG.warningv("The NavigationECProperty %s.%s has a relationship direction which is unsupported. The schema uses a newer version of the standard than is known to the current software. The property will not be loaded.",
+                                ecClass.GetFullName(), rowInfo.m_name.c_str());
+                            continue;
+                            }
+                        else
+                            {
+                            LOG.errorv("Failed to load NavigationECProperty %s.%s. Its relationship direction is unsupported.",
+                                ecClass.GetFullName(), rowInfo.m_name.c_str());
+                            }
+                        return ERROR;
+                        }
+                    }
 
 
                 rows.push_back(rowInfo);
@@ -2217,7 +2284,11 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
                     {
                     ECEnumerationCP ecenum = nullptr;
                     if (SUCCESS != ReadEnumeration(ecenum, ctx, rowInfo.m_enumId))
+                        {
+                        if (SchemaElementContainsUnknowns(TABLE_Enumeration, rowInfo.m_enumId))
+                            continue;
                         return ERROR;
+                        }
 
                     if (ECObjectsStatus::Success != ecClass.CreateEnumerationProperty(primProp, rowInfo.m_name, *ecenum))
                         return ERROR;
@@ -2324,22 +2395,19 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(Context& ctx, ECClassR ecClass)
                 case PropertyKind::Navigation:
                 {
                 BeAssert(ecClass.IsEntityClass() || ecClass.IsRelationshipClass());
-                BeAssert(rowInfo.m_navPropRelClassId.IsValid() && !rowInfo.m_navPropDirection.IsNull());
-
-                Nullable<ECRelatedInstanceDirection> direction = SchemaPersistenceHelper::ToECRelatedInstanceDirection(rowInfo.m_navPropDirection.Value());
-                if (direction.IsNull())
-                    {
-                    LOG.errorv("Failed to load NavigationECProperty %s.%s. Its relationship direction is unsupported. The file might have been used with newer versions of the software.",
-                               ecClass.GetFullName(), rowInfo.m_name.c_str());
-                    return ERROR;
-                    }
+                BeAssert(rowInfo.m_navPropRelClassId.IsValid() && rowInfo.m_navPropDirection.IsValid());
 
                 ECClassCP relClassRaw = GetClass(ctx, rowInfo.m_navPropRelClassId);
                 if (relClassRaw == nullptr)
+                    {
+                    if (SchemaElementContainsUnknowns(TABLE_Class, rowInfo.m_navPropRelClassId))
+                        continue;
                     return ERROR;
+                    }
 
                 BeAssert(relClassRaw->IsRelationshipClass());
                 NavigationECPropertyP navProp = nullptr;
+                const auto direction = SchemaPersistenceHelper::ToECRelatedInstanceDirection(rowInfo.m_navPropDirection.Value());
                 if (ecClass.IsEntityClass())
                     {
                     if (ECObjectsStatus::Success != ecClass.GetEntityClassP()->CreateNavigationProperty(navProp, rowInfo.m_name, *relClassRaw->GetRelationshipClassCP(), direction.Value(), false))
@@ -2446,7 +2514,11 @@ BentleyStatus SchemaReader::LoadBaseClassesFromDb(Context& ctx, ECClassR ecClass
         {
         ECClassCP baseClass = GetClass(ctx, baseClassId);
         if (baseClass == nullptr)
+            {
+            if (SchemaElementContainsUnknowns(TABLE_Class, baseClassId))
+                CacheSchemaElementWithUnknowns(TABLE_Class, ecClass.GetId());   // Base class contains newer unknown features and wasn't loaded, mark this child class to not load
             return ERROR;
+            }
 
         if (ECObjectsStatus::Success != ecClass.AddBaseClass(*baseClass, false, false, false))
             return ERROR;
@@ -2595,7 +2667,11 @@ BentleyStatus SchemaReader::LoadRelationshipConstraintClassesFromDb(ECRelationsh
         const ECClassId constraintClassId = statement->GetValueId<ECClassId>(0);
         ECClassCP constraintClass = GetClass(ctx, constraintClassId);
         if (constraintClass == nullptr)
+            {
+            if (SchemaElementContainsUnknowns(TABLE_Class, constraintClassId))
+                CacheSchemaElementWithUnknowns(TABLE_Class, constraint.GetRelationshipClass().GetId());   // One or both constraint classes contain newer unknown features and weren't loaded, mark relationship class to not load
             return ERROR;
+            }
 
         if (!constraintClass->IsEntityClass() && !constraintClass->IsRelationshipClass())
             {
@@ -2680,6 +2756,27 @@ CachedStatementPtr SchemaReader::GetCachedStatement(Utf8CP sql) const { return G
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SchemaReader::ClearCache() const { m_cache.Clear(); }
 
+void SchemaReader::CacheSchemaElementWithUnknowns(Utf8StringCR tableName, const BeInt64Id& elementId) const
+    {
+    if (auto iter = m_schemaElementsWithUnknowns.find(tableName); iter != m_schemaElementsWithUnknowns.end())
+        {
+        iter->second.insert(elementId);
+        }
+    else
+        {
+        bset<BeInt64Id> set;
+        set.insert(elementId);
+        m_schemaElementsWithUnknowns.emplace(tableName, set);
+        }
+    }
+
+bool SchemaReader::SchemaElementContainsUnknowns(Utf8StringCR tableName, const BeInt64Id& elementId) const
+    {
+    if (const auto iter = m_schemaElementsWithUnknowns.find(tableName); iter != m_schemaElementsWithUnknowns.end())
+        return iter->second.find(elementId) != iter->second.end();
+
+    return false;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod

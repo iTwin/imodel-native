@@ -128,8 +128,14 @@ DbResult QueryExecutorHelper::Step(ECSqlStatement& statement)
         throw DbConnectionInterruptException();
 
     if (BE_SQLITE_ROW != result && BE_SQLITE_DONE != result)
-        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Encountered unexpected db result code: %d", (int)result));
+        {
+        Utf8String lastError = statement.GetDataSourceDb()->GetLastError();
+        if (!lastError.empty())
+            DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, lastError);
 
+        DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Default, Utf8PrintfString("Encountered unexpected db result code: %d", (int)result));
+        }
+        
     return result;
     }
 

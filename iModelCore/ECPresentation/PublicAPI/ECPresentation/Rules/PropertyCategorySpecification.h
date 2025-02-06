@@ -17,9 +17,11 @@ enum class PropertyCategoryIdentifierType
     Root,
     DefaultParent,
     Id,
+    SchemaCategory,
     };
 
 struct IdPropertyCategoryIdentifier;
+struct SchemaPropertyCategoryIdentifier;
 /*---------------------------------------------------------------------------------**//**
 * Specification for identifying a category.
 * @bsiclass
@@ -41,6 +43,7 @@ protected:
 
     virtual std::unique_ptr<PropertyCategoryIdentifier> _Clone() const {return std::make_unique<PropertyCategoryIdentifier>(*this);}
     virtual IdPropertyCategoryIdentifier const* _AsIdIdentifier() const {return nullptr;}
+    virtual SchemaPropertyCategoryIdentifier const* _AsSchemaCategoryIdentifier() const {return nullptr;}
 
 protected:
     PropertyCategoryIdentifier(PropertyCategoryIdentifierType type) : m_type(type) {}
@@ -50,10 +53,12 @@ public:
     ECPRESENTATION_EXPORT static std::unique_ptr<PropertyCategoryIdentifier> CreateForRoot();
     ECPRESENTATION_EXPORT static std::unique_ptr<PropertyCategoryIdentifier> CreateForDefaultParent();
     ECPRESENTATION_EXPORT static std::unique_ptr<PropertyCategoryIdentifier> CreateForId(Utf8String id, bool createClassCategory = false);
+    ECPRESENTATION_EXPORT static std::unique_ptr<PropertyCategoryIdentifier> CreateSchemaBasedCategory(Utf8String categoryName);
 
     std::unique_ptr<PropertyCategoryIdentifier> Clone() const {return _Clone();}
 
     IdPropertyCategoryIdentifier const* AsIdIdentifier() const {return _AsIdIdentifier();}
+    SchemaPropertyCategoryIdentifier const* AsSchemaCategoryIdentifier() const {return _AsSchemaCategoryIdentifier();}
     PropertyCategoryIdentifierType GetType() const {return m_type;}
 };
 
@@ -85,6 +90,35 @@ protected:
 public:
     Utf8StringCR GetCategoryId() const {return m_categoryId;}
     bool ShouldCreateClassCategory() const {return m_createClassCategory;}
+};
+
+/*---------------------------------------------------------------------------------**//**
+* Specification for identifying a schema-based category by full name.
+* @bsiclass
++---------------+---------------+---------------+---------------+---------------+------*/
+struct SchemaPropertyCategoryIdentifier : PropertyCategoryIdentifier
+{
+    DEFINE_T_SUPER(PropertyCategoryIdentifier)
+    friend struct PropertyCategoryIdentifier;
+
+private:
+    Utf8String m_categoryName;
+
+protected:
+    ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
+    ECPRESENTATION_EXPORT virtual bool _ReadJson(BeJsConst) override;
+    ECPRESENTATION_EXPORT virtual void _WriteJson(BeJsValue) const override;
+    std::unique_ptr<PropertyCategoryIdentifier> _Clone() const override {return std::make_unique<SchemaPropertyCategoryIdentifier>(*this);}
+    SchemaPropertyCategoryIdentifier const* _AsSchemaCategoryIdentifier() const override {return this;}
+
+protected:
+    SchemaPropertyCategoryIdentifier(Utf8String categoryName = "")
+        : PropertyCategoryIdentifier(PropertyCategoryIdentifierType::SchemaCategory), m_categoryName(categoryName)
+        {}
+
+public:
+    Utf8StringCR GetCategoryName() const {return m_categoryName;}
+    void SetCategoryName(Utf8String value) {m_categoryName = value;}
 };
 
 /*---------------------------------------------------------------------------------**//**

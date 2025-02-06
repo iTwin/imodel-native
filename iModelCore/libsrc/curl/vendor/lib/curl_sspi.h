@@ -57,8 +57,8 @@ CURLcode Curl_create_sspi_identity(const char *userp, const char *passwdp,
 void Curl_sspi_free_identity(SEC_WINNT_AUTH_IDENTITY *identity);
 
 /* Forward-declaration of global variables defined in curl_sspi.c */
-extern HMODULE s_hSecDll;
-extern PSecurityFunctionTable s_pSecFn;
+extern HMODULE Curl_hSecDll;
+extern PSecurityFunctionTable Curl_pSecFn;
 
 /* Provide some definitions missing in old headers */
 #define SP_NAME_DIGEST              "WDigest"
@@ -86,6 +86,22 @@ extern PSecurityFunctionTable s_pSecFn;
 
 #ifndef CRYPT_E_REVOKED
 # define CRYPT_E_REVOKED                      ((HRESULT)0x80092010L)
+#endif
+
+#ifndef CRYPT_E_NO_REVOCATION_DLL
+# define CRYPT_E_NO_REVOCATION_DLL            ((HRESULT)0x80092011L)
+#endif
+
+#ifndef CRYPT_E_NO_REVOCATION_CHECK
+# define CRYPT_E_NO_REVOCATION_CHECK          ((HRESULT)0x80092012L)
+#endif
+
+#ifndef CRYPT_E_REVOCATION_OFFLINE
+# define CRYPT_E_REVOCATION_OFFLINE           ((HRESULT)0x80092013L)
+#endif
+
+#ifndef CRYPT_E_NOT_IN_REVOCATION_DATABASE
+# define CRYPT_E_NOT_IN_REVOCATION_DATABASE   ((HRESULT)0x80092014L)
 #endif
 
 #ifdef UNICODE

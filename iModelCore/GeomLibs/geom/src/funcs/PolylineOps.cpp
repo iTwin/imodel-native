@@ -1429,7 +1429,10 @@ bool xyOnly
 
     double tol = absTol;
     if (absTol < 0.0)
-        tol = DPoint3dOps::Tolerance (points, 0.0, Angle::SmallAngle ());
+        tol = xyOnly
+            ? DPoint3dOps::ToleranceXY(points, 0.0, Angle::SmallAngle())
+            : DPoint3dOps::Tolerance(points, 0.0, Angle::SmallAngle());
+
     double tol2 = tol * tol;
     DPoint3d lastAcceptedPoint = points[0];
     size_t numAccepted = 1;
@@ -1456,7 +1459,7 @@ bool xyOnly
     // The lastAcceptedPoint is NOT the last point.
     // The last point has NOT been accepted ...
 
-    if (   wrap)
+    if (wrap)
         {
         double d0 = points[n - 1].DistanceSquared(points[0]);
         if (d0 <= tol2 && numAccepted > 1

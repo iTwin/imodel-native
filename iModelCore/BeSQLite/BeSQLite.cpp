@@ -42,6 +42,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 extern "C" int checkNoActiveStatements(SqlDbP db);
 #endif
 
+extern "C" int getStatementState(SqlStatementP pStmt);
 extern "C" int sqlite3_shathree_init(sqlite3 *, char **, const sqlite3_api_routines *);
 
 BEGIN_BENTLEY_SQLITE_NAMESPACE
@@ -823,6 +824,516 @@ void     SnappyFromBlob::Finish() {m_blobIO.Close();}
 
 Utf8String ProfileVersion::ToJson() const { return ToString("{\"major\":%" PRIu16 ",\"minor\":%" PRIu16 ",\"sub1\":%" PRIu16 ",\"sub2\":%" PRIu16 "}"); }
 DbResult Db::FreeMemory() const { return (DbResult)sqlite3_db_release_memory(m_dbFile->m_sqlDb); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::vector<MetaData::TableInfo> MetaData::QueryTableNames(DbCR& db, std::optional<Utf8String> dbName, DbResult& rc) {
+    std::vector<MetaData::TableInfo> tableNames;
+    Statement stmt;
+    Utf8String sql = "PRAGMA [table_list]";
+    if (dbName.has_value()) {
+        sql = SqlPrintfString("PRAGMA [%s].[table_list]", dbName.value().c_str()).GetUtf8CP()   ;
+    }
+
+    rc = stmt.Prepare(db, sql.c_str());
+    if (rc != BE_SQLITE_OK)
+        return tableNames;
+
+    while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
+        MetaData::TableInfo tableName;
+        tableName.schema = stmt.GetValueText(0);
+        tableName.name = stmt.GetValueText(1);
+        tableName.type = stmt.GetValueText(2);
+        tableName.nColumns = stmt.GetValueInt(3);
+        tableName.hasRowId = stmt.GetValueInt(4) != 0;
+        tableName.isStrict = stmt.GetValueInt(5) != 0;
+        tableNames.push_back(tableName);
+    }
+    rc = rc == BE_SQLITE_DONE ? BE_SQLITE_OK : rc;
+    return tableNames;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::vector<MetaData::TableInfo> MetaData::QueryTableNames(DbCR& db, std::optional<Utf8String> dbName){
+    DbResult rc;
+    return QueryTableNames(db, dbName, rc);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult MetaData::QueryTable(DbCR& db, Utf8StringCR dbName, Utf8StringCR tableName, CompleteTableInfo& tableInfo) {
+    MetaData::TableInfo qualifiedTableName;
+    qualifiedTableName.schema = dbName;
+    qualifiedTableName.name = tableName;
+    return QueryTable(db, qualifiedTableName, tableInfo);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult MetaData::QueryTable(DbCR& db, MetaData::TableInfo const& qualifiedTableName, CompleteTableInfo& tableInfo) {
+    tableInfo.name.clear();
+    tableInfo.schema.clear();
+    tableInfo.type.clear();
+    tableInfo.columns.clear();
+    tableInfo.indexes.clear();
+    tableInfo.triggers.clear();
+    tableInfo.foreignKeys.clear();
+    tableInfo.nColumns = 0;
+    tableInfo.hasRowId = false;
+    tableInfo.isStrict = false;
+    const Utf8String& dbName = qualifiedTableName.schema;
+    const Utf8String& tableName = qualifiedTableName.name;
+    DbResult rc = BE_SQLITE_ERROR;
+    auto getSql = [&](Utf8String const& name, Utf8String const& type) -> Utf8String {
+        Statement stmt;
+        rc = stmt.Prepare(db, SqlPrintfString("SELECT [sql] FROM [%s].[sqlite_master] WHERE [type]='%s' AND [name]='%s'", dbName.c_str(), type.c_str(), name.c_str()));
+        if (rc != BE_SQLITE_OK){
+            LOG.warningv("MetaData::QueryTable(): Failed to query sql for %s: %s", type.c_str(), name.c_str());
+            return "";
+        }
+        if (stmt.Step() == BE_SQLITE_ROW) {
+            return stmt.GetValueText(0);
+        }
+        return "";
+    };
+
+    auto findColumns = [&]() {
+        Statement stmt;
+        rc = stmt.Prepare(db, SqlPrintfString("PRAGMA [%s].[table_info]([%s])", dbName.c_str(), tableName.c_str()));
+        if (rc != BE_SQLITE_OK){
+            LOG.errorv("MetaData::QueryTable(): Failed to query column definitions for table: %s", tableName.c_str());
+            return false;
+        }
+
+        while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
+            MetaData::ColumnInfo column;
+            column.cid = stmt.GetValueInt(0);
+            column.name = stmt.GetValueText(1);
+            column.dataType = stmt.GetValueText(2);
+            column.notNull = stmt.GetValueInt(3) != 0;
+            if (!stmt.IsColumnNull(4))
+                column.defaultValue = stmt.GetValueText(4);
+            column.primaryKey = stmt.GetValueInt(5) != 0;
+            column.hidden = stmt.GetValueInt(6) != 0;
+            char const* pzCollSeq;
+            int pAutoinc;
+            rc = (DbResult)sqlite3_table_column_metadata(db.GetSqlDb(), dbName.c_str(), tableName.c_str(), column.name.c_str(), nullptr, &pzCollSeq, nullptr, nullptr, &pAutoinc);
+            if (rc != BE_SQLITE_OK) {
+                LOG.errorv("MetaData::QueryTable(): Failed to query column metadata for column: %s", column.name.c_str());
+                return false;
+            }
+            column.collSeq = pzCollSeq;
+            column.autoIncrement = pAutoinc != 0;
+            tableInfo.columns.push_back(column);
+        }
+        return true;
+    };
+
+    auto findForeignKeys = [&]() {
+        Statement stmt;
+        rc = stmt.Prepare(db, SqlPrintfString("PRAGMA [%s].[foreign_key_list]([%s])", dbName.c_str(), tableName.c_str()));
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("MetaData::QueryTable(): Failed to query foreign key definitions for table: %s", tableName.c_str());
+            return false;
+        }
+        int lastId = -1;
+        while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
+            if (lastId == stmt.GetValueInt(0)) {
+                MetaData::ForeignKeyInfo& fk = tableInfo.foreignKeys.back();
+                fk.fromColumns.push_back(stmt.GetValueText(3));
+                fk.toColumns.push_back(stmt.GetValueText(4));
+            } else {
+                MetaData::ForeignKeyInfo fk;
+                lastId = stmt.GetValueInt(0);
+                fk.table = stmt.GetValueText(2);
+                fk.fromColumns.push_back(stmt.GetValueText(3));
+                fk.toColumns.push_back(stmt.GetValueText(4));
+                fk.onUpdate = stmt.GetValueText(5);
+                fk.onDelete = stmt.GetValueText(6);
+                fk.match = stmt.GetValueText(7);
+                tableInfo.foreignKeys.push_back(fk);
+            }
+        }
+        return true;
+    };
+
+    auto findTriggers = [&]() {
+        Statement stmt;
+        rc = stmt.Prepare(db, SqlPrintfString("SELECT [name], [sql] FROM [%s].[sqlite_master] WHERE [type]='trigger' AND [tbl_name]='%s'", dbName.c_str(), tableName.c_str()));
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("MetaData::QueryTable(): Failed to query existing trigger definitions for table: %s", tableName.c_str());
+            return false;
+        }
+
+        while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
+            MetaData::TriggerInfo info;
+            info.name = stmt.GetValueText(0);
+            info.sql = stmt.GetValueText(1);
+            tableInfo.triggers.push_back(info);
+        }
+        return true;
+    };
+
+    auto findIndexColumns = [&](MetaData::IndexInfo& info) {
+        Statement stmt;
+        rc = stmt.Prepare(db, SqlPrintfString("PRAGMA [%s].[index_xinfo]([%s])", dbName.c_str(), info.name.c_str()));
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("MetaData::QueryTable(): Failed to query index columns definitions for db: %s", info.name.c_str());
+            return false;
+        }
+
+        while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
+            if (stmt.GetValueInt(1) != -1) {
+                MetaData::IndexColumnInfo columnInfo;
+                columnInfo.cid = stmt.GetValueInt(1);
+                columnInfo.name = stmt.GetValueText(2);
+                columnInfo.desc = stmt.GetValueInt(3) != 0;
+                columnInfo.collSeq = stmt.GetValueText(4);
+                columnInfo.key = stmt.GetValueInt(5) != 0;
+                info.columns.push_back(columnInfo);
+            }
+        }
+        return true;
+    };
+
+    auto findIndexes = [&]() {
+        Statement stmt;
+        rc = stmt.Prepare(db, SqlPrintfString("PRAGMA [%s].[index_list]([%s])", dbName.c_str(), tableName.c_str()));
+        if (rc != BE_SQLITE_OK){
+            LOG.errorv("MetaData::QueryTable(): Failed to query indexes for table %s", tableName.c_str());
+            return false;
+        }
+
+        while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
+            MetaData::IndexInfo info;
+            info.name = stmt.GetValueText(1);
+            info.unique = stmt.GetValueInt(2) != 0;
+            info.origin = stmt.GetValueText(3);
+            info.partial = stmt.GetValueInt(4) != 0;
+            info.sql = getSql(info.name, "index");
+            if (!findIndexColumns(info))
+                return false;
+            tableInfo.indexes.push_back(info);
+        }
+        return true;
+    };
+
+    Statement stmt;
+    rc = stmt.Prepare(db, SqlPrintfString("PRAGMA [%s].[table_list]", dbName.c_str()));
+    if (rc != BE_SQLITE_OK) {
+        LOG.errorv("MetaData::QueryTable(): Failed to prepare table_list statement for database %s", dbName.c_str());
+        return rc;
+    }
+
+    while ((rc = stmt.Step()) == BE_SQLITE_ROW) {
+        if (tableName.CompareToI(stmt.GetValueText(1)) == 0) {
+            tableInfo.schema = stmt.GetValueText(0);
+            tableInfo.name = stmt.GetValueText(1);
+            tableInfo.type = stmt.GetValueText(2);
+            tableInfo.nColumns = stmt.GetValueInt(3);
+            tableInfo.hasRowId = stmt.GetValueInt(4) != 0;
+            tableInfo.isStrict = stmt.GetValueInt(5) != 0;
+            tableInfo.sql = getSql(tableName, "table");
+            if (!findColumns())
+                return rc;
+
+            if (!findForeignKeys())
+                return rc;
+
+            if (!findTriggers())
+                return rc;
+
+            if (!findIndexes())
+                return rc;
+
+            break;
+        }
+    }
+    return rc == BE_SQLITE_DONE || rc == BE_SQLITE_OK  ? BE_SQLITE_OK : rc;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult MetaData::SchemaDiff(DbCR lhsDb, DbCR rhsDb, std::vector<Utf8String>& patches, bool allowDrop) {
+    auto defaultFilter = [](auto const& table) {
+        return table.name.StartsWith("sqlite_") || table.type != "table";
+    };
+    return SchemaDiff(lhsDb, rhsDb, defaultFilter, patches);
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult MetaData::SchemaDiff(DbCR lhsDb, DbCR rhsDb, std::function<bool(MetaData::TableInfo const&)> excludeFilter, std::vector<Utf8String>& patches, bool allowDrop) {
+    DbResult rc;
+    auto lhsTables = MetaData::QueryTableNames(lhsDb, "main", rc);
+    if (rc != BE_SQLITE_OK) {
+        LOG.error("MetaData::SchemaDiff(): Failed to query table names for lhs database");
+        return rc;
+    }
+
+    auto rhsTables = MetaData::QueryTableNames(rhsDb, "main", rc);
+    if (rc != BE_SQLITE_OK) {
+        LOG.error("MetaData::SchemaDiff(): Failed to query table names for rhs database");
+        return rc;
+    }
+
+    if (nullptr != excludeFilter) {
+        auto filterOutUnsupportedTables = [&](std::vector<MetaData::TableInfo>& list) {
+            list.erase(std::remove_if(list.begin(), list.end(), [&](auto const& table) {
+                return excludeFilter(table);
+            }), list.end());
+        };
+
+        filterOutUnsupportedTables(lhsTables);
+        filterOutUnsupportedTables(rhsTables);
+    }
+
+    // MISSING | EXISTS  | DROP
+    if (allowDrop) {
+        for (auto const& table : rhsTables) {
+            if (std::find(lhsTables.begin(), lhsTables.end(), table) == lhsTables.end()) {
+                patches.push_back(SqlPrintfString("DROP TABLE IF EXISTS [%s].[%s];", table.schema.c_str(), table.name.c_str()).GetUtf8CP());
+            }
+        }
+    }
+
+    // EXISTS | MISSING | CREATE
+    for (auto const& table : lhsTables) {
+        if (std::find(rhsTables.begin(), rhsTables.end(), table) == rhsTables.end()) {
+            MetaData::CompleteTableInfo tableInfo;
+            rc = MetaData::QueryTable(lhsDb, table, tableInfo);
+            if (rc != BE_SQLITE_OK)
+                return rc;
+
+            patches.push_back(tableInfo.sql);
+
+            std::for_each(tableInfo.triggers.begin(), tableInfo.triggers.end(),
+            [&patches](auto const& trigger) {
+                patches.push_back(trigger.sql);
+            });
+
+            std::for_each(tableInfo.indexes.begin(), tableInfo.indexes.end(),
+            [&patches](auto const& index) {
+                if (index.origin== "c") {
+                    patches.push_back(index.sql);
+                }
+            });
+        }
+    }
+
+    // EXISTS | EXISTS  | ALTER
+    for (auto const& table : lhsTables) {
+        if (std::find(rhsTables.begin(), rhsTables.end(), table) == rhsTables.end()) {
+            continue;
+        }
+
+        MetaData::CompleteTableInfo lhsTableInfo;
+        rc = MetaData::QueryTable(lhsDb, table, lhsTableInfo);
+        if (rc != BE_SQLITE_OK)
+            return rc;
+
+        MetaData::CompleteTableInfo rhsTableInfo;
+        rc = MetaData::QueryTable(rhsDb, table, rhsTableInfo);
+        if (rc != BE_SQLITE_OK)
+            return rc;
+        // drop index if its missing
+        if (allowDrop) {
+            for (auto const& rhsIndex : rhsTableInfo.indexes) {
+                if (std::find_if(lhsTableInfo.indexes.begin(), lhsTableInfo.indexes.end(),
+                    [&rhsIndex](auto const& lhsIndex) { return rhsIndex.name == lhsIndex.name; }) == lhsTableInfo.indexes.end()) {
+                    patches.push_back(SqlPrintfString("DROP INDEX IF EXISTS [%s].[%s];", table.schema.c_str(), rhsIndex.name.c_str()).GetUtf8CP());
+                }
+            }
+        }
+        // drop trigger if its missing
+        if (allowDrop) {
+            for (auto const& rhsTrigger : rhsTableInfo.triggers) {
+                if (std::find_if(lhsTableInfo.triggers.begin(), lhsTableInfo.triggers.end(),
+                    [&rhsTrigger](auto const& lhsTrigger) { return rhsTrigger.name == lhsTrigger.name; }) == lhsTableInfo.triggers.end()) {
+                    patches.push_back(SqlPrintfString("DROP TRIGGER IF EXISTS [%s].[%s];", table.schema.c_str(), rhsTrigger.name.c_str()).GetUtf8CP());
+                }
+            }
+        }
+
+        if (allowDrop) {
+            for (auto const& column : rhsTableInfo.columns) {
+                if (std::find_if(lhsTableInfo.columns.begin(), lhsTableInfo.columns.end(),
+                    [&column](auto const& lhsColumn) { return column.name == lhsColumn.name; }) == lhsTableInfo.columns.end()) {
+                    patches.push_back(SqlPrintfString("ALTER TABLE [%s].[%s] DROP COLUMN [%s];", table.schema.c_str(), table.name.c_str(), column.name.c_str()).GetUtf8CP());
+                }
+            }
+        }
+
+        for (auto const& column : lhsTableInfo.columns) {
+            if (std::find_if(rhsTableInfo.columns.begin(), rhsTableInfo.columns.end(),
+                [&column](auto const& rhsColumn) { return column.name == rhsColumn.name; }) == rhsTableInfo.columns.end()) {
+                Utf8String addColumnSql = SqlPrintfString("ALTER TABLE [%s].[%s] ADD COLUMN [%s]", table.schema.c_str(), table.name.c_str(), column.name.c_str()).GetUtf8CP();
+                if (!column.dataType.empty()) {
+                    addColumnSql.append(" ").append(column.dataType);
+                }
+                if (column.primaryKey) {
+                    LOG.error("MetaData::SchemaDiff(): Primary key column cannot be added using ALTER TABLE");
+                    return BE_SQLITE_ERROR;
+                }
+                if (column.notNull) {
+                    addColumnSql.append(" NOT NULL");
+                }
+                if (column.defaultValue.has_value()) {
+                    addColumnSql.append(" DEFAULT (").append(column.defaultValue.value()).append(")");
+                }
+                if (column.collSeq.empty()) {
+                    addColumnSql.append(" COLLATE ").append(column.collSeq);
+                }
+                if (column.hidden) {
+                    addColumnSql.append(" HIDDEN");
+                }
+                for(auto& fk : lhsTableInfo.foreignKeys){
+                    if (std::find_if(fk.fromColumns.begin(), fk.fromColumns.end(),
+                        [&column](auto const& fromColumn) { return column.name == fromColumn; }) != fk.fromColumns.end()) {
+                        if (fk.fromColumns.size() > 1) {
+                            LOG.error("MetaData::SchemaDiff(): Foreign key with multiple columns cannot be added using ALTER TABLE");
+                            return BE_SQLITE_ERROR;
+                        }
+                        addColumnSql.append(SqlPrintfString(" REFERENCES [%s]([%s])", fk.table.c_str(), fk.toColumns[0].c_str()).GetUtf8CP());
+                        if (fk.onUpdate != "NO ACTION") {
+                            addColumnSql.append(" ON UPDATE ").append(fk.onUpdate);
+                        }
+                        if (fk.onDelete != "NO ACTION") {
+                            addColumnSql.append(" ON DELETE ").append(fk.onDelete);
+                        }
+                        if (fk.match != "NONE") {
+                            addColumnSql.append(" MATCH ").append(fk.match);
+                        }
+                        break;
+                    }
+                }
+                addColumnSql.append(";");
+                patches.push_back(addColumnSql);
+            }
+        }
+
+        // update trigger if its different
+        for (auto const& lhsTrigger : lhsTableInfo.triggers) {
+            for(auto const& rhsTrigger : rhsTableInfo.triggers){
+                if (lhsTrigger.name == rhsTrigger.name) {
+                    if (lhsTrigger.sql != rhsTrigger.sql) {
+                        patches.push_back(SqlPrintfString("DROP TRIGGER IF EXISTS [%s].[%s];", table.schema.c_str(), lhsTrigger.name.c_str()).GetUtf8CP());
+                        patches.push_back(lhsTrigger.sql);
+                    }
+                }
+            }
+        }
+
+        // create trigger if its missing on rhs
+        for (auto const& lhsTrigger : lhsTableInfo.triggers) {
+            if (std::find_if(rhsTableInfo.triggers.begin(), rhsTableInfo.triggers.end(),
+                [&lhsTrigger](auto const& rhsTrigger) { return lhsTrigger.name == rhsTrigger.name; }) == rhsTableInfo.triggers.end()) {
+                patches.push_back(lhsTrigger.sql);
+            }
+        }
+
+        // update index if its different
+        for (auto const& lhsIndex : lhsTableInfo.indexes) {
+            for(auto const& rhsIndex : rhsTableInfo.indexes){
+                if (lhsIndex.name == rhsIndex.name) {
+                    if (lhsIndex.sql != rhsIndex.sql) {
+                        patches.push_back(SqlPrintfString("DROP INDEX IF EXISTS [%s].[%s];", table.schema.c_str(), lhsIndex.name.c_str()).GetUtf8CP());
+                        patches.push_back(lhsIndex.sql);
+                    }
+                }
+            }
+        }
+
+        // create index if its missing on rhs
+        for (auto const& lhsIndex : lhsTableInfo.indexes) {
+            if (std::find_if(rhsTableInfo.indexes.begin(), rhsTableInfo.indexes.end(),
+                [&lhsIndex](auto const& rhsIndex) { return lhsIndex.name == rhsIndex.name; }) == rhsTableInfo.indexes.end()) {
+                patches.push_back(lhsIndex.sql);
+            }
+        }
+    }
+    return rc;
+}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void MetaData::ToJson(CompleteTableInfo const& tableInfo, BeJsValue jsTableInfo){
+    jsTableInfo.SetEmptyObject();
+    jsTableInfo["name"] = tableInfo.name;
+    jsTableInfo["schema"] = tableInfo.schema;
+    jsTableInfo["type"] = tableInfo.type;
+    jsTableInfo["nColumns"] = tableInfo.nColumns;
+    jsTableInfo["hasRowId"] = tableInfo.hasRowId;
+    jsTableInfo["isStrict"] = tableInfo.isStrict;
+    jsTableInfo["sql"] = tableInfo.sql;
+    auto jsColumns = jsTableInfo["columns"];
+    jsColumns.SetEmptyArray();
+    for (auto& column : tableInfo.columns) {
+        BeJsValue col = jsColumns.appendObject();
+        col["cid"] = column.cid;
+        col["name"] = column.name;
+        col["dataType"] = column.dataType;
+        col["notNull"] = column.notNull;
+        col["defaultValue"] = column.defaultValue.has_value() ? column.defaultValue.value() : nullptr;
+        col["primaryKey"] = column.primaryKey;
+        col["collSeq"] = column.collSeq;
+        col["autoIncrement"] = column.autoIncrement;
+    }
+    auto jsIndexes = jsTableInfo["indexes"];
+    jsIndexes.SetEmptyArray();
+    for (auto& index : tableInfo.indexes) {
+        BeJsValue idx = jsIndexes.appendObject();
+        idx["name"] = index.name;
+        idx["unique"] = index.unique;
+        idx["origin"] = index.origin;
+        idx["partial"] = index.partial;
+        idx["sql"] = index.sql;
+        auto jsIndexColumns = idx["columns"];
+        jsIndexColumns.SetEmptyArray();
+        for (auto& column : index.columns) {
+            BeJsValue col = jsIndexColumns.appendObject();
+            col["cid"] = column.cid;
+            col["name"] = column.name;
+            col["desc"] = column.desc;
+            col["collSeq"] = column.collSeq;
+            col["key"] = column.key;
+        }
+    }
+    auto jsTriggers = jsTableInfo["triggers"];
+    jsTriggers.SetEmptyArray();
+    for (auto& trigger : tableInfo.triggers) {
+        BeJsValue trg = jsTriggers.appendObject();
+        trg["name"] = trigger.name;
+        trg["sql"] = trigger.sql;
+    }
+    auto jsForeignKeys= jsTableInfo["foreignKeys"];
+    jsForeignKeys.SetEmptyArray();
+    for (auto& fk : tableInfo.foreignKeys) {
+        BeJsValue fkey = jsForeignKeys.appendObject();
+        fkey["table"] = fk.table;;
+        auto jsFromColumns= fkey["fromColumns"];
+        jsFromColumns.SetEmptyArray();
+        for (auto& col : fk.fromColumns) {
+            jsFromColumns.appendValue() = col;
+        }
+        auto jsToColumns= fkey["toColumns"];
+        jsToColumns.SetEmptyArray();
+        for (auto& col : fk.fromColumns) {
+            jsToColumns.appendValue() = col;
+        }
+        fkey["onUpdate"] = fk.onUpdate;
+        fkey["onDelete"] = fk.onDelete;
+        fkey["match"] = fk.match;
+    }
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -918,6 +1429,17 @@ void Statement::DumpResults()
         }
 
     Reset();
+    }
+    
+/*---------------------------------------------------------------------------------------
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Statement::TryGetStatementState(StatementState& state)
+    {
+    if(!IsPrepared())
+        return false;
+    state = (StatementState)getStatementState(m_stmt);
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1197,6 +1719,11 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation) 
 
     // Don't check m_tracker->HasChanges - may have dynamic changes to rollback
     ChangeTracker::OnCommitStatus trackerStatus = (m_tracker.IsValid()) ? m_tracker->_OnCommit(isCommit, operation) : ChangeTracker::OnCommitStatus::Commit;
+
+    if (trackerStatus == ChangeTracker::OnCommitStatus::RebaseInProgress) {
+        return BE_SQLITE_ERROR;
+    }
+
     if (trackerStatus == ChangeTracker::OnCommitStatus::Abort) {
         // Abort is considered fatal and application must quit.
         // We do not allocate memory or attempt to log as this is only happens when sqlite returns NOMEM.
@@ -2640,10 +3167,30 @@ DbResult Db::TruncateTable(Utf8CP tableName) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Db::TableExists(Utf8CP tableName) const
     {
-    Statement statement;
-    return BE_SQLITE_OK == statement.TryPrepare(*this, SqlPrintfString("SELECT NULL FROM %s", tableName));
+    // tableName could contain tableSpace, parse if that's the case
+    Utf8String actualTableName(tableName);
+    Utf8String parsedTableSpace;
+    auto dotPosition = actualTableName.find('.');
+    if (dotPosition != Utf8String::npos) {
+        parsedTableSpace = actualTableName.substr(0, dotPosition);
+        actualTableName = actualTableName.substr(dotPosition + 1);
     }
 
+    CachedStatementPtr stmt;
+    if (Utf8String::IsNullOrEmpty(parsedTableSpace.c_str()))
+        stmt = GetCachedStatement("SELECT 1 FROM sqlite_master where type='table' AND name=?");
+    else
+        stmt = GetCachedStatement(Utf8PrintfString("SELECT 1 FROM %s.sqlite_master where type='table' AND name=?", parsedTableSpace.c_str()).c_str());
+
+    if (stmt == nullptr)
+        {
+        BeAssert(false);
+        return false;
+        }
+
+    stmt->BindText(1, actualTableName.c_str(), Statement::MakeCopy::No);
+    return stmt->Step() == BE_SQLITE_ROW;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //--------------+------------------------------------------------------------------------
@@ -2657,26 +3204,44 @@ void Db::FlushPageCache()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Db::ColumnExists(Utf8CP tableName, Utf8CP columnName) const
     {
-    Statement sql;
-    return BE_SQLITE_OK == sql.TryPrepare(*this, SqlPrintfString("SELECT [%s] FROM %s", columnName, tableName));
+    bvector<Utf8String> columns;
+
+    GetColumns(columns, tableName);
+    return columns.end() != std::find_if(columns.begin(), columns.end(), [columnName](Utf8StringCR col) { return col.EqualsIAscii(columnName); });
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Db::GetColumns(bvector<Utf8String>& columns, Utf8CP tableName) const
+{
+    columns.clear();
+
+    Statement stmt;
+    DbResult status;
+
+    const char* dotPosition = strchr(tableName, '.');
+    if (dotPosition != nullptr)
     {
-    Statement statement;
-    DbResult status =  statement.TryPrepare(*this, SqlPrintfString("SELECT * FROM %s LIMIT 0", tableName));
+        Utf8String tablespace(tableName, dotPosition - tableName);
+        Utf8String actualTableName(dotPosition + 1);
+
+        status = stmt.Prepare(*this, SqlPrintfString("PRAGMA %s.table_info([%s])", tablespace.c_str(), actualTableName.c_str()));
+    }
+    else
+    {
+        status = stmt.Prepare(*this, SqlPrintfString("PRAGMA table_info([%s])", tableName));
+    }
+
     if (status != BE_SQLITE_OK)
         return false;
 
-    columns.clear();
-    for (int nColumn = 0; nColumn < statement.GetColumnCount(); nColumn++)
-        columns.push_back(statement.GetColumnName(nColumn));
+    while (stmt.Step() == BE_SQLITE_ROW)
+        columns.push_back(stmt.GetValueText(1));
 
     return true;
-    }
+}
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -2763,13 +3328,21 @@ DbFile::~DbFile() {
 
     if (BE_SQLITE_OK != rc) {
         sqlite3_stmt* stmt = nullptr;
+        std::vector<sqlite3_stmt*> stmts;
         while (nullptr != (stmt = sqlite3_next_stmt(m_sqlDb, stmt))) {
+            stmts.push_back(stmt);
             Utf8String openStatement(sqlite3_sql(stmt)); // keep as separate line for debugging
             LOG.errorv("Statement not closed: '%s'", openStatement.c_str());
         };
+        for(auto stmt : stmts)
+            sqlite3_finalize(stmt);
 
-        LOG.errorv("Cannot close database '%s'", sqlite3_db_filename(m_sqlDb, "main"));
-        BeAssert(false);
+        rc = (DbResult) sqlite3_close(m_sqlDb);
+        if (rc != BE_SQLITE_OK) {
+            LOG.errorv("Cannot close database '%s'", sqlite3_db_filename(m_sqlDb, "main"));
+            BeAssert(false);
+        }
+
     }
 
     m_sqlDb = 0;
@@ -5353,7 +5926,7 @@ Utf8CP BeSQLiteLib::GetErrorName(DbResult code) {
         case BE_SQLITE_ERROR_ProfileTooNewForReadWrite:   return "BE_SQLITE_ERROR_ProfileTooNewForReadWrite";
         case BE_SQLITE_ERROR_ProfileTooNew:               return "BE_SQLITE_ERROR_ProfileTooNew";
         case BE_SQLITE_ERROR_ChangeTrackError:            return "BE_SQLITE_ERROR_ChangeTrackError";
-        case BE_SQLITE_ERROR_InvalidChangeSetVersion:      return "BE_SQLITE_ERROR_InvalidChangeSetVersion";
+        case BE_SQLITE_ERROR_InvalidChangeSetVersion:     return "BE_SQLITE_ERROR_InvalidChangeSetVersion";
         case BE_SQLITE_ERROR_SchemaUpgradeRequired:       return "BE_SQLITE_ERROR_SchemaUpgradeRequired";
         case BE_SQLITE_ERROR_SchemaTooNew:                return "BE_SQLITE_ERROR_SchemaTooNew";
         case BE_SQLITE_ERROR_SchemaTooOld:                return "BE_SQLITE_ERROR_SchemaTooOld";

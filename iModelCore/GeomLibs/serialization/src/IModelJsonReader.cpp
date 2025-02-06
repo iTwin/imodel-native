@@ -1135,6 +1135,7 @@ CurveVector::BoundaryType boundaryType
             int numOuter = 0;
             int numInner = 0;
             int numOther = 0;
+            UNUSED_VARIABLE(numInner);
             for (auto & cp : *result)
                 {
                 auto loop = cp->GetChildCurveVectorP ();

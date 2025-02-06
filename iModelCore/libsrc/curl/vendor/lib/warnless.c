@@ -37,7 +37,7 @@
 
 #include "warnless.h"
 
-#ifdef WIN32
+#ifdef _WIN32
 #undef read
 #undef write
 #endif
@@ -345,29 +345,7 @@ size_t curlx_sitouz(int sinum)
 #endif
 }
 
-#ifdef USE_WINSOCK
-
-/*
-** curl_socket_t to signed int
-*/
-
-int curlx_sktosi(curl_socket_t s)
-{
-  return (int)((ssize_t) s);
-}
-
-/*
-** signed int to curl_socket_t
-*/
-
-curl_socket_t curlx_sitosk(int i)
-{
-  return (curl_socket_t)((ssize_t) i);
-}
-
-#endif /* USE_WINSOCK */
-
-#if defined(WIN32)
+#if defined(_WIN32)
 
 ssize_t curlx_read(int fd, void *buf, size_t count)
 {
@@ -379,8 +357,8 @@ ssize_t curlx_write(int fd, const void *buf, size_t count)
   return (ssize_t)write(fd, buf, curlx_uztoui(count));
 }
 
-/* Ensure that warnless.h continues to have an effect in "unity" builds. */
-#undef HEADER_CURL_WARNLESS_H
+#endif /* _WIN32 */
 
-#endif /* WIN32 */
-
+/* Ensure that warnless.h redefinitions continue to have an effect
+   in "unity" builds. */
+#undef HEADER_CURL_WARNLESS_H_REDEFS

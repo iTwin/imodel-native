@@ -88,6 +88,83 @@ TEST_F (RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_Retu
     }
 
 /*---------------------------------------------------------------------------------**//**
+// @betest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(SelectedNodeInstances_MergesSameRelatedPropertiesWhenInputClassesAreDifferentAndRelatedPropertiesSpecificationHasInstanceFilter, R"*(
+    <ECEntityClass typeName="Element">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="Element1">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="Element2">
+        <BaseClass>Element</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ElementUniqueAspect">
+        <ECProperty propertyName="AspectName" typeName="string" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsUniqueAspect" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Element"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="ElementUniqueAspect"/>
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, SelectedNodeInstances_MergesSameRelatedPropertiesWhenInputClassesAreDifferentAndRelatedPropertiesSpecificationHasInstanceFilter)
+    {
+    ECEntityClassCP elementClass = GetClass("Element")->GetEntityClassCP();
+    ECEntityClassCP elementClass1 = GetClass("Element1")->GetEntityClassCP();
+    ECEntityClassCP elementClass2 = GetClass("Element2")->GetEntityClassCP();
+    ECEntityClassCP aspectClass = GetClass("ElementUniqueAspect")->GetEntityClassCP();
+    ECRelationshipClassCP elementOwnsUniqueAspectRelationship = GetClass("ElementOwnsUniqueAspect")->GetRelationshipClassCP();
+
+    // set up dataset
+    IECInstancePtr element1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass1);
+    IECInstancePtr aspect1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsUniqueAspectRelationship, *element1, *aspect1);
+
+    IECInstancePtr element2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *elementClass2);
+    IECInstancePtr aspect2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *aspectClass);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *elementOwnsUniqueAspectRelationship, *element2, *aspect2);
+
+    // set up selection
+    KeySetPtr input = KeySet::Create(bvector<IECInstancePtr>{ element1, element2 });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification(1, false, "", "", true));
+    auto relatedPropertiesSpec = new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(elementOwnsUniqueAspectRelationship->GetFullName(), RequiredRelationDirection_Forward, aspectClass->GetFullName()),
+        }), { new PropertySpecification("*") }, RelationshipMeaning::SameInstance, true);
+    relatedPropertiesSpec->SetInstanceFilter("this.AspectName = NULL");
+    rule->GetSpecifications().back()->AddRelatedProperty(*relatedPropertiesSpec);
+    rules->AddPresentationRule(*rule);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", 0, *input)));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    ASSERT_EQ(2, descriptor->GetSelectClasses().size());
+    EXPECT_EQ(elementClass1, &descriptor->GetSelectClasses()[0].GetSelectClass().GetClass());
+    EXPECT_EQ(elementClass2, &descriptor->GetSelectClasses()[1].GetSelectClass().GetClass());
+
+    bvector<ContentDescriptor::Field*> fields = descriptor->GetVisibleFields();
+    ASSERT_EQ(1, fields.size());
+    EXPECT_TRUE(fields[0]->IsNestedContentField());
+    EXPECT_STREQ(NESTED_CONTENT_FIELD_NAME(elementClass, aspectClass), fields[0]->GetUniqueName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
 DEFINE_SCHEMA(RelatedPropertyValuesAreCorrectWhenSelectionIncludesInstanceOfRelatedInstanceClass, R"*(
@@ -154,6 +231,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, RelatedPropertyValuesAreCor
     expectedValues1.Parse(Utf8PrintfString(R"({
         "%s": "Test A",
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "Test B 1"
@@ -257,6 +339,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentModifierAppliesRelat
         "%s": "InstanceA",
         "%s": {"ECClassId": "%s", "ECInstanceId": "%s", "Label": %s},
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "InstanceB"
@@ -506,9 +593,19 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesSeparateFieldsWithDi
     rapidjson::Document expectedValues1;
     expectedValues1.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
                         "%s": "value1"
@@ -549,9 +646,19 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesSeparateFieldsWithDi
     expectedValues2.Parse(Utf8PrintfString(R"({
         "%s": [],
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
                         "%s": "value2"
@@ -764,9 +871,19 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesNestedContentWhenBas
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId":"%s", "ECInstanceId":"%s"}],
             "Values": {
                 "%s": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{"ECClassId":"%s", "ECInstanceId":"%s"}],
                     "Values": {
                     },
@@ -915,12 +1032,27 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesNestedContentWhenBas
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId":"%s", "ECInstanceId":"%s"}],
             "Values": {
                 "%s": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{"ECClassId":"%s", "ECInstanceId":"%s"}],
                     "Values": {
                         "%s": [{
+                            "DisplayLabel": {
+                                "DisplayValue": "@Presentation:label.notSpecified@",
+                                "TypeName": "string",
+                                "RawValue": "@Presentation:label.notSpecified@"
+                            },
                             "PrimaryKeys": [{"ECClassId":"%s", "ECInstanceId":"%s"}],
                             "Values": {
                             },
@@ -1213,6 +1345,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": {"ECClassId": "%s", "ECInstanceId": "%s", "Label": %s}
@@ -1223,6 +1360,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
             "MergedFieldNames": []
             }],
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": {"ECClassId": "%s", "ECInstanceId": "%s", "Label": %s},
@@ -1254,6 +1396,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
                 },
             "MergedFieldNames": []
             },{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": {"ECClassId": "%s", "ECInstanceId": "%s", "Label": %s},
@@ -1311,6 +1458,157 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
         FIELD_NAME(childClass2, "Parent"), CommonStrings::LABEL_NOTSPECIFIED,
         FIELD_NAME(childClass2, "IntProperty"), FIELD_NAME(childClass2, "StringProperty"), FIELD_NAME(childClass2, "ArrayProperty"),
         FIELD_NAME(childClass2, "StructProperty"), FIELD_NAME(childClass2, "StructArrayProperty")).c_str());
+        EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(LoadsXToManyRelatedInstancesAsArrays_WithCustomDisplayLabels, R"*(
+    <ECEntityClass typeName="ChildClass1">
+        <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren1" direction="Backward" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ChildClass2">
+        <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren2" direction="Backward" />
+    </ECEntityClass>
+    <ECEntityClass typeName="ParentClass" />
+    <ECRelationshipClass typeName="ParentHasChildren1" strength="referencing" strengthDirection="forward" modifier="Sealed">
+        <Source multiplicity="(1..1)" roleLabel="ClassD Has ClassE" polymorphic="False">
+            <Class class="ParentClass" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ClassE Has ClassD" polymorphic="False">
+            <Class class="ChildClass1" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ParentHasChildren2" strength="referencing" strengthDirection="forward" modifier="Sealed">
+        <Source multiplicity="(1..1)" roleLabel="ClassD Has ClassE" polymorphic="False">
+            <Class class="ParentClass" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="ClassE Has ClassD" polymorphic="False">
+            <Class class="ChildClass2" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstancesAsArrays_WithCustomDisplayLabels)
+    {
+    // set up data set
+    ECClassCP parentClass = GetClass("ParentClass");
+    ECClassCP childClass1 = GetClass("ChildClass1");
+    ECClassCP childClass2 = GetClass("ChildClass2");
+    ECRelationshipClassCP rel1 = GetRelationshipClass("ParentHasChildren1");
+    ECRelationshipClassCP rel2 = GetRelationshipClass("ParentHasChildren2");
+    IECInstancePtr parent = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *parentClass);
+    IECInstancePtr child1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *childClass1, [&](IECInstanceR instance)
+        {
+        instance.SetValue("Parent", ECValue(RulesEngineTestHelpers::GetInstanceKey(*parent).GetId(), rel1));
+        });
+    IECInstancePtr child2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *childClass2, [&](IECInstanceR instance)
+        {
+        instance.SetValue("Parent", ECValue(RulesEngineTestHelpers::GetInstanceKey(*parent).GetId(), rel2));
+        });
+    IECInstancePtr child3 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *childClass2, [&](IECInstanceR instance)
+        {
+        instance.SetValue("Parent", ECValue(RulesEngineTestHelpers::GetInstanceKey(*parent).GetId(), rel2));
+        });
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rules->AddPresentationRule(*rule);
+
+    auto spec = new ContentInstancesOfSpecificClassesSpecification(1, "", parentClass->GetFullName(), false, false);
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel1->GetFullName(),
+        childClass1->GetFullName(), "*", RelationshipMeaning::RelatedInstance));
+    spec->AddRelatedProperty(*new RelatedPropertiesSpecification(RequiredRelationDirection_Forward, rel2->GetFullName(),
+        childClass2->GetFullName(), "*", RelationshipMeaning::RelatedInstance));
+    rule->AddSpecification(*spec);
+
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, false, childClass1->GetFullName(), {new InstanceLabelOverrideClassNameValueSpecification()}));
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, false, childClass2->GetFullName(), {new InstanceLabelOverrideClassNameValueSpecification()}));
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", (int)ContentFlags::MergeResults, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+    EXPECT_EQ(2, descriptor->GetVisibleFields().size()); // Nested<ChildClass1 properties>, Nested<ChildClass2 properties>
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "%s",
+                "TypeName": "string",
+                "RawValue": "%s"
+            },
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
+            "Values": {
+                "%s": {"ECClassId": "%s", "ECInstanceId": "%s", "Label": %s}
+                },
+            "DisplayValues": {
+                "%s": "%s"
+                },
+            "MergedFieldNames": []
+            }],
+        "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "%s",
+                "TypeName": "string",
+                "RawValue": "%s"
+            },
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
+            "Values": {
+                "%s": {"ECClassId": "%s", "ECInstanceId": "%s", "Label": %s}
+            },
+            "DisplayValues": {
+                "%s": "%s"
+            },
+            "MergedFieldNames": []
+            },{
+            "DisplayLabel": {
+                "DisplayValue": "%s",
+                "TypeName": "string",
+                "RawValue": "%s"
+            },
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
+            "Values": {
+                "%s": {"ECClassId": "%s", "ECInstanceId": "%s", "Label": %s}
+            },
+            "DisplayValues": {
+                "%s": "%s"
+            },
+            "MergedFieldNames": []
+            }]
+        })",
+        NESTED_CONTENT_FIELD_NAME(parentClass, childClass1),
+        childClass1->GetName().c_str(), childClass1->GetName().c_str(),
+        childClass1->GetId().ToString().c_str(), child1->GetInstanceId().c_str(),
+        FIELD_NAME(childClass1, "Parent"), parent->GetClass().GetId().ToString().c_str(), parent->GetInstanceId().c_str(), GetNavigationPropertyTargetLabel().c_str(),
+        FIELD_NAME(childClass1, "Parent"), CommonStrings::LABEL_NOTSPECIFIED,
+
+        NESTED_CONTENT_FIELD_NAME(parentClass, childClass2),
+
+        childClass2->GetName().c_str(), childClass2->GetName().c_str(),
+        childClass2->GetId().ToString().c_str(), child2->GetInstanceId().c_str(),
+        FIELD_NAME(childClass2, "Parent"), parent->GetClass().GetId().ToString().c_str(), parent->GetInstanceId().c_str(), GetNavigationPropertyTargetLabel().c_str(),
+        FIELD_NAME(childClass2, "Parent"), CommonStrings::LABEL_NOTSPECIFIED,
+
+        childClass2->GetName().c_str(), childClass2->GetName().c_str(),
+        childClass2->GetId().ToString().c_str(), child3->GetInstanceId().c_str(),
+        FIELD_NAME(childClass2, "Parent"), parent->GetClass().GetId().ToString().c_str(),  parent->GetInstanceId().c_str(), GetNavigationPropertyTargetLabel().c_str(),
+        FIELD_NAME(childClass2, "Parent"), CommonStrings::LABEL_NOTSPECIFIED).c_str());
+        
         EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
         << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
@@ -1398,6 +1696,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId":"%s", "ECInstanceId":"%s"}, {"ECClassId":"%s", "ECInstanceId":"%s"}, {"ECClassId":"%s", "ECInstanceId":"%s"}],
             "Values": {
                 "%s": null,
@@ -1498,7 +1801,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
         classB->GetFullName(), "*", RelationshipMeaning::RelatedInstance));
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), 
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(),
         rules->GetRuleSetId(), RulesetVariables(), "", (int)ContentFlags::MergeResults, *KeySet::Create())));
     ASSERT_TRUE(descriptor.IsValid());
     EXPECT_EQ(2, descriptor->GetVisibleFields().size());
@@ -1515,6 +1818,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId":"%s", "ECInstanceId":"%s"}, {"ECClassId":"%s", "ECInstanceId":"%s"}],
             "Values": {
                 "%s": 1,
@@ -1526,6 +1834,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
                 },
             "MergedFieldNames": []
             }, {
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId":"%s", "ECInstanceId":"%s"}, {"ECClassId":"%s", "ECInstanceId":"%s"}],
             "Values": {
                 "%s": 2,
@@ -1729,6 +2042,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedInstance
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}, {"ECClassId": "%s", "ECInstanceId": "%s"}, {"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": null,
@@ -1839,10 +2157,20 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": {"ECClassId": "%s", "ECInstanceId": "%s", "Label": %s},
                 "%s": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
                         "%s": {"ECClassId": "%s", "ECInstanceId": "%s", "Label": %s}
@@ -1961,9 +2289,19 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedNestedIn
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
                         "%s": {"ECClassId": "%s", "ECInstanceId": "%s", "Label": %s}
@@ -2089,10 +2427,20 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToOneToManyRelatedNes
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": 123,
                 "%s": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
                         "%s": 456
@@ -2135,6 +2483,522 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToOneToManyRelatedNes
         })",
         NESTED_CONTENT_FIELD_NAME(classA, classB),
         FIELD_NAME(classD, "PropD")
+    ).c_str());
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(LoadsXToManyToManyRelatedNestedInstances, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="PropB" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <ECProperty propertyName="PropC" typeName="int" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="AB" strength="referencing" strengthDirection="forward" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="AB" polymorphic="False">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="BA" polymorphic="False">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="BC" strength="referencing" strengthDirection="forward" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="BC" polymorphic="False">
+            <Class class="B" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="CB" polymorphic="False">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyToManyRelatedNestedInstances)
+    {
+
+    // set up data set
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP relAB = GetClass("AB")->GetRelationshipClassCP();
+    ECRelationshipClassCP relBC = GetClass("BC")->GetRelationshipClassCP();
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [&](IECInstanceR instance)
+        {
+        instance.SetValue("PropB", ECValue(1));
+        });
+    IECInstancePtr c11 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [&](IECInstanceR instance)
+        {
+        instance.SetValue("PropC", ECValue(11));
+        });
+    IECInstancePtr c12 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [&](IECInstanceR instance)
+        {
+        instance.SetValue("PropC", ECValue(12));
+        });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a, *b1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *b1, *c11);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *b1, *c12);
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [&](IECInstanceR instance)
+        {
+        instance.SetValue("PropB", ECValue(2));
+        });
+    IECInstancePtr c21 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [&](IECInstanceR instance)
+        {
+        instance.SetValue("PropC", ECValue(21));
+        });
+    IECInstancePtr c22 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [&](IECInstanceR instance)
+        {
+        instance.SetValue("PropC", ECValue(22));
+        });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a, *b2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *b2, *c21);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *b2, *c22);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), true, true));
+    rules->AddPresentationRule(*rule);
+
+    auto modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward),
+        }), { new PropertySpecification("*") }, RelationshipMeaning::RelatedInstance));
+    modifier->GetRelatedProperties().back()->AddNestedRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relBC->GetFullName(), RequiredRelationDirection_Forward),
+        }), { new PropertySpecification("*") }, RelationshipMeaning::RelatedInstance));
+    rules->AddPresentationRule(*modifier);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    auto bField = ContainerHelpers::FindFirst<ContentDescriptor::Field const*>(descriptor->GetAllFields(), [&](auto const& f) -> bool
+        {
+        return f->GetLabel().Equals(classB->GetDisplayLabel());
+        });
+    ASSERT_TRUE(bField != nullptr);
+    ASSERT_TRUE(bField->IsNestedContentField());
+
+    auto cField = ContainerHelpers::FindFirst<ContentDescriptor::Field const*>(bField->AsNestedContentField()->GetFields(), [&](auto const& f) -> bool
+        {
+        return f->GetLabel().Equals(classC->GetDisplayLabel());
+        });
+    ASSERT_TRUE(cField != nullptr);
+    ASSERT_TRUE(cField->IsNestedContentField());
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
+            "Values": {
+                "%s": 1,
+                "%s": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
+                    "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
+                    "Values": {
+                        "%s": 11
+                        },
+                    "DisplayValues": {
+                        "%s": "11"
+                        },
+                    "MergedFieldNames": []
+                    }, {
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
+                    "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
+                    "Values": {
+                        "%s": 12
+                        },
+                    "DisplayValues": {
+                        "%s": "12"
+                        },
+                    "MergedFieldNames": []
+                    }]
+                },
+            "DisplayValues": {
+                "%s": "1",
+                "%s": [{
+                    "DisplayValues": {
+                        "%s": "11"
+                        }
+                    }, {
+                    "DisplayValues": {
+                        "%s": "12"
+                        }
+                    }]
+                },
+            "MergedFieldNames": []
+            }, {
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
+            "Values": {
+                "%s": 2,
+                "%s": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
+                    "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
+                    "Values": {
+                        "%s": 21
+                        },
+                    "DisplayValues": {
+                        "%s": "21"
+                        },
+                    "MergedFieldNames": []
+                    }, {
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
+                    "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
+                    "Values": {
+                        "%s": 22
+                        },
+                    "DisplayValues": {
+                        "%s": "22"
+                        },
+                    "MergedFieldNames": []
+                    }]
+                },
+            "DisplayValues": {
+                "%s": "2",
+                "%s": [{
+                    "DisplayValues": {
+                        "%s": "21"
+                        }
+                    }, {
+                    "DisplayValues": {
+                        "%s": "22"
+                        }
+                    }]
+                },
+            "MergedFieldNames": []
+            }]
+        })",
+        NESTED_CONTENT_FIELD_NAME(classA, classB),
+
+        classB->GetId().ToString().c_str(), b1->GetInstanceId().c_str(),
+        FIELD_NAME(classB, "PropB"),
+        NESTED_CONTENT_FIELD_NAME(classB, classC),
+        classC->GetId().ToString().c_str(), c11->GetInstanceId().c_str(),
+        FIELD_NAME(classC, "PropC"), FIELD_NAME(classC, "PropC"),
+        classC->GetId().ToString().c_str(), c12->GetInstanceId().c_str(),
+        FIELD_NAME(classC, "PropC"), FIELD_NAME(classC, "PropC"),
+        FIELD_NAME(classB, "PropB"),
+        NESTED_CONTENT_FIELD_NAME(classB, classC),
+        FIELD_NAME(classC, "PropC"), FIELD_NAME(classC, "PropC"),
+
+        classB->GetId().ToString().c_str(), b2->GetInstanceId().c_str(),
+        FIELD_NAME(classB, "PropB"),
+        NESTED_CONTENT_FIELD_NAME(classB, classC),
+        classC->GetId().ToString().c_str(), c21->GetInstanceId().c_str(),
+        FIELD_NAME(classC, "PropC"), FIELD_NAME(classC, "PropC"),
+        classC->GetId().ToString().c_str(), c22->GetInstanceId().c_str(),
+        FIELD_NAME(classC, "PropC"), FIELD_NAME(classC, "PropC"),
+        FIELD_NAME(classB, "PropB"),
+        NESTED_CONTENT_FIELD_NAME(classB, classC),
+        FIELD_NAME(classC, "PropC"), FIELD_NAME(classC, "PropC")
+    ).c_str());
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(LoadsXToManyToManyRelatedNestedInstances_WithCustomDisplayLabels, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B">
+        <ECProperty propertyName="PropB" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="C">
+        <ECProperty propertyName="PropC" typeName="int" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="AB" strength="referencing" strengthDirection="forward" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="AB" polymorphic="False">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="BA" polymorphic="False">
+            <Class class="B" />
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="BC" strength="referencing" strengthDirection="forward" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="BC" polymorphic="False">
+            <Class class="B" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="CB" polymorphic="False">
+            <Class class="C" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyToManyRelatedNestedInstances_WithCustomDisplayLabels)
+    {
+
+    // set up data set
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classC = GetClass("C");
+    ECRelationshipClassCP relAB = GetClass("AB")->GetRelationshipClassCP();
+    ECRelationshipClassCP relBC = GetClass("BC")->GetRelationshipClassCP();
+
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [&](IECInstanceR instance)
+        {
+        instance.SetValue("PropB", ECValue(1));
+        });
+    IECInstancePtr c11 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [&](IECInstanceR instance)
+        {
+        instance.SetValue("PropC", ECValue(11));
+        });
+    IECInstancePtr c12 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [&](IECInstanceR instance)
+        {
+        instance.SetValue("PropC", ECValue(12));
+        });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a, *b1);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *b1, *c11);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *b1, *c12);
+    IECInstancePtr b2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [&](IECInstanceR instance)
+        {
+        instance.SetValue("PropB", ECValue(2));
+        });
+    IECInstancePtr c21 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [&](IECInstanceR instance)
+        {
+        instance.SetValue("PropC", ECValue(21));
+        });
+    IECInstancePtr c22 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classC, [&](IECInstanceR instance)
+        {
+        instance.SetValue("PropC", ECValue(22));
+        });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAB, *a, *b2);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *b2, *c21);
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relBC, *b2, *c22);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    ContentRuleP rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new ContentInstancesOfSpecificClassesSpecification(1, "", classA->GetFullName(), true, true));
+    rules->AddPresentationRule(*rule);
+
+    auto modifier = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifier->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relAB->GetFullName(), RequiredRelationDirection_Forward),
+        }), { new PropertySpecification("*") }, RelationshipMeaning::RelatedInstance));
+    modifier->GetRelatedProperties().back()->AddNestedRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relBC->GetFullName(), RequiredRelationDirection_Forward),
+        }), { new PropertySpecification("*") }, RelationshipMeaning::RelatedInstance));
+    rules->AddPresentationRule(*modifier);
+
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, false, classA->GetFullName(), {new InstanceLabelOverrideClassNameValueSpecification()}));
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, false, classB->GetFullName(), {new InstanceLabelOverrideClassNameValueSpecification()}));
+    rules->AddPresentationRule(*new InstanceLabelOverride(1, false, classC->GetFullName(), {new InstanceLabelOverrideClassNameValueSpecification()}));
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", 0, *KeySet::Create())));
+    ASSERT_TRUE(descriptor.IsValid());
+
+    auto bField = ContainerHelpers::FindFirst<ContentDescriptor::Field const*>(descriptor->GetAllFields(), [&](auto const& f) -> bool
+        {
+        return f->GetLabel().Equals(classB->GetDisplayLabel());
+        });
+    ASSERT_TRUE(bField != nullptr);
+    ASSERT_TRUE(bField->IsNestedContentField());
+
+    auto cField = ContainerHelpers::FindFirst<ContentDescriptor::Field const*>(bField->AsNestedContentField()->GetFields(), [&](auto const& f) -> bool
+        {
+        return f->GetLabel().Equals(classC->GetDisplayLabel());
+        });
+    ASSERT_TRUE(cField != nullptr);
+    ASSERT_TRUE(cField->IsNestedContentField());
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(1, contentSet.GetSize());
+
+    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "%s",
+                "TypeName": "string",
+                "RawValue": "%s"
+            },
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
+            "Values": {
+                "%s": 1,
+                "%s": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "%s",
+                        "TypeName": "string",
+                        "RawValue": "%s"
+                    },
+                    "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
+                    "Values": {
+                        "%s": 11
+                        },
+                    "DisplayValues": {
+                        "%s": "11"
+                        },
+                    "MergedFieldNames": []
+                    }, {
+                    "DisplayLabel": {
+                        "DisplayValue": "%s",
+                        "TypeName": "string",
+                        "RawValue": "%s"
+                    },
+                    "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
+                    "Values": {
+                        "%s": 12
+                        },
+                    "DisplayValues": {
+                        "%s": "12"
+                        },
+                    "MergedFieldNames": []
+                    }]
+                },
+            "DisplayValues": {
+                "%s": "1",
+                "%s": [{
+                    "DisplayValues": {
+                        "%s": "11"
+                        }
+                    }, {
+                    "DisplayValues": {
+                        "%s": "12"
+                        }
+                    }]
+                },
+            "MergedFieldNames": []
+            }, {
+            "DisplayLabel": {
+                "DisplayValue": "%s",
+                "TypeName": "string",
+                "RawValue": "%s"
+            },
+            "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
+            "Values": {
+                "%s": 2,
+                "%s": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "%s",
+                        "TypeName": "string",
+                        "RawValue": "%s"
+                    },
+                    "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
+                    "Values": {
+                        "%s": 21
+                        },
+                    "DisplayValues": {
+                        "%s": "21"
+                        },
+                    "MergedFieldNames": []
+                    }, {
+                    "DisplayLabel": {
+                        "DisplayValue": "%s",
+                        "TypeName": "string",
+                        "RawValue": "%s"
+                    },
+                    "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
+                    "Values": {
+                        "%s": 22
+                        },
+                    "DisplayValues": {
+                        "%s": "22"
+                        },
+                    "MergedFieldNames": []
+                    }]
+                },
+            "DisplayValues": {
+                "%s": "2",
+                "%s": [{
+                    "DisplayValues": {
+                        "%s": "21"
+                        }
+                    }, {
+                    "DisplayValues": {
+                        "%s": "22"
+                        }
+                    }]
+                },
+            "MergedFieldNames": []
+            }]
+        })",
+        NESTED_CONTENT_FIELD_NAME(classA, classB),
+        
+        classB->GetName().c_str(), classB->GetName().c_str(),
+        classB->GetId().ToString().c_str(), b1->GetInstanceId().c_str(),
+        FIELD_NAME(classB, "PropB"),
+        NESTED_CONTENT_FIELD_NAME(classB, classC),
+        classC->GetName().c_str(), classC->GetName().c_str(),
+        classC->GetId().ToString().c_str(), c11->GetInstanceId().c_str(),
+        FIELD_NAME(classC, "PropC"), FIELD_NAME(classC, "PropC"),
+        classC->GetName().c_str(), classC->GetName().c_str(),
+        classC->GetId().ToString().c_str(), c12->GetInstanceId().c_str(),
+        FIELD_NAME(classC, "PropC"), FIELD_NAME(classC, "PropC"),
+        FIELD_NAME(classB, "PropB"),
+        NESTED_CONTENT_FIELD_NAME(classB, classC),
+        FIELD_NAME(classC, "PropC"), FIELD_NAME(classC, "PropC"),
+        
+        classB->GetName().c_str(), classB->GetName().c_str(),
+        classB->GetId().ToString().c_str(), b2->GetInstanceId().c_str(),
+        FIELD_NAME(classB, "PropB"),
+        NESTED_CONTENT_FIELD_NAME(classB, classC),
+        classC->GetName().c_str(), classC->GetName().c_str(),
+        classC->GetId().ToString().c_str(), c21->GetInstanceId().c_str(),
+        FIELD_NAME(classC, "PropC"), FIELD_NAME(classC, "PropC"),
+        classC->GetName().c_str(), classC->GetName().c_str(),   
+        classC->GetId().ToString().c_str(), c22->GetInstanceId().c_str(),
+        FIELD_NAME(classC, "PropC"), FIELD_NAME(classC, "PropC"),
+        FIELD_NAME(classB, "PropB"),
+        NESTED_CONTENT_FIELD_NAME(classB, classC),
+        FIELD_NAME(classC, "PropC"), FIELD_NAME(classC, "PropC")
     ).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
@@ -2236,6 +3100,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedContentW
     rapidjson::Document expectedValues1;
     expectedValues1.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{
                 "ECClassId": "%s",
                 "ECInstanceId": "%s"
@@ -2268,6 +3137,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedContentW
     expectedValues2.Parse(Utf8PrintfString(R"({
         "%s": [],
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{
                 "ECClassId": "%s",
                 "ECInstanceId": "%s"
@@ -2408,6 +3282,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedContentW
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{
                 "ECClassId": "%s",
                 "ECInstanceId": "%s"
@@ -2431,6 +3310,133 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedContentW
         FIELD_NAME(classR, "PropR"), FIELD_NAME(classR, "PropR"), varies_string.c_str(),
         FIELD_NAME(classR, "PropR"),
         NESTED_CONTENT_FIELD_NAME(classB, classZ)
+    ).c_str());
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
+DEFINE_SCHEMA(LoadsXToManyRelatedContentForInstancesOfDifferentClasses, R"*(
+    <ECEntityClass typeName="A" />
+    <ECEntityClass typeName="B" />
+    <ECEntityClass typeName="R">
+        <ECProperty propertyName="PropR" typeName="int" />        
+    </ECEntityClass>
+    <ECRelationshipClass typeName="A_R" strength="referencing" strengthDirection="forward" modifier="Sealed">
+        <Source multiplicity="(0..1)" roleLabel="AR" polymorphic="True">
+            <Class class="A" />
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="RA" polymorphic="True">
+            <Class class="R" />
+        </Target>
+    </ECRelationshipClass>
+)*");
+TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsXToManyRelatedContentForInstancesOfDifferentClasses)
+    {
+    // set up data set
+    ECClassCP classA = GetClass("A");
+    ECClassCP classB = GetClass("B");
+    ECClassCP classR = GetClass("R");
+    ECRelationshipClassCP relAR = GetClass("A_R")->GetRelationshipClassCP();
+    
+    IECInstancePtr a = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA);
+    IECInstancePtr b = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB);
+    IECInstancePtr r1 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classR, [](IECInstanceR instance)
+        {
+        instance.SetValue("PropR", ECValue(123));
+        });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAR, *a, *r1);
+    IECInstancePtr r2 = RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classR, [](IECInstanceR instance)
+        {
+        instance.SetValue("PropR", ECValue(456));
+        });
+    RulesEngineTestHelpers::InsertRelationship(s_project->GetECDb(), *relAR, *a, *r2);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest());
+    m_locater->AddRuleSet(*rules);
+
+    auto rule = new ContentRule("", 1, false);
+    rule->AddSpecification(*new SelectedNodeInstancesSpecification());
+    rules->AddPresentationRule(*rule);
+
+    auto modifierA = new ContentModifier(classA->GetSchema().GetName(), classA->GetName());
+    modifierA->AddRelatedProperty(*new RelatedPropertiesSpecification(*new RelationshipPathSpecification(
+        {
+        new RelationshipStepSpecification(relAR->GetFullName(), RequiredRelationDirection_Forward),
+        }), { new PropertySpecification("*") }, RelationshipMeaning::RelatedInstance, true));
+    rules->AddPresentationRule(*modifierA);
+
+    // validate descriptor
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), "", 0, *KeySet::Create(bvector<IECInstancePtr>{ a, b }))));
+    ASSERT_TRUE(descriptor.IsValid());
+    ASSERT_EQ(1, descriptor->GetVisibleFields().size());
+
+    // request for content
+    ContentCPtr content = GetVerifiedContent(*descriptor);
+    ASSERT_TRUE(content.IsValid());
+
+    // validate content set
+    DataContainer<ContentSetItemCPtr> contentSet = content->GetContentSet();
+    ASSERT_EQ(2, contentSet.GetSize());
+
+    rapidjson::Document recordJson = contentSet.Get(0)->AsJson();
+    rapidjson::Document expectedValues;
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
+            "PrimaryKeys": [{
+                "ECClassId": "%s",
+                "ECInstanceId": "%s"
+            }],
+            "Values": {
+                "%s": 123
+            },
+            "DisplayValues": {
+                "%s": "123"
+            },
+            "MergedFieldNames": []
+        }, {
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
+            "PrimaryKeys": [{
+                "ECClassId": "%s",
+                "ECInstanceId": "%s"
+            }],
+            "Values": {
+                "%s": 456
+            },
+            "DisplayValues": {
+                "%s": "456"
+            },
+            "MergedFieldNames": []
+        }]
+    })",
+        NESTED_CONTENT_FIELD_NAME(classA, classR),
+        classR->GetId().ToString().c_str(), r1->GetInstanceId().c_str(),
+        FIELD_NAME(classR, "PropR"), FIELD_NAME(classR, "PropR"),
+        classR->GetId().ToString().c_str(), r2->GetInstanceId().c_str(),
+        FIELD_NAME(classR, "PropR"), FIELD_NAME(classR, "PropR")
+    ).c_str());
+    EXPECT_EQ(expectedValues, recordJson["Values"])
+        << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
+        << "Actual: \r\n" << BeRapidJsonUtilities::ToPrettyString(recordJson["Values"]);
+
+    recordJson = contentSet.Get(1)->AsJson();
+    expectedValues.Parse(Utf8PrintfString(R"({
+        "%s": []
+    })",
+        NESTED_CONTENT_FIELD_NAME(classA, classR)
     ).c_str());
     EXPECT_EQ(expectedValues, recordJson["Values"])
         << "Expected: \r\n" << BeRapidJsonUtilities::ToPrettyString(expectedValues) << "\r\n"
@@ -2516,6 +3522,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyRelated
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "my aspect"
@@ -2626,6 +3637,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsMultiStepPolymorphical
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": "element 1",
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "aspect"
@@ -2724,6 +3740,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyBackwar
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId":"%s", "ECInstanceId":"%s"}],
             "Values": {
                 "%s": "my element"
@@ -2894,6 +3915,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyRelated
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": "my element 1",
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "my aspect a"
@@ -2997,6 +4023,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyRelated
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": "my element 1",
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "my aspect a"
@@ -3106,6 +4137,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyRelated
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "my aspect a"
@@ -3217,6 +4253,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsMultiStepPolymorphical
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": "element 1",
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "aspect"
@@ -3319,6 +4360,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyRelated
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": "my element 1",
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "my aspect a"
@@ -3420,6 +4466,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyRelated
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": "my element 1",
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "my aspect a"
@@ -3540,6 +4591,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyRelated
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": "my element 1",
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "my aspect a"
@@ -3666,6 +4722,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsMultiStepPolymorphical
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": "element 1",
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "aspect"
@@ -3786,6 +4847,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyRelated
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": "my element 1",
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "my aspect a"
@@ -3929,6 +4995,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DEPRECATED_LoadsPolymorphic
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": "my element 2",
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "my aspect a"
@@ -3954,6 +5025,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DEPRECATED_LoadsPolymorphic
         "%s": "my element 3",
         "%s": [],
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "my aspect b"
@@ -3979,6 +5055,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DEPRECATED_LoadsPolymorphic
         "%s": [],
         "%s": [],
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "my aspect c"
@@ -4127,6 +5208,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyRelated
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": "my element 2",
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "my aspect a"
@@ -4152,6 +5238,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyRelated
         "%s": "my element 3",
         "%s": [],
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "my aspect b"
@@ -4177,6 +5268,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsPolymorphicallyRelated
         "%s": [],
         "%s": [],
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "my aspect c"
@@ -4297,9 +5393,19 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedPolymorphicallyR
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": "my model 1",
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
                         "%s": "my aspect a"
@@ -4432,9 +5538,19 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedPolymorphicallyR
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": "my model 1",
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
                         "%s": "my aspect a"
@@ -4594,6 +5710,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedPolymorphicallyR
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "One"
@@ -4615,6 +5736,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedPolymorphicallyR
     recordJson = contentSet.Get(1)->AsJson();
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "Two"
@@ -4763,6 +5889,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedPolymorphicallyR
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "One"
@@ -4784,6 +5915,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedPolymorphicallyR
     recordJson = contentSet.Get(1)->AsJson();
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "Two"
@@ -4932,6 +6068,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedPolymorphicallyR
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "One"
@@ -4953,6 +6094,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedPolymorphicallyR
     recordJson = contentSet.Get(1)->AsJson();
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "Two"
@@ -5099,7 +6245,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsActualSourceClassesOnRe
     EXPECT_TRUE(descriptor->GetVisibleFields()[fieldIndex]->IsNestedContentField());
     EXPECT_TRUE(descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->AsRelatedContentField());
     EXPECT_EQ(classB1, &descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->AsRelatedContentField()->GetContentClass());
-    EXPECT_TRUE(ContainsAll(descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->AsRelatedContentField()->GetActualSourceClasses(), bvector<ECClassCP>{ classA2 }, true));
+    EXPECT_TRUE(ContainsAll(*descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->AsRelatedContentField()->GetActualSourceClasses(), bvector<ECClassCP>{ classA2 }, true));
     EXPECT_EQ(1, descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields().size());
     EXPECT_STREQ("PropB", descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[0]->GetLabel().c_str());
 
@@ -5110,12 +6256,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SetsActualSourceClassesOnRe
     EXPECT_TRUE(descriptor->GetVisibleFields()[fieldIndex]->IsNestedContentField());
     EXPECT_TRUE(descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->AsRelatedContentField());
     EXPECT_EQ(classB2, &descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->AsRelatedContentField()->GetContentClass());
-    EXPECT_TRUE(ContainsAll(descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->AsRelatedContentField()->GetActualSourceClasses(), bvector<ECClassCP>{ classA3, classA4 }, true));
+    EXPECT_TRUE(ContainsAll(*descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->AsRelatedContentField()->GetActualSourceClasses(), bvector<ECClassCP>{ classA3, classA4 }, true));
     EXPECT_EQ(2, descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields().size());
     EXPECT_STREQ("PropB", descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[0]->GetLabel().c_str());
     EXPECT_TRUE(descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[1]->IsNestedContentField());
     EXPECT_TRUE(descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[1]->AsNestedContentField()->AsRelatedContentField());
-    EXPECT_TRUE(ContainsAll(descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[1]->AsNestedContentField()->AsRelatedContentField()->GetActualSourceClasses(), bvector<ECClassCP>{ classA3 }, true));
     EXPECT_EQ(1, descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[1]->AsNestedContentField()->GetFields().size());
     EXPECT_STREQ("PropC", descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[1]->AsNestedContentField()->GetFields()[0]->GetLabel().c_str());
 
@@ -5211,13 +6356,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesValidDescriptorWhenD
     EXPECT_TRUE(descriptor->GetVisibleFields()[fieldIndex]->IsNestedContentField());
     EXPECT_TRUE(descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->AsRelatedContentField());
     EXPECT_EQ(classT, &descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->AsRelatedContentField()->GetContentClass());
-    EXPECT_TRUE(ContainsAll(descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->AsRelatedContentField()->GetActualSourceClasses(), bvector<ECClassCP>{ classB, classC }, true));
+    EXPECT_TRUE(ContainsAll(*descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->AsRelatedContentField()->GetActualSourceClasses(), bvector<ECClassCP>{ classB, classC }, true));
     EXPECT_EQ(2, descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields().size());
     EXPECT_STREQ("PropT", descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[0]->GetLabel().c_str());
     EXPECT_TRUE(descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[1]->IsNestedContentField());
     EXPECT_TRUE(descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[1]->AsNestedContentField()->AsRelatedContentField());
     EXPECT_EQ(classS, &descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[1]->AsNestedContentField()->AsRelatedContentField()->GetContentClass());
-    EXPECT_TRUE(ContainsAll(descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[1]->AsNestedContentField()->AsRelatedContentField()->GetActualSourceClasses(), bvector<ECClassCP>{ classB, classC }, true));
     EXPECT_EQ(1, descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[1]->AsNestedContentField()->GetFields().size());
     EXPECT_STREQ("PropS", descriptor->GetVisibleFields()[fieldIndex]->AsNestedContentField()->GetFields()[1]->AsNestedContentField()->GetFields()[0]->GetLabel().c_str());
     }
@@ -5341,9 +6485,19 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedPolymorphicallyR
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": "my category 1",
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
                         "%s": "my aspect a"
@@ -5520,9 +6674,19 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DEPRECATED_LoadsNestedPolym
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": "my model 2",
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
                         "%s": "my aspect a"
@@ -5564,10 +6728,20 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DEPRECATED_LoadsNestedPolym
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": "my model 3",
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": [],
                 "%s": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
                         "%s": "my aspect b"
@@ -5609,11 +6783,21 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, DEPRECATED_LoadsNestedPolym
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": "my model 4",
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": [],
                 "%s": [],
                 "%s": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
                         "%s": "my aspect c"
@@ -5799,6 +6983,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedPolymorphicallyR
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": "my model 2",
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "my aspect a"
@@ -5826,6 +7015,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedPolymorphicallyR
         "%s": "my model 3",
         "%s": [],
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "my aspect b"
@@ -5853,6 +7047,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedPolymorphicallyR
         "%s": [],
         "%s": [],
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "my aspect c"
@@ -5957,6 +7156,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelatedPropertiesForMu
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [
                 {
                 "ECClassId": "%s",
@@ -6082,6 +7286,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelatedPropertiesForMu
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [
                 {
                 "ECClassId": "%s",
@@ -6196,6 +7405,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelatedPropertiesWhenU
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{
                 "ECClassId": "%s",
                 "ECInstanceId": "%s"
@@ -6348,6 +7562,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsSameClassRelatedProper
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [
                 {
                 "ECClassId": "%s",
@@ -6521,6 +7740,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedRelatedPropertie
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [
                 {
                 "ECClassId": "%s",
@@ -6528,6 +7752,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedRelatedPropertie
                 }],
             "Values": {
                 "%s": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [
                         {
                         "ECClassId": "%s",
@@ -6571,6 +7800,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedRelatedPropertie
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [],
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [
                 {
                 "ECClassId": "%s",
@@ -6578,6 +7812,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsNestedRelatedPropertie
                 }],
             "Values": {
                 "%s": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [
                         {
                         "ECClassId": "%s",
@@ -6792,6 +8031,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, HandlesContentWithPolymorph
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [
                 {
                 "ECClassId": "%s",
@@ -7065,6 +8309,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, AppendsTheSameRelatedConten
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "a",
@@ -7951,6 +9200,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PicksUpOnlyPropertiesOfRela
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{
                 "ECClassId": "%s",
                 "ECInstanceId": "%s"
@@ -7963,6 +9217,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PicksUpOnlyPropertiesOfRela
                 },
             "MergedFieldNames": []
             }, {
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{
                 "ECClassId": "%s",
                 "ECInstanceId": "%s"
@@ -8072,6 +9331,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PicksUpOnlyPropertiesOfRela
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{
                 "ECClassId": "%s",
                 "ECInstanceId": "%s"
@@ -8079,6 +9343,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, PicksUpOnlyPropertiesOfRela
             "Values": {
                 "%s": 222,
                 "%s": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{
                         "ECClassId": "%s",
                         "ECInstanceId": "%s"
@@ -8183,6 +9452,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelatedPropertiesAndRe
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": 4
@@ -8193,6 +9467,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelatedPropertiesAndRe
             "MergedFieldNames": []
             }],
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": 2
@@ -8274,6 +9553,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsOnlyRelationshipProper
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": 4
@@ -8388,6 +9672,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelationshipProperties
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": 4
@@ -8398,9 +9687,19 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelationshipProperties
             "MergedFieldNames": []
             }],
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
                         "%s": 5
@@ -8411,9 +9710,19 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelationshipProperties
                     "MergedFieldNames": []
                     }],
                 "%s": [{
+                    "DisplayLabel": {
+                        "DisplayValue": "@Presentation:label.notSpecified@",
+                        "TypeName": "string",
+                        "RawValue": "@Presentation:label.notSpecified@"
+                    },
                     "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                     "Values": {
                         "%s": [{
+                            "DisplayLabel": {
+                                "DisplayValue": "@Presentation:label.notSpecified@",
+                                "TypeName": "string",
+                                "RawValue": "@Presentation:label.notSpecified@"
+                            },
                             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
                             "Values": {
                                 "%s": 6
@@ -8536,6 +9845,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelationshipProperties
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": 4
@@ -8545,6 +9859,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelationshipProperties
                 },
             "MergedFieldNames": []
             },{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": 5
@@ -8661,6 +9980,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelationshipProperties
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": 2
@@ -8682,6 +10006,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelationshipProperties
     recordJson = contentSet.Get(1)->AsJson();
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": 4
@@ -8796,6 +10125,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelationshipProperties
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": 2
@@ -8805,6 +10139,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelationshipProperties
                 },
             "MergedFieldNames": []
             },{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": 4
@@ -8910,6 +10249,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelationshipProperties
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": 123
@@ -8920,6 +10264,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsRelationshipProperties
             "MergedFieldNames": []
             }],
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": 456
@@ -9007,6 +10356,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SortsRelationshipProperties
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": 1
@@ -9016,6 +10370,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SortsRelationshipProperties
                 },
             "MergedFieldNames": []
             },{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": 2
@@ -9025,6 +10384,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, SortsRelationshipProperties
                 },
             "MergedFieldNames": []
             },{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": 3
@@ -9716,6 +11080,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesValuesForRelatedProp
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": "a",
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "b"
@@ -9726,6 +11095,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesValuesForRelatedProp
             "MergedFieldNames": []
             }],
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "c",
@@ -9823,7 +11197,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesContentForDifferentR
     auto keys = KeySet::Create(bvector<IECInstancePtr>{ a1, a2 });
 
     // validate descriptor
-    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(), 
+    ContentDescriptorCPtr descriptor = GetValidatedResponse(m_manager->GetContentDescriptor(AsyncContentDescriptorRequestParams::Create(s_project->GetECDb(), rules->GetRuleSetId(), RulesetVariables(),
         "", 0, *keys)));
     ASSERT_TRUE(descriptor.IsValid());
 
@@ -9838,6 +11212,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesContentForDifferentR
     rapidjson::Document expectedValues;
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "b1-1",
@@ -9864,6 +11243,11 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, CreatesContentForDifferentR
     expectedValues.Parse(Utf8PrintfString(R"({
         "%s": [],
         "%s": [{
+            "DisplayLabel": {
+                "DisplayValue": "@Presentation:label.notSpecified@",
+                "TypeName": "string",
+                "RawValue": "@Presentation:label.notSpecified@"
+            },
             "PrimaryKeys": [{"ECClassId": "%s", "ECInstanceId": "%s"}],
             "Values": {
                 "%s": "b2-1",

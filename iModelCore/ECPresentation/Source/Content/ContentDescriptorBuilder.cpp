@@ -7,6 +7,7 @@
 #include <ECPresentation/Rules/SpecificationVisitor.h>
 #include "ContentQueryBuilder.h"
 #include "PropertyInfoStore.h"
+#include "../Shared/ValueHelpers.h"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -125,6 +126,20 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
+    std::shared_ptr<ContentDescriptor::Category> ShareOrCreateCategory(ContentDescriptor::Category const& category, std::shared_ptr<ContentDescriptor::Category> parentCategory)
+        {
+        if (auto shared = GetSharedCategory(category.GetName().c_str(), parentCategory.get()))
+            return shared;
+
+        auto newCategory = std::make_shared<ContentDescriptor::Category>(category);
+        newCategory->SetParentCategory(parentCategory);
+        m_context.GetAllCategories().Insert(std::make_pair(newCategory->GetName(), newCategory->GetParentCategory()), newCategory);
+        return newCategory;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
     std::shared_ptr<ContentDescriptor::Category> PrepareCategoryForReturn(CategoryOverrideInfo const& overrideInfo)
         {
         std::shared_ptr<ContentDescriptor::Category> parentCategory = nullptr;
@@ -137,6 +152,7 @@ private:
                 parentCategory = GetRootCategory();
                 continue;
                 }
+
             if (categoryRef->IsDefaultParentCategoryRef())
                 {
                 DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Content, !parentCategory, Utf8PrintfString("Detected default parent category reference in categories "
@@ -144,18 +160,28 @@ private:
                 parentCategory = GetParentCategory(true);
                 continue;
                 }
-
-            auto const& category = categoryRef->AsConcreteCategoryRef()->GetCategory();
-            if (auto shared = GetSharedCategory(category.GetName().c_str(), parentCategory.get()))
+            
+            if (auto schemaCategoryRef = categoryRef->AsSchemaCategoryRef())
                 {
-                parentCategory = shared;
+                auto propertyCategory = m_context.GetDescriptorBuilderContext().GetSchemaHelper().GetECPropertyCategory(schemaCategoryRef->GetCategoryName().c_str());
+                if (!propertyCategory)
+                    {
+                    DIAGNOSTICS_LOG(DiagnosticsCategory::Content, LOG_TRACE, LOG_ERROR, Utf8PrintfString("Schema-based property category \"%s\" is referenced in presentation rules, but is not found in schema.", schemaCategoryRef->GetCategoryName().c_str()));
+                    continue;
+                    }
+                auto category = m_context.GetPropertyCategories().CreatePropertyCategory(*propertyCategory);
+                parentCategory = ShareOrCreateCategory(*category, parentCategory ? parentCategory : GetParentCategory(true));
                 continue;
                 }
 
-            auto newCategory = std::make_shared<ContentDescriptor::Category>(category);
-            newCategory->SetParentCategory(parentCategory);
-            m_context.GetAllCategories().Insert(std::make_pair(newCategory->GetName(), newCategory->GetParentCategory()), newCategory);
-            parentCategory = newCategory;
+            if (auto concreteCategoryRef = categoryRef->AsConcreteCategoryRef())
+                {
+                auto const& category = concreteCategoryRef->GetCategory();
+                parentCategory = ShareOrCreateCategory(category, parentCategory);
+                continue;
+                }
+
+            DIAGNOSTICS_ASSERT_SOFT(DiagnosticsCategory::Content, false, "Unhandled category ref");
             }
         return parentCategory;
         }
@@ -345,13 +371,38 @@ protected:
     ContentDescriptor::CalculatedPropertyField* CreateCalculatedPropertyField(ECClassCP ecClass, Utf8StringCR name, CalculatedPropertiesSpecificationCR spec,
         RelatedClassPathCR pathFromSelectToPropertyClass, RelationshipMeaning relationshipMeaning)
         {
+        PrimitiveType primitiveType;
+        if (!spec.GetType().empty())
+            {
+            if (BentleyStatus::SUCCESS != ValueHelpers::ParsePrimitiveType(primitiveType, spec.GetType()))
+                DIAGNOSTICS_HANDLE_FAILURE(DiagnosticsCategory::Content, "Provided type is not valid primitive type for calculated fields.");
+            }
+        else
+            primitiveType = PRIMITIVETYPE_String;
+
         ContentDescriptor::CalculatedPropertyField* field = new ContentDescriptor::CalculatedPropertyField(m_categoriesSupplier.GetCalculatedFieldCategory(ecClass, spec, pathFromSelectToPropertyClass, relationshipMeaning),
-            spec.GetLabel(), name, spec.GetValue(), ecClass, spec.GetPriority());
+            spec.GetLabel(), name, spec.GetValue(), primitiveType, ecClass, spec.GetPriority());
 
         if (nullptr != spec.GetRenderer())
             field->SetRenderer(ContentFieldRenderer::FromSpec(*spec.GetRenderer()));
         if (nullptr != spec.GetEditor())
             field->SetEditor(ContentFieldEditor::FromSpec(*spec.GetEditor()));
+
+        if (spec.GetExtendedDataMap().size() == 0)
+            return field;
+
+        ECExpressionContextsProvider::ContextParametersBase params(m_context.GetConnection(), m_context.GetRulesetVariables(), m_context.GetUsedVariablesListener());
+        ExpressionContextPtr expressionContext = ECExpressionContextsProvider::GetRulesEngineRootContext(params);
+
+        ECExpressionsCache noCache;
+        for (auto const& entry : spec.GetExtendedDataMap())
+            {
+            Utf8StringCR key = entry.first;
+            Utf8StringCR expression = entry.second;
+            ECValue value;
+            if (ECExpressionEvaluationStatus::Success == ECExpressionsHelper(noCache).EvaluateECExpression(value, expression, *expressionContext))
+                field->AddExtendedData(key.c_str(), value);
+            }
         return field;
         }
 
@@ -840,6 +891,17 @@ private:
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod
     +---------------+---------------+---------------+---------------+---------------+------*/
+    static void AddActualSourceClasses(ContentDescriptor::RelatedContentField& field, std::unordered_set<ECClassCP> const& sourceClasses)
+        {
+        if (!field.GetActualSourceClasses())
+            field.SetActualSourceClasses(std::make_unique<std::unordered_set<ECClassCP>>(sourceClasses));
+        else
+            ContainerHelpers::Push(*field.GetActualSourceClasses(), sourceClasses);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
     struct MergeWithExistingRelatedContentFieldResult
         {
         ContentDescriptor::RelatedContentField* field;
@@ -888,7 +950,7 @@ private:
 
                 // if m_pathFromSelectToPropertyClass starts with existing nested content field path, this field should be nested in existing field
                 DIAGNOSTICS_DEV_LOG(DiagnosticsCategory::Content, LOG_TRACE, "Found a related content field with similar start - merging");
-                ContainerHelpers::Push(existingRelatedContentField->GetActualSourceClasses(), sourceClasses);
+                AddActualSourceClasses(*existingRelatedContentField, sourceClasses);
                 RelatedClassPath prevPath = path;
                 path = GetPathDifference(path, existingRelatedContentField->GetPathFromSelectToContentClass());
                 if (path.empty())
@@ -934,7 +996,7 @@ private:
                     RelatedClassPath prevFieldPath = existingRelatedContentField->GetPathFromSelectToContentClass();
                     unifiedPath.SetTargetsCount(GetMaxTargetsCount(existingRelatedContentField->GetPathFromSelectToContentClass().GetTargetsCount(), path.GetTargetsCount()));
                     existingRelatedContentField->SetPathFromSelectToContentClass(unifiedPath);
-                    ContainerHelpers::Push(existingRelatedContentField->GetActualSourceClasses(), sourceClasses);
+                    AddActualSourceClasses(*existingRelatedContentField, sourceClasses);
                     result.field = existingRelatedContentField;
                     result.pathReplacement = std::make_unique<bpair<RelatedClassPath, RelatedClassPath>>(prevFieldPath, unifiedPath);
                     break;
@@ -1151,8 +1213,11 @@ public:
             ContentDescriptor::Property::DEFAULT_PRIORITY, actualPropertyClass.IsRelationshipClass());
 
         relatedContentField->SetSpecificationIdentifier(relatedPropertySpecsStack.back()->GetHash());
-        relatedContentField->SetActualSourceClasses(actualSourceClasses);
         relatedContentField->SetRelationshipMeaning(relatedPropertySpecsStack.back()->GetRelationshipMeaning());
+
+        // only set actual source classes if the field is not nested - they're pointing to nesting field's source otherwise
+        if (!mergeResult.nestingField)
+            relatedContentField->SetActualSourceClasses(std::make_unique<std::unordered_set<ECClassCP>>(actualSourceClasses));
 
         if (fieldAttributes.GetRenderer())
             relatedContentField->SetRenderer(new ContentFieldRenderer(*fieldAttributes.GetRenderer()));

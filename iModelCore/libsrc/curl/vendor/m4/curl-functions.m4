@@ -46,7 +46,7 @@ curl_includes_arpa_inet="\
 #ifdef HAVE_ARPA_INET_H
 #  include <arpa/inet.h>
 #endif
-#ifdef HAVE_WINSOCK2_H
+#ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #endif
@@ -108,35 +108,6 @@ curl_includes_ifaddrs="\
 ])
 
 
-dnl CURL_INCLUDES_INTTYPES
-dnl -------------------------------------------------
-dnl Set up variable with list of headers that must be
-dnl included when inttypes.h is to be included.
-
-AC_DEFUN([CURL_INCLUDES_INTTYPES], [
-curl_includes_inttypes="\
-/* includes start */
-#ifdef HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#endif
-#ifdef HAVE_STDINT_H
-# include <stdint.h>
-#endif
-#ifdef HAVE_INTTYPES_H
-# include <inttypes.h>
-#endif
-/* includes end */"
-  case $host_os in
-    irix*)
-      ac_cv_header_stdint_h="no"
-      ;;
-  esac
-  AC_CHECK_HEADERS(
-    sys/types.h stdint.h inttypes.h,
-    [], [], [$curl_includes_inttypes])
-])
-
-
 dnl CURL_INCLUDES_LIBGEN
 dnl -------------------------------------------------
 dnl Set up variable with list of headers that must be
@@ -179,30 +150,6 @@ curl_includes_netdb="\
 ])
 
 
-dnl CURL_INCLUDES_POLL
-dnl -------------------------------------------------
-dnl Set up variable with list of headers that must be
-dnl included when poll.h is to be included.
-
-AC_DEFUN([CURL_INCLUDES_POLL], [
-curl_includes_poll="\
-/* includes start */
-#ifdef HAVE_SYS_TYPES_H
-#  include <sys/types.h>
-#endif
-#ifdef HAVE_POLL_H
-#  include <poll.h>
-#endif
-#ifdef HAVE_SYS_POLL_H
-#  include <sys/poll.h>
-#endif
-/* includes end */"
-  AC_CHECK_HEADERS(
-    sys/types.h poll.h sys/poll.h,
-    [], [], [$curl_includes_poll])
-])
-
-
 dnl CURL_INCLUDES_SETJMP
 dnl -------------------------------------------------
 dnl Set up variable with list of headers that must be
@@ -238,27 +185,6 @@ curl_includes_signal="\
   AC_CHECK_HEADERS(
     sys/types.h,
     [], [], [$curl_includes_signal])
-])
-
-
-dnl CURL_INCLUDES_SOCKET
-dnl -------------------------------------------------
-dnl Set up variable with list of headers that must be
-dnl included when socket.h is to be included.
-
-AC_DEFUN([CURL_INCLUDES_SOCKET], [
-curl_includes_socket="\
-/* includes start */
-#ifdef HAVE_SYS_TYPES_H
-#  include <sys/types.h>
-#endif
-#ifdef HAVE_SOCKET_H
-#  include <socket.h>
-#endif
-/* includes end */"
-  AC_CHECK_HEADERS(
-    sys/types.h socket.h,
-    [], [], [$curl_includes_socket])
 ])
 
 
@@ -443,18 +369,14 @@ dnl included when winsock2.h is to be included.
 AC_DEFUN([CURL_INCLUDES_WINSOCK2], [
 curl_includes_winsock2="\
 /* includes start */
-#ifdef HAVE_WINDOWS_H
+#ifdef _WIN32
 #  ifndef WIN32_LEAN_AND_MEAN
 #    define WIN32_LEAN_AND_MEAN
 #  endif
-#  include <windows.h>
-#  ifdef HAVE_WINSOCK2_H
-#    include <winsock2.h>
-#  endif
+#  include <winsock2.h>
 #endif
 /* includes end */"
-  CURL_CHECK_HEADER_WINDOWS
-  CURL_CHECK_HEADER_WINSOCK2
+  CURL_CHECK_NATIVE_WINDOWS
 ])
 
 
@@ -466,22 +388,15 @@ dnl included when ws2tcpip.h is to be included.
 AC_DEFUN([CURL_INCLUDES_WS2TCPIP], [
 curl_includes_ws2tcpip="\
 /* includes start */
-#ifdef HAVE_WINDOWS_H
+#ifdef _WIN32
 #  ifndef WIN32_LEAN_AND_MEAN
 #    define WIN32_LEAN_AND_MEAN
 #  endif
-#  include <windows.h>
-#  ifdef HAVE_WINSOCK2_H
-#    include <winsock2.h>
-#    ifdef HAVE_WS2TCPIP_H
-#       include <ws2tcpip.h>
-#    endif
-#  endif
+#  include <winsock2.h>
+#  include <ws2tcpip.h>
 #endif
 /* includes end */"
-  CURL_CHECK_HEADER_WINDOWS
-  CURL_CHECK_HEADER_WINSOCK2
-  CURL_CHECK_HEADER_WS2TCPIP
+  CURL_CHECK_NATIVE_WINDOWS
 ])
 
 
@@ -539,7 +454,7 @@ dnl defines function calling convention.
 AC_DEFUN([CURL_PREPROCESS_CALLCONV], [
 curl_preprocess_callconv="\
 /* preprocess start */
-#ifdef HAVE_WINDOWS_H
+#ifdef _WIN32
 #  define FUNCALLCONV __stdcall
 #else
 #  define FUNCALLCONV
@@ -734,7 +649,6 @@ dnl HAVE_CLOSESOCKET will be defined.
 
 AC_DEFUN([CURL_CHECK_FUNC_CLOSESOCKET], [
   AC_REQUIRE([CURL_INCLUDES_WINSOCK2])dnl
-  AC_REQUIRE([CURL_INCLUDES_SOCKET])dnl
   #
   tst_links_closesocket="unknown"
   tst_proto_closesocket="unknown"
@@ -745,7 +659,6 @@ AC_DEFUN([CURL_CHECK_FUNC_CLOSESOCKET], [
   AC_LINK_IFELSE([
     AC_LANG_PROGRAM([[
       $curl_includes_winsock2
-      $curl_includes_socket
     ]],[[
       if(0 != closesocket(0))
         return 1;
@@ -762,7 +675,6 @@ AC_DEFUN([CURL_CHECK_FUNC_CLOSESOCKET], [
     AC_MSG_CHECKING([if closesocket is prototyped])
     AC_EGREP_CPP([closesocket],[
       $curl_includes_winsock2
-      $curl_includes_socket
     ],[
       AC_MSG_RESULT([yes])
       tst_proto_closesocket="yes"
@@ -777,7 +689,6 @@ AC_DEFUN([CURL_CHECK_FUNC_CLOSESOCKET], [
     AC_COMPILE_IFELSE([
       AC_LANG_PROGRAM([[
         $curl_includes_winsock2
-        $curl_includes_socket
       ]],[[
         if(0 != closesocket(0))
           return 1;
@@ -1059,249 +970,6 @@ AC_DEFUN([CURL_CHECK_FUNC_FCNTL_O_NONBLOCK], [
   fi
 ])
 
-dnl CURL_CHECK_FUNC_FGETXATTR
-dnl -------------------------------------------------
-dnl Verify if fgetxattr is available, prototyped, and
-dnl can be compiled. If all of these are true, and
-dnl usage has not been previously disallowed with
-dnl shell variable curl_disallow_fgetxattr, then
-dnl HAVE_FGETXATTR will be defined.
-
-AC_DEFUN([CURL_CHECK_FUNC_FGETXATTR], [
-  AC_REQUIRE([CURL_INCLUDES_SYS_XATTR])dnl
-  #
-  tst_links_fgetxattr="unknown"
-  tst_proto_fgetxattr="unknown"
-  tst_compi_fgetxattr="unknown"
-  tst_allow_fgetxattr="unknown"
-  tst_nargs_fgetxattr="unknown"
-  #
-  AC_MSG_CHECKING([if fgetxattr can be linked])
-  AC_LINK_IFELSE([
-    AC_LANG_FUNC_LINK_TRY([fgetxattr])
-  ],[
-    AC_MSG_RESULT([yes])
-    tst_links_fgetxattr="yes"
-  ],[
-    AC_MSG_RESULT([no])
-    tst_links_fgetxattr="no"
-  ])
-  #
-  if test "$tst_links_fgetxattr" = "yes"; then
-    AC_MSG_CHECKING([if fgetxattr is prototyped])
-    AC_EGREP_CPP([fgetxattr],[
-      $curl_includes_sys_xattr
-    ],[
-      AC_MSG_RESULT([yes])
-      tst_proto_fgetxattr="yes"
-    ],[
-      AC_MSG_RESULT([no])
-      tst_proto_fgetxattr="no"
-    ])
-  fi
-  #
-  if test "$tst_proto_fgetxattr" = "yes"; then
-    if test "$tst_nargs_fgetxattr" = "unknown"; then
-      AC_MSG_CHECKING([if fgetxattr takes 4 args.])
-      AC_COMPILE_IFELSE([
-        AC_LANG_PROGRAM([[
-          $curl_includes_sys_xattr
-        ]],[[
-          if(0 != fgetxattr(0, 0, 0, 0))
-            return 1;
-        ]])
-      ],[
-        AC_MSG_RESULT([yes])
-        tst_compi_fgetxattr="yes"
-        tst_nargs_fgetxattr="4"
-      ],[
-        AC_MSG_RESULT([no])
-        tst_compi_fgetxattr="no"
-      ])
-    fi
-    if test "$tst_nargs_fgetxattr" = "unknown"; then
-      AC_MSG_CHECKING([if fgetxattr takes 6 args.])
-      AC_COMPILE_IFELSE([
-        AC_LANG_PROGRAM([[
-          $curl_includes_sys_xattr
-        ]],[[
-          if(0 != fgetxattr(0, 0, 0, 0, 0, 0))
-            return 1;
-        ]])
-      ],[
-        AC_MSG_RESULT([yes])
-        tst_compi_fgetxattr="yes"
-        tst_nargs_fgetxattr="6"
-      ],[
-        AC_MSG_RESULT([no])
-        tst_compi_fgetxattr="no"
-      ])
-    fi
-    AC_MSG_CHECKING([if fgetxattr is compilable])
-    if test "$tst_compi_fgetxattr" = "yes"; then
-      AC_MSG_RESULT([yes])
-    else
-      AC_MSG_RESULT([no])
-    fi
-  fi
-  #
-  if test "$tst_compi_fgetxattr" = "yes"; then
-    AC_MSG_CHECKING([if fgetxattr usage allowed])
-    if test "x$curl_disallow_fgetxattr" != "xyes"; then
-      AC_MSG_RESULT([yes])
-      tst_allow_fgetxattr="yes"
-    else
-      AC_MSG_RESULT([no])
-      tst_allow_fgetxattr="no"
-    fi
-  fi
-  #
-  AC_MSG_CHECKING([if fgetxattr might be used])
-  if test "$tst_links_fgetxattr" = "yes" &&
-     test "$tst_proto_fgetxattr" = "yes" &&
-     test "$tst_compi_fgetxattr" = "yes" &&
-     test "$tst_allow_fgetxattr" = "yes"; then
-    AC_MSG_RESULT([yes])
-    AC_DEFINE_UNQUOTED(HAVE_FGETXATTR, 1,
-      [Define to 1 if you have the fgetxattr function.])
-    dnl AC_DEFINE_UNQUOTED(FGETXATTR_ARGS, $tst_nargs_fgetxattr,
-    dnl   [Specifies the number of arguments to fgetxattr])
-    #
-    if test "$tst_nargs_fgetxattr" -eq "4"; then
-      AC_DEFINE(HAVE_FGETXATTR_4, 1, [fgetxattr() takes 4 args])
-    elif test "$tst_nargs_fgetxattr" -eq "6"; then
-      AC_DEFINE(HAVE_FGETXATTR_6, 1, [fgetxattr() takes 6 args])
-    fi
-    #
-    curl_cv_func_fgetxattr="yes"
-  else
-    AC_MSG_RESULT([no])
-    curl_cv_func_fgetxattr="no"
-  fi
-])
-
-
-dnl CURL_CHECK_FUNC_FLISTXATTR
-dnl -------------------------------------------------
-dnl Verify if flistxattr is available, prototyped, and
-dnl can be compiled. If all of these are true, and
-dnl usage has not been previously disallowed with
-dnl shell variable curl_disallow_flistxattr, then
-dnl HAVE_FLISTXATTR will be defined.
-
-AC_DEFUN([CURL_CHECK_FUNC_FLISTXATTR], [
-  AC_REQUIRE([CURL_INCLUDES_SYS_XATTR])dnl
-  #
-  tst_links_flistxattr="unknown"
-  tst_proto_flistxattr="unknown"
-  tst_compi_flistxattr="unknown"
-  tst_allow_flistxattr="unknown"
-  tst_nargs_flistxattr="unknown"
-  #
-  AC_MSG_CHECKING([if flistxattr can be linked])
-  AC_LINK_IFELSE([
-    AC_LANG_FUNC_LINK_TRY([flistxattr])
-  ],[
-    AC_MSG_RESULT([yes])
-    tst_links_flistxattr="yes"
-  ],[
-    AC_MSG_RESULT([no])
-    tst_links_flistxattr="no"
-  ])
-  #
-  if test "$tst_links_flistxattr" = "yes"; then
-    AC_MSG_CHECKING([if flistxattr is prototyped])
-    AC_EGREP_CPP([flistxattr],[
-      $curl_includes_sys_xattr
-    ],[
-      AC_MSG_RESULT([yes])
-      tst_proto_flistxattr="yes"
-    ],[
-      AC_MSG_RESULT([no])
-      tst_proto_flistxattr="no"
-    ])
-  fi
-  #
-  if test "$tst_proto_flistxattr" = "yes"; then
-    if test "$tst_nargs_flistxattr" = "unknown"; then
-      AC_MSG_CHECKING([if flistxattr takes 3 args.])
-      AC_COMPILE_IFELSE([
-        AC_LANG_PROGRAM([[
-          $curl_includes_sys_xattr
-        ]],[[
-          if(0 != flistxattr(0, 0, 0))
-            return 1;
-        ]])
-      ],[
-        AC_MSG_RESULT([yes])
-        tst_compi_flistxattr="yes"
-        tst_nargs_flistxattr="3"
-      ],[
-        AC_MSG_RESULT([no])
-        tst_compi_flistxattr="no"
-      ])
-    fi
-    if test "$tst_nargs_flistxattr" = "unknown"; then
-      AC_MSG_CHECKING([if flistxattr takes 4 args.])
-      AC_COMPILE_IFELSE([
-        AC_LANG_PROGRAM([[
-          $curl_includes_sys_xattr
-        ]],[[
-          if(0 != flistxattr(0, 0, 0, 0))
-            return 1;
-        ]])
-      ],[
-        AC_MSG_RESULT([yes])
-        tst_compi_flistxattr="yes"
-        tst_nargs_flistxattr="4"
-      ],[
-        AC_MSG_RESULT([no])
-        tst_compi_flistxattr="no"
-      ])
-    fi
-    AC_MSG_CHECKING([if flistxattr is compilable])
-    if test "$tst_compi_flistxattr" = "yes"; then
-      AC_MSG_RESULT([yes])
-    else
-      AC_MSG_RESULT([no])
-    fi
-  fi
-  #
-  if test "$tst_compi_flistxattr" = "yes"; then
-    AC_MSG_CHECKING([if flistxattr usage allowed])
-    if test "x$curl_disallow_flistxattr" != "xyes"; then
-      AC_MSG_RESULT([yes])
-      tst_allow_flistxattr="yes"
-    else
-      AC_MSG_RESULT([no])
-      tst_allow_flistxattr="no"
-    fi
-  fi
-  #
-  AC_MSG_CHECKING([if flistxattr might be used])
-  if test "$tst_links_flistxattr" = "yes" &&
-     test "$tst_proto_flistxattr" = "yes" &&
-     test "$tst_compi_flistxattr" = "yes" &&
-     test "$tst_allow_flistxattr" = "yes"; then
-    AC_MSG_RESULT([yes])
-    AC_DEFINE_UNQUOTED(HAVE_FLISTXATTR, 1,
-      [Define to 1 if you have the flistxattr function.])
-    dnl AC_DEFINE_UNQUOTED(FLISTXATTR_ARGS, $tst_nargs_flistxattr,
-    dnl   [Specifies the number of arguments to flistxattr])
-    #
-    if test "$tst_nargs_flistxattr" -eq "3"; then
-      AC_DEFINE(HAVE_FLISTXATTR_3, 1, [flistxattr() takes 3 args])
-    elif test "$tst_nargs_flistxattr" -eq "4"; then
-      AC_DEFINE(HAVE_FLISTXATTR_4, 1, [flistxattr() takes 4 args])
-    fi
-    #
-    curl_cv_func_flistxattr="yes"
-  else
-    AC_MSG_RESULT([no])
-    curl_cv_func_flistxattr="no"
-  fi
-])
-
 
 dnl CURL_CHECK_FUNC_FREEADDRINFO
 dnl -------------------------------------------------
@@ -1395,128 +1063,6 @@ AC_DEFUN([CURL_CHECK_FUNC_FREEADDRINFO], [
   else
     AC_MSG_RESULT([no])
     curl_cv_func_freeaddrinfo="no"
-  fi
-])
-
-
-dnl CURL_CHECK_FUNC_FREMOVEXATTR
-dnl -------------------------------------------------
-dnl Verify if fremovexattr is available, prototyped, and
-dnl can be compiled. If all of these are true, and
-dnl usage has not been previously disallowed with
-dnl shell variable curl_disallow_fremovexattr, then
-dnl HAVE_FREMOVEXATTR will be defined.
-
-AC_DEFUN([CURL_CHECK_FUNC_FREMOVEXATTR], [
-  AC_REQUIRE([CURL_INCLUDES_SYS_XATTR])dnl
-  #
-  tst_links_fremovexattr="unknown"
-  tst_proto_fremovexattr="unknown"
-  tst_compi_fremovexattr="unknown"
-  tst_allow_fremovexattr="unknown"
-  tst_nargs_fremovexattr="unknown"
-  #
-  AC_MSG_CHECKING([if fremovexattr can be linked])
-  AC_LINK_IFELSE([
-    AC_LANG_FUNC_LINK_TRY([fremovexattr])
-  ],[
-    AC_MSG_RESULT([yes])
-    tst_links_fremovexattr="yes"
-  ],[
-    AC_MSG_RESULT([no])
-    tst_links_fremovexattr="no"
-  ])
-  #
-  if test "$tst_links_fremovexattr" = "yes"; then
-    AC_MSG_CHECKING([if fremovexattr is prototyped])
-    AC_EGREP_CPP([fremovexattr],[
-      $curl_includes_sys_xattr
-    ],[
-      AC_MSG_RESULT([yes])
-      tst_proto_fremovexattr="yes"
-    ],[
-      AC_MSG_RESULT([no])
-      tst_proto_fremovexattr="no"
-    ])
-  fi
-  #
-  if test "$tst_proto_fremovexattr" = "yes"; then
-    if test "$tst_nargs_fremovexattr" = "unknown"; then
-      AC_MSG_CHECKING([if fremovexattr takes 2 args.])
-      AC_COMPILE_IFELSE([
-        AC_LANG_PROGRAM([[
-          $curl_includes_sys_xattr
-        ]],[[
-          if(0 != fremovexattr(0, 0))
-            return 1;
-        ]])
-      ],[
-        AC_MSG_RESULT([yes])
-        tst_compi_fremovexattr="yes"
-        tst_nargs_fremovexattr="2"
-      ],[
-        AC_MSG_RESULT([no])
-        tst_compi_fremovexattr="no"
-      ])
-    fi
-    if test "$tst_nargs_fremovexattr" = "unknown"; then
-      AC_MSG_CHECKING([if fremovexattr takes 3 args.])
-      AC_COMPILE_IFELSE([
-        AC_LANG_PROGRAM([[
-          $curl_includes_sys_xattr
-        ]],[[
-          if(0 != fremovexattr(0, 0, 0))
-            return 1;
-        ]])
-      ],[
-        AC_MSG_RESULT([yes])
-        tst_compi_fremovexattr="yes"
-        tst_nargs_fremovexattr="3"
-      ],[
-        AC_MSG_RESULT([no])
-        tst_compi_fremovexattr="no"
-      ])
-    fi
-    AC_MSG_CHECKING([if fremovexattr is compilable])
-    if test "$tst_compi_fremovexattr" = "yes"; then
-      AC_MSG_RESULT([yes])
-    else
-      AC_MSG_RESULT([no])
-    fi
-  fi
-  #
-  if test "$tst_compi_fremovexattr" = "yes"; then
-    AC_MSG_CHECKING([if fremovexattr usage allowed])
-    if test "x$curl_disallow_fremovexattr" != "xyes"; then
-      AC_MSG_RESULT([yes])
-      tst_allow_fremovexattr="yes"
-    else
-      AC_MSG_RESULT([no])
-      tst_allow_fremovexattr="no"
-    fi
-  fi
-  #
-  AC_MSG_CHECKING([if fremovexattr might be used])
-  if test "$tst_links_fremovexattr" = "yes" &&
-     test "$tst_proto_fremovexattr" = "yes" &&
-     test "$tst_compi_fremovexattr" = "yes" &&
-     test "$tst_allow_fremovexattr" = "yes"; then
-    AC_MSG_RESULT([yes])
-    AC_DEFINE_UNQUOTED(HAVE_FREMOVEXATTR, 1,
-      [Define to 1 if you have the fremovexattr function.])
-    dnl AC_DEFINE_UNQUOTED(FREMOVEXATTR_ARGS, $tst_nargs_fremovexattr,
-    dnl   [Specifies the number of arguments to fremovexattr])
-    #
-    if test "$tst_nargs_fremovexattr" -eq "2"; then
-      AC_DEFINE(HAVE_FREMOVEXATTR_2, 1, [fremovexattr() takes 2 args])
-    elif test "$tst_nargs_fremovexattr" -eq "3"; then
-      AC_DEFINE(HAVE_FREMOVEXATTR_3, 1, [fremovexattr() takes 3 args])
-    fi
-    #
-    curl_cv_func_fremovexattr="yes"
-  else
-    AC_MSG_RESULT([no])
-    curl_cv_func_fremovexattr="no"
   fi
 ])
 
@@ -1823,10 +1369,10 @@ AC_DEFUN([CURL_CHECK_FUNC_GETADDRINFO], [
         struct addrinfo *ai = 0;
         int error;
 
-        #ifdef HAVE_WINSOCK2_H
+        #ifdef _WIN32
         WSADATA wsa;
-        if (WSAStartup(MAKEWORD(2,2), &wsa))
-                exit(2);
+        if(WSAStartup(MAKEWORD(2, 2), &wsa))
+          exit(2);
         #endif
 
         memset(&hints, 0, sizeof(hints));
@@ -1878,37 +1424,38 @@ AC_DEFUN([CURL_CHECK_FUNC_GETADDRINFO], [
   #
   if test "$curl_cv_func_getaddrinfo" = "yes"; then
     AC_MSG_CHECKING([if getaddrinfo is threadsafe])
+    case $host in
+      *-apple-*)
+        dnl Darwin 6.0 and macOS 10.2.X and newer
+        tst_tsafe_getaddrinfo="yes"
+    esac
     case $host_os in
       aix[[1234]].* | aix5.[[01]].*)
-        dnl aix 5.1 and older
+        dnl AIX 5.1 and older
         tst_tsafe_getaddrinfo="no"
         ;;
       aix*)
-        dnl aix 5.2 and newer
+        dnl AIX 5.2 and newer
         tst_tsafe_getaddrinfo="yes"
         ;;
       darwin[[12345]].*)
-        dnl darwin 5.0 and mac os x 10.1.X and older
+        dnl Darwin 5.0 and macOS 10.1.X and older
         tst_tsafe_getaddrinfo="no"
         ;;
-      darwin*)
-        dnl darwin 6.0 and mac os x 10.2.X and newer
-        tst_tsafe_getaddrinfo="yes"
-        ;;
       freebsd[[1234]].* | freebsd5.[[1234]]*)
-        dnl freebsd 5.4 and older
+        dnl FreeBSD 5.4 and older
         tst_tsafe_getaddrinfo="no"
         ;;
       freebsd*)
-        dnl freebsd 5.5 and newer
+        dnl FreeBSD 5.5 and newer
         tst_tsafe_getaddrinfo="yes"
         ;;
       hpux[[123456789]].* | hpux10.* | hpux11.0* | hpux11.10*)
-        dnl hpux 11.10 and older
+        dnl HP-UX 11.10 and older
         tst_tsafe_getaddrinfo="no"
         ;;
       hpux*)
-        dnl hpux 11.11 and newer
+        dnl HP-UX 11.11 and newer
         tst_tsafe_getaddrinfo="yes"
         ;;
       midnightbsd*)
@@ -1916,19 +1463,19 @@ AC_DEFUN([CURL_CHECK_FUNC_GETADDRINFO], [
         tst_tsafe_getaddrinfo="yes"
         ;;
       netbsd[[123]].*)
-        dnl netbsd 3.X and older
+        dnl NetBSD 3.X and older
         tst_tsafe_getaddrinfo="no"
         ;;
       netbsd*)
-        dnl netbsd 4.X and newer
+        dnl NetBSD 4.X and newer
         tst_tsafe_getaddrinfo="yes"
         ;;
       *bsd*)
-        dnl All other bsd's
+        dnl All other BSD's
         tst_tsafe_getaddrinfo="no"
         ;;
       solaris2*)
-        dnl solaris which have it
+        dnl Solaris which have it
         tst_tsafe_getaddrinfo="yes"
         ;;
     esac
@@ -1937,52 +1484,7 @@ AC_DEFUN([CURL_CHECK_FUNC_GETADDRINFO], [
       tst_tsafe_getaddrinfo="yes"
     fi
     if test "$tst_tsafe_getaddrinfo" = "unknown"; then
-      CURL_CHECK_DEF_CC([h_errno], [
-        $curl_includes_sys_socket
-        $curl_includes_netdb
-        ], [silent])
-      if test "$curl_cv_have_def_h_errno" = "yes"; then
-        tst_h_errno_macro="yes"
-      else
-        tst_h_errno_macro="no"
-      fi
-      AC_COMPILE_IFELSE([
-        AC_LANG_PROGRAM([[
-          $curl_includes_sys_socket
-          $curl_includes_netdb
-        ]],[[
-          h_errno = 2;
-          if(0 != h_errno)
-            return 1;
-        ]])
-      ],[
-        tst_h_errno_modifiable_lvalue="yes"
-      ],[
-        tst_h_errno_modifiable_lvalue="no"
-      ])
-      AC_COMPILE_IFELSE([
-        AC_LANG_PROGRAM([[
-        ]],[[
-#if defined(_POSIX_C_SOURCE) && (_POSIX_C_SOURCE >= 200809L)
-          return 0;
-#elif defined(_XOPEN_SOURCE) && (_XOPEN_SOURCE >= 700)
-          return 0;
-#else
-          force compilation error
-#endif
-        ]])
-      ],[
-        tst_h_errno_sbs_issue_7="yes"
-      ],[
-        tst_h_errno_sbs_issue_7="no"
-      ])
-      if test "$tst_h_errno_macro" = "no" &&
-         test "$tst_h_errno_modifiable_lvalue" = "no" &&
-         test "$tst_h_errno_sbs_issue_7" = "no"; then
-        tst_tsafe_getaddrinfo="no"
-      else
-        tst_tsafe_getaddrinfo="yes"
-      fi
+      tst_tsafe_getaddrinfo="yes"
     fi
     AC_MSG_RESULT([$tst_tsafe_getaddrinfo])
     if test "$tst_tsafe_getaddrinfo" = "yes"; then
@@ -2562,101 +2064,6 @@ AC_DEFUN([CURL_CHECK_FUNC_GETSOCKNAME], [
   fi
 ])
 
-dnl CURL_CHECK_FUNC_IF_NAMETOINDEX
-dnl -------------------------------------------------
-dnl Verify if if_nametoindex is available, prototyped, and
-dnl can be compiled. If all of these are true, and
-dnl usage has not been previously disallowed with
-dnl shell variable curl_disallow_if_nametoindex, then
-dnl HAVE_IF_NAMETOINDEX will be defined.
-
-AC_DEFUN([CURL_CHECK_FUNC_IF_NAMETOINDEX], [
-  AC_REQUIRE([CURL_INCLUDES_WINSOCK2])dnl
-  AC_REQUIRE([CURL_INCLUDES_NETIF])dnl
-  AC_REQUIRE([CURL_PREPROCESS_CALLCONV])dnl
-  #
-  tst_links_if_nametoindex="unknown"
-  tst_proto_if_nametoindex="unknown"
-  tst_compi_if_nametoindex="unknown"
-  tst_allow_if_nametoindex="unknown"
-  #
-  AC_MSG_CHECKING([if if_nametoindex can be linked])
-  AC_LINK_IFELSE([
-    AC_LANG_PROGRAM([[
-      $curl_includes_winsock2
-      $curl_includes_bsdsocket
-      #include <net/if.h>
-    ]],[[
-      if(0 != if_nametoindex(""))
-        return 1;
-    ]])
-  ],[
-    AC_MSG_RESULT([yes])
-    tst_links_if_nametoindex="yes"
-  ],[
-    AC_MSG_RESULT([no])
-    tst_links_if_nametoindex="no"
-  ])
-  #
-  if test "$tst_links_if_nametoindex" = "yes"; then
-    AC_MSG_CHECKING([if if_nametoindex is prototyped])
-    AC_EGREP_CPP([if_nametoindex],[
-      $curl_includes_winsock2
-      $curl_includes_netif
-    ],[
-      AC_MSG_RESULT([yes])
-      tst_proto_if_nametoindex="yes"
-    ],[
-      AC_MSG_RESULT([no])
-      tst_proto_if_nametoindex="no"
-    ])
-  fi
-  #
-  if test "$tst_proto_if_nametoindex" = "yes"; then
-    AC_MSG_CHECKING([if if_nametoindex is compilable])
-    AC_COMPILE_IFELSE([
-      AC_LANG_PROGRAM([[
-        $curl_includes_winsock2
-        $curl_includes_netif
-      ]],[[
-        if(0 != if_nametoindex(""))
-          return 1;
-      ]])
-    ],[
-      AC_MSG_RESULT([yes])
-      tst_compi_if_nametoindex="yes"
-    ],[
-      AC_MSG_RESULT([no])
-      tst_compi_if_nametoindex="no"
-    ])
-  fi
-  #
-  if test "$tst_compi_if_nametoindex" = "yes"; then
-    AC_MSG_CHECKING([if if_nametoindex usage allowed])
-    if test "x$curl_disallow_if_nametoindex" != "xyes"; then
-      AC_MSG_RESULT([yes])
-      tst_allow_if_nametoindex="yes"
-    else
-      AC_MSG_RESULT([no])
-      tst_allow_if_nametoindex="no"
-    fi
-  fi
-  #
-  AC_MSG_CHECKING([if if_nametoindex might be used])
-  if test "$tst_links_if_nametoindex" = "yes" &&
-     test "$tst_proto_if_nametoindex" = "yes" &&
-     test "$tst_compi_if_nametoindex" = "yes" &&
-     test "$tst_allow_if_nametoindex" = "yes"; then
-    AC_MSG_RESULT([yes])
-    AC_DEFINE_UNQUOTED(HAVE_IF_NAMETOINDEX, 1,
-      [Define to 1 if you have the if_nametoindex function.])
-    curl_cv_func_if_nametoindex="yes"
-  else
-    AC_MSG_RESULT([no])
-    curl_cv_func_if_nametoindex="no"
-  fi
-])
-
 
 dnl CURL_CHECK_FUNC_GETIFADDRS
 dnl -------------------------------------------------
@@ -2770,128 +2177,6 @@ AC_DEFUN([CURL_CHECK_FUNC_GETIFADDRS], [
   else
     AC_MSG_RESULT([no])
     curl_cv_func_getifaddrs="no"
-  fi
-])
-
-
-dnl CURL_CHECK_FUNC_GETXATTR
-dnl -------------------------------------------------
-dnl Verify if getxattr is available, prototyped, and
-dnl can be compiled. If all of these are true, and
-dnl usage has not been previously disallowed with
-dnl shell variable curl_disallow_getxattr, then
-dnl HAVE_GETXATTR will be defined.
-
-AC_DEFUN([CURL_CHECK_FUNC_GETXATTR], [
-  AC_REQUIRE([CURL_INCLUDES_SYS_XATTR])dnl
-  #
-  tst_links_getxattr="unknown"
-  tst_proto_getxattr="unknown"
-  tst_compi_getxattr="unknown"
-  tst_allow_getxattr="unknown"
-  tst_nargs_getxattr="unknown"
-  #
-  AC_MSG_CHECKING([if getxattr can be linked])
-  AC_LINK_IFELSE([
-    AC_LANG_FUNC_LINK_TRY([getxattr])
-  ],[
-    AC_MSG_RESULT([yes])
-    tst_links_getxattr="yes"
-  ],[
-    AC_MSG_RESULT([no])
-    tst_links_getxattr="no"
-  ])
-  #
-  if test "$tst_links_getxattr" = "yes"; then
-    AC_MSG_CHECKING([if getxattr is prototyped])
-    AC_EGREP_CPP([getxattr],[
-      $curl_includes_sys_xattr
-    ],[
-      AC_MSG_RESULT([yes])
-      tst_proto_getxattr="yes"
-    ],[
-      AC_MSG_RESULT([no])
-      tst_proto_getxattr="no"
-    ])
-  fi
-  #
-  if test "$tst_proto_getxattr" = "yes"; then
-    if test "$tst_nargs_getxattr" = "unknown"; then
-      AC_MSG_CHECKING([if getxattr takes 4 args.])
-      AC_COMPILE_IFELSE([
-        AC_LANG_PROGRAM([[
-          $curl_includes_sys_xattr
-        ]],[[
-          if(0 != getxattr(0, 0, 0, 0))
-            return 1;
-        ]])
-      ],[
-        AC_MSG_RESULT([yes])
-        tst_compi_getxattr="yes"
-        tst_nargs_getxattr="4"
-      ],[
-        AC_MSG_RESULT([no])
-        tst_compi_getxattr="no"
-      ])
-    fi
-    if test "$tst_nargs_getxattr" = "unknown"; then
-      AC_MSG_CHECKING([if getxattr takes 6 args.])
-      AC_COMPILE_IFELSE([
-        AC_LANG_PROGRAM([[
-          $curl_includes_sys_xattr
-        ]],[[
-          if(0 != getxattr(0, 0, 0, 0, 0, 0))
-            return 1;
-        ]])
-      ],[
-        AC_MSG_RESULT([yes])
-        tst_compi_getxattr="yes"
-        tst_nargs_getxattr="6"
-      ],[
-        AC_MSG_RESULT([no])
-        tst_compi_getxattr="no"
-      ])
-    fi
-    AC_MSG_CHECKING([if getxattr is compilable])
-    if test "$tst_compi_getxattr" = "yes"; then
-      AC_MSG_RESULT([yes])
-    else
-      AC_MSG_RESULT([no])
-    fi
-  fi
-  #
-  if test "$tst_compi_getxattr" = "yes"; then
-    AC_MSG_CHECKING([if getxattr usage allowed])
-    if test "x$curl_disallow_getxattr" != "xyes"; then
-      AC_MSG_RESULT([yes])
-      tst_allow_getxattr="yes"
-    else
-      AC_MSG_RESULT([no])
-      tst_allow_getxattr="no"
-    fi
-  fi
-  #
-  AC_MSG_CHECKING([if getxattr might be used])
-  if test "$tst_links_getxattr" = "yes" &&
-     test "$tst_proto_getxattr" = "yes" &&
-     test "$tst_compi_getxattr" = "yes" &&
-     test "$tst_allow_getxattr" = "yes"; then
-    AC_MSG_RESULT([yes])
-    AC_DEFINE_UNQUOTED(HAVE_GETXATTR, 1,
-      [Define to 1 if you have the getxattr function.])
-    dnl AC_DEFINE_UNQUOTED(GETXATTR_ARGS, $tst_nargs_getxattr,
-    dnl   [Specifies the number of arguments to getxattr])
-    #
-    if test "$tst_nargs_getxattr" -eq "4"; then
-      AC_DEFINE(HAVE_GETXATTR_4, 1, [getxattr() takes 4 args])
-    elif test "$tst_nargs_getxattr" -eq "6"; then
-      AC_DEFINE(HAVE_GETXATTR_6, 1, [getxattr() takes 6 args])
-    fi
-    #
-    curl_cv_func_getxattr="yes"
-  else
-    AC_MSG_RESULT([no])
-    curl_cv_func_getxattr="no"
   fi
 ])
 
@@ -3632,7 +2917,7 @@ AC_DEFUN([CURL_CHECK_FUNC_IOCTLSOCKET_FIONBIO], [
       AC_LANG_PROGRAM([[
         $curl_includes_winsock2
       ]],[[
-        int flags = 0;
+        unsigned long flags = 0;
         if(0 != ioctlsocket(0, FIONBIO, &flags))
           return 1;
       ]])
@@ -3816,128 +3101,6 @@ AC_DEFUN([CURL_CHECK_FUNC_IOCTLSOCKET_CAMEL_FIONBIO], [
 ])
 
 
-dnl CURL_CHECK_FUNC_LISTXATTR
-dnl -------------------------------------------------
-dnl Verify if listxattr is available, prototyped, and
-dnl can be compiled. If all of these are true, and
-dnl usage has not been previously disallowed with
-dnl shell variable curl_disallow_listxattr, then
-dnl HAVE_LISTXATTR will be defined.
-
-AC_DEFUN([CURL_CHECK_FUNC_LISTXATTR], [
-  AC_REQUIRE([CURL_INCLUDES_SYS_XATTR])dnl
-  #
-  tst_links_listxattr="unknown"
-  tst_proto_listxattr="unknown"
-  tst_compi_listxattr="unknown"
-  tst_allow_listxattr="unknown"
-  tst_nargs_listxattr="unknown"
-  #
-  AC_MSG_CHECKING([if listxattr can be linked])
-  AC_LINK_IFELSE([
-    AC_LANG_FUNC_LINK_TRY([listxattr])
-  ],[
-    AC_MSG_RESULT([yes])
-    tst_links_listxattr="yes"
-  ],[
-    AC_MSG_RESULT([no])
-    tst_links_listxattr="no"
-  ])
-  #
-  if test "$tst_links_listxattr" = "yes"; then
-    AC_MSG_CHECKING([if listxattr is prototyped])
-    AC_EGREP_CPP([listxattr],[
-      $curl_includes_sys_xattr
-    ],[
-      AC_MSG_RESULT([yes])
-      tst_proto_listxattr="yes"
-    ],[
-      AC_MSG_RESULT([no])
-      tst_proto_listxattr="no"
-    ])
-  fi
-  #
-  if test "$tst_proto_listxattr" = "yes"; then
-    if test "$tst_nargs_listxattr" = "unknown"; then
-      AC_MSG_CHECKING([if listxattr takes 3 args.])
-      AC_COMPILE_IFELSE([
-        AC_LANG_PROGRAM([[
-          $curl_includes_sys_xattr
-        ]],[[
-          if(0 != listxattr(0, 0, 0))
-            return 1;
-        ]])
-      ],[
-        AC_MSG_RESULT([yes])
-        tst_compi_listxattr="yes"
-        tst_nargs_listxattr="3"
-      ],[
-        AC_MSG_RESULT([no])
-        tst_compi_listxattr="no"
-      ])
-    fi
-    if test "$tst_nargs_listxattr" = "unknown"; then
-      AC_MSG_CHECKING([if listxattr takes 4 args.])
-      AC_COMPILE_IFELSE([
-        AC_LANG_PROGRAM([[
-          $curl_includes_sys_xattr
-        ]],[[
-          if(0 != listxattr(0, 0, 0, 0))
-            return 1;
-        ]])
-      ],[
-        AC_MSG_RESULT([yes])
-        tst_compi_listxattr="yes"
-        tst_nargs_listxattr="4"
-      ],[
-        AC_MSG_RESULT([no])
-        tst_compi_listxattr="no"
-      ])
-    fi
-    AC_MSG_CHECKING([if listxattr is compilable])
-    if test "$tst_compi_listxattr" = "yes"; then
-      AC_MSG_RESULT([yes])
-    else
-      AC_MSG_RESULT([no])
-    fi
-  fi
-  #
-  if test "$tst_compi_listxattr" = "yes"; then
-    AC_MSG_CHECKING([if listxattr usage allowed])
-    if test "x$curl_disallow_listxattr" != "xyes"; then
-      AC_MSG_RESULT([yes])
-      tst_allow_listxattr="yes"
-    else
-      AC_MSG_RESULT([no])
-      tst_allow_listxattr="no"
-    fi
-  fi
-  #
-  AC_MSG_CHECKING([if listxattr might be used])
-  if test "$tst_links_listxattr" = "yes" &&
-     test "$tst_proto_listxattr" = "yes" &&
-     test "$tst_compi_listxattr" = "yes" &&
-     test "$tst_allow_listxattr" = "yes"; then
-    AC_MSG_RESULT([yes])
-    AC_DEFINE_UNQUOTED(HAVE_LISTXATTR, 1,
-      [Define to 1 if you have the listxattr function.])
-    dnl AC_DEFINE_UNQUOTED(LISTXATTR_ARGS, $tst_nargs_listxattr,
-    dnl   [Specifies the number of arguments to listxattr])
-    #
-    if test "$tst_nargs_listxattr" -eq "3"; then
-      AC_DEFINE(HAVE_LISTXATTR_3, 1, [listxattr() takes 3 args])
-    elif test "$tst_nargs_listxattr" -eq "4"; then
-      AC_DEFINE(HAVE_LISTXATTR_4, 1, [listxattr() takes 4 args])
-    fi
-    #
-    curl_cv_func_listxattr="yes"
-  else
-    AC_MSG_RESULT([no])
-    curl_cv_func_listxattr="no"
-  fi
-])
-
-
 dnl CURL_CHECK_FUNC_MEMRCHR
 dnl -------------------------------------------------
 dnl Verify if memrchr is available, prototyped, and
@@ -4039,450 +3202,6 @@ AC_DEFUN([CURL_CHECK_FUNC_MEMRCHR], [
   else
     AC_MSG_RESULT([no])
     curl_cv_func_memrchr="no"
-  fi
-])
-
-
-dnl CURL_CHECK_FUNC_POLL
-dnl -------------------------------------------------
-dnl Verify if poll is available, prototyped, can
-dnl be compiled and seems to work.
-
-AC_DEFUN([CURL_CHECK_FUNC_POLL], [
-  AC_REQUIRE([CURL_INCLUDES_STDLIB])dnl
-  AC_REQUIRE([CURL_INCLUDES_POLL])dnl
-  #
-  tst_links_poll="unknown"
-  tst_proto_poll="unknown"
-  tst_compi_poll="unknown"
-  tst_works_poll="unknown"
-  tst_allow_poll="unknown"
-  #
-  case $host_os in
-    darwin*|interix*)
-      dnl poll() does not work on these platforms
-      dnl Interix: "does provide poll(), but the implementing developer must
-      dnl have been in a bad mood, because poll() only works on the /proc
-      dnl filesystem here"
-      dnl macOS: poll() first didn't exist, then was broken until fixed in 10.9
-      dnl only to break again in 10.12.
-      curl_disallow_poll="yes"
-      tst_compi_poll="no"
-      ;;
-  esac
-  #
-  AC_MSG_CHECKING([if poll can be linked])
-  AC_LINK_IFELSE([
-    AC_LANG_PROGRAM([[
-      $curl_includes_poll
-    ]],[[
-      if(0 != poll(0, 0, 0))
-        return 1;
-    ]])
-  ],[
-    AC_MSG_RESULT([yes])
-    tst_links_poll="yes"
-  ],[
-    AC_MSG_RESULT([no])
-    tst_links_poll="no"
-  ])
-  #
-  if test "$tst_links_poll" = "yes"; then
-    AC_MSG_CHECKING([if poll is prototyped])
-    AC_EGREP_CPP([poll],[
-      $curl_includes_poll
-    ],[
-      AC_MSG_RESULT([yes])
-      tst_proto_poll="yes"
-    ],[
-      AC_MSG_RESULT([no])
-      tst_proto_poll="no"
-    ])
-  fi
-  #
-  if test "$tst_proto_poll" = "yes"; then
-    AC_MSG_CHECKING([if poll is compilable])
-    AC_COMPILE_IFELSE([
-      AC_LANG_PROGRAM([[
-        $curl_includes_poll
-      ]],[[
-        if(0 != poll(0, 0, 0))
-          return 1;
-      ]])
-    ],[
-      AC_MSG_RESULT([yes])
-      tst_compi_poll="yes"
-    ],[
-      AC_MSG_RESULT([no])
-      tst_compi_poll="no"
-    ])
-  fi
-  #
-  dnl only do runtime verification when not cross-compiling
-  if test "x$cross_compiling" != "xyes" &&
-    test "$tst_compi_poll" = "yes"; then
-    AC_MSG_CHECKING([if poll seems to work])
-    CURL_RUN_IFELSE([
-      AC_LANG_PROGRAM([[
-        $curl_includes_stdlib
-        $curl_includes_poll
-        $curl_includes_time
-      ]],[[
-        /* detect the original poll() breakage */
-        if(0 != poll(0, 0, 10))
-          exit(1); /* fail */
-        else {
-          /* detect the 10.12 poll() breakage */
-          struct timeval before, after;
-          int rc;
-          size_t us;
-
-          gettimeofday(&before, NULL);
-          rc = poll(NULL, 0, 500);
-          gettimeofday(&after, NULL);
-
-          us = (after.tv_sec - before.tv_sec) * 1000000 +
-            (after.tv_usec - before.tv_usec);
-
-          if(us < 400000)
-            exit(1);
-        }
-      ]])
-    ],[
-      AC_MSG_RESULT([yes])
-      tst_works_poll="yes"
-    ],[
-      AC_MSG_RESULT([no])
-      tst_works_poll="no"
-    ])
-  fi
-  #
-  if test "$tst_compi_poll" = "yes" &&
-    test "$tst_works_poll" != "no"; then
-    AC_MSG_CHECKING([if poll usage allowed])
-    if test "x$curl_disallow_poll" != "xyes"; then
-      AC_MSG_RESULT([yes])
-      tst_allow_poll="yes"
-    else
-      AC_MSG_RESULT([no])
-      tst_allow_poll="no"
-    fi
-  fi
-  #
-  AC_MSG_CHECKING([if poll might be used])
-  if test "$tst_links_poll" = "yes" &&
-     test "$tst_proto_poll" = "yes" &&
-     test "$tst_compi_poll" = "yes" &&
-     test "$tst_allow_poll" = "yes" &&
-     test "$tst_works_poll" != "no"; then
-    AC_MSG_RESULT([yes])
-    AC_DEFINE_UNQUOTED(HAVE_POLL_FINE, 1,
-      [If you have a fine poll])
-    curl_cv_func_poll="yes"
-  else
-    AC_MSG_RESULT([no])
-    curl_cv_func_poll="no"
-  fi
-])
-
-
-dnl CURL_CHECK_FUNC_REMOVEXATTR
-dnl -------------------------------------------------
-dnl Verify if removexattr is available, prototyped, and
-dnl can be compiled. If all of these are true, and
-dnl usage has not been previously disallowed with
-dnl shell variable curl_disallow_removexattr, then
-dnl HAVE_REMOVEXATTR will be defined.
-
-AC_DEFUN([CURL_CHECK_FUNC_REMOVEXATTR], [
-  AC_REQUIRE([CURL_INCLUDES_SYS_XATTR])dnl
-  #
-  tst_links_removexattr="unknown"
-  tst_proto_removexattr="unknown"
-  tst_compi_removexattr="unknown"
-  tst_allow_removexattr="unknown"
-  tst_nargs_removexattr="unknown"
-  #
-  AC_MSG_CHECKING([if removexattr can be linked])
-  AC_LINK_IFELSE([
-    AC_LANG_FUNC_LINK_TRY([removexattr])
-  ],[
-    AC_MSG_RESULT([yes])
-    tst_links_removexattr="yes"
-  ],[
-    AC_MSG_RESULT([no])
-    tst_links_removexattr="no"
-  ])
-  #
-  if test "$tst_links_removexattr" = "yes"; then
-    AC_MSG_CHECKING([if removexattr is prototyped])
-    AC_EGREP_CPP([removexattr],[
-      $curl_includes_sys_xattr
-    ],[
-      AC_MSG_RESULT([yes])
-      tst_proto_removexattr="yes"
-    ],[
-      AC_MSG_RESULT([no])
-      tst_proto_removexattr="no"
-    ])
-  fi
-  #
-  if test "$tst_proto_removexattr" = "yes"; then
-    if test "$tst_nargs_removexattr" = "unknown"; then
-      AC_MSG_CHECKING([if removexattr takes 2 args.])
-      AC_COMPILE_IFELSE([
-        AC_LANG_PROGRAM([[
-          $curl_includes_sys_xattr
-        ]],[[
-          if(0 != removexattr(0, 0))
-            return 1;
-        ]])
-      ],[
-        AC_MSG_RESULT([yes])
-        tst_compi_removexattr="yes"
-        tst_nargs_removexattr="2"
-      ],[
-        AC_MSG_RESULT([no])
-        tst_compi_removexattr="no"
-      ])
-    fi
-    if test "$tst_nargs_removexattr" = "unknown"; then
-      AC_MSG_CHECKING([if removexattr takes 3 args.])
-      AC_COMPILE_IFELSE([
-        AC_LANG_PROGRAM([[
-          $curl_includes_sys_xattr
-        ]],[[
-          if(0 != removexattr(0, 0, 0))
-            return 1;
-        ]])
-      ],[
-        AC_MSG_RESULT([yes])
-        tst_compi_removexattr="yes"
-        tst_nargs_removexattr="3"
-      ],[
-        AC_MSG_RESULT([no])
-        tst_compi_removexattr="no"
-      ])
-    fi
-    AC_MSG_CHECKING([if removexattr is compilable])
-    if test "$tst_compi_removexattr" = "yes"; then
-      AC_MSG_RESULT([yes])
-    else
-      AC_MSG_RESULT([no])
-    fi
-  fi
-  #
-  if test "$tst_compi_removexattr" = "yes"; then
-    AC_MSG_CHECKING([if removexattr usage allowed])
-    if test "x$curl_disallow_removexattr" != "xyes"; then
-      AC_MSG_RESULT([yes])
-      tst_allow_removexattr="yes"
-    else
-      AC_MSG_RESULT([no])
-      tst_allow_removexattr="no"
-    fi
-  fi
-  #
-  AC_MSG_CHECKING([if removexattr might be used])
-  if test "$tst_links_removexattr" = "yes" &&
-     test "$tst_proto_removexattr" = "yes" &&
-     test "$tst_compi_removexattr" = "yes" &&
-     test "$tst_allow_removexattr" = "yes"; then
-    AC_MSG_RESULT([yes])
-    AC_DEFINE_UNQUOTED(HAVE_REMOVEXATTR, 1,
-      [Define to 1 if you have the removexattr function.])
-    dnl AC_DEFINE_UNQUOTED(REMOVEXATTR_ARGS, $tst_nargs_removexattr,
-    dnl   [Specifies the number of arguments to removexattr])
-    #
-    if test "$tst_nargs_removexattr" -eq "2"; then
-      AC_DEFINE(HAVE_REMOVEXATTR_2, 1, [removexattr() takes 2 args])
-    elif test "$tst_nargs_removexattr" -eq "3"; then
-      AC_DEFINE(HAVE_REMOVEXATTR_3, 1, [removexattr() takes 3 args])
-    fi
-    #
-    curl_cv_func_removexattr="yes"
-  else
-    AC_MSG_RESULT([no])
-    curl_cv_func_removexattr="no"
-  fi
-])
-
-
-dnl CURL_CHECK_FUNC_SETSOCKOPT_SO_NONBLOCK
-dnl -------------------------------------------------
-dnl Verify if setsockopt with the SO_NONBLOCK command is
-dnl available, can be compiled, and seems to work. If
-dnl all of these are true, then HAVE_SETSOCKOPT_SO_NONBLOCK
-dnl will be defined.
-
-AC_DEFUN([CURL_CHECK_FUNC_SETSOCKOPT_SO_NONBLOCK], [
-  #
-  tst_compi_setsockopt_so_nonblock="unknown"
-  tst_allow_setsockopt_so_nonblock="unknown"
-  #
-  if test "$curl_cv_func_setsockopt" = "yes"; then
-    AC_MSG_CHECKING([if setsockopt SO_NONBLOCK is compilable])
-    AC_COMPILE_IFELSE([
-      AC_LANG_PROGRAM([[
-        $curl_includes_winsock2
-        $curl_includes_bsdsocket
-        $curl_includes_sys_socket
-      ]],[[
-        if(0 != setsockopt(0, SOL_SOCKET, SO_NONBLOCK, 0, 0))
-          return 1;
-      ]])
-    ],[
-      AC_MSG_RESULT([yes])
-      tst_compi_setsockopt_so_nonblock="yes"
-    ],[
-      AC_MSG_RESULT([no])
-      tst_compi_setsockopt_so_nonblock="no"
-    ])
-  fi
-  #
-  if test "$tst_compi_setsockopt_so_nonblock" = "yes"; then
-    AC_MSG_CHECKING([if setsockopt SO_NONBLOCK usage allowed])
-    if test "x$curl_disallow_setsockopt_so_nonblock" != "xyes"; then
-      AC_MSG_RESULT([yes])
-      tst_allow_setsockopt_so_nonblock="yes"
-    else
-      AC_MSG_RESULT([no])
-      tst_allow_setsockopt_so_nonblock="no"
-    fi
-  fi
-  #
-  AC_MSG_CHECKING([if setsockopt SO_NONBLOCK might be used])
-  if test "$tst_compi_setsockopt_so_nonblock" = "yes" &&
-     test "$tst_allow_setsockopt_so_nonblock" = "yes"; then
-    AC_MSG_RESULT([yes])
-    AC_DEFINE_UNQUOTED(HAVE_SETSOCKOPT_SO_NONBLOCK, 1,
-      [Define to 1 if you have a working setsockopt SO_NONBLOCK function.])
-    curl_cv_func_setsockopt_so_nonblock="yes"
-  else
-    AC_MSG_RESULT([no])
-    curl_cv_func_setsockopt_so_nonblock="no"
-  fi
-])
-
-
-dnl CURL_CHECK_FUNC_SETXATTR
-dnl -------------------------------------------------
-dnl Verify if setxattr is available, prototyped, and
-dnl can be compiled. If all of these are true, and
-dnl usage has not been previously disallowed with
-dnl shell variable curl_disallow_setxattr, then
-dnl HAVE_SETXATTR will be defined.
-
-AC_DEFUN([CURL_CHECK_FUNC_SETXATTR], [
-  AC_REQUIRE([CURL_INCLUDES_SYS_XATTR])dnl
-  #
-  tst_links_setxattr="unknown"
-  tst_proto_setxattr="unknown"
-  tst_compi_setxattr="unknown"
-  tst_allow_setxattr="unknown"
-  tst_nargs_setxattr="unknown"
-  #
-  AC_MSG_CHECKING([if setxattr can be linked])
-  AC_LINK_IFELSE([
-    AC_LANG_FUNC_LINK_TRY([setxattr])
-  ],[
-    AC_MSG_RESULT([yes])
-    tst_links_setxattr="yes"
-  ],[
-    AC_MSG_RESULT([no])
-    tst_links_setxattr="no"
-  ])
-  #
-  if test "$tst_links_setxattr" = "yes"; then
-    AC_MSG_CHECKING([if setxattr is prototyped])
-    AC_EGREP_CPP([setxattr],[
-      $curl_includes_sys_xattr
-    ],[
-      AC_MSG_RESULT([yes])
-      tst_proto_setxattr="yes"
-    ],[
-      AC_MSG_RESULT([no])
-      tst_proto_setxattr="no"
-    ])
-  fi
-  #
-  if test "$tst_proto_setxattr" = "yes"; then
-    if test "$tst_nargs_setxattr" = "unknown"; then
-      AC_MSG_CHECKING([if setxattr takes 5 args.])
-      AC_COMPILE_IFELSE([
-        AC_LANG_PROGRAM([[
-          $curl_includes_sys_xattr
-        ]],[[
-          if(0 != setxattr(0, 0, 0, 0, 0))
-            return 1;
-        ]])
-      ],[
-        AC_MSG_RESULT([yes])
-        tst_compi_setxattr="yes"
-        tst_nargs_setxattr="5"
-      ],[
-        AC_MSG_RESULT([no])
-        tst_compi_setxattr="no"
-      ])
-    fi
-    if test "$tst_nargs_setxattr" = "unknown"; then
-      AC_MSG_CHECKING([if setxattr takes 6 args.])
-      AC_COMPILE_IFELSE([
-        AC_LANG_PROGRAM([[
-          $curl_includes_sys_xattr
-        ]],[[
-          if(0 != setxattr(0, 0, 0, 0, 0, 0))
-            return 1;
-        ]])
-      ],[
-        AC_MSG_RESULT([yes])
-        tst_compi_setxattr="yes"
-        tst_nargs_setxattr="6"
-      ],[
-        AC_MSG_RESULT([no])
-        tst_compi_setxattr="no"
-      ])
-    fi
-    AC_MSG_CHECKING([if setxattr is compilable])
-    if test "$tst_compi_setxattr" = "yes"; then
-      AC_MSG_RESULT([yes])
-    else
-      AC_MSG_RESULT([no])
-    fi
-  fi
-  #
-  if test "$tst_compi_setxattr" = "yes"; then
-    AC_MSG_CHECKING([if setxattr usage allowed])
-    if test "x$curl_disallow_setxattr" != "xyes"; then
-      AC_MSG_RESULT([yes])
-      tst_allow_setxattr="yes"
-    else
-      AC_MSG_RESULT([no])
-      tst_allow_setxattr="no"
-    fi
-  fi
-  #
-  AC_MSG_CHECKING([if setxattr might be used])
-  if test "$tst_links_setxattr" = "yes" &&
-     test "$tst_proto_setxattr" = "yes" &&
-     test "$tst_compi_setxattr" = "yes" &&
-     test "$tst_allow_setxattr" = "yes"; then
-    AC_MSG_RESULT([yes])
-    AC_DEFINE_UNQUOTED(HAVE_SETXATTR, 1,
-      [Define to 1 if you have the setxattr function.])
-    dnl AC_DEFINE_UNQUOTED(SETXATTR_ARGS, $tst_nargs_setxattr,
-    dnl   [Specifies the number of arguments to setxattr])
-    #
-    if test "$tst_nargs_setxattr" -eq "5"; then
-      AC_DEFINE(HAVE_SETXATTR_5, 1, [setxattr() takes 5 args])
-    elif test "$tst_nargs_setxattr" -eq "6"; then
-      AC_DEFINE(HAVE_SETXATTR_6, 1, [setxattr() takes 6 args])
-    fi
-    #
-    curl_cv_func_setxattr="yes"
-  else
-    AC_MSG_RESULT([no])
-    curl_cv_func_setxattr="no"
   fi
 ])
 
@@ -4860,7 +3579,6 @@ dnl HAVE_SOCKET will be defined.
 AC_DEFUN([CURL_CHECK_FUNC_SOCKET], [
   AC_REQUIRE([CURL_INCLUDES_WINSOCK2])dnl
   AC_REQUIRE([CURL_INCLUDES_SYS_SOCKET])dnl
-  AC_REQUIRE([CURL_INCLUDES_SOCKET])dnl
   #
   tst_links_socket="unknown"
   tst_proto_socket="unknown"
@@ -4873,7 +3591,6 @@ AC_DEFUN([CURL_CHECK_FUNC_SOCKET], [
       $curl_includes_winsock2
       $curl_includes_bsdsocket
       $curl_includes_sys_socket
-      $curl_includes_socket
     ]],[[
       if(0 != socket(0, 0, 0))
         return 1;
@@ -4892,7 +3609,6 @@ AC_DEFUN([CURL_CHECK_FUNC_SOCKET], [
       $curl_includes_winsock2
       $curl_includes_bsdsocket
       $curl_includes_sys_socket
-      $curl_includes_socket
     ],[
       AC_MSG_RESULT([yes])
       tst_proto_socket="yes"
@@ -4909,7 +3625,6 @@ AC_DEFUN([CURL_CHECK_FUNC_SOCKET], [
         $curl_includes_winsock2
         $curl_includes_bsdsocket
         $curl_includes_sys_socket
-        $curl_includes_socket
       ]],[[
         if(0 != socket(0, 0, 0))
           return 1;
@@ -4960,7 +3675,6 @@ dnl HAVE_SOCKETPAIR will be defined.
 
 AC_DEFUN([CURL_CHECK_FUNC_SOCKETPAIR], [
   AC_REQUIRE([CURL_INCLUDES_SYS_SOCKET])dnl
-  AC_REQUIRE([CURL_INCLUDES_SOCKET])dnl
   #
   tst_links_socketpair="unknown"
   tst_proto_socketpair="unknown"
@@ -4982,7 +3696,6 @@ AC_DEFUN([CURL_CHECK_FUNC_SOCKETPAIR], [
     AC_MSG_CHECKING([if socketpair is prototyped])
     AC_EGREP_CPP([socketpair],[
       $curl_includes_sys_socket
-      $curl_includes_socket
     ],[
       AC_MSG_RESULT([yes])
       tst_proto_socketpair="yes"
@@ -4997,7 +3710,6 @@ AC_DEFUN([CURL_CHECK_FUNC_SOCKETPAIR], [
     AC_COMPILE_IFELSE([
       AC_LANG_PROGRAM([[
         $curl_includes_sys_socket
-        $curl_includes_socket
       ]],[[
         int sv[2];
         if(0 != socketpair(0, 0, 0, sv))
@@ -5816,11 +4528,11 @@ dnl CURL_LIBRARY_PATH variable. It keeps the LD_LIBRARY_PATH
 dnl changes contained within this macro.
 
 AC_DEFUN([CURL_RUN_IFELSE], [
-   case $host_os in
-     darwin*)
+  case $host in
+    *-apple-*)
       AC_RUN_IFELSE([AC_LANG_SOURCE([$1])], $2, $3, $4)
-     ;;
-     *)
+      ;;
+    *)
       oldcc=$CC
       old=$LD_LIBRARY_PATH
       CC="sh ./run-compiler"
@@ -5829,8 +4541,8 @@ AC_DEFUN([CURL_RUN_IFELSE], [
       AC_RUN_IFELSE([AC_LANG_SOURCE([$1])], $2, $3, $4)
       LD_LIBRARY_PATH=$old # restore
       CC=$oldcc
-     ;;
-   esac
+      ;;
+  esac
 ])
 
 dnl CURL_COVERAGE
@@ -5847,8 +4559,8 @@ AC_DEFUN([CURL_COVERAGE],[
 
   dnl check if enabled by argument
   AC_ARG_ENABLE(code-coverage,
-     AS_HELP_STRING([--enable-code-coverage], [Provide code coverage]),
-     coverage="$enableval")
+    AS_HELP_STRING([--enable-code-coverage], [Provide code coverage]),
+    coverage="$enableval")
 
   dnl if not gcc switch off again
   AS_IF([ test "$GCC" != "yes" ], coverage="no" )
@@ -5927,19 +4639,19 @@ AC_DEFUN([CURL_SIZEOF], [
   r=0
   dnl Check the sizes in a reasonable order
   for typesize in 8 4 2 16 1; do
-     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
 $2
 ]],
-     [switch(0) {
-       case 0:
-       case (sizeof($1) == $typesize):;
-     }
+    [switch(0) {
+      case 0:
+      case (sizeof($1) == $typesize):;
+    }
     ]) ],
       [
-       r=$typesize],
+        r=$typesize],
       [
-       r=0])
+        r=0])
     dnl get out of the loop once matched
     if test $r -gt 0; then
       break;
@@ -5950,7 +4662,7 @@ $2
   fi
   AC_MSG_RESULT($r)
   dnl lowercase and underscore instead of space
-  tname=$(echo "ac_cv_sizeof_$1" | tr A-Z a-z | tr " " "_")
+  tname=`echo "ac_cv_sizeof_$1" | tr A-Z a-z | tr " " "_"`
   eval "$tname=$r"
 
   AC_DEFINE_UNQUOTED(TYPE, [$r], [Size of $1 in number of bytes])

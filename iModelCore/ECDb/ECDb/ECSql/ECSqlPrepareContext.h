@@ -132,6 +132,7 @@ struct ECSqlPrepareContext final
         int m_nextSystemSqlParameterNameSuffix = 0;
         SqlAnchors m_anchors;
         bool m_isInstanceQuery = false;
+        bool m_createField = true;
         //not copyable
         ECSqlPrepareContext(ECSqlPrepareContext const&) = delete;
         ECSqlPrepareContext& operator=(ECSqlPrepareContext const&) = delete;
@@ -169,6 +170,9 @@ struct ECSqlPrepareContext final
         SqlAnchors& GetAnchors() { return m_anchors; }
         void SetIsInstanceQuery(const bool isInstanceQuery) { m_isInstanceQuery = isInstanceQuery; }
         bool IsInstanceQuery() const { return m_isInstanceQuery; }
+
+        void SetCreateField(bool flag) { m_createField = flag; }
+        bool GetCreateField() const { return m_createField; }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

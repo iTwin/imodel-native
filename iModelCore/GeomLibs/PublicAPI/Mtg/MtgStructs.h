@@ -416,10 +416,11 @@ GEOMDLLIMPEXP size_t CountMaskAroundFace   (MTGNodeId nodeId, MTGMask mask) cons
 GEOMDLLIMPEXP MTGNodeId FindMaskAroundFace (MTGNodeId nodeId, MTGMask mask) const;
 /// Search vertex loop for mask
 GEOMDLLIMPEXP MTGNodeId FindMaskAroundVertex (MTGNodeId nodeId, MTGMask mask) const;
-/// Search vertex loop for mask
+/// Search vertex predecessor loop for mask
 GEOMDLLIMPEXP MTGNodeId FindMaskAroundVertexPred (MTGNodeId nodeId, MTGMask mask) const;
-
-/// Search face loop for mmissing mask
+/// Search vertex predecessor loop for missing mask
+GEOMDLLIMPEXP MTGNodeId FindUnmaskedAroundVertexPred(MTGNodeId nodeId, MTGMask mask) const;
+/// Search face loop for missing mask
 GEOMDLLIMPEXP MTGNodeId FindUnmaskedAroundFace (MTGNodeId nodeId, MTGMask mask) const;
 /// Search vertex loop for missing mask
 GEOMDLLIMPEXP MTGNodeId FindUnmaskedAroundVertex (MTGNodeId nodeId, MTGMask mask) const;
@@ -432,6 +433,8 @@ GEOMDLLIMPEXP bool AreNodesInSameFaceLoop (MTGNodeId nodeA, MTGNodeId nodeB) con
 
 /// Count nodes with mask around a vertex
 GEOMDLLIMPEXP size_t CountMaskAroundVertex (MTGNodeId nodeId, MTGMask mask) const;
+/// Count nodes missing the mask around a vertex
+GEOMDLLIMPEXP size_t CountUnmaskedAroundVertex(MTGNodeId nodeId, MTGMask mask) const;
 /// Count masked nodes in entire graph.
 GEOMDLLIMPEXP size_t CountMask   (MTGMask mask) const;
 
@@ -502,7 +505,11 @@ GEOMDLLIMPEXP void CollectConnectedComponents (bvector<bvector<MTGNodeId>>& comp
 GEOMDLLIMPEXP void DropMasked (bvector <MTGNodeId> &nodes, MTGMask mask) const;
 // Pack the bvector to remove nodes that do not have the mask.
 GEOMDLLIMPEXP void DropUnMasked (bvector <MTGNodeId> &nodes, MTGMask mask) const;
-
+// Swap vertex successors and face predecessors.
+// If the nodes do not start in the same vertex loop, and one node is dangling (vSucc is itself), then this node will
+// be inserted after the other node in the other node's vertex loop.
+// If the nodes start out in the same vertex loop, then they will end up in separate vertex loops; in particular, if
+// one node is the other node's vSucc, it becomes a dangling node (see YankEdgeFromVertex).
 GEOMDLLIMPEXP bool VertexTwist (MTGNodeId nodeIdA, MTGNodeId nodeIdB);
 // Yank then end of a single edge from a vertex.
 // @return if this is a dangling edge, return null.  Otherwise return

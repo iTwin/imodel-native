@@ -1,6 +1,6 @@
 /*---------------------------------------------------------------------------------------------
 * Copyright (c) Bentley Systems, Incorporated. All rights reserved.
-* See COPYRIGHT.md in the repository root for full copyright notice.
+* See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #pragma once
 
@@ -251,7 +251,7 @@ struct InstanceReader::Impl final {
             explicit Reader(ECDbCR conn):m_conn(conn),m_seekPos(conn),m_propExists(conn){}
             ~Reader() { }
             void Clear() const;
-            bool Seek(InstanceReader::Position const& position, InstanceReader::RowCallback callback) const;
+            bool Seek(InstanceReader::Position const& position, InstanceReader::RowCallback callback, InstanceReader::Options const& options) const;
     };
 
     private:
@@ -261,8 +261,8 @@ struct InstanceReader::Impl final {
     public:
         Impl(InstanceReader& , ECDbCR);
         ~Impl();
-        bool Seek(Position const& position, RowCallback callback) const {
-            return m_reader.Seek(position, callback);
+        bool Seek(Position const& position, RowCallback callback, InstanceReader::Options const& options) const {
+            return m_reader.Seek(position, callback, options);
         }
         void Reset() { m_reader.Clear(); }
 };

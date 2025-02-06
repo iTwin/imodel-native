@@ -48,6 +48,10 @@ SchemaImportResult SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schem
 DropSchemaResult SchemaManager::DropSchema(Utf8StringCR name, SchemaImportToken const* token, bool logIssue) const {
     return Main().DropSchema(name, token, logIssue);
 }
+
+DropSchemaResult SchemaManager::DropSchemas(bvector<Utf8String> schemaNames, SchemaImportToken const* token, bool logIssue) const {
+    return Main().DropSchemas(schemaNames, token, logIssue);
+}
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/

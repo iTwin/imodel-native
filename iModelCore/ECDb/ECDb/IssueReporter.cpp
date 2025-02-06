@@ -725,6 +725,16 @@ IssueId ECDbIssueId::ECDb_0725 = IssueId("ECDb_0725");
 IssueId ECDbIssueId::ECDb_0726 = IssueId("ECDb_0726");
 IssueId ECDbIssueId::ECDb_0727 = IssueId("ECDb_0727");
 IssueId ECDbIssueId::ECDb_0728 = IssueId("ECDb_0728");
+IssueId ECDbIssueId::ECDb_0729 = IssueId("ECDb_0729");
+IssueId ECDbIssueId::ECDb_0730 = IssueId("ECDb_0730");
+IssueId ECDbIssueId::ECDb_0731 = IssueId("ECDb_0731");
+IssueId ECDbIssueId::ECDb_0732 = IssueId("ECDb_0732");
+IssueId ECDbIssueId::ECDb_0733 = IssueId("ECDb_0733");
+IssueId ECDbIssueId::ECDb_0734 = IssueId("ECDb_0734");
+IssueId ECDbIssueId::ECDb_0735 = IssueId("ECDb_0735");
+IssueId ECDbIssueId::ECDb_0736 = IssueId("ECDb_0736");
+IssueId ECDbIssueId::ECDb_0737 = IssueId("ECDb_0737");
+IssueId ECDbIssueId::ECDb_0738 = IssueId("ECDb_0738");
 
 //---------------------------------------------------------------------------------------
 // @bsimethod

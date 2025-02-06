@@ -3310,6 +3310,8 @@ public:
     uint32_t GetOriginalECXmlVersionMajor() const {return m_originalECXmlVersionMajor;} //!< Gets the original major xml version.
     uint32_t GetOriginalECXmlVersionMinor() const {return m_originalECXmlVersionMinor;} //!< Gets the original minor xml version.
 
+    Utf8String GetOriginalECXmlVersionAsString() const {return Utf8PrintfString("%d.%d", m_originalECXmlVersionMajor, m_originalECXmlVersionMinor);} //!< Gets the original major-minor xml version as a string.
+
     //! Sets the original ECXml version of the schema.
     //! @remarks This method is intended for internal use only.
     //! @param[in] major The version number to set as the major ECXml version

@@ -633,6 +633,7 @@ SurfaceBreakContext&    breakContext
     bvector<DPoint3d> surfacePoints;
 
     int numCurve = 0;
+    UNUSED_VARIABLE(numCurve);
 
     for (TrimCurveCP pCurrTrim = sourceBoundary.pFirst; NULL != pCurrTrim; pCurrTrim = pCurrTrim->pNext)
         {

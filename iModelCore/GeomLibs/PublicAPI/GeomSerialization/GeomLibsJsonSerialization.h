@@ -7,6 +7,7 @@
 #include <Bentley/Bentley.h>
 #include <Geom/GeomApi.h>
 #include <BeRapidJson/BeJsValue.h>
+#include "GeomLibsSerialization.h"
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 

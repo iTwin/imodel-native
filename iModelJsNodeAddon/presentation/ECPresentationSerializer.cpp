@@ -177,6 +177,71 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, Cont
         propertyJson.AddMember("kindOfQuantity", IModelJsECPresentationSerializer::_AsJson(ctx, *koq, json.GetAllocator()), json.GetAllocator());
         }
 
+    rapidjson::Value constraintsJson(rapidjson::kObjectType);
+    if (property.GetProperty().GetIsPrimitiveArray())
+        {
+        constraintsJson.AddMember("minOccurs", rapidjson::Value(property.GetProperty().GetAsPrimitiveArrayProperty()->GetMinOccurs()), json.GetAllocator());
+        if (!property.GetProperty().GetAsPrimitiveArrayProperty()->IsStoredMaxOccursUnbounded())
+            {
+            constraintsJson.AddMember("maxOccurs", rapidjson::Value(property.GetProperty().GetAsPrimitiveArrayProperty()->GetStoredMaxOccurs()), json.GetAllocator());
+            }
+        }
+    else if (property.GetProperty().GetIsPrimitive() && (property.GetProperty().GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Integer || property.GetProperty().GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Long || property.GetProperty().GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Double))
+        {
+        ECValue minimumValue;
+        if (property.GetProperty().GetAsPrimitiveProperty()->IsMinimumValueDefined() && property.GetProperty().GetAsPrimitiveProperty()->GetMinimumValue(minimumValue) == ECObjectsStatus::Success)
+            {
+            if (minimumValue.IsLong())
+                {
+                constraintsJson.AddMember("minimumValue", rapidjson::Value(minimumValue.GetLong()), json.GetAllocator());
+                }
+
+            else if (minimumValue.IsDouble())
+                {
+                constraintsJson.AddMember("minimumValue", rapidjson::Value(minimumValue.GetDouble()), json.GetAllocator());
+                }
+
+            else if (minimumValue.IsInteger())
+                {
+                constraintsJson.AddMember("minimumValue", rapidjson::Value(minimumValue.GetInteger()), json.GetAllocator());
+                }
+            }
+        ECValue maximumValue;
+        if (property.GetProperty().GetAsPrimitiveProperty()->IsMaximumValueDefined() && property.GetProperty().GetAsPrimitiveProperty()->GetMaximumValue(maximumValue) == ECObjectsStatus::Success)
+            {
+            if (maximumValue.IsLong())
+                {
+                constraintsJson.AddMember("maximumValue", rapidjson::Value(maximumValue.GetLong()), json.GetAllocator());
+                }
+
+            else if (maximumValue.IsDouble())
+                {
+                constraintsJson.AddMember("maximumValue", rapidjson::Value(maximumValue.GetDouble()), json.GetAllocator());
+                }
+
+            else if (maximumValue.IsInteger())
+                {
+                constraintsJson.AddMember("maximumValue", rapidjson::Value(maximumValue.GetInteger()), json.GetAllocator());
+                }
+            }
+        }
+    else if (property.GetProperty().GetIsPrimitive() && property.GetProperty().GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_String)
+        {
+        if (property.GetProperty().GetAsPrimitiveProperty()->IsMaximumLengthDefined())
+            {
+            constraintsJson.AddMember("maximumLength", rapidjson::Value(property.GetProperty().GetAsPrimitiveProperty()->GetMaximumLength()), json.GetAllocator());
+            }
+        if (property.GetProperty().GetAsPrimitiveProperty()->IsMinimumLengthDefined())
+            {
+            constraintsJson.AddMember("minimumLength", rapidjson::Value(property.GetProperty().GetAsPrimitiveProperty()->GetMinimumLength()), json.GetAllocator());
+            }
+        }
+
+    if (constraintsJson.MemberCount() > 0)
+        {
+        propertyJson.AddMember("constraints", constraintsJson, json.GetAllocator());
+        }
+
     if (property.GetProperty().GetIsNavigation())
         {
         ECRelationshipClassCP relationshipClass = property.GetProperty().GetAsNavigationProperty()->GetRelationshipClass();
@@ -216,6 +281,9 @@ void IModelJsECPresentationSerializer::_FieldAsJson(ContextR ctx, ContentDescrip
 
     if (nullptr != field.GetEditor())
         fieldBaseJson.AddMember("editor", field.GetEditor()->AsJson(ctx, &fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
+
+    if (field.IsCalculatedPropertyField() && field.AsCalculatedPropertyField()->GetExtendedData().GetJson().MemberCount() > 0)
+        fieldBaseJson.AddMember("extendedData", rapidjson::Value(field.AsCalculatedPropertyField()->GetExtendedData().GetJson(), fieldBaseJson.GetAllocator()), fieldBaseJson.GetAllocator());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -289,8 +357,11 @@ void IModelJsECPresentationSerializer::_AsJson(ContextR ctx, ContentDescriptor::
     nestedContentBaseJson.AddMember("relationshipMeaning", rapidjson::StringRef(ParseRelationshipMeaning(relatedContentField.GetRelationshipMeaning())), nestedContentBaseJson.GetAllocator());
 
     rapidjson::Value actualSourceClassIdsJson(rapidjson::kArrayType);
-    for (auto const& actualSourceClass : relatedContentField.GetActualSourceClasses())
-        actualSourceClassIdsJson.PushBack(IModelJsECPresentationSerializer::_AsJson(ctx, actualSourceClass->GetId(), &nestedContentBaseJson.GetAllocator()), nestedContentBaseJson.GetAllocator());
+    if (relatedContentField.GetActualSourceClasses())
+        {
+        for (auto const& actualSourceClass : *relatedContentField.GetActualSourceClasses())
+            actualSourceClassIdsJson.PushBack(IModelJsECPresentationSerializer::_AsJson(ctx, actualSourceClass->GetId(), &nestedContentBaseJson.GetAllocator()), nestedContentBaseJson.GetAllocator());
+        }
     nestedContentBaseJson.AddMember("actualPrimaryClassIds", actualSourceClassIdsJson, nestedContentBaseJson.GetAllocator());
     }
 
@@ -731,7 +802,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, Cont
             rapidjson::Value nestedValuesJson(rapidjson::kArrayType);
             for (auto const& nestedItem : nestedContentEntry.second)
                 {
-                static const int valueSerializationFlags = ContentSetItem::SERIALIZE_PrimaryKeys | ContentSetItem::SERIALIZE_Values | ContentSetItem::SERIALIZE_DisplayValues | ContentSetItem::SERIALIZE_MergedFieldNames;
+                static const int valueSerializationFlags = ContentSetItem::SERIALIZE_PrimaryKeys | ContentSetItem::SERIALIZE_Values | ContentSetItem::SERIALIZE_DisplayValues | ContentSetItem::SERIALIZE_MergedFieldNames | ContentSetItem::SERIALIZE_DisplayLabel;
                 nestedValuesJson.PushBack(nestedItem->AsJson(ctx, valueSerializationFlags, &json.GetAllocator()), json.GetAllocator());
                 }
             json["values"].AddMember(rapidjson::Value(nestedContentEntry.first.c_str(), json.GetAllocator()), nestedValuesJson, json.GetAllocator());

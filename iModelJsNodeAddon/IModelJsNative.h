@@ -15,6 +15,9 @@
 #include <Napi/napi.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include "DgnDbWorker.h"
+#ifndef BENTLEY_WIN32
+    #include <signal.h>
+#endif
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -360,7 +363,7 @@ ENUM_IS_FLAGS(TextEmphasis);
 
 struct JsInterop {
     [[noreturn]] static void throwSqlResult(Utf8CP msg, Utf8CP fileName, DbResult result) {
-        BeNapi::ThrowJsException(Env(), Utf8PrintfString("%s [%s]: %s", msg, fileName, BeSQLiteLib::GetErrorString(result)).c_str(), result);
+        BeNapi::ThrowJsException(Env(), Utf8PrintfString("%s [%s]: rc=%d, %s", msg, fileName, (int)result, BeSQLiteLib::GetLogError(result).c_str()).c_str(), result);
     }
     [[noreturn]] static void throwDgnDbStatus(DgnDbStatus);
     [[noreturn]] static void throwWrongClass() { throwDgnDbStatus(DgnDbStatus::WrongClass); }
@@ -414,6 +417,7 @@ struct JsInterop {
     BE_JSON_NAME(data)
     BE_JSON_NAME(date)
     BE_JSON_NAME(dbName)
+    BE_JSON_NAME(debugLogging)
     BE_JSON_NAME(defaultTxn)
     BE_JSON_NAME(description)
     BE_JSON_NAME(ecefLocation)
@@ -424,6 +428,7 @@ struct JsInterop {
     BE_JSON_NAME(face)
     BE_JSON_NAME(fileExt)
     BE_JSON_NAME(fileName)
+    BE_JSON_NAME(findOrphanedBlocks)
     BE_JSON_NAME(finishedAtOrAfterTime)
     BE_JSON_NAME(fonts)
     BE_JSON_NAME(forceUseId)
@@ -443,6 +448,7 @@ struct JsInterop {
     BE_JSON_NAME(name)
     BE_JSON_NAME(namespace)
     BE_JSON_NAME(nRequests)
+    BE_JSON_NAME(nSeconds)
     BE_JSON_NAME(numBytes)
     BE_JSON_NAME(offset)
     BE_JSON_NAME(openMode)
@@ -530,6 +536,7 @@ public:
     static DgnDbStatus QueryDefinitionElementUsage(BeJsValue usageInfo, DgnDbR db, bvector<Utf8String> const& idStringArray);
     static void UpdateProjectExtents(DgnDbR dgndb, BeJsConst newExtents);
     static void UpdateIModelProps(DgnDbR dgndb, BeJsConst);
+    static Napi::Value GetInstance(ECDbR db, NapiInfoCR info);
 
     static DbResult CreateECDb(ECDbR, BeFileNameCR pathname);
     static DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenParams const&);
@@ -550,8 +557,8 @@ public:
     static DgnElementIdSet FindGeometryPartReferences(bvector<Utf8String> const& partIds, bool is2d, DgnDbR db);
 
     static void ConcurrentQueryExecute(ECDbCR ecdb, Napi::Object request, Napi::Function callback);
-    static Napi::Object  ConcurrentQueryResetConfig(Napi::Env, ECDbCR, Napi::Object);
-    static Napi::Object  ConcurrentQueryResetConfig(Napi::Env, ECDbCR);
+    static Napi::Object  ConcurrentQueryResetConfig(Napi::Env, Napi::Object);
+    static Napi::Object  ConcurrentQueryResetConfig(Napi::Env);
     static void GetTileTree(ICancellableP, DgnDbR db, Utf8StringCR id, Napi::Function& callback);
     static void GetTileContent(ICancellableP, DgnDbR db, Utf8StringCR treeId, Utf8StringCR tileId, Napi::Function& callback);
     static void SetMaxTileCacheSize(uint64_t maxBytes);
@@ -614,7 +621,7 @@ struct CRSListResponseProps
     bool m_deprecated;
     DRange2d m_crsExtent;
     };
-    
+
 struct GeoServicesInterop
 {
     static BentleyStatus GetGeographicCRSInterpretation(BeJsValue, BeJsConst);
@@ -630,7 +637,6 @@ struct NativeChangeset {
         bool m_invert;
         Byte* m_primaryKeyColumns;
         Changes::Change m_currentChange;
-        Db m_unusedDb;
         DbOpcode m_opcode;
         int m_columnCount;
         int m_indirect;
@@ -638,6 +644,7 @@ struct NativeChangeset {
         int m_primaryKeyCount;
         std::unique_ptr<Changes> m_changes;
         std::unique_ptr<ChangeStream> m_changeStream;
+        std::unique_ptr<ChangeGroup> m_changeGroup;
         Utf8CP m_tableName;
         Utf8String m_ddl;
 
@@ -652,8 +659,10 @@ struct NativeChangeset {
         NativeChangeset():m_primaryKeyColumns(nullptr), m_tableName(nullptr), m_currentChange(nullptr, false), m_invert(false){}
         void OpenFile(Napi::Env env, Utf8StringCR changesetFile, bool invert);
         void OpenChangeStream(Napi::Env env, std::unique_ptr<ChangeStream>, bool invert);
+        void OpenGroup(Napi::Env env, T_Utf8StringVector const& changesetFiles, Db const& db, bool invert);
         void Close(Napi::Env env);
         void Reset(Napi::Env env);
+        void WriteToFile(Napi::Env env, Utf8String const& fileName, bool containChanges, bool override);
         Napi::Value GetHasRow(Napi::Env env);
         Napi::Value GetColumnCount(Napi::Env env);
         Napi::Value GetColumnValue(Napi::Env env, int col, int target);

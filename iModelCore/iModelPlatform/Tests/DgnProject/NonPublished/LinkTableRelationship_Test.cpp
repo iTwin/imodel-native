@@ -11,17 +11,7 @@ USING_NAMESPACE_BENTLEY_EC;
 // @bsiclass
 //========================================================================================
 struct LinkTableRelationshipTests : public DgnDbTestFixture
-{
-    struct TestIssueListener : ECN::IIssueListener
-    {
-    mutable bvector<Utf8String> m_issues;
-
-    void _OnIssueReported(ECN::IssueSeverity severity, ECN::IssueCategory category, ECN::IssueType type, ECN::IssueId id, Utf8CP message) const override
-        {
-        m_issues.push_back(message);
-        }
-    };
-};
+{};
 
 //---------------------------------------------------------------------------------------
 // @bsimethod

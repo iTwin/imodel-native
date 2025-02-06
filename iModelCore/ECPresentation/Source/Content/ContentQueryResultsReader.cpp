@@ -150,6 +150,9 @@ static void SkipValues(int& sqlColumnIndex, bvector<ContentDescriptor::Field*> c
             if (!contract.ShouldHandleRelatedContentField(relatedContentField))
                 continue; // don't increase sqlColumnIndex even for this field
 
+            // Skip display label column 
+            ++sqlColumnIndex;
+            // Skip related content select fields
             SkipValues(sqlColumnIndex, relatedContentField.GetFields(), contract);
             }
 
@@ -195,13 +198,20 @@ static void ReadValues(ContentItemBuilder& item, int& sqlColumnIndex, ECSqlState
                 if (statement.IsValueNull(sqlColumnIndex))
                     {
                     item.AddEmptyNestedContentValue(fieldName.c_str());
-                    SkipValues(++sqlColumnIndex, relatedContentField.GetFields(), contract);
+                    // Skip instance key and display label columns
+                    sqlColumnIndex += 2;
+                    SkipValues(sqlColumnIndex, relatedContentField.GetFields(), contract);
                     }
                 else
                     {
                     ECInstanceKey relatedInstanceKey = ValueHelpers::GetECInstanceKeyFromJsonString(statement.GetValueText(sqlColumnIndex++));
                     ContentItemBuilder* existingNestedContentItem = item.GetNestedContentValue(fieldName.c_str(), relatedInstanceKey);
-                    ReadValues(existingNestedContentItem ? *existingNestedContentItem : item.AddNestedContentValue(fieldName.c_str(), relatedInstanceKey), sqlColumnIndex, statement,
+                    ContentItemBuilder& nestedItem = existingNestedContentItem ? *existingNestedContentItem : item.AddNestedContentValue(fieldName.c_str(), relatedInstanceKey);
+                    if (statement.IsValueNull(sqlColumnIndex))
+                        ++sqlColumnIndex;
+                    else
+                        nestedItem.SetLabel(*LabelDefinition::FromString(statement.GetValueText(sqlColumnIndex++)));
+                    ReadValues(nestedItem, sqlColumnIndex, statement,
                         relatedContentField.GetFields(), contract, readLabels, nullptr == existingNestedContentItem);
                     }
                 }
@@ -225,8 +235,7 @@ static void ReadValues(ContentItemBuilder& item, int& sqlColumnIndex, ECSqlState
         else if (field->IsCalculatedPropertyField())
             {
             // if this is a calculated field, just append the value
-            Utf8CP value = statement.GetValueText(sqlColumnIndex);
-            item.AddValue(fieldName.c_str(), value, nullptr);
+            item.AddCalculatedPropertyValue(fieldName.c_str(), field->AsCalculatedPropertyField()->GetType(), statement.GetValue(sqlColumnIndex));
             }
         else if (field->IsPropertiesField())
             {

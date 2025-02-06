@@ -31,6 +31,27 @@ struct SchemaCompatibilityTests : ECTestFixture
 
     //! The additionalSchemaXml is a snippet of the ECXml that will be placed within the 
     void CreateSchema(Utf8CP additionSchemaXml, Utf8CP failureMessage);
+
+    // Serialization should fail when schema has original ECXml version greater than the current version.
+    void TestSerializationFailure(ECSchemaCR schema, Utf8String testCaseName)
+        {
+        WString wcharXml;
+        EXPECT_EQ(SchemaWriteStatus::FailedToSaveXml, schema.WriteToXmlString(wcharXml));
+        EXPECT_STREQ(L"", wcharXml.c_str());
+
+        Utf8String serializedSchema;
+        EXPECT_EQ(SchemaWriteStatus::FailedToSaveXml, schema.WriteToXmlString(serializedSchema));
+        EXPECT_TRUE(Utf8String::IsNullOrEmpty(serializedSchema.c_str()));
+
+        serializedSchema.clear();
+        SchemaWriteStatus status = schema.WriteToXmlFile(ECTestFixture::GetTempDataPath(L"PrimitiveTypeAdded.xml").c_str());
+        EXPECT_EQ(SchemaWriteStatus::FailedToSaveXml, status);
+        EXPECT_TRUE(Utf8String::IsNullOrEmpty(serializedSchema.c_str()));
+
+        serializedSchema.clear();
+        EXPECT_FALSE(schema.WriteToJsonString(serializedSchema));
+        EXPECT_TRUE(Utf8String::IsNullOrEmpty(serializedSchema.c_str()));
+        }
 };
 
 //--------------------------------------------------------------------------------------
@@ -89,6 +110,8 @@ TEST_F(SchemaCompatibilityTests, PrimitiveTypeAdded)
     EXPECT_TRUE(bananaArrProp->GetIsPrimitiveArray());
     EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, bananaArrProp->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType()) << "The property is expected to have the default Primitive Type of string since it has an unknown type.";
     }
+
+    TestSerializationFailure(*m_schema, "PrimitiveTypeAdded");
     }
 
 //--------------------------------------------------------------------------------------
@@ -107,6 +130,8 @@ TEST_F(SchemaCompatibilityTests, NewEnumerationBackingType)
     ECEnumerationCP ecEnum = m_schema->GetEnumerationCP("TestEnumeration");
     ASSERT_NE(nullptr, ecEnum);
     EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, ecEnum->GetType()) << "The enumeration is expected to have a default backing type of string since it has a currently unknown backing type.";
+
+    TestSerializationFailure(*m_schema, "NewEnumerationBackingType");
     }
 
 //--------------------------------------------------------------------------------------
@@ -125,6 +150,8 @@ TEST_F(SchemaCompatibilityTests, NewClassModifier)
     ASSERT_NE(nullptr, testClass);
 
     EXPECT_EQ(ECClassModifier::None, testClass->GetClassModifier()) << "The class is expected to have a modifier of None since it currently has an unknown backing type";
+
+    TestSerializationFailure(*m_schema, "NewClassModifier");
     }
 
 //--------------------------------------------------------------------------------------
@@ -145,6 +172,8 @@ TEST_F(SchemaCompatibilityTests, NewPropertyKind)
     ASSERT_NE(nullptr, testClass);
 
     EXPECT_EQ(0, testClass->GetPropertyCount()) << "The property kind that is unknown is expected to be dropped from the class.";
+
+    TestSerializationFailure(*m_schema, "NewPropertyKind");
     }
 
 //--------------------------------------------------------------------------------------
@@ -174,6 +203,8 @@ TEST_F(SchemaCompatibilityTests, NewStrengthType)
     EXPECT_TRUE(testClass->IsRelationshipClass());
 
     EXPECT_EQ(StrengthType::Referencing, testClass->GetRelationshipClassCP()->GetStrength()) << "The relationship is expected to have a strength of Referencing since it currently has an unknown strength";
+
+    TestSerializationFailure(*m_schema, "NewStrengthType");
     }
 
 //--------------------------------------------------------------------------------------
@@ -187,6 +218,8 @@ TEST_F(SchemaCompatibilityTests, NewSchemaItemType)
 
     CreateSchema(partialXml, "with an unknown Schema Item type.");
     ASSERT_NE(nullptr, m_schema.get());
+
+    TestSerializationFailure(*m_schema, "NewSchemaItemType");
     }
 
 //--------------------------------------------------------------------------------------
@@ -203,6 +236,8 @@ TEST_F(SchemaCompatibilityTests, SchemaItemWithUnknownAttributes)
 
     ECClassCP ecClass = m_schema->GetClassCP("TestBananaClass");
     EXPECT_NE(nullptr, ecClass);
+
+    TestSerializationFailure(*m_schema, "SchemaItemWithUnknownAttributes");
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
