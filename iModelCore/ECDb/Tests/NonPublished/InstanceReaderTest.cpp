@@ -1106,6 +1106,28 @@ TEST_F(InstanceReaderFixture, ecsql_read_instance) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, ecsql_read_instance_after_cache_clean) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("instanceReader.ecdb"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"sql(
+        SELECT $ FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.'
+    )sql"));
+
+    m_ecdb.ClearECDbCache();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"sql(
+        SELECT $ FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.'
+    )sql"));
+
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+    ASSERT_STREQ(stmt.GetNativeSql(), SqlPrintfString("SELECT json(extract_inst([ECClassDef].[ECClassId],[ECClassDef].[ECInstanceId], 0x0)) FROM (SELECT [Id] ECInstanceId,%d ECClassId,[Description] FROM [main].[ec_Class]) [ECClassDef] WHERE [ECClassDef].[Description]='Relates the property to its PropertyCategory.'", CLASS_ID(meta, ECClassDef)).GetUtf8CP());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, ecsql_read_property) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("instanceReader.ecdb"));
 
