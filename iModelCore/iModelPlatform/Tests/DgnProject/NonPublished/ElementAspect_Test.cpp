@@ -127,28 +127,28 @@ TEST_F(ElementAspectTests, ImportingElementsWithUniqueAspects)
     
     //  Insert an element ...
     TestElementPtr tempEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement");
-    ASSERT_EQ(nullptr, DgnElement::UniqueAspect::GetAspect(*tempEl, aclass)) << "element should not yet have an aspect";
+    ASSERT_EQ(nullptr, DgnElement::UniqueAspect::GetAspect(*tempEl, aclass)) << "Element should not yet have an aspect";
     //  ... with an aspect
     DgnElement::UniqueAspect::SetAspect(*tempEl, *TestUniqueAspect::Create("Initial Value"));
-    ASSERT_NE(nullptr, DgnElement::UniqueAspect::GetAspect(*tempEl, aclass)) << "element should have a scheduled aspect";
+    ASSERT_NE(nullptr, DgnElement::UniqueAspect::GetAspect(*tempEl, aclass)) << "Element should have a scheduled aspect";
     el = m_db->Elements().Insert(*tempEl);
 
     //  Verify that aspect was saved in the Db
     TestUniqueAspectCP aspect = DgnElement::UniqueAspect::Get<TestUniqueAspect>(*el, aclass);
-    ASSERT_NE(nullptr, aspect) << "element should have a persistent aspect";
+    ASSERT_NE(nullptr, aspect) << "Element should have a persistent aspect";
     ASSERT_STREQ("Initial Value", aspect->GetTestUniqueAspectProperty().c_str());
 
-    // Create an element without aspects
+    //  Create an element without aspects
     TestElementPtr tempEl2 = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement2");
-    ASSERT_EQ(nullptr, DgnElement::UniqueAspect::GetAspect(*tempEl2, aclass)) << "element should not yet have an aspect";
+    ASSERT_EQ(nullptr, DgnElement::UniqueAspect::GetAspect(*tempEl2, aclass)) << "Element should not yet have an aspect";
 
-    // Import the element with the aspect
+    //  Import the element with the aspect
     DgnImportContext context(*m_db, *m_db);
     ASSERT_EQ(DgnDbStatus::Success,DgnElement::Aspect::ImportAspects(*tempEl2, *tempEl, context));
     auto importedEl = m_db->Elements().Insert(*tempEl2);
     ASSERT_TRUE(importedEl.IsValid());
 
-    // Verify that the imported element has the aspect
+    //  Verify that the imported element has the aspect
     TestUniqueAspectCP aspect2 = DgnElement::UniqueAspect::Get<TestUniqueAspect>(*importedEl, aclass);
     ASSERT_NE(nullptr, aspect2) << "Imported element should have a persistent aspect";
     ASSERT_EQ(aspect->GetTestUniqueAspectProperty(), aspect2->GetTestUniqueAspectProperty()) << "Imported element's aspect should have the same property value as the original element's aspect";
