@@ -2133,11 +2133,11 @@ DgnDbStatus DgnElement::Aspect::ImportAspects(DgnElementR destEl, DgnElementCR s
         }
 
 
-    auto uniqueAspects = srcDb.GetPreparedECSqlStatement("select ecclassid from " BIS_SCHEMA(BIS_CLASS_ElementUniqueAspect) " where ECInstanceId=?");
+    auto uniqueAspects = srcDb.GetPreparedECSqlStatement("select ecclassid from " BIS_SCHEMA(BIS_CLASS_ElementUniqueAspect) " where Element.Id=?");
     uniqueAspects->BindId(1, srcEl.GetElementId());
     while (BE_SQLITE_ROW == uniqueAspects->Step())
         {
-        auto srcAspectClassId = multiAspects->GetValueId<ECClassId>(0);
+        auto srcAspectClassId = uniqueAspects->GetValueId<ECClassId>(0);
         auto srcAspectClass = srcDb.Schemas().GetClass(srcAspectClassId);
         if (nullptr == srcAspectClass)
             {

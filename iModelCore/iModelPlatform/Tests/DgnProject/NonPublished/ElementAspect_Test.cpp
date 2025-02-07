@@ -119,6 +119,43 @@ TEST_F(ElementAspectTests, UniqueAspect_CRUD)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ElementAspectTests, ImportingElementsWithUniqueAspects)
+    {
+    SetupSeedProject();
+    ECN::ECClassCR aclass = *TestUniqueAspect::GetECClass(*m_db);
+    TestElementCPtr el;
+    
+    //  Insert an element ...
+    TestElementPtr tempEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement");
+    ASSERT_EQ(nullptr, DgnElement::UniqueAspect::GetAspect(*tempEl, aclass)) << "element should not yet have an aspect";
+    //  ... with an aspect
+    DgnElement::UniqueAspect::SetAspect(*tempEl, *TestUniqueAspect::Create("Initial Value"));
+    ASSERT_NE(nullptr, DgnElement::UniqueAspect::GetAspect(*tempEl, aclass)) << "element should have a scheduled aspect";
+    el = m_db->Elements().Insert(*tempEl);
+
+    //  Verify that aspect was saved in the Db
+    TestUniqueAspectCP aspect = DgnElement::UniqueAspect::Get<TestUniqueAspect>(*el, aclass);
+    ASSERT_NE(nullptr, aspect) << "element should have a persistent aspect";
+    ASSERT_STREQ("Initial Value", aspect->GetTestUniqueAspectProperty().c_str());
+
+    // Create an element without aspects
+    TestElementPtr tempEl2 = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement2");
+    ASSERT_EQ(nullptr, DgnElement::UniqueAspect::GetAspect(*tempEl2, aclass)) << "element should not yet have an aspect";
+
+    // Import the element with the aspect
+    DgnImportContext context(*m_db, *m_db);
+    ASSERT_EQ(DgnDbStatus::Success,DgnElement::Aspect::ImportAspects(*tempEl2, *tempEl, context));
+    auto temp = m_db->Elements().Insert(*tempEl2);
+    ASSERT_TRUE(temp.IsValid());
+
+    TestUniqueAspectCP aspect2 = DgnElement::UniqueAspect::Get<TestUniqueAspect>(*temp, aclass);
+    ASSERT_NE(nullptr, aspect2) << "Imported element should have a persistent aspect";
+    ASSERT_EQ(aspect->GetTestUniqueAspectProperty(), aspect2->GetTestUniqueAspectProperty()) << "Imported aspect should have the same property value as the original aspect";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ElementAspectTests, UniqueAspect_Uniqueness)
     {
     SetupSeedProject();
