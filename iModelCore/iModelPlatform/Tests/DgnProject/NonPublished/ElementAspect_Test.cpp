@@ -145,12 +145,13 @@ TEST_F(ElementAspectTests, ImportingElementsWithUniqueAspects)
     // Import the element with the aspect
     DgnImportContext context(*m_db, *m_db);
     ASSERT_EQ(DgnDbStatus::Success,DgnElement::Aspect::ImportAspects(*tempEl2, *tempEl, context));
-    auto temp = m_db->Elements().Insert(*tempEl2);
-    ASSERT_TRUE(temp.IsValid());
+    auto importedEl = m_db->Elements().Insert(*tempEl2);
+    ASSERT_TRUE(importedEl.IsValid());
 
-    TestUniqueAspectCP aspect2 = DgnElement::UniqueAspect::Get<TestUniqueAspect>(*temp, aclass);
+    // Verify that the imported element has the aspect
+    TestUniqueAspectCP aspect2 = DgnElement::UniqueAspect::Get<TestUniqueAspect>(*importedEl, aclass);
     ASSERT_NE(nullptr, aspect2) << "Imported element should have a persistent aspect";
-    ASSERT_EQ(aspect->GetTestUniqueAspectProperty(), aspect2->GetTestUniqueAspectProperty()) << "Imported aspect should have the same property value as the original aspect";
+    ASSERT_EQ(aspect->GetTestUniqueAspectProperty(), aspect2->GetTestUniqueAspectProperty()) << "Imported element's aspect should have the same property value as the original element's aspect";
     }
 
 //---------------------------------------------------------------------------------------
