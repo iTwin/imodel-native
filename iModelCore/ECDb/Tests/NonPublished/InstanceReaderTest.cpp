@@ -1106,6 +1106,49 @@ TEST_F(InstanceReaderFixture, ecsql_read_instance) {
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(InstanceReaderFixture, ecsql_read_instance_after_cache_clean) {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("instanceReader.ecdb"));
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, R"sql(
+        SELECT ECClassId, ECInstanceId, EXTRACT_INST('meta.ecClassDef',ECInstanceId,0x0) FROM meta.ECClassDef WHERE Description='Relates the property to its PropertyCategory.'
+    )sql"));
+
+    BeJsDocument doc;
+    //! HARD_CODED_IDS
+    doc.Parse(R"json({
+        "ECInstanceId": "0x35",
+        "ECClassId": "0x25",
+        "Schema": {
+            "Id": "0x4",
+            "RelECClassId": "0x26"
+        },
+        "Name": "PropertyHasCategory",
+        "Description": "Relates the property to its PropertyCategory.",
+        "Type": 1,
+        "Modifier": 2,
+        "RelationshipStrength": 0,
+        "RelationshipStrengthDirection": 1
+    })json");
+    auto& reader = m_ecdb.GetInstanceReader();
+    if(stmt.Step() == BE_SQLITE_ROW) {
+        ECInstanceKey instanceKey (stmt.GetValueId<ECClassId>(0), stmt.GetValueId<ECInstanceId>(1));
+        auto pos = InstanceReader::Position(stmt.GetValueId<ECInstanceId>(1), stmt.GetValueId<ECClassId>(0));
+        ASSERT_EQ(true, reader.Seek(pos,[&](InstanceReader::IRowContext const& row){
+            EXPECT_STRCASEEQ(doc.Stringify(StringifyFormat::Indented).c_str(), row.GetJson().Stringify(StringifyFormat::Indented).c_str());
+        }));
+
+        m_ecdb.ClearECDbCache();
+        
+        ASSERT_EQ(true, reader.Seek(pos,[&](InstanceReader::IRowContext const& row){
+            EXPECT_STRCASEEQ(doc.Stringify(StringifyFormat::Indented).c_str(), row.GetJson().Stringify(StringifyFormat::Indented).c_str());
+        }));
+    }
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(InstanceReaderFixture, ecsql_read_property) {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("instanceReader.ecdb"));
 
