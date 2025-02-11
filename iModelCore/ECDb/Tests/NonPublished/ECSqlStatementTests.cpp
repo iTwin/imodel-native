@@ -12780,15 +12780,19 @@ TEST_F(ECSqlStatementTestFixture, ValuesClauseTest) {
     query = "SELECT * FROM (VALUES(1), (2), (3))";
     ASSERT_EQ(ECSqlStatus::Success, asteriskExpansion.Prepare(m_ecdb, query.c_str()));
 
+    ECSqlStatement asteriskWithMultipleColumns;
+    query = "SELECT * FROM (VALUES(1,2,3,4,5), (6,7,8,9,10))";
+    ASSERT_EQ(ECSqlStatus::Success, asteriskWithMultipleColumns.Prepare(m_ecdb, query.c_str()));
+
     // ECSqlStatement asteriskWithMultipleTables;
     // query = "SELECT * FROM (VALUES(1), (2)), (VALUES(3), (4))";
     // ASSERT_EQ(ECSqlStatus::Success, asteriskWithMultipleTables.Prepare(m_ecdb, query.c_str()));
     // this one fails becuz when its trying to add the second classRef in ECSqlParser::ParseFromClause, the code think theres duplicate className
     // this statement also fails in exisiting ecsql execution, but wotks in sqlite execution
 
-    ECSqlStatement asteriskWithMultipleTablesAlias;
+    ECSqlStatement asteriskWithMultipleSubqueryAlias;
     query = "SELECT * FROM (VALUES(1), (2)) a, (VALUES(3), (4)) b";
-    ASSERT_EQ(ECSqlStatus::Success, asteriskWithMultipleTablesAlias.Prepare(m_ecdb, query.c_str()));
+    ASSERT_EQ(ECSqlStatus::Success, asteriskWithMultipleSubqueryAlias.Prepare(m_ecdb, query.c_str()));
 
     ECSqlStatement multipleInlineTables;
     query = "SELECT d.column1, d.column2, x.column1, x.column2 FROM (VALUES(1,1), (2,2)) d, (VALUES(4,5), (5,6)) x";
@@ -12802,13 +12806,25 @@ TEST_F(ECSqlStatementTestFixture, ValuesClauseTest) {
     query = "SELECT column1 FROM (SELECT column1 FROM (VALUES(1), (2), (3)))";
     ASSERT_EQ(ECSqlStatus::Success, nestedValues.Prepare(m_ecdb, query.c_str()));
 
+    ECSqlStatement tripleNestedValues;
+    query = "SELECT column1 FROM (SELECT column1 FROM (SELECT column1 FROM (VALUES(1), (2), (3))))";
+    ASSERT_EQ(ECSqlStatus::Success, tripleNestedValues.Prepare(m_ecdb, query.c_str()));
+
     ECSqlStatement nestedValuesWithAsterisk;
     query = "SELECT * FROM (SELECT * FROM (VALUES(1), (2), (3)))";
     ASSERT_EQ(ECSqlStatus::Success, nestedValuesWithAsterisk.Prepare(m_ecdb, query.c_str()));
 
-    ECSqlStatement nestedValuesWithAsteriskAndAlias;
+    ECSqlStatement selectColumnInNestedValuesWithAsterisk;
+    query = "SELECT column2 FROM (SELECT * FROM (VALUES(1, 2), (2, 3), (3, 4)))";
+    ASSERT_EQ(ECSqlStatus::Success, selectColumnInNestedValuesWithAsterisk.Prepare(m_ecdb, query.c_str()));
+
+    ECSqlStatement nestedValuesWithAlias;
     query = "SELECT a.col1 FROM (SELECT b.column1 col1 from (VALUES(1), (2), (3)) b) a";
-    ASSERT_EQ(ECSqlStatus::Success, nestedValuesWithAsteriskAndAlias.Prepare(m_ecdb, query.c_str()));
+    ASSERT_EQ(ECSqlStatus::Success, nestedValuesWithAlias.Prepare(m_ecdb, query.c_str()));
+
+    ECSqlStatement tripleNestedValuesWithAlias;
+    query = "SELECT a.col1 FROM (SELECT b.col1 FROM (SELECT c.column1 col1 FROM (VALUES(1), (2), (3)) c) b) a";
+    ASSERT_EQ(ECSqlStatus::Success, tripleNestedValuesWithAlias.Prepare(m_ecdb, query.c_str()));
 
     ECSqlStatement fiveHundredPlusValues;
     query = "SELECT * FROM (VALUES ";
@@ -12826,8 +12842,7 @@ TEST_F(ECSqlStatementTestFixture, ValuesClauseTest) {
     // Failure case
     ECSqlStatement unequalNumberOfColumns;
     query = "SELECT * FROM (VALUES(1), (3,4))";
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, unequalNumberOfColumns.Prepare(m_ecdb, query.c_str()));
-    
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, unequalNumberOfColumns.Prepare(m_ecdb, query.c_str()));    
 }
 
 END_ECDBUNITTESTS_NAMESPACE
