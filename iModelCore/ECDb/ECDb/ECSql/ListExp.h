@@ -99,4 +99,30 @@ struct ValueExpListExp final : ComputedExp
         ValueExp const* GetValueExp(size_t index) const { return GetChild<ValueExp>(index); }
     };
 
+//************************ RowValuesExpListExp ******************************
+//=======================================================================================
+//! @bsiclass
+//+===============+===============+===============+===============+===============+======
+struct SelectClauseExp;
+struct RowValueConstructorListExp final : RangeClassRefExp
+    {
+    ECSqlTypeInfo m_typeInfo;
+    private:
+        FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode mode) override;
+        void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToJson(BeJsValue, JsonFormat const&) const override;
+        Utf8String _ToString() const override { return "RowValueConstructorList"; }
+
+        void SetTypeInfo(ECSqlTypeInfo const& typeInfo) { m_typeInfo = typeInfo; }
+        Utf8StringCR _GetId() const override { static const Utf8String emptryStr = ""; return emptryStr; }
+        void _OnAliasChanged() override {}
+        void _ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const&) const override;
+        PropertyMatchResult _FindProperty(ECSqlParseContext& ctx, PropertyPath const &propertyPath, const PropertyMatchOptions &options) const override;
+
+    public:
+        explicit RowValueConstructorListExp(std::vector<std::unique_ptr<ValueExpListExp>>&);
+        SelectClauseExp const* GetSelection() const { return GetChild<SelectClauseExp>(0); }
+        std::vector<ValueExpListExp const*> GetRowValues() const;
+    };
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

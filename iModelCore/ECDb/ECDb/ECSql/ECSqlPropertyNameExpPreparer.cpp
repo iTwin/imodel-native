@@ -388,6 +388,11 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                     ECSqlFieldFactory::CreateField(ctx, exp.GetParent()->GetAsCP<DerivedPropertyExp>(), ctx.GetCurrentScope().GetNativeSqlSelectClauseColumnCount());
                 break;
                 }
+            case Exp::Type::SqlColumnName:
+                {
+                    nativeSqlSnippets.push_back(NativeSqlBuilder(exp.GetResolvedPropertyPath().ToString()));
+                    break;
+                }
             default: {
                 if (exp.IsPropertyFromCommonTableBlock()) {
                     NativeSqlBuilder sqlSnippet;

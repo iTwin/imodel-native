@@ -1938,6 +1938,25 @@ Utf8String UnaryValueExp::_ToString() const
     return str;
     }
 
+//******************************* sqlColumnNameExp *****************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SqlColumnNameExp::_ToJson(BeJsValue val, JsonFormat const&) const
+    {
+    val.SetEmptyObject();
+    val["id"] = "SqlColumnNameExp";
+    val["name"] = m_columnName;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+void SqlColumnNameExp::_ToECSql(ECSqlRenderContext& ctx) const
+    {
+    ctx.AppendToECSql(m_columnName);
+    }
+
 //****************************** FunctionSignatureSet *****************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod

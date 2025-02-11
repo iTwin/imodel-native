@@ -1588,6 +1588,18 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryExp(ECSqlPrepareContext& ctx, Subqu
         ctx.GetSqlBuilder().AppendParenRight();
         return stat;
     }
+    RowValueConstructorListExp const* rowValuesSubquery =  exp.GetQuery<RowValueConstructorListExp>();
+    if(rowValuesSubquery != nullptr)
+        {
+        NativeSqlBuilder::List nativeSqlSnippets;
+        ECSqlStatus stat = PrepareRowValueConstructorListExp(nativeSqlSnippets, ctx, *rowValuesSubquery);
+        if (!stat.IsSuccess())
+            return stat;
+        ctx.GetSqlBuilder().Append(nativeSqlSnippets);
+        ctx.GetSqlBuilder().AppendParenRight();
+        return stat;
+        }
+    
     BeAssert(false && "ECSqlExpPreparer::PrepareSubqueryExp> SubqueryExp must have a child of type either SelectStatementExp or CommonTableExp.");
     return ECSqlStatus::Error;
     }
@@ -1657,6 +1669,23 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryValueExp(NativeSqlBuilder::List& na
     ECSqlStatus st = PrepareSubqueryExp(ctx, *exp.GetQuery());
     nativeSqlSnippets.push_back(NativeSqlBuilder(ctx.GetSqlBuilder().Pop()));
     return st;
+    }
+
+ECSqlStatus ECSqlExpPreparer::PrepareSqlColumnNameExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, SqlColumnNameExp const& exp)
+    {
+    NativeSqlBuilder nativeSql;
+
+    // auto subqueryRefExp = exp.GetParent()->GetParent()->GetAs<SubqueryRefExp>();
+    // if (exp.GetParent()->GetParent()->GetAs<SubqueryRefExp>() != nullptr) 
+    //     {
+        
+    //     nativeSql.AppendEscaped(subqueryAlias.c_str()).Append(".");
+    //     }
+
+    nativeSql.Append(exp.GetColumnName().c_str());
+
+    nativeSqlSnippets.push_back(nativeSql);
+    return ECSqlStatus::Success;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -2543,6 +2572,8 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp(NativeSqlBuilder::List& nativeSqlS
                 return PrepareWindowFunctionExp(nativeSqlSnippets, ctx, exp.GetAs<WindowFunctionExp>());
             case Exp::Type::NavValueCreationFunc:
                 return PrepareNavValueCreationFuncExp(nativeSqlSnippets, ctx, exp.GetAs<NavValueCreationFuncExp>());
+            case Exp::Type::SqlColumnName: //@todo - naron: this should be removed, when asterisk expands it should go into propertyNameExp
+                return PrepareSqlColumnNameExp(nativeSqlSnippets, ctx, exp.GetAs<SqlColumnNameExp>());
             default:
                 break;
             }
@@ -2550,6 +2581,63 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp(NativeSqlBuilder::List& nativeSqlS
     BeAssert(false && "ECSqlPreparer::PrepareValueExp> Unhandled ValueExp subclass.");
     return ECSqlStatus::Error;
     }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+ECSqlStatus ECSqlExpPreparer::PrepareRowValueConstructorListExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, RowValueConstructorListExp const& exp)
+{
+    BeAssert(nativeSqlSnippets.empty());
+    bool isFirstExp = true;
+
+    // build the select string
+    NativeSqlBuilder builder;
+    builder.Append("SELECT ");
+    for (Exp const* selectionItem : exp.GetSelection()->GetChildren())
+        {
+            auto columnNameExp = selectionItem->GetAs<DerivedPropertyExp>().GetExpression();
+            Utf8StringCR columnName = columnNameExp->GetAs<SqlColumnNameExp>().GetColumnName();
+            if (!isFirstExp)
+                builder.AppendComma();
+            else
+                isFirstExp = false;
+            builder.Append(columnName);        
+        }
+    
+    builder.Append(" FROM (VALUES ");
+    isFirstExp = true;
+    // build the values string
+    for (Exp const* valueExpListExp : exp.GetRowValues())
+        {
+        NativeSqlBuilder::List listItemExpBuilders;
+        
+        auto stat = PrepareValueExpListExp(listItemExpBuilders, ctx, valueExpListExp->GetAs<ValueExpListExp>(), false);
+        if (!stat.IsSuccess())
+            return stat;
+
+        if (!isFirstExp)
+            builder.AppendComma();
+        else 
+            isFirstExp = false;
+
+        builder.AppendParenLeft();
+        for (size_t i = 0; i < listItemExpBuilders.size(); i++)
+        {
+            if (i > 0)
+                builder.AppendComma();
+            builder.Append(listItemExpBuilders[i]);
+        }
+        builder.AppendParenRight();
+        }
+
+    builder.AppendParenRight();
+
+    nativeSqlSnippets.push_back(std::move(builder));
+
+    return ECSqlStatus::Success;
+}
+
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod

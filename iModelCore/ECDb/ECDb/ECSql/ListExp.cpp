@@ -6,6 +6,7 @@
 #include "ECDbPch.h"
 #include "ListExp.h"
 #include "UpdateStatementExp.h"
+#include "SelectStatementExp.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -166,6 +167,116 @@ void ValueExpListExp::_ToECSql(ECSqlRenderContext& ctx) const
         ctx.AppendToECSql(*childExp);
         isFirstItem = false;
         }
+    }
+
+// ******************* RowValueConstructorListExp *************************
+
+RowValueConstructorListExp::RowValueConstructorListExp(std::vector<std::unique_ptr<ValueExpListExp>>& rowValueList)
+    : RangeClassRefExp(Exp::Type::RowValueConstructorList, PolymorphicInfo::NotSpecified())
+    {
+    std::unique_ptr<SelectClauseExp> selectStmtExp = std::make_unique<SelectClauseExp>(); 
+
+    // BeAssert(!rowValueList.empty() && rowValueList[0] != nullptr);
+    size_t childrenCount = rowValueList[0]->GetChildrenCount();
+
+    for (size_t i = 1; i <= childrenCount; i++)
+        {
+        Utf8String columnName = "column" + std::to_string(i);
+        
+        selectStmtExp->AddProperty(std::make_unique<DerivedPropertyExp>(
+            std::make_unique<SqlColumnNameExp>(columnName),
+                columnName.c_str()
+        ));
+        }
+    
+    AddChild(std::move(selectStmtExp));
+
+    for (std::unique_ptr<ValueExpListExp>& valueExpListExp : rowValueList)
+        { 
+        AddChild(std::move(valueExpListExp));
+        }
+    }
+
+Exp::FinalizeParseStatus RowValueConstructorListExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
+    {
+        if (mode == FinalizeParseMode::BeforeFinalizingChildren)
+            SetTypeInfo(ECSqlTypeInfo(ECSqlTypeInfo::Kind::Varies)); 
+        return FinalizeParseStatus::Completed;
+    }
+
+void RowValueConstructorListExp::_ToECSql(ECSqlRenderContext& ctx) const
+    {
+        ctx.AppendToECSql("(");
+        
+        bool isFirstItem = true;
+        for (Exp const* childExp : GetChildren())
+        {
+            if (!isFirstItem)
+                ctx.AppendToECSql(", ");
+            ctx.AppendToECSql(*childExp);
+            isFirstItem = false;
+        }
+
+        ctx.AppendToECSql("(");
+    }
+
+void RowValueConstructorListExp::_ToJson(BeJsValue val, JsonFormat const& fmt) const
+    {
+        val.SetEmptyArray();
+        for (Exp const* childExp : GetChildren())
+            childExp->ToJson(val.appendValue(), fmt);
+    }
+
+void RowValueConstructorListExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const
+    {
+        for (size_t i = 0; i < GetSelection()->GetChildrenCount(); i++)
+            {
+            auto derivedPropertyExp = GetSelection()->GetChildren().Get<DerivedPropertyExp>(i);
+            expandedSelectClauseItemList.push_back(std::make_unique<DerivedPropertyExp>(
+                std::make_unique<SqlColumnNameExp>(derivedPropertyExp->GetColumnAlias()),
+                derivedPropertyExp->GetColumnAlias().c_str()
+            ));
+            }
+    }
+
+PropertyMatchResult RowValueConstructorListExp::_FindProperty(ECSqlParseContext& ctx, PropertyPath const& propertyPath, const PropertyMatchOptions& options) const
+    {
+    if (propertyPath.IsEmpty())
+        return PropertyMatchResult::NotFound();
+    
+    Utf8String subqueryAlias = GetParent()->GetParent()->GetAs<SubqueryRefExp>().GetAlias();
+
+    if (subqueryAlias.empty())
+        {
+        for (size_t i = 0; i <  GetSelection()->GetChildrenCount(); i++)
+            {
+            auto derivedPropertyExp = GetSelection()->GetChildren().Get<DerivedPropertyExp>(i);
+            if (propertyPath.First().GetName() == derivedPropertyExp->GetColumnAlias())
+                return PropertyMatchResult(options, propertyPath, propertyPath, *derivedPropertyExp, 0);
+            }
+        }
+    else{
+        if (propertyPath.First().GetName() == subqueryAlias && propertyPath.Size() == 2)
+            {
+            for (size_t i = 0; i <  GetSelection()->GetChildrenCount(); i++)
+                {
+                auto derivedPropertyExp = GetSelection()->GetChildren().Get<DerivedPropertyExp>(i);
+                if (propertyPath[1].GetName() == derivedPropertyExp->GetColumnAlias())
+                    return PropertyMatchResult(options, propertyPath, propertyPath, *derivedPropertyExp, 0);
+                }
+            }
+        }
+
+    
+    return PropertyMatchResult::NotFound();
+    }
+
+std::vector<ValueExpListExp const*> RowValueConstructorListExp::GetRowValues() const
+    {
+        std::vector<ValueExpListExp const*> rowValues;
+        for (size_t i = 1; i < GetChildrenCount(); i++)
+            rowValues.push_back(GetChild<ValueExpListExp>(i));
+        return rowValues;
     }
 
 

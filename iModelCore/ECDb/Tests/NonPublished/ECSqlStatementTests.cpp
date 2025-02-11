@@ -12749,6 +12749,48 @@ TEST_F(ECSqlStatementTestFixture, InsertUsingOnlyAndAll)
     }
     }
 
+TEST_F(ECSqlStatementTestFixture, ValuesClauseTest) {
+    // ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ValuesClauseTest.ecdb", SchemaItem(
+    //     R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+    //         <ECEntityClass typeName="Dummy" >
+    //             <ECProperty propertyName="DummyProp" typeName="string" />
+    //         </ECEntityClass>
+    //     </ECSchema>)xml"
+    // )));
+    
+    ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ValuesClauseTest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
+    ECSqlStatement stmt;
+    std::string query = "select column1 from (values(1), (2), (3))";
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query.c_str()));
+
+    ECSqlStatement stmt2;
+    query = "SELECT column1 FROM (VALUES(1,2), (3,4))";
+    ASSERT_EQ(ECSqlStatus::Success, stmt2.Prepare(m_ecdb, query.c_str()));
+
+    ECSqlStatement stmt3;
+    query = "SELECT column1, column2 FROM (VALUES(1,2), (3,4))";
+    ASSERT_EQ(ECSqlStatus::Success, stmt3.Prepare(m_ecdb, query.c_str()));
+
+    ECSqlStatement stmt4;
+    query = "SELECT a.column1, a.column2 FROM (VALUES(1,2), (3,4)) a"; // this got translated to SELECT column1,column2 FROM (SELECT column1,column2 FROM (VALUES (1,2),(3,4))) [a]
+    ASSERT_EQ(ECSqlStatus::Success, stmt4.Prepare(m_ecdb, query.c_str()));
+
+    ECSqlStatement stmt5;
+    query = "SELECT * FROM (VALUES(1), (2), (3))";
+    ASSERT_EQ(ECSqlStatus::Success, stmt5.Prepare(m_ecdb, query.c_str()));
+
+    ECSqlStatement stmt8;
+    query = "SELECT * FROM (VALUES(1), (2)) a, (VALUES(3), (4)) b";
+    ASSERT_EQ(ECSqlStatus::Success, stmt8.Prepare(m_ecdb, query.c_str()));
+
+    ECSqlStatement stmt6;
+    query = "SELECT d.column1, d.column2, x.column1, x.column2 FROM (VALUES(1,1), (2,2)) d, (VALUES(4,5), (5,6)) x";
+    ASSERT_EQ(ECSqlStatus::Success, stmt6.Prepare(m_ecdb, query.c_str()));
+
+    ECSqlStatement stmt7;
+    query = "SELECT column1 myColumn FROM (VALUES(1), (2))";
+    
+}
 
 END_ECDBUNITTESTS_NAMESPACE
