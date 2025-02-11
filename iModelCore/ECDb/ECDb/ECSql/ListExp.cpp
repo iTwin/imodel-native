@@ -246,6 +246,7 @@ PropertyMatchResult RowValueConstructorListExp::_FindProperty(ECSqlParseContext&
     
     Utf8String subqueryAlias = GetParent()->GetParent()->GetAs<SubqueryRefExp>().GetAlias();
 
+    // if subquery dooesn't have alias
     if (subqueryAlias.empty())
         {
         for (size_t i = 0; i <  GetSelection()->GetChildrenCount(); i++)
@@ -255,6 +256,7 @@ PropertyMatchResult RowValueConstructorListExp::_FindProperty(ECSqlParseContext&
                 return PropertyMatchResult(options, propertyPath, propertyPath, *derivedPropertyExp, 0);
             }
         }
+    // if subquery has alias
     else{
         if (propertyPath.First().GetName() == subqueryAlias && propertyPath.Size() == 2)
             {

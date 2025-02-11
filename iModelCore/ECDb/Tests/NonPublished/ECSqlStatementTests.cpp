@@ -12760,36 +12760,73 @@ TEST_F(ECSqlStatementTestFixture, ValuesClauseTest) {
     
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ValuesClauseTest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
-    ECSqlStatement stmt;
+    ECSqlStatement simpleSelect;
     std::string query = "select column1 from (values(1), (2), (3))";
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, query.c_str()));
+    ASSERT_EQ(ECSqlStatus::Success, simpleSelect.Prepare(m_ecdb, query.c_str()));
 
-    ECSqlStatement stmt2;
+    ECSqlStatement selectOneColumn;
     query = "SELECT column1 FROM (VALUES(1,2), (3,4))";
-    ASSERT_EQ(ECSqlStatus::Success, stmt2.Prepare(m_ecdb, query.c_str()));
+    ASSERT_EQ(ECSqlStatus::Success, selectOneColumn.Prepare(m_ecdb, query.c_str()));
 
-    ECSqlStatement stmt3;
+    ECSqlStatement multipleRows;
     query = "SELECT column1, column2 FROM (VALUES(1,2), (3,4))";
-    ASSERT_EQ(ECSqlStatus::Success, stmt3.Prepare(m_ecdb, query.c_str()));
+    ASSERT_EQ(ECSqlStatus::Success, multipleRows.Prepare(m_ecdb, query.c_str()));
 
-    ECSqlStatement stmt4;
-    query = "SELECT a.column1, a.column2 FROM (VALUES(1,2), (3,4)) a"; // this got translated to SELECT column1,column2 FROM (SELECT column1,column2 FROM (VALUES (1,2),(3,4))) [a]
-    ASSERT_EQ(ECSqlStatus::Success, stmt4.Prepare(m_ecdb, query.c_str()));
+    ECSqlStatement tableAlias;
+    query = "SELECT a.column1, a.column2 FROM (VALUES(1,2), (3,4)) a"; 
+    ASSERT_EQ(ECSqlStatus::Success, tableAlias.Prepare(m_ecdb, query.c_str()));
 
-    ECSqlStatement stmt5;
+    ECSqlStatement asteriskExpansion;
     query = "SELECT * FROM (VALUES(1), (2), (3))";
-    ASSERT_EQ(ECSqlStatus::Success, stmt5.Prepare(m_ecdb, query.c_str()));
+    ASSERT_EQ(ECSqlStatus::Success, asteriskExpansion.Prepare(m_ecdb, query.c_str()));
 
-    ECSqlStatement stmt8;
+    // ECSqlStatement asteriskWithMultipleTables;
+    // query = "SELECT * FROM (VALUES(1), (2)), (VALUES(3), (4))";
+    // ASSERT_EQ(ECSqlStatus::Success, asteriskWithMultipleTables.Prepare(m_ecdb, query.c_str()));
+    // this one fails becuz when its trying to add the second classRef in ECSqlParser::ParseFromClause, the code think theres duplicate className
+    // this statement also fails in exisiting ecsql execution, but wotks in sqlite execution
+
+    ECSqlStatement asteriskWithMultipleTablesAlias;
     query = "SELECT * FROM (VALUES(1), (2)) a, (VALUES(3), (4)) b";
-    ASSERT_EQ(ECSqlStatus::Success, stmt8.Prepare(m_ecdb, query.c_str()));
+    ASSERT_EQ(ECSqlStatus::Success, asteriskWithMultipleTablesAlias.Prepare(m_ecdb, query.c_str()));
 
-    ECSqlStatement stmt6;
+    ECSqlStatement multipleInlineTables;
     query = "SELECT d.column1, d.column2, x.column1, x.column2 FROM (VALUES(1,1), (2,2)) d, (VALUES(4,5), (5,6)) x";
-    ASSERT_EQ(ECSqlStatus::Success, stmt6.Prepare(m_ecdb, query.c_str()));
+    ASSERT_EQ(ECSqlStatus::Success, multipleInlineTables.Prepare(m_ecdb, query.c_str()));
 
-    ECSqlStatement stmt7;
+    ECSqlStatement withColumnAlias;
     query = "SELECT column1 myColumn FROM (VALUES(1), (2))";
+    ASSERT_EQ(ECSqlStatus::Success, withColumnAlias.Prepare(m_ecdb, query.c_str()));
+
+    ECSqlStatement nestedValues;
+    query = "SELECT column1 FROM (SELECT column1 FROM (VALUES(1), (2), (3)))";
+    ASSERT_EQ(ECSqlStatus::Success, nestedValues.Prepare(m_ecdb, query.c_str()));
+
+    ECSqlStatement nestedValuesWithAsterisk;
+    query = "SELECT * FROM (SELECT * FROM (VALUES(1), (2), (3)))";
+    ASSERT_EQ(ECSqlStatus::Success, nestedValuesWithAsterisk.Prepare(m_ecdb, query.c_str()));
+
+    ECSqlStatement nestedValuesWithAsteriskAndAlias;
+    query = "SELECT a.col1 FROM (SELECT b.column1 col1 from (VALUES(1), (2), (3)) b) a";
+    ASSERT_EQ(ECSqlStatus::Success, nestedValuesWithAsteriskAndAlias.Prepare(m_ecdb, query.c_str()));
+
+    ECSqlStatement fiveHundredPlusValues;
+    query = "SELECT * FROM (VALUES ";
+    for (int i = 0; i < 600; i++)
+        {
+        query += "(" + std::to_string(i) + ")";
+        if (i != 599)
+            query += ", ";
+        }
+    query += ")";
+    ASSERT_EQ(ECSqlStatus::Success, fiveHundredPlusValues.Prepare(m_ecdb, query.c_str()));
+
+    // @todo - naron: there should be a case where select * from (values(1), (2)), ms_myclass
+
+    // Failure case
+    ECSqlStatement unequalNumberOfColumns;
+    query = "SELECT * FROM (VALUES(1), (3,4))";
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, unequalNumberOfColumns.Prepare(m_ecdb, query.c_str()));
     
 }
 
