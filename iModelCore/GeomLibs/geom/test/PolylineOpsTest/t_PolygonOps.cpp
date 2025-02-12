@@ -394,3 +394,67 @@ TEST(PolygonOps,ClassifyTriangleRange)
         }
     Check::ClearGeometry("PolygonOps.TriangleRange");
     }
+
+TEST(PolygonOps,SplitToConvexPartsXY)
+    {
+    bvector<DPoint3d> outerPts, innerPts;
+    outerPts.push_back(DPoint3d::From(0,0));
+    outerPts.push_back(DPoint3d::From(1,0));
+    outerPts.push_back(DPoint3d::From(1,1.5));
+    outerPts.push_back(DPoint3d::From(0,1.5));
+    outerPts.push_back(DPoint3d::From(0,1));
+    outerPts.push_back(DPoint3d::From(-1,2));
+    outerPts.push_back(DPoint3d::From(-1,0));
+    outerPts.push_back(DPoint3d::From(0,-1));
+    outerPts.push_back(DPoint3d::From(0,0));
+    innerPts.push_back(DPoint3d::From(0,0.4));
+    innerPts.push_back(DPoint3d::From(-0.5,0.3));
+    innerPts.push_back(DPoint3d::From(-0.5,0.5));
+    innerPts.push_back(DPoint3d::From(0.5,0.5));
+    innerPts.push_back(DPoint3d::From(0.5,0.3));
+    innerPts.push_back(DPoint3d::From(0,0.4));
+    CurveVectorPtr cvOuter = CurveVector::CreateLinear(outerPts, CurveVector::BoundaryType::BOUNDARY_TYPE_Outer, true);
+    CurveVectorPtr cvInner = CurveVector::CreateLinear(innerPts, CurveVector::BoundaryType::BOUNDARY_TYPE_Inner, true);
+    CurveVectorPtr cv = CurveVector::AreaDifference(*cvOuter, *cvInner);
+    DPoint3d centroid;
+    double area;
+    Check::True(cv->CentroidAreaXY(centroid, area));
+    Check::SaveTransformed(*cv);
+
+    // test input is concave polygon with concave hole, separated by disconnect pt
+    DPoint3d disconnect; disconnect.InitDisconnect();
+    bvector<DPoint3d> inPts(outerPts);
+    inPts.push_back(disconnect);
+    inPts.insert(inPts.end(), innerPts.begin(), innerPts.end());
+
+    bvector<int> outIndices;
+    bvector<DPoint3d> outPts;
+    size_t numConvexParts = PolygonOps::SplitToConvexPartsXY(outIndices, outPts, inPts);
+    Check::True(numConvexParts > 1);
+    Check::Size(outPts.size(), inPts.size());
+
+    double areaSum = 0.0;
+    bvector<DPoint3d> convexFacePts;
+    for (auto oneBasedIndex : outIndices)
+        {
+        if (0 != oneBasedIndex)
+            {
+            convexFacePts.push_back(outPts[abs(oneBasedIndex) - 1]);
+            }
+        else    // we have a face
+            {
+            Check::True(PolygonOps::IsConvex(convexFacePts));
+            areaSum += PolygonOps::AreaXY(convexFacePts);
+            Check::SaveTransformed(*CurveVector::CreateLinear(convexFacePts, CurveVector::BoundaryType::BOUNDARY_TYPE_Outer));
+            convexFacePts.clear();
+            }
+        }
+    Check::Near(areaSum, area, "Convex decomposition has same total area");
+
+    Check::Shift(5, 0, 0);
+    auto facetedPoly = PolyfaceHeader::CreateIndexedMesh(1, outPts, outIndices);
+    facetedPoly->Compress(0.0);     // squeeze out the disconnect
+    Check::SaveTransformed(*facetedPoly);
+
+    Check::ClearGeometry("PolygonOps.SplitToConvexPartsXY");
+    }
