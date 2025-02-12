@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+LanguageCodes: http://www.sql-und-xml.de/server-daten/culture-info/ms.html
+-->
+
+<LanguagePackSpecifications>
+    <LanguageSpecification Name="en">
+        <LanguageName>English</LanguageName>
+        <EulaString>english</EulaString>
+        <LCID>1033</LCID>
+        <Culture>en</Culture>
+        <Codepage>1252</Codepage>
+        <ThreeLetterWindowsName>ENU</ThreeLetterWindowsName>
+        <ThreeLetterISOName>eng</ThreeLetterISOName>
+        <PRGLanguageShortName EnvMacro="LANGUAGE_SHORT">en</PRGLanguageShortName>
+        <WixCultureCode>en-US</WixCultureCode>
+    </LanguageSpecification>
+
+    <LanguageSpecification Name="de">
+        <LanguageName>German</LanguageName>
+        <EulaString>german</EulaString>
+        <LCID>1031</LCID>
+        <Culture>de</Culture>
+        <Codepage>1252</Codepage>
+        <ThreeLetterWindowsName>DEU</ThreeLetterWindowsName>
+        <ThreeLetterISOName>deu</ThreeLetterISOName>
+        <PRGLanguageShortName EnvMacro="LANGUAGE_SHORT">de</PRGLanguageShortName>
+        <WixCultureCode>de-DE</WixCultureCode>
+    </LanguageSpecification>
+
+    <LanguageSpecification Name="ja">
+        <LanguageName>Japanese</LanguageName>
+        <EulaString>japanese</EulaString>
+        <LCID>1041</LCID>
+        <Culture>ja</Culture>
+        <Codepage>932</Codepage>
+        <ThreeLetterWindowsName>JPN</ThreeLetterWindowsName>
+        <ThreeLetterISOName>jpn</ThreeLetterISOName>
+        <PRGLanguageShortName EnvMacro="LANGUAGE_SHORT">ja</PRGLanguageShortName>
+        <WixCultureCode>ja-JP</WixCultureCode>
+    </LanguageSpecification>
+
+    <LanguageSpecification Name="cs">
+        <LanguageName>Czech</LanguageName>
+        <EulaString>czech</EulaString>
+        <LCID>1029</LCID>
+        <Culture>cs</Culture>
+        <Codepage>1250</Codepage>
+        <ThreeLetterWindowsName>CSY</ThreeLetterWindowsName>
+        <ThreeLetterISOName>ces</ThreeLetterISOName>
+        <PRGLanguageShortName EnvMacro="LANGUAGE_SHORT">cs</PRGLanguageShortName>
+        <WixCultureCode>cs-CZ</WixCultureCode>
+    </LanguageSpecification>
+
+    <LanguageSpecification Name="en-AU">
+        <LanguageName>Australian</LanguageName>
+        <EulaString>english</EulaString>
+        <LCID>3081</LCID>
+        <Culture>en-AU</Culture>
+        <Codepage>1252</Codepage>
+        <ThreeLetterWindowsName>ENA</ThreeLetterWindowsName>
+        <ThreeLetterISOName>eng</ThreeLetterISOName>
+        <PRGLanguageShortName EnvMacro="LANGUAGE_SHORT">en</PRGLanguageShortName>
+        <WixCultureCode>en-AU</WixCultureCode>
+    </LanguageSpecification>
+
+    <LanguageSpecification Name="en-GB">
+        <LanguageName>British</LanguageName>
+        <EulaString>english</EulaString>
+        <LCID>2057</LCID>
+        <Culture>en-GB</Culture>
+        <Codepage>1252</Codepage>
+        <ThreeLetterWindowsName>ENG</ThreeLetterWindowsName>
+        <ThreeLetterISOName>eng</ThreeLetterISOName>
+        <PRGLanguageShortName EnvMacro="LANGUAGE_SHORT">en</PRGLanguageShortName>
+        <WixCultureCode>en-GB</WixCultureCode>
+    </LanguageSpecification>
+
+    <LanguageSpecification Name="es">
+        <LanguageName>Spanish</LanguageName>
+        <EulaString>spanish</EulaString>
+        <LCID>3082</LCID>
+        <Culture>es</Culture>
+        <Codepage>1252</Codepage>
+        <ThreeLetterWindowsName>ESP</ThreeLetterWindowsName>
+        <ThreeLetterISOName>spa</ThreeLetterISOName>
+        <PRGLanguageShortName EnvMacro="LANGUAGE_SHORT">es</PRGLanguageShortName>
+        <WixCultureCode>es-ES</WixCultureCode>
+    </LanguageSpecification>
+
+    <LanguageSpecification Name="fi">
+        <LanguageName>Finnish</LanguageName>
+        <EulaString>finnish</EulaString>
+        <LCID>1035</LCID>
+        <Culture>fi</Culture>
+        <Codepage>1252</Codepage>
+        <ThreeLetterWindowsName>FIN</ThreeLetterWindowsName>
+        <ThreeLetterISOName>fin</ThreeLetterISOName>
+        <PRGLanguageShortName EnvMacro="LANGUAGE_SHORT">fi</PRGLanguageShortName>
+        <WixCultureCode>fi-FI</WixCultureCode>
+    </LanguageSpecification>
+
+    <LanguageSpecification Name="fr">
+        <LanguageName>French</LanguageName>
+        <EulaString>french</EulaString>
+        <LCID>1036</LCID>
+        <Culture>fr</Culture>
+        <Codepage>1252</Codepage>
+        <ThreeLetterWindowsName>FRA</ThreeLetterWindowsName>
+        <ThreeLetterISOName>fra</ThreeLetterISOName>
+        <PRGLanguageShortName EnvMacro="LANGUAGE_SHORT">fr</PRGLanguageShortName>
+        <WixCultureCode>fr-FR</WixCultureCode>
+    </LanguageSpecification>
+
+    <LanguageSpecification Name="hu">
+        <LanguageName>Hungarian</LanguageName>
+        <EulaString>hungarian</EulaString>
+        <LCID>1038</LCID>
+        <Culture>hu</Culture>
+        <Codepage>1250</Codepage>
+        <ThreeLetterWindowsName>HUN</ThreeLetterWindowsName>
+        <ThreeLetterISOName>hun</ThreeLetterISOName>
+        <PRGLanguageShortName EnvMacro="LANGUAGE_SHORT">hu</PRGLanguageShortName>
+        <WixCultureCode>hu-HU</WixCultureCode>
+    </LanguageSpecification>
+
+    <LanguageSpecification Name="it">
+        <LanguageName>Italian</LanguageName>
+        <EulaString>italian</EulaString>
+        <LCID>1040</LCID>
+        <Culture>it</Culture>
+        <Codepage>1252</Codepage>
+        <ThreeLetterWindowsName>ITA</ThreeLetterWindowsName>
+        <ThreeLetterISOName>ita</ThreeLetterISOName>
+        <PRGLanguageShortName EnvMacro="LANGUAGE_SHORT">it</PRGLanguageShortName>
+        <WixCultureCode>it-IT</WixCultureCode>
+    </LanguageSpecification>
+
+    <LanguageSpecification Name="ko">
+        <LanguageName>Korean</LanguageName>
+        <EulaString>korean</EulaString>
+        <LCID>1042</LCID>
+        <Culture>ko</Culture>
+        <Codepage>949</Codepage>
+        <ThreeLetterWindowsName>KOR</ThreeLetterWindowsName>
+        <ThreeLetterISOName>kor</ThreeLetterISOName>
+        <PRGLanguageShortName EnvMacro="LANGUAGE_SHORT">ko</PRGLanguageShortName>
+        <WixCultureCode>ko-KR</WixCultureCode>
+    </LanguageSpecification>
+
+    <LanguageSpecification Name="my">
+        <LanguageName>Malaysia</LanguageName>
+        <EulaString>malaysia</EulaString>
+        <LCID>1086</LCID>
+        <Culture>my</Culture>
+        <Codepage>1252</Codepage>
+        <ThreeLetterWindowsName>MSL</ThreeLetterWindowsName>
+        <ThreeLetterISOName>msa</ThreeLetterISOName>
+        <PRGLanguageShortName EnvMacro="LANGUAGE_SHORT">my</PRGLanguageShortName>
+        <WixCultureCode>ms-MY</WixCultureCode>
+    </LanguageSpecification>
+
+    <LanguageSpecification Name="nl">
+        <LanguageName>Dutch</LanguageName>
+        <EulaString>dutch</EulaString>
+        <LCID>1043</LCID>
+        <Culture>nl</Culture>
+        <Codepage>1252</Codepage>
+        <ThreeLetterWindowsName>NLD</ThreeLetterWindowsName>
+        <ThreeLetterISOName>nld</ThreeLetterISOName>
+        <PRGLanguageShortName EnvMacro="LANGUAGE_SHORT">nl</PRGLanguageShortName>
+        <WixCultureCode>nl-NL</WixCultureCode>
+    </LanguageSpecification>
+
+    <LanguageSpecification Name="pl">
+        <LanguageName>Polish</LanguageName>
+        <EulaString>polish</EulaString>
+        <LCID>1045</LCID>
+        <Culture>pl</Culture>
+        <Codepage>1250</Codepage>
+        <ThreeLetterWindowsName>PLK</ThreeLetterWindowsName>
+        <ThreeLetterISOName>pol</ThreeLetterISOName>
+        <PRGLanguageShortName EnvMacro="LANGUAGE_SHORT">pl</PRGLanguageShortName>
+        <WixCultureCode>pl-PL</WixCultureCode>
+    </LanguageSpecification>
+
+    <LanguageSpecification Name="pt">
+        <LanguageName>Portuguese</LanguageName>
+        <EulaString>portuguese</EulaString>
+        <LCID>2070</LCID>
+        <Culture>pt</Culture>
+        <Codepage>1252</Codepage>
+        <ThreeLetterWindowsName>PTB</ThreeLetterWindowsName>
+        <ThreeLetterISOName>por</ThreeLetterISOName>
+        <PRGLanguageShortName EnvMacro="LANGUAGE_SHORT">pt</PRGLanguageShortName>
+        <WixCultureCode>pt-PT</WixCultureCode>
+    </LanguageSpecification>
+
+    <LanguageSpecification Name="pt-BR">
+        <LanguageName>PortugueseBrazil</LanguageName>
+        <EulaString>portuguesebrazil</EulaString>
+        <LCID>1046</LCID>
+        <Culture>pt-BR</Culture>
+        <Codepage>1252</Codepage>
+        <ThreeLetterWindowsName>PTB</ThreeLetterWindowsName>
+        <ThreeLetterISOName>por</ThreeLetterISOName>
+        <PRGLanguageShortName EnvMacro="LANGUAGE_SHORT">pt-BR</PRGLanguageShortName>
+        <WixCultureCode>pt-BR</WixCultureCode>
+    </LanguageSpecification>
+
+    <LanguageSpecification Name="ru">
+        <LanguageName>Russian</LanguageName>
+        <EulaString>russian</EulaString>
+        <LCID>1049</LCID>
+        <Culture>ru</Culture>
+        <Codepage>1251</Codepage>
+        <ThreeLetterWindowsName>RUS</ThreeLetterWindowsName>
+        <ThreeLetterISOName>rus</ThreeLetterISOName>
+        <PRGLanguageShortName EnvMacro="LANGUAGE_SHORT">ru</PRGLanguageShortName>
+        <WixCultureCode>ru-RU</WixCultureCode>
+    </LanguageSpecification>
+
+    <LanguageSpecification Name="sv">
+        <LanguageName>Swedish</LanguageName>
+        <EulaString>swedish</EulaString>
+        <LCID>1053</LCID>
+        <Culture>sv</Culture>
+        <Codepage>1252</Codepage>
+        <ThreeLetterWindowsName>SVE</ThreeLetterWindowsName>
+        <ThreeLetterISOName>swe</ThreeLetterISOName>
+        <PRGLanguageShortName EnvMacro="LANGUAGE_SHORT">sv</PRGLanguageShortName>
+        <WixCultureCode>sv-SE</WixCultureCode>
+    </LanguageSpecification>
+
+    <LanguageSpecification Name="tr">
+        <LanguageName>Turkish</LanguageName>
+        <EulaString>turkish</EulaString>
+        <LCID>1055</LCID>
+        <Culture>tr</Culture>
+        <Codepage>1254</Codepage>
+        <ThreeLetterWindowsName>TRK</ThreeLetterWindowsName>
+        <ThreeLetterISOName>tur</ThreeLetterISOName>
+        <PRGLanguageShortName EnvMacro="LANGUAGE_SHORT">tr</PRGLanguageShortName>
+        <WixCultureCode>tr-TR</WixCultureCode>
+    </LanguageSpecification>
+
+    <LanguageSpecification Name="vi">
+        <LanguageName>Vietnamese</LanguageName>
+        <EulaString>vietnamese</EulaString>
+        <LCID>1066</LCID>
+        <Culture>vi</Culture>
+        <Codepage>1258</Codepage>
+        <ThreeLetterWindowsName>VIT</ThreeLetterWindowsName>
+        <ThreeLetterISOName>vie</ThreeLetterISOName>
+        <PRGLanguageShortName EnvMacro="LANGUAGE_SHORT">vn</PRGLanguageShortName>
+        <WixCultureCode>vi-VN</WixCultureCode>
+    </LanguageSpecification>
+
+    <LanguageSpecification Name="zh-CN">
+        <LanguageName>SChinese</LanguageName>
+        <EulaString>schinese</EulaString>
+        <LCID>2052</LCID>
+        <Culture>zh-CN</Culture>
+        <Codepage>936</Codepage>
+        <ThreeLetterWindowsName>CHS</ThreeLetterWindowsName>
+        <ThreeLetterISOName>zho</ThreeLetterISOName>
+        <PRGLanguageShortName EnvMacro="LANGUAGE_SHORT">zh</PRGLanguageShortName>
+        <WixCultureCode>zh-CN</WixCultureCode>
+    </LanguageSpecification>
+
+    <LanguageSpecification Name="zh-TW">
+        <LanguageName>Chinese (Trad.)</LanguageName>
+        <EulaString>tchinese</EulaString>
+        <LCID>1028</LCID>
+        <Culture>zh-TW</Culture>
+        <Codepage>950</Codepage>
+        <ThreeLetterWindowsName>CHT</ThreeLetterWindowsName>
+        <ThreeLetterISOName>zho</ThreeLetterISOName>
+        <PRGLanguageShortName EnvMacro="LANGUAGE_SHORT">tc</PRGLanguageShortName>
+        <WixCultureCode>zh-TW</WixCultureCode>
+    </LanguageSpecification>
+
+    <LanguageSpecification Name="mr">
+        <LanguageName>Martian</LanguageName>
+        <EulaString>English</EulaString>
+        <LCID>1033</LCID>
+        <Culture>mr</Culture>
+        <Codepage>1252</Codepage>
+        <ThreeLetterWindowsName>MAR</ThreeLetterWindowsName>
+        <ThreeLetterISOName>mar</ThreeLetterISOName>
+        <PRGLanguageShortName EnvMacro="LANGUAGE_SHORT_MARTIAN">mr</PRGLanguageShortName>
+        <WixCultureCode>mr-IN</WixCultureCode>
+    </LanguageSpecification>
+
+</LanguagePackSpecifications>
+
