@@ -386,8 +386,8 @@ protected:
     void _HandleKey(NavNodeKeyCR newValue) override
         {
         Add("key", newValue.AsJson(&m_allocator).Move());
-        if (!m_changes.HasMember("labelDefinition"))
-            Add("labelDefinition", m_updatedNode->GetLabelDefinition().AsJson(&m_allocator).Move());
+        if (!m_changes.HasMember("label"))
+            Add("label", m_updatedNode->GetLabelDefinition().AsJson(&m_allocator).Move());
         }
     void _HandleHasChildren(bool newValue) override {Add("hasChildren", rapidjson::Value(newValue).Move());}
     void _HandleIsChecked(bool newValue) override {Add("isChecked", rapidjson::Value(newValue).Move());}
@@ -402,7 +402,7 @@ protected:
     void _HandleType(Utf8StringCR newValue) override {}
     void _HandleLabelDefinition(LabelDefinitionCR newValue) override
         {
-        Add("labelDefinition", newValue.AsJson(&m_allocator).Move());
+        Add("label", newValue.AsJson(&m_allocator).Move());
         if (!m_changes.HasMember("key"))
             Add("key", m_updatedNode->GetKey()->AsJson(&m_allocator).Move());
         }
@@ -789,7 +789,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, Cont
     json.SetObject();
 
     if (0 != (ContentSetItem::SerializationFlags::SERIALIZE_DisplayLabel & flags))
-        json.AddMember("labelDefinition", IModelJsECPresentationSerializer::_AsJson(ctx, contentSetItem.GetDisplayLabelDefinition(), &json.GetAllocator()), json.GetAllocator());
+        json.AddMember("label", IModelJsECPresentationSerializer::_AsJson(ctx, contentSetItem.GetDisplayLabelDefinition(), &json.GetAllocator()), json.GetAllocator());
 
     if (0 != (ContentSetItem::SerializationFlags::SERIALIZE_ImageId & flags))
         json.AddMember("imageId", rapidjson::Value(contentSetItem.GetImageId().c_str(), json.GetAllocator()), json.GetAllocator());
@@ -1165,7 +1165,7 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, NavN
     rapidjson::Document json(allocator);
     json.SetObject();
     json.AddMember("key", navNode.GetKey()->AsJson(ctx, &json.GetAllocator()), json.GetAllocator());
-    json.AddMember("labelDefinition", IModelJsECPresentationSerializer::_AsJson(ctx, navNode.GetLabelDefinition(), &json.GetAllocator()), json.GetAllocator());
+    json.AddMember("label", IModelJsECPresentationSerializer::_AsJson(ctx, navNode.GetLabelDefinition(), &json.GetAllocator()), json.GetAllocator());
     if (navNode.HasChildren())
         json.AddMember("hasChildren", navNode.HasChildren(), json.GetAllocator());
     if (!navNode.GetDescription().empty())
@@ -1279,8 +1279,8 @@ rapidjson::Document IModelJsECPresentationSerializer::_AsJson(ContextR ctx, Node
     rapidjson::Value filteringData;
     filteringData.SetObject();
 
-    filteringData.AddMember("occurances", navNodesPathElement.GetFilteringData().GetOccurances(), json.GetAllocator());
-    filteringData.AddMember("childrenOccurances", navNodesPathElement.GetFilteringData().GetChildrenOccurances(), json.GetAllocator());
+    filteringData.AddMember("matchesCount", navNodesPathElement.GetFilteringData().GetOccurances(), json.GetAllocator());
+    filteringData.AddMember("childMatchesCount", navNodesPathElement.GetFilteringData().GetChildrenOccurances(), json.GetAllocator());
 
     json.AddMember("filteringData", filteringData, json.GetAllocator());
 

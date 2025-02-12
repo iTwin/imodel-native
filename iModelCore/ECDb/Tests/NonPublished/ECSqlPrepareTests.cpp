@@ -1802,6 +1802,64 @@ TEST_F(ECSqlSelectPrepareTests, NestedSubqueries)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlSelectPrepareTests, TableRefWithoutSchemaNames)
+    {
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM SA WHERE SAStructProp.PStructProp IS NULL"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM SA WHERE SAStructProp.PStructProp = ?"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM SA WHERE SAStructProp.PStructProp.i = 123 AND SAStructProp.PStructProp.dt <> DATE '2010-10-10'"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT NULL FROM SA WHERE SAStructProp IS NULL"));
+    
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, L FROM PSA"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, L FROM PSA a"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT a.I, a.L FROM PSA a"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT B, ECInstanceId, S FROM PSA"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT Bi FROM PSA a"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT 3.14 FROM PSA"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT 3.14 FROM PSA WHERE L = 0"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT 1000 AS I FROM PSA"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT 3.14 AS BlaBla FROM PSA"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT b FROM PSA"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT B, d FROM PSA"));
+
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT p.ECClassId, c.ECClassId FROM PSA p JOIN P c USING ecsql.PSAHasP"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("select parent.ECInstanceId, child.ECInstanceId FROM PSA parent JOIN PSA child USING ecsql.PSAHasPSA BACKWARD"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("select parent.ECInstanceId, child.ECInstanceId FROM PSA parent JOIN PSA child USING ecsql:PSAHasPSA BACKWARD"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("select parent.ECInstanceId, child.ECInstanceId FROM PSA parent JOIN PSA child USING ecsql.PSAHasPSA FORWARD"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("select PSA.ECInstanceId, P.ECInstanceId FROM PSA JOIN P USING ecsql.PSAHasP"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("select PSA.*, P.* FROM PSA JOIN P USING ecsql.PSAHasP"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT end1.I, end2.I FROM ONLY PSA end1 JOIN PSA end2 USING ecsql.PSAHasPSA BACKWARD"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT end1.I, end2.I FROM ONLY PSA end1 JOIN ONLY P end2 USING ecsql.PSAHasP"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT end1.I, end1.L FROM ONLY PSA end1 JOIN ONLY PSA end2 USING ecsql.PSAHasPSA FORWARD WHERE end2.I = 123"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT end1.I, end1.L FROM ONLY PSA end1 JOIN ONLY PSA end2 USING ecsql.PSAHasPSA BACKWARD WHERE end2.I = 123"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT end1.I, end2.L FROM ONLY PSA end1 JOIN ONLY P end2 USING ecsql.PSAHasP WHERE end2.I = 123"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT end1.I, end2.L FROM ONLY PSA end1 JOIN ONLY P end2 USING ecsql.PSAHasP FORWARD"));
+    //RIGHT JOIN
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("select * FROM PSA RIGHT JOIN PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("select * FROM PSA RIGHT OUTER JOIN PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
+
+    //LEFT JOIN not a good example
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("select * FROM PSA LEFT JOIN PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("select * FROM PSA LEFT OUTER JOIN PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
+
+    //FULL JOIN
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("select * FROM PSA FULL JOIN PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("select * FROM PSA FULL OUTER JOIN PSAHasP ON PSA.ECInstanceId = PSAHasP.SourceECInstanceId"));
+
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT P3D, P2D FROM PSA a"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT P3D, P2D FROM PSA WHERE P2D = P2D"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT P3D, P2D FROM PSA WHERE P2D <> P2D"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT P3D, P2D FROM PSA WHERE P2D IN (P2D, P2D)"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT P3D, P2D FROM PSA WHERE P2D NOT IN (P2D, P2D)"));
+
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, S FROM PSA WHERE I = -?"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, S FROM PSA WHERE ? = -?"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, S FROM PSA WHERE ? = ?"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, S FROM PSA WHERE :p1 > -:p1"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, S FROM PSA WHERE :p1 = -:p1"));
+    }
 
 
 
@@ -2099,6 +2157,24 @@ TEST_F(ECSqlInsertPrepareTests, Structs)
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.SA (SAStructProp.PStructProp) VALUES (NULL)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.SA (SAStructProp.PStructProp) VALUES (?)"));
     EXPECT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.SA (SAStructProp.PStructProp.i, SAStructProp.PStructProp.dt) VALUES (123, DATE '2010-10-10')"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlInsertPrepareTests, Testing_classes_without_schemas)
+    {
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO P (ECInstanceId, I) VALUES (NULL, NULL)"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO TH2 (ECInstanceId, S2) VALUES (NULL, 'hello')"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO P (ECInstanceId) VALUES (123)"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO TH2 (ECInstanceId) VALUES (4443412341)"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO P (ECInstanceId) VALUES (?)"));
+
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO PSAHasTHBase_NN (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (123, 333, 124, 335)"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO PSAHasTHBase_NN (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (123, ?, 124, ?)"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO PSA (PStructProp.i, B) VALUES (123, true)"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO PSA (PStructProp.i, PStructProp.dt, B) VALUES (123, DATE '2010-10-10', true)"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO SA (SAStructProp.PStructProp) VALUES (NULL)"));
     }
 
 
@@ -2779,6 +2855,30 @@ TEST_F(ECSqlUpdatePrepareTests, MiscellaneousWithALL)
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE +ALL ecsql.P SET I=10 WHERE LOWER(S) = UPPER(S)"));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlUpdatePrepareTests, Testing_classes_without_schemas_names)
+    {
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE P SET I=10 WHERE 5 + (4&1) = 5"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE P SET I=10 WHERE 5 + 4 & 1 = 1"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE P SET I=10 WHERE 5 + 4 | 1 = 9"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE P SET I=10 WHERE 4|1&1 = 5"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE P SET I=10 WHERE (4|1)&1 = 1"));
+    
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL PSA SET I=? WHERE PStructProp.i = 123 AND B = true"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL PSA SET I=? WHERE PStructProp.i = 123 AND PStructProp.dt <> DATE '2010-10-10' AND B = true"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL SA SET SAStructProp.PStructProp.i=? WHERE SAStructProp.PStructProp IS NULL"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL SA SET SAStructProp.PStructProp.i=? WHERE SAStructProp.PStructProp = ?"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL SA SET SAStructProp.PStructProp.i=? WHERE SAStructProp.PStructProp.i = 123 AND SAStructProp.PStructProp.dt <> DATE '2010-10-10'"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ALL SA SET SAStructProp.PStructProp.i=? WHERE SAStructProp IS NULL"));
+
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ClassWithLastModProp SET I=123, LastMod=? WHERE ECInstanceId=? ECSQLOPTIONS ReadonlyPropertiesAreUpdatable"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY PSA SET PStructProp.CreationDate=? WHERE ECInstanceId=? ECSQLOPTIONS ReadonlyPropertiesAreUpdatable"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ClassWithLastModProp SET I=123, LastMod=? WHERE ECInstanceId=? ECSQLOPTIONS rEaDonlYPropertiEsAreupdaTable"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ClassWithLastModProp SET I=123 WHERE ECInstanceId=? ECSQLOPTIONS ReadonlyPropertiesAreUpdatable"));
+    }
+
 
 //********************* Delete **********************
 struct ECSqlDeletePrepareTests : ECSqlPrepareTestFixture {};
@@ -3252,6 +3352,24 @@ TEST_F(ECSqlDeletePrepareTests, MiscellaneousWithALL)
     //Syntactically Incorrect
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM +ALL ecsql.PASpatial WHERE Geometry_Array IS NULL"));
     EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM +ONLY ecsql.P WHERE LOWER(UPPER(S)) = LOWER (S)"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlDeletePrepareTests, Testing_classes_names_without_schemas)
+    {
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL P WHERE Glob('*amp*',S)"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL P WHERE NOT Glob('*amp*',S)"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL P WHERE L < 3.14"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL P WHERE (L < 3.14 AND I > 3) OR B = True AND D > 0.0"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL P WHERE MyPSA = ?"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL P WHERE MyPSA.Id IS NULL"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL P WHERE MyPSA.Id = NULL"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ALL P WHERE MyPSA.RelECClassId IS NULL"));
+
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY P WHERE i<0"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY p WHERE i<0"));
     }
 
 END_ECDBUNITTESTS_NAMESPACE

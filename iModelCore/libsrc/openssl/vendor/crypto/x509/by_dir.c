@@ -264,6 +264,7 @@ static int get_cert_by_subject_ex(X509_LOOKUP *xl, X509_LOOKUP_TYPE type,
 
 #if defined(__ANDROID__)
     h = X509_NAME_hash_old(name);
+    i = 1; // Always assume ok
 #else
     h = X509_NAME_hash_ex(name, libctx, propq, &i);
 #endif
