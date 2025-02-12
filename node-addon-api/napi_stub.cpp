@@ -39,6 +39,12 @@ static FARPROC delayLoadNotify(unsigned dliNotify, PDelayLoadInfo pdli)
 {
     if (dliNotePreLoadLibrary != dliNotify || 0 != _stricmp(pdli->szDll, "iTwinNapi.dll"))
         return nullptr;
+
+    HMODULE embedded = ::GetModuleHandle("libnode.dll");
+    if (embedded != nullptr) {
+        return (FARPROC)embedded;
+    }
+
     return (FARPROC)::GetModuleHandle(nullptr);
 }
 decltype(__pfnDliNotifyHook2) __pfnDliNotifyHook2 = delayLoadNotify;
