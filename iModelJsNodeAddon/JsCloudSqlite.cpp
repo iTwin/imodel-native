@@ -191,8 +191,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
 
     void RequireWriteLock() {
         RequireConnected();
-        if (!m_writeLockHeld)
-            BeNapi::ThrowJsException(Env(), Utf8PrintfString("container [%s] is not locked for write access", m_containerId.c_str()).c_str());
+        ResumeWriteLock(true);
     }
 
     void CallJsMemberFunc(Utf8CP funcName, std::vector<napi_value> const& args) {
@@ -221,7 +220,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
             m_writeable = false; // daemon cannot be used for writing
 
         if (m_writeable) {
-            ResumeWriteLock(); // see if we are re-attaching and previously had the write lock.
+            ResumeWriteLock(false); // see if we are re-attaching and previously had the write lock.
             if (!m_writeLockHeld && HasLocalChanges())
                 AbandonChanges(info); // we lost the write lock, we have no choice but to abandon all local changes.
         }
@@ -505,7 +504,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         rc = stmt.Step();
         if (rc == BE_SQLITE_ROW) {
             auto date = DateTime::FromString(stmt.GetValueText(0));
-            if (date.IsValid())
+            if (date.IsValid()) 
                 return date;
         }
         // if the server didn't include a "Date" field, just fall back to local time.
@@ -514,28 +513,31 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         return DateTime::GetCurrentTimeUtc();
     }
 
-    void CheckLock() {
+    Utf8String CheckLock(bool failIfNotHeldAlready) {
         BeJsDocument lockedBy;
         ReadWriteLock(lockedBy);
         auto lockedByGuid = lockedBy[JSON_NAME(guid)].asString();
-        if (lockedByGuid.empty() || lockedByGuid.Equals(m_cache->m_guid))
-            return; // not locked or already locked by same cache
+        Utf8String lockedByUser = lockedBy[JSON_NAME(user)].asString();
+        if (failIfNotHeldAlready && lockedByGuid.empty()) {
+            m_containerDb.TryExecuteSql("ROLLBACK");
+            BeNapi::ThrowJsException(Env(), Utf8PrintfString("Container [%s] is not locked for write access.", m_containerId.c_str()).c_str());
+        } else if (lockedByGuid.empty() || lockedByGuid.Equals(m_cache->m_guid))
+            return lockedByUser; // not locked or already locked by same cache, we'll use the same user. 
 
         auto expiresAt = DateTime::FromString(lockedBy[JSON_NAME(expires)].asString());
         if (!expiresAt.IsValid())
-            return; // the expiration time is invalid, ignore lock
+            return lockedByUser; // the expiration time is invalid, ignore lock
 
-        auto lockedByUser = lockedBy[JSON_NAME(user)].asString();
         if (DateTime::CompareResult::EarlierThan == DateTime::Compare(expiresAt, GetServerTime())) {
             Utf8PrintfString warning("write lock on container [%s] from user [%s] was present but expired. Overwriting it.", m_containerId.c_str(), lockedByUser.c_str());
             NativeLogging::Logging::LogMessage("CloudSqlite", NativeLogging::SEVERITY::LOG_WARNING, warning.c_str());
-            return; // other user's write lock has expired
+            return lockedByUser; // other user's write lock has expired
         }
 
         m_containerDb.TryExecuteSql("ROLLBACK");
 
         // report that container is currently locked by another user. Set details in exception.
-        auto err = Napi::Error::New(Env(), Utf8PrintfString("Container [%s] is currently locked.", m_containerId.c_str()).c_str());
+        auto err = Napi::Error::New(Env(), Utf8PrintfString("Container [%s] is currently locked by another user.", m_containerId.c_str()).c_str());
         auto val = err.Value();
         val[JSON_NAME(errorNumber)] = (int) BE_SQLITE_BUSY;
         val[JSON_NAME(lockedBy)] = lockedByUser.c_str();
@@ -543,16 +545,15 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         throw err;
     }
 
-    void ResumeWriteLock() {
-        BeJsDocument lockedBy;
-        ReadWriteLock(lockedBy);
-
-        auto lockedByGuid = lockedBy[JSON_NAME(guid)].asString();
-        if (lockedByGuid.Equals(m_cache->m_guid)) {
+    void ResumeWriteLock(bool shouldFailIfUnableToResume) {
+        m_writeLockHeld = false;
+        if (shouldFailIfUnableToResume) {
+            AcquireWriteLock("", true);
+        } else {
             try {
-                AcquireWriteLock(lockedBy[JSON_NAME(user)].asString());
+                AcquireWriteLock("", true);
             } catch (...) {
-                // if we can't resume, don't fail
+                // if we can't resume, don't fail.
             }
         }
     }
@@ -563,18 +564,18 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
         return DateTime::FromJulianDay(serverTimeMs + offsetMilliseconds, DateTime::Info::CreateForDateTime(DateTime::Kind::Utc)).ToString();
     }
 
-    void AcquireWriteLock(Utf8StringCR user) {
+    void AcquireWriteLock(Utf8StringCR user, bool failIfNotHeldAlready) {
         RequireConnected();
         if (!m_writeable)
             BeNapi::ThrowJsException(Env(), "container is not writeable");
 
         m_containerDb.TryExecuteSql("BEGIN");
-        CheckLock(); // throws if already locked by another user
+        Utf8String lockOwner = CheckLock(failIfNotHeldAlready); // throws if already locked by another user or failIfNotHeldAlready is true and not locked at all
 
-        m_lockExpireSeconds = std::min((int) (12*SECONDS_PER_HOUR), std::max((int)SECONDS_PER_HOUR, m_lockExpireSeconds));
+        m_lockExpireSeconds = std::min((int) (12*SECONDS_PER_HOUR), std::max(10*((int)SECONDS_PER_MINUTE), m_lockExpireSeconds));
         BeJsDocument lockedBy;
         lockedBy[JSON_NAME(guid)] = m_cache->m_guid;
-        lockedBy[JSON_NAME(user)] = user;
+        lockedBy[JSON_NAME(user)] = user.Equals("") ? lockOwner : user;
         lockedBy[JSON_NAME(expires)] = GetServerDateString(m_lockExpireSeconds * 1000);
 
         Statement stmt;
@@ -595,7 +596,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
 
     void AcquireWriteLockJs(NapiInfoCR info) {
         REQUIRE_ARGUMENT_STRING(0, user);
-        AcquireWriteLock(user);
+        AcquireWriteLock(user, false);
         PollManifest(info);
     }
 
@@ -642,6 +643,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
 
     void ReleaseWriteLock(NapiInfoCR info) {
         RequireConnected();
+        ResumeWriteLock(false); // We can only trust the truth value of m_writeLockHeld after calling ResumeWriteLock
         if (!m_writeLockHeld)
             return;
 
@@ -655,7 +657,7 @@ struct JsCloudContainer : CloudContainer, Napi::ObjectWrap<JsCloudContainer> {
 
     void AbandonChanges(NapiInfoCR info) {
         RequireConnected();
-
+        ResumeWriteLock(false); // We can only trust the truth value of m_writeLockHeld after calling ResumeWriteLock
         CloudResult stat;
         if (m_writeLockHeld)
             stat = ClearWriteLock();
