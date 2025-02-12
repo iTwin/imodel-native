@@ -2267,7 +2267,7 @@ bool ComputeSnapLocation(SnapMode snapMode, bool findArcCenters) const
 SnapStatus GetClosestCurve(GeometrySourceCR source, DgnSubCategoryId const* subCategoryId, DgnGeometryClass const* geomClass, ViewFlagsCP viewFlags, ICancellableP cancel)
     {
     Render::GeometryParams baseParams(source.GetCategoryId());
-    Transform sourceToWorld = Transform::FromProduct(source.GetPlacementTransform(), m_modelToWorld);
+    Transform sourceToWorld = Transform::FromProduct(m_modelToWorld, source.GetPlacementTransform());
     GeometryCollection collection(source.GetGeometryStream(), source.GetSourceDgnDb(), &baseParams, &sourceToWorld);
 
     return GetClosestCurve(collection, source.ToElement(), subCategoryId, geomClass, viewFlags, cancel);
