@@ -1671,23 +1671,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareSubqueryValueExp(NativeSqlBuilder::List& na
     return st;
     }
 
-ECSqlStatus ECSqlExpPreparer::PrepareSqlColumnNameExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, SqlColumnNameExp const& exp)
-    {
-    NativeSqlBuilder nativeSql;
-
-    // auto subqueryRefExp = exp.GetParent()->GetParent()->GetAs<SubqueryRefExp>();
-    // if (exp.GetParent()->GetParent()->GetAs<SubqueryRefExp>() != nullptr) 
-    //     {
-        
-    //     nativeSql.AppendEscaped(subqueryAlias.c_str()).Append(".");
-    //     }
-
-    nativeSql.Append(exp.GetColumnName().c_str());
-
-    nativeSqlSnippets.push_back(nativeSql);
-    return ECSqlStatus::Success;
-    }
-
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -2572,8 +2555,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExp(NativeSqlBuilder::List& nativeSqlS
                 return PrepareWindowFunctionExp(nativeSqlSnippets, ctx, exp.GetAs<WindowFunctionExp>());
             case Exp::Type::NavValueCreationFunc:
                 return PrepareNavValueCreationFuncExp(nativeSqlSnippets, ctx, exp.GetAs<NavValueCreationFuncExp>());
-            case Exp::Type::SqlColumnName: //@todo - naron: this should be removed, when asterisk expands it should go into propertyNameExp
-                return PrepareSqlColumnNameExp(nativeSqlSnippets, ctx, exp.GetAs<SqlColumnNameExp>());
             default:
                 break;
             }

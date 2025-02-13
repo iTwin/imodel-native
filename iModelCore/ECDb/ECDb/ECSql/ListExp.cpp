@@ -227,6 +227,7 @@ void RowValueConstructorListExp::_ToJson(BeJsValue val, JsonFormat const& fmt) c
             childExp->ToJson(val.appendValue(), fmt);
     }
 
+// @todo - Naron: this doesn't get triggered 
 void RowValueConstructorListExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const
     {
         for (size_t i = 0; i < GetSelection()->GetChildrenCount(); i++)
