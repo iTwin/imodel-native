@@ -20,7 +20,7 @@ import type {
   ChangesetIndexAndId, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps,
   ElementGraphicsRequestProps, ElementLoadProps, ElementMeshRequestProps, ElementProps,
   FilePropertyProps, FontId, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
-  GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, IModelCoordinatesRequestProps,
+  GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, ImageBuffer, ImageBufferFormat, ImageSourceFormat, IModelCoordinatesRequestProps,
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
   ModelProps, QueryQuota, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions,
 } from "@itwin/core-common";
@@ -213,6 +213,23 @@ export declare namespace IModelJsNative {
   function getTrueTypeFontMetadata(fileName: LocalFileName): TrueTypeFontMetadata;
   function isRscFontData(blob: Uint8Array): boolean;
 
+  function imageBufferFromImageSource(
+    sourceFormat: ImageSourceFormat.Png | ImageSourceFormat.Jpeg,
+    sourceData: Uint8Array,
+    targetFormat: ImageBufferFormat.Rgb | ImageBufferFormat.Rgba | 255,
+    flipVertically: boolean
+  ): Pick<ImageBuffer, "data" | "format" | "width"> | undefined;
+  
+  function imageSourceFromImageBuffer(
+    imageFormat: ImageBufferFormat.Rgb | ImageBufferFormat.Rgba,
+    imageData: Uint8Array,
+    imageWidth: number,
+    imageHeight: number,
+    targetFormat: ImageSourceFormat.Png | ImageSourceFormat.Jpeg | 255,
+    flipVertically: boolean,
+    jpegQuality: number
+  ): { format: ImageSourceFormat.Jpeg | ImageSourceFormat.Png, data: Uint8Array } | undefined;
+  
   /** Get the SHA1 hash of a Schema XML file, possibly including its referenced Schemas */
   function computeSchemaChecksum(arg: {
     /** the full path to the root schema XML file */
