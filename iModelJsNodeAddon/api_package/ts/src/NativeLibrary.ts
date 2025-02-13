@@ -216,7 +216,7 @@ export declare namespace IModelJsNative {
   function imageBufferFromImageSource(
     sourceFormat: ImageSourceFormat.Png | ImageSourceFormat.Jpeg,
     sourceData: Uint8Array,
-    targetFormat: ImageBufferFormat.Rgb | ImageBufferFormat.Rgba,
+    targetFormat: ImageBufferFormat.Rgb | ImageBufferFormat.Rgba | 255,
     flipVertically: boolean
   ): Pick<ImageBuffer, "data" | "format" | "width"> | undefined;
   
@@ -224,6 +224,7 @@ export declare namespace IModelJsNative {
     imageFormat: ImageBufferFormat.Rgb | ImageBufferFormat.Rgba,
     imageData: Uint8Array,
     imageWidth: number,
+    imageHeight: number,
     targetFormat: ImageSourceFormat.Png | ImageSourceFormat.Jpeg | 255,
     flipVertically: boolean,
     jpegQuality: number
