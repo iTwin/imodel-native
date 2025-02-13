@@ -1,3 +1,5 @@
+#ifndef HEADER_CURL_VTLS_SPACK_H
+#define HEADER_CURL_VTLS_SPACK_H
 /***************************************************************************
  *                                  _   _ ____  _
  *  Project                     ___| | | |  _ \| |
@@ -21,35 +23,21 @@
  * SPDX-License-Identifier: curl
  *
  ***************************************************************************/
-#include "tool_setup.h"
+#include "curl_setup.h"
 
-#if defined(HAVE_SETMODE) || defined(HAVE__SETMODE)
+#ifdef USE_SSLS_EXPORT
 
-#ifdef HAVE_IO_H
-#  include <io.h>
-#endif
+struct dynbuf;
+struct Curl_ssl_session;
 
-#ifdef HAVE_FCNTL_H
-#  include <fcntl.h>
-#endif
+CURLcode Curl_ssl_session_pack(struct Curl_easy *data,
+                               struct Curl_ssl_session *s,
+                               struct dynbuf *buf);
 
-#include "tool_binmode.h"
+CURLcode Curl_ssl_session_unpack(struct Curl_easy *data,
+                                 const unsigned char *buf, size_t buflen,
+                                 struct Curl_ssl_session **ps);
 
-#include "memdebug.h" /* keep this as LAST include */
+#endif /* USE_SSLS_EXPORT */
 
-void set_binmode(FILE *stream)
-{
-#ifdef O_BINARY
-#  ifdef __HIGHC__
-  _setmode(stream, O_BINARY);
-#  elif defined(HAVE__SETMODE)
-  (void)_setmode(fileno(stream), O_BINARY);
-#  else
-  (void)setmode(fileno(stream), O_BINARY);
-#  endif
-#else
-  (void)stream;
-#endif
-}
-
-#endif /* HAVE_SETMODE || HAVE__SETMODE */
+#endif /* HEADER_CURL_VTLS_SPACK_H */
