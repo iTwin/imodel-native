@@ -20,6 +20,7 @@ private:
         private:
             ECDb const* m_ecdb = nullptr;
             ECSqlTypeInfo m_typeInfo;
+            BinderInfo m_binderInfo;
 
             rapidjson::Value* m_json = nullptr;
             rapidjson::MemoryPoolAllocator<>* m_jsonAllocator = nullptr;
@@ -64,15 +65,18 @@ private:
 
             IECSqlBinder& _AddArrayElement() override;
 
+            BinderInfo& _GetBinderInfo() override;
+
         };
 
     rapidjson::Document m_json;
     std::unique_ptr<JsonValueBinder> m_rootBinder = nullptr;
+    BinderInfo m_binderInfo;
 
     void Initialize();
 
     void _OnClearBindings() override { Initialize(); }
-    ECSqlStatus _OnBeforeStep() override;
+    ECSqlStatus _OnBeforeFirstStep() override;
 
     ECSqlStatus _BindNull() override { _OnClearBindings(); return ECSqlStatus::Success; }
     ECSqlStatus _BindBoolean(bool value) override { return m_rootBinder->BindBoolean(value); }
@@ -92,9 +96,10 @@ private:
     IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override { return m_rootBinder->operator[](structMemberPropertyId); }
 
     IECSqlBinder& _AddArrayElement() override { return m_rootBinder->AddArrayElement(); }
+    BinderInfo const& _GetBinderInfo() override { return m_binderInfo; }
 
 public:
-    ArrayECSqlBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, SqlParamNameGenerator&);
+    ArrayECSqlBinder(ECSqlPrepareContext&, ECSqlTypeInfo const&, SqlParamNameGenerator&, bool);
     ~ArrayECSqlBinder() {}
     };
 

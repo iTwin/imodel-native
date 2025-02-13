@@ -62,6 +62,7 @@ export function loadLocalBuildOfAddon(): any {
   const addonFile = path.join(generatedPkgsDir, NativeLibrary.archName, NativeLibrary.nodeAddonName);
   assert(fs.existsSync(addonFile), `${addonFile} - local build of imodeljs.node not found`);
 
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   return require(addonFile);
 }
 
@@ -81,8 +82,7 @@ export function copyFile(newName: string, pathToCopy: string): string {
   const newPath = path.join(outDir, newName);
   try {
     fs.unlinkSync(newPath);
-  } catch (_err) {
-  }
+  } catch {}
   if (!fs.existsSync(outDir))
     fs.mkdirSync(outDir);
   fs.copyFileSync(pathToCopy, newPath);

@@ -4,7 +4,6 @@
 * See LICENSE.md in the repository root for full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -12,8 +11,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ArrayECSqlBinder::ArrayECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& paramNameGen)
-    : ECSqlBinder(ctx, typeInfo, paramNameGen, 1, true, true)
+ArrayECSqlBinder::ArrayECSqlBinder(ECSqlPrepareContext& ctx, ECSqlTypeInfo const& typeInfo, SqlParamNameGenerator& paramNameGen, bool isForIdSet)
+    : ECSqlBinder(ctx, typeInfo, paramNameGen, 1, true, true), m_binderInfo(BinderInfo::BinderType::Array, isForIdSet)
     {
     BeAssert(GetTypeInfo().IsArray());
     Initialize();
@@ -35,7 +34,7 @@ void ArrayECSqlBinder::Initialize()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-ECSqlStatus ArrayECSqlBinder::_OnBeforeStep()
+ECSqlStatus ArrayECSqlBinder::_OnBeforeFirstStep()
     {
     const uint32_t arrayLength = m_json.IsNull() ? 0 : (uint32_t) m_json.Size();
     // from the API we cannot tell between binding NULL and binding an empty array. so we treat them
@@ -68,7 +67,7 @@ ECSqlStatus ArrayECSqlBinder::_OnBeforeStep()
 // @bsimethod
 //---------------------------------------------------------------------------------------
 ArrayECSqlBinder::JsonValueBinder::JsonValueBinder(ECDbCR ecdb, ECSqlTypeInfo const& typeInfo, rapidjson::Value& json, rapidjson::MemoryPoolAllocator<>& jsonAllocator) 
-    : IECSqlBinder(), m_ecdb(&ecdb), m_typeInfo(typeInfo), m_json(&json), m_jsonAllocator(&jsonAllocator), m_currentArrayElementBinder(nullptr)
+    : IECSqlBinder(), m_ecdb(&ecdb), m_typeInfo(typeInfo), m_json(&json), m_jsonAllocator(&jsonAllocator), m_currentArrayElementBinder(nullptr), m_binderInfo(BinderInfo::BinderType::JsonValue)
     {
     BeAssert(m_json != nullptr);
     BeAssert(m_jsonAllocator != nullptr);
@@ -79,7 +78,7 @@ ArrayECSqlBinder::JsonValueBinder::JsonValueBinder(ECDbCR ecdb, ECSqlTypeInfo co
 // @bsimethod
 //---------------------------------------------------------------------------------------
 ArrayECSqlBinder::JsonValueBinder::JsonValueBinder(JsonValueBinder&& rhs)
-    : m_ecdb(std::move(rhs.m_ecdb)), m_typeInfo(std::move(rhs.m_typeInfo)), m_json(std::move(rhs.m_json)), m_jsonAllocator(std::move(rhs.m_jsonAllocator)), m_currentArrayElementBinder(std::move(rhs.m_currentArrayElementBinder))
+    : m_ecdb(std::move(rhs.m_ecdb)), m_typeInfo(std::move(rhs.m_typeInfo)), m_json(std::move(rhs.m_json)), m_jsonAllocator(std::move(rhs.m_jsonAllocator)), m_currentArrayElementBinder(std::move(rhs.m_currentArrayElementBinder)), m_binderInfo(std::move(rhs.m_binderInfo))
     {
     if (!rhs.m_structMemberBinders.empty())
         m_structMemberBinders = std::move(rhs.m_structMemberBinders);
@@ -579,6 +578,14 @@ ECSqlStatus ArrayECSqlBinder::JsonValueBinder::FailIfInvalid() const
         }
 
     return ECSqlStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+BinderInfo& ArrayECSqlBinder::JsonValueBinder::_GetBinderInfo()
+    {
+    return m_binderInfo;
     }
 
 
