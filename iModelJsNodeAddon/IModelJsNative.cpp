@@ -6719,6 +6719,54 @@ static Napi::Value isRscFontData(NapiInfoCR info) {
     return Napi::Boolean::New(info.Env(), isRsc);
 }
 
+static Napi::Value imageBufferFromImageSource(NapiInfoCR info) {
+    REQUIRE_ARGUMENT_UINTEGER(0, iSrcFmt);
+    if (static_cast<uint32_t>(ImageSource::Format::Png) != iSrcFmt && static_cast<uint32_t>(ImageSource::Format::Jpeg) != iSrcFmt) {
+        THROW_JS_EXCEPTION("ImageSource format must be Png or Jpeg");
+    }
+
+    REQUIRE_ARGUMENT_ANY_OBJ(1, oSrcData);
+    if (!oSrcData.IsTypedArray()) {
+        THROW_JS_EXCEPTION("ImageSource data must be Uint8Array");
+    }
+
+    auto srcData = oSrcData.As<Napi::Uint8Array>();
+    ImageSource src(static_cast<ImageSource::Format>(iSrcFmt), ByteStream(srcData.Data(), srcData.ByteLength()));
+    
+    REQUIRE_ARGUMENT_INTEGER(2, iImgFmt);
+    Image::Format imgFmt;
+    if (iImgFmt == 255) {
+        imgFmt = src.SupportsTransparency() ? Image::Format::Rgba : Image::Format::Rgb;
+    } else {
+        if (static_cast<int32_t>(Image::Format::Rgb) != iImgFmt && static_cast<int32_t>(Image::Format::Rgba) != iImgFmt) {
+            THROW_JS_EXCEPTION("ImageBuffer format must be Rgb or Rgba");
+        }
+
+        imgFmt = static_cast<Image::Format>(iImgFmt);
+    }
+
+    REQUIRE_ARGUMENT_BOOL(3, flipVertically);
+
+    Image img(src, imgFmt, flipVertically ? Image::BottomUp::Yes : Image::BottomUp::No);
+    if (!img.IsValid()) {
+        return info.Env().Undefined();
+    }
+
+    auto imgData = Napi::Uint8Array::New(info.Env(), img.GetByteStream().size());
+    memcpy(imgData.Data(), img.GetByteStream().data(), img.GetByteStream().size());
+
+    Napi::Object ret = Napi::Object::New(info.Env());
+    ret.Set(Napi::String::New(info.Env(), "data"), imgData);
+    ret.Set(Napi::String::New(info.Env(), "format"), Napi::Number::New(info.Env(), static_cast<uint32_t>(img.GetFormat())));
+    ret.Set(Napi::String::New(info.Env(), "width"), Napi::Number::New(info.Env(), img.GetWidth()));
+
+    return ret;
+}
+
+static Napi::Value imageSourceFromImageBuffer(NapiInfoCR info) {
+    return Napi::String::New(info.Env(), "###TODO");
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -6778,6 +6826,8 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
         Napi::PropertyDescriptor::Function(env, exports, "setMaxTileCacheSize", &setMaxTileCacheSize),
         Napi::PropertyDescriptor::Function(env, exports, "getTrueTypeFontMetadata", &getTrueTypeFontMetadata),
         Napi::PropertyDescriptor::Function(env, exports, "isRscFontData", &isRscFontData),
+        Napi::PropertyDescriptor::Function(env, exports, "imageBufferFromImageSource", &imageBufferFromImageSource),
+        Napi::PropertyDescriptor::Function(env, exports, "imageSourceFromImageBuffer", &imageSourceFromImageBuffer),
     });
 
     registerCloudSqlite(env, exports);
