@@ -635,5 +635,15 @@ DgnStyleId LineStyleElement::ImportLineStyle(DgnStyleId srcStyleId, DgnImportCon
     return (result == BSISUCCESS) ? dstStyleId : DgnStyleId();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void LineStyleElement::_RemapIds(DgnImportContext& importer)
+    {
+    T_Super::_RemapIds(importer);
+    this->ImportLineStyle(this->GetId(), importer);
+    importer.AddLineStyleId(this->GetId(), this->GetId());
+    }
+
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

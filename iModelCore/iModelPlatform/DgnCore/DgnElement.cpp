@@ -6,6 +6,7 @@
 #include "BisCoreNames.h"
 #include "ElementECInstanceAdapter.h"
 #include <ECObjects/ECJsonUtilities.h>
+// #include "../PublicAPI/DgnPlatform/LineStyle.h"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -1891,6 +1892,16 @@ void GeometricElement::_RemapIds(DgnImportContext& importer)
     m_categoryId = importer.RemapCategory(m_categoryId);
     importer.RemapGeometryStreamIds(m_geom);
     }
+
+// /*---------------------------------------------------------------------------------**//**
+// * @bsimethod
+// +---------------+---------------+---------------+---------------+---------------+------*/
+// void LineStyleElement::_RemapIds(DgnImportContext& importer)
+//     {
+//     T_Super::_RemapIds(importer);
+//     this->ImportLineStyle(this->GetId(), importer);
+//     importer.AddLineStyleId(this->GetId(), this->GetId());
+//     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
