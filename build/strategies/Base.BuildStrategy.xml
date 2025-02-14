@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildStrategy  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  xsi:noNamespaceSchemaLocation="../bentleybuild/BuildStrategy.xsd">
+
+    <DefaultPartOptions BuildFromSource="Never" OnError="Stop"/>
+    <DefaultProvenance OnError="Warn" />
+
+    <DefaultToolset Platform="x64"          Toolset="VS2019" />
+    <DefaultToolset Platform="iOS*"         Toolset="APPLE_CLANG" />
+    <DefaultToolset Platform="Mac*"         Toolset="APPLE_CLANG" />
+    <DefaultToolset Platform="android*"     Toolset="ANDROID_CLANG" />
+    <DefaultToolset Platform="linux*"       Toolset="LINUX_GCC" />
+
+    <LocalRepository Name="BisSchemas"                              Type="Git"      Directory="${SrcRoot}BisSchemas"/>
+    <LocalRepository Name="BsiScripts"                              Type="Git"      Directory="${ToolCache}BsiScripts" />
+    <LocalRepository Name="imodel-native"                           Type="Git"      Directory="${SrcRoot}imodel-native"/>
+    <LocalRepository Name="imodel-native-internal"                  Type="Git"      Directory="${SrcRoot}imodel-native"/>
+
+    <UpackFeed Name="BsiUpack" Address="https://none/" Feed="none" />
+    <DefaultUpackFeed Pull="BsiUpack" Push="BsiUpack" />
+    <UpackSource Name="bmake"                   Version="*" Multiplatform="true" />
+    <UpackSource Name="bsitools"                Version="*" Multiplatform="true" />
+    <UpackSource Name="nasm"                    Version="*" Multiplatform="true" />
+    <UpackSource Name="breakpad_54fa71efbe50"   Version="*" PartFile="breakpad_54fa71efbe50" PartName="BreakPad"/>
+
+    <ToolsetPart Repository="imodel-native" PartFile="build/PublicSDK/BootStrapToolset" PartName="BootStrapToolset"/>
+    <PartStrategy PartFile="BootStrapToolset"   PartName="*" BuildFromSource="Once"/>
+
+    <PartStrategy PartFile="*"                  PartName="*" BuildFromSource="Once"/>
+    <PartStrategy PartFile="Visualization"      PartName="*"        Exclude="true" />
+    <PartStrategy PartFile="PSBRepGeometry"     PartName="*"        Exclude="true" />
+    <PartStrategy PartFile="BRepCore"           PartName="*"        Exclude="true" />
+    <PartStrategy PartFile="iModelJsNodeAddon"  PartName="breakpad" Exclude="true" />
+
+</BuildStrategy>
