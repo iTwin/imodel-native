@@ -681,7 +681,7 @@ struct InterpolationCurve : private flatbuffers::Table {
   int32_t isColinearTangents() const { return GetField<int32_t>(10, 0); }
   int32_t isChordLenTangents() const { return GetField<int32_t>(12, 0); }
   int32_t isNaturalTangents() const { return GetField<int32_t>(14, 0); }
-  const DPoint3d *startTangent() const { return GetStruct<const DPoint3d *>(16); }
+  const DVector3d *startTangent() const { return GetStruct<const DVector3d *>(16); }
   const DVector3d *endTangent() const { return GetStruct<const DVector3d *>(18); }
   const flatbuffers::Vector<double> *fitPoints() const { return GetPointer<const flatbuffers::Vector<double> *>(20); }
   const flatbuffers::Vector<double> *knots() const { return GetPointer<const flatbuffers::Vector<double> *>(22); }
@@ -693,7 +693,7 @@ struct InterpolationCurve : private flatbuffers::Table {
            VerifyField<int32_t>(verifier, 10 /* isColinearTangents */) &&
            VerifyField<int32_t>(verifier, 12 /* isChordLenTangents */) &&
            VerifyField<int32_t>(verifier, 14 /* isNaturalTangents */) &&
-           VerifyField<DPoint3d>(verifier, 16 /* startTangent */) &&
+           VerifyField<DVector3d>(verifier, 16 /* startTangent */) &&
            VerifyField<DVector3d>(verifier, 18 /* endTangent */) &&
            VerifyField<flatbuffers::uoffset_t>(verifier, 20 /* fitPoints */) &&
            verifier.Verify(fitPoints()) &&
@@ -722,7 +722,7 @@ struct InterpolationCurveBuilder {
   void add_isColinearTangents(int32_t isColinearTangents) { fbb_.AddElement<int32_t>(10, isColinearTangents, 0); }
   void add_isChordLenTangents(int32_t isChordLenTangents) { fbb_.AddElement<int32_t>(12, isChordLenTangents, 0); }
   void add_isNaturalTangents(int32_t isNaturalTangents) { fbb_.AddElement<int32_t>(14, isNaturalTangents, 0); }
-  void add_startTangent(const DPoint3d *startTangent) { fbb_.AddStruct(16, startTangent); }
+  void add_startTangent(const DVector3d *startTangent) { fbb_.AddStruct(16, startTangent); }
   void add_endTangent(const DVector3d *endTangent) { fbb_.AddStruct(18, endTangent); }
   void add_fitPoints(flatbuffers::Offset<flatbuffers::Vector<double>> fitPoints) { fbb_.AddOffset(20, fitPoints); }
   void add_knots(flatbuffers::Offset<flatbuffers::Vector<double>> knots) { fbb_.AddOffset(22, knots); }
@@ -741,7 +741,7 @@ inline flatbuffers::Offset<InterpolationCurve> CreateInterpolationCurve(flatbuff
    int32_t isColinearTangents = 0,
    int32_t isChordLenTangents = 0,
    int32_t isNaturalTangents = 0,
-   const DPoint3d *startTangent = 0,
+   const DVector3d *startTangent = 0,
    const DVector3d *endTangent = 0,
    flatbuffers::Offset<flatbuffers::Vector<double>> fitPoints = 0,
    flatbuffers::Offset<flatbuffers::Vector<double>> knots = 0) {
@@ -1561,6 +1561,7 @@ struct Polyface : private flatbuffers::Table {
   const PolyfaceAuxData *auxData() const { return GetPointer<const PolyfaceAuxData *>(36); }
   int32_t expectedClosure() const { return GetField<int32_t>(38, 0); }
   const TaggedNumericData *taggedNumericData() const { return GetPointer<const TaggedNumericData *>(40); }
+  const flatbuffers::Vector<int32_t> *edgeMateIndex() const { return GetPointer<const flatbuffers::Vector<int32_t> *>(42); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<flatbuffers::uoffset_t>(verifier, 4 /* point */) &&
@@ -1596,6 +1597,8 @@ struct Polyface : private flatbuffers::Table {
            VerifyField<int32_t>(verifier, 38 /* expectedClosure */) &&
            VerifyField<flatbuffers::uoffset_t>(verifier, 40 /* taggedNumericData */) &&
            verifier.VerifyTable(taggedNumericData()) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, 42 /* edgeMateIndex */) &&
+           verifier.Verify(edgeMateIndex()) &&
            verifier.EndTable();
   }
   bool has_point() const { return CheckField(4); }
@@ -1617,6 +1620,7 @@ struct Polyface : private flatbuffers::Table {
   bool has_auxData() const { return CheckField(36); }
   bool has_expectedClosure() const { return CheckField(38); }
   bool has_taggedNumericData() const { return CheckField(40); }
+  bool has_edgeMateIndex() const { return CheckField(42); }
 };
 
 struct PolyfaceBuilder {
@@ -1641,10 +1645,11 @@ struct PolyfaceBuilder {
   void add_auxData(flatbuffers::Offset<PolyfaceAuxData> auxData) { fbb_.AddOffset(36, auxData); }
   void add_expectedClosure(int32_t expectedClosure) { fbb_.AddElement<int32_t>(38, expectedClosure, 0); }
   void add_taggedNumericData(flatbuffers::Offset<TaggedNumericData> taggedNumericData) { fbb_.AddOffset(40, taggedNumericData); }
+  void add_edgeMateIndex(flatbuffers::Offset<flatbuffers::Vector<int32_t>> edgeMateIndex) { fbb_.AddOffset(42, edgeMateIndex); }
   PolyfaceBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   PolyfaceBuilder &operator=(const PolyfaceBuilder &);
   flatbuffers::Offset<Polyface> Finish() {
-    auto o = flatbuffers::Offset<Polyface>(fbb_.EndTable(start_, 19));
+    auto o = flatbuffers::Offset<Polyface>(fbb_.EndTable(start_, 20));
     return o;
   }
 };
@@ -1668,8 +1673,10 @@ inline flatbuffers::Offset<Polyface> CreatePolyface(flatbuffers::FlatBufferBuild
    flatbuffers::Offset<flatbuffers::Vector<double>> faceData = 0,
    flatbuffers::Offset<PolyfaceAuxData> auxData = 0,
    int32_t expectedClosure = 0,
-   flatbuffers::Offset<TaggedNumericData> taggedNumericData = 0) {
+   flatbuffers::Offset<TaggedNumericData> taggedNumericData = 0,
+   flatbuffers::Offset<flatbuffers::Vector<int32_t>> edgeMateIndex = 0) {
   PolyfaceBuilder builder_(_fbb);
+  builder_.add_edgeMateIndex(edgeMateIndex);
   builder_.add_taggedNumericData(taggedNumericData);
   builder_.add_expectedClosure(expectedClosure);
   builder_.add_auxData(auxData);

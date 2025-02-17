@@ -177,7 +177,6 @@ bool tryValueToXYZ (BeJsConst value, DPoint3dR xyz)
         xyz.Init (xyzArray[0], xyzArray[1], xyzArray[2]);
         stat = haveX && haveY;  // allow optional z
         }
-
     return stat;
     }
 
@@ -400,13 +399,13 @@ bool derefAxes (BeJsConst source, RotMatrixR axes, RotMatrixCR defaultAxes)
     axes = defaultAxes;
     auto xyVectors = source["xyVectors"];
     DVec3d vectorX, vectorY, vectorZ;
-    if (xyVectors.isArray () && xyVectors.size () == 2
+    if (!xyVectors.isNull () && xyVectors.isArray () && xyVectors.size () == 2
         && tryValueToXYZ (xyVectors[0], vectorX)
         && tryValueToXYZ (xyVectors[1], vectorY))
         return completeAxesConstruction (vectorX, 0, vectorY, 1, 2, axes, defaultAxes);
 
     auto zxVectors = source["zxVectors"];
-    if (zxVectors.isArray () && zxVectors.size () == 2
+    if (!zxVectors.isNull () && zxVectors.isArray () && zxVectors.size () == 2
         && tryValueToXYZ (zxVectors[0], vectorZ)
         && tryValueToXYZ (zxVectors[1], vectorX))
         return completeAxesConstruction (vectorZ, 2, vectorX, 0, 1, axes, defaultAxes);
@@ -523,19 +522,19 @@ bool tryValueToInterpolationCurve(BeJsConst value, ICurvePrimitivePtr &result)
     if (!value.isNull())
         {
         bvector<DPoint3d> fitPoints;
-        bvector<double> knots;
         if (tryValueToBVectorDPoint3d(value["fitPoints"], fitPoints))
             {
+            bvector<double> knots;
             tryValueToBVectorDouble(value["knots"], knots);
             auto order = AsInt(value["order"], 4).Value();
             bool closed;
             derefBool(value, "closed", closed, false);
-            auto isChordLenKnots = AsInt(value["isChordLenKnots"], 0).Value ();
-            auto isColinearTangents = AsInt(value["isColinearTangents"], 0);
-            auto isChordLenTangents = AsInt(value["isChordLenTangents"], 0);
-            auto isNaturalTangents = AsInt(value["isNaturalTangents"], 0);
+            auto isChordLenKnots = AsInt(value["isChordLenKnots"], 0).Value();
+            auto isColinearTangents = AsInt(value["isColinearTangents"], 0).Value();
+            auto isChordLenTangents = AsInt(value["isChordLenTangents"], 0).Value();
+            auto isNaturalTangents = AsInt(value["isNaturalTangents"], 0).Value();
             DVec3d startTangent = DVec3d::From (0,0,0), endTangent = DVec3d::From(0,0,0);
-            if (!value["startTangent"].isNull ())
+            if (!value["startTangent"].isNull())
                 tryValueToXYZ (value["startTangent"], startTangent);
             if (!value["endTangent"].isNull())
                 tryValueToXYZ (value["endTangent"], endTangent);
@@ -724,8 +723,8 @@ bool tryValueToBox (BeJsConst value, ISolidPrimitivePtr &result)
         double baseX = 0, baseY, topX, topY, height;
         DVec3d vectorX, vectorY, vectorZ;
         RotMatrix axes;
-        // required ...
-        if ((tryValueToXYZ(value["origin"], baseOrigin) || tryValueToXYZ (value["baseOrigin"], baseOrigin))
+        // both baseOrigin and origin may be present, but origin is preferred
+        if ((tryValueToXYZ(value["origin"], baseOrigin) || tryValueToXYZ(value["baseOrigin"], baseOrigin))
             && derefNumeric (value, "baseX", baseX))
             {
             // optional with default from required values
@@ -735,7 +734,6 @@ bool tryValueToBox (BeJsConst value, ISolidPrimitivePtr &result)
             derefNumeric (value, "topY", topY, baseY);
             derefAxes (value, axes, RotMatrix::FromIdentity ());
             axes.GetColumns (vectorX, vectorY, vectorZ);
-
             if (!tryValueToXYZ (value["topOrigin"], topOrigin))
                 {
                 derefNumeric (value, "height", height, baseX);
@@ -1048,6 +1046,7 @@ PolyfaceHeaderPtr tryValueToPolyfaceHeader (BeJsConst parentValue)
     if (tryValueToTaggedNumericData(value["tags"], numericData))
         pf->SetNumericTags (numericData);
 
+    // TODO: currently edgeMateIndex array is ignored for native Polyface
     return pf;
     }
 
@@ -1133,9 +1132,7 @@ CurveVector::BoundaryType boundaryType
             {
             // PP demands that only one loop be called outer ... check it . .
             int numOuter = 0;
-            int numInner = 0;
             int numOther = 0;
-            UNUSED_VARIABLE(numInner);
             for (auto & cp : *result)
                 {
                 auto loop = cp->GetChildCurveVectorP ();
@@ -1144,7 +1141,7 @@ CurveVector::BoundaryType boundaryType
                     if (loop->GetBoundaryType () == CurveVector::BOUNDARY_TYPE_Outer)
                         numOuter++;
                     else if (loop->GetBoundaryType () == CurveVector::BOUNDARY_TYPE_Inner)
-                        numInner++;
+                        ;
                     else
                         numOther++;
                     }

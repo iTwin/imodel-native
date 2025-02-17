@@ -4,9 +4,25 @@ rem   Copyright (c) Bentley Systems, Incorporated. All rights reserved.
 rem   See LICENSE.md in the repository root for full copyright notice.
 rem ------------------------------------------------------------------------------------
 
-: Run this Windows script manually to compile the flatbuffer geometry schema allcg.fbs into flatbuffer accessors for
-: native, iTwin, and .NET geometry libraries. Do this whenever data is added to a geometry type that must be persisted.
-: All of the Bentley geometry repos must then be updated with the new accessors. See NOTES below for details.
+: KEEP THIS FILE IN SYNC ACROSS ALL NATIVE GEOMLIBS REPOS:
+: * PPBase\Geomlibs\serialization\src\FlatBuffer\CompileFbs.bat
+: * imodel-native\iModelCore\GeomLibs\serialization\src\FlatBuffer\CompileFbs.bat
+: * imodel02\iModelCore\GeomLibs\serialization\src\FlatBuffer\CompileFbs.bat
+
+: NOTES:
+: * This Windows script manually to compile the flatbuffer geometry schema allcg.fbs into flatbuffer accessors for
+:   native, iTwin, and .NET geometry libraries.
+: * Run this script whenever data is added to a geometry type that must be persisted, then ensure outputs
+:   are copied to the respective repos:
+:   * C++ output is %OutDir%allcg_generated.h, and belongs in:
+:     * PPBase\Geomlibs\serialization\src\FlatBuffer\
+:     * imodel02\iModelCore\GeomLibs\serialization\src\FlatBuffer\
+:     * imodel-native\iModelCore\GeomLibs\serialization\src\FlatBuffer\
+:   * Typescript output is %OutDir%BGFBAccessors.ts, and belongs in itwinjs\core\geometry\src\serialization\
+:   * .NET output is %OutDir%Bentley\GeometryNET\FB\*.cs, and belongs in PPBase\BentleyGeometryNet\src\FlatBuffers\gensrc\
+: * The Google flatbuffers repo has diverged too much to efficiently port our changes and/or analyze modern output
+:   differences in the generated geometry FB accessors for TypeScript and .NET. Therefore in this script, we continue
+:   to employ the same compilers first used to generate the geometry FB accessors for these languages.
 
 : beflatc is the latest version built in libsrc with Bentley changes, and used to generate C++ accessors.
 SET CFlatcExe=%SrcRoot%imodel-native\iModelCore\libsrc\flatbuffers\bin\beflatc.exe
@@ -19,20 +35,6 @@ SET NETFlatcExe=%SrcRoot%imodel-native\iModelCore\libsrc\flatbuffers\bin\beflatc
 
 : gema is open-source pattern-based text processor developed by David N. Gray and used in several build scripts.
 SET GemaExe=%SrcRoot%toolcache\bsitools_x64.1.0.0-6\gema.exe
-
-: NOTES:
-: * The Google flatbuffers repo has diverged too much to efficiently port our changes and/or analyze modern output
-:   differences in the generated geometry FB accessors for TypeScript and .NET. Therefore in this script, we continue
-:   to employ the same compilers first used to generate the geometry FB accessors for these languages.
-: * %OutDir% and %TempDir% are created locally by this script, and should not be committed.
-: * C++ output is %OutDir%allcg_generated.h, and:
-:   * is copied locally to %SrcDir% by this script
-:   * must be manually copied to PPBase\Geomlibs\serialization\src\FlatBuffer\
-:   * must be manually copied to imodel02\iModelCore\GeomLibs\serialization\src\FlatBuffer\
-: * Typescript output is %OutDir%BGFBAccessors.ts, and:
-:   * must be manually copied to itwinjs\core\geometry\src\serialization\
-: * .NET output is %OutDir%Bentley\GeometryNET\FB\*.cs, and:
-:   * must be manually copied to PPBase\BentleyGeometryNet\src\FlatBuffers\gensrc\
 
 SET BaseName=allcg
 SET SrcDir=.\
@@ -93,4 +95,5 @@ TYPE %SrcFile% >> %TempFile%
     )
 @ECHO Done Generating %OutDir%Bentley\GeometryNET\FB\*.cs
 
+@RD /Q %TempDir%
 :done
