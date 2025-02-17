@@ -170,7 +170,9 @@ void ValueExpListExp::_ToECSql(ECSqlRenderContext& ctx) const
     }
 
 // ******************* RowValueConstructorListExp *************************
-
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
 RowValueConstructorListExp::RowValueConstructorListExp(std::vector<std::unique_ptr<ValueExpListExp>>& rowValueList)
     : RangeClassRefExp(Exp::Type::RowValueConstructorList, PolymorphicInfo::NotSpecified())
     {
@@ -197,6 +199,9 @@ RowValueConstructorListExp::RowValueConstructorListExp(std::vector<std::unique_p
         }
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
 Exp::FinalizeParseStatus RowValueConstructorListExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
         if (mode == FinalizeParseMode::BeforeFinalizingChildren)
@@ -204,6 +209,9 @@ Exp::FinalizeParseStatus RowValueConstructorListExp::_FinalizeParsing(ECSqlParse
         return FinalizeParseStatus::Completed;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
 void RowValueConstructorListExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
         ctx.AppendToECSql("(");
@@ -219,7 +227,10 @@ void RowValueConstructorListExp::_ToECSql(ECSqlRenderContext& ctx) const
 
         ctx.AppendToECSql("(");
     }
-
+    
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
 void RowValueConstructorListExp::_ToJson(BeJsValue val, JsonFormat const& fmt) const
     {
         val.SetEmptyArray();
@@ -227,7 +238,9 @@ void RowValueConstructorListExp::_ToJson(BeJsValue val, JsonFormat const& fmt) c
             childExp->ToJson(val.appendValue(), fmt);
     }
 
-// @todo - Naron: this doesn't get triggered 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
 void RowValueConstructorListExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const
     {
         for (size_t i = 0; i < GetSelection()->GetChildrenCount(); i++)
@@ -240,6 +253,9 @@ void RowValueConstructorListExp::_ExpandSelectAsterisk(std::vector<std::unique_p
             }
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
 PropertyMatchResult RowValueConstructorListExp::_FindProperty(ECSqlParseContext& ctx, PropertyPath const& propertyPath, const PropertyMatchOptions& options) const
     {
     if (propertyPath.IsEmpty())
@@ -274,6 +290,9 @@ PropertyMatchResult RowValueConstructorListExp::_FindProperty(ECSqlParseContext&
     return PropertyMatchResult::NotFound();
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
 std::vector<ValueExpListExp const*> RowValueConstructorListExp::GetRowValues() const
     {
         std::vector<ValueExpListExp const*> rowValues;

@@ -378,9 +378,6 @@ ECSqlStatus ECSqlSelectPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::Lis
             innerExp->GetAs<PropertyNameExp>().IsPropertyRef() &&
             innerExp->GetAs<PropertyNameExp>().GetPropertyRef()->IsSqlColumnNameExp())
             return ECSqlStatus::Success;
-        if (innerExp->GetType() == Exp::Type::SqlColumnName)
-            return ECSqlStatus::Success;// @todo - Naron: this should be removed as * expands to propertyNameExp?
-        
         ECSqlStatus status = ECSqlFieldFactory::CreateField(ctx, &exp, startColumnIndex);
         if (!status.IsSuccess())
             return status;
