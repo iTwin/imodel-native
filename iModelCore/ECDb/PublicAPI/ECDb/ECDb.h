@@ -120,7 +120,7 @@ struct ECSqlConfig {
         DisableSqlFunctions m_disabledFunctions;
         bool m_experimentalFeaturesEnabled;
         mutable std::unordered_map<OptimizationOptions, bool> m_optimisationOptionsMap;
-
+        bool m_ignorePolymorphicFlagOnRelationshipConstraint = true;
     public:
         ECSqlConfig(): m_experimentalFeaturesEnabled(false) {
             m_optimisationOptionsMap[OptimizationOptions::OptimizeJoinForClassIds] = true;
@@ -133,6 +133,8 @@ struct ECSqlConfig {
         void SetOptimizationOption(OptimizationOptions option, bool flag) {m_optimisationOptionsMap[option] = flag;}
         bool GetExperimentalFeaturesEnabled() const { return m_experimentalFeaturesEnabled; }
         void SetExperimentalFeaturesEnabled(bool v)  { m_experimentalFeaturesEnabled = v; }
+        bool GetIgnorePolymorphicFlagOnRelationshipConstraint() const { return m_ignorePolymorphicFlagOnRelationshipConstraint; }
+        void SetIgnorePolymorphicFlagOnRelationshipConstraint(bool v)  { m_ignorePolymorphicFlagOnRelationshipConstraint = v; }
 };
 
 

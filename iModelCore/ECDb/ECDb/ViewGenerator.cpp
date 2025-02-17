@@ -1039,31 +1039,61 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
         //no need to cast referencIdColumn because IS NOT NULL doesn't need to change the data affinity
         unionQuerySql.Append(" WHERE ").AppendFullyQualified(referenceIdColumn.GetTable().GetName(), referenceIdColumn.GetName()).Append(" IS NOT NULL");
 
+        const auto ignorePolymorphicFlagOnRelationshipConstraint = ctx.GetECDb().GetECSqlConfig().GetIgnorePolymorphicFlagOnRelationshipConstraint();
         if (relationMap.GetForeignEnd() == ECRelationshipEnd::ECRelationshipEnd_Source) {
             if (partition->GetSourceECClassIdColumn()->GetPersistenceType() == PersistenceType::Physical) {
-                const auto constraintClassId = relationshipClass.GetSource().GetConstraintClasses()[0]->GetId().ToString();
+                const bool isMultipleConstraint = relationshipClass.GetSource().GetConstraintClasses().size() > 1;
+                Utf8String constraintClassIds;
+                for(auto const& constraintClass : relationshipClass.GetSource().GetConstraintClasses()) {
+                    if (!constraintClassIds.empty())
+                        constraintClassIds.append(", ");
+
+                    constraintClassIds.append(constraintClass->GetId().ToHexStr());
+                }
+
                 const auto tablespace = ctx.GetSchemaManager().GetTableSpace().GetName();
                 unionQuerySql.Append(" AND ");
                 toSql(unionQuerySql, *partition->GetSourceECClassIdColumn());
-                if (relationshipClass.GetSource().GetIsPolymorphic()) {
-                    unionQuerySql.AppendFormatted(" IN (SELECT ClassId FROM [%s]." TABLE_ClassHierarchyCache " WHERE BaseClassId=%s)", tablespace.c_str(), constraintClassId.c_str());
+                if (relationshipClass.GetSource().GetIsPolymorphic() || ignorePolymorphicFlagOnRelationshipConstraint) {
+                    if (isMultipleConstraint)
+                        unionQuerySql.AppendFormatted(" IN (SELECT ClassId FROM [%s]." TABLE_ClassHierarchyCache " WHERE BaseClassId IN (%s))", tablespace.c_str(), constraintClassIds.c_str());
+                    else
+                        unionQuerySql.AppendFormatted(" IN (SELECT ClassId FROM [%s]." TABLE_ClassHierarchyCache " WHERE BaseClassId = %s)", tablespace.c_str(), constraintClassIds.c_str());
                 }
                 else {
-                    unionQuerySql.Append("=").Append(constraintClassId);
+                    if (isMultipleConstraint)
+                        unionQuerySql.Append(" IN (").Append(constraintClassIds).Append(")");
+                    else
+                        unionQuerySql.Append("=").Append(constraintClassIds);
                 }
             }
         }
         else {
             if (partition->GetTargetECClassIdColumn()->GetPersistenceType() == PersistenceType::Physical) {
-                const auto constraintClassId = relationshipClass.GetTarget().GetConstraintClasses()[0]->GetId().ToString();
+                Utf8String constraintClassIds;
+                const bool isMultipleConstraint = relationshipClass.GetTarget().GetConstraintClasses().size() > 1;
+                for(auto const& constraintClass : relationshipClass.GetTarget().GetConstraintClasses()) {
+                    if (!constraintClassIds.empty())
+                        constraintClassIds.append(", ");
+
+                    constraintClassIds.append(constraintClass->GetId().ToHexStr());
+                }
+
                 const auto tablespace = ctx.GetSchemaManager().GetTableSpace().GetName();
                 unionQuerySql.Append(" AND ");
                 toSql(unionQuerySql, *partition->GetTargetECClassIdColumn());
-                if (relationshipClass.GetTarget().GetIsPolymorphic()) {
-                    unionQuerySql.AppendFormatted(" IN (SELECT ClassId FROM [%s]." TABLE_ClassHierarchyCache " WHERE BaseClassId=%s)", tablespace.c_str(), constraintClassId.c_str());
+                if (relationshipClass.GetTarget().GetIsPolymorphic() || ignorePolymorphicFlagOnRelationshipConstraint) {
+                    if (isMultipleConstraint)
+                        unionQuerySql.AppendFormatted(" IN (SELECT ClassId FROM [%s]." TABLE_ClassHierarchyCache " WHERE BaseClassId IN (%s))", tablespace.c_str(), constraintClassIds.c_str());
+                    else
+                        unionQuerySql.AppendFormatted(" IN (SELECT ClassId FROM [%s]." TABLE_ClassHierarchyCache " WHERE BaseClassId = %s)", tablespace.c_str(), constraintClassIds.c_str());
+
                 }
                 else {
-                    unionQuerySql.Append("=").Append(constraintClassId);
+                    if (isMultipleConstraint)
+                        unionQuerySql.Append(" IN (").Append(constraintClassIds).Append(")");
+                    else
+                        unionQuerySql.Append("=").Append(constraintClassIds);
                 }
             }
         }
@@ -1740,13 +1770,19 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(NavigationPropertyMap::Re
         result.GetSqlBuilderR().Append("CAST(");
 
     //The RelECClassId should always be logically null if the respective NavId col is null
-
-    result.GetSqlBuilderR().AppendFormatted("(CASE WHEN %s IS NULL THEN NULL ELSE COALESCE(%s, %s) END)",
-        idColStrBuilder.GetSql().c_str(),
-        relClassIdColStrBuilder.GetSql().c_str(),
-        relClassIdPropMap.GetDefaultClassId().ToString().c_str()
-    );
-
+    const auto classIdStr = relClassIdPropMap.GetDefaultClassId().ToString();
+    if (relClassIdColStrBuilder.GetSql() != classIdStr)
+        result.GetSqlBuilderR().AppendFormatted("(CASE WHEN %s IS NULL THEN NULL ELSE COALESCE(%s, %s) END)",
+            idColStrBuilder.GetSql().c_str(),
+            relClassIdColStrBuilder.GetSql().c_str(),
+            relClassIdPropMap.GetDefaultClassId().ToString().c_str()
+        );
+    else {
+        result.GetSqlBuilderR().AppendFormatted("(CASE WHEN %s IS NULL THEN NULL ELSE %s END)",
+            idColStrBuilder.GetSql().c_str(),
+            relClassIdColStrBuilder.GetSql().c_str()
+        );
+    }
     if (requiresCast)
         result.GetSqlBuilderR().Append(" AS ").Append(DbColumn::TypeToSql(relClassIdPropMap.GetColumnDataType())).AppendParenRight();
 

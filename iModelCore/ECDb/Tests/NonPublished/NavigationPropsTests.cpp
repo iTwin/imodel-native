@@ -1415,7 +1415,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithMandatoryRelClassId)
         if (expectedRelClassId.IsValid())
             ASSERT_EQ(expectedRelClassId.GetValueUnchecked(), stmt.GetValueId<ECClassId>(1).GetValueUnchecked()) << "Parent.RelECClassId";
         else
-            ASSERT_TRUE(stmt.IsValueNull(1)) << "Parent.RelECClassId";
+            ASSERT_TRUE(stmt.IsValueNull(1)) << "Parent.RelECClassId: " << stmt.GetValueId<ECClassId>(1).ToHexStr().c_str();
 
         isValid = true;
         };
@@ -1461,7 +1461,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithMandatoryRelClassId)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << stmt.GetECSql();
     stmt.Reset();
     stmt.ClearBindings();
-    validateInsert(insertWasValid, m_ecdb, newKey.GetInstanceId(), info1Key.GetInstanceId(), ECClassId());
+    validateInsert(insertWasValid, m_ecdb, newKey.GetInstanceId(), info1Key.GetInstanceId(), ECClassId((uint64_t)0x59));
     ASSERT_TRUE(insertWasValid);
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Physical-4", IECSqlBinder::MakeCopy::No));
@@ -1521,7 +1521,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithMandatoryRelClassId)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << stmt.GetECSql();
     stmt.Reset();
     stmt.ClearBindings();
-    validateInsert(insertWasValid, m_ecdb, newKey.GetInstanceId(), info1Key.GetInstanceId(), ECClassId());
+    validateInsert(insertWasValid, m_ecdb, newKey.GetInstanceId(), info1Key.GetInstanceId(), ECClassId((uint64_t)0x59));
     ASSERT_TRUE(insertWasValid);
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Physical-2-3", IECSqlBinder::MakeCopy::No));
@@ -1530,7 +1530,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithMandatoryRelClassId)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << stmt.GetECSql();
     stmt.Reset();
     stmt.ClearBindings();
-    validateInsert(insertWasValid, m_ecdb, newKey.GetInstanceId(), info1Key.GetInstanceId(), ECClassId());
+    validateInsert(insertWasValid, m_ecdb, newKey.GetInstanceId(), info1Key.GetInstanceId(), ECClassId((uint64_t)0x59));
     ASSERT_TRUE(insertWasValid);
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Physical-2-4", IECSqlBinder::MakeCopy::No));
@@ -1584,7 +1584,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithMandatoryRelClassId)
     //ECDb cannot enforce the rel class id to be set. It is the responsibility of the caller to do that
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << stmt.GetECSql();
     stmt.Finalize();
-    validateInsert(insertWasValid, m_ecdb, newKey.GetInstanceId(), info1Key.GetInstanceId(), ECClassId());
+    validateInsert(insertWasValid, m_ecdb, newKey.GetInstanceId(), info1Key.GetInstanceId(), ECClassId((uint64_t)0x59));
     ASSERT_TRUE(insertWasValid);
 
     ecsql.Sprintf("INSERT INTO ts.PhysicalElement(Code,Parent.Id,Parent.RelECClassId) VALUES('Physical-3-3','%s',NULL)",
@@ -1593,7 +1593,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithMandatoryRelClassId)
     //ECDb cannot enforce the rel class id to be set. It is the responsibility of the caller to do that
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << stmt.GetECSql();
     stmt.Finalize();
-    validateInsert(insertWasValid, m_ecdb, newKey.GetInstanceId(), info1Key.GetInstanceId(), ECClassId());
+    validateInsert(insertWasValid, m_ecdb, newKey.GetInstanceId(), info1Key.GetInstanceId(), ECClassId((uint64_t)0x59));
     ASSERT_TRUE(insertWasValid);
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.PhysicalElement(Code) VALUES('Physical-3-4')"));

@@ -188,7 +188,7 @@ TEST_F(ECSqlToSqlGenerationTests, NavPropSharedColumnCasting)
     EXPECT_STREQ("SELECT [Child].[ps1],[Child].[ps2],[Child].[ps3],[Child].[ps4] FROM (SELECT [Id] ECInstanceId,[ECClassId],[ps1],[ps2],[ps3],(CASE WHEN [ps3] IS NULL THEN NULL ELSE COALESCE([ps4], 89) END) [ps4] FROM [main].[ts_Child]) [Child]",
                  GetHelper().ECSqlToSql("SELECT D,S,Parent.Id,Parent.RelECClassId FROM ts.Child").c_str());
 
-    EXPECT_STREQ("SELECT [Rel].[SourceECInstanceId],[Rel].[SourceECClassId],[Rel].[TargetECInstanceId],[Rel].[TargetECClassId] FROM (SELECT [ts_Child].[Id] ECInstanceId,COALESCE([ts_Child].[ps4],89) ECClassId,[ts_Child].[ps3] SourceECInstanceId,90 SourceECClassId,[ts_Child].[Id] TargetECInstanceId,[ts_Child].[ECClassId] TargetECClassId FROM [main].[ts_Child] WHERE [ts_Child].[ps3] IS NOT NULL AND [ts_Child].[ECClassId] IN (SELECT ClassId FROM [main].ec_cache_ClassHierarchy WHERE BaseClassId=88) AND COALESCE([ts_Child].[ps4],89)=89) [Rel]",
+    EXPECT_STREQ("SELECT [Rel].[SourceECInstanceId],[Rel].[SourceECClassId],[Rel].[TargetECInstanceId],[Rel].[TargetECClassId] FROM (SELECT [ts_Child].[Id] ECInstanceId,COALESCE([ts_Child].[ps4],89) ECClassId,[ts_Child].[ps3] SourceECInstanceId,90 SourceECClassId,[ts_Child].[Id] TargetECInstanceId,[ts_Child].[ECClassId] TargetECClassId FROM [main].[ts_Child] WHERE [ts_Child].[ps3] IS NOT NULL AND [ts_Child].[ECClassId] IN (SELECT ClassId FROM [main].ec_cache_ClassHierarchy WHERE BaseClassId = 0x58) AND COALESCE([ts_Child].[ps4],89)=89) [Rel]",
                  GetHelper().ECSqlToSql("SELECT SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId FROM ts.Rel").c_str());
     }
 

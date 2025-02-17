@@ -793,6 +793,7 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship_TPH)
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
         }
 
+        m_ecdb.SaveChanges();
         {
         const ECClassId classParentId = m_ecdb.Schemas().GetClass("TestSchema", "Parent")->GetId();
         const ECClassId classGrandchildAId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildA")->GetId();
