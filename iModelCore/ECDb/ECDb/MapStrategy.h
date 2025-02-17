@@ -18,7 +18,8 @@ enum class MapStrategy
     TablePerHierarchy = 2,
     ExistingTable = 3,
     ForeignKeyRelationshipInTargetTable = 10,
-    ForeignKeyRelationshipInSourceTable = 11
+    ForeignKeyRelationshipInSourceTable = 11,
+    UnknownMapping = 99
     };
 
 //======================================================================================
