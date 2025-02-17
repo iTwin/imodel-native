@@ -48,6 +48,7 @@ struct ClassPropsModule : BeSQLite::DbModule {
 // @bsiclass
 //=======================================================================================
 struct RelatedInstanceModule : ECDbModule {
+    constexpr static auto NAME = "related_instances";
     struct RelatedInstanceTable : ECDbVirtualTable {
         struct RelatedInstanceCursor : ECDbCursor {
             enum class Columns{

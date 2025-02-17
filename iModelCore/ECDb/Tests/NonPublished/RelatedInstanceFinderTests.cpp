@@ -152,7 +152,7 @@ TEST_F(RelatedInstanceFinderFixture, Basic) {
                     'RelECClassId', ec_className(RelECClassId),
                     'Direction', Direction)
                 ) out
-            FROM rel1.related_instances(?,?,?) ORDER BY ECInstanceId;
+            FROM rel1.related_instances(?,?,?) ORDER BY ECInstanceId OPTIONS ENABLE_EXPERIMENTAL_FEATURES;
         )s"));
 
         stmt.BindId(1, e1.GetInstanceId());
