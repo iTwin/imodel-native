@@ -6,8 +6,8 @@ rem   See LICENSE.md in the repository root for full copyright notice.
 rem ------------------------------------------------------------------------------------
 
 SET BaseName=allcg
-SET SrcDir=%SrcRoot%GeomLibs\Serialization\src\Flatbuffer\
-SET SrcFile=%SrcDir%%BaseName%.flatbuf
+SET SrcDir=%SrcRoot%GeomLibs\Serialization\src\FlatBuffer\
+SET SrcFile=%SrcDir%%BaseName%.fbs
 SET GeneratedDir=%SrcDir%
 SET GeneratedFileName=%BaseName%_generated.h
 SET GeneratedFile=%GeneratedDir%%GeneratedFileName%
@@ -16,12 +16,9 @@ SET OutFile=%OutDir%%BaseName%.fb.h
 SET TempFile=%OutDir%%BaseName%.fbs
 SET OutNetDir=%SrcRoot%BentleyGeometryNet\src\FlatBuffers\gensrc\
 
-REM flatbuffers comes from nuget now... just use the latest we can find:
-for /f %%i IN ('dir "%SrcRoot%nuget\FlatBuffersNuget_x64*" /ad /b /on') DO (
-set latestFBNugetDir=%SrcRoot%nuget\%%i
-)
-
-SET CompileExe=%latestFBNugetDir%\native\bin\beflatc.exe
+REM The flatc compiler bits are at https://github.com/google/flatbuffers/releases/tag/v1.12.0
+REM SET CompileExe=c:\bin\flatcv1.12.0.exe
+SET CompileExe=%SrcRoot%imodel02\iModelCore\libsrc\flatbuffers\bin\beflatc.exe
 
 SET CompileCmd=%CompileExe% -c
 SET CompileNETCmd=%CompileExe% -n -o %OutNetDir%

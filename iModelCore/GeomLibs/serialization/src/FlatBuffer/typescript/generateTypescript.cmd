@@ -15,13 +15,13 @@
 copy ..\allcg.fbs allcg.fbs
 @rem The flatc compiler bits are at https://github.com/google/flatbuffers/releases/tag/v1.12.0
 @rem the --ts and --js options both generate .ts files which are really javascript -- e.g. do not apply "public" declarations as expected.
-rem  %srcRoot%imodel02\iModelCore\libsrc\flatbuffers\bin\flatcv1.12.0.exe --ts allcg.fbs
-c:\bin\flatcv1.12.0.exe --ts allcg.fbs
+rem c:\bin\flatcv1.12.0.exe --ts allcg.fbs
+%srcRoot%iModel02\iModelCore\libsrc\flatbuffers\bin\beflatc.exe --ts allcg.fbs
 @echo .
 @echo .
 @rem apply various fixups that make it compile quietly in typescript ...
 set finalFileName=BGFBAccessors.ts
-gema -f fixupTypescript.g allcg_generated.ts > allcg_generated.ts.1
+%OutRoot%Tools\bsitools\gema.exe -f fixupTypescript.g allcg_generated.ts > allcg_generated.ts.1
 copy topOfFile.ts %finalFileName%
 type allcg_generated.ts.1 >>%finalFileName%
 type endOfFile.ts >>%finalFileName%

@@ -491,23 +491,23 @@ BentleyStatus AnnotationTextStylePersistence::DecodeFromFlatBuf(AnnotationTextSt
     {
     for (auto const& setter : setters)
         {
-        switch (setter.key())
+        switch (setter->key())
             {
-            case FB::AnnotationTextStyleProperty_ColorType: data.SetIntegerProperty(AnnotationTextStyleProperty::ColorType, setter.integerValue()); break;
-            case FB::AnnotationTextStyleProperty_ColorValue: data.SetIntegerProperty(AnnotationTextStyleProperty::ColorValue, setter.integerValue()); break;
-            case FB::AnnotationTextStyleProperty_FontId: data.SetIntegerProperty(AnnotationTextStyleProperty::FontId, setter.integerValue()); break;
-            case FB::AnnotationTextStyleProperty_Height: data.SetRealProperty(AnnotationTextStyleProperty::Height, setter.realValue()); break;
-            case FB::AnnotationTextStyleProperty_LineSpacingFactor: data.SetRealProperty(AnnotationTextStyleProperty::LineSpacingFactor, setter.realValue()); break;
-            case FB::AnnotationTextStyleProperty_IsBold: data.SetIntegerProperty(AnnotationTextStyleProperty::IsBold, setter.integerValue()); break;
-            case FB::AnnotationTextStyleProperty_IsItalic: data.SetIntegerProperty(AnnotationTextStyleProperty::IsItalic, setter.integerValue()); break;
-            case FB::AnnotationTextStyleProperty_IsUnderlined: data.SetIntegerProperty(AnnotationTextStyleProperty::IsUnderlined, setter.integerValue()); break;
-            case FB::AnnotationTextStyleProperty_StackedFractionScale: data.SetRealProperty(AnnotationTextStyleProperty::StackedFractionScale, setter.realValue()); break;
-            case FB::AnnotationTextStyleProperty_StackedFractionType: data.SetIntegerProperty(AnnotationTextStyleProperty::StackedFractionType, setter.integerValue()); break;
-            case FB::AnnotationTextStyleProperty_SubScriptOffsetFactor: data.SetRealProperty(AnnotationTextStyleProperty::SubScriptOffsetFactor, setter.realValue()); break;
-            case FB::AnnotationTextStyleProperty_SubScriptScale: data.SetRealProperty(AnnotationTextStyleProperty::SubScriptScale, setter.realValue()); break;
-            case FB::AnnotationTextStyleProperty_SuperScriptOffsetFactor: data.SetRealProperty(AnnotationTextStyleProperty::SuperScriptOffsetFactor, setter.realValue()); break;
-            case FB::AnnotationTextStyleProperty_SuperScriptScale: data.SetRealProperty(AnnotationTextStyleProperty::SuperScriptScale, setter.realValue()); break;
-            case FB::AnnotationTextStyleProperty_WidthFactor: data.SetRealProperty(AnnotationTextStyleProperty::WidthFactor, setter.realValue()); break;
+            case FB::AnnotationTextStyleProperty_ColorType: data.SetIntegerProperty(AnnotationTextStyleProperty::ColorType, setter->integerValue()); break;
+            case FB::AnnotationTextStyleProperty_ColorValue: data.SetIntegerProperty(AnnotationTextStyleProperty::ColorValue, setter->integerValue()); break;
+            case FB::AnnotationTextStyleProperty_FontId: data.SetIntegerProperty(AnnotationTextStyleProperty::FontId, setter->integerValue()); break;
+            case FB::AnnotationTextStyleProperty_Height: data.SetRealProperty(AnnotationTextStyleProperty::Height, setter->realValue()); break;
+            case FB::AnnotationTextStyleProperty_LineSpacingFactor: data.SetRealProperty(AnnotationTextStyleProperty::LineSpacingFactor, setter->realValue()); break;
+            case FB::AnnotationTextStyleProperty_IsBold: data.SetIntegerProperty(AnnotationTextStyleProperty::IsBold, setter->integerValue()); break;
+            case FB::AnnotationTextStyleProperty_IsItalic: data.SetIntegerProperty(AnnotationTextStyleProperty::IsItalic, setter->integerValue()); break;
+            case FB::AnnotationTextStyleProperty_IsUnderlined: data.SetIntegerProperty(AnnotationTextStyleProperty::IsUnderlined, setter->integerValue()); break;
+            case FB::AnnotationTextStyleProperty_StackedFractionScale: data.SetRealProperty(AnnotationTextStyleProperty::StackedFractionScale, setter->realValue()); break;
+            case FB::AnnotationTextStyleProperty_StackedFractionType: data.SetIntegerProperty(AnnotationTextStyleProperty::StackedFractionType, setter->integerValue()); break;
+            case FB::AnnotationTextStyleProperty_SubScriptOffsetFactor: data.SetRealProperty(AnnotationTextStyleProperty::SubScriptOffsetFactor, setter->realValue()); break;
+            case FB::AnnotationTextStyleProperty_SubScriptScale: data.SetRealProperty(AnnotationTextStyleProperty::SubScriptScale, setter->realValue()); break;
+            case FB::AnnotationTextStyleProperty_SuperScriptOffsetFactor: data.SetRealProperty(AnnotationTextStyleProperty::SuperScriptOffsetFactor, setter->realValue()); break;
+            case FB::AnnotationTextStyleProperty_SuperScriptScale: data.SetRealProperty(AnnotationTextStyleProperty::SuperScriptScale, setter->realValue()); break;
+            case FB::AnnotationTextStyleProperty_WidthFactor: data.SetRealProperty(AnnotationTextStyleProperty::WidthFactor, setter->realValue()); break;
             }
         }
 

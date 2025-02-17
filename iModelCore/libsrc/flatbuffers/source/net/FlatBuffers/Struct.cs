@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2014 Google Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,9 +19,16 @@ namespace FlatBuffers
     /// <summary>
     /// All structs in the generated code derive from this class, and add their own accessors.
     /// </summary>
-    public abstract class Struct
+    public struct Struct
     {
-        protected int bb_pos;
-        protected ByteBuffer bb;
+        public int bb_pos { get; private set; }
+        public ByteBuffer bb { get; private set; }
+
+        // Re-init the internal state with an external buffer {@code ByteBuffer} and an offset within.
+        public Struct(int _i, ByteBuffer _bb) : this()
+        {
+            bb = _bb;
+            bb_pos = _i;
+        }
     }
 }

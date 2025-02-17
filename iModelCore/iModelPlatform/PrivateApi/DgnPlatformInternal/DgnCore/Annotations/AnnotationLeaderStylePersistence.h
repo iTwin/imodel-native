@@ -9,6 +9,13 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
+namespace FB
+    {
+    typedef bvector<AnnotationLeaderStyleSetter> AnnotationLeaderStyleSetters;
+    typedef flatbuffers::Vector<AnnotationLeaderStyleSetter const*> AnnotationLeaderStyleSetterVector;
+    typedef flatbuffers::Offset<AnnotationLeaderStyleSetterVector> AnnotationLeaderStyleSetterVectorOffset;
+    }
+
 //=======================================================================================
 // @bsiclass
 //=======================================================================================

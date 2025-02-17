@@ -9,6 +9,13 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
+namespace FB
+    {
+    typedef bvector<TextAnnotationSeedSetter> TextAnnotationSeedSetters;
+    typedef flatbuffers::Vector<TextAnnotationSeedSetter const*> TextAnnotationSeedSetterVector;
+    typedef flatbuffers::Offset<TextAnnotationSeedSetterVector> TextAnnotationSeedSetterVectorOffset;
+    }
+
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
