@@ -12750,19 +12750,17 @@ TEST_F(ECSqlStatementTestFixture, InsertUsingOnlyAndAll)
     }
 
 TEST_F(ECSqlStatementTestFixture, ValuesClauseTest) {
-    // ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ValuesClauseTest.ecdb", SchemaItem(
-    //     R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-    //         <ECEntityClass typeName="Dummy" >
-    //             <ECProperty propertyName="DummyProp" typeName="string" />
-    //         </ECEntityClass>
-    //     </ECSchema>)xml"
-    // )));
-    
     ASSERT_EQ(BentleyStatus::SUCCESS, SetupECDb("ValuesClauseTest.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.00.ecschema.xml")));
 
     ECSqlStatement simpleSelect;
     std::string query = "select column1 from (values(1), (2), (3))";
     ASSERT_EQ(ECSqlStatus::Success, simpleSelect.Prepare(m_ecdb, query.c_str()));
+    
+    // EXPECT_EQ(BE_SQLITE_ROW, simpleSelect.Step());
+    // ASSERT_EQ(1, simpleSelect.GetColumnCount());
+    // ECSqlColumnInfo const& colInfo = simpleSelect.GetColumnInfo(0);
+    // Utf8String colName = colInfo.GetPropertyPath().ToString();
+    // ASSERT_STREQ("column1", colName.c_str());
 
     ECSqlStatement selectOneColumn;
     query = "SELECT column1 FROM (VALUES(1,2), (3,4))";

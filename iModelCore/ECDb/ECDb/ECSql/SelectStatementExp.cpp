@@ -1236,11 +1236,8 @@ void SubqueryRefExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPr
         DerivedPropertyExp const& selectClauseItemExp = expr->GetAs<DerivedPropertyExp>();
         std::unique_ptr<PropertyNameExp> propNameExp;
         if (GetSubquery()->GetQuery<RowValueConstructorListExp>() != nullptr){
-            PropertyPath propertyPath;
-            if (!this->GetAlias().empty())
-                propertyPath.Push(this->GetAlias(), -1);
-            propertyPath.Push(selectClauseItemExp.GetColumnAlias(), -1);
-            propNameExp = std::make_unique<PropertyNameExp>(std::move(propertyPath));
+            auto rowValueConstructorListExp = GetSubquery()->GetQuery<RowValueConstructorListExp>();
+            propNameExp = std::make_unique<PropertyNameExp>(ctx, *rowValueConstructorListExp, selectClauseItemExp);
         }
         else
             propNameExp = std::make_unique<PropertyNameExp>(ctx, *this, selectClauseItemExp);

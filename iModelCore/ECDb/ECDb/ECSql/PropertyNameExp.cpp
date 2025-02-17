@@ -627,6 +627,14 @@ bool PropertyNameExp::PropertyRef::IsComputedExp() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+--------
+bool PropertyNameExp::PropertyRef::IsSqlColumnNameExp() const
+    {
+    return this->GetEndPointDerivedProperty().GetExpression()->GetType() == Exp::Type::SqlColumnName;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+--------
 bool PropertyNameExp::PropertyRef::TryResolvePath(PropertyPath &path) const
     {
     PropertyMap const *propertyMap = TryGetPropertyMap(path);

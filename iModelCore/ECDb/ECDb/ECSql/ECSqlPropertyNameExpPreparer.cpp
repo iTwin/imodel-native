@@ -390,7 +390,13 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                 }
             case Exp::Type::SqlColumnName:
                 {
-                    nativeSqlSnippets.push_back(NativeSqlBuilder(exp.GetResolvedPropertyPath().ToString()));
+                    NativeSqlBuilder sqlSnippet;
+                    SqlColumnNameExp const& sqlColumnExp = referencedValueExp->GetAs<SqlColumnNameExp>();
+                    SubqueryRefExp const& subqueryRefExp = sqlColumnExp.FindParent(Exp::Type::SubqueryRef)->GetAs<SubqueryRefExp>();
+                    if (!subqueryRefExp.GetAlias().empty())
+                        sqlSnippet.Append(subqueryRefExp.GetAlias() + '.');
+                    sqlSnippet.Append(sqlColumnExp.GetColumnName());
+                    nativeSqlSnippets.push_back(sqlSnippet);
                     break;
                 }
             default: {
