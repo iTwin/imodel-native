@@ -2039,7 +2039,7 @@ IBRepEntityPtr GeometryStreamIO::Reader::ReadBRepEntity(uint8_t const* data)
 
     T_FaceAttachmentsVec faceAttachmentsVec;
 
-    for (size_t iSymb=0; iSymb < fbSymbology->Length(); iSymb++)
+    for (flatbuffers::uoffset_t iSymb = 0; iSymb < fbSymbology->Length(); iSymb++)
         {
         FB::FaceSymbology const* fbSymb = fbSymbology->Get(iSymb);
         FaceAttachment attachment;
@@ -2064,7 +2064,7 @@ IBRepEntityPtr GeometryStreamIO::Reader::ReadBRepEntity(uint8_t const* data)
     // Support for older BRep that didn't have face attachment index attrib and add the attributes now...
     T_FaceIndexToAttachmentIndexVec faceIndexAttVec;
 
-    for (size_t iSymbIndex=0; iSymbIndex < fbSymbologyIndex->Length(); iSymbIndex++)
+    for (flatbuffers::uoffset_t iSymbIndex = 0; iSymbIndex < fbSymbologyIndex->Length(); iSymbIndex++)
         {
         FB::FaceSymbologyIndex const* fbSymbIndex = fbSymbologyIndex->Get(iSymbIndex);
         FaceIndexToAttachmentIndex faceAttIndex;
@@ -2777,7 +2777,7 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
 
                 bvector<FB::FaceSymbology> remappedFaceSymbVec;
 
-                for (size_t iSymb=0; iSymb < fbSymbology->Length(); iSymb++)
+                for (flatbuffers::uoffset_t iSymb = 0; iSymb < fbSymbology->Length(); iSymb++)
                     {
                     FB::FaceSymbology const* fbSymb = fbSymbology->Get(iSymb);
 
@@ -2932,7 +2932,7 @@ void DefinitionElementUsageInfo::ScanGeometryStream(GeometryStreamCR geometryStr
                     auto fbSymbology = brepFB->symbology();
                     if (nullptr != fbSymbology)
                         {
-                        for (size_t iSymb=0; iSymb < fbSymbology->Length(); iSymb++)
+                        for (flatbuffers::uoffset_t iSymb = 0; iSymb < fbSymbology->Length(); iSymb++)
                             {
                             FB::FaceSymbology const* faceSymbologyFB = fbSymbology->Get(iSymb);
 
@@ -5286,7 +5286,7 @@ void GeometryCollection::ToJson(BeJsValue output, BeJsConst opts) const
                     if (!ppfb->has_symbologyIndex())
                         {
                         auto array = value["faceSymbology"];
-                        for (size_t iSymb=0; iSymb < fbSymbology->Length(); iSymb++)
+                        for (flatbuffers::uoffset_t iSymb = 0; iSymb < fbSymbology->Length(); iSymb++)
                             {
                             FB::FaceSymbology const* fbSymb = fbSymbology->Get(iSymb);
                             auto faceValue = array.appendValue();
