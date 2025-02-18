@@ -4493,6 +4493,65 @@ TEST_F(SchemaMergerTests, MergeRelationshipConstraints)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaMergerTests, MergeRelationshipConstraintsWithNoBaseClass)
+    {
+      Utf8CP refXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="Reference" nameSpacePrefix="ref" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+          <ECClass typeName="Joint" isDomainClass="True">
+              <ECProperty propertyName="n" typeName="int"/>
+          </ECClass>
+          <ECClass typeName="Fastener" isDomainClass="True">
+              <ECProperty propertyName="n" typeName="int"/>
+          </ECClass>
+          <ECClass typeName="Bolt" >
+              <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+          </ECClass>
+          <ECClass typeName="Weld" >
+              <ECProperty propertyName="p" typeName="int" displayLabel="p"/>
+          </ECClass>
+  
+          <ECRelationshipClass typeName="JointHasRandomThings" isDomainClass="True" strength="referencing" strengthDirection="forward">
+             <Source cardinality="(0,1)" polymorphic="True">
+                 <Class class="Joint" />
+             </Source>
+             <Target cardinality="(0,N)" polymorphic="True">
+                 <Class class="Fastener"/>
+                 <Class class="Bolt"/>
+                 <Class class="Weld"/>
+             </Target>
+         </ECRelationshipClass>
+  
+      </ECSchema>)xml";
+  
+      Utf8CP schemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+          <ECSchemaReference name="Reference" version="01.00" prefix="ref" />
+          <ECClass typeName="Zulu" isDomainClass="True">
+              <BaseClass>ref:Joint</BaseClass>
+          </ECClass>
+      </ECSchema>)xml";
+  
+      Utf8CP schemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+      <ECSchema schemaName="Skimah" nameSpacePrefix="ski" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+          <ECSchemaReference name="Reference" version="01.00" prefix="ref" />
+          <ECClass typeName="Whiskey" isDomainClass="True">
+              <BaseClass>ref:Bolt</BaseClass>
+          </ECClass>
+      </ECSchema>)xml";
+
+    ECSchemaReadContextPtr leftContext = InitializeReadContextWithAllSchemas({refXml, schemaXml1}, nullptr, true);
+    bvector<ECN::ECSchemaCP> leftSchemas = leftContext->GetCache().GetSchemas();
+
+    ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas({refXml, schemaXml2}, nullptr, true);
+    bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
+
+    SchemaMergeResult result;
+    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas));
+    
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsitest
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaMergerTests, ChangeAbstractConstraint)
     {
     // Initialize two sets of schemas
