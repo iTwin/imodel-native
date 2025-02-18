@@ -6753,8 +6753,11 @@ static Napi::Value imageBufferFromImageSource(NapiInfoCR info) {
         return info.Env().Undefined();
     }
 
-    auto imgData = Napi::Uint8Array::New(info.Env(), img.GetByteStream().size());
-    memcpy(imgData.Data(), img.GetByteStream().data(), img.GetByteStream().size());
+    // JPEG decoder can leave extra junk bytes past the end of the image data. Omit them.
+    auto expectedImgDataSize = img.GetWidth() * img.GetHeight() * img.GetBytesPerPixel();
+    auto imgDataSize = std::min(expectedImgDataSize, img.GetByteStream().GetSize());
+    auto imgData = Napi::Uint8Array::New(info.Env(), imgDataSize);
+    memcpy(imgData.Data(), img.GetByteStream().data(), imgDataSize);
 
     Napi::Object ret = Napi::Object::New(info.Env());
     ret.Set(Napi::String::New(info.Env(), "data"), imgData);
@@ -6790,7 +6793,7 @@ static Napi::Value imageSourceFromImageBuffer(NapiInfoCR info) {
         // Use Jpeg unless alpha channel is present
         srcFmt = Image::Format::Rgba == img.GetFormat() ? ImageSource::Format::Png : ImageSource::Format::Jpeg;
     } else {
-        if (static_cast<uint32_t>(ImageSource::Format::Png) != iSrcFmt || static_cast<uint32_t>(ImageSource::Format::Jpeg) != iSrcFmt) {
+        if (static_cast<uint32_t>(ImageSource::Format::Png) != iSrcFmt && static_cast<uint32_t>(ImageSource::Format::Jpeg) != iSrcFmt) {
             THROW_JS_EXCEPTION("ImageSource format must be Png or Jpeg");
         }
 
