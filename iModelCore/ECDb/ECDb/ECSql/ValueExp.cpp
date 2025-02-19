@@ -1942,6 +1942,17 @@ Utf8String UnaryValueExp::_ToString() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
+Exp::FinalizeParseStatus SqlColumnNameExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode){
+    if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
+        SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PrimitiveType::PRIMITIVETYPE_Double));
+
+    return FinalizeParseStatus::Completed;
+}
+
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 void SqlColumnNameExp::_ToJson(BeJsValue val, JsonFormat const&) const
     {
     val.SetEmptyObject();

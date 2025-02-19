@@ -573,7 +573,8 @@ struct SqlColumnNameExp : ValueExp
 {
     private:
         Utf8String m_columnName;
-
+        FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
+        
         void _ToECSql(ECSqlRenderContext&) const override;
         void _ToJson(BeJsValue, JsonFormat const&) const override;
         

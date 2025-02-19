@@ -781,10 +781,10 @@ Exp::FinalizeParseStatus SelectClauseExp::_FinalizeParsing(ECSqlParseContext& ct
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
-        // if child is a sqlColumnNameExp, nothing needed to be done
-        if (Contains(Exp::Type::SqlColumnName))
+        if (GetParent()->GetType() == Exp::Type::RowValueConstructorList){
+            // auto& parent = GetParent()->GetAs<RowValueConstructorListExp>();
             return FinalizeParseStatus::Completed;
-    
+        }
         auto& sel = GetParent()->GetAs<SingleSelectStatementExp>();
         if (!sel.IsRowConstructor())
             {
@@ -1231,16 +1231,15 @@ SubqueryRefExp::SubqueryRefExp(std::unique_ptr<SubqueryExp> subquery, Utf8CP ali
 //+---------------+---------------+---------------+---------------+---------------+------
 void SubqueryRefExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const
     {
+    if (GetSubquery()->GetQuery<RowValueConstructorListExp>() != nullptr){
+        auto rowValueConstructorListExp = GetSubquery()->GetQuery<RowValueConstructorListExp>();
+        rowValueConstructorListExp->ExpandSelectAsterisk(expandedSelectClauseItemList, ctx);
+        return ;
+    }
     for (Exp const* expr : GetSubquery()->GetSelection()->GetChildren())
         {
         DerivedPropertyExp const& selectClauseItemExp = expr->GetAs<DerivedPropertyExp>();
-        std::unique_ptr<PropertyNameExp> propNameExp;
-        if (GetSubquery()->GetQuery<RowValueConstructorListExp>() != nullptr){
-            auto rowValueConstructorListExp = GetSubquery()->GetQuery<RowValueConstructorListExp>();
-            propNameExp = std::make_unique<PropertyNameExp>(ctx, *rowValueConstructorListExp, selectClauseItemExp);
-        }
-        else
-            propNameExp = std::make_unique<PropertyNameExp>(ctx, *this, selectClauseItemExp);
+        std::unique_ptr<PropertyNameExp> propNameExp = std::make_unique<PropertyNameExp>(ctx, *this, selectClauseItemExp);
         expandedSelectClauseItemList.push_back(std::make_unique<DerivedPropertyExp>(std::move(propNameExp), nullptr));
         }
 }

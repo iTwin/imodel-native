@@ -204,8 +204,6 @@ RowValueConstructorListExp::RowValueConstructorListExp(std::vector<std::unique_p
 //+---------------+---------------+---------------+---------------+---------------+--------
 Exp::FinalizeParseStatus RowValueConstructorListExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
-        if (mode == FinalizeParseMode::BeforeFinalizingChildren)
-            SetTypeInfo(ECSqlTypeInfo(ECSqlTypeInfo::Kind::Varies)); 
         return FinalizeParseStatus::Completed;
     }
 
@@ -243,14 +241,11 @@ void RowValueConstructorListExp::_ToJson(BeJsValue val, JsonFormat const& fmt) c
 //+---------------+---------------+---------------+---------------+---------------+--------
 void RowValueConstructorListExp::_ExpandSelectAsterisk(std::vector<std::unique_ptr<DerivedPropertyExp>>& expandedSelectClauseItemList, ECSqlParseContext const& ctx) const
     {
-        for (size_t i = 0; i < GetSelection()->GetChildrenCount(); i++)
-            {
-            auto derivedPropertyExp = GetSelection()->GetChildren().Get<DerivedPropertyExp>(i);
-            expandedSelectClauseItemList.push_back(std::make_unique<DerivedPropertyExp>(
-                std::make_unique<SqlColumnNameExp>(derivedPropertyExp->GetColumnAlias()),
-                derivedPropertyExp->GetColumnAlias().c_str()
-            ));
-            }
+        for (Exp const* expr : GetSelection()->GetChildren()){
+            DerivedPropertyExp const& selectClauseItemExp = expr->GetAs<DerivedPropertyExp>();
+            std::unique_ptr<PropertyNameExp> propNameExp = std::make_unique<PropertyNameExp>(ctx, *this, selectClauseItemExp);
+            expandedSelectClauseItemList.push_back(std::make_unique<DerivedPropertyExp>(std::move(propNameExp), nullptr));
+        }
     }
 
 //-----------------------------------------------------------------------------------------
