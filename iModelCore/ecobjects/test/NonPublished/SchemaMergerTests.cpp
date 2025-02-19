@@ -4546,7 +4546,7 @@ TEST_F(SchemaMergerTests, MergeRelationshipConstraintsWithNoBaseClass)
     bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
 
     auto schemaMergeOptions = SchemaMergeOptions();
-    schemaMergeOptions.SetSkipValidations(true);
+    schemaMergeOptions.SetSkipValidation(true);
     SchemaMergeResult result;
     EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, schemaMergeOptions));
     

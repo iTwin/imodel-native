@@ -3847,7 +3847,7 @@ public:
     ECObjectsStatus GetOrCopyReferencedItemForCopy(const Item & itemWithRef, RefItem *& refForCopy, RefItem const* startingRef, bool copyReferences, ECSchemaElementType refItemType, RefItem *(ECSchema::*getItemP)(Utf8CP), ECObjectsStatus(ECSchema::*copyItem)(RefItem *&, const RefItem &, bool, Utf8CP));
 
     // Specializations because they are used often or are referenced outside of ECSchema
-    ECObjectsStatus GetOrCopyReferencedClassForCopy(ECClassCR classWithRef, ECClassP& refForCopy, ECClassCP startingRef, bool copyReferences);
+    ECObjectsStatus GetOrCopyReferencedClassForCopy(ECClassCR classWithRef, ECClassP& refForCopy, ECClassCP startingRef, bool copyReferences, bool skipValidation = false);
     ECObjectsStatus GetOrCopyReferencedEnumerationForCopy(ECClassCR classWithRef, ECEnumerationP& refForCopy, ECEnumerationCP startingRef, bool copyReferences);
     ECObjectsStatus GetOrCopyReferencedKindOfQuantityForCopy(ECClassCR classWithRef, KindOfQuantityP& refForCopy, KindOfQuantityCP startingRef, bool copyReferences);
     ECObjectsStatus GetOrCopyReferencedPropertyCategoryForCopy(ECClassCR classWithRef, PropertyCategoryP& refForCopy, PropertyCategoryCP startingRef, bool copyReferences);

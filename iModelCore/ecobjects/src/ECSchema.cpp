@@ -1586,7 +1586,7 @@ bool areFromSameSchema (NamedItemA const* itemA, NamedItemB const* itemB)
     return status;
     }
 
-ECObjectsStatus ECSchema::GetOrCopyReferencedClassForCopy(ECClassCR classWithRef, ECClassP& refForCopy, ECClassCP startingRef, bool copyReferences)
+ECObjectsStatus ECSchema::GetOrCopyReferencedClassForCopy(ECClassCR classWithRef, ECClassP& refForCopy, ECClassCP startingRef, bool copyReferences, bool skipValidation)
     {
         bool willCopyRef = copyReferences && areFromSameSchema(&classWithRef, startingRef);
         ECSchemaP refSchema;
@@ -1598,7 +1598,7 @@ ECObjectsStatus ECSchema::GetOrCopyReferencedClassForCopy(ECClassCR classWithRef
         if (nullptr == refForCopy)
             {
             if (willCopyRef)
-                status = CopyClass(refForCopy, *startingRef, copyReferences, nullptr, false);
+                status = CopyClass(refForCopy, *startingRef, copyReferences, nullptr, skipValidation);
             else
                 status = logCopyErrorDueToReferencedItem(&classWithRef, this, startingRef, SchemaParseUtils::SchemaElementTypeToString(ECSchemaElementType::ECClass), refSchema, copyReferences);
             }
