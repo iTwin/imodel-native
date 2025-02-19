@@ -536,6 +536,9 @@ void ECDb::Impl::ClearECDbCache() const
         m_ecdb.DropAppData(*appDataKey);
         }
 
+    if (m_instanceReader != nullptr)
+        m_instanceReader->Reset();
+
     if (m_schemaManager != nullptr)
         m_schemaManager->ClearCache();
 

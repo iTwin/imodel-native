@@ -3,8 +3,8 @@
 * See LICENSE.md in the project root for license terms and full copyright notice.
 *--------------------------------------------------------------------------------------------*/
 
-import * as os from "os";
-import * as path from "path";
+import * as os from "node:os";
+import * as path from "node:path";
 
 import type { NativeCloudSqlite } from "./NativeCloudSqlite";
 
@@ -20,7 +20,7 @@ import type {
   ChangesetIndexAndId, CodeSpecProperties, CreateEmptyStandaloneIModelProps, DbRequest, DbResponse, ElementAspectProps,
   ElementGraphicsRequestProps, ElementLoadProps, ElementMeshRequestProps, ElementProps,
   FilePropertyProps, FontId, FontMapProps, GeoCoordinatesRequestProps, GeoCoordinatesResponseProps, GeographicCRSInterpretRequestProps,
-  GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, IModelCoordinatesRequestProps,
+  GeographicCRSInterpretResponseProps, GeometryContainmentResponseProps, ImageBuffer, ImageBufferFormat, ImageSourceFormat, IModelCoordinatesRequestProps,
   IModelCoordinatesResponseProps, IModelProps, LocalDirName, LocalFileName, MassPropertiesResponseProps, ModelLoadProps,
   ModelProps, QueryQuota, RelationshipProps, SnapshotOpenOptions, TextureData, TextureLoadProps, TileVersionInfo, UpgradeOptions,
 } from "@itwin/core-common";
@@ -86,9 +86,9 @@ export class NativeLibrary {
   // This returns true if you used `linkNativePlatform.bat` to install your local addon build.
   public static get isDevBuild(): boolean {
     try {
-      require("./devbuild.json");
+      require.resolve("./devbuild.json");
       return true;
-    } catch (_e) {
+    } catch {
       return false;
     }
   }
@@ -103,7 +103,8 @@ export class NativeLibrary {
         if (platform === "ios" || platform === "android") {
           this._nativeLib = (process as any)._linkedBinding("iModelJsNative") as typeof IModelJsNative;
         } else {
-          this._nativeLib = require(`./${NativeLibrary.archName}/${NativeLibrary.nodeAddonName}`) as typeof IModelJsNative; // eslint-disable-line @typescript-eslint/no-var-requires
+          this._nativeLib =
+            require(`./${NativeLibrary.archName}/${NativeLibrary.nodeAddonName}`) as typeof IModelJsNative; // eslint-disable-line @typescript-eslint/no-require-imports
         }
       } catch (err: any) {
         err.message += "\nThis error may occur when trying to run an iTwin.js backend without"
@@ -192,7 +193,6 @@ export declare namespace IModelJsNative {
     params?: NameValuePair[];
   }
 
-  const version: string;
   let logger: NativeLogger;
   function setMaxTileCacheSize(maxBytes: number): void;
   function getTileVersionInfo(): TileVersionInfo;
@@ -213,6 +213,23 @@ export declare namespace IModelJsNative {
   function getTrueTypeFontMetadata(fileName: LocalFileName): TrueTypeFontMetadata;
   function isRscFontData(blob: Uint8Array): boolean;
 
+  function imageBufferFromImageSource(
+    sourceFormat: ImageSourceFormat.Png | ImageSourceFormat.Jpeg,
+    sourceData: Uint8Array,
+    targetFormat: ImageBufferFormat.Rgb | ImageBufferFormat.Rgba | 255,
+    flipVertically: boolean
+  ): Pick<ImageBuffer, "data" | "format" | "width"> | undefined;
+  
+  function imageSourceFromImageBuffer(
+    imageFormat: ImageBufferFormat.Rgb | ImageBufferFormat.Rgba,
+    imageData: Uint8Array,
+    imageWidth: number,
+    imageHeight: number,
+    targetFormat: ImageSourceFormat.Png | ImageSourceFormat.Jpeg | 255,
+    flipVertically: boolean,
+    jpegQuality: number
+  ): { format: ImageSourceFormat.Jpeg | ImageSourceFormat.Png, data: Uint8Array } | undefined;
+  
   /** Get the SHA1 hash of a Schema XML file, possibly including its referenced Schemas */
   function computeSchemaChecksum(arg: {
     /** the full path to the root schema XML file */
@@ -1366,7 +1383,7 @@ export declare namespace IModelJsNative {
 
   class ECSchemaXmlContext {
     constructor();
-    public addSchemaPath(path: string): void;
+    public addSchemaPath(schemaPath: string): void;
     public setSchemaLocater(locater: ECSchemaXmlContext.SchemaLocaterCallback): void;
     public setFirstSchemaLocater(locater: ECSchemaXmlContext.SchemaLocaterCallback): void;
     public readSchemaFromXmlFile(filePath: string): ErrorStatusOrResult<BentleyStatus, string>;
