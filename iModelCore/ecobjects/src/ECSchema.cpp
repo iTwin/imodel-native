@@ -1566,8 +1566,8 @@ bool areFromSameSchema (NamedItemA const* itemA, NamedItemB const* itemB)
     return itemA->GetSchema().GetName().Equals(itemB->GetSchema().GetName().c_str());
     }
 
-template<typename Item, typename RefItem>
-ECObjectsStatus ECSchema::GetOrCopyReferencedItemForCopy(const Item & itemWithRef, RefItem *& refForCopy, RefItem const* startingRef, bool copyReferences, ECSchemaElementType refItemType, RefItem *(ECSchema::*getItemP)(Utf8CP), ECObjectsStatus(ECSchema::*copyItem)(RefItem *&, const RefItem &, bool, Utf8CP))
+template<typename Item, typename RefItem, typename CopyItemFunction, typename... Args>
+ECObjectsStatus ECSchema::GetOrCopyReferencedItemForCopy(const Item & itemWithRef, RefItem *& refForCopy, RefItem const* startingRef, bool copyReferences, ECSchemaElementType refItemType, RefItem *(ECSchema::*getItemP)(Utf8CP), CopyItemFunction copyItem, Args&&... args)
     {
     bool willCopyRef = copyReferences && areFromSameSchema(&itemWithRef, startingRef);
     ECSchemaP refSchema;
@@ -1579,7 +1579,7 @@ ECObjectsStatus ECSchema::GetOrCopyReferencedItemForCopy(const Item & itemWithRe
     if (nullptr == refForCopy)
         {
         if (willCopyRef)
-            status = (this->*copyItem)(refForCopy, *startingRef, copyReferences, nullptr);
+            status = (this->*copyItem)(refForCopy, *startingRef, copyReferences, nullptr, std::forward<Args>(args)...);
         else
             status = logCopyErrorDueToReferencedItem(&itemWithRef, this, startingRef, SchemaParseUtils::SchemaElementTypeToString(refItemType), refSchema, copyReferences);
         }
@@ -1588,7 +1588,7 @@ ECObjectsStatus ECSchema::GetOrCopyReferencedItemForCopy(const Item & itemWithRe
 
 ECObjectsStatus ECSchema::GetOrCopyReferencedClassForCopy(ECClassCR classWithRef, ECClassP& refForCopy, ECClassCP startingRef, bool copyReferences)
     {
-    return GetOrCopyReferencedItemForCopy(classWithRef, refForCopy, startingRef, copyReferences, ECSchemaElementType::ECClass, &ECSchema::GetClassP, &ECSchema::CopyClass);
+    return GetOrCopyReferencedItemForCopy(classWithRef, refForCopy, startingRef, copyReferences, ECSchemaElementType::ECClass, &ECSchema::GetClassP, &ECSchema::CopyClass, false);
     }
 ECObjectsStatus ECSchema::GetOrCopyReferencedEnumerationForCopy(ECClassCR classWithRef, ECEnumerationP& refForCopy, ECEnumerationCP startingRef, bool copyReferences)
     {
@@ -1606,7 +1606,7 @@ ECObjectsStatus ECSchema::GetOrCopyReferencedPropertyCategoryForCopy(ECClassCR c
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass, bool copyReferences, Utf8CP newName)
+ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass, bool copyReferences, Utf8CP newName, bool skipValidations)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
     Utf8String targetClassName((newName == nullptr ? sourceClass.GetName().c_str() : newName));
@@ -1622,7 +1622,7 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
             // since the variable lives through the entire switch/case statement. Need to put in a scope block to make it explicit.
             ECRelationshipClassCP sourceAsRelationshipClass = sourceClass.GetRelationshipClassCP();
             ECRelationshipClassP newRelationshipClass;
-            status = this->CreateRelationshipClass(newRelationshipClass, targetClassName);
+            status = this->CreateRelationshipClass(newRelationshipClass, targetClassName, !skipValidations);
             if (ECObjectsStatus::Success == status)
                 {
                 newRelationshipClass->SetStrength(sourceAsRelationshipClass->GetStrength());
@@ -2002,7 +2002,7 @@ ECObjectsStatus ECSchema::CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceF
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut, IECSchemaLocaterP schemaLocater) const
+ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut, IECSchemaLocaterP schemaLocater, bool skipValidations) const
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
     status = CreateSchema(schemaOut,  GetName().c_str(), GetAlias().c_str(), GetVersionRead(), GetVersionWrite(), GetVersionMinor(), m_ecVersion);
@@ -2095,7 +2095,7 @@ ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut, IECSchemaLocaterP s
     for (ECClassP ecClass : m_classContainer)
         {
         ECClassP copyClass;
-        status = schemaOut->CopyClass(copyClass, *ecClass, true);
+        status = schemaOut->CopyClass(copyClass, *ecClass, true, nullptr, skipValidations);
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
             return status;
         }

@@ -125,7 +125,7 @@ public:
     //! @param[in] left All existing schemas
     //! @param[in] right The new schemas which should be merged
     //! @param[in] options Custom settings for merge schemas operation
-    ECOBJECTS_EXPORT static BentleyStatus MergeSchemas(SchemaMergeResult& result, bvector<ECSchemaCP> const& left, bvector<ECSchemaCP> const& right, SchemaMergeOptions const& options = SchemaMergeOptions());
+    ECOBJECTS_EXPORT static BentleyStatus MergeSchemas(SchemaMergeResult& result, bvector<ECSchemaCP> const& left, bvector<ECSchemaCP> const& right, SchemaMergeOptions const& options = SchemaMergeOptions(), bool skipValidations = false);
 
     using ShouldMergeSchemaFunc = std::function<bool(ECSchemaCP schema)>;
 

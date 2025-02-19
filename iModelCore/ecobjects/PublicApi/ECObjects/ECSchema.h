@@ -3831,7 +3831,7 @@ public:
     //! @param[in]  sourceClass The class to copy
     //! @param[in]  copyReferences If true the method will copy types from the source schema into the target schema, if they do not already exist. If false, there will be a schema reference created to the source schema if necessary.
     //! @param[in]  newName  If not nullptr, this name will be used as the new name instead of the original name
-    ECOBJECTS_EXPORT ECObjectsStatus CopyClass(ECClassP& targetClass, ECClassCR sourceClass, bool copyReferences = false, Utf8CP newName = nullptr);
+    ECOBJECTS_EXPORT ECObjectsStatus CopyClass(ECClassP& targetClass, ECClassCR sourceClass, bool copyReferences = false, Utf8CP newName = nullptr, bool skipValidations = false);
 
     //! Gets the needed referenced schema item from this schema or it's references, copies it, or adds the reference.  The end result is that the output refForCopy is
     //! the correct object reference needed for a copy operation.
@@ -3842,8 +3842,8 @@ public:
     //! @param[in]  refItemType     the schema item type for startingRef.  For logging.
     //! @param[in]  getItemP        the method that will be used to geth the refForCopy
     //! @param[in]  copyItem        the method that will copy the startingRef if necessary
-    template<typename Item, typename RefItem>
-    ECObjectsStatus GetOrCopyReferencedItemForCopy(const Item & itemWithRef, RefItem *& refForCopy, RefItem const* startingRef, bool copyReferences, ECSchemaElementType refItemType, RefItem *(ECSchema::*getItemP)(Utf8CP), ECObjectsStatus(ECSchema::*copyItem)(RefItem *&, const RefItem &, bool, Utf8CP));
+    template<typename Item, typename RefItem, typename CopyItemFunction, typename... Args>
+    ECObjectsStatus GetOrCopyReferencedItemForCopy(const Item & itemWithRef, RefItem *& refForCopy, RefItem const* startingRef, bool copyReferences, ECSchemaElementType refItemType, RefItem *(ECSchema::*getItemP)(Utf8CP), CopyItemFunction copyItem, Args&&... args);
 
     // Specializations because they are used often or are referenced outside of ECSchema
     ECObjectsStatus GetOrCopyReferencedClassForCopy(ECClassCR classWithRef, ECClassP& refForCopy, ECClassCP startingRef, bool copyReferences);
@@ -3903,7 +3903,7 @@ public:
 
     //! Copies this schema
     //! @param[out] schemaOut   If successful, will contain a copy of this schema
-    ECOBJECTS_EXPORT ECObjectsStatus CopySchema(ECSchemaPtr& schemaOut, IECSchemaLocaterP schemaLocater = nullptr) const;
+    ECOBJECTS_EXPORT ECObjectsStatus CopySchema(ECSchemaPtr& schemaOut, IECSchemaLocaterP schemaLocater = nullptr, bool skipValidations = false) const;
 
     //! Get the IECCustomAttributeContainer holding this schema's custom attributes
     IECCustomAttributeContainer& GetCustomAttributeContainer() {return *this;}
