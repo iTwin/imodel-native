@@ -1620,7 +1620,7 @@ ECObjectsStatus ECSchema::GetOrCopyReferencedPropertyCategoryForCopy(ECClassCR c
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass, bool copyReferences, Utf8CP newName, bool skipValidations)
+ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass, bool copyReferences, Utf8CP newName, bool skipValidation)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
     Utf8String targetClassName((newName == nullptr ? sourceClass.GetName().c_str() : newName));
@@ -1636,7 +1636,7 @@ ECObjectsStatus ECSchema::CopyClass(ECClassP& targetClass, ECClassCR sourceClass
             // since the variable lives through the entire switch/case statement. Need to put in a scope block to make it explicit.
             ECRelationshipClassCP sourceAsRelationshipClass = sourceClass.GetRelationshipClassCP();
             ECRelationshipClassP newRelationshipClass;
-            status = this->CreateRelationshipClass(newRelationshipClass, targetClassName, !skipValidations);
+            status = this->CreateRelationshipClass(newRelationshipClass, targetClassName, !skipValidation);
             if (ECObjectsStatus::Success == status)
                 {
                 newRelationshipClass->SetStrength(sourceAsRelationshipClass->GetStrength());
@@ -2016,7 +2016,7 @@ ECObjectsStatus ECSchema::CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceF
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut, IECSchemaLocaterP schemaLocater, bool skipValidations) const
+ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut, IECSchemaLocaterP schemaLocater, bool skipValidation) const
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
     status = CreateSchema(schemaOut,  GetName().c_str(), GetAlias().c_str(), GetVersionRead(), GetVersionWrite(), GetVersionMinor(), m_ecVersion);
@@ -2109,7 +2109,7 @@ ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut, IECSchemaLocaterP s
     for (ECClassP ecClass : m_classContainer)
         {
         ECClassP copyClass;
-        status = schemaOut->CopyClass(copyClass, *ecClass, true, nullptr, skipValidations);
+        status = schemaOut->CopyClass(copyClass, *ecClass, true, nullptr, skipValidation);
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
             return status;
         }

@@ -51,14 +51,14 @@ public:
 struct SchemaMergeOptions final
     {
 private:
-    bool skipValidations = false;
+    bool m_skipValidation = false;
     BeJsDocument m_json;
 public:
     SchemaMergeOptions() {}
 
     //! Setting this flag instructs the merger to skip validations
-    void SetSkipValidations(bool flag) { skipValidations = flag; }
-    bool GetSkipValidations() const { return skipValidations; }
+    void SetSkipValidations(bool flag) { m_skipValidation = flag; }
+    bool GetSkipValidations() const { return m_skipValidation; }
 
     //! Instructs the merger to only merge schemas which are marked as dynamic schemas. Defaults to false.
     void SetMergeOnlyDynamicSchemas(bool flag) { m_json[SCHEMAMERGER_OPTION_MERGEONLYDYNAMICSCHEMAS] = flag; }
