@@ -51,9 +51,14 @@ public:
 struct SchemaMergeOptions final
     {
 private:
+    bool skipValidations = false;
     BeJsDocument m_json;
 public:
     SchemaMergeOptions() {}
+
+    //! Setting this flag instructs the merger to skip validations
+    void SetSkipValidations(bool flag) { skipValidations = flag; }
+    bool GetSkipValidations() const { return skipValidations; }
 
     //! Instructs the merger to only merge schemas which are marked as dynamic schemas. Defaults to false.
     void SetMergeOnlyDynamicSchemas(bool flag) { m_json[SCHEMAMERGER_OPTION_MERGEONLYDYNAMICSCHEMAS] = flag; }
@@ -125,7 +130,7 @@ public:
     //! @param[in] left All existing schemas
     //! @param[in] right The new schemas which should be merged
     //! @param[in] options Custom settings for merge schemas operation
-    ECOBJECTS_EXPORT static BentleyStatus MergeSchemas(SchemaMergeResult& result, bvector<ECSchemaCP> const& left, bvector<ECSchemaCP> const& right, SchemaMergeOptions const& options = SchemaMergeOptions(), bool skipValidations = false);
+    ECOBJECTS_EXPORT static BentleyStatus MergeSchemas(SchemaMergeResult& result, bvector<ECSchemaCP> const& left, bvector<ECSchemaCP> const& right, SchemaMergeOptions const& options = SchemaMergeOptions());
 
     using ShouldMergeSchemaFunc = std::function<bool(ECSchemaCP schema)>;
 

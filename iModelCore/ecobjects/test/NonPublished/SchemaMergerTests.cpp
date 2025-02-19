@@ -4545,8 +4545,10 @@ TEST_F(SchemaMergerTests, MergeRelationshipConstraintsWithNoBaseClass)
     ECSchemaReadContextPtr rightContext = InitializeReadContextWithAllSchemas({refXml, schemaXml2}, nullptr, true);
     bvector<ECN::ECSchemaCP> rightSchemas = rightContext->GetCache().GetSchemas();
 
+    auto schemaMergeOptions = SchemaMergeOptions();
+    schemaMergeOptions.SetSkipValidations(true);
     SchemaMergeResult result;
-    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, SchemaMergeOptions(), true));
+    EXPECT_EQ(BentleyStatus::SUCCESS, SchemaMerger::MergeSchemas(result, leftSchemas, rightSchemas, schemaMergeOptions));
     
     }
 /*---------------------------------------------------------------------------------**//**
