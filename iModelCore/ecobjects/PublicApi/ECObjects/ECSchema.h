@@ -3842,8 +3842,8 @@ public:
     //! @param[in]  refItemType     the schema item type for startingRef.  For logging.
     //! @param[in]  getItemP        the method that will be used to geth the refForCopy
     //! @param[in]  copyItem        the method that will copy the startingRef if necessary
-    template<typename Item, typename RefItem, typename CopyItemFunction, typename... Args>
-    ECObjectsStatus GetOrCopyReferencedItemForCopy(const Item & itemWithRef, RefItem *& refForCopy, RefItem const* startingRef, bool copyReferences, ECSchemaElementType refItemType, RefItem *(ECSchema::*getItemP)(Utf8CP), CopyItemFunction copyItem, Args&&... args);
+    template<typename Item, typename RefItem>
+    ECObjectsStatus GetOrCopyReferencedItemForCopy(const Item & itemWithRef, RefItem *& refForCopy, RefItem const* startingRef, bool copyReferences, ECSchemaElementType refItemType, RefItem *(ECSchema::*getItemP)(Utf8CP), ECObjectsStatus(ECSchema::*copyItem)(RefItem *&, const RefItem &, bool, Utf8CP));
 
     // Specializations because they are used often or are referenced outside of ECSchema
     ECObjectsStatus GetOrCopyReferencedClassForCopy(ECClassCR classWithRef, ECClassP& refForCopy, ECClassCP startingRef, bool copyReferences);

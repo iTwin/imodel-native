@@ -1566,8 +1566,8 @@ bool areFromSameSchema (NamedItemA const* itemA, NamedItemB const* itemB)
     return itemA->GetSchema().GetName().Equals(itemB->GetSchema().GetName().c_str());
     }
 
-template<typename Item, typename RefItem, typename CopyItemFunction, typename... Args>
-ECObjectsStatus ECSchema::GetOrCopyReferencedItemForCopy(const Item & itemWithRef, RefItem *& refForCopy, RefItem const* startingRef, bool copyReferences, ECSchemaElementType refItemType, RefItem *(ECSchema::*getItemP)(Utf8CP), CopyItemFunction copyItem, Args&&... args)
+    template<typename Item, typename RefItem>
+    ECObjectsStatus ECSchema::GetOrCopyReferencedItemForCopy(const Item & itemWithRef, RefItem *& refForCopy, RefItem const* startingRef, bool copyReferences, ECSchemaElementType refItemType, RefItem *(ECSchema::*getItemP)(Utf8CP), ECObjectsStatus(ECSchema::*copyItem)(RefItem *&, const RefItem &, bool, Utf8CP))
     {
     bool willCopyRef = copyReferences && areFromSameSchema(&itemWithRef, startingRef);
     ECSchemaP refSchema;
@@ -1579,7 +1579,7 @@ ECObjectsStatus ECSchema::GetOrCopyReferencedItemForCopy(const Item & itemWithRe
     if (nullptr == refForCopy)
         {
         if (willCopyRef)
-            status = (this->*copyItem)(refForCopy, *startingRef, copyReferences, nullptr, std::forward<Args>(args)...);
+            status = (this->*copyItem)(refForCopy, *startingRef, copyReferences, nullptr);
         else
             status = logCopyErrorDueToReferencedItem(&itemWithRef, this, startingRef, SchemaParseUtils::SchemaElementTypeToString(refItemType), refSchema, copyReferences);
         }
@@ -1588,7 +1588,21 @@ ECObjectsStatus ECSchema::GetOrCopyReferencedItemForCopy(const Item & itemWithRe
 
 ECObjectsStatus ECSchema::GetOrCopyReferencedClassForCopy(ECClassCR classWithRef, ECClassP& refForCopy, ECClassCP startingRef, bool copyReferences)
     {
-    return GetOrCopyReferencedItemForCopy(classWithRef, refForCopy, startingRef, copyReferences, ECSchemaElementType::ECClass, &ECSchema::GetClassP, &ECSchema::CopyClass, false);
+        bool willCopyRef = copyReferences && areFromSameSchema(&classWithRef, startingRef);
+        ECSchemaP refSchema;
+        ECObjectsStatus status = getOrAddReferencedSchema(this, startingRef->GetSchema(), refSchema, willCopyRef);
+        if (ECObjectsStatus::Success != status)
+            return status;
+    
+        refForCopy = (refSchema->ECSchema::GetClassP)(startingRef->GetName().c_str());
+        if (nullptr == refForCopy)
+            {
+            if (willCopyRef)
+                status = CopyClass(refForCopy, *startingRef, copyReferences, nullptr, false);
+            else
+                status = logCopyErrorDueToReferencedItem(&classWithRef, this, startingRef, SchemaParseUtils::SchemaElementTypeToString(ECSchemaElementType::ECClass), refSchema, copyReferences);
+            }
+        return status;
     }
 ECObjectsStatus ECSchema::GetOrCopyReferencedEnumerationForCopy(ECClassCR classWithRef, ECEnumerationP& refForCopy, ECEnumerationCP startingRef, bool copyReferences)
     {
