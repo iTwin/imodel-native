@@ -6719,6 +6719,105 @@ static Napi::Value isRscFontData(NapiInfoCR info) {
     return Napi::Boolean::New(info.Env(), isRsc);
 }
 
+static Napi::Value imageBufferFromImageSource(NapiInfoCR info) {
+    REQUIRE_ARGUMENT_UINTEGER(0, iSrcFmt);
+    if (static_cast<uint32_t>(ImageSource::Format::Png) != iSrcFmt && static_cast<uint32_t>(ImageSource::Format::Jpeg) != iSrcFmt) {
+        THROW_JS_EXCEPTION("ImageSource format must be Png or Jpeg");
+    }
+
+    REQUIRE_ARGUMENT_ANY_OBJ(1, oSrcData);
+    if (!oSrcData.IsTypedArray()) {
+        THROW_JS_EXCEPTION("ImageSource data must be Uint8Array");
+    }
+
+    auto srcData = oSrcData.As<Napi::Uint8Array>();
+    ImageSource src(static_cast<ImageSource::Format>(iSrcFmt), ByteStream(srcData.Data(), srcData.ByteLength()));
+    
+    REQUIRE_ARGUMENT_UINTEGER(2, iImgFmt);
+    Image::Format imgFmt;
+    if (iImgFmt == 255) {
+        // Use Rgb unless alpha channel is present.
+        imgFmt = src.SupportsTransparency() ? Image::Format::Rgba : Image::Format::Rgb;
+    } else {
+        if (static_cast<uint32_t>(Image::Format::Rgb) != iImgFmt && static_cast<uint32_t>(Image::Format::Rgba) != iImgFmt) {
+            THROW_JS_EXCEPTION("ImageBuffer format must be Rgb or Rgba");
+        }
+
+        imgFmt = static_cast<Image::Format>(iImgFmt);
+    }
+
+    REQUIRE_ARGUMENT_BOOL(3, flipVertically);
+
+    Image img(src, imgFmt, flipVertically ? Image::BottomUp::Yes : Image::BottomUp::No);
+    if (!img.IsValid()) {
+        return info.Env().Undefined();
+    }
+
+    // JPEG decoder can leave extra junk bytes past the end of the image data. Omit them.
+    auto expectedImgDataSize = img.GetWidth() * img.GetHeight() * img.GetBytesPerPixel();
+    auto imgDataSize = std::min(expectedImgDataSize, img.GetByteStream().GetSize());
+    auto imgData = Napi::Uint8Array::New(info.Env(), imgDataSize);
+    memcpy(imgData.Data(), img.GetByteStream().data(), imgDataSize);
+
+    Napi::Object ret = Napi::Object::New(info.Env());
+    ret.Set(Napi::String::New(info.Env(), "data"), imgData);
+    ret.Set(Napi::String::New(info.Env(), "format"), Napi::Number::New(info.Env(), static_cast<uint32_t>(img.GetFormat())));
+    ret.Set(Napi::String::New(info.Env(), "width"), Napi::Number::New(info.Env(), img.GetWidth()));
+
+    return ret;
+}
+
+static Napi::Value imageSourceFromImageBuffer(NapiInfoCR info) {
+    REQUIRE_ARGUMENT_UINTEGER(0, iImgFmt);
+    if (static_cast<uint32_t>(Image::Format::Rgb) != iImgFmt && static_cast<uint32_t>(Image::Format::Rgba) != iImgFmt) {
+        THROW_JS_EXCEPTION("ImageBuffer format must be Rgb or Rgba");
+    }
+
+    REQUIRE_ARGUMENT_ANY_OBJ(1, oImgData);
+    if (!oImgData.IsTypedArray()) {
+        THROW_JS_EXCEPTION("ImageBuffer data must be Uint8Array");
+    }
+
+    REQUIRE_ARGUMENT_UINTEGER(2, imgWidth);
+    REQUIRE_ARGUMENT_UINTEGER(3, imgHeight);
+    
+    auto imgData = oImgData.As<Napi::Uint8Array>();
+    Image img(imgWidth, imgHeight, ByteStream(imgData.Data(), imgData.ByteLength()), static_cast<Image::Format>(iImgFmt));
+    if (!img.IsValid()) {
+        return info.Env().Undefined();
+    }
+
+    REQUIRE_ARGUMENT_UINTEGER(4, iSrcFmt);
+    ImageSource::Format srcFmt;
+    if (iSrcFmt == 255) {
+        // Use Jpeg unless alpha channel is present
+        srcFmt = Image::Format::Rgba == img.GetFormat() ? ImageSource::Format::Png : ImageSource::Format::Jpeg;
+    } else {
+        if (static_cast<uint32_t>(ImageSource::Format::Png) != iSrcFmt && static_cast<uint32_t>(ImageSource::Format::Jpeg) != iSrcFmt) {
+            THROW_JS_EXCEPTION("ImageSource format must be Png or Jpeg");
+        }
+
+        srcFmt = static_cast<ImageSource::Format>(iSrcFmt);
+    }
+
+    REQUIRE_ARGUMENT_BOOL(5, flipVertically);
+    REQUIRE_ARGUMENT_UINTEGER(6, jpegQuality);
+    
+    ImageSource src(img, srcFmt, jpegQuality, flipVertically ? Image::BottomUp::Yes : Image::BottomUp::No);
+    if (!src.IsValid()) {
+        return info.Env().Undefined();
+    }
+
+    auto data = Napi::Uint8Array::New(info.Env(), src.GetByteStream().size());
+    memcpy(data.Data(), src.GetByteStream().data(), src.GetByteStream().size());
+
+    Napi::Object ret = Napi::Object::New(info.Env());
+    ret.Set(Napi::String::New(info.Env(), "data"), data);
+    ret.Set(Napi::String::New(info.Env(), "format"), static_cast<uint32_t>(src.GetFormat()));
+
+    return ret;
+}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -6778,6 +6877,8 @@ static Napi::Object registerModule(Napi::Env env, Napi::Object exports) {
         Napi::PropertyDescriptor::Function(env, exports, "setMaxTileCacheSize", &setMaxTileCacheSize),
         Napi::PropertyDescriptor::Function(env, exports, "getTrueTypeFontMetadata", &getTrueTypeFontMetadata),
         Napi::PropertyDescriptor::Function(env, exports, "isRscFontData", &isRscFontData),
+        Napi::PropertyDescriptor::Function(env, exports, "imageBufferFromImageSource", &imageBufferFromImageSource),
+        Napi::PropertyDescriptor::Function(env, exports, "imageSourceFromImageBuffer", &imageSourceFromImageBuffer),
     });
 
     registerCloudSqlite(env, exports);
