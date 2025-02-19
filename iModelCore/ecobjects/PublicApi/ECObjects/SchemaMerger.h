@@ -57,8 +57,8 @@ public:
     SchemaMergeOptions() {}
 
     //! Setting this flag instructs the merger to skip validations
-    void SetSkipValidations(bool flag) { m_skipValidation = flag; }
-    bool GetSkipValidations() const { return m_skipValidation; }
+    void SetSkipValidation(bool flag) { m_skipValidation = flag; }
+    bool GetSkipValidation() const { return m_skipValidation; }
 
     //! Instructs the merger to only merge schemas which are marked as dynamic schemas. Defaults to false.
     void SetMergeOnlyDynamicSchemas(bool flag) { m_json[SCHEMAMERGER_OPTION_MERGEONLYDYNAMICSCHEMAS] = flag; }
