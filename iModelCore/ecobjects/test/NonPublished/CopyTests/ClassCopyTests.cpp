@@ -318,8 +318,10 @@ TEST_F(ClassCopyTest, RelationshipClassesWithNoBaseClass)
     ASSERT_NE(ecClass, nullptr);
     ASSERT_TRUE(ecClass->IsRelationshipClass());
 
-    ECClassP copiedClass;
-    copyStatus = copySchema->CopyClass(copiedClass, *ecClass, true, nullptr, true);
+    ECClassP copiedClassTrue, copiedClassFalse;
+    copyStatus = copySchema->CopyClass(copiedClassFalse, *ecClass, true);
+    ASSERT_NE(ECObjectsStatus::Success, copyStatus) << "Failed to copy class";
+    copyStatus = copySchema->CopyClass(copiedClassTrue, *ecClass, true, nullptr, true);
     ASSERT_EQ(ECObjectsStatus::Success, copyStatus) << "Failed to copy class";
 }
 

@@ -352,6 +352,19 @@ BentleyStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSc
         {
         DumpSchemasToFile(result.GetResults(), dumpLocation.c_str(), "Result");
         }
+    
+    if(false == options.GetSkipValidation())
+        {
+        for(const auto& schema : result.GetResults())
+            {
+            if(!const_cast<ECSchemaP>(schema)->Validate(true))
+                {
+                result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0010,
+                    "Schema %s failed to validate.", schema->GetFullSchemaName().c_str());
+                return BentleyStatus::ERROR;
+                }
+            }
+        }
 
     return BentleyStatus::SUCCESS;
     }
@@ -512,7 +525,7 @@ BentleyStatus SchemaMerger::MergeSchema(SchemaMergeResult& result, ECSchemaP lef
             }
 
         ECClassP createdClass;
-        ECObjectsStatus status = left->CopyClass(createdClass, *newClass, true, className.c_str());
+        ECObjectsStatus status = left->CopyClass(createdClass, *newClass, true, className.c_str(), options.GetSkipValidation());
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
           {
           result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0029,
