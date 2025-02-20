@@ -2790,6 +2790,13 @@ BentleyStatus ECSqlParser::ParseValuesCommalist(std::unique_ptr<RowValueConstruc
         std::vector<std::unique_ptr<ValueExp>> valueExpList; 
         if (SUCCESS != ParseRowValueConstructorCommalist(valueExpList, *listNode))
             return ERROR;
+        
+        // @todo - naron: double check on IssueId
+        if (valueExpList.size() == 0)
+            {
+            Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0493, "Empty list within row value constructor list");
+            return ERROR;
+            }
 
         // return error if each valueExpList dont have the same number of elements
         if (i > 0 && valueExpList.size() != rowValuesExpList[0]->GetChildrenCount())
@@ -2801,7 +2808,12 @@ BentleyStatus ECSqlParser::ParseValuesCommalist(std::unique_ptr<RowValueConstruc
         
         rowValuesExpList.push_back(std::make_unique<ValueExpListExp>(valueExpList));
         }
-        
+    
+    if (rowValuesExpList.size() == 0)
+        {
+        Issues().Report(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0493, "Empty row value constructor list");
+        return ERROR;
+        }
     
     exp = std::make_unique<RowValueConstructorListExp>(rowValuesExpList);
     

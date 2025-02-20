@@ -13096,9 +13096,24 @@ TEST_F(ECSqlStatementTestFixture, ValuesClauseTest) {
     EXPECT_EQ(BE_SQLITE_DONE, fiveHundredPlusValues.Step());
     }
 
+    {
+    ECSqlStatement selectVaiousPrimitivves;
+    std::string query = "SELECT * FROM (VALUES(1, 2.5, 'test', 3.14, TRUE))";
+    ASSERT_EQ(ECSqlStatus::Success, selectVaiousPrimitivves.Prepare(m_ecdb, query.c_str()));
+
+    EXPECT_EQ(BE_SQLITE_ROW, selectVaiousPrimitivves.Step());
+    ASSERT_EQ(5, selectVaiousPrimitivves.GetColumnCount());
+
+    ASSERT_EQ(1, selectVaiousPrimitivves.GetValueInt(0));
+    ASSERT_EQ(2.5, selectVaiousPrimitivves.GetValueDouble(1));
+    ASSERT_STREQ("test", selectVaiousPrimitivves.GetValueText(2));
+    ASSERT_EQ(3.14, selectVaiousPrimitivves.GetValueDouble(3));
+    ASSERT_EQ(true, selectVaiousPrimitivves.GetValueBoolean(4));
+    }
+
 
     // there should be a case where select * from (values(1), (2)), ms_myclass?
-    // there should also be a case where values contain other primitive types
+    // its not able to handle calculation inside the values clause now, might log it as a different issue
     {
     // Failure case
     ECSqlStatement unequalNumberOfColumns;

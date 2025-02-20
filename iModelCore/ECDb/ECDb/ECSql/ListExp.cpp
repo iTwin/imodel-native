@@ -178,17 +178,18 @@ RowValueConstructorListExp::RowValueConstructorListExp(std::vector<std::unique_p
     {
     std::unique_ptr<SelectClauseExp> selectStmtExp = std::make_unique<SelectClauseExp>(); 
 
-    // BeAssert(!rowValueList.empty() && rowValueList[0] != nullptr);
     size_t childrenCount = rowValueList[0]->GetChildrenCount();
 
-    for (size_t i = 1; i <= childrenCount; i++)
+    for (size_t i = 0; i < childrenCount; i++)
         {
-        Utf8String columnName = "column" + std::to_string(i);
-        
-        selectStmtExp->AddProperty(std::make_unique<DerivedPropertyExp>(
-            std::make_unique<SqlColumnNameExp>(columnName),
-                columnName.c_str()
-        ));
+        Utf8String columnName = "column" + std::to_string(i+1);
+        ECSqlTypeInfo const& typeInfo = rowValueList[0]->GetValueExp(i)->GetTypeInfo();
+
+        // set typeInfo for property generation
+        std::unique_ptr<SqlColumnNameExp> sqlColumnNameExp = std::make_unique<SqlColumnNameExp>(columnName);
+        sqlColumnNameExp->SetTypeInfo(typeInfo);
+
+        selectStmtExp->AddProperty(std::make_unique<DerivedPropertyExp>(std::move(sqlColumnNameExp), columnName.c_str()));
         }
     
     AddChild(std::move(selectStmtExp));

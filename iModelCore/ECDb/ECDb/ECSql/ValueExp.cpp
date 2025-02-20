@@ -1944,8 +1944,11 @@ Utf8String UnaryValueExp::_ToString() const
 //+---------------+---------------+---------------+---------------+---------------+------
 Exp::FinalizeParseStatus SqlColumnNameExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode){
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
-        SetTypeInfo(ECSqlTypeInfo::CreatePrimitive(ECN::PrimitiveType::PRIMITIVETYPE_Double));
-
+        if (!GetTypeInfo().IsPrimitive()){
+            ctx.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSQL, ECDbIssueId::ECDb_0559,
+                "values inside Values List expects primitive type expressions", ToECSql().c_str()); // @todo-naron: check IssueIds
+            return FinalizeParseStatus::Error;
+        }
     return FinalizeParseStatus::Completed;
 }
 
