@@ -1430,7 +1430,7 @@ void Statement::DumpResults()
 
     Reset();
     }
-    
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2801,15 +2801,15 @@ std::vector<AttachFileInfo> Db::GetAttachedDbs() const {
         info.m_alias = stmt.GetValueText(1);
         info.m_fileName = stmt.GetValueText(2);
         if (info.m_alias.EqualsIAscii("main")) {
-            info.m_type = AttachFileTypes::Main;
+            info.m_type = AttachFileType::Main;
         } else if (info.m_alias.EqualsIAscii("schema_sync_db")){
-            info.m_type = AttachFileTypes::SchemaSync;
+            info.m_type = AttachFileType::SchemaSync;
         } else if (info.m_alias.EqualsIAscii("ecchange")){
-            info.m_type = AttachFileTypes::ECChangeCache;
+            info.m_type = AttachFileType::ECChangeCache;
         } else if (info.m_alias.EqualsIAscii("temp")){
-            info.m_type = AttachFileTypes::Temp;
+            info.m_type = AttachFileType::Temp;
         } else {
-            info.m_type = AttachFileTypes::Unknown;
+            info.m_type = AttachFileType::Unknown;
         }
         result.push_back(info);
     }

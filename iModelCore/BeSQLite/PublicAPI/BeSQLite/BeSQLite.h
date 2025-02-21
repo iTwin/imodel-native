@@ -393,7 +393,7 @@ enum class WalCheckpointMode {
     Truncate=3, /* Like RESTART but also truncate WAL */
 };
 
-enum class AttachFileTypes {
+enum class AttachFileType {
     Unknown,
     Main,
     Temp,
@@ -405,7 +405,7 @@ struct AttachFileInfo final {
 public:
     Utf8String m_fileName;
     Utf8String m_alias;
-    AttachFileTypes m_type;
+    AttachFileType m_type;
 };
 
 //=======================================================================================

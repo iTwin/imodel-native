@@ -129,11 +129,11 @@ void CachedConnection::SyncAttachDbs() {
 
     // detach dbs that does not exist on primary connection
     for (auto& attachFile : thisAttachDbs) {
-        if (attachFile.m_type == AttachFileTypes::Main || attachFile.m_type == AttachFileTypes::Temp) {
+        if (attachFile.m_type == AttachFileType::Main || attachFile.m_type == AttachFileType::Temp) {
             continue;
         }
 
-        BeAssert(attachFile.m_type != AttachFileTypes::SchemaSync);
+        BeAssert(attachFile.m_type != AttachFileType::SchemaSync);
 
         auto it = std::find_if(primaryAttachDbs.begin(), primaryAttachDbs.end(),
         [&attachFile](auto& primaryAttach) {
@@ -143,7 +143,7 @@ void CachedConnection::SyncAttachDbs() {
 
         if (it == primaryAttachDbs.end()) {
             std::call_once(cachedClearFlag, reset);
-            if (attachFile.m_type == AttachFileTypes::ECChangeCache)
+            if (attachFile.m_type == AttachFileType::ECChangeCache)
                 m_db.DetachChangeCache();
             else
                 m_db.DetachDb(attachFile.m_alias.c_str());
@@ -152,7 +152,7 @@ void CachedConnection::SyncAttachDbs() {
 
     // attach dbs that exist on primary connection but not on cached connection.
     for (auto& attachFile : primaryAttachDbs) {
-        if (attachFile.m_type == AttachFileTypes::SchemaSync || attachFile.m_type == AttachFileTypes::Main || attachFile.m_type == AttachFileTypes::Temp) {
+        if (attachFile.m_type == AttachFileType::SchemaSync || attachFile.m_type == AttachFileType::Main || attachFile.m_type == AttachFileType::Temp) {
             continue;
         }
 
@@ -163,7 +163,7 @@ void CachedConnection::SyncAttachDbs() {
 
         if (it == thisAttachDbs.end()) {
             std::call_once(cachedClearFlag, reset);
-            if (attachFile.m_type == AttachFileTypes::ECChangeCache)
+            if (attachFile.m_type == AttachFileType::ECChangeCache)
                 m_db.AttachChangeCache(BeFileName(attachFile.m_fileName.c_str()));
             else
                 m_db.AttachDb(attachFile.m_fileName.c_str(), attachFile.m_alias.c_str());
@@ -298,7 +298,7 @@ std::shared_ptr<CachedConnection> CachedConnection::Make(ConnectionCache& cache,
 void ConnectionCache::SyncAttachDbs() {
     FNV1HashBuilder builder;
     for (auto& file : GetPrimaryDb().GetAttachedDbs()) {
-        if (file.m_type == AttachFileTypes::SchemaSync  || file.m_type == AttachFileTypes::Main || file.m_type == AttachFileTypes::Temp) {
+        if (file.m_type == AttachFileType::SchemaSync  || file.m_type == AttachFileType::Main || file.m_type == AttachFileType::Temp) {
             continue;
         }
         builder.UpdateString(file.m_alias);
