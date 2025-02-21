@@ -355,11 +355,11 @@ BentleyStatus SchemaMerger::MergeSchemas(SchemaMergeResult& result, bvector<ECSc
     
     if(false == options.GetSkipValidation())
         {
-        for(const auto& schema : result.GetResults())
+        for(const auto& schema : result.GetModifiedSchemas())
             {
-            if(!const_cast<ECSchemaP>(schema)->Validate(true))
+            if(!schema->Validate(true))
                 {
-                result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0010,
+                result.Issues().ReportV(IssueSeverity::Error, IssueCategory::BusinessProperties, IssueType::ECSchema, ECIssueId::EC_0061,
                     "Schema %s failed to validate.", schema->GetFullSchemaName().c_str());
                 return BentleyStatus::ERROR;
                 }

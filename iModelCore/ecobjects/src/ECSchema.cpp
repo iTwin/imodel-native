@@ -1566,8 +1566,8 @@ bool areFromSameSchema (NamedItemA const* itemA, NamedItemB const* itemB)
     return itemA->GetSchema().GetName().Equals(itemB->GetSchema().GetName().c_str());
     }
 
-    template<typename Item, typename RefItem>
-    ECObjectsStatus ECSchema::GetOrCopyReferencedItemForCopy(const Item & itemWithRef, RefItem *& refForCopy, RefItem const* startingRef, bool copyReferences, ECSchemaElementType refItemType, RefItem *(ECSchema::*getItemP)(Utf8CP), ECObjectsStatus(ECSchema::*copyItem)(RefItem *&, const RefItem &, bool, Utf8CP))
+template<typename Item, typename RefItem>
+ECObjectsStatus ECSchema::GetOrCopyReferencedItemForCopy(const Item & itemWithRef, RefItem *& refForCopy, RefItem const* startingRef, bool copyReferences, ECSchemaElementType refItemType, RefItem *(ECSchema::*getItemP)(Utf8CP), ECObjectsStatus(ECSchema::*copyItem)(RefItem *&, const RefItem &, bool, Utf8CP))
     {
     bool willCopyRef = copyReferences && areFromSameSchema(&itemWithRef, startingRef);
     ECSchemaP refSchema;
