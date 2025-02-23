@@ -2361,20 +2361,34 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_UnknownMapSt
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECEntityClass typeName="A">
                 <ECProperty propertyName="PropA" typeName="string"/>
-                <ECNavigationProperty propertyName="RelProp" relationshipName="AToB" direction="Forward"/>
+                <ECNavigationProperty propertyName="AToARelProp" relationshipName="AToA" direction="Forward"/>
+                <ECNavigationProperty propertyName="AToChildARelProp" relationshipName="AToChildA" direction="Forward"/>
+                <ECNavigationProperty propertyName="AToGrandChildARelProp" relationshipName="AToGrandChildA" direction="Forward"/>
+                <ECNavigationProperty propertyName="AToBRelProp" relationshipName="AToB" direction="Forward"/>
             </ECEntityClass>
-            <ECEntityClass typeName="SubA">
+            <ECEntityClass typeName="ChildA">
                 <BaseClass>A</BaseClass>
-                <ECProperty propertyName="PropSubA" typeName="string"/>
+                <ECProperty propertyName="PropChildA" typeName="string"/>
             </ECEntityClass>
-            <ECEntityClass typeName="GrandSubA">
-                <BaseClass>SubA</BaseClass>
-                <ECProperty propertyName="PropGrandSubA" typeName="string"/>
+            <ECEntityClass typeName="GrandChildA">
+                <BaseClass>ChildA</BaseClass>
+                <ECProperty propertyName="PropGrandChildA" typeName="string"/>
             </ECEntityClass>
             <ECEntityClass typeName="B">
                 <ECProperty propertyName="PropB" typeName="string"/>
-                <ECNavigationProperty propertyName="AnotherRelProp" relationshipName="BToA" direction="Forward"/>
+                <ECNavigationProperty propertyName="BToARelProp" relationshipName="BToA" direction="Forward"/>
+                <ECNavigationProperty propertyName="BToChildARelProp" relationshipName="BToChildA" direction="Forward"/>
+                <ECNavigationProperty propertyName="BToGrandChildARelProp" relationshipName="BToGrandChildA" direction="Forward"/>
             </ECEntityClass>
+
+            <ECRelationshipClass typeName="AToA" strength="Referencing" modifier="Sealed" strengthDirection="Forward">
+                <Source multiplicity="(0..*)" polymorphic="False" roleLabel="A">
+                    <Class class ="A"/>
+                </Source>
+                <Target multiplicity="(1..1)" polymorphic="False" roleLabel="A">
+                    <Class class ="A"/>
+                </Target>
+            </ECRelationshipClass>
 
             <ECRelationshipClass typeName="AToB" strength="Referencing" modifier="Sealed" strengthDirection="Forward">
                 <Source multiplicity="(0..*)" polymorphic="False" roleLabel="A">
@@ -2385,51 +2399,111 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_UnknownMapSt
                 </Target>
             </ECRelationshipClass>
 
-            <ECRelationshipClass typeName="BToA" strength="Referencing" modifier="Sealed" strengthDirection="Forward">
+            <ECRelationshipClass typeName="AToChildA" strength="Referencing" modifier="Sealed" strengthDirection="Forward">
                 <Source multiplicity="(0..*)" polymorphic="False" roleLabel="A">
+                    <Class class ="A"/>
+                </Source>
+                <Target multiplicity="(1..1)" polymorphic="False" roleLabel="ChildA">
+                    <Class class ="ChildA"/>
+                </Target>
+            </ECRelationshipClass>
+
+            <ECRelationshipClass typeName="AToGrandChildA" strength="Referencing" modifier="Sealed" strengthDirection="Forward">
+                <Source multiplicity="(0..*)" polymorphic="False" roleLabel="A">
+                    <Class class ="A"/>
+                </Source>
+                <Target multiplicity="(1..1)" polymorphic="False" roleLabel="GrandChildA">
+                    <Class class ="GrandChildA"/>
+                </Target>
+            </ECRelationshipClass>
+
+            <ECRelationshipClass typeName="BToA" strength="Referencing" modifier="Sealed" strengthDirection="Forward">
+                <Source multiplicity="(0..*)" polymorphic="False" roleLabel="B">
                     <Class class ="B"/>
                 </Source>
-                <Target multiplicity="(1..1)" polymorphic="False" roleLabel="B">
+                <Target multiplicity="(1..1)" polymorphic="False" roleLabel="A">
                     <Class class ="A"/>
+                </Target>
+            </ECRelationshipClass>
+
+            <ECRelationshipClass typeName="BToChildA" strength="Referencing" modifier="Sealed" strengthDirection="Forward">
+                <Source multiplicity="(0..*)" polymorphic="False" roleLabel="B">
+                    <Class class ="B"/>
+                </Source>
+                <Target multiplicity="(1..1)" polymorphic="False" roleLabel="ChildA">
+                    <Class class ="ChildA"/>
+                </Target>
+            </ECRelationshipClass>
+
+            <ECRelationshipClass typeName="BToGrandChildA" strength="Referencing" modifier="Sealed" strengthDirection="Forward">
+                <Source multiplicity="(0..*)" polymorphic="False" roleLabel="B">
+                    <Class class ="B"/>
+                </Source>
+                <Target multiplicity="(1..1)" polymorphic="False" roleLabel="GrandChildA">
+                    <Class class ="GrandChildA"/>
                 </Target>
             </ECRelationshipClass>
         </ECSchema>)xml")));
 
     const auto schema = m_ecdb.Schemas().GetSchema("TestSchema");
     ASSERT_NE(nullptr, schema);
-    ASSERT_NE(schema->GetClassCP("A"), nullptr);
-    ASSERT_NE(schema->GetClassCP("SubA"), nullptr);
-    ASSERT_NE(schema->GetClassCP("GrandSubA"), nullptr);
-    ASSERT_NE(schema->GetClassCP("B"), nullptr);
-    ASSERT_NE(schema->GetClassCP("AToB"), nullptr);
-    ASSERT_NE(schema->GetClassCP("BToA"), nullptr);
+    const auto aToAClass = schema->GetClassCP("AToA");
+    ASSERT_NE(aToAClass, nullptr);
+    const auto aToChildAClass = schema->GetClassCP("AToChildA");
+    ASSERT_NE(aToChildAClass, nullptr);
+    const auto aToGrandChildAClass = schema->GetClassCP("AToGrandChildA");
+    ASSERT_NE(aToGrandChildAClass, nullptr);
+    const auto aToBClass = schema->GetClassCP("AToB");
+    ASSERT_NE(aToBClass, nullptr);
 
+    const auto bToAClass = schema->GetClassCP("BToA");
+    ASSERT_NE(bToAClass, nullptr);
+    const auto bToChildAClass = schema->GetClassCP("BToChildA");
+    ASSERT_NE(bToChildAClass, nullptr);
+    const auto bToGrandChildAClass = schema->GetClassCP("BToGrandChildA");
+    ASSERT_NE(bToGrandChildAClass, nullptr);
+
+    // Insert some data for tests
+    ECInstanceKey key1, key2, key3, key4;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key1, 
+        Utf8PrintfString("insert into ts.A(PropA,AToARelProp.Id,AToARelProp.RelECClassId,AToChildARelProp.Id,AToChildARelProp.RelECClassId,AToGrandChildARelProp.Id,AToGrandChildARelProp.RelECClassId,AToBRelProp.Id,AToBRelProp.RelECClassId) values ('PropA1', 0x1, %s, 0x1, %s, 0x1, %s, 0x1, %s)",
+        aToAClass->GetId().ToHexStr().c_str(), aToChildAClass->GetId().ToHexStr().c_str(), aToGrandChildAClass->GetId().ToHexStr().c_str(), aToBClass->GetId().ToHexStr().c_str()).c_str()));
+    
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key2, 
+        Utf8PrintfString("insert into ts.B(PropB,BToARelProp.Id,BToARelProp.RelECClassId,BToChildARelProp.Id,BToChildARelProp.RelECClassId,BToGrandChildARelProp.Id,BToGrandChildARelProp.RelECClassId) values ('PropB1', 0x1, %s, 0x1, %s, 0x1, %s)",
+        bToAClass->GetId().ToHexStr().c_str(), bToChildAClass->GetId().ToHexStr().c_str(), bToGrandChildAClass->GetId().ToHexStr().c_str()).c_str()));
+    
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key3, "insert into ts.ChildA(PropA, PropChildA) values ('PropA3', 'PropChildA1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key4, "insert into ts.GrandChildA(PropA, PropChildA, PropGrandChildA) values ('PropA4', 'PropChildA2', 'PropGrandChildA1')"));
+
+    ASSERT_TRUE(key1.IsValid());
+    ASSERT_TRUE(key2.IsValid());
+    ASSERT_TRUE(key3.IsValid());
+    ASSERT_TRUE(key4.IsValid());
+        
+    m_ecdb.SaveChanges();
+
+    // Set the schema to a newer minor version
     unsigned int ecXmlMajorVersion;
     unsigned int ecXmlMinorVersion;
     EXPECT_EQ(ECObjectsStatus::Success, ECSchema::ParseECVersion(ecXmlMajorVersion, ecXmlMinorVersion, ECVersion::Latest));
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(SqlPrintfString("UPDATE ec_Schema SET OriginalECXmlVersionMinor=%d WHERE Name='TestSchema'", ++ecXmlMinorVersion)));
-    m_ecdb.SaveChanges();
 
-    // Let's put some data in the classes
-    for (const auto& insertStatement : std::vector<Utf8CP> {
-        "insert into ts_A(Id, PropA, RelPropId) values (1, 'PropA1', 1)",
-        "insert into ts_A(Id, PropA, RelPropId) values (2, 'PropA2', 1)",
-        "insert into ts_SubA(Id, PropA, PropSubA) values (1, 'PropA1', 'PropSubA1')",
-        "insert into ts_GrandSubA(Id, PropA, PropSubA, PropGrandSubA) values (1, 'PropA1', 'PropSubA1', 'PropGrandSubA1')",
-        "insert into ts_B(Id, PropB, AnotherRelPropId) values (1, 'PropB1', 1)",
-        "insert into ts_B(Id, PropB, AnotherRelPropId) values (2, 'PropB2', 1)",
-    })
+    const auto executeTestCase = [&](Utf8StringCR classesToUpdate, const unsigned int testCaseNumber, Utf8StringCR selectStatement, const ECSqlStatus prepareResult, const DbResult stepResult, const std::vector<Utf8String>& columnNames)
         {
-        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(insertStatement));
-        }
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(SqlPrintfString("UPDATE ec_Schema SET OriginalECXmlVersionMinor=%d WHERE Name='TestSchema'", ++ecXmlMinorVersion)));
 
-    m_ecdb.SaveChanges();
-
-    const auto executeTestCase = [&](const unsigned int testCaseNumber, Utf8CP selectStatement, const DbResult stepResult)
-        {
         ECSqlStatement stmt;
-        EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, selectStatement)) << "Sql Prepare failed for testcase " << testCaseNumber;
-        EXPECT_EQ(stepResult, stmt.Step()) << "Sql Step failed for testcase " << testCaseNumber;
+        const auto errorLog = Utf8PrintfString("for testcase %d for classes %s", testCaseNumber, classesToUpdate.c_str());
+        EXPECT_EQ(prepareResult, stmt.Prepare(m_ecdb, selectStatement.c_str())) << "Sql Prepare failed " << errorLog;
+        if (prepareResult == ECSqlStatus::Success)
+            {
+            EXPECT_EQ(stmt.Step(), stepResult) << "Sql Step failed " << errorLog;
+            EXPECT_EQ(columnNames.size(), stmt.GetColumnCount()) << "Failed " << errorLog;
+            auto index = 0;
+            for (const auto& columnName : columnNames)
+                EXPECT_STREQ(stmt.GetColumnInfo(index++).GetProperty()->GetName().c_str(), columnName.c_str()) << "Failed " << errorLog;
+            }
+
         stmt.Finalize();
         };
 
@@ -2440,115 +2514,93 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_UnknownMapSt
         ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql(updateStatement));
         };
 
+    typedef std::vector<std::tuple<const unsigned int, const Utf8String, const ECSqlStatus, const DbResult, const std::vector<Utf8String>>> TestCaseData;
 
-    resetTestCase("UPDATE ec_ClassMap SET MapStrategy=999 WHERE ClassId IN (SELECT Id from ec_Class WHERE Name IN ('A'))");
-    for (const auto& [testCaseNumber, selectStatement, stepResult] : std::vector<std::tuple<unsigned int, Utf8CP, DbResult>>
+
+    for (const auto& classesToUpdate : std::vector<Utf8String>{"'A'", "'A', 'ChildA'", "'A', 'GrandChildA'", "'A', 'ChildA', 'GrandChildA'"})
         {
-            { 1, "SELECT * FROM ts.A", BE_SQLITE_DONE },
-            { 2, "SELECT ECInstanceId, PropA FROM ts.A", BE_SQLITE_DONE },
-            { 3, "SELECT * FROM ts.SubA", BE_SQLITE_DONE },
-            { 4, "SELECT ECInstanceId, PropA, PropSubA FROM ts.SubA", BE_SQLITE_DONE },
-            { 5, "SELECT * FROM ts.GrandSubA", BE_SQLITE_DONE },
-            { 6, "SELECT ECInstanceId, PropA, PropSubA, PropGrandSubA FROM ts.GrandSubA", BE_SQLITE_DONE },
-        })
-        {
-        executeTestCase(testCaseNumber, selectStatement, stepResult);
+        // Since the base class A itself has unknown mapping, all selects on it and it's sub classes should return null columns
+        resetTestCase(Utf8PrintfString("UPDATE ec_ClassMap SET MapStrategy=999 WHERE ClassId IN (SELECT Id from ec_Class WHERE Name IN (%s))", classesToUpdate.c_str()).c_str());
+        for (const auto& [testCaseNumber, selectStatement, prepareResult, stepResult, columnNames] : TestCaseData
+            {
+                { 1, "SELECT * FROM ts.A", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId", "ECClassId", "PropA", "AToARelProp", "AToChildARelProp", "AToGrandChildARelProp", "AToBRelProp"} },
+                { 2, "SELECT ECInstanceId, PropA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.A", ECSqlStatus::Success, BE_SQLITE_DONE,
+                    {"ECInstanceId", "PropA", "AToARelProp", "AToChildARelProp", "AToGrandChildARelProp", "AToBRelProp"} },
+                { 3, "SELECT * FROM ts.ChildA", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId", "ECClassId", "PropA", "AToARelProp", "AToChildARelProp", "AToGrandChildARelProp", "AToBRelProp", "PropChildA"} },
+                { 4, "SELECT ECInstanceId, PropA, PropChildA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.ChildA", ECSqlStatus::Success, BE_SQLITE_DONE, 
+                    {"ECInstanceId", "PropA", "PropChildA", "AToARelProp", "AToChildARelProp", "AToGrandChildARelProp", "AToBRelProp"} },
+                { 5, "SELECT * FROM ts.GrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId", "ECClassId", "PropA", "AToARelProp", "AToChildARelProp", "AToGrandChildARelProp", "AToBRelProp", "PropChildA", "PropGrandChildA"} },
+                { 6, "SELECT ECInstanceId, PropA, PropChildA, PropGrandChildA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.GrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,
+                    {"ECInstanceId", "PropA", "PropChildA", "PropGrandChildA","AToARelProp", "AToChildARelProp", "AToGrandChildARelProp", "AToBRelProp"} },
+                { 7, "SELECT * FROM ts.AToB", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                { 8, "SELECT * FROM ts.BToA", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                { 9, "SELECT * FROM ts.B"   , ECSqlStatus::Success, BE_SQLITE_ROW, { "ECInstanceId", "ECClassId", "PropB" } },    // Will return only ECInstanceId, ECClassId, PropB
+                {10, "SELECT PropB, BToARelProp, BToChildARelProp, BToGrandChildARelProp FROM ts.B", ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, {} },
+                {11, "SELECT BToARelProp, BToChildARelProp, BToGrandChildARelProp FROM ts.B", ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, {} },
+            })
+            {
+            executeTestCase(classesToUpdate, testCaseNumber, selectStatement, prepareResult, stepResult, columnNames);
+            }
         }
 
-    resetTestCase("UPDATE ec_ClassMap SET MapStrategy=999 WHERE ClassId IN (SELECT Id from ec_Class WHERE Name IN ('SubA'))");
-    for (const auto& [testCaseNumber, selectStatement, stepResult] : std::vector<std::tuple<unsigned int, Utf8CP, DbResult>>
+    for (const auto& classesToUpdate : std::vector<Utf8String>{"'ChildA'", "'ChildA', 'GrandChildA'"})
         {
-            {  7, "SELECT * FROM ts.A", BE_SQLITE_ROW },
-            {  8, "SELECT ECInstanceId, PropA FROM ts.A", BE_SQLITE_ROW },
-            {  9, "SELECT * FROM ts.SubA", BE_SQLITE_DONE },
-            { 10, "SELECT ECInstanceId, PropA, PropSubA FROM ts.SubA", BE_SQLITE_DONE },
-            { 11, "SELECT * FROM ts.GrandSubA", BE_SQLITE_DONE },
-            { 12, "SELECT ECInstanceId, PropA, PropSubA, PropGrandSubA FROM ts.GrandSubA", BE_SQLITE_DONE },
-        })
-        {
-        executeTestCase(testCaseNumber, selectStatement, stepResult);
+        // Selects on ChildA and it's sub class GrandChildA should return null columns
+        resetTestCase(Utf8PrintfString("UPDATE ec_ClassMap SET MapStrategy=999 WHERE ClassId IN (SELECT Id from ec_Class WHERE Name IN (%s))", classesToUpdate.c_str()).c_str());
+        for (const auto& [testCaseNumber, selectStatement, prepareResult, stepResult, columnNames] : TestCaseData
+            {
+                {12, "SELECT * FROM ts.A", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToBRelProp"} },
+                {13, "SELECT ECInstanceId, PropA, AToARelProp, AToBRelProp FROM ts.A", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId", "PropA", "AToARelProp", "AToBRelProp"} },
+                {14, "SELECT ECInstanceId, PropA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.A", ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, {} },   // Explicit select for AToChildARelProp and AToGrandChildARelProp
+                {15, "SELECT * FROM ts.ChildA", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp","PropChildA"} },
+                {16, "SELECT ECInstanceId, PropA, PropChildA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.ChildA", ECSqlStatus::Success, BE_SQLITE_DONE,
+                    {"ECInstanceId","PropA","PropChildA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp"} },
+                {17, "SELECT * FROM ts.GrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp","PropChildA","PropGrandChildA"} },
+                {18, "SELECT ECInstanceId, PropA, PropChildA, PropGrandChildA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.GrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,
+                    {"ECInstanceId","PropA","PropChildA","PropGrandChildA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp"} },
+                {19, "SELECT * FROM ts.AToA", ECSqlStatus::Success, BE_SQLITE_ROW,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {20, "SELECT * FROM ts.AToB", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {21, "SELECT * FROM ts.AToChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {22, "SELECT * FROM ts.AToGrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {23, "SELECT * FROM ts.BToA", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {24, "SELECT * FROM ts.BToChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {25, "SELECT * FROM ts.BToGrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+                {26, "SELECT * FROM ts.B"   , ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropB","BToARelProp"} },    // Will return only ECInstanceId, ECClassId, PropB
+                {27, "SELECT PropB, BToARelProp FROM ts.B", ECSqlStatus::Success, BE_SQLITE_ROW, {"PropB","BToARelProp"} },
+                {28, "SELECT PropB, BToARelProp, BToChildARelProp, BToGrandChildARelProp FROM ts.B", ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, {} },  // Explicit select for BToChildARelProp and BToGrandChildARelProp
+            })
+            {
+            executeTestCase(classesToUpdate, testCaseNumber, selectStatement, prepareResult, stepResult, columnNames);
+            }
         }
 
-    resetTestCase("UPDATE ec_ClassMap SET MapStrategy=999 WHERE ClassId IN (SELECT Id from ec_Class WHERE Name IN ('GrandSubA'))");
-    for (const auto& [testCaseNumber, selectStatement, stepResult] : std::vector<std::tuple<unsigned int, Utf8CP, DbResult>>
+    // Selects on GrandChildA should return null columns
+    resetTestCase("UPDATE ec_ClassMap SET MapStrategy=999 WHERE ClassId IN (SELECT Id from ec_Class WHERE Name IN ('GrandChildA'))");
+    for (const auto& [testCaseNumber, selectStatement, prepareResult, stepResult, columnNames] : TestCaseData
         {
-            { 13, "SELECT * FROM ts.A", BE_SQLITE_ROW },
-            { 14, "SELECT ECInstanceId, PropA FROM ts.A", BE_SQLITE_ROW },
-            { 15, "SELECT * FROM ts.SubA", BE_SQLITE_ROW },
-            { 16, "SELECT ECInstanceId, PropA, PropSubA FROM ts.SubA", BE_SQLITE_ROW },
-            { 17, "SELECT * FROM ts.GrandSubA", BE_SQLITE_DONE },
-            { 18, "SELECT ECInstanceId, PropA, PropSubA, PropGrandSubA FROM ts.GrandSubA", BE_SQLITE_DONE },
+            {29, "SELECT * FROM ts.A", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToBRelProp"} },
+            {30, "SELECT ECInstanceId, PropA, AToARelProp, AToChildARelProp, AToBRelProp FROM ts.A", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","PropA","AToARelProp","AToChildARelProp","AToBRelProp"} },
+            {31, "SELECT ECInstanceId, PropA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.A", ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, {} }, // Explicit select for AToGrandChildARelProp
+            {32, "SELECT * FROM ts.ChildA", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToBRelProp","PropChildA"} },
+            {33, "SELECT ECInstanceId, PropA, PropChildA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.ChildA", ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, {} },
+            {34, "SELECT * FROM ts.GrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE, {"ECInstanceId","ECClassId","PropA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp","PropChildA","PropGrandChildA"} },
+            {36, "SELECT ECInstanceId, PropA, PropChildA, PropGrandChildA, AToARelProp, AToChildARelProp, AToGrandChildARelProp, AToBRelProp FROM ts.GrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,
+                {"ECInstanceId","PropA","PropChildA","PropGrandChildA","AToARelProp","AToChildARelProp","AToGrandChildARelProp","AToBRelProp"} },
+            {37, "SELECT * FROM ts.AToA", ECSqlStatus::Success, BE_SQLITE_ROW,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+            {38, "SELECT * FROM ts.AToB", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+            {39, "SELECT * FROM ts.AToChildA", ECSqlStatus::Success, BE_SQLITE_ROW,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+            {40, "SELECT * FROM ts.AToGrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+            {41, "SELECT * FROM ts.BToA", ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+            {42, "SELECT * FROM ts.BToChildA", ECSqlStatus::Success, BE_SQLITE_ROW,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+            {43, "SELECT * FROM ts.BToGrandChildA", ECSqlStatus::Success, BE_SQLITE_DONE,{"ECInstanceId","ECClassId","SourceECInstanceId","SourceECClassId","TargetECInstanceId","TargetECClassId"} },
+            {44, "SELECT * FROM ts.B"   , ECSqlStatus::Success, BE_SQLITE_ROW, {"ECInstanceId","ECClassId","PropB","BToARelProp","BToChildARelProp"} },
+            {45, "SELECT PropB, BToARelProp, BToChildARelProp FROM ts.B", ECSqlStatus::Success, BE_SQLITE_ROW, {"PropB","BToARelProp","BToChildARelProp"} },
+            {46, "SELECT PropB, BToARelProp, BToChildARelProp, BToGrandChildARelProp FROM ts.B", ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, {} },
         })
         {
-        executeTestCase(testCaseNumber, selectStatement, stepResult);
+        executeTestCase("'GrandChildA'", testCaseNumber, selectStatement, prepareResult, stepResult, columnNames);
         }
 
-    resetTestCase("UPDATE ec_ClassMap SET MapStrategy=999 WHERE ClassId IN (SELECT Id from ec_Class WHERE Name IN ('A', 'SubA'))");
-    for (const auto& [testCaseNumber, selectStatement, stepResult] : std::vector<std::tuple<unsigned int, Utf8CP, DbResult>>
-        {
-            { 19, "SELECT * FROM ts.A", BE_SQLITE_DONE },
-            { 20, "SELECT ECInstanceId, PropA FROM ts.A", BE_SQLITE_DONE },
-            { 21, "SELECT * FROM ts.SubA", BE_SQLITE_DONE },
-            { 22, "SELECT ECInstanceId, PropA, PropSubA FROM ts.SubA", BE_SQLITE_DONE },
-            { 23, "SELECT * FROM ts.GrandSubA", BE_SQLITE_DONE },
-            { 24, "SELECT ECInstanceId, PropA, PropSubA, PropGrandSubA FROM ts.GrandSubA", BE_SQLITE_DONE },
-        })
-        {
-        executeTestCase(testCaseNumber, selectStatement, stepResult);
-        }
-
-    resetTestCase("UPDATE ec_ClassMap SET MapStrategy=999 WHERE ClassId IN (SELECT Id from ec_Class WHERE Name IN ('SubA', 'GrandSubA'))");
-    for (const auto& [testCaseNumber, selectStatement, stepResult] : std::vector<std::tuple<unsigned int, Utf8CP, DbResult>>
-        {
-            { 25, "SELECT * FROM ts.A", BE_SQLITE_ROW },
-            { 26, "SELECT ECInstanceId, PropA FROM ts.A", BE_SQLITE_ROW },
-            { 27, "SELECT * FROM ts.SubA", BE_SQLITE_DONE },
-            { 28, "SELECT ECInstanceId, PropA, PropSubA FROM ts.SubA", BE_SQLITE_DONE },
-            { 29, "SELECT * FROM ts.GrandSubA", BE_SQLITE_DONE },
-            { 30, "SELECT ECInstanceId, PropA, PropSubA, PropGrandSubA FROM ts.GrandSubA", BE_SQLITE_DONE },
-        })
-        {
-        executeTestCase(testCaseNumber, selectStatement, stepResult);
-        }
-
-    resetTestCase("UPDATE ec_ClassMap SET MapStrategy=999 WHERE ClassId IN (SELECT Id from ec_Class WHERE Name IN ('A', 'GrandSubA'))");
-    for (const auto& [testCaseNumber, selectStatement, stepResult] : std::vector<std::tuple<unsigned int, Utf8CP, DbResult>>
-        {
-            { 31, "SELECT * FROM ts.A", BE_SQLITE_DONE },
-            { 32, "SELECT ECInstanceId, PropA FROM ts.A", BE_SQLITE_DONE },
-            { 33, "SELECT * FROM ts.SubA", BE_SQLITE_DONE },
-            { 34, "SELECT ECInstanceId, PropA, PropSubA FROM ts.SubA", BE_SQLITE_DONE },
-            { 35, "SELECT * FROM ts.GrandSubA", BE_SQLITE_DONE },
-            { 36, "SELECT ECInstanceId, PropA, PropSubA, PropGrandSubA FROM ts.GrandSubA", BE_SQLITE_DONE },
-        })
-        {
-        executeTestCase(testCaseNumber, selectStatement, stepResult);
-        }
-
-    resetTestCase("UPDATE ec_ClassMap SET MapStrategy=999 WHERE ClassId IN (SELECT Id from ec_Class WHERE Name IN ('A', 'SubA', 'GrandSubA'))");
-    for (const auto& [testCaseNumber, selectStatement, stepResult] : std::vector<std::tuple<unsigned int, Utf8CP, DbResult>>
-        {
-            { 37, "SELECT * FROM ts.A", BE_SQLITE_DONE },
-            { 38, "SELECT ECInstanceId, PropA FROM ts.A", BE_SQLITE_DONE },
-            { 39, "SELECT * FROM ts.SubA", BE_SQLITE_DONE },
-            { 40, "SELECT ECInstanceId, PropA, PropSubA FROM ts.SubA", BE_SQLITE_DONE },
-            { 41, "SELECT * FROM ts.GrandSubA", BE_SQLITE_DONE },
-            { 42, "SELECT ECInstanceId, PropA, PropSubA, PropGrandSubA FROM ts.GrandSubA", BE_SQLITE_DONE },
-        })
-        {
-        executeTestCase(testCaseNumber, selectStatement, stepResult);
-        }
-
-    resetTestCase("UPDATE ec_ClassMap SET MapStrategy=999 WHERE ClassId IN (SELECT Id from ec_Class WHERE Name IN ('A', 'SubA', 'GrandSubA'))");
-    for (const auto& [testCaseNumber, selectStatement, stepResult] : std::vector<std::tuple<unsigned int, Utf8CP, DbResult>>
-        {
-            { 43, "SELECT * FROM ts.B", BE_SQLITE_ROW },
-            { 44, "SELECT * FROM ts.AToB", BE_SQLITE_ROW },
-            { 45, "SELECT * FROM ts.BToA", BE_SQLITE_ROW },
-        })
-        {
-        executeTestCase(testCaseNumber, selectStatement, stepResult);
-        }
     m_ecdb.AbandonChanges();
     }
 

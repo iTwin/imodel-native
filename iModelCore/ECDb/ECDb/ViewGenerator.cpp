@@ -820,7 +820,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassLinkTableMap(NativeSqlBuilde
         unionList.push_back(view);
         }
 
-    if (unionList.empty())
+    if (unionList.empty() || relationMap.GetMapStrategy().GetStrategy() == MapStrategy::UnknownMapping)
         {
         if (RenderNullView(viewSql, ctx, relationMap) != SUCCESS)
             return ERROR;
@@ -1053,7 +1053,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
         unionList.push_back(unionQuerySql);
         }
 
-    if (unionList.empty())
+    if (unionList.empty() || relationMap.GetMapStrategy().GetStrategy() == MapStrategy::UnknownMapping)
         {
         if (RenderNullView(viewSql, ctx, relationMap) != SUCCESS)
             return ERROR;
