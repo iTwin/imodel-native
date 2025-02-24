@@ -10,7 +10,6 @@
   <Part Name="iModelJsNodeAddonPRG" PrgOutputDir="iModelJsNodeAddon" OnlyPlatforms="x64,linuxx64,macosx64,macosarm64">
     <SubPart PartName="iModelJsMakePackages"/>
     <SubPart PartName="RunUnitTests"/>
-    <SubPart PartName="RunUnitTestsMacOSARM64"/>
   </Part>
 
   <Part Name="iModelJsApiDeclarations" BentleyBuildMakeFile="api_package/ts/makeTs.mke">
@@ -160,11 +159,7 @@
     <SubPart PartName="CrashpadHandler" PartFile="iModelCore/libsrc/crashpad/crashpad"/>
   </Part>
 
-  <Part Name="RunUnitTests" DeferType="RunUnitTests" BentleyBuildMakeFile="api_package/ts/runTests.mke" ExcludePlatforms="MacOSARM64">
-    <SubPart PartName="iModelJsMakePackages"/>
-  </Part>
-
-  <Part Name="RunUnitTestsMacOSARM64" DeferType="RunUnitTests" BentleyBuildMakeFile="api_package/ts/runTests.mke" OnlyPlatforms="MacOSARM64">
+  <Part Name="RunUnitTests" DeferType="RunUnitTests" BentleyBuildMakeFile="api_package/ts/runTests.mke">
     <SubPart PartName="iModelJsMakePackages"/>
   </Part>
 
