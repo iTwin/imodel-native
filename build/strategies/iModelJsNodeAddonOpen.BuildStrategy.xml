@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BuildStrategy
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../bentleybuild/BuildStrategy.xsd"
+    >
+
+    <ImportStrategy Name="Base"/>
+
+    <DefaultTarget
+        Repository="imodel-native"
+        PartFile="iModelJsNodeAddon/iModelJsNodeAddon"
+        PartName="iModelJsNodeAddonOpen"
+        Platform="$(hostPlatform)"
+        OnlyPlatforms="x64,linuxx64,macosx64,macosarm64"
+        />
+
+</BuildStrategy>
