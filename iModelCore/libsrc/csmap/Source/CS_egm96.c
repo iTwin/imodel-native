@@ -116,9 +116,11 @@ struct cs_Egm96_ *CSnewEgm96 (const char *filePath,long32_t bufferSize,ulong32_t
 		if (cp != NULL) *cp = '\0';
 	}
 
+#if !defined(GEOCOORD_ENHANCEMENT)
 	/* Create a binary file if one does not exist already. */
 	st = CSmkBinaryEgm96 (__This);
 	if (st != 0) goto error;
+#endif
 
 	/* Open the binary file. */
 	st = CSopnBinaryEgm96 (__This,bufferSize);
